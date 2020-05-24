@@ -3259,7 +3259,7 @@ void QUnit::ApplyBufferMap(const bitLenInt& bitIndex, ShardToPhaseMap bufferMap,
 
 void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusivity,
     const RevertControl& controlExclusivity, const RevertAnti& antiExclusivity, std::set<bitLenInt> exceptControlling,
-    std::set<bitLenInt> exceptTargetedBy, const bool& dumpSkipped, const bool& skipOptimize)
+    std::set<bitLenInt> exceptTargetedBy, const bool& dumpSkipped)
 {
     QEngineShard& shard = shards[i];
 
@@ -3271,14 +3271,14 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
 
     shard.CombineGates();
 
-    if (!skipOptimize && (controlExclusivity == ONLY_CONTROLS) && (exclusivity != ONLY_INVERT)) {
+    if ((controlExclusivity == ONLY_CONTROLS) && (exclusivity != ONLY_INVERT)) {
         if (antiExclusivity != ONLY_ANTI) {
             shard.OptimizeControls();
         }
         if (antiExclusivity != ONLY_CTRL) {
             shard.OptimizeAntiControls();
         }
-    } else if (!skipOptimize && (controlExclusivity == ONLY_TARGETS) && (exclusivity != ONLY_INVERT)) {
+    } else if ((controlExclusivity == ONLY_TARGETS) && (exclusivity != ONLY_INVERT)) {
         if (antiExclusivity != ONLY_ANTI) {
             shard.OptimizeTargets();
         }
@@ -3310,7 +3310,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
 
 void QUnit::CommuteH(const bitLenInt& bitIndex)
 {
-    RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, {}, {}, false, true);
+    RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS);
 
     QEngineShard& shard = shards[bitIndex];
 
@@ -3372,15 +3372,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         }
     }
 
-    // TODO: Should be able to commute these:
-    if (anyInvert || anyAntiInvert) {
-        if (shard.targetOfShards.size() >= shard.antiTargetOfShards.size()) {
-            RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
-        } else {
-            RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
-        }
-    }
-
     targetOfShards = shard.targetOfShards;
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
         buffer = phaseShard->second;
@@ -3405,6 +3396,15 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
             ApplyBuffer(phaseShard, control, bitIndex, true);
             shard.RemovePhaseAntiControl(partner);
+        }
+    }
+
+    // TODO: Should be able to commute these:
+    if (anyInvert != anyAntiInvert) {
+        if (shard.targetOfShards.size() >= shard.antiTargetOfShards.size()) {
+            RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
+        } else {
+            RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
         }
     }
 
