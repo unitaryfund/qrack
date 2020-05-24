@@ -4730,6 +4730,61 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     }
     crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
     REQUIRE(crossEntropy > 0.97);
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->CNOT(0, 3);
+    qftReg->CNOT(1, 2);
+    qftReg->T(2);
+    qftReg->T(3);
+    qftReg->CZ(2, 3);
+    qftReg->CZ(1, 0);
+    qftReg->T(3);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+    qftReg->H(2);
+    qftReg->H(3);
+    testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
+
+    goldStandard->SetPermutation(0);
+    goldStandard->H(0);
+    goldStandard->H(1);
+    goldStandard->CNOT(0, 3);
+    goldStandard->CNOT(1, 2);
+    goldStandard->T(2);
+    goldStandard->T(3);
+    goldStandard->CZ(2, 3);
+    goldStandard->CZ(1, 0);
+    goldStandard->T(3);
+    goldStandard->CNOT(0, 1);
+    goldStandard->H(0);
+    goldStandard->H(2);
+    goldStandard->H(3);
+    goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
+
+    crossEntropy = ZERO_R1;
+    for (int perm = 0; perm < 256; perm++) {
+        measurementBin = goldStandardResult.find(perm);
+        if (measurementBin == goldStandardResult.end()) {
+            goldBinResult = 0;
+        } else {
+            goldBinResult = measurementBin->second;
+        }
+
+        measurementBin = testCaseResult.find(perm);
+        if (measurementBin == testCaseResult.end()) {
+            testBinResult = 0;
+        } else {
+            testBinResult = measurementBin->second;
+        }
+        crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
+    }
+    if (crossEntropy < ZERO_R1) {
+        crossEntropy = ZERO_R1;
+    }
+    crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
+    REQUIRE(crossEntropy > 0.97);
 }
 
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
@@ -4911,6 +4966,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
             crossEntropy = ZERO_R1;
         }
         crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
+
         REQUIRE(crossEntropy > 0.97);
     }
 }
