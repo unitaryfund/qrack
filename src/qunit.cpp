@@ -1341,8 +1341,8 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL, {}, { control });
+        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL);
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL);
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
 
         shards[target].AddPhaseAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
@@ -1636,8 +1636,8 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL, {}, { control });
+        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL);
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL);
         if (!IS_ARG_0(bottomRight)) {
             RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
         }
@@ -1720,8 +1720,8 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_ANTI, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_ANTI, {}, { control });
+        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_ANTI);
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_ANTI);
         if (!IS_ARG_0(topLeft)) {
             RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL);
         }
