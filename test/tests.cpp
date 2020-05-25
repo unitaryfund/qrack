@@ -4732,27 +4732,27 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     REQUIRE(crossEntropy > 0.97);
 
     qftReg->SetPermutation(0);
-    qftReg->H(0, 4);
-    qftReg->CZ(0, 3);
+    qftReg->H(0, 5);
     qftReg->CZ(1, 2);
+    qftReg->CZ(0, 4);
+    qftReg->X(1);
     qftReg->H(2);
-    qftReg->CZ(1, 0);
-    qftReg->CZ(2, 3);
-    qftReg->H(1);
-    qftReg->CZ(0, 1);
-    qftReg->H(0, 4);
+    qftReg->CZ(3, 4);
+    qftReg->CZ(0, 2);
+    qftReg->H(0);
+    qftReg->H(3);
     testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
 
     goldStandard->SetPermutation(0);
-    goldStandard->H(0, 4);
-    goldStandard->CZ(0, 3);
+    goldStandard->H(0, 5);
     goldStandard->CZ(1, 2);
+    goldStandard->CZ(0, 4);
+    goldStandard->X(1);
     goldStandard->H(2);
-    goldStandard->CZ(1, 0);
-    goldStandard->CZ(2, 3);
-    goldStandard->H(1);
-    goldStandard->CZ(0, 1);
-    goldStandard->H(0, 4);
+    goldStandard->CZ(3, 4);
+    goldStandard->CZ(0, 2);
+    goldStandard->H(0);
+    goldStandard->H(3);
     goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
 
     crossEntropy = ZERO_R1;
@@ -4779,25 +4779,27 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     REQUIRE(crossEntropy > 0.97);
 
     qftReg->SetPermutation(0);
-    qftReg->H(0, 5);
-    qftReg->CZ(0, 2);
-    qftReg->CZ(2, 1);
-    qftReg->CZ(4, 3);
-    qftReg->H(3);
-    qftReg->X(4);
-    qftReg->CZ(2, 3);
+    qftReg->H(0, 4);
+    qftReg->CZ(0, 3);
+    qftReg->CZ(1, 2);
     qftReg->H(2);
+    qftReg->CZ(1, 0);
+    qftReg->CZ(2, 3);
+    qftReg->H(1);
+    qftReg->CZ(0, 1);
+    qftReg->H(0, 4);
     testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
 
     goldStandard->SetPermutation(0);
-    goldStandard->H(0, 5);
-    goldStandard->CZ(0, 2);
-    goldStandard->CZ(2, 1);
-    goldStandard->CZ(4, 3);
-    goldStandard->H(3);
-    goldStandard->X(4);
-    goldStandard->CZ(2, 3);
+    goldStandard->H(0, 4);
+    goldStandard->CZ(0, 3);
+    goldStandard->CZ(1, 2);
     goldStandard->H(2);
+    goldStandard->CZ(1, 0);
+    goldStandard->CZ(2, 3);
+    goldStandard->H(1);
+    goldStandard->CZ(0, 1);
+    goldStandard->H(0, 4);
     goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
 
     crossEntropy = ZERO_R1;
