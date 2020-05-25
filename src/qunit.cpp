@@ -1341,9 +1341,8 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL, {}, { control });
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
+        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddPhaseAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
         return;
@@ -1636,14 +1635,8 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_CTRL, {}, { control });
-        if (!IS_ARG_0(bottomRight)) {
-            RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
-        }
-        if (!IS_ARG_0(topLeft)) {
-            RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS, ONLY_ANTI);
-        }
+        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddPhaseAngles(&(shards[control]), topLeft, bottomRight);
         delete[] controls;
@@ -1720,14 +1713,8 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_ANTI, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, ONLY_ANTI, {}, { control });
-        if (!IS_ARG_0(topLeft)) {
-            RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL);
-        }
-        if (!IS_ARG_0(bottomRight)) {
-            RevertBasis2Qb(target, ONLY_INVERT, ONLY_CONTROLS, ONLY_CTRL);
-        }
+        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddAntiPhaseAngles(&(shards[control]), bottomRight, topLeft);
         delete[] controls;
@@ -3259,7 +3246,7 @@ void QUnit::ApplyBufferMap(const bitLenInt& bitIndex, ShardToPhaseMap bufferMap,
 
 void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusivity,
     const RevertControl& controlExclusivity, const RevertAnti& antiExclusivity, std::set<bitLenInt> exceptControlling,
-    std::set<bitLenInt> exceptTargetedBy, const bool& dumpSkipped)
+    std::set<bitLenInt> exceptTargetedBy, const bool& dumpSkipped, const bool& skipOptimize)
 {
     QEngineShard& shard = shards[i];
 
@@ -3271,14 +3258,14 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
 
     shard.CombineGates();
 
-    if ((controlExclusivity == ONLY_CONTROLS) && (exclusivity != ONLY_INVERT)) {
+    if (!skipOptimize && (controlExclusivity == ONLY_CONTROLS) && (exclusivity != ONLY_INVERT)) {
         if (antiExclusivity != ONLY_ANTI) {
             shard.OptimizeControls();
         }
         if (antiExclusivity != ONLY_CTRL) {
             shard.OptimizeAntiControls();
         }
-    } else if ((controlExclusivity == ONLY_TARGETS) && (exclusivity != ONLY_INVERT)) {
+    } else if (!skipOptimize && (controlExclusivity == ONLY_TARGETS) && (exclusivity != ONLY_INVERT)) {
         if (antiExclusivity != ONLY_ANTI) {
             shard.OptimizeTargets();
         }
@@ -3310,7 +3297,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
 
 void QUnit::CommuteH(const bitLenInt& bitIndex)
 {
-    RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS);
+    RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, {}, {}, false, true);
 
     QEngineShard& shard = shards[bitIndex];
 
@@ -3372,39 +3359,44 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         }
     }
 
+    if (shard.targetOfShards.size() > 1U || shard.antiTargetOfShards.size() > 0U) {
+        targetOfShards = shard.targetOfShards;
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            buffer = phaseShard->second;
+
+            if (phaseShard->second->isInvert != anyInvert ||
+                (anyInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
+                partner = phaseShard->first;
+                control = FindShardIndex(*partner);
+
+                ApplyBuffer(phaseShard, control, bitIndex, false);
+                shard.RemovePhaseControl(partner);
+            }
+        }
+    }
+
+    if (shard.antiTargetOfShards.size() > 1U || shard.targetOfShards.size() > 0U) {
+        targetOfShards = shard.antiTargetOfShards;
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            buffer = phaseShard->second;
+
+            if (phaseShard->second->isInvert != anyAntiInvert ||
+                (anyAntiInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
+                partner = phaseShard->first;
+                control = FindShardIndex(*partner);
+
+                ApplyBuffer(phaseShard, control, bitIndex, true);
+                shard.RemovePhaseAntiControl(partner);
+            }
+        }
+    }
+
     // TODO: Should be able to commute these:
-    if (anyInvert || anyAntiInvert) {
+    if (anyInvert != anyAntiInvert) {
         if (shard.targetOfShards.size() >= shard.antiTargetOfShards.size()) {
             RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
         } else {
             RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
-        }
-    }
-
-    targetOfShards = shard.targetOfShards;
-    for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-        buffer = phaseShard->second;
-
-        if (phaseShard->second->isInvert != anyInvert || (anyInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
-            partner = phaseShard->first;
-            control = FindShardIndex(*partner);
-
-            ApplyBuffer(phaseShard, control, bitIndex, false);
-            shard.RemovePhaseControl(partner);
-        }
-    }
-
-    targetOfShards = shard.antiTargetOfShards;
-    for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-        buffer = phaseShard->second;
-
-        if (phaseShard->second->isInvert != anyAntiInvert ||
-            (anyAntiInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
-            partner = phaseShard->first;
-            control = FindShardIndex(*partner);
-
-            ApplyBuffer(phaseShard, control, bitIndex, true);
-            shard.RemovePhaseAntiControl(partner);
         }
     }
 

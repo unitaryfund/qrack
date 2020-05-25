@@ -305,6 +305,10 @@ public:
 protected:
     void OptimizeBuffer(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet, AddAnglesFn phaseFn, bool makeThisControl)
     {
+        if (IsInvert()) {
+            return;
+        }
+
         PhaseShardPtr buffer;
         QEngineShardPtr partner;
 
@@ -315,7 +319,8 @@ protected:
             buffer = phaseShard->second;
             partner = phaseShard->first;
 
-            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplxDiff)) {
+            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplxDiff) ||
+                partner->IsInvert()) {
                 continue;
             }
 
@@ -519,6 +524,7 @@ public:
                 if (buffer->isInvert) {
                     buffer->cmplxDiff = -buffer->cmplxSame;
                     buffer->isInvert = false;
+                } else {
                 }
             } else {
                 if (buffer->isInvert) {
@@ -577,6 +583,8 @@ public:
 
         return false;
     }
+
+    bool IsInvert() { return IsInvertTarget() || IsInvertControl(); }
 
     bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
     bool operator!=(const QEngineShard& rhs) { return (mapped != rhs.mapped) || (unit != rhs.unit); }
@@ -923,7 +931,7 @@ protected:
     void RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusivity = INVERT_AND_PHASE,
         const RevertControl& controlExclusivity = CONTROLS_AND_TARGETS,
         const RevertAnti& antiExclusivity = CTRL_AND_ANTI, std::set<bitLenInt> exceptControlling = {},
-        std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false);
+        std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false, const bool& skipOptimized = false);
 
     void Flush0Eigenstate(const bitLenInt& i)
     {
