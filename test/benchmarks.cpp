@@ -885,11 +885,11 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     gateChoices.erase(gateChoiceIterator);
 
                     gateChoiceIterator = gateChoices.begin();
-                    if (gateRand == 1) {
-                        gateChoice = *(gateChoices.rbegin());
-                    } else {
-                        std::advance(gateChoiceIterator, (int)(gateRand * 2));
+                    gateRand = (int)(gateRand * 2);
+                    if (gateRand > 1) {
+                        gateRand--;
                     }
+                    std::advance(gateChoiceIterator, (int)(gateRand * 2));
                     gateChoice = *gateChoiceIterator;
 
                     if (gateChoice == 0) {

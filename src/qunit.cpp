@@ -737,19 +737,13 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_CLASSICAL(shard1)) {
-        if (SHARD_STATE(shard1)) {
-            Flush1Eigenstate(qubit1);
-        } else {
-            Flush0Eigenstate(qubit1);
+    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2)) {
+        // We can avoid dirtying the cache and entangling, since the bits are classical.
+        if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
+            X(qubit1);
+            X(qubit2);
         }
-    }
-    if (UNSAFE_CACHED_CLASSICAL(shard2)) {
-        if (SHARD_STATE(shard2)) {
-            Flush1Eigenstate(qubit2);
-        } else {
-            Flush0Eigenstate(qubit2);
-        }
+        return;
     }
 
     RevertBasis2Qb(qubit1);
@@ -781,7 +775,8 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2)) {
         // We can avoid dirtying the cache and entangling, since the bits are classical.
         if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
-            Swap(qubit1, qubit2);
+            X(qubit1);
+            X(qubit2);
             if (!randGlobalPhase) {
                 // Under the preconditions, this has no effect on Hermitian expectation values, but we track it, if the
                 // QUnit is tracking arbitrary numerical phase.
