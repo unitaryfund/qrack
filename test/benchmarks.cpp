@@ -50,11 +50,11 @@ QInterfacePtr MakeRandQubit()
     QInterfacePtr qubit = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1U, 0, rng,
         ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng);
 
-    real1 prob = qubit->Rand();
-    complex phaseFactor = std::polar(ONE_R1, (real1)(2 * M_PI * qubit->Rand()));
+    real1 theta = 2 * M_PI * qubit->Rand();
+    real1 phi = 2 * M_PI * qubit->Rand();
+    real1 lambda = 2 * M_PI * qubit->Rand();
 
-    complex state[2] = { ((real1)sqrt(ONE_R1 - prob)) * ONE_CMPLX, ((real1)sqrt(prob)) * phaseFactor };
-    qubit->SetQuantumState(state);
+    qubit->U(0, theta, phi, lambda);
 
     return qubit;
 }
@@ -1059,6 +1059,32 @@ TEST_CASE("test_qft_cosmology", "[cosmos]")
     // random, single, separable qubits.
 
     benchmarkLoop([&](QInterfacePtr qUniverse, bitLenInt n) { qUniverse->QFT(0, n); }, false, false, false, true);
+}
+
+TEST_CASE("test_qft_cosmology_inverse", "[cosmos]")
+{
+    // This is "scratch work" inspired by https://arxiv.org/abs/1702.06959
+    //
+    // Per the notes in the previous tests, this is probably our most accurate possible simulation of a cosmos: one
+    // QFT (or inverse) to consume the entire "entropy" budget.
+    //
+    // For the time reversal, say we "know the ultimate basis of measurement, at the end of the universe." It is trivial
+    // to reverse to statistically compatible initial state. (This is simply the "uncomputation" of the forward-in-time
+    // simulation.)
+
+    benchmarkLoop(
+        [&](QInterfacePtr qUniverse, bitLenInt n) {
+            qUniverse->IQFT(0, n);
+
+            for (bitLenInt i = 0; i < qUniverse->GetQubitCount(); i++) {
+                real1 theta = -2 * M_PI * qUniverse->Rand();
+                real1 phi = -2 * M_PI * qUniverse->Rand();
+                real1 lambda = -2 * M_PI * qUniverse->Rand();
+
+                qUniverse->U(i, theta, phi, lambda);
+            }
+        },
+        true, false, false, false);
 }
 
 TEST_CASE("test_n_bell", "[stabilizer]")
