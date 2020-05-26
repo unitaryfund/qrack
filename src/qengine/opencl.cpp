@@ -2265,7 +2265,7 @@ QInterfacePtr QEngineOCL::Clone()
     copyPtr->runningNorm = runningNorm;
 
     EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPower);
+    DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), (bitCapIntOcl)(sizeof(complex) * maxQPower));
     Finish();
 
     return copyPtr;
