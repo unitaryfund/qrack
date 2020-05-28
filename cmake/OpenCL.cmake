@@ -47,6 +47,7 @@ if (ENABLE_OPENCL)
     target_link_libraries (quantum_associative_memory ${OpenCL_LIBRARIES})
     target_link_libraries (shors_factoring ${OpenCL_LIBRARIES})
     target_link_libraries (pearson32 ${OpenCL_LIBRARIES})
+    target_link_libraries (teleport ${OpenCL_LIBRARIES})
 
 
     # Build the OpenCL command files
