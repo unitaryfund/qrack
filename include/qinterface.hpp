@@ -120,7 +120,7 @@ protected:
     uint32_t randomSeed;
     qrack_rand_gen_ptr rand_generator;
     std::uniform_real_distribution<real1> rand_distribution;
-    std::shared_ptr<RdRandWrapper::RdRandom> hardware_rand_generator;
+    std::shared_ptr<RdRandom> hardware_rand_generator;
     bool doNormalize;
     bool randGlobalPhase;
     real1 amplitudeFloor;
@@ -185,7 +185,7 @@ public:
         SetQubitCount(n);
 
         if (useHardwareRNG) {
-            hardware_rand_generator = std::make_shared<RdRandWrapper::RdRandom>();
+            hardware_rand_generator = std::make_shared<RdRandom>();
             if (!(hardware_rand_generator->SupportsRDRAND())) {
                 hardware_rand_generator = NULL;
             }

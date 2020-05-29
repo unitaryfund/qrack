@@ -21,9 +21,11 @@
 #include <immintrin.h>
 #endif
 
+#include "qrack_types.hpp"
+
 #pragma once
 
-namespace RdRandWrapper {
+namespace Qrack {
 
 bool getRdRand(unsigned int* pv);
 
@@ -31,6 +33,6 @@ class RdRandom {
 public:
     bool SupportsRDRAND();
 
-    double Next();
+    real1 Next();
 };
-} // namespace RdRandWrapper
+} // namespace Qrack
