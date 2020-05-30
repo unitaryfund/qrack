@@ -10,6 +10,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <iostream>
+
 #include <algorithm>
 #include <dirent.h>
 #include <fstream>
@@ -70,10 +72,14 @@ std::vector<std::string> RdRandom::ReadDirectory(const std::string& path)
             if (de == NULL) {
                 break;
             }
-            result.push_back(path + std::string(de->d_name));
+            if (std::string(de->d_name) != "." && std::string(de->d_name) != "..") {
+                result.push_back(path + "/" + std::string(de->d_name));
+            }
         }
         closedir(dp);
-        std::sort(result.begin(), result.end());
+        if (result.size() > 0) {
+            std::sort(result.begin(), result.end());
+        }
     }
     return result;
 }
@@ -88,7 +94,7 @@ real1 RdRandom::Next()
         std::vector<std::string> fileNames = {};
 
         while (fileNames.size() == 0) {
-            fileNames = ReadDirectory("~/.qrack/rng");
+            fileNames = ReadDirectory("/home/iamu/.qrack/rng");
         }
 
         std::ifstream in1(fileNames[0]);
@@ -100,7 +106,7 @@ real1 RdRandom::Next()
 
         future2 = std::async(std::launch::async, [&]() {
             while (fileNames.size() == 0) {
-                fileNames = ReadDirectory("~/.qrack/rng");
+                fileNames = ReadDirectory("/home/iamu/.qrack/rng");
             }
 
             std::ifstream in2(fileNames[0]);
@@ -119,7 +125,7 @@ real1 RdRandom::Next()
                 std::vector<std::string> fileNames;
 
                 while (fileNames.size() == 0) {
-                    fileNames = ReadDirectory("~/.qrack/rng");
+                    fileNames = ReadDirectory("/home/iamu/.qrack/rng");
                 }
 
                 std::ifstream in2(fileNames[0]);
@@ -134,7 +140,7 @@ real1 RdRandom::Next()
                 std::vector<std::string> fileNames = {};
 
                 while (fileNames.size() == 0) {
-                    fileNames = ReadDirectory("~/.qrack/rng");
+                    fileNames = ReadDirectory("/home/iamu/.qrack/rng");
                 }
 
                 std::ifstream in1(fileNames[0]);
