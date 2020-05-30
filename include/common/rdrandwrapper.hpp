@@ -10,20 +10,24 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#if ENABLE_RDRAND
+#pragma once
 
+#if ENABLE_RNDFILE
+#include <future>
+#include <string>
+#include <vector>
+#endif
+
+#if ENABLE_RDRAND
 #if _MSC_VER
 #include <intrin.h>
 #else
 #include <cpuid.h>
 #endif
-
 #include <immintrin.h>
 #endif
 
 #include "qrack_types.hpp"
-
-#pragma once
 
 namespace Qrack {
 
@@ -32,7 +36,18 @@ bool getRdRand(unsigned int* pv);
 class RdRandom {
 public:
     bool SupportsRDRAND();
-
     real1 Next();
+#if ENABLE_RNDFILE
+    std::vector<std::string> ReadDirectory(const std::string& path = std::string());
+
+private:
+    bool didInit;
+    bool isPageTwo;
+    std::vector<char> data1;
+    std::vector<char> data2;
+    std::future<void> future1;
+    std::future<void> future2;
+    int dataOffset;
+#endif
 };
 } // namespace Qrack

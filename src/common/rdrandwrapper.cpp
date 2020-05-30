@@ -10,6 +10,11 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <algorithm>
+#include <dirent.h>
+#include <fstream>
+#include <sys/types.h>
+
 #include "rdrandwrapper.hpp"
 
 namespace Qrack {
@@ -49,11 +54,107 @@ bool RdRandom::SupportsRDRAND()
 #endif
 }
 
+#if ENABLE_RNDFILE
+// From http://www.cplusplus.com/forum/unices/3548/
+std::vector<std::string> RdRandom::ReadDirectory(const std::string& path)
+{
+    std::vector<std::string> result;
+    dirent* de;
+    DIR* dp;
+    errno = 0;
+    dp = opendir(path.empty() ? "." : path.c_str());
+    if (dp) {
+        while (true) {
+            errno = 0;
+            de = readdir(dp);
+            if (de == NULL) {
+                break;
+            }
+            result.push_back(path + std::string(de->d_name));
+        }
+        closedir(dp);
+        std::sort(result.begin(), result.end());
+    }
+    return result;
+}
+#endif
+
 real1 RdRandom::Next()
 {
-    unsigned int v;
     real1 res = 0;
     real1 part = 1;
+#if ENABLE_RNDFILE
+    if (!didInit) {
+        std::vector<std::string> fileNames = {};
+
+        while (fileNames.size() == 0) {
+            fileNames = ReadDirectory("~/.qrack/rng");
+        }
+
+        std::ifstream in1(fileNames[0]);
+        std::string contents1((std::istreambuf_iterator<char>(in1)), std::istreambuf_iterator<char>());
+        remove(fileNames[0].c_str());
+        fileNames.erase(fileNames.begin());
+        data1.resize(contents1.size());
+        std::copy(contents1.begin(), contents1.end(), data1.begin());
+
+        future2 = std::async(std::launch::async, [&]() {
+            while (fileNames.size() == 0) {
+                fileNames = ReadDirectory("~/.qrack/rng");
+            }
+
+            std::ifstream in2(fileNames[0]);
+            std::string contents2((std::istreambuf_iterator<char>(in2)), std::istreambuf_iterator<char>());
+            remove(fileNames[0].c_str());
+            data2.resize(contents2.size());
+            std::copy(contents2.begin(), contents2.end(), data2.begin());
+        });
+
+        didInit = true;
+    }
+    if ((isPageTwo && (data2.size() - dataOffset) < 4) || (!isPageTwo && (data1.size() - dataOffset) < 4)) {
+        if (isPageTwo) {
+            future1.get();
+            future2 = std::async(std::launch::async, [&]() {
+                std::vector<std::string> fileNames;
+
+                while (fileNames.size() == 0) {
+                    fileNames = ReadDirectory("~/.qrack/rng");
+                }
+
+                std::ifstream in2(fileNames[0]);
+                std::string contents2((std::istreambuf_iterator<char>(in2)), std::istreambuf_iterator<char>());
+                remove(fileNames[0].c_str());
+                data2.resize(contents2.size());
+                std::copy(contents2.begin(), contents2.end(), data2.begin());
+            });
+        } else {
+            future2.get();
+            future1 = std::async(std::launch::async, [&]() {
+                std::vector<std::string> fileNames = {};
+
+                while (fileNames.size() == 0) {
+                    fileNames = ReadDirectory("~/.qrack/rng");
+                }
+
+                std::ifstream in1(fileNames[0]);
+                std::string contents1((std::istreambuf_iterator<char>(in1)), std::istreambuf_iterator<char>());
+                remove(fileNames[0].c_str());
+                data1.resize(contents1.size());
+                std::copy(contents1.begin(), contents1.end(), data1.begin());
+            });
+        }
+        isPageTwo = !isPageTwo;
+        dataOffset = 0;
+    }
+    for (int i = 0; i < 4; i++) {
+        part /= 256;
+        res += part * ((isPageTwo ? data2[dataOffset + i] : data1[dataOffset + i]) + 128);
+    }
+    dataOffset += 4;
+    return res;
+#else
+    unsigned int v;
     if (!getRdRand(&v)) {
         throw "Failed to get hardware RNG number.";
     }
@@ -64,6 +165,7 @@ real1 RdRandom::Next()
             res += part;
         }
     }
+#endif
     return res;
 }
 
