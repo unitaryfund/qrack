@@ -35,19 +35,28 @@ bool getRdRand(unsigned int* pv);
 
 class RdRandom {
 public:
+#if ENABLE_RNDFILE
+    RdRandom()
+        : didInit(false)
+        , isPageTwo(false)
+        , data1()
+        , data2()
+        , dataOffset(0)
+        , fileOffset(0)
+    {
+    }
+#endif
     bool SupportsRDRAND();
     real1 Next();
 #if ENABLE_RNDFILE
-    std::vector<std::string> ReadDirectory(const std::string& path = std::string());
-
 private:
-    bool didInit;
+    bool didInit = false;
     bool isPageTwo;
     std::vector<char> data1;
     std::vector<char> data2;
-    std::future<void> future1;
-    std::future<void> future2;
-    int dataOffset;
+    std::future<void> readFuture;
+    size_t dataOffset;
+    size_t fileOffset;
 #endif
 };
 } // namespace Qrack

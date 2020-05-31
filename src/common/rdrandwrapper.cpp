@@ -10,7 +10,9 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <chrono>
 #include <iostream>
+#include <thread>
 
 #include <algorithm>
 #include <dirent.h>
@@ -33,32 +35,9 @@ bool getRdRand(unsigned int* pv)
     return false;
 }
 
-bool RdRandom::SupportsRDRAND()
-{
-#if ENABLE_RDRAND
-    const unsigned int flag_RDRAND = (1 << 30);
-
-#if _MSC_VER
-    int ex[4];
-    __cpuid(ex, 1);
-
-    return ((ex[2] & flag_RDRAND) == flag_RDRAND);
-#else
-    unsigned int eax, ebx, ecx, edx;
-    ecx = 0;
-    __get_cpuid(1, &eax, &ebx, &ecx, &edx);
-
-    return ((ecx & flag_RDRAND) == flag_RDRAND);
-#endif
-
-#else
-    return false;
-#endif
-}
-
 #if ENABLE_RNDFILE
 // From http://www.cplusplus.com/forum/unices/3548/
-std::vector<std::string> RdRandom::ReadDirectory(const std::string& path)
+std::vector<std::string> _readDirectoryFileNames(const std::string& path)
 {
     std::vector<std::string> result;
     dirent* de;
@@ -83,7 +62,61 @@ std::vector<std::string> RdRandom::ReadDirectory(const std::string& path)
     }
     return result;
 }
+
+bool _readNextRandDataFile(size_t fileOffset, std::vector<char>& data)
+{
+    std::vector<std::string> fileNames = {};
+
+    fileNames = _readDirectoryFileNames("/home/iamu/.qrack/rng");
+    while (fileNames.size() <= fileOffset) {
+        fileNames = _readDirectoryFileNames("/home/iamu/.qrack/rng");
+    }
+
+    FILE* dataFile;
+    while (!(dataFile = fopen(fileNames[fileOffset].c_str(), "r"))) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+
+    fseek(dataFile, 0L, SEEK_END);
+    size_t fSize = ftell(dataFile);
+
+    if (fSize == 0) {
+        fclose(dataFile);
+        return false;
+    }
+
+    rewind(dataFile);
+
+    data.resize(fSize);
+    fSize = fread(&data[0], sizeof(unsigned char), fSize, dataFile);
+    fclose(dataFile);
+
+    return true;
+}
 #endif
+
+bool RdRandom::SupportsRDRAND()
+{
+#if ENABLE_RDRAND
+    const unsigned int flag_RDRAND = (1 << 30);
+
+#if _MSC_VER
+    int ex[4];
+    __cpuid(ex, 1);
+
+    return ((ex[2] & flag_RDRAND) == flag_RDRAND);
+#else
+    unsigned int eax, ebx, ecx, edx;
+    ecx = 0;
+    __get_cpuid(1, &eax, &ebx, &ecx, &edx);
+
+    return ((ecx & flag_RDRAND) == flag_RDRAND);
+#endif
+
+#else
+    return false;
+#endif
+}
 
 real1 RdRandom::Next()
 {
@@ -91,71 +124,40 @@ real1 RdRandom::Next()
     real1 part = 1;
 #if ENABLE_RNDFILE
     if (!didInit) {
-        std::vector<std::string> fileNames = {};
-
-        while (fileNames.size() == 0) {
-            fileNames = ReadDirectory("/home/iamu/.qrack/rng");
-        }
-
-        std::ifstream in1(fileNames[0]);
-        std::string contents1((std::istreambuf_iterator<char>(in1)), std::istreambuf_iterator<char>());
-        remove(fileNames[0].c_str());
-        fileNames.erase(fileNames.begin());
-        data1.resize(contents1.size());
-        std::copy(contents1.begin(), contents1.end(), data1.begin());
-
-        future2 = std::async(std::launch::async, [&]() {
-            while (fileNames.size() == 0) {
-                fileNames = ReadDirectory("/home/iamu/.qrack/rng");
+        while ((data1.size() - dataOffset) < 4) {
+            if (_readNextRandDataFile(fileOffset, data1)) {
+                fileOffset++;
+                dataOffset = 0;
             }
-
-            std::ifstream in2(fileNames[0]);
-            std::string contents2((std::istreambuf_iterator<char>(in2)), std::istreambuf_iterator<char>());
-            remove(fileNames[0].c_str());
-            data2.resize(contents2.size());
-            std::copy(contents2.begin(), contents2.end(), data2.begin());
+        }
+        readFuture = std::async(std::launch::async, [&]() {
+            while (!_readNextRandDataFile(fileOffset, data2)) {
+            }
+            fileOffset++;
         });
-
         didInit = true;
-    }
-    if ((isPageTwo && (data2.size() - dataOffset) < 4) || (!isPageTwo && (data1.size() - dataOffset) < 4)) {
+    } else if ((isPageTwo && ((data2.size() - dataOffset) < 4)) || (!isPageTwo && ((data1.size() - dataOffset) < 4))) {
+        readFuture.get();
+        dataOffset = 0;
         if (isPageTwo) {
-            future1.get();
-            future2 = std::async(std::launch::async, [&]() {
-                std::vector<std::string> fileNames;
-
-                while (fileNames.size() == 0) {
-                    fileNames = ReadDirectory("/home/iamu/.qrack/rng");
+            readFuture = std::async(std::launch::async, [&]() {
+                while (!_readNextRandDataFile(fileOffset, data1)) {
                 }
-
-                std::ifstream in2(fileNames[0]);
-                std::string contents2((std::istreambuf_iterator<char>(in2)), std::istreambuf_iterator<char>());
-                remove(fileNames[0].c_str());
-                data2.resize(contents2.size());
-                std::copy(contents2.begin(), contents2.end(), data2.begin());
+                fileOffset++;
             });
         } else {
-            future2.get();
-            future1 = std::async(std::launch::async, [&]() {
-                std::vector<std::string> fileNames = {};
-
-                while (fileNames.size() == 0) {
-                    fileNames = ReadDirectory("/home/iamu/.qrack/rng");
+            readFuture = std::async(std::launch::async, [&]() {
+                while (!_readNextRandDataFile(fileOffset, data2)) {
                 }
-
-                std::ifstream in1(fileNames[0]);
-                std::string contents1((std::istreambuf_iterator<char>(in1)), std::istreambuf_iterator<char>());
-                remove(fileNames[0].c_str());
-                data1.resize(contents1.size());
-                std::copy(contents1.begin(), contents1.end(), data1.begin());
+                fileOffset++;
             });
         }
         isPageTwo = !isPageTwo;
-        dataOffset = 0;
     }
-    for (int i = 0; i < 4; i++) {
+    size_t precision = sizeof(real1) - 1U;
+    for (unsigned int i = 0; i < precision; i++) {
         part /= 256;
-        res += part * ((isPageTwo ? data2[dataOffset + i] : data1[dataOffset + i]) + 128);
+        res += part * (data1[dataOffset + i] + 128);
     }
     dataOffset += 4;
     return res;
