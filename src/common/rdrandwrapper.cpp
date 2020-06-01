@@ -63,13 +63,34 @@ std::vector<std::string> _readDirectoryFileNames(const std::string& path)
     return result;
 }
 
+std::string _getDefaultRandomNumberFilePath()
+{
+    if (getenv("QRACK_RNG_PATH")) {
+        std::string toRet = std::string(getenv("QRACK_RNG_PATH"));
+        if ((toRet.back() != '/') && (toRet.back() != '\\')) {
+#if defined(_WIN32) && !defined(__CYGWIN__)
+            toRet += "\\";
+#else
+            toRet += "/";
+#endif
+        }
+        return toRet;
+    }
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    return std::string(getenv("HOMEDRIVE") ? getenv("HOMEDRIVE") : "") +
+        std::string(getenv("HOMEPATH") ? getenv("HOMEPATH") : "") + "\\.qrack\\rng\\";
+#else
+    return std::string(getenv("HOME") ? getenv("HOME") : "") + "/.qrack/rng/";
+#endif
+}
+
 bool _readNextRandDataFile(size_t fileOffset, std::vector<char>& data)
 {
     std::vector<std::string> fileNames = {};
 
-    fileNames = _readDirectoryFileNames("/home/iamu/.qrack/rng");
+    fileNames = _readDirectoryFileNames(_getDefaultRandomNumberFilePath());
     while (fileNames.size() <= fileOffset) {
-        fileNames = _readDirectoryFileNames("/home/iamu/.qrack/rng");
+        fileNames = _readDirectoryFileNames(_getDefaultRandomNumberFilePath());
     }
 
     FILE* dataFile;
