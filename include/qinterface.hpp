@@ -186,9 +186,11 @@ public:
 
         if (useHardwareRNG) {
             hardware_rand_generator = std::make_shared<RdRandom>();
+#if !ENABLE_RNDFILE
             if (!(hardware_rand_generator->SupportsRDRAND())) {
                 hardware_rand_generator = NULL;
             }
+#endif
         }
 
         if (rgp == NULL) {

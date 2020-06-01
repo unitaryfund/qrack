@@ -10,6 +10,16 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#if ENABLE_RNDFILE
+#include <chrono>
+#include <thread>
+
+#include <algorithm>
+#include <dirent.h>
+#include <fstream>
+#include <sys/types.h>
+#endif
+
 #include "rdrandwrapper.hpp"
 
 namespace Qrack {
@@ -25,6 +35,87 @@ bool getRdRand(unsigned int* pv)
 #endif
     return false;
 }
+
+#if ENABLE_RNDFILE
+// From http://www.cplusplus.com/forum/unices/3548/
+std::vector<std::string> _readDirectoryFileNames(const std::string& path)
+{
+    std::vector<std::string> result;
+    dirent* de;
+    DIR* dp;
+    errno = 0;
+    dp = opendir(path.empty() ? "." : path.c_str());
+    if (dp) {
+        while (true) {
+            errno = 0;
+            de = readdir(dp);
+            if (de == NULL) {
+                break;
+            }
+            if (std::string(de->d_name) != "." && std::string(de->d_name) != "..") {
+                result.push_back(path + "/" + std::string(de->d_name));
+            }
+        }
+        closedir(dp);
+        if (result.size() > 0) {
+            std::sort(result.begin(), result.end());
+        }
+    }
+    return result;
+}
+
+std::string _getDefaultRandomNumberFilePath()
+{
+    if (getenv("QRACK_RNG_PATH")) {
+        std::string toRet = std::string(getenv("QRACK_RNG_PATH"));
+        if ((toRet.back() != '/') && (toRet.back() != '\\')) {
+#if defined(_WIN32) && !defined(__CYGWIN__)
+            toRet += "\\";
+#else
+            toRet += "/";
+#endif
+        }
+        return toRet;
+    }
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    return std::string(getenv("HOMEDRIVE") ? getenv("HOMEDRIVE") : "") +
+        std::string(getenv("HOMEPATH") ? getenv("HOMEPATH") : "") + "\\.qrack\\rng\\";
+#else
+    return std::string(getenv("HOME") ? getenv("HOME") : "") + "/.qrack/rng/";
+#endif
+}
+
+bool _readNextRandDataFile(size_t fileOffset, std::vector<char>& data)
+{
+    std::vector<std::string> fileNames = {};
+
+    fileNames = _readDirectoryFileNames(_getDefaultRandomNumberFilePath());
+    while (fileNames.size() <= fileOffset) {
+        fileNames = _readDirectoryFileNames(_getDefaultRandomNumberFilePath());
+    }
+
+    FILE* dataFile;
+    while (!(dataFile = fopen(fileNames[fileOffset].c_str(), "r"))) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+
+    fseek(dataFile, 0L, SEEK_END);
+    size_t fSize = ftell(dataFile);
+
+    if (fSize == 0) {
+        fclose(dataFile);
+        return false;
+    }
+
+    rewind(dataFile);
+
+    data.resize(fSize);
+    fSize = fread(&data[0], sizeof(unsigned char), fSize, dataFile);
+    fclose(dataFile);
+
+    return true;
+}
+#endif
 
 bool RdRandom::SupportsRDRAND()
 {
@@ -51,9 +142,49 @@ bool RdRandom::SupportsRDRAND()
 
 real1 RdRandom::Next()
 {
-    unsigned int v;
     real1 res = 0;
     real1 part = 1;
+#if ENABLE_RNDFILE
+    if (!didInit) {
+        while ((data1.size() - dataOffset) < 4) {
+            if (_readNextRandDataFile(fileOffset, data1)) {
+                fileOffset++;
+                dataOffset = 0;
+            }
+        }
+        readFuture = std::async(std::launch::async, [&]() {
+            while (!_readNextRandDataFile(fileOffset, data2)) {
+            }
+            fileOffset++;
+        });
+        didInit = true;
+    } else if ((isPageTwo && ((data2.size() - dataOffset) < 4)) || (!isPageTwo && ((data1.size() - dataOffset) < 4))) {
+        readFuture.get();
+        dataOffset = 0;
+        if (isPageTwo) {
+            readFuture = std::async(std::launch::async, [&]() {
+                while (!_readNextRandDataFile(fileOffset, data1)) {
+                }
+                fileOffset++;
+            });
+        } else {
+            readFuture = std::async(std::launch::async, [&]() {
+                while (!_readNextRandDataFile(fileOffset, data2)) {
+                }
+                fileOffset++;
+            });
+        }
+        isPageTwo = !isPageTwo;
+    }
+    size_t precision = sizeof(real1) - 1U;
+    for (unsigned int i = 0; i < precision; i++) {
+        part /= 256;
+        res += part * (data1[dataOffset + i] + 128);
+    }
+    dataOffset += 4;
+    return res;
+#else
+    unsigned int v;
     if (!getRdRand(&v)) {
         throw "Failed to get hardware RNG number.";
     }
@@ -64,6 +195,7 @@ real1 RdRandom::Next()
             res += part;
         }
     }
+#endif
     return res;
 }
 

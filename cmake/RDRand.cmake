@@ -6,3 +6,11 @@ if (ENABLE_RDRAND)
 endif (ENABLE_RDRAND)
 
 message ("Try RDRAND is: ${ENABLE_RDRAND}")
+
+option (ENABLE_RNDFILE "Get random numbers from ~/.qrack/rng directory" OFF)
+
+if (ENABLE_RNDFILE)
+    target_compile_definitions(qrack PUBLIC ENABLE_RNDFILE=1)
+endif (ENABLE_RNDFILE)
+
+message ("RNDFILE is: ${ENABLE_RNDFILE}")
