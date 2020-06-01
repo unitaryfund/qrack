@@ -72,7 +72,8 @@ int main()
     qReg->CNOT(1, 2);
     std::cout << "Bob received: " << (int)qReg->M(2) << std::endl;
 
-    // Another MWI unitary equivalent:
+    // Another MWI unitary equivalent, with a caveat: This variant would specifically be "decoherent," if measurements
+    // were used instead of unitary gates.
     qReg->SetPermutation(0);
     // Eve prepares a Bell pair.
     qReg->H(1);
