@@ -10,14 +10,15 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#if ENABLE_RNDFILE
 #include <chrono>
-#include <iostream>
 #include <thread>
 
 #include <algorithm>
 #include <dirent.h>
 #include <fstream>
 #include <sys/types.h>
+#endif
 
 #include "rdrandwrapper.hpp"
 
