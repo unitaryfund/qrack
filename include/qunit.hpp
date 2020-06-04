@@ -537,6 +537,43 @@ public:
         });
 
         RemoveIdentityBuffers(antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
+
+        /*ShardToPhaseMap tempControls = controlsShards;
+
+        par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = tempControls.begin();
+            std::advance(phaseShard, lcv);
+            PhaseShardPtr buffer = phaseShard->second;
+            buffer->isInvert = true;
+            if (IS_ARG_PI(buffer->cmplxDiff)) {
+                controlsShards.erase(phaseShard->first);
+                if (IsInvertAntiControlOf(phaseShard->first)) {
+                    std::swap(controlsShards[phaseShard->first], antiControlsShards[phaseShard->first]);
+                    controlsShards[phaseShard->first]->isInvert = true;
+                } else {
+                    antiControlsShards[phaseShard->first] = phaseShard->second;
+                }
+            }
+            buffer->cmplxDiff = ONE_CMPLX;
+            buffer->cmplxSame = ONE_CMPLX;
+        });
+
+        tempControls = antiControlsShards;
+
+        par_for(0, antiControlsShards.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = tempControls.begin();
+            std::advance(phaseShard, lcv);
+            PhaseShardPtr buffer = phaseShard->second;
+            buffer->isInvert = true;
+            if (IS_ARG_PI(buffer->cmplxSame)) {
+                antiControlsShards.erase(phaseShard->first);
+                if (!IsInvertControlOf(phaseShard->first)) {
+                    controlsShards[phaseShard->first] = phaseShard->second;
+                }
+            }
+            buffer->cmplxDiff = ONE_CMPLX;
+            buffer->cmplxSame = ONE_CMPLX;
+        });*/
     }
 
     bool IsInvertControlOf(QEngineShardPtr target) { return (controlsShards.find(target) != controlsShards.end()); }

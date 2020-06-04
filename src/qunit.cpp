@@ -3292,21 +3292,83 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
 
 void QUnit::CommuteH(const bitLenInt& bitIndex)
 {
-    RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, {}, {}, false, true);
-
     QEngineShard& shard = shards[bitIndex];
 
     if (!QUEUED_PHASE(shard)) {
         return;
     }
 
-    real1 ampThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
-
     complex polarDiff, polarSame;
     ShardToPhaseMap::iterator phaseShard, oppositeShard;
     QEngineShardPtr partner;
     PhaseShardPtr buffer;
-    bitLenInt control;
+    bitLenInt control, target;
+
+    bool isDiffNegOne, isSameNegOne, isDiffOne, isSameOne, doCommute;
+
+    ShardToPhaseMap controlsShards = shard.controlsShards;
+
+    for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+        buffer = phaseShard->second;
+
+        isDiffOne = IS_ARG_0(buffer->cmplxDiff);
+        isDiffNegOne = IS_ARG_PI(buffer->cmplxDiff);
+        doCommute = isDiffOne || isDiffNegOne;
+        isSameOne = IS_ARG_0(buffer->cmplxSame);
+        isSameNegOne = IS_ARG_PI(buffer->cmplxSame);
+        doCommute = isSameOne || isSameNegOne;
+
+        if (buffer->isInvert || !doCommute) {
+            partner = phaseShard->first;
+            target = FindShardIndex(*partner);
+
+            ApplyBuffer(phaseShard, bitIndex, target, false);
+            shard.RemovePhaseTarget(partner);
+        } else if (isDiffNegOne && isSameNegOne) {
+            partner = phaseShard->first;
+            target = FindShardIndex(*partner);
+
+            shard.RemovePhaseTarget(partner);
+            X(target);
+            if (!randGlobalPhase) {
+                ApplySinglePhase(-ONE_CMPLX, -ONE_CMPLX, target);
+            }
+        }
+    }
+
+    controlsShards = shard.antiControlsShards;
+
+    for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+        buffer = phaseShard->second;
+
+        isDiffOne = IS_ARG_0(buffer->cmplxDiff);
+        isDiffNegOne = IS_ARG_PI(buffer->cmplxDiff);
+        doCommute = isDiffOne || isDiffNegOne;
+        isSameOne = IS_ARG_0(buffer->cmplxSame);
+        isSameNegOne = IS_ARG_PI(buffer->cmplxSame);
+        doCommute = isSameOne || isSameNegOne;
+
+        if (buffer->isInvert || !doCommute) {
+            partner = phaseShard->first;
+            target = FindShardIndex(*partner);
+
+            ApplyBuffer(phaseShard, bitIndex, target, true);
+            shard.RemovePhaseAntiTarget(partner);
+        } else if (isDiffNegOne && isSameNegOne) {
+            partner = phaseShard->first;
+            target = FindShardIndex(*partner);
+
+            shard.RemovePhaseAntiTarget(partner);
+            X(target);
+            if (!randGlobalPhase) {
+                ApplySinglePhase(-ONE_CMPLX, -ONE_CMPLX, target);
+            }
+        }
+    }
+
+    RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, {}, {}, false, true);
+
+    real1 ampThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
 
     bool isSame, isOpposite, anyInvert = false, anyAntiInvert = false;
 
