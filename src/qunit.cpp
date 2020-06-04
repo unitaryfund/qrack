@@ -1738,6 +1738,19 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddAntiPhaseAngles(&(shards[control]), bottomRight, topLeft);
+
+        // AddPhaseAngles might produce an identity buffer, and remove it.
+        // Otherwise, additional optimization might be available.
+        if (shards[control].antiControlsShards.find(&(shards[target])) != shards[control].antiControlsShards.end()) {
+            PhaseShardPtr phaseShard = shards[control].antiControlsShards[&(shards[target])];
+            complex polarDiff = phaseShard->cmplxDiff;
+            complex polarSame = phaseShard->cmplxSame;
+            if (!phaseShard->isInvert && IS_SAME(polarDiff, polarSame)) {
+                shards[control].RemovePhaseAntiTarget(&(shards[target]));
+                ApplySinglePhase(polarSame, polarDiff, control);
+            }
+        }
+
         delete[] controls;
         return;
     }
