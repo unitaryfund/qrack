@@ -3304,27 +3304,12 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     PhaseShardPtr buffer;
     bitLenInt control, target;
 
-    bool isDiffNegOne, isSameNegOne, isDiffOne, isSameOne, doCommute;
-
     ShardToPhaseMap controlsShards = shard.controlsShards;
 
     for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
         buffer = phaseShard->second;
 
-        isDiffOne = IS_ARG_0(buffer->cmplxDiff);
-        isDiffNegOne = IS_ARG_PI(buffer->cmplxDiff);
-        doCommute = isDiffOne || isDiffNegOne;
-        isSameOne = IS_ARG_0(buffer->cmplxSame);
-        isSameNegOne = IS_ARG_PI(buffer->cmplxSame);
-        doCommute = isSameOne || isSameNegOne;
-
-        if (buffer->isInvert || !doCommute) {
-            partner = phaseShard->first;
-            target = FindShardIndex(*partner);
-
-            ApplyBuffer(phaseShard, bitIndex, target, false);
-            shard.RemovePhaseTarget(partner);
-        } else if (isDiffNegOne && isSameNegOne) {
+        if (!buffer->isInvert && IS_ARG_PI(buffer->cmplxDiff) && IS_ARG_PI(buffer->cmplxSame)) {
             partner = phaseShard->first;
             target = FindShardIndex(*partner);
 
@@ -3341,20 +3326,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
         buffer = phaseShard->second;
 
-        isDiffOne = IS_ARG_0(buffer->cmplxDiff);
-        isDiffNegOne = IS_ARG_PI(buffer->cmplxDiff);
-        doCommute = isDiffOne || isDiffNegOne;
-        isSameOne = IS_ARG_0(buffer->cmplxSame);
-        isSameNegOne = IS_ARG_PI(buffer->cmplxSame);
-        doCommute = isSameOne || isSameNegOne;
-
-        if (buffer->isInvert || !doCommute) {
-            partner = phaseShard->first;
-            target = FindShardIndex(*partner);
-
-            ApplyBuffer(phaseShard, bitIndex, target, true);
-            shard.RemovePhaseAntiTarget(partner);
-        } else if (isDiffNegOne && isSameNegOne) {
+        if (!buffer->isInvert && IS_ARG_PI(buffer->cmplxDiff) && IS_ARG_PI(buffer->cmplxSame)) {
             partner = phaseShard->first;
             target = FindShardIndex(*partner);
 
