@@ -933,6 +933,8 @@ protected:
         const RevertAnti& antiExclusivity = CTRL_AND_ANTI, std::set<bitLenInt> exceptControlling = {},
         std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false, const bool& skipOptimized = false);
 
+    void CheckOptimizeBuffer(const bitLenInt& control, const bitLenInt& target, const bool& isAnti);
+
     void Flush0Eigenstate(const bitLenInt& i)
     {
         shards[i].DumpControlOf();
