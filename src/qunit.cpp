@@ -1339,16 +1339,19 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        shards[target].AddPhaseAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
+        QEngineShard& controlShard = shards[control];
+        QEngineShard& targetShard = shards[target];
+
+        targetShard.AddPhaseAngles(&controlShard, ONE_CMPLX, -ONE_CMPLX);
 
         // AddPhaseAngles might produce an identity buffer, and remove it.
         // Otherwise, additional optimization might be available.
-        if (shards[control].controlsShards.find(&(shards[target])) != shards[control].controlsShards.end()) {
-            PhaseShardPtr phaseShard = shards[control].controlsShards[&(shards[target])];
+        if (controlShard.controlsShards.find(&targetShard) != controlShard.controlsShards.end()) {
+            PhaseShardPtr phaseShard = controlShard.controlsShards[&targetShard];
             complex polarDiff = phaseShard->cmplxDiff;
             complex polarSame = phaseShard->cmplxSame;
             if (!phaseShard->isInvert && IS_SAME(polarDiff, polarSame)) {
-                shards[control].RemovePhaseTarget(&(shards[target]));
+                controlShard.RemovePhaseTarget(&targetShard);
                 ApplySinglePhase(polarDiff, polarSame, control);
             }
         }
@@ -1646,16 +1649,19 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        shards[target].AddPhaseAngles(&(shards[control]), topLeft, bottomRight);
+        QEngineShard& controlShard = shards[control];
+        QEngineShard& targetShard = shards[target];
+
+        targetShard.AddPhaseAngles(&controlShard, topLeft, bottomRight);
 
         // AddPhaseAngles might produce an identity buffer, and remove it.
         // Otherwise, additional optimization might be available.
-        if (shards[control].controlsShards.find(&(shards[target])) != shards[control].controlsShards.end()) {
-            PhaseShardPtr phaseShard = shards[control].controlsShards[&(shards[target])];
+        if (controlShard.controlsShards.find(&targetShard) != controlShard.controlsShards.end()) {
+            PhaseShardPtr phaseShard = controlShard.controlsShards[&targetShard];
             complex polarDiff = phaseShard->cmplxDiff;
             complex polarSame = phaseShard->cmplxSame;
             if (!phaseShard->isInvert && IS_SAME(polarDiff, polarSame)) {
-                shards[control].RemovePhaseTarget(&(shards[target]));
+                controlShard.RemovePhaseTarget(&targetShard);
                 ApplySinglePhase(polarDiff, polarSame, control);
             }
         }
@@ -1737,17 +1743,20 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        shards[target].AddAntiPhaseAngles(&(shards[control]), bottomRight, topLeft);
+        QEngineShard& controlShard = shards[control];
+        QEngineShard& targetShard = shards[target];
+
+        targetShard.AddAntiPhaseAngles(&(shards[control]), bottomRight, topLeft);
 
         // AddPhaseAngles might produce an identity buffer, and remove it.
         // Otherwise, additional optimization might be available.
-        if (shards[control].antiControlsShards.find(&(shards[target])) != shards[control].antiControlsShards.end()) {
-            PhaseShardPtr phaseShard = shards[control].antiControlsShards[&(shards[target])];
+        if (controlShard.controlsShards.find(&targetShard) != controlShard.controlsShards.end()) {
+            PhaseShardPtr phaseShard = controlShard.controlsShards[&targetShard];
             complex polarDiff = phaseShard->cmplxDiff;
             complex polarSame = phaseShard->cmplxSame;
             if (!phaseShard->isInvert && IS_SAME(polarDiff, polarSame)) {
-                shards[control].RemovePhaseAntiTarget(&(shards[target]));
-                ApplySinglePhase(polarSame, polarDiff, control);
+                controlShard.RemovePhaseAntiTarget(&targetShard);
+                ApplySinglePhase(polarDiff, polarSame, control);
             }
         }
 
