@@ -604,7 +604,7 @@ void QUnit::DumpShards()
     }
 }
 
-real1 QUnit::ProbBase(const bitLenInt& qubit)
+real1 QUnit::ProbBase(const bitLenInt& qubit, const bool& trySeparate)
 {
     QEngineShard& shard = shards[qubit];
 
@@ -620,7 +620,9 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         shard.isProbDirty = false;
         shard.isEmulated = false;
 
-        CheckShardSeparable(qubit);
+        if (trySeparate) {
+            CheckShardSeparable(qubit);
+        }
     }
 
     return norm(shard.amp1);
@@ -1336,7 +1338,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddPhaseAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
@@ -1630,7 +1632,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddPhaseAngles(&(shards[control]), topLeft, bottomRight);
@@ -1708,7 +1710,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, { target }, {});
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, { target }, {});
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddAntiPhaseAngles(&(shards[control]), bottomRight, topLeft);
@@ -3402,14 +3404,26 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1U)) {
-        return;
+    if (shard.isProbDirty) {
+        if (shard.unit->GetQubitCount() == 1U) {
+            ProbBase(target, false);
+        } else {
+            return;
+        }
     }
 
     if (IS_NORM_ZERO(shard.amp0)) {
-        SeparateBit(true, target);
+        if (shard.unit->GetQubitCount() == 1U) {
+            shard.isPhaseDirty = false;
+        } else {
+            SeparateBit(true, target);
+        }
     } else if (IS_NORM_ZERO(shard.amp1)) {
-        SeparateBit(false, target);
+        if (shard.unit->GetQubitCount() == 1U) {
+            shard.isPhaseDirty = false;
+        } else {
+            SeparateBit(false, target);
+        }
     }
 }
 
