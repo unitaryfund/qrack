@@ -604,7 +604,7 @@ void QUnit::DumpShards()
     }
 }
 
-real1 QUnit::ProbBase(const bitLenInt& qubit)
+real1 QUnit::ProbBase(const bitLenInt& qubit, const bool& trySeparate)
 {
     QEngineShard& shard = shards[qubit];
 
@@ -620,7 +620,9 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         shard.isProbDirty = false;
         shard.isEmulated = false;
 
-        CheckShardSeparable(qubit);
+        if (trySeparate) {
+            CheckShardSeparable(qubit);
+        }
     }
 
     return norm(shard.amp1);
@@ -3403,7 +3405,11 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
     QEngineShard& shard = shards[target];
 
     if (shard.isProbDirty) {
-        return;
+        if (shard.unit->GetQubitCount() == 1U) {
+            ProbBase(target, false);
+        } else {
+            return;
+        }
     }
 
     if (IS_NORM_ZERO(shard.amp0)) {

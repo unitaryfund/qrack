@@ -828,7 +828,7 @@ public:
 protected:
     virtual void XBase(const bitLenInt& target);
     virtual void ZBase(const bitLenInt& target);
-    virtual real1 ProbBase(const bitLenInt& qubit);
+    virtual real1 ProbBase(const bitLenInt& qubit, const bool& trySeparate = true);
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
