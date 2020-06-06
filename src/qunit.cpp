@@ -3402,14 +3402,22 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.isProbDirty || (shard.unit->GetQubitCount() == 1U)) {
+    if (shard.isProbDirty) {
         return;
     }
 
     if (IS_NORM_ZERO(shard.amp0)) {
-        SeparateBit(true, target);
+        if (shard.unit->GetQubitCount() == 1U) {
+            shard.isPhaseDirty = false;
+        } else {
+            SeparateBit(true, target);
+        }
     } else if (IS_NORM_ZERO(shard.amp1)) {
-        SeparateBit(false, target);
+        if (shard.unit->GetQubitCount() == 1U) {
+            shard.isPhaseDirty = false;
+        } else {
+            SeparateBit(false, target);
+        }
     }
 }
 
