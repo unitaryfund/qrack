@@ -3403,7 +3403,13 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
     QEngineShard& shard = shards[target];
 
     if (shard.isProbDirty) {
-        return;
+        if (shard.unit->GetQubitCount() == 1U) {
+            // Refresh cache
+            ProbBase(target);
+        } else {
+            // Otherwise, not efficient to check if we can separate
+            return;
+        }
     }
 
     if (IS_NORM_ZERO(shard.amp0)) {
