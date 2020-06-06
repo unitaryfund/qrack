@@ -315,7 +315,7 @@ public:
 
     void AddAntiInversionAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
     {
-        MakePhaseControlledBy(control);
+        MakePhaseAntiControlledBy(control);
 
         PhaseShardPtr targetOfShard = antiTargetOfShards[control];
         targetOfShard->isInvert = !targetOfShard->isInvert;
@@ -567,9 +567,9 @@ public:
             PhaseShardPtr buffer = phaseShard->second;
             RemovePhaseTarget(phaseShard->first);
             if (IS_ARG_PI(buffer->cmplxSame)) {
-                AddInversionAngles(phaseShard->first, buffer->cmplxDiff, buffer->cmplxSame);
+                AddInversionAngles(phaseShard->first, -ONE_CMPLX, -ONE_CMPLX);
             } else {
-                AddAntiInversionAngles(phaseShard->first, buffer->cmplxDiff, buffer->cmplxSame);
+                AddAntiInversionAngles(phaseShard->first, -ONE_CMPLX, -ONE_CMPLX);
             }
         });
 
@@ -580,9 +580,9 @@ public:
             PhaseShardPtr buffer = phaseShard->second;
             RemovePhaseAntiTarget(phaseShard->first);
             if (IS_ARG_PI(buffer->cmplxDiff)) {
-                AddInversionAngles(phaseShard->first, buffer->cmplxDiff, buffer->cmplxSame);
+                AddInversionAngles(phaseShard->first, -ONE_CMPLX, -ONE_CMPLX);
             } else {
-                AddAntiInversionAngles(phaseShard->first, buffer->cmplxDiff, buffer->cmplxSame);
+                AddAntiInversionAngles(phaseShard->first, -ONE_CMPLX, -ONE_CMPLX);
             }
         });
     }
