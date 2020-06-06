@@ -302,6 +302,28 @@ public:
             &QEngineShard::RemovePhaseAntiControl);
     }
 
+    void AddInversionAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    {
+        MakePhaseControlledBy(control);
+
+        PhaseShardPtr targetOfShard = targetOfShards[control];
+        targetOfShard->isInvert = !targetOfShard->isInvert;
+        std::swap(targetOfShard->cmplxDiff, targetOfShard->cmplxSame);
+
+        AddPhaseAngles(control, cmplxDiff, cmplxSame);
+    }
+
+    void AddAntiInversionAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    {
+        MakePhaseControlledBy(control);
+
+        PhaseShardPtr targetOfShard = antiTargetOfShards[control];
+        targetOfShard->isInvert = !targetOfShard->isInvert;
+        std::swap(targetOfShard->cmplxDiff, targetOfShard->cmplxSame);
+
+        AddAntiPhaseAngles(control, cmplxDiff, cmplxSame);
+    }
+
 protected:
     void OptimizeBuffer(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet, AddAnglesFn phaseFn, bool makeThisControl)
     {
@@ -537,6 +559,32 @@ public:
         });
 
         RemoveIdentityBuffers(antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
+
+        ShardToPhaseMap tempControls = controlsShards;
+        par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = tempControls.begin();
+            std::advance(phaseShard, lcv);
+            PhaseShardPtr buffer = phaseShard->second;
+            RemovePhaseTarget(phaseShard->first);
+            if (IS_ARG_PI(buffer->cmplxSame)) {
+                AddInversionAngles(phaseShard->first, buffer->cmplxDiff, buffer->cmplxSame);
+            } else {
+                AddAntiInversionAngles(phaseShard->first, buffer->cmplxDiff, buffer->cmplxSame);
+            }
+        });
+
+        tempControls = antiControlsShards;
+        par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
+            ShardToPhaseMap::iterator phaseShard = tempControls.begin();
+            std::advance(phaseShard, lcv);
+            PhaseShardPtr buffer = phaseShard->second;
+            RemovePhaseAntiTarget(phaseShard->first);
+            if (IS_ARG_PI(buffer->cmplxDiff)) {
+                AddInversionAngles(phaseShard->first, buffer->cmplxDiff, buffer->cmplxSame);
+            } else {
+                AddAntiInversionAngles(phaseShard->first, buffer->cmplxDiff, buffer->cmplxSame);
+            }
+        });
     }
 
     bool IsInvertControlOf(QEngineShardPtr target) { return (controlsShards.find(target) != controlsShards.end()); }
