@@ -609,9 +609,19 @@ real1 QUnit::ProbBase(const bitLenInt& qubit, const bool& trySeparate)
     QEngineShard& shard = shards[qubit];
 
     if (shard.isProbDirty) {
-        real1 prob = (shard.unit->Prob)(shard.mapped);
-        shard.amp1 = complex(sqrt(prob), ZERO_R1);
-        shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
+        real1 prob;
+        if (shard.unit->GetQubitCount() == 1U) {
+            complex amps[2];
+            shard.unit->GetQuantumState(amps);
+            shard.amp0 = amps[0];
+            shard.amp1 = amps[1];
+            prob = norm(amps[1]);
+            shard.isPhaseDirty = false;
+        } else {
+            prob = shard.unit->Prob(shard.mapped);
+            shard.amp1 = complex(sqrt(prob), ZERO_R1);
+            shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
+        }
         if (doNormalize) {
             if (shard.ClampAmps(amplitudeFloor) && (shard.unit->GetQubitCount() == 1U)) {
                 shard.unit->SetPermutation((prob < (ONE_R1 / 2)) ? 0 : 1);
@@ -3412,17 +3422,22 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
         }
     }
 
-    if (IS_NORM_ZERO(shard.amp0)) {
-        if (shard.unit->GetQubitCount() == 1U) {
-            shard.isPhaseDirty = false;
-        } else {
-            SeparateBit(true, target);
+    if (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)) {
+        if (shard.unit->GetQubitCount() == 2U) {
+            bitLenInt partnerIndex;
+            for (partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
+                QEngineShard& partnerShard = shards[partnerIndex];
+                if ((shard.unit == partnerShard.unit) && (shard.mapped != partnerShard.mapped)) {
+                    break;
+                }
+            }
+            SeparateBit(SHARD_STATE(shard), target);
+            ProbBase(partnerIndex, true);
         }
-    } else if (IS_NORM_ZERO(shard.amp1)) {
         if (shard.unit->GetQubitCount() == 1U) {
             shard.isPhaseDirty = false;
         } else {
-            SeparateBit(false, target);
+            SeparateBit(SHARD_STATE(shard), target);
         }
     }
 }
