@@ -776,8 +776,6 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    TransformBasis1Qb(false, qubit1);
-    TransformBasis1Qb(false, qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
@@ -813,8 +811,6 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    TransformBasis1Qb(false, qubit1);
-    TransformBasis1Qb(false, qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
@@ -842,8 +838,6 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    TransformBasis1Qb(false, qubit1);
-    TransformBasis1Qb(false, qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
