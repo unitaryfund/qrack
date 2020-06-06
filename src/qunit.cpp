@@ -3332,7 +3332,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isSameNegOne = IS_ARG_PI(buffer->cmplxSame);
         doCommute &= isSameOne || isSameNegOne;
 
-        if (buffer->isInvert || !doCommute) {
+        if (!doCommute) {
             target = FindShardIndex(*partner);
             ApplyBuffer(phaseShard, bitIndex, target, false);
             shard.RemovePhaseTarget(partner);
@@ -3341,6 +3341,10 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             CheckOptimizeBuffer(bitIndex, target, false);
         } else if (isDiffOne && isSameOne) {
             target = FindShardIndex(*partner);
+            shard.RemovePhaseTarget(partner);
+        } else if (isSameNegOne) {
+            target = FindShardIndex(*partner);
+            ApplyBuffer(phaseShard, bitIndex, target, false);
             shard.RemovePhaseTarget(partner);
         }
     }
@@ -3358,7 +3362,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isSameNegOne = IS_ARG_PI(buffer->cmplxSame);
         doCommute &= isSameOne || isSameNegOne;
 
-        if (buffer->isInvert || !doCommute) {
+        if (!doCommute) {
             target = FindShardIndex(*partner);
             ApplyBuffer(phaseShard, bitIndex, target, true);
             shard.RemovePhaseAntiTarget(partner);
@@ -3367,6 +3371,10 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             CheckOptimizeBuffer(bitIndex, target, true);
         } else if (isDiffOne && isSameOne) {
             target = FindShardIndex(*partner);
+            shard.RemovePhaseAntiTarget(partner);
+        } else if (isSameNegOne) {
+            target = FindShardIndex(*partner);
+            ApplyBuffer(phaseShard, bitIndex, target, true);
             shard.RemovePhaseAntiTarget(partner);
         }
     }
