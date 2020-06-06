@@ -559,32 +559,6 @@ public:
         });
 
         RemoveIdentityBuffers(antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
-
-        /*ShardToPhaseMap tempControls = controlsShards;
-        par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = tempControls.begin();
-            std::advance(phaseShard, lcv);
-            PhaseShardPtr buffer = phaseShard->second;
-            RemovePhaseTarget(phaseShard->first);
-            if (IS_ARG_PI(buffer->cmplxSame)) {
-                AddInversionAngles(phaseShard->first, -ONE_CMPLX, -ONE_CMPLX);
-            } else {
-                AddAntiInversionAngles(phaseShard->first, -ONE_CMPLX, -ONE_CMPLX);
-            }
-        });
-
-        tempControls = antiControlsShards;
-        par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = tempControls.begin();
-            std::advance(phaseShard, lcv);
-            PhaseShardPtr buffer = phaseShard->second;
-            RemovePhaseAntiTarget(phaseShard->first);
-            if (IS_ARG_PI(buffer->cmplxDiff)) {
-                AddInversionAngles(phaseShard->first, -ONE_CMPLX, -ONE_CMPLX);
-            } else {
-                AddAntiInversionAngles(phaseShard->first, -ONE_CMPLX, -ONE_CMPLX);
-            }
-        });*/
     }
 
     bool IsInvertControlOf(QEngineShardPtr target) { return (controlsShards.find(target) != controlsShards.end()); }
