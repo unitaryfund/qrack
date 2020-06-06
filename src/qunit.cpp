@@ -3301,7 +3301,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
 
 void QUnit::CommuteH(const bitLenInt& bitIndex)
 {
-    RevertBasis2Qb(bitIndex, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI, {}, {}, false, true);
+    RevertBasis2Qb(bitIndex, ONLY_INVERT, ONLY_CONTROLS, CTRL_AND_ANTI);
 
     QEngineShard& shard = shards[bitIndex];
 
@@ -3317,29 +3317,16 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     PhaseShardPtr buffer;
     bitLenInt control, target;
 
-    bool isDiffNegOne, isSameNegOne, isDiffOne, isSameOne; //, doCommute;
-
     ShardToPhaseMap controlsShards = shard.controlsShards;
 
     for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
         partner = phaseShard->first;
         buffer = phaseShard->second;
+        target = FindShardIndex(*partner);
 
-        isDiffOne = IS_ARG_0(buffer->cmplxDiff);
-        isDiffNegOne = IS_ARG_PI(buffer->cmplxDiff);
-        // doCommute = isDiffOne || isDiffNegOne;
-        isSameOne = IS_ARG_0(buffer->cmplxSame);
-        isSameNegOne = IS_ARG_PI(buffer->cmplxSame);
-        // doCommute &= isSameOne || isSameNegOne;
-
-        if (isDiffOne && isSameOne) {
-            target = FindShardIndex(*partner);
-            shard.RemovePhaseTarget(partner);
-        } else if (isDiffNegOne && isSameNegOne) {
-            target = FindShardIndex(*partner);
+        if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
             CheckOptimizeBuffer(bitIndex, target, false);
         } else {
-            target = FindShardIndex(*partner);
             ApplyBuffer(phaseShard, bitIndex, target, false);
             shard.RemovePhaseTarget(partner);
         }
@@ -3350,22 +3337,11 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
         partner = phaseShard->first;
         buffer = phaseShard->second;
+        target = FindShardIndex(*partner);
 
-        isDiffOne = IS_ARG_0(buffer->cmplxDiff);
-        isDiffNegOne = IS_ARG_PI(buffer->cmplxDiff);
-        // doCommute = isDiffOne || isDiffNegOne;
-        isSameOne = IS_ARG_0(buffer->cmplxSame);
-        isSameNegOne = IS_ARG_PI(buffer->cmplxSame);
-        // doCommute &= isSameOne || isSameNegOne;
-
-        if (isDiffOne && isSameOne) {
-            target = FindShardIndex(*partner);
-            shard.RemovePhaseAntiTarget(partner);
-        } else if (isDiffNegOne && isSameNegOne) {
-            target = FindShardIndex(*partner);
+        if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
             CheckOptimizeBuffer(bitIndex, target, true);
         } else {
-            target = FindShardIndex(*partner);
             ApplyBuffer(phaseShard, bitIndex, target, true);
             shard.RemovePhaseAntiTarget(partner);
         }
