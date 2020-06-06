@@ -3322,6 +3322,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     ShardToPhaseMap controlsShards = shard.controlsShards;
 
     for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+        partner = phaseShard->first;
         buffer = phaseShard->second;
 
         isDiffOne = IS_ARG_0(buffer->cmplxDiff);
@@ -3332,20 +3333,14 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         doCommute &= isSameOne || isSameNegOne;
 
         if (buffer->isInvert || !doCommute) {
-            partner = phaseShard->first;
             target = FindShardIndex(*partner);
-
             ApplyBuffer(phaseShard, bitIndex, target, false);
             shard.RemovePhaseTarget(partner);
         } else if (isDiffNegOne && isSameNegOne) {
-            partner = phaseShard->first;
             target = FindShardIndex(*partner);
-
             CheckOptimizeBuffer(bitIndex, target, false);
         } else if (isDiffOne && isSameOne) {
-            partner = phaseShard->first;
             target = FindShardIndex(*partner);
-
             shard.RemovePhaseTarget(partner);
         }
     }
@@ -3353,6 +3348,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     controlsShards = shard.antiControlsShards;
 
     for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+        partner = phaseShard->first;
         buffer = phaseShard->second;
 
         isDiffOne = IS_ARG_0(buffer->cmplxDiff);
@@ -3363,20 +3359,14 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         doCommute &= isSameOne || isSameNegOne;
 
         if (buffer->isInvert || !doCommute) {
-            partner = phaseShard->first;
             target = FindShardIndex(*partner);
-
             ApplyBuffer(phaseShard, bitIndex, target, true);
             shard.RemovePhaseAntiTarget(partner);
         } else if (isDiffNegOne && isSameNegOne) {
-            partner = phaseShard->first;
             target = FindShardIndex(*partner);
-
             CheckOptimizeBuffer(bitIndex, target, true);
         } else if (isDiffOne && isSameOne) {
-            partner = phaseShard->first;
             target = FindShardIndex(*partner);
-
             shard.RemovePhaseAntiTarget(partner);
         }
     }
