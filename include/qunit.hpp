@@ -560,7 +560,7 @@ public:
 
         RemoveIdentityBuffers(antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
 
-        ShardToPhaseMap tempControls = controlsShards;
+        /*ShardToPhaseMap tempControls = controlsShards;
         par_for(0, tempControls.size(), [&](const bitCapInt lcv, const int cpu) {
             ShardToPhaseMap::iterator phaseShard = tempControls.begin();
             std::advance(phaseShard, lcv);
@@ -584,7 +584,7 @@ public:
             } else {
                 AddAntiInversionAngles(phaseShard->first, -ONE_CMPLX, -ONE_CMPLX);
             }
-        });
+        });*/
     }
 
     bool IsInvertControlOf(QEngineShardPtr target) { return (controlsShards.find(target) != controlsShards.end()); }
