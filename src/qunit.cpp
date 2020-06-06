@@ -45,6 +45,7 @@
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
 #define UNSAFE_CACHED_EIGENSTATE(shard) (!shard.isProbDirty && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
 #define UNSAFE_CACHED_CLASSICAL(shard) (!shard.isPlusMinus && UNSAFE_CACHED_EIGENSTATE(shard))
+#define UNSAFE_CACHED_PLUS_MINUS(shard) (shard.isPlusMinus && UNSAFE_CACHED_EIGENSTATE(shard))
 #define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp0))
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp1))
 
@@ -751,9 +752,13 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
     if (UNSAFE_CACHED_EIGENSTATE(shard1) && UNSAFE_CACHED_EIGENSTATE(shard2)) {
         // We can avoid dirtying the cache and entangling, since the bits are classical.
-        if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
-            XBase(qubit1);
-            XBase(qubit2);
+        if (shard1.isPlusMinus == shard2.isPlusMinus) {
+            if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
+                XBase(qubit1);
+                XBase(qubit2);
+            }
+        } else {
+            std::swap(shard1.isPlusMinus, shard2.isPlusMinus);
         }
         return;
     }
@@ -817,8 +822,8 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_EIGENSTATE(shard1) && UNSAFE_CACHED_EIGENSTATE(shard2) &&
-        (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+    if ((shard1.isPlusMinus == shard2.isPlusMinus) && UNSAFE_CACHED_EIGENSTATE(shard1) &&
+        UNSAFE_CACHED_EIGENSTATE(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         return;
     }
