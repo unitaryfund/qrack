@@ -821,9 +821,6 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         return;
-    } else if (CACHED_PLUS_MINUS(shard1) && CACHED_PLUS_MINUS(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
-        // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical |+>/|-> basis bits.
-        return;
     }
 
     QInterfacePtr unit = Entangle({ qubit1, qubit2 });
@@ -850,9 +847,6 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
         (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
-        return;
-    } else if (CACHED_PLUS_MINUS(shard1) && CACHED_PLUS_MINUS(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
-        // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical |+>/|-> basis bits.
         return;
     }
 
