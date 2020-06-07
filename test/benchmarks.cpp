@@ -50,7 +50,7 @@ QInterfacePtr MakeRandQubit()
     QInterfacePtr qubit = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1U, 0, rng,
         ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng);
 
-    real1 theta = 2 * M_PI * qubit->Rand();
+    real1 theta = 4 * M_PI * qubit->Rand();
     real1 phi = 2 * M_PI * qubit->Rand();
     real1 lambda = 2 * M_PI * qubit->Rand();
 

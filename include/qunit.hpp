@@ -305,7 +305,7 @@ public:
 protected:
     void OptimizeBuffer(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet, AddAnglesFn phaseFn, bool makeThisControl)
     {
-        if (IsInvert()) {
+        if (isPlusMinus || IsInvert()) {
             return;
         }
 
@@ -319,8 +319,7 @@ protected:
             buffer = phaseShard->second;
             partner = phaseShard->first;
 
-            if (buffer->isInvert || (isPlusMinus != partner->isPlusMinus) || !IS_ARG_0(buffer->cmplxDiff) ||
-                partner->IsInvert()) {
+            if (buffer->isInvert || partner->isPlusMinus || !IS_ARG_0(buffer->cmplxDiff) || partner->IsInvert()) {
                 continue;
             }
 
@@ -931,7 +930,7 @@ protected:
     void RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusivity = INVERT_AND_PHASE,
         const RevertControl& controlExclusivity = CONTROLS_AND_TARGETS,
         const RevertAnti& antiExclusivity = CTRL_AND_ANTI, std::set<bitLenInt> exceptControlling = {},
-        std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false, const bool& skipOptimized = false);
+        std::set<bitLenInt> exceptTargetedBy = {}, const bool& dumpSkipped = false);
 
     void Flush0Eigenstate(const bitLenInt& i)
     {
