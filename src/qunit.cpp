@@ -776,8 +776,6 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    TransformBasis1Qb(false, qubit1);
-    TransformBasis1Qb(false, qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
@@ -787,8 +785,8 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2)) {
         // We can avoid dirtying the cache and entangling, since the bits are classical.
         if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
-            X(qubit1);
-            X(qubit2);
+            XBase(qubit1);
+            XBase(qubit2);
             if (!randGlobalPhase) {
                 // Under the preconditions, this has no effect on Hermitian expectation values, but we track it, if the
                 // QUnit is tracking arbitrary numerical phase.
@@ -813,8 +811,6 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    TransformBasis1Qb(false, qubit1);
-    TransformBasis1Qb(false, qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
@@ -842,8 +838,6 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    TransformBasis1Qb(false, qubit1);
-    TransformBasis1Qb(false, qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
