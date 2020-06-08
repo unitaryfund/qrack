@@ -3314,7 +3314,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     PhaseShardPtr buffer;
     bitLenInt control;
 
-    bool isSame, isOpposite;
+    bool isSame, isOpposite, anyInvert = false, anyAntiInvert = false;
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
@@ -3328,12 +3328,12 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isOpposite = !buffer->isInvert && norm(polarDiff + polarSame) <= ampThreshold;
 
         if (isSame || isOpposite) {
+            anyInvert |= buffer->isInvert;
             continue;
         }
 
         partner = phaseShard->first;
         control = FindShardIndex(*partner);
-
         ApplyBuffer(phaseShard, control, bitIndex, false);
         shard.RemovePhaseControl(partner);
     }
@@ -3350,14 +3350,46 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isOpposite = !buffer->isInvert && norm(polarDiff + polarSame) <= ampThreshold;
 
         if (isSame || isOpposite) {
+            anyAntiInvert |= buffer->isInvert;
             continue;
         }
 
         partner = phaseShard->first;
         control = FindShardIndex(*partner);
-
         ApplyBuffer(phaseShard, control, bitIndex, true);
         shard.RemovePhaseAntiControl(partner);
+    }
+
+    if (shard.targetOfShards.size() > 1U || shard.antiTargetOfShards.size() > 0U) {
+        targetOfShards = shard.targetOfShards;
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            buffer = phaseShard->second;
+
+            if (buffer->isInvert == anyInvert) {
+                continue;
+            }
+
+            partner = phaseShard->first;
+            control = FindShardIndex(*partner);
+            ApplyBuffer(phaseShard, control, bitIndex, false);
+            shard.RemovePhaseControl(partner);
+        }
+    }
+
+    if (shard.antiTargetOfShards.size() > 1U || shard.targetOfShards.size() > 0U) {
+        targetOfShards = shard.antiTargetOfShards;
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            buffer = phaseShard->second;
+
+            if (buffer->isInvert == anyAntiInvert) {
+                continue;
+            }
+
+            partner = phaseShard->first;
+            control = FindShardIndex(*partner);
+            ApplyBuffer(phaseShard, control, bitIndex, true);
+            shard.RemovePhaseAntiControl(partner);
+        }
     }
 
     shard.CommuteH();
