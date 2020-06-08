@@ -3314,7 +3314,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     PhaseShardPtr buffer;
     bitLenInt control;
 
-    bool isSame, isOpposite, anyInvert = false, anyAntiInvert = false;
+    bool isSame, isOpposite, anyInvert = false;
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
@@ -3350,7 +3350,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isOpposite = !buffer->isInvert && norm(polarDiff + polarSame) <= ampThreshold;
 
         if (isSame || isOpposite) {
-            anyAntiInvert |= buffer->isInvert;
+            anyInvert |= buffer->isInvert;
             continue;
         }
 
@@ -3381,7 +3381,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
-            if (buffer->isInvert == anyAntiInvert) {
+            if (buffer->isInvert == anyInvert) {
                 continue;
             }
 
@@ -3389,14 +3389,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
             control = FindShardIndex(*partner);
             ApplyBuffer(phaseShard, control, bitIndex, true);
             shard.RemovePhaseAntiControl(partner);
-        }
-    }
-
-    if (anyInvert != anyAntiInvert) {
-        if (shard.targetOfShards.size() >= shard.antiTargetOfShards.size()) {
-            RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
-        } else {
-            RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
         }
     }
 
