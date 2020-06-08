@@ -3392,6 +3392,14 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         }
     }
 
+    if (anyInvert != anyAntiInvert) {
+        if (shard.targetOfShards.size() >= shard.antiTargetOfShards.size()) {
+            RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
+        } else {
+            RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
+        }
+    }
+
     shard.CommuteH();
 }
 
