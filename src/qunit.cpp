@@ -3314,7 +3314,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     PhaseShardPtr buffer;
     bitLenInt control;
 
-    bool isSame, isOpposite, anyInvert = false;
+    bool isSame, isOpposite;
+    bitLenInt phaseCount = 0, invertCount = 0;
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
@@ -3328,7 +3329,11 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isOpposite = !buffer->isInvert && norm(polarDiff + polarSame) <= ampThreshold;
 
         if (isSame || isOpposite) {
-            anyInvert |= buffer->isInvert;
+            if (buffer->isInvert) {
+                invertCount++;
+            } else {
+                phaseCount++;
+            }
             continue;
         }
 
@@ -3350,7 +3355,11 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isOpposite = !buffer->isInvert && norm(polarDiff + polarSame) <= ampThreshold;
 
         if (isSame || isOpposite) {
-            anyInvert |= buffer->isInvert;
+            if (buffer->isInvert) {
+                invertCount++;
+            } else {
+                phaseCount++;
+            }
             continue;
         }
 
@@ -3360,12 +3369,17 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         shard.RemovePhaseAntiControl(partner);
     }
 
+    bool saveInvert = (invertCount >= phaseCount);
+
     if (shard.targetOfShards.size() > 1U || shard.antiTargetOfShards.size() > 0U) {
         targetOfShards = shard.targetOfShards;
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
-            if (buffer->isInvert == anyInvert) {
+            polarDiff = buffer->cmplxDiff;
+            polarSame = buffer->cmplxSame;
+
+            if (buffer->isInvert == saveInvert || !(saveInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
                 continue;
             }
 
@@ -3381,7 +3395,10 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             buffer = phaseShard->second;
 
-            if (buffer->isInvert == anyInvert) {
+            polarDiff = buffer->cmplxDiff;
+            polarSame = buffer->cmplxSame;
+
+            if (buffer->isInvert == saveInvert || !(saveInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
                 continue;
             }
 
