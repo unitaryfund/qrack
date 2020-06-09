@@ -301,6 +301,20 @@ public:
         AddAngles(control, cmplxDiff, cmplxSame, &QEngineShard::MakePhaseAntiControlledBy, antiTargetOfShards,
             &QEngineShard::RemovePhaseAntiControl);
     }
+    void AddInversionAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    {
+        MakePhaseControlledBy(control);
+        targetOfShards[control]->isInvert = !targetOfShards[control]->isInvert;
+        std::swap(targetOfShards[control]->cmplxDiff, targetOfShards[control]->cmplxSame);
+        AddPhaseAngles(control, cmplxDiff, cmplxSame);
+    }
+    void AddAntiInversionAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    {
+        MakePhaseAntiControlledBy(control);
+        antiTargetOfShards[control]->isInvert = !antiTargetOfShards[control]->isInvert;
+        std::swap(antiTargetOfShards[control]->cmplxDiff, antiTargetOfShards[control]->cmplxSame);
+        AddAntiPhaseAngles(control, cmplxDiff, cmplxSame);
+    }
 
 protected:
     void OptimizeBuffer(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet, AddAnglesFn phaseFn, bool makeThisControl)
