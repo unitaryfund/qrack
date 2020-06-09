@@ -32,6 +32,7 @@
 #define IS_NORM_ZERO(c) (c == ZERO_CMPLX)
 #define IS_ZERO_R1(r) (r == ZERO_R1)
 #define IS_ONE_R1(r) (r == ONE_R1)
+#define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard)                                                                                            \
     ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0) ||                                       \
@@ -1343,7 +1344,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         TransformBasis1Qb(false, control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
 
         shards[target].AddPhaseAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
         return;
@@ -1637,7 +1638,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         TransformBasis1Qb(false, control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
+        RevertBasis2Qb(target, ONLY_INVERT, IS_ONE_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
 
         shards[target].AddPhaseAngles(&(shards[control]), topLeft, bottomRight);
         delete[] controls;
@@ -1715,7 +1716,8 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         TransformBasis1Qb(false, control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
+        RevertBasis2Qb(
+            target, ONLY_INVERT, IS_ONE_CMPLX(bottomRight) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
 
         shards[target].AddAntiPhaseAngles(&(shards[control]), bottomRight, topLeft);
         delete[] controls;
