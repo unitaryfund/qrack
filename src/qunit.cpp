@@ -3315,7 +3315,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     bitLenInt control;
 
     bool isSame, isOpposite;
-    bitLenInt phaseCount = 0, invertCount = 0;
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
@@ -3329,11 +3328,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isOpposite = !buffer->isInvert && norm(polarDiff + polarSame) <= ampThreshold;
 
         if (isSame || isOpposite) {
-            if (buffer->isInvert) {
-                invertCount++;
-            } else {
-                phaseCount++;
-            }
             continue;
         }
 
@@ -3355,11 +3349,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isOpposite = !buffer->isInvert && norm(polarDiff + polarSame) <= ampThreshold;
 
         if (isSame || isOpposite) {
-            if (buffer->isInvert) {
-                invertCount++;
-            } else {
-                phaseCount++;
-            }
             continue;
         }
 
@@ -3367,46 +3356,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         control = FindShardIndex(*partner);
         ApplyBuffer(phaseShard, control, bitIndex, true);
         shard.RemovePhaseAntiControl(partner);
-    }
-
-    bool saveInvert = (invertCount >= phaseCount);
-
-    if (shard.targetOfShards.size() > 1U || shard.antiTargetOfShards.size() > 0U) {
-        targetOfShards = shard.targetOfShards;
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            buffer = phaseShard->second;
-
-            polarDiff = buffer->cmplxDiff;
-            polarSame = buffer->cmplxSame;
-
-            if (buffer->isInvert == saveInvert || !(saveInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
-                continue;
-            }
-
-            partner = phaseShard->first;
-            control = FindShardIndex(*partner);
-            ApplyBuffer(phaseShard, control, bitIndex, false);
-            shard.RemovePhaseControl(partner);
-        }
-    }
-
-    if (shard.antiTargetOfShards.size() > 1U || shard.targetOfShards.size() > 0U) {
-        targetOfShards = shard.antiTargetOfShards;
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            buffer = phaseShard->second;
-
-            polarDiff = buffer->cmplxDiff;
-            polarSame = buffer->cmplxSame;
-
-            if (buffer->isInvert == saveInvert || !(saveInvert && norm(polarDiff + polarSame) <= ampThreshold)) {
-                continue;
-            }
-
-            partner = phaseShard->first;
-            control = FindShardIndex(*partner);
-            ApplyBuffer(phaseShard, control, bitIndex, true);
-            shard.RemovePhaseAntiControl(partner);
-        }
     }
 
     shard.CommuteH();
