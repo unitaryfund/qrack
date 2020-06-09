@@ -4824,6 +4824,47 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     }
     crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
     REQUIRE(crossEntropy > 0.97);
+
+    qftReg->H(0);
+    qftReg->H(2);
+    qftReg->CCZ(2, 0, 4);
+    qftReg->CZ(0, 2);
+    qftReg->H(2);
+    qftReg->CZ(0, 2);
+    qftReg->H(0);
+    testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
+
+    goldStandard->H(0);
+    goldStandard->H(2);
+    goldStandard->CCZ(2, 0, 4);
+    goldStandard->CZ(0, 2);
+    goldStandard->H(2);
+    goldStandard->CZ(0, 2);
+    goldStandard->H(0);
+    goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
+
+    crossEntropy = ZERO_R1;
+    for (int perm = 0; perm < 256; perm++) {
+        measurementBin = goldStandardResult.find(perm);
+        if (measurementBin == goldStandardResult.end()) {
+            goldBinResult = 0;
+        } else {
+            goldBinResult = measurementBin->second;
+        }
+
+        measurementBin = testCaseResult.find(perm);
+        if (measurementBin == testCaseResult.end()) {
+            testBinResult = 0;
+        } else {
+            testBinResult = measurementBin->second;
+        }
+        crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
+    }
+    if (crossEntropy < ZERO_R1) {
+        crossEntropy = ZERO_R1;
+    }
+    crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
+    REQUIRE(crossEntropy > 0.97);
 }
 
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
@@ -4851,9 +4892,9 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     const int GateCount1Qb = 5;
     const int GateCountMultiQb = 4;
-    const int Depth = 3;
+    const int Depth = 5;
 
-    const int TRIALS = 200;
+    const int TRIALS = 6000;
     const int ITERATIONS = 60000;
     const int n = 8;
     bitCapInt permCount = pow2(n);
