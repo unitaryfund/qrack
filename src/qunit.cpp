@@ -1337,10 +1337,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        if (tShard.IsInvertControlOf(&cShard)) {
-            std::swap(control, target);
-        }
-
         TransformBasis1Qb(false, control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
@@ -1631,10 +1627,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             return;
         }
 
-        if (IS_ARG_0(topLeft) && tShard.IsInvertControlOf(&(shards[control]))) {
-            std::swap(control, target);
-        }
-
         TransformBasis1Qb(false, control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
@@ -1707,10 +1699,6 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
             }
             delete[] controls;
             return;
-        }
-
-        if (IS_ARG_0(bottomRight) && tShard.IsInvertAntiControlOf(&(shards[control]))) {
-            std::swap(control, target);
         }
 
         TransformBasis1Qb(false, control);
