@@ -1342,8 +1342,8 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
 
         shards[target].AddPhaseAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
         return;
@@ -1636,8 +1636,8 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
 
         shards[target].AddPhaseAngles(&(shards[control]), topLeft, bottomRight);
         delete[] controls;
@@ -1714,8 +1714,8 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, { target }, {});
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
 
         shards[target].AddAntiPhaseAngles(&(shards[control]), bottomRight, topLeft);
         delete[] controls;
@@ -3298,7 +3298,7 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
 
 void QUnit::CommuteH(const bitLenInt& bitIndex)
 {
-    RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, {}, {}, false, true);
+    RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI);
 
     QEngineShard& shard = shards[bitIndex];
 
@@ -3325,7 +3325,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarSame = buffer->cmplxSame;
 
         isSame = norm(polarDiff - polarSame) <= ampThreshold;
-        isOpposite = !buffer->isInvert && norm(polarDiff + polarSame) <= ampThreshold;
+        isOpposite = !buffer->isInvert && (norm(polarDiff + polarSame) <= ampThreshold);
 
         if (isSame || isOpposite) {
             continue;
@@ -3346,7 +3346,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarSame = buffer->cmplxSame;
 
         isSame = norm(polarDiff - polarSame) <= ampThreshold;
-        isOpposite = !buffer->isInvert && norm(polarDiff + polarSame) <= ampThreshold;
+        isOpposite = !buffer->isInvert && (norm(polarDiff + polarSame) <= ampThreshold);
 
         if (isSame || isOpposite) {
             continue;
