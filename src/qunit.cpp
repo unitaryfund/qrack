@@ -1151,9 +1151,12 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        H(target);
-        CZ(control, target);
-        H(target);
+        TransformBasis1Qb(false, control);
+
+        RevertBasis2Qb(control, INVERT_AND_PHASE, ONLY_TARGETS);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, {}, { control });
+
+        shards[target].AddInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
         return;
     }
 
@@ -1209,11 +1212,12 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     bitLenInt controlLen = 1;
 
     if (!freezeBasis) {
-        X(control);
-        H(target);
-        CZ(control, target);
-        H(target);
-        X(control);
+        TransformBasis1Qb(false, control);
+
+        RevertBasis2Qb(control, INVERT_AND_PHASE, ONLY_TARGETS);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, {}, { control });
+
+        shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
         return;
     }
 
@@ -1337,10 +1341,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        if (tShard.IsInvertControlOf(&cShard)) {
-            std::swap(control, target);
-        }
-
         TransformBasis1Qb(false, control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
@@ -1631,10 +1631,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             return;
         }
 
-        if (IS_ARG_0(topLeft) && tShard.IsInvertControlOf(&(shards[control]))) {
-            std::swap(control, target);
-        }
-
         TransformBasis1Qb(false, control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
@@ -1707,10 +1703,6 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
             }
             delete[] controls;
             return;
-        }
-
-        if (IS_ARG_0(bottomRight) && tShard.IsInvertAntiControlOf(&(shards[control]))) {
-            std::swap(control, target);
         }
 
         TransformBasis1Qb(false, control);
