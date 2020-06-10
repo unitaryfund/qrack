@@ -3324,10 +3324,10 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
         if (IS_ARG_0(polarDiff) && IS_ARG_PI(polarSame)) {
             shard.RemovePhaseTarget(partner);
-            shard.AddPhaseAngles(partner, polarDiff, polarSame);
+            shard.AddPhaseAngles(partner, ONE_CMPLX, -ONE_CMPLX);
         } else if (IS_ARG_PI(polarDiff) && IS_ARG_0(polarSame)) {
             shard.RemovePhaseTarget(partner);
-            shard.AddAntiPhaseAngles(partner, polarDiff, polarSame);
+            shard.AddAntiPhaseAngles(partner, -ONE_CMPLX, ONE_CMPLX);
         }
     }
 
@@ -3346,10 +3346,10 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
         if (IS_ARG_0(polarDiff) && IS_ARG_PI(polarSame)) {
             shard.RemovePhaseAntiTarget(partner);
-            shard.AddAntiPhaseAngles(partner, polarDiff, polarSame);
+            shard.AddAntiPhaseAngles(partner, ONE_CMPLX, -ONE_CMPLX);
         } else if (IS_ARG_PI(polarDiff) && IS_ARG_0(polarSame)) {
             shard.RemovePhaseAntiTarget(partner);
-            shard.AddPhaseAngles(partner, polarDiff, polarSame);
+            shard.AddPhaseAngles(partner, -ONE_CMPLX, ONE_CMPLX);
         }
     }
 
