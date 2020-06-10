@@ -3329,15 +3329,15 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
         buffer = phaseShard->second;
+        partner = phaseShard->first;
 
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        if (buffer->isInvert || !IS_ARG_0(polarDiff) || !IS_ARG_PI(polarSame)) {
+        if (partner->isPlusMinus || buffer->isInvert || !IS_ARG_0(polarDiff) || !IS_ARG_PI(polarSame)) {
             continue;
         }
 
-        partner = phaseShard->first;
         shard.RemovePhaseAntiTarget(partner);
         shard.AddAntiPhaseAngles(partner, polarDiff, polarSame);
     }
