@@ -3263,10 +3263,11 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
             shard.OptimizeAntiControls();
         }
     } else if (!skipOptimize && (controlExclusivity == ONLY_TARGETS) && (exclusivity != ONLY_INVERT)) {
-        if (antiExclusivity != ONLY_ANTI) {
+        if (antiExclusivity == CTRL_AND_ANTI) {
+            shard.OptimizeBothTargets();
+        } else if (antiExclusivity == ONLY_CTRL) {
             shard.OptimizeTargets();
-        }
-        if (antiExclusivity != ONLY_CTRL) {
+        } else if (antiExclusivity == ONLY_ANTI) {
             shard.OptimizeAntiTargets();
         }
     }
