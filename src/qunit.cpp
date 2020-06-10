@@ -3294,8 +3294,6 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
 
 void QUnit::CommuteH(const bitLenInt& bitIndex)
 {
-    RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, {}, {}, false, true);
-
     QEngineShard& shard = shards[bitIndex];
 
     if (!QUEUED_PHASE(shard)) {
@@ -3309,6 +3307,42 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     QEngineShardPtr partner;
     PhaseShardPtr buffer;
     bitLenInt control;
+
+    ShardToPhaseMap controlsShards = shard.controlsShards;
+
+    for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+        buffer = phaseShard->second;
+
+        polarDiff = buffer->cmplxDiff;
+        polarSame = buffer->cmplxSame;
+
+        if (buffer->isInvert || !IS_ARG_0(polarDiff) || !IS_ARG_PI(polarSame)) {
+            continue;
+        }
+
+        partner = phaseShard->first;
+        shard.RemovePhaseTarget(partner);
+        shard.AddPhaseAngles(partner, polarDiff, polarSame);
+    }
+
+    controlsShards = shard.antiControlsShards;
+
+    for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+        buffer = phaseShard->second;
+
+        polarDiff = buffer->cmplxDiff;
+        polarSame = buffer->cmplxSame;
+
+        if (buffer->isInvert || !IS_ARG_0(polarDiff) || !IS_ARG_PI(polarSame)) {
+            continue;
+        }
+
+        partner = phaseShard->first;
+        shard.RemovePhaseAntiTarget(partner);
+        shard.AddAntiPhaseAngles(partner, polarDiff, polarSame);
+    }
+
+    RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, {}, {}, false, true);
 
     bool isSame, isOpposite;
 
