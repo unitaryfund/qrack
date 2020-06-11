@@ -1220,7 +1220,6 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
-
         return;
     }
 
