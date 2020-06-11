@@ -3365,14 +3365,17 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        isSame = norm(polarDiff - polarSame) <= ampThreshold;
+        partner = phaseShard->first;
+
+        // If isSame and !isInvert, application of this buffer is already "efficient."
+        isSame = (buffer->isInvert || !partner->isPlusMinus || !partner->IsInvertTarget()) &&
+            norm(polarDiff - polarSame) <= ampThreshold;
         isOpposite = !buffer->isInvert && (norm(polarDiff + polarSame) <= ampThreshold);
 
         if (isSame || isOpposite) {
             continue;
         }
 
-        partner = phaseShard->first;
         control = FindShardIndex(*partner);
         ApplyBuffer(phaseShard, control, bitIndex, false);
         shard.RemovePhaseControl(partner);
@@ -3386,14 +3389,17 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        isSame = norm(polarDiff - polarSame) <= ampThreshold;
+        partner = phaseShard->first;
+
+        // If isSame and !isInvert, application of this buffer is already "efficient."
+        isSame = (buffer->isInvert || !partner->isPlusMinus || !partner->IsInvertTarget()) &&
+            norm(polarDiff - polarSame) <= ampThreshold;
         isOpposite = !buffer->isInvert && (norm(polarDiff + polarSame) <= ampThreshold);
 
         if (isSame || isOpposite) {
             continue;
         }
 
-        partner = phaseShard->first;
         control = FindShardIndex(*partner);
         ApplyBuffer(phaseShard, control, bitIndex, true);
         shard.RemovePhaseAntiControl(partner);
