@@ -364,6 +364,54 @@ public:
             antiTargetOfShards, &QEngineShard::GetAntiControlsShards, &QEngineShard::AddAntiPhaseAngles, true);
     }
 
+    void OptimizeBothTargets()
+    {
+        PhaseShardPtr buffer;
+        QEngineShardPtr partner;
+
+        ShardToPhaseMap::iterator phaseShard;
+
+        ShardToPhaseMap tempLocalMap = targetOfShards;
+        for (phaseShard = tempLocalMap.begin(); phaseShard != tempLocalMap.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            partner = phaseShard->first;
+
+            if (buffer->isInvert) {
+                continue;
+            }
+
+            if (IS_ARG_0(buffer->cmplxDiff)) {
+                phaseShard->first->GetControlsShards().erase(this);
+                targetOfShards.erase(partner);
+                partner->AddPhaseAngles(this, ONE_CMPLX, buffer->cmplxSame);
+            } else if (IS_ARG_0(buffer->cmplxSame)) {
+                phaseShard->first->GetControlsShards().erase(this);
+                targetOfShards.erase(partner);
+                partner->AddAntiPhaseAngles(this, buffer->cmplxDiff, ONE_CMPLX);
+            }
+        }
+
+        tempLocalMap = antiTargetOfShards;
+        for (phaseShard = tempLocalMap.begin(); phaseShard != tempLocalMap.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            partner = phaseShard->first;
+
+            if (buffer->isInvert) {
+                continue;
+            }
+
+            if (IS_ARG_0(buffer->cmplxDiff)) {
+                phaseShard->first->GetAntiControlsShards().erase(this);
+                antiTargetOfShards.erase(partner);
+                partner->AddAntiPhaseAngles(this, ONE_CMPLX, buffer->cmplxSame);
+            } else if (IS_ARG_0(buffer->cmplxSame)) {
+                phaseShard->first->GetAntiControlsShards().erase(this);
+                antiTargetOfShards.erase(partner);
+                partner->AddPhaseAngles(this, buffer->cmplxDiff, ONE_CMPLX);
+            }
+        }
+    }
+
 protected:
     void CombineBuffers(GetBufferFn targetMapGet, GetBufferFn controlMapGet, AddAnglesFn angleFn)
     {
