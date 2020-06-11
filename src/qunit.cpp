@@ -1151,13 +1151,9 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        TransformBasis1Qb(false, control);
-
-        RevertBasis2Qb(control, INVERT_AND_PHASE, ONLY_TARGETS);
-        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS);
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
-
-        shards[target].AddInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
+        H(target);
+        CZ(control, target);
+        H(target);
         return;
     }
 
@@ -1213,13 +1209,11 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     bitLenInt controlLen = 1;
 
     if (!freezeBasis) {
-        TransformBasis1Qb(false, control);
-
-        RevertBasis2Qb(control, INVERT_AND_PHASE, ONLY_TARGETS);
-        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS);
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
-
-        shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
+        X(control);
+        H(target);
+        CZ(control, target);
+        H(target);
+        X(control);
         return;
     }
 
