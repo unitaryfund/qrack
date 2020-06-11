@@ -9,7 +9,7 @@ include ("cmake/Format.cmake")
 
 include_directories ("include" "include/common")
 
-set(PSTRIDE "16" CACHE STRING "Stride of parallel for loops (must be power of 2)")
+set(PSTRIDE "64" CACHE STRING "Stride of parallel for loops (must be power of 2)")
 
 set(QBCAPPOW "6" CACHE STRING "Log2 of maximum qubit capacity of a single QInterface (must be at least 5, equivalent to >= 32 qubits)")
 if (QBCAPPOW LESS 5)
