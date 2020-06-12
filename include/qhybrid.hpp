@@ -19,11 +19,6 @@ namespace Qrack {
 class QHybrid;
 typedef std::shared_ptr<QHybrid> QHybridPtr;
 
-template <class BidirectionalIterator>
-void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt stride);
-template <class BidirectionalIterator>
-void rotate(BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last, bitCapInt stride);
-
 /**
  * General purpose QHybrid implementation
  */
@@ -160,6 +155,73 @@ public:
     /** @} */
 
     /**
+     * \defgroup BasicGates Basic quantum gate primitives
+     *@{
+     */
+
+    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex)
+    {
+        qEngine->ApplySingleBit(mtrx, qubitIndex);
+    }
+    virtual void ApplyControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    {
+        qEngine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+    }
+    virtual void ApplyAntiControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    {
+        qEngine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+    }
+    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { qEngine->Swap(qubitIndex1, qubitIndex2); }
+    virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { qEngine->ISwap(qubitIndex1, qubitIndex2); }
+    virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { qEngine->SqrtSwap(qubitIndex1, qubitIndex2); }
+    virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        qEngine->ISqrtSwap(qubitIndex1, qubitIndex2);
+    }
+    virtual void FSim(real1 theta, real1 phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        qEngine->FSim(theta, phi, qubitIndex1, qubitIndex2);
+    }
+    virtual void CSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
+        qEngine->CSwap(controls, controlLen, qubit1, qubit2);
+    }
+    virtual void AntiCSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
+        qEngine->AntiCSwap(controls, controlLen, qubit1, qubit2);
+    }
+    virtual void CSqrtSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
+        qEngine->CSqrtSwap(controls, controlLen, qubit1, qubit2);
+    }
+    virtual void AntiCSqrtSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
+        qEngine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2);
+    }
+    virtual void CISqrtSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
+        qEngine->CISqrtSwap(controls, controlLen, qubit1, qubit2);
+    }
+    virtual void AntiCISqrtSwap(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
+        qEngine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
+    }
+    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
+    {
+        return qEngine->ForceM(qubit, result, doForce, doApply);
+    }
+
+    /** @} */
+
+    /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.
      *
      * @{
@@ -167,6 +229,10 @@ public:
 
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length) { qEngine->ROL(shift, start, length); }
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { qEngine->INC(toAdd, start, length); }
+    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        qEngine->INCC(toAdd, start, length, carryIndex);
+    }
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
     {
@@ -176,7 +242,37 @@ public:
     {
         qEngine->INCS(toAdd, start, length, overflowIndex);
     }
+    virtual void INCSC(
+        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+    {
+        qEngine->INCSC(toAdd, start, length, overflowIndex, carryIndex);
+    }
+    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        qEngine->INCSC(toAdd, start, length, carryIndex);
+    }
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) { qEngine->INCBCD(toAdd, start, length); }
+    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        qEngine->INCBCDC(toAdd, start, length, carryIndex);
+    }
+    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        qEngine->INCC(toSub, start, length, carryIndex);
+    }
+    virtual void DECSC(
+        bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+    {
+        qEngine->DECSC(toSub, start, length, overflowIndex, carryIndex);
+    }
+    virtual void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        qEngine->DECSC(toSub, start, length, carryIndex);
+    }
+    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        qEngine->DECBCDC(toSub, start, length, carryIndex);
+    }
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
         qEngine->MUL(toMul, inOutStart, carryStart, length);
@@ -302,6 +398,7 @@ public:
     {
         qEngine->NormalizeState(nrm, norm_thresh);
     }
+    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG) { qEngine->UpdateRunningNorm(norm_thresh); }
 
     /** @} */
 };
