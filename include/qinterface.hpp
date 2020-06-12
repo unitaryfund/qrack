@@ -82,6 +82,11 @@ enum QInterfaceEngine {
     QINTERFACE_OPENCL,
 
     /**
+     * Create a QHybrid, switching between QEngineCPU and QEngineOCL for optimization
+     */
+    QINTERFACE_HYBRID,
+
+    /**
      * Create a QUnit, which utilizes other QInterface classes to minimize the amount of work that's needed for any
      * given operation based on the entanglement of the bits involved.
      *
