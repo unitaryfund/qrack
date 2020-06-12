@@ -22,7 +22,7 @@ typedef std::shared_ptr<QHybrid> QHybridPtr;
 /**
  * General purpose QHybrid implementation
  */
-class QHybrid : virtual public QInterface {
+class QHybrid : public QInterface {
 protected:
     const bitLenInt MIN_OCL_QUBIT_COUNT = 4U;
     QEnginePtr qEngine;
@@ -50,21 +50,24 @@ public:
 
     bitCapInt GetMaxQPower() { return qEngine->GetMaxQPower(); }
 
-    virtual bitLenInt Compose(QHybridPtr toCopy)
+    using QInterface::Compose;
+    virtual bitLenInt Compose(QInterfacePtr toCopy)
     {
+        QHybridPtr toCopyH = std::dynamic_pointer_cast<QHybrid>(toCopy);
+
         QInterfaceEngine composeType = QINTERFACE_CPU;
         if (qEngineType == QINTERFACE_OPENCL) {
             composeType = QINTERFACE_OPENCL;
         }
-        if (toCopy->qEngineType == QINTERFACE_OPENCL) {
+        if (toCopyH->qEngineType == QINTERFACE_OPENCL) {
             composeType = QINTERFACE_OPENCL;
         }
-        if ((qEngine->GetQubitCount() + toCopy->GetQubitCount()) >= MIN_OCL_QUBIT_COUNT) {
+        if ((qEngine->GetQubitCount() + toCopyH->GetQubitCount()) >= MIN_OCL_QUBIT_COUNT) {
             composeType = QINTERFACE_OPENCL;
         }
 
         qEngine = ConvertEngineType(qEngineType, composeType, qEngine);
-        QEnginePtr nCopyQEngine = ConvertEngineType(toCopy->qEngineType, composeType, toCopy->qEngine);
+        QEnginePtr nCopyQEngine = ConvertEngineType(toCopyH->qEngineType, composeType, toCopyH->qEngine);
 
         bitLenInt toRet = qEngine->Compose(nCopyQEngine);
 
@@ -72,14 +75,34 @@ public:
 
         return toRet;
     }
-    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QHybrid>(toCopy)); }
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
-        return Compose(std::dynamic_pointer_cast<QHybrid>(toCopy), start);
-    }
+        QHybridPtr toCopyH = std::dynamic_pointer_cast<QHybrid>(toCopy);
 
-    virtual void Decompose(bitLenInt start, bitLenInt length, QHybridPtr dest)
+        QInterfaceEngine composeType = QINTERFACE_CPU;
+        if (qEngineType == QINTERFACE_OPENCL) {
+            composeType = QINTERFACE_OPENCL;
+        }
+        if (toCopyH->qEngineType == QINTERFACE_OPENCL) {
+            composeType = QINTERFACE_OPENCL;
+        }
+        if ((qEngine->GetQubitCount() + toCopyH->GetQubitCount()) >= MIN_OCL_QUBIT_COUNT) {
+            composeType = QINTERFACE_OPENCL;
+        }
+
+        qEngine = ConvertEngineType(qEngineType, composeType, qEngine);
+        QEnginePtr nCopyQEngine = ConvertEngineType(toCopyH->qEngineType, composeType, toCopyH->qEngine);
+
+        bitLenInt toRet = qEngine->Compose(nCopyQEngine, start);
+
+        qEngineType = composeType;
+
+        return toRet;
+    }
+    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     {
+        QHybridPtr destH = std::dynamic_pointer_cast<QHybrid>(destH);
+
         QInterfaceEngine decomposeType = QINTERFACE_OPENCL;
         if (qEngineType == QINTERFACE_CPU) {
             decomposeType = QINTERFACE_CPU;
@@ -88,21 +111,15 @@ public:
             decomposeType = QINTERFACE_CPU;
         }
 
-        qEngine = ConvertEngineType(qEngineType, dest->qEngineType, qEngine);
-        qEngine->Decompose(start, length, dest->qEngine);
+        qEngine = ConvertEngineType(qEngineType, destH->qEngineType, qEngine);
+        qEngine->Decompose(start, length, destH->qEngine);
 
-        if (decomposeType != dest->qEngineType) {
+        if (decomposeType != destH->qEngineType) {
             qEngine = ConvertEngineType(qEngineType, decomposeType, qEngine);
         }
 
         qEngineType = decomposeType;
     }
-
-    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
-    {
-        Decompose(start, length, std::dynamic_pointer_cast<QHybrid>(dest));
-    }
-
     virtual void Dispose(bitLenInt start, bitLenInt length)
     {
         QInterfaceEngine disposeType = QINTERFACE_OPENCL;
