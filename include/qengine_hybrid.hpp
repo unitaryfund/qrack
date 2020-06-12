@@ -32,26 +32,11 @@ protected:
     const bitLenInt MIN_OCL_QUBIT_COUNT = 4U;
     QEnginePtr qEngine;
     QInterfaceEngine qEngineType;
-    bool isSparse;
     int deviceID;
+    bool useRDRAND;
+    bool isSparse;
 
-    QEnginePtr ConvertEngineType(QInterfaceEngine, oQEngineType, QInterfaceEngine nQEngineType, QEnginePtr oQEngine)
-    {
-        if (oQEngineType == nQEngineType) {
-            return oQEngine;
-        }
-
-        QEnginePtr nQEngine =
-            std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(nQEngineType, oQEngine->qubitCount, 0,
-                rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, deviceID, useRDRAND, isSparse));
-
-        complex* nStateVec = new complex[nQEngine->GetMaxQPower()];
-        oQEngine->GetQuantumState(nStateVec);
-        nQEngine->SetQuantumState(nStateVec);
-        delete[] nStateVec;
-
-        return nQEngine;
-    }
+    QEnginePtr ConvertEngineType(QInterfaceEngine oQEngineType, QInterfaceEngine nQEngineType, QEnginePtr oQEngine);
 
 public:
     /**
@@ -63,25 +48,16 @@ public:
     QEngineHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = true, int devID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {})
-        : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
-        , isSparse(useSparseStateVec)
-        , deviceID(devID)
-    {
-        if (qBitCount < MIN_OCL_QUBIT_COUNT) {
-            qEngineType = QINTERFACE_CPU;
-        } else {
-            qEngineType = QINTERFACE_OPENCL;
-        }
-
-        qEngine = std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(qEngineType, qBitCount, initState,
-            rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, deviceID, useRDRAND, isSparse));
-    }
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {});
 
     virtual ~QEngineHybrid()
     {
         // Intentionally left blank
     }
+
+    bitLenInt GetQubitCount() { return qEngine->GetQubitCount(); }
+
+    bitCapInt GetMaxQPower() { return qEngine->GetMaxQPower(); }
 
     virtual bitLenInt Compose(QEngineHybridPtr toCopy)
     {
@@ -92,7 +68,7 @@ public:
         if (toCopy->qEngineType == QINTERFACE_OPENCL) {
             composeType = QINTERFACE_OPENCL;
         }
-        if ((qubitCount + toCopy->qubitCount) >= MIN_OCL_QUBIT_COUNT) {
+        if ((qEngine->GetQubitCount() + toCopy->GetQubitCount()) >= MIN_OCL_QUBIT_COUNT) {
             composeType = QINTERFACE_OPENCL;
         }
 
@@ -115,18 +91,18 @@ public:
         return Compose(std::dynamic_pointer_cast<QEngineHybrid>(toCopy), start);
     }
 
-    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    virtual void Decompose(bitLenInt start, bitLenInt length, QEngineHybridPtr dest)
     {
         QInterfaceEngine decomposeType = QINTERFACE_OPENCL;
         if (qEngineType == QINTERFACE_CPU) {
             decomposeType = QINTERFACE_CPU;
         }
-        if ((qubitCount - length) < MIN_OCL_QUBIT_COUNT) {
+        if ((qEngine->GetQubitCount() - length) < MIN_OCL_QUBIT_COUNT) {
             decomposeType = QINTERFACE_CPU;
         }
 
         qEngine = ConvertEngineType(qEngineType, dest->qEngineType, qEngine);
-        qEngine->Decompose(start, length, nCopyQEngine);
+        qEngine->Decompose(start, length, dest->qEngine);
 
         if (decomposeType != dest->qEngineType) {
             qEngine = ConvertEngineType(qEngineType, decomposeType, qEngine);
@@ -135,13 +111,18 @@ public:
         qEngineType = decomposeType;
     }
 
+    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    {
+        Decompose(start, length, std::dynamic_pointer_cast<QEngineHybrid>(dest));
+    }
+
     virtual void Dispose(bitLenInt start, bitLenInt length)
     {
         QInterfaceEngine disposeType = QINTERFACE_OPENCL;
         if (qEngineType == QINTERFACE_CPU) {
             disposeType = QINTERFACE_CPU;
         }
-        if ((qubitCount - length) < MIN_OCL_QUBIT_COUNT) {
+        if ((qEngine->GetQubitCount() - length) < MIN_OCL_QUBIT_COUNT) {
             disposeType = QINTERFACE_CPU;
         }
 
@@ -154,7 +135,7 @@ public:
         if (qEngineType == QINTERFACE_CPU) {
             disposeType = QINTERFACE_CPU;
         }
-        if ((qubitCount - length) < MIN_OCL_QUBIT_COUNT) {
+        if ((qEngine->GetQubitCount() - length) < MIN_OCL_QUBIT_COUNT) {
             disposeType = QINTERFACE_CPU;
         }
 
@@ -168,7 +149,7 @@ public:
 
     virtual void GetQuantumState(complex* outputState) { qEngine->GetQuantumState(outputState); }
     virtual void GetProbs(real1* outputProbs) { qEngine->GetProbs(outputProbs); }
-    virtual complex GetAmplitude(bitCapInt perm) { return qEngine->GetAmplitude(outputProbs); }
+    virtual complex GetAmplitude(bitCapInt perm) { return qEngine->GetAmplitude(perm); }
     virtual void SetAmplitude(bitCapInt perm, complex amp) { qEngine->SetAmplitude(perm, amp); }
 
     virtual bool ApproxCompare(QInterfacePtr toCompare)
@@ -309,15 +290,15 @@ public:
      * @{
      */
 
-    virtual real1 Prob(bitLenInt qubitIndex) { qEngine->Prob(qubitIndex); }
-    virtual real1 ProbAll(bitCapInt fullRegister) { qEngine->ProbAll(fullRegister); }
+    virtual real1 Prob(bitLenInt qubitIndex) { return qEngine->Prob(qubitIndex); }
+    virtual real1 ProbAll(bitCapInt fullRegister) { return qEngine->ProbAll(fullRegister); }
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
     {
-        qEngine->ProbReg(start, length, permutation);
+        return qEngine->ProbReg(start, length, permutation);
     }
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     {
-        qEngine->ProbMask(mask, permutation);
+        return qEngine->ProbMask(mask, permutation);
     }
     virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG)
     {
@@ -362,5 +343,4 @@ protected:
 
     /** @} */
 };
-}; // namespace Qrack
 } // namespace Qrack

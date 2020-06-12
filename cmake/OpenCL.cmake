@@ -75,6 +75,7 @@ if (ENABLE_OPENCL)
         ${COMPILED_RESOURCES}
         src/common/oclengine.cpp
         src/qengine/opencl.cpp
+        src/qengine/qengine_hybrid.cpp
         src/qunitmulti.cpp
         )
 
