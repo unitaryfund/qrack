@@ -12,12 +12,12 @@
 
 #pragma once
 
-#include "qfactory.hpp"
+#include "qengine.hpp"
 
 namespace Qrack {
 
-class QEngineHybrid;
-typedef std::shared_ptr<QEngineHybrid> QEngineHybridPtr;
+class QHybrid;
+typedef std::shared_ptr<QHybrid> QHybridPtr;
 
 template <class BidirectionalIterator>
 void reverse(BidirectionalIterator first, BidirectionalIterator last, bitCapInt stride);
@@ -25,9 +25,9 @@ template <class BidirectionalIterator>
 void rotate(BidirectionalIterator first, BidirectionalIterator middle, BidirectionalIterator last, bitCapInt stride);
 
 /**
- * General purpose QEngineHybrid implementation
+ * General purpose QHybrid implementation
  */
-class QEngineHybrid : virtual public QEngine {
+class QHybrid : virtual public QInterface {
 protected:
     const bitLenInt MIN_OCL_QUBIT_COUNT = 4U;
     QEnginePtr qEngine;
@@ -35,22 +35,23 @@ protected:
     int deviceID;
     bool useRDRAND;
     bool isSparse;
+    bool useHostRam;
 
     QEnginePtr ConvertEngineType(QInterfaceEngine oQEngineType, QInterfaceEngine nQEngineType, QEnginePtr oQEngine);
 
 public:
     /**
-     * \defgroup HybridInterface Special implementations for QEngineHybrid.
+     * \defgroup HybridInterface Special implementations for QHybrid.
      *
      * @{
      */
 
-    QEngineHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
+    QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = true, int devID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {});
 
-    virtual ~QEngineHybrid()
+    virtual ~QHybrid()
     {
         // Intentionally left blank
     }
@@ -59,7 +60,7 @@ public:
 
     bitCapInt GetMaxQPower() { return qEngine->GetMaxQPower(); }
 
-    virtual bitLenInt Compose(QEngineHybridPtr toCopy)
+    virtual bitLenInt Compose(QHybridPtr toCopy)
     {
         QInterfaceEngine composeType = QINTERFACE_CPU;
         if (qEngineType == QINTERFACE_OPENCL) {
@@ -81,17 +82,14 @@ public:
 
         return toRet;
     }
-    virtual bitLenInt Compose(QInterfacePtr toCopy)
-    {
-        return Compose(std::dynamic_pointer_cast<QEngineHybrid>(toCopy));
-    }
-    virtual bitLenInt Compose(QEngineHybridPtr toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QHybrid>(toCopy)); }
+    virtual bitLenInt Compose(QHybridPtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
-        return Compose(std::dynamic_pointer_cast<QEngineHybrid>(toCopy), start);
+        return Compose(std::dynamic_pointer_cast<QHybrid>(toCopy), start);
     }
 
-    virtual void Decompose(bitLenInt start, bitLenInt length, QEngineHybridPtr dest)
+    virtual void Decompose(bitLenInt start, bitLenInt length, QHybridPtr dest)
     {
         QInterfaceEngine decomposeType = QINTERFACE_OPENCL;
         if (qEngineType == QINTERFACE_CPU) {
@@ -113,7 +111,7 @@ public:
 
     virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
     {
-        Decompose(start, length, std::dynamic_pointer_cast<QEngineHybrid>(dest));
+        Decompose(start, length, std::dynamic_pointer_cast<QHybrid>(dest));
     }
 
     virtual void Dispose(bitLenInt start, bitLenInt length)
@@ -154,9 +152,9 @@ public:
 
     virtual bool ApproxCompare(QInterfacePtr toCompare)
     {
-        return ApproxCompare(std::dynamic_pointer_cast<QEngineHybrid>(toCompare));
+        return ApproxCompare(std::dynamic_pointer_cast<QHybrid>(toCompare));
     }
-    virtual bool ApproxCompare(QEngineHybridPtr toCompare) { return qEngine->ApproxCompare(toCompare->qEngine); }
+    virtual bool ApproxCompare(QHybridPtr toCompare) { return qEngine->ApproxCompare(toCompare->qEngine); }
     virtual QInterfacePtr Clone() { return qEngine->Clone(); }
 
     /** @} */
@@ -303,42 +301,6 @@ public:
     virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG)
     {
         qEngine->NormalizeState(nrm, norm_thresh);
-    }
-
-    /** @} */
-
-protected:
-    /**
-     * \defgroup HybridInterfaceProtected QEngineHybrid implementation of pure virtual QEngine methods.
-     *
-     * @{
-     */
-
-    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = REAL1_DEFAULT_ARG)
-    {
-        qEngine->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
-    }
-
-    virtual void INCDECC(
-        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
-    {
-        qEngine->INCDECC(toMod, inOutStart, length, carryIndex);
-    }
-    virtual void INCDECSC(
-        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
-    {
-        qEngine->INCDECSC(toMod, inOutStart, length, carryIndex);
-    }
-    virtual void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
-        const bitLenInt& overflowIndex, const bitLenInt& carryIndex)
-    {
-        qEngine->INCDECSC(toMod, inOutStart, length, overflowIndex, carryIndex);
-    }
-    virtual void INCDECBCDC(
-        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
-    {
-        qEngine->INCDECBCDC(toMod, inOutStart, length, carryIndex);
     }
 
     /** @} */

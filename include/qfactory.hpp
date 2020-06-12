@@ -15,8 +15,8 @@
 #include "qengine_cpu.hpp"
 
 #if ENABLE_OPENCL
-#include "qengine_hybrid.hpp"
 #include "qengine_opencl.hpp"
+#include "qhybrid.hpp"
 #include "qunitmulti.hpp"
 #else
 #include "qunit.hpp"

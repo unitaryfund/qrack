@@ -10,12 +10,12 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include "qengine_hybrid.hpp"
+#include "qhybrid.hpp"
+#include "qfactory.hpp"
 
 namespace Qrack {
 
-QEnginePtr QEngineHybrid::ConvertEngineType(
-    QInterfaceEngine oQEngineType, QInterfaceEngine nQEngineType, QEnginePtr oQEngine)
+QEnginePtr QHybrid::ConvertEngineType(QInterfaceEngine oQEngineType, QInterfaceEngine nQEngineType, QEnginePtr oQEngine)
 {
     if (oQEngineType == nQEngineType) {
         return oQEngine;
@@ -33,13 +33,14 @@ QEnginePtr QEngineHybrid::ConvertEngineType(
     return nQEngine;
 }
 
-QEngineHybrid::QEngineHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
-    bool doNorm, bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh, std::vector<bitLenInt> ignored)
-    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
+QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
+    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh,
+    std::vector<bitLenInt> ignored)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , deviceID(devID)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
+    , useHostRam(useHostMem)
 {
     if (qBitCount < MIN_OCL_QUBIT_COUNT) {
         qEngineType = QINTERFACE_CPU;
