@@ -43,13 +43,8 @@ public:
 
     QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = true, int devID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {});
-
-    virtual ~QHybrid()
-    {
-        // Intentionally left blank
-    }
+        bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false,
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored2 = {});
 
     bitLenInt GetQubitCount() { return qEngine->GetQubitCount(); }
 
@@ -78,7 +73,6 @@ public:
         return toRet;
     }
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QHybrid>(toCopy)); }
-    virtual bitLenInt Compose(QHybridPtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
         return Compose(std::dynamic_pointer_cast<QHybrid>(toCopy), start);
@@ -258,7 +252,7 @@ public:
     }
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        qEngine->INCC(toSub, start, length, carryIndex);
+        qEngine->DECC(toSub, start, length, carryIndex);
     }
     virtual void DECSC(
         bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)

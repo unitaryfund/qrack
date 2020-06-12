@@ -35,7 +35,7 @@ QEnginePtr QHybrid::ConvertEngineType(QInterfaceEngine oQEngineType, QInterfaceE
 
 QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh,
-    std::vector<bitLenInt> ignored)
+    std::vector<bitLenInt> devList)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , deviceID(devID)
     , useRDRAND(useHardwareRNG)
