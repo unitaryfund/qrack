@@ -653,7 +653,6 @@ typedef std::shared_ptr<QUnit> QUnitPtr;
 class QUnit : public QInterface {
 protected:
     QInterfaceEngine engine;
-    QInterfaceEngine subengine;
     int devID;
     std::vector<QEngineShard> shards;
     complex phaseFactor;
@@ -672,10 +671,6 @@ protected:
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
 public:
-    QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
-        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true,
-        bool randomGlobalPhase = true, bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {});
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,

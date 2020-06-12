@@ -54,18 +54,8 @@ namespace Qrack {
 QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
     bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
     real1 norm_thresh, std::vector<bitLenInt> devList)
-    : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceID,
-          useHardwareRNG, useSparseStateVec, norm_thresh, devList)
-{
-    // Intentionally left blank
-}
-
-QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
-    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
-    bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<bitLenInt> devList)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , engine(eng)
-    , subengine(subEng)
     , devID(deviceID)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
@@ -86,8 +76,8 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
 {
-    return CreateQuantumInterface(engine, subengine, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse);
+    return CreateQuantumInterface(engine, length, perm, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
+        useHostRam, devID, useRDRAND, isSparse);
 }
 
 void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
@@ -3109,7 +3099,7 @@ QInterfacePtr QUnit::Clone()
     EndAllEmulation();
 
     QUnitPtr copyPtr = std::make_shared<QUnit>(
-        engine, subengine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
+        engine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
 
     return CloneBody(copyPtr);
 }
