@@ -62,6 +62,16 @@ set_target_properties(teleport PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINA
 
 target_link_libraries (teleport ${QRACK_LIBS})
 
+add_executable (qneuron_regression
+    examples/qneuron_regression.cpp
+    )
+
+set_target_properties(qneuron_regression PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
+
+target_link_libraries (qneuron_regression ${QRACK_LIBS})
+
+configure_file(examples/data/powers_of_2.csv examples/data/powers_of_2.csv COPYONLY)
+
 target_compile_options (grovers PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (grovers_lookup PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (ordered_list_search PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
@@ -70,3 +80,4 @@ target_compile_options (quantum_associative_memory PUBLIC ${TEST_COMPILE_OPTS} -
 target_compile_options (shors_factoring PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (pearson32 PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (teleport PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (qneuron_regression PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
