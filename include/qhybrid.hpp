@@ -24,7 +24,7 @@ typedef std::shared_ptr<QHybrid> QHybridPtr;
  */
 class QHybrid : public QInterface {
 protected:
-    const bitLenInt MIN_OCL_QUBIT_COUNT = 4U;
+    const bitLenInt MIN_OCL_QUBIT_COUNT = 6U;
     QInterfacePtr qEngine;
     QInterfaceEngine qEngineType;
     int deviceID;

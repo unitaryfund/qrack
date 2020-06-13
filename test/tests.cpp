@@ -1784,10 +1784,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
     qftReg->H(4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 
-    if (testEngineType == QINTERFACE_HYBRID) {
-        return;
-    }
-
     qftReg->SetReg(0, 8, 0x02);
     QInterfacePtr qftReg2 = qftReg->Clone();
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
@@ -2009,10 +2005,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
     qftReg->UniformlyControlledSingleBit(controls, 2, 1, pauliRYs);
     qftReg->H(4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
-
-    if (testEngineType == QINTERFACE_HYBRID) {
-        return;
-    }
 
     qftReg->SetReg(0, 8, 0x02);
     QInterfacePtr qftReg2 = qftReg->Clone();

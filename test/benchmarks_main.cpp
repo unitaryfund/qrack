@@ -45,7 +45,6 @@ int main(int argc, char* argv[])
     bool cpu = false;
     bool opencl_single = false;
     bool opencl_multi = false;
-    bool hybrid = false;
 
     int mxQbts = 24;
 
@@ -59,7 +58,6 @@ int main(int argc, char* argv[])
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl_single)["--proc-opencl-single"]("Single (parallel) processor OpenCL tests") |
         Opt(opencl_multi)["--proc-opencl-multi"]("Multiple processor OpenCL tests") |
-        Opt(hybrid)["--proc-hybrid"]("Hybrid CPU/OpenCL engine tests") |
         Opt(async_time)["--async-time"]("Time based on asynchronous return") |
         Opt(enable_normalization)["--enable-normalization"](
             "Enable state vector normalization. (Usually not "
@@ -108,11 +106,10 @@ int main(int argc, char* argv[])
         qengine = true;
     }
 
-    if (!cpu && !opencl_single && !opencl_multi && !hybrid) {
+    if (!cpu && !opencl_single && !opencl_multi) {
         cpu = true;
         opencl_single = true;
         opencl_multi = true;
-        hybrid = true;
     }
 
     if (mxQbts == -1) {
@@ -173,14 +170,6 @@ int main(int argc, char* argv[])
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
-
-        if (num_failed == 0 && hybrid) {
-            session.config().stream() << "############ QHybrid ############" << std::endl;
-            testEngineType = QINTERFACE_HYBRID;
-            testSubEngineType = QINTERFACE_HYBRID;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
-            num_failed = session.run();
-        }
 #endif
     }
 
@@ -200,13 +189,6 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && opencl_single) {
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
-            num_failed = session.run();
-        }
-
-        if (num_failed == 0 && hybrid) {
-            session.config().stream() << "############ QUnit -> QHybrid ############" << std::endl;
-            testSubEngineType = QINTERFACE_HYBRID;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }

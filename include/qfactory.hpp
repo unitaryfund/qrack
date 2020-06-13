@@ -16,7 +16,6 @@
 
 #if ENABLE_OPENCL
 #include "qengine_opencl.hpp"
-#include "qhybrid.hpp"
 #include "qunitmulti.hpp"
 #else
 #include "qunit.hpp"
@@ -34,8 +33,6 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
-    case QINTERFACE_HYBRID:
-        return std::make_shared<QHybrid>(args...);
 #endif
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine, args...);
@@ -56,8 +53,6 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
-    case QINTERFACE_HYBRID:
-        return std::make_shared<QHybrid>(args...);
 #endif
     default:
         return NULL;
