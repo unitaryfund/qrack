@@ -115,7 +115,7 @@ int main()
         qReg->SetPermutation(perm);
 
         for (i = 0; i < outputLayer.size(); i++) {
-            outputLayer[i]->LearnPermutation(row[0], etas[i]);
+            outputLayer[i]->LearnPermutation(row[0], etas[i] / trainingRowCount);
         }
     }
 
