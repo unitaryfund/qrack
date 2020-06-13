@@ -25,14 +25,15 @@ typedef std::shared_ptr<QHybrid> QHybridPtr;
 class QHybrid : public QInterface {
 protected:
     const bitLenInt MIN_OCL_QUBIT_COUNT = 4U;
-    QEnginePtr qEngine;
+    QInterfacePtr qEngine;
     QInterfaceEngine qEngineType;
     int deviceID;
     bool useRDRAND;
     bool isSparse;
     bool useHostRam;
 
-    QEnginePtr ConvertEngineType(QInterfaceEngine oQEngineType, QInterfaceEngine nQEngineType, QEnginePtr oQEngine);
+    QInterfacePtr ConvertEngineType(
+        QInterfaceEngine oQEngineType, QInterfaceEngine nQEngineType, QInterfacePtr oQEngine);
 
 public:
     /**
@@ -67,7 +68,7 @@ public:
         }
 
         qEngine = ConvertEngineType(qEngineType, composeType, qEngine);
-        QEnginePtr nCopyQEngine = ConvertEngineType(toCopyH->qEngineType, composeType, toCopyH->qEngine);
+        QInterfacePtr nCopyQEngine = ConvertEngineType(toCopyH->qEngineType, composeType, toCopyH->qEngine);
 
         bitLenInt toRet = qEngine->Compose(nCopyQEngine);
 
@@ -91,7 +92,7 @@ public:
         }
 
         qEngine = ConvertEngineType(qEngineType, composeType, qEngine);
-        QEnginePtr nCopyQEngine = ConvertEngineType(toCopyH->qEngineType, composeType, toCopyH->qEngine);
+        QInterfacePtr nCopyQEngine = ConvertEngineType(toCopyH->qEngineType, composeType, toCopyH->qEngine);
 
         bitLenInt toRet = qEngine->Compose(nCopyQEngine, start);
 

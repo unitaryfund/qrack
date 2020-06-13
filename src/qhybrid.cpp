@@ -15,17 +15,17 @@
 
 namespace Qrack {
 
-QEnginePtr QHybrid::ConvertEngineType(QInterfaceEngine oQEngineType, QInterfaceEngine nQEngineType, QEnginePtr oQEngine)
+QInterfacePtr QHybrid::ConvertEngineType(
+    QInterfaceEngine oQEngineType, QInterfaceEngine nQEngineType, QInterfacePtr oQEngine)
 {
     if (oQEngineType == nQEngineType) {
         return oQEngine;
     }
 
-    QEnginePtr nQEngine = std::dynamic_pointer_cast<QEngine>(
-        CreateQuantumInterface(nQEngineType, oQEngine->GetQubitCount(), 0, rand_generator, CMPLX_DEFAULT_ARG,
-            doNormalize, randGlobalPhase, useHostRam, deviceID, useRDRAND, isSparse));
+    QInterfacePtr nQEngine = CreateQuantumInterface(nQEngineType, oQEngine->GetQubitCount(), 0, rand_generator,
+        CMPLX_DEFAULT_ARG, doNormalize, randGlobalPhase, useHostRam, deviceID, useRDRAND, isSparse);
 
-    complex* nStateVec = new complex[nQEngine->GetMaxQPower()];
+    complex* nStateVec = new complex[oQEngine->GetMaxQPower()];
     oQEngine->GetQuantumState(nStateVec);
     nQEngine->SetQuantumState(nStateVec);
     delete[] nStateVec;
@@ -48,8 +48,8 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
         qEngineType = QINTERFACE_OPENCL;
     }
 
-    qEngine = std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(qEngineType, qBitCount, initState,
-        rand_generator, phaseFac, doNormalize, randGlobalPhase, useHostRam, deviceID, useRDRAND, isSparse));
+    qEngine = CreateQuantumInterface(qEngineType, qBitCount, initState, rand_generator, phaseFac, doNormalize,
+        randGlobalPhase, useHostRam, deviceID, useRDRAND, isSparse);
 }
 
 } // namespace Qrack
