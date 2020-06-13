@@ -24,7 +24,6 @@ using namespace Qrack;
 
 enum QInterfaceEngine testEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
-enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
 qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
 bool disable_hardware_rng = false;
@@ -159,7 +158,6 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && cpu) {
             testEngineType = QINTERFACE_CPU;
             testSubEngineType = QINTERFACE_CPU;
-            testSubSubEngineType = QINTERFACE_CPU;
             session.config().stream() << "############ QEngine -> CPU ############" << std::endl;
             num_failed = session.run();
         }
@@ -169,7 +167,6 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QEngine -> OpenCL ############" << std::endl;
             testEngineType = QINTERFACE_OPENCL;
             testSubEngineType = QINTERFACE_OPENCL;
-            testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
@@ -185,7 +182,6 @@ int main(int argc, char* argv[])
                 session.config().stream() << "############ QUnit -> QEngine -> CPU ############" << std::endl;
             }
             testSubEngineType = QINTERFACE_CPU;
-            testSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }
 
@@ -193,7 +189,6 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && opencl_single) {
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL;
-            testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
@@ -202,7 +197,6 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QUnitMulti (OpenCL) ############" << std::endl;
             testEngineType = QINTERFACE_QUNIT_MULTI;
             testSubEngineType = QINTERFACE_OPENCL;
-            testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }

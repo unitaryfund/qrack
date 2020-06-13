@@ -24,7 +24,6 @@ using namespace Qrack;
 
 enum QInterfaceEngine testEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
-enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
 qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
 bool disable_hardware_rng = false;
@@ -99,7 +98,6 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && cpu) {
             testEngineType = QINTERFACE_CPU;
             testSubEngineType = QINTERFACE_CPU;
-            testSubSubEngineType = QINTERFACE_CPU;
             session.config().stream() << "############ QEngine -> CPU ############" << std::endl;
             num_failed = session.run();
         }
@@ -109,7 +107,6 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QEngine -> OpenCL ############" << std::endl;
             testEngineType = QINTERFACE_OPENCL;
             testSubEngineType = QINTERFACE_OPENCL;
-            testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
@@ -121,7 +118,6 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && cpu) {
             session.config().stream() << "############ QUnit -> QEngine -> CPU ############" << std::endl;
             testSubEngineType = QINTERFACE_CPU;
-            testSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }
 
@@ -129,7 +125,6 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && opencl_single) {
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL;
-            testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
@@ -150,6 +145,6 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1, 0, rng,
-        complex(ONE_R1, ZERO_R1), enable_normalization, false, true, -1, !disable_hardware_rng);
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0, rng, complex(ONE_R1, ZERO_R1),
+        enable_normalization, false, true, -1, !disable_hardware_rng);
 }
