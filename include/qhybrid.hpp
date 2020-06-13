@@ -47,6 +47,18 @@ public:
         bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false,
         real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored2 = {});
 
+    QHybrid(QInterfacePtr qEngineCopy, QInterfaceEngine qEngineTypeCopy, qrack_rand_gen_ptr rgp, bool doNorm,
+        bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool isSparseStateVec)
+        : QInterface(qEngineCopy->GetQubitCount(), rgp, doNorm, useHardwareRNG, randomGlobalPhase, isSparseStateVec)
+        , qEngineType(qEngineTypeCopy)
+        , deviceID(devID)
+        , useRDRAND(useHardwareRNG)
+        , isSparse(isSparseStateVec)
+        , useHostRam(useHostMem)
+    {
+        qEngine = qEngineCopy->Clone();
+    }
+
     bitLenInt GetQubitCount() { return qEngine->GetQubitCount(); }
 
     bitCapInt GetMaxQPower() { return qEngine->GetMaxQPower(); }
@@ -133,6 +145,8 @@ public:
 
         qEngine = ConvertEngineType(qEngineType, disposeType, qEngine);
         qEngine->Dispose(start, length);
+
+        qEngineType = disposeType;
     }
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
@@ -146,9 +160,9 @@ public:
 
         qEngine = ConvertEngineType(qEngineType, disposeType, qEngine);
         qEngine->Dispose(start, length, disposedPerm);
-    }
 
-    virtual void FreeStateVec() { qEngine = NULL; }
+        qEngineType = disposeType;
+    }
 
     virtual void SetQuantumState(const complex* inputState) { qEngine->SetQuantumState(inputState); }
 
@@ -162,7 +176,11 @@ public:
         return ApproxCompare(std::dynamic_pointer_cast<QHybrid>(toCompare));
     }
     virtual bool ApproxCompare(QHybridPtr toCompare) { return qEngine->ApproxCompare(toCompare->qEngine); }
-    virtual QInterfacePtr Clone() { return qEngine->Clone(); }
+    virtual QInterfacePtr Clone()
+    {
+        return std::make_shared<QHybrid>(qEngine, qEngineType, rand_generator, doNormalize, randGlobalPhase, useHostRam,
+            deviceID, useRDRAND, isSparse);
+    }
 
     /** @} */
 
