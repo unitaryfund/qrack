@@ -78,6 +78,10 @@ public:
     /** Get the angles of this QNeuron */
     void GetAngles(real1* oAngles) { std::copy(angles, angles + inputPower, oAngles); }
 
+    bitLenInt GetInputCount() { return inputCount; }
+
+    bitCapInt GetInputPower() { return inputPower; }
+
     /** Feed-forward from the inputs, loaded in "qReg", to a binary categorical distinction. "expected" flips the binary
      * categories, if false. "resetInit," if true, resets the result qubit to 0.5/0.5 |0>/|1> superposition before
      * proceeding to predict. */
