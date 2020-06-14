@@ -112,7 +112,7 @@ public:
     void Learn(bool expected, real1 eta, bool resetInit = true)
     {
         real1 startProb = Predict(expected, resetInit);
-        if (startProb > (ONE_R1 - tolerance)) {
+        if ((ONE_R1 - startProb) <= tolerance) {
             return;
         }
 
@@ -135,7 +135,7 @@ public:
     void LearnPermutation(bool expected, real1 eta, bool resetInit = true)
     {
         real1 startProb = Predict(expected, resetInit);
-        if (startProb > (ONE_R1 - tolerance)) {
+        if ((ONE_R1 - startProb) <= tolerance) {
             return;
         }
 
@@ -155,29 +155,31 @@ protected:
         real1 origAngle;
 
         origAngle = angles[permOcl];
-        angles[permOcl] += eta * M_PI;
 
+        // Try positive angle increment:
+        angles[permOcl] += eta * M_PI;
         endProb = Predict(expected, resetInit);
-        if (endProb > (ONE_R1 - tolerance)) {
+        if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1;
         }
-
         if (endProb > startProb) {
-            startProb = endProb;
-        } else {
-            angles[permOcl] -= 2 * eta * M_PI;
-
-            endProb = Predict(expected, resetInit);
-            if (endProb > (ONE_R1 - tolerance)) {
-                return -ONE_R1;
-            }
-
-            if (endProb > startProb) {
-                startProb = endProb;
-            } else {
-                angles[permOcl] = origAngle;
-            }
+            return endProb;
         }
+
+        // If positive angle increment is not an improvement,
+        // try negative angle increment:
+        angles[permOcl] -= 2 * eta * M_PI;
+        endProb = Predict(expected, resetInit);
+        if ((ONE_R1 - endProb) <= tolerance) {
+            return -ONE_R1;
+        }
+        if (endProb > startProb) {
+            return endProb;
+        }
+
+        // If neither increment is an improvement,
+        // restore the original variational parameter.
+        angles[permOcl] = origAngle;
 
         return startProb;
     }
