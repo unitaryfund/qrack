@@ -21,21 +21,39 @@
 
 using namespace Qrack;
 
-std::vector<std::vector<bool>> readBinaryCSV()
+enum BoolH { BOOLH_F = 0, BOOLH_T = 1, BOOLH_H = 2 };
+
+BoolH translateCsvEntry(std::string str)
 {
-    std::vector<std::vector<bool>> toRet;
+    switch (str.at(0)) {
+    case '0':
+        return BOOLH_F;
+        break;
+    case '1':
+        return BOOLH_T;
+        break;
+    case 'H':
+        return BOOLH_H;
+        break;
+    default:
+        throw "Invalid CSV character";
+    }
+}
+
+std::vector<std::vector<BoolH>> readBinaryCSV()
+{
+    std::vector<std::vector<BoolH>> toRet;
     std::ifstream in("data/powers_of_2.csv");
     std::string str;
 
     while (std::getline(in, str)) {
-        std::vector<bool> row;
+        std::vector<BoolH> row;
         while (str != "") {
             std::string::size_type pos = str.find(',');
+            row.push_back(translateCsvEntry(str));
             if (pos != std::string::npos) {
-                row.push_back(str.substr(0, pos) == "1");
                 str = str.substr(pos + 1, str.size() - pos);
             } else {
-                row.push_back(str == "1");
                 str = "";
             }
         }
@@ -70,7 +88,7 @@ struct dfObservation {
 
 int main()
 {
-    std::vector<std::vector<bool>> rawYX = readBinaryCSV();
+    std::vector<std::vector<BoolH>> rawYX = readBinaryCSV();
     const bitLenInt OUTPUT_INDEX = 0;
     const bitLenInt INPUT_START = 1;
     size_t trainingRowCount = rawYX.size();
@@ -110,31 +128,45 @@ int main()
 
     // Train the network to recognize powers 2 (via the CSV data)
     bitCapInt perm;
+    std::vector<bitLenInt> permH;
     std::cout << "Learning (powers of two)..." << std::endl;
     for (rowIndex = 0; rowIndex < trainingRowCount; rowIndex++) {
         std::cout << "Epoch " << (rowIndex + 1U) << " out of " << trainingRowCount << std::endl;
 
-        std::vector<bool> row = rawYX[rowIndex];
+        std::vector<BoolH> row = rawYX[rowIndex];
 
         perm = 0U;
+        permH.clear();
         for (i = 0; i < qRegSize; i++) {
-            if (row[i]) {
+            if (row[i] == BOOLH_T) {
                 perm |= pow2(i);
+            } else if (row[i] == BOOLH_H) {
+                permH.push_back(i);
             }
         }
 
         qReg->SetPermutation(perm);
+        for (i = 0; i < permH.size(); i++) {
+            qReg->H(permH[i]);
+        }
 
-        for (i = 0; i < outputLayer.size(); i++) {
-            outputLayer[i]->LearnPermutation(row[0], etas[i] / trainingRowCount);
+        if (permH.size() == 0) {
+            for (i = 0; i < outputLayer.size(); i++) {
+                outputLayer[i]->LearnPermutation(row[0], etas[i] / trainingRowCount);
+            }
+        } else {
+            for (i = 0; i < outputLayer.size(); i++) {
+                outputLayer[i]->Learn(row[0], etas[i] / trainingRowCount);
+            }
         }
     }
 
     std::vector<dfObservation> dfObs;
     std::set<real1> dfVals;
-    std::cout << std::endl << "Should identify powers of 2 (via discriminant function)..." << std::endl;
+    std::cout << std::endl
+              << "Should identify powers of 2 (via discriminant function, with some missing values)..." << std::endl;
     for (rowIndex = 0; rowIndex < trainingRowCount; rowIndex++) {
-        std::vector<bool> row = rawYX[rowIndex];
+        std::vector<BoolH> row = rawYX[rowIndex];
 
         perm = 0U;
         for (i = 0; i < qRegSize; i++) {
@@ -149,7 +181,8 @@ int main()
             outputLayer[i]->Predict();
         }
 
-        dfObs.emplace_back(dfObservation(qReg->Prob(OUTPUT_INDEX), row[0]));
+        // Dependent variable (true classifications) must not have "H" ("NA") values
+        dfObs.emplace_back(dfObservation(qReg->Prob(OUTPUT_INDEX), (row[0] == BOOLH_T)));
         dfVals.insert(dfObs[rowIndex].df);
 
         std::cout << "Input: " << (perm >> 1U) << ", Output (df): " << dfObs[rowIndex].df << std::endl;
@@ -211,9 +244,9 @@ int main()
 
         dTp = lTp - ((real1)tp / totT);
         dFp = lFp - ((real1)fp / totF);
-        auc += dFp * (lTp + (dTp / 2));
+        auc += dFp * (((real1)tp / totT) + (dTp / 2));
 
-        err = std::sqrt(((fp * fp) + (fn * fn)) / (trainingRowCount * trainingRowCount));
+        err = ((real1)((fp * fp) + (fn * fn))) / (trainingRowCount * trainingRowCount);
         if (err < optimumErr) {
             optimumErr = err;
 
