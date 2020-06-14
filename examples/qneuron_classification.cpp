@@ -57,6 +57,17 @@ int factorial(int n)
 // to find combination or nCr
 int nCr(int n, int r) { return (factorial(n) / (factorial(n - r) * factorial(r))); }
 
+struct dfObservation {
+    real1 df;
+    bool cat;
+
+    dfObservation(real1 dfValue, bool c)
+    {
+        df = dfValue;
+        cat = c;
+    }
+};
+
 int main()
 {
     std::vector<std::vector<bool>> rawYX = readBinaryCSV();
@@ -66,6 +77,8 @@ int main()
     bitLenInt predictorCount = rawYX[0].size() - 1U;
     bitLenInt neuronCount = pow2(predictorCount);
     bitLenInt qRegSize = predictorCount + 1U;
+    bitLenInt i, x, y;
+    size_t rowIndex;
 
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, qRegSize, 0);
 
@@ -73,8 +86,6 @@ int main()
     for (bitLenInt i = 0; i < predictorCount; i++) {
         allInputIndices[i] = INPUT_START + i;
     }
-
-    bitLenInt i, x, y;
 
     std::vector<QNeuronPtr> outputLayer;
     std::vector<real1> etas;
@@ -100,7 +111,7 @@ int main()
     // Train the network to recognize powers 2 (via the CSV data)
     bitCapInt perm;
     std::cout << "Learning (powers of two)..." << std::endl;
-    for (size_t rowIndex = 0; rowIndex < trainingRowCount; rowIndex++) {
+    for (rowIndex = 0; rowIndex < trainingRowCount; rowIndex++) {
         std::cout << "Epoch " << (rowIndex + 1U) << " out of " << trainingRowCount << std::endl;
 
         std::vector<bool> row = rawYX[rowIndex];
@@ -119,12 +130,112 @@ int main()
         }
     }
 
-    std::cout << "Should identify powers of 2 (via discriminant function)..." << std::endl;
-    for (perm = 0; perm < trainingRowCount; perm++) {
-        qReg->SetPermutation(perm << 1U);
+    std::vector<dfObservation> dfObs;
+    std::set<real1> dfVals;
+    std::cout << std::endl << "Should identify powers of 2 (via discriminant function)..." << std::endl;
+    for (rowIndex = 0; rowIndex < trainingRowCount; rowIndex++) {
+        std::vector<bool> row = rawYX[rowIndex];
+
+        perm = 0U;
+        for (i = 0; i < qRegSize; i++) {
+            if (row[i]) {
+                perm |= pow2(i);
+            }
+        }
+
+        qReg->SetPermutation(perm);
+
         for (bitLenInt i = 0; i < outputLayer.size(); i++) {
             outputLayer[i]->Predict();
         }
-        std::cout << "Input: " << perm << ", Output (df): " << qReg->Prob(OUTPUT_INDEX) << std::endl;
+
+        dfObs.emplace_back(dfObservation(qReg->Prob(OUTPUT_INDEX), row[0]));
+        dfVals.insert(dfObs[rowIndex].df);
+
+        std::cout << "Input: " << (perm >> 1U) << ", Output (df): " << dfObs[rowIndex].df << std::endl;
     }
+
+    size_t tp = 0, fp = 0, fn = 0, tn = 0;
+    size_t oTp = 0, oFp = 0, oFn = 0, oTn = 0;
+    size_t totT, totF;
+    real1 lTp = 0, lFp = 0;
+    real1 dTp, dFp;
+    real1 optimumCutoff = 0;
+    real1 cutoff;
+    real1 err, optimumErr;
+    real1 auc = 0;
+
+    for (rowIndex = 0; rowIndex < trainingRowCount; rowIndex++) {
+        if (dfObs[rowIndex].cat) {
+            tp++;
+        } else {
+            fp++;
+        }
+    }
+
+    oTp = tp;
+    oFp = fp;
+    totT = tp;
+    totF = fp;
+    err = ((real1)fp) / trainingRowCount;
+    optimumErr = err;
+
+    std::set<real1>::iterator it = dfVals.begin();
+    while (it != dfVals.end()) {
+        cutoff = *it;
+        it++;
+
+        lTp = (real1)tp / totT;
+        lFp = (real1)fp / totF;
+
+        tp = 0;
+        fp = 0;
+        fn = 0;
+        tn = 0;
+
+        for (rowIndex = 0; rowIndex < trainingRowCount; rowIndex++) {
+            if (dfObs[rowIndex].cat) {
+                if (dfObs[rowIndex].df > cutoff) {
+                    tp++;
+                } else {
+                    fn++;
+                }
+            } else {
+                if (dfObs[rowIndex].df > cutoff) {
+                    fp++;
+                } else {
+                    tn++;
+                }
+            }
+        }
+
+        dTp = lTp - ((real1)tp / totT);
+        dFp = lFp - ((real1)fp / totF);
+        auc += dFp * (lTp + (dTp / 2));
+
+        err = std::sqrt(((fp * fp) + (fn * fn)) / (trainingRowCount * trainingRowCount));
+        if (err < optimumErr) {
+            optimumErr = err;
+
+            if (it == dfVals.end()) {
+                optimumCutoff = 1;
+            } else {
+                optimumCutoff = cutoff + (((*it) - cutoff) / 2);
+            }
+
+            oTp = tp;
+            oFp = fp;
+            oFn = fn;
+            oTn = tn;
+        }
+    }
+
+    std::cout << std::endl;
+    std::cout << "AUC: " << auc << std::endl;
+    std::cout << "Optimal df cutoff:" << optimumCutoff << std::endl;
+    std::cout << "Confusion matrix values: " << std::endl;
+    std::cout << "TP: " << oTp << std::endl;
+    std::cout << "FP: " << oFp << std::endl;
+    std::cout << "FN: " << oFn << std::endl;
+    std::cout << "TN: " << oTn << std::endl;
 }
