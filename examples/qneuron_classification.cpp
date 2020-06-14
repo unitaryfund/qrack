@@ -92,9 +92,9 @@ struct dfObservation {
 void makeGeoPowerSetQnn(
     const bitLenInt& predictorCount, QInterfacePtr qReg, std::vector<QNeuronPtr>& outputLayer, std::vector<real1>& etas)
 {
-    bitLenInt neuronCount = pow2(predictorCount);
+    bitCapInt neuronCount = pow2(predictorCount);
 
-    bitLenInt i, x, y;
+    bitCapInt i, x, y;
 
     std::vector<bitLenInt> allInputIndices(predictorCount);
     for (bitLenInt i = 0; i < predictorCount; i++) {
