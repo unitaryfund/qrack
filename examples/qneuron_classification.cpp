@@ -89,7 +89,7 @@ struct dfObservation {
     }
 };
 
-void makeGeoPermNN(
+void makeGeoPowerSetQnn(
     const bitLenInt& predictorCount, QInterfacePtr qReg, std::vector<QNeuronPtr>& outputLayer, std::vector<real1>& etas)
 {
     bitLenInt neuronCount = pow2(predictorCount);
@@ -316,7 +316,7 @@ int main()
 
     std::vector<QNeuronPtr> outputLayer;
     std::vector<real1> etas;
-    makeGeoPermNN(predictorCount, qReg, outputLayer, etas);
+    makeGeoPowerSetQnn(predictorCount, qReg, outputLayer, etas);
 
     train(rawYX, etas, qReg, outputLayer);
 
