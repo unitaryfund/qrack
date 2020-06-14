@@ -21,6 +21,9 @@
 
 using namespace Qrack;
 
+const bitLenInt OUTPUT_INDEX = 0;
+const bitLenInt INPUT_START = 1;
+
 enum BoolH { BOOLH_F = 0, BOOLH_T = 1, BOOLH_H = 2 };
 
 BoolH translateCsvEntry(std::string str)
@@ -86,17 +89,199 @@ struct dfObservation {
     }
 };
 
+void Train(std::vector<std::vector<BoolH>>& rawYX, std::vector<real1>& etas, QInterfacePtr qReg,
+    std::vector<QNeuronPtr>& outputLayer)
+{
+    // Train the network
+    size_t i;
+    size_t rowCount = rawYX.size();
+    bitLenInt qRegSize = qReg->GetQubitCount();
+    bitCapInt perm;
+    std::vector<bitLenInt> permH;
+
+    std::cout << "Learning..." << std::endl;
+
+    for (size_t rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+        std::cout << "Epoch " << (rowIndex + 1U) << " out of " << rowCount << std::endl;
+
+        std::vector<BoolH> row = rawYX[rowIndex];
+
+        perm = 0U;
+        permH.clear();
+        for (i = 0; i < qRegSize; i++) {
+            if (row[i] == BOOLH_T) {
+                perm |= pow2(i);
+            } else if (row[i] == BOOLH_H) {
+                permH.push_back(i);
+            }
+        }
+
+        qReg->SetPermutation(perm);
+        for (i = 0; i < permH.size(); i++) {
+            qReg->H(permH[i]);
+        }
+
+        if (permH.size() == 0) {
+            for (i = 0; i < outputLayer.size(); i++) {
+                outputLayer[i]->LearnPermutation(row[0], etas[i] / rowCount);
+            }
+        } else {
+            for (i = 0; i < outputLayer.size(); i++) {
+                outputLayer[i]->Learn(row[0], etas[i] / rowCount);
+            }
+        }
+    }
+    std::cout << std::endl;
+}
+
+std::vector<dfObservation> Predict(
+    std::vector<std::vector<BoolH>>& rawYX, QInterfacePtr qReg, std::vector<QNeuronPtr>& outputLayer)
+{
+    // Train the network
+    size_t i, rowIndex;
+    size_t rowCount = rawYX.size();
+    bitLenInt qRegSize = qReg->GetQubitCount();
+    bitCapInt perm;
+    std::vector<bitLenInt> permH;
+
+    std::vector<dfObservation> dfObs;
+
+    for (rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+        std::vector<BoolH> row = rawYX[rowIndex];
+
+        perm = 0U;
+        permH.clear();
+        for (i = 0; i < qRegSize; i++) {
+            if (row[i] == BOOLH_T) {
+                perm |= pow2(i);
+            } else if (row[i] == BOOLH_H) {
+                permH.push_back(i);
+            }
+        }
+
+        qReg->SetPermutation(perm);
+        for (i = 0; i < permH.size(); i++) {
+            qReg->H(permH[i]);
+        }
+
+        for (bitLenInt i = 0; i < outputLayer.size(); i++) {
+            outputLayer[i]->Predict();
+        }
+
+        // Dependent variable (true classifications) must not have "H" ("NA") values
+        dfObs.emplace_back(dfObservation(qReg->Prob(OUTPUT_INDEX), (row[0] == BOOLH_T)));
+
+        std::cout << "Input: " << (perm >> 1U) << ", Output (df): " << dfObs[rowIndex].df << std::endl;
+    }
+    std::cout << std::endl;
+
+    return dfObs;
+}
+
+real1 calculateAuc(std::vector<std::vector<BoolH>>& rawYX, std::vector<dfObservation>& dfObs)
+{
+    size_t rowCount = rawYX.size();
+    size_t rowIndex;
+    size_t tp = 0, fp = 0, fn = 0, tn = 0;
+    size_t oTp = 0, oFp = 0, oFn = 0, oTn = 0;
+    size_t totT, totF;
+    real1 lTp = 0, lFp = 0;
+    real1 dTp, dFp;
+    real1 optimumCutoff = 0;
+    real1 cutoff;
+    real1 err, optimumErr;
+    real1 auc = 0;
+
+    std::set<real1> dfVals;
+    for (rowIndex = 0; rowIndex < dfObs.size(); rowIndex++) {
+        dfVals.insert(dfObs[rowIndex].df);
+    }
+
+    for (rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+        if (dfObs[rowIndex].cat) {
+            tp++;
+        } else {
+            fp++;
+        }
+    }
+
+    oTp = tp;
+    oFp = fp;
+    totT = tp;
+    totF = fp;
+    err = ((real1)fp) / rowCount;
+    optimumErr = err;
+
+    std::set<real1>::iterator it = dfVals.begin();
+    while (it != dfVals.end()) {
+        cutoff = *it;
+        it++;
+
+        lTp = (real1)tp / totT;
+        lFp = (real1)fp / totF;
+
+        tp = 0;
+        fp = 0;
+        fn = 0;
+        tn = 0;
+
+        for (rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+            if (dfObs[rowIndex].cat) {
+                if (dfObs[rowIndex].df > cutoff) {
+                    tp++;
+                } else {
+                    fn++;
+                }
+            } else {
+                if (dfObs[rowIndex].df > cutoff) {
+                    fp++;
+                } else {
+                    tn++;
+                }
+            }
+        }
+
+        dTp = lTp - ((real1)tp / totT);
+        dFp = lFp - ((real1)fp / totF);
+        auc += dFp * (((real1)tp / totT) + (dTp / 2));
+
+        err = ((real1)((fp * fp) + (fn * fn))) / (rowCount * rowCount);
+        if (err < optimumErr) {
+            optimumErr = err;
+
+            if (it == dfVals.end()) {
+                optimumCutoff = 1;
+            } else {
+                optimumCutoff = cutoff + (((*it) - cutoff) / 2);
+            }
+
+            oTp = tp;
+            oFp = fp;
+            oFn = fn;
+            oTn = tn;
+        }
+    }
+
+    std::cout << "AUC: " << auc << std::endl;
+    std::cout << "Optimal df cutoff:" << optimumCutoff << std::endl;
+    std::cout << "Confusion matrix values: " << std::endl;
+    std::cout << "TP: " << oTp << std::endl;
+    std::cout << "FP: " << oFp << std::endl;
+    std::cout << "FN: " << oFn << std::endl;
+    std::cout << "TN: " << oTn << std::endl;
+
+    return auc;
+}
+
 int main()
 {
     std::vector<std::vector<BoolH>> rawYX = readBinaryCSV();
-    const bitLenInt OUTPUT_INDEX = 0;
-    const bitLenInt INPUT_START = 1;
-    size_t trainingRowCount = rawYX.size();
+    std::cout << "Row count: " << rawYX.size() << std::endl;
+    std::cout << "Column count: " << rawYX[0].size() << std::endl;
     bitLenInt predictorCount = rawYX[0].size() - 1U;
     bitLenInt neuronCount = pow2(predictorCount);
     bitLenInt qRegSize = predictorCount + 1U;
     bitLenInt i, x, y;
-    size_t rowIndex;
 
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, qRegSize, 0);
 
@@ -126,149 +311,7 @@ int main()
         etas.push_back((ONE_R1 / nCr(predictorCount, x)) / pow2(x));
     }
 
-    // Train the network to recognize powers 2 (via the CSV data)
-    bitCapInt perm;
-    std::vector<bitLenInt> permH;
-    std::cout << "Learning (powers of two)..." << std::endl;
-    for (rowIndex = 0; rowIndex < trainingRowCount; rowIndex++) {
-        std::cout << "Epoch " << (rowIndex + 1U) << " out of " << trainingRowCount << std::endl;
-
-        std::vector<BoolH> row = rawYX[rowIndex];
-
-        perm = 0U;
-        permH.clear();
-        for (i = 0; i < qRegSize; i++) {
-            if (row[i] == BOOLH_T) {
-                perm |= pow2(i);
-            } else if (row[i] == BOOLH_H) {
-                permH.push_back(i);
-            }
-        }
-
-        qReg->SetPermutation(perm);
-        for (i = 0; i < permH.size(); i++) {
-            qReg->H(permH[i]);
-        }
-
-        if (permH.size() == 0) {
-            for (i = 0; i < outputLayer.size(); i++) {
-                outputLayer[i]->LearnPermutation(row[0], etas[i] / trainingRowCount);
-            }
-        } else {
-            for (i = 0; i < outputLayer.size(); i++) {
-                outputLayer[i]->Learn(row[0], etas[i] / trainingRowCount);
-            }
-        }
-    }
-
-    std::vector<dfObservation> dfObs;
-    std::set<real1> dfVals;
-    std::cout << std::endl
-              << "Should identify powers of 2 (via discriminant function, with some missing values)..." << std::endl;
-    for (rowIndex = 0; rowIndex < trainingRowCount; rowIndex++) {
-        std::vector<BoolH> row = rawYX[rowIndex];
-
-        perm = 0U;
-        for (i = 0; i < qRegSize; i++) {
-            if (row[i]) {
-                perm |= pow2(i);
-            }
-        }
-
-        qReg->SetPermutation(perm);
-
-        for (bitLenInt i = 0; i < outputLayer.size(); i++) {
-            outputLayer[i]->Predict();
-        }
-
-        // Dependent variable (true classifications) must not have "H" ("NA") values
-        dfObs.emplace_back(dfObservation(qReg->Prob(OUTPUT_INDEX), (row[0] == BOOLH_T)));
-        dfVals.insert(dfObs[rowIndex].df);
-
-        std::cout << "Input: " << (perm >> 1U) << ", Output (df): " << dfObs[rowIndex].df << std::endl;
-    }
-
-    size_t tp = 0, fp = 0, fn = 0, tn = 0;
-    size_t oTp = 0, oFp = 0, oFn = 0, oTn = 0;
-    size_t totT, totF;
-    real1 lTp = 0, lFp = 0;
-    real1 dTp, dFp;
-    real1 optimumCutoff = 0;
-    real1 cutoff;
-    real1 err, optimumErr;
-    real1 auc = 0;
-
-    for (rowIndex = 0; rowIndex < trainingRowCount; rowIndex++) {
-        if (dfObs[rowIndex].cat) {
-            tp++;
-        } else {
-            fp++;
-        }
-    }
-
-    oTp = tp;
-    oFp = fp;
-    totT = tp;
-    totF = fp;
-    err = ((real1)fp) / trainingRowCount;
-    optimumErr = err;
-
-    std::set<real1>::iterator it = dfVals.begin();
-    while (it != dfVals.end()) {
-        cutoff = *it;
-        it++;
-
-        lTp = (real1)tp / totT;
-        lFp = (real1)fp / totF;
-
-        tp = 0;
-        fp = 0;
-        fn = 0;
-        tn = 0;
-
-        for (rowIndex = 0; rowIndex < trainingRowCount; rowIndex++) {
-            if (dfObs[rowIndex].cat) {
-                if (dfObs[rowIndex].df > cutoff) {
-                    tp++;
-                } else {
-                    fn++;
-                }
-            } else {
-                if (dfObs[rowIndex].df > cutoff) {
-                    fp++;
-                } else {
-                    tn++;
-                }
-            }
-        }
-
-        dTp = lTp - ((real1)tp / totT);
-        dFp = lFp - ((real1)fp / totF);
-        auc += dFp * (((real1)tp / totT) + (dTp / 2));
-
-        err = ((real1)((fp * fp) + (fn * fn))) / (trainingRowCount * trainingRowCount);
-        if (err < optimumErr) {
-            optimumErr = err;
-
-            if (it == dfVals.end()) {
-                optimumCutoff = 1;
-            } else {
-                optimumCutoff = cutoff + (((*it) - cutoff) / 2);
-            }
-
-            oTp = tp;
-            oFp = fp;
-            oFn = fn;
-            oTn = tn;
-        }
-    }
-
-    std::cout << std::endl;
-    std::cout << "AUC: " << auc << std::endl;
-    std::cout << "Optimal df cutoff:" << optimumCutoff << std::endl;
-    std::cout << "Confusion matrix values: " << std::endl;
-    std::cout << "TP: " << oTp << std::endl;
-    std::cout << "FP: " << oFp << std::endl;
-    std::cout << "FN: " << oFn << std::endl;
-    std::cout << "TN: " << oTn << std::endl;
+    Train(rawYX, etas, qReg, outputLayer);
+    std::vector<dfObservation> dfObs = Predict(rawYX, qReg, outputLayer);
+    calculateAuc(rawYX, dfObs);
 }
