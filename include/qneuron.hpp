@@ -131,7 +131,7 @@ public:
         real1 result = Predict(expected, false);
         Unpredict(expected);
         for (bitLenInt i = 0; i < inputCount; i++) {
-            qReg->M(inputIndices[i]);
+            qReg->TrySeparate(inputIndices[i]);
         }
         return result;
     }
