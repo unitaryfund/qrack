@@ -126,6 +126,16 @@ public:
         return prob;
     }
 
+    real1 LearnCycle(bool expected = true)
+    {
+        real1 result = Predict(expected, false);
+        Unpredict(expected);
+        for (bitLenInt i = 0; i < inputCount; i++) {
+            qReg->M(inputIndices[i]);
+        }
+        return result;
+    }
+
     /** Perform one learning iteration, training all parameters
      *
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
@@ -186,8 +196,7 @@ protected:
 
         // Try positive angle increment:
         angles[permOcl] += eta * M_PI;
-        endProb = Predict(expected, false);
-        Unpredict(expected);
+        endProb = LearnCycle(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1;
         }
@@ -198,8 +207,7 @@ protected:
         // If positive angle increment is not an improvement,
         // try negative angle increment:
         angles[permOcl] -= 2 * eta * M_PI;
-        endProb = Predict(expected, false);
-        Unpredict(expected);
+        endProb = LearnCycle(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1;
         }
