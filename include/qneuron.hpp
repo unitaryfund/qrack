@@ -138,7 +138,7 @@ public:
         }
 
         for (bitCapInt perm = 0; perm < inputPower; perm++) {
-            startProb = LearnInternal(expected, eta, perm, startProb, false);
+            startProb = LearnInternal(expected, eta, perm, startProb);
             if (0 > startProb) {
                 break;
             }
@@ -157,6 +157,7 @@ public:
     void LearnPermutation(bool expected, real1 eta, bool resetInit = true)
     {
         real1 startProb = Predict(expected, resetInit);
+        Unpredict(expected);
         if ((ONE_R1 - startProb) <= tolerance) {
             return;
         }
@@ -166,11 +167,11 @@ public:
             perm |= qReg->M(inputIndices[i]) ? pow2(i) : 0;
         }
 
-        LearnInternal(expected, eta, perm, startProb, resetInit);
+        LearnInternal(expected, eta, perm, startProb);
     }
 
 protected:
-    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb, bool resetInit)
+    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb)
     {
         bitCapIntOcl permOcl = (bitCapIntOcl)perm;
         real1 endProb;
@@ -180,7 +181,7 @@ protected:
 
         // Try positive angle increment:
         angles[permOcl] += eta * M_PI;
-        endProb = Predict(expected, resetInit);
+        endProb = Predict(expected, false);
         Unpredict(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1;
@@ -192,7 +193,7 @@ protected:
         // If positive angle increment is not an improvement,
         // try negative angle increment:
         angles[permOcl] -= 2 * eta * M_PI;
-        endProb = Predict(expected, resetInit);
+        endProb = Predict(expected, false);
         Unpredict(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1;
