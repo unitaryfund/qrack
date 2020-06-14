@@ -43,10 +43,10 @@ BoolH translateCsvEntry(std::string str)
     }
 }
 
-std::vector<std::vector<BoolH>> readBinaryCSV()
+std::vector<std::vector<BoolH>> readBinaryCSV(std::string fileName)
 {
     std::vector<std::vector<BoolH>> toRet;
-    std::ifstream in("data/powers_of_2.csv");
+    std::ifstream in(fileName);
     std::string str;
 
     while (std::getline(in, str)) {
@@ -159,7 +159,7 @@ void train(std::vector<std::vector<BoolH>>& rawYX, std::vector<real1>& etas, QIn
             }
         } else {
             for (i = 0; i < outputLayer.size(); i++) {
-                outputLayer[i]->Learn(row[0], etas[i] / rowCount);
+                outputLayer[i]->Learn(row[0], etas[i] / (rowCount * pow2(permH.size())));
             }
         }
     }
@@ -307,7 +307,7 @@ real1 calculateAuc(std::vector<std::vector<BoolH>>& rawYX, std::vector<dfObserva
 
 int main()
 {
-    std::vector<std::vector<BoolH>> rawYX = readBinaryCSV();
+    std::vector<std::vector<BoolH>> rawYX = readBinaryCSV("data/powers_of_2.csv");
     std::cout << "Row count: " << rawYX.size() << std::endl;
     std::cout << "Column count: " << rawYX[0].size() << std::endl;
     bitLenInt predictorCount = rawYX[0].size() - 1U;
