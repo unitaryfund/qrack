@@ -40,7 +40,8 @@ public:
      * An untrained QNeuron (with all 0 variational parameters) will forward all inputs to 1/sqrt(2) * (|0> + |1>). The
      * variational parameters are Pauli Y-axis rotation angles divided by 2 * Pi (such that a learning parameter of 0.5
      * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input). */
-    QNeuron(QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx, real1 tol = 1e-6)
+    QNeuron(
+        QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx, real1 tol = REAL1_EPSILON)
         : inputCount(inputCnt)
         , inputPower(pow2Ocl(inputCnt))
         , outputIndex(outputIndx)
@@ -101,6 +102,26 @@ public:
         return prob;
     }
 
+    /** "Uncompute" the Predict() method */
+    real1 Unpredict(bool expected = true)
+    {
+        if (inputCount == 0) {
+            // If there are no controls, this "neuron" is actually just a bias.
+            qReg->RY(-angles[0], outputIndex);
+        } else {
+            // Otherwise, the action can always be represented as a uniformly controlled gate.
+            real1* reverseAngles = new real1[inputPower];
+            std::transform(angles, angles + inputPower, reverseAngles, [](real1 r) { return -r; });
+            qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, reverseAngles);
+            delete[] reverseAngles;
+        }
+        real1 prob = qReg->Prob(outputIndex);
+        if (!expected) {
+            prob = ONE_R1 - prob;
+        }
+        return prob;
+    }
+
     /** Perform one learning iteration, training all parameters
      *
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
@@ -112,12 +133,14 @@ public:
     void Learn(bool expected, real1 eta, bool resetInit = true)
     {
         real1 startProb = Predict(expected, resetInit);
-        if (startProb > (ONE_R1 - tolerance)) {
+        Unpredict(expected);
+        if ((ONE_R1 - startProb) <= tolerance) {
             return;
         }
 
         for (bitCapInt perm = 0; perm < inputPower; perm++) {
-            if (0 > LearnInternal(expected, eta, perm, startProb, resetInit)) {
+            startProb = LearnInternal(expected, eta, perm, startProb);
+            if (0 > startProb) {
                 break;
             }
         }
@@ -135,7 +158,8 @@ public:
     void LearnPermutation(bool expected, real1 eta, bool resetInit = true)
     {
         real1 startProb = Predict(expected, resetInit);
-        if (startProb > (ONE_R1 - tolerance)) {
+        Unpredict(expected);
+        if ((ONE_R1 - startProb) <= tolerance) {
             return;
         }
 
@@ -144,40 +168,44 @@ public:
             perm |= qReg->M(inputIndices[i]) ? pow2(i) : 0;
         }
 
-        LearnInternal(expected, eta, perm, startProb, resetInit);
+        LearnInternal(expected, eta, perm, startProb);
     }
 
 protected:
-    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb, bool resetInit)
+    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb)
     {
         bitCapIntOcl permOcl = (bitCapIntOcl)perm;
         real1 endProb;
         real1 origAngle;
 
         origAngle = angles[permOcl];
-        angles[permOcl] += eta * M_PI;
 
-        endProb = Predict(expected, resetInit);
-        if (endProb > (ONE_R1 - tolerance)) {
+        // Try positive angle increment:
+        angles[permOcl] += eta * M_PI;
+        endProb = Predict(expected, false);
+        Unpredict(expected);
+        if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1;
         }
-
         if (endProb > startProb) {
-            startProb = endProb;
-        } else {
-            angles[permOcl] -= 2 * eta * M_PI;
-
-            endProb = Predict(expected, resetInit);
-            if (endProb > (ONE_R1 - tolerance)) {
-                return -ONE_R1;
-            }
-
-            if (endProb > startProb) {
-                startProb = endProb;
-            } else {
-                angles[permOcl] = origAngle;
-            }
+            return endProb;
         }
+
+        // If positive angle increment is not an improvement,
+        // try negative angle increment:
+        angles[permOcl] -= 2 * eta * M_PI;
+        endProb = Predict(expected, false);
+        Unpredict(expected);
+        if ((ONE_R1 - endProb) <= tolerance) {
+            return -ONE_R1;
+        }
+        if (endProb > startProb) {
+            return endProb;
+        }
+
+        // If neither increment is an improvement,
+        // restore the original variational parameter.
+        angles[permOcl] = origAngle;
 
         return startProb;
     }
