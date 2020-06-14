@@ -40,7 +40,8 @@ public:
      * An untrained QNeuron (with all 0 variational parameters) will forward all inputs to 1/sqrt(2) * (|0> + |1>). The
      * variational parameters are Pauli Y-axis rotation angles divided by 2 * Pi (such that a learning parameter of 0.5
      * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input). */
-    QNeuron(QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx, real1 tol = 1e-6)
+    QNeuron(
+        QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx, real1 tol = REAL1_EPSILON)
         : inputCount(inputCnt)
         , inputPower(pow2Ocl(inputCnt))
         , outputIndex(outputIndx)

@@ -75,6 +75,7 @@ typedef float real1;
 // the results of the tests in accuracy.cpp.
 #define min_norm 1e-14f
 #define REAL1_DEFAULT_ARG -999.0f
+#define REAL1_EPSILON FLT_EPSILON
 #else
 //#include "complex16simd.hpp"
 namespace Qrack {
@@ -88,6 +89,7 @@ typedef double real1;
 // the results of the tests in accuracy.cpp.
 #define min_norm 1e-30
 #define REAL1_DEFAULT_ARG -999.0
+#define REAL1_EPSILON DBL_EPSILON
 #endif
 
 #define ONE_CMPLX complex(ONE_R1, ZERO_R1)
