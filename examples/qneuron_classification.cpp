@@ -89,6 +89,38 @@ struct dfObservation {
     }
 };
 
+void makeGeoPermNN(
+    const bitLenInt& predictorCount, QInterfacePtr qReg, std::vector<QNeuronPtr>& outputLayer, std::vector<real1>& etas)
+{
+    bitLenInt neuronCount = pow2(predictorCount);
+
+    bitLenInt i, x, y;
+
+    std::vector<bitLenInt> allInputIndices(predictorCount);
+    for (bitLenInt i = 0; i < predictorCount; i++) {
+        allInputIndices[i] = INPUT_START + i;
+    }
+
+    for (i = 0; i < neuronCount; i++) {
+
+        std::vector<bitLenInt> inputIndices;
+
+        x = 0;
+        y = i;
+
+        while (y > 0) {
+            if ((y & 1U) == 1U) {
+                inputIndices.push_back(allInputIndices[x]);
+                x++;
+            }
+            y = y >> 1U;
+        }
+
+        outputLayer.push_back(std::make_shared<QNeuron>(qReg, &(inputIndices[0]), x, 0));
+        etas.push_back((ONE_R1 / nCr(predictorCount, x)) / pow2(x));
+    }
+}
+
 void train(std::vector<std::vector<BoolH>>& rawYX, std::vector<real1>& etas, QInterfacePtr qReg,
     std::vector<QNeuronPtr>& outputLayer)
 {
@@ -279,39 +311,16 @@ int main()
     std::cout << "Row count: " << rawYX.size() << std::endl;
     std::cout << "Column count: " << rawYX[0].size() << std::endl;
     bitLenInt predictorCount = rawYX[0].size() - 1U;
-    bitLenInt neuronCount = pow2(predictorCount);
-    bitLenInt qRegSize = predictorCount + 1U;
-    bitLenInt i, x, y;
 
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, qRegSize, 0);
-
-    std::vector<bitLenInt> allInputIndices(predictorCount);
-    for (bitLenInt i = 0; i < predictorCount; i++) {
-        allInputIndices[i] = INPUT_START + i;
-    }
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, predictorCount + 1U, 0);
 
     std::vector<QNeuronPtr> outputLayer;
     std::vector<real1> etas;
-    for (i = 0; i < neuronCount; i++) {
-
-        std::vector<bitLenInt> inputIndices;
-
-        x = 0;
-        y = i;
-
-        while (y > 0) {
-            if ((y & 1U) == 1U) {
-                inputIndices.push_back(allInputIndices[x]);
-                x++;
-            }
-            y = y >> 1U;
-        }
-
-        outputLayer.push_back(std::make_shared<QNeuron>(qReg, &(inputIndices[0]), x, 0));
-        etas.push_back((ONE_R1 / nCr(predictorCount, x)) / pow2(x));
-    }
+    makeGeoPermNN(predictorCount, qReg, outputLayer, etas);
 
     train(rawYX, etas, qReg, outputLayer);
+
     std::vector<dfObservation> dfObs = predict(rawYX, qReg, outputLayer);
+
     calculateAuc(rawYX, dfObs);
 }
