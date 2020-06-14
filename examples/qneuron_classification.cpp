@@ -89,7 +89,7 @@ struct dfObservation {
     }
 };
 
-void Train(std::vector<std::vector<BoolH>>& rawYX, std::vector<real1>& etas, QInterfacePtr qReg,
+void train(std::vector<std::vector<BoolH>>& rawYX, std::vector<real1>& etas, QInterfacePtr qReg,
     std::vector<QNeuronPtr>& outputLayer)
 {
     // Train the network
@@ -134,7 +134,7 @@ void Train(std::vector<std::vector<BoolH>>& rawYX, std::vector<real1>& etas, QIn
     std::cout << std::endl;
 }
 
-std::vector<dfObservation> Predict(
+std::vector<dfObservation> predict(
     std::vector<std::vector<BoolH>>& rawYX, QInterfacePtr qReg, std::vector<QNeuronPtr>& outputLayer)
 {
     // Train the network
@@ -311,7 +311,7 @@ int main()
         etas.push_back((ONE_R1 / nCr(predictorCount, x)) / pow2(x));
     }
 
-    Train(rawYX, etas, qReg, outputLayer);
-    std::vector<dfObservation> dfObs = Predict(rawYX, qReg, outputLayer);
+    train(rawYX, etas, qReg, outputLayer);
+    std::vector<dfObservation> dfObs = predict(rawYX, qReg, outputLayer);
     calculateAuc(rawYX, dfObs);
 }
