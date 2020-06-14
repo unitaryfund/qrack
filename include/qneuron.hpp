@@ -101,6 +101,26 @@ public:
         return prob;
     }
 
+    /** "Uncompute" the Predict() method */
+    real1 Unpredict(bool expected = true)
+    {
+        if (inputCount == 0) {
+            // If there are no controls, this "neuron" is actually just a bias.
+            qReg->RY(-angles[0], outputIndex);
+        } else {
+            // Otherwise, the action can always be represented as a uniformly controlled gate.
+            real1* reverseAngles = new real1[inputPower];
+            std::transform(angles, angles + inputPower, reverseAngles, [](real1 r) { return -r; });
+            qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, reverseAngles);
+            delete[] reverseAngles;
+        }
+        real1 prob = qReg->Prob(outputIndex);
+        if (!expected) {
+            prob = ONE_R1 - prob;
+        }
+        return prob;
+    }
+
     /** Perform one learning iteration, training all parameters
      *
      * Inputs must be already loaded into "qReg" before calling this method. "expected" is the true binary output
@@ -112,12 +132,14 @@ public:
     void Learn(bool expected, real1 eta, bool resetInit = true)
     {
         real1 startProb = Predict(expected, resetInit);
+        Unpredict(expected);
         if ((ONE_R1 - startProb) <= tolerance) {
             return;
         }
 
         for (bitCapInt perm = 0; perm < inputPower; perm++) {
-            if (0 > LearnInternal(expected, eta, perm, startProb, resetInit)) {
+            startProb = LearnInternal(expected, eta, perm, startProb, false);
+            if (0 > startProb) {
                 break;
             }
         }
@@ -159,6 +181,7 @@ protected:
         // Try positive angle increment:
         angles[permOcl] += eta * M_PI;
         endProb = Predict(expected, resetInit);
+        Unpredict(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1;
         }
@@ -170,6 +193,7 @@ protected:
         // try negative angle increment:
         angles[permOcl] -= 2 * eta * M_PI;
         endProb = Predict(expected, resetInit);
+        Unpredict(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1;
         }
