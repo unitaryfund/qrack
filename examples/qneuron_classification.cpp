@@ -198,7 +198,7 @@ std::vector<dfObservation> predict(
             qReg->H(permH[i]);
         }
 
-        for (bitLenInt i = 0; i < outputLayer.size(); i++) {
+        for (bitCapInt i = 0; i < outputLayer.size(); i++) {
             outputLayer[i]->Predict();
         }
 
