@@ -78,6 +78,10 @@ public:
     /** Get the angles of this QNeuron */
     void GetAngles(real1* oAngles) { std::copy(angles, angles + inputPower, oAngles); }
 
+    bitLenInt GetInputCount() { return inputCount; }
+
+    bitCapInt GetInputPower() { return inputPower; }
+
     /** Feed-forward from the inputs, loaded in "qReg", to a binary categorical distinction. "expected" flips the binary
      * categories, if false. "resetInit," if true, resets the result qubit to 0.5/0.5 |0>/|1> superposition before
      * proceeding to predict. */
@@ -120,6 +124,13 @@ public:
             prob = ONE_R1 - prob;
         }
         return prob;
+    }
+
+    real1 LearnCycle(bool expected = true)
+    {
+        real1 result = Predict(expected, false);
+        Unpredict(expected);
+        return result;
     }
 
     /** Perform one learning iteration, training all parameters
@@ -169,6 +180,10 @@ public:
         }
 
         LearnInternal(expected, eta, perm, startProb);
+
+        for (bitLenInt i = 0; i < inputCount; i++) {
+            qReg->TrySeparate(inputIndices[i]);
+        }
     }
 
 protected:
@@ -182,8 +197,7 @@ protected:
 
         // Try positive angle increment:
         angles[permOcl] += eta * M_PI;
-        endProb = Predict(expected, false);
-        Unpredict(expected);
+        endProb = LearnCycle(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1;
         }
@@ -194,8 +208,7 @@ protected:
         // If positive angle increment is not an improvement,
         // try negative angle increment:
         angles[permOcl] -= 2 * eta * M_PI;
-        endProb = Predict(expected, false);
-        Unpredict(expected);
+        endProb = LearnCycle(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1;
         }
