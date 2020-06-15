@@ -94,7 +94,7 @@ void makeGeoPowerSetQnn(
 {
     bitCapInt neuronCount = pow2(predictorCount);
 
-    bitCapInt i, x, y;
+    bitCapInt i, x, y, z;
 
     std::vector<bitLenInt> allInputIndices(predictorCount);
     for (bitLenInt i = 0; i < predictorCount; i++) {
@@ -107,16 +107,18 @@ void makeGeoPowerSetQnn(
 
         x = 0;
         y = i;
+        z = 0;
 
         while (y > 0) {
             if ((y & 1U) == 1U) {
                 inputIndices.push_back(allInputIndices[x]);
-                x++;
+                z++;
             }
+            x++;
             y = y >> 1U;
         }
 
-        outputLayer.push_back(std::make_shared<QNeuron>(qReg, &(inputIndices[0]), x, 0));
+        outputLayer.push_back(std::make_shared<QNeuron>(qReg, &(inputIndices[0]), z, 0));
         etas.push_back((ONE_R1 / nCr(predictorCount, x)) / pow2(x));
     }
 }
