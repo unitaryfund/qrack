@@ -1678,8 +1678,8 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     }
 
     if (IS_ARG_0(bottomRight)) {
-        if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(tShard)) {
-            Flush0Eigenstate(target);
+        if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ONE(tShard)) {
+            Flush1Eigenstate(target);
             delete[] controls;
             return;
         }
