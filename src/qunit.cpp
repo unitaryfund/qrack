@@ -1205,7 +1205,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     if (!freezeBasis) {
         TransformBasis1Qb(false, control);
 
-        RevertBasis2Qb(control, INVERT_AND_PHASE, ONLY_TARGETS);
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS);
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
