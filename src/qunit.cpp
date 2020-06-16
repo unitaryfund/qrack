@@ -1336,7 +1336,8 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         TransformBasis1Qb(false, control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL);
 
         shards[target].AddPhaseAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
         return;
@@ -3356,6 +3357,10 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, {}, {}, false, true);
 
+    if (!QUEUED_PHASE(shard)) {
+        return;
+    }
+
     bool isSame, isOpposite;
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
@@ -3369,9 +3374,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
 
         // If isSame and !isInvert, application of this buffer is already "efficient."
-        isSame = (buffer->isInvert || !partner->isPlusMinus || !partner->IsInvertTarget()) &&
-            norm(polarDiff - polarSame) <= ampThreshold;
-        isOpposite = !buffer->isInvert && (norm(polarDiff + polarSame) <= ampThreshold);
+        isSame = (buffer->isInvert || !partner->isPlusMinus) && norm(polarDiff - polarSame) <= ampThreshold;
+        isOpposite = norm(polarDiff + polarSame) <= ampThreshold;
 
         if (isSame || isOpposite) {
             continue;
@@ -3393,9 +3397,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
 
         // If isSame and !isInvert, application of this buffer is already "efficient."
-        isSame = (buffer->isInvert || !partner->isPlusMinus || !partner->IsInvertTarget()) &&
-            norm(polarDiff - polarSame) <= ampThreshold;
-        isOpposite = !buffer->isInvert && (norm(polarDiff + polarSame) <= ampThreshold);
+        isSame = (buffer->isInvert || !partner->isPlusMinus) && norm(polarDiff - polarSame) <= ampThreshold;
+        isOpposite = norm(polarDiff + polarSame) <= ampThreshold;
 
         if (isSame || isOpposite) {
             continue;
