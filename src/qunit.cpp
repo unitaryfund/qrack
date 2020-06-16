@@ -1677,10 +1677,21 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         return;
     }
 
-    if (IS_ARG_0(bottomRight) && (!tShard.IsInvertTarget() && UNSAFE_CACHED_ONE(tShard))) {
-        Flush1Eigenstate(target);
-        delete[] controls;
-        return;
+    if (IS_ARG_0(bottomRight)) {
+        if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ZERO(tShard)) {
+            Flush0Eigenstate(target);
+            delete[] controls;
+            return;
+        }
+
+        if (!shards[target].isPlusMinus) {
+            for (bitLenInt i = 0; i < controlLen; i++) {
+                if (shards[controls[i]].isPlusMinus) {
+                    std::swap(controls[i], target);
+                    break;
+                }
+            }
+        }
     }
 
     if (!freezeBasis && (controlLen == 1U)) {
