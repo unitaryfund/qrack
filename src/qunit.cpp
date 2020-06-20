@@ -1342,7 +1342,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
 
         bool isInvert = cShard.IsInvertControlOf(&tShard);
-
         if (isInvert) {
             TransformBasis1Qb(false, target);
         }
@@ -1532,7 +1531,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 {
     QEngineShard& shard = shards[target];
 
-    if ((topRight == bottomLeft) && (randGlobalPhase || (topRight == ONE_CMPLX))) {
+    if ((topRight == bottomLeft) && (randGlobalPhase || IS_ONE_CMPLX(topRight))) {
         X(target);
         return;
     }
@@ -1648,6 +1647,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             } else {
                 Flush0Eigenstate(control);
             }
+
             return;
         }
 
@@ -1656,11 +1656,11 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
         RevertBasis2Qb(target, ONLY_INVERT, IS_ONE_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
 
-        tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
+        shards[target].AddPhaseAngles(&(shards[control]), topLeft, bottomRight);
 
-        ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
+        ShardToPhaseMap::iterator phaseShard = shards[target].targetOfShards.find(&(shards[control]));
 
-        if (cShard.IsInvertControlOf(&tShard) || (phaseShard == tShard.targetOfShards.end())) {
+        if (cShard.IsInvertControlOf(&tShard) || (phaseShard == shards[target].targetOfShards.end())) {
             return;
         }
 
@@ -1669,7 +1669,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
             ApplyBuffer(buffer, control, target, false);
-            tShard.RemovePhaseControl(&cShard);
+            tShard.RemovePhaseControl(&(shards[control]));
         }
 
         return;
@@ -1758,11 +1758,11 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         RevertBasis2Qb(
             target, ONLY_INVERT, IS_ONE_CMPLX(bottomRight) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
 
-        tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
+        shards[target].AddAntiPhaseAngles(&(shards[control]), bottomRight, topLeft);
 
-        ShardToPhaseMap::iterator phaseShard = tShard.antiTargetOfShards.find(&cShard);
+        ShardToPhaseMap::iterator phaseShard = shards[target].targetOfShards.find(&(shards[control]));
 
-        if (cShard.IsInvertAntiControlOf(&tShard) || (phaseShard == tShard.antiTargetOfShards.end())) {
+        if (cShard.IsInvertControlOf(&tShard) || (phaseShard == shards[target].targetOfShards.end())) {
             return;
         }
 
@@ -1771,7 +1771,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
             ApplyBuffer(buffer, control, target, true);
-            tShard.RemovePhaseAntiControl(&cShard);
+            tShard.RemovePhaseAntiControl(&(shards[control]));
         }
 
         return;
