@@ -3502,7 +3502,11 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     if (anyInvert && ((shard.targetOfShards.size() + shard.antiTargetOfShards.size()) > 1U)) {
         control = FindShardIndex(*singlePartner);
         ApplyBuffer(singleBuffer, control, bitIndex, invertAnti);
-        shard.RemovePhaseControl(singlePartner);
+        if (invertAnti) {
+            shard.RemovePhaseAntiControl(singlePartner);
+        } else {
+            shard.RemovePhaseControl(singlePartner);
+        }
     }
 
     shard.CommuteH();
