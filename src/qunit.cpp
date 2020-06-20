@@ -3446,7 +3446,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         isOpposite = IS_OPPOSITE(polarDiff, polarSame);
 
         if (isOpposite) {
-            if (!anyInvert) {
+            if (!anyInvert || !buffer->isInvert) {
                 if (buffer->isInvert) {
                     singleBuffer = buffer;
                     singlePartner = partner;
@@ -3484,7 +3484,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
         if (isOpposite) {
             if (!anyInvert) {
-                if (buffer->isInvert) {
+                if (!anyInvert || !buffer->isInvert) {
                     singleBuffer = buffer;
                     singlePartner = partner;
                     invertAnti = true;
