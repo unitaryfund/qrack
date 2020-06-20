@@ -1660,7 +1660,8 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         ShardToPhaseMap::iterator phaseShard = shards[target].targetOfShards.find(&(shards[control]));
 
-        if (cShard.IsInvertControlOf(&tShard) || (phaseShard == shards[target].targetOfShards.end())) {
+        if (shards[control].IsInvertControlOf(&(shards[target])) ||
+            (phaseShard == shards[target].targetOfShards.end())) {
             return;
         }
 
@@ -1669,7 +1670,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
             ApplyBuffer(buffer, control, target, false);
-            tShard.RemovePhaseControl(&(shards[control]));
+            shards[target].RemovePhaseControl(&(shards[control]));
         }
 
         return;
@@ -1762,7 +1763,8 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         ShardToPhaseMap::iterator phaseShard = shards[target].targetOfShards.find(&(shards[control]));
 
-        if (cShard.IsInvertControlOf(&tShard) || (phaseShard == shards[target].targetOfShards.end())) {
+        if (shards[control].IsInvertAntiControlOf(&(shards[target])) ||
+            (phaseShard == shards[target].targetOfShards.end())) {
             return;
         }
 
@@ -1771,7 +1773,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
             ApplyBuffer(buffer, control, target, true);
-            tShard.RemovePhaseAntiControl(&(shards[control]));
+            shards[target].RemovePhaseAntiControl(&(shards[control]));
         }
 
         return;
