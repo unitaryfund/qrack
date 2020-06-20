@@ -46,8 +46,8 @@ struct PhaseShard {
     }
 };
 
-#define IS_SAME(c1, c2) (norm((c1) - (c2)) <= amplitudeFloor)
-#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= amplitudeFloor)
+#define IS_SAME(c1, c2) (norm((c1) - (c2)) <= amplitudeThreshold)
+#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= amplitudeThreshold)
 #define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)
 #define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX)
 
@@ -68,7 +68,7 @@ protected:
 public:
     QInterfacePtr unit;
     bitLenInt mapped;
-    real1 amplitudeFloor;
+    real1 amplitudeThreshold;
     bool isEmulated;
     bool isProbDirty;
     bool isPhaseDirty;
@@ -95,7 +95,7 @@ public:
     QEngineShard(const real1 amp_thresh = min_norm)
         : unit(NULL)
         , mapped(0)
-        , amplitudeFloor(amp_thresh)
+        , amplitudeThreshold(amp_thresh)
         , isEmulated(false)
         , isProbDirty(false)
         , isPhaseDirty(false)
@@ -112,7 +112,7 @@ public:
     QEngineShard(QInterfacePtr u, const bool& set, const real1 amp_thresh = min_norm)
         : unit(u)
         , mapped(0)
-        , amplitudeFloor(amp_thresh)
+        , amplitudeThreshold(amp_thresh)
         , isEmulated(false)
         , isProbDirty(false)
         , isPhaseDirty(false)
@@ -132,7 +132,7 @@ public:
     QEngineShard(QInterfacePtr u, const bitLenInt& mapping, const real1 amp_thresh = min_norm)
         : unit(u)
         , mapped(mapping)
-        , amplitudeFloor(amp_thresh)
+        , amplitudeThreshold(amp_thresh)
         , isEmulated(false)
         , isProbDirty(true)
         , isPhaseDirty(true)
@@ -976,8 +976,7 @@ protected:
     enum RevertControl { CONTROLS_AND_TARGETS = 0, ONLY_CONTROLS = 1, ONLY_TARGETS = 2 };
     enum RevertAnti { CTRL_AND_ANTI = 0, ONLY_CTRL = 1, ONLY_ANTI = 2 };
 
-    void ApplyBuffer(
-        ShardToPhaseMap::iterator phaseShard, const bitLenInt& control, const bitLenInt& target, const bool& isAnti);
+    void ApplyBuffer(PhaseShardPtr phaseShard, const bitLenInt& control, const bitLenInt& target, const bool& isAnti);
     void ApplyBufferMap(const bitLenInt& bitIndex, ShardToPhaseMap bufferMap, const RevertExclusivity& exclusivity,
         const bool& isControl, const bool& isAnti, std::set<bitLenInt> exceptPartners, const bool& dumpSkipped);
     void RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusivity = INVERT_AND_PHASE,
