@@ -3430,7 +3430,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         // If isSame and !isInvert, application of this buffer is already "efficient."
         isSame =
             (buffer->isInvert || !partner->isPlusMinus || !partner->IsInvertTarget()) && IS_SAME(polarDiff, polarSame);
-        isOpposite = IS_OPPOSITE(polarDiff, polarSame);
+        isOpposite = !buffer->isInvert && IS_OPPOSITE(polarDiff, polarSame);
 
         if (isSame || isOpposite) {
             continue;
@@ -3454,7 +3454,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         // If isSame and !isInvert, application of this buffer is already "efficient."
         isSame =
             (buffer->isInvert || !partner->isPlusMinus || !partner->IsInvertTarget()) && IS_SAME(polarDiff, polarSame);
-        isOpposite = IS_OPPOSITE(polarDiff, polarSame);
+        isOpposite = !buffer->isInvert && IS_OPPOSITE(polarDiff, polarSame);
 
         if (isSame || isOpposite) {
             continue;
