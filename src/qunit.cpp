@@ -1011,12 +1011,30 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
+    shard.FlipPhaseAnti();
+
     if (shard.IsBellBasis()) {
-        XBase(FindShardIndex(*(shard.GetBellTarget())));
+        QEngineShardPtr partner;
+        bitLenInt bellTarget, bellControl;
+
+        if (shard.bellTarget) {
+            partner = shard.bellTarget;
+            bellControl = target;
+            bellTarget = FindShardIndex(*partner);
+        } else {
+            partner = shard.bellControl;
+            bellTarget = target;
+            bellControl = FindShardIndex(*partner);
+        }
+
+        if (shard.isPlusMinus || partner->isPlusMinus) {
+            XBase(bellControl);
+        } else {
+            XBase(bellTarget);
+        }
+
         return;
     }
-
-    shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
         XBase(target);
@@ -1029,13 +1047,6 @@ void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.IsBellBasis()) {
-        QEngineShard& cShard = *shard.GetBellControl();
-        XBase(FindShardIndex(cShard));
-        // TODO: Doesn't fully bookkeep a global phase factor (without physically measurable consequence)
-        return;
-    }
-
     if (shard.IsInvertTarget()) {
         RevertPlusMinusBasis(target);
         shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
@@ -1044,6 +1055,29 @@ void QUnit::Z(bitLenInt target)
             Flush0Eigenstate(target);
             return;
         }
+    }
+
+    if (shard.IsBellBasis()) {
+        QEngineShardPtr partner;
+        bitLenInt bellTarget, bellControl;
+
+        if (shard.bellTarget) {
+            partner = shard.bellTarget;
+            bellControl = target;
+            bellTarget = FindShardIndex(*partner);
+        } else {
+            partner = shard.bellControl;
+            bellTarget = target;
+            bellControl = FindShardIndex(*partner);
+        }
+
+        if (shard.isPlusMinus || partner->isPlusMinus) {
+            XBase(bellTarget);
+        } else {
+            XBase(bellControl);
+        }
+
+        return;
     }
 
     if (!shard.isPlusMinus) {
@@ -1155,15 +1189,19 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
+        /*if (!cShard.isPlusMinus && !tShard.isPlusMinus &&
+            ((cShard.bellTarget == &tShard) || (cShard.bellControl == &tShard))) {
+            cShard.isPlusMinus = true;
+            cShard.ClearBellBasis();
+            return;
+        }*/
+
+        RevertBellBasis(control);
+        RevertBellBasis(target);
+
         if (CACHED_PLUS_MINUS(cShard) && CACHED_CLASSICAL(tShard)) {
             cShard.isPlusMinus = false;
             cShard.SetBellTarget(&tShard);
-            return;
-        }
-
-        if ((cShard.bellTarget == &tShard) || (cShard.bellControl == &tShard)) {
-            cShard.isPlusMinus = true;
-            cShard.ClearBellBasis();
             return;
         }
 
@@ -1236,6 +1274,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis) {
         RevertPlusMinusBasis(control);
+        RevertBellBasis(target);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS);
@@ -1374,6 +1413,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         }
 
         RevertPlusMinusBasis(control);
+        RevertBellBasis(target);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
 
@@ -1695,6 +1735,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
 
         RevertPlusMinusBasis(control);
+        RevertBellBasis(target);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
         RevertBasis2Qb(target, ONLY_INVERT, IS_ONE_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
@@ -1801,6 +1842,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         }
 
         RevertPlusMinusBasis(control);
+        RevertBellBasis(target);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
         RevertBasis2Qb(
@@ -3298,6 +3340,7 @@ void QUnit::ApplyBufferMap(const bitLenInt& bitIndex, ShardToPhaseMap bufferMap,
         }
 
         bitLenInt partnerIndex = FindShardIndex(*partner);
+        RevertBellBasis(partnerIndex);
 
         if (exceptPartners.find(partnerIndex) != exceptPartners.end()) {
             bufferMap.erase(phaseShard);
@@ -3354,6 +3397,8 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
         // or already in target basis.
         return;
     }
+
+    RevertBellBasis(i);
 
     shard.CombineGates();
 

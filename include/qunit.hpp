@@ -181,7 +181,7 @@ public:
         return didClamp;
     }
 
-    bool IsBellBasis() { return (bellTarget != NULL) || (bellControl != NULL); }
+    bool IsBellBasis() { return (bellTarget || bellControl); }
 
     void SetBellTarget(QEngineShardPtr target)
     {
@@ -197,9 +197,9 @@ public:
 
     QEngineShardPtr GetBellTarget()
     {
-        if (bellTarget != NULL) {
+        if (bellTarget) {
             return bellTarget;
-        } else if (bellControl != NULL) {
+        } else if (bellControl) {
             return this;
         }
 
@@ -208,9 +208,9 @@ public:
 
     QEngineShardPtr GetBellControl()
     {
-        if (bellControl != NULL) {
+        if (bellControl) {
             return bellControl;
-        } else if (bellTarget != NULL) {
+        } else if (bellTarget) {
             return this;
         }
 
@@ -219,11 +219,11 @@ public:
 
     void ClearBellBasis()
     {
-        if (bellTarget != NULL) {
+        if (bellTarget) {
             bellTarget->bellControl = NULL;
             bellTarget = NULL;
         }
-        if (bellControl != NULL) {
+        if (bellControl) {
             bellControl->bellTarget = NULL;
             bellControl = NULL;
         }
@@ -235,27 +235,23 @@ public:
             return;
         }
 
+        QEngineShardPtr partner = NULL;
+
         if (bellTarget) {
-            if (bellTarget->isPlusMinus) {
-                isPlusMinus = false;
-                bellTarget->isPlusMinus = false;
-
-                bellControl = bellTarget;
-                bellTarget = NULL;
-                bellControl->bellTarget = this;
-                bellControl->bellControl = NULL;
-            }
+            partner = bellTarget;
         } else if (bellControl) {
-            if (bellControl->isPlusMinus) {
-                isPlusMinus = false;
-                bellControl->isPlusMinus = false;
-
-                bellTarget = bellControl;
-                bellTarget = NULL;
-                bellTarget->bellControl = this;
-                bellTarget->bellTarget = NULL;
-            }
+            partner = bellControl;
         }
+
+        if (!partner || !partner->isPlusMinus) {
+            return;
+        }
+
+        isPlusMinus = false;
+        partner->isPlusMinus = false;
+        std::swap(amp0, partner->amp0);
+        std::swap(amp1, partner->amp1);
+        amp1 = -amp1;
     }
 
 protected:
@@ -1057,11 +1053,15 @@ protected:
 
     void RevertPlusMinusBasis(const bitLenInt& i)
     {
+        if (freezeBasis) {
+            // Recursive call that should be blocked
+            return;
+        }
+
         RevertBellBasis(i);
 
-        if (freezeBasis || (!shards[i].isPlusMinus)) {
-            // Recursive call that should be blocked,
-            // or already in target basis.
+        if (!shards[i].isPlusMinus) {
+            // Already in target basis
             return;
         }
 
@@ -1089,13 +1089,13 @@ protected:
             return;
         }
 
+        shards[control].bellTarget = NULL;
+        shards[target].bellControl = NULL;
+
         freezeBasis = true;
         H(control);
         CNOT(control, target);
         freezeBasis = false;
-
-        shards[control].bellTarget = NULL;
-        shards[target].bellControl = NULL;
     }
 
     enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
