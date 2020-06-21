@@ -75,6 +75,8 @@ public:
     complex amp0;
     complex amp1;
     bool isPlusMinus;
+    QEngineShardPtr bellTarget;
+    QEngineShardPtr bellControl;
     // Shards which this shard controls
     ShardToPhaseMap controlsShards;
     // Shards which this shard (anti-)controls
@@ -102,6 +104,8 @@ public:
         , amp0(ONE_CMPLX)
         , amp1(ZERO_CMPLX)
         , isPlusMinus(false)
+        , bellTarget(NULL)
+        , bellControl(NULL)
         , controlsShards()
         , antiControlsShards()
         , targetOfShards()
@@ -119,6 +123,8 @@ public:
         , amp0(ONE_CMPLX)
         , amp1(ZERO_CMPLX)
         , isPlusMinus(false)
+        , bellTarget(NULL)
+        , bellControl(NULL)
         , controlsShards()
         , antiControlsShards()
         , targetOfShards()
@@ -139,6 +145,8 @@ public:
         , amp0(ONE_CMPLX)
         , amp1(ZERO_CMPLX)
         , isPlusMinus(false)
+        , bellTarget(NULL)
+        , bellControl(NULL)
         , controlsShards()
         , antiControlsShards()
         , targetOfShards()
@@ -171,6 +179,83 @@ public:
             }
         }
         return didClamp;
+    }
+
+    bool IsBellBasis() { return (bellTarget != NULL) || (bellControl != NULL); }
+
+    void SetBellTarget(QEngineShardPtr target)
+    {
+        bellTarget = target;
+        target->bellControl = this;
+    }
+
+    void SetBellControl(QEngineShardPtr control)
+    {
+        bellControl = control;
+        control->bellTarget = this;
+    }
+
+    QEngineShardPtr GetBellTarget()
+    {
+        if (bellTarget != NULL) {
+            return bellTarget;
+        } else if (bellControl != NULL) {
+            return this;
+        }
+
+        return NULL;
+    }
+
+    QEngineShardPtr GetBellControl()
+    {
+        if (bellControl != NULL) {
+            return bellControl;
+        } else if (bellTarget != NULL) {
+            return this;
+        }
+
+        return NULL;
+    }
+
+    void ClearBellBasis()
+    {
+        if (bellTarget != NULL) {
+            bellTarget->bellControl = NULL;
+            bellTarget = NULL;
+        }
+        if (bellControl != NULL) {
+            bellControl->bellTarget = NULL;
+            bellControl = NULL;
+        }
+    }
+
+    void CombineBellH()
+    {
+        if (!isPlusMinus) {
+            return;
+        }
+
+        if (bellTarget) {
+            if (bellTarget->isPlusMinus) {
+                isPlusMinus = false;
+                bellTarget->isPlusMinus = false;
+
+                bellControl = bellTarget;
+                bellTarget = NULL;
+                bellControl->bellTarget = this;
+                bellControl->bellControl = NULL;
+            }
+        } else if (bellControl) {
+            if (bellControl->isPlusMinus) {
+                isPlusMinus = false;
+                bellControl->isPlusMinus = false;
+
+                bellTarget = bellControl;
+                bellTarget = NULL;
+                bellTarget->bellControl = this;
+                bellTarget->bellTarget = NULL;
+            }
+        }
     }
 
 protected:
@@ -970,7 +1055,48 @@ protected:
     void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
     void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
 
-    void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
+    void RevertPlusMinusBasis(const bitLenInt& i)
+    {
+        RevertBellBasis(i);
+
+        if (freezeBasis || (!shards[i].isPlusMinus)) {
+            // Recursive call that should be blocked,
+            // or already in target basis.
+            return;
+        }
+
+        freezeBasis = true;
+        H(i);
+        shards[i].isPlusMinus = false;
+        freezeBasis = false;
+    }
+
+    void RevertBellBasis(const bitLenInt& i)
+    {
+        if (freezeBasis) {
+            // Recursive call that should be blocked
+            return;
+        }
+
+        bitLenInt control, target;
+        if (shards[i].bellTarget) {
+            control = i;
+            target = FindShardIndex(*(shards[i].bellTarget));
+        } else if (shards[i].bellControl) {
+            control = FindShardIndex(*(shards[i].bellControl));
+            target = i;
+        } else {
+            return;
+        }
+
+        freezeBasis = true;
+        H(control);
+        CNOT(control, target);
+        freezeBasis = false;
+
+        shards[control].bellTarget = NULL;
+        shards[target].bellControl = NULL;
+    }
 
     enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
     enum RevertControl { CONTROLS_AND_TARGETS = 0, ONLY_CONTROLS = 1, ONLY_TARGETS = 2 };
@@ -1002,14 +1128,14 @@ protected:
     }
     void ToPermBasis(const bitLenInt& i)
     {
-        TransformBasis1Qb(false, i);
+        RevertPlusMinusBasis(i);
         RevertBasis2Qb(i);
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
     {
         bitLenInt i;
         for (i = 0; i < length; i++) {
-            TransformBasis1Qb(false, start + i);
+            RevertPlusMinusBasis(start + i);
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i);
@@ -1031,7 +1157,7 @@ protected:
         }
 
         for (i = 0; i < length; i++) {
-            TransformBasis1Qb(false, start + i);
+            RevertPlusMinusBasis(start + i);
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
@@ -1043,7 +1169,7 @@ protected:
     {
         bitLenInt i;
         for (i = 0; i < qubitCount; i++) {
-            TransformBasis1Qb(i, false);
+            RevertPlusMinusBasis(i);
         }
         for (i = 0; i < qubitCount; i++) {
             RevertBasis2Qb(i, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, {}, true);

@@ -37,15 +37,16 @@
 #define QUEUED_PHASE(shard)                                                                                            \
     ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0) ||                                       \
         (shard.antiTargetOfShards.size() != 0) || (shard.antiControlsShards.size() != 0))
-#define CACHED_PLUS_MINUS(shard) (shard.isPlusMinus && !DIRTY(shard) && !QUEUED_PHASE(shard))
+#define CACHED_PLUS_MINUS(shard) (shard.isPlusMinus && !DIRTY(shard) && !shard.IsBellBasis() && !QUEUED_PHASE(shard))
 #define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && IS_NORM_ZERO(shard.amp1))
-#define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPlusMinus && !QUEUED_PHASE(shard))
+#define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPlusMinus && !shard.IsBellBasis() && !QUEUED_PHASE(shard))
 #define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
 #define CACHED_ONE(shard) (CACHED_PROB(shard) && IS_NORM_ZERO(shard.amp0))
 #define CACHED_ZERO(shard) (CACHED_PROB(shard) && IS_NORM_ZERO(shard.amp1))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
 #define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
-    (!shard.isProbDirty && !shard.isPlusMinus && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
+    (!shard.isProbDirty && !shard.isPlusMinus && !shard.IsBellBasis() &&                                               \
+        (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
 #define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp0))
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp1))
 
@@ -866,8 +867,8 @@ void QUnit::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    TransformBasis1Qb(false, qubit1);
-    TransformBasis1Qb(false, qubit2);
+    RevertPlusMinusBasis(qubit1);
+    RevertPlusMinusBasis(qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
@@ -961,6 +962,7 @@ void QUnit::H(bitLenInt target)
     if (!freezeBasis) {
         CommuteH(target);
         shard.isPlusMinus = !shard.isPlusMinus;
+        shard.CombineBellH();
         return;
     }
 
@@ -1009,6 +1011,11 @@ void QUnit::X(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
+    if (shard.IsBellBasis()) {
+        XBase(FindShardIndex(*(shard.GetBellTarget())));
+        return;
+    }
+
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
@@ -1022,8 +1029,15 @@ void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
+    if (shard.IsBellBasis()) {
+        QEngineShard& cShard = *shard.GetBellControl();
+        XBase(FindShardIndex(cShard));
+        // TODO: Doesn't fully bookkeep a global phase factor (without physically measurable consequence)
+        return;
+    }
+
     if (shard.IsInvertTarget()) {
-        TransformBasis1Qb(false, target);
+        RevertPlusMinusBasis(target);
         shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
     } else {
         if (UNSAFE_CACHED_ZERO(shard)) {
@@ -1128,6 +1142,18 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     QEngineShard& cShard = shards[control];
 
+    if (CACHED_PLUS_MINUS(cShard) && CACHED_CLASSICAL(tShard)) {
+        cShard.isPlusMinus = false;
+        cShard.SetBellTarget(&tShard);
+        return;
+    }
+
+    if ((cShard.bellTarget == &tShard) || (cShard.bellControl == &tShard)) {
+        cShard.isPlusMinus = true;
+        cShard.ClearBellBasis();
+        return;
+    }
+
     if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
         if (IS_NORM_ZERO(cShard.amp1)) {
             Flush0Eigenstate(control);
@@ -1141,12 +1167,12 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        TransformBasis1Qb(false, control);
+        RevertPlusMinusBasis(control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
 
         if (cShard.IsInvertControlOf(&tShard)) {
-            TransformBasis1Qb(false, target);
+            RevertPlusMinusBasis(target);
         }
 
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
@@ -1168,6 +1194,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
     // alone, by way of the last optional "true" argument in the call.
     if (cShard.isPlusMinus && tShard.isPlusMinus) {
+        RevertPlusMinusBasis(control);
+        RevertPlusMinusBasis(target);
         RevertBasis2Qb(control);
         RevertBasis2Qb(target);
 
@@ -1207,7 +1235,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     bitLenInt controlLen = 1;
 
     if (!freezeBasis) {
-        TransformBasis1Qb(false, control);
+        RevertPlusMinusBasis(control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS);
@@ -1336,14 +1364,22 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
+    if ((CACHED_PLUS_MINUS(cShard) && CACHED_PLUS_MINUS(tShard)) || (cShard.bellTarget == &tShard) ||
+        (cShard.bellControl == &tShard)) {
+        H(target);
+        CNOT(control, target);
+        H(target);
+        return;
+    }
+
     if (!freezeBasis) {
-        TransformBasis1Qb(false, control);
+        RevertPlusMinusBasis(control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
 
         bool isInvert = cShard.IsInvertControlOf(&tShard);
         if (isInvert) {
-            TransformBasis1Qb(false, target);
+            RevertPlusMinusBasis(target);
         }
 
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, {}, { control });
@@ -1482,7 +1518,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
     QEngineShard& shard = shards[target];
 
     if (shard.IsInvertTarget()) {
-        TransformBasis1Qb(false, target);
+        RevertPlusMinusBasis(target);
         shard.CommutePhase(topLeft, bottomRight);
     } else {
         if (IS_ARG_0(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
@@ -1495,6 +1531,8 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             return;
         }
     }
+
+    RevertBellBasis(target);
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(
@@ -1541,7 +1579,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
     }
 
     if (shard.IsInvertTarget()) {
-        TransformBasis1Qb(false, target);
+        RevertPlusMinusBasis(target);
         shard.CommutePhase(bottomLeft, topRight);
     }
 
@@ -1656,7 +1694,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             return;
         }
 
-        TransformBasis1Qb(false, control);
+        RevertPlusMinusBasis(control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
         RevertBasis2Qb(target, ONLY_INVERT, IS_ONE_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
@@ -1762,7 +1800,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
             return;
         }
 
-        TransformBasis1Qb(false, control);
+        RevertPlusMinusBasis(control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
         RevertBasis2Qb(
@@ -1832,6 +1870,7 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
 
     QEngineShard& shard = shards[target];
 
+    RevertBellBasis(target);
     RevertBasis2Qb(target);
 
     complex trnsMtrx[4];
@@ -1952,7 +1991,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             // This might determine that we can just skip out of the whole gate, in which case it returns this
             // method:
             if (!inCurrentBasis) {
-                TransformBasis1Qb(false, controls[i]);
+                RevertPlusMinusBasis(controls[i]);
                 RevertBasis2Qb(controls[i], ONLY_INVERT);
             }
             ProbBase(controls[i]);
@@ -2003,6 +2042,10 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     if (!inCurrentBasis) {
         for (i = 0; i < controlVec.size(); i++) {
             RevertBasis2Qb(controlVec[i]);
+        }
+
+        for (i = 0; i < targets.size(); i++) {
+            RevertBellBasis(targets[i]);
         }
     }
 
@@ -2941,7 +2984,7 @@ void QUnit::PhaseFlip()
 {
     QEngineShard& shard = shards[0];
     if (!randGlobalPhase) {
-        TransformBasis1Qb(false, 0);
+        RevertPlusMinusBasis(0);
         ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
         shard.amp1 = -shard.amp1;
     }
@@ -3208,20 +3251,6 @@ QInterfacePtr QUnit::CloneBody(QUnitPtr copyPtr)
     }
 
     return copyPtr;
-}
-
-void QUnit::TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i)
-{
-    if (freezeBasis || (toPlusMinus == shards[i].isPlusMinus)) {
-        // Recursive call that should be blocked,
-        // or already in target basis.
-        return;
-    }
-
-    freezeBasis = true;
-    H(i);
-    shards[i].isPlusMinus = toPlusMinus;
-    freezeBasis = false;
 }
 
 void QUnit::ApplyBuffer(PhaseShardPtr phaseShard, const bitLenInt& control, const bitLenInt& target, const bool& isAnti)
