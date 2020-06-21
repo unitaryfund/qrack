@@ -1350,9 +1350,13 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
         tShard.AddPhaseAngles(&cShard, ONE_CMPLX, -ONE_CMPLX);
 
+        if (isInvert) {
+            return;
+        }
+
         ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
 
-        if (isInvert || (phaseShard == tShard.targetOfShards.end())) {
+        if (phaseShard == tShard.targetOfShards.end()) {
             return;
         }
 
@@ -1639,6 +1643,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     if (!freezeBasis && (controlLen == 1U)) {
         bitLenInt control = controls[0];
         delete[] controls;
+        // Not safe to use tShard from above
         QEngineShard& cShard = shards[control];
         if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
             if (SHARD_STATE(cShard)) {
@@ -1656,11 +1661,15 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
         RevertBasis2Qb(target, ONLY_INVERT, IS_ONE_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
 
-        shards[target].AddPhaseAngles(&(shards[control]), topLeft, bottomRight);
+        shards[target].AddPhaseAngles(&cShard, topLeft, bottomRight);
 
-        ShardToPhaseMap::iterator phaseShard = shards[target].targetOfShards.find(&(shards[control]));
+        if (cShard.IsInvertControlOf(&(shards[target]))) {
+            return;
+        }
 
-        if (cShard.IsInvertControlOf(&tShard) || (phaseShard == shards[target].targetOfShards.end())) {
+        ShardToPhaseMap::iterator phaseShard = shards[target].targetOfShards.find(&cShard);
+
+        if (phaseShard == shards[target].targetOfShards.end()) {
             return;
         }
 
@@ -1669,7 +1678,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
             ApplyBuffer(buffer, control, target, false);
-            tShard.RemovePhaseControl(&(shards[control]));
+            shards[target].RemovePhaseControl(&cShard);
         }
 
         return;
@@ -1741,6 +1750,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     if (!freezeBasis && (controlLen == 1U)) {
         bitLenInt control = controls[0];
         delete[] controls;
+        // Not safe to use tShard from above
         QEngineShard& cShard = shards[control];
         if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
             if (SHARD_STATE(cShard)) {
@@ -1758,11 +1768,15 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         RevertBasis2Qb(
             target, ONLY_INVERT, IS_ONE_CMPLX(bottomRight) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
 
-        shards[target].AddAntiPhaseAngles(&(shards[control]), bottomRight, topLeft);
+        shards[target].AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
 
-        ShardToPhaseMap::iterator phaseShard = shards[target].targetOfShards.find(&(shards[control]));
+        if (cShard.IsInvertAntiControlOf(&(shards[target]))) {
+            return;
+        }
 
-        if (cShard.IsInvertControlOf(&tShard) || (phaseShard == shards[target].targetOfShards.end())) {
+        ShardToPhaseMap::iterator phaseShard = shards[target].antiTargetOfShards.find(&cShard);
+
+        if (phaseShard == shards[target].targetOfShards.end()) {
             return;
         }
 
@@ -1771,7 +1785,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
             ApplyBuffer(buffer, control, target, true);
-            tShard.RemovePhaseAntiControl(&(shards[control]));
+            shards[target].RemovePhaseAntiControl(&cShard);
         }
 
         return;
@@ -3363,7 +3377,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
 
     complex polarDiff, polarSame;
-    ShardToPhaseMap::iterator phaseShard, oppositeShard;
+    ShardToPhaseMap::iterator phaseShard;
     QEngineShardPtr partner;
     PhaseShardPtr buffer;
     bitLenInt control;
