@@ -1350,7 +1350,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
         tShard.AddPhaseAngles(&cShard, ONE_CMPLX, -ONE_CMPLX);
 
-        if (isInvert || (cShard.unit->GetQubitCount() > 1U)) {
+        if (isInvert) {
             return;
         }
 
@@ -1663,7 +1663,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         shards[target].AddPhaseAngles(&cShard, topLeft, bottomRight);
 
-        if ((cShard.unit->GetQubitCount() > 1U) || cShard.IsInvertControlOf(&(shards[target]))) {
+        if (cShard.IsInvertControlOf(&(shards[target]))) {
             return;
         }
 
@@ -1770,7 +1770,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         shards[target].AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
 
-        if ((cShard.unit->GetQubitCount() > 1U) || cShard.IsInvertAntiControlOf(&(shards[target]))) {
+        if (cShard.IsInvertAntiControlOf(&(shards[target]))) {
             return;
         }
 
