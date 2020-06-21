@@ -251,7 +251,12 @@ public:
         partner->isPlusMinus = false;
         std::swap(amp0, partner->amp0);
         std::swap(amp1, partner->amp1);
-        amp1 = -amp1;
+
+        // TODO: We assume only separable eigenstates, here,
+        // but we might wish to generalize.
+        if ((amp0 == ZERO_R1) && (partner->amp0 == ZERO_R1)) {
+            amp1 *= -1;
+        }
     }
 
 protected:
@@ -1053,15 +1058,11 @@ protected:
 
     void RevertPlusMinusBasis(const bitLenInt& i)
     {
-        if (freezeBasis) {
-            // Recursive call that should be blocked
-            return;
-        }
-
         RevertBellBasis(i);
 
-        if (!shards[i].isPlusMinus) {
-            // Already in target basis
+        if (freezeBasis || !shards[i].isPlusMinus) {
+            // Recursive call that should be blocked,
+            // or already in target basis.
             return;
         }
 
@@ -1073,11 +1074,6 @@ protected:
 
     void RevertBellBasis(const bitLenInt& i)
     {
-        if (freezeBasis) {
-            // Recursive call that should be blocked
-            return;
-        }
-
         bitLenInt control, target;
         if (shards[i].bellTarget) {
             control = i;
@@ -1089,13 +1085,23 @@ protected:
             return;
         }
 
-        shards[control].bellTarget = NULL;
-        shards[target].bellControl = NULL;
+        QEngineShard& cShard = shards[control];
+        QEngineShard& tShard = shards[target];
 
+        cShard.bellTarget = NULL;
+        tShard.bellControl = NULL;
+
+        bool wasFrozen = freezeBasis;
+        bool wasControlPM = cShard.isPlusMinus;
+        bool wasTargetPM = tShard.isPlusMinus;
+        cShard.isPlusMinus = false;
+        tShard.isPlusMinus = false;
         freezeBasis = true;
         H(control);
         CNOT(control, target);
-        freezeBasis = false;
+        freezeBasis = wasFrozen;
+        cShard.isPlusMinus = wasControlPM;
+        tShard.isPlusMinus = wasTargetPM;
     }
 
     enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };

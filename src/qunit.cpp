@@ -1189,13 +1189,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        /*if (!cShard.isPlusMinus && !tShard.isPlusMinus &&
-            ((cShard.bellTarget == &tShard) || (cShard.bellControl == &tShard))) {
-            cShard.isPlusMinus = true;
-            cShard.ClearBellBasis();
-            return;
-        }*/
-
         RevertBellBasis(control);
         RevertBellBasis(target);
 
@@ -3392,13 +3385,13 @@ void QUnit::RevertBasis2Qb(const bitLenInt& i, const RevertExclusivity& exclusiv
 {
     QEngineShard& shard = shards[i];
 
+    RevertBellBasis(i);
+
     if (freezeBasis || !QUEUED_PHASE(shard)) {
         // Recursive call that should be blocked,
         // or already in target basis.
         return;
     }
-
-    RevertBellBasis(i);
 
     shard.CombineGates();
 
