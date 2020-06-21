@@ -1142,18 +1142,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     QEngineShard& cShard = shards[control];
 
-    if (CACHED_PLUS_MINUS(cShard) && CACHED_CLASSICAL(tShard)) {
-        cShard.isPlusMinus = false;
-        cShard.SetBellTarget(&tShard);
-        return;
-    }
-
-    if ((cShard.bellTarget == &tShard) || (cShard.bellControl == &tShard)) {
-        cShard.isPlusMinus = true;
-        cShard.ClearBellBasis();
-        return;
-    }
-
     if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
         if (IS_NORM_ZERO(cShard.amp1)) {
             Flush0Eigenstate(control);
@@ -1167,6 +1155,18 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
+        if (CACHED_PLUS_MINUS(cShard) && CACHED_CLASSICAL(tShard)) {
+            cShard.isPlusMinus = false;
+            cShard.SetBellTarget(&tShard);
+            return;
+        }
+
+        if ((cShard.bellTarget == &tShard) || (cShard.bellControl == &tShard)) {
+            cShard.isPlusMinus = true;
+            cShard.ClearBellBasis();
+            return;
+        }
+
         RevertPlusMinusBasis(control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
@@ -1364,15 +1364,15 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if ((CACHED_PLUS_MINUS(cShard) && CACHED_PLUS_MINUS(tShard)) || (cShard.bellTarget == &tShard) ||
-        (cShard.bellControl == &tShard)) {
-        H(target);
-        CNOT(control, target);
-        H(target);
-        return;
-    }
-
     if (!freezeBasis) {
+        if ((CACHED_PLUS_MINUS(cShard) && CACHED_PLUS_MINUS(tShard)) || (cShard.bellTarget == &tShard) ||
+            (cShard.bellControl == &tShard)) {
+            H(target);
+            CNOT(control, target);
+            H(target);
+            return;
+        }
+
         RevertPlusMinusBasis(control);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
