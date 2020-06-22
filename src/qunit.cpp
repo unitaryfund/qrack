@@ -47,8 +47,10 @@
 #define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
     (!shard.isProbDirty && !shard.isPlusMinus && !shard.IsBellBasis() &&                                               \
         (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
-#define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp0))
-#define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp1))
+#define UNSAFE_CACHED_ONE(shard)                                                                                       \
+    (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp0) && !shard.IsBellBasis())
+#define UNSAFE_CACHED_ZERO(shard)                                                                                      \
+    (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp1) && !shard.IsBellBasis())
 
 namespace Qrack {
 
@@ -444,13 +446,8 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
         }
 
         // This is usually all that's worth trying:
-        QEngineShard& shard = shards[start + i];
         real1 prob;
-        if (shard.isPlusMinus || QUEUED_PHASE(shard)) {
-            prob = ProbBase(start);
-        } else {
-            prob = Prob(start);
-        }
+        prob = ProbBase(start);
         didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
     }
 
@@ -1550,6 +1547,8 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     QEngineShard& shard = shards[target];
 
+    RevertBellBasis(target);
+
     if (shard.IsInvertTarget()) {
         RevertPlusMinusBasis(target);
         shard.CommutePhase(topLeft, bottomRight);
@@ -1564,8 +1563,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             return;
         }
     }
-
-    RevertBellBasis(target);
 
     if (!shard.isPlusMinus) {
         ApplyOrEmulate(
@@ -1610,6 +1607,8 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         X(target);
         return;
     }
+
+    RevertBellBasis(target);
 
     if (shard.IsInvertTarget()) {
         RevertPlusMinusBasis(target);
