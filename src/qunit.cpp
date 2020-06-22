@@ -732,13 +732,17 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    QEngineShard& shard1 = shards[qubit1];
+    QEngineShard& shard2 = shards[qubit2];
+
+    if ((shard1.bellTarget == &shard2) || (shard2.bellTarget == &shard1)) {
+        return;
+    }
+
     RevertBellBasis(qubit1);
     RevertBellBasis(qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
-
-    QEngineShard& shard1 = shards[qubit1];
-    QEngineShard& shard2 = shards[qubit2];
 
     if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2)) {
         // We can avoid dirtying the cache and entangling, since the bits are classical.
@@ -767,13 +771,18 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    QEngineShard& shard1 = shards[qubit1];
+    QEngineShard& shard2 = shards[qubit2];
+
+    // TODO: Missing phase factor here is nonglobal/nonarbitrary, unless we're limited to eigenstates.
+    if (!randGlobalPhase && ((shard1.bellTarget == &shard2) || (shard2.bellTarget == &shard1))) {
+        return;
+    }
+
     RevertBellBasis(qubit1);
     RevertBellBasis(qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
-
-    QEngineShard& shard1 = shards[qubit1];
-    QEngineShard& shard2 = shards[qubit2];
 
     if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2)) {
         // We can avoid dirtying the cache and entangling, since the bits are classical.
@@ -804,13 +813,18 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    QEngineShard& shard1 = shards[qubit1];
+    QEngineShard& shard2 = shards[qubit2];
+
+    // TODO: Missing phase factor here is nonglobal/nonarbitrary, unless we're limited to eigenstates.
+    if (!randGlobalPhase && ((shard1.bellTarget == &shard2) || (shard2.bellTarget == &shard1))) {
+        return;
+    }
+
     RevertBellBasis(qubit1);
     RevertBellBasis(qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
-
-    QEngineShard& shard1 = shards[qubit1];
-    QEngineShard& shard2 = shards[qubit2];
 
     if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
         (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
@@ -833,13 +847,18 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    QEngineShard& shard1 = shards[qubit1];
+    QEngineShard& shard2 = shards[qubit2];
+
+    // TODO: Missing phase factor here is nonglobal/nonarbitrary, unless we're limited to eigenstates.
+    if (!randGlobalPhase && ((shard1.bellTarget == &shard2) || (shard2.bellTarget == &shard1))) {
+        return;
+    }
+
     RevertBellBasis(qubit1);
     RevertBellBasis(qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
-
-    QEngineShard& shard1 = shards[qubit1];
-    QEngineShard& shard2 = shards[qubit2];
 
     if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
         (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
@@ -872,13 +891,18 @@ void QUnit::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    QEngineShard& shard1 = shards[qubit1];
+    QEngineShard& shard2 = shards[qubit2];
+
+    // TODO: Missing phase factor here is nonglobal/nonarbitrary, unless we're limited to eigenstates.
+    if (!randGlobalPhase && ((shard1.bellTarget == &shard2) || (shard2.bellTarget == &shard1))) {
+        return;
+    }
+
     RevertPlusMinusBasis(qubit1);
     RevertPlusMinusBasis(qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
-
-    QEngineShard& shard1 = shards[qubit1];
-    QEngineShard& shard2 = shards[qubit2];
 
     if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
         (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
@@ -1029,9 +1053,9 @@ void QUnit::X(bitLenInt target)
 
 void QUnit::Z(bitLenInt target)
 {
-    RevertBellBasis(target);
-
     QEngineShard& shard = shards[target];
+
+    RevertBellBasis(target);
 
     if (shard.IsInvertTarget()) {
         RevertPlusMinusBasis(target);
