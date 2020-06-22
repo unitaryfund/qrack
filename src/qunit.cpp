@@ -1014,32 +1014,11 @@ void QUnit::ZBase(const bitLenInt& target)
 
 void QUnit::X(bitLenInt target)
 {
+    RevertBellBasis(target);
+
     QEngineShard& shard = shards[target];
 
     shard.FlipPhaseAnti();
-
-    if (shard.IsBellBasis()) {
-        QEngineShardPtr partner;
-        bitLenInt bellTarget, bellControl;
-
-        if (shard.bellTarget) {
-            partner = shard.bellTarget;
-            bellControl = target;
-            bellTarget = FindShardIndex(*partner);
-        } else {
-            partner = shard.bellControl;
-            bellTarget = target;
-            bellControl = FindShardIndex(*partner);
-        }
-
-        if (shard.isPlusMinus || partner->isPlusMinus) {
-            XBase(bellControl);
-        } else {
-            XBase(bellTarget);
-        }
-
-        return;
-    }
 
     if (!shard.isPlusMinus) {
         XBase(target);
@@ -1050,6 +1029,8 @@ void QUnit::X(bitLenInt target)
 
 void QUnit::Z(bitLenInt target)
 {
+    RevertBellBasis(target);
+
     QEngineShard& shard = shards[target];
 
     if (shard.IsInvertTarget()) {
@@ -1060,29 +1041,6 @@ void QUnit::Z(bitLenInt target)
             Flush0Eigenstate(target);
             return;
         }
-    }
-
-    if (shard.IsBellBasis()) {
-        QEngineShardPtr partner;
-        bitLenInt bellTarget, bellControl;
-
-        if (shard.bellTarget) {
-            partner = shard.bellTarget;
-            bellControl = target;
-            bellTarget = FindShardIndex(*partner);
-        } else {
-            partner = shard.bellControl;
-            bellTarget = target;
-            bellControl = FindShardIndex(*partner);
-        }
-
-        if (shard.isPlusMinus || partner->isPlusMinus) {
-            XBase(bellTarget);
-        } else {
-            XBase(bellControl);
-        }
-
-        return;
     }
 
     if (!shard.isPlusMinus) {
