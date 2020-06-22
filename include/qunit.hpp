@@ -185,12 +185,14 @@ public:
 
     void SetBellTarget(QEngineShardPtr target)
     {
+        isEmulated = true;
         bellTarget = target;
         target->bellControl = this;
     }
 
     void SetBellControl(QEngineShardPtr control)
     {
+        isEmulated = true;
         bellControl = control;
         control->bellTarget = this;
     }

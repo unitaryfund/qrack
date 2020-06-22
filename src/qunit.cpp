@@ -1038,9 +1038,22 @@ void QUnit::ZBase(const bitLenInt& target)
 
 void QUnit::X(bitLenInt target)
 {
-    RevertBellBasis(target);
-
     QEngineShard& shard = shards[target];
+
+    if (shard.IsBellBasis()) {
+        QEngineShardPtr partner;
+
+        if (shard.bellControl) {
+            partner = shard.bellControl;
+
+            if (!shard.isPlusMinus && !partner->isPlusMinus) {
+                XBase(target);
+                return;
+            }
+        }
+
+        RevertBellBasis(target);
+    }
 
     shard.FlipPhaseAnti();
 
@@ -1055,7 +1068,20 @@ void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    RevertBellBasis(target);
+    if (shard.IsBellBasis()) {
+        QEngineShardPtr partner;
+
+        if (shard.bellControl) {
+            partner = shard.bellControl;
+
+            if (shard.isPlusMinus || partner->isPlusMinus) {
+                XBase(target);
+                return;
+            }
+        }
+
+        RevertBellBasis(target);
+    }
 
     if (shard.IsInvertTarget()) {
         RevertPlusMinusBasis(target);
