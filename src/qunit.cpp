@@ -1152,6 +1152,19 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
+        if ((cShard.bellTarget == &tShard) || (tShard.bellTarget == &cShard)) {
+            if (cShard.isPlusMinus || tShard.isPlusMinus) {
+                if (!SHARD_STATE(tShard)) {
+                    std::swap(cShard.amp0, cShard.amp1);
+                }
+                return;
+            }
+
+            cShard.isPlusMinus = true;
+            cShard.ClearBellBasis();
+            return;
+        }
+
         RevertBellBasis(control);
         RevertBellBasis(target);
 
@@ -1360,6 +1373,13 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
+        if ((cShard.bellTarget == &tShard) || (tShard.bellTarget == &cShard)) {
+            H(target);
+            CNOT(control, target);
+            H(target);
+            return;
+        }
+
         RevertPlusMinusBasis(control);
         RevertBellBasis(target);
 
