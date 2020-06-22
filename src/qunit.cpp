@@ -735,6 +735,8 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    RevertBellBasis(qubit1);
+    RevertBellBasis(qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
@@ -768,6 +770,8 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    RevertBellBasis(qubit1);
+    RevertBellBasis(qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
@@ -803,6 +807,8 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    RevertBellBasis(qubit1);
+    RevertBellBasis(qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
@@ -830,6 +836,8 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    RevertBellBasis(qubit1);
+    RevertBellBasis(qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
@@ -1397,14 +1405,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        if ((CACHED_PLUS_MINUS(cShard) && CACHED_PLUS_MINUS(tShard)) || (cShard.bellTarget == &tShard) ||
-            (cShard.bellControl == &tShard)) {
-            H(target);
-            CNOT(control, target);
-            H(target);
-            return;
-        }
-
         RevertPlusMinusBasis(control);
         RevertBellBasis(target);
 
@@ -2062,6 +2062,15 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         }
     }
 
+    if (!inCurrentBasis) {
+        for (i = 0; i < controlVec.size(); i++) {
+            RevertBasis2Qb(controlVec[i]);
+        }
+        for (i = 0; i < targets.size(); i++) {
+            RevertBellBasis(targets[i]);
+        }
+    }
+
     for (i = 0; i < targets.size(); i++) {
         RevertBasis2Qb(targets[i]);
     }
@@ -2072,16 +2081,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         fn();
 
         return;
-    }
-
-    if (!inCurrentBasis) {
-        for (i = 0; i < controlVec.size(); i++) {
-            RevertBasis2Qb(controlVec[i]);
-        }
-
-        for (i = 0; i < targets.size(); i++) {
-            RevertBellBasis(targets[i]);
-        }
     }
 
     // TODO: If controls that survive the "first order" check above start out entangled,
