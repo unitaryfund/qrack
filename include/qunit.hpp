@@ -1043,7 +1043,7 @@ protected:
     {
         bitLenInt i;
         for (i = 0; i < qubitCount; i++) {
-            TransformBasis1Qb(i, false);
+            TransformBasis1Qb(false, i);
         }
         for (i = 0; i < qubitCount; i++) {
             RevertBasis2Qb(i, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, {}, true);
