@@ -970,7 +970,19 @@ protected:
     void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
     void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
 
-    void TransformBasis1Qb(const bool& toPlusMinus, const bitLenInt& i);
+    void RevertBasis1Qb(const bitLenInt& i)
+    {
+        if (freezeBasis || !shards[i].isPlusMinus) {
+            // Recursive call that should be blocked,
+            // or already in target basis.
+            return;
+        }
+
+        freezeBasis = true;
+        H(i);
+        shards[i].isPlusMinus = false;
+        freezeBasis = false;
+    }
 
     enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
     enum RevertControl { CONTROLS_AND_TARGETS = 0, ONLY_CONTROLS = 1, ONLY_TARGETS = 2 };
@@ -1002,14 +1014,14 @@ protected:
     }
     void ToPermBasis(const bitLenInt& i)
     {
-        TransformBasis1Qb(false, i);
+        RevertBasis1Qb(i);
         RevertBasis2Qb(i);
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
     {
         bitLenInt i;
         for (i = 0; i < length; i++) {
-            TransformBasis1Qb(false, start + i);
+            RevertBasis1Qb(start + i);
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i);
@@ -1031,7 +1043,7 @@ protected:
         }
 
         for (i = 0; i < length; i++) {
-            TransformBasis1Qb(false, start + i);
+            RevertBasis1Qb(start + i);
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
@@ -1043,7 +1055,7 @@ protected:
     {
         bitLenInt i;
         for (i = 0; i < qubitCount; i++) {
-            TransformBasis1Qb(false, i);
+            RevertBasis1Qb(i);
         }
         for (i = 0; i < qubitCount; i++) {
             RevertBasis2Qb(i, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, {}, true);
