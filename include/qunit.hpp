@@ -237,11 +237,11 @@ public:
             return;
         }
 
-        QEngineShardPtr partner = NULL;
+        QEngineShardPtr partner;
 
         if (bellTarget) {
             partner = bellTarget;
-        } else if (bellControl) {
+        } else {
             partner = bellControl;
         }
 
@@ -251,12 +251,12 @@ public:
 
         isPlusMinus = false;
         partner->isPlusMinus = false;
-        std::swap(amp0, partner->amp0);
-        std::swap(amp1, partner->amp1);
+        std::swap(bellControl, bellTarget);
+        std::swap(partner->bellControl, partner->bellTarget);
 
         // TODO: We assume only separable eigenstates, here,
         // but we might wish to generalize.
-        if ((amp0 == ZERO_R1) && (partner->amp0 == ZERO_R1)) {
+        if ((norm(amp0) < (ONE_R1 / 2)) && (norm(partner->amp0) < (ONE_R1 / 2))) {
             amp1 *= -1;
         }
     }
@@ -1060,8 +1060,6 @@ protected:
 
     void RevertPlusMinusBasis(const bitLenInt& i)
     {
-        RevertBellBasis(i);
-
         if (freezeBasis || !shards[i].isPlusMinus) {
             // Recursive call that should be blocked,
             // or already in target basis.
@@ -1076,12 +1074,18 @@ protected:
 
     void RevertBellBasis(const bitLenInt& i)
     {
+        if (freezeBasis) {
+            // Recursive call that should be blocked.
+            return;
+        }
+
+        QEngineShard& shard = shards[i];
         bitLenInt control, target;
-        if (shards[i].bellTarget) {
+        if (shard.bellTarget) {
             control = i;
-            target = FindShardIndex(*(shards[i].bellTarget));
-        } else if (shards[i].bellControl) {
-            control = FindShardIndex(*(shards[i].bellControl));
+            target = FindShardIndex(*(shard.bellTarget));
+        } else if (shard.bellControl) {
+            control = FindShardIndex(*(shard.bellControl));
             target = i;
         } else {
             return;
@@ -1093,7 +1097,6 @@ protected:
         cShard.bellTarget = NULL;
         tShard.bellControl = NULL;
 
-        bool wasFrozen = freezeBasis;
         bool wasControlPM = cShard.isPlusMinus;
         bool wasTargetPM = tShard.isPlusMinus;
         cShard.isPlusMinus = false;
@@ -1101,7 +1104,7 @@ protected:
         freezeBasis = true;
         H(control);
         CNOT(control, target);
-        freezeBasis = wasFrozen;
+        freezeBasis = false;
         cShard.isPlusMinus = wasControlPM;
         tShard.isPlusMinus = wasTargetPM;
     }
@@ -1136,12 +1139,16 @@ protected:
     }
     void ToPermBasis(const bitLenInt& i)
     {
+        RevertBellBasis(i);
         RevertPlusMinusBasis(i);
         RevertBasis2Qb(i);
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
     {
         bitLenInt i;
+        for (i = 0; i < length; i++) {
+            RevertBellBasis(start + i);
+        }
         for (i = 0; i < length; i++) {
             RevertPlusMinusBasis(start + i);
         }
@@ -1176,6 +1183,9 @@ protected:
     void ToPermBasisAllMeasure()
     {
         bitLenInt i;
+        for (i = 0; i < qubitCount; i++) {
+            RevertBellBasis(i);
+        }
         for (i = 0; i < qubitCount; i++) {
             RevertPlusMinusBasis(i);
         }
