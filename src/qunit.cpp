@@ -1190,6 +1190,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
             cShard.ClearBellBasis();
             cShard.isPlusMinus = true;
             return;
+        } else if (isForward && !cShard.isPlusMinus && tShard.isPlusMinus) {
+            if (!SHARD_STATE(cShard)) {
+                std::swap(cShard.amp0, cShard.amp1);
+            }
+            return;
         }
 
         RevertBellBasis(control);
