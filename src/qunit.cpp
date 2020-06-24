@@ -1183,23 +1183,30 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        bool isForward = (cShard.bellTarget == &tShard);
-        bool isReverse = (tShard.bellTarget == &cShard);
-        if ((isForward && !cShard.isPlusMinus && !tShard.isPlusMinus) ||
-            (isReverse && cShard.isPlusMinus && tShard.isPlusMinus)) {
-            cShard.ClearBellBasis();
-            cShard.isPlusMinus = true;
-            return;
-        } else if (isForward && !cShard.isPlusMinus && tShard.isPlusMinus) {
-            if (!SHARD_STATE(tShard)) {
-                std::swap(cShard.amp0, cShard.amp1);
+        if (cShard.bellTarget == &tShard) {
+            if (!cShard.isPlusMinus && !tShard.isPlusMinus) {
+                cShard.ClearBellBasis();
+                cShard.isPlusMinus = true;
+                return;
+            } else if (!cShard.isPlusMinus && tShard.isPlusMinus) {
+                if (!SHARD_STATE(tShard)) {
+                    std::swap(cShard.amp0, cShard.amp1);
+                }
+                return;
+            } else if (cShard.isPlusMinus && !tShard.isPlusMinus) {
+                if (!SHARD_STATE(cShard)) {
+                    std::swap(tShard.amp0, tShard.amp1);
+                }
+                return;
+            } else if (cShard.isPlusMinus && tShard.isPlusMinus) {
+                std::swap(cShard.amp0, tShard.amp0);
+                std::swap(cShard.amp1, tShard.amp1);
+                tShard.isPlusMinus = false;
+                if (SHARD_STATE(cShard)) {
+                    tShard.amp1 *= -1;
+                }
+                return;
             }
-            return;
-        } else if (isForward && cShard.isPlusMinus && !tShard.isPlusMinus) {
-            if (!SHARD_STATE(cShard)) {
-                std::swap(tShard.amp0, tShard.amp1);
-            }
-            return;
         }
 
         RevertBellBasis(control);
@@ -1415,8 +1422,18 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        RevertBellBasis(control);
-        RevertBellBasis(target);
+        bool isBellPair = ((cShard.bellTarget == &tShard) || (tShard.bellTarget == &cShard));
+        if (!isBellPair) {
+            RevertBellBasis(control);
+            RevertBellBasis(target);
+        }
+
+        if (isBellPair || (CACHED_PLUS_MINUS(cShard) && CACHED_PLUS_MINUS(tShard))) {
+            H(target);
+            CNOT(control, target);
+            H(target);
+            return;
+        }
 
         RevertPlusMinusBasis(control);
 
