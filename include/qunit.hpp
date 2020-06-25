@@ -254,10 +254,8 @@ public:
         std::swap(bellControl, bellTarget);
         std::swap(partner->bellControl, partner->bellTarget);
 
-        // TODO: We assume only separable eigenstates, here,
-        // but we might wish to generalize.
-        if ((norm(amp0) < (ONE_R1 / 2)) && (norm(partner->amp0) < (ONE_R1 / 2))) {
-            amp1 *= -1;
+        if (norm(amp0) < (ONE_R1 / 2)) {
+            partner->amp1 *= -1;
         }
     }
 

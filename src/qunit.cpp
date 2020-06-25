@@ -1019,12 +1019,9 @@ void QUnit::X(bitLenInt target)
 
     shard.FlipPhaseAnti();
 
-    /*if (shard.IsBellBasis()) {
-        QEngineShardPtr partner;
-
+    if (shard.IsBellBasis()) {
         if (shard.bellControl) {
-            partner = shard.bellControl;
-
+            QEngineShardPtr partner = shard.bellControl;
             if (!shard.isPlusMinus && !partner->isPlusMinus) {
                 XBase(target);
                 return;
@@ -1032,9 +1029,7 @@ void QUnit::X(bitLenInt target)
         }
 
         RevertBellBasis(target);
-    }*/
-
-    RevertBellBasis(target);
+    }
 
     if (!shard.isPlusMinus) {
         XBase(target);
@@ -1050,23 +1045,21 @@ void QUnit::Z(bitLenInt target)
     RevertBellBasis(target);
 
     if (shard.IsInvertTarget()) {
+        RevertBellBasis(target);
         RevertPlusMinusBasis(target);
         shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
     } else {
-        /*if (shard.IsBellBasis()) {
-            QEngineShardPtr partner;
-
+        if (shard.IsBellBasis()) {
             if (shard.bellControl) {
-                partner = shard.bellControl;
-
-                if (shard.isPlusMinus || partner->isPlusMinus) {
+                QEngineShardPtr partner = shard.bellControl;
+                if (shard.isPlusMinus && !partner->isPlusMinus) {
                     XBase(target);
                     return;
                 }
             }
 
             RevertBellBasis(target);
-        }*/
+        }
 
         if (UNSAFE_CACHED_ZERO(shard)) {
             Flush0Eigenstate(target);
@@ -1183,30 +1176,31 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis) {
-        if (cShard.bellTarget == &tShard) {
-            if (!cShard.isPlusMinus && !tShard.isPlusMinus) {
-                cShard.ClearBellBasis();
-                cShard.isPlusMinus = true;
-                return;
-            } else if (!cShard.isPlusMinus && tShard.isPlusMinus) {
-                if (!SHARD_STATE(tShard)) {
-                    std::swap(cShard.amp0, cShard.amp1);
-                }
-                return;
-            } else if (cShard.isPlusMinus && !tShard.isPlusMinus) {
-                if (!SHARD_STATE(cShard)) {
-                    std::swap(tShard.amp0, tShard.amp1);
-                }
-                return;
-            } else if (cShard.isPlusMinus && tShard.isPlusMinus) {
+        bool isForward = (cShard.bellTarget == &tShard);
+        bool isReverse = (tShard.bellTarget == &cShard);
+
+        if ((isForward || isReverse) && !cShard.isPlusMinus && !tShard.isPlusMinus) {
+            cShard.ClearBellBasis();
+            cShard.isPlusMinus = true;
+            tShard.isPlusMinus = false;
+            if (isReverse) {
                 std::swap(cShard.amp0, tShard.amp0);
                 std::swap(cShard.amp1, tShard.amp1);
-                tShard.isPlusMinus = false;
-                if (SHARD_STATE(cShard)) {
-                    tShard.amp1 *= -1;
+                if (SHARD_STATE(tShard)) {
+                    cShard.amp1 = -cShard.amp1;
                 }
-                return;
             }
+            return;
+        } else if (isForward && !cShard.isPlusMinus && tShard.isPlusMinus) {
+            if (!SHARD_STATE(tShard)) {
+                std::swap(cShard.amp0, cShard.amp1);
+            }
+            return;
+        } else if (isForward && cShard.isPlusMinus && !tShard.isPlusMinus) {
+            if (!SHARD_STATE(cShard)) {
+                std::swap(tShard.amp0, tShard.amp1);
+            }
+            return;
         }
 
         RevertBellBasis(control);
