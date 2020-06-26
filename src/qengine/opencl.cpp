@@ -177,11 +177,8 @@ size_t QEngineOCL::FixWorkItemCount(size_t maxI, size_t wic)
 
 size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
 {
-    if (gs > (wic / procElemCount)) {
-        gs = (wic / procElemCount);
-        if (gs == 0) {
-            gs = 1;
-        }
+    if (gs > wic) {
+        gs = wic;
     }
     size_t frac = wic / gs;
     while ((frac * gs) != wic) {
@@ -189,6 +186,7 @@ size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
         frac = wic / gs;
     }
     return gs;
+
 }
 
 PoolItemPtr QEngineOCL::GetFreePoolItem()
@@ -359,6 +357,23 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     bitCapIntOcl oldNrmGroupCount = nrmGroupCount;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+    maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+
+    // constrain to a power of two
+    size_t groupSizePow = 1;
+    while (groupSizePow <= nrmGroupSize) {
+        groupSizePow <<= ONE_BCI;
+    }
+    groupSizePow >>= ONE_BCI;
+    nrmGroupSize = groupSizePow;
+    size_t procElemPow = 1;
+    while (procElemPow < procElemCount) {
+        procElemPow <<= ONE_BCI;
+    }
+    nrmGroupCount = procElemPow * nrmGroupSize;
+    while (nrmGroupCount > maxWorkItems) {
+        nrmGroupCount >>= ONE_BCI;
+    }
 
     // If the user wants to not use general host RAM, but we can't allocate enough on the device, fall back to host RAM
     // anyway.
@@ -389,31 +404,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
             ResetStateVec(NULL);
             ResetStateBuffer(nStateBuffer);
         }
-    }
-
-    // constrain to a power of two
-    size_t procElemPow = 1;
-    while (procElemPow < procElemCount) {
-        procElemPow <<= ONE_BCI;
-    }
-    procElemCount = procElemPow;
-    maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
-    nrmGroupCount = maxWorkItems;
-    size_t nrmGroupPow = 2;
-    while (nrmGroupPow <= nrmGroupCount) {
-        nrmGroupPow <<= ONE_BCI;
-    }
-    nrmGroupCount = nrmGroupPow >> ONE_BCI;
-    if (nrmGroupSize > (nrmGroupCount / procElemCount)) {
-        nrmGroupSize = (nrmGroupCount / procElemCount);
-        if (nrmGroupSize == 0) {
-            nrmGroupSize = 1;
-        }
-    }
-    size_t frac = nrmGroupCount / nrmGroupSize;
-    while ((frac * nrmGroupSize) != nrmGroupCount) {
-        nrmGroupSize++;
-        frac = nrmGroupCount / nrmGroupSize;
     }
 
     size_t nrmVecAlignSize =
