@@ -186,7 +186,6 @@ size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
         frac = wic / gs;
     }
     return gs;
-
 }
 
 PoolItemPtr QEngineOCL::GetFreePoolItem()
@@ -360,17 +359,18 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
 
     // constrain to a power of two
-    size_t groupSizePow = 1;
+    size_t groupSizePow = ONE_BCI;
     while (groupSizePow <= nrmGroupSize) {
         groupSizePow <<= ONE_BCI;
     }
     groupSizePow >>= ONE_BCI;
     nrmGroupSize = groupSizePow;
-    size_t procElemPow = 1;
-    while (procElemPow < procElemCount) {
+    size_t procElemPow = ONE_BCI;
+    while (procElemPow <= procElemCount) {
         procElemPow <<= ONE_BCI;
     }
-    nrmGroupCount = procElemPow * nrmGroupSize;
+    procElemPow >>= ONE_BCI;
+    nrmGroupCount = procElemPow * nrmGroupSize * 2U;
     while (nrmGroupCount > maxWorkItems) {
         nrmGroupCount >>= ONE_BCI;
     }
