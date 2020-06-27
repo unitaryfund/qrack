@@ -26,6 +26,38 @@
 #define bitLenInt uint64_t
 #endif
 
+#if ENABLE_CUDA
+#include <cuda_runtime.h>
+#if ENABLE_PURE32
+#define bitCapIntOcl2 uint2
+#define bitCapIntOcl4 uint4
+#define qCudaReal1 float
+#define qCudaCmplx float2
+#define qCudaCmplx2 float4
+#define qCudaCmplx4 float8
+#define make_qCudaCmplx make_float2
+#define make_qCudaCmplx2 make_float4
+#else
+#define bitCapIntOcl2 ulong2
+#define bitCapIntOcl4 ulong4
+#if ENABLE_COMPLEX8
+#define qCudaReal1 float
+#define qCudaCmplx float2
+#define qCudaCmplx2 float4
+#define qCudaCmplx4 float8
+#define make_qCudaCmplx make_float2
+#define make_qCudaCmplx2 make_float4
+#else
+#define qCudaReal1 double
+#define qCudaCmplx double2
+#define qCudaCmplx2 double4
+#define qCudaCmplx4 double8
+#define make_qCudaCmplx make_double2
+#define make_qCudaCmplx2 make_double4
+#endif
+#endif
+#endif
+
 #if ENABLE_PURE32
 #define bitCapIntOcl uint32_t
 #define bitCapInt uint32_t

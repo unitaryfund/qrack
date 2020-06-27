@@ -45,6 +45,14 @@ inline real1 arg(const cmplx cmp)
     real1 nrm = cmplxPtr[8];                                                                                           \
                                                                                                                        \
     cmplx2 mulRes;
+    
+#define PREP_2X2_WIDE()                                                                                                \
+    bitCapIntOcl lcv, i;                                                                                               \
+                                                                                                                       \
+    cmplx4 mtrx = vload8(0, cmplxPtr);                                                                                 \
+    real1 nrm = cmplxPtr[8];                                                                                           \
+                                                                                                                       \
+    cmplx2 mulRes;
 
 #define PREP_2X2_NORM()                                                                                                \
     real1 norm_thresh = cmplxPtr[9];                                                                                   \
@@ -54,10 +62,6 @@ inline real1 arg(const cmplx cmp)
     bitCapIntOcl lcv, i;                                                                                               \
     bitCapIntOcl Nthreads = get_global_size(0);                                                                        \
     cmplx Y0;
-
-#define PREP_Z_2X2()                                                                                                   \
-    bitCapIntOcl lcv, i;                                                                                               \
-    bitCapIntOcl Nthreads = get_global_size(0);
 
 #define PUSH_APART_GEN()                                                                                               \
     iHigh = lcv;                                                                                                       \
@@ -177,7 +181,7 @@ void kernel apply2x2double(global cmplx* stateVec, constant real1* cmplxPtr, con
 void kernel apply2x2wide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr,
     constant bitCapIntOcl* qPowersSorted)
 {
-    PREP_2X2();
+    PREP_2X2_WIDE();
 
     bitCapIntOcl iLow, iHigh;
     bitLenInt p;
@@ -189,7 +193,7 @@ void kernel apply2x2wide(global cmplx* stateVec, constant real1* cmplxPtr, const
 
 void kernel apply2x2singlewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
-    PREP_2X2();
+    PREP_2X2_WIDE();
 
     bitCapIntOcl qMask = bitCapIntOclPtr[2];
 
@@ -200,7 +204,7 @@ void kernel apply2x2singlewide(global cmplx* stateVec, constant real1* cmplxPtr,
 
 void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
-    PREP_2X2();
+    PREP_2X2_WIDE();
 
     bitCapIntOcl qMask1 = bitCapIntOclPtr[3];
     bitCapIntOcl qMask2 = bitCapIntOclPtr[4];
@@ -220,7 +224,6 @@ void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr,
     bitCapIntOcl qMask = bitCapIntOclPtr[3];
 
     bitCapIntOcl locID, locNthreads;
-    cmplx YT;
     real1 partNrm = ZERO_R1;
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
@@ -234,13 +237,12 @@ void kernel apply2x2normsingle(global cmplx* stateVec, constant real1* cmplxPtr,
 void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplxPtr,
     constant bitCapIntOcl* bitCapIntOclPtr, global real1* nrmParts, local real1* lProbBuffer)
 {
-    PREP_2X2();
+    PREP_2X2_WIDE();
     PREP_2X2_NORM();
 
     bitCapIntOcl qMask = bitCapIntOclPtr[2];
 
     bitCapIntOcl locID, locNthreads;
-    cmplx YT;
     real1 partNrm = ZERO_R1;
 
     lcv = ID;
@@ -265,6 +267,7 @@ void kernel xsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
 void kernel xsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     PREP_SPECIAL_2X2();
+    bitCapIntOcl Nthreads = get_global_size(0);
 
     bitCapIntOcl qMask = bitCapIntOclPtr[2];
 
@@ -275,7 +278,8 @@ void kernel xsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 
 void kernel zsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
 {
-    PREP_Z_2X2();
+    bitCapIntOcl lcv, i;
+    bitCapIntOcl Nthreads = get_global_size(0);
 
     bitCapIntOcl qMask = bitCapIntOclPtr[3];
 
@@ -287,11 +291,10 @@ void kernel zsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
 
 void kernel zsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
 {
-    PREP_Z_2X2();
-
+    bitCapIntOcl i;
     bitCapIntOcl qMask = bitCapIntOclPtr[2];
 
-    lcv = ID;
+    bitCapIntOcl lcv = ID;
     PUSH_APART_1();
     APPLY_Z();
 }
@@ -316,7 +319,6 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* b
     real1 partNrm = ZERO_R1;
 
     cmplx2 qubit;
-    cmplx Y0;
 
     bitCapIntOcl i, offset;
     bitCapIntOcl j, jHigh, jLow, p;
@@ -411,7 +413,7 @@ void kernel composemid(
 
     bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
     bitCapIntOcl nMaxQPower = args.x;
-    bitCapIntOcl qubitCount = args.y;
+    // bitCapIntOcl qubitCount = args.y;
     bitCapIntOcl oQubitCount = args.z;
     bitCapIntOcl startMask = args.w;
     bitCapIntOcl midMask = bitCapIntOclPtr[4];
@@ -648,7 +650,7 @@ void kernel probmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOcl
 
     bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
     bitCapIntOcl maxI = args.x;
-    bitCapIntOcl mask = args.y;
+    //bitCapIntOcl mask = args.y;
     bitCapIntOcl perm = args.z;
     bitCapIntOcl len = args.w;
 
@@ -915,7 +917,7 @@ void kernel incdecsc1(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOc
         } else {
             outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
         }
-        bool isOverflow = false;
+        isOverflow = false;
         // Both negative:
         if (inOutInt & inInt & signMask) {
             inOutInt = ((~inOutInt) & (lengthPower - ONE_BCI)) + ONE_BCI;
@@ -966,7 +968,7 @@ void kernel incdecsc2(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOc
         } else {
             outRes = ((outInt - lengthPower) << inOutStart) | otherRes | carryMask;
         }
-        bool isOverflow = false;
+        isOverflow = false;
         // Both negative:
         if (inOutInt & inInt & (signMask)) {
             inOutInt = ((~inOutInt) & (lengthPower - ONE_BCI)) + ONE_BCI;
@@ -1138,7 +1140,7 @@ void kernel mul(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, 
     bitCapIntOcl maxI = bitCapIntOclPtr[0];
     bitCapIntOcl toMul = bitCapIntOclPtr[1];
     bitCapIntOcl inOutMask = bitCapIntOclPtr[2];
-    bitCapIntOcl carryMask = bitCapIntOclPtr[3];
+    // bitCapIntOcl carryMask = bitCapIntOclPtr[3];
     bitCapIntOcl otherMask = bitCapIntOclPtr[4];
     bitCapIntOcl len = bitCapIntOclPtr[5];
     bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
@@ -1168,7 +1170,7 @@ void kernel div(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, 
     bitCapIntOcl maxI = bitCapIntOclPtr[0];
     bitCapIntOcl toDiv = bitCapIntOclPtr[1];
     bitCapIntOcl inOutMask = bitCapIntOclPtr[2];
-    bitCapIntOcl carryMask = bitCapIntOclPtr[3];
+    // bitCapIntOcl carryMask = bitCapIntOclPtr[3];
     bitCapIntOcl otherMask = bitCapIntOclPtr[4];
     bitCapIntOcl len = bitCapIntOclPtr[5];
     bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
@@ -1198,10 +1200,10 @@ void kernel div(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, 
     bitCapIntOcl maxI = bitCapIntOclPtr[0];                                                                            \
     bitCapIntOcl toMul = bitCapIntOclPtr[1];                                                                           \
     bitCapIntOcl inMask = bitCapIntOclPtr[2];                                                                          \
-    bitCapIntOcl outMask = bitCapIntOclPtr[3];                                                                         \
+    /* bitCapIntOcl outMask = bitCapIntOclPtr[3]; */                                                                   \
     bitCapIntOcl otherMask = bitCapIntOclPtr[4];                                                                       \
     bitCapIntOcl len = bitCapIntOclPtr[5];                                                                             \
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;                                                                 \
+    /* bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI; */                                                           \
     bitCapIntOcl inStart = bitCapIntOclPtr[6];                                                                         \
     bitCapIntOcl outStart = bitCapIntOclPtr[7];                                                                        \
     bitCapIntOcl skipMask = bitCapIntOclPtr[8];                                                                        \
@@ -1463,7 +1465,7 @@ void kernel cmul(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     bitCapIntOcl controlLen = bitCapIntOclPtr[2];
     bitCapIntOcl controlMask = bitCapIntOclPtr[3];
     bitCapIntOcl inOutMask = bitCapIntOclPtr[4];
-    bitCapIntOcl carryMask = bitCapIntOclPtr[5];
+    // bitCapIntOcl carryMask = bitCapIntOclPtr[5];
     bitCapIntOcl otherMask = bitCapIntOclPtr[6];
     bitCapIntOcl len = bitCapIntOclPtr[7];
     bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
@@ -1497,7 +1499,7 @@ void kernel cdiv(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     bitCapIntOcl controlLen = bitCapIntOclPtr[2];
     bitCapIntOcl controlMask = bitCapIntOclPtr[3];
     bitCapIntOcl inOutMask = bitCapIntOclPtr[4];
-    bitCapIntOcl carryMask = bitCapIntOclPtr[5];
+    // bitCapIntOcl carryMask = bitCapIntOclPtr[5];
     bitCapIntOcl otherMask = bitCapIntOclPtr[6];
     bitCapIntOcl len = bitCapIntOclPtr[7];
     bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
@@ -1533,7 +1535,7 @@ void kernel cdiv(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     bitCapIntOcl outMask = bitCapIntOclPtr[5];                                                                         \
     bitCapIntOcl modN = bitCapIntOclPtr[6];                                                                            \
     bitCapIntOcl len = bitCapIntOclPtr[7];                                                                             \
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;                                                                 \
+    /* bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI; */                                                           \
     bitCapIntOcl inStart = bitCapIntOclPtr[8];                                                                         \
     bitCapIntOcl outStart = bitCapIntOclPtr[9];                                                                        \
                                                                                                                        \
@@ -1582,7 +1584,6 @@ void kernel cpowmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     bitCapIntOcl outMask = bitCapIntOclPtr[5];
     bitCapIntOcl modN = bitCapIntOclPtr[6];
     bitCapIntOcl len = bitCapIntOclPtr[7];
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
     bitCapIntOcl inStart = bitCapIntOclPtr[8];
     bitCapIntOcl outStart = bitCapIntOclPtr[9];
 
@@ -1894,7 +1895,7 @@ void kernel applym(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPt
     bitCapIntOcl savePower = bitCapIntOclPtr[2];
     bitCapIntOcl discardPower = qPower ^ savePower;
     cmplx nrm = cmplx_ptr[0];
-    bitCapIntOcl i, iLow, iHigh, j;
+    bitCapIntOcl i, iLow, iHigh;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -1961,7 +1962,6 @@ void kernel cphaseflipifless(global cmplx* stateVec, constant bitCapIntOcl* bitC
     bitCapIntOcl skipPower = bitCapIntOclPtr[2];
     bitCapIntOcl greaterPerm = bitCapIntOclPtr[3];
     bitCapIntOcl start = bitCapIntOclPtr[4];
-    cmplx amp;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (skipPower - ONE_BCI);
@@ -1981,7 +1981,6 @@ void kernel phaseflipifless(global cmplx* stateVec, constant bitCapIntOcl* bitCa
     bitCapIntOcl regMask = bitCapIntOclPtr[1];
     bitCapIntOcl greaterPerm = bitCapIntOclPtr[2];
     bitCapIntOcl start = bitCapIntOclPtr[3];
-    cmplx amp;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         if (((lcv & regMask) >> start) < greaterPerm)
             stateVec[lcv] = -stateVec[lcv];

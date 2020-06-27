@@ -107,7 +107,8 @@ add_test (NAME qrack_cl_precompile
 option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
 include ("cmake/Examples.cmake")
 include ("cmake/UInt128.cmake")
-include ("cmake/OpenCL.cmake" )
+include ("cmake/OpenCL.cmake")
+include ("cmake/CUDA.cmake")
 include ("cmake/Complex8.cmake")
 include ("cmake/Complex_x2.cmake")
 include ("cmake/Pure32.cmake")
@@ -137,9 +138,11 @@ endif (ENABLE_UINT128 AND ENABLE_PURE32)
 
 if (MSVC)
     set(QRACK_COMPILE_OPTS -std=c++11 -Wall)
+    set(QRACK_CUDA_COMPILE_OPTS -std=c++11 -Wall)
     set(TEST_COMPILE_OPTS -std=c++11 -Wall)
 else (MSVC)
     set(QRACK_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror -fPIC)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror all-warnings -fPIC)
     set(TEST_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror)
 endif(MSVC)
 
@@ -163,7 +166,12 @@ if (APPLE)
     set(TEST_COMPILE_OPTS -Wno-inconsistent-missing-override)
 endif (APPLE)
 
-target_compile_options (qrack PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (qrack PUBLIC -DCATCH_CONFIG_FAST_COMPILE)
+add_compile_options (qrack PUBLIC
+    "$<$<COMPILE_LANGUAGE:C>:${QRACK_COMPILE_OPTS}>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${QRACK_COMPILE_OPTS}>"
+    "$<$<COMPILE_LANGUAGE:CUDA>:${QRACK_CUDA_COMPILE_OPTS}>"
+    )
 target_compile_options (qrack_pinvoke PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
 target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
@@ -188,6 +196,7 @@ install (FILES
     include/common/parallel_for.hpp
     include/common/rdrandwrapper.hpp
     include/common/dispatch_queue.hpp
+    include/common/cuda_kernels.cuh
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 
