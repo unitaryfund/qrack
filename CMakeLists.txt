@@ -24,6 +24,7 @@ endif (QBCAPPOW GREATER 31)
 add_library (qrack STATIC
     src/common/parallel_for.cpp
     src/common/rdrandwrapper.cpp
+    src/common/dispatch_queue.cpp
     src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
@@ -186,6 +187,7 @@ install (FILES
     include/common/oclengine.hpp
     include/common/parallel_for.hpp
     include/common/rdrandwrapper.hpp
+    include/common/dispatch_queue.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 
