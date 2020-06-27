@@ -3446,7 +3446,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_clone")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
 {
-    QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, 4, 0, rng);
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, 4, 0, rng, ONE_CMPLX,
+        enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
 
     qftReg->SetPermutation(0x2b);
     qftReg->Decompose(0, 4, qftReg2);
@@ -3457,8 +3458,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
     qftReg->Compose(qftReg2);
 
     // Try across device/heap allocation case:
-    qftReg2 = CreateQuantumInterface(
-        testEngineType, testSubEngineType, 4, 0, rng, complex(ONE_R1, ZERO_R1), false, true, true);
+    qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, 4, 0, rng, complex(ONE_R1, ZERO_R1),
+        enable_normalization, true, true, device_id, !disable_hardware_rng, sparse);
 
     qftReg->SetPermutation(0x2b);
     qftReg->Decompose(0, 4, qftReg2);
