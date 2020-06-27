@@ -45,7 +45,7 @@ inline real1 arg(const cmplx cmp)
     real1 nrm = cmplxPtr[8];                                                                                           \
                                                                                                                        \
     cmplx2 mulRes;
-    
+
 #define PREP_2X2_WIDE()                                                                                                \
     bitCapIntOcl lcv, i;                                                                                               \
                                                                                                                        \
@@ -60,7 +60,6 @@ inline real1 arg(const cmplx cmp)
 
 #define PREP_SPECIAL_2X2()                                                                                             \
     bitCapIntOcl lcv, i;                                                                                               \
-    bitCapIntOcl Nthreads = get_global_size(0);                                                                        \
     cmplx Y0;
 
 #define PUSH_APART_GEN()                                                                                               \
@@ -255,6 +254,7 @@ void kernel apply2x2normsinglewide(global cmplx* stateVec, constant real1* cmplx
 void kernel xsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     PREP_SPECIAL_2X2();
+    bitCapIntOcl Nthreads = get_global_size(0);
 
     bitCapIntOcl qMask = bitCapIntOclPtr[3];
 
@@ -267,7 +267,6 @@ void kernel xsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
 void kernel xsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     PREP_SPECIAL_2X2();
-    bitCapIntOcl Nthreads = get_global_size(0);
 
     bitCapIntOcl qMask = bitCapIntOclPtr[2];
 
