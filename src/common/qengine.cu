@@ -33,15 +33,15 @@ __device__ inline real1 arg(const cmplx cmp)
     return atan2(cmp.y, cmp.x);
 }
 
-#define OFFSET2_ARG bitCapIntPtr[0]
-#define OFFSET1_ARG bitCapIntPtr[1]
-#define MAXI_ARG bitCapIntPtr[2]
-#define BITCOUNT_ARG bitCapIntPtr[3]
+#define OFFSET2_ARG bitCapIntOclPtr[0]
+#define OFFSET1_ARG bitCapIntOclPtr[1]
+#define MAXI_ARG bitCapIntOclPtr[2]
+#define BITCOUNT_ARG bitCapIntOclPtr[3]
 #define ID blockIdx.x* blockDim.x + threadIdx.x
 
 #define PREP_2X2()                                                                                                     \
-    bitCapInt lcv, i;                                                                                                  \
-    bitCapInt Nthreads = gridDim.x * blockDim.x;                                                                       \
+    bitCapIntOcl lcv, i;                                                                                               \
+    bitCapIntOcl Nthreads = gridDim.x * blockDim.x;                                                                    \
                                                                                                                        \
     cmplx4 mtrx = vload8(0, cmplxPtr);                                                                                 \
     real1 nrm = cmplxPtr[8];                                                                                           \
@@ -53,13 +53,13 @@ __device__ inline real1 arg(const cmplx cmp)
     real1 dotMulRes;
 
 #define PREP_SPECIAL_2X2()                                                                                             \
-    bitCapInt lcv, i;                                                                                                  \
-    bitCapInt Nthreads = gridDim.x * blockDim.x;                                                                       \
+    bitCapIntOcl lcv, i;                                                                                               \
+    bitCapIntOcl Nthreads = gridDim.x * blockDim.x;                                                                    \
     cmplx Y0;
 
 #define PREP_Z_2X2()                                                                                                   \
-    bitCapInt lcv, i;                                                                                                  \
-    bitCapInt Nthreads = gridDim.x * blockDim.x;
+    bitCapIntOcl lcv, i;                                                                                               \
+    bitCapIntOcl Nthreads = gridDim.x * blockDim.x;
 
 #define PUSH_APART_GEN()                                                                                               \
     iHigh = lcv;                                                                                                       \
@@ -103,7 +103,7 @@ __device__ inline real1 arg(const cmplx cmp)
     lProbBuffer[locID] = partNrm;                                                                                      \
                                                                                                                        \
     for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {                                                  \
-        barrier(CLK_LOCAL_MEM_FENCE);                                                                                  \
+        __syncthreads();                                                                                               \
         if (locID < lcv) {                                                                                             \
             lProbBuffer[locID] += lProbBuffer[locID + lcv];                                                            \
         }                                                                                                              \
@@ -136,12 +136,12 @@ __device__ inline real1 arg(const cmplx cmp)
     stateVec[i | OFFSET1_ARG] = mulRes.lo;                                                                             \
     stateVec[i | OFFSET2_ARG] = mulRes.hi;
 
-__global__ void apply2x2(__global__ cmplx* stateVec, __constant__ real1* cmplxPtr, __constant__ bitCapInt* bitCapIntPtr,
-    __constant__ bitCapInt* qPowersSorted)
+__global__ void apply2x2(__global__ cmplx* stateVec, __constant__ real1* cmplxPtr,
+    __constant__ bitCapIntOcl* bitCapIntOclPtr, __constant__ bitCapIntOcl* qPowersSorted)
 {
     PREP_2X2();
 
-    bitCapInt iLow, iHigh;
+    bitCapIntOcl iLow, iHigh;
     bitLenInt p;
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
@@ -151,11 +151,11 @@ __global__ void apply2x2(__global__ cmplx* stateVec, __constant__ real1* cmplxPt
 }
 
 __global__ void apply2x2single(
-    __global__ cmplx* stateVec, __constant__ real1* cmplxPtr, __constant__ bitCapInt* bitCapIntPtr)
+    __global__ cmplx* stateVec, __constant__ real1* cmplxPtr, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
     PREP_2X2();
 
-    bitCapInt qMask = bitCapIntPtr[3];
+    bitCapIntOcl qMask = bitCapIntOclPtr[3];
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
@@ -164,13 +164,13 @@ __global__ void apply2x2single(
 }
 
 __global__ void apply2x2double(
-    __global__ cmplx* stateVec, __constant__ real1* cmplxPtr, __constant__ bitCapInt* bitCapIntPtr)
+    __global__ cmplx* stateVec, __constant__ real1* cmplxPtr, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
     PREP_2X2();
 
-    bitCapInt qMask1 = bitCapIntPtr[3];
-    bitCapInt qMask2 = bitCapIntPtr[4];
-    bitCapInt iLow, iHigh;
+    bitCapIntOcl qMask1 = bitCapIntOclPtr[3];
+    bitCapIntOcl qMask2 = bitCapIntOclPtr[4];
+    bitCapIntOcl iLow, iHigh;
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_2();
@@ -179,11 +179,11 @@ __global__ void apply2x2double(
 }
 
 __global__ void apply2x2wide(__global__ cmplx* stateVec, __constant__ real1* cmplxPtr,
-    __constant__ bitCapInt* bitCapIntPtr, __constant__ bitCapInt* qPowersSorted)
+    __constant__ bitCapIntOcl* bitCapIntOclPtr, __constant__ bitCapIntOcl* qPowersSorted)
 {
     PREP_2X2();
 
-    bitCapInt iLow, iHigh;
+    bitCapIntOcl iLow, iHigh;
     bitLenInt p;
 
     lcv = ID;
@@ -192,11 +192,11 @@ __global__ void apply2x2wide(__global__ cmplx* stateVec, __constant__ real1* cmp
 }
 
 __global__ void apply2x2singlewide(
-    __global__ cmplx* stateVec, __constant__ real1* cmplxPtr, __constant__ bitCapInt* bitCapIntPtr)
+    __global__ cmplx* stateVec, __constant__ real1* cmplxPtr, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
     PREP_2X2();
 
-    bitCapInt qMask = bitCapIntPtr[2];
+    bitCapIntOcl qMask = bitCapIntOclPtr[2];
 
     lcv = ID;
     PUSH_APART_1();
@@ -204,13 +204,13 @@ __global__ void apply2x2singlewide(
 }
 
 __global__ void apply2x2doublewide(
-    __global__ cmplx* stateVec, __constant__ real1* cmplxPtr, __constant__ bitCapInt* bitCapIntPtr)
+    __global__ cmplx* stateVec, __constant__ real1* cmplxPtr, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
     PREP_2X2();
 
-    bitCapInt qMask1 = bitCapIntPtr[3];
-    bitCapInt qMask2 = bitCapIntPtr[4];
-    bitCapInt iLow, iHigh;
+    bitCapIntOcl qMask1 = bitCapIntOclPtr[3];
+    bitCapIntOcl qMask2 = bitCapIntOclPtr[4];
+    bitCapIntOcl iLow, iHigh;
 
     lcv = ID;
     PUSH_APART_2();
@@ -218,14 +218,14 @@ __global__ void apply2x2doublewide(
 }
 
 __global__ void apply2x2normsingle(__global__ cmplx* stateVec, __constant__ real1* cmplxPtr,
-    __constant__ bitCapInt* bitCapIntPtr, __global__ real1* nrmParts, __shared__ real1* lProbBuffer)
+    __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ real1* nrmParts, __shared__ real1* lProbBuffer)
 {
     PREP_2X2();
     PREP_2X2_NORM();
 
-    bitCapInt qMask = bitCapIntPtr[3];
+    bitCapIntOcl qMask = bitCapIntOclPtr[3];
 
-    bitCapInt locID, locNthreads;
+    bitCapIntOcl locID, locNthreads;
     cmplx YT;
     real1 partNrm = ZERO_R1;
 
@@ -238,14 +238,14 @@ __global__ void apply2x2normsingle(__global__ cmplx* stateVec, __constant__ real
 }
 
 __global__ void apply2x2normsinglewide(__global__ cmplx* stateVec, __constant__ real1* cmplxPtr,
-    __constant__ bitCapInt* bitCapIntPtr, __global__ real1* nrmParts, __shared__ real1* lProbBuffer)
+    __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ real1* nrmParts, __shared__ real1* lProbBuffer)
 {
     PREP_2X2();
     PREP_2X2_NORM();
 
-    bitCapInt qMask = bitCapIntPtr[2];
+    bitCapIntOcl qMask = bitCapIntOclPtr[2];
 
-    bitCapInt locID, locNthreads;
+    bitCapIntOcl locID, locNthreads;
     cmplx YT;
     real1 partNrm = ZERO_R1;
 
@@ -256,11 +256,11 @@ __global__ void apply2x2normsinglewide(__global__ cmplx* stateVec, __constant__ 
     SUM_2X2();
 }
 
-__global__ void xsingle(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr)
+__global__ void xsingle(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
     PREP_SPECIAL_2X2();
 
-    bitCapInt qMask = bitCapIntPtr[3];
+    bitCapIntOcl qMask = bitCapIntOclPtr[3];
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
@@ -268,22 +268,22 @@ __global__ void xsingle(__global__ cmplx* stateVec, __constant__ bitCapInt* bitC
     }
 }
 
-__global__ void xsinglewide(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr)
+__global__ void xsinglewide(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
     PREP_SPECIAL_2X2();
 
-    bitCapInt qMask = bitCapIntPtr[2];
+    bitCapIntOcl qMask = bitCapIntOclPtr[2];
 
     lcv = ID;
     PUSH_APART_1();
     APPLY_X();
 }
 
-__global__ void zsingle(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr)
+__global__ void zsingle(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
     PREP_Z_2X2();
 
-    bitCapInt qMask = bitCapIntPtr[3];
+    bitCapIntOcl qMask = bitCapIntOclPtr[3];
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
@@ -291,31 +291,31 @@ __global__ void zsingle(__global__ cmplx* stateVec, __constant__ bitCapInt* bitC
     }
 }
 
-__global__ void zsinglewide(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr)
+__global__ void zsinglewide(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
     PREP_Z_2X2();
 
-    bitCapInt qMask = bitCapIntPtr[2];
+    bitCapIntOcl qMask = bitCapIntOclPtr[2];
 
     lcv = ID;
     PUSH_APART_1();
     APPLY_Z();
 }
 
-__global__ void uniformlycontrolled(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
-    __constant__ bitCapInt* qPowers, __constant__ cmplx4* mtrxs, __constant__ real1* nrmIn, __global__ real1* nrmParts,
-    __shared__ real1* lProbBuffer)
+__global__ void uniformlycontrolled(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
+    __constant__ bitCapIntOcl* qPowers, __constant__ cmplx4* mtrxs, __constant__ real1* nrmIn,
+    __global__ real1* nrmParts, __shared__ real1* lProbBuffer)
 {
-    bitCapInt Nthreads, lcv, locID, locNthreads;
+    bitCapIntOcl Nthreads, lcv, locID, locNthreads;
 
     Nthreads = gridDim.x * blockDim.x;
 
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt targetPower = bitCapIntPtr[1];
-    bitCapInt targetMask = targetPower - ONE_BCI;
-    bitCapInt controlLen = bitCapIntPtr[2];
-    bitCapInt mtrxSkipLen = bitCapIntPtr[3];
-    bitCapInt mtrxSkipValueMask = bitCapIntPtr[4];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl targetPower = bitCapIntOclPtr[1];
+    bitCapIntOcl targetMask = targetPower - ONE_BCI;
+    bitCapIntOcl controlLen = bitCapIntOclPtr[2];
+    bitCapIntOcl mtrxSkipLen = bitCapIntOclPtr[3];
+    bitCapIntOcl mtrxSkipValueMask = bitCapIntOclPtr[4];
 
     real1 nrm = nrmIn[0];
 
@@ -324,8 +324,8 @@ __global__ void uniformlycontrolled(__global__ cmplx* stateVec, __constant__ bit
     cmplx2 qubit;
     cmplx Y0;
 
-    bitCapInt i, offset;
-    bitCapInt j, jHigh, jLow, p;
+    bitCapIntOcl i, offset;
+    bitCapIntOcl j, jHigh, jLow, p;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & targetMask;
@@ -364,7 +364,7 @@ __global__ void uniformlycontrolled(__global__ cmplx* stateVec, __constant__ bit
     lProbBuffer[locID] = partNrm;
 
     for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
+        __syncthreads();
         if (locID < lcv) {
             lProbBuffer[locID] += lProbBuffer[locID + lcv];
         }
@@ -375,19 +375,19 @@ __global__ void uniformlycontrolled(__global__ cmplx* stateVec, __constant__ bit
     }
 }
 
-__global__ void compose(__global__ cmplx* stateVec1, __global__ cmplx* stateVec2, __constant__ bitCapInt* bitCapIntPtr,
-    __global__ cmplx* nStateVec)
+__global__ void compose(__global__ cmplx* stateVec1, __global__ cmplx* stateVec2,
+    __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
 
-    bitCapInt4 args = vload4(0, bitCapIntPtr);
+    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
     // For reference:
-    // bitCapInt nMaxQPower = args.x;
-    // bitCapInt qubitCount = args.y;
-    // bitCapInt startMask = args.z;
-    // bitCapInt endMask = args.w;
+    // bitCapIntOcl nMaxQPower = args.x;
+    // bitCapIntOcl qubitCount = args.y;
+    // bitCapIntOcl startMask = args.z;
+    // bitCapIntOcl endMask = args.w;
 
     for (lcv = ID; lcv < args.x; lcv += Nthreads) {
         nStateVec[lcv] = zmul(stateVec1[lcv & args.z], stateVec2[(lcv & args.w) >> args.y]);
@@ -395,34 +395,34 @@ __global__ void compose(__global__ cmplx* stateVec1, __global__ cmplx* stateVec2
 }
 
 __global__ void composewide(__global__ cmplx* stateVec1, __global__ cmplx* stateVec2,
-    __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+    __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt lcv = ID;
-    bitCapInt4 args = vload4(0, bitCapIntPtr);
+    bitCapIntOcl lcv = ID;
+    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
     // For reference:
-    // bitCapInt nMaxQPower = args.x;
-    // bitCapInt qubitCount = args.y;
-    // bitCapInt startMask = args.z;
-    // bitCapInt endMask = args.w;
+    // bitCapIntOcl nMaxQPower = args.x;
+    // bitCapIntOcl qubitCount = args.y;
+    // bitCapIntOcl startMask = args.z;
+    // bitCapIntOcl endMask = args.w;
 
     nStateVec[lcv] = zmul(stateVec1[lcv & args.z], stateVec2[(lcv & args.w) >> args.y]);
 }
 
 __global__ void composemid(__global__ cmplx* stateVec1, __global__ cmplx* stateVec2,
-    __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+    __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
 
-    bitCapInt4 args = vload4(0, bitCapIntPtr);
-    bitCapInt nMaxQPower = args.x;
-    bitCapInt qubitCount = args.y;
-    bitCapInt oQubitCount = args.z;
-    bitCapInt startMask = args.w;
-    bitCapInt midMask = bitCapIntPtr[4];
-    bitCapInt endMask = bitCapIntPtr[5];
-    bitCapInt start = bitCapIntPtr[6];
+    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    bitCapIntOcl nMaxQPower = args.x;
+    bitCapIntOcl qubitCount = args.y;
+    bitCapIntOcl oQubitCount = args.z;
+    bitCapIntOcl startMask = args.w;
+    bitCapIntOcl midMask = bitCapIntOclPtr[4];
+    bitCapIntOcl endMask = bitCapIntOclPtr[5];
+    bitCapIntOcl start = bitCapIntOclPtr[6];
 
     for (lcv = ID; lcv < nMaxQPower; lcv += Nthreads) {
         nStateVec[lcv] =
@@ -430,21 +430,21 @@ __global__ void composemid(__global__ cmplx* stateVec1, __global__ cmplx* stateV
     }
 }
 
-__global__ void decomposeprob(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
+__global__ void decomposeprob(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
     __global__ real1* remainderStateProb, __global__ real1* remainderStateAngle, __global__ real1* partStateProb,
     __global__ real1* partStateAngle)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
 
-    bitCapInt4 args = vload4(0, bitCapIntPtr);
-    bitCapInt partPower = args.x;
-    bitCapInt remainderPower = args.y;
-    bitCapInt start = args.z;
-    bitCapInt len = args.w;
+    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    bitCapIntOcl partPower = args.x;
+    bitCapIntOcl remainderPower = args.y;
+    bitCapIntOcl start = args.z;
+    bitCapIntOcl len = args.w;
 
-    bitCapInt j, k, l;
+    bitCapIntOcl j, k, l;
     cmplx amp;
     real1 partProb, nrm, firstAngle, currentAngle;
 
@@ -503,12 +503,12 @@ __global__ void decomposeprob(__global__ cmplx* stateVec, __constant__ bitCapInt
 }
 
 __global__ void decomposeamp(__global__ real1* stateProb, __global__ real1* stateAngle,
-    __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+    __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxQPower = bitCapIntPtr[0];
+    bitCapIntOcl maxQPower = bitCapIntOclPtr[0];
     real1 angle;
     for (lcv = ID; lcv < maxQPower; lcv += Nthreads) {
         angle = stateAngle[lcv];
@@ -516,39 +516,40 @@ __global__ void decomposeamp(__global__ real1* stateProb, __global__ real1* stat
     }
 }
 
-__global__ void dispose(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+__global__ void dispose(
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt remainderPower = bitCapIntPtr[0];
-    bitCapInt len = bitCapIntPtr[1];
-    bitCapInt skipMask = bitCapIntPtr[2];
-    bitCapInt disposedRes = bitCapIntPtr[3];
-    bitCapInt i, iLow, iHigh;
+    bitCapIntOcl remainderPower = bitCapIntOclPtr[0];
+    bitCapIntOcl len = bitCapIntOclPtr[1];
+    bitCapIntOcl skipMask = bitCapIntOclPtr[2];
+    bitCapIntOcl disposedRes = bitCapIntOclPtr[3];
+    bitCapIntOcl i, iLow, iHigh;
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & skipMask;
-        i = iLow | ((iHigh ^ iLow) << (bitCapInt)len) | disposedRes;
+        i = iLow | ((iHigh ^ iLow) << (bitCapIntOcl)len) | disposedRes;
         nStateVec[lcv] = stateVec[i];
     }
 }
 
-__global__ void prob(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
+__global__ void prob(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
     __global__ real1* oneChanceBuffer, __shared__ real1* lProbBuffer)
 {
-    bitCapInt Nthreads, lcv, locID, locNthreads;
+    bitCapIntOcl Nthreads, lcv, locID, locNthreads;
 
     Nthreads = gridDim.x * blockDim.x;
 
-    bitCapInt2 args = vload2(0, bitCapIntPtr);
-    bitCapInt maxI = args.x;
-    bitCapInt qPower = args.y;
-    bitCapInt qMask = qPower - ONE_BCI;
+    bitCapIntOcl2 args = vload2(0, bitCapIntOclPtr);
+    bitCapIntOcl maxI = args.x;
+    bitCapIntOcl qPower = args.y;
+    bitCapIntOcl qMask = qPower - ONE_BCI;
 
     real1 oneChancePart = ZERO_R1;
     cmplx amp;
-    bitCapInt i;
+    bitCapIntOcl i;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & qMask;
@@ -562,7 +563,7 @@ __global__ void prob(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapI
     lProbBuffer[locID] = oneChancePart;
 
     for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
+        __syncthreads();
         if (locID < lcv) {
             lProbBuffer[locID] += lProbBuffer[locID + lcv];
         }
@@ -573,23 +574,23 @@ __global__ void prob(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapI
     }
 }
 
-__global__ void probreg(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
+__global__ void probreg(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
     __global__ real1* oneChanceBuffer, __shared__ real1* lProbBuffer)
 {
-    bitCapInt Nthreads, lcv, locID, locNthreads;
+    bitCapIntOcl Nthreads, lcv, locID, locNthreads;
 
     Nthreads = gridDim.x * blockDim.x;
 
-    bitCapInt4 args = vload4(0, bitCapIntPtr);
-    bitCapInt maxI = args.x;
-    bitCapInt perm = args.y;
-    bitCapInt start = args.z;
-    bitCapInt len = args.w;
-    bitCapInt qMask = (ONE_BCI << start) - ONE_BCI;
+    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    bitCapIntOcl maxI = args.x;
+    bitCapIntOcl perm = args.y;
+    bitCapIntOcl start = args.z;
+    bitCapIntOcl len = args.w;
+    bitCapIntOcl qMask = (ONE_BCI << start) - ONE_BCI;
 
     real1 oneChancePart = ZERO_R1;
     cmplx amp;
-    bitCapInt i;
+    bitCapIntOcl i;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & qMask;
@@ -603,7 +604,7 @@ __global__ void probreg(__global__ cmplx* stateVec, __constant__ bitCapInt* bitC
     lProbBuffer[locID] = oneChancePart;
 
     for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
+        __syncthreads();
         if (locID < lcv) {
             lProbBuffer[locID] += lProbBuffer[locID + lcv];
         }
@@ -615,23 +616,23 @@ __global__ void probreg(__global__ cmplx* stateVec, __constant__ bitCapInt* bitC
 }
 
 __global__ void probregall(
-    __global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ real1* oneChanceBuffer)
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ real1* oneChanceBuffer)
 {
-    bitCapInt Nthreads, lcv1, lcv2;
+    bitCapIntOcl Nthreads, lcv1, lcv2;
 
     Nthreads = gridDim.x * blockDim.x;
 
-    bitCapInt4 args = vload4(0, bitCapIntPtr);
-    bitCapInt maxI = args.x;
-    bitCapInt maxJ = args.y;
-    bitCapInt start = args.z;
-    bitCapInt len = args.w;
-    bitCapInt qMask = (ONE_BCI << start) - ONE_BCI;
+    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    bitCapIntOcl maxI = args.x;
+    bitCapIntOcl maxJ = args.y;
+    bitCapIntOcl start = args.z;
+    bitCapIntOcl len = args.w;
+    bitCapIntOcl qMask = (ONE_BCI << start) - ONE_BCI;
 
     real1 oneChancePart;
     cmplx amp;
-    bitCapInt perm;
-    bitCapInt i;
+    bitCapIntOcl perm;
+    bitCapIntOcl i;
 
     for (lcv1 = ID; lcv1 < maxI; lcv1 += Nthreads) {
         perm = lcv1 << start;
@@ -646,22 +647,22 @@ __global__ void probregall(
     }
 }
 
-__global__ void probmask(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
-    __global__ real1* oneChanceBuffer, __constant__ bitCapInt* qPowers, __shared__ real1* lProbBuffer)
+__global__ void probmask(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
+    __global__ real1* oneChanceBuffer, __constant__ bitCapIntOcl* qPowers, __shared__ real1* lProbBuffer)
 {
-    bitCapInt Nthreads, locID, locNthreads, lcv;
+    bitCapIntOcl Nthreads, locID, locNthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
 
-    bitCapInt4 args = vload4(0, bitCapIntPtr);
-    bitCapInt maxI = args.x;
-    bitCapInt mask = args.y;
-    bitCapInt perm = args.z;
-    bitCapInt len = args.w;
+    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    bitCapIntOcl maxI = args.x;
+    bitCapIntOcl mask = args.y;
+    bitCapIntOcl perm = args.z;
+    bitCapIntOcl len = args.w;
 
     real1 oneChancePart = ZERO_R1;
     cmplx amp;
-    bitCapInt i, iHigh, iLow, p;
+    bitCapIntOcl i, iHigh, iLow, p;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -682,7 +683,7 @@ __global__ void probmask(__global__ cmplx* stateVec, __constant__ bitCapInt* bit
     lProbBuffer[locID] = oneChancePart;
 
     for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
+        __syncthreads();
         if (locID < lcv) {
             lProbBuffer[locID] += lProbBuffer[locID + lcv];
         }
@@ -693,23 +694,23 @@ __global__ void probmask(__global__ cmplx* stateVec, __constant__ bitCapInt* bit
     }
 }
 
-__global__ void probmaskall(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
-    __global__ real1* oneChanceBuffer, __constant__ bitCapInt* qPowersMask, __constant__ bitCapInt* qPowersSkip)
+__global__ void probmaskall(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
+    __global__ real1* oneChanceBuffer, __constant__ bitCapIntOcl* qPowersMask, __constant__ bitCapIntOcl* qPowersSkip)
 {
-    bitCapInt Nthreads, lcv1, lcv2;
+    bitCapIntOcl Nthreads, lcv1, lcv2;
 
     Nthreads = gridDim.x * blockDim.x;
 
-    bitCapInt4 args = vload4(0, bitCapIntPtr);
-    bitCapInt maxI = args.x;
-    bitCapInt maxJ = args.y;
-    bitCapInt maskLen = args.z;
-    bitCapInt skipLen = args.w;
+    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    bitCapIntOcl maxI = args.x;
+    bitCapIntOcl maxJ = args.y;
+    bitCapIntOcl maskLen = args.z;
+    bitCapIntOcl skipLen = args.w;
 
     real1 oneChancePart;
     cmplx amp;
-    bitCapInt perm;
-    bitCapInt i, iHigh, iLow, p;
+    bitCapIntOcl perm;
+    bitCapIntOcl i, iHigh, iLow, p;
 
     for (lcv1 = ID; lcv1 < maxI; lcv1 += Nthreads) {
         iHigh = lcv1;
@@ -739,19 +740,19 @@ __global__ void probmaskall(__global__ cmplx* stateVec, __constant__ bitCapInt* 
     }
 }
 
-__global__ void rol(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+__global__ void rol(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt regMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthMask = bitCapIntPtr[3] - ONE_BCI;
-    bitCapInt start = bitCapIntPtr[4];
-    bitCapInt shift = bitCapIntPtr[5];
-    bitCapInt length = bitCapIntPtr[6];
-    bitCapInt otherRes, regRes, regInt, inInt;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl regMask = bitCapIntOclPtr[1];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+    bitCapIntOcl lengthMask = bitCapIntOclPtr[3] - ONE_BCI;
+    bitCapIntOcl start = bitCapIntOclPtr[4];
+    bitCapIntOcl shift = bitCapIntOclPtr[5];
+    bitCapIntOcl length = bitCapIntOclPtr[6];
+    bitCapIntOcl otherRes, regRes, regInt, inInt;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         otherRes = (lcv & otherMask);
         regRes = (lcv & regMask);
@@ -761,39 +762,39 @@ __global__ void rol(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIn
     }
 }
 
-__global__ void inc(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+__global__ void inc(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, i;
+    bitCapIntOcl Nthreads, i;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthMask = bitCapIntPtr[3] - ONE_BCI;
-    bitCapInt inOutStart = bitCapIntPtr[4];
-    bitCapInt toAdd = bitCapIntPtr[5];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+    bitCapIntOcl lengthMask = bitCapIntOclPtr[3] - ONE_BCI;
+    bitCapIntOcl inOutStart = bitCapIntOclPtr[4];
+    bitCapIntOcl toAdd = bitCapIntOclPtr[5];
     for (i = ID; i < maxI; i += Nthreads) {
         nStateVec[(((((i & inOutMask) >> inOutStart) + toAdd) & lengthMask) << inOutStart) | (i & otherMask)] =
             stateVec[i];
     }
 }
 
-__global__ void cinc(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec,
-    __constant__ bitCapInt* controlPowers)
+__global__ void cinc(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
+    __global__ cmplx* nStateVec, __constant__ bitCapIntOcl* controlPowers)
 {
-    bitCapInt Nthreads, i, lcv;
+    bitCapIntOcl Nthreads, i, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthMask = bitCapIntPtr[3] - ONE_BCI;
-    bitCapInt inOutStart = bitCapIntPtr[4];
-    bitCapInt toAdd = bitCapIntPtr[5];
-    bitCapInt controlLen = bitCapIntPtr[6];
-    bitCapInt controlMask = bitCapIntPtr[7];
-    bitCapInt otherRes;
-    bitCapInt iHigh, iLow;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+    bitCapIntOcl lengthMask = bitCapIntOclPtr[3] - ONE_BCI;
+    bitCapIntOcl inOutStart = bitCapIntOclPtr[4];
+    bitCapIntOcl toAdd = bitCapIntOclPtr[5];
+    bitCapIntOcl controlLen = bitCapIntOclPtr[6];
+    bitCapIntOcl controlMask = bitCapIntOclPtr[7];
+    bitCapIntOcl otherRes;
+    bitCapIntOcl iHigh, iLow;
     bitLenInt p;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -811,19 +812,20 @@ __global__ void cinc(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapI
     }
 }
 
-__global__ void incdecc(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+__global__ void incdecc(
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthMask = bitCapIntPtr[3] - ONE_BCI;
-    bitCapInt carryMask = bitCapIntPtr[4];
-    bitCapInt inOutStart = bitCapIntPtr[5];
-    bitCapInt toMod = bitCapIntPtr[6];
-    bitCapInt otherRes, inOutRes, outInt, outRes, i;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+    bitCapIntOcl lengthMask = bitCapIntOclPtr[3] - ONE_BCI;
+    bitCapIntOcl carryMask = bitCapIntOclPtr[4];
+    bitCapIntOcl inOutStart = bitCapIntOclPtr[5];
+    bitCapIntOcl toMod = bitCapIntOclPtr[6];
+    bitCapIntOcl otherRes, inOutRes, outInt, outRes, i;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         i = lcv & (carryMask - ONE_BCI);
         i |= (lcv ^ i) << ONE_BCI;
@@ -841,20 +843,21 @@ __global__ void incdecc(__global__ cmplx* stateVec, __constant__ bitCapInt* bitC
     }
 }
 
-__global__ void incs(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+__global__ void incs(
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthPower = bitCapIntPtr[3];
-    bitCapInt signMask = lengthPower >> ONE_BCI;
-    bitCapInt overflowMask = bitCapIntPtr[4];
-    bitCapInt inOutStart = bitCapIntPtr[5];
-    bitCapInt toAdd = bitCapIntPtr[6];
-    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+    bitCapIntOcl lengthPower = bitCapIntOclPtr[3];
+    bitCapIntOcl signMask = lengthPower >> ONE_BCI;
+    bitCapIntOcl overflowMask = bitCapIntOclPtr[4];
+    bitCapIntOcl inOutStart = bitCapIntOclPtr[5];
+    bitCapIntOcl toAdd = bitCapIntOclPtr[6];
+    bitCapIntOcl otherRes, inOutInt, inOutRes, inInt, outInt, outRes;
     cmplx amp;
     bool isOverflow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -891,21 +894,22 @@ __global__ void incs(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapI
     }
 }
 
-__global__ void incdecsc1(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+__global__ void incdecsc1(
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthPower = bitCapIntPtr[3];
-    bitCapInt signMask = lengthPower >> ONE_BCI;
-    bitCapInt overflowMask = bitCapIntPtr[4];
-    bitCapInt carryMask = bitCapIntPtr[5];
-    bitCapInt inOutStart = bitCapIntPtr[6];
-    bitCapInt toAdd = bitCapIntPtr[7];
-    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+    bitCapIntOcl lengthPower = bitCapIntOclPtr[3];
+    bitCapIntOcl signMask = lengthPower >> ONE_BCI;
+    bitCapIntOcl overflowMask = bitCapIntOclPtr[4];
+    bitCapIntOcl carryMask = bitCapIntOclPtr[5];
+    bitCapIntOcl inOutStart = bitCapIntOclPtr[6];
+    bitCapIntOcl toAdd = bitCapIntOclPtr[7];
+    bitCapIntOcl otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i;
     cmplx amp;
     bool isOverflow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -943,20 +947,21 @@ __global__ void incdecsc1(__global__ cmplx* stateVec, __constant__ bitCapInt* bi
     }
 }
 
-__global__ void incdecsc2(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+__global__ void incdecsc2(
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt lengthPower = bitCapIntPtr[3];
-    bitCapInt signMask = lengthPower >> ONE_BCI;
-    bitCapInt carryMask = bitCapIntPtr[4];
-    bitCapInt inOutStart = bitCapIntPtr[5];
-    bitCapInt toAdd = bitCapIntPtr[6];
-    bitCapInt otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+    bitCapIntOcl lengthPower = bitCapIntOclPtr[3];
+    bitCapIntOcl signMask = lengthPower >> ONE_BCI;
+    bitCapIntOcl carryMask = bitCapIntOclPtr[4];
+    bitCapIntOcl inOutStart = bitCapIntOclPtr[5];
+    bitCapIntOcl toAdd = bitCapIntOclPtr[6];
+    bitCapIntOcl otherRes, inOutInt, inOutRes, inInt, outInt, outRes, i;
     cmplx amp;
     bool isOverflow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -994,18 +999,19 @@ __global__ void incdecsc2(__global__ cmplx* stateVec, __constant__ bitCapInt* bi
     }
 }
 
-__global__ void incbcd(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+__global__ void incbcd(
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt inOutStart = bitCapIntPtr[3];
-    bitCapInt toAdd = bitCapIntPtr[4];
-    int nibbleCount = bitCapIntPtr[5];
-    bitCapInt otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+    bitCapIntOcl inOutStart = bitCapIntOclPtr[3];
+    bitCapIntOcl toAdd = bitCapIntOclPtr[4];
+    int nibbleCount = bitCapIntOclPtr[5];
+    bitCapIntOcl otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes;
     int test1, test2;
     int j;
     // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
@@ -1050,7 +1056,7 @@ __global__ void incbcd(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCa
                         nibbles[j + 1]++;
                     }
                 }
-                outInt |= ((bitCapInt)nibbles[j]) << (j * 4);
+                outInt |= ((bitCapIntOcl)nibbles[j]) << (j * 4);
             }
             outRes = (outInt << (inOutStart)) | otherRes;
             nStateVec[outRes] = amp;
@@ -1061,19 +1067,19 @@ __global__ void incbcd(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCa
 }
 
 __global__ void incdecbcdc(
-    __global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inOutMask = bitCapIntPtr[1];
-    bitCapInt otherMask = bitCapIntPtr[2];
-    bitCapInt carryMask = bitCapIntPtr[3];
-    bitCapInt inOutStart = bitCapIntPtr[4];
-    bitCapInt toAdd = bitCapIntPtr[5];
-    int nibbleCount = bitCapIntPtr[6];
-    bitCapInt otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes, carryRes, i;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl inOutMask = bitCapIntOclPtr[1];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+    bitCapIntOcl carryMask = bitCapIntOclPtr[3];
+    bitCapIntOcl inOutStart = bitCapIntOclPtr[4];
+    bitCapIntOcl toAdd = bitCapIntOclPtr[5];
+    int nibbleCount = bitCapIntOclPtr[6];
+    bitCapIntOcl otherRes, partToAdd, inOutRes, inOutInt, outInt, outRes, carryRes, i;
     int test1, test2;
     int j;
     // For 64 qubits, we would have 16 nibbles. For now, there's no reason not overallocate in
@@ -1125,7 +1131,7 @@ __global__ void incdecbcdc(
                         carryRes = carryMask;
                     }
                 }
-                outInt |= ((bitCapInt)nibbles[j]) << (j * 4);
+                outInt |= ((bitCapIntOcl)nibbles[j]) << (j * 4);
             }
             outRes = (outInt << inOutStart) | otherRes | carryRes;
             nStateVec[outRes] = amp1;
@@ -1138,24 +1144,24 @@ __global__ void incdecbcdc(
     }
 }
 
-__global__ void mul(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+__global__ void mul(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt toMul = bitCapIntPtr[1];
-    bitCapInt inOutMask = bitCapIntPtr[2];
-    bitCapInt carryMask = bitCapIntPtr[3];
-    bitCapInt otherMask = bitCapIntPtr[4];
-    bitCapInt len = bitCapIntPtr[5];
-    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapInt highMask = lowMask << len;
-    bitCapInt inOutStart = bitCapIntPtr[6];
-    bitCapInt carryStart = bitCapIntPtr[7];
-    bitCapInt skipMask = bitCapIntPtr[8];
-    bitCapInt otherRes, outInt;
-    bitCapInt i, iHigh, iLow;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl toMul = bitCapIntOclPtr[1];
+    bitCapIntOcl inOutMask = bitCapIntOclPtr[2];
+    bitCapIntOcl carryMask = bitCapIntOclPtr[3];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[4];
+    bitCapIntOcl len = bitCapIntOclPtr[5];
+    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
+    bitCapIntOcl highMask = lowMask << len;
+    bitCapIntOcl inOutStart = bitCapIntOclPtr[6];
+    bitCapIntOcl carryStart = bitCapIntOclPtr[7];
+    bitCapIntOcl skipMask = bitCapIntOclPtr[8];
+    bitCapIntOcl otherRes, outInt;
+    bitCapIntOcl i, iHigh, iLow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & skipMask;
@@ -1168,24 +1174,24 @@ __global__ void mul(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIn
     }
 }
 
-__global__ void div(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+__global__ void div(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt toDiv = bitCapIntPtr[1];
-    bitCapInt inOutMask = bitCapIntPtr[2];
-    bitCapInt carryMask = bitCapIntPtr[3];
-    bitCapInt otherMask = bitCapIntPtr[4];
-    bitCapInt len = bitCapIntPtr[5];
-    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapInt highMask = lowMask << len;
-    bitCapInt inOutStart = bitCapIntPtr[6];
-    bitCapInt carryStart = bitCapIntPtr[7];
-    bitCapInt skipMask = bitCapIntPtr[8];
-    bitCapInt otherRes, outInt;
-    bitCapInt i, iHigh, iLow;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl toDiv = bitCapIntOclPtr[1];
+    bitCapIntOcl inOutMask = bitCapIntOclPtr[2];
+    bitCapIntOcl carryMask = bitCapIntOclPtr[3];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[4];
+    bitCapIntOcl len = bitCapIntOclPtr[5];
+    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
+    bitCapIntOcl highMask = lowMask << len;
+    bitCapIntOcl inOutStart = bitCapIntOclPtr[6];
+    bitCapIntOcl carryStart = bitCapIntOclPtr[7];
+    bitCapIntOcl skipMask = bitCapIntOclPtr[8];
+    bitCapIntOcl otherRes, outInt;
+    bitCapIntOcl i, iHigh, iLow;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & skipMask;
@@ -1200,22 +1206,22 @@ __global__ void div(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIn
 
 // The conditional in the body of kernel loop would majorly hurt performance:
 #define MODNOUT(indexIn, indexOut)                                                                                     \
-    bitCapInt Nthreads, lcv;                                                                                           \
+    bitCapIntOcl Nthreads, lcv;                                                                                        \
                                                                                                                        \
     Nthreads = gridDim.x * blockDim.x;                                                                                 \
-    bitCapInt maxI = bitCapIntPtr[0];                                                                                  \
-    bitCapInt toMul = bitCapIntPtr[1];                                                                                 \
-    bitCapInt inMask = bitCapIntPtr[2];                                                                                \
-    bitCapInt outMask = bitCapIntPtr[3];                                                                               \
-    bitCapInt otherMask = bitCapIntPtr[4];                                                                             \
-    bitCapInt len = bitCapIntPtr[5];                                                                                   \
-    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;                                                                    \
-    bitCapInt inStart = bitCapIntPtr[6];                                                                               \
-    bitCapInt outStart = bitCapIntPtr[7];                                                                              \
-    bitCapInt skipMask = bitCapIntPtr[8];                                                                              \
-    bitCapInt modN = bitCapIntPtr[9];                                                                                  \
-    bitCapInt otherRes, inRes, outRes;                                                                                 \
-    bitCapInt i, iHigh, iLow;                                                                                          \
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];                                                                            \
+    bitCapIntOcl toMul = bitCapIntOclPtr[1];                                                                           \
+    bitCapIntOcl inMask = bitCapIntOclPtr[2];                                                                          \
+    bitCapIntOcl outMask = bitCapIntOclPtr[3];                                                                         \
+    bitCapIntOcl otherMask = bitCapIntOclPtr[4];                                                                       \
+    bitCapIntOcl len = bitCapIntOclPtr[5];                                                                             \
+    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;                                                                 \
+    bitCapIntOcl inStart = bitCapIntOclPtr[6];                                                                         \
+    bitCapIntOcl outStart = bitCapIntOclPtr[7];                                                                        \
+    bitCapIntOcl skipMask = bitCapIntOclPtr[8];                                                                        \
+    bitCapIntOcl modN = bitCapIntOclPtr[9];                                                                            \
+    bitCapIntOcl otherRes, inRes, outRes;                                                                              \
+    bitCapIntOcl i, iHigh, iLow;                                                                                       \
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {                                                                      \
         iHigh = lcv;                                                                                                   \
         iLow = iHigh & skipMask;                                                                                       \
@@ -1228,36 +1234,36 @@ __global__ void div(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIn
     }
 
 __global__ void mulmodnout(
-    __global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
     MODNOUT(i, (inRes | outRes | otherRes));
 }
 
 __global__ void imulmodnout(
-    __global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
     MODNOUT((inRes | outRes | otherRes), i);
 }
 
 __global__ void powmodnout(
-    __global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec)
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ cmplx* nStateVec)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt base = bitCapIntPtr[1];
-    bitCapInt inMask = bitCapIntPtr[2];
-    bitCapInt outMask = bitCapIntPtr[3];
-    bitCapInt otherMask = bitCapIntPtr[4];
-    bitCapInt len = bitCapIntPtr[5];
-    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapInt inStart = bitCapIntPtr[6];
-    bitCapInt outStart = bitCapIntPtr[7];
-    bitCapInt skipMask = bitCapIntPtr[8];
-    bitCapInt modN = bitCapIntPtr[9];
-    bitCapInt otherRes, inRes, outRes, inInt;
-    bitCapInt i, iHigh, iLow, powRes, pw;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl base = bitCapIntOclPtr[1];
+    bitCapIntOcl inMask = bitCapIntOclPtr[2];
+    bitCapIntOcl outMask = bitCapIntOclPtr[3];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[4];
+    bitCapIntOcl len = bitCapIntOclPtr[5];
+    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
+    bitCapIntOcl inStart = bitCapIntOclPtr[6];
+    bitCapIntOcl outStart = bitCapIntOclPtr[7];
+    bitCapIntOcl skipMask = bitCapIntOclPtr[8];
+    bitCapIntOcl modN = bitCapIntOclPtr[9];
+    bitCapIntOcl otherRes, inRes, outRes, inInt;
+    bitCapIntOcl i, iHigh, iLow, powRes, pw;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & skipMask;
@@ -1281,18 +1287,18 @@ __global__ void powmodnout(
     }
 }
 
-__global__ void fulladd(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr)
+__global__ void fulladd(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt input1Mask = bitCapIntPtr[1];
-    bitCapInt input2Mask = bitCapIntPtr[2];
-    bitCapInt carryInSumOutMask = bitCapIntPtr[3];
-    bitCapInt carryOutMask = bitCapIntPtr[4];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl input1Mask = bitCapIntOclPtr[1];
+    bitCapIntOcl input2Mask = bitCapIntOclPtr[2];
+    bitCapIntOcl carryInSumOutMask = bitCapIntOclPtr[3];
+    bitCapIntOcl carryOutMask = bitCapIntOclPtr[4];
 
-    bitCapInt qMask1, qMask2;
+    bitCapIntOcl qMask1, qMask2;
     if (carryInSumOutMask < carryOutMask) {
         qMask1 = carryInSumOutMask - ONE_BCI;
         qMask2 = carryOutMask - ONE_BCI;
@@ -1304,7 +1310,7 @@ __global__ void fulladd(__global__ cmplx* stateVec, __constant__ bitCapInt* bitC
     cmplx ins0c0, ins0c1, ins1c0, ins1c1;
     cmplx outs0c0, outs0c1, outs1c0, outs1c1;
 
-    bitCapInt i, iLow, iHigh;
+    bitCapIntOcl i, iLow, iHigh;
 
     bool aVal, bVal;
 
@@ -1361,18 +1367,18 @@ __global__ void fulladd(__global__ cmplx* stateVec, __constant__ bitCapInt* bitC
     }
 }
 
-__global__ void ifulladd(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr)
+__global__ void ifulladd(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt input1Mask = bitCapIntPtr[1];
-    bitCapInt input2Mask = bitCapIntPtr[2];
-    bitCapInt carryInSumOutMask = bitCapIntPtr[3];
-    bitCapInt carryOutMask = bitCapIntPtr[4];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl input1Mask = bitCapIntOclPtr[1];
+    bitCapIntOcl input2Mask = bitCapIntOclPtr[2];
+    bitCapIntOcl carryInSumOutMask = bitCapIntOclPtr[3];
+    bitCapIntOcl carryOutMask = bitCapIntOclPtr[4];
 
-    bitCapInt qMask1, qMask2;
+    bitCapIntOcl qMask1, qMask2;
     if (carryInSumOutMask < carryOutMask) {
         qMask1 = carryInSumOutMask - ONE_BCI;
         qMask2 = carryOutMask - ONE_BCI;
@@ -1384,7 +1390,7 @@ __global__ void ifulladd(__global__ cmplx* stateVec, __constant__ bitCapInt* bit
     cmplx ins0c0, ins0c1, ins1c0, ins1c1;
     cmplx outs0c0, outs0c1, outs1c0, outs1c1;
 
-    bitCapInt i, iLow, iHigh;
+    bitCapIntOcl i, iLow, iHigh;
 
     bool aVal, bVal;
 
@@ -1463,28 +1469,28 @@ __global__ void ifulladd(__global__ cmplx* stateVec, __constant__ bitCapInt* bit
         nStateVec[i | partControlMask] = stateVec[i | partControlMask];                                                \
     }
 
-__global__ void cmul(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec,
-    __constant__ bitCapInt* controlPowers)
+__global__ void cmul(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
+    __global__ cmplx* nStateVec, __constant__ bitCapIntOcl* controlPowers)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt toMul = bitCapIntPtr[1];
-    bitCapInt controlLen = bitCapIntPtr[2];
-    bitCapInt controlMask = bitCapIntPtr[3];
-    bitCapInt inOutMask = bitCapIntPtr[4];
-    bitCapInt carryMask = bitCapIntPtr[5];
-    bitCapInt otherMask = bitCapIntPtr[6];
-    bitCapInt len = bitCapIntPtr[7];
-    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapInt highMask = lowMask << len;
-    bitCapInt inOutStart = bitCapIntPtr[8];
-    bitCapInt carryStart = bitCapIntPtr[9];
-    bitCapInt otherRes, outInt;
-    bitCapInt i, iHigh, iLow, j;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl toMul = bitCapIntOclPtr[1];
+    bitCapIntOcl controlLen = bitCapIntOclPtr[2];
+    bitCapIntOcl controlMask = bitCapIntOclPtr[3];
+    bitCapIntOcl inOutMask = bitCapIntOclPtr[4];
+    bitCapIntOcl carryMask = bitCapIntOclPtr[5];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[6];
+    bitCapIntOcl len = bitCapIntOclPtr[7];
+    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
+    bitCapIntOcl highMask = lowMask << len;
+    bitCapIntOcl inOutStart = bitCapIntOclPtr[8];
+    bitCapIntOcl carryStart = bitCapIntOclPtr[9];
+    bitCapIntOcl otherRes, outInt;
+    bitCapIntOcl i, iHigh, iLow, j;
     bitLenInt p, k;
-    bitCapInt partControlMask;
+    bitCapIntOcl partControlMask;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         CMOD_START();
 
@@ -1497,28 +1503,28 @@ __global__ void cmul(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapI
     }
 }
 
-__global__ void cdiv(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec,
-    __constant__ bitCapInt* controlPowers)
+__global__ void cdiv(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
+    __global__ cmplx* nStateVec, __constant__ bitCapIntOcl* controlPowers)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt toDiv = bitCapIntPtr[1];
-    bitCapInt controlLen = bitCapIntPtr[2];
-    bitCapInt controlMask = bitCapIntPtr[3];
-    bitCapInt inOutMask = bitCapIntPtr[4];
-    bitCapInt carryMask = bitCapIntPtr[5];
-    bitCapInt otherMask = bitCapIntPtr[6];
-    bitCapInt len = bitCapIntPtr[7];
-    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapInt highMask = lowMask << len;
-    bitCapInt inOutStart = bitCapIntPtr[8];
-    bitCapInt carryStart = bitCapIntPtr[9];
-    bitCapInt otherRes, outInt;
-    bitCapInt i, iHigh, iLow, j;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl toDiv = bitCapIntOclPtr[1];
+    bitCapIntOcl controlLen = bitCapIntOclPtr[2];
+    bitCapIntOcl controlMask = bitCapIntOclPtr[3];
+    bitCapIntOcl inOutMask = bitCapIntOclPtr[4];
+    bitCapIntOcl carryMask = bitCapIntOclPtr[5];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[6];
+    bitCapIntOcl len = bitCapIntOclPtr[7];
+    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
+    bitCapIntOcl highMask = lowMask << len;
+    bitCapIntOcl inOutStart = bitCapIntOclPtr[8];
+    bitCapIntOcl carryStart = bitCapIntOclPtr[9];
+    bitCapIntOcl otherRes, outInt;
+    bitCapIntOcl i, iHigh, iLow, j;
     bitLenInt p, k;
-    bitCapInt partControlMask;
+    bitCapIntOcl partControlMask;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         CMOD_START();
 
@@ -1533,28 +1539,28 @@ __global__ void cdiv(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapI
 
 // The conditional in the body of kernel loop would majorly hurt performance:
 #define CMODNOUT(indexIn, indexOut)                                                                                    \
-    bitCapInt Nthreads, lcv;                                                                                           \
+    bitCapIntOcl Nthreads, lcv;                                                                                        \
                                                                                                                        \
     Nthreads = gridDim.x * blockDim.x;                                                                                 \
-    bitCapInt maxI = bitCapIntPtr[0];                                                                                  \
-    bitCapInt toMul = bitCapIntPtr[1];                                                                                 \
-    bitCapInt controlLen = bitCapIntPtr[2];                                                                            \
-    bitCapInt controlMask = bitCapIntPtr[3];                                                                           \
-    bitCapInt inMask = bitCapIntPtr[4];                                                                                \
-    bitCapInt outMask = bitCapIntPtr[5];                                                                               \
-    bitCapInt modN = bitCapIntPtr[6];                                                                                  \
-    bitCapInt len = bitCapIntPtr[7];                                                                                   \
-    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;                                                                    \
-    bitCapInt inStart = bitCapIntPtr[8];                                                                               \
-    bitCapInt outStart = bitCapIntPtr[9];                                                                              \
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];                                                                            \
+    bitCapIntOcl toMul = bitCapIntOclPtr[1];                                                                           \
+    bitCapIntOcl controlLen = bitCapIntOclPtr[2];                                                                      \
+    bitCapIntOcl controlMask = bitCapIntOclPtr[3];                                                                     \
+    bitCapIntOcl inMask = bitCapIntOclPtr[4];                                                                          \
+    bitCapIntOcl outMask = bitCapIntOclPtr[5];                                                                         \
+    bitCapIntOcl modN = bitCapIntOclPtr[6];                                                                            \
+    bitCapIntOcl len = bitCapIntOclPtr[7];                                                                             \
+    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;                                                                 \
+    bitCapIntOcl inStart = bitCapIntOclPtr[8];                                                                         \
+    bitCapIntOcl outStart = bitCapIntOclPtr[9];                                                                        \
                                                                                                                        \
-    bitCapInt otherMask = (maxI - ONE_BCI) ^ (inMask | outMask | controlMask);                                         \
+    bitCapIntOcl otherMask = (maxI - ONE_BCI) ^ (inMask | outMask | controlMask);                                      \
     maxI >>= (controlLen + len);                                                                                       \
                                                                                                                        \
-    bitCapInt otherRes, outRes, inRes;                                                                                 \
-    bitCapInt i, iHigh, iLow, j;                                                                                       \
+    bitCapIntOcl otherRes, outRes, inRes;                                                                              \
+    bitCapIntOcl i, iHigh, iLow, j;                                                                                    \
     bitLenInt p, k;                                                                                                    \
-    bitCapInt partControlMask;                                                                                         \
+    bitCapIntOcl partControlMask;                                                                                      \
                                                                                                                        \
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {                                                                      \
         CMOD_START();                                                                                                  \
@@ -1567,43 +1573,43 @@ __global__ void cdiv(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapI
         CMOD_FINISH();                                                                                                 \
     }
 
-__global__ void cmulmodnout(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
-    __global__ cmplx* nStateVec, __constant__ bitCapInt* controlPowers)
+__global__ void cmulmodnout(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
+    __global__ cmplx* nStateVec, __constant__ bitCapIntOcl* controlPowers)
 {
     CMODNOUT((i | controlMask), (inRes | outRes | otherRes | controlMask));
 }
 
-__global__ void cimulmodnout(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
-    __global__ cmplx* nStateVec, __constant__ bitCapInt* controlPowers)
+__global__ void cimulmodnout(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
+    __global__ cmplx* nStateVec, __constant__ bitCapIntOcl* controlPowers)
 {
     CMODNOUT((inRes | outRes | otherRes | controlMask), (i | controlMask));
 }
 
-__global__ void cpowmodnout(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
-    __global__ cmplx* nStateVec, __constant__ bitCapInt* controlPowers)
+__global__ void cpowmodnout(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
+    __global__ cmplx* nStateVec, __constant__ bitCapIntOcl* controlPowers)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt base = bitCapIntPtr[1];
-    bitCapInt controlLen = bitCapIntPtr[2];
-    bitCapInt controlMask = bitCapIntPtr[3];
-    bitCapInt inMask = bitCapIntPtr[4];
-    bitCapInt outMask = bitCapIntPtr[5];
-    bitCapInt modN = bitCapIntPtr[6];
-    bitCapInt len = bitCapIntPtr[7];
-    bitCapInt lowMask = (ONE_BCI << len) - ONE_BCI;
-    bitCapInt inStart = bitCapIntPtr[8];
-    bitCapInt outStart = bitCapIntPtr[9];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl base = bitCapIntOclPtr[1];
+    bitCapIntOcl controlLen = bitCapIntOclPtr[2];
+    bitCapIntOcl controlMask = bitCapIntOclPtr[3];
+    bitCapIntOcl inMask = bitCapIntOclPtr[4];
+    bitCapIntOcl outMask = bitCapIntOclPtr[5];
+    bitCapIntOcl modN = bitCapIntOclPtr[6];
+    bitCapIntOcl len = bitCapIntOclPtr[7];
+    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
+    bitCapIntOcl inStart = bitCapIntOclPtr[8];
+    bitCapIntOcl outStart = bitCapIntOclPtr[9];
 
-    bitCapInt otherMask = (maxI - ONE_BCI) ^ (inMask | outMask | controlMask);
+    bitCapIntOcl otherMask = (maxI - ONE_BCI) ^ (inMask | outMask | controlMask);
     maxI >>= (controlLen + len);
 
-    bitCapInt otherRes, outRes, inRes, inInt;
-    bitCapInt i, iHigh, iLow, j, powRes, pw;
+    bitCapIntOcl otherRes, outRes, inRes, inInt;
+    bitCapIntOcl i, iHigh, iLow, j, powRes, pw;
     bitLenInt p, k;
-    bitCapInt partControlMask;
+    bitCapIntOcl partControlMask;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         CMOD_START();
 
@@ -1627,21 +1633,21 @@ __global__ void cpowmodnout(__global__ cmplx* stateVec, __constant__ bitCapInt* 
     }
 }
 
-__global__ void indexedLda(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
+__global__ void indexedLda(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
     __global__ cmplx* nStateVec, __constant__ bitLenInt* values)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inputStart = bitCapIntPtr[1];
-    bitCapInt inputMask = bitCapIntPtr[2];
-    bitCapInt outputStart = bitCapIntPtr[3];
-    bitCapInt valueBytes = bitCapIntPtr[4];
-    bitCapInt valueLength = bitCapIntPtr[5];
-    bitCapInt lowMask = (ONE_BCI << outputStart) - ONE_BCI;
-    bitCapInt inputRes, inputInt, outputRes, outputInt;
-    bitCapInt i, iLow, iHigh, j;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl inputStart = bitCapIntOclPtr[1];
+    bitCapIntOcl inputMask = bitCapIntOclPtr[2];
+    bitCapIntOcl outputStart = bitCapIntOclPtr[3];
+    bitCapIntOcl valueBytes = bitCapIntOclPtr[4];
+    bitCapIntOcl valueLength = bitCapIntOclPtr[5];
+    bitCapIntOcl lowMask = (ONE_BCI << outputStart) - ONE_BCI;
+    bitCapIntOcl inputRes, inputInt, outputRes, outputInt;
+    bitCapIntOcl i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & lowMask;
@@ -1658,24 +1664,24 @@ __global__ void indexedLda(__global__ cmplx* stateVec, __constant__ bitCapInt* b
     }
 }
 
-__global__ void indexedAdc(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
+__global__ void indexedAdc(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
     __global__ cmplx* nStateVec, __constant__ bitLenInt* values)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inputStart = bitCapIntPtr[1];
-    bitCapInt inputMask = bitCapIntPtr[2];
-    bitCapInt outputStart = bitCapIntPtr[3];
-    bitCapInt outputMask = bitCapIntPtr[4];
-    bitCapInt otherMask = bitCapIntPtr[5];
-    bitCapInt carryIn = bitCapIntPtr[6];
-    bitCapInt carryMask = bitCapIntPtr[7];
-    bitCapInt lengthPower = bitCapIntPtr[8];
-    bitCapInt valueBytes = bitCapIntPtr[9];
-    bitCapInt otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
-    bitCapInt i, iLow, iHigh, j;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl inputStart = bitCapIntOclPtr[1];
+    bitCapIntOcl inputMask = bitCapIntOclPtr[2];
+    bitCapIntOcl outputStart = bitCapIntOclPtr[3];
+    bitCapIntOcl outputMask = bitCapIntOclPtr[4];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[5];
+    bitCapIntOcl carryIn = bitCapIntOclPtr[6];
+    bitCapIntOcl carryMask = bitCapIntOclPtr[7];
+    bitCapIntOcl lengthPower = bitCapIntOclPtr[8];
+    bitCapIntOcl valueBytes = bitCapIntOclPtr[9];
+    bitCapIntOcl otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
+    bitCapIntOcl i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - ONE_BCI);
@@ -1702,24 +1708,24 @@ __global__ void indexedAdc(__global__ cmplx* stateVec, __constant__ bitCapInt* b
     }
 }
 
-__global__ void indexedSbc(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
+__global__ void indexedSbc(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
     __global__ cmplx* nStateVec, __constant__ bitLenInt* values)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt inputStart = bitCapIntPtr[1];
-    bitCapInt inputMask = bitCapIntPtr[2];
-    bitCapInt outputStart = bitCapIntPtr[3];
-    bitCapInt outputMask = bitCapIntPtr[4];
-    bitCapInt otherMask = bitCapIntPtr[5];
-    bitCapInt carryIn = bitCapIntPtr[6];
-    bitCapInt carryMask = bitCapIntPtr[7];
-    bitCapInt lengthPower = bitCapIntPtr[8];
-    bitCapInt valueBytes = bitCapIntPtr[9];
-    bitCapInt otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
-    bitCapInt i, iLow, iHigh, j;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl inputStart = bitCapIntOclPtr[1];
+    bitCapIntOcl inputMask = bitCapIntOclPtr[2];
+    bitCapIntOcl outputStart = bitCapIntOclPtr[3];
+    bitCapIntOcl outputMask = bitCapIntOclPtr[4];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[5];
+    bitCapIntOcl carryIn = bitCapIntOclPtr[6];
+    bitCapIntOcl carryMask = bitCapIntOclPtr[7];
+    bitCapIntOcl lengthPower = bitCapIntOclPtr[8];
+    bitCapIntOcl valueBytes = bitCapIntOclPtr[9];
+    bitCapIntOcl otherRes, inputRes, inputInt, outputRes, outputInt, carryRes;
+    bitCapIntOcl i, iLow, iHigh, j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & (carryMask - ONE_BCI);
@@ -1746,18 +1752,18 @@ __global__ void indexedSbc(__global__ cmplx* stateVec, __constant__ bitCapInt* b
     }
 }
 
-__global__ void hash(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __global__ cmplx* nStateVec,
-    __constant__ bitLenInt* values)
+__global__ void hash(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
+    __global__ cmplx* nStateVec, __constant__ bitLenInt* values)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt start = bitCapIntPtr[1];
-    bitCapInt inputMask = bitCapIntPtr[2];
-    bitCapInt bytes = bitCapIntPtr[3];
-    bitCapInt inputRes, inputInt, outputRes, outputInt;
-    bitCapInt j;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl start = bitCapIntOclPtr[1];
+    bitCapIntOcl inputMask = bitCapIntOclPtr[2];
+    bitCapIntOcl bytes = bitCapIntOclPtr[3];
+    bitCapIntOcl inputRes, inputInt, outputRes, outputInt;
+    bitCapIntOcl j;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         inputRes = lcv & inputMask;
         inputInt = inputRes >> start;
@@ -1770,12 +1776,13 @@ __global__ void hash(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapI
     }
 }
 
-__global__ void nrmlze(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __constant__ real1* args_ptr)
+__global__ void nrmlze(
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __constant__ real1* args_ptr)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
     real1 norm_thresh = args_ptr[0];
     real1 nrm = args_ptr[1];
     cmplx amp;
@@ -1790,9 +1797,9 @@ __global__ void nrmlze(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCa
 }
 
 __global__ void nrmlzewide(
-    __global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __constant__ real1* args_ptr)
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __constant__ real1* args_ptr)
 {
-    bitCapInt lcv = ID;
+    bitCapIntOcl lcv = ID;
     real1 norm_thresh = args_ptr[0];
     real1 nrm = args_ptr[1];
     cmplx amp;
@@ -1804,13 +1811,13 @@ __global__ void nrmlzewide(
     stateVec[lcv] = nrm * amp;
 }
 
-__global__ void updatenorm(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr,
+__global__ void updatenorm(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr,
     __constant__ real1* args_ptr, __global__ real1* norm_ptr, __shared__ real1* lProbBuffer)
 {
-    bitCapInt Nthreads, lcv, locID, locNthreads;
+    bitCapIntOcl Nthreads, lcv, locID, locNthreads;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
     real1 norm_thresh = args_ptr[0];
     cmplx amp;
     real1 nrm;
@@ -1829,7 +1836,7 @@ __global__ void updatenorm(__global__ cmplx* stateVec, __constant__ bitCapInt* b
     locNthreads = blockDim.x;
     lProbBuffer[locID] = partNrm;
     for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-        barrier(CLK_LOCAL_MEM_FENCE);
+        __syncthreads();
         if (locID < lcv) {
             lProbBuffer[locID] += lProbBuffer[locID + lcv];
         }
@@ -1841,19 +1848,19 @@ __global__ void updatenorm(__global__ cmplx* stateVec, __constant__ bitCapInt* b
 }
 
 __global__ void approxcompare(__global__ cmplx* stateVec1, __global__ cmplx* stateVec2,
-    __constant__ bitCapInt* bitCapIntPtr, __global__ real1* norm_ptr, __shared__ real1* lProbBuffer)
+    __constant__ bitCapIntOcl* bitCapIntOclPtr, __global__ real1* norm_ptr, __shared__ real1* lProbBuffer)
 {
-    bitCapInt Nthreads, lcv, locID, locNthreads;
+    bitCapIntOcl Nthreads, lcv, locID, locNthreads;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
     cmplx amp;
     real1 partNrm = ZERO_R1;
 
     // Hopefully, since this is identical redundant work by all elements, the break hits for all at the same time.
     cmplx basePhaseFac1;
     real1 nrm;
-    bitCapInt basePerm = 0;
+    bitCapIntOcl basePerm = 0;
     do {
         amp = stateVec1[basePerm];
         nrm = dot(amp, amp);
@@ -1881,7 +1888,7 @@ __global__ void approxcompare(__global__ cmplx* stateVec1, __global__ cmplx* sta
         lProbBuffer[locID] = partNrm;
 
         for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-            barrier(CLK_LOCAL_MEM_FENCE);
+            __syncthreads();
             if (locID < lcv) {
                 lProbBuffer[locID] += lProbBuffer[locID + lcv];
             }
@@ -1895,18 +1902,19 @@ __global__ void approxcompare(__global__ cmplx* stateVec1, __global__ cmplx* sta
     }
 }
 
-__global__ void applym(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __constant__ cmplx* cmplx_ptr)
+__global__ void applym(
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __constant__ cmplx* cmplx_ptr)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt qPower = bitCapIntPtr[1];
-    bitCapInt qMask = qPower - ONE_BCI;
-    bitCapInt savePower = bitCapIntPtr[2];
-    bitCapInt discardPower = qPower ^ savePower;
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl qPower = bitCapIntOclPtr[1];
+    bitCapIntOcl qMask = qPower - ONE_BCI;
+    bitCapIntOcl savePower = bitCapIntOclPtr[2];
+    bitCapIntOcl discardPower = qPower ^ savePower;
     cmplx nrm = cmplx_ptr[0];
-    bitCapInt i, iLow, iHigh, j;
+    bitCapIntOcl i, iLow, iHigh, j;
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -1919,14 +1927,14 @@ __global__ void applym(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCa
 }
 
 __global__ void applymreg(
-    __global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr, __constant__ cmplx* cmplx_ptr)
+    __global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr, __constant__ cmplx* cmplx_ptr)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt mask = bitCapIntPtr[1];
-    bitCapInt result = bitCapIntPtr[2];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl mask = bitCapIntOclPtr[1];
+    bitCapIntOcl result = bitCapIntOclPtr[2];
     cmplx nrm = cmplx_ptr[0];
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
@@ -1934,26 +1942,26 @@ __global__ void applymreg(
     }
 }
 
-__global__ void phaseflip(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr)
+__global__ void phaseflip(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         stateVec[lcv] = -stateVec[lcv];
     }
 }
 
-__global__ void zerophaseflip(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr)
+__global__ void zerophaseflip(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
-    bitCapInt Nthreads, lcv;
-    bitCapInt i, iLow, iHigh;
+    bitCapIntOcl Nthreads, lcv;
+    bitCapIntOcl i, iLow, iHigh;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt skipMask = bitCapIntPtr[1] - ONE_BCI;
-    bitCapInt skipLength = bitCapIntPtr[2];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl skipMask = bitCapIntOclPtr[1] - ONE_BCI;
+    bitCapIntOcl skipLength = bitCapIntOclPtr[2];
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
         iLow = iHigh & skipMask;
@@ -1963,17 +1971,17 @@ __global__ void zerophaseflip(__global__ cmplx* stateVec, __constant__ bitCapInt
     }
 }
 
-__global__ void cphaseflipifless(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr)
+__global__ void cphaseflipifless(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
-    bitCapInt Nthreads, lcv;
-    bitCapInt i, iLow, iHigh;
+    bitCapIntOcl Nthreads, lcv;
+    bitCapIntOcl i, iLow, iHigh;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt regMask = bitCapIntPtr[1];
-    bitCapInt skipPower = bitCapIntPtr[2];
-    bitCapInt greaterPerm = bitCapIntPtr[3];
-    bitCapInt start = bitCapIntPtr[4];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl regMask = bitCapIntOclPtr[1];
+    bitCapIntOcl skipPower = bitCapIntOclPtr[2];
+    bitCapIntOcl greaterPerm = bitCapIntOclPtr[3];
+    bitCapIntOcl start = bitCapIntOclPtr[4];
     cmplx amp;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         iHigh = lcv;
@@ -1985,15 +1993,15 @@ __global__ void cphaseflipifless(__global__ cmplx* stateVec, __constant__ bitCap
     }
 }
 
-__global__ void phaseflipifless(__global__ cmplx* stateVec, __constant__ bitCapInt* bitCapIntPtr)
+__global__ void phaseflipifless(__global__ cmplx* stateVec, __constant__ bitCapIntOcl* bitCapIntOclPtr)
 {
-    bitCapInt Nthreads, lcv;
+    bitCapIntOcl Nthreads, lcv;
 
     Nthreads = gridDim.x * blockDim.x;
-    bitCapInt maxI = bitCapIntPtr[0];
-    bitCapInt regMask = bitCapIntPtr[1];
-    bitCapInt greaterPerm = bitCapIntPtr[2];
-    bitCapInt start = bitCapIntPtr[3];
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl regMask = bitCapIntOclPtr[1];
+    bitCapIntOcl greaterPerm = bitCapIntOclPtr[2];
+    bitCapIntOcl start = bitCapIntOclPtr[3];
     cmplx amp;
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         if (((lcv & regMask) >> start) < greaterPerm)
