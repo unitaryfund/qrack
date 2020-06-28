@@ -374,15 +374,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         throw "Error: State vector exceeds device maximum OpenCL allocation";
     } else if (useHostRam || ((OclMemDenom * stateVecSize) > maxMem)) {
         usingHostRam = true;
-        if (didInit && !stateVec && !nStateVec) {
-            nStateVec = AllocStateVec(maxQPowerOcl, true);
-            BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
-            oldQueue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl);
-            oldQueue.finish();
-            ResetStateVec(nStateVec);
-            ResetStateBuffer(nStateBuffer);
-            nStateVec = NULL;
-        }
     } else {
         usingHostRam = false;
         if (didInit && stateVec && !nStateVec) {
