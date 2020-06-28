@@ -370,7 +370,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         procElemPow <<= ONE_BCI;
     }
     procElemPow >>= ONE_BCI;
-    nrmGroupCount = procElemPow * nrmGroupSize * 2U;
+    nrmGroupCount = procElemPow * nrmGroupSize * 4U;
     while (nrmGroupCount > maxWorkItems) {
         nrmGroupCount >>= ONE_BCI;
     }
@@ -456,9 +456,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     if ((!didInit) || !isSameContext || (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer =
             std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
-        EventVecPtr waitVec = ResetWaitEvents();
-        // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
-        DISPATCH_FILL(waitVec, *nrmBuffer, sizeof(real1) * nrmGroupCount, ZERO_R1);
     }
 }
 
