@@ -243,7 +243,7 @@ public:
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
 
-    virtual void SetDevice(const int& dID, const bool& forceReInit = false);
+    virtual void SetDevice(const int& dID);
     virtual int GetDeviceID() { return deviceID; }
 
     virtual void SetQuantumState(const complex* inputState);
@@ -283,7 +283,7 @@ protected:
     virtual void INCDECBCDC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
 
-    void InitOCL(int devID);
+    void InitCUDA(int devID);
     PoolItemPtr GetFreePoolItem();
 
     real1 ParSum(real1* toSum, bitCapIntOcl maxI);
@@ -299,7 +299,7 @@ protected:
     /**
      * Dumps the remaining asynchronous wait event list or queue of OpenCL events, for the current queue.
      */
-    virtual void clDump();
+    virtual void cudaDump();
 
     size_t FixWorkItemCount(size_t maxI, size_t wic);
     size_t FixGroupSize(size_t wic, size_t gs);

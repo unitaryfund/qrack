@@ -69,9 +69,9 @@ namespace Qrack {
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));
 
-QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored, real1 norm_thresh,
-    std::vector<bitLenInt> devList)
+QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
+    bool doNorm, bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored,
+    real1 norm_thresh, std::vector<bitLenInt> devList)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , deviceID(devID)
     , wait_refs()
@@ -79,80 +79,27 @@ QEngineCUDA::QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_ge
     , unlockHostMem(false)
 {
     maxQPowerOcl = pow2Ocl(qubitCount);
-    InitOCL(devID);
+    InitCUDA(devID);
     SetPermutation(initState, phaseFac);
 }
 
-void QEngineCUDA::LockSync(cl_int flags)
+void QEngineCUDA::cudaFinish()
 {
-    lockSyncFlags = flags;
-    clFinish();
-
-    if (stateVec) {
-        unlockHostMem = true;
-        lockSyncStateBuffer = stateBuffer;
-    } else {
-        unlockHostMem = false;
-        stateVec = AllocStateVec(maxQPowerOcl, true);
-        if (lockSyncFlags & CL_MAP_WRITE) {
-            lockSyncStateBuffer = MakeStateVecBuffer(stateVec);
-        } else {
-            // The OpenCL device will never have to read from this buffer, hence we can set it CL_MEM_WRITE_ONLY
-            lockSyncStateBuffer = std::make_shared<cl::Buffer>(
-                context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * maxQPowerOcl, stateVec);
-        }
-        WAIT_COPY(*stateBuffer, *lockSyncStateBuffer, sizeof(complex) * maxQPowerOcl);
-    }
-
-    queue.enqueueMapBuffer(*lockSyncStateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPowerOcl, NULL);
-}
-
-void QEngineCUDA::UnlockSync()
-{
-    EventVecPtr waitVec = ResetWaitEvents();
-    cl::Event unmapEvent;
-    queue.enqueueUnmapMemObject(*lockSyncStateBuffer, stateVec, waitVec.get(), &unmapEvent);
-    unmapEvent.wait();
-    wait_refs.clear();
-
-    if (!unlockHostMem) {
-        if (lockSyncFlags & CL_MAP_WRITE) {
-            WAIT_COPY(*lockSyncStateBuffer, *stateBuffer, sizeof(complex) * maxQPowerOcl);
-        }
-        FreeStateVec();
-        stateVec = NULL;
-    }
-
-    lockSyncStateBuffer = NULL;
-    lockSyncFlags = 0;
-}
-
-void QEngineCUDA::clFinish(bool doHard)
-{
-    if (device_context == NULL) {
-        return;
-    }
+    cudaSetDevice(deviceID);
 
     while (wait_queue_items.size() > 1) {
-        device_context->WaitOnAllEvents();
+        cudaDeviceSynchronize();
         PopQueue(NULL, CL_COMPLETE);
     }
 
-    if (doHard) {
-        queue.finish();
-    } else {
-        device_context->WaitOnAllEvents();
-    }
+    cudaDeviceSynchronize();
     wait_refs.clear();
 }
 
-void QEngineCUDA::clDump()
+void QEngineCUDA::cudaDump()
 {
-    if (device_context == NULL) {
-        return;
-    }
-
-    device_context->WaitOnAllEvents();
+    cudaSetDevice(deviceID);
+    cudaDeviceSynchronize();
     wait_refs.clear();
 }
 
@@ -276,6 +223,8 @@ void QEngineCUDA::DispatchQueue(cl_event event, cl_int type)
     // other QEngineCUDA instances, until we're done queueing it.
     OCLDeviceCall ocl = device_context->Reserve(item.api_call);
 
+    cudaSetDevice(deviceID);
+
     // Load the arguments.
     for (unsigned int i = 0; i < args.size(); i++) {
         ocl.call.setArg(i, *args[i]);
@@ -307,15 +256,11 @@ real1 QEngineCUDA::ProbAll(bitCapInt fullRegister)
         NormalizeState();
     }
 
-    complex amp[1];
-    EventVecPtr waitVec = ResetWaitEvents();
-    queue.enqueueReadBuffer(
-        *stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)fullRegister, sizeof(complex), amp, waitVec.get());
-    wait_refs.clear();
-    return norm(amp[0]);
+    cudaFinish();
+    return norm(stateVector[fullRegister]);
 }
 
-void QEngineCUDA::SetDevice(const int& dID, const bool& forceReInit)
+void QEngineCUDA::SetDevice(const int& dID)
 {
     bool didInit = (nrmArray != NULL);
 
@@ -326,29 +271,16 @@ void QEngineCUDA::SetDevice(const int& dID, const bool& forceReInit)
 
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
-        if ((!forceReInit) && (dID == deviceID)) {
+        if (dID == deviceID) {
             return;
         }
 
-        // In this branch, the QEngineCUDA was previously allocated, and now we need to copy its memory to a buffer
-        // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
-        if (!isSameContext) {
-            nStateVec = AllocStateVec(maxQPowerOcl, true);
-            LockSync(CL_MAP_READ);
-            std::copy(stateVec, stateVec + maxQPowerOcl, nStateVec);
-            UnlockSync();
-        }
+        // Otherwise, we finish the queue and switch.
+        cudaFinish();
+        deviceID = dID;
 
-        // We're about to switch to a new device, so finish the queue, first.
-        clFinish(true);
+        return;
     }
-
-    cl::Context oldContext = context;
-    device_context = OCLEngine::Instance()->GetDeviceContextPtr(dID);
-    deviceID = device_context->context_id;
-    context = device_context->context;
-    cl::CommandQueue oldQueue = queue;
-    queue = device_context->queue;
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLY2X2_NORM_SINGLE);
     clFinish(true);
@@ -358,7 +290,8 @@ void QEngineCUDA::SetDevice(const int& dID, const bool& forceReInit)
     procElemCount = props.multiProcessorCount;
     maxWorkItems = pow2(31U) - 1UL;
     maxMem = props.totalGlobalMem;
-    // CUDA doesn't have a good way to query the GPU RAM segment size. This is typically going to be 1/2, 1/4, or 1/8 of maxMem, but we'll give allocation a shot, if the user tries to request more.
+    // CUDA doesn't have a good way to query the GPU RAM segment size. This is typically going to be 1/2, 1/4, or 1/8 of
+    // maxMem, but we'll give allocation a shot, if the user tries to request more.
     maxAlloc = props.totalGlobalMem;
 
     // constrain to a power of two
@@ -383,82 +316,15 @@ void QEngineCUDA::SetDevice(const int& dID, const bool& forceReInit)
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > maxAlloc) {
         throw "Error: State vector exceeds device maximum OpenCL allocation";
-    } else if (useHostRam || ((OclMemDenom * stateVecSize) > maxMem)) {
-        usingHostRam = true;
-        if (didInit && !stateVec && !nStateVec) {
-            nStateVec = AllocStateVec(maxQPowerOcl, true);
-            BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
-            oldQueue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl);
-            oldQueue.finish();
-            ResetStateVec(nStateVec);
-            ResetStateBuffer(nStateBuffer);
-            nStateVec = NULL;
-        }
     } else {
-        usingHostRam = false;
-        if (didInit && stateVec && !nStateVec) {
-            BufferPtr nStateBuffer = MakeStateVecBuffer(NULL);
-            oldQueue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl);
-            oldQueue.finish();
-            ResetStateVec(NULL);
-            ResetStateBuffer(nStateBuffer);
-        }
-    }
-
-    size_t nrmVecAlignSize =
-        ((sizeof(real1) * nrmGroupCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
-
-    if (didInit && (nrmGroupCount != oldNrmGroupCount)) {
-        nrmBuffer = NULL;
-        FreeAligned(nrmArray);
-        nrmArray = NULL;
-    }
-
-    if (!didInit || (nrmGroupCount != oldNrmGroupCount)) {
-#if defined(__APPLE__)
-        posix_memalign((void**)&nrmArray, QRACK_ALIGN_SIZE, nrmVecAlignSize);
-#elif defined(_WIN32) && !defined(__CYGWIN__)
-        nrmArray = (real1*)_aligned_malloc(nrmVecAlignSize, QRACK_ALIGN_SIZE);
-#else
-        nrmArray = (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmVecAlignSize);
-#endif
-    }
-
-    // create buffers on device (allocate space on GPU)
-    if (didInit) {
-        // In this branch, the QEngineCUDA was previously allocated, and now we need to copy its memory to a buffer
-        // that's accessible in a new device, if the old buffer is not.
-        if (!usingHostRam && nStateVec) {
-            // We did not have host allocation, so we copied from device-local memory to host memory, above.
-            // Now, we copy to the new device's memory.
-            stateBuffer = MakeStateVecBuffer(NULL);
-            queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, nStateVec);
-            FreeAligned(nStateVec);
-            ResetStateVec(NULL);
-        } else if (nStateVec) {
-            // We had host allocation; we will continue to have it.
-            ResetStateVec(nStateVec);
-            ResetStateBuffer(MakeStateVecBuffer(nStateVec));
-        }
-    } else {
-        // In this branch, the QEngineCUDA is first being initialized, and no data needs to be copied between device
-        // contexts.
         stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
-        stateBuffer = MakeStateVecBuffer(stateVec);
     }
+
+    cudaMallocManaged(&nrmArray, sizeof(real1) * nrmGroupCount);
+    cudaMallocManaged(&nrmArray, sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl) * 16);
 
     poolItems.clear();
     poolItems.push_back(std::make_shared<PoolItem>(context));
-    powersBuffer =
-        std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl) * 16);
-
-    if ((!didInit) || !isSameContext || (nrmGroupCount != oldNrmGroupCount)) {
-        nrmBuffer =
-            std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
-        EventVecPtr waitVec = ResetWaitEvents();
-        // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
-        DISPATCH_FILL(waitVec, *nrmBuffer, sizeof(real1) * nrmGroupCount, ZERO_R1);
-    }
 }
 
 real1 QEngineCUDA::ParSum(real1* toSum, bitCapIntOcl maxI)
@@ -472,17 +338,15 @@ real1 QEngineCUDA::ParSum(real1* toSum, bitCapIntOcl maxI)
     return totNorm;
 }
 
-void QEngineCUDA::InitOCL(int devID) { SetDevice(devID, true); }
+void QEngineCUDA::InitCUDA(int devID) { SetDevice(devID); }
 
 void QEngineCUDA::ResetStateVec(complex* nStateVec)
 {
     if (stateVec) {
         FreeStateVec();
-        stateVec = nStateVec;
     }
+    stateVec = nStateVec;
 }
-
-void QEngineCUDA::ResetStateBuffer(BufferPtr nStateBuffer) { stateBuffer = nStateBuffer; }
 
 void QEngineCUDA::SetPermutation(bitCapInt perm, complex phaseFac)
 {
@@ -920,24 +784,8 @@ void QEngineCUDA::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineCUDAPtr 
     BufferPtr otherStateBuffer;
     complex* otherStateVec;
 
-    bool isSameContext = (toCopy->device_context->context_id == device_context->context_id);
-
-    if (!isSameContext) {
-        toCopy->LockSync(CL_MAP_READ);
-        otherStateVec = AllocStateVec(toCopy->maxQPowerOcl, true);
-        std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPowerOcl, otherStateVec);
-        toCopy->UnlockSync();
-        otherStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPowerOcl, otherStateVec);
-    } else {
-        otherStateVec = toCopy->stateVec;
-        otherStateBuffer = toCopy->stateBuffer;
-    }
-
-    if (!isSameContext) {
-        poolItem->otherStateVec = otherStateVec;
-        toCopy->stateVec = NULL;
-    }
+    otherStateVec = toCopy->stateVec;
+    otherStateBuffer = toCopy->stateBuffer;
 
     WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
 
@@ -998,21 +846,11 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
         NormalizeState();
     }
 
-    bool isSameContext = !destination || (destination->device_context->context_id == device_context->context_id);
-
     if (length == qubitCount) {
         if (destination != NULL) {
-            if (isSameContext) {
-                destination->ResetStateVec(stateVec);
-                destination->stateBuffer = stateBuffer;
-                stateVec = NULL;
-            } else {
-                LockSync();
-                destination->LockSync();
-                std::copy(stateVec, stateVec + maxQPowerOcl, destination->stateVec);
-                destination->UnlockSync();
-                UnlockSync();
-            }
+            destination->ResetStateVec(stateVec);
+            destination->stateBuffer = stateBuffer;
+            stateVec = NULL;
         }
         // This will be cleared by the destructor:
         ResetStateVec(AllocStateVec(2));
@@ -1074,50 +912,12 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
         size_t ngc2 = FixWorkItemCount(partPower, nrmGroupCount);
         size_t ngs2 = FixGroupSize(ngc2, nrmGroupSize);
 
-        BufferPtr otherStateBuffer;
-        complex* otherStateVec;
-        if (isSameContext) {
-            otherStateVec = destination->stateVec;
-            otherStateBuffer = destination->stateBuffer;
-        } else {
-            otherStateVec = AllocStateVec(destination->maxQPowerOcl, true);
-            otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
-                sizeof(complex) * destination->maxQPowerOcl, otherStateVec);
-
-            DISPATCH_FILL(
-                waitVec2, *otherStateBuffer, sizeof(complex) * destination->maxQPowerOcl, complex(ZERO_R1, ZERO_R1));
-        }
+        complex* otherStateVec = destination->stateVec;
 
         size_t oNStateVecSize = maxQPowerOcl * sizeof(complex);
 
         WaitCall(
             OCL_API_DECOMPOSEAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, poolItem->ulongBuffer, otherStateBuffer });
-
-        if (!isSameContext) {
-            queue.enqueueMapBuffer(
-                *otherStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * destination->maxQPowerOcl);
-            destination->LockSync(CL_MAP_WRITE);
-            std::copy(otherStateVec, otherStateVec + destination->maxQPowerOcl, destination->stateVec);
-            cl::Event waitUnmap;
-            queue.enqueueUnmapMemObject(*otherStateBuffer, otherStateVec, NULL, &waitUnmap);
-            waitUnmap.wait();
-            destination->UnlockSync();
-            FreeAligned(otherStateVec);
-        } else if (!(destination->useHostRam) && destination->stateVec && oNStateVecSize <= destination->maxAlloc &&
-            (2 * oNStateVecSize) <= destination->maxMem) {
-
-            BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
-
-            cl::Event copyEvent;
-            destination->queue.enqueueCopyBuffer(
-                *(destination->stateBuffer), *nSB, 0, 0, sizeof(complex) * destination->maxQPowerOcl, NULL, &copyEvent);
-            copyEvent.wait();
-            wait_refs.clear();
-
-            destination->stateBuffer = nSB;
-            FreeAligned(destination->stateVec);
-            destination->stateVec = NULL;
-        }
     }
 
     delete[] partStateProb;
@@ -1135,10 +935,6 @@ void QEngineCUDA::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCUD
     size_t nStateVecSize = maxQPowerOcl * sizeof(complex);
 
     clFinish();
-
-    if (!useHostRam && stateVec && ((OclMemDenom * nStateVecSize) <= maxMem)) {
-        FreeStateVec();
-    }
 
     complex* nStateVec = AllocStateVec(maxQPowerOcl);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
@@ -1274,9 +1070,8 @@ void QEngineCUDA::ProbRegAll(const bitLenInt& start, const bitLenInt& length, re
                 NormalizeState();
             }
 
-            LockSync(CL_MAP_READ);
+            cudaFinish();
             std::transform(stateVec, stateVec + maxQPowerOcl, probsArray, normHelper);
-            UnlockSync();
         } else {
             QEngine::ProbRegAll(start, length, probsArray);
         }
@@ -1632,7 +1427,8 @@ void QEngineCUDA::INTSC(
 }
 
 /** Increment integer (with sign, with carry) */
-void QEngineCUDA::INCDECSC(bitCapInt toAdd, const bitLenInt& start, const bitLenInt& length, const bitLenInt& carryIndex)
+void QEngineCUDA::INCDECSC(
+    bitCapInt toAdd, const bitLenInt& start, const bitLenInt& length, const bitLenInt& carryIndex)
 {
     INTSC(OCL_API_INCDECSC_2, (bitCapIntOcl)toAdd, start, length, carryIndex);
 }
@@ -2145,10 +1941,9 @@ void QEngineCUDA::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineCUDA::SetQuantumState(const complex* inputState)
 {
-    LockSync(CL_MAP_WRITE);
+    cudaFinish();
     std::copy(inputState, inputState + maxQPowerOcl, stateVec);
     runningNorm = ONE_R1;
-    UnlockSync();
 }
 
 complex QEngineCUDA::GetAmplitude(bitCapInt fullRegister)
@@ -2184,9 +1979,8 @@ void QEngineCUDA::GetQuantumState(complex* outputState)
         NormalizeState();
     }
 
-    LockSync(CL_MAP_READ);
+    cudaFinish();
     std::copy(stateVec, stateVec + maxQPowerOcl, outputState);
-    UnlockSync();
 }
 
 /// Get all probabilities, in unsigned int permutation basis
@@ -2218,19 +2012,7 @@ bool QEngineCUDA::ApproxCompare(QEngineCUDAPtr toCompare)
 
     bool isSameContext = (toCompare->device_context->context_id == device_context->context_id);
 
-    BufferPtr otherStateBuffer;
-    complex* otherStateVec;
-    if (isSameContext) {
-        otherStateVec = toCompare->stateVec;
-        otherStateBuffer = toCompare->stateBuffer;
-    } else {
-        otherStateVec = AllocStateVec(toCompare->maxQPowerOcl, true);
-        toCompare->LockSync(CL_MAP_READ);
-        std::copy(toCompare->stateVec, toCompare->stateVec + toCompare->maxQPowerOcl, otherStateVec);
-        toCompare->UnlockSync();
-        otherStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCompare->maxQPowerOcl, otherStateVec);
-    }
+    complex* otherStateVec = toCompare->stateVec;
 
     QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
         { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
@@ -2340,38 +2122,10 @@ void QEngineCUDA::UpdateRunningNorm(real1 norm_thresh)
 
 complex* QEngineCUDA::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
 {
-    // If we're not using host ram, there's no reason to allocate.
-    if (!doForceAlloc && !stateVec) {
-        return NULL;
-    }
-
-    // elemCount is always a power of two, but might be smaller than QRACK_ALIGN_SIZE
-#if defined(__APPLE__)
-    void* toRet;
-    posix_memalign(&toRet, QRACK_ALIGN_SIZE,
-        ((sizeof(complex) * (bitCapIntOcl)elemCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE
-                                                                         : sizeof(complex) * (bitCapIntOcl)elemCount);
-    return (complex*)toRet;
-#elif defined(_WIN32) && !defined(__CYGWIN__)
-    return (complex*)_aligned_malloc(((sizeof(complex) * (bitCapIntOcl)elemCount) < QRACK_ALIGN_SIZE)
-            ? QRACK_ALIGN_SIZE
-            : sizeof(complex) * (bitCapIntOcl)elemCount,
-        QRACK_ALIGN_SIZE);
-#else
-    return (complex*)aligned_alloc(QRACK_ALIGN_SIZE,
-        ((sizeof(complex) * (bitCapIntOcl)elemCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE
-                                                                         : sizeof(complex) * (bitCapIntOcl)elemCount);
-#endif
-}
-
-BufferPtr QEngineCUDA::MakeStateVecBuffer(complex* nStateVec)
-{
-    if (nStateVec) {
-        return std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPowerOcl, nStateVec);
-    } else {
-        return std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPowerOcl);
-    }
+    cudaSetDevice(deviceID);
+    complex* toRet;
+    cudaMallocManaged(&toRet, sizeof(complex) * (bitCapIntOcl)elemCount);
+    return toRet;
 }
 
 } // namespace Qrack
