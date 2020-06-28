@@ -217,6 +217,7 @@ install (FILES
     include/qunit.hpp
     include/qunitmulti.hpp
     include/qengine_opencl.hpp
+    include/qengine_cuda.hpp
     include/qinterface.hpp
     include/qneuron.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack

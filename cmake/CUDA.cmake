@@ -28,5 +28,9 @@ if (ENABLE_CUDA)
     target_link_libraries (teleport ${CUDA_LIBRARIES})
     target_link_libraries (qneuron_classification ${CUDA_LIBRARIES})
     
-    target_sources (qrack PRIVATE src/common/qengine.cu)
+    # Add the CUDA objects to the library
+    target_sources (qrack PRIVATE
+        src/common/qengine.cu
+        src/qengine/cuda.cu
+        )
 endif(ENABLE_CUDA)
