@@ -370,7 +370,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         procElemPow <<= ONE_BCI;
     }
     procElemPow >>= ONE_BCI;
-    nrmGroupCount = procElemPow * nrmGroupSize * 2U;
+    nrmGroupCount = procElemPow * nrmGroupSize * 4U;
     while (nrmGroupCount > maxWorkItems) {
         nrmGroupCount >>= ONE_BCI;
     }
