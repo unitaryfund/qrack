@@ -138,11 +138,11 @@ endif (ENABLE_UINT128 AND ENABLE_PURE32)
 
 if (MSVC)
     set(QRACK_COMPILE_OPTS -std=c++11 -Wall)
-    set(QRACK_CUDA_COMPILE_OPTS -std=c++11 -Wall)
+    set(QRACK_CUDA_COMPILE_OPTS -std=c++11)
     set(TEST_COMPILE_OPTS -std=c++11 -Wall)
 else (MSVC)
     set(QRACK_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror -fPIC)
-    set(QRACK_CUDA_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror all-warnings -fPIC)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -std=c++11 -Werror all-warnings)
     set(TEST_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror)
 endif(MSVC)
 
@@ -166,13 +166,18 @@ if (APPLE)
     set(TEST_COMPILE_OPTS -Wno-inconsistent-missing-override)
 endif (APPLE)
 
-target_compile_options (qrack PUBLIC -DCATCH_CONFIG_FAST_COMPILE)
-add_compile_options (qrack PUBLIC
+target_compile_options (qrack PUBLIC
     "$<$<COMPILE_LANGUAGE:C>:${QRACK_COMPILE_OPTS}>"
     "$<$<COMPILE_LANGUAGE:CXX>:${QRACK_COMPILE_OPTS}>"
     "$<$<COMPILE_LANGUAGE:CUDA>:${QRACK_CUDA_COMPILE_OPTS}>"
+    -DCATCH_CONFIG_FAST_COMPILE
     )
-target_compile_options (qrack_pinvoke PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (qrack_pinvoke PUBLIC
+    "$<$<COMPILE_LANGUAGE:C>:${QRACK_COMPILE_OPTS}>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${QRACK_COMPILE_OPTS}>"
+    "$<$<COMPILE_LANGUAGE:CUDA>:${QRACK_CUDA_COMPILE_OPTS}>"
+    -DCATCH_CONFIG_FAST_COMPILE
+    )
 target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
 target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)

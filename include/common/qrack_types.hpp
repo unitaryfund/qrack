@@ -29,29 +29,35 @@
 #if ENABLE_CUDA
 #include <cuda_runtime.h>
 #if ENABLE_PURE32
+#define SineShift M_PI_2_F
 #define bitCapIntOcl2 uint2
 #define bitCapIntOcl4 uint4
 #define qCudaReal1 float
+#define qCudaReal2 float2
+#define qCudaReal4 float4
 #define qCudaCmplx float2
 #define qCudaCmplx2 float4
-#define qCudaCmplx4 float8
 #define make_qCudaCmplx make_float2
 #define make_qCudaCmplx2 make_float4
 #else
 #define bitCapIntOcl2 ulong2
 #define bitCapIntOcl4 ulong4
 #if ENABLE_COMPLEX8
+#define SineShift M_PI_2_F
 #define qCudaReal1 float
+#define qCudaReal2 float2
+#define qCudaReal4 float4
 #define qCudaCmplx float2
 #define qCudaCmplx2 float4
-#define qCudaCmplx4 float8
 #define make_qCudaCmplx make_float2
 #define make_qCudaCmplx2 make_float4
 #else
+#define SineShift M_PI_2
 #define qCudaReal1 double
+#define qCudaReal2 double2
+#define qCudaReal4 double4
 #define qCudaCmplx double2
 #define qCudaCmplx2 double4
-#define qCudaCmplx4 double8
 #define make_qCudaCmplx make_double2
 #define make_qCudaCmplx2 make_double4
 #endif

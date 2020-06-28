@@ -649,7 +649,7 @@ void kernel probmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOcl
 
     bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
     bitCapIntOcl maxI = args.x;
-    //bitCapIntOcl mask = args.y;
+    // bitCapIntOcl mask = args.y;
     bitCapIntOcl perm = args.z;
     bitCapIntOcl len = args.w;
 
@@ -1238,10 +1238,9 @@ void kernel powmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
     bitCapIntOcl maxI = bitCapIntOclPtr[0];
     bitCapIntOcl base = bitCapIntOclPtr[1];
     bitCapIntOcl inMask = bitCapIntOclPtr[2];
-    bitCapIntOcl outMask = bitCapIntOclPtr[3];
+    // bitCapIntOcl outMask = bitCapIntOclPtr[3];
     bitCapIntOcl otherMask = bitCapIntOclPtr[4];
     bitCapIntOcl len = bitCapIntOclPtr[5];
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
     bitCapIntOcl inStart = bitCapIntOclPtr[6];
     bitCapIntOcl outStart = bitCapIntOclPtr[7];
     bitCapIntOcl skipMask = bitCapIntOclPtr[8];
