@@ -261,6 +261,15 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     // prefer the last device because that's usually a GPU or accelerator; device[0] is usually the CPU
     int dev = deviceCount - 1;
+    if (getenv("QRACK_OCL_DEFAULT_DEVICE")) {
+        dev = std::stoi(std::string(getenv("QRACK_OCL_DEFAULT_DEVICE")));
+        if ((dev < 0) || (dev > (deviceCount - 1))) {
+            std::cout << "WARNING: Invalid QRACK_OCL_DEFAULT_DEVICE selection. (Falling back to highest index device "
+                         "as default.)"
+                      << std::endl;
+            dev = deviceCount - 1;
+        }
+    }
 
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
