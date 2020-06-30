@@ -4866,6 +4866,58 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
     REQUIRE(crossEntropy > 0.97);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_bell_basis")
+{
+    bitCapInt qPowers[8];
+    for (bitLenInt i = 0; i < 8; i++) {
+        qPowers[i] = pow2(i);
+    }
+
+    qftReg->H(1);
+    qftReg->CNOT(1, 7);
+    qftReg->H(1);
+    qftReg->CNOT(1, 7);
+    qftReg->H(1);
+
+    std::map<bitCapInt, int> testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
+
+    QInterfacePtr goldStandard = CreateQuantumInterface(
+        testSubEngineType, 8, 0, rng, ONE_CMPLX, false, true, false, device_id, !disable_hardware_rng);
+
+    goldStandard->H(1);
+    goldStandard->CNOT(1, 7);
+    goldStandard->H(1);
+    goldStandard->CNOT(1, 7);
+    goldStandard->H(1);
+
+    std::map<bitCapInt, int> goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
+
+    int testBinResult, goldBinResult;
+    std::map<bitCapInt, int>::iterator measurementBin;
+    real1 crossEntropy = ZERO_R1;
+    for (int perm = 0; perm < 256; perm++) {
+        measurementBin = goldStandardResult.find(perm);
+        if (measurementBin == goldStandardResult.end()) {
+            goldBinResult = 0;
+        } else {
+            goldBinResult = measurementBin->second;
+        }
+
+        measurementBin = testCaseResult.find(perm);
+        if (measurementBin == testCaseResult.end()) {
+            testBinResult = 0;
+        } else {
+            testBinResult = measurementBin->second;
+        }
+        crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
+    }
+    if (crossEntropy < ZERO_R1) {
+        crossEntropy = ZERO_R1;
+    }
+    crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
+    REQUIRE(crossEntropy > 0.97);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();

@@ -1196,7 +1196,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
                 std::swap(cShard.amp0, cShard.amp1);
             }
             return;
-        } else if (isForward && cShard.isPlusMinus && !tShard.isPlusMinus) {
+        } else if (isReverse && !cShard.isPlusMinus && tShard.isPlusMinus) {
             if (!SHARD_STATE(cShard)) {
                 std::swap(tShard.amp0, tShard.amp1);
             }
