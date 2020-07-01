@@ -57,7 +57,7 @@ typedef std::shared_ptr<PhaseShard> PhaseShardPtr;
 typedef std::map<QEngineShardPtr, PhaseShardPtr> ShardToPhaseMap;
 
 /** Associates a QInterface object with a set of bits. */
-class QEngineShard : public ParallelFor {
+class QEngineShard {
 protected:
     typedef ShardToPhaseMap& (QEngineShard::*GetBufferFn)();
     typedef void (QEngineShard::*OptimizeFn)();
@@ -492,42 +492,41 @@ public:
         }
         std::swap(controlsShards, antiControlsShards);
 
-        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
-            std::advance(phaseShard, lcv);
-            std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
-        });
+        ShardToPhaseMap::iterator phaseShard;
 
-        par_for(0, antiTargetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = antiTargetOfShards.begin();
-            std::advance(phaseShard, lcv);
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
-        });
+        }
+
+        for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
+            std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
+        }
     }
 
     void CommutePhase(const complex& topLeft, const complex& bottomRight)
     {
-        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
-            std::advance(phaseShard, lcv);
-            if (!phaseShard->second->isInvert) {
+        ShardToPhaseMap::iterator phaseShard;
+        PhaseShardPtr buffer;
+
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            if (!buffer->isInvert) {
                 return;
             }
 
-            phaseShard->second->cmplxDiff *= topLeft / bottomRight;
-            phaseShard->second->cmplxSame *= bottomRight / topLeft;
-        });
+            buffer->cmplxDiff *= topLeft / bottomRight;
+            buffer->cmplxSame *= bottomRight / topLeft;
+        }
 
-        par_for(0, antiTargetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = antiTargetOfShards.begin();
-            std::advance(phaseShard, lcv);
-            if (!phaseShard->second->isInvert) {
+        for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            if (!buffer->isInvert) {
                 return;
             }
 
-            phaseShard->second->cmplxDiff *= bottomRight / topLeft;
-            phaseShard->second->cmplxSame *= topLeft / bottomRight;
-        });
+            buffer->cmplxDiff *= bottomRight / topLeft;
+            buffer->cmplxSame *= topLeft / bottomRight;
+        }
     }
 
 protected:
@@ -551,10 +550,11 @@ protected:
 public:
     void CommuteH()
     {
+        ShardToPhaseMap::iterator phaseShard;
+        PhaseShardPtr buffer;
+
         // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
-        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
-            std::advance(phaseShard, lcv);
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
             if (norm(buffer->cmplxDiff - buffer->cmplxSame) < ONE_R1) {
                 if (buffer->isInvert) {
@@ -569,13 +569,11 @@ public:
                     buffer->isInvert = true;
                 }
             }
-        });
+        }
 
         RemoveIdentityBuffers(targetOfShards, &QEngineShard::GetControlsShards);
 
-        par_for(0, antiTargetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = antiTargetOfShards.begin();
-            std::advance(phaseShard, lcv);
+        for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
             if (norm(buffer->cmplxDiff - buffer->cmplxSame) < ONE_R1) {
                 if (buffer->isInvert) {
@@ -591,7 +589,7 @@ public:
                     buffer->isInvert = true;
                 }
             }
-        });
+        }
 
         RemoveIdentityBuffers(antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
     }
