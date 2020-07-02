@@ -437,18 +437,22 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
     bitCapIntOcl partPower = args.x;
     bitCapIntOcl remainderPower = args.y;
     bitCapIntOcl start = args.z;
+    bitCapIntOcl startMask = (ONE_BCI << start) - ONE_BCI;
     bitCapIntOcl len = args.w;
 
     bitCapIntOcl j, k, l;
     cmplx amp;
     real1 partProb, nrm, firstAngle, currentAngle;
 
+    const real1 angleThresh = -8 * PI_R1;
+    const real1 initAngle = -16 * PI_R1;
+
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
-        j = lcv & ((ONE_BCI << start) - ONE_BCI);
+        j = lcv & startMask;
         j |= (lcv ^ j) << len;
 
         partProb = ZERO_R1;
-        firstAngle = -16 * PI_R1;
+        firstAngle = initAngle;
 
         for (k = 0U; k < partPower; k++) {
             l = j | (k << start);
@@ -459,7 +463,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
 
             if (nrm > min_norm) {
                 currentAngle = arg(amp);
-                if (firstAngle < (-8 * PI_R1)) {
+                if (firstAngle < angleThresh) {
                     firstAngle = currentAngle;
                 }
                 partStateAngle[k] = currentAngle - firstAngle;
@@ -473,10 +477,10 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
         j = lcv << start;
 
         partProb = ZERO_R1;
-        firstAngle = -16 * PI_R1;
+        firstAngle = initAngle;
 
         for (k = 0U; k < remainderPower; k++) {
-            l = k & ((ONE_BCI << start) - ONE_BCI);
+            l = k & startMask;
             l |= (k ^ l) << len;
             l = j | l;
 
@@ -486,7 +490,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
 
             if (nrm > min_norm) {
                 currentAngle = arg(stateVec[l]);
-                if (firstAngle < (-8 * PI_R1)) {
+                if (firstAngle < angleThresh) {
                     firstAngle = currentAngle;
                 }
                 remainderStateAngle[k] = currentAngle - firstAngle;
