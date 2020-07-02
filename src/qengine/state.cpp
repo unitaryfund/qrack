@@ -24,6 +24,11 @@
 #endif
 #endif
 
+#define CHECK_ZERO_SKIP()                                                                                              \
+    if (runningNorm == ZERO_R1) {                                                                                      \
+        return;                                                                                                        \
+    }
+
 namespace Qrack {
 
 /**
@@ -70,6 +75,11 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 
     runningNorm -= norm(stateVec->read(perm));
     runningNorm += norm(amp);
+    if (runningNorm <= min_norm) {
+        runningNorm = ZERO_R1;
+        amp = ZERO_CMPLX;
+    }
+
     stateVec->write(perm, amp);
 }
 
@@ -108,6 +118,11 @@ void QEngineCPU::GetQuantumState(complex* outputState)
         NormalizeState();
     }
 
+    if (runningNorm == ZERO_R1) {
+        std::fill(outputState, outputState + maxQPower, ZERO_CMPLX);
+        return;
+    }
+
     stateVec->copy_out(outputState);
 }
 
@@ -116,6 +131,11 @@ void QEngineCPU::GetProbs(real1* outputProbs)
 {
     if (doNormalize) {
         NormalizeState();
+    }
+
+    if (runningNorm == ZERO_R1) {
+        std::fill(outputProbs, outputProbs + maxQPower, ZERO_R1);
+        return;
     }
 
     stateVec->get_probs(outputProbs);
@@ -144,6 +164,8 @@ union ComplexUnion {
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh)
 {
+    CHECK_ZERO_SKIP();
+
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
     if (norm_thresh < ZERO_R1) {
@@ -224,6 +246,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh)
 {
+    CHECK_ZERO_SKIP();
+
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
     if (norm_thresh < ZERO_R1) {
@@ -303,6 +327,8 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)
 {
+    CHECK_ZERO_SKIP();
+
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controlLen == 0) {
         ApplySingleBit(mtrxs + (bitCapIntOcl)(mtrxSkipValueMask * 4U), qubitIndex);
@@ -674,6 +700,10 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
         NormalizeState();
     }
 
+    if (runningNorm == ZERO_R1) {
+        return ZERO_R1;
+    }
+
     bitCapInt qPower = pow2(qubit);
     real1 oneChance = 0;
 
@@ -718,6 +748,10 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
         NormalizeState();
     }
 
+    if (runningNorm == ZERO_R1) {
+        return ZERO_R1;
+    }
+
     int num_threads = GetConcurrencyLevel();
     real1* probs = new real1[num_threads]();
 
@@ -747,6 +781,10 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     if (doNormalize) {
         NormalizeState();
+    }
+
+    if (runningNorm == ZERO_R1) {
+        return ZERO_R1;
     }
 
     bitCapInt v = mask; // count the number of bits set in v
@@ -838,6 +876,8 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
+    CHECK_ZERO_SKIP();
+
     par_for_skip(0, maxQPower, pow2(start), length,
         [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); });
 }
@@ -845,6 +885,8 @@ void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
 void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    CHECK_ZERO_SKIP();
+
     bitCapInt regMask = bitRegMask(start, length);
     bitCapInt flagMask = pow2(flagIndex);
 
@@ -857,6 +899,8 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 /// This is an expedient for an adaptive Grover's search for a function's global minimum.
 void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
+    CHECK_ZERO_SKIP();
+
     bitCapInt regMask = bitRegMask(start, length);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
