@@ -12,10 +12,17 @@
 
 #include "qengine_cpu.hpp"
 
+#define CHECK_ZERO_SKIP()                                                                                              \
+    if (runningNorm == ZERO_R1) {                                                                                      \
+        return;                                                                                                        \
+    }
+
 namespace Qrack {
 
 void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
 {
+    CHECK_ZERO_SKIP();
+
     ParallelFunc fn = [&](const bitCapInt i, const int cpu) {
         if ((i & regMask) == result) {
             stateVec->write(i, nrm * stateVec->read(i));
@@ -36,6 +43,8 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
 /// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU
 void QEngineCPU::PhaseFlip()
 {
+    CHECK_ZERO_SKIP();
+
     // This gate has no physical consequence. We only enable it for "book-keeping," if the engine is not using global
     // phase offsets.
     if (randGlobalPhase) {
