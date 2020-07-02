@@ -69,6 +69,11 @@ namespace Qrack {
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));
 
+#define CHECK_ZERO_SKIP()                                                                                              \
+    if (runningNorm == ZERO_R1) {                                                                                      \
+        return;                                                                                                        \
+    }
+
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored, real1 norm_thresh,
     std::vector<bitLenInt> devList)
@@ -307,6 +312,10 @@ real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
         NormalizeState();
     }
 
+    if (runningNorm == ZERO_R1) {
+        return ZERO_R1;
+    }
+
     complex amp[1];
     EventVecPtr waitVec = ResetWaitEvents();
     queue.enqueueReadBuffer(
@@ -493,6 +502,8 @@ void QEngineOCL::ArithmeticCall(
 void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], bitCapIntOcl* controlPowers,
     const bitLenInt controlLen, unsigned char* values, bitCapIntOcl valuesPower)
 {
+    CHECK_ZERO_SKIP();
+
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -553,8 +564,6 @@ void QEngineOCL::X(bitLenInt qubit)
 /// Apply Pauli Z matrix to bit
 void QEngineOCL::Z(bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
     const complex pauliZ[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
         complex(-ONE_R1, ZERO_R1) };
     bitCapInt qPowers[1];
@@ -565,6 +574,8 @@ void QEngineOCL::Z(bitLenInt qubit)
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1 norm_thresh)
 {
+    CHECK_ZERO_SKIP();
+
     bool isXGate = (special == SPECIAL_2X2::PAULIX) && (!doNormalize || (runningNorm == ONE_R1));
     bool isZGate = (special == SPECIAL_2X2::PAULIZ) && (!doNormalize || (runningNorm == ONE_R1));
 
@@ -763,6 +774,8 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)
 {
+    CHECK_ZERO_SKIP();
+
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controlLen == 0) {
         ApplySingleBit(mtrxs + (bitCapIntOcl)(mtrxSkipValueMask * 4U), qubitIndex);
@@ -820,6 +833,8 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 
 void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapIntOcl* bciArgs, complex nrm)
 {
+    CHECK_ZERO_SKIP();
+
     // We don't actually have to wait, so this is empty:
     EventVecPtr waitVec;
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1182,6 +1197,10 @@ real1 QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
         NormalizeState();
     }
 
+    if (runningNorm == ZERO_R1) {
+        return ZERO_R1;
+    }
+
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -1239,6 +1258,11 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
         NormalizeState();
     }
 
+    if (runningNorm == ZERO_R1) {
+        std::fill(probsArray, probsArray + lengthPower, ZERO_R1);
+        return;
+    }
+
     if ((lengthPower * lengthPower) < nrmGroupCount) {
         // With "lengthPower" count of threads, compared to a redundancy of "lengthPower" with full utilization, this is
         // close to the point where it becomes more efficient to rely on iterating through ProbReg calls.
@@ -1280,6 +1304,14 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
 // Returns probability of permutation of the register
 real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
+    if (doNormalize) {
+        NormalizeState();
+    }
+
+    if (runningNorm == ZERO_R1) {
+        return ZERO_R1;
+    }
+
     bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
     bitCapIntOcl oldV;
     bitLenInt length; // c accumulates the total bits set in v
@@ -1292,10 +1324,6 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> length, (bitCapIntOcl)mask, (bitCapIntOcl)permutation, length,
         0, 0, 0, 0, 0, 0 };
-
-    if (doNormalize) {
-        NormalizeState();
-    }
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1325,6 +1353,12 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
 void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 {
+    if (doNormalize) {
+        NormalizeState();
+    }
+
+    CHECK_ZERO_SKIP();
+
     bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
     bitCapIntOcl oldV;
     bitLenInt length;
@@ -1337,10 +1371,6 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 
     bitCapIntOcl lengthPower = pow2Ocl(length);
     bitCapIntOcl maxJ = maxQPowerOcl >> length;
-
-    if (doNormalize) {
-        NormalizeState();
-    }
 
     if ((lengthPower * lengthPower) < nrmGroupCount) {
         // With "lengthPower" count of threads, compared to a redundancy of "lengthPower" with full utilization, this is
@@ -1681,6 +1711,8 @@ void QEngineOCL::INCDECBCDC(
 /** Multiply by integer */
 void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
+    CHECK_ZERO_SKIP();
+
     SetReg(carryStart, length, 0);
 
     bitCapIntOcl lowPower = pow2Ocl(length);
@@ -1742,6 +1774,8 @@ void QEngineOCL::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 void QEngineOCL::FullAdx(
     bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut, OCLAPI api_call)
 {
+    CHECK_ZERO_SKIP();
+
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> (bitCapIntOcl)2U, pow2Ocl(inputBit1), pow2Ocl(inputBit2),
         pow2Ocl(carryInSumOut), pow2Ocl(carryOut), 0, 0, 0, 0, 0 };
 
@@ -1805,6 +1839,8 @@ void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
 void QEngineOCL::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
+    CHECK_ZERO_SKIP();
+
     if (controlLen == 0) {
         MULModNOut(toMul, modN, inStart, outStart, length);
         return;
@@ -1857,6 +1893,8 @@ void QEngineOCL::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, 
 
 void QEngineOCL::xMULx(OCLAPI api_call, bitCapIntOcl* bciArgs, BufferPtr controlBuffer)
 {
+    CHECK_ZERO_SKIP();
+
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -1984,6 +2022,10 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
 bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, unsigned char* values, bool resetValue)
 {
+    if (runningNorm == ZERO_R1) {
+        return 0U;
+    }
+
     if (resetValue) {
         SetReg(valueStart, valueLength, 0);
     }
@@ -2007,6 +2049,10 @@ bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 bitCapIntOcl QEngineOCL::OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLenInt indexStart, bitLenInt indexLength,
     bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
+    if (runningNorm == ZERO_R1) {
+        return 0U;
+    }
+
     bool carryRes = M(carryIndex);
     // The carry has to first to be measured for its input value.
     if (carryRes) {
@@ -2064,6 +2110,8 @@ void QEngineOCL::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
 
 void QEngineOCL::PhaseFlipX(OCLAPI api_call, bitCapIntOcl* bciArgs)
 {
+    CHECK_ZERO_SKIP();
+
     // We don't actually have to wait, so this is empty:
     EventVecPtr waitVec;
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -2140,8 +2188,16 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 
 void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
 {
+    if (doNormalize) {
+        NormalizeState();
+    }
+
     runningNorm -= norm(GetAmplitude(perm));
     runningNorm += norm(amp);
+    if (runningNorm <= min_norm) {
+        runningNorm = ZERO_R1;
+        amp = ZERO_CMPLX;
+    }
 
     EventVecPtr waitVec = ResetWaitEvents();
     device_context->wait_events->emplace_back();
@@ -2155,6 +2211,11 @@ void QEngineOCL::GetQuantumState(complex* outputState)
 {
     if (doNormalize) {
         NormalizeState();
+    }
+
+    if (runningNorm == ZERO_R1) {
+        std::fill(outputState, outputState + maxQPowerOcl, ZERO_CMPLX);
+        return;
     }
 
     LockSync(CL_MAP_READ);
@@ -2241,7 +2302,7 @@ void QEngineOCL::NormalizeState(real1 nrm, real1 norm_thresh)
     if (nrm < ZERO_R1) {
         nrm = runningNorm;
     }
-    if (nrm == ONE_R1) {
+    if ((nrm <= ZERO_R1) || (nrm == ONE_R1)) {
         return;
     }
 

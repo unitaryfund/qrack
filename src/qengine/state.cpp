@@ -56,7 +56,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 
 complex QEngineCPU::GetAmplitude(bitCapInt perm)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
     return stateVec->read(perm);
@@ -64,7 +64,7 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
 
 void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -104,7 +104,7 @@ void QEngineCPU::SetQuantumState(const complex* inputState)
 /// Get pure quantum state, in unsigned int permutation basis
 void QEngineCPU::GetQuantumState(complex* outputState)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -114,7 +114,7 @@ void QEngineCPU::GetQuantumState(complex* outputState)
 /// Get all probabilities, in unsigned int permutation basis
 void QEngineCPU::GetProbs(real1* outputProbs)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -379,7 +379,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     // TODO: Sparse optimization
     bitLenInt result = qubitCount;
 
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -418,7 +418,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
  */
 bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -470,7 +470,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     bitLenInt nQubitCount = qubitCount;
     bitCapInt nMaxQPower;
 
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -520,7 +520,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         return;
     }
 
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -627,7 +627,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
         return;
     }
 
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -670,7 +670,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -704,7 +704,7 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
 real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -714,7 +714,7 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 // Returns probability of permutation of the register
 real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -745,7 +745,7 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 // Returns probability of permutation of the mask
 real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -790,7 +790,7 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     }
 
     // Make sure both engines are normalized
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
     if (toCompare->doNormalize && (toCompare->runningNorm != ONE_R1)) {

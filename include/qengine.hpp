@@ -48,7 +48,7 @@ public:
         , useHostRam(useHostMem)
         , runningNorm(ONE_R1)
     {
-        if (qBitCount > (sizeof(bitCapInt) * bitsInByte)) {
+        if (qBitCount > (sizeof(bitCapIntOcl) * bitsInByte)) {
             throw std::invalid_argument(
                 "Cannot instantiate a register with greater capacity than native types on emulating system.");
         }
