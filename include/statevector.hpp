@@ -123,6 +123,14 @@ public:
     {
         std::copy(toCopy->amplitudes, toCopy->amplitudes + (bitCapIntOcl)capacity, amplitudes);
     }
+    
+    void shuffle(StateVectorPtr svp) { shuffle(std::dynamic_pointer_cast<StateVectorArray>(svp)); }
+
+    void shuffle(StateVectorArrayPtr svp)
+    {
+        std::swap_ranges(
+            amplitudes + (((bitCapIntOcl)capacity) >> ONE_BCI), amplitudes + (bitCapIntOcl)capacity, svp->amplitudes);
+    }
 
     void get_probs(real1* outArray)
     {
@@ -263,6 +271,21 @@ public:
     {
         mtx.lock();
         amplitudes = toCopy->amplitudes;
+        mtx.unlock();
+    }
+    
+    void shuffle(StateVectorPtr svp) { shuffle(std::dynamic_pointer_cast<StateVectorSparse>(svp)); }
+
+    void shuffle(StateVectorSparse svp)
+    {
+        complex amp;
+        size_t halfCap = capacity >> ONE_BCI;
+        mtx.lock();
+        for (bitCapInt i = 0; i < halfCap; i++) {
+            amp = svp.read(i);
+            svp.write(i, read(i + halfCap));
+            write(i + halfCap, amp);
+        }
         mtx.unlock();
     }
 

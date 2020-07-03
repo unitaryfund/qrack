@@ -185,6 +185,7 @@ public:
 
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length);
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length);
+    virtual void ShuffleBuffers(QEnginePtr engine);
 
     bitCapIntOcl GetMaxSize() { return maxAlloc / sizeof(complex); };
 

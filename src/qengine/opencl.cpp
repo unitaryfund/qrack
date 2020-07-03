@@ -102,6 +102,23 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
         *stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr, waitVec.get());
 }
 
+void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
+{
+    QEngineOCLPtr engineOcl = std::dynamic_pointer_cast<QEngineOCL>(engine);
+
+    size_t halfSize = sizeof(complex) * (maxQPower >> ONE_BCI);
+    cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, halfSize);
+
+    clFinish();
+    engineOcl->clFinish();
+
+    queue.enqueueCopyBuffer(*stateBuffer, tempBuffer, halfSize, 0, halfSize);
+    queue.enqueueCopyBuffer(*(engineOcl->stateBuffer), *stateBuffer, 0, halfSize, halfSize);
+    queue.enqueueCopyBuffer(tempBuffer, *(engineOcl->stateBuffer), 0, 0, halfSize);
+
+    queue.finish();
+}
+
 void QEngineOCL::LockSync(cl_int flags)
 {
     lockSyncFlags = flags;

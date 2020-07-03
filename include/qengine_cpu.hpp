@@ -61,6 +61,12 @@ public:
         stateVec->copy_in(pagePtr, offset, length);
     }
 
+    virtual void ShuffleBuffers(QEnginePtr engine)
+    {
+        QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);
+        stateVec->shuffle(engineCpu->stateVec);
+    }
+
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
