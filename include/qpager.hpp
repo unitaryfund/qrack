@@ -35,13 +35,22 @@ protected:
     std::vector<QEnginePtr> qPages;
 
     // TODO: Make this a constructor argument:
-    const bitLenInt qPagePow = 3U;
-    const bitCapInt qPageCount = 8U;
+    const bitCapInt qubitsPerPage = 4U;
+    bitLenInt qPagePow;
+    bitCapInt qPageCount;
 
     QEnginePtr MakeEngine(bitLenInt length, bitCapInt perm)
     {
         return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engine, length, perm, rand_generator,
             phaseFactor, false, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse));
+    }
+
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        QInterface::SetQubitCount(qb);
+
+        qPagePow = qubitCount - qubitsPerPage;
+        qPageCount = pow2(qPagePow);
     }
 
     void CombineEngines();

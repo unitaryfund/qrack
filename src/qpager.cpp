@@ -36,7 +36,9 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
 {
-    if ((qPageQubitCount) > (sizeof(bitCapIntOcl) * bitsInByte)) {
+    SetQubitCount(qubitCount);
+
+    if (pow2(qubitsPerPage) > (sizeof(bitCapIntOcl) * bitsInByte)) {
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
     }
@@ -84,6 +86,52 @@ void QPager::SeparateEngines()
     }
 
     qPages = nQPages;
+}
+
+bitLenInt QPager::Compose(QPagerPtr toCopy)
+{
+    CombineEngines();
+    toCopy->CombineEngines();
+    bitLenInt toRet = qPages[0]->Compose(toCopy->qPages[0]);
+    SetQubitCount(qPages[0]->GetQubitCount());
+    toCopy->SeparateEngines();
+    SeparateEngines();
+    return toRet;
+}
+
+bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
+{
+    CombineEngines();
+    toCopy->CombineEngines();
+    bitLenInt toRet = qPages[0]->Compose(toCopy->qPages[0], start);
+    SetQubitCount(qPages[0]->GetQubitCount());
+    toCopy->SeparateEngines();
+    SeparateEngines();
+    return toRet;
+}
+
+void QPager::Decompose(bitLenInt start, bitLenInt length, QPagerPtr dest)
+{
+    CombineEngines();
+    dest->CombineEngines();
+    qPages[0]->Decompose(start, length, dest->qPages[0]);
+    SetQubitCount(qPages[0]->GetQubitCount());
+    dest->SeparateEngines();
+    SeparateEngines();
+}
+
+void QPager::Dispose(bitLenInt start, bitLenInt length)
+{
+    CombineEngines();
+    qPages[0]->Dispose(start, length);
+    SeparateEngines();
+}
+
+void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+{
+    CombineEngines();
+    qPages[0]->Dispose(start, length, disposedPerm);
+    SeparateEngines();
 }
 
 void QPager::SetQuantumState(const complex* inputState)
@@ -147,7 +195,7 @@ void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if (target < (qubitCount - qPagePow)) {
+    if (target < qubitsPerPage) {
         for (bitCapInt i = 0; i < qPageCount; i++) {
             qPages[i]->ApplySingleBit(mtrx, target);
         }
@@ -159,8 +207,8 @@ void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
     // half of engines, acting the maximum bit gate, (for the sub-engine bit count,) and swapping back. Depending on
     // the bit index and number of sub-engines, we just have to determine which sub-engine to pair with which.
     bitCapInt groupCount = ONE_BCI << (qubitCount - (target + ONE_BCI));
-    bitCapInt groupSize = ONE_BCI << ((target + ONE_BCI) - (qubitCount - qPagePow));
-    bitLenInt sqi = (qubitCount - qPagePow) - ONE_BCI;
+    bitCapInt groupSize = ONE_BCI << ((target + ONE_BCI) - qubitsPerPage);
+    bitLenInt sqi = qubitsPerPage - ONE_BCI;
 
     bitCapInt i, j;
 
