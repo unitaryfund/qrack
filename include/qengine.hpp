@@ -61,6 +61,12 @@ public:
 
     virtual ~QEngine() { Finish(); }
 
+    virtual void ZeroAmplitudes()
+    {
+        runningNorm = 0;
+        FreeStateVec();
+    }
+
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
     virtual bitCapInt ForceMReg(
@@ -126,6 +132,8 @@ protected:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void ApplyAntiControlled2x2(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+
+    virtual void FreeStateVec(complex* sv = NULL) = 0;
 
     /**
      * Common driver method behind INCC and DECC

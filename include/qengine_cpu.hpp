@@ -49,7 +49,7 @@ public:
         // Intentionally left blank
     }
 
-    virtual void FreeStateVec() { stateVec = NULL; }
+    virtual void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);

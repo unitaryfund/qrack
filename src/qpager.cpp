@@ -97,8 +97,7 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
             continue;
         }
 
-        // TODO: Set QEngine total amplitude to 0
-        // qPages[i]->ZeroAmps();
+        qPages[i]->ZeroAmplitudes();
     }
 }
 
