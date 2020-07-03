@@ -41,9 +41,10 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
     }
 
+    bool isPermInPage;
     bitCapInt pagePerm = 0;
     for (bitCapInt i = 0; i < qPageCount; i++) {
-        bool isPermInPage = (initState >= pagePerm);
+        isPermInPage = (initState >= pagePerm);
         pagePerm += qPageMaxQPower;
         isPermInPage &= (initState < pagePerm);
         if (isPermInPage) {
@@ -52,6 +53,52 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
             qPages.push_back(MakeEngine(qPageQubitCount, 0));
             qPages.back()->SetAmplitude(0, ZERO_CMPLX);
         }
+    }
+}
+
+void QPager::SetQuantumState(const complex* inputState)
+{
+    bitCapInt pagePerm = 0;
+    for (bitCapInt i = 0; i < qPageCount; i++) {
+        qPages[i]->SetQuantumState(inputState + pagePerm);
+        pagePerm += qPageMaxQPower;
+    }
+}
+
+void QPager::GetQuantumState(complex* outputState)
+{
+    bitCapInt pagePerm = 0;
+    for (bitCapInt i = 0; i < qPageCount; i++) {
+        qPages[i]->GetQuantumState(outputState + pagePerm);
+        pagePerm += qPageMaxQPower;
+    }
+}
+
+void QPager::GetProbs(real1* outputProbs)
+{
+    bitCapInt pagePerm = 0;
+    for (bitCapInt i = 0; i < qPageCount; i++) {
+        qPages[i]->GetProbs(outputProbs + pagePerm);
+        pagePerm += qPageMaxQPower;
+    }
+}
+
+void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
+{
+    bool isPermInPage;
+    bitCapInt pagePerm = 0;
+    for (bitCapInt i = 0; i < qPageCount; i++) {
+        isPermInPage = (perm >= pagePerm);
+        pagePerm += qPageMaxQPower;
+        isPermInPage &= (perm < pagePerm);
+
+        if (isPermInPage) {
+            qPages[i]->SetPermutation(perm - (pagePerm - qPageMaxQPower));
+            continue;
+        }
+
+        // TODO: Set QEngine total amplitude to 0
+        // qPages[i]->ZeroAmps();
     }
 }
 

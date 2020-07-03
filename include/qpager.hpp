@@ -50,12 +50,19 @@ public:
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> devList = {});
 
-    virtual void SetQuantumState(const complex* inputState) = 0;
-    virtual void GetQuantumState(complex* outputState) = 0;
-    virtual void GetProbs(real1* outputProbs) = 0;
-    virtual complex GetAmplitude(bitCapInt perm) = 0;
-    virtual void SetAmplitude(bitCapInt perm, complex amp) = 0;
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG) = 0;
+    virtual void SetQuantumState(const complex* inputState);
+    virtual void GetQuantumState(complex* outputState);
+    virtual void GetProbs(real1* outputProbs);
+    virtual complex GetAmplitude(bitCapInt perm)
+    {
+        return qPages[perm / qPageMaxQPower]->GetAmplitude(perm & (qPageMaxQPower - ONE_BCI));
+    }
+    virtual void SetAmplitude(bitCapInt perm, complex amp)
+    {
+        return qPages[perm / qPageMaxQPower]->SetAmplitude(perm & (qPageMaxQPower - ONE_BCI), amp);
+    }
+
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     using QInterface::Compose;
     virtual bitLenInt Compose(QPagerPtr toCopy);
