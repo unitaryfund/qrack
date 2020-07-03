@@ -313,8 +313,8 @@ void kernel phasesingle(global cmplx* stateVec, constant real1* cmplxPtr, consta
     bitCapIntOcl Nthreads = get_global_size(0);
 
     bitCapIntOcl qMask = bitCapIntOclPtr[3];
-    cmplx topLeft = (cmplx)(cmplxPtr[0], cmplxPtr[1]);
-    cmplx bottomRight = (cmplx)(cmplxPtr[6], cmplxPtr[7]);
+    cmplx topLeft = vload2(0, cmplxPtr);
+    cmplx bottomRight = vload2(3, cmplxPtr);
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
@@ -327,8 +327,8 @@ void kernel phasesinglewide(global cmplx* stateVec, constant real1* cmplxPtr, co
     bitCapIntOcl i;
     
     bitCapIntOcl qMask = bitCapIntOclPtr[2];
-    cmplx topLeft = (cmplx)(cmplxPtr[0], cmplxPtr[1]);
-    cmplx bottomRight = (cmplx)(cmplxPtr[6], cmplxPtr[7]);
+    cmplx topLeft = vload2(0, cmplxPtr);
+    cmplx bottomRight = vload2(3, cmplxPtr);
 
     bitCapIntOcl lcv = ID;
     PUSH_APART_1();
@@ -342,8 +342,8 @@ void kernel invertsingle(global cmplx* stateVec, constant real1* cmplxPtr, const
     cmplx Y0;
 
     bitCapIntOcl qMask = bitCapIntOclPtr[3];
-    cmplx topRight = (cmplx)(cmplxPtr[2], cmplxPtr[3]);
-    cmplx bottomLeft = (cmplx)(cmplxPtr[4], cmplxPtr[5]);
+    cmplx topRight = vload2(1, cmplxPtr);
+    cmplx bottomLeft = vload2(2, cmplxPtr);
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
@@ -357,8 +357,8 @@ void kernel invertsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, c
     cmplx Y0;
     
     bitCapIntOcl qMask = bitCapIntOclPtr[2];
-    cmplx topRight = (cmplx)(cmplxPtr[2], cmplxPtr[3]);
-    cmplx bottomLeft = (cmplx)(cmplxPtr[4], cmplxPtr[5]);
+    cmplx topRight = vload2(1, cmplxPtr);
+    cmplx bottomLeft = vload2(2, cmplxPtr);
 
     bitCapIntOcl lcv = ID;
     PUSH_APART_1();
