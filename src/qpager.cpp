@@ -227,4 +227,84 @@ void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
     }
 }
 
+void QPager::ApplySinglePhase(const complex tl, const complex br, bitLenInt target)
+{
+    complex topLeft = tl;
+    complex bottomRight = br;
+
+    if ((topLeft == bottomRight) && (randGlobalPhase || (topLeft == ONE_CMPLX))) {
+        return;
+    }
+
+    if (target < qubitsPerPage) {
+        for (bitCapInt i = 0; i < qPageCount; i++) {
+            qPages[i]->ApplySinglePhase(topLeft, bottomRight, target);
+        }
+        return;
+    }
+
+    if (randGlobalPhase) {
+        topLeft = ONE_CMPLX;
+        bottomRight /= topLeft;
+    }
+
+    bitCapInt offset = pow2(target - qubitsPerPage);
+    bitCapInt qMask = offset - ONE_BCI;
+    bitCapInt maxLcv = qPageCount >> ONE_BCI;
+    bitCapInt i;
+    for (bitCapInt lcv = 0; lcv < maxLcv; lcv++) {
+        i = lcv & qMask;
+        i |= (lcv ^ i) << ONE_BCI;
+
+        if (topLeft != ONE_CMPLX) {
+            qPages[i]->ApplySinglePhase(topLeft, topLeft, 0);
+        }
+
+        if (bottomRight != ONE_CMPLX) {
+            qPages[i + offset]->ApplySinglePhase(bottomRight, bottomRight, 0);
+        }
+    }
+}
+
+void QPager::ApplySingleInvert(const complex tr, const complex bl, bitLenInt target)
+{
+    complex topRight = tr;
+    complex bottomLeft = bl;
+
+    if ((topRight == -bottomLeft) && (randGlobalPhase || (topRight == ONE_CMPLX))) {
+        return;
+    }
+
+    if (target < qubitsPerPage) {
+        for (bitCapInt i = 0; i < qPageCount; i++) {
+            qPages[i]->ApplySingleInvert(topRight, bottomLeft, target);
+        }
+        return;
+    }
+
+    if (randGlobalPhase) {
+        topRight = ONE_CMPLX;
+        bottomLeft /= topRight;
+    }
+
+    bitCapInt offset = pow2(target - qubitsPerPage);
+    bitCapInt qMask = offset - ONE_BCI;
+    bitCapInt maxLcv = qPageCount >> ONE_BCI;
+    bitCapInt i;
+    for (bitCapInt lcv = 0; lcv < maxLcv; lcv++) {
+        i = lcv & qMask;
+        i |= (lcv ^ i) << ONE_BCI;
+
+        std::swap(qPages[i], qPages[i + offset]);
+
+        if (topRight != ONE_CMPLX) {
+            qPages[i]->ApplySinglePhase(topRight, topRight, 0);
+        }
+
+        if (bottomLeft != ONE_CMPLX) {
+            qPages[i + offset]->ApplySinglePhase(bottomLeft, bottomLeft, 0);
+        }
+    }
+}
+
 } // namespace Qrack

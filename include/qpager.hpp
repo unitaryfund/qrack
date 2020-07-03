@@ -92,7 +92,7 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex) = 0;
+    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
     virtual void ApplyAntiControlledSingleBit(
