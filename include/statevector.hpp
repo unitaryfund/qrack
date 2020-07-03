@@ -106,10 +106,16 @@ public:
 
     void copy_in(const complex* copyIn, const bitCapInt offset, const bitCapInt length)
     {
-        std::copy(copyIn, copyIn + (bitCapIntOcl)length, amplitudes + offset);
+        std::copy(copyIn, copyIn + (bitCapIntOcl)length, amplitudes + (bitCapIntOcl)offset);
     }
 
     void copy_out(complex* copyOut) { std::copy(amplitudes, amplitudes + (bitCapIntOcl)capacity, copyOut); }
+
+    void copy_out(complex* copyOut, const bitCapInt offset, const bitCapInt length)
+    {
+        std::copy(
+            amplitudes + (bitCapIntOcl)offset, amplitudes + (bitCapIntOcl)offset + (bitCapIntOcl)capacity, copyOut);
+    }
 
     void copy(StateVectorPtr toCopy) { copy(std::dynamic_pointer_cast<StateVectorArray>(toCopy)); }
 
@@ -241,6 +247,13 @@ public:
     {
         for (bitCapInt i = 0; i < capacity; i++) {
             copyOut[(bitCapIntOcl)i] = read(i);
+        }
+    }
+
+    void copy_out(complex* copyOut, const bitCapInt offset, const bitCapInt length)
+    {
+        for (bitCapInt i = 0; i < length; i++) {
+            copyOut[(bitCapIntOcl)i] = read(i + offset);
         }
     }
 

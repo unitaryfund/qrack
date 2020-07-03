@@ -140,6 +140,7 @@ public:
     virtual void copy_in(const complex* inArray) = 0;
     virtual void copy_in(const complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
     virtual void copy_out(complex* outArray) = 0;
+    virtual void copy_out(complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
     virtual void copy(StateVectorPtr toCopy) = 0;
     virtual void get_probs(real1* outArray) = 0;
     virtual bool is_sparse() = 0;

@@ -26,9 +26,9 @@
 namespace Qrack {
 
 QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
-    bool ignored, bool randomGlobalPhase, bool useHostMem, int deviceId, bool useHardwareRNG, bool useSparseStateVec,
+    bool ignored, bool ignored2, bool useHostMem, int deviceId, bool useHardwareRNG, bool useSparseStateVec,
     real1 norm_thresh, std::vector<bitLenInt> devList)
-    : QInterface(qBitCount, rgp, ignored, useHardwareRNG, randomGlobalPhase, norm_thresh)
+    : QInterface(qBitCount, rgp, ignored, useHardwareRNG, false, norm_thresh)
     , engine(eng)
     , devID(deviceId)
     , phaseFactor(phaseFac)

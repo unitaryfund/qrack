@@ -67,6 +67,7 @@ public:
         FreeStateVec();
     }
 
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);

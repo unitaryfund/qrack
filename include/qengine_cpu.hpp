@@ -51,6 +51,11 @@ public:
 
     virtual void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }
 
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        stateVec->copy_out(pagePtr, offset, length);
+    }
+
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
         stateVec->copy_in(pagePtr, offset, length);
