@@ -109,6 +109,12 @@ public:
         std::copy(copyIn, copyIn + (bitCapIntOcl)length, amplitudes + (bitCapIntOcl)offset);
     }
 
+    void copy_in(StateVectorPtr copyInSv, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        const complex* copyIn = std::dynamic_pointer_cast<StateVectorArray>(copyInSv)->amplitudes + srcOffset;
+        std::copy(copyIn, copyIn + (bitCapIntOcl)length, amplitudes + (bitCapIntOcl)dstOffset);
+    }
+
     void copy_out(complex* copyOut) { std::copy(amplitudes, amplitudes + (bitCapIntOcl)capacity, copyOut); }
 
     void copy_out(complex* copyOut, const bitCapInt offset, const bitCapInt length)
@@ -246,6 +252,24 @@ public:
                 amplitudes.erase(i);
             } else {
                 amplitudes[i + offset] = copyIn[(bitCapIntOcl)i];
+            }
+        }
+        mtx.unlock();
+    }
+
+    void copy_in(StateVectorPtr copyInSv, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        StateVectorSparsePtr copyIn = std::dynamic_pointer_cast<StateVectorSparse>(copyInSv);
+
+        complex amp;
+
+        mtx.lock();
+        for (bitCapInt i = 0; i < length; i++) {
+            amp = copyIn->read(i + srcOffset);
+            if (amp == ZERO_CMPLX) {
+                amplitudes.erase(i + srcOffset);
+            } else {
+                amplitudes[i + dstOffset] = amp;
             }
         }
         mtx.unlock();

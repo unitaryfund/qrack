@@ -44,6 +44,9 @@ protected:
             phaseFactor, false, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse));
     }
 
+    void CombineEngines();
+    void SeparateEngines();
+
 public:
     QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool ignored = false, bool ignored2 = false, bool useHostMem = false,

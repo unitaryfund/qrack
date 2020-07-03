@@ -69,6 +69,8 @@ public:
 
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length) = 0;
     /** Swap the high half of this engine with the low half of another. This is necessary for gates which cross
      * sub-engine  boundaries. */
     virtual void ShuffleBuffers(QEnginePtr engine) = 0;

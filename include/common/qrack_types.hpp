@@ -139,6 +139,8 @@ public:
     virtual void clear() = 0;
     virtual void copy_in(const complex* inArray) = 0;
     virtual void copy_in(const complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
+    virtual void copy_in(
+        StateVectorPtr copyInSv, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length) = 0;
     virtual void copy_out(complex* outArray) = 0;
     virtual void copy_out(complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
     virtual void copy(StateVectorPtr toCopy) = 0;

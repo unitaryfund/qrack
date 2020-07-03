@@ -55,12 +55,16 @@ public:
     {
         stateVec->copy_out(pagePtr, offset, length);
     }
-
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
         stateVec->copy_in(pagePtr, offset, length);
     }
-
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
+        stateVec->copy_in(pageEngineCpuPtr->stateVec, srcOffset, dstOffset, length);
+    }
     virtual void ShuffleBuffers(QEnginePtr engine)
     {
         QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);

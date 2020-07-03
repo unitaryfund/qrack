@@ -1553,7 +1553,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         X(target);
         return;
     }
-    
+
     QEngineShard& shard = shards[target];
 
     if (shard.IsInvertTarget()) {

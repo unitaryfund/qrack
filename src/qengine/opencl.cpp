@@ -104,6 +104,20 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
         *stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr, waitVec.get());
 }
 
+void QEngineOCL::SetAmplitudePage(
+    QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+{
+    QEngineOCLPtr pageEngineOclPtr = std::dynamic_pointer_cast<QEngineOCL>(pageEnginePtr);
+    BufferPtr oStateBuffer = pageEngineOclPtr->stateBuffer;
+
+    clFinish();
+    pageEngineOclPtr->clFinish();
+
+    queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, srcOffset, dstOffset, length);
+
+    queue.finish();
+}
+
 void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
 {
     QEngineOCLPtr engineOcl = std::dynamic_pointer_cast<QEngineOCL>(engine);

@@ -56,6 +56,36 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     }
 }
 
+void QPager::CombineEngines()
+{
+    if (qPages.size() == 1U) {
+        return;
+    }
+
+    std::vector<QEnginePtr> nQPages;
+    nQPages.push_back(MakeEngine(qubitCount, 0));
+    for (bitCapInt i = 0; i < qPageCount; i++) {
+        nQPages[0]->SetAmplitudePage(qPages[i], 0, i * qPageMaxQPower, qPageMaxQPower);
+    }
+
+    qPages = nQPages;
+}
+
+void QPager::SeparateEngines()
+{
+    if (qPages.size() == qPageCount) {
+        return;
+    }
+
+    std::vector<QEnginePtr> nQPages;
+    for (bitCapInt i = 0; i < qPageCount; i++) {
+        nQPages.push_back(MakeEngine(qPageQubitCount, 0));
+        nQPages.back()->SetAmplitudePage(qPages[0], i * qPageMaxQPower, 0, qPageMaxQPower);
+    }
+
+    qPages = nQPages;
+}
+
 void QPager::SetQuantumState(const complex* inputState)
 {
     bitCapInt pagePerm = 0;
