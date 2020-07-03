@@ -90,17 +90,16 @@ void QPager::SeparateEngines()
 
 // This is like the QEngineCPU and QEngineOCL logic for register-like CNOT and CCNOT, just swapping sub-engine indices
 // instead of amplitude indices.
-template <typename F, typename... Args>
-void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, F fn, Args... gfnArgs)
+void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, std::vector<bitLenInt> intraControls, const complex* mtrx)
 {
     bitCapInt i;
 
-    std::vector<bitLenInt> sortedMasks(1 + controls.size());
-    sortedMasks[controls.size()] = 1 << target;
+    std::vector<bitLenInt> sortedMasks(1U + controls.size());
+    sortedMasks[controls.size()] = 1U << target;
 
     bitCapInt controlMask = 0;
     for (i = 0; i < controls.size(); i++) {
-        sortedMasks[i] = 1 << controls[i];
+        sortedMasks[i] = 1U << controls[i];
         if (!anti) {
             controlMask |= sortedMasks[i];
         }
@@ -109,8 +108,8 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
 
     std::sort(sortedMasks.begin(), sortedMasks.end());
 
-    bitCapInt targetMask = 1 << target;
-    bitLenInt sqi = qubitsPerPage - 1;
+    bitCapInt targetMask = pow2(target);
+    bitLenInt sqi = qubitsPerPage - 1U;
 
     bitLenInt maxLcv = qPageCount >> (sortedMasks.size());
 
@@ -120,7 +119,7 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
         j = 0;
         for (k = 0; k < (sortedMasks.size()); k++) {
             jLo = jHi & sortedMasks[k];
-            jHi = (jHi ^ jLo) << 1;
+            jHi = (jHi ^ jLo) << ONE_BCI;
             j |= jLo;
         }
         j |= jHi | controlMask;
@@ -130,8 +129,13 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
 
         engine1->ShuffleBuffers(engine2);
 
-        ((engine1.get())->*fn)(gfnArgs..., sqi);
-        ((engine2.get())->*fn)(gfnArgs..., sqi);
+        if (anti) {
+            engine1->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), sqi, mtrx);
+            engine2->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), sqi, mtrx);
+        } else {
+            engine1->ApplyControlledSingleBit(&(intraControls[0]), intraControls.size(), sqi, mtrx);
+            engine2->ApplyControlledSingleBit(&(intraControls[0]), intraControls.size(), sqi, mtrx);
+        }
 
         engine1->ShuffleBuffers(engine2);
     }
@@ -139,15 +143,15 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
 
 // This is called when control bits are "meta-" but the target bit is below the "meta-" threshold, (low enough to fit in
 // sub-engines).
-template <typename F, typename... Args>
-void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt targetBit, F fn, Args... gfnArgs)
+void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt targetBit,
+    std::vector<bitLenInt> intraControls, const complex* mtrx)
 {
     bitCapInt i;
     bitCapInt maxLcv = qPageCount >> (controls.size());
     std::vector<bitLenInt> sortedMasks(controls.size());
     bitCapInt controlMask = 0;
     for (i = 0; i < controls.size(); i++) {
-        sortedMasks[i] = 1 << controls[i];
+        sortedMasks[i] = 1U << controls[i];
         if (!anti) {
             controlMask |= sortedMasks[i];
         }
@@ -161,12 +165,16 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
         j = 0;
         for (k = 0; k < (sortedMasks.size()); k++) {
             jLo = jHi & sortedMasks[k];
-            jHi = (jHi ^ jLo) << 1;
+            jHi = (jHi ^ jLo) << ONE_BCI;
             j |= jLo;
         }
         j |= jHi | controlMask;
 
-        (qPages[j].get()->*fn)(gfnArgs..., targetBit);
+        if (anti) {
+            qPages[j]->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), targetBit, mtrx);
+        } else {
+            qPages[j]->ApplyControlledSingleBit(&(intraControls[0]), intraControls.size(), targetBit, mtrx);
+        }
     }
 }
 
@@ -386,6 +394,26 @@ void QPager::ApplySingleInvert(const complex tr, const complex bl, bitLenInt tar
         if (bottomLeft != ONE_CMPLX) {
             qPages[i + offset]->ApplySinglePhase(bottomLeft, bottomLeft, 0);
         }
+    }
+}
+
+void QPager::ApplyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+{
+    std::vector<bitLenInt> metaControls;
+    std::vector<bitLenInt> intraControls;
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        if (controls[i] < qubitsPerPage) {
+            intraControls.push_back(controls[i]);
+        } else {
+            metaControls.push_back(controls[i]);
+        }
+    }
+
+    if (target < qubitsPerPage) {
+        SemiMetaControlled(false, metaControls, target, intraControls, mtrx);
+    } else {
+        MetaControlled(false, metaControls, target, intraControls, mtrx);
     }
 }
 

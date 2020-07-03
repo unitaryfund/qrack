@@ -56,10 +56,10 @@ protected:
     void CombineEngines();
     void SeparateEngines();
 
-    template <typename F, typename... Args>
-    void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, F fn, Args... gfnArgs);
-    template <typename F, typename... Args>
-    void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt targetBit, F fn, Args... gfnArgs);
+    void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target,
+        std::vector<bitLenInt> intraControls, const complex* mtrx);
+    void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt targetBit,
+        std::vector<bitLenInt> intraControls, const complex* mtrx);
 
 public:
     QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
