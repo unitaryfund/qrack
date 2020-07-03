@@ -138,6 +138,7 @@ public:
     virtual void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) = 0;
     virtual void clear() = 0;
     virtual void copy_in(const complex* inArray) = 0;
+    virtual void copy_in(const complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
     virtual void copy_out(complex* outArray) = 0;
     virtual void copy(StateVectorPtr toCopy) = 0;
     virtual void get_probs(real1* outArray) = 0;

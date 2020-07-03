@@ -183,6 +183,8 @@ public:
         }
     }
 
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length);
+
     bitCapIntOcl GetMaxSize() { return maxAlloc / sizeof(complex); };
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);

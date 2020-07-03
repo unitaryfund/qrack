@@ -88,6 +88,11 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     SetPermutation(initState, phaseFac);
 }
 
+void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+{
+    queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr);
+}
+
 void QEngineOCL::LockSync(cl_int flags)
 {
     lockSyncFlags = flags;
