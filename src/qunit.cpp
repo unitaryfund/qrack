@@ -1489,7 +1489,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         return;
     }
 
-    if (IS_ARG_0(topLeft) && IS_ARG_PI(bottomRight)) {
+    if (IS_OPPOSITE(topLeft, bottomRight) && (randGlobalPhase || IS_ARG_0(topLeft))) {
         Z(target);
         return;
     }
@@ -1548,12 +1548,13 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
 void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
 {
-    QEngineShard& shard = shards[target];
-
-    if ((topRight == bottomLeft) && (randGlobalPhase || IS_ONE_CMPLX(topRight))) {
+    real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
+    if (IS_SAME(topRight, bottomLeft) && (randGlobalPhase || IS_ONE_CMPLX(topRight))) {
         X(target);
         return;
     }
+    
+    QEngineShard& shard = shards[target];
 
     if (shard.IsInvertTarget()) {
         RevertBasis1Qb(target);

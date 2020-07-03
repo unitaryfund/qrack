@@ -607,6 +607,11 @@ void QEngineOCL::Z(bitLenInt qubit)
 
 void QEngineOCL::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
 {
+    if ((topRight == bottomLeft) && (randGlobalPhase || (topRight == ONE_CMPLX))) {
+        X(qubitIndex);
+        return;
+    }
+
     const complex pauliX[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     bitCapInt qPowers[1];
     qPowers[0] = pow2(qubitIndex);
@@ -615,6 +620,15 @@ void QEngineOCL::ApplySingleInvert(const complex topRight, const complex bottomL
 
 void QEngineOCL::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
 {
+    if ((topLeft == bottomRight) && (randGlobalPhase || (topLeft == ONE_CMPLX))) {
+        return;
+    }
+
+    if ((topLeft == -bottomRight) && (randGlobalPhase || (topLeft == ONE_CMPLX))) {
+        Z(qubitIndex);
+        return;
+    }
+
     const complex pauliZ[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     bitCapInt qPowers[1];
     qPowers[0] = pow2(qubitIndex);
