@@ -88,6 +88,88 @@ void QPager::SeparateEngines()
     qPages = nQPages;
 }
 
+// This is like the QEngineCPU and QEngineOCL logic for register-like CNOT and CCNOT, just swapping sub-engine indices
+// instead of amplitude indices.
+template <typename F, typename... Args>
+void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, F fn, Args... gfnArgs)
+{
+    bitCapInt i;
+
+    std::vector<bitLenInt> sortedMasks(1 + controls.size());
+    sortedMasks[controls.size()] = 1 << target;
+
+    bitCapInt controlMask = 0;
+    for (i = 0; i < controls.size(); i++) {
+        sortedMasks[i] = 1 << controls[i];
+        if (!anti) {
+            controlMask |= sortedMasks[i];
+        }
+        sortedMasks[i]--;
+    }
+
+    std::sort(sortedMasks.begin(), sortedMasks.end());
+
+    bitCapInt targetMask = 1 << target;
+    bitLenInt sqi = qubitsPerPage - 1;
+
+    bitLenInt maxLcv = qPageCount >> (sortedMasks.size());
+
+    for (i = 0; i < maxLcv; i++) {
+        bitCapInt j, k, jLo, jHi;
+        jHi = i;
+        j = 0;
+        for (k = 0; k < (sortedMasks.size()); k++) {
+            jLo = jHi & sortedMasks[k];
+            jHi = (jHi ^ jLo) << 1;
+            j |= jLo;
+        }
+        j |= jHi | controlMask;
+
+        QEnginePtr engine1 = qPages[j];
+        QEnginePtr engine2 = qPages[j + targetMask];
+
+        engine1->ShuffleBuffers(engine2);
+
+        ((engine1.get())->*fn)(gfnArgs..., sqi);
+        ((engine2.get())->*fn)(gfnArgs..., sqi);
+
+        engine1->ShuffleBuffers(engine2);
+    }
+}
+
+// This is called when control bits are "meta-" but the target bit is below the "meta-" threshold, (low enough to fit in
+// sub-engines).
+template <typename F, typename... Args>
+void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt targetBit, F fn, Args... gfnArgs)
+{
+    bitCapInt i;
+    bitCapInt maxLcv = qPageCount >> (controls.size());
+    std::vector<bitLenInt> sortedMasks(controls.size());
+    bitCapInt controlMask = 0;
+    for (i = 0; i < controls.size(); i++) {
+        sortedMasks[i] = 1 << controls[i];
+        if (!anti) {
+            controlMask |= sortedMasks[i];
+        }
+        sortedMasks[i]--;
+    }
+    std::sort(sortedMasks.begin(), sortedMasks.end());
+
+    bitCapInt j, k, jLo, jHi;
+    for (i = 0; i < maxLcv; i++) {
+        jHi = i;
+        j = 0;
+        for (k = 0; k < (sortedMasks.size()); k++) {
+            jLo = jHi & sortedMasks[k];
+            jHi = (jHi ^ jLo) << 1;
+            j |= jLo;
+        }
+        j |= jHi | controlMask;
+
+        (qPages[j].get()->*fn)(gfnArgs..., targetBit);
+    }
+}
+
 bitLenInt QPager::Compose(QPagerPtr toCopy)
 {
     CombineEngines();
