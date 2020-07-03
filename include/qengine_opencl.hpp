@@ -28,7 +28,7 @@
 
 namespace Qrack {
 
-enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ };
+enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ, INVERT, PHASE };
 
 typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
@@ -201,6 +201,10 @@ public:
     virtual void X(bitLenInt target);
     using QEngine::Z;
     virtual void Z(bitLenInt target);
+    using QEngine::ApplySingleInvert;
+    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
+    using QEngine::ApplySinglePhase;
+    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
 
     using QEngine::Compose;
     virtual bitLenInt Compose(QEngineOCLPtr toCopy);

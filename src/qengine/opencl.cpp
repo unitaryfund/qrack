@@ -26,6 +26,8 @@ namespace Qrack {
 #define APPLY2X2_WIDE 0x08
 #define APPLY2X2_X 0x10
 #define APPLY2X2_Z 0x20
+#define APPLY2X2_PHASE 0x40
+#define APPLY2X2_INVERT 0x80
 
 // These are commonly used emplace patterns, for OpenCL buffer I/O.
 #define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)                                                       \
@@ -588,21 +590,35 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
 /// NOT gate, which is also Pauli x matrix
 void QEngineOCL::X(bitLenInt qubit)
 {
-    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
+    const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     bitCapInt qPowers[1];
     qPowers[0] = pow2(qubit);
-    Apply2x2(0, qPowers[0], pauliX, 1, qPowers, false, SPECIAL_2X2::PAULIX);
+    Apply2x2(0U, qPowers[0], pauliX, 1U, qPowers, false, SPECIAL_2X2::PAULIX);
 }
 
 /// Apply Pauli Z matrix to bit
 void QEngineOCL::Z(bitLenInt qubit)
 {
-    const complex pauliZ[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(-ONE_R1, ZERO_R1) };
+    const complex pauliZ[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
     bitCapInt qPowers[1];
     qPowers[0] = pow2(qubit);
-    Apply2x2(0, qPowers[0], pauliZ, 1, qPowers, false, SPECIAL_2X2::PAULIZ);
+    Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PAULIZ);
+}
+
+void QEngineOCL::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
+{
+    const complex pauliX[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+    bitCapInt qPowers[1];
+    qPowers[0] = pow2(qubitIndex);
+    Apply2x2(0U, qPowers[0], pauliX, 1U, qPowers, false, SPECIAL_2X2::INVERT);
+}
+
+void QEngineOCL::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
+{
+    const complex pauliZ[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+    bitCapInt qPowers[1];
+    qPowers[0] = pow2(qubitIndex);
+    Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PHASE);
 }
 
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
@@ -610,12 +626,16 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 {
     CHECK_ZERO_SKIP();
 
-    bool isXGate = (special == SPECIAL_2X2::PAULIX) && (!doNormalize || (runningNorm == ONE_R1));
-    bool isZGate = (special == SPECIAL_2X2::PAULIZ) && (!doNormalize || (runningNorm == ONE_R1));
+    bool skipNorm = !doNormalize || (runningNorm == ONE_R1);
+    bool isXGate = skipNorm && (special == SPECIAL_2X2::PAULIX);
+    bool isZGate = skipNorm && (special == SPECIAL_2X2::PAULIZ);
+    bool isInvertGate = skipNorm && (special == SPECIAL_2X2::INVERT);
+    bool isPhaseGate = skipNorm && (special == SPECIAL_2X2::PHASE);
 
     // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
     // every single permutation amplitude.
-    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (!isXGate) && (!isZGate) && (bitCount == 1);
+    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && !isXGate && !isZGate && !isInvertGate &&
+        !isPhaseGate && (bitCount == 1);
 
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     EventVecPtr waitVec;
@@ -708,6 +728,10 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             kernelMask |= APPLY2X2_X;
         } else if (isZGate) {
             kernelMask |= APPLY2X2_Z;
+        } else if (isInvertGate) {
+            kernelMask |= APPLY2X2_INVERT;
+        } else if (isPhaseGate) {
+            kernelMask |= APPLY2X2_PHASE;
         } else if (doCalcNorm) {
             kernelMask |= APPLY2X2_NORM;
         }
@@ -732,6 +756,12 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     case APPLY2X2_SINGLE | APPLY2X2_Z:
         api_call = OCL_API_Z_SINGLE;
         break;
+    case APPLY2X2_SINGLE | APPLY2X2_INVERT:
+        api_call = OCL_API_INVERT_SINGLE;
+        break;
+    case APPLY2X2_SINGLE | APPLY2X2_PHASE:
+        api_call = OCL_API_PHASE_SINGLE;
+        break;
     case APPLY2X2_NORM | APPLY2X2_SINGLE:
         api_call = OCL_API_APPLY2X2_NORM_SINGLE;
         break;
@@ -749,6 +779,12 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         break;
     case APPLY2X2_SINGLE | APPLY2X2_WIDE | APPLY2X2_Z:
         api_call = OCL_API_Z_SINGLE_WIDE;
+        break;
+    case APPLY2X2_SINGLE | APPLY2X2_WIDE | APPLY2X2_INVERT:
+        api_call = OCL_API_INVERT_SINGLE_WIDE;
+        break;
+    case APPLY2X2_SINGLE | APPLY2X2_WIDE | APPLY2X2_PHASE:
+        api_call = OCL_API_PHASE_SINGLE_WIDE;
         break;
     case APPLY2X2_NORM | APPLY2X2_SINGLE | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_NORM_SINGLE_WIDE;
@@ -799,7 +835,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
         // values into a single normalization constant.
         WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
-    } else if ((bitCount == 1) && (!isXGate) && (!isZGate)) {
+    } else if ((bitCount == 1) && !isXGate && !isZGate && !isInvertGate && !isPhaseGate) {
         runningNorm = ONE_R1;
     }
 }
