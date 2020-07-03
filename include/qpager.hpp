@@ -19,7 +19,8 @@ class QPager;
 typedef std::shared_ptr<QInterface> QPager;
 
 /**
- * A "Qrack::QPager" splits a "Qrack::QEngine" implementation into equal-length "pages." This helps both optimization and distribution of a single coherent quantum register across multiple devices.
+ * A "Qrack::QPager" splits a "Qrack::QEngine" implementation into equal-length "pages." This helps both optimization
+ * and distribution of a single coherent quantum register across multiple devices.
  */
 class QPager {
 protected:
@@ -32,14 +33,15 @@ protected:
     bitLenInt qPageQubitCount;
     bitCapIntOcl qPageMaxQPower;
     std::vector<QEnginePtr> qPages;
-    
+
     // TODO: Make this a constructor argument:
     const bitLenInt qPagePow = 3U;
     const bitCapInt qPageCount = 8U;
-    
+
     QEnginePtr MakeEngine(bitLenInt length, bitCapInt perm)
     {
-        return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engine, length, perm, rand_generator, phaseFactor, false, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse));
+        return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engine, length, perm, rand_generator,
+            phaseFactor, false, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse));
     }
 
 public:
@@ -87,11 +89,6 @@ public:
     virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft);
 
-    virtual void UniformlyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
-    {
-        UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs, NULL, 0, 0);
-    }
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
@@ -108,11 +105,6 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
-
-    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
-    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
-    virtual void CNOT(bitLenInt control, bitLenInt target);
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true) = 0;
 
@@ -157,12 +149,6 @@ public:
         bitLenInt carryInSumOut, bitLenInt carryOut);
     virtual void CIFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
         bitLenInt carryInSumOut, bitLenInt carryOut);
-    virtual void ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry);
-    virtual void IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry);
-    virtual void CADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
-        bitLenInt length, bitLenInt carry);
-    virtual void CIADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
-        bitLenInt length, bitLenInt carry);
 
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length) = 0;
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) = 0;
@@ -190,19 +176,21 @@ public:
     virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
     virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
-    virtual void Finish(){
+    virtual void Finish()
+    {
         for (bitLenInt i = 0; i < qPageCount; i++) {
             qPages[i]->Finish();
         }
     };
 
-    virtual bool isFinished() {
+    virtual bool isFinished()
+    {
         for (bitLenInt i = 0; i < qPageCount; i++) {
             if (!qPages[i]->isFinished()) {
                 return false;
             }
         }
-        
+
         return true;
     };
 
