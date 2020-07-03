@@ -123,7 +123,7 @@ public:
     {
         std::copy(toCopy->amplitudes, toCopy->amplitudes + (bitCapIntOcl)capacity, amplitudes);
     }
-    
+
     void shuffle(StateVectorPtr svp) { shuffle(std::dynamic_pointer_cast<StateVectorArray>(svp)); }
 
     void shuffle(StateVectorArrayPtr svp)
@@ -273,7 +273,7 @@ public:
         amplitudes = toCopy->amplitudes;
         mtx.unlock();
     }
-    
+
     void shuffle(StateVectorPtr svp) { shuffle(std::dynamic_pointer_cast<StateVectorSparse>(svp)); }
 
     void shuffle(StateVectorSparse svp)

@@ -101,4 +101,52 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 }
 
+void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
+{
+    if (IsIdentity(mtrx, true)) {
+        return;
+    }
+
+    if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
+        ApplySinglePhase(mtrx[0], mtrx[3], target);
+        return;
+    }
+
+    if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
+        ApplySingleInvert(mtrx[1], mtrx[2], target);
+        return;
+    }
+
+    if (target < (qubitCount - qPagePow)) {
+        for (bitCapInt i = 0; i < qPageCount; i++) {
+            qPages[i]->ApplySingleBit(mtrx, target);
+        }
+        return;
+    }
+
+    // Here, the gate requires data to cross sub-engine boundaries.
+    // It's always a matter of swapping the high halves of half the sub-engines with the low halves of the other
+    // half of engines, acting the maximum bit gate, (for the sub-engine bit count,) and swapping back. Depending on
+    // the bit index and number of sub-engines, we just have to determine which sub-engine to pair with which.
+    bitCapInt groupCount = ONE_BCI << (qubitCount - (target + ONE_BCI));
+    bitCapInt groupSize = ONE_BCI << ((target + ONE_BCI) - (qubitCount - qPagePow));
+    bitLenInt sqi = (qubitCount - qPagePow) - ONE_BCI;
+
+    bitCapInt i, j;
+
+    for (i = 0; i < groupCount; i++) {
+        for (j = 0; j < (groupSize / 2); j++) {
+            QEnginePtr engine1 = qPages[j + (i * groupSize)];
+            QEnginePtr engine2 = qPages[j + (i * groupSize) + (groupSize / 2)];
+
+            engine1->ShuffleBuffers(engine2);
+
+            engine1->ApplySingleBit(mtrx, sqi);
+            engine2->ApplySingleBit(mtrx, sqi);
+
+            engine1->ShuffleBuffers(engine2);
+        }
+    }
+}
+
 } // namespace Qrack
