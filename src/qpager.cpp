@@ -27,31 +27,32 @@ namespace Qrack {
 
 QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
     bool ignored, bool randomGlobalPhase, bool useHostMem, int deviceId, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh, std::vector<bitLenInt> ignored);
-        : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
-        , engine(eng)
-        , devID(deviceID)
-        , phaseFactor(phaseFac)
-        , useHostRam(useHostMem)
-        , useRDRAND(useHardwareRNG)
-        , isSparse(useSparseStateVec)
-        {
-            if ((qPageQubitCount) > (sizeof(bitCapIntoCL) * bitsInByte)) {
-                throw std::invalid_argument(
-                    "Cannot instantiate a register with greater capacity than native types on emulating system.");
-            }
+    real1 norm_thresh, std::vector<bitLenInt> devList)
+    : QInterface(qBitCount, rgp, ignored, useHardwareRNG, randomGlobalPhase, norm_thresh)
+    , engine(eng)
+    , devID(deviceId)
+    , phaseFactor(phaseFac)
+    , useHostRam(useHostMem)
+    , useRDRAND(useHardwareRNG)
+    , isSparse(useSparseStateVec)
+{
+    if ((qPageQubitCount) > (sizeof(bitCapIntOcl) * bitsInByte)) {
+        throw std::invalid_argument(
+            "Cannot instantiate a register with greater capacity than native types on emulating system.");
+    }
 
-            bitCapInt pagePerm = 0;
-            for (bitCapInt i = 0; i < qPageCount; i++) {
-                bool isPermInPage = (initState >= pagePerm);
-                pagePerm += qPageMaxQPower;
-                isPermInPage &= (initState < pagePerm);
-                if (isPermInPage) {
-                qPages.push_back(MakeEngine(qPageQubitCount, initState / qPageCount);
-                } else {
-                qPages.push_back(MakeEngine(qPageQubitCount, 0);
-                qPages.back()->SetAmplitude(0, ZERO_CMPLX);
-                }
-            };
+    bitCapInt pagePerm = 0;
+    for (bitCapInt i = 0; i < qPageCount; i++) {
+        bool isPermInPage = (initState >= pagePerm);
+        pagePerm += qPageMaxQPower;
+        isPermInPage &= (initState < pagePerm);
+        if (isPermInPage) {
+            qPages.push_back(MakeEngine(qPageQubitCount, initState - (pagePerm - qPageMaxQPower)));
+        } else {
+            qPages.push_back(MakeEngine(qPageQubitCount, 0));
+            qPages.back()->SetAmplitude(0, ZERO_CMPLX);
+        }
+    }
+}
 
-        } // namespace Qrack
+} // namespace Qrack

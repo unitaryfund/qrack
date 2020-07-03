@@ -16,13 +16,13 @@
 namespace Qrack {
 
 class QPager;
-typedef std::shared_ptr<QInterface> QPager;
+typedef std::shared_ptr<QPager> QPagerPtr;
 
 /**
  * A "Qrack::QPager" splits a "Qrack::QEngine" implementation into equal-length "pages." This helps both optimization
  * and distribution of a single coherent quantum register across multiple devices.
  */
-class QPager {
+class QPager : public QInterface {
 protected:
     QInterfaceEngine engine;
     int devID;
@@ -48,7 +48,7 @@ public:
     QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool ignored = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {});
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> devList = {});
 
     virtual void SetQuantumState(const complex* inputState) = 0;
     virtual void GetQuantumState(complex* outputState) = 0;
