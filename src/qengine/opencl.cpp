@@ -468,11 +468,14 @@ void QEngineOCL::ResetStateBuffer(BufferPtr nStateBuffer) { stateBuffer = nState
 
 void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
 {
+    if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPowerOcl));
+    }
+
     EventVecPtr waitVec = ResetWaitEvents();
 
     cl::Event fillEvent1;
-    queue.enqueueFillBuffer(
-        *stateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPowerOcl, waitVec.get(), &fillEvent1);
+    queue.enqueueFillBuffer(*stateBuffer, ZERO_CMPLX, 0, sizeof(complex) * maxQPowerOcl, waitVec.get(), &fillEvent1);
     queue.flush();
 
     complex amp;
@@ -2166,10 +2169,16 @@ void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineOCL::SetQuantumState(const complex* inputState)
 {
+    if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPowerOcl));
+    }
+
     LockSync(CL_MAP_WRITE);
     std::copy(inputState, inputState + maxQPowerOcl, stateVec);
     runningNorm = ONE_R1;
     UnlockSync();
+
+    UpdateRunningNorm();
 }
 
 complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
@@ -2196,7 +2205,11 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
     runningNorm += norm(amp);
     if (runningNorm <= min_norm) {
         runningNorm = ZERO_R1;
-        amp = ZERO_CMPLX;
+        FreeStateVec();
+    } else if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPowerOcl));
+        EventVecPtr fillWaitVec = ResetWaitEvents();
+        DISPATCH_FILL(fillWaitVec, *stateBuffer, sizeof(complex) * maxQPowerOcl, ZERO_CMPLX);
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -2370,6 +2383,11 @@ void QEngineOCL::UpdateRunningNorm(real1 norm_thresh)
         sizeof(real1) * ngs);
 
     WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+
+    if (runningNorm <= min_norm) {
+        runningNorm = ZERO_R1;
+        FreeStateVec();
+    }
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)

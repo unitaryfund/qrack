@@ -78,6 +78,9 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     if (runningNorm <= min_norm) {
         runningNorm = ZERO_R1;
         amp = ZERO_CMPLX;
+    } else if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPower));
+        stateVec->clear();
     }
 
     stateVec->write(perm, amp);
@@ -85,6 +88,10 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 {
+    if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPower));
+    }
+
     stateVec->clear();
 
     if (phaseFac == complex(-999.0, -999.0)) {
@@ -107,8 +114,14 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineCPU::SetQuantumState(const complex* inputState)
 {
+    if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPower));
+    }
+
     stateVec->copy_in(inputState);
     runningNorm = ONE_R1;
+
+    UpdateRunningNorm();
 }
 
 /// Get pure quantum state, in unsigned int permutation basis
@@ -948,6 +961,11 @@ void QEngineCPU::UpdateRunningNorm(real1 norm_thresh)
         norm_thresh = amplitudeFloor;
     }
     runningNorm = par_norm(maxQPower, stateVec, norm_thresh);
+
+    if (runningNorm <= min_norm) {
+        runningNorm = ZERO_R1;
+        FreeStateVec();
+    }
 }
 
 StateVectorPtr QEngineCPU::AllocStateVec(bitCapInt elemCount)
