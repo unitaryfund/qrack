@@ -75,10 +75,15 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 
     runningNorm -= norm(stateVec->read(perm));
     runningNorm += norm(amp);
+
     if (runningNorm <= min_norm) {
         runningNorm = ZERO_R1;
         amp = ZERO_CMPLX;
-    } else if (!stateVec) {
+        FreeStateVec();
+        return;
+    }
+
+    if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPower));
         stateVec->clear();
     }

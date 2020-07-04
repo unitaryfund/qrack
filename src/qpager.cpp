@@ -56,9 +56,9 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
         pagePerm += qPageMaxQPower;
         isPermInPage &= (initState < pagePerm);
         if (isPermInPage) {
-            qPages.push_back(MakeEngine(qPageQubitCount, initState - (pagePerm - qPageMaxQPower)));
+            qPages.push_back(MakeEngine(qubitsPerPage, initState - (pagePerm - qPageMaxQPower)));
         } else {
-            qPages.push_back(MakeEngine(qPageQubitCount, 0));
+            qPages.push_back(MakeEngine(qubitsPerPage, 0));
             qPages.back()->SetAmplitude(0, ZERO_CMPLX);
         }
     }
@@ -93,7 +93,7 @@ void QPager::SeparateEngines()
 
     std::vector<QEnginePtr> nQPages;
     for (bitCapInt i = 0; i < qPageCount; i++) {
-        nQPages.push_back(MakeEngine(qPageQubitCount, 0));
+        nQPages.push_back(MakeEngine(qubitsPerPage, 0));
         nQPages.back()->SetAmplitudePage(qPages[0], i * qPageMaxQPower, 0, qPageMaxQPower);
     }
 
@@ -277,9 +277,7 @@ template <typename F> void QPager::CombineAndOp(F fn, std::vector<bitLenInt> bit
         CombineEngines();
     }
 
-    for (i = 0; i < qPageCount; i++) {
-        fn(qPages[i]);
-    }
+    fn(qPages[i]);
 
     if (highestBit >= qubitsPerPage) {
         SeparateEngines();
@@ -864,7 +862,7 @@ real1 QPager::Prob(bitLenInt qubitIndex)
     real1 oneChance = ZERO_R1;
     bitCapInt i;
 
-    if (qubitIndex < qPageQubitCount) {
+    if (qubitIndex < qubitsPerPage) {
         std::vector<std::future<real1>> futures(qPageCount);
         for (i = 0; i < qPageCount; i++) {
             QEnginePtr engine = qPages[i];
@@ -874,15 +872,15 @@ real1 QPager::Prob(bitLenInt qubitIndex)
             oneChance += futures[i].get();
         }
     } else {
-        CombineAndOp([&](QEnginePtr engine) { engine->Prob(qubitIndex); }, { qubitIndex });
+        CombineAndOp([&](QEnginePtr engine) { oneChance = engine->Prob(qubitIndex); }, { qubitIndex });
     }
 
     return oneChance;
 }
 real1 QPager::ProbAll(bitCapInt fullRegister)
 {
-    bitLenInt subIndex = fullRegister / qPagePow;
-    fullRegister -= subIndex * qPagePow;
+    bitCapInt subIndex = fullRegister / qPageMaxQPower;
+    fullRegister -= subIndex * qPageMaxQPower;
     return qPages[subIndex]->ProbAll(fullRegister);
 }
 

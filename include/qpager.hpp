@@ -30,14 +30,13 @@ protected:
     bool useHostRam;
     bool useRDRAND;
     bool isSparse;
-    bitLenInt qPageQubitCount;
-    bitCapIntOcl qPageMaxQPower;
     std::vector<QEnginePtr> qPages;
 
     // TODO: Make this a constructor argument:
     const bitCapInt qubitsPerPage = 18U;
     bitLenInt qPagePow;
     bitCapInt qPageCount;
+    bitCapIntOcl qPageMaxQPower;
 
     QEnginePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
@@ -47,6 +46,7 @@ protected:
 
         qPagePow = qubitCount - qubitsPerPage;
         qPageCount = pow2(qPagePow);
+        qPageMaxQPower = pow2(qubitsPerPage);
     }
 
     void CombineEngines();
