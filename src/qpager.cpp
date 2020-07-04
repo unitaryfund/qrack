@@ -90,10 +90,12 @@ void QPager::SeparateEngines()
 
 // This is like the QEngineCPU and QEngineOCL logic for register-like CNOT and CCNOT, just swapping sub-engine indices
 // instead of amplitude indices.
-void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, std::vector<bitLenInt> intraControls, const complex* mtrx)
+void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target,
+    std::vector<bitLenInt> intraControls, const complex* mtrx)
 {
     bitCapInt i;
 
+    bitLenInt maxLcv = qPageCount >> (1U + controls.size());
     std::vector<bitLenInt> sortedMasks(1U + controls.size());
     sortedMasks[controls.size()] = 1U << target;
 
@@ -105,13 +107,10 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
         }
         sortedMasks[i]--;
     }
-
     std::sort(sortedMasks.begin(), sortedMasks.end());
 
-    bitCapInt targetMask = pow2(target);
+    bitCapInt targetMask = pow2(target - qPagePow);
     bitLenInt sqi = qubitsPerPage - 1U;
-
-    bitLenInt maxLcv = qPageCount >> (sortedMasks.size());
 
     for (i = 0; i < maxLcv; i++) {
         bitCapInt j, k, jLo, jHi;
@@ -129,7 +128,10 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
 
         engine1->ShuffleBuffers(engine2);
 
-        if (anti) {
+        if (intraControls.size() == 0) {
+            engine1->ApplySingleBit(mtrx, sqi);
+            engine2->ApplySingleBit(mtrx, sqi);
+        } else if (anti) {
             engine1->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), sqi, mtrx);
             engine2->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), sqi, mtrx);
         } else {
@@ -149,6 +151,7 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
     bitCapInt i;
     bitCapInt maxLcv = qPageCount >> (controls.size());
     std::vector<bitLenInt> sortedMasks(controls.size());
+
     bitCapInt controlMask = 0;
     for (i = 0; i < controls.size(); i++) {
         sortedMasks[i] = 1U << controls[i];
@@ -170,10 +173,75 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
         }
         j |= jHi | controlMask;
 
-        if (anti) {
+        if (intraControls.size() == 0) {
+            qPages[j]->ApplySingleBit(mtrx, targetBit);
+        } else if (anti) {
             qPages[j]->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), targetBit, mtrx);
         } else {
             qPages[j]->ApplyControlledSingleBit(&(intraControls[0]), intraControls.size(), targetBit, mtrx);
+        }
+    }
+}
+
+void QPager::MetaControlledPhaseInvert(bool anti, bool invert, std::vector<bitLenInt> controls, bitLenInt target,
+    std::vector<bitLenInt> intraControls, complex top, complex bottom)
+{
+    bitCapInt i;
+
+    std::vector<bitLenInt> sortedMasks(1U + controls.size());
+    sortedMasks[controls.size()] = 1U << target;
+
+    bitCapInt controlMask = 0;
+    for (i = 0; i < controls.size(); i++) {
+        sortedMasks[i] = 1U << controls[i];
+        if (!anti) {
+            controlMask |= sortedMasks[i];
+        }
+        sortedMasks[i]--;
+    }
+
+    std::sort(sortedMasks.begin(), sortedMasks.end());
+
+    bitCapInt targetMask = pow2(target - qPagePow);
+
+    bitLenInt maxLcv = qPageCount >> (sortedMasks.size());
+
+    for (i = 0; i < maxLcv; i++) {
+        bitCapInt j, k, jLo, jHi;
+        jHi = i;
+        j = 0;
+        for (k = 0; k < (sortedMasks.size()); k++) {
+            jLo = jHi & sortedMasks[k];
+            jHi = (jHi ^ jLo) << ONE_BCI;
+            j |= jLo;
+        }
+        j |= jHi | controlMask;
+
+        if (invert) {
+            std::swap(qPages[j], qPages[j + targetMask]);
+        }
+
+        QEnginePtr engine1 = qPages[j];
+        QEnginePtr engine2 = qPages[j + targetMask];
+
+        if (top != ONE_CMPLX) {
+            if (intraControls.size() == 0) {
+                engine1->ApplySinglePhase(top, top, 0);
+            } else if (anti) {
+                engine1->ApplyAntiControlledSinglePhase(&(intraControls[0]), intraControls.size(), 0, top, top);
+            } else {
+                engine1->ApplyControlledSinglePhase(&(intraControls[0]), intraControls.size(), 0, top, top);
+            }
+        }
+
+        if (bottom != ONE_CMPLX) {
+            if (intraControls.size() == 0) {
+                engine2->ApplySinglePhase(bottom, bottom, 0);
+            } else if (anti) {
+                engine2->ApplyAntiControlledSinglePhase(&(intraControls[0]), intraControls.size(), 0, bottom, bottom);
+            } else {
+                engine2->ApplyControlledSinglePhase(&(intraControls[0]), intraControls.size(), 0, bottom, bottom);
+            }
         }
     }
 }
@@ -414,6 +482,38 @@ void QPager::ApplyControlledSingleBit(
         SemiMetaControlled(false, metaControls, target, intraControls, mtrx);
     } else {
         MetaControlled(false, metaControls, target, intraControls, mtrx);
+    }
+}
+
+void QPager::ApplyControlledPhaseInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
+    const complex top, const complex bottom, const bool isAnti, const bool isInvert)
+{
+    std::vector<bitLenInt> metaControls;
+    std::vector<bitLenInt> intraControls;
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        if (controls[i] < qubitsPerPage) {
+            intraControls.push_back(controls[i]);
+        } else {
+            metaControls.push_back(controls[i]);
+        }
+    }
+
+    if (target < qubitsPerPage) {
+        complex mtrx[4];
+        if (isInvert) {
+            mtrx[0] = ZERO_CMPLX;
+            mtrx[1] = top;
+            mtrx[2] = bottom;
+            mtrx[3] = ZERO_CMPLX;
+        } else {
+            mtrx[0] = top;
+            mtrx[1] = ZERO_CMPLX;
+            mtrx[2] = ZERO_CMPLX;
+            mtrx[3] = bottom;
+        }
+        SemiMetaControlled(isAnti, metaControls, target, intraControls, mtrx);
+    } else {
+        MetaControlledPhaseInvert(isAnti, isInvert, metaControls, target, intraControls, top, bottom);
     }
 }
 
