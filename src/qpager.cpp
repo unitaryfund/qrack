@@ -277,7 +277,7 @@ template <typename F> void QPager::CombineAndOp(F fn, std::vector<bitLenInt> bit
         CombineEngines();
     }
 
-    fn(qPages[i]);
+    fn(qPages[0]);
 
     if (highestBit >= qubitsPerPage) {
         SeparateEngines();
