@@ -21,6 +21,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <future>
+
 #include "qpager.hpp"
 
 namespace Qrack {
@@ -244,6 +246,45 @@ void QPager::MetaControlledPhaseInvert(bool anti, bool invert, std::vector<bitLe
             }
         }
     }
+}
+
+template <typename F> void QPager::CombineAndOp(F fn, std::vector<bitLenInt> bits)
+{
+    if (qPageCount == 1U) {
+        fn(qPages[0]);
+        return;
+    }
+
+    bitLenInt i;
+    bitLenInt highestBit = 0;
+    for (i = 0; i < bits.size(); i++) {
+        if (bits[i] > highestBit) {
+            highestBit = bits[i];
+        }
+    }
+
+    if (highestBit >= qubitsPerPage) {
+        CombineEngines();
+    }
+
+    for (i = 0; i < qPageCount; i++) {
+        fn(qPages[i]);
+    }
+
+    if (highestBit >= qubitsPerPage) {
+        SeparateEngines();
+    }
+}
+
+template <typename F>
+void QPager::CombineAndOpControlled(
+    F fn, std::vector<bitLenInt> bits, const bitLenInt* controls, const bitLenInt controlLen)
+{
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        bits.push_back(controls[i]);
+    }
+
+    CombineAndOp(fn, bits);
 }
 
 bitLenInt QPager::Compose(QPagerPtr toCopy)
@@ -514,6 +555,301 @@ void QPager::ApplyControlledPhaseInvert(const bitLenInt* controls, const bitLenI
         SemiMetaControlled(isAnti, metaControls, target, intraControls, mtrx);
     } else {
         MetaControlledPhaseInvert(isAnti, isInvert, metaControls, target, intraControls, top, bottom);
+    }
+}
+
+void QPager::CSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    CombineAndOpControlled([&](QEnginePtr engine) { engine->CSwap(controls, controlLen, qubit1, qubit2); },
+        { qubit1, qubit2 }, controls, controlLen);
+}
+void QPager::AntiCSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCSwap(controls, controlLen, qubit1, qubit2); },
+        { qubit1, qubit2 }, controls, controlLen);
+}
+void QPager::CSqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    CombineAndOpControlled([&](QEnginePtr engine) { engine->CSqrtSwap(controls, controlLen, qubit1, qubit2); },
+        { qubit1, qubit2 }, controls, controlLen);
+}
+void QPager::AntiCSqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2); },
+        { qubit1, qubit2 }, controls, controlLen);
+}
+void QPager::CISqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    CombineAndOpControlled([&](QEnginePtr engine) { engine->CISqrtSwap(controls, controlLen, qubit1, qubit2); },
+        { qubit1, qubit2 }, controls, controlLen);
+}
+void QPager::AntiCISqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2); },
+        { qubit1, qubit2 }, controls, controlLen);
+}
+
+void QPager::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+{
+    CombineAndOp(
+        [&](QEnginePtr engine) { engine->INC(toAdd, start, length); }, { static_cast<bitLenInt>(start + length - 1U) });
+}
+void QPager::CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+{
+    CombineAndOpControlled([&](QEnginePtr engine) { engine->CINC(toAdd, start, length, controls, controlLen); },
+        { static_cast<bitLenInt>(start + length - 1U) }, controls, controlLen);
+}
+void QPager::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->INCC(toAdd, start, length, carryIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
+}
+void QPager::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->INCS(toAdd, start, length, overflowIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), overflowIndex });
+}
+void QPager::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->INCSC(toAdd, start, length, overflowIndex, carryIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), overflowIndex, carryIndex });
+}
+void QPager::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->INCSC(toAdd, start, length, carryIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
+}
+void QPager::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->INCBCD(toAdd, start, length); },
+        { static_cast<bitLenInt>(start + length - 1U) });
+}
+void QPager::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->INCBCDC(toAdd, start, length, carryIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
+}
+void QPager::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->DECC(toSub, start, length, carryIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
+}
+void QPager::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->DECSC(toSub, start, length, overflowIndex, carryIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), overflowIndex, carryIndex });
+}
+void QPager::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->DECSC(toSub, start, length, carryIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
+}
+void QPager::DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->DECBCDC(toSub, start, length, carryIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
+}
+void QPager::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->MUL(toMul, inOutStart, carryStart, length); },
+        { static_cast<bitLenInt>(inOutStart + length - 1U), static_cast<bitLenInt>(carryStart + length - 1U) });
+}
+void QPager::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->DIV(toDiv, inOutStart, carryStart, length); },
+        { static_cast<bitLenInt>(inOutStart + length - 1U), static_cast<bitLenInt>(carryStart + length - 1U) });
+}
+void QPager::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->MULModNOut(toMul, modN, inStart, outStart, length); },
+        { static_cast<bitLenInt>(inStart + length - 1U), static_cast<bitLenInt>(outStart + length - 1U) });
+}
+void QPager::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->IMULModNOut(toMul, modN, inStart, outStart, length); },
+        { static_cast<bitLenInt>(inStart + length - 1U), static_cast<bitLenInt>(outStart + length - 1U) });
+}
+void QPager::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->POWModNOut(base, modN, inStart, outStart, length); },
+        { static_cast<bitLenInt>(inStart + length - 1U), static_cast<bitLenInt>(outStart + length - 1U) });
+}
+void QPager::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
+    bitLenInt controlLen)
+{
+    CombineAndOpControlled(
+        [&](QEnginePtr engine) { engine->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen); },
+        { static_cast<bitLenInt>(inOutStart + length - 1U), static_cast<bitLenInt>(carryStart + length - 1U) },
+        controls, controlLen);
+}
+void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
+    bitLenInt controlLen)
+{
+    CombineAndOpControlled(
+        [&](QEnginePtr engine) { engine->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen); },
+        { static_cast<bitLenInt>(inOutStart + length - 1U), static_cast<bitLenInt>(carryStart + length - 1U) },
+        controls, controlLen);
+}
+void QPager::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    CombineAndOpControlled(
+        [&](QEnginePtr engine) { engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen); },
+        { static_cast<bitLenInt>(inStart + length - 1U), static_cast<bitLenInt>(outStart + length - 1U) }, controls,
+        controlLen);
+}
+void QPager::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    CombineAndOpControlled(
+        [&](QEnginePtr engine) { engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen); },
+        { static_cast<bitLenInt>(inStart + length - 1U), static_cast<bitLenInt>(outStart + length - 1U) }, controls,
+        controlLen);
+}
+void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    bitLenInt* controls, bitLenInt controlLen)
+{
+    CombineAndOpControlled(
+        [&](QEnginePtr engine) { engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen); },
+        { static_cast<bitLenInt>(inStart + length - 1U), static_cast<bitLenInt>(outStart + length - 1U) }, controls,
+        controlLen);
+}
+
+void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->ZeroPhaseFlip(start, length); },
+        { static_cast<bitLenInt>(start + length - 1U) });
+}
+void QPager::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), flagIndex });
+}
+void QPager::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->PhaseFlipIfLess(greaterPerm, start, length); },
+        { static_cast<bitLenInt>(start + length - 1U) });
+}
+void QPager::PhaseFlip()
+{
+    for (bitLenInt i = 0; i < qPageCount; i++) {
+        qPages[i]->PhaseFlip();
+    }
+}
+
+bitCapInt QPager::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+    unsigned char* values, bool resetValue)
+{
+    CombineAndOp(
+        [&](QEnginePtr engine) { engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, true); },
+        { static_cast<bitLenInt>(indexStart + indexLength - 1U),
+            static_cast<bitLenInt>(valueStart + valueLength - 1U) });
+
+    return 0;
+}
+
+bitCapInt QPager::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+    bitLenInt carryIndex, unsigned char* values)
+{
+    CombineAndOp(
+        [&](QEnginePtr engine) {
+            engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+        },
+        { static_cast<bitLenInt>(indexStart + indexLength - 1U), static_cast<bitLenInt>(valueStart + valueLength - 1U),
+            carryIndex });
+
+    return 0;
+}
+bitCapInt QPager::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+    bitLenInt carryIndex, unsigned char* values)
+{
+    CombineAndOp(
+        [&](QEnginePtr engine) {
+            engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+        },
+        { static_cast<bitLenInt>(indexStart + indexLength - 1U), static_cast<bitLenInt>(valueStart + valueLength - 1U),
+            carryIndex });
+
+    return 0;
+}
+void QPager::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->Hash(start, length, values); },
+        { static_cast<bitLenInt>(start + length - 1U) });
+}
+
+void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->Swap(qubit1, qubit2); }, { qubit1, qubit2 });
+}
+void QPager::ISwap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->ISwap(qubit1, qubit2); }, { qubit1, qubit2 });
+}
+void QPager::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->SqrtSwap(qubit1, qubit2); }, { qubit1, qubit2 });
+}
+void QPager::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->ISqrtSwap(qubit1, qubit2); }, { qubit1, qubit2 });
+}
+void QPager::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->FSim(theta, phi, qubit1, qubit2); }, { qubit1, qubit2 });
+}
+
+real1 QPager::Prob(bitLenInt qubitIndex)
+{
+    if (qPageCount == 1U) {
+        return qPages[0]->Prob(qubitIndex);
+    }
+
+    real1 oneChance = ZERO_R1;
+    bitCapInt i;
+
+    if (qubitIndex < qPageQubitCount) {
+        std::vector<std::future<real1>> futures(qPageCount);
+        for (i = 0; i < qPageCount; i++) {
+            QEnginePtr engine = qPages[i];
+            futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
+        }
+        for (i = 0; i < qPageCount; i++) {
+            oneChance += futures[i].get();
+        }
+    } else {
+        CombineAndOp([&](QEnginePtr engine) { engine->Prob(qubitIndex); }, { qubitIndex });
+    }
+
+    return oneChance;
+}
+real1 QPager::ProbAll(bitCapInt fullRegister)
+{
+    bitLenInt subIndex = fullRegister / qPagePow;
+    fullRegister -= subIndex * qPagePow;
+    return qPages[subIndex]->ProbAll(fullRegister);
+}
+
+bool QPager::ApproxCompare(QInterfacePtr toCompare)
+{
+    QPagerPtr toComparePager = std::dynamic_pointer_cast<QPager>(toCompare);
+    CombineEngines();
+    toComparePager->CombineEngines();
+    bool toRet = qPages[0]->ApproxCompare(toComparePager->qPages[0]);
+    toComparePager->SeparateEngines();
+    SeparateEngines();
+    return toRet;
+}
+void QPager::UpdateRunningNorm(real1 norm_thresh)
+{
+    for (bitCapInt i = 0; i < qPageCount; i++) {
+        qPages[i]->UpdateRunningNorm(norm_thresh);
     }
 }
 
