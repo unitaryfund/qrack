@@ -49,23 +49,28 @@ protected:
         qPageMaxQPower = pow2(qubitsPerPage);
     }
 
-    void CombineEngines();
+    void CombineEngines(bitLenInt ignored = -1);
     void SeparateEngines();
 
-    void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target,
-        std::vector<bitLenInt> intraControls, const complex* mtrx);
-    void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt targetBit,
-        std::vector<bitLenInt> intraControls, const complex* mtrx);
-    void MetaControlledPhaseInvert(bool anti, bool invert, std::vector<bitLenInt> controls, bitLenInt target,
-        std::vector<bitLenInt> intraControls, complex top, complex bottom);
-
-    void ApplyControlledPhaseInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
-        const complex top, const complex bottom, const bool isAnti, const bool isInvert);
+    template <typename Qubit1Fn> void SingleBitGate(bitLenInt target, Qubit1Fn fn);
+    template <typename Qubit1Fn, typename Qubit2Fn>
+    void ControlledGate(bool anti, bitLenInt controlBit, bitLenInt target, Qubit2Fn cfn, Qubit1Fn fn);
+    template <typename Qubit1Fn, typename Qubit2Fn, typename Qubit3Fn>
+    void DoublyControlledGate(bool anti, bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt target, Qubit3Fn ccfn,
+        Qubit2Fn cfn, Qubit1Fn fn);
+    template <typename Qubit1Fn>
+    void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
+    template <typename Qubit1Fn>
+    void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
+    template <typename Qubit1Fn> void ControlledSkip(bool anti, bitLenInt controlDepth, bitLenInt target, Qubit1Fn fn);
 
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
     template <typename F>
     void CombineAndOpControlled(
         F fn, std::vector<bitLenInt> bits, const bitLenInt* controls, const bitLenInt controlLen);
+
+    void ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex* mtrx);
 
 public:
     QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
@@ -105,32 +110,17 @@ public:
 
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    {
+        ApplyEitherControlledSingleBit(false, controls, controlLen, target, mtrx);
+    }
     virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    {
+        ApplyEitherControlledSingleBit(true, controls, controlLen, target, mtrx);
+    }
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
     virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
-    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight)
-    {
-        ApplyControlledPhaseInvert(controls, controlLen, target, topLeft, bottomRight, false, false);
-    }
-    virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft)
-    {
-        ApplyControlledPhaseInvert(controls, controlLen, target, topRight, bottomLeft, false, true);
-    }
-    virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight)
-    {
-        ApplyControlledPhaseInvert(controls, controlLen, target, topLeft, bottomRight, true, false);
-    }
-    virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft)
-    {
-        ApplyControlledPhaseInvert(controls, controlLen, target, topRight, bottomLeft, true, true);
-    }
-
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
