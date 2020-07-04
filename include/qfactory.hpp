@@ -13,6 +13,7 @@
 #pragma once
 
 #include "qengine_cpu.hpp"
+#include "qpager.hpp"
 
 #if ENABLE_OPENCL
 #include "qengine_opencl.hpp"
@@ -25,6 +26,24 @@ namespace Qrack {
 
 /** Factory method to create specific engine implementations. */
 template <typename... Ts>
+QInterfacePtr CreateQuantumInterface(
+    QInterfaceEngine engine, QInterfaceEngine subengine1, QInterfaceEngine subengine2, Ts... args)
+{
+    switch (engine) {
+    case QINTERFACE_CPU:
+        return std::make_shared<QEngineCPU>(args...);
+#if ENABLE_OPENCL
+    case QINTERFACE_OPENCL:
+        return std::make_shared<QEngineOCL>(args...);
+#endif
+    case QINTERFACE_QUNIT:
+        return std::make_shared<QUnit>(subengine1, subengine2, args...);
+    default:
+        return NULL;
+    }
+}
+
+template <typename... Ts>
 QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine subengine, Ts... args)
 {
     switch (engine) {
@@ -34,6 +53,8 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
 #endif
+    case QINTERFACE_QPAGER:
+        return std::make_shared<QPager>(subengine, args...);
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine, args...);
 #if ENABLE_OPENCL

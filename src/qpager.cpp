@@ -23,7 +23,7 @@
 
 #include <future>
 
-#include "qpager.hpp"
+#include "qfactory.hpp"
 
 namespace Qrack {
 
@@ -58,6 +58,12 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
             qPages.back()->SetAmplitude(0, ZERO_CMPLX);
         }
     }
+}
+
+QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapInt perm)
+{
+    return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engine, length, perm, rand_generator, phaseFactor,
+        false, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse));
 }
 
 void QPager::CombineEngines()
@@ -526,6 +532,26 @@ void QPager::ApplyControlledSingleBit(
     }
 }
 
+void QPager::ApplyAntiControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+{
+    std::vector<bitLenInt> metaControls;
+    std::vector<bitLenInt> intraControls;
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        if (controls[i] < qubitsPerPage) {
+            intraControls.push_back(controls[i]);
+        } else {
+            metaControls.push_back(controls[i]);
+        }
+    }
+
+    if (target < qubitsPerPage) {
+        SemiMetaControlled(true, metaControls, target, intraControls, mtrx);
+    } else {
+        MetaControlled(true, metaControls, target, intraControls, mtrx);
+    }
+}
+
 void QPager::ApplyControlledPhaseInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex top, const complex bottom, const bool isAnti, const bool isInvert)
 {
@@ -556,6 +582,18 @@ void QPager::ApplyControlledPhaseInvert(const bitLenInt* controls, const bitLenI
     } else {
         MetaControlledPhaseInvert(isAnti, isInvert, metaControls, target, intraControls, top, bottom);
     }
+}
+
+void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
+    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
+    const bitCapInt& mtrxSkipValueMask)
+{
+    CombineAndOpControlled(
+        [&](QEnginePtr engine) {
+            engine->UniformlyControlledSingleBit(
+                controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
+        },
+        { qubitIndex }, controls, controlLen);
 }
 
 void QPager::CSwap(
@@ -593,6 +631,14 @@ void QPager::AntiCISqrtSwap(
 {
     CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2); },
         { qubit1, qubit2 }, controls, controlLen);
+}
+
+bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
+{
+    CombineEngines();
+    bool toRet = qPages[0]->ForceM(qubit, result, doForce, doApply);
+    SeparateEngines();
+    return toRet;
 }
 
 void QPager::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
@@ -851,6 +897,17 @@ void QPager::UpdateRunningNorm(real1 norm_thresh)
     for (bitCapInt i = 0; i < qPageCount; i++) {
         qPages[i]->UpdateRunningNorm(norm_thresh);
     }
+}
+
+QInterfacePtr QPager::Clone()
+{
+    QPagerPtr clone = std::dynamic_pointer_cast<QPager>(
+        CreateQuantumInterface(QINTERFACE_QPAGER, engine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+            randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse));
+    for (bitCapInt i = 0; i < qPageCount; i++) {
+        clone->qPages[i]->SetAmplitudePage(qPages[i], 0, 0, qPageMaxQPower);
+    }
+    return clone;
 }
 
 } // namespace Qrack

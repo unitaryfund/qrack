@@ -51,11 +51,12 @@
 
 namespace Qrack {
 
-QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
-    bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh, std::vector<bitLenInt> devList)
+QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
+    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
+    bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<bitLenInt> devList)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , engine(eng)
+    , subEngine(subEng)
     , devID(deviceID)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
@@ -76,8 +77,8 @@ QUnit::QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qra
 
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
 {
-    return CreateQuantumInterface(engine, length, perm, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
-        useHostRam, devID, useRDRAND, isSparse);
+    return CreateQuantumInterface(engine, subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse);
 }
 
 void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)

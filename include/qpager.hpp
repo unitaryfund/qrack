@@ -11,7 +11,7 @@
 // for details.
 #pragma once
 
-#include "qfactory.hpp"
+#include "qinterface.hpp"
 
 namespace Qrack {
 
@@ -39,11 +39,7 @@ protected:
     bitLenInt qPagePow;
     bitCapInt qPageCount;
 
-    QEnginePtr MakeEngine(bitLenInt length, bitCapInt perm)
-    {
-        return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engine, length, perm, rand_generator,
-            phaseFactor, false, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse));
-    }
+    QEnginePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -109,9 +105,9 @@ public:
 
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
     virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
     virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -152,9 +148,9 @@ public:
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
 
-    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true) = 0;
+    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
@@ -232,6 +228,6 @@ public:
 
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1) { return false; }
 
-    virtual QInterfacePtr Clone() { return NULL; } // TODO: skip implementation for now
+    virtual QInterfacePtr Clone();
 };
 } // namespace Qrack
