@@ -36,8 +36,14 @@ QInterfacePtr CreateQuantumInterface(
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
 #endif
+    case QINTERFACE_QPAGER:
+        return std::make_shared<QPager>(subengine1, args...);
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine1, subengine2, args...);
+#if ENABLE_OPENCL
+    case QINTERFACE_QUNIT_MULTI:
+        return std::make_shared<QUnit>(subengine1, args...);
+#endif
     default:
         return NULL;
     }

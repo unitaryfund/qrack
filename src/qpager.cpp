@@ -30,7 +30,7 @@ namespace Qrack {
 QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
     bool ignored, bool ignored2, bool useHostMem, int deviceId, bool useHardwareRNG, bool useSparseStateVec,
     real1 norm_thresh, std::vector<bitLenInt> devList)
-    : QInterface(qBitCount, rgp, ignored, useHardwareRNG, false, norm_thresh)
+    : QInterface(qBitCount, rgp, false, useHardwareRNG, false, norm_thresh)
     , engine(eng)
     , devID(deviceId)
     , phaseFactor(phaseFac)
@@ -38,9 +38,13 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
 {
+    if ((eng != QINTERFACE_CPU) && (eng != QINTERFACE_OPENCL)) {
+        throw std::invalid_argument("QPager sub-engine type must be QINTERFACE_CPU or QINTERFACE_OPENCL.");
+    }
+
     SetQubitCount(qubitCount);
 
-    if (pow2(qubitsPerPage) > (sizeof(bitCapIntOcl) * bitsInByte)) {
+    if (qubitsPerPage > (sizeof(bitCapIntOcl) * bitsInByte)) {
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
     }

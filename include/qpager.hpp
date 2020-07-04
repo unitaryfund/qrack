@@ -35,7 +35,7 @@ protected:
     std::vector<QEnginePtr> qPages;
 
     // TODO: Make this a constructor argument:
-    const bitCapInt qubitsPerPage = 4U;
+    const bitCapInt qubitsPerPage = 18U;
     bitLenInt qPagePow;
     bitCapInt qPageCount;
 
