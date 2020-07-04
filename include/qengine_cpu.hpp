@@ -82,6 +82,21 @@ public:
     virtual void ShuffleBuffers(QEnginePtr engine)
     {
         QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);
+
+        if (!stateVec && !(engineCpu->stateVec)) {
+            return;
+        }
+
+        if (!stateVec) {
+            ResetStateVec(AllocStateVec(maxQPower));
+            stateVec->clear();
+        }
+
+        if (!(engineCpu->stateVec)) {
+            engineCpu->ResetStateVec(AllocStateVec(maxQPower));
+            engineCpu->stateVec->clear();
+        }
+
         stateVec->shuffle(engineCpu->stateVec);
     }
 

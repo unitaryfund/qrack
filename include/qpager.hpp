@@ -190,6 +190,7 @@ public:
 
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
+    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
 
     virtual bool ApproxCompare(QInterfacePtr toCompare);
     virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);

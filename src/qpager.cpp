@@ -95,6 +95,7 @@ void QPager::SeparateEngines()
     for (bitCapInt i = 0; i < qPageCount; i++) {
         nQPages.push_back(MakeEngine(qubitsPerPage, 0));
         nQPages.back()->SetAmplitudePage(qPages[0], i * qPageMaxQPower, 0, qPageMaxQPower);
+        // nQPages.back()->UpdateRunningNorm();
     }
 
     qPages = nQPages;
@@ -836,6 +837,14 @@ real1 QPager::ProbAll(bitCapInt fullRegister)
     bitCapInt subIndex = fullRegister / qPageMaxQPower;
     fullRegister -= subIndex * qPageMaxQPower;
     return qPages[subIndex]->ProbAll(fullRegister);
+}
+
+real1 QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+{
+    CombineEngines();
+    real1 maskChance = qPages[0]->ProbMask(mask, permutation);
+    SeparateEngines();
+    return maskChance;
 }
 
 bool QPager::ApproxCompare(QInterfacePtr toCompare)
