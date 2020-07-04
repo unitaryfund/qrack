@@ -474,104 +474,7 @@ void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
-        ApplySinglePhase(mtrx[0], mtrx[3], target);
-        return;
-    }
-
-    if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
-        ApplySingleInvert(mtrx[1], mtrx[2], target);
-        return;
-    }
-
-    if (target < qubitsPerPage) {
-        for (bitCapInt i = 0; i < qPageCount; i++) {
-            qPages[i]->ApplySingleBit(mtrx, target);
-        }
-        return;
-    }
-
     SingleBitGate(target, [mtrx](QEnginePtr engine, bitLenInt lTarget) { engine->ApplySingleBit(mtrx, lTarget); });
-}
-
-void QPager::ApplySinglePhase(const complex tl, const complex br, bitLenInt target)
-{
-    complex topLeft = tl;
-    complex bottomRight = br;
-
-    if ((topLeft == bottomRight) && (randGlobalPhase || (topLeft == ONE_CMPLX))) {
-        return;
-    }
-
-    if (target < qubitsPerPage) {
-        for (bitCapInt i = 0; i < qPageCount; i++) {
-            qPages[i]->ApplySinglePhase(topLeft, bottomRight, target);
-        }
-        return;
-    }
-
-    if (randGlobalPhase) {
-        topLeft = ONE_CMPLX;
-        bottomRight /= topLeft;
-    }
-
-    bitCapInt offset = pow2(target - (qubitsPerPage - 1U));
-    bitCapInt qMask = offset - ONE_BCI;
-    bitCapInt maxLcv = qPageCount >> ONE_BCI;
-    bitCapInt i;
-    for (bitCapInt lcv = 0; lcv < maxLcv; lcv++) {
-        i = lcv & qMask;
-        i |= (lcv ^ i) << ONE_BCI;
-
-        if (topLeft != ONE_CMPLX) {
-            qPages[i]->ApplySinglePhase(topLeft, topLeft, 0);
-        }
-
-        if (bottomRight != ONE_CMPLX) {
-            qPages[i + offset]->ApplySinglePhase(bottomRight, bottomRight, 0);
-        }
-    }
-}
-
-void QPager::ApplySingleInvert(const complex tr, const complex bl, bitLenInt target)
-{
-    complex topRight = tr;
-    complex bottomLeft = bl;
-
-    if ((topRight == -bottomLeft) && (randGlobalPhase || (topRight == ONE_CMPLX))) {
-        return;
-    }
-
-    if (target < qubitsPerPage) {
-        for (bitCapInt i = 0; i < qPageCount; i++) {
-            qPages[i]->ApplySingleInvert(topRight, bottomLeft, target);
-        }
-        return;
-    }
-
-    if (randGlobalPhase) {
-        topRight = ONE_CMPLX;
-        bottomLeft /= topRight;
-    }
-
-    bitCapInt offset = pow2(target - (qubitsPerPage - 1U));
-    bitCapInt qMask = offset - ONE_BCI;
-    bitCapInt maxLcv = qPageCount >> ONE_BCI;
-    bitCapInt i;
-    for (bitCapInt lcv = 0; lcv < maxLcv; lcv++) {
-        i = lcv & qMask;
-        i |= (lcv ^ i) << ONE_BCI;
-
-        std::swap(qPages[i], qPages[i + offset]);
-
-        if (topRight != ONE_CMPLX) {
-            qPages[i]->ApplySinglePhase(topRight, topRight, 0);
-        }
-
-        if (bottomLeft != ONE_CMPLX) {
-            qPages[i + offset]->ApplySinglePhase(bottomLeft, bottomLeft, 0);
-        }
-    }
 }
 
 void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* controls, const bitLenInt& controlLen,
@@ -609,10 +512,14 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
     };
 
     auto sg = [anti, mtrx, &intraControls](QEnginePtr engine, bitLenInt lTarget) {
-        if (anti) {
-            engine->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
+        if (intraControls.size()) {
+            if (anti) {
+                engine->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
+            } else {
+                engine->ApplyControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
+            }
         } else {
-            engine->ApplyControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
+            engine->ApplySingleBit(mtrx, lTarget);
         }
     };
 
@@ -625,9 +532,9 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
         }
         SeparateEngines();
     } else if (metaControls.size() == 2U) {
-        DoublyControlledGate(false, metaControls[0], metaControls[1], target, dc, sc, sg);
+        DoublyControlledGate(anti, metaControls[0], metaControls[1], target, dc, sc, sg);
     } else if (metaControls.size() == 1U) {
-        ControlledGate(false, metaControls[0], target, sc, sg);
+        ControlledGate(anti, metaControls[0], target, sc, sg);
     } else {
         SingleBitGate(target, sg);
     }
@@ -902,7 +809,7 @@ void QPager::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
 
 real1 QPager::Prob(bitLenInt qubitIndex)
 {
-    if (qPageCount == 1U) {
+    if (qPages.size() == 1U) {
         return qPages[0]->Prob(qubitIndex);
     }
 
