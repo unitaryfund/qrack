@@ -104,100 +104,19 @@ void QPager::SeparateEngines()
 template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn)
 {
     if (target < qubitsPerPage) {
-        for (bitCapInt i = 0; i < qPageCount; i++) {
-            fn(qPages[i], target);
+        bitCapInt i;
+        std::vector<std::future<void>> futures(qPageCount);
+        for (i = 0; i < qPageCount; i++) {
+            QEnginePtr engine = qPages[i];
+            futures[i] = std::async(std::launch::async, [engine, fn, target]() { fn(engine, target); });
+        }
+        for (i = 0; i < qPageCount; i++) {
+            futures[i].get();
         }
         return;
     }
 
-    // Here, the gate requires data to cross sub-engine boundaries.
-    // It's always a matter of swapping the high halves of half the sub-engines with the low halves of the other
-    // half of engines, acting the maximum bit gate, (for the sub-engine bit count,) and swapping back. Depending on
-    // the bit index and number of sub-engines, we just have to determine which sub-engine to pair with which.
-    bitCapInt groupCount = ONE_BCI << (qubitCount - (target + ONE_BCI));
-    bitCapInt groupSize = ONE_BCI << ((target + ONE_BCI) - qubitsPerPage);
-    bitLenInt sqi = qubitsPerPage - ONE_BCI;
-
-    bitCapInt i, j;
-
-    for (i = 0; i < groupCount; i++) {
-        for (j = 0; j < (groupSize / 2); j++) {
-            QEnginePtr engine1 = qPages[j + (i * groupSize)];
-            QEnginePtr engine2 = qPages[j + (i * groupSize) + (groupSize / 2)];
-
-            engine1->ShuffleBuffers(engine2);
-
-            std::future<void> future1 = std::async(std::launch::async, [engine1, fn, sqi]() { fn(engine1, sqi); });
-            std::future<void> future2 = std::async(std::launch::async, [engine2, fn, sqi]() { fn(engine2, sqi); });
-            future1.get();
-            future2.get();
-
-            engine1->ShuffleBuffers(engine2);
-        }
-    }
-}
-
-// This method underlies all controlled gates that can't be entirely carried out at the "meta-" level.
-template <typename Qubit1Fn, typename Qubit2Fn>
-void QPager::ControlledGate(bool anti, bitLenInt controlBit, bitLenInt target, Qubit2Fn cfn, Qubit1Fn fn)
-{
-
-    if (qPageCount == ONE_BCI) {
-        cfn(qPages[0], controlBit, target);
-        return;
-    }
-
-    if ((controlBit >= qubitsPerPage) && (target >= qubitsPerPage)) {
-        // If both the control and target are "meta-," we can do this at a "meta-" level with a single-bit gate
-        // "payload."
-        MetaControlled(anti, { static_cast<bitLenInt>(controlBit - qubitsPerPage) },
-            static_cast<bitLenInt>(target - qubitsPerPage), fn);
-    } else if (controlBit >= qubitsPerPage) {
-        // If the control is "meta-," but the target is not, we do this semi- at a "meta-" level, again with a
-        // single-bit gate payload.
-        SemiMetaControlled(anti, { static_cast<bitLenInt>(controlBit - qubitsPerPage) }, target, fn);
-    } else if (controlBit == (qubitsPerPage - 1U)) {
-        // There's a particular edge case not handled by any of the above, where both control and target fit in
-        // independent sub-engines, but the control bit is the highest bit in the sub-engine.
-        ControlledSkip(anti, 0, target, fn);
-    }
-}
-
-template <typename Qubit1Fn, typename Qubit2Fn, typename Qubit3Fn>
-void QPager::DoublyControlledGate(
-    bool anti, bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt target, Qubit3Fn ccfn, Qubit2Fn cfn, Qubit1Fn fn)
-{
-    if (qPageCount == ONE_BCI) {
-        ccfn(qPages[0], controlBit1, controlBit2, target);
-        return;
-    }
-
-    bitLenInt lowControl, highControl;
-    if (controlBit1 < controlBit2) {
-        lowControl = controlBit1;
-        highControl = controlBit2;
-    } else {
-        lowControl = controlBit2;
-        highControl = controlBit1;
-    }
-
-    // Like singly-controlled gates, we can handle this entirely "meta-," "semi-meta-," or parallelized entirely
-    // independently within sub-engines.
-    if ((lowControl >= qubitsPerPage) && (target >= qubitsPerPage)) {
-        MetaControlled(anti,
-            { static_cast<bitLenInt>(controlBit1 - qubitsPerPage),
-                static_cast<bitLenInt>(controlBit2 - qubitsPerPage) },
-            static_cast<bitLenInt>(target - qubitsPerPage), fn);
-    } else if (lowControl >= qubitsPerPage) {
-        // Both controls >= qubitsPerPage, target < qubitsPerPage
-        SemiMetaControlled(anti,
-            { static_cast<bitLenInt>(lowControl - qubitsPerPage), static_cast<bitLenInt>(highControl - qubitsPerPage) },
-            target, fn);
-    } else if (lowControl == (qubitsPerPage - 1U)) {
-        // Again, there's a particular edge case not handled by any of the above, where the low control bit and the
-        // target bit fit in independent sub-engines, but the low control bit is the highest bit in the sub-engine.
-        ControlledSkip(anti, 1, target, fn);
-    }
+    CombineAndOp([fn, target](QEnginePtr engine) { fn(engine, target); }, { target });
 }
 
 // This is like the QEngineCPU and QEngineOCL logic for register-like CNOT and CCNOT, just swapping sub-engine indices
@@ -207,12 +126,13 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
 {
     bitLenInt i;
 
-    std::vector<bitLenInt> sortedMasks(1 + controls.size());
-    sortedMasks[controls.size()] = 1 << target;
+    std::vector<bitCapInt> sortedMasks(1U + controls.size());
+    bitCapInt targetMask = pow2(target);
+    sortedMasks[controls.size()] = targetMask;
 
     bitCapInt controlMask = 0;
     for (i = 0; i < controls.size(); i++) {
-        sortedMasks[i] = 1 << controls[i];
+        sortedMasks[i] = pow2(controls[i]);
         if (!anti) {
             controlMask |= sortedMasks[i];
         }
@@ -221,20 +141,19 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
 
     std::sort(sortedMasks.begin(), sortedMasks.end());
 
-    bitCapInt targetMask = 1 << target;
-    bitLenInt sqi = qubitsPerPage - 1;
+    bitLenInt sqi = qubitsPerPage - 1U;
 
     bitLenInt maxLCV = qPageCount >> (sortedMasks.size());
     std::vector<std::future<void>> futures(maxLCV);
 
     for (i = 0; i < maxLCV; i++) {
-        futures[i] = std::async(std::launch::async, [this, i, &sortedMasks, &controlMask, &targetMask, &sqi, fn]() {
+        futures[i] = std::async(std::launch::async, [&]() {
             bitCapInt j, k, jLo, jHi;
             jHi = i;
             j = 0;
             for (k = 0; k < (sortedMasks.size()); k++) {
                 jLo = jHi & sortedMasks[k];
-                jHi = (jHi ^ jLo) << 1;
+                jHi = (jHi ^ jLo) << ONE_BCI;
                 j |= jLo;
             }
             j |= jHi | controlMask;
@@ -278,7 +197,7 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
 
     std::vector<std::future<void>> futures(maxLCV);
     for (i = 0; i < maxLCV; i++) {
-        futures[i] = std::async(std::launch::async, [this, i, fn, sortedMasks, controlMask, target]() {
+        futures[i] = std::async(std::launch::async, [&]() {
             bitCapInt j, k, jLo, jHi;
             jHi = i;
             j = 0;
@@ -293,44 +212,6 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
         });
     }
     for (i = 0; i < maxLCV; i++) {
-        futures[i].get();
-    }
-}
-
-// This is the particular edge case between any "meta-" gate and any gate entirely below the "meta-"/"embarrassingly
-// parallel" threshold, where a control bit is the most significant bit in a sub-engine.
-template <typename Qubit1Fn>
-void QPager::ControlledSkip(bool anti, bitLenInt controlDepth, bitLenInt target, Qubit1Fn fn)
-{
-    bitLenInt i, j;
-    bitLenInt k = 0;
-    bitLenInt groupCount = 1 << (qubitCount - (target + 1));
-    bitLenInt groupSize = 1 << ((target + 1) - qubitsPerPage);
-    std::vector<std::future<void>> futures((groupCount * groupSize) / 2);
-    bitLenInt sqi = qubitsPerPage - 1;
-    bitLenInt jStart = (anti | (controlDepth == 0)) ? 0 : ((groupSize / 2) - 1);
-    bitLenInt jInc = (controlDepth == 0) ? 1 : 2;
-
-    for (i = 0; i < groupCount; i++) {
-        for (j = jStart; j < (groupSize / 2); j += jInc) {
-            futures[k] = std::async(std::launch::async, [this, groupSize, i, j, fn, sqi, anti]() {
-                QEnginePtr engine1 = qPages[j + (i * groupSize)];
-                QEnginePtr engine2 = qPages[j + (i * groupSize) + (groupSize / 2)];
-
-                engine1->ShuffleBuffers(engine2);
-
-                if (anti) {
-                    fn(engine1, sqi);
-                } else {
-                    fn(engine2, sqi);
-                }
-
-                engine1->ShuffleBuffers(engine2);
-            });
-            k++;
-        }
-    }
-    for (i = 0; i < k; i++) {
         futures[i].get();
     }
 }
@@ -471,10 +352,6 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
 
 void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
 {
-    if (IsIdentity(mtrx, true)) {
-        return;
-    }
-
     SingleBitGate(target, [mtrx](QEnginePtr engine, bitLenInt lTarget) { engine->ApplySingleBit(mtrx, lTarget); });
 }
 
@@ -484,33 +361,12 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
     std::vector<bitLenInt> metaControls;
     std::vector<bitLenInt> intraControls;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        if (controls[i] < (qubitsPerPage - 1U)) {
+        if (controls[i] < qubitsPerPage) {
             intraControls.push_back(controls[i]);
         } else {
-            metaControls.push_back(controls[i]);
+            metaControls.push_back(controls[i] - qubitsPerPage);
         }
     }
-
-    auto dc = [anti, mtrx, &intraControls](
-                  QEnginePtr engine, bitLenInt lControl1, bitLenInt lControl2, bitLenInt lTarget) {
-        std::vector<bitLenInt> lControls = { lControl1, lControl2 };
-        lControls.insert(lControls.end(), intraControls.begin(), intraControls.end());
-        if (anti) {
-            engine->ApplyAntiControlledSingleBit(&(lControls[0]), 2U + intraControls.size(), lTarget, mtrx);
-        } else {
-            engine->ApplyControlledSingleBit(&(lControls[0]), 2U + intraControls.size(), lTarget, mtrx);
-        }
-    };
-
-    auto sc = [anti, mtrx, &intraControls](QEnginePtr engine, bitLenInt lControl1, bitLenInt lTarget) {
-        std::vector<bitLenInt> lControls = { lControl1 };
-        lControls.insert(lControls.end(), intraControls.begin(), intraControls.end());
-        if (anti) {
-            engine->ApplyAntiControlledSingleBit(&(lControls[0]), 1U + intraControls.size(), lTarget, mtrx);
-        } else {
-            engine->ApplyControlledSingleBit(&(lControls[0]), 1U + intraControls.size(), lTarget, mtrx);
-        }
-    };
 
     auto sg = [anti, mtrx, &intraControls](QEnginePtr engine, bitLenInt lTarget) {
         if (intraControls.size()) {
@@ -524,20 +380,12 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
         }
     };
 
-    if (metaControls.size() > 2U) {
-        CombineEngines();
-        if (anti) {
-            qPages[0]->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
-        } else {
-            qPages[0]->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
-        }
-        SeparateEngines();
-    } else if (metaControls.size() == 2U) {
-        DoublyControlledGate(anti, metaControls[0], metaControls[1], target, dc, sc, sg);
-    } else if (metaControls.size() == 1U) {
-        ControlledGate(anti, metaControls[0], target, sc, sg);
-    } else {
+    if (metaControls.size() == 0) {
         SingleBitGate(target, sg);
+    } else if (target >= qubitsPerPage) {
+        MetaControlled(anti, metaControls, target - qubitsPerPage, sg);
+    } else {
+        SemiMetaControlled(anti, metaControls, target, sg);
     }
 }
 

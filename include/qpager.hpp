@@ -53,16 +53,10 @@ protected:
     void SeparateEngines();
 
     template <typename Qubit1Fn> void SingleBitGate(bitLenInt target, Qubit1Fn fn);
-    template <typename Qubit1Fn, typename Qubit2Fn>
-    void ControlledGate(bool anti, bitLenInt controlBit, bitLenInt target, Qubit2Fn cfn, Qubit1Fn fn);
-    template <typename Qubit1Fn, typename Qubit2Fn, typename Qubit3Fn>
-    void DoublyControlledGate(bool anti, bitLenInt controlBit1, bitLenInt controlBit2, bitLenInt target, Qubit3Fn ccfn,
-        Qubit2Fn cfn, Qubit1Fn fn);
     template <typename Qubit1Fn>
     void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
     template <typename Qubit1Fn>
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
-    template <typename Qubit1Fn> void ControlledSkip(bool anti, bitLenInt controlDepth, bitLenInt target, Qubit1Fn fn);
 
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
     template <typename F>
