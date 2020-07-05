@@ -78,6 +78,10 @@ void QPager::CombineEngines(bitLenInt bit)
         return;
     }
 
+    if (bit > qubitCount) {
+        bit = qubitCount;
+    }
+
     bitCapInt groupCount = pow2(qubitCount - bit);
     bitCapInt groupSize = qPageCount / groupCount;
     std::vector<QEnginePtr> nQPages;
@@ -156,7 +160,7 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
 
     std::sort(sortedMasks.begin(), sortedMasks.end());
 
-    bitLenInt sqi = qubitsPerPage - 1U;
+    bitLenInt sqi = qubitCount - (log2(qPages.size()) + 1U);
 
     bitLenInt maxLCV = qPageCount >> (sortedMasks.size());
     std::vector<std::future<void>> futures(maxLCV);
@@ -198,7 +202,7 @@ template <typename Qubit1Fn>
 void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn)
 {
     bitLenInt i;
-    bitLenInt maxLCV = qPageCount >> (controls.size());
+    bitLenInt maxLCV = qPages.size() >> (controls.size());
     std::vector<bitLenInt> sortedMasks(controls.size());
     bitCapInt controlMask = 0;
     for (i = 0; i < controls.size(); i++) {
@@ -373,14 +377,48 @@ void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
 void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex* mtrx)
 {
+    if (controlLen == 0) {
+        ApplySingleBit(mtrx, target);
+        return;
+    }
+
     std::vector<bitLenInt> metaControls;
     std::vector<bitLenInt> intraControls;
     for (bitLenInt i = 0; i < controlLen; i++) {
+        if (controls[i] == qubitsPerPage) {
+            // Here, 2+ qubit controlled gate edge case splits engines between identity and single bit payload gate.
+            // TODO: Handle this efficiently.
+            CombineAndOpControlled(
+                [&](QEnginePtr engine) {
+                    if (anti) {
+                        engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+                    } else {
+                        engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+                    }
+                },
+                { target }, controls, controlLen);
+            return;
+        }
+
         if (controls[i] < qubitsPerPage) {
             intraControls.push_back(controls[i]);
         } else {
             metaControls.push_back(controls[i] - qubitsPerPage);
         }
+    }
+
+    bitLenInt order = qubitsPerPage;
+    std::sort(metaControls.begin(), metaControls.end());
+    while (metaControls.size() && metaControls[0] == order) {
+        order++;
+        intraControls.push_back(order);
+        metaControls.erase(metaControls.begin());
+    }
+
+    if (order > qubitsPerPage) {
+        // This is an edge case where the two halves of a controlled gate would be equivalent to the identity operator
+        // in one engine and a single bit gate in another.
+        CombineEngines(order - 1U);
     }
 
     auto sg = [anti, mtrx, &intraControls](QEnginePtr engine, bitLenInt lTarget) {
@@ -401,6 +439,10 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
         MetaControlled(anti, metaControls, target - qubitsPerPage, sg);
     } else {
         SemiMetaControlled(anti, metaControls, target, sg);
+    }
+
+    if (order > qubitsPerPage) {
+        SeparateEngines();
     }
 }
 
