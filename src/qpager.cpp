@@ -72,16 +72,14 @@ QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapInt perm)
 
 void QPager::CombineEngines(bitLenInt bit)
 {
-    // TODO: Fix this:
-    // bit++;
-    bit = qubitCount;
+    bit++;
 
-    if ((qPages.size() == 1U) || (bit < qubitsPerPage)) {
+    if ((qPages.size() == 1U) || (bit <= qubitsPerPage)) {
         return;
     }
 
-    bitLenInt groupCount = pow2(qubitCount - bit);
-    bitLenInt groupSize = pow2(bit - qubitsPerPage);
+    bitCapInt groupCount = pow2(qubitCount - bit);
+    bitCapInt groupSize = qPageCount / groupCount;
     std::vector<QEnginePtr> nQPages;
 
     bitCapInt i, j;
@@ -680,17 +678,21 @@ real1 QPager::Prob(bitLenInt qubitIndex)
     real1 oneChance = ZERO_R1;
     bitCapInt i;
 
-    if (qubitIndex < qubitsPerPage) {
-        std::vector<std::future<real1>> futures(qPageCount);
-        for (i = 0; i < qPageCount; i++) {
-            QEnginePtr engine = qPages[i];
-            futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
-        }
-        for (i = 0; i < qPageCount; i++) {
-            oneChance += futures[i].get();
-        }
-    } else {
-        CombineAndOp([&](QEnginePtr engine) { oneChance = engine->Prob(qubitIndex); }, { qubitIndex });
+    if (qubitIndex >= qubitsPerPage) {
+        CombineEngines(qubitIndex);
+    }
+
+    std::vector<std::future<real1>> futures(qPageCount);
+    for (i = 0; i < qPages.size(); i++) {
+        QEnginePtr engine = qPages[i];
+        futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
+    }
+    for (i = 0; i < qPages.size(); i++) {
+        oneChance += futures[i].get();
+    }
+
+    if (qubitIndex >= qubitsPerPage) {
+        SeparateEngines();
     }
 
     return oneChance;

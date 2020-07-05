@@ -35,7 +35,6 @@ protected:
     // TODO: Make this a constructor argument:
     const bitLenInt thresholdQubitsPerPage = 18U;
     bitLenInt qubitsPerPage;
-    bitLenInt qPagePow;
     bitCapInt qPageCount;
     bitCapIntOcl qPageMaxQPower;
 
@@ -46,8 +45,7 @@ protected:
         QInterface::SetQubitCount(qb);
 
         qubitsPerPage = (qubitCount < thresholdQubitsPerPage) ? qubitCount : thresholdQubitsPerPage;
-        qPagePow = qubitCount - qubitsPerPage;
-        qPageCount = pow2(qPagePow);
+        qPageCount = pow2(qubitCount - qubitsPerPage);
         qPageMaxQPower = pow2(qubitsPerPage);
     }
 
