@@ -966,6 +966,10 @@ void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
 
 void QEngineCPU::UpdateRunningNorm(real1 norm_thresh)
 {
+    if (!stateVec) {
+        return;
+    }
+
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;
     }
