@@ -33,7 +33,8 @@ protected:
     std::vector<QEnginePtr> qPages;
 
     // TODO: Make this a constructor argument:
-    const bitCapInt qubitsPerPage = 18U;
+    const bitLenInt thresholdQubitsPerPage = 18U;
+    bitLenInt qubitsPerPage;
     bitLenInt qPagePow;
     bitCapInt qPageCount;
     bitCapIntOcl qPageMaxQPower;
@@ -44,12 +45,14 @@ protected:
     {
         QInterface::SetQubitCount(qb);
 
+        qubitsPerPage = (qubitCount < thresholdQubitsPerPage) ? qubitCount : thresholdQubitsPerPage;
         qPagePow = qubitCount - qubitsPerPage;
         qPageCount = pow2(qPagePow);
         qPageMaxQPower = pow2(qubitsPerPage);
     }
 
-    void CombineEngines(bitLenInt ignored = -1);
+    void CombineEngines(bitLenInt bit);
+    void CombineEngines() { CombineEngines(qubitCount - 1U); }
     void SeparateEngines();
 
     template <typename Qubit1Fn> void SingleBitGate(bitLenInt target, Qubit1Fn fn);

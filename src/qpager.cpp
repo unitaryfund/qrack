@@ -70,16 +70,27 @@ QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapInt perm)
         false, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse));
 }
 
-void QPager::CombineEngines(bitLenInt ignored)
+void QPager::CombineEngines(bitLenInt bit)
 {
-    if (qPages.size() == 1U) {
+    // TODO: Fix this:
+    // bit++;
+    bit = qubitCount;
+
+    if ((qPages.size() == 1U) || (bit < qubitsPerPage)) {
         return;
     }
 
+    bitLenInt groupCount = pow2(qubitCount - bit);
+    bitLenInt groupSize = pow2(bit - qubitsPerPage);
     std::vector<QEnginePtr> nQPages;
-    nQPages.push_back(MakeEngine(qubitCount, 0));
-    for (bitCapInt i = 0; i < qPageCount; i++) {
-        nQPages[0]->SetAmplitudePage(qPages[i], 0, i * qPageMaxQPower, qPageMaxQPower);
+
+    bitCapInt i, j;
+
+    for (i = 0; i < groupCount; i++) {
+        nQPages.push_back(MakeEngine(bit, 0));
+        for (j = 0; j < groupSize; j++) {
+            nQPages.back()->SetAmplitudePage(qPages[j + (i * groupSize)], 0, j * qPageMaxQPower, qPageMaxQPower);
+        }
     }
 
     qPages = nQPages;
@@ -91,11 +102,15 @@ void QPager::SeparateEngines()
         return;
     }
 
+    bitCapInt i, j;
+    bitCapInt pagesPer = qPageCount / qPages.size();
+
     std::vector<QEnginePtr> nQPages;
-    for (bitCapInt i = 0; i < qPageCount; i++) {
-        nQPages.push_back(MakeEngine(qubitsPerPage, 0));
-        nQPages.back()->SetAmplitudePage(qPages[0], i * qPageMaxQPower, 0, qPageMaxQPower);
-        // nQPages.back()->UpdateRunningNorm();
+    for (i = 0; i < qPages.size(); i++) {
+        for (j = 0; j < pagesPer; j++) {
+            nQPages.push_back(MakeEngine(qubitsPerPage, 0));
+            nQPages.back()->SetAmplitudePage(qPages[i], j * qPageMaxQPower, 0, qPageMaxQPower);
+        }
     }
 
     qPages = nQPages;
