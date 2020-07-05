@@ -89,6 +89,7 @@ void QPager::CombineEngines(bitLenInt bit)
         for (j = 0; j < groupSize; j++) {
             nQPages.back()->SetAmplitudePage(qPages[j + (i * groupSize)], 0, j * qPageMaxQPower, qPageMaxQPower);
         }
+        nQPages.back()->UpdateRunningNorm();
     }
 
     qPages = nQPages;
@@ -108,6 +109,7 @@ void QPager::SeparateEngines()
         for (j = 0; j < pagesPer; j++) {
             nQPages.push_back(MakeEngine(qubitsPerPage, 0));
             nQPages.back()->SetAmplitudePage(qPages[i], j * qPageMaxQPower, 0, qPageMaxQPower);
+            nQPages.back()->UpdateRunningNorm();
         }
     }
 

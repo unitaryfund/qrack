@@ -760,6 +760,10 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
         NormalizeState();
     }
 
+    if (runningNorm == ZERO_R1) {
+        return ZERO_R1;
+    }
+
     return norm(stateVec->read(fullRegister));
 }
 
