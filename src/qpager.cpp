@@ -682,7 +682,7 @@ real1 QPager::Prob(bitLenInt qubitIndex)
         CombineEngines(qubitIndex);
     }
 
-    std::vector<std::future<real1>> futures(qPageCount);
+    std::vector<std::future<real1>> futures(qPages.size());
     for (i = 0; i < qPages.size(); i++) {
         QEnginePtr engine = qPages[i];
         futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
