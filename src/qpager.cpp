@@ -237,7 +237,7 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
 
 template <typename F> void QPager::CombineAndOp(F fn, std::vector<bitLenInt> bits)
 {
-    if (qPageCount == 1U) {
+    if (qPages.size() == 1U) {
         fn(qPages[0]);
         return;
     }
@@ -314,6 +314,7 @@ void QPager::Dispose(bitLenInt start, bitLenInt length)
 {
     CombineEngines();
     qPages[0]->Dispose(start, length);
+    SetQubitCount(qPages[0]->GetQubitCount());
     SeparateEngines();
 }
 
@@ -321,6 +322,7 @@ void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
     CombineEngines();
     qPages[0]->Dispose(start, length, disposedPerm);
+    SetQubitCount(qPages[0]->GetQubitCount());
     SeparateEngines();
 }
 
