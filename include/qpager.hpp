@@ -80,11 +80,13 @@ public:
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm)
     {
-        return qPages[perm / qPageMaxQPower]->GetAmplitude(perm & (qPageMaxQPower - ONE_BCI));
+        bitCapInt subIndex = perm / qPageMaxQPower;
+        return qPages[subIndex]->GetAmplitude(perm - (subIndex * qPageMaxQPower));
     }
     virtual void SetAmplitude(bitCapInt perm, complex amp)
     {
-        return qPages[perm / qPageMaxQPower]->SetAmplitude(perm & (qPageMaxQPower - ONE_BCI), amp);
+        bitCapInt subIndex = perm / qPageMaxQPower;
+        return qPages[perm / qPageMaxQPower]->SetAmplitude(perm - (subIndex * qPageMaxQPower), amp);
     }
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);

@@ -2293,6 +2293,10 @@ void QEngineOCL::SetQuantumState(const complex* inputState)
 
 complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 {
+    if (!stateVec) {
+        return ZERO_CMPLX;
+    }
+
     if (doNormalize) {
         NormalizeState();
     }

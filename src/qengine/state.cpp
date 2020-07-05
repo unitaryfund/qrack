@@ -61,6 +61,10 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 
 complex QEngineCPU::GetAmplitude(bitCapInt perm)
 {
+    if (!stateVec) {
+        return ZERO_CMPLX;
+    }
+
     if (doNormalize) {
         NormalizeState();
     }
