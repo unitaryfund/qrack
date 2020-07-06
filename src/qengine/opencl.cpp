@@ -110,8 +110,9 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
-    queue.enqueueWriteBuffer(
-        *stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr, waitVec.get());
+    device_context->wait_events->emplace_back();
+    queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr,
+        waitVec.get(), &(device_context->wait_events->back()));
 }
 
 void QEngineOCL::SetAmplitudePage(
@@ -126,7 +127,10 @@ void QEngineOCL::SetAmplitudePage(
 
     if (!oStateBuffer) {
         EventVecPtr waitVec = ResetWaitEvents();
-        DISPATCH_FILL(waitVec, *stateBuffer, sizeof(complex) * maxQPowerOcl, ZERO_CMPLX);
+        device_context->wait_events->emplace_back();
+        queue.enqueueFillBuffer(*stateBuffer, ZERO_CMPLX, sizeof(complex) * srcOffset, sizeof(complex) * length,
+            waitVec.get(), &(device_context->wait_events->back()));
+        queue.flush();
         return;
     }
 
@@ -137,8 +141,8 @@ void QEngineOCL::SetAmplitudePage(
     clFinish();
     pageEngineOclPtr->clFinish();
 
-    queue.enqueueCopyBuffer(
-        *oStateBuffer, *stateBuffer, srcOffset * sizeof(complex), dstOffset * sizeof(complex), length);
+    queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, srcOffset * sizeof(complex), dstOffset * sizeof(complex),
+        sizeof(complex) * length);
 
     queue.finish();
 }
