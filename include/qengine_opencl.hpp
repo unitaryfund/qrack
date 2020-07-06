@@ -161,8 +161,12 @@ public:
     {
         clDump();
         runningNorm = ZERO_R1;
-        ResetStateBuffer(NULL);
-        FreeStateVec();
+        // ResetStateBuffer(NULL);
+        // FreeStateVec();
+        device_context->wait_events->emplace_back();
+        queue.enqueueFillBuffer(
+            *stateBuffer, ZERO_CMPLX, 0, maxQPowerOcl * sizeof(complex), NULL, &(device_context->wait_events->back()));
+        queue.flush();
     }
 
     virtual void SetQubitCount(bitLenInt qb)
