@@ -87,6 +87,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 {
     maxQPowerOcl = pow2Ocl(qubitCount);
     InitOCL(devID);
+    clFinish();
     SetPermutation(initState, phaseFac);
 }
 
@@ -553,6 +554,8 @@ void QEngineOCL::ResetStateBuffer(BufferPtr nStateBuffer) { stateBuffer = nState
 
 void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
 {
+    clDump();
+
     if (!stateBuffer) {
         ReinitBuffer();
     }
@@ -2314,6 +2317,8 @@ void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineOCL::SetQuantumState(const complex* inputState)
 {
+    clDump();
+
     if (!stateBuffer) {
         ReinitBuffer();
     }

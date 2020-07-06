@@ -159,9 +159,10 @@ public:
 
     virtual void ZeroAmplitudes()
     {
+        clDump();
         runningNorm = ZERO_R1;
-        // ResetStateBuffer(NULL);
-        // FreeStateVec();
+        ResetStateBuffer(NULL);
+        FreeStateVec();
     }
 
     virtual void SetQubitCount(bitLenInt qb)
