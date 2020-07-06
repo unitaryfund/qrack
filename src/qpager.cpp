@@ -782,6 +782,7 @@ QInterfacePtr QPager::Clone()
             randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse));
     for (bitCapInt i = 0; i < qPageCount; i++) {
         clone->qPages[i]->SetAmplitudePage(qPages[i], 0, 0, qPageMaxQPower);
+        clone->qPages[i]->UpdateRunningNorm();
     }
     return clone;
 }

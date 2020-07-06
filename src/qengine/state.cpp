@@ -81,9 +81,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     runningNorm += norm(amp);
 
     if (runningNorm <= min_norm) {
-        runningNorm = ZERO_R1;
-        amp = ZERO_CMPLX;
-        FreeStateVec();
+        ZeroAmplitudes();
         return;
     }
 
@@ -980,8 +978,7 @@ void QEngineCPU::UpdateRunningNorm(real1 norm_thresh)
     runningNorm = par_norm(maxQPower, stateVec, norm_thresh);
 
     if (runningNorm <= min_norm) {
-        runningNorm = ZERO_R1;
-        FreeStateVec();
+        ZeroAmplitudes();
     }
 }
 

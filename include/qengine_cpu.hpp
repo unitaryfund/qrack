@@ -49,6 +49,12 @@ public:
         // Intentionally left blank
     }
 
+    virtual void ZeroAmplitudes()
+    {
+        runningNorm = ZERO_R1;
+        FreeStateVec();
+    }
+
     virtual void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }
 
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
@@ -71,13 +77,19 @@ public:
     virtual void SetAmplitudePage(
         QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
     {
+        QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
+        StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
+
+        if (!stateVec && !oStateVec) {
+            return;
+        }
+
         if (!stateVec) {
             ResetStateVec(AllocStateVec(maxQPower));
             stateVec->clear();
         }
 
-        QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
-        stateVec->copy_in(pageEngineCpuPtr->stateVec, srcOffset, dstOffset, length);
+        stateVec->copy_in(oStateVec, srcOffset, dstOffset, length);
     }
     virtual void ShuffleBuffers(QEnginePtr engine)
     {

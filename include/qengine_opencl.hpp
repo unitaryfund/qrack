@@ -120,6 +120,7 @@ protected:
     unsigned int procElemCount;
     bool unlockHostMem;
     cl_int lockSyncFlags;
+    bool usingHostRam;
 
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
@@ -154,6 +155,13 @@ public:
         clDump();
         FreeAligned(nrmArray);
         FreeStateVec();
+    }
+
+    virtual void ZeroAmplitudes()
+    {
+        runningNorm = ZERO_R1;
+        // ResetStateBuffer(NULL);
+        // FreeStateVec();
     }
 
     virtual void SetQubitCount(bitLenInt qb)
@@ -294,6 +302,7 @@ protected:
     virtual void ResetStateVec(complex* sv);
     virtual void ResetStateBuffer(BufferPtr nStateBuffer);
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
+    virtual void ReinitBuffer();
 
     virtual void Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy);
 

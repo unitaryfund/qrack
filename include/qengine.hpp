@@ -61,11 +61,7 @@ public:
 
     virtual ~QEngine() { Finish(); }
 
-    virtual void ZeroAmplitudes()
-    {
-        runningNorm = 0;
-        FreeStateVec();
-    }
+    virtual void ZeroAmplitudes() = 0;
 
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
