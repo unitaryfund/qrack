@@ -74,7 +74,7 @@ void QPager::CombineEngines(bitLenInt bit)
 {
     bit++;
 
-    if ((qPages.size() == 1U) || (bit <= qubitsPerPage)) {
+    if ((qPages.size() == 1U) || (bit < qubitsPerPage)) {
         return;
     }
 

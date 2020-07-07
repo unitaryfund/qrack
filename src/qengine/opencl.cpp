@@ -141,7 +141,7 @@ void QEngineOCL::SetAmplitudePage(
     clFinish();
     pageEngineOclPtr->clFinish();
 
-    queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, srcOffset * sizeof(complex), dstOffset * sizeof(complex),
+    queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, sizeof(complex) * srcOffset, sizeof(complex) * dstOffset,
         sizeof(complex) * length);
 
     queue.finish();
@@ -167,7 +167,7 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
         DISPATCH_FILL(waitVec, *(engineOcl->stateBuffer), sizeof(complex) * engineOcl->maxQPowerOcl, ZERO_CMPLX);
     }
 
-    size_t halfSize = sizeof(complex) * (maxQPower >> ONE_BCI);
+    size_t halfSize = sizeof(complex) * (maxQPowerOcl >> ONE_BCI);
     cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, halfSize);
 
     engineOcl->clFinish();
