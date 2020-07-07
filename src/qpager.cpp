@@ -752,14 +752,22 @@ void QPager::UpdateRunningNorm(real1 norm_thresh)
 
 QInterfacePtr QPager::Clone()
 {
+    bitLenInt qpp = qubitsPerPage();
+
     QPagerPtr clone = std::dynamic_pointer_cast<QPager>(
         CreateQuantumInterface(QINTERFACE_QPAGER, engine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
             randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse));
+
+    clone->CombineEngines(qpp - 1U);
+
     bitCapInt pagePower = pageMaxQPower();
     for (bitCapInt i = 0; i < qPages.size(); i++) {
         clone->qPages[i]->SetAmplitudePage(qPages[i], 0, 0, pagePower);
         clone->qPages[i]->UpdateRunningNorm();
     }
+
+    clone->SeparateEngines();
+
     return clone;
 }
 

@@ -1789,10 +1789,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
-    qftReg->UniformlyControlledRY(controls, 2, 0, angles);
-    qftReg2->QInterface::UniformlyControlledRY(controls, 2, 0, angles);
+    if ((testEngineType != QINTERFACE_QPAGER) && (testSubEngineType != QINTERFACE_QPAGER)) {
+        qftReg->UniformlyControlledRY(controls, 2, 0, angles);
+        qftReg2->QInterface::UniformlyControlledRY(controls, 2, 0, angles);
 
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
+        REQUIRE(qftReg->ApproxCompare(qftReg2));
+    }
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_rz")
@@ -2011,20 +2013,22 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
-    qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
-    qftReg2->QInterface::UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
+    if ((testEngineType != QINTERFACE_QPAGER) && (testSubEngineType != QINTERFACE_QPAGER)) {
+        qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
+        qftReg2->QInterface::UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
 
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
+        REQUIRE(qftReg->ApproxCompare(qftReg2));
 
-    qftReg->SetReg(0, 8, 0x02);
-    qftReg2 = qftReg->Clone();
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
-    REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
+        qftReg->SetReg(0, 8, 0x02);
+        qftReg2 = qftReg->Clone();
+        REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+        REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
-    qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
-    qftReg2->QInterface::UniformlyControlledSingleBit(controls, 2, 0, pauliRYs, NULL, 0, 0);
+        qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
+        qftReg2->QInterface::UniformlyControlledSingleBit(controls, 2, 0, pauliRYs, NULL, 0, 0);
 
-    REQUIRE(qftReg->ApproxCompare(qftReg2));
+        REQUIRE(qftReg->ApproxCompare(qftReg2));
+    }
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_exp")
@@ -4431,6 +4435,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve_uniform")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
 {
+    if ((testEngineType == QINTERFACE_QPAGER) || (testSubEngineType == QINTERFACE_QPAGER)) {
+        return;
+    }
+
     bitLenInt controls[2] = { 1, 2 };
     real1 angles[4] = { 3.0, 0.8, 1.2, 0.7 };
 
