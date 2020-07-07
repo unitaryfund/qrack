@@ -83,7 +83,8 @@ void QPager::CombineEngines(bitLenInt bit)
     }
 
     bitCapInt groupCount = pow2(qubitCount - bit);
-    bitCapInt groupSize = qPageCount / groupCount;
+    bitCapInt groupSize = qPages.size() / groupCount;
+    bitCapInt pageSize = maxQPower / qPages.size();
     std::vector<QEnginePtr> nQPages;
 
     bitCapInt i, j;
@@ -91,7 +92,7 @@ void QPager::CombineEngines(bitLenInt bit)
     for (i = 0; i < groupCount; i++) {
         nQPages.push_back(MakeEngine(bit, 0));
         for (j = 0; j < groupSize; j++) {
-            nQPages.back()->SetAmplitudePage(qPages[j + (i * groupSize)], 0, j * qPageMaxQPower, qPageMaxQPower);
+            nQPages.back()->SetAmplitudePage(qPages[j + (i * groupSize)], 0, j * pageSize, pageSize);
         }
         nQPages.back()->UpdateRunningNorm();
     }
