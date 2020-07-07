@@ -34,9 +34,9 @@ protected:
 
     // TODO: Make this a constructor argument:
     const bitLenInt thresholdQubitsPerPage = 18U;
-    bitLenInt qubitsPerPage;
-    bitCapInt qPageCount;
-    bitCapIntOcl qPageMaxQPower;
+    bitLenInt baseQubitsPerPage;
+    bitCapInt basePageCount;
+    bitCapIntOcl basePageMaxQPower;
 
     QEnginePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
@@ -44,10 +44,14 @@ protected:
     {
         QInterface::SetQubitCount(qb);
 
-        qubitsPerPage = (qubitCount < thresholdQubitsPerPage) ? qubitCount : thresholdQubitsPerPage;
-        qPageCount = pow2(qubitCount - qubitsPerPage);
-        qPageMaxQPower = pow2(qubitsPerPage);
+        baseQubitsPerPage = (qubitCount < thresholdQubitsPerPage) ? qubitCount : thresholdQubitsPerPage;
+        basePageCount = pow2(qubitCount - baseQubitsPerPage);
+        basePageMaxQPower = pow2(baseQubitsPerPage);
     }
+
+    bitCapInt pageMaxQPower() { return maxQPower / qPages.size(); }
+    bitLenInt pagedQubitCount() { return log2(qPages.size()); }
+    bitLenInt qubitsPerPage() { return log2(pageMaxQPower()); }
 
     void CombineEngines(bitLenInt bit);
     void CombineEngines() { CombineEngines(qubitCount - 1U); }
@@ -78,13 +82,13 @@ public:
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm)
     {
-        bitCapInt subIndex = perm / qPageMaxQPower;
-        return qPages[subIndex]->GetAmplitude(perm - (subIndex * qPageMaxQPower));
+        bitCapInt subIndex = perm / pageMaxQPower();
+        return qPages[subIndex]->GetAmplitude(perm - (subIndex * pageMaxQPower()));
     }
     virtual void SetAmplitude(bitCapInt perm, complex amp)
     {
-        bitCapInt subIndex = perm / qPageMaxQPower;
-        return qPages[perm / qPageMaxQPower]->SetAmplitude(perm - (subIndex * qPageMaxQPower), amp);
+        bitCapInt subIndex = perm / pageMaxQPower();
+        return qPages[subIndex]->SetAmplitude(perm - (subIndex * pageMaxQPower()), amp);
     }
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
@@ -196,14 +200,14 @@ public:
 
     virtual void Finish()
     {
-        for (bitLenInt i = 0; i < qPageCount; i++) {
+        for (bitLenInt i = 0; i < qPages.size(); i++) {
             qPages[i]->Finish();
         }
     };
 
     virtual bool isFinished()
     {
-        for (bitLenInt i = 0; i < qPageCount; i++) {
+        for (bitLenInt i = 0; i < qPages.size(); i++) {
             if (!qPages[i]->isFinished()) {
                 return false;
             }
