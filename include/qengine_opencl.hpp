@@ -153,6 +153,7 @@ public:
     virtual ~QEngineOCL()
     {
         clDump();
+        nrmBuffer = NULL;
         FreeAligned(nrmArray);
         FreeStateVec();
     }
@@ -161,12 +162,11 @@ public:
     {
         clDump();
         runningNorm = ZERO_R1;
-        // ResetStateBuffer(NULL);
-        // FreeStateVec();
-        device_context->wait_events->emplace_back();
-        queue.enqueueFillBuffer(
-            *stateBuffer, ZERO_CMPLX, 0, maxQPowerOcl * sizeof(complex), NULL, &(device_context->wait_events->back()));
-        queue.flush();
+        ResetStateBuffer(NULL);
+        FreeStateVec();
+        nrmBuffer = NULL;
+        FreeAligned(nrmArray);
+        nrmArray = NULL;
     }
 
     virtual void SetQubitCount(bitLenInt qb)

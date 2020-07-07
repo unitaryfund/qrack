@@ -72,7 +72,7 @@ namespace Qrack {
     queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));
 
 #define CHECK_ZERO_SKIP()                                                                                              \
-    if (runningNorm == ZERO_R1) {                                                                                      \
+    if (!stateBuffer) {                                                                                                \
         return;                                                                                                        \
     }
 
@@ -128,7 +128,7 @@ void QEngineOCL::SetAmplitudePage(
     if (!oStateBuffer) {
         EventVecPtr waitVec = ResetWaitEvents();
         device_context->wait_events->emplace_back();
-        queue.enqueueFillBuffer(*stateBuffer, ZERO_CMPLX, sizeof(complex) * srcOffset, sizeof(complex) * length,
+        queue.enqueueFillBuffer(*stateBuffer, ZERO_CMPLX, sizeof(complex) * dstOffset, sizeof(complex) * length,
             waitVec.get(), &(device_context->wait_events->back()));
         queue.flush();
         return;
@@ -404,7 +404,7 @@ real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
         NormalizeState();
     }
 
-    if (runningNorm == ZERO_R1) {
+    if (!stateBuffer) {
         return ZERO_R1;
     }
 
@@ -1340,7 +1340,7 @@ real1 QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
         NormalizeState();
     }
 
-    if (runningNorm == ZERO_R1) {
+    if (!stateBuffer) {
         return ZERO_R1;
     }
 
@@ -1401,7 +1401,7 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
         NormalizeState();
     }
 
-    if (runningNorm == ZERO_R1) {
+    if (!stateBuffer) {
         std::fill(probsArray, probsArray + lengthPower, ZERO_R1);
         return;
     }
@@ -1451,7 +1451,7 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
         NormalizeState();
     }
 
-    if (runningNorm == ZERO_R1) {
+    if (!stateBuffer) {
         return ZERO_R1;
     }
 
@@ -1513,7 +1513,7 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     bitCapIntOcl lengthPower = pow2Ocl(length);
     bitCapIntOcl maxJ = maxQPowerOcl >> length;
 
-    if (runningNorm == ZERO_R1) {
+    if (!stateBuffer) {
         std::fill(probsArray, probsArray + lengthPower, ZERO_R1);
         return;
     }
@@ -2178,7 +2178,7 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
 bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, unsigned char* values, bool resetValue)
 {
-    if (runningNorm == ZERO_R1) {
+    if (!stateBuffer) {
         return 0U;
     }
 
@@ -2205,7 +2205,7 @@ bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 bitCapIntOcl QEngineOCL::OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLenInt indexStart, bitLenInt indexLength,
     bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    if (runningNorm == ZERO_R1) {
+    if (!stateBuffer) {
         return 0U;
     }
 
@@ -2385,7 +2385,7 @@ void QEngineOCL::GetQuantumState(complex* outputState)
         NormalizeState();
     }
 
-    if (runningNorm == ZERO_R1) {
+    if (!stateBuffer) {
         std::fill(outputState, outputState + maxQPowerOcl, ZERO_CMPLX);
         return;
     }
@@ -2592,6 +2592,20 @@ void QEngineOCL::ReinitBuffer()
 {
     ResetStateVec(AllocStateVec(maxQPower, usingHostRam));
     ResetStateBuffer(MakeStateVecBuffer(stateVec));
+
+    size_t nrmVecAlignSize =
+        ((sizeof(real1) * nrmGroupCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
+
+#if defined(__APPLE__)
+    posix_memalign((void**)&nrmArray, QRACK_ALIGN_SIZE, nrmVecAlignSize);
+#elif defined(_WIN32) && !defined(__CYGWIN__)
+    nrmArray = (real1*)_aligned_malloc(nrmVecAlignSize, QRACK_ALIGN_SIZE);
+#else
+    nrmArray = (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmVecAlignSize);
+#endif
+
+    nrmBuffer =
+        std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
 }
 
 } // namespace Qrack
