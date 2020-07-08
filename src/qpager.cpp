@@ -45,7 +45,9 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
 #if ENABLE_OPENCL
     if ((thresholdQubitsPerPage == 0) && (eng == QINTERFACE_OPENCL)) {
-        thresholdQubitsPerPage = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency());
+        // Single bit gates act pairwise on amplitudes, so add 1 qubit to the log2 of the preferred concurrency.
+        thresholdQubitsPerPage =
+            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
     }
 #endif
 
@@ -78,8 +80,8 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
 QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapInt perm)
 {
-    return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engine, length, perm, rand_generator, phaseFactor,
-        false, false, useHostRam, devID, useRDRAND, isSparse));
+    return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(
+        engine, length, perm, rand_generator, phaseFactor, false, false, useHostRam, devID, useRDRAND, isSparse));
 }
 
 void QPager::CombineEngines(bitLenInt bit)
