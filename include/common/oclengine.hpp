@@ -208,21 +208,9 @@ public:
         size_t procElemCount = device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
         size_t maxWorkItems = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
 
-        // constrain to a power of two
-        size_t groupSizePow = 1U;
-        while (groupSizePow <= nrmGroupSize) {
-            groupSizePow <<= 1U;
-        }
-        groupSizePow >>= 1U;
-        nrmGroupSize = groupSizePow;
-        size_t procElemPow = 1U;
-        while (procElemPow <= procElemCount) {
-            procElemPow <<= 1U;
-        }
-        procElemPow >>= 1U;
-        size_t nrmGroupCount = procElemPow * nrmGroupSize;
-        while (nrmGroupCount > maxWorkItems) {
-            nrmGroupCount >>= 1U;
+        size_t nrmGroupCount = procElemCount * nrmGroupSize;
+        if (nrmGroupCount > maxWorkItems) {
+            nrmGroupCount = maxWorkItems;
         }
 
         return nrmGroupCount;
