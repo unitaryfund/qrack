@@ -37,17 +37,21 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
-    , thresholdQubitsPerPage(18)
 {
     if ((eng != QINTERFACE_CPU) && (eng != QINTERFACE_OPENCL)) {
         throw std::invalid_argument("QPager sub-engine type must be QINTERFACE_CPU or QINTERFACE_OPENCL.");
     }
 
 #if ENABLE_OPENCL
-    if (eng == QINTERFACE_OPENCL) {
+    if ((thresholdQubitsPerPage == 0) && (eng == QINTERFACE_OPENCL)) {
         thresholdQubitsPerPage = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency());
     }
 #endif
+
+    if (thresholdQubitsPerPage == 0) {
+        // TODO: Tune for QEngineCPU
+        thresholdQubitsPerPage = 18;
+    }
 
     SetQubitCount(qubitCount);
 
