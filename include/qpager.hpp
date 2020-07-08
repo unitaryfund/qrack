@@ -216,7 +216,7 @@ public:
 
     virtual bool isFinished()
     {
-        for (bitLenInt i = 0; i < qPages.size(); i++) {
+        for (bitCapInt i = 0; i < qPages.size(); i++) {
             if (!qPages[i]->isFinished()) {
                 return false;
             }
