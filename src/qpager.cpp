@@ -37,6 +37,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
+    , thresholdQubitsPerPage(qubitThreshold)
 {
     if ((eng != QINTERFACE_CPU) && (eng != QINTERFACE_OPENCL)) {
         throw std::invalid_argument("QPager sub-engine type must be QINTERFACE_CPU or QINTERFACE_OPENCL.");
