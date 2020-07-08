@@ -53,7 +53,8 @@ namespace Qrack {
 
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
-    bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<bitLenInt> devList)
+    bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<bitLenInt> devList,
+    bitLenInt qubitThreshold)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , engine(eng)
     , subEngine(subEng)

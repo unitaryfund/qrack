@@ -201,6 +201,33 @@ public:
         wait_events->clear();
     }
 
+    size_t GetPreferredConcurrency()
+    {
+        size_t nrmGroupSize =
+            calls[OCL_API_APPLY2X2_SINGLE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
+        size_t procElemCount = device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+        size_t maxWorkItems = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+
+        // constrain to a power of two
+        size_t groupSizePow = 1U;
+        while (groupSizePow <= nrmGroupSize) {
+            groupSizePow <<= 1U;
+        }
+        groupSizePow >>= 1U;
+        nrmGroupSize = groupSizePow;
+        size_t procElemPow = 1U;
+        while (procElemPow <= procElemCount) {
+            procElemPow <<= 1U;
+        }
+        procElemPow >>= 1U;
+        size_t nrmGroupCount = procElemPow * nrmGroupSize;
+        while (nrmGroupCount > maxWorkItems) {
+            nrmGroupCount >>= 1U;
+        }
+
+        return nrmGroupCount;
+    }
+
     friend class OCLEngine;
 };
 

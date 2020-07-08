@@ -29,7 +29,7 @@ namespace Qrack {
 
 QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
     bool ignored, bool ignored2, bool useHostMem, int deviceId, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh, std::vector<bitLenInt> devList)
+    real1 norm_thresh, std::vector<bitLenInt> devList, bitLenInt qubitThreshold)
     : QInterface(qBitCount, rgp, false, useHardwareRNG, false, norm_thresh)
     , engine(eng)
     , devID(deviceId)
@@ -37,10 +37,17 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
+    , thresholdQubitsPerPage(18)
 {
     if ((eng != QINTERFACE_CPU) && (eng != QINTERFACE_OPENCL)) {
         throw std::invalid_argument("QPager sub-engine type must be QINTERFACE_CPU or QINTERFACE_OPENCL.");
     }
+
+#if ENABLE_OPENCL
+    if (eng == QINTERFACE_OPENCL) {
+        thresholdQubitsPerPage = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency());
+    }
+#endif
 
     SetQubitCount(qubitCount);
 
