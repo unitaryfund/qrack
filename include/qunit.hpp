@@ -651,6 +651,7 @@ typedef std::shared_ptr<QUnit> QUnitPtr;
 class QUnit : public QInterface {
 protected:
     QInterfaceEngine engine;
+    QInterfaceEngine subEngine;
     int devID;
     std::vector<QEngineShard> shards;
     complex phaseFactor;
@@ -669,10 +670,19 @@ protected:
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
 public:
+    QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
+        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true,
+        bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
+        bool useSparseStateVec = false, real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {},
+        bitLenInt qubitThreshold = 0);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {});
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {}, bitLenInt qubitThreshold = 0)
+        : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId,
+              useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold)
+    {
+    }
 
     virtual ~QUnit() { Dump(); }
 

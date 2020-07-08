@@ -28,7 +28,7 @@
 
 namespace Qrack {
 
-enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ };
+enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ, INVERT, PHASE };
 
 typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
@@ -120,6 +120,7 @@ protected:
     unsigned int procElemCount;
     bool unlockHostMem;
     cl_int lockSyncFlags;
+    bool usingHostRam;
 
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
@@ -147,13 +148,25 @@ public:
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored2 = {});
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored2 = {}, bitLenInt ignored3 = 0);
 
     virtual ~QEngineOCL()
     {
         clDump();
+        nrmBuffer = NULL;
         FreeAligned(nrmArray);
         FreeStateVec();
+    }
+
+    virtual void ZeroAmplitudes()
+    {
+        clDump();
+        runningNorm = ZERO_R1;
+        ResetStateBuffer(NULL);
+        FreeStateVec();
+        nrmBuffer = NULL;
+        FreeAligned(nrmArray);
+        nrmArray = NULL;
     }
 
     virtual void SetQubitCount(bitLenInt qb)
@@ -183,6 +196,12 @@ public:
         }
     }
 
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length);
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length);
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length);
+    virtual void ShuffleBuffers(QEnginePtr engine);
+
     bitCapIntOcl GetMaxSize() { return maxAlloc / sizeof(complex); };
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
@@ -197,6 +216,10 @@ public:
     virtual void X(bitLenInt target);
     using QEngine::Z;
     virtual void Z(bitLenInt target);
+    using QEngine::ApplySingleInvert;
+    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
+    using QEngine::ApplySinglePhase;
+    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
 
     using QEngine::Compose;
     virtual bitLenInt Compose(QEngineOCLPtr toCopy);
@@ -284,6 +307,7 @@ protected:
     virtual void ResetStateVec(complex* sv);
     virtual void ResetStateBuffer(BufferPtr nStateBuffer);
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
+    virtual void ReinitBuffer();
 
     virtual void Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy);
 

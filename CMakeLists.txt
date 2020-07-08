@@ -37,6 +37,7 @@ add_library (qrack STATIC
     src/qengine/utility.cpp
     src/bitbuffer.cpp
     src/qunit.cpp
+    src/qpager.cpp
     )
 	
 add_library (qrack_pinvoke SHARED
@@ -203,6 +204,7 @@ install (FILES
     include/qengine_opencl.hpp
     include/qinterface.hpp
     include/qneuron.hpp
+    include/qpager.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 

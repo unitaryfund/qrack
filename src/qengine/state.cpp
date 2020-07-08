@@ -24,6 +24,11 @@
 #endif
 #endif
 
+#define CHECK_ZERO_SKIP()                                                                                              \
+    if (runningNorm == ZERO_R1) {                                                                                      \
+        return;                                                                                                        \
+    }
+
 namespace Qrack {
 
 /**
@@ -38,7 +43,7 @@ namespace Qrack {
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh, std::vector<bitLenInt> devList)
+    real1 norm_thresh, std::vector<bitLenInt> devList, bitLenInt qubitThreshold)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
 {
@@ -56,7 +61,11 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 
 complex QEngineCPU::GetAmplitude(bitCapInt perm)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (!stateVec) {
+        return ZERO_CMPLX;
+    }
+
+    if (doNormalize) {
         NormalizeState();
     }
     return stateVec->read(perm);
@@ -64,17 +73,32 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
 
 void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
     runningNorm -= norm(stateVec->read(perm));
     runningNorm += norm(amp);
+
+    if (runningNorm <= min_norm) {
+        ZeroAmplitudes();
+        return;
+    }
+
+    if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPower));
+        stateVec->clear();
+    }
+
     stateVec->write(perm, amp);
 }
 
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 {
+    if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPower));
+    }
+
     stateVec->clear();
 
     if (phaseFac == complex(-999.0, -999.0)) {
@@ -97,15 +121,26 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineCPU::SetQuantumState(const complex* inputState)
 {
+    if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPower));
+    }
+
     stateVec->copy_in(inputState);
     runningNorm = ONE_R1;
+
+    UpdateRunningNorm();
 }
 
 /// Get pure quantum state, in unsigned int permutation basis
 void QEngineCPU::GetQuantumState(complex* outputState)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
+    }
+
+    if (runningNorm == ZERO_R1) {
+        std::fill(outputState, outputState + maxQPower, ZERO_CMPLX);
+        return;
     }
 
     stateVec->copy_out(outputState);
@@ -114,8 +149,13 @@ void QEngineCPU::GetQuantumState(complex* outputState)
 /// Get all probabilities, in unsigned int permutation basis
 void QEngineCPU::GetProbs(real1* outputProbs)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
+    }
+
+    if (runningNorm == ZERO_R1) {
+        std::fill(outputProbs, outputProbs + maxQPower, ZERO_R1);
+        return;
     }
 
     stateVec->get_probs(outputProbs);
@@ -144,6 +184,8 @@ union ComplexUnion {
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh)
 {
+    CHECK_ZERO_SKIP();
+
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
     if (norm_thresh < ZERO_R1) {
@@ -224,6 +266,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
     const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh)
 {
+    CHECK_ZERO_SKIP();
+
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
     if (norm_thresh < ZERO_R1) {
@@ -303,6 +347,8 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)
 {
+    CHECK_ZERO_SKIP();
+
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controlLen == 0) {
         ApplySingleBit(mtrxs + (bitCapIntOcl)(mtrxSkipValueMask * 4U), qubitIndex);
@@ -379,7 +425,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     // TODO: Sparse optimization
     bitLenInt result = qubitCount;
 
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -418,7 +464,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
  */
 bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -470,7 +516,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     bitLenInt nQubitCount = qubitCount;
     bitCapInt nMaxQPower;
 
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -520,7 +566,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         return;
     }
 
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -627,7 +673,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
         return;
     }
 
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
 
@@ -670,8 +716,12 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
+    }
+
+    if (runningNorm == ZERO_R1) {
+        return ZERO_R1;
     }
 
     bitCapInt qPower = pow2(qubit);
@@ -704,8 +754,12 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
 real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
+    }
+
+    if (runningNorm == ZERO_R1) {
+        return ZERO_R1;
     }
 
     return norm(stateVec->read(fullRegister));
@@ -714,8 +768,12 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 // Returns probability of permutation of the register
 real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
+    }
+
+    if (runningNorm == ZERO_R1) {
+        return ZERO_R1;
     }
 
     int num_threads = GetConcurrencyLevel();
@@ -745,8 +803,12 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 // Returns probability of permutation of the mask
 real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
+    }
+
+    if (runningNorm == ZERO_R1) {
+        return ZERO_R1;
     }
 
     bitCapInt v = mask; // count the number of bits set in v
@@ -790,7 +852,7 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     }
 
     // Make sure both engines are normalized
-    if (doNormalize && (runningNorm != ONE_R1)) {
+    if (doNormalize) {
         NormalizeState();
     }
     if (toCompare->doNormalize && (toCompare->runningNorm != ONE_R1)) {
@@ -838,6 +900,8 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
 void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
+    CHECK_ZERO_SKIP();
+
     par_for_skip(0, maxQPower, pow2(start), length,
         [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); });
 }
@@ -845,6 +909,8 @@ void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
 void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    CHECK_ZERO_SKIP();
+
     bitCapInt regMask = bitRegMask(start, length);
     bitCapInt flagMask = pow2(flagIndex);
 
@@ -857,6 +923,8 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 /// This is an expedient for an adaptive Grover's search for a function's global minimum.
 void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
+    CHECK_ZERO_SKIP();
+
     bitCapInt regMask = bitRegMask(start, length);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
@@ -900,10 +968,18 @@ void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
 
 void QEngineCPU::UpdateRunningNorm(real1 norm_thresh)
 {
+    if (!stateVec) {
+        return;
+    }
+
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;
     }
     runningNorm = par_norm(maxQPower, stateVec, norm_thresh);
+
+    if (runningNorm <= min_norm) {
+        ZeroAmplitudes();
+    }
 }
 
 StateVectorPtr QEngineCPU::AllocStateVec(bitCapInt elemCount)

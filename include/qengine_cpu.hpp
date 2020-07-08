@@ -42,14 +42,75 @@ public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored = false,
         int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored3 = {});
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored3 = {}, bitLenInt ignored4 = 0);
 
     virtual ~QEngineCPU()
     {
         // Intentionally left blank
     }
 
-    virtual void FreeStateVec() { stateVec = NULL; }
+    virtual void ZeroAmplitudes()
+    {
+        runningNorm = ZERO_R1;
+        FreeStateVec();
+    }
+
+    virtual void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }
+
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        if (stateVec) {
+            stateVec->copy_out(pagePtr, offset, length);
+        } else {
+            std::fill(pagePtr, pagePtr + length, ZERO_CMPLX);
+        }
+    }
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        if (!stateVec) {
+            ResetStateVec(AllocStateVec(maxQPower));
+            stateVec->clear();
+        }
+
+        stateVec->copy_in(pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
+        StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
+
+        if (!stateVec && !oStateVec) {
+            return;
+        }
+
+        if (!stateVec) {
+            ResetStateVec(AllocStateVec(maxQPower));
+            stateVec->clear();
+        }
+
+        stateVec->copy_in(oStateVec, srcOffset, dstOffset, length);
+    }
+    virtual void ShuffleBuffers(QEnginePtr engine)
+    {
+        QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);
+
+        if (!stateVec && !(engineCpu->stateVec)) {
+            return;
+        }
+
+        if (!stateVec) {
+            ResetStateVec(AllocStateVec(maxQPower));
+            stateVec->clear();
+        }
+
+        if (!(engineCpu->stateVec)) {
+            engineCpu->ResetStateVec(AllocStateVec(maxQPower));
+            engineCpu->stateVec->clear();
+        }
+
+        stateVec->shuffle(engineCpu->stateVec);
+    }
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
