@@ -59,7 +59,7 @@ protected:
 
     template <typename Qubit1Fn> void SingleBitGate(bitLenInt target, Qubit1Fn fn);
     template <typename Qubit1Fn>
-    void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
+    void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, const complex* mtrx);
     template <typename Qubit1Fn>
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
 
