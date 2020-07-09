@@ -156,8 +156,8 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
 // This is like the QEngineCPU and QEngineOCL logic for register-like CNOT and CCNOT, just swapping sub-engine indices
 // instead of amplitude indices.
 template <typename Qubit1Fn>
-void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, bool isSpecial,
-    bool isInvert, complex top, complex bottom)
+void QPager::MetaControlled(
+    bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, const complex* mtrx)
 {
     bitLenInt qpp = qubitsPerPage();
     target -= qpp;
@@ -176,6 +176,25 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
         sortedMasks[i]--;
     }
     std::sort(sortedMasks.begin(), sortedMasks.end());
+
+    bool isSpecial, isInvert;
+    complex top, bottom;
+    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
+        isSpecial = true;
+        isInvert = false;
+        top = mtrx[0];
+        bottom = mtrx[3];
+    } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
+        isSpecial = true;
+        isInvert = true;
+        top = mtrx[1];
+        bottom = mtrx[2];
+    } else {
+        isSpecial = false;
+        isInvert = false;
+        top = ZERO_CMPLX;
+        bottom = ZERO_CMPLX;
+    }
 
     if (randGlobalPhase) {
         bottom /= top;
@@ -527,13 +546,7 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
     } else if (target < qpp) {
         SemiMetaControlled(anti, metaControls, target, sg);
     } else {
-        if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
-            MetaControlled(anti, metaControls, target, sg, true, false, mtrx[0], mtrx[3]);
-        } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
-            MetaControlled(anti, metaControls, target, sg, true, true, mtrx[1], mtrx[2]);
-        } else {
-            MetaControlled(anti, metaControls, target, sg);
-        }
+        MetaControlled(anti, metaControls, target, sg, mtrx);
     }
 }
 
