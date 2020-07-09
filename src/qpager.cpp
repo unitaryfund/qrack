@@ -156,7 +156,8 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
 // This is like the QEngineCPU and QEngineOCL logic for register-like CNOT and CCNOT, just swapping sub-engine indices
 // instead of amplitude indices.
 template <typename Qubit1Fn>
-void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn)
+void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, bool isSpecial,
+    bool isInvert, complex top, complex bottom)
 {
     bitLenInt qpp = qubitsPerPage();
     target -= qpp;
@@ -176,33 +177,62 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
     }
     std::sort(sortedMasks.begin(), sortedMasks.end());
 
+    if (randGlobalPhase) {
+        bottom /= top;
+        top = ONE_CMPLX;
+    }
+
     bitCapInt maxLCV = qPages.size() >> sortedMasks.size();
     std::vector<std::future<void>> futures(maxLCV);
     bitCapInt i;
     for (i = 0; i < maxLCV; i++) {
-        futures[i] = std::async(std::launch::async, [this, i, fn, sqi, &controlMask, &targetMask, &sortedMasks]() {
-            bitCapInt j, k, jLo, jHi;
-            jHi = i;
-            j = 0;
-            for (k = 0; k < (sortedMasks.size()); k++) {
-                jLo = jHi & sortedMasks[k];
-                jHi = (jHi ^ jLo) << ONE_BCI;
-                j |= jLo;
-            }
-            j |= jHi | controlMask;
+        futures[i] = std::async(std::launch::async,
+            [this, i, fn, sqi, &controlMask, &targetMask, &sortedMasks, &isSpecial, &isInvert, &top, &bottom]() {
+                bitCapInt j, k, jLo, jHi;
+                jHi = i;
+                j = 0;
+                for (k = 0; k < (sortedMasks.size()); k++) {
+                    jLo = jHi & sortedMasks[k];
+                    jHi = (jHi ^ jLo) << ONE_BCI;
+                    j |= jLo;
+                }
+                j |= jHi | controlMask;
 
-            QEnginePtr engine1 = qPages[j];
-            QEnginePtr engine2 = qPages[j + targetMask];
+                if (isSpecial && isInvert) {
+                    std::swap(qPages[j], qPages[j + targetMask]);
+                }
 
-            engine1->ShuffleBuffers(engine2);
+                QEnginePtr engine1 = qPages[j];
+                QEnginePtr engine2 = qPages[j + targetMask];
 
-            std::future<void> future1 = std::async(std::launch::async, [engine1, fn, sqi]() { fn(engine1, sqi); });
-            std::future<void> future2 = std::async(std::launch::async, [engine2, fn, sqi]() { fn(engine2, sqi); });
-            future1.get();
-            future2.get();
+                std::future<void> future1, future2;
+                if (!isSpecial) {
+                    engine1->ShuffleBuffers(engine2);
 
-            engine1->ShuffleBuffers(engine2);
-        });
+                    future1 = std::async(std::launch::async, [engine1, fn, sqi]() { fn(engine1, sqi); });
+                    future2 = std::async(std::launch::async, [engine2, fn, sqi]() { fn(engine2, sqi); });
+                    future1.get();
+                    future2.get();
+
+                    engine1->ShuffleBuffers(engine2);
+                } else {
+                    if (top != ONE_CMPLX) {
+                        future1 = std::async(
+                            std::launch::async, [engine1, &top]() { engine1->ApplySinglePhase(top, top, 0); });
+                    }
+                    if (bottom != ONE_CMPLX) {
+                        future2 = std::async(
+                            std::launch::async, [engine2, &bottom]() { engine2->ApplySinglePhase(bottom, bottom, 0); });
+                    }
+
+                    if (top != ONE_CMPLX) {
+                        future1.get();
+                    }
+                    if (bottom != ONE_CMPLX) {
+                        future2.get();
+                    }
+                }
+            });
     }
 
     for (i = 0; i < maxLCV; i++) {
@@ -497,7 +527,13 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
     } else if (target < qpp) {
         SemiMetaControlled(anti, metaControls, target, sg);
     } else {
-        MetaControlled(anti, metaControls, target, sg);
+        if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
+            MetaControlled(anti, metaControls, target, sg, true, false, mtrx[0], mtrx[3]);
+        } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
+            MetaControlled(anti, metaControls, target, sg, true, true, mtrx[1], mtrx[2]);
+        } else {
+            MetaControlled(anti, metaControls, target, sg);
+        }
     }
 }
 
