@@ -78,7 +78,7 @@ namespace Qrack {
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored, real1 norm_thresh,
-    std::vector<bitLenInt> devList, bitLenInt qubitThreshold)
+    std::vector<int> devList, bitLenInt qubitThreshold)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , deviceID(devID)
     , wait_refs()
