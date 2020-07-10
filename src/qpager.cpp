@@ -29,7 +29,7 @@ namespace Qrack {
 
 QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
     bool ignored, bool ignored2, bool useHostMem, int deviceId, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh, std::vector<bitLenInt> devList, bitLenInt qubitThreshold)
+    real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
     : QInterface(qBitCount, rgp, false, useHardwareRNG, false, norm_thresh)
     , engine(eng)
     , devID(deviceId)
@@ -37,6 +37,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
+    , deviceIDs(devList)
     , thresholdQubitsPerPage(qubitThreshold)
 {
     if ((eng != QINTERFACE_CPU) && (eng != QINTERFACE_OPENCL)) {
@@ -56,6 +57,10 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
         thresholdQubitsPerPage = 18;
     }
 
+    if (deviceIDs.size() == 0) {
+        deviceIDs.push_back(-1);
+    }
+
     SetQubitCount(qubitCount);
 
     if (baseQubitsPerPage > (sizeof(bitCapIntOcl) * bitsInByte)) {
@@ -70,18 +75,19 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
         pagePerm += basePageMaxQPower;
         isPermInPage &= (initState < pagePerm);
         if (isPermInPage) {
-            qPages.push_back(MakeEngine(baseQubitsPerPage, initState - (pagePerm - basePageMaxQPower)));
+            qPages.push_back(MakeEngine(
+                baseQubitsPerPage, initState - (pagePerm - basePageMaxQPower), deviceIDs[i % deviceIDs.size()]));
         } else {
-            qPages.push_back(MakeEngine(baseQubitsPerPage, 0));
+            qPages.push_back(MakeEngine(baseQubitsPerPage, 0, deviceIDs[i % deviceIDs.size()]));
             qPages.back()->SetAmplitude(0, ZERO_CMPLX);
         }
     }
 }
 
-QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapInt perm)
+QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapInt perm, int deviceId)
 {
     return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(
-        engine, length, perm, rand_generator, phaseFactor, false, false, useHostRam, devID, useRDRAND, isSparse));
+        engine, length, perm, rand_generator, phaseFactor, false, false, useHostRam, deviceId, useRDRAND, isSparse));
 }
 
 void QPager::CombineEngines(bitLenInt bit)
@@ -104,7 +110,7 @@ void QPager::CombineEngines(bitLenInt bit)
     bitCapInt i, j;
 
     for (i = 0; i < groupCount; i++) {
-        nQPages.push_back(MakeEngine(bit, 0));
+        nQPages.push_back(MakeEngine(bit, 0, deviceIDs[i % deviceIDs.size()]));
         for (j = 0; j < groupSize; j++) {
             nQPages.back()->SetAmplitudePage(qPages[j + (i * groupSize)], 0, j * pagePower, pagePower);
         }
@@ -126,7 +132,7 @@ void QPager::SeparateEngines()
     std::vector<QEnginePtr> nQPages;
     for (i = 0; i < qPages.size(); i++) {
         for (j = 0; j < pagesPer; j++) {
-            nQPages.push_back(MakeEngine(baseQubitsPerPage, 0));
+            nQPages.push_back(MakeEngine(baseQubitsPerPage, 0, deviceIDs[(j + (i * pagesPer)) % deviceIDs.size()]));
             nQPages.back()->SetAmplitudePage(qPages[i], j * basePageMaxQPower, 0, basePageMaxQPower);
             nQPages.back()->UpdateRunningNorm();
         }

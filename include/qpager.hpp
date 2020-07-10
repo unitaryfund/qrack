@@ -31,6 +31,7 @@ protected:
     bool useRDRAND;
     bool isSparse;
     std::vector<QEnginePtr> qPages;
+    std::vector<int> deviceIDs;
 
     // TODO: Make this a constructor argument:
     bitLenInt thresholdQubitsPerPage;
@@ -38,7 +39,7 @@ protected:
     bitCapInt basePageCount;
     bitCapIntOcl basePageMaxQPower;
 
-    QEnginePtr MakeEngine(bitLenInt length, bitCapInt perm);
+    QEnginePtr MakeEngine(bitLenInt length, bitCapInt perm, int deviceId);
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -76,7 +77,7 @@ public:
     QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool ignored = false, bool ignored2 = false, bool useHostMem = false,
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 ignored3 = REAL1_DEFAULT_ARG, std::vector<bitLenInt> devList = {}, bitLenInt qubitThreshold = 0);
+        real1 ignored3 = REAL1_DEFAULT_ARG, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0);
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
