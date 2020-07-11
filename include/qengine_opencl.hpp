@@ -421,6 +421,8 @@ protected:
 
     bitCapIntOcl OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLenInt indexStart, bitLenInt indexLength,
         bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+
+    void ClearBuffer(BufferPtr buff, bitCapIntOcl size, EventVecPtr waitVec);
 };
 
 } // namespace Qrack

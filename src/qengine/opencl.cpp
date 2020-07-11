@@ -48,11 +48,6 @@ namespace Qrack {
     queue.enqueueReadBuffer(buff, CL_FALSE, 0, size, array, waitVec.get(), &(device_context->wait_events->back()));    \
     queue.flush()
 
-#define DISPATCH_FILL(waitVec, buff, size, value)                                                                      \
-    device_context->wait_events->emplace_back();                                                                       \
-    queue.enqueueFillBuffer(buff, value, 0, size, waitVec.get(), &(device_context->wait_events->back()));              \
-    queue.flush()
-
 #define DISPATCH_COPY(waitVec, buff1, buff2, size)                                                                     \
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, waitVec.get(), &(device_context->wait_events->back()));          \
@@ -157,14 +152,12 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
 
     if (!stateBuffer) {
         ReinitBuffer();
-        EventVecPtr waitVec = ResetWaitEvents();
-        DISPATCH_FILL(waitVec, *stateBuffer, sizeof(complex) * maxQPowerOcl, ZERO_CMPLX);
+        ClearBuffer(stateBuffer, maxQPowerOcl, ResetWaitEvents());
     }
 
     if (!(engineOcl->stateBuffer)) {
         engineOcl->ReinitBuffer();
-        EventVecPtr waitVec = ResetWaitEvents();
-        DISPATCH_FILL(waitVec, *(engineOcl->stateBuffer), sizeof(complex) * engineOcl->maxQPowerOcl, ZERO_CMPLX);
+        engineOcl->ClearBuffer(engineOcl->stateBuffer, engineOcl->maxQPowerOcl, engineOcl->ResetWaitEvents());
     }
 
     size_t halfSize = sizeof(complex) * (maxQPowerOcl >> ONE_BCI);
@@ -601,7 +594,6 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
     CHECK_ZERO_SKIP();
 
     EventVecPtr waitVec = ResetWaitEvents();
-    PoolItemPtr poolItem = GetFreePoolItem();
 
     /* Allocate a temporary nStateVec, or use the one supplied. */
     complex* nStateVec = AllocStateVec(maxQPowerOcl);
@@ -612,8 +604,6 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
             context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controlLen, controlPowers);
     }
 
-    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * BCI_ARG_LEN, bciArgs);
-
     nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     if (controlLen > 0) {
@@ -622,8 +612,11 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
             &(device_context->wait_events->back()));
         queue.flush();
     } else {
-        DISPATCH_FILL(waitVec, *nStateBuffer, sizeof(complex) * maxQPowerOcl, ZERO_CMPLX);
+        ClearBuffer(nStateBuffer, maxQPowerOcl, waitVec);
     }
+
+    PoolItemPtr poolItem = GetFreePoolItem();
+    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * BCI_ARG_LEN, bciArgs);
 
     bitCapIntOcl maxI = bciArgs[0];
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
@@ -1216,7 +1209,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
                 sizeof(complex) * destination->maxQPowerOcl, otherStateVec);
 
-            DISPATCH_FILL(waitVec2, *otherStateBuffer, sizeof(complex) * destination->maxQPowerOcl, ZERO_CMPLX);
+            ClearBuffer(otherStateBuffer, destination->maxQPowerOcl, waitVec2);
         }
 
         size_t oNStateVecSize = maxQPowerOcl * sizeof(complex);
@@ -2052,14 +2045,15 @@ void QEngineOCL::xMULx(OCLAPI api_call, bitCapIntOcl* bciArgs, BufferPtr control
     CHECK_ZERO_SKIP();
 
     EventVecPtr waitVec = ResetWaitEvents();
-    PoolItemPtr poolItem = GetFreePoolItem();
 
     /* Allocate a temporary nStateVec, or use the one supplied. */
     complex* nStateVec = AllocStateVec(maxQPowerOcl);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
+    ClearBuffer(nStateBuffer, maxQPowerOcl, waitVec);
+
+    PoolItemPtr poolItem = GetFreePoolItem();
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 10, bciArgs);
-    DISPATCH_FILL(waitVec, *nStateBuffer, sizeof(complex) * maxQPowerOcl, ZERO_CMPLX);
 
     size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -2367,8 +2361,7 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         return;
     } else if (!stateBuffer) {
         ReinitBuffer();
-        EventVecPtr fillWaitVec = ResetWaitEvents();
-        DISPATCH_FILL(fillWaitVec, *stateBuffer, sizeof(complex) * maxQPowerOcl, ZERO_CMPLX);
+        ClearBuffer(stateBuffer, maxQPowerOcl, ResetWaitEvents());
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -2530,9 +2523,8 @@ void QEngineOCL::UpdateRunningNorm(real1 norm_thresh)
 
     runningNorm = ONE_R1;
 
-    bitCapIntOcl bciArgs[1] = { maxQPowerOcl };
     cl::Event writeBCIArgsEvent;
-    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, writeBCIArgsEvent);
+    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl), &maxQPowerOcl, writeBCIArgsEvent);
 
     size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -2606,6 +2598,22 @@ void QEngineOCL::ReinitBuffer()
 
     nrmBuffer =
         std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
+}
+
+void QEngineOCL::ClearBuffer(BufferPtr buff, bitCapIntOcl size, EventVecPtr waitVec)
+{
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    cl::Event writeArgsEvent;
+    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl), &size, writeArgsEvent);
+
+    size_t ngc = FixWorkItemCount(size, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
+
+    QueueCall(OCL_API_CLEARBUFFER, ngc, ngs, { buff, poolItem->ulongBuffer });
 }
 
 } // namespace Qrack

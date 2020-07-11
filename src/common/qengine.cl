@@ -2056,3 +2056,13 @@ void kernel phaseflipifless(global cmplx* stateVec, constant bitCapIntOcl* bitCa
             stateVec[lcv] = -stateVec[lcv];
     }
 }
+
+void kernel clearbuffer(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+{
+    bitCapIntOcl Nthreads = get_global_size(0);
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    const cmplx amp0 = (cmplx)(ZERO_R1, ZERO_R1);
+    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
+        stateVec[lcv] = amp0;
+    }
+}
