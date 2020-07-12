@@ -556,17 +556,16 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
 
     ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
 
-    complex amp;
     if (phaseFac == complex(-999.0, -999.0)) {
-        amp = GetNonunitaryPhase();
+        permutationAmp = GetNonunitaryPhase();
     } else {
-        amp = phaseFac;
+        permutationAmp = phaseFac;
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
     device_context->wait_events->emplace_back();
-    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex), waitVec.get(),
-        &(device_context->wait_events->back()));
+    queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex),
+        &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
     queue.flush();
 
     runningNorm = ONE_R1;

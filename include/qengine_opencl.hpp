@@ -121,6 +121,7 @@ protected:
     bool unlockHostMem;
     cl_int lockSyncFlags;
     bool usingHostRam;
+    complex permutationAmp;
 
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
