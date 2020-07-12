@@ -2061,8 +2061,10 @@ void kernel clearbuffer(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 {
     bitCapIntOcl Nthreads = get_global_size(0);
     bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl offset = bitCapIntOclPtr[1];
+    maxI += offset;
     const cmplx amp0 = (cmplx)(ZERO_R1, ZERO_R1);
-    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
+    for (bitCapIntOcl lcv = (ID + offset); lcv < maxI; lcv += Nthreads) {
         stateVec[lcv] = amp0;
     }
 }

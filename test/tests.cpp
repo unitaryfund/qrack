@@ -3189,7 +3189,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, randPerm));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished") { REQUIRE(qftReg->isFinished()); }
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished")
+{
+    if ((testEngineType == QINTERFACE_OPENCL) || (testSubEngineType == QINTERFACE_OPENCL) ||
+        (testSubSubEngineType == QINTERFACE_OPENCL)) {
+        // Just check that this doesn't throw execption.
+        // (Might be in engine initialization, still, or not.)
+        qftReg->isFinished();
+    } else {
+        REQUIRE(qftReg->isFinished());
+    }
+}
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
 {
