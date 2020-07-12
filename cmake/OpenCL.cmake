@@ -38,7 +38,7 @@ if (ENABLE_OPENCL)
         set(QRACK_OpenCL_LIBRARIES snucl_cluster)
         set(QRACK_OpenCL_INCLUDE_DIRS ${MPI_CXX_INCLUDE_PATH} $ENV{SNUCLROOT}/inc)
         set(QRACK_OpenCL_LINK_DIRS $ENV{SNUCLROOT}/lib)
-        set(QRACK_OpenCL_COMPILATION_OPTIONS ${MPI_CXX_COMPILE_FLAGS} ${OpenCL_COMPILATION_OPTIONS})
+        set(QRACK_OpenCL_COMPILATION_OPTIONS ${MPI_CXX_COMPILE_FLAGS} ${OpenCL_COMPILATION_OPTIONS} -Wno-deprecated-declarations -Wno-ignored-attributes)
 
         target_link_directories (qrack_pinvoke PRIVATE ${QRACK_OpenCL_LINK_DIRS})
         target_link_directories (unittest PRIVATE ${QRACK_OpenCL_LINK_DIRS})
@@ -54,9 +54,13 @@ if (ENABLE_OPENCL)
         target_link_directories (pearson32 PRIVATE ${QRACK_OpenCL_LINK_DIRS})
         target_link_directories (teleport PRIVATE ${QRACK_OpenCL_LINK_DIRS})
         target_link_directories (qneuron_classification PRIVATE ${QRACK_OpenCL_LINK_DIRS})
+
+        target_compile_definitions (qrack PUBLIC ENABLE_SNUCL=1)
     else (ENABLE_SNUCL)
         set(QRACK_OpenCL_LIBRARIES ${OpenCL_LIBRARIES})
         set(QRACK_OpenCL_INCLUDE_DIRS ${OpenCL_INCLUDE_DIRS})
+
+        target_compile_definitions (qrack PUBLIC ENABLE_SNUCL=0)
     endif (ENABLE_SNUCL)
 
     target_include_directories (qrack PUBLIC ${PROJECT_BINARY_DIR} ${QRACK_OpenCL_INCLUDE_DIRS})
