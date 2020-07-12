@@ -152,10 +152,7 @@ public:
 
     virtual ~QEngineOCL()
     {
-        clDump();
-        nrmBuffer = NULL;
-        FreeAligned(nrmArray);
-        FreeStateVec();
+        ZeroAmplitudes();
     }
 
     virtual void ZeroAmplitudes()
