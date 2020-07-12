@@ -369,7 +369,11 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
 
     // For all of our kernels, if a local memory buffer is used, there is always only one, as the last argument.
     if (item.localBuffSize) {
+#if ENABLE_SNUCL
+        ocl.call.setArg(args.size(), cl::__local(item.localBuffSize));
+#else
         ocl.call.setArg(args.size(), cl::Local(item.localBuffSize));
+#endif
     }
 
     // Dispatch the primary kernel, to apply the gate.
