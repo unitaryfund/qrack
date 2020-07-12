@@ -121,6 +121,7 @@ protected:
     bool unlockHostMem;
     cl_int lockSyncFlags;
     bool usingHostRam;
+    complex permutationAmp;
 
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
@@ -421,6 +422,8 @@ protected:
 
     bitCapIntOcl OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLenInt indexStart, bitLenInt indexLength,
         bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+
+    void ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size, EventVecPtr waitVec);
 };
 
 } // namespace Qrack

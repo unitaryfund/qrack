@@ -32,7 +32,7 @@
 #if defined(__APPLE__)
 #define CL_SILENCE_DEPRECATION
 #include <OpenCL/cl.hpp>
-#elif defined(_WIN32)
+#elif defined(_WIN32) || ENABLE_SNUCL
 #include <CL/cl.hpp>
 #else
 #include <CL/cl2.hpp>
@@ -111,7 +111,8 @@ enum OCLAPI {
     OCL_API_CIMULMODN_OUT,
     OCL_API_CPOWMODN_OUT,
     OCL_API_FULLADD,
-    OCL_API_IFULLADD
+    OCL_API_IFULLADD,
+    OCL_API_CLEARBUFFER
 };
 
 struct OCLKernelHandle {

@@ -105,6 +105,7 @@ add_test (NAME qrack_cl_precompile
 
 # Included after the library and other modules have been declared
 option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
+option (ENABLE_SNUCL "Use SnuCL framework for clusters" OFF)
 include ("cmake/Examples.cmake")
 include ("cmake/UInt128.cmake")
 include ("cmake/OpenCL.cmake" )

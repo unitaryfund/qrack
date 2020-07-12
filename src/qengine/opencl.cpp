@@ -48,11 +48,6 @@ namespace Qrack {
     queue.enqueueReadBuffer(buff, CL_FALSE, 0, size, array, waitVec.get(), &(device_context->wait_events->back()));    \
     queue.flush()
 
-#define DISPATCH_FILL(waitVec, buff, size, value)                                                                      \
-    device_context->wait_events->emplace_back();                                                                       \
-    queue.enqueueFillBuffer(buff, value, 0, size, waitVec.get(), &(device_context->wait_events->back()));              \
-    queue.flush()
-
 #define DISPATCH_COPY(waitVec, buff1, buff2, size)                                                                     \
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, waitVec.get(), &(device_context->wait_events->back()));          \
@@ -126,11 +121,7 @@ void QEngineOCL::SetAmplitudePage(
     }
 
     if (!oStateBuffer) {
-        EventVecPtr waitVec = ResetWaitEvents();
-        device_context->wait_events->emplace_back();
-        queue.enqueueFillBuffer(*stateBuffer, ZERO_CMPLX, sizeof(complex) * dstOffset, sizeof(complex) * length,
-            waitVec.get(), &(device_context->wait_events->back()));
-        queue.flush();
+        ClearBuffer(stateBuffer, dstOffset, length, ResetWaitEvents());
         return;
     }
 
@@ -157,14 +148,12 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
 
     if (!stateBuffer) {
         ReinitBuffer();
-        EventVecPtr waitVec = ResetWaitEvents();
-        DISPATCH_FILL(waitVec, *stateBuffer, sizeof(complex) * maxQPowerOcl, ZERO_CMPLX);
+        ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
     }
 
     if (!(engineOcl->stateBuffer)) {
         engineOcl->ReinitBuffer();
-        EventVecPtr waitVec = ResetWaitEvents();
-        DISPATCH_FILL(waitVec, *(engineOcl->stateBuffer), sizeof(complex) * engineOcl->maxQPowerOcl, ZERO_CMPLX);
+        engineOcl->ClearBuffer(engineOcl->stateBuffer, 0, engineOcl->maxQPowerOcl, engineOcl->ResetWaitEvents());
     }
 
     size_t halfSize = sizeof(complex) * (maxQPowerOcl >> ONE_BCI);
@@ -380,7 +369,11 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
 
     // For all of our kernels, if a local memory buffer is used, there is always only one, as the last argument.
     if (item.localBuffSize) {
+#if ENABLE_SNUCL
+        ocl.call.setArg(args.size(), cl::__local(item.localBuffSize));
+#else
         ocl.call.setArg(args.size(), cl::Local(item.localBuffSize));
+#endif
     }
 
     // Dispatch the primary kernel, to apply the gate.
@@ -565,25 +558,20 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
         ReinitBuffer();
     }
 
-    EventVecPtr waitVec = ResetWaitEvents();
+    ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
 
-    cl::Event fillEvent1;
-    queue.enqueueFillBuffer(*stateBuffer, ZERO_CMPLX, 0, sizeof(complex) * maxQPowerOcl, waitVec.get(), &fillEvent1);
-    queue.flush();
+    // If "permutationAmp" amp is in (read-only) use, this method complicates supersedes that application anyway.
 
-    complex amp;
     if (phaseFac == complex(-999.0, -999.0)) {
-        amp = GetNonunitaryPhase();
+        permutationAmp = GetNonunitaryPhase();
     } else {
-        amp = phaseFac;
+        permutationAmp = phaseFac;
     }
 
-    fillEvent1.wait();
-    wait_refs.clear();
-
+    EventVecPtr waitVec = ResetWaitEvents();
     device_context->wait_events->emplace_back();
-    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex), NULL,
-        &(device_context->wait_events->back()));
+    queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex),
+        &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
     queue.flush();
 
     runningNorm = ONE_R1;
@@ -601,7 +589,6 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
     CHECK_ZERO_SKIP();
 
     EventVecPtr waitVec = ResetWaitEvents();
-    PoolItemPtr poolItem = GetFreePoolItem();
 
     /* Allocate a temporary nStateVec, or use the one supplied. */
     complex* nStateVec = AllocStateVec(maxQPowerOcl);
@@ -612,8 +599,6 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
             context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controlLen, controlPowers);
     }
 
-    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * BCI_ARG_LEN, bciArgs);
-
     nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     if (controlLen > 0) {
@@ -622,8 +607,11 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
             &(device_context->wait_events->back()));
         queue.flush();
     } else {
-        DISPATCH_FILL(waitVec, *nStateBuffer, sizeof(complex) * maxQPowerOcl, ZERO_CMPLX);
+        ClearBuffer(nStateBuffer, 0, maxQPowerOcl, waitVec);
     }
+
+    PoolItemPtr poolItem = GetFreePoolItem();
+    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * BCI_ARG_LEN, bciArgs);
 
     bitCapIntOcl maxI = bciArgs[0];
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
@@ -1216,7 +1204,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
                 sizeof(complex) * destination->maxQPowerOcl, otherStateVec);
 
-            DISPATCH_FILL(waitVec2, *otherStateBuffer, sizeof(complex) * destination->maxQPowerOcl, ZERO_CMPLX);
+            ClearBuffer(otherStateBuffer, 0, destination->maxQPowerOcl, waitVec2);
         }
 
         size_t oNStateVecSize = maxQPowerOcl * sizeof(complex);
@@ -2052,14 +2040,15 @@ void QEngineOCL::xMULx(OCLAPI api_call, bitCapIntOcl* bciArgs, BufferPtr control
     CHECK_ZERO_SKIP();
 
     EventVecPtr waitVec = ResetWaitEvents();
-    PoolItemPtr poolItem = GetFreePoolItem();
 
     /* Allocate a temporary nStateVec, or use the one supplied. */
     complex* nStateVec = AllocStateVec(maxQPowerOcl);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
+    ClearBuffer(nStateBuffer, 0, maxQPowerOcl, waitVec);
+
+    PoolItemPtr poolItem = GetFreePoolItem();
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 10, bciArgs);
-    DISPATCH_FILL(waitVec, *nStateBuffer, sizeof(complex) * maxQPowerOcl, ZERO_CMPLX);
 
     size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -2367,14 +2356,17 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         return;
     } else if (!stateBuffer) {
         ReinitBuffer();
-        EventVecPtr fillWaitVec = ResetWaitEvents();
-        DISPATCH_FILL(fillWaitVec, *stateBuffer, sizeof(complex) * maxQPowerOcl, ZERO_CMPLX);
+        ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
     }
+
+    // "permutationAmp" might be in use, so we clFinish(), first, to guarantee it is not.
+    clFinish();
+    permutationAmp = amp;
 
     EventVecPtr waitVec = ResetWaitEvents();
     device_context->wait_events->emplace_back();
-    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex), waitVec.get(),
-        &(device_context->wait_events->back()));
+    queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex),
+        &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
     queue.flush();
 }
 
@@ -2530,9 +2522,8 @@ void QEngineOCL::UpdateRunningNorm(real1 norm_thresh)
 
     runningNorm = ONE_R1;
 
-    bitCapIntOcl bciArgs[1] = { maxQPowerOcl };
     cl::Event writeBCIArgsEvent;
-    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, writeBCIArgsEvent);
+    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl), &maxQPowerOcl, writeBCIArgsEvent);
 
     size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -2606,6 +2597,23 @@ void QEngineOCL::ReinitBuffer()
 
     nrmBuffer =
         std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
+}
+
+void QEngineOCL::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size, EventVecPtr waitVec)
+{
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    bitCapIntOcl bciArgs[2] = { size, offset };
+    cl::Event writeArgsEvent;
+    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent);
+
+    size_t ngc = FixWorkItemCount(size, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
+
+    QueueCall(OCL_API_CLEARBUFFER, ngc, ngs, { buff, poolItem->ulongBuffer });
 }
 
 } // namespace Qrack

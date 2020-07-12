@@ -105,7 +105,8 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_CIMULMODN_OUT, "cimulmodnout"),
     OCLKernelHandle(OCL_API_CPOWMODN_OUT, "cpowmodnout"),
     OCLKernelHandle(OCL_API_FULLADD, "fulladd"),
-    OCLKernelHandle(OCL_API_IFULLADD, "ifulladd")
+    OCLKernelHandle(OCL_API_IFULLADD, "ifulladd"),
+    OCLKernelHandle(OCL_API_CLEARBUFFER, "clearbuffer")
 };
 // clang-format on
 
@@ -151,7 +152,7 @@ cl::Program OCLEngine::MakeProgram(
                           << std::endl;
             }
 
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
             program = cl::Program(devCntxt->context, { devCntxt->device },
                 { std::pair<const void*, unsigned long>(&buffer[0], buffer.size()) }, &binaryStatus, &buildError);
 #else
@@ -202,7 +203,7 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     }
 
     FILE* clBinFile = fopen((path + fileName).c_str(), "w");
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
     std::vector<char*> clBinaries = program.getInfo<CL_PROGRAM_BINARIES>();
     char* clBinary = clBinaries[clBinIndex];
     fwrite(clBinary, clBinSize, sizeof(char), clBinFile);
