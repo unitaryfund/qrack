@@ -21,13 +21,6 @@ endif ()
 message ("OpenCL Support is: ${ENABLE_OPENCL}")
 
 if (ENABLE_OPENCL)
-    message ("    libOpenCL: ${OpenCL_LIBRARIES}")
-    message ("    Includes:  ${OpenCL_INCLUDE_DIRS}")
-    message ("    Options:   ${OpenCL_COMPILATION_OPTIONS}")
-endif ()
-
-if (ENABLE_OPENCL)
-
     target_compile_definitions (qrack PUBLIC CL_HPP_TARGET_OPENCL_VERSION=200)
     target_compile_definitions (qrack PUBLIC CL_HPP_MINIMUM_OPENCL_VERSION=110)
     target_compile_definitions (qrack_pinvoke PUBLIC CL_HPP_TARGET_OPENCL_VERSION=200)
@@ -59,9 +52,15 @@ if (ENABLE_OPENCL)
     else (ENABLE_SNUCL)
         set(QRACK_OpenCL_LIBRARIES ${OpenCL_LIBRARIES})
         set(QRACK_OpenCL_INCLUDE_DIRS ${OpenCL_INCLUDE_DIRS})
+        set(QRACK_OpenCL_COMPILATION_OPTIONS ${OpenCL_COMPILATION_OPTIONS})
 
         target_compile_definitions (qrack PUBLIC ENABLE_SNUCL=0)
     endif (ENABLE_SNUCL)
+
+    message ("SnuCL Support is: ${ENABLE_SNUCL}")
+    message ("    libOpenCL: ${QRACK_OpenCL_LIBRARIES}")
+    message ("    Includes:  ${QRACK_OpenCL_INCLUDE_DIRS}")
+    message ("    Options:   ${QRACK_OpenCL_COMPILATION_OPTIONS}")
 
     target_include_directories (qrack PUBLIC ${PROJECT_BINARY_DIR} ${QRACK_OpenCL_INCLUDE_DIRS})
     target_compile_options (qrack PUBLIC ${QRACK_OpenCL_COMPILATION_OPTIONS})
