@@ -269,7 +269,7 @@ TEST_CASE("test_exp2x2_log2x2")
     REQUIRE_FLOAT(imag(mtrx1[3]), ZERO_R1);
 }
 
-#if ENABLE_OPENCL
+#if ENABLE_OPENCL && !ENABLE_SNUCL
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_oclengine")
 {
     if (testEngineType == QINTERFACE_OPENCL) {

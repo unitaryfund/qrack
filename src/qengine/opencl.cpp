@@ -61,10 +61,8 @@ namespace Qrack {
 
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr)                                                                      \
     clFinish();                                                                                                        \
-    queue.enqueueMapBuffer(buff, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (size));                                     \
-    *(sumPtr) = ParSum(array, size);                                                                                   \
-    device_context->wait_events->emplace_back();                                                                       \
-    queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));
+    queue.enqueueReadBuffer(buff, CL_TRUE, 0, sizeof(real1) * size, array, NULL, NULL);                                \
+    *(sumPtr) = ParSum(array, size);
 
 #define CHECK_ZERO_SKIP()                                                                                              \
     if (!stateBuffer) {                                                                                                \
@@ -522,8 +520,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl) * 16);
 
     if ((!didInit) || (nrmGroupCount != oldNrmGroupCount)) {
-        nrmBuffer =
-            std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
+        nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
     }
 }
 
