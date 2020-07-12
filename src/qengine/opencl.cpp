@@ -556,6 +556,8 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
 
     ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
 
+    // If "permutationAmp" amp is in (read-only) use, this method complicates supersedes that application anyway.
+
     if (phaseFac == complex(-999.0, -999.0)) {
         permutationAmp = GetNonunitaryPhase();
     } else {
@@ -2353,10 +2355,14 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
     }
 
+    // "permutationAmp" might be in use, so we clFinish(), first, to guarantee it is not.
+    clFinish();
+    permutationAmp = amp;
+
     EventVecPtr waitVec = ResetWaitEvents();
     device_context->wait_events->emplace_back();
     queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex),
-        &permutationAmp2, waitVec.get(), &(device_context->wait_events->back()));
+        &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
     queue.flush();
 }
 
