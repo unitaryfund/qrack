@@ -108,9 +108,10 @@ int main(int argc, char* argv[])
 
     if (!qengine && !qpager && !qunit && !qunit_qpager) {
         qunit = true;
-        qpager = true;
         qengine = true;
-        qunit_qpager = true;
+        // Unstable:
+        // qpager = true;
+        // qunit_qpager = true;
     }
 
     if (!cpu && !opencl_single && !opencl_multi) {
