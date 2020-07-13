@@ -61,10 +61,8 @@ namespace Qrack {
 
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr)                                                                      \
     clFinish();                                                                                                        \
-    queue.enqueueMapBuffer(buff, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (size));                                     \
-    *(sumPtr) = ParSum(array, size);                                                                                   \
-    device_context->wait_events->emplace_back();                                                                       \
-    queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));
+    queue.enqueueReadBuffer(buff, CL_TRUE, 0, sizeof(real1) * size, array, NULL, NULL);                                \
+    *(sumPtr) = ParSum(array, size);
 
 #define CHECK_ZERO_SKIP()                                                                                              \
     if (!stateBuffer) {                                                                                                \
@@ -478,8 +476,9 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         }
     }
 
-    size_t nrmVecAlignSize =
-        ((sizeof(real1) * nrmGroupCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
+    size_t nrmVecAlignSize = ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
+        ? QRACK_ALIGN_SIZE
+        : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
 
     if (didInit && (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer = NULL;
@@ -522,8 +521,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl) * 16);
 
     if ((!didInit) || (nrmGroupCount != oldNrmGroupCount)) {
-        nrmBuffer =
-            std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
+        nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize);
     }
 }
 
@@ -2584,8 +2582,9 @@ void QEngineOCL::ReinitBuffer()
     ResetStateVec(AllocStateVec(maxQPower, usingHostRam));
     ResetStateBuffer(MakeStateVecBuffer(stateVec));
 
-    size_t nrmVecAlignSize =
-        ((sizeof(real1) * nrmGroupCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
+    size_t nrmVecAlignSize = ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
+        ? QRACK_ALIGN_SIZE
+        : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
 
 #if defined(__APPLE__)
     posix_memalign((void**)&nrmArray, QRACK_ALIGN_SIZE, nrmVecAlignSize);
@@ -2595,8 +2594,7 @@ void QEngineOCL::ReinitBuffer()
     nrmArray = (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmVecAlignSize);
 #endif
 
-    nrmBuffer =
-        std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
+    nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize);
 }
 
 void QEngineOCL::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size, EventVecPtr waitVec)

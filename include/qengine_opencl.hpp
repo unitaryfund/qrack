@@ -151,10 +151,7 @@ public:
         bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false,
         real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored2 = {}, bitLenInt ignored3 = 0);
 
-    virtual ~QEngineOCL()
-    {
-        ZeroAmplitudes();
-    }
+    virtual ~QEngineOCL() { ZeroAmplitudes(); }
 
     virtual void ZeroAmplitudes()
     {
