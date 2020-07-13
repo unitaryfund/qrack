@@ -1035,29 +1035,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     complex* nStateVec = AllocStateVec(maxQPowerOcl, forceAlloc);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
-    BufferPtr otherStateBuffer;
-    complex* otherStateVec;
-
-    bool isSameContext = (toCopy->device_context->context_id == device_context->context_id);
-
-    if (!isSameContext) {
-        toCopy->LockSync(CL_MAP_READ);
-        otherStateVec = AllocStateVec(toCopy->maxQPowerOcl, true);
-        std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPowerOcl, otherStateVec);
-        toCopy->UnlockSync();
-        otherStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPowerOcl, otherStateVec);
-    } else {
-        otherStateVec = toCopy->stateVec;
-        otherStateBuffer = toCopy->stateBuffer;
-    }
-
-    if (!isSameContext) {
-        poolItem->otherStateVec = otherStateVec;
-        toCopy->stateVec = NULL;
-    }
-
-    WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
+    WaitCall(apiCall, ngc, ngs, { stateBuffer, toCopy->stateBuffer, poolItem->ulongBuffer, nStateBuffer });
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
@@ -1116,21 +1094,11 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         NormalizeState();
     }
 
-    bool isSameContext = !destination || (destination->device_context->context_id == device_context->context_id);
-
     if (length == qubitCount) {
         if (destination != NULL) {
-            if (isSameContext) {
-                destination->ResetStateVec(stateVec);
-                destination->stateBuffer = stateBuffer;
-                stateVec = NULL;
-            } else {
-                LockSync();
-                destination->LockSync();
-                std::copy(stateVec, stateVec + maxQPowerOcl, destination->stateVec);
-                destination->UnlockSync();
-                UnlockSync();
-            }
+            destination->ResetStateVec(stateVec);
+            destination->stateBuffer = stateBuffer;
+            stateVec = NULL;
         }
         // This will be cleared by the destructor:
         ResetStateVec(AllocStateVec(2));
@@ -1192,35 +1160,12 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         size_t ngc2 = FixWorkItemCount(partPower, nrmGroupCount);
         size_t ngs2 = FixGroupSize(ngc2, nrmGroupSize);
 
-        BufferPtr otherStateBuffer;
-        complex* otherStateVec;
-        if (isSameContext) {
-            otherStateVec = destination->stateVec;
-            otherStateBuffer = destination->stateBuffer;
-        } else {
-            otherStateVec = AllocStateVec(destination->maxQPowerOcl, true);
-            otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
-                sizeof(complex) * destination->maxQPowerOcl, otherStateVec);
-
-            ClearBuffer(otherStateBuffer, 0, destination->maxQPowerOcl, waitVec2);
-        }
-
         size_t oNStateVecSize = maxQPowerOcl * sizeof(complex);
 
-        WaitCall(
-            OCL_API_DECOMPOSEAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, poolItem->ulongBuffer, otherStateBuffer });
+        WaitCall(OCL_API_DECOMPOSEAMP, ngc2, ngs2,
+            { probBuffer2, angleBuffer2, poolItem->ulongBuffer, destination->stateBuffer });
 
-        if (!isSameContext) {
-            queue.enqueueMapBuffer(
-                *otherStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * destination->maxQPowerOcl);
-            destination->LockSync(CL_MAP_WRITE);
-            std::copy(otherStateVec, otherStateVec + destination->maxQPowerOcl, destination->stateVec);
-            cl::Event waitUnmap;
-            queue.enqueueUnmapMemObject(*otherStateBuffer, otherStateVec, NULL, &waitUnmap);
-            waitUnmap.wait();
-            destination->UnlockSync();
-            FreeAligned(otherStateVec);
-        } else if (!(destination->useHostRam) && destination->stateVec && oNStateVecSize <= destination->maxAlloc &&
+        if (!(destination->useHostRam) && destination->stateVec && oNStateVecSize <= destination->maxAlloc &&
             (2 * oNStateVecSize) <= destination->maxMem) {
 
             BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
@@ -2412,31 +2357,11 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs);
 
-    bool isSameContext = (toCompare->device_context->context_id == device_context->context_id);
-
-    BufferPtr otherStateBuffer;
-    complex* otherStateVec;
-    if (isSameContext) {
-        otherStateVec = toCompare->stateVec;
-        otherStateBuffer = toCompare->stateBuffer;
-    } else {
-        otherStateVec = AllocStateVec(toCompare->maxQPowerOcl, true);
-        toCompare->LockSync(CL_MAP_READ);
-        std::copy(toCompare->stateVec, toCompare->stateVec + toCompare->maxQPowerOcl, otherStateVec);
-        toCompare->UnlockSync();
-        otherStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCompare->maxQPowerOcl, otherStateVec);
-    }
-
     QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
-        { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
+        { stateBuffer, toCompare->stateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
 
     real1 sumSqrErr = 0;
     WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
-
-    if (!isSameContext) {
-        FreeAligned(otherStateVec);
-    }
 
     return sumSqrErr < approxcompare_error;
 }
