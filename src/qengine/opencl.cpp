@@ -1124,20 +1124,12 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // The "remainder" bits will always be maintained.
-    std::shared_ptr<real1> remainderStateProb(new real1[remainderPower](), [](real1* p) { delete[] p; });
-    std::shared_ptr<real1> remainderStateAngle(new real1[remainderPower](), [](real1* p) { delete[] p; });
-    BufferPtr probBuffer1 = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateProb.get());
-    BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle.get());
+    BufferPtr probBuffer1 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * remainderPower);
+    BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * remainderPower);
 
     // The removed "part" is only necessary for Decompose.
-    real1* partStateProb = new real1[partPower]();
-    real1* partStateAngle = new real1[partPower]();
-    BufferPtr probBuffer2 = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateProb);
-    BufferPtr angleBuffer2 = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
+    BufferPtr probBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
+    BufferPtr angleBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
 
     // Call the kernel that calculates bit probability and angle, retaining both parts.
     QueueCall(api_call, ngc, ngs,
@@ -1182,9 +1174,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         }
     }
 
-    delete[] partStateProb;
-    delete[] partStateAngle;
-
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
     bciArgs[0] = maxQPowerOcl;
     poolItem = GetFreePoolItem();
@@ -1207,9 +1196,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
-
-    poolItem->probArray = remainderStateProb;
-    poolItem->angleArray = remainderStateAngle;
 
     QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer });
 }
@@ -1337,6 +1323,7 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
         return;
     }
 
+#if !ENABLE_SNUCL
     if ((lengthPower * lengthPower) < nrmGroupCount) {
         // With "lengthPower" count of threads, compared to a redundancy of "lengthPower" with full utilization, this is
         // close to the point where it becomes more efficient to rely on iterating through ProbReg calls.
@@ -1353,6 +1340,7 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
         }
         return;
     }
+#endif
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { lengthPower, maxJ, start, length, 0, 0, 0, 0, 0, 0 };
 
@@ -2325,9 +2313,10 @@ void QEngineOCL::GetQuantumState(complex* outputState)
         return;
     }
 
-    LockSync(CL_MAP_READ);
-    std::copy(stateVec, stateVec + maxQPowerOcl, outputState);
-    UnlockSync();
+    EventVecPtr waitVec = ResetWaitEvents();
+    queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, outputState, waitVec.get());
+    queue.flush();
+    clFinish();
 }
 
 /// Get all probabilities, in unsigned int permutation basis
