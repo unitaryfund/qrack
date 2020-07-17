@@ -34,7 +34,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const double clockFactor = 1000.0 / CLOCKS_PER_SEC; // Report in ms
+const double clockFactor = 1.0 / 1000.0; // Report in ms
 
 double formatTime(double t, bool logNormal)
 {
@@ -77,7 +77,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     std::cout << "3rd Quartile (ms), ";
     std::cout << "Slowest (ms)" << std::endl;
 
-    clock_t tClock, iterClock;
     real1 trialClocks[ITERATIONS];
 
     bitLenInt i, j, numBits;
@@ -136,7 +135,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             }
             qftReg->Finish();
 
-            iterClock = clock();
+            auto iterClock = std::chrono::high_resolution_clock::now();
 
             // Run loop body
             fn(qftReg, numBits);
@@ -146,11 +145,12 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             }
 
             // Collect interval data
-            tClock = clock() - iterClock;
+            auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::high_resolution_clock::now() - iterClock);
             if (logNormal) {
-                trialClocks[i] = log2(tClock * clockFactor);
+                trialClocks[i] = log2(tClock.count() * clockFactor);
             } else {
-                trialClocks[i] = tClock * clockFactor;
+                trialClocks[i] = tClock.count() * clockFactor;
             }
             avgt += trialClocks[i];
 
