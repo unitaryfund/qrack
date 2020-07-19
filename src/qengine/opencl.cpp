@@ -103,7 +103,6 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
-    device_context->wait_events->emplace_back();
     queue.enqueueWriteBuffer(
         *stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr, waitVec.get());
 }
@@ -2229,7 +2228,6 @@ void QEngineOCL::SetQuantumState(const complex* inputState)
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
-    device_context->wait_events->emplace_back();
     queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, inputState, waitVec.get());
 
     UpdateRunningNorm();
