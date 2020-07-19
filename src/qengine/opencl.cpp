@@ -104,8 +104,8 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
 
     EventVecPtr waitVec = ResetWaitEvents();
     device_context->wait_events->emplace_back();
-    queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr,
-        waitVec.get(), &(device_context->wait_events->back()));
+    queue.enqueueWriteBuffer(
+        *stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr, waitVec.get());
 }
 
 void QEngineOCL::SetAmplitudePage(
@@ -1330,8 +1330,7 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs);
 
-    BufferPtr probsBuffer =
-        std::make_shared<cl::Buffer>(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
+    BufferPtr probsBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
 
     size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -2229,10 +2228,9 @@ void QEngineOCL::SetQuantumState(const complex* inputState)
         ReinitBuffer();
     }
 
-    LockSync(CL_MAP_WRITE);
-    std::copy(inputState, inputState + maxQPowerOcl, stateVec);
-    runningNorm = ONE_R1;
-    UnlockSync();
+    EventVecPtr waitVec = ResetWaitEvents();
+    device_context->wait_events->emplace_back();
+    queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, inputState, waitVec.get());
 
     UpdateRunningNorm();
 }
