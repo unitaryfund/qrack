@@ -336,30 +336,6 @@ protected:
     size_t FixWorkItemCount(size_t maxI, size_t wic);
     size_t FixGroupSize(size_t wic, size_t gs);
 
-    // CL_MAP_READ = (1 << 0); CL_MAP_WRITE = (1 << 1);
-    /**
-     * Locks synchronization between the state vector buffer and general RAM, so the state vector can be directly read
-     * and/or written to.
-     *
-     * OpenCL buffers, even when allocated on "host" general RAM, are not safe to read from or write to unless "mapped."
-     * When mapped, a buffer cannot be used by OpenCL kernels. If the state vector needs to be directly manipulated, it
-     * needs to be temporarily mapped, and this can be accomplished with LockSync(). When direct reading from or writing
-     * to the state vector is done, before performing other OpenCL operations on it, it must be unmapped with
-     * UnlockSync().
-     */
-    void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
-    /**
-     * Unlocks synchronization between the state vector buffer and general RAM, so the state vector can be operated on
-     * with OpenCL kernels and operations.
-     *
-     * OpenCL buffers, even when allocated on "host" general RAM, are not safe to read from or write to unless "mapped."
-     * When mapped, a buffer cannot be used by OpenCL kernels. If the state vector needs to be directly manipulated, it
-     * needs to be temporarily mapped, and this can be accomplished with LockSync(). When direct reading from or writing
-     * to the state vector is done, before performing other OpenCL operations on it, it must be unmapped with
-     * UnlockSync().
-     */
-    void UnlockSync();
-
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
     void ArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL,
         bitCapIntOcl valuesLength = 0);
