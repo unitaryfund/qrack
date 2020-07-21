@@ -166,50 +166,6 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     queue.finish();
 }
 
-void QEngineOCL::LockSync(cl_int flags)
-{
-    lockSyncFlags = flags;
-    clFinish();
-
-    if (stateVec) {
-        unlockHostMem = true;
-        lockSyncStateBuffer = stateBuffer;
-    } else {
-        unlockHostMem = false;
-        stateVec = AllocStateVec(maxQPowerOcl, true);
-        if (lockSyncFlags & CL_MAP_WRITE) {
-            lockSyncStateBuffer = MakeStateVecBuffer(stateVec);
-        } else {
-            // The OpenCL device will never have to read from this buffer, hence we can set it CL_MEM_WRITE_ONLY
-            lockSyncStateBuffer = std::make_shared<cl::Buffer>(
-                context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * maxQPowerOcl, stateVec);
-        }
-        WAIT_COPY(*stateBuffer, *lockSyncStateBuffer, sizeof(complex) * maxQPowerOcl);
-    }
-
-    queue.enqueueMapBuffer(*lockSyncStateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPowerOcl, NULL);
-}
-
-void QEngineOCL::UnlockSync()
-{
-    EventVecPtr waitVec = ResetWaitEvents();
-    cl::Event unmapEvent;
-    queue.enqueueUnmapMemObject(*lockSyncStateBuffer, stateVec, waitVec.get(), &unmapEvent);
-    unmapEvent.wait();
-    wait_refs.clear();
-
-    if (!unlockHostMem) {
-        if (lockSyncFlags & CL_MAP_WRITE) {
-            WAIT_COPY(*lockSyncStateBuffer, *stateBuffer, sizeof(complex) * maxQPowerOcl);
-        }
-        FreeStateVec();
-        stateVec = NULL;
-    }
-
-    lockSyncStateBuffer = NULL;
-    lockSyncFlags = 0;
-}
-
 void QEngineOCL::clFinish(bool doHard)
 {
     if (device_context == NULL) {
