@@ -1,11 +1,11 @@
 language: python
-python: 3.7
+python: 3.8
 dist: xenial
 sudo: true
 install:
   - sudo apt-get update
   - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake
-  - python -m pip install --upgrade pip numpy setuptools==45 wheel
+  - python -m pip install --upgrade pip numpy setuptools wheel
   - python -m pip install cvxpy cython stestr qiskit pennylane
 script:
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
@@ -20,13 +20,13 @@ script:
   - cd ../.. && git clone https://github.com/vm6502q/qiskit-qrack-provider.git && cd qiskit-qrack-provider
   - python -m pip install .
   - python -m stestr run
-#  - cd .. && git clone https://github.com/XanaduAI/pennylane-pq.git && cd pennylane-pq
-#  - python -m pip install .
-#  - python -m pytest .
+  - cd .. && git clone https://github.com/XanaduAI/pennylane-pq.git && cd pennylane-pq
+  - python -m pip install .
+  - python -m pytest .
   - cd .. && git clone https://github.com/vm6502q/pennylane-qiskit.git && cd pennylane-qiskit
   - python -m pip install .
   - python -m pytest .
-#  - cd .. && git clone https://github.com/SoftwareQuTech/SimulaQron.git && cd SimulaQron
-#  - python -m pip install .
-#  - echo "import simulaqron" > simulaqron_tests.py && echo "simulaqron.tests()" >> simulaqron_tests.py
-#  - python simulaqron_tests.py
+  - cd .. && git clone https://github.com/SoftwareQuTech/SimulaQron.git && cd SimulaQron
+  - python -m pip install .
+  - echo "import simulaqron" > simulaqron_tests.py && echo "simulaqron.tests()" >> simulaqron_tests.py
+  - python simulaqron_tests.py
