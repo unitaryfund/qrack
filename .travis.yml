@@ -16,17 +16,17 @@ script:
   - cd ../.. && git clone -b qrack_unit_tests https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
   - python -m pip install -r requirements.txt
   - python setup.py install
-  - cd build && python -m pytest .
-  - cd ../.. && git clone https://github.com/vm6502q/qiskit-qrack-provider.git && cd qiskit-qrack-provider
+#  - cd build && python -m pytest . && cd ..
+  - cd .. && git clone https://github.com/vm6502q/qiskit-qrack-provider.git && cd qiskit-qrack-provider
   - python -m pip install .
   - python -m stestr run
-  - cd .. && git clone https://github.com/XanaduAI/pennylane-pq.git && cd pennylane-pq
-  - python -m pip install .
-  - python -m pytest .
+#  - cd .. && git clone https://github.com/XanaduAI/pennylane-pq.git && cd pennylane-pq
+#  - python -m pip install .
+#  - python -m pytest .
   - cd .. && git clone https://github.com/vm6502q/pennylane-qiskit.git && cd pennylane-qiskit
   - python -m pip install .
   - python -m pytest .
-  - cd .. && git clone https://github.com/SoftwareQuTech/SimulaQron.git && cd SimulaQron
-  - python -m pip install .
-  - echo "import simulaqron" > simulaqron_tests.py && echo "simulaqron.tests()" >> simulaqron_tests.py
-  - python simulaqron_tests.py
+#  - cd .. && git clone https://github.com/SoftwareQuTech/SimulaQron.git && cd SimulaQron
+#  - python -m pip install .
+#  - echo "import simulaqron" > simulaqron_tests.py && echo "simulaqron.tests()" >> simulaqron_tests.py
+#  - python simulaqron_tests.py
