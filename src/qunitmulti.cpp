@@ -31,7 +31,7 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance()->GetDeviceContextPtrVector();
 
     if (devList.size() == 0) {
-        defaultDeviceID = OCLEngine::Instance()->GetDefaultDeviceID();
+        defaultDeviceID = (deviceID == -1) ? OCLEngine::Instance()->GetDefaultDeviceID() : deviceID;
 
         for (bitLenInt i = 0; i < deviceContext.size(); i++) {
             DeviceInfo deviceInfo;
