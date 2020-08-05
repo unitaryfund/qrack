@@ -827,13 +827,16 @@ void QPager::MetaControlledSwap(
 
     std::vector<bitLenInt> subcontrols;
     bitCapInt controlMask = 0;
+    bool isSqiSubcontrol = false;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        if (controls[i] < qpp) {
+        if (controls[i] < sqi) {
             sortedMasks.push_back(pow2(controls[i] - qpp));
             if (!anti) {
                 controlMask |= sortedMasks.back();
             }
             sortedMasks.back()--;
+        } else if (controls[i] == sqi) {
+            isSqiSubcontrol = true;
         } else {
             subcontrols.push_back(controls[i]);
         }
@@ -845,7 +848,8 @@ void QPager::MetaControlledSwap(
     bitCapInt i;
     for (i = 0; i < maxLCV; i++) {
         futures[i] = std::async(std::launch::async,
-            [this, i, &qubit1Mask, &qubit2Mask, &sortedMasks, &subcontrols, &isIPhaseFac, &sqi, &controlMask]() {
+            [this, i, &qubit1Mask, &qubit2Mask, &sortedMasks, &subcontrols, &isIPhaseFac, &sqi, &controlMask,
+                &isSqiSubcontrol, &anti]() {
                 bitCapInt j, k, jLo, jHi;
                 jHi = i;
                 j = 0;
@@ -865,27 +869,39 @@ void QPager::MetaControlledSwap(
                     std::future<void> future1, future2;
 
                     if (isIPhaseFac) {
-                        future1 = std::async(std::launch::async, [engine1, &sqi, &subcontrols]() {
-                            engine1->ApplyControlledSingleInvert(
-                                &(subcontrols[0]), subcontrols.size(), sqi, I_CMPLX, I_CMPLX);
-                        });
-                        future2 = std::async(std::launch::async, [engine2, &sqi, &subcontrols]() {
-                            engine2->ApplyControlledSingleInvert(
-                                &(subcontrols[0]), subcontrols.size(), sqi, I_CMPLX, I_CMPLX);
-                        });
+                        if (!isSqiSubcontrol || anti) {
+                            future1 = std::async(std::launch::async, [engine1, &sqi, &subcontrols]() {
+                                engine1->ApplyControlledSingleInvert(
+                                    &(subcontrols[0]), subcontrols.size(), sqi, I_CMPLX, I_CMPLX);
+                            });
+                        }
+                        if (!isSqiSubcontrol || !anti) {
+                            future2 = std::async(std::launch::async, [engine2, &sqi, &subcontrols]() {
+                                engine2->ApplyControlledSingleInvert(
+                                    &(subcontrols[0]), subcontrols.size(), sqi, I_CMPLX, I_CMPLX);
+                            });
+                        }
                     } else {
-                        future1 = std::async(std::launch::async, [engine1, &sqi, &subcontrols]() {
-                            engine1->ApplyControlledSingleInvert(
-                                &(subcontrols[0]), subcontrols.size(), sqi, ONE_CMPLX, ONE_CMPLX);
-                        });
-                        future2 = std::async(std::launch::async, [engine2, &sqi, &subcontrols]() {
-                            engine2->ApplyControlledSingleInvert(
-                                &(subcontrols[0]), subcontrols.size(), sqi, ONE_CMPLX, ONE_CMPLX);
-                        });
+                        if (!isSqiSubcontrol || anti) {
+                            future1 = std::async(std::launch::async, [engine1, &sqi, &subcontrols]() {
+                                engine1->ApplyControlledSingleInvert(
+                                    &(subcontrols[0]), subcontrols.size(), sqi, ONE_CMPLX, ONE_CMPLX);
+                            });
+                        }
+                        if (!isSqiSubcontrol || !anti) {
+                            future2 = std::async(std::launch::async, [engine2, &sqi, &subcontrols]() {
+                                engine2->ApplyControlledSingleInvert(
+                                    &(subcontrols[0]), subcontrols.size(), sqi, ONE_CMPLX, ONE_CMPLX);
+                            });
+                        }
                     }
 
-                    future1.get();
-                    future2.get();
+                    if (!isSqiSubcontrol || anti) {
+                        future1.get();
+                    }
+                    if (!isSqiSubcontrol || !anti) {
+                        future2.get();
+                    }
 
                     engine1->ShuffleBuffers(engine2);
                 } else {
@@ -928,13 +944,16 @@ void QPager::SemiMetaControlledSwap(
 
     std::vector<bitLenInt> subcontrols;
     bitCapInt controlMask = 0;
+    bool isSqiSubcontrol = false;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        if (controls[i] < qpp) {
+        if (controls[i] < sqi) {
             sortedMasks.push_back(pow2(controls[i] - qpp));
             if (!anti) {
                 controlMask |= sortedMasks.back();
             }
             sortedMasks.back()--;
+        } else if (controls[i] == sqi) {
+            isSqiSubcontrol = true;
         } else {
             subcontrols.push_back(controls[i]);
         }
@@ -946,7 +965,8 @@ void QPager::SemiMetaControlledSwap(
     bitCapInt i;
     for (i = 0; i < maxLCV; i++) {
         futures[i] = std::async(std::launch::async,
-            [this, i, &qubit1, &qubit2Mask, &sortedMasks, &subcontrols, &isIPhaseFac, &sqi, &controlMask]() {
+            [this, i, &qubit1, &qubit2Mask, &sortedMasks, &subcontrols, &isIPhaseFac, &sqi, &controlMask,
+                &isSqiSubcontrol, &anti]() {
                 bitCapInt j, k, jLo, jHi;
                 jHi = i;
                 j = 0;
@@ -964,25 +984,37 @@ void QPager::SemiMetaControlledSwap(
 
                 std::future<void> future1, future2;
                 if (isIPhaseFac) {
-                    future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi, &subcontrols]() {
-                        engine1->CSwap(&(subcontrols[0]), subcontrols.size(), qubit1, sqi);
-                        engine1->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
-                    });
-                    future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi, &subcontrols]() {
-                        engine2->CSwap(&(subcontrols[0]), subcontrols.size(), qubit1, sqi);
-                        engine2->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
-                    });
+                    if (!isSqiSubcontrol || anti) {
+                        future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi, &subcontrols]() {
+                            engine1->CSwap(&(subcontrols[0]), subcontrols.size(), qubit1, sqi);
+                            engine1->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+                        });
+                    }
+                    if (!isSqiSubcontrol || !anti) {
+                        future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi, &subcontrols]() {
+                            engine2->CSwap(&(subcontrols[0]), subcontrols.size(), qubit1, sqi);
+                            engine2->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+                        });
+                    }
                 } else {
-                    future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi, &subcontrols]() {
-                        engine1->CSwap(&(subcontrols[0]), subcontrols.size(), qubit1, sqi);
-                    });
-                    future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi, &subcontrols]() {
-                        engine2->CSwap(&(subcontrols[0]), subcontrols.size(), qubit1, sqi);
-                    });
+                    if (!isSqiSubcontrol || anti) {
+                        future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi, &subcontrols]() {
+                            engine1->CSwap(&(subcontrols[0]), subcontrols.size(), qubit1, sqi);
+                        });
+                    }
+                    if (!isSqiSubcontrol || !anti) {
+                        future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi, &subcontrols]() {
+                            engine2->CSwap(&(subcontrols[0]), subcontrols.size(), qubit1, sqi);
+                        });
+                    }
                 }
 
-                future1.get();
-                future2.get();
+                if (!isSqiSubcontrol || anti) {
+                    future1.get();
+                }
+                if (!isSqiSubcontrol || !anti) {
+                    future2.get();
+                }
 
                 engine1->ShuffleBuffers(engine2);
             });
