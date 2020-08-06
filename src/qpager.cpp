@@ -750,10 +750,6 @@ void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitL
 
 void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    CombineAndOp([&](QEnginePtr engine) { engine->ZeroPhaseFlip(start, length); },
-        { static_cast<bitLenInt>(start + length - 1U) });
-
-#if 0
     bitLenInt qpp = qubitsPerPage();
 
     bitCapInt i;
@@ -781,7 +777,7 @@ void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         // Semi-meta-
         bitLenInt metaLen = (start + length) - qpp;
         bitLenInt remainderLen = length - metaLen;
-        bitCapInt mask = pow2(metaLen) - pow2(qpp);
+        bitCapInt mask = pow2(metaLen) - ONE_BCI;
         std::vector<std::future<void>> futures;
         for (i = 0; i < qPages.size(); i++) {
             if ((i & mask) == 0U) {
@@ -808,7 +804,6 @@ void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     for (i = 0; i < qPages.size(); i++) {
         futures[i].get();
     }
-#endif
 }
 void QPager::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
