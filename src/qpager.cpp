@@ -2,20 +2,7 @@
 //
 // (C) Daniel Strano and the Qrack contributors 2017-2020. All rights reserved.
 //
-// QUnit maintains explicit separability of qubits as an optimization on a QEngine.
-// See https://arxiv.org/abs/1710.05867
-// (The makers of Qrack have no affiliation with the authors of that paper.)
-//
-// When we allocate a quantum register, all bits are in a (re)set state. At this point,
-// we know they are separable, in the sense of full Schmidt decomposability into qubits
-// in the "natural" or "permutation" basis of the register. Many operations can be
-// traced in terms of fewer qubits that the full "Schr\{"o}dinger representation."
-//
-// Based on experimentation, QUnit is designed to avoid increasing representational
-// entanglement for its primary action, and only try to decrease it when inquiries
-// about probability need to be made otherwise anyway. Avoiding introducing the cost of
-// basically any entanglement whatsoever, rather than exponentially costly "garbage
-// collection," should be the first and ultimate concern, in the authors' experience.
+// QPager breaks a QEngine instance into pages of contiguous amplitudes.
 //
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
@@ -571,12 +558,34 @@ void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLe
 void QPager::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
+    bool isQubit1Meta = qubit1 >= qubitsPerPage();
+    bool isQubit2Meta = qubit2 >= qubitsPerPage();
+    if (isQubit1Meta && isQubit2Meta) {
+        MetaControlledSwap(false, controls, controlLen, qubit1, qubit2, false);
+        return;
+    }
+    if (isQubit1Meta || isQubit2Meta) {
+        SemiMetaControlledSwap(false, controls, controlLen, qubit1, qubit2, false);
+        return;
+    }
+
     CombineAndOpControlled([&](QEnginePtr engine) { engine->CSwap(controls, controlLen, qubit1, qubit2); },
         { qubit1, qubit2 }, controls, controlLen);
 }
 void QPager::AntiCSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
+    bool isQubit1Meta = qubit1 >= qubitsPerPage();
+    bool isQubit2Meta = qubit2 >= qubitsPerPage();
+    if (isQubit1Meta && isQubit2Meta) {
+        MetaControlledSwap(true, controls, controlLen, qubit1, qubit2, false);
+        return;
+    }
+    if (isQubit1Meta || isQubit2Meta) {
+        SemiMetaControlledSwap(true, controls, controlLen, qubit1, qubit2, false);
+        return;
+    }
+
     CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCSwap(controls, controlLen, qubit1, qubit2); },
         { qubit1, qubit2 }, controls, controlLen);
 }
@@ -802,12 +811,248 @@ void QPager::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
         { static_cast<bitLenInt>(start + length - 1U) });
 }
 
+void QPager::MetaControlledSwap(
+    bool anti, const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
+{
+    bitLenInt qpp = qubitsPerPage();
+    qubit1 -= qpp;
+    qubit2 -= qpp;
+    bitLenInt sqi = qpp - 1U;
+
+    std::vector<bitCapInt> sortedMasks(2U);
+    bitCapInt qubit1Mask = pow2(qubit1);
+    sortedMasks[0] = qubit1Mask;
+    bitCapInt qubit2Mask = pow2(qubit2);
+    sortedMasks[1] = qubit2Mask;
+
+    std::vector<bitLenInt> subcontrols;
+    bitCapInt controlMask = 0;
+    bool isSqiSubcontrol = false;
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        if (controls[i] < sqi) {
+            sortedMasks.push_back(pow2(controls[i] - qpp));
+            if (!anti) {
+                controlMask |= sortedMasks.back();
+            }
+            sortedMasks.back()--;
+        } else if (controls[i] == sqi) {
+            isSqiSubcontrol = true;
+        } else {
+            subcontrols.push_back(controls[i]);
+        }
+    }
+    std::sort(sortedMasks.begin(), sortedMasks.end());
+
+    bitCapInt maxLCV = qPages.size() >> sortedMasks.size();
+    std::vector<std::future<void>> futures(maxLCV);
+    bitCapInt i;
+    for (i = 0; i < maxLCV; i++) {
+        futures[i] = std::async(std::launch::async,
+            [this, i, &qubit1Mask, &qubit2Mask, &sortedMasks, &subcontrols, &isIPhaseFac, &sqi, &controlMask,
+                &isSqiSubcontrol, &anti]() {
+                bitCapInt j, k, jLo, jHi;
+                jHi = i;
+                j = 0;
+                for (k = 0; k < (sortedMasks.size()); k++) {
+                    jLo = jHi & sortedMasks[k];
+                    jHi = (jHi ^ jLo) << ONE_BCI;
+                    j |= jLo;
+                }
+                j |= jHi;
+
+                QEnginePtr engine1 = qPages[j + qubit1Mask];
+                QEnginePtr engine2 = qPages[j + qubit2Mask];
+
+                if (subcontrols.size()) {
+                    engine1->ShuffleBuffers(engine2);
+
+                    std::future<void> future1, future2;
+
+                    if (isIPhaseFac) {
+                        if (!isSqiSubcontrol || anti) {
+                            future1 = std::async(std::launch::async, [engine1, &sqi, &subcontrols]() {
+                                engine1->ApplyControlledSingleInvert(
+                                    &(subcontrols[0]), subcontrols.size(), sqi, I_CMPLX, I_CMPLX);
+                            });
+                        }
+                        if (!isSqiSubcontrol || !anti) {
+                            future2 = std::async(std::launch::async, [engine2, &sqi, &subcontrols]() {
+                                engine2->ApplyControlledSingleInvert(
+                                    &(subcontrols[0]), subcontrols.size(), sqi, I_CMPLX, I_CMPLX);
+                            });
+                        }
+                    } else {
+                        if (!isSqiSubcontrol || anti) {
+                            future1 = std::async(std::launch::async, [engine1, &sqi, &subcontrols]() {
+                                engine1->ApplyControlledSingleInvert(
+                                    &(subcontrols[0]), subcontrols.size(), sqi, ONE_CMPLX, ONE_CMPLX);
+                            });
+                        }
+                        if (!isSqiSubcontrol || !anti) {
+                            future2 = std::async(std::launch::async, [engine2, &sqi, &subcontrols]() {
+                                engine2->ApplyControlledSingleInvert(
+                                    &(subcontrols[0]), subcontrols.size(), sqi, ONE_CMPLX, ONE_CMPLX);
+                            });
+                        }
+                    }
+
+                    if (!isSqiSubcontrol || anti) {
+                        future1.get();
+                    }
+                    if (!isSqiSubcontrol || !anti) {
+                        future2.get();
+                    }
+
+                    engine1->ShuffleBuffers(engine2);
+                } else {
+                    std::swap(qPages[j + qubit1Mask], qPages[j + qubit2Mask]);
+
+                    if (isIPhaseFac) {
+                        std::future<void> future1, future2;
+
+                        future1 = std::async(
+                            std::launch::async, [engine1]() { engine1->ApplySinglePhase(I_CMPLX, I_CMPLX, 0); });
+                        future2 = std::async(
+                            std::launch::async, [engine2]() { engine2->ApplySinglePhase(I_CMPLX, I_CMPLX, 0); });
+
+                        future1.get();
+                        future2.get();
+                    }
+                }
+            });
+    }
+
+    for (i = 0; i < maxLCV; i++) {
+        futures[i].get();
+    }
+}
+
+void QPager::SemiMetaControlledSwap(
+    bool anti, const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
+{
+    if (qubit1 > qubit2) {
+        std::swap(qubit1, qubit2);
+    }
+
+    bitLenInt qpp = qubitsPerPage();
+    qubit1 -= qpp;
+    bitLenInt sqi = qpp - 1U;
+
+    std::vector<bitCapInt> sortedMasks(1U);
+    bitCapInt qubit2Mask = pow2(qubit2);
+    sortedMasks[0] = qubit2Mask;
+
+    std::vector<bitLenInt> subcontrols;
+    bitCapInt controlMask = 0;
+    bool isSqiSubcontrol = false;
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        if (controls[i] < sqi) {
+            sortedMasks.push_back(pow2(controls[i] - qpp));
+            if (!anti) {
+                controlMask |= sortedMasks.back();
+            }
+            sortedMasks.back()--;
+        } else if (controls[i] == sqi) {
+            isSqiSubcontrol = true;
+        } else {
+            subcontrols.push_back(controls[i]);
+        }
+    }
+    std::sort(sortedMasks.begin(), sortedMasks.end());
+
+    bitCapInt maxLCV = qPages.size() >> sortedMasks.size();
+    std::vector<std::future<void>> futures(maxLCV);
+    bitCapInt i;
+    for (i = 0; i < maxLCV; i++) {
+        futures[i] = std::async(std::launch::async,
+            [this, i, &qubit1, &qubit2Mask, &sortedMasks, &subcontrols, &isIPhaseFac, &sqi, &controlMask,
+                &isSqiSubcontrol, &anti]() {
+                bitCapInt j, k, jLo, jHi;
+                jHi = i;
+                j = 0;
+                for (k = 0; k < (sortedMasks.size()); k++) {
+                    jLo = jHi & sortedMasks[k];
+                    jHi = (jHi ^ jLo) << ONE_BCI;
+                    j |= jLo;
+                }
+                j |= jHi | controlMask;
+
+                QEnginePtr engine1 = qPages[j];
+                QEnginePtr engine2 = qPages[j + qubit2Mask];
+
+                engine1->ShuffleBuffers(engine2);
+
+                std::future<void> future1, future2;
+                if (isIPhaseFac) {
+                    if (!isSqiSubcontrol || anti) {
+                        future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi, &subcontrols]() {
+                            engine1->CSwap(&(subcontrols[0]), subcontrols.size(), qubit1, sqi);
+                            engine1->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+                        });
+                    }
+                    if (!isSqiSubcontrol || !anti) {
+                        future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi, &subcontrols]() {
+                            engine2->CSwap(&(subcontrols[0]), subcontrols.size(), qubit1, sqi);
+                            engine2->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+                        });
+                    }
+                } else {
+                    if (!isSqiSubcontrol || anti) {
+                        future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi, &subcontrols]() {
+                            engine1->CSwap(&(subcontrols[0]), subcontrols.size(), qubit1, sqi);
+                        });
+                    }
+                    if (!isSqiSubcontrol || !anti) {
+                        future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi, &subcontrols]() {
+                            engine2->CSwap(&(subcontrols[0]), subcontrols.size(), qubit1, sqi);
+                        });
+                    }
+                }
+
+                if (!isSqiSubcontrol || anti) {
+                    future1.get();
+                }
+                if (!isSqiSubcontrol || !anti) {
+                    future2.get();
+                }
+
+                engine1->ShuffleBuffers(engine2);
+            });
+    }
+
+    for (i = 0; i < maxLCV; i++) {
+        futures[i].get();
+    }
+}
+
 void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
+    bool isQubit1Meta = qubit1 >= qubitsPerPage();
+    bool isQubit2Meta = qubit2 >= qubitsPerPage();
+    if (isQubit1Meta && isQubit2Meta) {
+        MetaControlledSwap(false, NULL, 0, qubit1, qubit2, false);
+        return;
+    }
+    if (isQubit1Meta || isQubit2Meta) {
+        SemiMetaControlledSwap(false, NULL, 0, qubit1, qubit2, false);
+        return;
+    }
+
     CombineAndOp([&](QEnginePtr engine) { engine->Swap(qubit1, qubit2); }, { qubit1, qubit2 });
 }
 void QPager::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 {
+    bool isQubit1Meta = qubit1 >= qubitsPerPage();
+    bool isQubit2Meta = qubit2 >= qubitsPerPage();
+    if (isQubit1Meta && isQubit2Meta) {
+        MetaControlledSwap(false, NULL, 0, qubit1, qubit2, true);
+        return;
+    }
+    if (isQubit1Meta || isQubit2Meta) {
+        SemiMetaControlledSwap(false, NULL, 0, qubit1, qubit2, true);
+        return;
+    }
+
     CombineAndOp([&](QEnginePtr engine) { engine->ISwap(qubit1, qubit2); }, { qubit1, qubit2 });
 }
 void QPager::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)

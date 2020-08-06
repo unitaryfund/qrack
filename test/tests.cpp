@@ -457,6 +457,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")
     qftReg->CSwap(control, 1, 0, 4);
     qftReg->H(8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x110));
+
+    QInterfacePtr qftReg2 =
+        CreateQuantumInterface(testEngineType, testSubEngineType, 20U, 0, rng, ONE_CMPLX, enable_normalization, true,
+            false, device_id, !disable_hardware_rng, sparse, REAL1_DEFAULT_ARG, (std::vector<int>){}, 10);
+
+    control[0] = 9;
+    qftReg2->SetPermutation((1U << 9U) || (1U << 10U));
+    qftReg2->CSwap(control, 1, 10, 11);
+    REQUIRE_THAT(qftReg2, HasProbability(0, 12, (1U << 9U) || (1U << 11U)));
+
+    qftReg2->SetPermutation((1U << 9U) || (1U << 10U));
+    qftReg2->CSwap(control, 1, 10, 0);
+    REQUIRE_THAT(qftReg2, HasProbability(0, 12, (1U << 9U) || 1U));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticswap")
