@@ -752,6 +752,63 @@ void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->ZeroPhaseFlip(start, length); },
         { static_cast<bitLenInt>(start + length - 1U) });
+
+#if 0
+    bitLenInt qpp = qubitsPerPage();
+
+    bitCapInt i;
+
+    if (start >= qpp) {
+        // Entirely meta-
+        start -= qpp;
+        bitCapInt mask = pow2(start + length) - pow2(start);
+        std::vector<std::future<void>> futures;
+        for (i = 0; i < qPages.size(); i++) {
+            if ((i & mask) == 0U) {
+                QInterfacePtr engine = qPages[i];
+                futures.push_back(std::async(std::launch::async, [engine]() { engine->PhaseFlip(); }));
+            }
+        }
+
+        for (i = 0; i < futures.size(); i++) {
+            futures[i].get();
+        }
+
+        return;
+    }
+
+    if ((start + length) >= qpp) {
+        // Semi-meta-
+        bitLenInt metaLen = (start + length) - qpp;
+        bitLenInt remainderLen = length - metaLen;
+        bitCapInt mask = pow2(metaLen) - pow2(qpp);
+        std::vector<std::future<void>> futures;
+        for (i = 0; i < qPages.size(); i++) {
+            if ((i & mask) == 0U) {
+                QInterfacePtr engine = qPages[i];
+                futures.push_back(std::async(std::launch::async,
+                    [engine, &start, &remainderLen]() { engine->ZeroPhaseFlip(start, remainderLen); }));
+            }
+        }
+
+        for (i = 0; i < futures.size(); i++) {
+            futures[i].get();
+        }
+
+        return;
+    }
+
+    // Contained in sub-units
+    std::vector<std::future<void>> futures(qPages.size());
+    for (i = 0; i < qPages.size(); i++) {
+        QInterfacePtr engine = qPages[i];
+        futures[i] =
+            std::async(std::launch::async, [engine, &start, &length]() { engine->ZeroPhaseFlip(start, length); });
+    }
+    for (i = 0; i < qPages.size(); i++) {
+        futures[i].get();
+    }
+#endif
 }
 void QPager::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
@@ -939,7 +996,7 @@ void QPager::SemiMetaControlledSwap(
     bitLenInt sqi = qpp - 1U;
 
     std::vector<bitCapInt> sortedMasks(1U);
-    bitCapInt qubit2Mask = pow2(qubit2);
+    bitCapInt qubit2Mask = pow2(qubit2 - qpp);
     sortedMasks[0] = qubit2Mask;
 
     std::vector<bitLenInt> subcontrols;
