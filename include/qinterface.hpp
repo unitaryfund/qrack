@@ -48,6 +48,16 @@ inline bitCapInt pow2(const bitLenInt& p) { return ONE_BCI << p; }
 inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return ONE_BCI << p; }
 inline bitCapInt pow2Mask(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
 inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
+inline bitLenInt log2(bitCapInt n)
+{
+    bitLenInt pow = 0;
+    bitCapInt p = n >> ONE_BCI;
+    while (p != 0) {
+        p >>= ONE_BCI;
+        pow++;
+    }
+    return pow;
+}
 inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return (ONE_BCI << bit) & source; }
 inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source) { return (ONE_BCI << bit) & source; }
 inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
@@ -134,17 +144,6 @@ protected:
     {
         qubitCount = qb;
         maxQPower = pow2(qubitCount);
-    }
-
-    static inline bitLenInt log2(bitCapInt n)
-    {
-        bitLenInt pow = 0;
-        bitCapInt p = n >> 1U;
-        while (p != 0) {
-            p >>= 1U;
-            pow++;
-        }
-        return pow;
     }
 
     // Compilers have difficulty figuring out types and overloading if the "norm" handle is passed to std::transform. If
