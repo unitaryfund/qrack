@@ -3251,23 +3251,21 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 
-#if 0
     QInterfacePtr qftReg2 =
         CreateQuantumInterface(testEngineType, testSubEngineType, 20U, 0, rng, ONE_CMPLX, enable_normalization, true,
             false, device_id, !disable_hardware_rng, sparse, REAL1_DEFAULT_ARG, (std::vector<int>){}, 10);
 
-    qftReg2->SetPermutation((1U << 9U) || (1U << 10U));
+    qftReg2->SetPermutation(3U << 9U);
     qftReg2->H(10);
     qftReg2->ZeroPhaseFlip(10, 1);
     qftReg2->H(10);
     REQUIRE_THAT(qftReg2, HasProbability(0, 12, (1U << 9U)));
 
-    qftReg2->SetPermutation((1U << 9U) || (1U << 10U));
+    qftReg2->SetPermutation(3U << 9U);
     qftReg2->H(9, 2);
     qftReg2->ZeroPhaseFlip(9, 2);
     qftReg2->H(9, 2);
     REQUIRE_THAT(qftReg2, HasProbability(0, 12, 0));
-#endif
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
