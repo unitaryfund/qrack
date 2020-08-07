@@ -79,14 +79,12 @@ QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapInt perm, int deviceId)
 
 void QPager::CombineEngines(bitLenInt bit)
 {
-    bit++;
-
-    if ((qPages.size() == 1U) || (bit < qubitsPerPage())) {
-        return;
-    }
-
     if (bit > qubitCount) {
         bit = qubitCount;
+    }
+
+    if ((qPages.size() == 1U) || (bit <= qubitsPerPage())) {
+        return;
     }
 
     bitCapInt groupCount = pow2(qubitCount - bit);
@@ -107,20 +105,25 @@ void QPager::CombineEngines(bitLenInt bit)
     qPages = nQPages;
 }
 
-void QPager::SeparateEngines()
+void QPager::SeparateEngines(bitLenInt thresholdBits)
 {
-    if (qPages.size() <= basePageCount) {
+    if (thresholdBits < baseQubitsPerPage) {
+        thresholdBits = baseQubitsPerPage;
+    }
+
+    if (thresholdBits >= qubitsPerPage()) {
         return;
     }
 
     bitCapInt i, j;
-    bitCapInt pagesPer = basePageCount / qPages.size();
+    bitCapInt pagesPer = pow2(qubitCount - thresholdBits) / qPages.size();
+    bitCapInt pageMaxQPower = pow2(thresholdBits);
 
     std::vector<QEnginePtr> nQPages;
     for (i = 0; i < qPages.size(); i++) {
         for (j = 0; j < pagesPer; j++) {
-            nQPages.push_back(MakeEngine(baseQubitsPerPage, 0, deviceIDs[(j + (i * pagesPer)) % deviceIDs.size()]));
-            nQPages.back()->SetAmplitudePage(qPages[i], j * basePageMaxQPower, 0, basePageMaxQPower);
+            nQPages.push_back(MakeEngine(thresholdBits, 0, deviceIDs[(j + (i * pagesPer)) % deviceIDs.size()]));
+            nQPages.back()->SetAmplitudePage(qPages[i], j * pageMaxQPower, 0, pageMaxQPower);
             nQPages.back()->UpdateRunningNorm();
         }
     }
@@ -130,6 +133,9 @@ void QPager::SeparateEngines()
 
 template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn)
 {
+    bitLenInt baseQubits = (target < baseQubitsPerPage) ? baseQubitsPerPage : (target + 1U);
+    SeparateEngines(baseQubits);
+
     if (target >= qubitsPerPage()) {
         CombineAndOp([fn, target](QEnginePtr engine) { fn(engine, target); }, { target });
         return;
@@ -309,7 +315,11 @@ template <typename F> void QPager::CombineAndOp(F fn, std::vector<bitLenInt> bit
     }
 
     if (highestBit >= qubitsPerPage()) {
-        CombineEngines(highestBit);
+        CombineEngines(highestBit + 1U);
+    } else {
+        // Lazy separate: avoid cycling through combine/separate in successive CombineAndOp() calls
+        bitLenInt baseQubits = (highestBit < baseQubitsPerPage) ? baseQubitsPerPage : (highestBit + 1U);
+        SeparateEngines(baseQubits);
     }
 
     std::vector<std::future<void>> futures(qPages.size());
@@ -319,10 +329,6 @@ template <typename F> void QPager::CombineAndOp(F fn, std::vector<bitLenInt> bit
     }
     for (i = 0; i < qPages.size(); i++) {
         futures[i].get();
-    }
-
-    if (highestBit >= baseQubitsPerPage) {
-        SeparateEngines();
     }
 }
 
@@ -432,6 +438,9 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
 
         qPages[i]->ZeroAmplitudes();
     }
+
+    // SetPermutation is a total break from past calculation, so reset.
+    SeparateEngines();
 }
 
 void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
@@ -441,7 +450,12 @@ void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
 
 void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom, bitLenInt target)
 {
-    if (target < qubitsPerPage()) {
+    bitLenInt baseQubits = (target < baseQubitsPerPage) ? baseQubitsPerPage : (target + 1U);
+    SeparateEngines(baseQubits);
+
+    bitLenInt qpp = qubitsPerPage();
+
+    if (target < qpp) {
         if (isInvert) {
             SingleBitGate(target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) {
                 engine->ApplySingleInvert(top, bottom, lTarget);
@@ -454,7 +468,6 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
         return;
     }
 
-    bitLenInt qpp = qubitsPerPage();
     target -= qpp;
     bitCapInt targetMask = pow2(target);
     bitCapInt qMask = targetMask - 1U;
@@ -510,6 +523,9 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
         return;
     }
 
+    bitLenInt baseQubits = (target < baseQubitsPerPage) ? baseQubitsPerPage : (target + 1U);
+    SeparateEngines(baseQubits);
+
     bitLenInt qpp = qubitsPerPage();
 
     std::vector<bitLenInt> metaControls;
@@ -558,6 +574,11 @@ void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLe
 void QPager::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
+#if 0
+    bitLenInt highestBit = qubit1 > qubit2 ? qubit1 : qubit2;
+    bitLenInt baseQubits = (highestBit < baseQubitsPerPage) ? baseQubitsPerPage : (highestBit + 1U);
+    SeparateEngines(baseQubits);
+
     bool isQubit1Meta = qubit1 >= qubitsPerPage();
     bool isQubit2Meta = qubit2 >= qubitsPerPage();
     if (isQubit1Meta && isQubit2Meta) {
@@ -568,13 +589,18 @@ void QPager::CSwap(
         SemiMetaControlledSwap(false, controls, controlLen, qubit1, qubit2, false);
         return;
     }
-
+#endif
     CombineAndOpControlled([&](QEnginePtr engine) { engine->CSwap(controls, controlLen, qubit1, qubit2); },
         { qubit1, qubit2 }, controls, controlLen);
 }
 void QPager::AntiCSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
+#if 0
+    bitLenInt highestBit = qubit1 > qubit2 ? qubit1 : qubit2;
+    bitLenInt baseQubits = (highestBit < baseQubitsPerPage) ? baseQubitsPerPage : (highestBit + 1U);
+    SeparateEngines(baseQubits);
+
     bool isQubit1Meta = qubit1 >= qubitsPerPage();
     bool isQubit2Meta = qubit2 >= qubitsPerPage();
     if (isQubit1Meta && isQubit2Meta) {
@@ -585,7 +611,7 @@ void QPager::AntiCSwap(
         SemiMetaControlledSwap(true, controls, controlLen, qubit1, qubit2, false);
         return;
     }
-
+#endif
     CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCSwap(controls, controlLen, qubit1, qubit2); },
         { qubit1, qubit2 }, controls, controlLen);
 }
@@ -618,6 +644,7 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
     CombineEngines();
     bool toRet = qPages[0]->ForceM(qubit, result, doForce, doApply);
+    // Measurement tends to come at the end of algorithms, before reset.
     SeparateEngines();
     return toRet;
 }
@@ -750,6 +777,9 @@ void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitL
 
 void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
+    bitLenInt baseQubits = ((start + length) < baseQubitsPerPage) ? baseQubitsPerPage : (start + length);
+    SeparateEngines(baseQubits);
+
     bitLenInt qpp = qubitsPerPage();
 
     bitCapInt i;
@@ -1079,6 +1109,11 @@ void QPager::SemiMetaControlledSwap(
 
 void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
+#if 0
+    bitLenInt highestBit = qubit1 > qubit2 ? qubit1 : qubit2;
+    bitLenInt baseQubits = (highestBit < baseQubitsPerPage) ? baseQubitsPerPage : (highestBit + 1U);
+    SeparateEngines(baseQubits);
+
     bool isQubit1Meta = qubit1 >= qubitsPerPage();
     bool isQubit2Meta = qubit2 >= qubitsPerPage();
     if (isQubit1Meta && isQubit2Meta) {
@@ -1089,11 +1124,16 @@ void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
         SemiMetaControlledSwap(false, NULL, 0, qubit1, qubit2, false);
         return;
     }
-
+#endif
     CombineAndOp([&](QEnginePtr engine) { engine->Swap(qubit1, qubit2); }, { qubit1, qubit2 });
 }
 void QPager::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 {
+#if 0
+    bitLenInt highestBit = qubit1 > qubit2 ? qubit1 : qubit2;
+    bitLenInt baseQubits = (highestBit < baseQubitsPerPage) ? baseQubitsPerPage : (highestBit + 1U);
+    SeparateEngines(baseQubits);
+
     bool isQubit1Meta = qubit1 >= qubitsPerPage();
     bool isQubit2Meta = qubit2 >= qubitsPerPage();
     if (isQubit1Meta && isQubit2Meta) {
@@ -1104,7 +1144,7 @@ void QPager::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         SemiMetaControlledSwap(false, NULL, 0, qubit1, qubit2, true);
         return;
     }
-
+#endif
     CombineAndOp([&](QEnginePtr engine) { engine->ISwap(qubit1, qubit2); }, { qubit1, qubit2 });
 }
 void QPager::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -1130,7 +1170,7 @@ real1 QPager::Prob(bitLenInt qubitIndex)
     bitCapInt i;
 
     if (qubitIndex >= qubitsPerPage()) {
-        CombineEngines(qubitIndex);
+        CombineEngines(qubitIndex + 1U);
     }
 
     std::vector<std::future<real1>> futures(qPages.size());
@@ -1142,9 +1182,8 @@ real1 QPager::Prob(bitLenInt qubitIndex)
         oneChance += futures[i].get();
     }
 
-    if (qubitIndex >= baseQubitsPerPage) {
-        SeparateEngines();
-    }
+    // Prob() tends to be called during M(), at end of algorithms.
+    SeparateEngines();
 
     return oneChance;
 }
@@ -1187,7 +1226,7 @@ QInterfacePtr QPager::Clone()
         CreateQuantumInterface(QINTERFACE_QPAGER, engine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
             randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse));
 
-    clone->CombineEngines(qpp - 1U);
+    clone->CombineEngines(qpp);
 
     bitCapInt pagePower = pageMaxQPower();
     for (bitCapInt i = 0; i < qPages.size(); i++) {

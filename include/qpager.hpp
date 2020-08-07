@@ -54,9 +54,10 @@ protected:
     bitLenInt pagedQubitCount() { return log2(qPages.size()); }
     bitLenInt qubitsPerPage() { return log2(pageMaxQPower()); }
 
-    void CombineEngines(bitLenInt bit);
-    void CombineEngines() { CombineEngines(qubitCount - 1U); }
-    void SeparateEngines();
+    void CombineEngines(bitLenInt thresholdBits);
+    void CombineEngines() { CombineEngines(qubitCount); }
+    void SeparateEngines(bitLenInt thresholdBits);
+    void SeparateEngines() { SeparateEngines(baseQubitsPerPage); }
 
     template <typename Qubit1Fn> void SingleBitGate(bitLenInt target, Qubit1Fn fn);
     template <typename Qubit1Fn>
