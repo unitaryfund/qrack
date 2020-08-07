@@ -64,10 +64,7 @@ protected:
     void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, const complex* mtrx);
     template <typename Qubit1Fn>
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
-    void MetaControlledSwap(bool anti, const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1,
-        bitLenInt qubit2, bool isIPhaseFac);
-    void SemiMetaControlledSwap(bool anti, const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1,
-        bitLenInt qubit2, bool isIPhaseFac);
+    void MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac);
 
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
     template <typename F>
