@@ -567,6 +567,9 @@ void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLe
 void QPager::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
 
     bitLenInt highestBit = qubit1 > qubit2 ? qubit1 : qubit2;
     bitLenInt baseQubits = (highestBit < baseQubitsPerPage) ? baseQubitsPerPage : (highestBit + 1U);
@@ -589,6 +592,9 @@ void QPager::CSwap(
 void QPager::AntiCSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
 
     bitLenInt highestBit = qubit1 > qubit2 ? qubit1 : qubit2;
     bitLenInt baseQubits = (highestBit < baseQubitsPerPage) ? baseQubitsPerPage : (highestBit + 1U);
@@ -904,7 +910,7 @@ void QPager::MetaControlledSwap(
     bitCapInt controlMask = 0;
     bool isSqiSubcontrol = false;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        if (controls[i] < sqi) {
+        if (controls[i] > sqi) {
             sortedMasks.push_back(pow2(controls[i] - qpp));
             if (!anti) {
                 controlMask |= sortedMasks.back();
@@ -1018,7 +1024,7 @@ void QPager::SemiMetaControlledSwap(
     bitCapInt controlMask = 0;
     bool isSqiSubcontrol = false;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        if (controls[i] < sqi) {
+        if (controls[i] > sqi) {
             sortedMasks.push_back(pow2(controls[i] - qpp));
             if (!anti) {
                 controlMask |= sortedMasks.back();
@@ -1102,6 +1108,9 @@ void QPager::SemiMetaControlledSwap(
 
 void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
 
     bitLenInt highestBit = qubit1 > qubit2 ? qubit1 : qubit2;
     bitLenInt baseQubits = (highestBit < baseQubitsPerPage) ? baseQubitsPerPage : (highestBit + 1U);
@@ -1122,6 +1131,9 @@ void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
 }
 void QPager::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubit1 == qubit2) {
+        return;
+    }
 
     bitLenInt highestBit = qubit1 > qubit2 ? qubit1 : qubit2;
     bitLenInt baseQubits = (highestBit < baseQubitsPerPage) ? baseQubitsPerPage : (highestBit + 1U);
