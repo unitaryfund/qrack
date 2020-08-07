@@ -33,9 +33,10 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
 #if ENABLE_OPENCL
     if ((thresholdQubitsPerPage == 0) && (eng == QINTERFACE_OPENCL)) {
-        // Single bit gates act pairwise on amplitudes, so add 1 qubit to the log2 of the preferred concurrency.
+        // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
+        // concurrency.
         thresholdQubitsPerPage =
-            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+            2U * log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency());
     }
 #endif
 
@@ -205,7 +206,7 @@ void QPager::MetaControlled(
     bitCapInt i;
     for (i = 0; i < maxLCV; i++) {
         futures[i] = std::async(std::launch::async,
-            [this, i, fn, sqi, &controlMask, &targetMask, &sortedMasks, &isSpecial, &isInvert, &top, &bottom]() {
+            [this, i, fn, &sqi, &controlMask, &targetMask, &sortedMasks, &isSpecial, &isInvert, &top, &bottom]() {
                 bitCapInt j, k, jLo, jHi;
                 jHi = i;
                 j = 0;
@@ -224,16 +225,7 @@ void QPager::MetaControlled(
                 QEnginePtr engine2 = qPages[j + targetMask];
 
                 std::future<void> future1, future2;
-                if (!isSpecial) {
-                    engine1->ShuffleBuffers(engine2);
-
-                    future1 = std::async(std::launch::async, [engine1, fn, sqi]() { fn(engine1, sqi); });
-                    future2 = std::async(std::launch::async, [engine2, fn, sqi]() { fn(engine2, sqi); });
-                    future1.get();
-                    future2.get();
-
-                    engine1->ShuffleBuffers(engine2);
-                } else {
+                if (isSpecial) {
                     if (top != ONE_CMPLX) {
                         future1 = std::async(
                             std::launch::async, [engine1, &top]() { engine1->ApplySinglePhase(top, top, 0); });
@@ -249,6 +241,15 @@ void QPager::MetaControlled(
                     if (bottom != ONE_CMPLX) {
                         future2.get();
                     }
+                } else {
+                    engine1->ShuffleBuffers(engine2);
+
+                    future1 = std::async(std::launch::async, [engine1, fn, &sqi]() { fn(engine1, sqi); });
+                    future2 = std::async(std::launch::async, [engine2, fn, &sqi]() { fn(engine2, sqi); });
+                    future1.get();
+                    future2.get();
+
+                    engine1->ShuffleBuffers(engine2);
                 }
             });
     }
@@ -287,7 +288,7 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
             j = 0;
             for (k = 0; k < (sortedMasks.size()); k++) {
                 jLo = jHi & sortedMasks[k];
-                jHi = (jHi ^ jLo) << 1U;
+                jHi = (jHi ^ jLo) << ONE_BCI;
                 j |= jLo;
             }
             j |= jHi | controlMask;
