@@ -42,7 +42,7 @@ QInterfacePtr CreateQuantumInterface(
         return std::make_shared<QUnit>(subengine1, subengine2, args...);
 #if ENABLE_OPENCL
     case QINTERFACE_QUNIT_MULTI:
-        return std::make_shared<QUnit>(subengine1, args...);
+        return std::make_shared<QUnitMulti>(subengine1, args...);
 #endif
     default:
         return NULL;
@@ -65,7 +65,7 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
         return std::make_shared<QUnit>(subengine, args...);
 #if ENABLE_OPENCL
     case QINTERFACE_QUNIT_MULTI:
-        return std::make_shared<QUnit>(subengine, args...);
+        return std::make_shared<QUnitMulti>(subengine, args...);
 #endif
     default:
         return NULL;

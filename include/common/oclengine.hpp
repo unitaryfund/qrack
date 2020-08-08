@@ -155,6 +155,7 @@ public:
     cl::Device device;
     cl::Context context;
     int context_id;
+    int device_id;
     cl::CommandQueue queue;
     EventVecPtr wait_events;
 
@@ -164,11 +165,12 @@ protected:
     std::map<OCLAPI, std::unique_ptr<std::mutex>> mutexes;
 
 public:
-    OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int cntxt_id)
+    OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int cntxt_id, int dev_id)
         : platform(p)
         , device(d)
         , context(c)
         , context_id(cntxt_id)
+        , device_id(dev_id)
     {
         cl_int error;
         queue = cl::CommandQueue(context, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &error);
@@ -237,7 +239,7 @@ public:
     /// Get the count of devices in the current list.
     int GetDeviceCount() { return all_device_contexts.size(); }
     /// Get default device ID.
-    int GetDefaultDeviceID() { return default_device_context->context_id; }
+    int GetDefaultDeviceID() { return default_device_context->device_id; }
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
     /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded

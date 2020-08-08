@@ -208,7 +208,15 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && opencl_single) {
             testSubSubEngineType = QINTERFACE_OPENCL;
             session.config().stream() << "############ QUnit -> QPager -> OpenCL ############" << std::endl;
-            testSubEngineType = QINTERFACE_OPENCL;
+            testSubSubEngineType = QINTERFACE_OPENCL;
+            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && opencl_multi) {
+            session.config().stream() << "############ QUnitMulti -> QPager (OpenCL) ############" << std::endl;
+            testEngineType = QINTERFACE_QUNIT_MULTI;
+            testSubSubEngineType = QINTERFACE_OPENCL;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }

@@ -109,7 +109,6 @@ protected:
     BufferPtr stateBuffer;
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
-    BufferPtr lockSyncStateBuffer;
     std::vector<PoolItemPtr> poolItems;
     real1* nrmArray;
     size_t nrmGroupCount;
@@ -319,6 +318,29 @@ protected:
     PoolItemPtr GetFreePoolItem();
 
     real1 ParSum(real1* toSum, bitCapIntOcl maxI);
+
+    /**
+     * Locks synchronization between the state vector buffer and general RAM, so the state vector can be directly read
+     * and/or written to.
+     *
+     * OpenCL buffers, even when allocated on "host" general RAM, are not safe to read from or write to unless "mapped."
+     * When mapped, a buffer cannot be used by OpenCL kernels. If the state vector needs to be directly manipulated, it
+     * needs to be temporarily mapped, and this can be accomplished with LockSync(). When direct reading from or writing
+     * to the state vector is done, before performing other OpenCL operations on it, it must be unmapped with
+     * UnlockSync().
+     */
+    void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
+    /**
+     * Unlocks synchronization between the state vector buffer and general RAM, so the state vector can be operated on
+     * with OpenCL kernels and operations.
+     *
+     * OpenCL buffers, even when allocated on "host" general RAM, are not safe to read from or write to unless "mapped."
+     * When mapped, a buffer cannot be used by OpenCL kernels. If the state vector needs to be directly manipulated, it
+     * needs to be temporarily mapped, and this can be accomplished with LockSync(). When direct reading from or writing
+     * to the state vector is done, before performing other OpenCL operations on it, it must be unmapped with
+     * UnlockSync().
+     */
+    void UnlockSync();
 
     /**
      * Finishes the asynchronous wait event list or queue of OpenCL events.

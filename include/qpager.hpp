@@ -231,5 +231,22 @@ public:
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1) { return false; }
 
     virtual QInterfacePtr Clone();
+
+    virtual void SetDevice(const int& dID, const bool& forceReInit = false)
+    {
+        deviceIDs.clear();
+        deviceIDs.push_back(dID);
+
+        for (bitCapInt i = 0; i < qPages.size(); i++) {
+            qPages[i]->SetDevice(dID, forceReInit);
+        }
+    }
+
+    virtual int GetDeviceID() { return qPages[0]->GetDeviceID(); }
+
+    /**
+     *  Get maximum number of amplitudes that can be allocated on current device.
+     */
+    bitCapIntOcl GetMaxSize() { return qPages[0]->GetMaxSize(); };
 };
 } // namespace Qrack

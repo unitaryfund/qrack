@@ -17,16 +17,15 @@
 
 namespace Qrack {
 
-QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
-    : QUnit(QINTERFACE_OPENCL, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1,
+QUnitMulti::QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
+    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG,
+    bool useSparseStateVec, real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
+    : QUnit(eng, QINTERFACE_OPENCL, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1,
           useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold)
 {
-    // Notice that this constructor does not take an engine type parameter, and it always passes QINTERFACE_OPENCL to
-    // the QUnit constructor. For QUnitMulti, the "shard" engines are therefore guaranteed to always be QEngineOCL
-    // types, and it's safe to assume that they can be cast from QInterfacePtr types to QEngineOCLPtr types in this
-    // class.
+    // Notice that this constructor always passes QINTERFACE_OPENCL to the QUnit constructor. For QUnitMulti, the
+    // "shard" engines are therefore guaranteed to always be QEngineOCL or QPager types, and it's safe to assume that
+    // they can be cast from QInterfacePtr types to QEngineOCLPtr types in this class.
 
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance()->GetDeviceContextPtrVector();
 
@@ -64,8 +63,7 @@ QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 void QUnitMulti::RedistributeSingleQubits()
 {
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        std::dynamic_pointer_cast<QEngineOCL>(shards[i].unit)
-            ->SetDevice(deviceList[(int)((real1)(i * deviceList.size()) / qubitCount)].id);
+        shards[i].unit->SetDevice(deviceList[(int)((real1)(i * deviceList.size()) / qubitCount)].id);
     }
 }
 
@@ -73,18 +71,16 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
 {
     // Get shard sizes and devices
     std::vector<QInterfacePtr> qips;
-    QEngineOCLPtr qOCL;
     std::vector<QEngineInfo> qinfos;
     int deviceIndex;
 
     for (auto&& shard : shards) {
         if (std::find(qips.begin(), qips.end(), shard.unit) == qips.end()) {
             qips.push_back(shard.unit);
-            qOCL = std::dynamic_pointer_cast<QEngineOCL>(shard.unit);
             deviceIndex = std::distance(deviceList.begin(),
-                std::find_if(
-                    deviceList.begin(), deviceList.end(), [&](DeviceInfo di) { return di.id == qOCL->GetDeviceID(); }));
-            qinfos.push_back(QEngineInfo(qOCL, deviceIndex));
+                std::find_if(deviceList.begin(), deviceList.end(),
+                    [&](DeviceInfo di) { return di.id == shard.unit->GetDeviceID(); }));
+            qinfos.push_back(QEngineInfo(shard.unit, deviceIndex));
         }
     }
 
@@ -159,7 +155,7 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
-    QEngineOCLPtr unit1 = std::dynamic_pointer_cast<QEngineOCL>(shards[**first].unit);
+    QInterfacePtr unit1 = shards[**first].unit;
 
     // If already fully entangled, just return unit1.
     bool isAlreadyEntangled = true;
@@ -171,30 +167,38 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
         }
     }
 
-    // This does nothing if the first unit is the default device:
-    if (!isAlreadyEntangled && deviceList[0].id != unit1->GetDeviceID()) {
-        // Check if size exceeds single device capacity:
-        bitLenInt qubitCount = 0;
-        std::map<QInterfacePtr, bool> found;
+    QInterfacePtr toRet;
 
+    if (isAlreadyEntangled) {
         for (auto bit = first; bit < last; bit++) {
-            QInterfacePtr unit = shards[**bit].unit;
-            if (found.find(unit) == found.end()) {
-                found[unit] = true;
-                qubitCount += unit->GetQubitCount();
+            EndEmulation(shards[**bit]);
+        }
+        toRet = unit1;
+    } else {
+        // This does nothing if the first unit is the default device:
+        if (deviceList[0].id != unit1->GetDeviceID()) {
+            // Check if size exceeds single device capacity:
+            bitLenInt qubitCount = 0;
+            std::map<QInterfacePtr, bool> found;
+
+            for (auto bit = first; bit < last; bit++) {
+                QInterfacePtr unit = shards[**bit].unit;
+                if (found.find(unit) == found.end()) {
+                    found[unit] = true;
+                    qubitCount += unit->GetQubitCount();
+                }
+            }
+
+            // If device capacity is exceeded, put on default device:
+            if (pow2(qubitCount) > unit1->GetMaxSize()) {
+                unit1->SetDevice(deviceList[0].id);
             }
         }
 
-        // If device capacity is exceeded, put on default device:
-        if (pow2(qubitCount) > std::dynamic_pointer_cast<QEngineOCL>(unit1)->GetMaxSize()) {
-            unit1->SetDevice(deviceList[0].id);
-        }
-    }
-
-    QInterfacePtr toRet = QUnit::EntangleInCurrentBasis(first, last);
-    if (!isAlreadyEntangled) {
+        toRet = QUnit::EntangleInCurrentBasis(first, last);
         RedistributeQEngines();
     }
+
     return toRet;
 }
 
@@ -227,7 +231,7 @@ QInterfacePtr QUnitMulti::Clone()
     EndAllEmulation();
 
     QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(
-        qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
+        engine, qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
 
     return CloneBody(copyPtr);
 }

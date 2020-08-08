@@ -298,7 +298,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
             all_contexts.push_back(cl::Context(all_platforms_devices[plat_id]));
         }
         std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
-            devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], plat_id);
+            devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], i, plat_id);
 
         std::string fileName = binary_file_prefix + std::to_string(i) + binary_file_ext;
         std::string clBinName = home + fileName;

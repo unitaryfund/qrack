@@ -2020,6 +2020,21 @@ public:
      */
     virtual QInterfacePtr Clone() = 0;
 
+    /**
+     *  Set the device index, if more than one device is available.
+     */
+    virtual void SetDevice(const int& dID, const bool& forceReInit = false) {}
+
+    /**
+     *  Get the device index. ("-1" is default).
+     */
+    virtual int GetDeviceID() { return -1; }
+
+    /**
+     *  Get maximum number of amplitudes that can be allocated on current device.
+     */
+    bitCapIntOcl GetMaxSize() { return pow2(sizeof(bitCapInt) * 8); };
+
     /** @} */
 };
 } // namespace Qrack
