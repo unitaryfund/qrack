@@ -443,12 +443,8 @@ void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
 
 void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom, bitLenInt target)
 {
-    bitLenInt baseQubits = (target < baseQubitsPerPage) ? baseQubitsPerPage : (target + 1U);
-    SeparateEngines(baseQubits);
-
-    bitLenInt qpp = qubitsPerPage();
-
-    if (target < qpp) {
+    if (target < qubitsPerPage()) {
+        SeparateEngines(target + 1U);
         if (isInvert) {
             SingleBitGate(target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) {
                 engine->ApplySingleInvert(top, bottom, lTarget);
@@ -460,6 +456,9 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
         }
         return;
     }
+
+    SeparateEngines();
+    bitLenInt qpp = qubitsPerPage();
 
     target -= qpp;
     bitCapInt targetMask = pow2(target);
