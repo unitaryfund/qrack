@@ -166,6 +166,43 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     queue.finish();
 }
 
+void QEngineOCL::LockSync(cl_int flags)
+{
+    lockSyncFlags = flags;
+    clFinish();
+
+    if (stateVec) {
+        unlockHostMem = true;
+        queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPowerOcl, NULL);
+    } else {
+        unlockHostMem = false;
+        stateVec = AllocStateVec(maxQPowerOcl, true);
+        if (lockSyncFlags & CL_MAP_READ) {
+            queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
+        }
+    }
+}
+
+void QEngineOCL::UnlockSync()
+{
+    clFinish();
+
+    if (unlockHostMem) {
+        cl::Event unmapEvent;
+        queue.enqueueUnmapMemObject(*stateBuffer, stateVec, NULL, &unmapEvent);
+        unmapEvent.wait();
+        wait_refs.clear();
+    } else {
+        if (lockSyncFlags & CL_MAP_WRITE) {
+            queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
+        }
+        FreeStateVec();
+        stateVec = NULL;
+    }
+
+    lockSyncFlags = 0;
+}
+
 void QEngineOCL::clFinish(bool doHard)
 {
     if (device_context == NULL) {
@@ -366,23 +403,30 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 {
     bool didInit = (nrmArray != NULL);
 
-    complex* nStateVec = NULL;
+    clFinish();
+
+    int oldContextId = device_context ? device_context->context_id : 0;
+    device_context = OCLEngine::Instance()->GetDeviceContextPtr(dID);
 
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
-        if ((!forceReInit) && (dID == deviceID)) {
+        if ((!forceReInit) && (oldContextId == device_context->context_id)) {
+            deviceID = dID;
+            context = device_context->context;
+            queue = device_context->queue;
+
             return;
         }
 
-        // We're about to switch to a new device, so finish the queue, first.
-        clFinish();
+        // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
+        LockSync();
+
+        // Pool item buffers are in the old context, so we free them.
+        poolItems.clear();
     }
 
-    cl::Context oldContext = context;
-    device_context = OCLEngine::Instance()->GetDeviceContextPtr(dID);
-    deviceID = device_context->context_id;
+    deviceID = dID;
     context = device_context->context;
-    cl::CommandQueue oldQueue = queue;
     queue = device_context->queue;
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLY2X2_NORM_SINGLE);
@@ -421,13 +465,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         usingHostRam = true;
     } else {
         usingHostRam = false;
-        if (didInit && stateVec && !nStateVec) {
-            BufferPtr nStateBuffer = MakeStateVecBuffer(NULL);
-            oldQueue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl);
-            oldQueue.finish();
-            ResetStateVec(NULL);
-            ResetStateBuffer(nStateBuffer);
-        }
     }
 
     size_t nrmVecAlignSize = ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
@@ -452,14 +489,15 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     // create buffers on device (allocate space on GPU)
     if (didInit) {
-        // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
-        // that's accessible in a new device, if the old buffer is not.
-        if (!usingHostRam && nStateVec) {
-            // We did not have host allocation, so we copied from device-local memory to host memory, above.
-            // Now, we copy to the new device's memory.
-            stateBuffer = MakeStateVecBuffer(NULL);
-            queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, nStateVec);
-            FreeAligned(nStateVec);
+        ResetStateBuffer(MakeStateVecBuffer(usingHostRam ? stateVec : NULL));
+
+        // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer.
+        clFinish();
+        queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
+        lockSyncFlags = 0;
+
+        // Make sure that "usingHostRam" is respected:
+        if (!usingHostRam) {
             ResetStateVec(NULL);
         }
     } else {
@@ -966,7 +1004,8 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
         toCopy->NormalizeState();
     }
 
-    toCopy->Finish();
+    // int toCopyDevID = toCopy->GetDeviceID();
+    toCopy->SetDevice(deviceID);
 
     PoolItemPtr poolItem = GetFreePoolItem();
     EventVecPtr waitVec = ResetWaitEvents();
@@ -989,10 +1028,14 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     complex* nStateVec = AllocStateVec(maxQPowerOcl, forceAlloc);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
+    toCopy->Finish();
+
     WaitCall(apiCall, ngc, ngs, { stateBuffer, toCopy->stateBuffer, poolItem->ulongBuffer, nStateBuffer });
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
+
+    // toCopy->SetDevice(toCopyDevID);
 }
 
 bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
@@ -1047,12 +1090,22 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     if (doNormalize) {
         NormalizeState();
     }
+    if (destination && destination->doNormalize) {
+        destination->NormalizeState();
+    }
+
+    // int destinationDevID = 0;
+    if (destination) {
+        // destinationDevID = destination->GetDeviceID();
+        destination->SetDevice(deviceID);
+    }
 
     if (length == qubitCount) {
         if (destination != NULL) {
             destination->ResetStateVec(stateVec);
             destination->stateBuffer = stateBuffer;
             stateVec = NULL;
+            // destination->SetDevice(destinationDevID);
         }
         // This will be cleared by the destructor:
         ResetStateVec(AllocStateVec(2));
@@ -1126,6 +1179,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             FreeAligned(destination->stateVec);
             destination->stateVec = NULL;
         }
+
+        // destination->SetDevice(destinationDevID);
     }
 
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
