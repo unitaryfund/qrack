@@ -134,8 +134,7 @@ void QPager::SeparateEngines(bitLenInt thresholdBits)
 
 template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn)
 {
-    bitLenInt baseQubits = (target < baseQubitsPerPage) ? baseQubitsPerPage : (target + 1U);
-    SeparateEngines(baseQubits);
+    SeparateEngines(target + 1U);
 
     if (target >= qubitsPerPage()) {
         CombineAndOp([fn, target](QEnginePtr engine) { fn(engine, target); }, { target });
@@ -319,8 +318,7 @@ template <typename F> void QPager::CombineAndOp(F fn, std::vector<bitLenInt> bit
         CombineEngines(highestBit + 1U);
     } else {
         // Lazy separate: avoid cycling through combine/separate in successive CombineAndOp() calls
-        bitLenInt baseQubits = (highestBit < baseQubitsPerPage) ? baseQubitsPerPage : (highestBit + 1U);
-        SeparateEngines(baseQubits);
+        SeparateEngines(highestBit + 1U);
     }
 
     std::vector<std::future<void>> futures(qPages.size());
@@ -515,8 +513,7 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
         return;
     }
 
-    bitLenInt baseQubits = (target < baseQubitsPerPage) ? baseQubitsPerPage : (target + 1U);
-    SeparateEngines(baseQubits);
+    SeparateEngines(target + 1U);
 
     bitLenInt qpp = qubitsPerPage();
 
@@ -791,8 +788,7 @@ void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitL
 
 void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    bitLenInt baseQubits = ((start + length) < baseQubitsPerPage) ? baseQubitsPerPage : (start + length);
-    SeparateEngines(baseQubits);
+    SeparateEngines(start + length);
 
     bitLenInt qpp = qubitsPerPage();
 
