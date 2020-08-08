@@ -163,8 +163,8 @@ void QPager::MetaControlled(
     bitLenInt sqi = qpp - 1U;
 
     std::vector<bitCapInt> sortedMasks(1U + controls.size());
-    bitCapInt targetMask = pow2(target);
-    sortedMasks[controls.size()] = targetMask - ONE_BCI;
+    bitCapInt targetPow = pow2(target);
+    sortedMasks[controls.size()] = targetPow - ONE_BCI;
 
     bitCapInt controlMask = 0;
     for (bitLenInt i = 0; i < controls.size(); i++) {
@@ -205,7 +205,7 @@ void QPager::MetaControlled(
     bitCapInt i;
     for (i = 0; i < maxLCV; i++) {
         futures[i] = std::async(std::launch::async,
-            [this, i, fn, &sqi, &controlMask, &targetMask, &sortedMasks, &isSpecial, &isInvert, &top, &bottom]() {
+            [this, i, fn, &sqi, &controlMask, &targetPow, &sortedMasks, &isSpecial, &isInvert, &top, &bottom]() {
                 bitCapInt j, k, jLo, jHi;
                 jHi = i;
                 j = 0;
@@ -217,11 +217,11 @@ void QPager::MetaControlled(
                 j |= jHi | controlMask;
 
                 if (isSpecial && isInvert) {
-                    std::swap(qPages[j], qPages[j + targetMask]);
+                    std::swap(qPages[j], qPages[j + targetPow]);
                 }
 
                 QEnginePtr engine1 = qPages[j];
-                QEnginePtr engine2 = qPages[j + targetMask];
+                QEnginePtr engine2 = qPages[j + targetPow];
 
                 std::future<void> future1, future2;
                 if (isSpecial) {
@@ -459,8 +459,8 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
     bitLenInt qpp = qubitsPerPage();
 
     target -= qpp;
-    bitCapInt targetMask = pow2(target);
-    bitCapInt qMask = targetMask - 1U;
+    bitCapInt targetPow = pow2(target);
+    bitCapInt qMask = targetPow - 1U;
 
     if (randGlobalPhase) {
         bottom /= top;
@@ -471,16 +471,16 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
     std::vector<std::future<void>> futures(maxLCV);
     bitCapInt i;
     for (i = 0; i < maxLCV; i++) {
-        futures[i] = std::async(std::launch::async, [this, i, &isInvert, &top, &bottom, &targetMask, &qMask]() {
+        futures[i] = std::async(std::launch::async, [this, i, &isInvert, &top, &bottom, &targetPow, &qMask]() {
             bitCapInt j = i & qMask;
             j |= (i ^ j) << ONE_BCI;
 
             if (isInvert) {
-                std::swap(qPages[j], qPages[j + targetMask]);
+                std::swap(qPages[j], qPages[j + targetPow]);
             }
 
             QEnginePtr engine1 = qPages[j];
-            QEnginePtr engine2 = qPages[j + targetMask];
+            QEnginePtr engine2 = qPages[j + targetPow];
 
             std::future<void> future1, future2;
             if (top != ONE_CMPLX) {

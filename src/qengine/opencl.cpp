@@ -375,7 +375,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         }
 
         // We're about to switch to a new device, so finish the queue, first.
-        clFinish(true);
+        clFinish();
     }
 
     cl::Context oldContext = context;
@@ -386,7 +386,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     queue = device_context->queue;
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLY2X2_NORM_SINGLE);
-    clFinish(true);
 
     bitCapIntOcl oldNrmGroupCount = nrmGroupCount;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
