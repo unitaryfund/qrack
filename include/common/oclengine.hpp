@@ -165,7 +165,7 @@ protected:
     std::map<OCLAPI, std::unique_ptr<std::mutex>> mutexes;
 
 public:
-    OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int cntxt_id, int dev_id)
+    OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int dev_id, int cntxt_id)
         : platform(p)
         , device(d)
         , context(c)
