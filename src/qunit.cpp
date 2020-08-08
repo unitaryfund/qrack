@@ -3192,7 +3192,7 @@ QInterfacePtr QUnit::Clone()
     EndAllEmulation();
 
     QUnitPtr copyPtr = std::make_shared<QUnit>(
-        engine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
+        engine, subEngine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
 
     return CloneBody(copyPtr);
 }

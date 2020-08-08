@@ -105,8 +105,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             if (qftReg != NULL) {
                 qftReg.reset();
             }
-            qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, numBits, 0, rng, ONE_CMPLX,
-                enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+            qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits, 0, rng,
+                ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
         }
         avgt = 0.0;
 
@@ -1137,8 +1137,8 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
     int maxGates;
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(
-        testSubEngineType, n, 0, rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng);
+    QInterfacePtr goldStandard = CreateQuantumInterface(testSubEngineType, testSubSubEngineType, n, 0, rng, ONE_CMPLX,
+        enable_normalization, true, false, device_id, !disable_hardware_rng);
 
     for (d = 0; d < Depth; d++) {
         std::vector<int>& layer1QbRands = gate1QbRands[d];
