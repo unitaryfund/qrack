@@ -112,7 +112,7 @@ void QEngineOCL::SetAmplitudePage(
     }
 
     if (!oStateBuffer) {
-        ZeroAmplitudes();
+        ClearBuffer(stateBuffer, dstOffset, length, ResetWaitEvents());
         return;
     }
 
@@ -426,7 +426,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLY2X2_NORM_SINGLE);
 
-    bitCapIntOcl oldNrmGroupCount = nrmGroupCount;
+    bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
@@ -466,13 +466,15 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         ? QRACK_ALIGN_SIZE
         : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
 
-    if (didInit && (nrmGroupCount != oldNrmGroupCount)) {
+    bool doResize = (nrmGroupCount / nrmGroupSize) != oldNrmVecAlignSize;
+
+    if (didInit && doResize) {
         nrmBuffer = NULL;
         FreeAligned(nrmArray);
         nrmArray = NULL;
     }
 
-    if (!didInit || (nrmGroupCount != oldNrmGroupCount)) {
+    if (!didInit || doResize) {
 #if defined(__APPLE__)
         posix_memalign((void**)&nrmArray, QRACK_ALIGN_SIZE, nrmVecAlignSize);
 #elif defined(_WIN32) && !defined(__CYGWIN__)
@@ -480,6 +482,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 #else
         nrmArray = (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmVecAlignSize);
 #endif
+        nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize);
     }
 
     // create buffers on device (allocate space on GPU)
@@ -510,10 +513,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     poolItems.push_back(std::make_shared<PoolItem>(context));
     powersBuffer =
         std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl) * 16);
-
-    if (!didInit || (nrmGroupCount != oldNrmGroupCount)) {
-        nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize);
-    }
 }
 
 real1 QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
@@ -2489,8 +2488,6 @@ void QEngineOCL::ReinitBuffer()
 
 void QEngineOCL::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size, EventVecPtr waitVec)
 {
-    clDump();
-
     PoolItemPtr poolItem = GetFreePoolItem();
 
     bitCapIntOcl bciArgs[2] = { size, offset };
