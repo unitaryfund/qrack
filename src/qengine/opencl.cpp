@@ -39,18 +39,24 @@ namespace Qrack {
     queue.flush();
 
 #define DISPATCH_WRITE(waitVec, buff, size, array)                                                                     \
+    device_context->LockWaitEvents();                                                                                  \
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, waitVec.get(), &(device_context->wait_events->back()));   \
+    device_context->UnlockWaitEvents();                                                                                \
     queue.flush()
 
 #define DISPATCH_READ(waitVec, buff, size, array)                                                                      \
+    device_context->LockWaitEvents();                                                                                  \
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueReadBuffer(buff, CL_FALSE, 0, size, array, waitVec.get(), &(device_context->wait_events->back()));    \
+    device_context->UnlockWaitEvents();                                                                                \
     queue.flush()
 
 #define DISPATCH_COPY(waitVec, buff1, buff2, size)                                                                     \
+    device_context->LockWaitEvents();                                                                                  \
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, waitVec.get(), &(device_context->wait_events->back()));          \
+    device_context->UnlockWaitEvents();                                                                                \
     queue.flush();
 
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr)                                                                      \
@@ -363,17 +369,17 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 
     // Dispatch the primary kernel, to apply the gate.
-    cl::Event kernelEvent;
-    kernelEvent.setCallback(CL_COMPLETE, _PopQueue, this);
     EventVecPtr kernelWaitVec = ResetWaitEvents(false);
+    device_context->LockWaitEvents();
+    device_context->wait_events->emplace_back();
+    device_context->wait_events->back().setCallback(CL_COMPLETE, _PopQueue, this);
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(item.workItemCount), // global number of work items
         cl::NDRange(item.localGroupSize), // local number (per group)
         kernelWaitVec.get(), // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
+        &(device_context->wait_events->back())); // handle to wait for the kernel
 
-    device_context->wait_events->push_back(kernelEvent);
-
+    device_context->UnlockWaitEvents();
     queue.flush();
 }
 
@@ -557,9 +563,11 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
+    device_context->LockWaitEvents();
     device_context->wait_events->emplace_back();
     queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex),
         &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
+    device_context->UnlockWaitEvents();
     queue.flush();
 
     runningNorm = ONE_R1;
@@ -590,9 +598,11 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
     nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     if (controlLen > 0) {
+        device_context->LockWaitEvents();
         device_context->wait_events->emplace_back();
         queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl, waitVec.get(),
             &(device_context->wait_events->back()));
+        device_context->UnlockWaitEvents();
         queue.flush();
     } else {
         ClearBuffer(nStateBuffer, 0, maxQPowerOcl, waitVec);
@@ -2284,9 +2294,11 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
     permutationAmp = amp;
 
     EventVecPtr waitVec = ResetWaitEvents();
+    device_context->LockWaitEvents();
     device_context->wait_events->emplace_back();
     queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex),
         &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
+    device_context->UnlockWaitEvents();
     queue.flush();
 }
 

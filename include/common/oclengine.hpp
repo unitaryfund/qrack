@@ -199,6 +199,10 @@ public:
         return waitVec;
     }
 
+    void LockWaitEvents() { waitEventsMutex.lock(); }
+
+    void UnlockWaitEvents() { waitEventsMutex.unlock(); }
+
     void WaitOnAllEvents()
     {
         std::lock_guard<std::mutex> guard(waitEventsMutex);
