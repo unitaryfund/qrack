@@ -228,6 +228,7 @@ void QEngineOCL::clDump()
         return;
     }
 
+    wait_queue_items.clear();
     device_context->WaitOnAllEvents();
     wait_refs.clear();
 }
@@ -277,7 +278,7 @@ PoolItemPtr QEngineOCL::GetFreePoolItem()
 
 EventVecPtr QEngineOCL::ResetWaitEvents(bool waitQueue)
 {
-    if ((runningNorm != ZERO_CMPLX) && waitQueue) {
+    if (waitQueue) {
         while (wait_queue_items.size() > 1) {
             device_context->WaitOnAllEvents();
             PopQueue(NULL, CL_COMPLETE);
@@ -418,11 +419,10 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
             return;
         }
 
-        // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
-        LockSync();
-
-        // Pool item buffers are in the old context, so we free them.
-        poolItems.clear();
+        if (stateBuffer) {
+            // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
+            LockSync();
+        }
     }
 
     deviceID = dID;
@@ -489,16 +489,21 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     // create buffers on device (allocate space on GPU)
     if (didInit) {
-        ResetStateBuffer(MakeStateVecBuffer(usingHostRam ? stateVec : NULL));
+        if (stateBuffer) {
+            if (usingHostRam && !stateVec) {
+                stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
+            }
+            ResetStateBuffer(MakeStateVecBuffer(usingHostRam ? stateVec : NULL));
 
-        // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer.
-        clFinish();
-        queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
-        lockSyncFlags = 0;
+            // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer.
+            clFinish();
+            queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
+            lockSyncFlags = 0;
 
-        // Make sure that "usingHostRam" is respected:
-        if (!usingHostRam) {
-            ResetStateVec(NULL);
+            // Make sure that "usingHostRam" is respected:
+            if (!usingHostRam) {
+                ResetStateVec(NULL);
+            }
         }
     } else {
         // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device
@@ -512,7 +517,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     powersBuffer =
         std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl) * 16);
 
-    if ((!didInit) || (nrmGroupCount != oldNrmGroupCount)) {
+    if (stateBuffer && ((!didInit) || (nrmGroupCount != oldNrmGroupCount))) {
         nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize);
     }
 }
@@ -2245,7 +2250,7 @@ void QEngineOCL::SetQuantumState(const complex* inputState)
 
 complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 {
-    if (runningNorm == ZERO_CMPLX) {
+    if (!stateBuffer) {
         return ZERO_CMPLX;
     }
 
