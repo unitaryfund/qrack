@@ -200,7 +200,7 @@ void QEngineOCL::UnlockSync()
 
 void QEngineOCL::clFinish(bool doHard)
 {
-    if (!device_context || !stateBuffer) {
+    if (!device_context) {
         return;
     }
 
@@ -219,7 +219,7 @@ void QEngineOCL::clFinish(bool doHard)
 
 void QEngineOCL::clDump()
 {
-    if (!device_context || !stateBuffer) {
+    if (!device_context) {
         return;
     }
 
@@ -273,7 +273,7 @@ PoolItemPtr QEngineOCL::GetFreePoolItem()
 
 EventVecPtr QEngineOCL::ResetWaitEvents(bool waitQueue)
 {
-    if (stateBuffer && waitQueue) {
+    if (waitQueue) {
         while (wait_queue_items.size() > 1) {
             device_context->WaitOnAllEvents();
             PopQueue(NULL, CL_COMPLETE);
@@ -363,14 +363,16 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 
     // Dispatch the primary kernel, to apply the gate.
-    device_context->wait_events->emplace_back();
-    device_context->wait_events->back().setCallback(CL_COMPLETE, _PopQueue, this);
+    cl::Event kernelEvent;
+    kernelEvent.setCallback(CL_COMPLETE, _PopQueue, this);
     EventVecPtr kernelWaitVec = ResetWaitEvents(false);
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(item.workItemCount), // global number of work items
         cl::NDRange(item.localGroupSize), // local number (per group)
         kernelWaitVec.get(), // vector of events to wait for
-        &(device_context->wait_events->back())); // handle to wait for the kernel
+        &kernelEvent); // handle to wait for the kernel
+
+    device_context->wait_events->push_back(kernelEvent);
 
     queue.flush();
 }
@@ -509,7 +511,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     powersBuffer =
         std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl) * 16);
 
-    if (stateBuffer && ((!didInit) || (nrmGroupCount != oldNrmGroupCount))) {
+    if (!didInit || (nrmGroupCount != oldNrmGroupCount)) {
         nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize);
     }
 }
@@ -1013,6 +1015,10 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     bitCapIntOcl nMaxQPower = bciArgs[0];
     bitCapIntOcl nQubitCount = bciArgs[1] + toCopy->qubitCount;
     size_t nStateVecSize = nMaxQPower * sizeof(complex);
+    maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+    if (nStateVecSize > maxAlloc) {
+        throw "Error: State vector exceeds device maximum OpenCL allocation";
+    }
 
     SetQubitCount(nQubitCount);
 
@@ -2348,7 +2354,7 @@ QInterfacePtr QEngineOCL::Clone()
     copyPtr->runningNorm = runningNorm;
 
     EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), (bitCapIntOcl)(sizeof(complex) * maxQPower));
+    DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPowerOcl);
     Finish();
 
     return copyPtr;

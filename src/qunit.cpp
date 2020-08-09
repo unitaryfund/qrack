@@ -65,6 +65,10 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , isSparse(useSparseStateVec)
     , freezeBasis(false)
 {
+    if ((engine == QINTERFACE_CPU) || (engine == QINTERFACE_OPENCL)) {
+        subEngine = engine;
+    }
+
     shards.resize(qBitCount);
 
     bool bitState;
