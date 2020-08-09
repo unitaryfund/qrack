@@ -1020,16 +1020,18 @@ void QPager::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
 
 real1 QPager::Prob(bitLenInt qubitIndex)
 {
+    if (qubitIndex >= qubitsPerPage()) {
+        CombineEngines(qubitIndex + 1U);
+    } else {
+        SeparateEngines(qubitIndex + 1U);
+    }
+
     if (qPages.size() == 1U) {
         return qPages[0]->Prob(qubitIndex);
     }
 
     real1 oneChance = ZERO_R1;
     bitCapInt i;
-
-    if (qubitIndex >= qubitsPerPage()) {
-        CombineEngines(qubitIndex + 1U);
-    }
 
     std::vector<std::future<real1>> futures(qPages.size());
     for (i = 0; i < qPages.size(); i++) {
@@ -1039,9 +1041,6 @@ real1 QPager::Prob(bitLenInt qubitIndex)
     for (i = 0; i < qPages.size(); i++) {
         oneChance += futures[i].get();
     }
-
-    // Prob() tends to be called during M(), at end of algorithms.
-    SeparateEngines();
 
     return oneChance;
 }

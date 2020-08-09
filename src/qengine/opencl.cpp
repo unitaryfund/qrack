@@ -277,7 +277,7 @@ PoolItemPtr QEngineOCL::GetFreePoolItem()
 
 EventVecPtr QEngineOCL::ResetWaitEvents(bool waitQueue)
 {
-    if (waitQueue) {
+    if ((runningNorm != ZERO_CMPLX) && waitQueue) {
         while (wait_queue_items.size() > 1) {
             device_context->WaitOnAllEvents();
             PopQueue(NULL, CL_COMPLETE);
