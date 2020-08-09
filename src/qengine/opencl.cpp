@@ -205,7 +205,7 @@ void QEngineOCL::UnlockSync()
 
 void QEngineOCL::clFinish(bool doHard)
 {
-    if (device_context == NULL) {
+    if (!device_context || !stateBuffer) {
         return;
     }
 
@@ -224,7 +224,7 @@ void QEngineOCL::clFinish(bool doHard)
 
 void QEngineOCL::clDump()
 {
-    if (device_context == NULL) {
+    if (!device_context || !stateBuffer) {
         return;
     }
 
@@ -278,7 +278,7 @@ PoolItemPtr QEngineOCL::GetFreePoolItem()
 
 EventVecPtr QEngineOCL::ResetWaitEvents(bool waitQueue)
 {
-    if (waitQueue) {
+    if (stateBuffer && waitQueue) {
         while (wait_queue_items.size() > 1) {
             device_context->WaitOnAllEvents();
             PopQueue(NULL, CL_COMPLETE);
@@ -490,20 +490,19 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     // create buffers on device (allocate space on GPU)
     if (didInit) {
         if (stateBuffer) {
-            if (usingHostRam && !stateVec) {
-                stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
-            }
-            ResetStateBuffer(MakeStateVecBuffer(usingHostRam ? stateVec : NULL));
+            if (usingHostRam) {
+                ResetStateBuffer(MakeStateVecBuffer(stateVec));
+            } else {
+                ResetStateBuffer(MakeStateVecBuffer(NULL));
+                // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a
+                // buffer.
+                clFinish();
+                queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
 
-            // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer.
-            clFinish();
-            queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
-            lockSyncFlags = 0;
-
-            // Make sure that "usingHostRam" is respected:
-            if (!usingHostRam) {
                 ResetStateVec(NULL);
             }
+
+            lockSyncFlags = 0;
         }
     } else {
         // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device

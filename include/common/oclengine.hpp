@@ -202,8 +202,10 @@ public:
     void WaitOnAllEvents()
     {
         std::lock_guard<std::mutex> guard(waitEventsMutex);
-        cl::Event::waitForEvents((const std::vector<cl::Event>&)*(wait_events.get()));
-        wait_events->clear();
+        if ((wait_events.get())->size()) {
+            cl::Event::waitForEvents((const std::vector<cl::Event>&)*(wait_events.get()));
+            wait_events->clear();
+        }
     }
 
     size_t GetPreferredConcurrency()
