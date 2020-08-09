@@ -363,17 +363,17 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 
     // Dispatch the primary kernel, to apply the gate.
-    cl::Event kernelEvent;
-    kernelEvent.setCallback(CL_COMPLETE, _PopQueue, this);
     EventVecPtr kernelWaitVec = ResetWaitEvents(false);
+    device_context->LockWaitEvents();
+    device_context->wait_events->emplace_back();
+    device_context->wait_events->back().setCallback(CL_COMPLETE, _PopQueue, this);
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(item.workItemCount), // global number of work items
         cl::NDRange(item.localGroupSize), // local number (per group)
         kernelWaitVec.get(), // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
+        &(device_context->wait_events->back())); // handle to wait for the kernel
 
-    device_context->wait_events->push_back(kernelEvent);
-
+    device_context->UnlockWaitEvents();
     queue.flush();
 }
 
