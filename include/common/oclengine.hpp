@@ -191,17 +191,21 @@ public:
     {
         std::lock_guard<std::mutex> guard(waitEventsMutex);
         EventVecPtr waitVec = std::move(wait_events);
-        wait_events = std::make_shared<std::vector<cl::Event>>();
+        wait_events =
+            std::shared_ptr<std::vector<cl::Event>>(new std::vector<cl::Event>(), [](std::vector<cl::Event>* vec) {
+                vec->clear();
+                delete vec;
+            });
         return waitVec;
     }
 
     void WaitOnAllEvents()
     {
         std::lock_guard<std::mutex> guard(waitEventsMutex);
-        for (unsigned int i = 0; i < (wait_events.get())->size(); i++) {
-            (*wait_events.get())[i].wait();
+        if ((wait_events.get())->size()) {
+            cl::Event::waitForEvents((const std::vector<cl::Event>&)*(wait_events.get()));
+            wait_events->clear();
         }
-        wait_events->clear();
     }
 
     size_t GetPreferredConcurrency()

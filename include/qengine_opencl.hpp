@@ -158,9 +158,6 @@ public:
         runningNorm = ZERO_R1;
         ResetStateBuffer(NULL);
         FreeStateVec();
-        nrmBuffer = NULL;
-        FreeAligned(nrmArray);
-        nrmArray = NULL;
     }
 
     virtual void SetQubitCount(bitLenInt qb)

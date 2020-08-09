@@ -53,12 +53,6 @@ namespace Qrack {
     queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, waitVec.get(), &(device_context->wait_events->back()));          \
     queue.flush();
 
-#define WAIT_COPY(buff1, buff2, size)                                                                                  \
-    device_context->wait_events->emplace_back();                                                                       \
-    queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, NULL, &(device_context->wait_events->back()));                   \
-    device_context->wait_events->back().wait();                                                                        \
-    device_context->wait_events->pop_back()
-
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr)                                                                      \
     clFinish();                                                                                                        \
     queue.enqueueReadBuffer(buff, CL_TRUE, 0, sizeof(real1) * size, array, NULL, NULL);                                \
@@ -118,12 +112,13 @@ void QEngineOCL::SetAmplitudePage(
     }
 
     if (!oStateBuffer) {
-        ClearBuffer(stateBuffer, dstOffset, length, ResetWaitEvents());
+        ZeroAmplitudes();
         return;
     }
 
     if (!stateBuffer) {
         ReinitBuffer();
+        ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
     }
 
     clFinish();
@@ -205,7 +200,7 @@ void QEngineOCL::UnlockSync()
 
 void QEngineOCL::clFinish(bool doHard)
 {
-    if (device_context == NULL) {
+    if (!device_context || !stateBuffer) {
         return;
     }
 
@@ -224,10 +219,11 @@ void QEngineOCL::clFinish(bool doHard)
 
 void QEngineOCL::clDump()
 {
-    if (device_context == NULL) {
+    if (!device_context || !stateBuffer) {
         return;
     }
 
+    wait_queue_items.clear();
     device_context->WaitOnAllEvents();
     wait_refs.clear();
 }
@@ -277,7 +273,7 @@ PoolItemPtr QEngineOCL::GetFreePoolItem()
 
 EventVecPtr QEngineOCL::ResetWaitEvents(bool waitQueue)
 {
-    if ((runningNorm != ZERO_CMPLX) && waitQueue) {
+    if (stateBuffer && waitQueue) {
         while (wait_queue_items.size() > 1) {
             device_context->WaitOnAllEvents();
             PopQueue(NULL, CL_COMPLETE);
@@ -367,16 +363,14 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 
     // Dispatch the primary kernel, to apply the gate.
-    cl::Event kernelEvent;
-    kernelEvent.setCallback(CL_COMPLETE, _PopQueue, this);
+    device_context->wait_events->emplace_back();
+    device_context->wait_events->back().setCallback(CL_COMPLETE, _PopQueue, this);
     EventVecPtr kernelWaitVec = ResetWaitEvents(false);
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(item.workItemCount), // global number of work items
         cl::NDRange(item.localGroupSize), // local number (per group)
         kernelWaitVec.get(), // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-
-    device_context->wait_events->push_back(kernelEvent);
+        &(device_context->wait_events->back())); // handle to wait for the kernel
 
     queue.flush();
 }
@@ -418,11 +412,10 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
             return;
         }
 
-        // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
-        LockSync();
-
-        // Pool item buffers are in the old context, so we free them.
-        poolItems.clear();
+        if (stateBuffer) {
+            // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
+            LockSync();
+        }
     }
 
     deviceID = dID;
@@ -489,16 +482,20 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     // create buffers on device (allocate space on GPU)
     if (didInit) {
-        ResetStateBuffer(MakeStateVecBuffer(usingHostRam ? stateVec : NULL));
+        if (stateBuffer) {
+            if (usingHostRam) {
+                ResetStateBuffer(MakeStateVecBuffer(stateVec));
+            } else {
+                ResetStateBuffer(MakeStateVecBuffer(NULL));
+                // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a
+                // buffer.
+                clFinish();
+                queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
 
-        // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer.
-        clFinish();
-        queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
-        lockSyncFlags = 0;
+                ResetStateVec(NULL);
+            }
 
-        // Make sure that "usingHostRam" is respected:
-        if (!usingHostRam) {
-            ResetStateVec(NULL);
+            lockSyncFlags = 0;
         }
     } else {
         // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device
@@ -512,7 +509,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     powersBuffer =
         std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl) * 16);
 
-    if ((!didInit) || (nrmGroupCount != oldNrmGroupCount)) {
+    if (stateBuffer && ((!didInit) || (nrmGroupCount != oldNrmGroupCount))) {
         nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize);
     }
 }
@@ -2245,7 +2242,7 @@ void QEngineOCL::SetQuantumState(const complex* inputState)
 
 complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 {
-    if (runningNorm == ZERO_CMPLX) {
+    if (!stateBuffer) {
         return ZERO_CMPLX;
     }
 
@@ -2482,24 +2479,12 @@ void QEngineOCL::ReinitBuffer()
 {
     ResetStateVec(AllocStateVec(maxQPower, usingHostRam));
     ResetStateBuffer(MakeStateVecBuffer(stateVec));
-
-    size_t nrmVecAlignSize = ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
-        ? QRACK_ALIGN_SIZE
-        : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
-
-#if defined(__APPLE__)
-    posix_memalign((void**)&nrmArray, QRACK_ALIGN_SIZE, nrmVecAlignSize);
-#elif defined(_WIN32) && !defined(__CYGWIN__)
-    nrmArray = (real1*)_aligned_malloc(nrmVecAlignSize, QRACK_ALIGN_SIZE);
-#else
-    nrmArray = (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmVecAlignSize);
-#endif
-
-    nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize);
 }
 
 void QEngineOCL::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size, EventVecPtr waitVec)
 {
+    clDump();
+
     PoolItemPtr poolItem = GetFreePoolItem();
 
     bitCapIntOcl bciArgs[2] = { size, offset };
