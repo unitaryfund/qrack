@@ -53,12 +53,6 @@ namespace Qrack {
     queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, waitVec.get(), &(device_context->wait_events->back()));          \
     queue.flush();
 
-#define WAIT_COPY(buff1, buff2, size)                                                                                  \
-    device_context->wait_events->emplace_back();                                                                       \
-    queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, NULL, &(device_context->wait_events->back()));                   \
-    device_context->wait_events->back().wait();                                                                        \
-    device_context->wait_events->pop_back()
-
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr)                                                                      \
     clFinish();                                                                                                        \
     queue.enqueueReadBuffer(buff, CL_TRUE, 0, sizeof(real1) * size, array, NULL, NULL);                                \
@@ -118,12 +112,13 @@ void QEngineOCL::SetAmplitudePage(
     }
 
     if (!oStateBuffer) {
-        ClearBuffer(stateBuffer, dstOffset, length, ResetWaitEvents());
+        ZeroAmplitudes();
         return;
     }
 
     if (!stateBuffer) {
         ReinitBuffer();
+        ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
     }
 
     clFinish();
@@ -368,16 +363,14 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 
     // Dispatch the primary kernel, to apply the gate.
-    cl::Event kernelEvent;
-    kernelEvent.setCallback(CL_COMPLETE, _PopQueue, this);
+    device_context->wait_events->emplace_back();
+    device_context->wait_events->back().setCallback(CL_COMPLETE, _PopQueue, this);
     EventVecPtr kernelWaitVec = ResetWaitEvents(false);
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(item.workItemCount), // global number of work items
         cl::NDRange(item.localGroupSize), // local number (per group)
         kernelWaitVec.get(), // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
-
-    device_context->wait_events->push_back(kernelEvent);
+        &(device_context->wait_events->back())); // handle to wait for the kernel
 
     queue.flush();
 }
@@ -2486,24 +2479,12 @@ void QEngineOCL::ReinitBuffer()
 {
     ResetStateVec(AllocStateVec(maxQPower, usingHostRam));
     ResetStateBuffer(MakeStateVecBuffer(stateVec));
-
-    size_t nrmVecAlignSize = ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
-        ? QRACK_ALIGN_SIZE
-        : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
-
-#if defined(__APPLE__)
-    posix_memalign((void**)&nrmArray, QRACK_ALIGN_SIZE, nrmVecAlignSize);
-#elif defined(_WIN32) && !defined(__CYGWIN__)
-    nrmArray = (real1*)_aligned_malloc(nrmVecAlignSize, QRACK_ALIGN_SIZE);
-#else
-    nrmArray = (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmVecAlignSize);
-#endif
-
-    nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize);
 }
 
 void QEngineOCL::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size, EventVecPtr waitVec)
 {
+    clDump();
+
     PoolItemPtr poolItem = GetFreePoolItem();
 
     bitCapIntOcl bciArgs[2] = { size, offset };

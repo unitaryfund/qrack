@@ -429,9 +429,6 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
 
         qPages[i]->ZeroAmplitudes();
     }
-
-    // SetPermutation is a total break from past calculation, so reset.
-    SeparateEngines();
 }
 
 void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
@@ -655,8 +652,6 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
     CombineEngines();
     bool toRet = qPages[0]->ForceM(qubit, result, doForce, doApply);
-    // Measurement tends to come at the end of algorithms, before reset.
-    SeparateEngines();
     return toRet;
 }
 
@@ -1054,7 +1049,6 @@ real1 QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     CombineEngines();
     real1 maskChance = qPages[0]->ProbMask(mask, permutation);
-    SeparateEngines();
     return maskChance;
 }
 
@@ -1088,8 +1082,6 @@ QInterfacePtr QPager::Clone()
         clone->qPages[i]->SetAmplitudePage(qPages[i], 0, 0, pagePower);
         clone->qPages[i]->UpdateRunningNorm();
     }
-
-    clone->SeparateEngines();
 
     return clone;
 }
