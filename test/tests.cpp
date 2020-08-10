@@ -404,6 +404,22 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap")
     qftReg->SetPermutation(0xb2000);
     qftReg->Swap(12, 16, 4);
     REQUIRE_THAT(qftReg, HasProbability(0x2b000));
+
+    qftReg->SetPermutation(0x80000);
+    qftReg->Swap(18, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0x40000));
+
+    qftReg->SetPermutation(0xc0000);
+    qftReg->Swap(18, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0xc0000));
+
+    qftReg->SetPermutation(0x80000);
+    qftReg->Swap(17, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0x20000));
+
+    qftReg->SetPermutation(0xa0000);
+    qftReg->Swap(17, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0xa0000));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_iswap")

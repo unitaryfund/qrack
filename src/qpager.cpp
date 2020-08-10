@@ -918,15 +918,11 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
     for (i = 0; i < maxLCV; i++) {
         futures[i] =
             std::async(std::launch::async, [this, i, &qubit1Pow, &qubit2Pow, &sortedMasks, &isIPhaseFac, &sqi]() {
-                bitCapInt j, k, jLo, jHi;
-                jHi = i;
-                j = 0;
-                for (k = 0; k < (sortedMasks.size()); k++) {
-                    jLo = jHi & sortedMasks[k];
-                    jHi = (jHi ^ jLo) << ONE_BCI;
-                    j |= jLo;
-                }
-                j |= jHi;
+                bitCapInt j, jLo, jHi;
+                j = i & sortedMasks[0];
+                jHi = (i ^ j) << ONE_BCI;
+                jLo = jHi & sortedMasks[1];
+                j |= jLo | ((jHi ^ jLo) << ONE_BCI);
 
                 std::swap(qPages[j + qubit1Pow], qPages[j + qubit2Pow]);
 
@@ -954,6 +950,89 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
     }
 }
 
+void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
+{
+    if (qubit1 > qubit2) {
+        std::swap(qubit1, qubit2);
+    }
+
+    bitLenInt qpp = qubitsPerPage();
+    qubit2 -= qpp;
+    bitLenInt sqi = qpp - 1U;
+
+    bitCapInt qubit2Pow = pow2(qubit2);
+    bitCapInt qubit2Mask = qubit2Pow - ONE_BCI;
+
+    bitCapInt maxLCV = qPages.size() >> ONE_BCI;
+    std::vector<std::future<void>> futures(maxLCV);
+    bitCapInt i;
+    for (i = 0; i < maxLCV; i++) {
+        futures[i] = std::async(std::launch::async, [this, i, &qubit1, &qubit2Pow, &qubit2Mask, &isIPhaseFac, &sqi]() {
+            bitCapInt j = i & qubit2Mask;
+            j |= (i ^ j) << ONE_BCI;
+
+            QEnginePtr engine1 = qPages[j];
+            QEnginePtr engine2 = qPages[j + qubit2Pow];
+
+            engine1->ShuffleBuffers(engine2);
+
+            std::future<void> future1, future2;
+
+            if (qubit1 == sqi) {
+                if (isIPhaseFac) {
+                    future1 = std::async(std::launch::async, [engine1, &sqi]() {
+                        engine1->ApplySinglePhase(ZERO_CMPLX, I_CMPLX, sqi);
+                        engine1->UpdateRunningNorm();
+                    });
+                    future2 = std::async(std::launch::async, [engine2, &sqi]() {
+                        engine2->ApplySinglePhase(I_CMPLX, ZERO_CMPLX, sqi);
+                        engine2->UpdateRunningNorm();
+                    });
+
+                    future1.get();
+                    future2.get();
+                } else {
+                    future1 = std::async(std::launch::async, [engine1, &sqi]() { engine1->UpdateRunningNorm(); });
+                    future2 = std::async(std::launch::async, [engine2, &sqi]() { engine2->UpdateRunningNorm(); });
+
+                    future1.get();
+                    future2.get();
+                }
+                return;
+            }
+
+            if (isIPhaseFac) {
+                future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi]() {
+                    engine1->ISwap(qubit1, sqi);
+                    engine1->UpdateRunningNorm();
+                });
+                future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi]() {
+                    engine2->ISwap(qubit1, sqi);
+                    engine2->UpdateRunningNorm();
+                });
+            } else {
+                future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi]() {
+                    engine1->Swap(qubit1, sqi);
+                    engine1->UpdateRunningNorm();
+                });
+                future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi]() {
+                    engine2->Swap(qubit1, sqi);
+                    engine2->UpdateRunningNorm();
+                });
+            }
+
+            future1.get();
+            future2.get();
+
+            engine1->ShuffleBuffers(engine2);
+        });
+    }
+
+    for (i = 0; i < maxLCV; i++) {
+        futures[i].get();
+    }
+}
+
 void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
 {
     if (qubit1 == qubit2) {
@@ -966,6 +1045,11 @@ void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
     if (isQubit1Meta && isQubit2Meta) {
         SeparateEngines();
         MetaSwap(qubit1, qubit2, false);
+        return;
+    }
+    if (isQubit1Meta || isQubit2Meta) {
+        SeparateEngines();
+        SemiMetaSwap(qubit1, qubit2, false);
         return;
     }
 
@@ -983,6 +1067,11 @@ void QPager::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     if (isQubit1Meta && isQubit2Meta) {
         SeparateEngines();
         MetaSwap(qubit1, qubit2, true);
+        return;
+    }
+    if (isQubit1Meta || isQubit2Meta) {
+        SeparateEngines();
+        SemiMetaSwap(qubit1, qubit2, true);
         return;
     }
 
