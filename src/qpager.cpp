@@ -46,7 +46,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     }
 
     if (deviceIDs.size() == 0) {
-        deviceIDs.push_back(-1);
+        deviceIDs.push_back(deviceId);
     }
 
     SetQubitCount(qubitCount);
