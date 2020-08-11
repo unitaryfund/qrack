@@ -25,7 +25,7 @@
 #endif
 
 #define CHECK_ZERO_SKIP()                                                                                              \
-    if (runningNorm == ZERO_R1) {                                                                                      \
+    if (!stateVec) {                                                                                                   \
         return;                                                                                                        \
     }
 
@@ -138,7 +138,7 @@ void QEngineCPU::GetQuantumState(complex* outputState)
         NormalizeState();
     }
 
-    if (runningNorm == ZERO_R1) {
+    if (!stateVec) {
         std::fill(outputState, outputState + maxQPower, ZERO_CMPLX);
         return;
     }
@@ -153,7 +153,7 @@ void QEngineCPU::GetProbs(real1* outputProbs)
         NormalizeState();
     }
 
-    if (runningNorm == ZERO_R1) {
+    if (!stateVec) {
         std::fill(outputProbs, outputProbs + maxQPower, ZERO_R1);
         return;
     }
@@ -720,7 +720,7 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
         NormalizeState();
     }
 
-    if (runningNorm == ZERO_R1) {
+    if (!stateVec) {
         return ZERO_R1;
     }
 
@@ -758,7 +758,7 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
         NormalizeState();
     }
 
-    if (runningNorm == ZERO_R1) {
+    if (!stateVec) {
         return ZERO_R1;
     }
 
@@ -772,7 +772,7 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
         NormalizeState();
     }
 
-    if (runningNorm == ZERO_R1) {
+    if (!stateVec) {
         return ZERO_R1;
     }
 
@@ -807,7 +807,7 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
         NormalizeState();
     }
 
-    if (runningNorm == ZERO_R1) {
+    if (!stateVec) {
         return ZERO_R1;
     }
 

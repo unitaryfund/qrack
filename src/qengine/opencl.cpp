@@ -105,6 +105,8 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
     EventVecPtr waitVec = ResetWaitEvents();
     queue.enqueueWriteBuffer(
         *stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr, waitVec.get());
+
+    runningNorm = ONE_R1;
 }
 
 void QEngineOCL::SetAmplitudePage(
@@ -134,6 +136,8 @@ void QEngineOCL::SetAmplitudePage(
         sizeof(complex) * length);
 
     queue.finish();
+
+    runningNorm = ONE_R1;
 }
 
 void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
@@ -165,6 +169,9 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     queue.enqueueCopyBuffer(tempBuffer, *(engineOcl->stateBuffer), 0, 0, halfSize);
 
     queue.finish();
+
+    runningNorm = ONE_R1;
+    engineOcl->runningNorm = ONE_R1;
 }
 
 void QEngineOCL::LockSync(cl_int flags)
