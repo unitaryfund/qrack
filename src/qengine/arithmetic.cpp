@@ -13,7 +13,7 @@
 #include "qengine_cpu.hpp"
 
 #define CHECK_ZERO_SKIP()                                                                                              \
-    if (runningNorm == ZERO_R1) {                                                                                      \
+    if (!stateVec) {                                                                                                   \
         return;                                                                                                        \
     }
 
@@ -811,7 +811,7 @@ void QEngineCPU::INCDECBCDC(
 bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, unsigned char* values, bool resetValue)
 {
-    if (runningNorm == ZERO_R1) {
+    if (!stateVec) {
         return 0U;
     }
 
@@ -865,7 +865,7 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    if (runningNorm == ZERO_R1) {
+    if (!stateVec) {
         return 0U;
     }
 
@@ -967,7 +967,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
 bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
-    if (runningNorm == ZERO_R1) {
+    if (!stateVec) {
         return 0U;
     }
 

@@ -13,7 +13,7 @@
 #include "qengine_cpu.hpp"
 
 #define CHECK_ZERO_SKIP()                                                                                              \
-    if (runningNorm == ZERO_R1) {                                                                                      \
+    if (!stateVec) {                                                                                                   \
         return;                                                                                                        \
     }
 

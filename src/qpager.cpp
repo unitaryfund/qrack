@@ -136,18 +136,49 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
 {
     SeparateEngines(target + 1U);
 
-    if (target >= qubitsPerPage()) {
-        CombineAndOp([fn, target](QEnginePtr engine) { fn(engine, target); }, { target });
+    bitLenInt qpp = qubitsPerPage();
+
+    bitCapInt i;
+
+    if (target < qpp) {
+        std::vector<std::future<void>> futures(qPages.size());
+        for (i = 0; i < qPages.size(); i++) {
+            QEnginePtr engine = qPages[i];
+            futures[i] = std::async(std::launch::async, [engine, fn, target]() { fn(engine, target); });
+        }
+        for (i = 0; i < qPages.size(); i++) {
+            futures[i].get();
+        }
+
         return;
     }
 
-    std::vector<std::future<void>> futures(qPages.size());
-    bitCapInt i;
-    for (i = 0; i < qPages.size(); i++) {
-        QEnginePtr engine = qPages[i];
-        futures[i] = std::async(std::launch::async, [engine, fn, target]() { fn(engine, target); });
+    bitLenInt sqi = qpp - 1U;
+    target -= qpp;
+    bitCapInt targetPow = pow2(target);
+    bitCapInt targetMask = targetPow - ONE_BCI;
+    bitCapInt maxLCV = qPages.size() >> ONE_BCI;
+    std::vector<std::future<void>> futures(maxLCV);
+    for (i = 0; i < maxLCV; i++) {
+        futures[i] = std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi]() {
+            bitCapInt j = i & targetMask;
+            j |= (i ^ j) << ONE_BCI;
+
+            QEnginePtr engine1 = qPages[j];
+            QEnginePtr engine2 = qPages[j + targetPow];
+
+            engine1->ShuffleBuffers(engine2);
+
+            std::future<void> future1, future2;
+            future1 = std::async(std::launch::async, [fn, engine1, &sqi]() { fn(engine1, sqi); });
+            future2 = std::async(std::launch::async, [fn, engine2, &sqi]() { fn(engine2, sqi); });
+            future1.get();
+            future2.get();
+
+            engine1->ShuffleBuffers(engine2);
+        });
     }
-    for (i = 0; i < qPages.size(); i++) {
+    for (i = 0; i < maxLCV; i++) {
         futures[i].get();
     }
 }
@@ -524,7 +555,7 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
         }
     }
 
-    auto sg = [anti, mtrx, &intraControls](QEnginePtr engine, bitLenInt lTarget) {
+    auto sg = [anti, mtrx, intraControls](QEnginePtr engine, bitLenInt lTarget) {
         if (intraControls.size()) {
             if (anti) {
                 engine->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
@@ -1002,23 +1033,11 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
             }
 
             if (isIPhaseFac) {
-                future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi]() {
-                    engine1->ISwap(qubit1, sqi);
-                    engine1->UpdateRunningNorm();
-                });
-                future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi]() {
-                    engine2->ISwap(qubit1, sqi);
-                    engine2->UpdateRunningNorm();
-                });
+                future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi]() { engine1->ISwap(qubit1, sqi); });
+                future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi]() { engine2->ISwap(qubit1, sqi); });
             } else {
-                future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi]() {
-                    engine1->Swap(qubit1, sqi);
-                    engine1->UpdateRunningNorm();
-                });
-                future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi]() {
-                    engine2->Swap(qubit1, sqi);
-                    engine2->UpdateRunningNorm();
-                });
+                future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi]() { engine1->Swap(qubit1, sqi); });
+                future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi]() { engine2->Swap(qubit1, sqi); });
             }
 
             future1.get();

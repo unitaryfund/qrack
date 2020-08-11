@@ -73,6 +73,8 @@ public:
         }
 
         stateVec->copy_in(pagePtr, offset, length);
+
+        runningNorm = ONE_R1;
     }
     virtual void SetAmplitudePage(
         QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
@@ -90,6 +92,8 @@ public:
         }
 
         stateVec->copy_in(oStateVec, srcOffset, dstOffset, length);
+
+        runningNorm = ONE_R1;
     }
     virtual void ShuffleBuffers(QEnginePtr engine)
     {
@@ -105,7 +109,7 @@ public:
         }
 
         if (!(engineCpu->stateVec)) {
-            engineCpu->ResetStateVec(AllocStateVec(maxQPower));
+            engineCpu->ResetStateVec(engineCpu->AllocStateVec(maxQPower));
             engineCpu->stateVec->clear();
         }
 
