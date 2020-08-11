@@ -110,6 +110,9 @@ public:
         }
 
         stateVec->shuffle(engineCpu->stateVec);
+
+        runningNorm = ONE_R1;
+        engineCpu->runningNorm = ONE_R1;
     }
 
     virtual void SetQuantumState(const complex* inputState);
