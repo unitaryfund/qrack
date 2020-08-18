@@ -24,11 +24,15 @@ typedef bool (*ProbAmpCallback)(size_t, double, double);
 
 extern "C" {
 // non-quantum
-
 MICROSOFT_QUANTUM_DECL unsigned init();
+MICROSOFT_QUANTUM_DECL unsigned init_size(_In_ unsigned q);
 MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s);
 MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callback);
+
+//pseudo-quantum
+MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q);
+
 // MICROSOFT_QUANTUM_DECL bool DumpQubits(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_
 // ProbAmpCallback callback);
 MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ IdCallback callback);

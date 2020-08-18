@@ -262,7 +262,9 @@ extern "C" {
 /**
  * (External API) Initialize a simulator ID with 0 qubits
  */
-MICROSOFT_QUANTUM_DECL unsigned init()
+MICROSOFT_QUANTUM_DECL unsigned init() { return init_size(4); }
+
+MICROSOFT_QUANTUM_DECL unsigned init_size(_In_ unsigned q)
 {
     META_LOCK_GUARD()
 
@@ -275,7 +277,7 @@ MICROSOFT_QUANTUM_DECL unsigned init()
         }
     }
 
-    QInterfacePtr simulator = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, 4, 0, rng);
+    QInterfacePtr simulator = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, q, 0, rng);
     if (sid == simulators.size()) {
         simulators.push_back(simulator);
     } else {
@@ -340,6 +342,16 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
         }
     }
     delete[] wfn;
+}
+
+/**
+ * (External API) Get the probability that a qubit is in the |1> state.
+ */
+MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q) {
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    return simulator->Prob(shards[simulator][q]);
 }
 
 /**
