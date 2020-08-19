@@ -262,9 +262,9 @@ extern "C" {
 /**
  * (External API) Initialize a simulator ID with 0 qubits
  */
-MICROSOFT_QUANTUM_DECL unsigned init() { return init_size(4); }
+MICROSOFT_QUANTUM_DECL unsigned init() { return init_count(4); }
 
-MICROSOFT_QUANTUM_DECL unsigned init_size(_In_ unsigned q)
+MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 {
     META_LOCK_GUARD()
 
