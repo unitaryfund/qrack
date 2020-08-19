@@ -56,6 +56,8 @@ MICROSOFT_QUANTUM_DECL void S(_In_ unsigned sid, _In_ unsigned q);
 MICROSOFT_QUANTUM_DECL void T(_In_ unsigned sid, _In_ unsigned q);
 MICROSOFT_QUANTUM_DECL void AdjS(_In_ unsigned sid, _In_ unsigned q);
 MICROSOFT_QUANTUM_DECL void AdjT(_In_ unsigned sid, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void U(
+    _In_ unsigned sid, _In_ unsigned q, _In_ double theta, _In_ double phi, _In_ double lambda);
 
 // multi-controlled single-qubit gates
 
@@ -67,6 +69,8 @@ MICROSOFT_QUANTUM_DECL void MCS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 MICROSOFT_QUANTUM_DECL void MCT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
 MICROSOFT_QUANTUM_DECL void MCAdjS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
 MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL void MCU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q,
+    _In_ double theta, _In_ double phi, _In_ double lambda);
 
 // rotations
 MICROSOFT_QUANTUM_DECL void R(_In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned q);

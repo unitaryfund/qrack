@@ -574,6 +574,14 @@ public:
     virtual void U2(bitLenInt target, real1 phi, real1 lambda) { U(target, M_PI / 2, phi, lambda); }
 
     /**
+     * Controlled general unitary gate
+     *
+     * Applies a controlled gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible
+     * single bit unitary gates, (up to a global phase factor which has no effect on Hermitian operator expectation values).
+     */
+    virtual void CU(bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1 theta, real1 phi, real1 lambda);
+
+    /**
      * Hadamard gate
      *
      * Applies a Hadamard gate on qubit at "qubitIndex."

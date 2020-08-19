@@ -574,6 +574,18 @@ MICROSOFT_QUANTUM_DECL void AdjT(_In_ unsigned sid, _In_ unsigned q)
 }
 
 /**
+ * (External API) 3-parameter unitary gate
+ */
+MICROSOFT_QUANTUM_DECL void U(
+    _In_ unsigned sid, _In_ unsigned q, _In_ double theta, _In_ double phi, _In_ double lambda)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->U(shards[simulator][q], theta, phi, lambda);
+}
+
+/**
  * (External API) Controlled "X" Gate
  */
 MICROSOFT_QUANTUM_DECL void MCX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
@@ -718,6 +730,23 @@ MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads
     simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / 4));
 
     delete[] ctrlsArray;
+}
+
+/**
+ * (External API) Controlled 3-parameter unitary gate
+ */
+MICROSOFT_QUANTUM_DECL void MCU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q,
+    _In_ double theta, _In_ double phi, _In_ double lambda)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    bitLenInt* ctrlsArray = new bitLenInt[n];
+    for (unsigned i = 0; i < n; i++) {
+        ctrlsArray[i] = shards[simulator][c[i]];
+    }
+
+    simulator->CU(ctrlsArray, n, shards[simulator][q], theta, phi, lambda);
 }
 
 /**
