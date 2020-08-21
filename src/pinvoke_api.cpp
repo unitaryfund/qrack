@@ -347,7 +347,8 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
 /**
  * (External API) Get the probability that a qubit is in the |1> state.
  */
-MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q) {
+MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
+{
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];

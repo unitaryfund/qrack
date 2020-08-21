@@ -221,6 +221,18 @@ REG_GATE_3(NOR);
 /// "XNOR" compare a 2 bit ranges in QInterface and store result in range starting at output
 REG_GATE_3(XNOR);
 
+/// "AND" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
+/// output
+REG_GATE_3B(CLAND);
+
+/// "OR" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
+/// output
+REG_GATE_3B(CLOR);
+
+/// "XOR" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
+/// output
+REG_GATE_3B(CLXOR);
+
 /// "NAND" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
 /// output
 REG_GATE_3B(CLNAND);

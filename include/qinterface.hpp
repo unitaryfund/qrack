@@ -577,7 +577,8 @@ public:
      * Controlled general unitary gate
      *
      * Applies a controlled gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible
-     * single bit unitary gates, (up to a global phase factor which has no effect on Hermitian operator expectation values).
+     * single bit unitary gates, (up to a global phase factor which has no effect on Hermitian operator expectation
+     * values).
      */
     virtual void CU(bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1 theta, real1 phi, real1 lambda);
 
@@ -897,7 +898,7 @@ public:
     virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /**
-     * Quantum analog of classical "nAND" gate
+     * Quantum analog of classical "NAND" gate
      *
      * (Assumes the outputBit is in the 0 state)
      */

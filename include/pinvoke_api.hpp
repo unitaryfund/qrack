@@ -30,7 +30,7 @@ MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s);
 MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callback);
 
-//pseudo-quantum
+// pseudo-quantum
 MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q);
 
 // MICROSOFT_QUANTUM_DECL bool DumpQubits(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_
