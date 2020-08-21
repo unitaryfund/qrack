@@ -15,64 +15,6 @@
 namespace Qrack {
 
 // Logic Gates:
-
-/// "AND" compare two bits in QInterface, and store result in outputBit
-void QInterface::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length)
-{
-    /* Same bit, no action necessary. */
-    if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
-        return;
-    }
-
-    if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
-        if (inputBit1 == inputBit2) {
-            CNOT(inputBit1, outputBit, length);
-        } else {
-            CCNOT(inputBit1, inputBit2, outputBit, length);
-        }
-    } else {
-        throw std::invalid_argument("Invalid AND arguments.");
-    }
-}
-
-/// "OR" compare two bits in QInterface, and store result in outputBit
-void QInterface::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length)
-{
-    /* Same bit, no action necessary. */
-    if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
-        return;
-    }
-
-    if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
-        X(outputBit, length);
-        if (inputBit1 == inputBit2) {
-            AntiCNOT(inputBit1, outputBit, length);
-        } else {
-            AntiCCNOT(inputBit1, inputBit2, outputBit, length);
-        }
-    } else {
-        throw std::invalid_argument("Invalid OR arguments.");
-    }
-}
-
-/// "XOR" compare two bits in QInterface, and store result in outputBit
-void QInterface::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length)
-{
-    if (((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
-        SetReg(outputBit, length, 0);
-        return;
-    }
-
-    if (inputBit1 == outputBit) {
-        CNOT(inputBit2, outputBit, length);
-    } else if (inputBit2 == outputBit) {
-        CNOT(inputBit1, outputBit, length);
-    } else {
-        CNOT(inputBit1, outputBit, length);
-        CNOT(inputBit2, outputBit, length);
-    }
-}
-
 void QInterface::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     /* Same bit, no action necessary. */

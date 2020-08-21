@@ -771,30 +771,6 @@ public:
     /** @} */
 
     /**
-     * \defgroup LogicGates Logic Gates
-     *
-     * Each bit is paired with a CL* variant that utilizes a classical bit as
-     * an input.
-     *
-     * @{
-     */
-
-    using QInterface::AND;
-    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    using QInterface::OR;
-    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    using QInterface::XOR;
-    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    using QInterface::CLAND;
-    virtual void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-    using QInterface::CLOR;
-    virtual void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-    using QInterface::CLXOR;
-    virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-
-    /** @} */
-
-    /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.
      *
      * @{
@@ -924,10 +900,6 @@ protected:
     bool INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex);
     bool INTSCOptimize(
         bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex, bitLenInt overflowIndex);
-
-    template <typename F>
-    void CBoolReg(const bitLenInt& qInputStart, const bitCapInt& classicalInput, const bitLenInt& outputStart,
-        const bitLenInt& length, F fn);
 
     virtual QInterfacePtr Entangle(std::vector<bitLenInt> bits);
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);

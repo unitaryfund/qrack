@@ -30,6 +30,14 @@ namespace Qrack {
         }                                                                                                              \
     }
 
+#define REG_GATE_3(gate)                                                                                               \
+    void QInterface::gate(bitLenInt qubit1, bitLenInt qubit2, bitLenInt qubit3, bitLenInt length)                      \
+    {                                                                                                                  \
+        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+            gate(qubit1 + bit, qubit2 + bit, qubit3 + bit);                                                            \
+        }                                                                                                              \
+    }
+
 #define REG_GATE_3B(gate)                                                                                              \
     void QInterface::gate(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)    \
     {                                                                                                                  \
@@ -195,17 +203,35 @@ REG_GATE_C1_1(CT);
 /// Apply controlled IT gate to each bit
 REG_GATE_C1_1(CIT);
 
-/// "AND" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
-/// output
-REG_GATE_3B(CLAND);
+/// "AND" compare a 2 bit ranges in QInterface and store result in range starting at output
+REG_GATE_3(AND);
 
-/// "OR" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
-/// output
-REG_GATE_3B(CLOR);
+/// "OR" compare a 2 bit ranges in QInterface and store result in range starting at output
+REG_GATE_3(OR);
 
-/// "XOR" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
+/// "XOR" compare a 2 bit ranges in QInterface and store result in range starting at output
+REG_GATE_3(XOR);
+
+/// "NAND" compare a 2 bit ranges in QInterface and store result in range starting at output
+REG_GATE_3(NAND);
+
+/// "NOR" compare a 2 bit ranges in QInterface and store result in range starting at output
+REG_GATE_3(NOR);
+
+/// "XNOR" compare a 2 bit ranges in QInterface and store result in range starting at output
+REG_GATE_3(XNOR);
+
+/// "NAND" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
 /// output
-REG_GATE_3B(CLXOR);
+REG_GATE_3B(CLNAND);
+
+/// "NOR" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
+/// output
+REG_GATE_3B(CLNOR);
+
+/// "XNOR" compare a bit range in QInterface with a classical unsigned integer, and store result in range starting at
+/// output
+REG_GATE_3B(CLXNOR);
 
 ///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
 REG_GATE_1R(RT);

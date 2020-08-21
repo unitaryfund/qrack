@@ -49,66 +49,6 @@ void QInterface::DECBCD(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
 }
 
 // Logic Gates:
-
-/// "AND" compare two bits in QInterface, and store result in outputBit
-void QInterface::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length)
-{
-    /* Same bit, no action necessary. */
-    if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
-        return;
-    }
-
-    if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
-        SetReg(outputBit, length, 0);
-        if (inputBit1 == inputBit2) {
-            CNOT(inputBit1, outputBit, length);
-        } else {
-            CCNOT(inputBit1, inputBit2, outputBit, length);
-        }
-    } else {
-        throw std::invalid_argument("Invalid AND arguments.");
-    }
-}
-
-/// "OR" compare two bits in QInterface, and store result in outputBit
-void QInterface::OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length)
-{
-    /* Same bit, no action necessary. */
-    if ((inputBit1 == inputBit2) && (inputBit2 == outputBit)) {
-        return;
-    }
-
-    if ((inputBit1 != outputBit) && (inputBit2 != outputBit)) {
-        SetReg(outputBit, length, (1 << length) - 1);
-        if (inputBit1 == inputBit2) {
-            AntiCNOT(inputBit1, outputBit, length);
-        } else {
-            AntiCCNOT(inputBit1, inputBit2, outputBit, length);
-        }
-    } else {
-        throw std::invalid_argument("Invalid OR arguments.");
-    }
-}
-
-/// "XOR" compare two bits in QInterface, and store result in outputBit
-void QInterface::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length)
-{
-    if (((inputBit1 == inputBit2) && (inputBit2 == outputBit))) {
-        SetReg(outputBit, length, 0);
-        return;
-    }
-
-    if (inputBit1 == outputBit) {
-        CNOT(inputBit2, outputBit, length);
-    } else if (inputBit2 == outputBit) {
-        CNOT(inputBit1, outputBit, length);
-    } else {
-        SetReg(outputBit, length, 0);
-        CNOT(inputBit1, outputBit, length);
-        CNOT(inputBit2, outputBit, length);
-    }
-}
-
 void QInterface::AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
 {
     /* Same bit, no action necessary. */
@@ -165,6 +105,24 @@ void QInterface::XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputB
     }
 }
 
+void QInterface::NAND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
+    AND(inputBit1, inputBit2, outputBit);
+    X(outputBit);
+}
+
+void QInterface::NOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
+    OR(inputBit1, inputBit2, outputBit);
+    X(outputBit);
+}
+
+void QInterface::XNOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit)
+{
+    XOR(inputBit1, inputBit2, outputBit);
+    X(outputBit);
+}
+
 void QInterface::CLAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
 {
     SetBit(outputBit, false);
@@ -191,6 +149,24 @@ void QInterface::CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt ou
     } else if (inputClassicalBit) {
         X(outputBit);
     }
+}
+
+void QInterface::CLNAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
+{
+    CLAND(inputQBit, inputClassicalBit, outputBit);
+    X(outputBit);
+}
+
+void QInterface::CLNOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
+{
+    CLOR(inputQBit, inputClassicalBit, outputBit);
+    X(outputBit);
+}
+
+void QInterface::CLXNOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit)
+{
+    CLXOR(inputQBit, inputClassicalBit, outputBit);
+    X(outputBit);
 }
 
 } // namespace Qrack

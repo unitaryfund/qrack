@@ -896,6 +896,45 @@ public:
      */
     virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
+    /**
+     * Quantum analog of classical "nAND" gate
+     *
+     * (Assumes the outputBit is in the 0 state)
+     */
+    virtual void NAND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+
+    /**
+     * Quantum analog of classical "NOR" gate
+     *
+     * (Assumes the outputBit is in the 0 state)
+     */
+    virtual void NOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+
+    /**
+     * Quantum analog of classical "XNOR" gate
+     *
+     * (Assumes the outputBit is in the 0 state)
+     */
+    virtual void XNOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+
+    /**
+     *  Quantum analog of classical "NAND" gate. Takes one qubit input and one
+     *  classical bit input. (Assumes the outputBit is in the 0 state)
+     */
+    virtual void CLNAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+
+    /**
+     * Quantum analog of classical "NOR" gate. Takes one qubit input and one
+     * classical bit input. (Assumes the outputBit is in the 0 state)
+     */
+    virtual void CLNOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+
+    /**
+     * Quantum analog of classical "XNOR" gate. Takes one qubit input and one
+     * classical bit input. (Assumes the outputBit is in the 0 state)
+     */
+    virtual void CLXNOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+
     /** @} */
 
     /**
@@ -1228,6 +1267,24 @@ public:
 
     /** Classical bitwise "XOR" */
     virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+
+    /** Bitwise "NAND" */
+    virtual void NAND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+
+    /** Classical bitwise "NAND" */
+    virtual void CLNAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+
+    /** Bitwise "NOR" */
+    virtual void NOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+
+    /** Classical bitwise "NOR" */
+    virtual void CLNOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+
+    /** Bitwise "XNOR" */
+    virtual void XNOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+
+    /** Classical bitwise "XNOR" */
+    virtual void CLXNOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /**
      * Bitwise phase shift gate
