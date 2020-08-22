@@ -1396,14 +1396,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_or")
     qftReg->OR(0, 4, 8, 4); // 0xe | 0x3
     REQUIRE_THAT(qftReg, HasProbability(0xf3e));
     qftReg->SetPermutation(0x03);
-    qftReg->OR(0, 0, 8, 4); // 0x3 & 0x3
+    qftReg->OR(0, 0, 8, 4); // 0x3 | 0x3
     REQUIRE_THAT(qftReg, HasProbability(0x303));
     qftReg->SetPermutation(0x3e);
     qftReg->NOR(0, 4, 8, 4); // ~(0xe | 0x3)
     REQUIRE_THAT(qftReg, HasProbability(0x03e));
     qftReg->SetPermutation(0x03);
-    qftReg->NOR(0, 0, 8, 4); // ~(0x3 & 0x3)
-    REQUIRE_THAT(qftReg, HasProbability(0x003));
+    qftReg->NOR(0, 0, 8, 4); // ~(0x3 | 0x3)
+    REQUIRE_THAT(qftReg, HasProbability(0xc03));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_xor")
