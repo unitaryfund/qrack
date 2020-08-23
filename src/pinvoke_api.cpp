@@ -345,17 +345,6 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
 }
 
 /**
- * (External API) Get the probability that a qubit is in the |1> state.
- */
-MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-
-    QInterfacePtr simulator = simulators[sid];
-    return simulator->Prob(shards[simulator][q]);
-}
-
-/**
  * (External API) Select from a distribution of "n" elements according the discrete probabilities in "d."
  */
 MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::size_t n, _In_reads_(n) double* p)
@@ -1011,5 +1000,16 @@ MICROSOFT_QUANTUM_DECL void CLXNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigne
 
     QInterfacePtr simulator = simulators[sid];
     simulator->CLXNOR(ci, qi, qo);
+}
+
+/**
+ * (External API) Get the probability that a qubit is in the |1> state.
+ */
+MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    return simulator->Prob(shards[simulator][q]);
 }
 }
