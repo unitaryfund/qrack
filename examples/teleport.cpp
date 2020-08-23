@@ -54,6 +54,8 @@ int main()
     if (q1) {
         qReg->X(2);
     }
+    qReg->H(2);
+
     std::cout << "Bob received: " << (int)qReg->M(2) << std::endl;
 
     // MWI unitary equivalent:
