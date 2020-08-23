@@ -72,6 +72,7 @@ int main()
     // Bob receives the classical message and prepares his half of the Bell pair to complete teleportation.
     qReg->CZ(0, 2);
     qReg->CNOT(1, 2);
+    qReg->H(2);
     std::cout << "Bob received: " << (int)qReg->M(2) << std::endl;
 
     // Another MWI unitary equivalent, with a caveat: This variant would specifically be "decoherent," if measurements
@@ -96,6 +97,5 @@ int main()
     qReg->CNOT(2, 1);
     // Alice and Bob "reverse control" again.
     qReg->H(1);
-    qReg->H(2);
     std::cout << "Bob received: " << (int)qReg->M(2) << std::endl;
 };
