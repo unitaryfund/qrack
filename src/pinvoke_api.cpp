@@ -262,7 +262,9 @@ extern "C" {
 /**
  * (External API) Initialize a simulator ID with 0 qubits
  */
-MICROSOFT_QUANTUM_DECL unsigned init()
+MICROSOFT_QUANTUM_DECL unsigned init() { return init_count(4); }
+
+MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 {
     META_LOCK_GUARD()
 
@@ -275,12 +277,17 @@ MICROSOFT_QUANTUM_DECL unsigned init()
         }
     }
 
-    QInterfacePtr simulator = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, 4, 0, rng);
+    QInterfacePtr simulator = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, q, 0, rng);
     if (sid == simulators.size()) {
         simulators.push_back(simulator);
     } else {
         simulators[sid] = simulator;
     }
+
+	shards[simulator] = {};
+	for (unsigned i = 0; i < q; i++) {
+		shards[simulator][i] = (bitLenInt)i;
+	}
 
     return sid;
 }
@@ -562,6 +569,18 @@ MICROSOFT_QUANTUM_DECL void AdjT(_In_ unsigned sid, _In_ unsigned q)
 }
 
 /**
+ * (External API) 3-parameter unitary gate
+ */
+MICROSOFT_QUANTUM_DECL void U(
+    _In_ unsigned sid, _In_ unsigned q, _In_ double theta, _In_ double phi, _In_ double lambda)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->U(shards[simulator][q], theta, phi, lambda);
+}
+
+/**
  * (External API) Controlled "X" Gate
  */
 MICROSOFT_QUANTUM_DECL void MCX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
@@ -706,6 +725,23 @@ MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads
     simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / 4));
 
     delete[] ctrlsArray;
+}
+
+/**
+ * (External API) Controlled 3-parameter unitary gate
+ */
+MICROSOFT_QUANTUM_DECL void MCU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q,
+    _In_ double theta, _In_ double phi, _In_ double lambda)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    bitLenInt* ctrlsArray = new bitLenInt[n];
+    for (unsigned i = 0; i < n; i++) {
+        ctrlsArray[i] = shards[simulator][c[i]];
+    }
+
+    simulator->CU(ctrlsArray, n, shards[simulator][q], theta, phi, lambda);
 }
 
 /**
@@ -873,5 +909,112 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
     RevertPauliBasis(simulator, n, b, q);
 
     return toRet;
+}
+
+MICROSOFT_QUANTUM_DECL void AND(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->AND(qi1, qi2, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void OR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->OR(qi1, qi2, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void XOR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->XOR(qi1, qi2, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void NAND(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->NAND(qi1, qi2, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void NOR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->NOR(qi1, qi2, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void XNOR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->XNOR(qi1, qi2, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void CLAND(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->CLAND(ci, qi, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void CLOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->CLOR(ci, qi, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void CLXOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->CLXOR(ci, qi, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void CLNAND(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->CLNAND(ci, qi, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void CLNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->CLNOR(ci, qi, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void CLXNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->CLXNOR(ci, qi, qo);
+}
+
+/**
+ * (External API) Get the probability that a qubit is in the |1> state.
+ */
+MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    return simulator->Prob(shards[simulator][q]);
 }
 }

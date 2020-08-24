@@ -2054,60 +2054,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 }
 
-template <typename F>
-void QUnit::CBoolReg(const bitLenInt& qInputStart, const bitCapInt& classicalInput, const bitLenInt& outputStart,
-    const bitLenInt& length, F fn)
-{
-    bool cBit;
-    for (bitLenInt i = 0; i < length; i++) {
-        cBit = bitSlice(i, classicalInput) != 0;
-        fn(qInputStart + i, cBit, outputStart + i);
-    }
-}
-
-void QUnit::AND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
-{
-    if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
-        for (bitLenInt i = 0; i < length; i++) {
-            AND(inputStart1 + i, inputStart2 + i, outputStart + i);
-        }
-    }
-}
-
-void QUnit::OR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
-{
-    if (!((inputStart1 == inputStart2) && (inputStart2 == outputStart))) {
-        for (bitLenInt i = 0; i < length; i++) {
-            OR(inputStart1 + i, inputStart2 + i, outputStart + i);
-        }
-    }
-}
-
-void QUnit::XOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length)
-{
-    for (bitLenInt i = 0; i < length; i++) {
-        XOR(inputStart1 + i, inputStart2 + i, outputStart + i);
-    }
-}
-
-void QUnit::CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
-{
-    CBoolReg(qInputStart, classicalInput, outputStart, length,
-        [&](bitLenInt qb, bool cb, bitLenInt l) { CLAND(qb, cb, l); });
-}
-
-void QUnit::CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
-{
-    CBoolReg(
-        qInputStart, classicalInput, outputStart, length, [&](bitLenInt qb, bool cb, bitLenInt l) { CLOR(qb, cb, l); });
-}
-
-void QUnit::CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)
-{
-    CBoolReg(qInputStart, classicalInput, outputStart, length,
-        [&](bitLenInt qb, bool cb, bitLenInt l) { CLXOR(qb, cb, l); });
-}
-
 bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
 {
     if (controlLen == 0) {
