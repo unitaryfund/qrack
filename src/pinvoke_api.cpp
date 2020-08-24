@@ -283,6 +283,11 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
     } else {
         simulators[sid] = simulator;
     }
+	
+	shards[simulator] = {};
+	for (unsigned i = 0; i < q; i++) {
+		shards[simulator][i] = (bitLenInt)i;
+	}
 
     return sid;
 }
