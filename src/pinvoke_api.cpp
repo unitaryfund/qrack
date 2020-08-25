@@ -1022,12 +1022,14 @@ MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
 /**
  * (External API) Simulate a Hamiltonian
  */
-MICROSOFT_QUANTUM_DECL void TimeEvolve(
-    _In_ unsigned sid, _In_ double t, _In_ unsigned n, _In_reads_(n) QrackTimeEvolveOp* teos)
+MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ unsigned sid, _In_ double t, _In_ unsigned n,
+    _In_reads_(n) _QrackTimeEvolveOpHeader* teos, unsigned mn, _In_reads_(mn) double* mtrx)
 {
+    unsigned mtrxOffset = 0;
     Hamiltonian h(n);
     for (unsigned i = 0; i < n; i++) {
-        h[i] = std::make_shared<UniformHamiltonianOp>(teos[i]);
+        h[i] = std::make_shared<UniformHamiltonianOp>(teos[i], mtrx + mtrxOffset);
+        mtrxOffset += (ONE_BCI << teos[i].controlLen) * 8U;
     }
 
     SIMULATOR_LOCK_GUARD(sid)
