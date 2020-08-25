@@ -22,6 +22,8 @@
 typedef void (*IdCallback)(unsigned);
 typedef bool (*ProbAmpCallback)(size_t, double, double);
 
+struct QrackTimeEvolveOp;
+
 extern "C" {
 // non-quantum
 MICROSOFT_QUANTUM_DECL unsigned init();
@@ -104,6 +106,9 @@ MICROSOFT_QUANTUM_DECL void CLNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned
 MICROSOFT_QUANTUM_DECL void CLXNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo);
 
 MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q);
+
+MICROSOFT_QUANTUM_DECL void TimeEvolve(
+    _In_ unsigned sid, _In_ double t, _In_ unsigned teosLen, _In_ QrackTimeEvolveOp* teos);
 
 // permutation oracle emulation
 // MICROSOFT_QUANTUM_DECL void PermuteBasis(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_

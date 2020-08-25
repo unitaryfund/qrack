@@ -7,6 +7,7 @@
 // for details.
 
 #include "pinvoke_api.hpp"
+#include "hamiltonian.hpp"
 
 // for details.
 
@@ -284,10 +285,10 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
         simulators[sid] = simulator;
     }
 
-	shards[simulator] = {};
-	for (unsigned i = 0; i < q; i++) {
-		shards[simulator][i] = (bitLenInt)i;
-	}
+    shards[simulator] = {};
+    for (unsigned i = 0; i < q; i++) {
+        shards[simulator][i] = (bitLenInt)i;
+    }
 
     return sid;
 }
@@ -1016,5 +1017,22 @@ MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
 
     QInterfacePtr simulator = simulators[sid];
     return simulator->Prob(shards[simulator][q]);
+}
+
+/**
+ * (External API) Simulate a Hamiltonian
+ */
+MICROSOFT_QUANTUM_DECL void TimeEvolve(
+    _In_ unsigned sid, _In_ double t, _In_ unsigned teosLen, _In_ QrackTimeEvolveOp* teos)
+{
+    Hamiltonian h(teosLen);
+    for (unsigned i = 0; i < teosLen; i++) {
+        h[i] = std::make_shared<UniformHamiltonianOp>(teos[i]);
+    }
+
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->TimeEvolve(h, (real1)t);
 }
 }
