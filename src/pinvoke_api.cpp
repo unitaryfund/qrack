@@ -7,6 +7,7 @@
 // for details.
 
 #include "pinvoke_api.hpp"
+#include "hamiltonian.hpp"
 
 // for details.
 
@@ -284,10 +285,10 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
         simulators[sid] = simulator;
     }
 
-	shards[simulator] = {};
-	for (unsigned i = 0; i < q; i++) {
-		shards[simulator][i] = (bitLenInt)i;
-	}
+    shards[simulator] = {};
+    for (unsigned i = 0; i < q; i++) {
+        shards[simulator][i] = (bitLenInt)i;
+    }
 
     return sid;
 }
@@ -299,7 +300,8 @@ MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid)
 {
     META_LOCK_GUARD()
     // SIMULATOR_LOCK_GUARD(sid)
-
+	
+	shards.erase(simulators[sid]);
     simulators[sid] = NULL;
 }
 
@@ -1017,4 +1019,25 @@ MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
     QInterfacePtr simulator = simulators[sid];
     return simulator->Prob(shards[simulator][q]);
 }
+
+#if !ENABLE_PURE32
+/**
+ * (External API) Simulate a Hamiltonian
+ */
+MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ unsigned sid, _In_ double t, _In_ unsigned n,
+    _In_reads_(n) _QrackTimeEvolveOpHeader* teos, unsigned mn, _In_reads_(mn) double* mtrx)
+{
+    bitCapIntOcl mtrxOffset = 0;
+    Hamiltonian h(n);
+    for (unsigned i = 0; i < n; i++) {
+        h[i] = std::make_shared<UniformHamiltonianOp>(teos[i], mtrx + mtrxOffset);
+        mtrxOffset += pow2Ocl(teos[i].controlLen) * 8U;
+    }
+
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->TimeEvolve(h, (real1)t);
+}
+#endif
 }
