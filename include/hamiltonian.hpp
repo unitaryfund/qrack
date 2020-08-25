@@ -17,9 +17,9 @@
 #include "common/qrack_types.hpp"
 
 struct QrackTimeEvolveOp {
-    unsigned* controls;
-    unsigned controlLen;
     unsigned target;
+    unsigned controlLen;
+    unsigned controls[64];
     double* matrix;
 };
 
