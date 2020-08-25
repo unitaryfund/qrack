@@ -16,7 +16,7 @@
 
 #include "common/qrack_types.hpp"
 
-#pragma pack(push, 8)
+#pragma pack(push, 4)
 struct _QrackTimeEvolveOpHeader {
     unsigned target;
     unsigned controlLen;
