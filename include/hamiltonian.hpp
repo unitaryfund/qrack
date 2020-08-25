@@ -19,7 +19,7 @@
 struct QrackTimeEvolveOp {
     unsigned target;
     unsigned controlLen;
-    unsigned controls[64];
+    unsigned controls[32];
     double* matrix;
 };
 
