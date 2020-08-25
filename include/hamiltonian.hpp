@@ -16,13 +16,11 @@
 
 #include "common/qrack_types.hpp"
 
-#pragma pack(push, 4)
 struct _QrackTimeEvolveOpHeader {
     unsigned target;
     unsigned controlLen;
     unsigned controls[32];
 };
-#pragma pack(pop)
 
 namespace Qrack {
 
@@ -97,13 +95,14 @@ struct UniformHamiltonianOp : HamiltonianOp {
         uniform = true;
     }
 
+#if !ENABLE_PURE32
     UniformHamiltonianOp(_QrackTimeEvolveOpHeader teoh, double* mtrx)
         : HamiltonianOp()
     {
         targetBit = (bitLenInt)(teoh.target);
 
-        controls = new bitLenInt[teoh.controlLen];
         controlLen = (bitLenInt)teoh.controlLen;
+        controls = new bitLenInt[controlLen];
         for (bitLenInt i = 0; i < controlLen; i++) {
             controls[i] = (bitLenInt)teoh.controls[i];
         }
@@ -117,6 +116,7 @@ struct UniformHamiltonianOp : HamiltonianOp {
             matrix.get()[i] = complex((real1)mtrx[i * 2U], (real1)mtrx[(i * 2U) + 1U]);
         }
     }
+#endif
 };
 
 /**
