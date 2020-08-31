@@ -50,7 +50,11 @@ else (MSVC)
     if (APPLE)
         set(QRACK_LIBS qrack pthread)
     else (APPLE)
-        set(QRACK_LIBS qrack pthread atomic)
+        if (ANDROID)
+            set(QRACK_LIBS qrack atomic)
+        else (ANDROID)
+            set(QRACK_LIBS qrack pthread atomic)
+        endif(ANDROID)
     endif (APPLE)
 endif (MSVC)
 
@@ -76,10 +80,6 @@ add_executable (benchmarks
 
 target_link_libraries (benchmarks ${QRACK_LIBS})
 
-add_test (NAME qrack_benchmarks
-    COMMAND benchmarks
-    )
-
 # Declare the accuracy executable
 add_executable (accuracy
     test/accuracy_main.cpp
@@ -88,20 +88,12 @@ add_executable (accuracy
 
 target_link_libraries (accuracy ${QRACK_LIBS})
 
-add_test (NAME qrack_accuracy
-    COMMAND accuracy
-    )
-
 # Declare the OCL precompilation executable
 add_executable (qrack_cl_precompile
     src/qrack_cl_precompile.cpp
     )
 
 target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
-
-add_test (NAME qrack_cl_precompile
-    COMMAND qrack_cl_precompile
-    )
 
 # Included after the library and other modules have been declared
 option (ENABLE_OPENCL "Use OpenCL optimizations" ON)

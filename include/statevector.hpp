@@ -61,6 +61,8 @@ protected:
                 ? QRACK_ALIGN_SIZE
                 : sizeof(complex) * (bitCapIntOcl)elemCount,
             QRACK_ALIGN_SIZE);
+#elif defined(__ANDROID__)
+        return (complex*)malloc(sizeof(complex) * (bitCapIntOcl)elemCount);
 #else
         return (complex*)aligned_alloc(QRACK_ALIGN_SIZE,
             ((sizeof(complex) * (bitCapIntOcl)elemCount) < QRACK_ALIGN_SIZE)
@@ -339,14 +341,14 @@ public:
 
     void shuffle(StateVectorPtr svp) { shuffle(std::dynamic_pointer_cast<StateVectorSparse>(svp)); }
 
-    void shuffle(StateVectorSparse svp)
+    void shuffle(StateVectorSparsePtr svp)
     {
         complex amp;
         size_t halfCap = capacity >> ONE_BCI;
         mtx.lock();
         for (bitCapInt i = 0; i < halfCap; i++) {
-            amp = svp.read(i);
-            svp.write(i, read(i + halfCap));
+            amp = svp->read(i);
+            svp->write(i, read(i + halfCap));
             write(i + halfCap, amp);
         }
         mtx.unlock();

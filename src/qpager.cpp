@@ -934,7 +934,6 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
     bitLenInt qpp = qubitsPerPage();
     qubit1 -= qpp;
     qubit2 -= qpp;
-    bitLenInt sqi = qpp - 1U;
 
     std::vector<bitCapInt> sortedMasks(2U);
     bitCapInt qubit1Pow = pow2(qubit1);
@@ -948,7 +947,7 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
     bitCapInt i;
     for (i = 0; i < maxLCV; i++) {
         futures[i] =
-            std::async(std::launch::async, [this, i, &qubit1Pow, &qubit2Pow, &sortedMasks, &isIPhaseFac, &sqi]() {
+            std::async(std::launch::async, [this, i, &qubit1Pow, &qubit2Pow, &sortedMasks, &isIPhaseFac]() {
                 bitCapInt j, jLo, jHi;
                 j = i & sortedMasks[0];
                 jHi = (i ^ j) << ONE_BCI;
@@ -1023,8 +1022,8 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
                     future1.get();
                     future2.get();
                 } else {
-                    future1 = std::async(std::launch::async, [engine1, &sqi]() { engine1->UpdateRunningNorm(); });
-                    future2 = std::async(std::launch::async, [engine2, &sqi]() { engine2->UpdateRunningNorm(); });
+                    future1 = std::async(std::launch::async, [engine1]() { engine1->UpdateRunningNorm(); });
+                    future2 = std::async(std::launch::async, [engine2]() { engine2->UpdateRunningNorm(); });
 
                     future1.get();
                     future2.get();

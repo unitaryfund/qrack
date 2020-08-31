@@ -29,6 +29,8 @@ unsigned char* cl_alloc(size_t ucharCount)
             ? QRACK_ALIGN_SIZE
             : (sizeof(unsigned char) * ucharCount),
         QRACK_ALIGN_SIZE);
+#elif defined(__ANDROID__)
+    return (unsigned char*)malloc(sizeof(unsigned char) * ucharCount);
 #else
     return (unsigned char*)aligned_alloc(QRACK_ALIGN_SIZE,
         ((sizeof(unsigned char) * ucharCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE

@@ -479,13 +479,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")
         std::vector<int>{}, 10);
 
     control[0] = 9;
-    qftReg2->SetPermutation((1U << 9U) || (1U << 10U));
+    qftReg2->SetPermutation((1U << 9U) | (1U << 10U));
     qftReg2->CSwap(control, 1, 10, 11);
-    REQUIRE_THAT(qftReg2, HasProbability(0, 12, (1U << 9U) || (1U << 11U)));
+    REQUIRE_THAT(qftReg2, HasProbability(0, 12, (1U << 9U) | (1U << 11U)));
 
-    qftReg2->SetPermutation((1U << 9U) || (1U << 10U));
+    qftReg2->SetPermutation((1U << 9U) | (1U << 10U));
     qftReg2->CSwap(control, 1, 10, 0);
-    REQUIRE_THAT(qftReg2, HasProbability(0, 12, (1U << 9U) || 1U));
+    REQUIRE_THAT(qftReg2, HasProbability(0, 12, (1U << 9U) | 1U));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticswap")
