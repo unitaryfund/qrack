@@ -300,8 +300,8 @@ MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid)
 {
     META_LOCK_GUARD()
     // SIMULATOR_LOCK_GUARD(sid)
-	
-	shards.erase(simulators[sid]);
+
+    shards.erase(simulators[sid]);
     simulators[sid] = NULL;
 }
 

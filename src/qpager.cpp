@@ -946,33 +946,30 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
     std::vector<std::future<void>> futures(maxLCV);
     bitCapInt i;
     for (i = 0; i < maxLCV; i++) {
-        futures[i] =
-            std::async(std::launch::async, [this, i, &qubit1Pow, &qubit2Pow, &sortedMasks, &isIPhaseFac]() {
-                bitCapInt j, jLo, jHi;
-                j = i & sortedMasks[0];
-                jHi = (i ^ j) << ONE_BCI;
-                jLo = jHi & sortedMasks[1];
-                j |= jLo | ((jHi ^ jLo) << ONE_BCI);
+        futures[i] = std::async(std::launch::async, [this, i, &qubit1Pow, &qubit2Pow, &sortedMasks, &isIPhaseFac]() {
+            bitCapInt j, jLo, jHi;
+            j = i & sortedMasks[0];
+            jHi = (i ^ j) << ONE_BCI;
+            jLo = jHi & sortedMasks[1];
+            j |= jLo | ((jHi ^ jLo) << ONE_BCI);
 
-                std::swap(qPages[j + qubit1Pow], qPages[j + qubit2Pow]);
+            std::swap(qPages[j + qubit1Pow], qPages[j + qubit2Pow]);
 
-                if (!isIPhaseFac) {
-                    return;
-                }
+            if (!isIPhaseFac) {
+                return;
+            }
 
-                QEnginePtr engine1 = qPages[j + qubit1Pow];
-                QEnginePtr engine2 = qPages[j + qubit2Pow];
+            QEnginePtr engine1 = qPages[j + qubit1Pow];
+            QEnginePtr engine2 = qPages[j + qubit2Pow];
 
-                std::future<void> future1, future2;
+            std::future<void> future1, future2;
 
-                future1 =
-                    std::async(std::launch::async, [engine1]() { engine1->ApplySinglePhase(I_CMPLX, I_CMPLX, 0); });
-                future2 =
-                    std::async(std::launch::async, [engine2]() { engine2->ApplySinglePhase(I_CMPLX, I_CMPLX, 0); });
+            future1 = std::async(std::launch::async, [engine1]() { engine1->ApplySinglePhase(I_CMPLX, I_CMPLX, 0); });
+            future2 = std::async(std::launch::async, [engine2]() { engine2->ApplySinglePhase(I_CMPLX, I_CMPLX, 0); });
 
-                future1.get();
-                future2.get();
-            });
+            future1.get();
+            future2.get();
+        });
     }
 
     for (i = 0; i < maxLCV; i++) {
