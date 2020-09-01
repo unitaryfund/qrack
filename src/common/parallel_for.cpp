@@ -59,7 +59,7 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, 
         idx = 0;
         std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu < numCores; cpu++) {
-            futures[cpu] = ATOMIC_ASYNC(cpu, &idx, begin, itemCount, Stride, inc, fn)
+            futures[cpu] = ATOMIC_ASYNC(cpu, &idx, begin, itemCount, inc, fn)
             {
                 bitCapInt i, j, l;
                 bitCapInt k = 0;
@@ -237,7 +237,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
         idx = 0;
         std::vector<std::future<real1>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
-            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray, &norm_thresh, Stride)
+            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray, &norm_thresh)
             {
                 real1 sqrNorm = ZERO_R1;
                 real1 nrm;
@@ -284,7 +284,7 @@ real1 ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVectorPt
         idx = 0;
         std::vector<std::future<real1>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
-            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray, Stride)
+            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray)
             {
                 real1 sqrNorm = ZERO_R1;
                 bitCapInt i, j;
