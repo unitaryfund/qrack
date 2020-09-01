@@ -47,7 +47,9 @@ namespace Qrack {
  */
 void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, IncrementFunc inc, ParallelFunc fn)
 {
-    if ((itemCount / PSTRIDE) < (bitCapInt)numCores) {
+    const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+
+    if ((itemCount / Stride) < (bitCapInt)numCores) {
         bitCapInt maxLcv = begin + itemCount;
         for (bitCapInt j = begin; j < maxLcv; j++) {
             fn(inc(j, 0), 0);
@@ -57,13 +59,13 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, 
         idx = 0;
         std::vector<std::future<void>> futures(numCores);
         for (int cpu = 0; cpu < numCores; cpu++) {
-            futures[cpu] = ATOMIC_ASYNC(cpu, &idx, begin, itemCount, inc, fn)
+            futures[cpu] = ATOMIC_ASYNC(cpu, &idx, begin, itemCount, Stride, inc, fn)
             {
                 bitCapInt i, j, k, l;
                 for (;;) {
                     ATOMIC_INC();
-                    l = i * PSTRIDE;
-                    for (j = 0; j < PSTRIDE; j++) {
+                    l = i * Stride;
+                    for (j = 0; j < Stride; j++) {
                         k = j + l;
                         /* Easiest to clamp on end. */
                         if (k >= itemCount) {
@@ -218,8 +220,10 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
         return par_norm_exact(maxQPower, stateArray);
     }
 
+    const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+
     real1 nrmSqr = 0;
-    if ((maxQPower / PSTRIDE) < (bitCapInt)numCores) {
+    if ((maxQPower / Stride) < (bitCapInt)numCores) {
         real1 nrm;
         for (bitCapInt j = 0; j < maxQPower; j++) {
             nrm = norm(stateArray->read(j));
@@ -232,7 +236,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
         idx = 0;
         std::vector<std::future<real1>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
-            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray, &norm_thresh)
+            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray, &norm_thresh, Stride)
             {
                 real1 sqrNorm = ZERO_R1;
                 real1 nrm;
@@ -240,8 +244,8 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
                 bitCapInt k = 0;
                 for (;;) {
                     ATOMIC_INC();
-                    for (j = 0; j < PSTRIDE; j++) {
-                        k = i * PSTRIDE + j;
+                    for (j = 0; j < Stride; j++) {
+                        k = i * Stride + j;
                         if (k >= maxQPower)
                             break;
 
@@ -267,8 +271,10 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
 
 real1 ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray)
 {
+    const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+
     real1 nrmSqr = 0;
-    if ((maxQPower / PSTRIDE) < (bitCapInt)numCores) {
+    if ((maxQPower / Stride) < (bitCapInt)numCores) {
         for (bitCapInt j = 0; j < maxQPower; j++) {
             nrmSqr += norm(stateArray->read(j));
         }
@@ -277,15 +283,15 @@ real1 ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVectorPt
         idx = 0;
         std::vector<std::future<real1>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
-            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray)
+            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray, Stride)
             {
                 real1 sqrNorm = ZERO_R1;
                 bitCapInt i, j;
                 bitCapInt k = 0;
                 for (;;) {
                     ATOMIC_INC();
-                    for (j = 0; j < PSTRIDE; j++) {
-                        k = i * PSTRIDE + j;
+                    for (j = 0; j < Stride; j++) {
+                        k = i * Stride + j;
                         if (k >= maxQPower)
                             break;
 
