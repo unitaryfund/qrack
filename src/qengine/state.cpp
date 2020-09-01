@@ -197,13 +197,13 @@ union ComplexUnion {
     }
 };
 
-void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* matrix, const bitLenInt bitCount,
     const bitCapInt* qPowsSorted, bool doCalcNorm, real1 norm_thresh)
 {
     CHECK_ZERO_SKIP();
 
-    ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
-    ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
+    complex* mtrx = new complex[4];
+    std::copy(matrix, matrix + 4, mtrx);
 
     bitCapInt* qPowersSorted = new bitCapInt[bitCount];
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
@@ -218,139 +218,142 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     runningNorm = ONE_R1;
 
-    dispatchQueue.dispatch(
-        [this, mtrxCol1, mtrxCol2, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, norm_thresh, nrm]() {
-            int numCores = GetConcurrencyLevel();
+    dispatchQueue.dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, norm_thresh, nrm]() {
+        int numCores = GetConcurrencyLevel();
 
-            real1* rngNrm = NULL;
-            ParallelFunc fn;
-            if (doCalcNorm) {
-                rngNrm = new real1[numCores]();
-                if (nrm != ONE_R1) {
-                    if (norm_thresh > ZERO_R1) {
-                        fn = [&](const bitCapInt& lcv, const int& cpu) {
-                            ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+        ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
+        ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
-                            qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+        real1* rngNrm = NULL;
+        ParallelFunc fn;
+        if (doCalcNorm) {
+            rngNrm = new real1[numCores]();
+            if (nrm != ONE_R1) {
+                if (norm_thresh > ZERO_R1) {
+                    fn = [&](const bitCapInt& lcv, const int& cpu) {
+                        ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
-                            real1 dotMulRes = norm(qubit.cmplx[0]);
-                            if (dotMulRes < norm_thresh) {
-                                qubit.cmplx[0] = ZERO_CMPLX;
-                            } else {
-                                rngNrm[cpu] += dotMulRes;
-                            }
+                        qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
 
-                            dotMulRes = norm(qubit.cmplx[1]);
-                            if (dotMulRes < norm_thresh) {
-                                qubit.cmplx[1] = ZERO_CMPLX;
-                            } else {
-                                rngNrm[cpu] += dotMulRes;
-                            }
+                        real1 dotMulRes = norm(qubit.cmplx[0]);
+                        if (dotMulRes < norm_thresh) {
+                            qubit.cmplx[0] = ZERO_CMPLX;
+                        } else {
+                            rngNrm[cpu] += dotMulRes;
+                        }
 
-#if ENABLE_COMPLEX8
-                            stateVec->write(lcv + offset1, qubit.cmplx[0]);
-                            stateVec->write(lcv + offset2, qubit.cmplx[1]);
-#else
-                            stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
-#endif
-                        };
-                    } else {
-                        fn = [&](const bitCapInt& lcv, const int& cpu) {
-                            ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
-
-                            qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-
-                            rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
+                        dotMulRes = norm(qubit.cmplx[1]);
+                        if (dotMulRes < norm_thresh) {
+                            qubit.cmplx[1] = ZERO_CMPLX;
+                        } else {
+                            rngNrm[cpu] += dotMulRes;
+                        }
 
 #if ENABLE_COMPLEX8
-                            stateVec->write(lcv + offset1, qubit.cmplx[0]);
-                            stateVec->write(lcv + offset2, qubit.cmplx[1]);
+                        stateVec->write(lcv + offset1, qubit.cmplx[0]);
+                        stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
-                            stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+                        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
 #endif
-                        };
-                    }
+                    };
                 } else {
-                    if (norm_thresh > ZERO_R1) {
-                        fn = [&](const bitCapInt& lcv, const int& cpu) {
-                            ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+                    fn = [&](const bitCapInt& lcv, const int& cpu) {
+                        ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
-                            qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+                        qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
 
-                            real1 dotMulRes = norm(qubit.cmplx[0]);
-                            if (dotMulRes < norm_thresh) {
-                                qubit.cmplx[0] = ZERO_CMPLX;
-                            } else {
-                                rngNrm[cpu] += dotMulRes;
-                            }
-
-                            dotMulRes = norm(qubit.cmplx[1]);
-                            if (dotMulRes < norm_thresh) {
-                                qubit.cmplx[1] = ZERO_CMPLX;
-                            } else {
-                                rngNrm[cpu] += dotMulRes;
-                            }
+                        rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
 
 #if ENABLE_COMPLEX8
-                            stateVec->write(lcv + offset1, qubit.cmplx[0]);
-                            stateVec->write(lcv + offset2, qubit.cmplx[1]);
+                        stateVec->write(lcv + offset1, qubit.cmplx[0]);
+                        stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
-                            stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+                        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
 #endif
-                        };
-                    } else {
-                        fn = [&](const bitCapInt& lcv, const int& cpu) {
-                            ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
-
-                            qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-
-                            rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
-
-#if ENABLE_COMPLEX8
-                            stateVec->write(lcv + offset1, qubit.cmplx[0]);
-                            stateVec->write(lcv + offset2, qubit.cmplx[1]);
-#else
-                            stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
-#endif
-                        };
-                    }
+                    };
                 }
             } else {
-                fn = [&](const bitCapInt& lcv, const int& cpu) {
-                    ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+                if (norm_thresh > ZERO_R1) {
+                    fn = [&](const bitCapInt& lcv, const int& cpu) {
+                        ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
-                    qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+                        qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+
+                        real1 dotMulRes = norm(qubit.cmplx[0]);
+                        if (dotMulRes < norm_thresh) {
+                            qubit.cmplx[0] = ZERO_CMPLX;
+                        } else {
+                            rngNrm[cpu] += dotMulRes;
+                        }
+
+                        dotMulRes = norm(qubit.cmplx[1]);
+                        if (dotMulRes < norm_thresh) {
+                            qubit.cmplx[1] = ZERO_CMPLX;
+                        } else {
+                            rngNrm[cpu] += dotMulRes;
+                        }
+
 #if ENABLE_COMPLEX8
-                    stateVec->write(lcv + offset1, qubit.cmplx[0]);
-                    stateVec->write(lcv + offset2, qubit.cmplx[1]);
+                        stateVec->write(lcv + offset1, qubit.cmplx[0]);
+                        stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
-                    stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+                        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
 #endif
-                };
-            }
+                    };
+                } else {
+                    fn = [&](const bitCapInt& lcv, const int& cpu) {
+                        ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
-            if (stateVec->is_sparse()) {
-                bitCapInt setMask = offset1 ^ offset2;
-                bitCapInt filterMask = 0;
-                for (bitLenInt i = 0; i < bitCount; i++) {
-                    filterMask |= (qPowersSorted[i] & ~setMask);
+                        qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+
+                        rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
+
+#if ENABLE_COMPLEX8
+                        stateVec->write(lcv + offset1, qubit.cmplx[0]);
+                        stateVec->write(lcv + offset2, qubit.cmplx[1]);
+#else
+                        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+#endif
+                    };
                 }
-                bitCapInt filterValues = filterMask & offset1 & offset2;
-                par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
-            } else {
-                par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
             }
+        } else {
+            fn = [&](const bitCapInt& lcv, const int& cpu) {
+                ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
-            delete[] qPowersSorted;
+                qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+#if ENABLE_COMPLEX8
+                stateVec->write(lcv + offset1, qubit.cmplx[0]);
+                stateVec->write(lcv + offset2, qubit.cmplx[1]);
+#else
+                stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+#endif
+            };
+        }
 
-            if (doCalcNorm) {
-                runningNorm = ZERO_R1;
-                for (int i = 0; i < numCores; i++) {
-                    runningNorm += rngNrm[i];
-                }
-                delete[] rngNrm;
+        if (stateVec->is_sparse()) {
+            bitCapInt setMask = offset1 ^ offset2;
+            bitCapInt filterMask = 0;
+            for (bitLenInt i = 0; i < bitCount; i++) {
+                filterMask |= (qPowersSorted[i] & ~setMask);
             }
-        });
+            bitCapInt filterValues = filterMask & offset1 & offset2;
+            par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
+        } else {
+            par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
+        }
+
+        delete[] mtrx;
+        delete[] qPowersSorted;
+
+        if (doCalcNorm) {
+            runningNorm = ZERO_R1;
+            for (int i = 0; i < numCores; i++) {
+                runningNorm += rngNrm[i];
+            }
+            delete[] rngNrm;
+        }
+    });
 }
 #else
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* matrix, const bitLenInt bitCount,

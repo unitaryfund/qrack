@@ -33,6 +33,8 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
         return;
     }
 
+    dispatchQueue.restart();
+
     bitCapInt lengthPower = pow2(length);
     bitCapInt lengthMask = lengthPower - ONE_BCI;
     bitCapInt regMask = lengthMask << start;
@@ -71,6 +73,8 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     if (toAdd == 0) {
         return;
     }
+
+    dispatchQueue.restart();
 
     bitCapInt inOutMask = lengthMask << inOutStart;
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ inOutMask;
@@ -116,6 +120,8 @@ void QEngineCPU::CINC(
         return;
     }
 
+    dispatchQueue.restart();
+
     bitCapInt* controlPowers = new bitCapInt[controlLen];
     bitCapInt controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -159,6 +165,8 @@ void QEngineCPU::INCDECC(
     if (toMod == 0) {
         return;
     }
+
+    dispatchQueue.restart();
 
     bitCapInt carryMask = pow2(carryIndex);
     bitCapInt inOutMask = lengthMask << inOutStart;
@@ -206,6 +214,8 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
     if (toAdd == 0) {
         return;
     }
+
+    dispatchQueue.restart();
 
     bitCapInt overflowMask = pow2(overflowIndex);
     bitCapInt signMask = pow2(length - ONE_BCI);
@@ -259,6 +269,8 @@ void QEngineCPU::INCDECSC(
         return;
     }
 
+    dispatchQueue.restart();
+
     bitCapInt signMask = pow2(length - ONE_BCI);
     bitCapInt carryMask = pow2(carryIndex);
     bitCapInt otherMask = maxQPower - ONE_BCI;
@@ -307,6 +319,8 @@ void QEngineCPU::INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bi
         return;
     }
 
+    dispatchQueue.restart();
+
     bitCapInt overflowMask = pow2(overflowIndex);
     bitCapInt signMask = pow2(length - ONE_BCI);
     bitCapInt carryMask = pow2(carryIndex);
@@ -342,6 +356,8 @@ void QEngineCPU::MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& to
     const bitLenInt& carryStart, const bitLenInt& length)
 {
     CHECK_ZERO_SKIP();
+
+    dispatchQueue.restart();
 
     bitCapInt lowMask = pow2Mask(length);
     bitCapInt highMask = lowMask << length;
@@ -397,6 +413,8 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
     const bitLenInt& carryStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt controlLen)
 {
     CHECK_ZERO_SKIP();
+
+    dispatchQueue.restart();
 
     bitCapInt lowMask = pow2Mask(length);
     bitCapInt highMask = lowMask << length;
@@ -497,6 +515,8 @@ void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLe
 {
     CHECK_ZERO_SKIP();
 
+    dispatchQueue.restart();
+
     bitCapInt lowMask = pow2Mask(length);
     bitCapInt inMask = lowMask << inStart;
     bitCapInt outMask = lowMask << outStart;
@@ -555,6 +575,8 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
     const bool& inverse)
 {
     CHECK_ZERO_SKIP();
+
+    dispatchQueue.restart();
 
     bitCapInt lowPower = pow2(length);
     bitCapInt lowMask = lowPower - ONE_BCI;
@@ -668,6 +690,8 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         return;
     }
 
+    dispatchQueue.restart();
+
     bitCapInt inOutMask = bitRegMask(inOutStart, length);
     bitCapInt otherMask = maxQPower - ONE_BCI;
     otherMask ^= inOutMask;
@@ -740,6 +764,8 @@ void QEngineCPU::INCDECBCDC(
     if (toMod == 0) {
         return;
     }
+
+    dispatchQueue.restart();
 
     bitCapInt inOutMask = bitRegMask(inOutStart, length);
     bitCapInt otherMask = maxQPower - ONE_BCI;
@@ -815,6 +841,8 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
         return 0U;
     }
 
+    dispatchQueue.restart();
+
     if (resetValue) {
         SetReg(valueStart, valueLength, 0);
     }
@@ -868,6 +896,8 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     if (!stateVec) {
         return 0U;
     }
+
+    dispatchQueue.restart();
 
     // This a quantum/classical interface method, similar to IndexedLDA.
     // Like IndexedLDA, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
@@ -970,6 +1000,8 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     if (!stateVec) {
         return 0U;
     }
+
+    dispatchQueue.restart();
 
     // This a quantum/classical interface method, similar to IndexedLDA.
     // Like IndexedLDA, up to a page of classical memory is loaded based on a quantum mechanically coherent offset by
@@ -1074,6 +1106,8 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
 {
     CHECK_ZERO_SKIP();
 
+    dispatchQueue.restart();
+
     bitLenInt bytes = (length + 7U) / 8U;
     bitCapInt inputMask = bitRegMask(start, length);
 
@@ -1104,6 +1138,8 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
 void QEngineCPU::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     CHECK_ZERO_SKIP();
+
+    dispatchQueue.restart();
 
     bitCapInt input1Mask = pow2(inputBit1);
     bitCapInt input2Mask = pow2(inputBit2);
@@ -1170,6 +1206,8 @@ void QEngineCPU::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt car
 void QEngineCPU::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     CHECK_ZERO_SKIP();
+
+    dispatchQueue.restart();
 
     bitCapInt input1Mask = pow2(inputBit1);
     bitCapInt input2Mask = pow2(inputBit2);

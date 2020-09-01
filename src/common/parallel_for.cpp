@@ -54,38 +54,39 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, 
         for (bitCapInt j = begin; j < maxLcv; j++) {
             fn(inc(j, 0), 0);
         }
-    } else {
-        DECLARE_ATOMIC_BITCAPINT();
-        idx = 0;
-        std::vector<std::future<void>> futures(numCores);
-        for (int cpu = 0; cpu < numCores; cpu++) {
-            futures[cpu] = ATOMIC_ASYNC(cpu, &idx, begin, itemCount, inc, fn)
-            {
-                const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+        return;
+    }
 
-                bitCapInt i, j, l;
-                bitCapInt k = 0;
-                for (;;) {
-                    ATOMIC_INC();
-                    l = i * Stride;
-                    for (j = 0; j < Stride; j++) {
-                        k = j + l;
-                        /* Easiest to clamp on end. */
-                        if (k >= itemCount) {
-                            break;
-                        }
-                        fn(inc(begin + k, cpu), cpu);
-                    }
+    DECLARE_ATOMIC_BITCAPINT();
+    idx = 0;
+    std::vector<std::future<void>> futures(numCores);
+    for (int cpu = 0; cpu < numCores; cpu++) {
+        futures[cpu] = ATOMIC_ASYNC(cpu, &idx, begin, itemCount, inc, fn)
+        {
+            const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+
+            bitCapInt i, j, l;
+            bitCapInt k = 0;
+            for (;;) {
+                ATOMIC_INC();
+                l = i * Stride;
+                for (j = 0; j < Stride; j++) {
+                    k = j + l;
+                    /* Easiest to clamp on end. */
                     if (k >= itemCount) {
                         break;
                     }
+                    fn(inc(begin + k, cpu), cpu);
                 }
-            });
-        }
+                if (k >= itemCount) {
+                    break;
+                }
+            }
+        });
+    }
 
-        for (int cpu = 0; cpu < numCores; cpu++) {
-            futures[cpu].get();
-        }
+    for (int cpu = 0; cpu < numCores; cpu++) {
+        futures[cpu].get();
     }
 }
 
@@ -283,37 +284,38 @@ real1 ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVectorPt
         for (bitCapInt j = 0; j < maxQPower; j++) {
             nrmSqr += norm(stateArray->read(j));
         }
-    } else {
-        DECLARE_ATOMIC_BITCAPINT();
-        idx = 0;
-        std::vector<std::future<real1>> futures(numCores);
-        for (int cpu = 0; cpu != numCores; ++cpu) {
-            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray)
-            {
-                const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
 
-                real1 sqrNorm = ZERO_R1;
-                bitCapInt i, j;
-                bitCapInt k = 0;
-                for (;;) {
-                    ATOMIC_INC();
-                    for (j = 0; j < Stride; j++) {
-                        k = i * Stride + j;
-                        if (k >= maxQPower)
-                            break;
+        return nrmSqr;
+    }
+    DECLARE_ATOMIC_BITCAPINT();
+    idx = 0;
+    std::vector<std::future<real1>> futures(numCores);
+    for (int cpu = 0; cpu != numCores; ++cpu) {
+        futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray)
+        {
+            const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
 
-                        sqrNorm += norm(stateArray->read(k));
-                    }
+            real1 sqrNorm = ZERO_R1;
+            bitCapInt i, j;
+            bitCapInt k = 0;
+            for (;;) {
+                ATOMIC_INC();
+                for (j = 0; j < Stride; j++) {
+                    k = i * Stride + j;
                     if (k >= maxQPower)
                         break;
-                }
-                return sqrNorm;
-            });
-        }
 
-        for (int32_t cpu = 0; cpu != numCores; ++cpu) {
-            nrmSqr += futures[cpu].get();
-        }
+                    sqrNorm += norm(stateArray->read(k));
+                }
+                if (k >= maxQPower)
+                    break;
+            }
+            return sqrNorm;
+        });
+    }
+
+    for (int32_t cpu = 0; cpu != numCores; ++cpu) {
+        nrmSqr += futures[cpu].get();
     }
 
     return nrmSqr;
