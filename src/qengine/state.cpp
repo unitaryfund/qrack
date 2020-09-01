@@ -50,16 +50,14 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
 
-    dispatchQueue.dispatch([this, initState, phaseFac]() {
-        stateVec = AllocStateVec(maxQPower);
-        stateVec->clear();
+    stateVec = AllocStateVec(maxQPower);
+    stateVec->clear();
 
-        if (phaseFac == complex(-999.0, -999.0)) {
-            stateVec->write(initState, GetNonunitaryPhase());
-        } else {
-            stateVec->write(initState, phaseFac);
-        }
-    });
+    if (phaseFac == complex(-999.0, -999.0)) {
+        stateVec->write(initState, GetNonunitaryPhase());
+    } else {
+        stateVec->write(initState, phaseFac);
+    }
 }
 
 complex QEngineCPU::GetAmplitude(bitCapInt perm)
