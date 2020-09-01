@@ -104,7 +104,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     dispatchQueue.dump();
-    dispatchQueue.restart();
+    dispatchQueue.start();
 
     if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPower));
@@ -133,7 +133,7 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 void QEngineCPU::SetQuantumState(const complex* inputState)
 {
     dispatchQueue.dump();
-    dispatchQueue.restart();
+    dispatchQueue.start();
 
     if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPower));
@@ -753,7 +753,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     }
 
     destination->dispatchQueue.dump();
-    destination->dispatchQueue.restart();
+    destination->dispatchQueue.start();
 
     bitLenInt nLength = qubitCount - length;
 

@@ -24,11 +24,7 @@ DispatchQueue::DispatchQueue(size_t thread_cnt)
     start();
 }
 
-DispatchQueue::~DispatchQueue()
-{
-    dump();
-    finish();
-}
+DispatchQueue::~DispatchQueue() { dump(); }
 
 void DispatchQueue::start()
 {

@@ -37,6 +37,10 @@ public:
     void dispatch(const fp_t& op);
     // dispatch and move
     void dispatch(fp_t&& op);
+    // start threads
+    void start();
+    // finish threads
+    void finish();
     // finish queue before moving on
     void restart();
     // dump queue
@@ -54,11 +58,6 @@ private:
     std::queue<fp_t> q_;
     std::condition_variable cv_;
     bool quit_ = false;
-
-    // start threads
-    void start();
-    // finish threads
-    void finish();
 
     void dispatch_thread_handler(void);
 };
