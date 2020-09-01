@@ -61,7 +61,8 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, 
         for (int cpu = 0; cpu < numCores; cpu++) {
             futures[cpu] = ATOMIC_ASYNC(cpu, &idx, begin, itemCount, Stride, inc, fn)
             {
-                bitCapInt i, j, k, l;
+                bitCapInt i, j, l;
+                bitCapInt k = 0;
                 for (;;) {
                     ATOMIC_INC();
                     l = i * Stride;
