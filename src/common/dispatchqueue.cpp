@@ -65,25 +65,6 @@ void DispatchQueue::restart()
     start();
 }
 
-void DispatchQueue::SetConcurrencyLevel(size_t thread_cnt)
-{
-    if (thread_cnt == threads_.size()) {
-        return;
-    }
-
-    if (thread_cnt > threads_.size()) {
-        for (size_t i = threads_.size(); i < thread_cnt; i++) {
-            threads_.push_back(std::thread(&DispatchQueue::dispatch_thread_handler, this));
-        }
-    }
-
-    if (thread_cnt < threads_.size()) {
-        finish();
-        threads_.resize(thread_cnt);
-        start();
-    }
-}
-
 void DispatchQueue::dispatch(const fp_t& op)
 {
     std::unique_lock<std::mutex> lock(lock_);

@@ -216,7 +216,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
 
-    runningNorm = ONE_R1;
+    dispatchQueue.restart();
 
     dispatchQueue.dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, norm_thresh, nrm]() {
         int numCores = GetConcurrencyLevel();
@@ -347,10 +347,11 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         delete[] qPowersSorted;
 
         if (doCalcNorm) {
-            runningNorm = ZERO_R1;
+            real1 rNrm = ZERO_R1;
             for (int i = 0; i < numCores; i++) {
-                runningNorm += rngNrm[i];
+                rNrm += rngNrm[i];
             }
+            runningNorm = rNrm;
             delete[] rngNrm;
         }
     });
@@ -375,7 +376,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
 
-    runningNorm = ONE_R1;
+    dispatchQueue.restart();
 
     dispatchQueue.dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, norm_thresh, nrm]() {
         int numCores = GetConcurrencyLevel();
@@ -500,10 +501,11 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         delete[] qPowersSorted;
 
         if (doCalcNorm) {
-            runningNorm = ZERO_R1;
+            real1 rNrm = ZERO_R1;
             for (int i = 0; i < numCores; i++) {
-                runningNorm += rngNrm[i];
+                rNrm += rngNrm[i];
             }
+            runningNorm = rNrm;
             delete[] rngNrm;
         }
     });
@@ -1104,6 +1106,8 @@ void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     CHECK_ZERO_SKIP();
 
+    dispatchQueue.restart();
+
     dispatchQueue.dispatch([this, start, length]() {
         par_for_skip(0, maxQPower, pow2(start), length,
             [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); });
@@ -1114,6 +1118,8 @@ void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     CHECK_ZERO_SKIP();
+
+    dispatchQueue.restart();
 
     dispatchQueue.dispatch([this, greaterPerm, start, length, flagIndex]() {
         bitCapInt regMask = bitRegMask(start, length);
@@ -1130,6 +1136,8 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
     CHECK_ZERO_SKIP();
+
+    dispatchQueue.restart();
 
     dispatchQueue.dispatch([this, greaterPerm, start, length]() {
         bitCapInt regMask = bitRegMask(start, length);

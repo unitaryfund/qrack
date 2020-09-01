@@ -31,8 +31,6 @@ public:
     DispatchQueue(size_t thread_cnt = 1);
     ~DispatchQueue();
 
-    void SetConcurrencyLevel(size_t thread_cnt);
-
     // dispatch and copy
     void dispatch(const fp_t& op);
     // dispatch and move
