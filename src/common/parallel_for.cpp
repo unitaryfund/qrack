@@ -242,7 +242,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
             futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray, &norm_thresh)
             {
                 const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
-                
+
                 real1 sqrNorm = ZERO_R1;
                 real1 nrm;
                 bitCapInt i, j;
