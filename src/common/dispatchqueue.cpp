@@ -79,13 +79,8 @@ void DispatchQueue::SetConcurrencyLevel(size_t thread_cnt)
 
     if (thread_cnt < threads_.size()) {
         finish();
-        cv_.notify_all();
-        for (size_t i = threads_.size(); i > thread_cnt; i--) {
-            if (threads_[i - 1].joinable()) {
-                threads_[i - 1].join();
-            }
-            threads_.pop_back();
-        }
+        threads_.resize(thread_cnt);
+        start();
     }
 }
 
