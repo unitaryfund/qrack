@@ -48,7 +48,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     , isSparse(useSparseStateVec)
     , dispatchQueue(1)
 {
-    SetConcurrencyLevel(std::thread::hardware_concurrency());
+    SetConcurrency(std::thread::hardware_concurrency());
 
     stateVec = AllocStateVec(maxQPower);
     stateVec->clear();
