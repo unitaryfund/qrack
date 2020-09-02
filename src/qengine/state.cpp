@@ -10,6 +10,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <chrono>
 #include <thread>
 
 #include "qengine_cpu.hpp"
@@ -46,7 +47,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
-    , dispatchQueue(1)
+    , isRunningAsync(false)
 {
     SetConcurrency(std::thread::hardware_concurrency());
 
@@ -60,6 +61,11 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     }
 }
 
+bool QEngineCPU::isFinished()
+{
+    return !isRunningAsync || (asyncGate.wait_for(std::chrono::seconds(0)) == std::future_status::ready);
+};
+
 complex QEngineCPU::GetAmplitude(bitCapInt perm)
 {
     if (!stateVec) {
@@ -69,7 +75,7 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     return stateVec->read(perm);
@@ -80,7 +86,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     runningNorm -= norm(stateVec->read(perm));
@@ -101,8 +107,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 {
-    dispatchQueue.dump();
-    dispatchQueue.start();
+    Dump();
 
     if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPower));
@@ -130,8 +135,7 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineCPU::SetQuantumState(const complex* inputState)
 {
-    dispatchQueue.dump();
-    dispatchQueue.start();
+    Dump();
 
     if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPower));
@@ -154,7 +158,7 @@ void QEngineCPU::GetQuantumState(complex* outputState)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     stateVec->copy_out(outputState);
@@ -171,7 +175,7 @@ void QEngineCPU::GetProbs(real1* outputProbs)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     stateVec->get_probs(outputProbs);
@@ -523,7 +527,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     real1* rngNrm = new real1[numCores];
     std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
 
-    dispatchQueue.finish();
+    Finish();
 
     par_for_skip(0, maxQPower, targetPower, 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapIntOcl offset = 0;
@@ -589,7 +593,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
@@ -602,7 +606,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
         toCopy->NormalizeState();
     } else {
-        toCopy->dispatchQueue.finish();
+        toCopy->Finish();
     }
 
     if (stateVec->is_sparse() || toCopy->stateVec->is_sparse()) {
@@ -635,13 +639,13 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
         toCopy->NormalizeState();
     } else {
-        toCopy->dispatchQueue.finish();
+        toCopy->Finish();
     }
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
@@ -684,7 +688,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     for (i = 0; i < toComposeCount; i++) {
@@ -692,7 +696,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
         if ((src->doNormalize) && (src->runningNorm != ONE_R1)) {
             src->NormalizeState();
         } else {
-            src->dispatchQueue.finish();
+            src->Finish();
         }
         mask[i] = (src->GetMaxQPower() - ONE_BCI) << (bitCapIntOcl)nQubitCount;
         offset[i] = nQubitCount;
@@ -748,7 +752,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
@@ -805,8 +809,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     });
 
     if (destination != nullptr) {
-        destination->dispatchQueue.dump();
-        destination->dispatchQueue.start();
+        destination->Dump();
 
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             destination->stateVec->write(lcv,
@@ -856,7 +859,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     StateVectorPtr nStateVec = AllocStateVec(remainderPower);
@@ -909,7 +912,7 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     stateVec->isReadLocked = false;
@@ -939,7 +942,7 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     return norm(stateVec->read(fullRegister));
@@ -962,7 +965,7 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     stateVec->isReadLocked = false;
@@ -1009,7 +1012,7 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     stateVec->isReadLocked = false;
@@ -1040,13 +1043,13 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.finish();
+        Finish();
     }
 
     if (toCompare->doNormalize && (toCompare->runningNorm != ONE_R1)) {
         toCompare->NormalizeState();
     } else {
-        toCompare->dispatchQueue.finish();
+        toCompare->Finish();
     }
 
     int numCores = GetConcurrencyLevel();
@@ -1085,6 +1088,28 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     delete[] partError;
 
     return totError < approxcompare_error;
+}
+
+/// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU
+void QEngineCPU::PhaseFlip()
+{
+    CHECK_ZERO_SKIP();
+
+    // This gate has no physical consequence. We only enable it for "book-keeping," if the engine is not using global
+    // phase offsets.
+    if (randGlobalPhase) {
+        return;
+    }
+
+    Finish();
+
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); };
+
+    if (stateVec->is_sparse()) {
+        par_for_set(CastStateVecSparse()->iterable(), fn);
+    } else {
+        par_for(0, maxQPower, fn);
+    }
 }
 
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
@@ -1129,11 +1154,34 @@ void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
     });
 }
 
+void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
+{
+    CHECK_ZERO_SKIP();
+
+    Finish();
+
+    ParallelFunc fn = [&](const bitCapInt i, const int cpu) {
+        if ((i & regMask) == result) {
+            stateVec->write(i, nrm * stateVec->read(i));
+        } else {
+            stateVec->write(i, complex(ZERO_R1, ZERO_R1));
+        }
+    };
+
+    if (stateVec->is_sparse()) {
+        par_for_set(CastStateVecSparse()->iterable(), fn);
+    } else {
+        par_for(0, maxQPower, fn);
+    }
+
+    runningNorm = ONE_R1;
+}
+
 void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
 {
     CHECK_ZERO_SKIP();
 
-    dispatchQueue.finish();
+    Finish();
 
     if (nrm < ZERO_R1) {
         nrm = runningNorm;
@@ -1168,7 +1216,7 @@ void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
 
 void QEngineCPU::UpdateRunningNorm(real1 norm_thresh)
 {
-    dispatchQueue.finish();
+    Finish();
 
     if (!stateVec) {
         return;

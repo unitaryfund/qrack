@@ -14,7 +14,6 @@
 
 #include <memory>
 
-#include "common/dispatchqueue.hpp"
 #include "common/parallel_for.hpp"
 #include "qengine.hpp"
 #include "statevector.hpp"
@@ -36,7 +35,8 @@ class QEngineCPU : virtual public QEngine, public ParallelFor {
 protected:
     StateVectorPtr stateVec;
     bool isSparse;
-    DispatchQueue dispatchQueue;
+    bool isRunningAsync;
+    std::future<void> asyncGate;
 
     StateVectorSparsePtr CastStateVecSparse() { return std::dynamic_pointer_cast<StateVectorSparse>(stateVec); }
 
@@ -53,6 +53,22 @@ public:
 
     virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
 
+    virtual void Finish()
+    {
+        if (isRunningAsync) {
+            asyncGate.get();
+        }
+        isRunningAsync = false;
+    };
+
+    virtual bool isFinished();
+
+    virtual void Dump()
+    {
+        // TODO: Consider implementing an actual dump
+        Finish();
+    }
+
     virtual void ZeroAmplitudes()
     {
         runningNorm = ZERO_R1;
@@ -63,7 +79,7 @@ public:
 
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
-        dispatchQueue.finish();
+        Finish();
 
         if (stateVec) {
             stateVec->copy_out(pagePtr, offset, length);
@@ -73,7 +89,7 @@ public:
     }
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
-        dispatchQueue.finish();
+        Finish();
 
         if (!stateVec) {
             ResetStateVec(AllocStateVec(maxQPower));
@@ -90,8 +106,8 @@ public:
         QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
         StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
 
-        dispatchQueue.finish();
-        pageEngineCpuPtr->dispatchQueue.finish();
+        Finish();
+        pageEngineCpuPtr->Finish();
 
         if (!stateVec && !oStateVec) {
             return;
@@ -110,8 +126,8 @@ public:
     {
         QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);
 
-        dispatchQueue.finish();
-        engineCpu->dispatchQueue.finish();
+        Finish();
+        engineCpu->Finish();
 
         if (!stateVec && !(engineCpu->stateVec)) {
             return;
@@ -239,11 +255,11 @@ protected:
     virtual void Dispatch(DispatchFn fn)
     {
         const bitCapInt Stride = pow2(PSTRIDEPOW);
+        Finish();
         if (maxQPower < Stride) {
-            dispatchQueue.restart();
-            dispatchQueue.dispatch(fn);
+            asyncGate = std::async(std::launch::async, fn);
+            isRunningAsync = true;
         } else {
-            dispatchQueue.finish();
             fn();
         }
     }
