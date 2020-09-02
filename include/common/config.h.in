@@ -1,5 +1,5 @@
 #cmakedefine ENABLE_OPENCL 1
 #cmakedefine ENABLE_COMPLEX_X2 1
 #cmakedefine ENABLE_COMPLEX8 1
-#cmakedefine ENABLE_QUNIT_CPU_PARALLEL 0
+#cmakedefine ENABLE_QUNIT_CPU_PARALLEL 1
 #cmakedefine PSTRIDEPOW @PSTRIDEPOW@
