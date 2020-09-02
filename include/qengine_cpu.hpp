@@ -14,6 +14,7 @@
 
 #include <memory>
 
+#include "common/dispatchqueue.hpp"
 #include "common/parallel_for.hpp"
 #include "qengine.hpp"
 #include "statevector.hpp"
@@ -35,6 +36,7 @@ class QEngineCPU : virtual public QEngine, public ParallelFor {
 protected:
     StateVectorPtr stateVec;
     bool isSparse;
+    DispatchQueue dispatchQueue;
 
     StateVectorSparsePtr CastStateVecSparse() { return std::dynamic_pointer_cast<StateVectorSparse>(stateVec); }
 
@@ -59,6 +61,8 @@ public:
 
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
+        dispatchQueue.restart();
+
         if (stateVec) {
             stateVec->copy_out(pagePtr, offset, length);
         } else {
@@ -67,6 +71,8 @@ public:
     }
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
+        dispatchQueue.restart();
+
         if (!stateVec) {
             ResetStateVec(AllocStateVec(maxQPower));
             stateVec->clear();
@@ -81,6 +87,9 @@ public:
     {
         QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
         StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
+
+        dispatchQueue.restart();
+        pageEngineCpuPtr->dispatchQueue.restart();
 
         if (!stateVec && !oStateVec) {
             return;
@@ -98,6 +107,9 @@ public:
     virtual void ShuffleBuffers(QEnginePtr engine)
     {
         QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);
+
+        dispatchQueue.restart();
+        engineCpu->dispatchQueue.restart();
 
         if (!stateVec && !(engineCpu->stateVec)) {
             return;

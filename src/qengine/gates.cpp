@@ -23,6 +23,8 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
 {
     CHECK_ZERO_SKIP();
 
+    dispatchQueue.restart();
+
     ParallelFunc fn = [&](const bitCapInt i, const int cpu) {
         if ((i & regMask) == result) {
             stateVec->write(i, nrm * stateVec->read(i));
@@ -50,6 +52,8 @@ void QEngineCPU::PhaseFlip()
     if (randGlobalPhase) {
         return;
     }
+
+    dispatchQueue.restart();
 
     ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); };
 

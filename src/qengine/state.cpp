@@ -46,6 +46,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
+    , dispatchQueue(1)
 {
     SetConcurrencyLevel(std::thread::hardware_concurrency());
 
@@ -67,7 +68,10 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
 
     if (doNormalize) {
         NormalizeState();
+    } else {
+        dispatchQueue.finish();
     }
+
     return stateVec->read(perm);
 }
 
@@ -75,6 +79,8 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 {
     if (doNormalize) {
         NormalizeState();
+    } else {
+        dispatchQueue.finish();
     }
 
     runningNorm -= norm(stateVec->read(perm));
@@ -95,6 +101,9 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 {
+    dispatchQueue.dump();
+    dispatchQueue.start();
+
     if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPower));
     }
@@ -121,6 +130,9 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineCPU::SetQuantumState(const complex* inputState)
 {
+    dispatchQueue.dump();
+    dispatchQueue.start();
+
     if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPower));
     }
@@ -134,13 +146,15 @@ void QEngineCPU::SetQuantumState(const complex* inputState)
 /// Get pure quantum state, in unsigned int permutation basis
 void QEngineCPU::GetQuantumState(complex* outputState)
 {
-    if (doNormalize) {
-        NormalizeState();
-    }
-
     if (!stateVec) {
         std::fill(outputState, outputState + maxQPower, ZERO_CMPLX);
         return;
+    }
+
+    if (doNormalize) {
+        NormalizeState();
+    } else {
+        dispatchQueue.finish();
     }
 
     stateVec->copy_out(outputState);
@@ -149,13 +163,15 @@ void QEngineCPU::GetQuantumState(complex* outputState)
 /// Get all probabilities, in unsigned int permutation basis
 void QEngineCPU::GetProbs(real1* outputProbs)
 {
-    if (doNormalize) {
-        NormalizeState();
-    }
-
     if (!stateVec) {
         std::fill(outputProbs, outputProbs + maxQPower, ZERO_R1);
         return;
+    }
+
+    if (doNormalize) {
+        NormalizeState();
+    } else {
+        dispatchQueue.finish();
     }
 
     stateVec->get_probs(outputProbs);
@@ -181,287 +197,308 @@ union ComplexUnion {
     }
 };
 
-void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh)
+void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* matrix, const bitLenInt bitCount,
+    const bitCapInt* qPowsSorted, bool doCalcNrm, real1 nrm_thresh)
 {
     CHECK_ZERO_SKIP();
 
-    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+    complex* mtrx = new complex[4];
+    std::copy(matrix, matrix + 4, mtrx);
 
-    if (norm_thresh < ZERO_R1) {
-        norm_thresh = amplitudeFloor;
-    }
+    bitCapInt* qPowersSorted = new bitCapInt[bitCount];
+    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
 
-    int numCores = GetConcurrencyLevel();
-    real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
-    ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
-    ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
+    dispatchQueue.restart();
 
-    real1* rngNrm = NULL;
-    ParallelFunc fn;
-    if (doCalcNorm) {
-        rngNrm = new real1[numCores]();
-        if (nrm != ONE_R1) {
-            if (norm_thresh > ZERO_R1) {
-                fn = [&](const bitCapInt& lcv, const int& cpu) {
-                    ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+    dispatchQueue.dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNrm, nrm_thresh]() {
+        bool doCalcNorm = (doCalcNrm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+        real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
+        real1 norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
+        int numCores = GetConcurrencyLevel();
 
-                    qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+        ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
+        ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
-                    real1 dotMulRes = norm(qubit.cmplx[0]);
-                    if (dotMulRes < norm_thresh) {
-                        qubit.cmplx[0] = ZERO_CMPLX;
-                    } else {
-                        rngNrm[cpu] += dotMulRes;
-                    }
+        real1* rngNrm = NULL;
+        ParallelFunc fn;
+        if (doCalcNorm) {
+            rngNrm = new real1[numCores]();
+            if (nrm != ONE_R1) {
+                if (norm_thresh > ZERO_R1) {
+                    fn = [&](const bitCapInt& lcv, const int& cpu) {
+                        ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
-                    dotMulRes = norm(qubit.cmplx[1]);
-                    if (dotMulRes < norm_thresh) {
-                        qubit.cmplx[1] = ZERO_CMPLX;
-                    } else {
-                        rngNrm[cpu] += dotMulRes;
-                    }
+                        qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+
+                        real1 dotMulRes = norm(qubit.cmplx[0]);
+                        if (dotMulRes < norm_thresh) {
+                            qubit.cmplx[0] = ZERO_CMPLX;
+                        } else {
+                            rngNrm[cpu] += dotMulRes;
+                        }
+
+                        dotMulRes = norm(qubit.cmplx[1]);
+                        if (dotMulRes < norm_thresh) {
+                            qubit.cmplx[1] = ZERO_CMPLX;
+                        } else {
+                            rngNrm[cpu] += dotMulRes;
+                        }
 
 #if ENABLE_COMPLEX8
-                    stateVec->write(lcv + offset1, qubit.cmplx[0]);
-                    stateVec->write(lcv + offset2, qubit.cmplx[1]);
+                        stateVec->write(lcv + offset1, qubit.cmplx[0]);
+                        stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
-                    stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+                        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
 #endif
-                };
+                    };
+                } else {
+                    fn = [&](const bitCapInt& lcv, const int& cpu) {
+                        ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+
+                        qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+
+                        rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
+
+#if ENABLE_COMPLEX8
+                        stateVec->write(lcv + offset1, qubit.cmplx[0]);
+                        stateVec->write(lcv + offset2, qubit.cmplx[1]);
+#else
+                        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+#endif
+                    };
+                }
             } else {
-                fn = [&](const bitCapInt& lcv, const int& cpu) {
-                    ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+                if (norm_thresh > ZERO_R1) {
+                    fn = [&](const bitCapInt& lcv, const int& cpu) {
+                        ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
-                    qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+                        qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
 
-                    rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
+                        real1 dotMulRes = norm(qubit.cmplx[0]);
+                        if (dotMulRes < norm_thresh) {
+                            qubit.cmplx[0] = ZERO_CMPLX;
+                        } else {
+                            rngNrm[cpu] += dotMulRes;
+                        }
+
+                        dotMulRes = norm(qubit.cmplx[1]);
+                        if (dotMulRes < norm_thresh) {
+                            qubit.cmplx[1] = ZERO_CMPLX;
+                        } else {
+                            rngNrm[cpu] += dotMulRes;
+                        }
 
 #if ENABLE_COMPLEX8
-                    stateVec->write(lcv + offset1, qubit.cmplx[0]);
-                    stateVec->write(lcv + offset2, qubit.cmplx[1]);
+                        stateVec->write(lcv + offset1, qubit.cmplx[0]);
+                        stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
-                    stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+                        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
 #endif
-                };
+                    };
+                } else {
+                    fn = [&](const bitCapInt& lcv, const int& cpu) {
+                        ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+
+                        qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+
+                        rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
+
+#if ENABLE_COMPLEX8
+                        stateVec->write(lcv + offset1, qubit.cmplx[0]);
+                        stateVec->write(lcv + offset2, qubit.cmplx[1]);
+#else
+                        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+#endif
+                    };
+                }
             }
         } else {
-            if (norm_thresh > ZERO_R1) {
-                fn = [&](const bitCapInt& lcv, const int& cpu) {
-                    ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+            fn = [&](const bitCapInt& lcv, const int& cpu) {
+                ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
-                    qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-
-                    real1 dotMulRes = norm(qubit.cmplx[0]);
-                    if (dotMulRes < norm_thresh) {
-                        qubit.cmplx[0] = ZERO_CMPLX;
-                    } else {
-                        rngNrm[cpu] += dotMulRes;
-                    }
-
-                    dotMulRes = norm(qubit.cmplx[1]);
-                    if (dotMulRes < norm_thresh) {
-                        qubit.cmplx[1] = ZERO_CMPLX;
-                    } else {
-                        rngNrm[cpu] += dotMulRes;
-                    }
-
+                qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
 #if ENABLE_COMPLEX8
-                    stateVec->write(lcv + offset1, qubit.cmplx[0]);
-                    stateVec->write(lcv + offset2, qubit.cmplx[1]);
+                stateVec->write(lcv + offset1, qubit.cmplx[0]);
+                stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
-                    stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+                stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
 #endif
-                };
-            } else {
-                fn = [&](const bitCapInt& lcv, const int& cpu) {
-                    ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+            };
+        }
 
-                    qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-
-                    rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
-
-#if ENABLE_COMPLEX8
-                    stateVec->write(lcv + offset1, qubit.cmplx[0]);
-                    stateVec->write(lcv + offset2, qubit.cmplx[1]);
-#else
-                    stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
-#endif
-                };
+        if (stateVec->is_sparse()) {
+            bitCapInt setMask = offset1 ^ offset2;
+            bitCapInt filterMask = 0;
+            for (bitLenInt i = 0; i < bitCount; i++) {
+                filterMask |= (qPowersSorted[i] & ~setMask);
             }
+            bitCapInt filterValues = filterMask & offset1 & offset2;
+            par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
+        } else {
+            par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
         }
-    } else {
-        fn = [&](const bitCapInt& lcv, const int& cpu) {
-            ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
-            qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-#if ENABLE_COMPLEX8
-            stateVec->write(lcv + offset1, qubit.cmplx[0]);
-            stateVec->write(lcv + offset2, qubit.cmplx[1]);
-#else
-            stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
-#endif
-        };
-    }
+        delete[] mtrx;
+        delete[] qPowersSorted;
 
-    if (stateVec->is_sparse()) {
-        bitCapInt setMask = offset1 ^ offset2;
-        bitCapInt filterMask = 0;
-        for (bitLenInt i = 0; i < bitCount; i++) {
-            filterMask |= (qPowersSorted[i] & ~setMask);
+        if (doCalcNorm) {
+            real1 rNrm = ZERO_R1;
+            for (int i = 0; i < numCores; i++) {
+                rNrm += rngNrm[i];
+            }
+            runningNorm = rNrm;
+            delete[] rngNrm;
         }
-        bitCapInt filterValues = filterMask & offset1 & offset2;
-        par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
-    } else {
-        par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
-    }
-
-    if (doCalcNorm) {
-        runningNorm = ZERO_R1;
-        for (int i = 0; i < numCores; i++) {
-            runningNorm += rngNrm[i];
-        }
-        delete[] rngNrm;
-    }
+    });
 }
 #else
-void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh)
+void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* matrix, const bitLenInt bitCount,
+    const bitCapInt* qPowersSorted, bool doCalcNrm, real1 nrm_thresh)
 {
     CHECK_ZERO_SKIP();
 
-    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+    complex* mtrx = new complex[4];
+    std::copy(matrix, matrix + 4, mtrx);
 
-    if (norm_thresh < ZERO_R1) {
-        norm_thresh = amplitudeFloor;
-    }
+    bitCapInt* qPowersSorted = new bitCapInt[bitCount];
+    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
 
-    int numCores = GetConcurrencyLevel();
-    real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
+    dispatchQueue.restart();
 
-    real1* rngNrm = NULL;
-    ParallelFunc fn;
-    if (doCalcNorm) {
-        rngNrm = new real1[numCores]();
+    dispatchQueue.dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNrm, nrm_thresh]() {
+        bool doCalcNorm = (doCalcNrm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+        real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
+        real1 norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
+        int numCores = GetConcurrencyLevel();
 
-        if (nrm != ONE_R1) {
-            if (norm_thresh > ZERO_R1) {
-                fn = [&](const bitCapInt& lcv, const int& cpu) {
-                    complex qubit[2];
+        real1* rngNrm = NULL;
+        ParallelFunc fn;
+        if (doCalcNorm) {
+            rngNrm = new real1[numCores]();
 
-                    complex Y0 = stateVec->read(lcv + offset1);
-                    qubit[1] = stateVec->read(lcv + offset2);
+            if (nrm != ONE_R1) {
+                if (norm_thresh > ZERO_R1) {
+                    fn = [&](const bitCapInt& lcv, const int& cpu) {
+                        complex qubit[2];
 
-                    qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
-                    qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+                        complex Y0 = stateVec->read(lcv + offset1);
+                        qubit[1] = stateVec->read(lcv + offset2);
 
-                    real1 dotMulRes = norm(qubit[0]);
-                    if (dotMulRes < norm_thresh) {
-                        qubit[0] = ZERO_CMPLX;
-                    } else {
-                        rngNrm[cpu] += dotMulRes;
-                    }
+                        qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+                        qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
 
-                    dotMulRes = norm(qubit[1]);
-                    if (dotMulRes < norm_thresh) {
-                        qubit[1] = ZERO_CMPLX;
-                    } else {
-                        rngNrm[cpu] += dotMulRes;
-                    }
+                        real1 dotMulRes = norm(qubit[0]);
+                        if (dotMulRes < norm_thresh) {
+                            qubit[0] = ZERO_CMPLX;
+                        } else {
+                            rngNrm[cpu] += dotMulRes;
+                        }
 
-                    stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
-                };
+                        dotMulRes = norm(qubit[1]);
+                        if (dotMulRes < norm_thresh) {
+                            qubit[1] = ZERO_CMPLX;
+                        } else {
+                            rngNrm[cpu] += dotMulRes;
+                        }
+
+                        stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
+                    };
+                } else {
+                    fn = [&](const bitCapInt& lcv, const int& cpu) {
+                        complex qubit[2];
+
+                        complex Y0 = stateVec->read(lcv + offset1);
+                        qubit[1] = stateVec->read(lcv + offset2);
+
+                        qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
+                        qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+
+                        rngNrm[cpu] = norm(qubit[0]) + norm(qubit[1]);
+
+                        stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
+                    };
+                }
             } else {
-                fn = [&](const bitCapInt& lcv, const int& cpu) {
-                    complex qubit[2];
+                if (norm_thresh > ZERO_R1) {
+                    fn = [&](const bitCapInt& lcv, const int& cpu) {
+                        complex qubit[2];
 
-                    complex Y0 = stateVec->read(lcv + offset1);
-                    qubit[1] = stateVec->read(lcv + offset2);
+                        complex Y0 = stateVec->read(lcv + offset1);
+                        qubit[1] = stateVec->read(lcv + offset2);
 
-                    qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
-                    qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+                        qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
+                        qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
 
-                    rngNrm[cpu] = norm(qubit[0]) + norm(qubit[1]);
+                        real1 dotMulRes = norm(qubit[0]);
+                        if (dotMulRes < norm_thresh) {
+                            qubit[0] = ZERO_CMPLX;
+                        } else {
+                            rngNrm[cpu] += dotMulRes;
+                        }
 
-                    stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
-                };
+                        dotMulRes = norm(qubit[1]);
+                        if (dotMulRes < norm_thresh) {
+                            qubit[1] = ZERO_CMPLX;
+                        } else {
+                            rngNrm[cpu] += dotMulRes;
+                        }
+
+                        stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
+                    };
+                } else {
+                    fn = [&](const bitCapInt& lcv, const int& cpu) {
+                        complex qubit[2];
+
+                        complex Y0 = stateVec->read(lcv + offset1);
+                        qubit[1] = stateVec->read(lcv + offset2);
+
+                        qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
+                        qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
+
+                        rngNrm[cpu] = norm(qubit[0]) + norm(qubit[1]);
+
+                        stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
+                    };
+                }
             }
         } else {
-            if (norm_thresh > ZERO_R1) {
-                fn = [&](const bitCapInt& lcv, const int& cpu) {
-                    complex qubit[2];
+            fn = [&](const bitCapInt& lcv, const int& cpu) {
+                complex qubit[2];
 
-                    complex Y0 = stateVec->read(lcv + offset1);
-                    qubit[1] = stateVec->read(lcv + offset2);
+                complex Y0 = stateVec->read(lcv + offset1);
+                qubit[1] = stateVec->read(lcv + offset2);
 
-                    qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
-                    qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
+                qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
+                qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
 
-                    real1 dotMulRes = norm(qubit[0]);
-                    if (dotMulRes < norm_thresh) {
-                        qubit[0] = ZERO_CMPLX;
-                    } else {
-                        rngNrm[cpu] += dotMulRes;
-                    }
+                stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
+            };
+        }
 
-                    dotMulRes = norm(qubit[1]);
-                    if (dotMulRes < norm_thresh) {
-                        qubit[1] = ZERO_CMPLX;
-                    } else {
-                        rngNrm[cpu] += dotMulRes;
-                    }
-
-                    stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
-                };
-            } else {
-                fn = [&](const bitCapInt& lcv, const int& cpu) {
-                    complex qubit[2];
-
-                    complex Y0 = stateVec->read(lcv + offset1);
-                    qubit[1] = stateVec->read(lcv + offset2);
-
-                    qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
-                    qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
-
-                    rngNrm[cpu] = norm(qubit[0]) + norm(qubit[1]);
-
-                    stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
-                };
+        if (stateVec->is_sparse()) {
+            bitCapInt setMask = offset1 ^ offset2;
+            bitCapInt filterMask = 0;
+            for (bitLenInt i = 0; i < bitCount; i++) {
+                filterMask |= (qPowersSorted[i] & ~setMask);
             }
+            bitCapInt filterValues = filterMask & offset1 & offset2;
+            par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
+        } else {
+            par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
         }
-    } else {
-        fn = [&](const bitCapInt& lcv, const int& cpu) {
-            complex qubit[2];
 
-            complex Y0 = stateVec->read(lcv + offset1);
-            qubit[1] = stateVec->read(lcv + offset2);
+        delete[] mtrx;
+        delete[] qPowersSorted;
 
-            qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
-            qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
-
-            stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
-        };
-    }
-
-    if (stateVec->is_sparse()) {
-        bitCapInt setMask = offset1 ^ offset2;
-        bitCapInt filterMask = 0;
-        for (bitLenInt i = 0; i < bitCount; i++) {
-            filterMask |= (qPowersSorted[i] & ~setMask);
+        if (doCalcNorm) {
+            real1 rNrm = ZERO_R1;
+            for (int i = 0; i < numCores; i++) {
+                rNrm += rngNrm[i];
+            }
+            runningNorm = rNrm;
+            delete[] rngNrm;
         }
-        bitCapInt filterValues = filterMask & offset1 & offset2;
-        par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
-    } else {
-        par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
-    }
-
-    if (doCalcNorm) {
-        runningNorm = ZERO_R1;
-        for (int i = 0; i < numCores; i++) {
-            runningNorm += rngNrm[i];
-        }
-        delete[] rngNrm;
-    }
+    });
 }
 #endif
 
@@ -489,6 +526,8 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     int numCores = GetConcurrencyLevel();
     real1* rngNrm = new real1[numCores];
     std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
+
+    dispatchQueue.finish();
 
     par_for_skip(0, maxQPower, targetPower, 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapIntOcl offset = 0;
@@ -544,21 +583,18 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
  */
 bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 {
-    // TODO: Sparse optimization
     bitLenInt result = qubitCount;
-
-    if (doNormalize) {
-        NormalizeState();
-    }
-
-    if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
-        toCopy->NormalizeState();
-    }
 
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
     bitCapInt nMaxQPower = pow2(nQubitCount);
     bitCapInt startMask = maxQPower - ONE_BCI;
     bitCapInt endMask = (toCopy->maxQPower - ONE_BCI) << qubitCount;
+
+    if (doNormalize) {
+        NormalizeState();
+    } else {
+        dispatchQueue.finish();
+    }
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
     stateVec->isReadLocked = false;
@@ -566,6 +602,13 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         nStateVec->write(lcv, stateVec->read(lcv & startMask) * toCopy->stateVec->read((lcv & endMask) >> qubitCount));
     };
+
+    if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
+        toCopy->NormalizeState();
+    } else {
+        toCopy->dispatchQueue.finish();
+    }
+
     if (stateVec->is_sparse() || toCopy->stateVec->is_sparse()) {
         par_for_sparse_compose(
             CastStateVecSparse()->iterable(), toCopy->CastStateVecSparse()->iterable(), qubitCount, fn);
@@ -586,20 +629,24 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
  */
 bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 {
-    if (doNormalize) {
-        NormalizeState();
-    }
-
-    if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
-        toCopy->NormalizeState();
-    }
-
     bitLenInt oQubitCount = toCopy->qubitCount;
     bitLenInt nQubitCount = qubitCount + oQubitCount;
     bitCapInt nMaxQPower = pow2(nQubitCount);
     bitCapInt startMask = pow2Mask(start);
     bitCapInt midMask = bitRegMask(start, oQubitCount);
     bitCapInt endMask = pow2Mask(qubitCount + oQubitCount) & ~(startMask | midMask);
+
+    if (doNormalize) {
+        NormalizeState();
+    } else {
+        dispatchQueue.finish();
+    }
+
+    if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
+        toCopy->NormalizeState();
+    } else {
+        toCopy->dispatchQueue.finish();
+    }
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
     stateVec->isReadLocked = false;
@@ -640,12 +687,16 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
 
     if (doNormalize) {
         NormalizeState();
+    } else {
+        dispatchQueue.finish();
     }
 
     for (i = 0; i < toComposeCount; i++) {
         QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[i]);
         if ((src->doNormalize) && (src->runningNorm != ONE_R1)) {
             src->NormalizeState();
+        } else {
+            src->dispatchQueue.finish();
         }
         mask[i] = (src->GetMaxQPower() - ONE_BCI) << (bitCapIntOcl)nQubitCount;
         offset[i] = nQubitCount;
@@ -688,10 +739,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         return;
     }
 
-    if (doNormalize) {
-        NormalizeState();
-    }
-
     bitLenInt nLength = qubitCount - length;
 
     bitCapIntOcl partPower = pow2Ocl(length);
@@ -701,6 +748,12 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     real1* remainderStateAngle = new real1[remainderPower]();
     real1* partStateAngle = new real1[partPower]();
     real1* partStateProb = new real1[partPower]();
+
+    if (doNormalize) {
+        NormalizeState();
+    } else {
+        dispatchQueue.finish();
+    }
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt j, l;
@@ -756,6 +809,9 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     });
 
     if (destination != nullptr) {
+        destination->dispatchQueue.dump();
+        destination->dispatchQueue.start();
+
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             destination->stateVec->write(lcv,
                 (real1)(std::sqrt(partStateProb[(bitCapIntOcl)lcv])) *
@@ -795,15 +851,17 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
         return;
     }
 
-    if (doNormalize) {
-        NormalizeState();
-    }
-
     bitLenInt nLength = qubitCount - length;
     bitCapInt remainderPower = pow2(nLength);
     bitCapInt skipMask = pow2(start) - ONE_BCI;
     bitCapInt disposedRes = disposedPerm << (bitCapIntOcl)start;
     bitCapInt saveMask = ~((pow2(start + length) - ONE_BCI) ^ skipMask);
+
+    if (doNormalize) {
+        NormalizeState();
+    } else {
+        dispatchQueue.finish();
+    }
 
     StateVectorPtr nStateVec = AllocStateVec(remainderPower);
     stateVec->isReadLocked = false;
@@ -838,10 +896,6 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineCPU::Prob(bitLenInt qubit)
 {
-    if (doNormalize) {
-        NormalizeState();
-    }
-
     if (!stateVec) {
         return ZERO_R1;
     }
@@ -855,6 +909,12 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
     ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
     };
+
+    if (doNormalize) {
+        NormalizeState();
+    } else {
+        dispatchQueue.finish();
+    }
 
     stateVec->isReadLocked = false;
     if (stateVec->is_sparse()) {
@@ -876,12 +936,14 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
 real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 {
-    if (doNormalize) {
-        NormalizeState();
-    }
-
     if (!stateVec) {
         return ZERO_R1;
+    }
+
+    if (doNormalize) {
+        NormalizeState();
+    } else {
+        dispatchQueue.finish();
     }
 
     return norm(stateVec->read(fullRegister));
@@ -890,10 +952,6 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 // Returns probability of permutation of the register
 real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
-    if (doNormalize) {
-        NormalizeState();
-    }
-
     if (!stateVec) {
         return ZERO_R1;
     }
@@ -904,6 +962,13 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
     bitCapInt perm = permutation << start;
 
     ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec->read(lcv | perm)); };
+
+    if (doNormalize) {
+        NormalizeState();
+    } else {
+        dispatchQueue.finish();
+    }
+
     stateVec->isReadLocked = false;
     if (stateVec->is_sparse()) {
         par_for_set(CastStateVecSparse()->iterable(0, bitRegMask(start, length), perm), fn);
@@ -925,10 +990,6 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 // Returns probability of permutation of the mask
 real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
-    if (doNormalize) {
-        NormalizeState();
-    }
-
     if (!stateVec) {
         return ZERO_R1;
     }
@@ -948,6 +1009,12 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
     int num_threads = GetConcurrencyLevel();
     real1* probs = new real1[num_threads]();
+
+    if (doNormalize) {
+        NormalizeState();
+    } else {
+        dispatchQueue.finish();
+    }
 
     stateVec->isReadLocked = false;
     par_for_mask(0, maxQPower, skipPowers, skipPowersVec.size(),
@@ -976,9 +1043,14 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     // Make sure both engines are normalized
     if (doNormalize) {
         NormalizeState();
+    } else {
+        dispatchQueue.finish();
     }
+
     if (toCompare->doNormalize && (toCompare->runningNorm != ONE_R1)) {
         toCompare->NormalizeState();
+    } else {
+        toCompare->dispatchQueue.finish();
     }
 
     int numCores = GetConcurrencyLevel();
@@ -1024,8 +1096,12 @@ void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     CHECK_ZERO_SKIP();
 
-    par_for_skip(0, maxQPower, pow2(start), length,
-        [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); });
+    dispatchQueue.restart();
+
+    dispatchQueue.dispatch([this, start, length]() {
+        par_for_skip(0, maxQPower, pow2(start), length,
+            [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); });
+    });
 }
 
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
@@ -1033,12 +1109,16 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 {
     CHECK_ZERO_SKIP();
 
-    bitCapInt regMask = bitRegMask(start, length);
-    bitCapInt flagMask = pow2(flagIndex);
+    dispatchQueue.restart();
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if ((((lcv & regMask) >> start) < greaterPerm) & ((lcv & flagMask) == flagMask))
-            stateVec->write(lcv, -stateVec->read(lcv));
+    dispatchQueue.dispatch([this, greaterPerm, start, length, flagIndex]() {
+        bitCapInt regMask = bitRegMask(start, length);
+        bitCapInt flagMask = pow2(flagIndex);
+
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+            if ((((lcv & regMask) >> start) < greaterPerm) & ((lcv & flagMask) == flagMask))
+                stateVec->write(lcv, -stateVec->read(lcv));
+        });
     });
 }
 
@@ -1047,16 +1127,24 @@ void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 {
     CHECK_ZERO_SKIP();
 
-    bitCapInt regMask = bitRegMask(start, length);
+    dispatchQueue.restart();
 
-    par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        if (((lcv & regMask) >> start) < greaterPerm)
-            stateVec->write(lcv, -stateVec->read(lcv));
+    dispatchQueue.dispatch([this, greaterPerm, start, length]() {
+        bitCapInt regMask = bitRegMask(start, length);
+
+        par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
+            if (((lcv & regMask) >> start) < greaterPerm)
+                stateVec->write(lcv, -stateVec->read(lcv));
+        });
     });
 }
 
 void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
 {
+    CHECK_ZERO_SKIP();
+
+    dispatchQueue.restart();
+
     if (nrm < ZERO_R1) {
         nrm = runningNorm;
     }
@@ -1090,6 +1178,8 @@ void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
 
 void QEngineCPU::UpdateRunningNorm(real1 norm_thresh)
 {
+    dispatchQueue.restart();
+
     if (!stateVec) {
         return;
     }
