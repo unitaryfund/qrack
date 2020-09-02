@@ -14,7 +14,8 @@
 
 #include <chrono>
 
-#include "common/dispatchqueue.hpp"
+#include "config.h"
+#include "dispatchqueue.hpp"
 
 namespace Qrack {
 
@@ -28,7 +29,7 @@ DispatchQueue::~DispatchQueue() { dump(); }
 
 void DispatchQueue::start()
 {
-#if QUNIT_CPU_PARALLEL
+#if ENABLE_QUNIT_CPU_PARALLEL
     quit_ = false;
 
     for (size_t i = 0; i < threads_.size(); i++) {
@@ -69,7 +70,7 @@ void DispatchQueue::dump()
 
 void DispatchQueue::restart()
 {
-#if QUNIT_CPU_PARALLEL
+#if ENABLE_QUNIT_CPU_PARALLEL
     finish();
     quit_ = false;
     start();
