@@ -53,6 +53,10 @@ public:
 
     virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
 
+    virtual void Finish() { dispatchQueue.finish(); };
+
+    virtual bool isFinished() { return dispatchQueue.getIsFinished(); };
+
     virtual void ZeroAmplitudes()
     {
         runningNorm = ZERO_R1;
@@ -238,6 +242,7 @@ protected:
     typedef std::function<void(void)> DispatchFn;
     virtual void Dispatch(DispatchFn fn)
     {
+#if ENABLE_QUNIT_CPU_PARALLEL
         const bitCapInt Stride = pow2(PSTRIDEPOW);
         if (maxQPower < Stride) {
             dispatchQueue.restart();
@@ -246,6 +251,9 @@ protected:
             dispatchQueue.finish();
             fn();
         }
+#else
+        fn();
+#endif
     }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);

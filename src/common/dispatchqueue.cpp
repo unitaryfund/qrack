@@ -22,6 +22,7 @@ namespace Qrack {
 DispatchQueue::DispatchQueue(size_t thread_cnt)
     : threads_(thread_cnt)
     , quit_(true)
+    , isFinished_(true)
 {
 }
 
@@ -29,24 +30,26 @@ DispatchQueue::~DispatchQueue() { dump(); }
 
 void DispatchQueue::start()
 {
-#if ENABLE_QUNIT_CPU_PARALLEL
+    if (!quit_) {
+        return;
+    }
+
+    std::unique_lock<std::mutex> lock(lock_);
     quit_ = false;
 
     for (size_t i = 0; i < threads_.size(); i++) {
         threads_[i] = std::thread(&DispatchQueue::dispatch_thread_handler, this);
     }
-#endif
 }
 
 void DispatchQueue::finish()
 {
-    // Signal to dispatch threads that it's time to wrap up
-    std::unique_lock<std::mutex> lock(lock_);
-
     if (quit_) {
         return;
     }
 
+    // Signal to dispatch threads that it's time to wrap up
+    std::unique_lock<std::mutex> lock(lock_);
     quit_ = true;
     lock.unlock();
     cv_.notify_all();
@@ -70,22 +73,14 @@ void DispatchQueue::dump()
 
 void DispatchQueue::restart()
 {
-#if ENABLE_QUNIT_CPU_PARALLEL
     finish();
-    quit_ = false;
     start();
-#endif
 }
 
 void DispatchQueue::dispatch(const fp_t& op)
 {
     std::unique_lock<std::mutex> lock(lock_);
-
-    if (quit_) {
-        op();
-        return;
-    }
-
+    isFinished_ = false;
     q_.push(op);
 
     // Manual unlocking is done before notifying, to avoid waking up
@@ -97,12 +92,7 @@ void DispatchQueue::dispatch(const fp_t& op)
 void DispatchQueue::dispatch(fp_t&& op)
 {
     std::unique_lock<std::mutex> lock(lock_);
-
-    if (quit_) {
-        op();
-        return;
-    }
-
+    isFinished_ = false;
     q_.push(std::move(op));
 
     // Manual unlocking is done before notifying, to avoid waking up
@@ -123,6 +113,7 @@ void DispatchQueue::dispatch_thread_handler(void)
         if (!quit_ && q_.size()) {
             auto op = std::move(q_.front());
             q_.pop();
+            bool willBeFinished = !q_.size();
 
             // unlock now that we're done messing with the queue
             lock.unlock();
@@ -130,12 +121,15 @@ void DispatchQueue::dispatch_thread_handler(void)
             op();
 
             lock.lock();
+
+            isFinished_ = willBeFinished;
         }
     } while (!quit_);
 
     while (q_.size()) {
         auto op = std::move(q_.front());
         q_.pop();
+        bool willBeFinished = !q_.size();
 
         // unlock now that we're done messing with the queue
         lock.unlock();
@@ -143,6 +137,8 @@ void DispatchQueue::dispatch_thread_handler(void)
         op();
 
         lock.lock();
+
+        isFinished_ = willBeFinished;
     }
 }
 

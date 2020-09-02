@@ -43,6 +43,8 @@ public:
     void restart();
     // dump queue
     void dump();
+    // check if queue is finishedl
+    bool getIsFinished() { return isFinished_; }
 
     // Deleted operations
     DispatchQueue(const DispatchQueue& rhs) = delete;
@@ -55,7 +57,8 @@ private:
     std::vector<std::thread> threads_;
     std::queue<fp_t> q_;
     std::condition_variable cv_;
-    bool quit_ = false;
+    bool quit_;
+    bool isFinished_;
 
     void dispatch_thread_handler(void);
 };
