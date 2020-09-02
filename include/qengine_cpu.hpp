@@ -63,7 +63,7 @@ public:
 
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
 
         if (stateVec) {
             stateVec->copy_out(pagePtr, offset, length);
@@ -73,7 +73,7 @@ public:
     }
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
 
         if (!stateVec) {
             ResetStateVec(AllocStateVec(maxQPower));
@@ -90,8 +90,8 @@ public:
         QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
         StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
 
-        dispatchQueue.restart();
-        pageEngineCpuPtr->dispatchQueue.restart();
+        dispatchQueue.finish();
+        pageEngineCpuPtr->dispatchQueue.finish();
 
         if (!stateVec && !oStateVec) {
             return;
@@ -110,8 +110,8 @@ public:
     {
         QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);
 
-        dispatchQueue.restart();
-        engineCpu->dispatchQueue.restart();
+        dispatchQueue.finish();
+        engineCpu->dispatchQueue.finish();
 
         if (!stateVec && !(engineCpu->stateVec)) {
             return;
@@ -234,6 +234,19 @@ public:
 protected:
     virtual StateVectorPtr AllocStateVec(bitCapInt elemCount);
     virtual void ResetStateVec(StateVectorPtr sv);
+
+    typedef std::function<void(void)> DispatchFn;
+    virtual void Dispatch(DispatchFn fn)
+    {
+        const bitCapInt Stride = pow2(PSTRIDEPOW);
+        if (maxQPower < Stride) {
+            dispatchQueue.restart();
+            dispatchQueue.dispatch(fn);
+        } else {
+            dispatchQueue.finish();
+            fn();
+        }
+    }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,

@@ -208,9 +208,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     bitCapInt* qPowersSorted = new bitCapInt[bitCount];
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
 
-    dispatchQueue.restart();
-
-    dispatchQueue.dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNrm, nrm_thresh]() {
+    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNrm, nrm_thresh]() {
         bool doCalcNorm = (doCalcNrm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
         real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
         real1 norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
@@ -363,9 +361,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     bitCapInt* qPowersSorted = new bitCapInt[bitCount];
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
 
-    dispatchQueue.restart();
-
-    dispatchQueue.dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNrm, nrm_thresh]() {
+    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNrm, nrm_thresh]() {
         bool doCalcNorm = (doCalcNrm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
         real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
         real1 norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
@@ -1096,9 +1092,7 @@ void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     CHECK_ZERO_SKIP();
 
-    dispatchQueue.restart();
-
-    dispatchQueue.dispatch([this, start, length]() {
+    Dispatch([this, start, length]() {
         par_for_skip(0, maxQPower, pow2(start), length,
             [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); });
     });
@@ -1109,9 +1103,7 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 {
     CHECK_ZERO_SKIP();
 
-    dispatchQueue.restart();
-
-    dispatchQueue.dispatch([this, greaterPerm, start, length, flagIndex]() {
+    Dispatch([this, greaterPerm, start, length, flagIndex]() {
         bitCapInt regMask = bitRegMask(start, length);
         bitCapInt flagMask = pow2(flagIndex);
 
@@ -1127,9 +1119,7 @@ void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 {
     CHECK_ZERO_SKIP();
 
-    dispatchQueue.restart();
-
-    dispatchQueue.dispatch([this, greaterPerm, start, length]() {
+    Dispatch([this, greaterPerm, start, length]() {
         bitCapInt regMask = bitRegMask(start, length);
 
         par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
@@ -1143,7 +1133,7 @@ void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
 {
     CHECK_ZERO_SKIP();
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     if (nrm < ZERO_R1) {
         nrm = runningNorm;
@@ -1178,7 +1168,7 @@ void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
 
 void QEngineCPU::UpdateRunningNorm(real1 norm_thresh)
 {
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     if (!stateVec) {
         return;
