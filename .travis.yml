@@ -2,6 +2,7 @@ language: python
 python: 3.8
 dist: xenial
 sudo: true
+filter_secrets: false
 install:
   - sudo apt-get update
   - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake
