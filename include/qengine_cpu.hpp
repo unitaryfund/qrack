@@ -244,11 +244,10 @@ protected:
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
         const bitCapInt Stride = pow2(PSTRIDEPOW);
+        dispatchQueue.finish();
         if (maxQPower < Stride) {
-            dispatchQueue.restart();
             dispatchQueue.dispatch(fn);
         } else {
-            dispatchQueue.finish();
             fn();
         }
 #else

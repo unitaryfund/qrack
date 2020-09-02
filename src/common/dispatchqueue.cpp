@@ -19,15 +19,6 @@
 
 namespace Qrack {
 
-DispatchQueue::DispatchQueue(size_t thread_cnt)
-    : threads_(thread_cnt)
-    , quit_(true)
-    , isFinished_(true)
-{
-}
-
-DispatchQueue::~DispatchQueue() { dump(); }
-
 void DispatchQueue::start()
 {
     if (!quit_) {
@@ -71,15 +62,14 @@ void DispatchQueue::dump()
     finish();
 }
 
-void DispatchQueue::restart()
-{
-    finish();
-    start();
-}
-
 void DispatchQueue::dispatch(const fp_t& op)
 {
     std::unique_lock<std::mutex> lock(lock_);
+    if (isFinished_) {
+        lock.unlock();
+        start();
+        lock.lock();
+    }
     isFinished_ = false;
     q_.push(op);
 
@@ -92,6 +82,11 @@ void DispatchQueue::dispatch(const fp_t& op)
 void DispatchQueue::dispatch(fp_t&& op)
 {
     std::unique_lock<std::mutex> lock(lock_);
+    if (isFinished_) {
+        lock.unlock();
+        start();
+        lock.lock();
+    }
     isFinished_ = false;
     q_.push(std::move(op));
 

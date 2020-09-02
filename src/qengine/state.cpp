@@ -102,7 +102,6 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     dispatchQueue.dump();
-    dispatchQueue.start();
 
     if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPower));
@@ -131,7 +130,6 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 void QEngineCPU::SetQuantumState(const complex* inputState)
 {
     dispatchQueue.dump();
-    dispatchQueue.start();
 
     if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPower));
@@ -806,7 +804,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     if (destination != nullptr) {
         destination->dispatchQueue.dump();
-        destination->dispatchQueue.start();
 
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
             destination->stateVec->write(lcv,

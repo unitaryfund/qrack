@@ -28,19 +28,21 @@ class DispatchQueue {
     typedef std::function<void(void)> fp_t;
 
 public:
-    DispatchQueue(size_t thread_cnt = 1);
-    ~DispatchQueue();
+    DispatchQueue(size_t thread_cnt = 1)
+        : threads_(thread_cnt)
+        , quit_(true)
+        , isFinished_(true)
+    {
+        start();
+    }
+    ~DispatchQueue() { dump(); }
 
     // dispatch and copy
     void dispatch(const fp_t& op);
     // dispatch and move
     void dispatch(fp_t&& op);
-    // start threads
-    void start();
     // finish threads
     void finish();
-    // finish queue before moving on
-    void restart();
     // dump queue
     void dump();
     // check if queue is finishedl
@@ -59,6 +61,9 @@ private:
     std::condition_variable cv_;
     bool quit_;
     bool isFinished_;
+
+    // start threads
+    void start();
 
     void dispatch_thread_handler(void);
 };
