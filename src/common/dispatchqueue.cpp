@@ -20,14 +20,16 @@ namespace Qrack {
 
 DispatchQueue::DispatchQueue(size_t thread_cnt)
     : threads_(thread_cnt)
+    , quit_(true)
 {
-    start();
 }
 
 DispatchQueue::~DispatchQueue() { dump(); }
 
 void DispatchQueue::start()
 {
+    quit_ = false;
+
     for (size_t i = 0; i < threads_.size(); i++) {
         threads_[i] = std::thread(&DispatchQueue::dispatch_thread_handler, this);
     }
@@ -37,6 +39,11 @@ void DispatchQueue::finish()
 {
     // Signal to dispatch threads that it's time to wrap up
     std::unique_lock<std::mutex> lock(lock_);
+
+    if (quit_) {
+        return;
+    }
+
     quit_ = true;
     lock.unlock();
     cv_.notify_all();
@@ -68,6 +75,12 @@ void DispatchQueue::restart()
 void DispatchQueue::dispatch(const fp_t& op)
 {
     std::unique_lock<std::mutex> lock(lock_);
+
+    if (quit_) {
+        op();
+        return;
+    }
+
     q_.push(op);
 
     // Manual unlocking is done before notifying, to avoid waking up
@@ -79,6 +92,12 @@ void DispatchQueue::dispatch(const fp_t& op)
 void DispatchQueue::dispatch(fp_t&& op)
 {
     std::unique_lock<std::mutex> lock(lock_);
+
+    if (quit_) {
+        op();
+        return;
+    }
+
     q_.push(std::move(op));
 
     // Manual unlocking is done before notifying, to avoid waking up

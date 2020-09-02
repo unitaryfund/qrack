@@ -38,7 +38,7 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
     bitCapInt regMask = lengthMask << start;
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ regMask;
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     stateVec->isReadLocked = false;
@@ -77,7 +77,7 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     bitCapInt inOutMask = lengthMask << inOutStart;
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ inOutMask;
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     stateVec->isReadLocked = false;
@@ -131,7 +131,7 @@ void QEngineCPU::CINC(
     bitCapInt inOutMask = lengthMask << inOutStart;
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inOutMask | controlMask);
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->copy(stateVec);
@@ -172,7 +172,7 @@ void QEngineCPU::INCDECC(
 
     otherMask ^= inOutMask | carryMask;
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
@@ -220,7 +220,7 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
     bitCapInt inOutMask = lengthMask << inOutStart;
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ inOutMask;
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
@@ -276,7 +276,7 @@ void QEngineCPU::INCDECSC(
 
     otherMask ^= inOutMask | carryMask;
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
@@ -325,7 +325,7 @@ void QEngineCPU::INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bi
     bitCapInt inOutMask = lengthMask << inOutStart;
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inOutMask | carryMask);
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
@@ -363,7 +363,7 @@ void QEngineCPU::MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& to
     bitCapInt carryMask = lowMask << carryStart;
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inOutMask | carryMask);
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
@@ -434,7 +434,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
 
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inOutMask | carryMask | controlMask);
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
@@ -520,7 +520,7 @@ void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLe
     bitCapInt outMask = lowMask << outStart;
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inMask | outMask);
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
@@ -596,7 +596,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
 
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inMask | outMask | controlMask);
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
@@ -694,7 +694,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     bitCapInt otherMask = maxQPower - ONE_BCI;
     otherMask ^= inOutMask;
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
@@ -772,7 +772,7 @@ void QEngineCPU::INCDECBCDC(
 
     otherMask ^= inOutMask | carryMask;
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
@@ -850,7 +850,7 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
     bitCapInt inputMask = bitRegMask(indexStart, indexLength);
     bitCapInt skipPower = pow2(valueStart);
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
@@ -915,7 +915,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
         X(carryIndex);
     }
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     // We calloc a new stateVector for output.
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
@@ -1020,7 +1020,7 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
         X(carryIndex);
     }
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     // We calloc a new stateVector for output.
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
@@ -1110,7 +1110,7 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
     bitLenInt bytes = (length + 7U) / 8U;
     bitCapInt inputMask = bitRegMask(start, length);
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     StateVectorPtr nStateVec = AllocStateVec(maxQPower);
     nStateVec->clear();
@@ -1148,7 +1148,7 @@ void QEngineCPU::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt car
     bitCapInt qPowers[2] = { carryInSumOutMask, carryOutMask };
     std::sort(qPowers, qPowers + 2);
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     par_for_mask(0, maxQPower, qPowers, 2, [&](const bitCapInt lcv, const int cpu) {
         // Carry-in, sum bit in
@@ -1216,7 +1216,7 @@ void QEngineCPU::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
     bitCapInt qPowers[2] = { carryInSumOutMask, carryOutMask };
     std::sort(qPowers, qPowers + 2);
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     par_for_mask(0, maxQPower, qPowers, 2, [&](const bitCapInt lcv, const int cpu) {
         // Carry-in, sum bit out

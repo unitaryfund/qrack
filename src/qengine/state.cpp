@@ -69,7 +69,7 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     return stateVec->read(perm);
@@ -80,7 +80,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     runningNorm -= norm(stateVec->read(perm));
@@ -154,7 +154,7 @@ void QEngineCPU::GetQuantumState(complex* outputState)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     stateVec->copy_out(outputState);
@@ -171,7 +171,7 @@ void QEngineCPU::GetProbs(real1* outputProbs)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     stateVec->get_probs(outputProbs);
@@ -527,7 +527,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     real1* rngNrm = new real1[numCores];
     std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     par_for_skip(0, maxQPower, targetPower, 1, [&](const bitCapInt lcv, const int cpu) {
         bitCapIntOcl offset = 0;
@@ -593,7 +593,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
@@ -606,7 +606,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
         toCopy->NormalizeState();
     } else {
-        toCopy->dispatchQueue.restart();
+        toCopy->dispatchQueue.finish();
     }
 
     if (stateVec->is_sparse() || toCopy->stateVec->is_sparse()) {
@@ -639,13 +639,13 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
         toCopy->NormalizeState();
     } else {
-        toCopy->dispatchQueue.restart();
+        toCopy->dispatchQueue.finish();
     }
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
@@ -688,7 +688,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     for (i = 0; i < toComposeCount; i++) {
@@ -696,7 +696,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
         if ((src->doNormalize) && (src->runningNorm != ONE_R1)) {
             src->NormalizeState();
         } else {
-            src->dispatchQueue.restart();
+            src->dispatchQueue.finish();
         }
         mask[i] = (src->GetMaxQPower() - ONE_BCI) << (bitCapIntOcl)nQubitCount;
         offset[i] = nQubitCount;
@@ -752,7 +752,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
@@ -860,7 +860,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     StateVectorPtr nStateVec = AllocStateVec(remainderPower);
@@ -913,7 +913,7 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     stateVec->isReadLocked = false;
@@ -943,7 +943,7 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     return norm(stateVec->read(fullRegister));
@@ -966,7 +966,7 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     stateVec->isReadLocked = false;
@@ -1013,7 +1013,7 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     stateVec->isReadLocked = false;
@@ -1044,13 +1044,13 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
     if (doNormalize) {
         NormalizeState();
     } else {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
     }
 
     if (toCompare->doNormalize && (toCompare->runningNorm != ONE_R1)) {
         toCompare->NormalizeState();
     } else {
-        toCompare->dispatchQueue.restart();
+        toCompare->dispatchQueue.finish();
     }
 
     int numCores = GetConcurrencyLevel();
