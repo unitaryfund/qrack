@@ -16,7 +16,7 @@ namespace Qrack {
 
 QInterfacePtr QEngineCPU::Clone()
 {
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     QInterfacePtr clone = CreateQuantumInterface(QINTERFACE_CPU, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse);

@@ -63,7 +63,7 @@ public:
 
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
 
         if (stateVec) {
             stateVec->copy_out(pagePtr, offset, length);
@@ -73,7 +73,7 @@ public:
     }
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
-        dispatchQueue.restart();
+        dispatchQueue.finish();
 
         if (!stateVec) {
             ResetStateVec(AllocStateVec(maxQPower));
@@ -90,8 +90,8 @@ public:
         QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
         StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
 
-        dispatchQueue.restart();
-        pageEngineCpuPtr->dispatchQueue.restart();
+        dispatchQueue.finish();
+        pageEngineCpuPtr->dispatchQueue.finish();
 
         if (!stateVec && !oStateVec) {
             return;
@@ -110,8 +110,8 @@ public:
     {
         QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);
 
-        dispatchQueue.restart();
-        engineCpu->dispatchQueue.restart();
+        dispatchQueue.finish();
+        engineCpu->dispatchQueue.finish();
 
         if (!stateVec && !(engineCpu->stateVec)) {
             return;

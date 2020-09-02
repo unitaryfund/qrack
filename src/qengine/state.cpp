@@ -1143,7 +1143,7 @@ void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
 {
     CHECK_ZERO_SKIP();
 
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     if (nrm < ZERO_R1) {
         nrm = runningNorm;
@@ -1178,7 +1178,7 @@ void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
 
 void QEngineCPU::UpdateRunningNorm(real1 norm_thresh)
 {
-    dispatchQueue.restart();
+    dispatchQueue.finish();
 
     if (!stateVec) {
         return;
