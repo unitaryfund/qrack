@@ -28,11 +28,13 @@ DispatchQueue::~DispatchQueue() { dump(); }
 
 void DispatchQueue::start()
 {
+#if QUNIT_CPU_PARALLEL
     quit_ = false;
 
     for (size_t i = 0; i < threads_.size(); i++) {
         threads_[i] = std::thread(&DispatchQueue::dispatch_thread_handler, this);
     }
+#endif
 }
 
 void DispatchQueue::finish()
@@ -67,9 +69,11 @@ void DispatchQueue::dump()
 
 void DispatchQueue::restart()
 {
+#if QUNIT_CPU_PARALLEL
     finish();
     quit_ = false;
     start();
+#endif
 }
 
 void DispatchQueue::dispatch(const fp_t& op)
