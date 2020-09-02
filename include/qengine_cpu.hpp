@@ -235,6 +235,19 @@ protected:
     virtual StateVectorPtr AllocStateVec(bitCapInt elemCount);
     virtual void ResetStateVec(StateVectorPtr sv);
 
+    typedef std::function<void(void)> DispatchFn;
+    virtual void Dispatch(DispatchFn fn)
+    {
+        const bitCapInt Stride = pow2(PSTRIDEPOW);
+        if (maxQPower < Stride) {
+            dispatchQueue.restart();
+            dispatchQueue.dispatch(fn);
+        } else {
+            dispatchQueue.finish();
+            fn();
+        }
+    }
+
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = REAL1_DEFAULT_ARG);
