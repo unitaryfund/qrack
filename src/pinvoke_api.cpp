@@ -318,6 +318,18 @@ MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s)
 }
 
 /**
+ * (External API) Set concurrency level per QEngine shard
+ */
+MICROSOFT_QUANTUM_DECL void set_concurrency(_In_ unsigned sid, _In_ unsigned p)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    if (simulators[sid] != NULL) {
+        simulators[sid]->SetConcurrency(p);
+    }
+}
+
+/**
  * (External API) "Dump" all IDs from the selected simulator ID into the callback
  */
 MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ IdCallback callback)

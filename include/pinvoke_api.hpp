@@ -32,6 +32,7 @@ MICROSOFT_QUANTUM_DECL unsigned init();
 MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q);
 MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s);
+MICROSOFT_QUANTUM_DECL void set_concurrency(_In_ unsigned sid, _In_ unsigned p);
 MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callback);
 
 // pseudo-quantum

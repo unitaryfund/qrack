@@ -686,6 +686,16 @@ public:
 
     virtual ~QUnit() { Dump(); }
 
+    virtual void SetConcurrency(uint32_t threadsPerEngine)
+    {
+        ParallelUnitApply(
+            [](QInterfacePtr unit, real1 unused1, real1 unused2, int32_t threadsPerEngine) {
+                unit->SetConcurrency(threadsPerEngine);
+                return true;
+            },
+            ZERO_R1, ZERO_R1, threadsPerEngine);
+    }
+
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
@@ -921,8 +931,8 @@ protected:
     virtual QInterfacePtr EntangleInCurrentBasis(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
-    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param1, real1 param2);
-    bool ParallelUnitApply(ParallelUnitFn fn, real1 param1 = ZERO_R1, real1 param2 = ZERO_R1);
+    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param1, real1 param2, int32_t param3);
+    bool ParallelUnitApply(ParallelUnitFn fn, real1 param1 = ZERO_R1, real1 param2 = ZERO_R1, int32_t param3 = 0);
 
     virtual void SeparateBit(bool value, bitLenInt qubit, bool doDispose = true);
 

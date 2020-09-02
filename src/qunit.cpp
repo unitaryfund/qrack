@@ -3056,14 +3056,14 @@ void QUnit::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
     DirtyShardRangePhase(start, length);
 }
 
-bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1 param1, real1 param2)
+bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1 param1, real1 param2, int32_t param3)
 {
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0; i < shards.size(); i++) {
         QInterfacePtr toFind = shards[i].unit;
         if (find(units.begin(), units.end(), toFind) == units.end()) {
             units.push_back(toFind);
-            if (!fn(toFind, param1, param2)) {
+            if (!fn(toFind, param1, param2, param3)) {
                 return false;
             }
         }
@@ -3076,7 +3076,7 @@ void QUnit::UpdateRunningNorm(real1 norm_thresh)
 {
     EndAllEmulation();
     ParallelUnitApply(
-        [](QInterfacePtr unit, real1 norm_thresh, real1 unused2) {
+        [](QInterfacePtr unit, real1 norm_thresh, real1 unused2, int32_t unused3) {
             unit->UpdateRunningNorm(norm_thresh);
             return true;
         },
@@ -3087,7 +3087,7 @@ void QUnit::NormalizeState(real1 nrm, real1 norm_thresh)
 {
     EndAllEmulation();
     ParallelUnitApply(
-        [](QInterfacePtr unit, real1 nrm, real1 norm_thresh) {
+        [](QInterfacePtr unit, real1 nrm, real1 norm_thresh, int32_t unused) {
             unit->NormalizeState(nrm, norm_thresh);
             return true;
         },
@@ -3096,7 +3096,7 @@ void QUnit::NormalizeState(real1 nrm, real1 norm_thresh)
 
 void QUnit::Finish()
 {
-    ParallelUnitApply([](QInterfacePtr unit, real1 unused1, real1 unused2) {
+    ParallelUnitApply([](QInterfacePtr unit, real1 unused1, real1 unused2, int32_t unused3) {
         unit->Finish();
         return true;
     });
@@ -3104,7 +3104,7 @@ void QUnit::Finish()
 
 void QUnit::Dump()
 {
-    ParallelUnitApply([](QInterfacePtr unit, real1 unused1, real1 unused2) {
+    ParallelUnitApply([](QInterfacePtr unit, real1 unused1, real1 unused2, int32_t unused3) {
         unit.reset();
         return true;
     });
@@ -3112,7 +3112,8 @@ void QUnit::Dump()
 
 bool QUnit::isFinished()
 {
-    return ParallelUnitApply([](QInterfacePtr unit, real1 unused1, real1 unused2) { return unit->isFinished(); });
+    return ParallelUnitApply(
+        [](QInterfacePtr unit, real1 unused1, real1 unused2, int32_t unused3) { return unit->isFinished(); });
 }
 
 bool QUnit::ApproxCompare(QUnitPtr toCompare)

@@ -301,6 +301,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qengine_getmaxqpower")
     REQUIRE((qftReg->GetMaxQPower() == 1048576U));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_setconcurrency")
+{
+    // Make sure it doesn't throw:
+    qftReg->SetConcurrency(1);
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
 {
     qftReg->SetPermutation(0x55F00);

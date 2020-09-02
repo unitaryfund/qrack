@@ -82,6 +82,13 @@ public:
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1 ignored3 = REAL1_DEFAULT_ARG, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0);
 
+    virtual void SetConcurrency(uint32_t threadsPerEngine)
+    {
+        for (bitCapInt i = 0; i < qPages.size(); i++) {
+            qPages[i]->SetConcurrency(threadsPerEngine);
+        }
+    }
+
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);

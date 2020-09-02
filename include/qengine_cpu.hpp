@@ -51,6 +51,8 @@ public:
         // Intentionally left blank
     }
 
+    virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
+
     virtual void ZeroAmplitudes()
     {
         runningNorm = ZERO_R1;
