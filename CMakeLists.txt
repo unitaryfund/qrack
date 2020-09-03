@@ -105,6 +105,7 @@ include ("cmake/Complex8.cmake")
 include ("cmake/Complex_x2.cmake")
 include ("cmake/Pure32.cmake")
 include ("cmake/Boost.cmake")
+include ("cmake/QUnit_CPU_Parallel.cmake")
 include ("cmake/VM6502Q.cmake")
 
 target_compile_definitions (qrack PUBLIC QBCAPPOW=${QBCAPPOW})

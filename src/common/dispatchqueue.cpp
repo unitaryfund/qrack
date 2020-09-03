@@ -38,9 +38,7 @@ DispatchQueue::~DispatchQueue()
     cv_.notify_all();
 
     // Wait for thread to finish before we exit
-    if (thread_.joinable()) {
-        thread_.join();
-    }
+    thread_.get();
 
     isFinished_ = true;
     cvFinished_.notify_all();
@@ -53,7 +51,7 @@ void DispatchQueue::finish()
     }
 
     std::unique_lock<std::mutex> lock(lock_);
-    cvFinished_.wait(lock, [this]() { return isFinished_; });
+    cvFinished_.wait(lock, [this] { return isFinished_; });
 }
 
 void DispatchQueue::dump()
@@ -77,7 +75,7 @@ void DispatchQueue::dispatch(const fp_t& op)
     isFinished_ = false;
     if (!isStarted_) {
         isStarted_ = true;
-        thread_ = std::thread(&DispatchQueue::dispatch_thread_handler, this);
+        thread_ = std::async(std::launch::async, [this] { dispatch_thread_handler(); });
     }
 
     // Manual unlocking is done before notifying, to avoid waking up
@@ -93,7 +91,7 @@ void DispatchQueue::dispatch(fp_t&& op)
     isFinished_ = false;
     if (!isStarted_) {
         isStarted_ = true;
-        thread_ = std::thread(&DispatchQueue::dispatch_thread_handler, this);
+        thread_ = std::async(std::launch::async, [this] { dispatch_thread_handler(); });
     }
 
     // Manual unlocking is done before notifying, to avoid waking up
