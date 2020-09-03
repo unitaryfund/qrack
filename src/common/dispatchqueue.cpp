@@ -30,15 +30,16 @@ DispatchQueue::~DispatchQueue()
 {
     std::unique_lock<std::mutex> lock(lock_);
     quit_ = true;
-    isFinished_ = true;
     lock.unlock();
     cv_.notify_all();
-    cvFinished_.notify_all();
 
     // Wait for thread to finish before we exit
     if (thread_.joinable()) {
         thread_.join();
     }
+
+    isFinished_ = true;
+    cvFinished_.notify_all();
 }
 
 void DispatchQueue::finish()
