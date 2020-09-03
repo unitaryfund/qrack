@@ -122,6 +122,7 @@ else (QBCAPPOW EQUAL 7)
 endif (QBCAPPOW EQUAL 7)
 message ("Single accuracy is: ${ENABLE_COMPLEX8}")
 message ("Complex_x2/AVX support is: ${ENABLE_COMPLEX_X2}")
+message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 
 if (ENABLE_UINT128 AND ENABLE_PURE32)

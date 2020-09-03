@@ -14,7 +14,10 @@
 
 #include <memory>
 
+#include "config.h"
+#if ENABLE_QUNIT_CPU_PARALLEL
 #include "common/dispatchqueue.hpp"
+#endif
 #include "common/parallel_for.hpp"
 #include "qengine.hpp"
 #include "statevector.hpp"
@@ -36,7 +39,9 @@ class QEngineCPU : virtual public QEngine, public ParallelFor {
 protected:
     StateVectorPtr stateVec;
     bool isSparse;
+#if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
+#endif
 
     StateVectorSparsePtr CastStateVecSparse() { return std::dynamic_pointer_cast<StateVectorSparse>(stateVec); }
 
@@ -53,11 +58,28 @@ public:
 
     virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
 
-    virtual void Finish() { dispatchQueue.finish(); };
+    virtual void Finish()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.finish();
+#endif
+    };
 
-    virtual bool isFinished() { return dispatchQueue.isFinished(); }
+    virtual bool isFinished()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        return dispatchQueue.isFinished();
+#else
+        return true;
+#endif
+    }
 
-    virtual void Dump() { dispatchQueue.dump(); }
+    virtual void Dump()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.dump();
+#endif
+    }
 
     virtual void ZeroAmplitudes()
     {
@@ -244,6 +266,7 @@ protected:
     typedef std::function<void(void)> DispatchFn;
     virtual void Dispatch(DispatchFn fn)
     {
+#if ENABLE_QUNIT_CPU_PARALLEL
         const bitCapInt Stride = pow2(PSTRIDEPOW);
         if (maxQPower < Stride) {
             dispatchQueue.dispatch(fn);
@@ -251,6 +274,9 @@ protected:
             Finish();
             fn();
         }
+#else
+        fn();
+#endif
     }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
