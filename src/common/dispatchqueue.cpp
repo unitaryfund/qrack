@@ -53,6 +53,9 @@ void DispatchQueue::dump()
     std::unique_lock<std::mutex> lock(lock_);
     std::queue<fp_t> empty;
     std::swap(q_, empty);
+    isFinished_ = true;
+    lock.unlock();
+    cvFinished_.notify_all();
 }
 
 void DispatchQueue::dispatch(const fp_t& op)
