@@ -969,12 +969,13 @@ void QUnit::H(bitLenInt target)
         return;
     }
 
-    ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->H(shard.mapped); });
-
     if (DIRTY(shard)) {
         shard.MakeDirty();
+        shard.unit->H(shard.mapped);
         return;
     }
+
+    shard.isEmulated = true;
 
     complex tempAmp1 = ((real1)M_SQRT1_2) * (shard.amp0 - shard.amp1);
     shard.amp0 = ((real1)M_SQRT1_2) * (shard.amp0 + shard.amp1);
@@ -987,12 +988,14 @@ void QUnit::H(bitLenInt target)
 void QUnit::XBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
-    ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->X(shard.mapped); });
 
     if (DIRTY(shard)) {
         shard.MakeDirty();
+        shard.unit->X(shard.mapped);
         return;
     }
+
+    shard.isEmulated = true;
 
     std::swap(shard.amp0, shard.amp1);
 }
@@ -1000,12 +1003,14 @@ void QUnit::XBase(const bitLenInt& target)
 void QUnit::ZBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
-    ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->Z(shard.mapped); });
 
     if (DIRTY(shard)) {
         shard.MakeDirty();
+        shard.unit->Z(shard.mapped);
         return;
     }
+
+    shard.isEmulated = true;
 
     shard.amp1 = -shard.amp1;
 }
@@ -1517,13 +1522,14 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
     }
 
     if (!shard.isPlusMinus) {
-        ApplyOrEmulate(
-            shard, [&](QEngineShard& shard) { shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped); });
 
         if (DIRTY(shard)) {
             shard.MakeDirty();
+            shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped);
             return;
         }
+
+        shard.isEmulated = true;
 
         shard.amp0 *= topLeft;
         shard.amp1 *= bottomRight;
@@ -1534,12 +1540,13 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
         TransformPhase(topLeft, bottomRight, mtrx);
 
-        ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(mtrx, shard.mapped); });
-
         if (DIRTY(shard)) {
             shard.MakeDirty();
+            shard.unit->ApplySingleBit(mtrx, shard.mapped);
             return;
         }
+
+        shard.isEmulated = true;
 
         complex Y0 = shard.amp0;
 
@@ -1569,13 +1576,13 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
-        ApplyOrEmulate(
-            shard, [&](QEngineShard& shard) { shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped); });
-
         if (DIRTY(shard)) {
             shard.MakeDirty();
+            shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped);
             return;
         }
+
+        shard.isEmulated = true;
 
         complex tempAmp1 = shard.amp0 * bottomLeft;
         shard.amp0 = shard.amp1 * topRight;
@@ -1587,12 +1594,13 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
         TransformInvert(topRight, bottomLeft, mtrx);
 
-        ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(mtrx, shard.mapped); });
-
         if (DIRTY(shard)) {
             shard.MakeDirty();
+            shard.unit->ApplySingleBit(mtrx, shard.mapped);
             return;
         }
+
+        shard.isEmulated = true;
 
         complex Y0 = shard.amp0;
 
@@ -1855,12 +1863,13 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         Transform2x2(mtrx, trnsMtrx);
     }
 
-    ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->ApplySingleBit(trnsMtrx, shard.mapped); });
-
     if (DIRTY(shard)) {
         shard.MakeDirty();
+        shard.unit->ApplySingleBit(trnsMtrx, shard.mapped);
         return;
     }
+
+    shard.isEmulated = true;
 
     complex Y0 = shard.amp0;
     shard.amp0 = (trnsMtrx[0] * Y0) + (trnsMtrx[1] * shard.amp1);
@@ -2861,7 +2870,17 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
     if (CheckBitsPermutation(start, length)) {
         if (GetCachedPermutation(start, length) < greaterPerm) {
             // This has no physical effect, but we do it to respect direct simulator check of amplitudes:
-            ApplyOrEmulate(shards[start], [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
+            QEngineShard& shard = shards[start];
+            if (DIRTY(shard)) {
+                shard.MakeDirty();
+                shard.unit->PhaseFlip();
+                return;
+            }
+
+            shard.isEmulated = true;
+
+            shard.amp0 = -shard.amp0;
+            shard.amp1 = -shard.amp1;
         }
         return;
     }
@@ -2901,7 +2920,16 @@ void QUnit::PhaseFlip()
     QEngineShard& shard = shards[0];
     if (!randGlobalPhase) {
         RevertBasis1Qb(0);
-        ApplyOrEmulate(shard, [&](QEngineShard& shard) { shard.unit->PhaseFlip(); });
+
+        if (DIRTY(shard)) {
+            shard.MakeDirty();
+            shard.unit->PhaseFlip();
+            return;
+        }
+
+        shard.isEmulated = true;
+
+        shard.amp0 = -shard.amp0;
         shard.amp1 = -shard.amp1;
     }
 }

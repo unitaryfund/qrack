@@ -1057,8 +1057,7 @@ protected:
     void DirtyShardRange(bitLenInt start, bitLenInt length)
     {
         for (bitLenInt i = 0; i < length; i++) {
-            shards[start + i].isProbDirty = true;
-            shards[start + i].isPhaseDirty = true;
+            shards[start + i].MakeDirty();
         }
     }
 
@@ -1072,16 +1071,14 @@ protected:
     void DirtyShardIndexArray(bitLenInt* bitIndices, bitLenInt length)
     {
         for (bitLenInt i = 0; i < length; i++) {
-            shards[bitIndices[i]].isProbDirty = true;
-            shards[bitIndices[i]].isPhaseDirty = true;
+            shards[bitIndices[i]].MakeDirty();
         }
     }
 
     void DirtyShardIndexVector(std::vector<bitLenInt> bitIndices)
     {
         for (bitLenInt i = 0; i < bitIndices.size(); i++) {
-            shards[bitIndices[i]].isProbDirty = true;
-            shards[bitIndices[i]].isPhaseDirty = true;
+            shards[bitIndices[i]].MakeDirty();
         }
     }
 
@@ -1114,15 +1111,6 @@ protected:
         }
     }
 
-    template <typename F> void ApplyOrEmulate(QEngineShard& shard, F payload)
-    {
-        if ((shard.unit->GetQubitCount() == 1) && !shard.isProbDirty && !shard.isPhaseDirty) {
-            shard.isEmulated = true;
-        } else {
-            payload(shard);
-        }
-    }
-
     bitLenInt FindShardIndex(const QEngineShard& shard)
     {
         for (bitLenInt i = 0; i < shards.size(); i++) {
@@ -1137,7 +1125,6 @@ protected:
 
     /* Debugging and diagnostic routines. */
     void DumpShards();
-    QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
 };
 
 } // namespace Qrack
