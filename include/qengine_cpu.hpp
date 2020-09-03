@@ -18,6 +18,10 @@
 #include "qengine.hpp"
 #include "statevector.hpp"
 
+#if ENABLE_QUNIT_CPU_PARALLEL
+#include "common/dispatchqueue.hpp"
+#endif
+
 namespace Qrack {
 
 class QEngineCPU;
@@ -35,8 +39,9 @@ class QEngineCPU : virtual public QEngine, public ParallelFor {
 protected:
     StateVectorPtr stateVec;
     bool isSparse;
-    bool isRunningAsync;
-    std::future<void> asyncGate;
+#if ENABLE_QUNIT_CPU_PARALLEL
+    DispatchQueue dispatchQueue;
+#endif
 
     StateVectorSparsePtr CastStateVecSparse() { return std::dynamic_pointer_cast<StateVectorSparse>(stateVec); }
 
@@ -55,18 +60,25 @@ public:
 
     virtual void Finish()
     {
-        if (isRunningAsync) {
-            asyncGate.get();
-        }
-        isRunningAsync = false;
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.finish();
+#endif
     };
 
-    virtual bool isFinished();
+    virtual bool isFinished()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        return dispatchQueue.isFinished();
+#else
+        return true;
+#endif
+    }
 
     virtual void Dump()
     {
-        // TODO: Consider implementing an actual dump
-        Finish();
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.dump();
+#endif
     }
 
     virtual void ZeroAmplitudes()
@@ -254,14 +266,17 @@ protected:
     typedef std::function<void(void)> DispatchFn;
     virtual void Dispatch(DispatchFn fn)
     {
+#if ENABLE_QUNIT_CPU_PARALLEL
         const bitCapInt Stride = pow2(PSTRIDEPOW);
-        Finish();
         if (maxQPower < Stride) {
-            asyncGate = std::async(std::launch::async, fn);
-            isRunningAsync = true;
+            dispatchQueue.dispatch(fn);
         } else {
+            Finish();
             fn();
         }
+#else
+        fn();
+#endif
     }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);

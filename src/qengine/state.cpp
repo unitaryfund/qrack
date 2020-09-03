@@ -47,7 +47,6 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
-    , isRunningAsync(false)
 {
     SetConcurrency(std::thread::hardware_concurrency());
 
@@ -60,11 +59,6 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
         stateVec->write(initState, phaseFac);
     }
 }
-
-bool QEngineCPU::isFinished()
-{
-    return !isRunningAsync || (asyncGate.wait_for(std::chrono::seconds(0)) == std::future_status::ready);
-};
 
 complex QEngineCPU::GetAmplitude(bitCapInt perm)
 {
@@ -202,7 +196,7 @@ union ComplexUnion {
 };
 
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* matrix, const bitLenInt bitCount,
-    const bitCapInt* qPowsSorted, bool doCalcNrm, real1 nrm_thresh)
+    const bitCapInt* qPowsSorted, bool doCalcNorm, real1 nrm_thresh)
 {
     CHECK_ZERO_SKIP();
 
@@ -212,8 +206,13 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     bitCapInt* qPowersSorted = new bitCapInt[bitCount];
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
 
-    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNrm, nrm_thresh]() {
-        bool doCalcNorm = (doCalcNrm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+
+    if (doCalcNorm) {
+        runningNorm = ONE_R1;
+    }
+
+    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, nrm_thresh]() {
         real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
         real1 norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
         int numCores = GetConcurrencyLevel();
@@ -355,7 +354,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 }
 #else
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* matrix, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNrm, real1 nrm_thresh)
+    const bitCapInt* qPowersSorted, bool doCalcNorm, real1 nrm_thresh)
 {
     CHECK_ZERO_SKIP();
 
@@ -365,8 +364,13 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     bitCapInt* qPowersSorted = new bitCapInt[bitCount];
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
 
-    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNrm, nrm_thresh]() {
-        bool doCalcNorm = (doCalcNrm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+
+    if (doCalcNorm) {
+        runningNorm = ONE_R1;
+    }
+
+    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, nrm_thresh]() {
         real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
         real1 norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
         int numCores = GetConcurrencyLevel();
@@ -1101,15 +1105,15 @@ void QEngineCPU::PhaseFlip()
         return;
     }
 
-    Finish();
+    Dispatch([this]() {
+        ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); };
 
-    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); };
-
-    if (stateVec->is_sparse()) {
-        par_for_set(CastStateVecSparse()->iterable(), fn);
-    } else {
-        par_for(0, maxQPower, fn);
-    }
+        if (stateVec->is_sparse()) {
+            par_for_set(CastStateVecSparse()->iterable(), fn);
+        } else {
+            par_for(0, maxQPower, fn);
+        }
+    });
 }
 
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
@@ -1158,23 +1162,23 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
 {
     CHECK_ZERO_SKIP();
 
-    Finish();
+    Dispatch([this, regMask, result, nrm]() {
+        ParallelFunc fn = [&](const bitCapInt i, const int cpu) {
+            if ((i & regMask) == result) {
+                stateVec->write(i, nrm * stateVec->read(i));
+            } else {
+                stateVec->write(i, complex(ZERO_R1, ZERO_R1));
+            }
+        };
 
-    ParallelFunc fn = [&](const bitCapInt i, const int cpu) {
-        if ((i & regMask) == result) {
-            stateVec->write(i, nrm * stateVec->read(i));
+        if (stateVec->is_sparse()) {
+            par_for_set(CastStateVecSparse()->iterable(), fn);
         } else {
-            stateVec->write(i, complex(ZERO_R1, ZERO_R1));
+            par_for(0, maxQPower, fn);
         }
-    };
 
-    if (stateVec->is_sparse()) {
-        par_for_set(CastStateVecSparse()->iterable(), fn);
-    } else {
-        par_for(0, maxQPower, fn);
-    }
-
-    runningNorm = ONE_R1;
+        runningNorm = ONE_R1;
+    });
 }
 
 void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)

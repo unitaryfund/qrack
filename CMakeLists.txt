@@ -24,6 +24,7 @@ endif (QBCAPPOW GREATER 31)
 add_library (qrack STATIC
     src/common/parallel_for.cpp
     src/common/rdrandwrapper.cpp
+    src/common/dispatchqueue.cpp
     src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
@@ -121,6 +122,7 @@ else (QBCAPPOW EQUAL 7)
 endif (QBCAPPOW EQUAL 7)
 message ("Single accuracy is: ${ENABLE_COMPLEX8}")
 message ("Complex_x2/AVX support is: ${ENABLE_COMPLEX_X2}")
+message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 
 if (ENABLE_UINT128 AND ENABLE_PURE32)
@@ -179,6 +181,7 @@ install (FILES
     include/common/oclengine.hpp
     include/common/parallel_for.hpp
     include/common/rdrandwrapper.hpp
+    include/common/dispatchqueue.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 
