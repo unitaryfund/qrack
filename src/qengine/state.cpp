@@ -1101,15 +1101,15 @@ void QEngineCPU::PhaseFlip()
         return;
     }
 
-    Finish();
+    Dispatch([this]() {
+        ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); };
 
-    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); };
-
-    if (stateVec->is_sparse()) {
-        par_for_set(CastStateVecSparse()->iterable(), fn);
-    } else {
-        par_for(0, maxQPower, fn);
-    }
+        if (stateVec->is_sparse()) {
+            par_for_set(CastStateVecSparse()->iterable(), fn);
+        } else {
+            par_for(0, maxQPower, fn);
+        }
+    });
 }
 
 /// For chips with a zero flag, flip the phase of the state where the register equals zero.
@@ -1158,23 +1158,23 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
 {
     CHECK_ZERO_SKIP();
 
-    Finish();
+    Dispatch([this, regMask, result, nrm]() {
+        ParallelFunc fn = [&](const bitCapInt i, const int cpu) {
+            if ((i & regMask) == result) {
+                stateVec->write(i, nrm * stateVec->read(i));
+            } else {
+                stateVec->write(i, complex(ZERO_R1, ZERO_R1));
+            }
+        };
 
-    ParallelFunc fn = [&](const bitCapInt i, const int cpu) {
-        if ((i & regMask) == result) {
-            stateVec->write(i, nrm * stateVec->read(i));
+        if (stateVec->is_sparse()) {
+            par_for_set(CastStateVecSparse()->iterable(), fn);
         } else {
-            stateVec->write(i, complex(ZERO_R1, ZERO_R1));
+            par_for(0, maxQPower, fn);
         }
-    };
 
-    if (stateVec->is_sparse()) {
-        par_for_set(CastStateVecSparse()->iterable(), fn);
-    } else {
-        par_for(0, maxQPower, fn);
-    }
-
-    runningNorm = ONE_R1;
+        runningNorm = ONE_R1;
+    });
 }
 
 void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
