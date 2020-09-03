@@ -14,13 +14,13 @@
 
 #include <memory>
 
-#include "config.h"
-#if ENABLE_QUNIT_CPU_PARALLEL
-#include "common/dispatchqueue.hpp"
-#endif
 #include "common/parallel_for.hpp"
 #include "qengine.hpp"
 #include "statevector.hpp"
+
+#if ENABLE_QUNIT_CPU_PARALLEL
+#include "common/dispatchqueue.hpp"
+#endif
 
 namespace Qrack {
 
