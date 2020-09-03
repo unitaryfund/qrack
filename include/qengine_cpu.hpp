@@ -14,6 +14,7 @@
 
 #include <memory>
 
+#include "common/dispatchqueue.hpp"
 #include "common/parallel_for.hpp"
 #include "qengine.hpp"
 #include "statevector.hpp"
@@ -35,8 +36,7 @@ class QEngineCPU : virtual public QEngine, public ParallelFor {
 protected:
     StateVectorPtr stateVec;
     bool isSparse;
-    bool isRunningAsync;
-    std::future<void> asyncGate;
+    DispatchQueue dispatchQueue;
 
     StateVectorSparsePtr CastStateVecSparse() { return std::dynamic_pointer_cast<StateVectorSparse>(stateVec); }
 
@@ -53,21 +53,11 @@ public:
 
     virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
 
-    virtual void Finish()
-    {
-        if (isRunningAsync) {
-            asyncGate.get();
-        }
-        isRunningAsync = false;
-    };
+    virtual void Finish() { dispatchQueue.finish(); };
 
-    virtual bool isFinished();
+    virtual bool isFinished() { return dispatchQueue.isFinished(); }
 
-    virtual void Dump()
-    {
-        // TODO: Consider implementing an actual dump
-        Finish();
-    }
+    virtual void Dump() { dispatchQueue.dump(); }
 
     virtual void ZeroAmplitudes()
     {
@@ -255,11 +245,10 @@ protected:
     virtual void Dispatch(DispatchFn fn)
     {
         const bitCapInt Stride = pow2(PSTRIDEPOW);
-        Finish();
         if (maxQPower < Stride) {
-            asyncGate = std::async(std::launch::async, fn);
-            isRunningAsync = true;
+            dispatchQueue.dispatch(fn);
         } else {
+            Finish();
             fn();
         }
     }

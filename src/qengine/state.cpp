@@ -47,7 +47,6 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
-    , isRunningAsync(false)
 {
     SetConcurrency(std::thread::hardware_concurrency());
 
@@ -60,11 +59,6 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
         stateVec->write(initState, phaseFac);
     }
 }
-
-bool QEngineCPU::isFinished()
-{
-    return !isRunningAsync || (asyncGate.wait_for(std::chrono::seconds(0)) == std::future_status::ready);
-};
 
 complex QEngineCPU::GetAmplitude(bitCapInt perm)
 {
