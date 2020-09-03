@@ -22,12 +22,16 @@ namespace Qrack {
 DispatchQueue::DispatchQueue()
     : quit_(false)
     , isFinished_(true)
+    , isStarted_(false)
 {
-    thread_ = std::thread(&DispatchQueue::dispatch_thread_handler, this);
 }
 
 DispatchQueue::~DispatchQueue()
 {
+    if (!isStarted_) {
+        return;
+    }
+
     std::unique_lock<std::mutex> lock(lock_);
     quit_ = true;
     lock.unlock();
@@ -44,12 +48,20 @@ DispatchQueue::~DispatchQueue()
 
 void DispatchQueue::finish()
 {
+    if (!isStarted_) {
+        return;
+    }
+
     std::unique_lock<std::mutex> lock(lock_);
     cvFinished_.wait(lock, [this]() { return isFinished_; });
 }
 
 void DispatchQueue::dump()
 {
+    if (!isStarted_) {
+        return;
+    }
+
     std::unique_lock<std::mutex> lock(lock_);
     std::queue<fp_t> empty;
     std::swap(q_, empty);
@@ -63,6 +75,10 @@ void DispatchQueue::dispatch(const fp_t& op)
     std::unique_lock<std::mutex> lock(lock_);
     q_.push(op);
     isFinished_ = false;
+    if (!isStarted_) {
+        isStarted_ = true;
+        thread_ = std::thread(&DispatchQueue::dispatch_thread_handler, this);
+    }
 
     // Manual unlocking is done before notifying, to avoid waking up
     // the waiting thread only to block again (see notify_one for details)
@@ -75,6 +91,10 @@ void DispatchQueue::dispatch(fp_t&& op)
     std::unique_lock<std::mutex> lock(lock_);
     q_.push(std::move(op));
     isFinished_ = false;
+    if (!isStarted_) {
+        isStarted_ = true;
+        thread_ = std::thread(&DispatchQueue::dispatch_thread_handler, this);
+    }
 
     // Manual unlocking is done before notifying, to avoid waking up
     // the waiting thread only to block again (see notify_one for details)

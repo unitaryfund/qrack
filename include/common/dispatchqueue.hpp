@@ -56,6 +56,7 @@ private:
     std::condition_variable cvFinished_;
     bool quit_;
     bool isFinished_;
+    bool isStarted_;
 
     void dispatch_thread_handler(void);
 };
