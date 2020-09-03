@@ -202,7 +202,7 @@ union ComplexUnion {
 };
 
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* matrix, const bitLenInt bitCount,
-    const bitCapInt* qPowsSorted, bool doCalcNrm, real1 nrm_thresh)
+    const bitCapInt* qPowsSorted, bool doCalcNorm, real1 nrm_thresh)
 {
     CHECK_ZERO_SKIP();
 
@@ -212,8 +212,13 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     bitCapInt* qPowersSorted = new bitCapInt[bitCount];
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
 
-    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNrm, nrm_thresh]() {
-        bool doCalcNorm = (doCalcNrm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+
+    if (doCalcNorm) {
+        runningNorm = ONE_R1;
+    }
+
+    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, nrm_thresh]() {
         real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
         real1 norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
         int numCores = GetConcurrencyLevel();
@@ -355,7 +360,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 }
 #else
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* matrix, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNrm, real1 nrm_thresh)
+    const bitCapInt* qPowersSorted, bool doCalcNorm, real1 nrm_thresh)
 {
     CHECK_ZERO_SKIP();
 
@@ -365,8 +370,13 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     bitCapInt* qPowersSorted = new bitCapInt[bitCount];
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
 
-    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNrm, nrm_thresh]() {
-        bool doCalcNorm = (doCalcNrm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+
+    if (doCalcNorm) {
+        runningNorm = ONE_R1;
+    }
+
+    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, nrm_thresh]() {
         real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
         real1 norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
         int numCores = GetConcurrencyLevel();
