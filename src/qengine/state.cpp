@@ -212,7 +212,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         runningNorm = ONE_R1;
     }
 
-    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, nrm_thresh]() {
+    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, nrm_thresh] {
         real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
         real1 norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
         int numCores = GetConcurrencyLevel();
@@ -370,7 +370,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         runningNorm = ONE_R1;
     }
 
-    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, nrm_thresh]() {
+    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, nrm_thresh] {
         real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
         real1 norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
         int numCores = GetConcurrencyLevel();
@@ -1105,7 +1105,7 @@ void QEngineCPU::PhaseFlip()
         return;
     }
 
-    Dispatch([this]() {
+    Dispatch([this] {
         ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); };
 
         if (stateVec->is_sparse()) {
@@ -1121,7 +1121,7 @@ void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     CHECK_ZERO_SKIP();
 
-    Dispatch([this, start, length]() {
+    Dispatch([this, start, length] {
         par_for_skip(0, maxQPower, pow2(start), length,
             [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); });
     });
@@ -1132,7 +1132,7 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
 {
     CHECK_ZERO_SKIP();
 
-    Dispatch([this, greaterPerm, start, length, flagIndex]() {
+    Dispatch([this, greaterPerm, start, length, flagIndex] {
         bitCapInt regMask = bitRegMask(start, length);
         bitCapInt flagMask = pow2(flagIndex);
 
@@ -1148,7 +1148,7 @@ void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 {
     CHECK_ZERO_SKIP();
 
-    Dispatch([this, greaterPerm, start, length]() {
+    Dispatch([this, greaterPerm, start, length] {
         bitCapInt regMask = bitRegMask(start, length);
 
         par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
@@ -1162,7 +1162,7 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
 {
     CHECK_ZERO_SKIP();
 
-    Dispatch([this, regMask, result, nrm]() {
+    Dispatch([this, regMask, result, nrm] {
         ParallelFunc fn = [&](const bitCapInt i, const int cpu) {
             if ((i & regMask) == result) {
                 stateVec->write(i, nrm * stateVec->read(i));

@@ -17,9 +17,9 @@
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
+#include <future>
 #include <mutex>
 #include <queue>
-#include <thread>
 #include <vector>
 
 namespace Qrack {
@@ -50,12 +50,13 @@ public:
 
 private:
     std::mutex lock_;
-    std::thread thread_;
+    std::future<void> thread_;
     std::queue<fp_t> q_;
     std::condition_variable cv_;
     std::condition_variable cvFinished_;
     bool quit_;
     bool isFinished_;
+    bool isStarted_;
 
     void dispatch_thread_handler(void);
 };

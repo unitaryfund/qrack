@@ -56,15 +56,6 @@ QUnitMulti::QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt init
     if (devList.size() == 0) {
         std::sort(deviceList.begin() + 1, deviceList.end(), std::greater<DeviceInfo>());
     }
-
-    RedistributeSingleQubits();
-}
-
-void QUnitMulti::RedistributeSingleQubits()
-{
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        shards[i].unit->SetDevice(deviceList[(int)((real1)(i * deviceList.size()) / qubitCount)].id);
-    }
 }
 
 std::vector<QEngineInfo> QUnitMulti::GetQInfos()
@@ -75,7 +66,7 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
     int deviceIndex;
 
     for (auto&& shard : shards) {
-        if (std::find(qips.begin(), qips.end(), shard.unit) == qips.end()) {
+        if (shard.unit && (std::find(qips.begin(), qips.end(), shard.unit) == qips.end())) {
             qips.push_back(shard.unit);
             deviceIndex = std::distance(deviceList.begin(),
                 std::find_if(deviceList.begin(), deviceList.end(),
@@ -110,7 +101,7 @@ void QUnitMulti::RedistributeQEngines()
         // If the engine adds negligible load, we can let any given unit keep its
         // residency on this device.
         // In fact, single qubit units will be handled entirely by the CPU, anyway.
-        if (qinfos[i].unit->GetMaxQPower() <= 2U) {
+        if (!(qinfos[i].unit) || (qinfos[i].unit->GetMaxQPower() <= 2U)) {
             continue;
         }
 
@@ -157,13 +148,16 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
 {
     QInterfacePtr unit1 = shards[**first].unit;
 
-    // If already fully entangled, just return unit1.
-    bool isAlreadyEntangled = true;
-    for (auto bit = first + 1; bit < last; bit++) {
-        QInterfacePtr unit = shards[**bit].unit;
-        if (unit1 != unit) {
-            isAlreadyEntangled = false;
-            break;
+    bool isAlreadyEntangled = !!unit1;
+
+    if (isAlreadyEntangled) {
+        // If already fully entangled, just return unit1.
+        for (auto bit = first + 1; bit < last; bit++) {
+            QInterfacePtr unit = shards[**bit].unit;
+            if (!unit || (unit1 != unit)) {
+                isAlreadyEntangled = false;
+                break;
+            }
         }
     }
 
@@ -173,39 +167,13 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
         for (auto bit = first; bit < last; bit++) {
             EndEmulation(shards[**bit]);
         }
-        toRet = unit1;
-    } else {
-        // This does nothing if the first unit is the default device:
-        if (deviceList[0].id != unit1->GetDeviceID()) {
-            // Check if size exceeds single device capacity:
-            bitLenInt qubitCount = 0;
-            std::map<QInterfacePtr, bool> found;
-
-            for (auto bit = first; bit < last; bit++) {
-                QInterfacePtr unit = shards[**bit].unit;
-                if (found.find(unit) == found.end()) {
-                    found[unit] = true;
-                    qubitCount += unit->GetQubitCount();
-                }
-            }
-
-            // If device capacity is exceeded, put on default device:
-            if (pow2(qubitCount) > unit1->GetMaxSize()) {
-                unit1->SetDevice(deviceList[0].id);
-            }
-        }
-
-        toRet = QUnit::EntangleInCurrentBasis(first, last);
-        RedistributeQEngines();
+        return unit1;
     }
 
-    return toRet;
-}
+    toRet = QUnit::EntangleInCurrentBasis(first, last);
+    RedistributeQEngines();
 
-void QUnitMulti::SetPermutation(bitCapInt perm, complex phaseFac)
-{
-    QUnit::SetPermutation(perm, phaseFac);
-    RedistributeSingleQubits();
+    return toRet;
 }
 
 bool QUnitMulti::TrySeparate(bitLenInt start, bitLenInt length)
