@@ -81,7 +81,6 @@ public:
         bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0);
 
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 
     virtual QInterfacePtr Clone();
@@ -100,8 +99,6 @@ protected:
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest);
 
     virtual void RedistributeQEngines();
-
-    virtual void RedistributeSingleQubits();
 
     virtual QInterfacePtr EntangleInCurrentBasis(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
