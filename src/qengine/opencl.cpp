@@ -524,8 +524,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     poolItems.clear();
     poolItems.push_back(std::make_shared<PoolItem>(context));
-    powersBuffer =
-        std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl) * 16);
+    powersBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2(QBCAPPOW));
 }
 
 real1 QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
