@@ -69,7 +69,6 @@ public:
     QInterfacePtr unit;
     bitLenInt mapped;
     real1 amplitudeThreshold;
-    bool isEmulated;
     bool isProbDirty;
     bool isPhaseDirty;
     complex amp0;
@@ -83,6 +82,8 @@ public:
     ShardToPhaseMap targetOfShards;
     // Shards of which this shard is an (anti-controlled) target
     ShardToPhaseMap antiTargetOfShards;
+    // For FindShardIndex
+    bool found;
 
 protected:
     // We'd rather not have these getters at all, but we need their function pointers.
@@ -96,7 +97,6 @@ public:
         : unit(NULL)
         , mapped(0)
         , amplitudeThreshold(amp_thresh)
-        , isEmulated(false)
         , isProbDirty(false)
         , isPhaseDirty(false)
         , amp0(ONE_CMPLX)
@@ -106,6 +106,7 @@ public:
         , antiControlsShards()
         , targetOfShards()
         , antiTargetOfShards()
+        , found(false)
     {
     }
 
@@ -113,7 +114,6 @@ public:
         : unit(u)
         , mapped(0)
         , amplitudeThreshold(amp_thresh)
-        , isEmulated(false)
         , isProbDirty(false)
         , isPhaseDirty(false)
         , amp0(ONE_CMPLX)
@@ -123,6 +123,7 @@ public:
         , antiControlsShards()
         , targetOfShards()
         , antiTargetOfShards()
+        , found(false)
     {
         amp0 = set ? ZERO_CMPLX : ONE_CMPLX;
         amp1 = set ? ONE_CMPLX : ZERO_CMPLX;
@@ -133,7 +134,6 @@ public:
         : unit(u)
         , mapped(mapping)
         , amplitudeThreshold(amp_thresh)
-        , isEmulated(false)
         , isProbDirty(true)
         , isPhaseDirty(true)
         , amp0(ONE_CMPLX)
@@ -143,6 +143,7 @@ public:
         , antiControlsShards()
         , targetOfShards()
         , antiTargetOfShards()
+        , found(false)
     {
     }
 
@@ -643,9 +644,6 @@ public:
 
     bitLenInt GetQubitCount() { return (unit == NULL) ? 1U : unit->GetQubitCount(); };
     real1 Prob() { return unit->Prob(mapped); };
-
-    bool operator==(const QEngineShard& rhs) { return unit && (mapped == rhs.mapped) && (unit == rhs.unit); }
-    bool operator!=(const QEngineShard& rhs) { return !unit || (mapped != rhs.mapped) || (unit != rhs.unit); }
 };
 
 class QUnit;
@@ -1087,10 +1085,10 @@ protected:
 
     void EndEmulation(QEngineShard& shard)
     {
-        if (shard.isEmulated) {
+        if (!shard.unit) {
             complex bitState[2] = { shard.amp0, shard.amp1 };
+            shard.unit = MakeEngine(1, 0);
             shard.unit->SetQuantumState(bitState);
-            shard.isEmulated = false;
         }
     }
 
@@ -1098,6 +1096,13 @@ protected:
     {
         QEngineShard& shard = shards[target];
         EndEmulation(shard);
+    }
+
+    void EndEmulation(bitLenInt start, bitLenInt length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            EndEmulation(start + i);
+        }
     }
 
     void EndEmulation(bitLenInt* bitIndices, bitLenInt length)
@@ -1114,13 +1119,16 @@ protected:
         }
     }
 
-    bitLenInt FindShardIndex(const QEngineShard& shard)
+    bitLenInt FindShardIndex(QEngineShardPtr shard)
     {
+        shard->found = true;
         for (bitLenInt i = 0; i < shards.size(); i++) {
-            if (shards[i] == shard) {
+            if (shard->found) {
+                shard->found = false;
                 return i;
             }
         }
+        shard->found = false;
         return shards.size();
     }
 
