@@ -354,7 +354,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 }
 #else
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* matrix, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm, real1 nrm_thresh)
+    const bitCapInt* qPowsSorted, bool doCalcNorm, real1 nrm_thresh)
 {
     CHECK_ZERO_SKIP();
 
