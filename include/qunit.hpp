@@ -116,8 +116,6 @@ public:
         , amplitudeThreshold(amp_thresh)
         , isProbDirty(false)
         , isPhaseDirty(false)
-        , amp0(ONE_CMPLX)
-        , amp1(ZERO_CMPLX)
         , isPlusMinus(false)
         , controlsShards()
         , antiControlsShards()
@@ -642,7 +640,7 @@ public:
 
     bool IsInvert() { return IsInvertTarget() || IsInvertControl(); }
 
-    bitLenInt GetQubitCount() { return (unit == NULL) ? 1U : unit->GetQubitCount(); };
+    bitLenInt GetQubitCount() { return unit ? unit->GetQubitCount() : 1U; };
     real1 Prob() { return unit->Prob(mapped); };
 };
 
@@ -1114,7 +1112,7 @@ protected:
     {
         shard->found = true;
         for (bitLenInt i = 0; i < shards.size(); i++) {
-            if (shard->found) {
+            if (shards[i].found) {
                 shard->found = false;
                 return i;
             }
