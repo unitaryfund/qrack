@@ -2230,12 +2230,6 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         return;
     }
 
-    EndEmulation(start + length);
-    if (hasCarry) {
-        EndEmulation(carryIndex);
-    }
-    EndEmulation(controls, controlLen);
-
     std::vector<bitLenInt> allBits(controlLen + 1U);
     std::copy(controls, controls + controlLen, allBits.begin());
     std::sort(allBits.begin(), allBits.begin() + controlLen);
