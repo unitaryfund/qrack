@@ -110,8 +110,8 @@ public:
     {
     }
 
-    QEngineShard(QInterfacePtr u, const bool& set, const real1 amp_thresh = min_norm)
-        : unit(u)
+    QEngineShard(const bool& set, const real1 amp_thresh = min_norm)
+        : unit(NULL)
         , mapped(0)
         , amplitudeThreshold(amp_thresh)
         , isProbDirty(false)
@@ -875,7 +875,7 @@ public:
 protected:
     virtual void XBase(const bitLenInt& target);
     virtual void ZBase(const bitLenInt& target);
-    virtual real1 ProbBase(const bitLenInt& qubit, const bool& trySeparate = true);
+    virtual real1 ProbBase(const bitLenInt& qubit);
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
@@ -1053,8 +1053,6 @@ protected:
         }
     }
 
-    void CheckShardSeparable(const bitLenInt& target);
-
     void DirtyShardRange(bitLenInt start, bitLenInt length)
     {
         for (bitLenInt i = 0; i < length; i++) {
@@ -1066,13 +1064,6 @@ protected:
     {
         for (bitLenInt i = 0; i < length; i++) {
             shards[start + i].isPhaseDirty = true;
-        }
-    }
-
-    void DirtyShardIndexArray(bitLenInt* bitIndices, bitLenInt length)
-    {
-        for (bitLenInt i = 0; i < length; i++) {
-            shards[bitIndices[i]].MakeDirty();
         }
     }
 
