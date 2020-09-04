@@ -641,8 +641,11 @@ public:
 
     bool IsInvert() { return IsInvertTarget() || IsInvertControl(); }
 
-    bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
-    bool operator!=(const QEngineShard& rhs) { return (mapped != rhs.mapped) || (unit != rhs.unit); }
+    bitLenInt GetQubitCount() { return (unit == NULL) ? 1U : unit->GetQubitCount(); };
+    real1 Prob() { return unit->Prob(mapped); };
+
+    bool operator==(const QEngineShard& rhs) { return unit && (mapped == rhs.mapped) && (unit == rhs.unit); }
+    bool operator!=(const QEngineShard& rhs) { return !unit || (mapped != rhs.mapped) || (unit != rhs.unit); }
 };
 
 class QUnit;
@@ -1122,9 +1125,6 @@ protected:
     }
 
     void CommuteH(const bitLenInt& bitIndex);
-
-    /* Debugging and diagnostic routines. */
-    void DumpShards();
 };
 
 } // namespace Qrack

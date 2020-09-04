@@ -164,8 +164,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
         }
     }
 
-    if ((shards[0].unit->GetQubitCount() > 1) && IS_ONE_R1(norm(result)) &&
-        (randGlobalPhase || (result == ONE_CMPLX))) {
+    if ((shards[0].GetQubitCount() > 1) && IS_ONE_R1(norm(result)) && (randGlobalPhase || (result == ONE_CMPLX))) {
         SetPermutation(perm);
     }
 
@@ -205,7 +204,10 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     }
 
     QInterfacePtr destEngine;
-    if (length > 1) {
+    if (length == 1U) {
+        EndEmulation(start);
+        dest->EndAllEmulation();
+    } else {
         EntangleRange(start, length);
         OrderContiguous(shards[start].unit);
 
@@ -259,6 +261,10 @@ void QUnit::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) {
 QInterfacePtr QUnit::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
+    if ((first + 1) == last) {
+        return shards[**first].unit;
+    }
+
     for (auto bit = first; bit < last; bit++) {
         EndEmulation(shards[**bit]);
     }
@@ -443,7 +449,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
 {
     bool didSeparate = false;
     for (bitLenInt i = 0; i < length; i++) {
-        if (shards[start + i].unit->GetQubitCount() == 1) {
+        if (shards[start + i].GetQubitCount() == 1) {
             return true;
         }
 
@@ -467,7 +473,7 @@ void QUnit::OrderContiguous(QInterfacePtr unit)
      * order in which we compose qubits into a single engine. This is a cheap way to reduce the need for costly qubit
      * swap gates, later. */
 
-    if (unit->GetQubitCount() == 1) {
+    if (!unit || (unit->GetQubitCount() == 1)) {
         return;
     }
 
@@ -592,21 +598,13 @@ bool QUnit::CheckBitsPlus(const bitLenInt& qubitIndex, const bitLenInt& length)
     return isHBasis;
 }
 
-void QUnit::DumpShards()
-{
-    int i = 0;
-    for (auto shard : shards) {
-        printf("%2d.\t%p[%d]\n", i++, shard.unit.get(), (int)shard.mapped);
-    }
-}
-
 real1 QUnit::ProbBase(const bitLenInt& qubit, const bool& trySeparate)
 {
     QEngineShard& shard = shards[qubit];
 
     if (shard.isProbDirty) {
         real1 prob;
-        if (shard.unit->GetQubitCount() == 1U) {
+        if (shard.GetQubitCount() == 1U) {
             complex amps[2];
             shard.unit->GetQuantumState(amps);
             shard.amp0 = amps[0];
@@ -614,12 +612,12 @@ real1 QUnit::ProbBase(const bitLenInt& qubit, const bool& trySeparate)
             prob = norm(amps[1]);
             shard.isPhaseDirty = false;
         } else {
-            prob = shard.unit->Prob(shard.mapped);
+            prob = shard.Prob();
             shard.amp1 = complex(sqrt(prob), ZERO_R1);
             shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
         }
         if (doNormalize) {
-            if (shard.ClampAmps(amplitudeFloor) && (shard.unit->GetQubitCount() == 1U)) {
+            if (shard.ClampAmps(amplitudeFloor) && (shard.GetQubitCount() == 1U)) {
                 shard.unit->SetPermutation((prob < (ONE_R1 / 2)) ? 0 : 1);
             }
         }
@@ -655,7 +653,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
     shards[qubit].amp0 = value ? ZERO_CMPLX : ONE_CMPLX;
     shards[qubit].amp1 = value ? ONE_CMPLX : ZERO_CMPLX;
 
-    if (unit->GetQubitCount() == 1) {
+    if (!unit || (unit->GetQubitCount() == 1)) {
         return;
     }
 
@@ -680,7 +678,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     bool result;
     if (CACHED_CLASSICAL(shard)) {
         result = doForce ? res : SHARD_STATE(shard);
-    } else if (!shard.isProbDirty && (shard.unit->GetQubitCount() == 1U)) {
+    } else if (!shard.isProbDirty && (shard.GetQubitCount() == 1U)) {
         result = doForce ? res : (Rand() <= norm(shard.amp1));
     } else {
         EndEmulation(qubit);
@@ -691,7 +689,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
         return result;
     }
 
-    if (shard.unit->GetQubitCount() == 1U) {
+    if (shard.GetQubitCount() == 1U) {
         shard.isProbDirty = false;
         shard.isPhaseDirty = false;
         shard.isEmulated = true;
@@ -761,7 +759,7 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     std::swap(shards[qubit1], shards[qubit2]);
 
     QInterfacePtr unit = shards[qubit1].unit;
-    if (unit == shards[qubit2].unit) {
+    if (unit && (unit == shards[qubit2].unit)) {
         OrderContiguous(unit);
     }
 }
@@ -3078,9 +3076,7 @@ void QUnit::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
     }
 
     EntangleRange(start, length);
-
     shards[start].unit->Hash(shards[start].mapped, length, values);
-
     DirtyShardRangePhase(start, length);
 }
 
@@ -3089,7 +3085,7 @@ bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1 param1, real1 param2, int
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0; i < shards.size(); i++) {
         QInterfacePtr toFind = shards[i].unit;
-        if (find(units.begin(), units.end(), toFind) == units.end()) {
+        if (toFind && (find(units.begin(), units.end(), toFind) == units.end())) {
             units.push_back(toFind);
             if (!fn(toFind, param1, param2, param3)) {
                 return false;
@@ -3464,7 +3460,7 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
     QEngineShard& shard = shards[target];
 
     if (shard.isProbDirty) {
-        if (shard.unit->GetQubitCount() == 1U) {
+        if (shard.GetQubitCount() == 1U) {
             ProbBase(target, false);
         } else {
             return;
@@ -3472,7 +3468,7 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
     }
 
     if (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)) {
-        if (shard.unit->GetQubitCount() == 2U) {
+        if (shard.GetQubitCount() == 2U) {
             bitLenInt partnerIndex;
             for (partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
                 QEngineShard& partnerShard = shards[partnerIndex];
@@ -3483,7 +3479,7 @@ void QUnit::CheckShardSeparable(const bitLenInt& target)
             SeparateBit(SHARD_STATE(shard), target);
             ProbBase(partnerIndex, true);
         }
-        if (shard.unit->GetQubitCount() == 1U) {
+        if (shard.GetQubitCount() == 1U) {
             shard.isPhaseDirty = false;
         } else {
             SeparateBit(SHARD_STATE(shard), target);
