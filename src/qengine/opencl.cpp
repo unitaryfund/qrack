@@ -465,6 +465,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     // anyway.
     maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
     maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+#if ENABLE_OCL_MEM_GUARDS
     size_t stateVecSize = maxQPowerOcl * sizeof(complex);
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > maxAlloc) {
@@ -474,6 +475,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     } else {
         usingHostRam = false;
     }
+#endif
 
     size_t nrmVecAlignSize = ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
         ? QRACK_ALIGN_SIZE
