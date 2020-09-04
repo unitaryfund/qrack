@@ -605,8 +605,6 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         return norm(shard.amp1);
     }
 
-    bool didSeparate = false;
-
     QInterfacePtr unit = shard.unit;
     bitLenInt mapped = shard.mapped;
     bitLenInt shardQbCount = shard.GetQubitCount();
@@ -615,24 +613,37 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex(sqrt(prob), ZERO_R1);
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
     shard.isProbDirty = false;
-    if (!shard.isPhaseDirty || (shardQbCount == 1U)) {
-        if (IS_NORM_ZERO(shard.amp1)) {
-            unit->Dispose(shard.mapped, 1, 0);
-        } else if (IS_NORM_ZERO(shard.amp0)) {
-            unit->Dispose(shard.mapped, 1, 1);
-        } else {
-            unit->Dispose(shard.mapped, 1);
-        }
-        shard.mapped = 0;
+
+    if (shardQbCount == 1U) {
+        shard.isPhaseDirty = false;
         shard.unit = NULL;
+        return norm(shard.amp1);
+    }
+
+    if (shard.isPhaseDirty) {
+        return norm(shard.amp1);
+    }
+
+    bool didSeparate = false;
+    if (IS_NORM_ZERO(shard.amp1)) {
+        unit->Dispose(shard.mapped, 1, 0);
+        didSeparate = true;
+    } else if (IS_NORM_ZERO(shard.amp0)) {
+        unit->Dispose(shard.mapped, 1, 1);
         didSeparate = true;
     }
 
-    if (doNormalize && shard.GetQubitCount() == 1U) {
+    if (didSeparate) {
+        shard.mapped = 0;
+        shard.isPhaseDirty = false;
+        shard.unit = NULL;
+    }
+
+    if (doNormalize && didSeparate) {
         shard.ClampAmps(amplitudeFloor);
     }
 
-    if (!didSeparate || (shardQbCount != 2) || (!IS_NORM_ZERO(shard.amp0) && !IS_NORM_ZERO(shard.amp1))) {
+    if (!didSeparate || (shardQbCount != 2)) {
         return norm(shard.amp1);
     }
 
@@ -653,10 +664,6 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     partnerShard.isPhaseDirty = false;
     partnerShard.mapped = 0;
     partnerShard.unit = NULL;
-
-    shard.isPhaseDirty = false;
-    shard.mapped = 0;
-    shard.unit = NULL;
 
     return norm(shard.amp1);
 }
