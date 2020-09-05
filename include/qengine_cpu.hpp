@@ -161,6 +161,26 @@ public:
         engineCpu->runningNorm = ONE_R1;
     }
 
+    virtual void CopyStateVec(QInterfacePtr src)
+    {
+        Finish();
+        src->Finish();
+
+        complex* sv;
+        if (isSparse) {
+            sv = new complex[maxQPower];
+        } else {
+            sv = std::dynamic_pointer_cast<StateVectorArray>(stateVec)->amplitudes;
+        }
+
+        src->GetQuantumState(sv);
+
+        if (isSparse) {
+            SetQuantumState(sv);
+            delete[] sv;
+        }
+    }
+
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);

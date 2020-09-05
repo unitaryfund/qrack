@@ -33,7 +33,6 @@ protected:
     std::vector<QEnginePtr> qPages;
     std::vector<int> deviceIDs;
 
-    // TODO: Make this a constructor argument:
     bitLenInt thresholdQubitsPerPage;
     bitLenInt baseQubitsPerPage;
     bitCapInt basePageCount;
@@ -252,9 +251,6 @@ public:
 
     virtual int GetDeviceID() { return qPages[0]->GetDeviceID(); }
 
-    /**
-     *  Get maximum number of amplitudes that can be allocated on current device.
-     */
     bitCapIntOcl GetMaxSize() { return qPages[0]->GetMaxSize(); };
 };
 } // namespace Qrack

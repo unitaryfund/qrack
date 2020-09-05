@@ -41,9 +41,10 @@
 namespace Qrack {
 
 class StateVectorArray : public StateVector {
-protected:
+public:
     complex* amplitudes;
 
+protected:
     static real1 normHelper(const complex& c) { return norm(c); }
 
     complex* Alloc(bitCapInt elemCount)
