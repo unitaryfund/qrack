@@ -26,6 +26,7 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , thresholdQubits(qubitThreshold)
+    , isGpu(qubitCount >= qubitThreshold)
 {
     concurrency = std::thread::hardware_concurrency();
     engine = MakeEngine(qubitCount >= thresholdQubits, initState);
@@ -33,19 +34,16 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
 
 QEnginePtr QHybrid::MakeEngine(bool isOpenCL, bitCapInt initState)
 {
-    if (isOpenCL) {
-        return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(QINTERFACE_OPENCL, qubitCount, initState,
-            rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse));
-    } else {
-        return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(QINTERFACE_CPU, qubitCount, initState,
-            rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse));
-    }
+    return std::dynamic_pointer_cast<QEngine>(
+        CreateQuantumInterface(isOpenCL ? QINTERFACE_OPENCL : QINTERFACE_CPU, qubitCount, initState, rand_generator,
+            phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor));
 }
 
 QInterfacePtr QHybrid::Clone()
 {
-    QHybridPtr c = std::dynamic_pointer_cast<QHybrid>(CreateQuantumInterface(QINTERFACE_HYBRID, qubitCount, 0,
-        rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse));
+    QHybridPtr c =
+        std::dynamic_pointer_cast<QHybrid>(CreateQuantumInterface(QINTERFACE_HYBRID, qubitCount, 0, rand_generator,
+            phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor));
     c->engine->CopyStateVec(engine);
     return c;
 }

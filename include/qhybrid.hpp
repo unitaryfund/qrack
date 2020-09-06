@@ -32,9 +32,8 @@ protected:
     bool useRDRAND;
     bool isSparse;
     uint32_t concurrency;
-
-    // TODO: Make this a constructor argument:
-    const bitLenInt thresholdQubits = 14;
+    bitLenInt thresholdQubits;
+    bool isGpu;
 
 public:
     QHybrid(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
@@ -44,30 +43,35 @@ public:
 
     QEnginePtr MakeEngine(bool isOpenCL, bitCapInt initState = 0);
 
+    virtual bool IsOpencl() { return isGpu; }
+
     virtual void SetConcurrency(uint32_t threadCount)
     {
         concurrency = threadCount;
         engine->SetConcurrency(concurrency);
     }
 
-    virtual void CheckThreshold(bitLenInt nQubitCount)
+    virtual void SwitchModes(bool useGpu)
     {
-        if ((qubitCount < thresholdQubits) && (nQubitCount >= thresholdQubits)) {
+        if (!isGpu && useGpu) {
             QEnginePtr nEngine = MakeEngine(true);
             nEngine->CopyStateVec(engine);
             engine = nEngine;
-        } else if ((nQubitCount < thresholdQubits) && (qubitCount >= thresholdQubits)) {
+        } else if (isGpu && !useGpu) {
             QEnginePtr nEngine = MakeEngine(false);
             nEngine->CopyStateVec(engine);
             engine = nEngine;
         }
+
+        isGpu = useGpu;
     }
 
     using QInterface::Compose;
     virtual bitLenInt Compose(QHybridPtr toCopy)
     {
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
-        CheckThreshold(nQubitCount);
+        SwitchModes(nQubitCount >= thresholdQubits);
+        toCopy->SwitchModes(isGpu);
         SetQubitCount(nQubitCount);
         return engine->Compose(toCopy->engine);
     }
@@ -75,7 +79,8 @@ public:
     virtual bitLenInt Compose(QHybridPtr toCopy, bitLenInt start)
     {
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
-        CheckThreshold(nQubitCount);
+        SwitchModes(nQubitCount >= thresholdQubits);
+        toCopy->SwitchModes(isGpu);
         SetQubitCount(nQubitCount);
         return engine->Compose(toCopy->engine, start);
     }
@@ -90,21 +95,22 @@ public:
     virtual void Decompose(bitLenInt start, bitLenInt length, QHybridPtr dest)
     {
         bitLenInt nQubitCount = qubitCount - length;
-        CheckThreshold(nQubitCount);
+        SwitchModes(nQubitCount >= thresholdQubits);
+        dest->SwitchModes(isGpu);
         SetQubitCount(nQubitCount);
         return engine->Decompose(start, length, dest->engine);
     }
     virtual void Dispose(bitLenInt start, bitLenInt length)
     {
         bitLenInt nQubitCount = qubitCount - length;
-        CheckThreshold(nQubitCount);
+        SwitchModes(nQubitCount >= thresholdQubits);
         SetQubitCount(nQubitCount);
         return engine->Dispose(start, length);
     }
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
         bitLenInt nQubitCount = qubitCount - length;
-        CheckThreshold(nQubitCount);
+        SwitchModes(nQubitCount >= thresholdQubits);
         SetQubitCount(nQubitCount);
         return engine->Dispose(start, length, disposedPerm);
     }
