@@ -1848,7 +1848,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
-    if ((testEngineType != QINTERFACE_QPAGER) && (testSubEngineType != QINTERFACE_QPAGER)) {
+    if ((testEngineType != QINTERFACE_HYBRID) && (testSubEngineType != QINTERFACE_HYBRID) &&
+        (testEngineType != QINTERFACE_QPAGER) && (testSubEngineType != QINTERFACE_QPAGER)) {
         qftReg->UniformlyControlledRY(controls, 2, 0, angles);
         qftReg2->QInterface::UniformlyControlledRY(controls, 2, 0, angles);
 
@@ -2072,7 +2073,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
-    if ((testEngineType != QINTERFACE_QPAGER) && (testSubEngineType != QINTERFACE_QPAGER)) {
+    if ((testEngineType != QINTERFACE_HYBRID) && (testSubEngineType != QINTERFACE_HYBRID) &&
+        (testEngineType != QINTERFACE_QPAGER) && (testSubEngineType != QINTERFACE_QPAGER)) {
         qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
         qftReg2->QInterface::UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
 
@@ -3250,8 +3252,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished")
 {
-    if ((testEngineType == QINTERFACE_OPENCL) || (testSubEngineType == QINTERFACE_OPENCL) ||
-        (testSubSubEngineType == QINTERFACE_OPENCL)) {
+    if ((testEngineType == QINTERFACE_HYBRID) || (testSubEngineType == QINTERFACE_HYBRID) ||
+        (testSubSubEngineType == QINTERFACE_HYBRID) || (testEngineType == QINTERFACE_OPENCL) ||
+        (testSubEngineType == QINTERFACE_OPENCL) || (testSubSubEngineType == QINTERFACE_OPENCL)) {
         // Just check that this doesn't throw execption.
         // (Might be in engine initialization, still, or not.)
         qftReg->isFinished();
@@ -4521,7 +4524,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve_uniform")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
 {
-    if ((testEngineType == QINTERFACE_QPAGER) || (testSubEngineType == QINTERFACE_QPAGER)) {
+    if ((testEngineType == QINTERFACE_HYBRID) || (testSubEngineType == QINTERFACE_HYBRID) ||
+        (testEngineType == QINTERFACE_QPAGER) || (testSubEngineType == QINTERFACE_QPAGER)) {
         return;
     }
 
