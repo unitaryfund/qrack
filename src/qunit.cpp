@@ -1917,7 +1917,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
 
-        /*ShardToPhaseMap::iterator phaseShard = tShard.antiTargetOfShards.find(&cShard);
+        ShardToPhaseMap::iterator phaseShard = tShard.antiTargetOfShards.find(&cShard);
 
         if ((phaseShard == tShard.antiTargetOfShards.end()) || phaseShard->second->isInvert) {
             return;
@@ -1929,7 +1929,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
             ApplyBuffer(buffer, control, target, true);
             tShard.RemovePhaseAntiControl(&cShard);
-        }*/
+        }
 
         return;
     }
