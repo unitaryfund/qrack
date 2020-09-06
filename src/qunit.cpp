@@ -1103,6 +1103,15 @@ void QUnit::Z(bitLenInt target)
                 }
             }
 
+            if (shard.bellTarget) {
+                QEngineShardPtr partner = shard.bellTarget;
+                if (shard.isPlusMinus && !partner->isPlusMinus) {
+                    XBase(FindShardIndex(partner));
+                    ZBase(target);
+                    return;
+                }
+            }
+
             RevertBellBasis(target);
         }
 
