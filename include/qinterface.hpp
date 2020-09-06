@@ -48,6 +48,16 @@ inline bitCapInt pow2(const bitLenInt& p) { return ONE_BCI << p; }
 inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return ONE_BCI << p; }
 inline bitCapInt pow2Mask(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
 inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
+inline bitLenInt log2(bitCapInt n)
+{
+    bitLenInt pow = 0;
+    bitCapInt p = n >> ONE_BCI;
+    while (p != 0) {
+        p >>= ONE_BCI;
+        pow++;
+    }
+    return pow;
+}
 inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return (ONE_BCI << bit) & source; }
 inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source) { return (ONE_BCI << bit) & source; }
 inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
@@ -82,6 +92,16 @@ enum QInterfaceEngine {
     QINTERFACE_OPENCL,
 
     /**
+     * Create a QHybrid, switching between QEngineCPU and QEngineOCL as efficient.
+     */
+    QINTERFACE_HYBRID,
+
+    /**
+     * Create a QPager, which breaks up the work of a QEngine into equally sized "pages."
+     */
+    QINTERFACE_QPAGER,
+
+    /**
      * Create a QUnit, which utilizes other QInterface classes to minimize the amount of work that's needed for any
      * given operation based on the entanglement of the bits involved.
      *
@@ -98,7 +118,7 @@ enum QInterfaceEngine {
 
     QINTERFACE_FIRST = QINTERFACE_CPU,
 #if ENABLE_OPENCL
-    QINTERFACE_OPTIMAL = QINTERFACE_OPENCL,
+    QINTERFACE_OPTIMAL = QINTERFACE_HYBRID,
 #else
     QINTERFACE_OPTIMAL = QINTERFACE_CPU,
 #endif
@@ -129,17 +149,6 @@ protected:
     {
         qubitCount = qb;
         maxQPower = pow2(qubitCount);
-    }
-
-    static inline bitLenInt log2(bitCapInt n)
-    {
-        bitLenInt pow = 0;
-        bitCapInt p = n >> 1U;
-        while (p != 0) {
-            p >>= 1U;
-            pow++;
-        }
-        return pow;
     }
 
     // Compilers have difficulty figuring out types and overloading if the "norm" handle is passed to std::transform. If
@@ -220,6 +229,9 @@ public:
             rand_generator->seed(seed);
         }
     }
+
+    /** Set the number of threads in parallel for loops, per component QEngine */
+    virtual void SetConcurrency(uint32_t threadsPerEngine) {}
 
     /** Get the count of bits in this register */
     bitLenInt GetQubitCount() { return qubitCount; }
@@ -570,6 +582,15 @@ public:
     virtual void U2(bitLenInt target, real1 phi, real1 lambda) { U(target, M_PI / 2, phi, lambda); }
 
     /**
+     * Controlled general unitary gate
+     *
+     * Applies a controlled gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible
+     * single bit unitary gates, (up to a global phase factor which has no effect on Hermitian operator expectation
+     * values).
+     */
+    virtual void CU(bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1 theta, real1 phi, real1 lambda);
+
+    /**
      * Hadamard gate
      *
      * Applies a Hadamard gate on qubit at "qubitIndex."
@@ -883,6 +904,45 @@ public:
      * classical bit input. (Assumes the outputBit is in the 0 state)
      */
     virtual void CLXOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+
+    /**
+     * Quantum analog of classical "NAND" gate
+     *
+     * (Assumes the outputBit is in the 0 state)
+     */
+    virtual void NAND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+
+    /**
+     * Quantum analog of classical "NOR" gate
+     *
+     * (Assumes the outputBit is in the 0 state)
+     */
+    virtual void NOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+
+    /**
+     * Quantum analog of classical "XNOR" gate
+     *
+     * (Assumes the outputBit is in the 0 state)
+     */
+    virtual void XNOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit);
+
+    /**
+     *  Quantum analog of classical "NAND" gate. Takes one qubit input and one
+     *  classical bit input. (Assumes the outputBit is in the 0 state)
+     */
+    virtual void CLNAND(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+
+    /**
+     * Quantum analog of classical "NOR" gate. Takes one qubit input and one
+     * classical bit input. (Assumes the outputBit is in the 0 state)
+     */
+    virtual void CLNOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
+
+    /**
+     * Quantum analog of classical "XNOR" gate. Takes one qubit input and one
+     * classical bit input. (Assumes the outputBit is in the 0 state)
+     */
+    virtual void CLXNOR(bitLenInt inputQBit, bool inputClassicalBit, bitLenInt outputBit);
 
     /** @} */
 
@@ -1216,6 +1276,24 @@ public:
 
     /** Classical bitwise "XOR" */
     virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+
+    /** Bitwise "NAND" */
+    virtual void NAND(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+
+    /** Classical bitwise "NAND" */
+    virtual void CLNAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+
+    /** Bitwise "NOR" */
+    virtual void NOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+
+    /** Classical bitwise "NOR" */
+    virtual void CLNOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
+
+    /** Bitwise "XNOR" */
+    virtual void XNOR(bitLenInt inputStart1, bitLenInt inputStart2, bitLenInt outputStart, bitLenInt length);
+
+    /** Classical bitwise "XNOR" */
+    virtual void CLXNOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /**
      * Bitwise phase shift gate
@@ -2015,6 +2093,21 @@ public:
      *  Clone this QInterface
      */
     virtual QInterfacePtr Clone() = 0;
+
+    /**
+     *  Set the device index, if more than one device is available.
+     */
+    virtual void SetDevice(const int& dID, const bool& forceReInit = false) {}
+
+    /**
+     *  Get the device index. ("-1" is default).
+     */
+    virtual int GetDeviceID() { return -1; }
+
+    /**
+     *  Get maximum number of amplitudes that can be allocated on current device.
+     */
+    bitCapIntOcl GetMaxSize() { return pow2(sizeof(bitCapInt) * 8); };
 
     /** @} */
 };

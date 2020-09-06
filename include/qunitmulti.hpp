@@ -23,7 +23,7 @@
 namespace Qrack {
 
 struct QEngineInfo {
-    QEngineOCLPtr unit;
+    QInterfacePtr unit;
     bitLenInt deviceIndex;
 
     QEngineInfo()
@@ -32,7 +32,7 @@ struct QEngineInfo {
     {
     }
 
-    QEngineInfo(QEngineOCLPtr u, bitLenInt devIndex)
+    QEngineInfo(QInterfacePtr u, bitLenInt devIndex)
         : unit(u)
         , deviceIndex(devIndex)
     {
@@ -68,20 +68,11 @@ protected:
     std::vector<DeviceInfo> deviceList;
 
 public:
-    QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true,
-        bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> devList = {})
-        : QUnitMulti(qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG)
-    {
-    }
-
     QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> devList = {});
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0);
 
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = complex(-999.0, -999.0));
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
 
     virtual QInterfacePtr Clone();
@@ -100,8 +91,6 @@ protected:
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest);
 
     virtual void RedistributeQEngines();
-
-    virtual void RedistributeSingleQubits();
 
     virtual QInterfacePtr EntangleInCurrentBasis(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);

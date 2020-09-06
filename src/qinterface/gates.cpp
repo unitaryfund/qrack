@@ -97,6 +97,16 @@ void QInterface::U(bitLenInt target, real1 theta, real1 phi, real1 lambda)
     ApplySingleBit(uGate, target);
 }
 
+/// Controlled general unitary gate
+void QInterface::CU(bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1 theta, real1 phi, real1 lambda)
+{
+    real1 cos0 = cos(theta / 2);
+    real1 sin0 = sin(theta / 2);
+    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex(-cos(lambda), -sin(lambda)),
+        sin0 * complex(cos(phi), sin(phi)), cos0 * complex(cos(phi + lambda), sin(phi + lambda)) };
+    ApplyControlledSingleBit(controls, controlLen, target, uGate);
+}
+
 /// Apply 1/(2^N) phase rotation
 void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
 {

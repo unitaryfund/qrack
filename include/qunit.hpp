@@ -57,7 +57,7 @@ typedef std::shared_ptr<PhaseShard> PhaseShardPtr;
 typedef std::map<QEngineShardPtr, PhaseShardPtr> ShardToPhaseMap;
 
 /** Associates a QInterface object with a set of bits. */
-class QEngineShard : public ParallelFor {
+class QEngineShard {
 protected:
     typedef ShardToPhaseMap& (QEngineShard::*GetBufferFn)();
     typedef void (QEngineShard::*OptimizeFn)();
@@ -69,7 +69,6 @@ public:
     QInterfacePtr unit;
     bitLenInt mapped;
     real1 amplitudeThreshold;
-    bool isEmulated;
     bool isProbDirty;
     bool isPhaseDirty;
     complex amp0;
@@ -85,6 +84,8 @@ public:
     ShardToPhaseMap targetOfShards;
     // Shards of which this shard is an (anti-controlled) target
     ShardToPhaseMap antiTargetOfShards;
+    // For FindShardIndex
+    bool found;
 
 protected:
     // We'd rather not have these getters at all, but we need their function pointers.
@@ -98,7 +99,6 @@ public:
         : unit(NULL)
         , mapped(0)
         , amplitudeThreshold(amp_thresh)
-        , isEmulated(false)
         , isProbDirty(false)
         , isPhaseDirty(false)
         , amp0(ONE_CMPLX)
@@ -110,18 +110,16 @@ public:
         , antiControlsShards()
         , targetOfShards()
         , antiTargetOfShards()
+        , found(false)
     {
     }
 
-    QEngineShard(QInterfacePtr u, const bool& set, const real1 amp_thresh = min_norm)
-        : unit(u)
+    QEngineShard(const bool& set, const real1 amp_thresh = min_norm)
+        : unit(NULL)
         , mapped(0)
         , amplitudeThreshold(amp_thresh)
-        , isEmulated(false)
         , isProbDirty(false)
         , isPhaseDirty(false)
-        , amp0(ONE_CMPLX)
-        , amp1(ZERO_CMPLX)
         , isPlusMinus(false)
         , bellTarget(NULL)
         , bellControl(NULL)
@@ -129,6 +127,7 @@ public:
         , antiControlsShards()
         , targetOfShards()
         , antiTargetOfShards()
+        , found(false)
     {
         amp0 = set ? ZERO_CMPLX : ONE_CMPLX;
         amp1 = set ? ONE_CMPLX : ZERO_CMPLX;
@@ -139,7 +138,6 @@ public:
         : unit(u)
         , mapped(mapping)
         , amplitudeThreshold(amp_thresh)
-        , isEmulated(false)
         , isProbDirty(true)
         , isPhaseDirty(true)
         , amp0(ONE_CMPLX)
@@ -151,6 +149,7 @@ public:
         , antiControlsShards()
         , targetOfShards()
         , antiTargetOfShards()
+        , found(false)
     {
     }
 
@@ -578,42 +577,41 @@ public:
         }
         std::swap(controlsShards, antiControlsShards);
 
-        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
-            std::advance(phaseShard, lcv);
-            std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
-        });
+        ShardToPhaseMap::iterator phaseShard;
 
-        par_for(0, antiTargetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = antiTargetOfShards.begin();
-            std::advance(phaseShard, lcv);
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
-        });
+        }
+
+        for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
+            std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
+        }
     }
 
     void CommutePhase(const complex& topLeft, const complex& bottomRight)
     {
-        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
-            std::advance(phaseShard, lcv);
-            if (!phaseShard->second->isInvert) {
+        ShardToPhaseMap::iterator phaseShard;
+        PhaseShardPtr buffer;
+
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            if (!buffer->isInvert) {
                 return;
             }
 
-            phaseShard->second->cmplxDiff *= topLeft / bottomRight;
-            phaseShard->second->cmplxSame *= bottomRight / topLeft;
-        });
+            buffer->cmplxDiff *= topLeft / bottomRight;
+            buffer->cmplxSame *= bottomRight / topLeft;
+        }
 
-        par_for(0, antiTargetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = antiTargetOfShards.begin();
-            std::advance(phaseShard, lcv);
-            if (!phaseShard->second->isInvert) {
+        for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            if (!buffer->isInvert) {
                 return;
             }
 
-            phaseShard->second->cmplxDiff *= bottomRight / topLeft;
-            phaseShard->second->cmplxSame *= topLeft / bottomRight;
-        });
+            buffer->cmplxDiff *= bottomRight / topLeft;
+            buffer->cmplxSame *= topLeft / bottomRight;
+        }
     }
 
 protected:
@@ -637,10 +635,11 @@ protected:
 public:
     void CommuteH()
     {
+        ShardToPhaseMap::iterator phaseShard;
+        PhaseShardPtr buffer;
+
         // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
-        par_for(0, targetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = targetOfShards.begin();
-            std::advance(phaseShard, lcv);
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
             if (norm(buffer->cmplxDiff - buffer->cmplxSame) < ONE_R1) {
                 if (buffer->isInvert) {
@@ -655,13 +654,11 @@ public:
                     buffer->isInvert = true;
                 }
             }
-        });
+        }
 
         RemoveIdentityBuffers(targetOfShards, &QEngineShard::GetControlsShards);
 
-        par_for(0, antiTargetOfShards.size(), [&](const bitCapInt lcv, const int cpu) {
-            ShardToPhaseMap::iterator phaseShard = antiTargetOfShards.begin();
-            std::advance(phaseShard, lcv);
+        for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
             if (norm(buffer->cmplxDiff - buffer->cmplxSame) < ONE_R1) {
                 if (buffer->isInvert) {
@@ -677,7 +674,7 @@ public:
                     buffer->isInvert = true;
                 }
             }
-        });
+        }
 
         RemoveIdentityBuffers(antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
     }
@@ -729,8 +726,8 @@ public:
 
     bool IsInvert() { return IsInvertTarget() || IsInvertControl(); }
 
-    bool operator==(const QEngineShard& rhs) { return (mapped == rhs.mapped) && (unit == rhs.unit); }
-    bool operator!=(const QEngineShard& rhs) { return (mapped != rhs.mapped) || (unit != rhs.unit); }
+    bitLenInt GetQubitCount() { return unit ? unit->GetQubitCount() : 1U; };
+    real1 Prob() { return unit->Prob(mapped); };
 };
 
 class QUnit;
@@ -739,6 +736,7 @@ typedef std::shared_ptr<QUnit> QUnitPtr;
 class QUnit : public QInterface {
 protected:
     QInterfaceEngine engine;
+    QInterfaceEngine subEngine;
     int devID;
     std::vector<QEngineShard> shards;
     complex phaseFactor;
@@ -757,12 +755,31 @@ protected:
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
 public:
+    QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
+        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true,
+        bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
+        bool useSparseStateVec = false, real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored = {},
+        bitLenInt qubitThreshold = 0);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored = {});
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0)
+        : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId,
+              useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold)
+    {
+    }
 
     virtual ~QUnit() { Dump(); }
+
+    virtual void SetConcurrency(uint32_t threadsPerEngine)
+    {
+        ParallelUnitApply(
+            [](QInterfacePtr unit, real1 unused1, real1 unused2, int32_t threadsPerEngine) {
+                unit->SetConcurrency(threadsPerEngine);
+                return true;
+            },
+            ZERO_R1, ZERO_R1, threadsPerEngine);
+    }
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
@@ -845,30 +862,6 @@ public:
     using QInterface::ForceMReg;
     virtual bitCapInt ForceMReg(
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
-
-    /** @} */
-
-    /**
-     * \defgroup LogicGates Logic Gates
-     *
-     * Each bit is paired with a CL* variant that utilizes a classical bit as
-     * an input.
-     *
-     * @{
-     */
-
-    using QInterface::AND;
-    virtual void AND(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    using QInterface::OR;
-    virtual void OR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    using QInterface::XOR;
-    virtual void XOR(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt outputBit, bitLenInt length);
-    using QInterface::CLAND;
-    virtual void CLAND(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-    using QInterface::CLOR;
-    virtual void CLOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
-    using QInterface::CLXOR;
-    virtual void CLXOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
     /** @} */
 
@@ -966,7 +959,7 @@ public:
 protected:
     virtual void XBase(const bitLenInt& target);
     virtual void ZBase(const bitLenInt& target);
-    virtual real1 ProbBase(const bitLenInt& qubit, const bool& trySeparate = true);
+    virtual real1 ProbBase(const bitLenInt& qubit);
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
@@ -1003,10 +996,6 @@ protected:
     bool INTSCOptimize(
         bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex, bitLenInt overflowIndex);
 
-    template <typename F>
-    void CBoolReg(const bitLenInt& qInputStart, const bitCapInt& classicalInput, const bitLenInt& outputStart,
-        const bitLenInt& length, F fn);
-
     virtual QInterfacePtr Entangle(std::vector<bitLenInt> bits);
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
@@ -1027,8 +1016,8 @@ protected:
     virtual QInterfacePtr EntangleInCurrentBasis(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
-    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param1, real1 param2);
-    bool ParallelUnitApply(ParallelUnitFn fn, real1 param1 = ZERO_R1, real1 param2 = ZERO_R1);
+    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param1, real1 param2, int32_t param3);
+    bool ParallelUnitApply(ParallelUnitFn fn, real1 param1 = ZERO_R1, real1 param2 = ZERO_R1, int32_t param3 = 0);
 
     virtual void SeparateBit(bool value, bitLenInt qubit, bool doDispose = true);
 
@@ -1192,13 +1181,10 @@ protected:
         }
     }
 
-    void CheckShardSeparable(const bitLenInt& target);
-
     void DirtyShardRange(bitLenInt start, bitLenInt length)
     {
         for (bitLenInt i = 0; i < length; i++) {
-            shards[start + i].isProbDirty = true;
-            shards[start + i].isPhaseDirty = true;
+            shards[start + i].MakeDirty();
         }
     }
 
@@ -1209,28 +1195,19 @@ protected:
         }
     }
 
-    void DirtyShardIndexArray(bitLenInt* bitIndices, bitLenInt length)
-    {
-        for (bitLenInt i = 0; i < length; i++) {
-            shards[bitIndices[i]].isProbDirty = true;
-            shards[bitIndices[i]].isPhaseDirty = true;
-        }
-    }
-
     void DirtyShardIndexVector(std::vector<bitLenInt> bitIndices)
     {
         for (bitLenInt i = 0; i < bitIndices.size(); i++) {
-            shards[bitIndices[i]].isProbDirty = true;
-            shards[bitIndices[i]].isPhaseDirty = true;
+            shards[bitIndices[i]].MakeDirty();
         }
     }
 
     void EndEmulation(QEngineShard& shard)
     {
-        if (shard.isEmulated) {
+        if (!shard.unit) {
             complex bitState[2] = { shard.amp0, shard.amp1 };
+            shard.unit = MakeEngine(1, 0);
             shard.unit->SetQuantumState(bitState);
-            shard.isEmulated = false;
         }
     }
 
@@ -1238,6 +1215,13 @@ protected:
     {
         QEngineShard& shard = shards[target];
         EndEmulation(shard);
+    }
+
+    void EndEmulation(bitLenInt start, bitLenInt length)
+    {
+        for (bitLenInt i = 0; i < length; i++) {
+            EndEmulation(start + i);
+        }
     }
 
     void EndEmulation(bitLenInt* bitIndices, bitLenInt length)
@@ -1254,30 +1238,20 @@ protected:
         }
     }
 
-    template <typename F> void ApplyOrEmulate(QEngineShard& shard, F payload)
+    bitLenInt FindShardIndex(QEngineShardPtr shard)
     {
-        if ((shard.unit->GetQubitCount() == 1) && !shard.isProbDirty && !shard.isPhaseDirty) {
-            shard.isEmulated = true;
-        } else {
-            payload(shard);
-        }
-    }
-
-    bitLenInt FindShardIndex(const QEngineShard& shard)
-    {
+        shard->found = true;
         for (bitLenInt i = 0; i < shards.size(); i++) {
-            if (shards[i] == shard) {
+            if (shards[i].found) {
+                shard->found = false;
                 return i;
             }
         }
+        shard->found = false;
         return shards.size();
     }
 
     void CommuteH(const bitLenInt& bitIndex);
-
-    /* Debugging and diagnostic routines. */
-    void DumpShards();
-    QInterfacePtr GetUnit(bitLenInt bit) { return shards[bit].unit; }
 };
 
 } // namespace Qrack

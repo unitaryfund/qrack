@@ -9,7 +9,7 @@ include ("cmake/Format.cmake")
 
 include_directories ("include" "include/common")
 
-set(PSTRIDE "64" CACHE STRING "Stride of parallel for loops (must be power of 2)")
+set(PSTRIDEPOW "9" CACHE STRING "Stride of parallel for loops (as a power of 2)")
 
 set(QBCAPPOW "6" CACHE STRING "Log2 of maximum qubit capacity of a single QInterface (must be at least 5, equivalent to >= 32 qubits)")
 if (QBCAPPOW LESS 5)
@@ -24,6 +24,7 @@ endif (QBCAPPOW GREATER 31)
 add_library (qrack STATIC
     src/common/parallel_for.cpp
     src/common/rdrandwrapper.cpp
+    src/common/dispatchqueue.cpp
     src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
@@ -32,11 +33,12 @@ add_library (qrack STATIC
     src/qinterface/rotational.cpp
     src/qengine/qengine.cpp
     src/qengine/arithmetic.cpp
-    src/qengine/gates.cpp
     src/qengine/state.cpp
     src/qengine/utility.cpp
     src/bitbuffer.cpp
     src/qunit.cpp
+    src/qpager.cpp
+    src/qhybrid.cpp
     )
 	
 add_library (qrack_pinvoke SHARED
@@ -49,7 +51,11 @@ else (MSVC)
     if (APPLE)
         set(QRACK_LIBS qrack pthread)
     else (APPLE)
-        set(QRACK_LIBS qrack pthread atomic)
+        if (ANDROID)
+            set(QRACK_LIBS qrack atomic)
+        else (ANDROID)
+            set(QRACK_LIBS qrack pthread atomic)
+        endif(ANDROID)
     endif (APPLE)
 endif (MSVC)
 
@@ -75,10 +81,6 @@ add_executable (benchmarks
 
 target_link_libraries (benchmarks ${QRACK_LIBS})
 
-add_test (NAME qrack_benchmarks
-    COMMAND benchmarks
-    )
-
 # Declare the accuracy executable
 add_executable (accuracy
     test/accuracy_main.cpp
@@ -87,10 +89,6 @@ add_executable (accuracy
 
 target_link_libraries (accuracy ${QRACK_LIBS})
 
-add_test (NAME qrack_accuracy
-    COMMAND accuracy
-    )
-
 # Declare the OCL precompilation executable
 add_executable (qrack_cl_precompile
     src/qrack_cl_precompile.cpp
@@ -98,12 +96,9 @@ add_executable (qrack_cl_precompile
 
 target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
 
-add_test (NAME qrack_cl_precompile
-    COMMAND qrack_cl_precompile
-    )
-
 # Included after the library and other modules have been declared
 option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
+option (ENABLE_SNUCL "Use SnuCL framework for clusters" OFF)
 include ("cmake/Examples.cmake")
 include ("cmake/UInt128.cmake")
 include ("cmake/OpenCL.cmake" )
@@ -111,6 +106,8 @@ include ("cmake/Complex8.cmake")
 include ("cmake/Complex_x2.cmake")
 include ("cmake/Pure32.cmake")
 include ("cmake/Boost.cmake")
+include ("cmake/QUnit_CPU_Parallel.cmake")
+include ("cmake/OclMemGuards.cmake")
 include ("cmake/VM6502Q.cmake")
 
 target_compile_definitions (qrack PUBLIC QBCAPPOW=${QBCAPPOW})
@@ -127,7 +124,9 @@ else (QBCAPPOW EQUAL 7)
     message ("128-bit compilation is: ${ENABLE_UINT128}")
 endif (QBCAPPOW EQUAL 7)
 message ("Single accuracy is: ${ENABLE_COMPLEX8}")
-message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")
+message ("Complex_x2/AVX support is: ${ENABLE_COMPLEX_X2}")
+message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
+message ("OpenCL memory guards are: ${ENABLE_OCL_MEM_GUARDS}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 
 if (ENABLE_UINT128 AND ENABLE_PURE32)
@@ -186,6 +185,7 @@ install (FILES
     include/common/oclengine.hpp
     include/common/parallel_for.hpp
     include/common/rdrandwrapper.hpp
+    include/common/dispatchqueue.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 
@@ -203,6 +203,8 @@ install (FILES
     include/qengine_opencl.hpp
     include/qinterface.hpp
     include/qneuron.hpp
+    include/qpager.hpp
+    include/qhybrid.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 

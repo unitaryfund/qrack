@@ -18,6 +18,10 @@
 #include "qengine.hpp"
 #include "statevector.hpp"
 
+#if ENABLE_QUNIT_CPU_PARALLEL
+#include "common/dispatchqueue.hpp"
+#endif
+
 namespace Qrack {
 
 class QEngineCPU;
@@ -35,6 +39,9 @@ class QEngineCPU : virtual public QEngine, public ParallelFor {
 protected:
     StateVectorPtr stateVec;
     bool isSparse;
+#if ENABLE_QUNIT_CPU_PARALLEL
+    DispatchQueue dispatchQueue;
+#endif
 
     StateVectorSparsePtr CastStateVecSparse() { return std::dynamic_pointer_cast<StateVectorSparse>(stateVec); }
 
@@ -42,14 +49,137 @@ public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored = false,
         int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored3 = {});
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored3 = {}, bitLenInt ignored4 = 0);
 
     virtual ~QEngineCPU()
     {
         // Intentionally left blank
     }
 
-    virtual void FreeStateVec() { stateVec = NULL; }
+    virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
+
+    virtual void Finish()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.finish();
+#endif
+    };
+
+    virtual bool isFinished()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        return dispatchQueue.isFinished();
+#else
+        return true;
+#endif
+    }
+
+    virtual void Dump()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.dump();
+#endif
+    }
+
+    virtual void ZeroAmplitudes()
+    {
+        runningNorm = ZERO_R1;
+        FreeStateVec();
+    }
+
+    virtual void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }
+
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        Finish();
+
+        if (stateVec) {
+            stateVec->copy_out(pagePtr, offset, length);
+        } else {
+            std::fill(pagePtr, pagePtr + length, ZERO_CMPLX);
+        }
+    }
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        Finish();
+
+        if (!stateVec) {
+            ResetStateVec(AllocStateVec(maxQPower));
+            stateVec->clear();
+        }
+
+        stateVec->copy_in(pagePtr, offset, length);
+
+        runningNorm = ONE_R1;
+    }
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
+        StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
+
+        Finish();
+        pageEngineCpuPtr->Finish();
+
+        if (!stateVec && !oStateVec) {
+            return;
+        }
+
+        if (!stateVec) {
+            ResetStateVec(AllocStateVec(maxQPower));
+            stateVec->clear();
+        }
+
+        stateVec->copy_in(oStateVec, srcOffset, dstOffset, length);
+
+        runningNorm = ONE_R1;
+    }
+    virtual void ShuffleBuffers(QEnginePtr engine)
+    {
+        QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);
+
+        Finish();
+        engineCpu->Finish();
+
+        if (!stateVec && !(engineCpu->stateVec)) {
+            return;
+        }
+
+        if (!stateVec) {
+            ResetStateVec(AllocStateVec(maxQPower));
+            stateVec->clear();
+        }
+
+        if (!(engineCpu->stateVec)) {
+            engineCpu->ResetStateVec(engineCpu->AllocStateVec(maxQPower));
+            engineCpu->stateVec->clear();
+        }
+
+        stateVec->shuffle(engineCpu->stateVec);
+
+        runningNorm = ONE_R1;
+        engineCpu->runningNorm = ONE_R1;
+    }
+
+    virtual void CopyStateVec(QInterfacePtr src)
+    {
+        Finish();
+        src->Finish();
+
+        complex* sv;
+        if (isSparse) {
+            sv = new complex[maxQPower];
+        } else {
+            sv = std::dynamic_pointer_cast<StateVectorArray>(stateVec)->amplitudes;
+        }
+
+        src->GetQuantumState(sv);
+
+        if (isSparse) {
+            SetQuantumState(sv);
+            delete[] sv;
+        }
+    }
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
@@ -152,6 +282,22 @@ public:
 protected:
     virtual StateVectorPtr AllocStateVec(bitCapInt elemCount);
     virtual void ResetStateVec(StateVectorPtr sv);
+
+    typedef std::function<void(void)> DispatchFn;
+    virtual void Dispatch(DispatchFn fn)
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        const bitCapInt Stride = pow2(PSTRIDEPOW);
+        if (maxQPower < Stride) {
+            dispatchQueue.dispatch(fn);
+        } else {
+            Finish();
+            fn();
+        }
+#else
+        fn();
+#endif
+    }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,

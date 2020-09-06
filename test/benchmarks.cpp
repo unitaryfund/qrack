@@ -34,7 +34,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const double clockFactor = 1000.0 / CLOCKS_PER_SEC; // Report in ms
+const double clockFactor = 1.0 / 1000.0; // Report in ms
 
 double formatTime(double t, bool logNormal)
 {
@@ -47,8 +47,8 @@ double formatTime(double t, bool logNormal)
 
 QInterfacePtr MakeRandQubit()
 {
-    QInterfacePtr qubit = CreateQuantumInterface(testEngineType, testSubEngineType, 1U, 0, rng, ONE_CMPLX,
-        enable_normalization, true, false, device_id, !disable_hardware_rng);
+    QInterfacePtr qubit = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1U, 0, rng,
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng);
 
     real1 theta = 2 * M_PI * qubit->Rand();
     real1 phi = 2 * M_PI * qubit->Rand();
@@ -77,7 +77,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     std::cout << "3rd Quartile (ms), ";
     std::cout << "Slowest (ms)" << std::endl;
 
-    clock_t tClock, iterClock;
     real1 trialClocks[ITERATIONS];
 
     bitLenInt i, j, numBits;
@@ -106,8 +105,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             if (qftReg != NULL) {
                 qftReg.reset();
             }
-            qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, numBits, 0, rng, ONE_CMPLX,
-                enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+            qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits, 0, rng,
+                ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
         }
         avgt = 0.0;
 
@@ -136,7 +135,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             }
             qftReg->Finish();
 
-            iterClock = clock();
+            auto iterClock = std::chrono::high_resolution_clock::now();
 
             // Run loop body
             fn(qftReg, numBits);
@@ -146,11 +145,12 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             }
 
             // Collect interval data
-            tClock = clock() - iterClock;
+            auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::high_resolution_clock::now() - iterClock);
             if (logNormal) {
-                trialClocks[i] = log2(tClock * clockFactor);
+                trialClocks[i] = log2(tClock.count() * clockFactor);
             } else {
-                trialClocks[i] = tClock * clockFactor;
+                trialClocks[i] = tClock.count() * clockFactor;
             }
             avgt += trialClocks[i];
 
@@ -1137,8 +1137,8 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
     int maxGates;
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(
-        testSubEngineType, n, 0, rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng);
+    QInterfacePtr goldStandard = CreateQuantumInterface(testSubEngineType, testSubSubEngineType, n, 0, rng, ONE_CMPLX,
+        enable_normalization, true, false, device_id, !disable_hardware_rng);
 
     for (d = 0; d < Depth; d++) {
         std::vector<int>& layer1QbRands = gate1QbRands[d];

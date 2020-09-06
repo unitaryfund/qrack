@@ -163,7 +163,7 @@ public:
         for (bitLenInt j = 0; j < length; j++) {
             /* Consider anything more than a 50% probability as a '1'. */
             bool bit = (qftReg->Prob(j + start) > QRACK_TEST_EPSILON);
-            if (bit != !!(mask & (1U << j))) {
+            if (bit == !(mask & (1ULL << j))) {
                 return false;
             }
         }
@@ -175,7 +175,7 @@ public:
         std::ostringstream ss;
         ss << "matches bit pattern [" << (int)start << "," << start + length << "]: " << (int)length << "/";
         for (int j = (length - 1); j >= 0; j--) {
-            ss << !!((int)(mask & (1 << j)));
+            ss << !!((int)(mask & (1ULL << j)));
         }
         return ss.str();
     }

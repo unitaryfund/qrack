@@ -47,69 +47,46 @@ namespace Qrack {
  */
 void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, IncrementFunc inc, ParallelFunc fn)
 {
-    if (itemCount <= (bitCapInt)numCores) {
-        std::vector<std::future<void>> futures((bitCapIntOcl)itemCount);
-        bitCapInt j;
-        uint32_t cpu;
-        for (cpu = 0; cpu < itemCount; cpu++) {
-            j = begin + cpu;
-            futures[cpu] = std::async(std::launch::async, [j, cpu, inc, fn]() { fn(inc(j, cpu), cpu); });
+    const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+
+    if ((itemCount / Stride) < (bitCapInt)numCores) {
+        bitCapInt maxLcv = begin + itemCount;
+        for (bitCapInt j = begin; j < maxLcv; j++) {
+            fn(inc(j, 0), 0);
         }
-        for (cpu = 0; cpu < itemCount; cpu++) {
-            futures[cpu].get();
-        }
-    } else if ((itemCount / PSTRIDE) < (bitCapInt)numCores) {
-        bitCapInt parStride = itemCount / (bitCapInt)numCores;
-        bitCapInt remainder = itemCount - (parStride * numCores);
-        std::vector<std::future<void>> futures(numCores);
-        int32_t cpu, count;
-        bitCapInt offset = begin;
-        for (cpu = 0; cpu < numCores; cpu++) {
-            bitCapInt workUnit = parStride;
-            if (remainder > 0) {
-                workUnit++;
-                remainder--;
-            }
-            futures[cpu] = std::async(std::launch::async, [cpu, workUnit, offset, inc, fn]() {
-                for (bitCapInt j = 0; j < workUnit; j++) {
-                    fn(inc(offset + j, cpu), cpu);
-                }
-            });
-            offset += workUnit;
-        }
-        count = cpu;
-        for (cpu = 0; cpu < count; cpu++) {
-            futures[cpu].get();
-        }
-    } else {
-        DECLARE_ATOMIC_BITCAPINT();
-        idx = 0;
-        std::vector<std::future<void>> futures(numCores);
-        for (int cpu = 0; cpu < numCores; cpu++) {
-            futures[cpu] = ATOMIC_ASYNC(cpu, &idx, begin, itemCount, inc, fn)
-            {
-                bitCapInt i, j, k, l;
-                for (;;) {
-                    ATOMIC_INC();
-                    l = i * PSTRIDE;
-                    for (j = 0; j < PSTRIDE; j++) {
-                        k = j + l;
-                        /* Easiest to clamp on end. */
-                        if (k >= itemCount) {
-                            break;
-                        }
-                        fn(inc(begin + k, cpu), cpu);
-                    }
+        return;
+    }
+
+    DECLARE_ATOMIC_BITCAPINT();
+    idx = 0;
+    std::vector<std::future<void>> futures(numCores);
+    for (int cpu = 0; cpu < numCores; cpu++) {
+        futures[cpu] = ATOMIC_ASYNC(cpu, &idx, begin, itemCount, inc, fn)
+        {
+            const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+
+            bitCapInt i, j, l;
+            bitCapInt k = 0;
+            for (;;) {
+                ATOMIC_INC();
+                l = i * Stride;
+                for (j = 0; j < Stride; j++) {
+                    k = j + l;
+                    /* Easiest to clamp on end. */
                     if (k >= itemCount) {
                         break;
                     }
+                    fn(inc(begin + k, cpu), cpu);
                 }
-            });
-        }
+                if (k >= itemCount) {
+                    break;
+                }
+            }
+        });
+    }
 
-        for (int cpu = 0; cpu < numCores; cpu++) {
-            futures[cpu].get();
-        }
+    for (int cpu = 0; cpu < numCores; cpu++) {
+        futures[cpu].get();
     }
 }
 
@@ -243,52 +220,20 @@ void ParallelFor::par_for_mask(
 
 real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1 norm_thresh)
 {
+    if (norm_thresh <= ZERO_R1) {
+        return par_norm_exact(maxQPower, stateArray);
+    }
+
+    const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+
     real1 nrmSqr = 0;
-    if (maxQPower <= (bitCapInt)numCores) {
-        std::vector<std::future<real1>> futures((bitCapIntOcl)maxQPower);
-        bitCapInt j;
-        uint32_t cpu;
-        for (cpu = 0; cpu < maxQPower; cpu++) {
-            j = cpu;
-            futures[cpu] = std::async(std::launch::async, [j, stateArray, &norm_thresh]() {
-                real1 nrm = norm(stateArray->read(j));
-                if (nrm < norm_thresh) {
-                    nrm = ZERO_R1;
-                }
-                return nrm;
-            });
-        }
-        for (cpu = 0; cpu < maxQPower; cpu++) {
-            nrmSqr += futures[cpu].get();
-        }
-    } else if ((maxQPower / PSTRIDE) < (bitCapInt)numCores) {
-        bitCapInt parStride = maxQPower / numCores;
-        bitCapInt remainder = maxQPower - (parStride * numCores);
-        std::vector<std::future<real1>> futures(numCores);
-        int32_t cpu, count;
-        bitCapInt offset = 0;
-        for (cpu = 0; cpu < numCores; cpu++) {
-            bitCapInt workUnit = parStride;
-            if (remainder > 0) {
-                workUnit++;
-                remainder--;
+    if ((maxQPower / Stride) < (bitCapInt)numCores) {
+        real1 nrm;
+        for (bitCapInt j = 0; j < maxQPower; j++) {
+            nrm = norm(stateArray->read(j));
+            if (nrm >= norm_thresh) {
+                nrmSqr += nrm;
             }
-            futures[cpu] = std::async(std::launch::async, [workUnit, offset, stateArray, &norm_thresh]() {
-                real1 result = 0.0;
-                real1 nrm;
-                for (bitCapInt j = 0; j < workUnit; j++) {
-                    nrm = norm(stateArray->read(offset + j));
-                    if (nrm >= norm_thresh) {
-                        result += nrm;
-                    }
-                }
-                return result;
-            });
-            offset += workUnit;
-        }
-        count = cpu;
-        for (cpu = 0; cpu < count; cpu++) {
-            nrmSqr += futures[cpu].get();
         }
     } else {
         DECLARE_ATOMIC_BITCAPINT();
@@ -297,14 +242,16 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
         for (int cpu = 0; cpu != numCores; ++cpu) {
             futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray, &norm_thresh)
             {
-                real1 sqrNorm = 0.0;
+                const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+
+                real1 sqrNorm = ZERO_R1;
                 real1 nrm;
                 bitCapInt i, j;
                 bitCapInt k = 0;
                 for (;;) {
                     ATOMIC_INC();
-                    for (j = 0; j < PSTRIDE; j++) {
-                        k = i * PSTRIDE + j;
+                    for (j = 0; j < Stride; j++) {
+                        k = i * Stride + j;
                         if (k >= maxQPower)
                             break;
 
@@ -323,6 +270,52 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
         for (int32_t cpu = 0; cpu != numCores; ++cpu) {
             nrmSqr += futures[cpu].get();
         }
+    }
+
+    return nrmSqr;
+}
+
+real1 ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray)
+{
+    const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+
+    real1 nrmSqr = 0;
+    if ((maxQPower / Stride) < (bitCapInt)numCores) {
+        for (bitCapInt j = 0; j < maxQPower; j++) {
+            nrmSqr += norm(stateArray->read(j));
+        }
+
+        return nrmSqr;
+    }
+    DECLARE_ATOMIC_BITCAPINT();
+    idx = 0;
+    std::vector<std::future<real1>> futures(numCores);
+    for (int cpu = 0; cpu != numCores; ++cpu) {
+        futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray)
+        {
+            const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+
+            real1 sqrNorm = ZERO_R1;
+            bitCapInt i, j;
+            bitCapInt k = 0;
+            for (;;) {
+                ATOMIC_INC();
+                for (j = 0; j < Stride; j++) {
+                    k = i * Stride + j;
+                    if (k >= maxQPower)
+                        break;
+
+                    sqrNorm += norm(stateArray->read(k));
+                }
+                if (k >= maxQPower)
+                    break;
+            }
+            return sqrNorm;
+        });
+    }
+
+    for (int32_t cpu = 0; cpu != numCores; ++cpu) {
+        nrmSqr += futures[cpu].get();
     }
 
     return nrmSqr;

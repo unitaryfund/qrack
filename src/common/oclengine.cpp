@@ -51,6 +51,10 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_APPLY2X2_SINGLE_WIDE, "apply2x2singlewide"),
     OCLKernelHandle(OCL_API_APPLY2X2_NORM_SINGLE_WIDE, "apply2x2normsinglewide"),
     OCLKernelHandle(OCL_API_APPLY2X2_DOUBLE_WIDE, "apply2x2doublewide"),
+    OCLKernelHandle(OCL_API_PHASE_SINGLE, "phasesingle"),
+    OCLKernelHandle(OCL_API_PHASE_SINGLE_WIDE, "phasesinglewide"),
+    OCLKernelHandle(OCL_API_INVERT_SINGLE, "invertsingle"),
+    OCLKernelHandle(OCL_API_INVERT_SINGLE_WIDE, "invertsinglewide"),
     OCLKernelHandle(OCL_API_UNIFORMLYCONTROLLED, "uniformlycontrolled"),
     OCLKernelHandle(OCL_API_X_SINGLE, "xsingle"),
     OCLKernelHandle(OCL_API_X_SINGLE_WIDE, "xsinglewide"),
@@ -101,7 +105,8 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_CIMULMODN_OUT, "cimulmodnout"),
     OCLKernelHandle(OCL_API_CPOWMODN_OUT, "cpowmodnout"),
     OCLKernelHandle(OCL_API_FULLADD, "fulladd"),
-    OCLKernelHandle(OCL_API_IFULLADD, "ifulladd")
+    OCLKernelHandle(OCL_API_IFULLADD, "ifulladd"),
+    OCLKernelHandle(OCL_API_CLEARBUFFER, "clearbuffer")
 };
 // clang-format on
 
@@ -147,7 +152,7 @@ cl::Program OCLEngine::MakeProgram(
                           << std::endl;
             }
 
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
             program = cl::Program(devCntxt->context, { devCntxt->device },
                 { std::pair<const void*, unsigned long>(&buffer[0], buffer.size()) }, &binaryStatus, &buildError);
 #else
@@ -198,7 +203,7 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     }
 
     FILE* clBinFile = fopen((path + fileName).c_str(), "w");
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
     std::vector<char*> clBinaries = program.getInfo<CL_PROGRAM_BINARIES>();
     char* clBinary = clBinaries[clBinIndex];
     fwrite(clBinary, clBinSize, sizeof(char), clBinFile);
@@ -293,7 +298,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
             all_contexts.push_back(cl::Context(all_platforms_devices[plat_id]));
         }
         std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
-            devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], plat_id);
+            devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], i, plat_id);
 
         std::string fileName = binary_file_prefix + std::to_string(i) + binary_file_ext;
         std::string clBinName = home + fileName;

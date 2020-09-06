@@ -28,7 +28,7 @@
 
 namespace Qrack {
 
-enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ };
+enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ, INVERT, PHASE };
 
 typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
@@ -109,7 +109,6 @@ protected:
     BufferPtr stateBuffer;
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
-    BufferPtr lockSyncStateBuffer;
     std::vector<PoolItemPtr> poolItems;
     real1* nrmArray;
     size_t nrmGroupCount;
@@ -120,6 +119,8 @@ protected:
     unsigned int procElemCount;
     bool unlockHostMem;
     cl_int lockSyncFlags;
+    bool usingHostRam;
+    complex permutationAmp;
 
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
@@ -147,12 +148,15 @@ public:
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored2 = {});
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored2 = {}, bitLenInt ignored3 = 0);
 
-    virtual ~QEngineOCL()
+    virtual ~QEngineOCL() { ZeroAmplitudes(); }
+
+    virtual void ZeroAmplitudes()
     {
         clDump();
-        FreeAligned(nrmArray);
+        runningNorm = ZERO_R1;
+        ResetStateBuffer(NULL);
         FreeStateVec();
     }
 
@@ -183,6 +187,22 @@ public:
         }
     }
 
+    virtual void CopyStateVec(QInterfacePtr src)
+    {
+        Finish();
+        src->Finish();
+
+        LockSync(CL_MAP_WRITE);
+        src->GetQuantumState(stateVec);
+        UnlockSync();
+    }
+
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length);
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length);
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length);
+    virtual void ShuffleBuffers(QEnginePtr engine);
+
     bitCapIntOcl GetMaxSize() { return maxAlloc / sizeof(complex); };
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
@@ -197,6 +217,10 @@ public:
     virtual void X(bitLenInt target);
     using QEngine::Z;
     virtual void Z(bitLenInt target);
+    using QEngine::ApplySingleInvert;
+    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
+    using QEngine::ApplySinglePhase;
+    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
 
     using QEngine::Compose;
     virtual bitLenInt Compose(QEngineOCLPtr toCopy);
@@ -284,6 +308,7 @@ protected:
     virtual void ResetStateVec(complex* sv);
     virtual void ResetStateBuffer(BufferPtr nStateBuffer);
     virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
+    virtual void ReinitBuffer();
 
     virtual void Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy);
 
@@ -301,23 +326,6 @@ protected:
 
     real1 ParSum(real1* toSum, bitCapIntOcl maxI);
 
-    /**
-     * Finishes the asynchronous wait event list or queue of OpenCL events.
-     *
-     * By default (doHard = false) only the wait event list of this engine is finished. If doHard = true, the entire
-     * device queue is finished, (which might be shared by other QEngineOCL instances).
-     */
-    virtual void clFinish(bool doHard = false);
-
-    /**
-     * Dumps the remaining asynchronous wait event list or queue of OpenCL events, for the current queue.
-     */
-    virtual void clDump();
-
-    size_t FixWorkItemCount(size_t maxI, size_t wic);
-    size_t FixGroupSize(size_t wic, size_t gs);
-
-    // CL_MAP_READ = (1 << 0); CL_MAP_WRITE = (1 << 1);
     /**
      * Locks synchronization between the state vector buffer and general RAM, so the state vector can be directly read
      * and/or written to.
@@ -340,6 +348,22 @@ protected:
      * UnlockSync().
      */
     void UnlockSync();
+
+    /**
+     * Finishes the asynchronous wait event list or queue of OpenCL events.
+     *
+     * By default (doHard = false) only the wait event list of this engine is finished. If doHard = true, the entire
+     * device queue is finished, (which might be shared by other QEngineOCL instances).
+     */
+    virtual void clFinish(bool doHard = false);
+
+    /**
+     * Dumps the remaining asynchronous wait event list or queue of OpenCL events, for the current queue.
+     */
+    virtual void clDump();
+
+    size_t FixWorkItemCount(size_t maxI, size_t wic);
+    size_t FixGroupSize(size_t wic, size_t gs);
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
     void ArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], unsigned char* values = NULL,
@@ -397,6 +421,8 @@ protected:
 
     bitCapIntOcl OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLenInt indexStart, bitLenInt indexLength,
         bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+
+    void ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size, EventVecPtr waitVec);
 };
 
 } // namespace Qrack

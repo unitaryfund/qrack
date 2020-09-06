@@ -48,7 +48,7 @@ public:
         , useHostRam(useHostMem)
         , runningNorm(ONE_R1)
     {
-        if (qBitCount > (sizeof(bitCapInt) * bitsInByte)) {
+        if (qBitCount > (sizeof(bitCapIntOcl) * bitsInByte)) {
             throw std::invalid_argument(
                 "Cannot instantiate a register with greater capacity than native types on emulating system.");
         }
@@ -60,6 +60,18 @@ public:
     }
 
     virtual ~QEngine() { Finish(); }
+
+    virtual void ZeroAmplitudes() = 0;
+
+    virtual void CopyStateVec(QInterfacePtr src) = 0;
+
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length) = 0;
+    /** Swap the high half of this engine with the low half of another. This is necessary for gates which cross
+     * sub-engine  boundaries. */
+    virtual void ShuffleBuffers(QEnginePtr engine) = 0;
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
@@ -126,6 +138,8 @@ protected:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void ApplyAntiControlled2x2(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+
+    virtual void FreeStateVec(complex* sv = NULL) = 0;
 
     /**
      * Common driver method behind INCC and DECC
