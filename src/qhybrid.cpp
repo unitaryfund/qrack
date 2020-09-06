@@ -25,10 +25,10 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
-    , isGpu(qubitCount >= qubitThreshold)
 {
     concurrency = std::thread::hardware_concurrency();
-    thresholdQubits = qubitThreshold ? qubitThreshold : ((concurrency == 1 ? 0 : log2(concurrency - 1)) + PSTRIDEPOW);
+    thresholdQubits = (qubitThreshold != 0) ? qubitThreshold : (log2(concurrency) + PSTRIDEPOW);
+    isGpu = (qubitCount >= thresholdQubits);
     engine = MakeEngine(qubitCount >= thresholdQubits, initState);
 }
 

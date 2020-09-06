@@ -39,7 +39,7 @@ public:
     QHybrid(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 13);
+        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0);
 
     QEnginePtr MakeEngine(bool isOpenCL, bitCapInt initState = 0);
 
@@ -51,6 +51,11 @@ public:
         engine->SetConcurrency(concurrency);
     }
 
+    /**
+     * Switches between CPU and GPU used modes. (This will not incur a performance penalty, if the chosen mode matches
+     * the current mode.) Mode switching happens automatically when qubit counts change, but Compose() and Decompose()
+     * might leave their destination QInterface parameters in the opposite mode.
+     */
     virtual void SwitchModes(bool useGpu)
     {
         if (!isGpu && useGpu) {
