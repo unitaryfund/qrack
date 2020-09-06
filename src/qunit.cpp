@@ -3039,7 +3039,7 @@ void QUnit::PhaseFlip()
     QEngineShard& shard = shards[0];
     if (!randGlobalPhase) {
         RevertBellBasis(0);
-        RevertBasis1Qb(0);
+        RevertPlusMinusBasis(0);
 
         if (DIRTY(shard)) {
             shard.MakeDirty();

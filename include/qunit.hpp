@@ -184,14 +184,12 @@ public:
 
     void SetBellTarget(QEngineShardPtr target)
     {
-        isEmulated = true;
         bellTarget = target;
         target->bellControl = this;
     }
 
     void SetBellControl(QEngineShardPtr control)
     {
-        isEmulated = true;
         bellControl = control;
         control->bellTarget = this;
     }
@@ -1070,9 +1068,9 @@ protected:
         bitLenInt control, target;
         if (shard.bellTarget) {
             control = i;
-            target = FindShardIndex(*(shard.bellTarget));
+            target = FindShardIndex(shard.bellTarget);
         } else if (shard.bellControl) {
-            control = FindShardIndex(*(shard.bellControl));
+            control = FindShardIndex(shard.bellControl);
             target = i;
         } else {
             return;
