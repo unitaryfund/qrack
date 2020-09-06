@@ -92,6 +92,11 @@ enum QInterfaceEngine {
     QINTERFACE_OPENCL,
 
     /**
+     * Create a QHybrid, switching between QEngineCPU and QEngineOCL as efficient.
+     */
+    QINTERFACE_HYBRID,
+
+    /**
      * Create a QPager, which breaks up the work of a QEngine into equally sized "pages."
      */
     QINTERFACE_QPAGER,

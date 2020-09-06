@@ -11,6 +11,7 @@
 #include <future>
 
 #include "qfactory.hpp"
+#include "qpager.hpp"
 
 namespace Qrack {
 
