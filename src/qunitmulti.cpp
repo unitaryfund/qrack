@@ -17,10 +17,10 @@
 
 namespace Qrack {
 
-QUnitMulti::QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
-    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG,
-    bool useSparseStateVec, real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
-    : QUnit(eng, QINTERFACE_OPENCL, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1,
+QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
+    bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
+    real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
+    : QUnit(QINTERFACE_OPENCL, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1,
           useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold)
 {
     // Notice that this constructor always passes QINTERFACE_OPENCL to the QUnit constructor. For QUnitMulti, the
@@ -199,7 +199,7 @@ QInterfacePtr QUnitMulti::Clone()
     EndAllEmulation();
 
     QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(
-        engine, qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
+        qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
 
     return CloneBody(copyPtr);
 }

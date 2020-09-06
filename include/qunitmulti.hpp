@@ -68,15 +68,7 @@ protected:
     std::vector<DeviceInfo> deviceList;
 
 public:
-    QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-        bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
-        real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
-        : QUnitMulti(QINTERFACE_OPENCL, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1,
-              useHardwareRNG, qubitThreshold)
-    {
-    }
-
-    QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
+    QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0);
