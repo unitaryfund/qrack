@@ -45,7 +45,7 @@ QInterfacePtr CreateQuantumInterface(
     case QINTERFACE_HYBRID:
         return std::make_shared<QHybrid>(args...);
     case QINTERFACE_QUNIT_MULTI:
-        return std::make_shared<QUnitMulti>(subengine1, args...);
+        return std::make_shared<QUnitMulti>(args...);
 #endif
     default:
         return NULL;
@@ -70,7 +70,7 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
     case QINTERFACE_HYBRID:
         return std::make_shared<QHybrid>(args...);
     case QINTERFACE_QUNIT_MULTI:
-        return std::make_shared<QUnitMulti>(subengine, args...);
+        return std::make_shared<QUnitMulti>(args...);
 #endif
     default:
         return NULL;
@@ -87,6 +87,8 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
         return std::make_shared<QEngineOCL>(args...);
     case QINTERFACE_HYBRID:
         return std::make_shared<QHybrid>(args...);
+    case QINTERFACE_QUNIT_MULTI:
+        return std::make_shared<QUnitMulti>(args...);
 #endif
     default:
         return NULL;
