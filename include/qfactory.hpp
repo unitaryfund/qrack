@@ -45,7 +45,7 @@ QInterfacePtr CreateQuantumInterface(
     case QINTERFACE_HYBRID:
         return std::make_shared<QHybrid>(args...);
     case QINTERFACE_QUNIT_MULTI:
-        return std::make_shared<QUnitMulti>(subengine1, args...);
+        return std::make_shared<QUnitMulti>(subengine1, subengine2, args...);
 #endif
     default:
         return NULL;
