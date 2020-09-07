@@ -17,15 +17,24 @@
 
 namespace Qrack {
 
-QUnitMulti::QUnitMulti(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
-    : QUnit(QINTERFACE_OPENCL, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1,
-          useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold)
+QUnitMulti::QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
+    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
+    bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
+    : QUnit(eng, subEng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG,
+          useSparseStateVec, norm_thresh, devList, qubitThreshold)
 {
-    // Notice that this constructor always passes QINTERFACE_OPENCL to the QUnit constructor. For QUnitMulti, the
-    // "shard" engines are therefore guaranteed to always be QEngineOCL or QPager types, and it's safe to assume that
-    // they can be cast from QInterfacePtr types to QEngineOCLPtr types in this class.
+    // The "shard" engine type must be QINTERFACE_OPENCL or QINTERFACE_HYBRID, with or without an intermediate QPager
+    // layer.
+
+    if ((engine != QINTERFACE_HYBRID) && (engine != QINTERFACE_OPENCL) && (engine != QINTERFACE_QPAGER)) {
+        throw "Invalid sub-engine type: QUnitMulti must layer over only QEngineOCL or QHybrid, with or without an "
+              "intermediate QPager layer.";
+    }
+
+    if ((subEngine != QINTERFACE_HYBRID) && (subEngine != QINTERFACE_OPENCL)) {
+        throw "Invalid sub-engine type: QUnitMulti must layer over only QEngineOCL or QHybrid, with or without an "
+              "intermediate QPager layer.";
+    }
 
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance()->GetDeviceContextPtrVector();
 
@@ -101,7 +110,9 @@ void QUnitMulti::RedistributeQEngines()
         // If the engine adds negligible load, we can let any given unit keep its
         // residency on this device.
         // In fact, single qubit units will be handled entirely by the CPU, anyway.
-        if (!(qinfos[i].unit) || (qinfos[i].unit->GetMaxQPower() <= 2U)) {
+        // So will QHybrid "shards" that are below the GPU transition threshold.
+        if (!(qinfos[i].unit) || (qinfos[i].unit->GetMaxQPower() <= 2U) ||
+            ((subEngine == QINTERFACE_HYBRID) && (qinfos[i].unit->GetQubitCount() < thresholdQubits))) {
             continue;
         }
 
