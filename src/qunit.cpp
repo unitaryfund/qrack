@@ -1055,36 +1055,36 @@ void QUnit::X(bitLenInt target)
 
     shard.FlipPhaseAnti();
 
-    if (shard.IsBellBasis()) {
-        if (shard.bellControl) {
-            QEngineShardPtr partner = shard.bellControl;
-            if (!shard.isPlusMinus && !partner->isPlusMinus) {
-                std::swap(shard.amp0, shard.amp1);
-            } else if (shard.isPlusMinus && !partner->isPlusMinus) {
-                std::swap(partner->amp0, partner->amp1);
-                shard.amp1 = -shard.amp1;
-            } else if (!shard.isPlusMinus && partner->isPlusMinus) {
-                std::swap(shard.amp0, shard.amp1);
-                partner->amp1 = -partner->amp1;
-            } else {
-                std::swap(partner->amp0, partner->amp1);
-                shard.amp1 = -shard.amp1;
-            }
-        } else if (shard.bellTarget) {
-            QEngineShardPtr partner = shard.bellTarget;
-            if (!shard.isPlusMinus && !partner->isPlusMinus) {
-                std::swap(partner->amp0, partner->amp1);
-                shard.amp1 = -shard.amp1;
-            } else if (shard.isPlusMinus && !partner->isPlusMinus) {
-                std::swap(shard.amp0, shard.amp1);
-            } else if (!shard.isPlusMinus && partner->isPlusMinus) {
-                std::swap(partner->amp0, partner->amp1);
-                shard.amp1 = -shard.amp1;
-            } else {
-                std::swap(partner->amp0, partner->amp1);
-            }
+    if (shard.bellControl) {
+        QEngineShardPtr partner = shard.bellControl;
+        if (!shard.isPlusMinus && !partner->isPlusMinus) {
+            std::swap(shard.amp0, shard.amp1);
+        } else if (shard.isPlusMinus && !partner->isPlusMinus) {
+            std::swap(partner->amp0, partner->amp1);
+            shard.amp1 = -shard.amp1;
+        } else if (!shard.isPlusMinus && partner->isPlusMinus) {
+            std::swap(shard.amp0, shard.amp1);
+            partner->amp1 = -partner->amp1;
+        } else {
+            std::swap(partner->amp0, partner->amp1);
+            shard.amp1 = -shard.amp1;
         }
+        return;
+    }
 
+    if (shard.bellTarget) {
+        QEngineShardPtr partner = shard.bellTarget;
+        if (!shard.isPlusMinus && !partner->isPlusMinus) {
+            std::swap(partner->amp0, partner->amp1);
+            shard.amp1 = -shard.amp1;
+        } else if (shard.isPlusMinus && !partner->isPlusMinus) {
+            std::swap(shard.amp0, shard.amp1);
+        } else if (!shard.isPlusMinus && partner->isPlusMinus) {
+            std::swap(partner->amp0, partner->amp1);
+            shard.amp1 = -shard.amp1;
+        } else {
+            std::swap(partner->amp0, partner->amp1);
+        }
         return;
     }
 
@@ -1106,34 +1106,36 @@ void QUnit::Z(bitLenInt target)
         RevertPlusMinusBasis(target);
         shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
     } else {
-        if (shard.IsBellBasis()) {
-            if (shard.bellControl) {
-                QEngineShardPtr partner = shard.bellControl;
-                if (shard.isPlusMinus && !partner->isPlusMinus) {
-                    std::swap(shard.amp0, shard.amp1);
-                } else if (!shard.isPlusMinus && !partner->isPlusMinus) {
-                    std::swap(partner->amp0, partner->amp1);
-                    shard.amp1 = -shard.amp1;
-                } else if (shard.isPlusMinus && partner->isPlusMinus) {
-                    std::swap(shard.amp0, shard.amp1);
-                    partner->amp1 = -partner->amp1;
-                } else {
-                    std::swap(partner->amp0, partner->amp1);
-                    shard.amp1 = -shard.amp1;
-                }
-            } else if (shard.bellTarget) {
-                QEngineShardPtr partner = shard.bellTarget;
-                if (shard.isPlusMinus && !partner->isPlusMinus) {
-                    std::swap(partner->amp0, partner->amp1);
-                    shard.amp1 = -shard.amp1;
-                } else if (!shard.isPlusMinus && !partner->isPlusMinus) {
-                    std::swap(shard.amp0, shard.amp1);
-                } else if (shard.isPlusMinus && partner->isPlusMinus) {
-                    std::swap(partner->amp0, partner->amp1);
-                    shard.amp1 = -shard.amp1;
-                } else {
-                    std::swap(partner->amp0, partner->amp1);
-                }
+        if (shard.bellControl) {
+            QEngineShardPtr partner = shard.bellControl;
+            if (shard.isPlusMinus && !partner->isPlusMinus) {
+                std::swap(shard.amp0, shard.amp1);
+            } else if (!shard.isPlusMinus && !partner->isPlusMinus) {
+                std::swap(partner->amp0, partner->amp1);
+                shard.amp1 = -shard.amp1;
+            } else if (shard.isPlusMinus && partner->isPlusMinus) {
+                std::swap(shard.amp0, shard.amp1);
+                partner->amp1 = -partner->amp1;
+            } else {
+                std::swap(partner->amp0, partner->amp1);
+                shard.amp1 = -shard.amp1;
+            }
+
+            return;
+        }
+
+        if (shard.bellTarget) {
+            QEngineShardPtr partner = shard.bellTarget;
+            if (shard.isPlusMinus && !partner->isPlusMinus) {
+                std::swap(partner->amp0, partner->amp1);
+                shard.amp1 = -shard.amp1;
+            } else if (!shard.isPlusMinus && !partner->isPlusMinus) {
+                std::swap(shard.amp0, shard.amp1);
+            } else if (shard.isPlusMinus && partner->isPlusMinus) {
+                std::swap(partner->amp0, partner->amp1);
+                shard.amp1 = -shard.amp1;
+            } else {
+                std::swap(partner->amp0, partner->amp1);
             }
 
             return;
