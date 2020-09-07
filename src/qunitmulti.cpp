@@ -17,15 +17,23 @@
 
 namespace Qrack {
 
-QUnitMulti::QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
-    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG,
-    bool useSparseStateVec, real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
-    : QUnit(eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG,
+QUnitMulti::QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
+    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
+    bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
+    : QUnit(eng, subEng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG,
           useSparseStateVec, norm_thresh, devList, qubitThreshold)
 {
-    // The "shard" engine type must be QINTERFACE_OPENCL or QINTERFACE_HYBRID.
-    if ((engine != QINTERFACE_HYBRID) && (engine != QINTERFACE_OPENCL)) {
-        throw "Invalid sub-engine type: QUnitMulti must layer over only QEngineOCL or QHybrid.";
+    // The "shard" engine type must be QINTERFACE_OPENCL or QINTERFACE_HYBRID, with or without an intermediate QPager
+    // layer.
+
+    if ((engine != QINTERFACE_HYBRID) && (engine != QINTERFACE_OPENCL) && (engine != QINTERFACE_QPAGER)) {
+        throw "Invalid sub-engine type: QUnitMulti must layer over only QEngineOCL or QHybrid, with or without an "
+              "intermediate QPager layer.";
+    }
+
+    if ((subEngine != QINTERFACE_HYBRID) && (subEngine != QINTERFACE_OPENCL)) {
+        throw "Invalid sub-engine type: QUnitMulti must layer over only QEngineOCL or QHybrid, with or without an "
+              "intermediate QPager layer.";
     }
 
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance()->GetDeviceContextPtrVector();
@@ -104,7 +112,7 @@ void QUnitMulti::RedistributeQEngines()
         // In fact, single qubit units will be handled entirely by the CPU, anyway.
         // So will QHybrid "shards" that are below the GPU transition threshold.
         if (!(qinfos[i].unit) || (qinfos[i].unit->GetMaxQPower() <= 2U) ||
-            ((engine == QINTERFACE_HYBRID) && (qinfos[i].unit->GetQubitCount() < thresholdQubits))) {
+            ((subEngine == QINTERFACE_HYBRID) && (qinfos[i].unit->GetQubitCount() < thresholdQubits))) {
             continue;
         }
 
