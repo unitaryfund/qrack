@@ -1060,8 +1060,18 @@ void QUnit::X(bitLenInt target)
             QEngineShardPtr partner = shard.bellControl;
             if (!shard.isPlusMinus && !partner->isPlusMinus) {
                 XBase(target);
-                return;
+            } else if (shard.isPlusMinus && !partner->isPlusMinus) {
+                XBase(FindShardIndex(partner));
+                ZBase(target);
+            } else if (!shard.isPlusMinus && partner->isPlusMinus) {
+                XBase(target);
+                ZBase(FindShardIndex(partner));
+            } else {
+                XBase(FindShardIndex(partner));
+                ZBase(target);
             }
+
+            return;
         }
 
         if (shard.bellTarget) {
@@ -1069,8 +1079,16 @@ void QUnit::X(bitLenInt target)
             if (!shard.isPlusMinus && !partner->isPlusMinus) {
                 XBase(FindShardIndex(partner));
                 ZBase(target);
-                return;
+            } else if (shard.isPlusMinus && !partner->isPlusMinus) {
+                XBase(target);
+            } else if (!shard.isPlusMinus && partner->isPlusMinus) {
+                XBase(FindShardIndex(partner));
+                ZBase(target);
+            } else {
+                XBase(FindShardIndex(partner));
             }
+
+            return;
         }
 
         RevertBellBasis(target);
@@ -1099,8 +1117,18 @@ void QUnit::Z(bitLenInt target)
                 QEngineShardPtr partner = shard.bellControl;
                 if (shard.isPlusMinus && !partner->isPlusMinus) {
                     XBase(target);
-                    return;
+                } else if (!shard.isPlusMinus && !partner->isPlusMinus) {
+                    XBase(FindShardIndex(partner));
+                    ZBase(target);
+                } else if (shard.isPlusMinus && partner->isPlusMinus) {
+                    XBase(target);
+                    ZBase(FindShardIndex(partner));
+                } else {
+                    XBase(FindShardIndex(partner));
+                    ZBase(target);
                 }
+
+                return;
             }
 
             if (shard.bellTarget) {
@@ -1108,8 +1136,16 @@ void QUnit::Z(bitLenInt target)
                 if (shard.isPlusMinus && !partner->isPlusMinus) {
                     XBase(FindShardIndex(partner));
                     ZBase(target);
-                    return;
+                } else if (!shard.isPlusMinus && !partner->isPlusMinus) {
+                    XBase(target);
+                } else if (shard.isPlusMinus && partner->isPlusMinus) {
+                    XBase(FindShardIndex(partner));
+                    ZBase(target);
+                } else {
+                    XBase(FindShardIndex(partner));
                 }
+
+                return;
             }
 
             RevertBellBasis(target);
