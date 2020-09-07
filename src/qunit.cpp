@@ -1297,7 +1297,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         RevertBellBasis(control);
         RevertBellBasis(target);
 
-        if (cShard.isPlusMinus && !tShard.isPlusMinus) {
+        if (CACHED_PLUS_MINUS(cShard) && CACHED_CLASSICAL(tShard)) {
             cShard.isPlusMinus = false;
             cShard.SetBellTarget(&tShard);
             return;
@@ -1528,7 +1528,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             RevertBellBasis(target);
         }
 
-        if (isBellPair || (cShard.isPlusMinus && tShard.isPlusMinus)) {
+        if (isBellPair || (CACHED_PLUS_MINUS(cShard) && CACHED_PLUS_MINUS(tShard))) {
             H(target);
             CNOT(control, target);
             H(target);
