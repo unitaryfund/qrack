@@ -67,6 +67,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , freezeBasis(false)
+    , thresholdQubits(qubitThreshold)
 {
     if ((engine == QINTERFACE_CPU) || (engine == QINTERFACE_OPENCL)) {
         subEngine = engine;
@@ -85,7 +86,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
 {
     return CreateQuantumInterface(engine, subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse);
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, std::vector<int>{}, thresholdQubits);
 }
 
 void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
@@ -772,6 +773,14 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
+
+    if ((shard1.bellTarget == &shard2) || (shard2.bellTarget == &shard1)) {
+        if (shard1.isPlusMinus != shard2.isPlusMinus) {
+            std::swap(shard1.amp0, shard2.amp0);
+            std::swap(shard1.amp1, shard2.amp1);
+        }
+        return;
+    }
 
     RevertBellBasis(qubit1);
     RevertBellBasis(qubit2);
