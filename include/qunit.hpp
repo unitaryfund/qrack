@@ -659,6 +659,7 @@ protected:
     bool useRDRAND;
     bool isSparse;
     bool freezeBasis;
+    bitLenInt thresholdQubits;
 
     virtual void SetQubitCount(bitLenInt qb)
     {

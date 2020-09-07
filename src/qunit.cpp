@@ -64,6 +64,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , freezeBasis(false)
+    , thresholdQubits(qubitThreshold)
 {
     if ((engine == QINTERFACE_CPU) || (engine == QINTERFACE_OPENCL)) {
         subEngine = engine;
@@ -82,7 +83,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
 {
     return CreateQuantumInterface(engine, subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse);
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, std::vector<int>{}, thresholdQubits);
 }
 
 void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
