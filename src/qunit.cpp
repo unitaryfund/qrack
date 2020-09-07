@@ -1059,39 +1059,33 @@ void QUnit::X(bitLenInt target)
         if (shard.bellControl) {
             QEngineShardPtr partner = shard.bellControl;
             if (!shard.isPlusMinus && !partner->isPlusMinus) {
-                XBase(target);
+                std::swap(shard.amp0, shard.amp1);
             } else if (shard.isPlusMinus && !partner->isPlusMinus) {
-                XBase(FindShardIndex(partner));
-                ZBase(target);
+                std::swap(partner->amp0, partner->amp1);
+                shard.amp1 = -shard.amp1;
             } else if (!shard.isPlusMinus && partner->isPlusMinus) {
-                XBase(target);
-                ZBase(FindShardIndex(partner));
+                std::swap(shard.amp0, shard.amp1);
+                partner->amp1 = -partner->amp1;
             } else {
-                XBase(FindShardIndex(partner));
-                ZBase(target);
+                std::swap(partner->amp0, partner->amp1);
+                shard.amp1 = -shard.amp1;
             }
-
-            return;
-        }
-
-        if (shard.bellTarget) {
+        } else if (shard.bellTarget) {
             QEngineShardPtr partner = shard.bellTarget;
             if (!shard.isPlusMinus && !partner->isPlusMinus) {
-                XBase(FindShardIndex(partner));
-                ZBase(target);
+                std::swap(partner->amp0, partner->amp1);
+                shard.amp1 = -shard.amp1;
             } else if (shard.isPlusMinus && !partner->isPlusMinus) {
-                XBase(target);
+                std::swap(shard.amp0, shard.amp1);
             } else if (!shard.isPlusMinus && partner->isPlusMinus) {
-                XBase(FindShardIndex(partner));
-                ZBase(target);
+                std::swap(partner->amp0, partner->amp1);
+                shard.amp1 = -shard.amp1;
             } else {
-                XBase(FindShardIndex(partner));
+                std::swap(partner->amp0, partner->amp1);
             }
-
-            return;
         }
 
-        RevertBellBasis(target);
+        return;
     }
 
     if (!shard.isPlusMinus) {
@@ -1116,39 +1110,33 @@ void QUnit::Z(bitLenInt target)
             if (shard.bellControl) {
                 QEngineShardPtr partner = shard.bellControl;
                 if (shard.isPlusMinus && !partner->isPlusMinus) {
-                    XBase(target);
+                    std::swap(shard.amp0, shard.amp1);
                 } else if (!shard.isPlusMinus && !partner->isPlusMinus) {
-                    XBase(FindShardIndex(partner));
-                    ZBase(target);
+                    std::swap(partner->amp0, partner->amp1);
+                    shard.amp1 = -shard.amp1;
                 } else if (shard.isPlusMinus && partner->isPlusMinus) {
-                    XBase(target);
-                    ZBase(FindShardIndex(partner));
+                    std::swap(shard.amp0, shard.amp1);
+                    partner->amp1 = -partner->amp1;
                 } else {
-                    XBase(FindShardIndex(partner));
-                    ZBase(target);
+                    std::swap(partner->amp0, partner->amp1);
+                    shard.amp1 = -shard.amp1;
                 }
-
-                return;
-            }
-
-            if (shard.bellTarget) {
+            } else if (shard.bellTarget) {
                 QEngineShardPtr partner = shard.bellTarget;
                 if (shard.isPlusMinus && !partner->isPlusMinus) {
-                    XBase(FindShardIndex(partner));
-                    ZBase(target);
+                    std::swap(partner->amp0, partner->amp1);
+                    shard.amp1 = -shard.amp1;
                 } else if (!shard.isPlusMinus && !partner->isPlusMinus) {
-                    XBase(target);
+                    std::swap(shard.amp0, shard.amp1);
                 } else if (shard.isPlusMinus && partner->isPlusMinus) {
-                    XBase(FindShardIndex(partner));
-                    ZBase(target);
+                    std::swap(partner->amp0, partner->amp1);
+                    shard.amp1 = -shard.amp1;
                 } else {
-                    XBase(FindShardIndex(partner));
+                    std::swap(partner->amp0, partner->amp1);
                 }
-
-                return;
             }
 
-            RevertBellBasis(target);
+            return;
         }
 
         if (UNSAFE_CACHED_ZERO(shard)) {
