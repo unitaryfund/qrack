@@ -251,7 +251,8 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QUnitMulti -> QHybrid ############" << std::endl;
             testEngineType = QINTERFACE_QUNIT_MULTI;
             testSubEngineType = QINTERFACE_HYBRID;
-            CreateQuantumInterface(QINTERFACE_HYBRID, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            testSubSubEngineType = QINTERFACE_HYBRID;
+            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
 #endif
