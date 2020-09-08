@@ -181,6 +181,8 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
         return unit1;
     }
 
+    EndEmulation(shards[**first]);
+
     // This does nothing if the first unit is the default device:
     if (deviceList[0].id != unit1->GetDeviceID()) {
         // Check if size exceeds single device capacity:
@@ -189,7 +191,9 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
 
         for (auto bit = first; bit < last; bit++) {
             QInterfacePtr unit = shards[**bit].unit;
-            if (found.find(unit) == found.end()) {
+            if (!unit) {
+                qubitCount += 1U;
+            } else if (found.find(unit) == found.end()) {
                 found[unit] = true;
                 qubitCount += unit->GetQubitCount();
             }
