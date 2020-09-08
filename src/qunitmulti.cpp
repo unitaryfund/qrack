@@ -181,6 +181,26 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
         return unit1;
     }
 
+    // This does nothing if the first unit is the default device:
+    if (deviceList[0].id != unit1->GetDeviceID()) {
+        // Check if size exceeds single device capacity:
+        bitLenInt qubitCount = 0;
+        std::map<QInterfacePtr, bool> found;
+
+        for (auto bit = first; bit < last; bit++) {
+            QInterfacePtr unit = shards[**bit].unit;
+            if (found.find(unit) == found.end()) {
+                found[unit] = true;
+                qubitCount += unit->GetQubitCount();
+            }
+        }
+
+        // If device capacity is exceeded, put on default device:
+        if (pow2(qubitCount) > unit1->GetMaxSize()) {
+            unit1->SetDevice(deviceList[0].id);
+        }
+    }
+
     toRet = QUnit::EntangleInCurrentBasis(first, last);
     RedistributeQEngines();
 
