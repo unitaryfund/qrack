@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
         // qunit_qpager = true;
     }
 
-    if (!cpu && !opencl_single && !opencl_multi && !hybrid) {
+    if (!cpu && !opencl_single && !opencl_multi && !hybrid && !hybrid_multi) {
         cpu = true;
         opencl_single = true;
         opencl_multi = true;
@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
         // If we're talking about a particular OpenCL device,
         // we have an API designed to tell us device capabilities and limitations,
         // like maximum RAM allocation.
-        if (opencl_single || hybrid) {
+        if (opencl_single || hybrid || hybrid_multi) {
 #if ENABLE_OPENCL
             // Make sure the context singleton is initialized.
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();
