@@ -157,32 +157,25 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
-    QInterfacePtr unit1 = shards[**first].unit;
-
-    bool isAlreadyEntangled = !!unit1;
-
-    if (isAlreadyEntangled) {
-        // If already fully entangled, just return unit1.
-        for (auto bit = first + 1; bit < last; bit++) {
-            QInterfacePtr unit = shards[**bit].unit;
-            if (!unit || (unit1 != unit)) {
-                isAlreadyEntangled = false;
-                break;
-            }
-        }
-    }
-
-    QInterfacePtr toRet;
-
     for (auto bit = first; bit < last; bit++) {
         EndEmulation(shards[**bit]);
+    }
+
+    QInterfacePtr unit1 = shards[**first].unit;
+
+    bool isAlreadyEntangled = true;
+    // If already fully entangled, just return unit1.
+    for (auto bit = first + 1; bit < last; bit++) {
+        QInterfacePtr unit = shards[**bit].unit;
+        if (unit1 != unit) {
+            isAlreadyEntangled = false;
+            break;
+        }
     }
 
     if (isAlreadyEntangled) {
         return unit1;
     }
-
-    unit1 = shards[**first].unit;
 
     // This does nothing if the first unit is the default device:
     if (deviceList[0].id != unit1->GetDeviceID()) {
@@ -192,9 +185,7 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
 
         for (auto bit = first; bit < last; bit++) {
             QInterfacePtr unit = shards[**bit].unit;
-            if (!unit) {
-                qubitCount += 1U;
-            } else if (found.find(unit) == found.end()) {
+            if (found.find(unit) == found.end()) {
                 found[unit] = true;
                 qubitCount += unit->GetQubitCount();
             }
@@ -206,7 +197,7 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
         }
     }
 
-    toRet = QUnit::EntangleInCurrentBasis(first, last);
+    QInterfacePtr toRet = QUnit::EntangleInCurrentBasis(first, last);
     RedistributeQEngines();
 
     return toRet;
