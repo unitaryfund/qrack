@@ -174,14 +174,15 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
 
     QInterfacePtr toRet;
 
+    for (auto bit = first; bit < last; bit++) {
+        EndEmulation(shards[**bit]);
+    }
+
     if (isAlreadyEntangled) {
-        for (auto bit = first; bit < last; bit++) {
-            EndEmulation(shards[**bit]);
-        }
         return unit1;
     }
 
-    EndEmulation(shards[**first]);
+    unit1 = shards[**first].unit;
 
     // This does nothing if the first unit is the default device:
     if (deviceList[0].id != unit1->GetDeviceID()) {
