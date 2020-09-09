@@ -1224,7 +1224,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // alone, by way of the last optional "true" argument in the call.
     if (cShard.isPlusMinus && tShard.isPlusMinus) {
         RevertBasis2Qb(control);
-        RevertBasis2Qb(target);
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
 
         std::swap(controls[0], target);
         ApplyEitherControlled(
