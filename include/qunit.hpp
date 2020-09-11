@@ -658,7 +658,8 @@ protected:
     bool useHostRam;
     bool useRDRAND;
     bool isSparse;
-    bool freezeBasis;
+    bool freezeBasisH;
+    bool freezeBasis2Qb;
     bitLenInt thresholdQubits;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
@@ -956,16 +957,16 @@ protected:
 
     void RevertBasis1Qb(const bitLenInt& i)
     {
-        if (freezeBasis || !shards[i].isPlusMinus) {
+        if (freezeBasisH || !shards[i].isPlusMinus) {
             // Recursive call that should be blocked,
             // or already in target basis.
             return;
         }
 
-        freezeBasis = true;
+        freezeBasisH = true;
         H(i);
         shards[i].isPlusMinus = false;
-        freezeBasis = false;
+        freezeBasisH = false;
     }
 
     enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
