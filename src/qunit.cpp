@@ -2147,6 +2147,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     QEngineShard shard;
     for (i = 0; i < controlLen; i++) {
         if (!inCurrentBasis) {
+            RevertBellBasis(controls[i]);
             RevertPlusMinusBasis(controls[i]);
             RevertBasis2Qb(controls[i], ONLY_INVERT, ONLY_TARGETS);
         }
