@@ -1177,7 +1177,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
     }
 
-    if (!freezeBasis) {
+    if (!freezeBasis && !(cShard.isPlusMinus && tShard.isPlusMinus)) {
         RevertBasis1Qb(control);
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
 
