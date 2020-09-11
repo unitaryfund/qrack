@@ -1264,10 +1264,10 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
     }
 
-    if (!freezeBasis) {
-        bool isForward = (cShard.bellTarget == &tShard);
-        bool isReverse = (tShard.bellTarget == &cShard);
+    bool isForward = (cShard.bellTarget == &tShard);
+    bool isReverse = (tShard.bellTarget == &cShard);
 
+    if (!freezeBasis && !isForward && !isReverse && !(cShard.isPlusMinus && tShard.isPlusMinus)) {
         if ((isForward || isReverse) && !cShard.isPlusMinus && !tShard.isPlusMinus) {
             cShard.ClearBellBasis();
             cShard.isPlusMinus = true;
