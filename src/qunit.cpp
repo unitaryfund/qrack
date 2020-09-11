@@ -1178,7 +1178,9 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
     }
 
-    if (!freezeBasis2Qb && !(cShard.isPlusMinus && tShard.isPlusMinus)) {
+    bool pmBasis = (cShard.isPlusMinus && tShard.isPlusMinus && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
+
+    if (!freezeBasis2Qb && !pmBasis) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
 
         bool isInvert = cShard.IsInvertControlOf(&tShard);
@@ -1222,7 +1224,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
     // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
     // alone, by way of the last optional "true" argument in the call.
-    if (cShard.isPlusMinus && tShard.isPlusMinus && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard)) {
+    if (pmBasis) {
         std::swap(controls[0], target);
         ApplyEitherControlled(
             controls, controlLen, { target }, false,
