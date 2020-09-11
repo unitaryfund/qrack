@@ -1354,7 +1354,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // alone, by way of the last optional "true" argument in the call.
     if (cShard.isPlusMinus && tShard.isPlusMinus) {
         RevertBasis2Qb(control);
-        RevertBasis2Qb(target);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, ONLY_TARGETS);
 
         std::swap(controls[0], target);
         ApplyEitherControlled(
@@ -2146,17 +2146,15 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
     QEngineShard shard;
     for (i = 0; i < controlLen; i++) {
+        if (!inCurrentBasis) {
+            RevertPlusMinusBasis(controls[i]);
+            RevertBasis2Qb(controls[i], ONLY_INVERT, ONLY_TARGETS);
+        }
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         bool isEigenstate = false;
         if (!shards[controls[i]].isProbDirty) {
             // This might determine that we can just skip out of the whole gate, in which case it returns this
             // method:
-            if (!inCurrentBasis) {
-                RevertBellBasis(controls[i]);
-                RevertPlusMinusBasis(controls[i]);
-                RevertBasis2Qb(controls[i], ONLY_INVERT);
-            }
-            ProbBase(controls[i]);
             shard = shards[controls[i]];
             if (IS_NORM_ZERO(shard.amp1)) {
                 if (!inCurrentBasis) {
@@ -2182,24 +2180,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         }
 
         if (!isEigenstate) {
-            if (!inCurrentBasis) {
-                ToPermBasis(controls[i]);
-            }
             controlVec.push_back(controls[i]);
         }
-    }
-
-    if (!inCurrentBasis) {
-        for (i = 0; i < controlVec.size(); i++) {
-            RevertBasis2Qb(controlVec[i]);
-        }
-    }
-
-    for (i = 0; i < targets.size(); i++) {
-        RevertBellBasis(targets[i]);
-    }
-    for (i = 0; i < targets.size(); i++) {
-        RevertBasis2Qb(targets[i]);
     }
 
     if (controlVec.size() == 0) {
@@ -2208,6 +2190,10 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         fn();
 
         return;
+    }
+
+    for (i = 0; i < targets.size(); i++) {
+        RevertBasis2Qb(targets[i]);
     }
 
     // TODO: If controls that survive the "first order" check above start out entangled,

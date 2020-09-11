@@ -745,12 +745,6 @@ protected:
     bool freezeBasis;
     bitLenInt thresholdQubits;
 
-    virtual void SetQubitCount(bitLenInt qb)
-    {
-        shards.resize(qb);
-        QInterface::SetQubitCount(qb);
-    }
-
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
 public:

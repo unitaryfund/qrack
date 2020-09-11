@@ -157,31 +157,47 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
+    for (auto bit = first; bit < last; bit++) {
+        EndEmulation(shards[**bit]);
+    }
+
     QInterfacePtr unit1 = shards[**first].unit;
 
-    bool isAlreadyEntangled = !!unit1;
-
-    if (isAlreadyEntangled) {
-        // If already fully entangled, just return unit1.
-        for (auto bit = first + 1; bit < last; bit++) {
-            QInterfacePtr unit = shards[**bit].unit;
-            if (!unit || (unit1 != unit)) {
-                isAlreadyEntangled = false;
-                break;
-            }
+    bool isAlreadyEntangled = true;
+    // If already fully entangled, just return unit1.
+    for (auto bit = first + 1; bit < last; bit++) {
+        QInterfacePtr unit = shards[**bit].unit;
+        if (unit1 != unit) {
+            isAlreadyEntangled = false;
+            break;
         }
     }
 
-    QInterfacePtr toRet;
-
     if (isAlreadyEntangled) {
-        for (auto bit = first; bit < last; bit++) {
-            EndEmulation(shards[**bit]);
-        }
         return unit1;
     }
 
-    toRet = QUnit::EntangleInCurrentBasis(first, last);
+    // This does nothing if the first unit is the default device:
+    if (deviceList[0].id != unit1->GetDeviceID()) {
+        // Check if size exceeds single device capacity:
+        bitLenInt qubitCount = 0;
+        std::map<QInterfacePtr, bool> found;
+
+        for (auto bit = first; bit < last; bit++) {
+            QInterfacePtr unit = shards[**bit].unit;
+            if (found.find(unit) == found.end()) {
+                found[unit] = true;
+                qubitCount += unit->GetQubitCount();
+            }
+        }
+
+        // If device capacity is exceeded, put on default device:
+        if (pow2(qubitCount) > unit1->GetMaxSize()) {
+            unit1->SetDevice(deviceList[0].id);
+        }
+    }
+
+    QInterfacePtr toRet = QUnit::EntangleInCurrentBasis(first, last);
     RedistributeQEngines();
 
     return toRet;
