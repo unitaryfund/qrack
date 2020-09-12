@@ -328,9 +328,7 @@ protected:
             buffer = phaseShard->second;
             partner = phaseShard->first;
 
-            if (!IS_ARG_0(buffer->cmplxDiff) ||
-                (buffer->isInvert &&
-                    !((!makeThisControl && isPlusMinus) || (makeThisControl && partner->isPlusMinus)))) {
+            if (buffer->isInvert || !IS_ARG_0(buffer->cmplxDiff)) {
                 continue;
             }
 
