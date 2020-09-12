@@ -606,12 +606,14 @@ public:
     {
         ShardToPhaseMap::iterator phaseShard;
 
+        OptimizeControls();
         for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
                 return true;
             }
         }
 
+        OptimizeAntiControls();
         for (phaseShard = antiControlsShards.begin(); phaseShard != antiControlsShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
                 return true;
@@ -625,12 +627,14 @@ public:
     {
         ShardToPhaseMap::iterator phaseShard;
 
+        OptimizeTargets();
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
                 return true;
             }
         }
 
+        OptimizeAntiTargets();
         for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
                 return true;
