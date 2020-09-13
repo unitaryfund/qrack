@@ -1588,7 +1588,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
     }
 
     complex sTest = bottomRight / topLeft;
-    if (!IS_I_CMPLX(sTest) && !IS_I_CMPLX(-sTest)) {
+    if (!IS_ONE_CMPLX(sTest) && !IS_ONE_CMPLX(-sTest) && !IS_I_CMPLX(sTest) && !IS_I_CMPLX(-sTest)) {
         *(shards[target].isClifford) = false;
     }
 
@@ -1776,8 +1776,12 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         return;
     }
 
+    // CZ already filtered above
+    bool isClifford = (IS_ONE_CMPLX(-topLeft) && IS_ONE_CMPLX(bottomRight)) ||
+        (IS_ONE_CMPLX(topLeft) && IS_I_CMPLX(-bottomRight)) || (IS_ONE_CMPLX(-topLeft) && IS_I_CMPLX(bottomRight));
+
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-        ApplySinglePhase(topLeft, bottomRight, target), false, false, topLeft, bottomRight, false);
+        ApplySinglePhase(topLeft, bottomRight, target), false, false, topLeft, bottomRight, isClifford);
 
     delete[] controls;
 }
@@ -1791,7 +1795,8 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
         return;
     }
 
-    bool isClifford = IS_I_CMPLX(-topRight) && IS_I_CMPLX(bottomLeft);
+    bool isClifford = (IS_ONE_CMPLX(-topRight) && IS_ONE_CMPLX(bottomLeft)) ||
+        (IS_ONE_CMPLX(topRight) && IS_I_CMPLX(-bottomLeft)) || (IS_ONE_CMPLX(-topRight) && IS_I_CMPLX(bottomLeft));
 
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
         ApplySingleInvert(topRight, bottomLeft, target), false, true, topRight, bottomLeft, isClifford);
