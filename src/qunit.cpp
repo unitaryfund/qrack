@@ -871,7 +871,6 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 
     QInterfacePtr unit = Entangle({ qubit1, qubit2 });
     unit->ISwap(shards[qubit1].mapped, shards[qubit2].mapped);
-    *(shards[qubit1].isClifford) = false;
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
@@ -1576,11 +1575,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         return;
     }
 
-    complex sTest = bottomRight / topLeft;
-    if (!IS_I_CMPLX(sTest) && !IS_I_CMPLX(-sTest)) {
-        *(shards[target].isClifford) = false;
-    }
-
     QEngineShard& shard = shards[target];
 
     if (shard.IsInvertTarget()) {
@@ -1596,6 +1590,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             Flush1Eigenstate(target);
             return;
         }
+    }
+
+    complex sTest = bottomRight / topLeft;
+    if (!IS_I_CMPLX(sTest) && !IS_I_CMPLX(-sTest)) {
+        *(shards[target].isClifford) = false;
     }
 
     if (!shard.isPlusMinus) {
@@ -1927,6 +1926,8 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
 
     RevertBasis2Qb(target);
 
+    *(shard.isClifford) = false;
+
     complex trnsMtrx[4];
 
     if (!shard.isPlusMinus) {
@@ -2126,6 +2127,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shards[targets[i]].MakeDirty();
     }
 
+    // TODO: Find a better way to leverage Clifford set separability potential.
     if (*(shards[targets[0]].isClifford)) {
         for (i = 0; i < allBits.size(); i++) {
             ProbBase(allBits[i]);

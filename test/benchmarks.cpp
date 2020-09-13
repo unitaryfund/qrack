@@ -564,8 +564,8 @@ TEST_CASE("test_quantum_triviality", "[supreme]")
 
 TEST_CASE("test_stabilizer", "[supreme]")
 {
-    const int GateCount1Qb = 5;
-    const int GateCountMultiQb = 3;
+    const int GateCount1Qb = 4;
+    const int GateCountMultiQb = 2;
     const int Depth = 20;
 
     benchmarkLoop(
@@ -585,10 +585,8 @@ TEST_CASE("test_stabilizer", "[supreme]")
                         qReg->X(i);
                     } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
                         qReg->Y(i);
-                    } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
-                        qReg->S(i);
                     } else {
-                        // Identity
+                        qReg->S(i);
                     }
                 }
 
@@ -607,10 +605,8 @@ TEST_CASE("test_stabilizer", "[supreme]")
 
                     if (gateRand < ONE_R1) {
                         qReg->CNOT(b1, b2);
-                    } else if (gateRand < (2 * ONE_R1)) {
-                        qReg->CZ(b1, b2);
                     } else {
-                        // Identity
+                        qReg->CZ(b1, b2);
                     }
                 }
             }
