@@ -475,17 +475,12 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
     bool didSeparate = false;
     for (bitLenInt i = 0; i < length; i++) {
         if (shards[start + i].GetQubitCount() == 1) {
-            return true;
+            didSeparate = true;
+            continue;
         }
 
         // This is usually all that's worth trying:
-        QEngineShard& shard = shards[start + i];
-        real1 prob;
-        if (shard.isPlusMinus || QUEUED_PHASE(shard)) {
-            prob = ProbBase(start);
-        } else {
-            prob = Prob(start);
-        }
+        real1 prob = ProbBase(start + i);
         didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
     }
 
@@ -2130,7 +2125,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     // TODO: Find a better way to leverage Clifford set separability potential.
     if (*(shards[targets[0]].isClifford)) {
         for (i = 0; i < allBits.size(); i++) {
-            ProbBase(allBits[i]);
+            TrySeparate(allBits[i]);
         }
     }
 }
