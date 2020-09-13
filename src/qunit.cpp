@@ -112,7 +112,22 @@ void QUnit::SetQuantumState(const complex* inputState)
         shard.amp0 = inputState[0];
         shard.amp1 = inputState[1];
         shard.isPlusMinus = false;
-        shard.isClifford = std::make_shared<bool>(IS_NORM_ZERO(shard.amp1) || IS_NORM_ZERO(shard.amp0));
+        if (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)) {
+            shard.isClifford = std::make_shared<bool>(true);
+            shard.ClampAmps(amplitudeFloor);
+        } else if (norm(shard.amp0 + shard.amp1) < REAL1_EPSILON) {
+            shard.isPlusMinus = !shard.isPlusMinus;
+            shard.amp0 = ZERO_R1;
+            shard.amp1 = shard.amp0 / norm(shard.amp0);
+            shard.isClifford = std::make_shared<bool>(true);
+        } else if (norm(shard.amp0 - shard.amp1) < REAL1_EPSILON) {
+            shard.isPlusMinus = !shard.isPlusMinus;
+            shard.amp0 = shard.amp0 / norm(shard.amp0);
+            shard.amp1 = ZERO_R1;
+            shard.isClifford = std::make_shared<bool>(true);
+        } else {
+            shard.isClifford = std::make_shared<bool>(false);
+        }
         return;
     }
 
@@ -670,14 +685,28 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     QEngineShard& partnerShard = shards[partnerIndex];
     complex amps[2];
     partnerShard.unit->GetQuantumState(amps);
+    if (IS_NORM_ZERO(amps[0]) || IS_NORM_ZERO(amps[1])) {
+        partnerShard.isClifford = std::make_shared<bool>(true);
+    } else if (norm(amps[0] + amps[1]) < REAL1_EPSILON) {
+        shard.isPlusMinus = !shard.isPlusMinus;
+        amps[0] = ZERO_R1;
+        amps[1] = amps[0] / norm(amps[0]);
+        partnerShard.isClifford = std::make_shared<bool>(true);
+    } else if (norm(amps[0] - amps[1]) < REAL1_EPSILON) {
+        shard.isPlusMinus = !shard.isPlusMinus;
+        amps[0] = amps[0] / norm(amps[0]);
+        amps[1] = ZERO_R1;
+        partnerShard.isClifford = std::make_shared<bool>(true);
+    } else {
+        partnerShard.isClifford = std::make_shared<bool>(true);
+    }
     partnerShard.amp0 = amps[0];
     partnerShard.amp1 = amps[1];
     partnerShard.isProbDirty = false;
     partnerShard.isPhaseDirty = false;
     partnerShard.mapped = 0;
     partnerShard.unit = NULL;
-    partnerShard.isClifford =
-        std::make_shared<bool>(IS_NORM_ZERO(partnerShard.amp1) || IS_NORM_ZERO(partnerShard.amp0));
+    partnerShard.ClampAmps(amplitudeFloor);
 
     return norm(shard.amp1);
 }
@@ -1025,9 +1054,6 @@ void QUnit::H(bitLenInt target)
     if (DIRTY(shard)) {
         shard.MakeDirty();
         shard.unit->H(shard.mapped);
-        if (*(shard.isClifford)) {
-            ProbBase(target);
-        }
         return;
     }
 
@@ -1256,10 +1282,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         CTRLED_PHASE_INVERT_WRAP(CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false, true,
             ONE_CMPLX, ONE_CMPLX, true);
     }
-
-    if (*(shards[target].isClifford)) {
-        ProbBase(target);
-    }
 }
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
@@ -1296,10 +1318,6 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
     CTRLED_PHASE_INVERT_WRAP(AntiCNOT(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), X(target), true, true,
         ONE_CMPLX, ONE_CMPLX, true);
-
-    if (*(shards[target].isClifford)) {
-        ProbBase(target);
-    }
 }
 
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -1350,18 +1368,12 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
                     unit->CCZ(CTRL_2_ARGS);
                 } else {
                     unit->CZ(CTRL_1_ARGS);
-                    if (*(shards[target].isClifford)) {
-                        ProbBase(target);
-                    }
                 }
             } else {
                 if (mappedControls.size() == 2) {
                     unit->CCNOT(CTRL_2_ARGS);
                 } else {
                     unit->CNOT(CTRL_1_ARGS);
-                    if (*(shards[target].isClifford)) {
-                        ProbBase(target);
-                    }
                 }
             }
         },
@@ -1388,9 +1400,6 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
                     unit->AntiCCNOT(CTRL_2_ARGS);
                 } else {
                     unit->AntiCNOT(CTRL_1_ARGS);
-                    if (*(shards[target].isClifford)) {
-                        ProbBase(target);
-                    }
                 }
             }
         },
@@ -1464,10 +1473,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     CTRLED_PHASE_INVERT_WRAP(
         CZ(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), Z(target), false, false, ONE_CMPLX, -ONE_CMPLX, true);
-
-    if (*(shards[target].isClifford)) {
-        ProbBase(target);
-    }
 }
 
 void QUnit::CH(bitLenInt control, bitLenInt target)
@@ -1547,18 +1552,12 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
                     unit->CCNOT(CTRL_2_ARGS);
                 } else {
                     unit->CNOT(CTRL_1_ARGS);
-                    if (*(shards[target].isClifford)) {
-                        ProbBase(target);
-                    }
                 }
             } else {
                 if (mappedControls.size() == 2) {
                     unit->CCZ(CTRL_2_ARGS);
                 } else {
                     unit->CZ(CTRL_1_ARGS);
-                    if (*(shards[target].isClifford)) {
-                        ProbBase(target);
-                    }
                 }
             }
         },
@@ -2046,10 +2045,10 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         }
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         bool isEigenstate = false;
-        if (!shards[controls[i]].isProbDirty) {
+        shard = shards[controls[i]];
+        if (!shard.isProbDirty) {
             // This might determine that we can just skip out of the whole gate, in which case it returns this
             // method:
-            shard = shards[controls[i]];
             if (IS_NORM_ZERO(shard.amp1)) {
                 if (!inCurrentBasis) {
                     Flush0Eigenstate(controls[i]);
@@ -2125,6 +2124,12 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
     for (i = 0; i < targets.size(); i++) {
         shards[targets[i]].MakeDirty();
+    }
+
+    if (*(shards[targets[0]].isClifford)) {
+        for (i = 0; i < allBits.size(); i++) {
+            ProbBase(allBits[i]);
+        }
     }
 }
 
