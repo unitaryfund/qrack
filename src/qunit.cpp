@@ -1791,8 +1791,10 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
         return;
     }
 
+    bool isClifford = IS_I_CMPLX(-topRight) && IS_I_CMPLX(bottomLeft);
+
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-        ApplySingleInvert(topRight, bottomLeft, target), false, true, topRight, bottomLeft, false);
+        ApplySingleInvert(topRight, bottomLeft, target), false, true, topRight, bottomLeft, isClifford);
 }
 
 void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bitLenInt& controlLen,
