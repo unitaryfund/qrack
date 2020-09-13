@@ -110,8 +110,7 @@ public:
         , antiTargetOfShards()
         , found(false)
     {
-        isClifford = std::make_shared<bool>();
-        *isClifford = true;
+        isClifford = std::make_shared<bool>(true);
     }
 
     QEngineShard(const bool& set, const real1 amp_thresh = min_norm)
@@ -127,8 +126,7 @@ public:
         , antiTargetOfShards()
         , found(false)
     {
-        isClifford = std::make_shared<bool>();
-        *isClifford = true;
+        isClifford = std::make_shared<bool>(true);
         amp0 = set ? ZERO_CMPLX : ONE_CMPLX;
         amp1 = set ? ONE_CMPLX : ZERO_CMPLX;
     }
@@ -154,7 +152,7 @@ public:
 
     void MakeDirty()
     {
-        if (isPhaseDirty || !(*isClifford)) {
+        if (isProbDirty || isPhaseDirty || !(*isClifford)) {
             isProbDirty = true;
         } else {
             amp0 = M_SQRT1_2;

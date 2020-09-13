@@ -112,15 +112,13 @@ void QUnit::SetQuantumState(const complex* inputState)
         shard.amp0 = inputState[0];
         shard.amp1 = inputState[1];
         shard.isPlusMinus = false;
-        shard.isClifford = std::make_shared<bool>();
-        *(shard.isClifford) = false;
+        shard.isClifford = std::make_shared<bool>(IS_NORM_ZERO(shard.amp1) || IS_NORM_ZERO(shard.amp0));
         return;
     }
 
     QInterfacePtr unit = MakeEngine(qubitCount, 0);
     unit->SetQuantumState(inputState);
-    BoolPtr isClifford = std::make_shared<bool>();
-    *isClifford = false;
+    BoolPtr isClifford = std::make_shared<bool>(false);
 
     for (bitLenInt idx = 0; idx < qubitCount; idx++) {
         shards[idx] = QEngineShard(unit, idx, isClifford, doNormalize ? amplitudeFloor : ZERO_R1);
@@ -282,8 +280,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
     QInterfacePtr unit1 = shards[**first].unit;
     std::map<QInterfacePtr, bool> found;
 
-    BoolPtr isClifford = std::make_shared<bool>();
-    *isClifford = true;
+    BoolPtr isClifford = std::make_shared<bool>(true);
 
     /* Walk through all of the supplied bits and create a unique list to compose. */
     for (auto bit = first; bit < last; bit++) {
@@ -651,8 +648,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         shard.mapped = 0;
         shard.isPhaseDirty = false;
         shard.unit = NULL;
-        shard.isClifford = std::make_shared<bool>();
-        *(shard.isClifford) = true;
+        shard.isClifford = std::make_shared<bool>(true);
     }
 
     if (doNormalize && didSeparate) {
@@ -680,10 +676,8 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     partnerShard.isPhaseDirty = false;
     partnerShard.mapped = 0;
     partnerShard.unit = NULL;
-    if (IS_NORM_ZERO(partnerShard.amp1) || IS_NORM_ZERO(partnerShard.amp0)) {
-        partnerShard.isClifford = std::make_shared<bool>();
-        *(partnerShard.isClifford) = true;
-    }
+    partnerShard.isClifford =
+        std::make_shared<bool>(IS_NORM_ZERO(partnerShard.amp1) || IS_NORM_ZERO(partnerShard.amp0));
 
     return norm(shard.amp1);
 }
@@ -707,8 +701,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
     shards[qubit].isPhaseDirty = false;
     shards[qubit].amp0 = value ? ZERO_CMPLX : ONE_CMPLX;
     shards[qubit].amp1 = value ? ONE_CMPLX : ZERO_CMPLX;
-    shards[qubit].isClifford = std::make_shared<bool>();
-    *(shards[qubit].isClifford) = true;
+    shards[qubit].isClifford = std::make_shared<bool>(true);
 
     if (!unit || (unit->GetQubitCount() == 1)) {
         return;
@@ -752,8 +745,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
         shard.unit = NULL;
         shard.amp0 = result ? ZERO_CMPLX : ONE_CMPLX;
         shard.amp1 = result ? ONE_CMPLX : ZERO_CMPLX;
-        shard.isClifford = std::make_shared<bool>();
-        *(shard.isClifford) = true;
+        shard.isClifford = std::make_shared<bool>(true);
 
         // If we're keeping the bits, and they're already in their own unit, there's nothing to do.
         return result;
@@ -1033,6 +1025,9 @@ void QUnit::H(bitLenInt target)
     if (DIRTY(shard)) {
         shard.MakeDirty();
         shard.unit->H(shard.mapped);
+        if (*(shard.isClifford)) {
+            ProbBase(target);
+        }
         return;
     }
 
@@ -1257,11 +1252,14 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
             controls, controlLen, { target }, false,
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
             [&]() { XBase(target); }, true, true);
-        return;
+    } else {
+        CTRLED_PHASE_INVERT_WRAP(CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false, true,
+            ONE_CMPLX, ONE_CMPLX, true);
     }
 
-    CTRLED_PHASE_INVERT_WRAP(
-        CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false, true, ONE_CMPLX, ONE_CMPLX, true);
+    if (*(shards[target].isClifford)) {
+        ProbBase(target);
+    }
 }
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
@@ -1298,6 +1296,10 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
     CTRLED_PHASE_INVERT_WRAP(AntiCNOT(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), X(target), true, true,
         ONE_CMPLX, ONE_CMPLX, true);
+
+    if (*(shards[target].isClifford)) {
+        ProbBase(target);
+    }
 }
 
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -1348,12 +1350,18 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
                     unit->CCZ(CTRL_2_ARGS);
                 } else {
                     unit->CZ(CTRL_1_ARGS);
+                    if (*(shards[target].isClifford)) {
+                        ProbBase(target);
+                    }
                 }
             } else {
                 if (mappedControls.size() == 2) {
                     unit->CCNOT(CTRL_2_ARGS);
                 } else {
                     unit->CNOT(CTRL_1_ARGS);
+                    if (*(shards[target].isClifford)) {
+                        ProbBase(target);
+                    }
                 }
             }
         },
@@ -1380,6 +1388,9 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
                     unit->AntiCCNOT(CTRL_2_ARGS);
                 } else {
                     unit->AntiCNOT(CTRL_1_ARGS);
+                    if (*(shards[target].isClifford)) {
+                        ProbBase(target);
+                    }
                 }
             }
         },
@@ -1453,6 +1464,10 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     CTRLED_PHASE_INVERT_WRAP(
         CZ(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), Z(target), false, false, ONE_CMPLX, -ONE_CMPLX, true);
+
+    if (*(shards[target].isClifford)) {
+        ProbBase(target);
+    }
 }
 
 void QUnit::CH(bitLenInt control, bitLenInt target)
@@ -1532,12 +1547,18 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
                     unit->CCNOT(CTRL_2_ARGS);
                 } else {
                     unit->CNOT(CTRL_1_ARGS);
+                    if (*(shards[target].isClifford)) {
+                        ProbBase(target);
+                    }
                 }
             } else {
                 if (mappedControls.size() == 2) {
                     unit->CCZ(CTRL_2_ARGS);
                 } else {
                     unit->CZ(CTRL_1_ARGS);
+                    if (*(shards[target].isClifford)) {
+                        ProbBase(target);
+                    }
                 }
             }
         },
@@ -3257,8 +3278,7 @@ QInterfacePtr QUnit::CloneBody(QUnitPtr copyPtr)
         if (find(shardEngines.begin(), shardEngines.end(), shards[i].unit) == shardEngines.end()) {
             shardEngines.push_back(shards[i].unit);
             dupeEngines.push_back(shards[i].unit->Clone());
-            isCliffords.push_back(std::make_shared<bool>());
-            *(isCliffords.back()) = *(shards[i].isClifford);
+            isCliffords.push_back(std::make_shared<bool>(*(shards[i].isClifford)));
         }
 
         origEngine = find(shardEngines.begin(), shardEngines.end(), shards[i].unit);

@@ -562,6 +562,64 @@ TEST_CASE("test_quantum_triviality", "[supreme]")
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
 
+TEST_CASE("test_stabilizer", "[supreme]")
+{
+    const int GateCount1Qb = 5;
+    const int GateCountMultiQb = 3;
+    const int Depth = 20;
+
+    benchmarkLoop(
+        [&](QInterfacePtr qReg, bitLenInt n) {
+            int d;
+            bitLenInt i;
+            real1 gateRand;
+            bitLenInt b1, b2;
+
+            for (d = 0; d < Depth; d++) {
+
+                for (i = 0; i < n; i++) {
+                    gateRand = qReg->Rand();
+                    if (gateRand < (ONE_R1 / GateCount1Qb)) {
+                        qReg->H(i);
+                    } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
+                        qReg->X(i);
+                    } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
+                        qReg->Y(i);
+                    } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
+                        qReg->S(i);
+                    } else {
+                        // Identity
+                    }
+                }
+
+                std::set<bitLenInt> unusedBits;
+                for (i = 0; i < n; i++) {
+                    // In the past, "qReg->TrySeparate(i)" was also used, here, to attempt optimization. Be aware that
+                    // the method can give performance advantages, under opportune conditions, but it does not, here.
+                    unusedBits.insert(unusedBits.end(), i);
+                }
+
+                while (unusedBits.size() > 1) {
+                    b1 = pickRandomBit(qReg, &unusedBits);
+                    b2 = pickRandomBit(qReg, &unusedBits);
+
+                    gateRand = GateCountMultiQb * qReg->Rand();
+
+                    if (gateRand < ONE_R1) {
+                        qReg->CNOT(b1, b2);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        qReg->CZ(b1, b2);
+                    } else {
+                        // Identity
+                    }
+                }
+            }
+
+            qReg->MReg(0, n);
+        },
+        false, false, testEngineType == QINTERFACE_QUNIT);
+}
+
 TEST_CASE("test_universal_circuit_continuous", "[supreme]")
 {
     const int GateCountMultiQb = 2;
