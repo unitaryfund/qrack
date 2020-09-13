@@ -2165,6 +2165,8 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
     QInterfacePtr unit = Entangle({ start, flagIndex });
 
     *(shards[start].isClifford) = false;
+    DirtyShardRangePhase(start, length);
+    shards[flagIndex].isPhaseDirty = true;
 
     ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flagIndex].mapped);
 
@@ -2178,7 +2180,11 @@ void QUnit::INCxx(
     /* Make sure the flag bits are entangled in the same QU. */
     EntangleRange(start, length);
     QInterfacePtr unit = Entangle({ start, flag1Index, flag2Index });
+
     *(shards[start].isClifford) = false;
+    DirtyShardRangePhase(start, length);
+    shards[flag1Index].isPhaseDirty = true;
+    shards[flag2Index].isPhaseDirty = true;
 
     ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flag1Index].mapped, shards[flag2Index].mapped);
 
@@ -2744,8 +2750,13 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
 QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt start, bitLenInt carryStart,
     bitLenInt length, std::vector<bitLenInt>* controlsMapped)
 {
+    // TODO: Can we conceptualize arithmetic as Clifford?
     EntangleRange(start, length);
+    *(shards[start].isClifford) = false;
+    DirtyShardRangePhase(start, length);
     EntangleRange(carryStart, length);
+    *(shards[carryStart].isClifford) = false;
+    DirtyShardRangePhase(carryStart, length);
     DirtyShardRange(carryStart, length);
 
     std::vector<bitLenInt> bits(controlVec.size() + 2);
@@ -2789,8 +2800,6 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
     ((*unit).*fn)(
         toMod, shards[start].mapped, shards[carryStart].mapped, length, &(controlsMapped[0]), controlVec.size());
 
-    // TODO: Can we conceptualize arithmetic as Clifford?
-    *(shards[start].isClifford) = false;
     DirtyShardRange(start, length);
 }
 
