@@ -635,10 +635,6 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex(sqrt(prob), ZERO_R1);
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
-    // if (shard.isPhaseDirty) {
-    //    return norm(shard.amp1);
-    //}
-
     bool didSeparate = false;
     if (IS_NORM_ZERO(shard.amp1)) {
         SeparateBit(false, qubit);
@@ -670,13 +666,13 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     if (IS_NORM_ZERO(amps[0]) || IS_NORM_ZERO(amps[1])) {
         partnerShard.isClifford = std::make_shared<bool>(true);
     } else if (norm(amps[0] - amps[1]) < REAL1_EPSILON) {
-        shard.isPlusMinus = !shard.isPlusMinus;
-        amps[0] = amps[0] / norm(amps[0]);
+        partnerShard.isPlusMinus = !partnerShard.isPlusMinus;
+        amps[0] = amps[0] / abs(amps[0]);
         amps[1] = ZERO_R1;
         partnerShard.isClifford = std::make_shared<bool>(true);
     } else if (norm(amps[0] + amps[1]) < REAL1_EPSILON) {
-        shard.isPlusMinus = !shard.isPlusMinus;
-        amps[1] = amps[0] / norm(amps[0]);
+        partnerShard.isPlusMinus = !partnerShard.isPlusMinus;
+        amps[1] = amps[0] / abs(amps[0]);
         amps[0] = ZERO_R1;
         partnerShard.isClifford = std::make_shared<bool>(true);
     } else {
