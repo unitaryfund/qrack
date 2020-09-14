@@ -652,6 +652,16 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     } else if (IS_NORM_ZERO(shard.amp0)) {
         unit->Dispose(shard.mapped, 1, 1);
         didSeparate = true;
+    } else if (norm(shard.amp0 - shard.amp1) < REAL1_EPSILON) {
+        shard.isPlusMinus = !shard.isPlusMinus;
+        unit->H(shard.mapped);
+        unit->Dispose(shard.mapped, 1, 0);
+        didSeparate = true;
+    } else if (norm(shard.amp0 + shard.amp1) < REAL1_EPSILON) {
+        shard.isPlusMinus = !shard.isPlusMinus;
+        unit->H(shard.mapped);
+        unit->Dispose(shard.mapped, 1, 1);
+        didSeparate = true;
     }
 
     if (didSeparate) {
@@ -682,15 +692,15 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     partnerShard.unit->GetQuantumState(amps);
     if (IS_NORM_ZERO(amps[0]) || IS_NORM_ZERO(amps[1])) {
         partnerShard.isClifford = std::make_shared<bool>(true);
-    } else if (norm(amps[0] + amps[1]) < REAL1_EPSILON) {
-        shard.isPlusMinus = !shard.isPlusMinus;
-        amps[0] = ZERO_R1;
-        amps[1] = amps[0] / norm(amps[0]);
-        partnerShard.isClifford = std::make_shared<bool>(true);
     } else if (norm(amps[0] - amps[1]) < REAL1_EPSILON) {
         shard.isPlusMinus = !shard.isPlusMinus;
         amps[0] = amps[0] / norm(amps[0]);
         amps[1] = ZERO_R1;
+        partnerShard.isClifford = std::make_shared<bool>(true);
+    } else if (norm(amps[0] + amps[1]) < REAL1_EPSILON) {
+        shard.isPlusMinus = !shard.isPlusMinus;
+        amps[0] = ZERO_R1;
+        amps[1] = amps[0] / norm(amps[0]);
         partnerShard.isClifford = std::make_shared<bool>(true);
     } else {
         partnerShard.isClifford = std::make_shared<bool>(true);
