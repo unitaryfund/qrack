@@ -651,7 +651,14 @@ public:
     bool IsInvert() { return IsInvertTarget() || IsInvertControl(); }
 
     bitLenInt GetQubitCount() { return unit ? unit->GetQubitCount() : 1U; };
-    real1 Prob() { return unit->Prob(mapped); };
+    real1 Prob()
+    {
+        if (!isProbDirty) {
+            return norm(amp1);
+        }
+
+        return unit->Prob(mapped);
+    };
 };
 
 class QUnit;
