@@ -626,63 +626,40 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         return norm(shard.amp1);
     }
 
-    QInterfacePtr unit = shard.unit;
-    bitLenInt mapped = shard.mapped;
-    bitLenInt shardQbCount = shard.GetQubitCount();
-
-    real1 prob = shard.Prob();
-    shard.amp1 = complex(sqrt(prob), ZERO_R1);
-    shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
     shard.isProbDirty = false;
 
-    if (shardQbCount == 1U) {
-        shard.isPhaseDirty = false;
-        shard.unit = NULL;
-        return norm(shard.amp1);
-    }
+    bitLenInt shardQbCount = shard.GetQubitCount();
+    QInterfacePtr unit = shard.unit;
+    bitLenInt mapped = shard.mapped;
+    real1 prob = unit->Prob(mapped);
+    shard.amp1 = complex(sqrt(prob), ZERO_R1);
+    shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (shard.isPhaseDirty) {
-        return norm(shard.amp1);
-    }
+    // if (shard.isPhaseDirty) {
+    //    return norm(shard.amp1);
+    //}
 
     bool didSeparate = false;
     if (IS_NORM_ZERO(shard.amp1)) {
-        unit->Dispose(shard.mapped, 1, 0);
+        SeparateBit(false, qubit);
         didSeparate = true;
     } else if (IS_NORM_ZERO(shard.amp0)) {
-        unit->Dispose(shard.mapped, 1, 1);
-        didSeparate = true;
-    } else if (norm(shard.amp0 - shard.amp1) < REAL1_EPSILON) {
-        shard.isPlusMinus = !shard.isPlusMinus;
-        unit->H(shard.mapped);
-        unit->Dispose(shard.mapped, 1, 0);
-        didSeparate = true;
-    } else if (norm(shard.amp0 + shard.amp1) < REAL1_EPSILON) {
-        shard.isPlusMinus = !shard.isPlusMinus;
-        unit->H(shard.mapped);
-        unit->Dispose(shard.mapped, 1, 1);
+        SeparateBit(true, qubit);
         didSeparate = true;
     }
 
-    if (didSeparate) {
-        shard.mapped = 0;
-        shard.isPhaseDirty = false;
-        shard.unit = NULL;
-        shard.isClifford = std::make_shared<bool>(true);
+    if (!didSeparate) {
+        return norm(shard.amp1);
     }
 
-    if (doNormalize && didSeparate) {
-        shard.ClampAmps(amplitudeFloor);
-    }
-
-    if (!didSeparate || (shardQbCount != 2)) {
+    if (shardQbCount != 2) {
         return norm(shard.amp1);
     }
 
     bitLenInt partnerIndex;
     for (partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
         QEngineShard& partnerShard = shards[partnerIndex];
-        if ((unit == partnerShard.unit) && (mapped != partnerShard.mapped)) {
+        if (unit == partnerShard.unit) {
             break;
         }
     }
@@ -699,11 +676,11 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         partnerShard.isClifford = std::make_shared<bool>(true);
     } else if (norm(amps[0] + amps[1]) < REAL1_EPSILON) {
         shard.isPlusMinus = !shard.isPlusMinus;
-        amps[0] = ZERO_R1;
         amps[1] = amps[0] / norm(amps[0]);
+        amps[0] = ZERO_R1;
         partnerShard.isClifford = std::make_shared<bool>(true);
     } else {
-        partnerShard.isClifford = std::make_shared<bool>(true);
+        partnerShard.isClifford = std::make_shared<bool>(false);
     }
     partnerShard.amp0 = amps[0];
     partnerShard.amp1 = amps[1];
@@ -711,7 +688,9 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     partnerShard.isPhaseDirty = false;
     partnerShard.mapped = 0;
     partnerShard.unit = NULL;
-    partnerShard.ClampAmps(amplitudeFloor);
+    if (doNormalize) {
+        partnerShard.ClampAmps(amplitudeFloor);
+    }
 
     return norm(shard.amp1);
 }
