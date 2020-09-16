@@ -195,42 +195,58 @@ public:
         bitLenInt tPauliPart = generators[target] & PAULI_MASK;
         bitLenInt tSignPart = generators[target] & SIGN_MASK;
 
+        // Still debugging this.
+        // WARNING: Double "local sign" flips might still be missing in this truth table.
+
         switch (generators[control]) {
         case Z_M:
+            switch (tPauliPart) {
             // Nothing for tPauliPart == I_P
-            if (tPauliPart == X_P) {
+            case X_P:
                 cPauliPart = Y_P;
                 cSignPart = I_P;
                 tPauliPart = Y_P;
-            } else if (tPauliPart == Y_P) {
+                break;
+            case Y_P:
                 cPauliPart = Y_P;
                 tPauliPart = I_P;
-            } else if (tPauliPart == Z_P) {
+                break;
+            case Z_P:
                 tSignPart ^= SIGN_MASK;
+                break;
             }
             break;
         case X_M:
         case X_P:
-            if (tPauliPart == I_P) {
+            switch (tPauliPart) {
+            case I_P:
                 tPauliPart = X_P;
-            } else if (tPauliPart == X_P) {
+                break;
+            case X_P:
                 tPauliPart = I_P;
-            } else if (tPauliPart == Y_P) {
+                break;
+            case Y_P:
                 cPauliPart = Y_P;
                 tPauliPart = Z_P;
-            } else if (tPauliPart == Z_P) {
+                break;
+            case Z_P:
                 cPauliPart = Y_P;
                 tPauliPart = Y_P;
                 tSignPart ^= SIGN_MASK;
+                break;
             }
+            break;
         case Y_M:
         case Y_P:
-            if (tPauliPart == I_P) {
+            switch (tPauliPart) {
+            case I_P:
                 cPauliPart = Z_P;
                 tPauliPart = Y_P;
-            } else if (tPauliPart == X_P) {
+                break;
+            case X_P:
                 tPauliPart = I_P;
-            } else if (tPauliPart == Y_P) {
+                break;
+            case Y_P:
                 // This is basically a critical fold-over on actual stabilizer implementation.
                 // CNOT(Y1, Y2) cannot increase the number of "local negatives" overall.
                 cPauliPart = X_P;
@@ -240,23 +256,31 @@ public:
                 } else {
                     cSignPart = ~cSignPart & SIGN_MASK;
                 }
-            } else if (tPauliPart == Z_P) {
+                break;
+            case Z_P:
                 cPauliPart = X_P;
                 tPauliPart = Y_P;
+                break;
             }
-            // TODO:
+            break;
         case I_M:
         case I_P:
-            if (tPauliPart == I_P) {
-                // TODO:
-            } else if (tPauliPart == X_P) {
-                // TODO:
-            } else if (tPauliPart == Y_P) {
-                // TODO:
+            switch (tPauliPart) {
+            // Nothing for tPauliPart == I_P
+            // Nothing for tPauliPart == X_P
+            case Y_P:
+                cPauliPart = Z_P;
+                tPauliPart = Y_P;
+                break;
+            case Z_P:
+                cPauliPart = Z_P;
+                tPauliPart = Z_P;
+                break;
             }
-            // Nothing for tPauliPart == Z_P;
+            break;
         case Z_P:
             // Nothing.
+            break;
         default:
             break;
         }
