@@ -46,6 +46,176 @@ struct PhaseShard {
     }
 };
 
+enum Pauli {
+    I_P = 0,
+    X_P = 1,
+    Y_P = 2,
+    Z_P = 3,
+    I_M = 4,
+    X_M = 5,
+    Y_M = 6,
+    Z_M = 7,
+    I_PI = 8,
+    X_PI = 9,
+    Y_PI = 10,
+    Z_PI = 11,
+    I_MI = 12,
+    X_MI = 13,
+    Y_MI = 14,
+    Z_MI = 15,
+}
+
+class QStabilizer {
+protected:
+    const char PauliSize = 4U;
+    const char GEN_MASK = 0x0FU;
+    const char PAULI_MASK = 0x07U;
+    const char SIGN_MASK = 0x08U;
+    std::vector<char> generators;
+    qrack_rand_gen_ptr rand_generator;
+    std::uniform_real_distribution<real1> rand_distribution;
+    std::shared_ptr<RdRandom> hardware_rand_generator;
+    
+#define _QRACK_QSTAB_1QB_INIT(target) \
+    bitLenInt offset = (target & 1U) ? 4U : 0U; \
+    bitLenInt vIndex = target / 2U; \
+    bitLenInt generator = (generators[vIndex] >> offset); \
+    bitLenInt pauliPart = generator & PAULI_MASK; \
+    bitLenInt signPart = generator & SIGN_MASK
+    
+#define _QRACK_QSTAB_1QB_REPLACE() \
+    generators[vIndex] = (generators[vIndex] & ~(GEN_MASK << offset)) | ((pauliPart | signPart) << offset)
+public:
+    QStabilizer(const bitCapInt& perm, const bitLenInt& qubitCount, bool useHardwareRng = true, qrack_rand_gen_ptr rgp = nullptr)
+        : rand_distribution(0.0, 1.0)
+        , generators(qubitCount)
+    {
+        if (useHardwareRNG) {
+            hardware_rand_generator = std::make_shared<RdRandom>();
+#if !ENABLE_RNDFILE
+            if (!(hardware_rand_generator->SupportsRDRAND())) {
+                hardware_rand_generator = NULL;
+            }
+#endif
+        }
+
+        if (rgp == NULL) {
+            rand_generator = std::make_shared<qrack_rand_gen>();
+            randomSeed = std::time(0);
+            SetRandomSeed(randomSeed);
+        } else {
+            rand_generator = rgp;
+        }
+        
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            generators[i] = ((perm >> i) & 1U) ? Z_M : Z_P;
+        }
+    }
+    
+    bool Rand() {
+    {
+        if (hardware_rand_generator != NULL) {
+            return hardware_rand_generator->Next() < (ONE_CMPLX / 2U);
+        } else {
+            return rand_distribution(*rand_generator) < (ONE_CMPLX / 2U);
+        }
+    }
+    
+    bool M(const bitLenInt& target) {
+        bitLenInt pauliPart = generators[target] & PAULI_MASK;
+        bitLenInt signPart = generators[target] & SIGN_MASK;
+        
+        bool result;
+        
+        switch (pauliPart) {
+            case X_P:
+            case Y_P:
+                signPart = Rand() ? SIGN_MASK : 0U;
+                break;
+            default:
+                break;
+        }
+        
+        result = signPart;
+        generators[target] = Z_P | signPart;
+        
+        return result;
+    }
+    
+    void H(const bitLenInt& target) {
+        bitLenInt pauliPart = generators[target] & PAULI_MASK;
+        bitLenInt signPart = generators[target] & SIGN_MASK;
+        
+        switch (pauliPart) {
+            case X_P:
+                pauliPart = Z_P;
+                break;
+            case Z_P:
+                pauliPart = X_P;
+                break;
+            case Y_P:
+                signPart ^= SIGN_MASK;
+                break;
+            default:
+                break;
+        }
+        
+        generators[target] = pauliPart | signPart;
+    }
+    
+    void S(const bitLenInt& target) {
+        bitLenInt pauliPart = generators[target] & PAULI_MASK;
+        bitLenInt signPart = generators[target] & SIGN_MASK;
+        
+        switch (pauliPart) {
+            case X_P:
+                pauliPart = Y_P;
+                signPart ^= SIGN_MASK;
+                break;
+            case Z_P:
+                break;
+            case Y_P:
+                pauliPart = X_P;
+                signPart ^= SIGN_MASK;
+                break;
+            default:
+                break;
+        }
+        
+        generators[target] = pauliPart | signPart;
+    }
+    
+    void CNOT(const bitLenInt& control, const bitLenInt& target) {
+        bitLenInt cPauliPart = generators[control] & PAULI_MASK;
+        bitLenInt cSignPart = generators[control] & SIGN_MASK;
+        bitLenInt tPauliPart = generators[target] & PAULI_MASK;
+        bitLenInt tSignPart = generators[target] & SIGN_MASK;
+        
+        switch (generators[control]) {
+            case I_M:
+            case Z_M:
+                if ((tPauliPart == Z_P) || (tPauliPart == I_P)) {
+                    tSignPart ^= SIGN_MASK;
+                } else if (tPauliPart == X_P) {
+                    cPauliPart = Y_P;
+                    cSignPart = I_P;
+                    tPauliPart = Y_P;
+                } else if (tPauliPart == Y_P) {
+                    //TODO
+                }
+                break;
+            //TODO: case X_M, X_P
+            //TODO: case Y_M, Y_P
+            case I_P: 
+            case Z_P:
+            default:
+                break;
+        }
+        
+        generators[target] = pauliPart | signPart;
+    }
+}
+
 #define IS_SAME(c1, c2) (norm((c1) - (c2)) <= amplitudeThreshold)
 #define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= amplitudeThreshold)
 #define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)
