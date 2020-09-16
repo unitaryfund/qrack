@@ -201,9 +201,11 @@ public:
         switch (generators[control]) {
         case Z_M:
             switch (tPauliPart) {
-            // Nothing for tPauliPart == I_P
             // Nothing for tPauliPart == X_P
-            // Nothing for tPauliPart == Y_P
+            case Y_P:
+                cPauliPart = I_P;
+                break;
+            case I_P:
             case Z_P:
                 tSignPart ^= SIGN_MASK;
                 break;
@@ -214,16 +216,22 @@ public:
             switch (tPauliPart) {
             case I_P:
                 tPauliPart = X_P;
+                cSignPart ^= SIGN_MASK;
+                tSignPart ^= SIGN_MASK;
                 break;
             case X_P:
                 tPauliPart = I_P;
+                cSignPart ^= SIGN_MASK;
+                tSignPart ^= SIGN_MASK;
                 break;
             case Y_P:
                 cPauliPart = Y_P;
                 tPauliPart = Z_P;
                 break;
             case Z_P:
-                tPauliPart = X_P;
+                cPauliPart = Y_P;
+                tPauliPart = Y_P;
+                tSignPart ^= SIGN_MASK;
                 break;
             }
             break;
@@ -231,9 +239,11 @@ public:
         case Y_P:
             switch (tPauliPart) {
             case I_P:
+                // Double sign flip?
                 tPauliPart = X_P;
                 break;
             case X_P:
+                // Double sign flip?
                 tPauliPart = I_P;
                 break;
             case Y_P:
@@ -254,22 +264,14 @@ public:
             }
             break;
         case I_M:
-        case I_P:
-            cSignPart ^= SIGN_MASK;
-            tSignPart ^= SIGN_MASK;
             switch (tPauliPart) {
-            // Nothing for tPauliPart == I_P
-            // Nothing for tPauliPart == X_P
-            case Y_P:
-                cPauliPart = Z_P;
-                tPauliPart = Y_P;
-                break;
+            case I_P:
             case Z_P:
-                cPauliPart = Z_P;
-                tPauliPart = Z_P;
+                cSignPart ^= SIGN_MASK;
                 break;
             }
             break;
+        case I_P:
         case Z_P:
             // Nothing.
             break;
