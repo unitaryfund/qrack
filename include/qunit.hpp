@@ -271,9 +271,8 @@ public:
             break;
         case I_M:
             switch (tPauliPart) {
-            case I_P:
-            case Z_P:
-                cSignPart ^= SIGN_MASK;
+            case Y_P:
+                cPauliPart = Z_P;
                 break;
             }
             break;
