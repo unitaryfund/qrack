@@ -46,7 +46,7 @@ struct PhaseShard {
     }
 };
 
-enum Pauli {
+enum Pauli : char {
     I_P = 0,
     X_P = 1,
     Y_P = 2,
@@ -63,19 +63,17 @@ enum Pauli {
     X_MI = 13,
     Y_MI = 14,
     Z_MI = 15,
+    PAULI_MASK = Z_M,
+    SIGN_MASK = I_M
 };
 
 class QStabilizer {
 protected:
-    const char PauliSize = 4U;
-    const char GEN_MASK = 0x0FU;
-    const char PAULI_MASK = 0x07U;
-    const char SIGN_MASK = 0x08U;
     uint32_t randomSeed;
     qrack_rand_gen_ptr rand_generator;
     std::uniform_real_distribution<real1> rand_distribution;
     std::shared_ptr<RdRandom> hardware_rand_generator;
-    std::vector<char> generators;
+    std::vector<Pauli> generators;
 
 public:
     QStabilizer(const bitCapInt& perm, const bitLenInt& qubitCount, bool useHardwareRNG = true,
@@ -123,8 +121,8 @@ public:
 
     bool M(const bitLenInt& target)
     {
-        bitLenInt pauliPart = generators[target] & PAULI_MASK;
-        bitLenInt signPart = generators[target] & SIGN_MASK;
+        char pauliPart = generators[target] & PAULI_MASK;
+        char signPart = generators[target] & SIGN_MASK;
 
         bool result;
 
@@ -133,18 +131,34 @@ public:
         case Y_P:
             signPart = Rand() ? SIGN_MASK : 0U;
             break;
+        default:
+            break;
         }
 
         result = signPart;
-        generators[target] = Z_P | signPart;
+        generators[target] = (Pauli)(Z_P | signPart);
 
         return result;
     }
 
+    Pauli Remove(const bitLenInt& target)
+    {
+        Pauli qubit = generators[target];
+        generators.erase(generators.begin() + target);
+        return qubit;
+    }
+
+    bitLenInt Append(const Pauli& p)
+    {
+        bitLenInt pos = generators.size();
+        generators.push_back(p);
+        return pos;
+    }
+
     void H(const bitLenInt& target)
     {
-        bitLenInt pauliPart = generators[target] & PAULI_MASK;
-        bitLenInt signPart = generators[target] & SIGN_MASK;
+        char pauliPart = generators[target] & PAULI_MASK;
+        char signPart = generators[target] & SIGN_MASK;
 
         switch (pauliPart) {
         case X_P:
@@ -156,15 +170,17 @@ public:
         case Y_P:
             signPart ^= SIGN_MASK;
             break;
+        default:
+            break;
         }
 
-        generators[target] = pauliPart | signPart;
+        generators[target] = (Pauli)(pauliPart | signPart);
     }
 
     void S(const bitLenInt& target)
     {
-        bitLenInt pauliPart = generators[target] & PAULI_MASK;
-        bitLenInt signPart = generators[target] & SIGN_MASK;
+        char pauliPart = generators[target] & PAULI_MASK;
+        char signPart = generators[target] & SIGN_MASK;
 
         switch (pauliPart) {
         case X_P:
@@ -175,62 +191,70 @@ public:
             pauliPart = X_P;
             signPart ^= SIGN_MASK;
             break;
+        default:
+            break;
         }
 
-        generators[target] = pauliPart | signPart;
+        generators[target] = (Pauli)(pauliPart | signPart);
     }
-    
+
     void X(const bitLenInt& target)
     {
-        bitLenInt pauliPart = generators[target] & PAULI_MASK;
-        bitLenInt signPart = generators[target] & SIGN_MASK;
+        char pauliPart = generators[target] & PAULI_MASK;
+        char signPart = generators[target] & SIGN_MASK;
 
         switch (pauliPart) {
         case Y_P:
         case Z_P:
             signPart ^= SIGN_MASK;
             break;
+        default:
+            break;
         }
 
-        generators[target] = pauliPart | signPart;
+        generators[target] = (Pauli)(pauliPart | signPart);
     }
-    
+
     void Y(const bitLenInt& target)
     {
-        bitLenInt pauliPart = generators[target] & PAULI_MASK;
-        bitLenInt signPart = generators[target] & SIGN_MASK;
+        char pauliPart = generators[target] & PAULI_MASK;
+        char signPart = generators[target] & SIGN_MASK;
 
         switch (pauliPart) {
         case X_P:
         case Z_P:
             signPart ^= SIGN_MASK;
             break;
+        default:
+            break;
         }
 
-        generators[target] = pauliPart | signPart;
+        generators[target] = (Pauli)(pauliPart | signPart);
     }
-    
+
     void Z(const bitLenInt& target)
     {
-        bitLenInt pauliPart = generators[target] & PAULI_MASK;
-        bitLenInt signPart = generators[target] & SIGN_MASK;
+        char pauliPart = generators[target] & PAULI_MASK;
+        char signPart = generators[target] & SIGN_MASK;
 
         switch (pauliPart) {
         case X_P:
         case Y_P:
             signPart ^= SIGN_MASK;
             break;
+        default:
+            break;
         }
 
-        generators[target] = pauliPart | signPart;
+        generators[target] = (Pauli)(pauliPart | signPart);
     }
 
     void CNOT(const bitLenInt& control, const bitLenInt& target)
     {
-        bitLenInt cPauliPart = generators[control] & PAULI_MASK;
-        bitLenInt cSignPart = generators[control] & SIGN_MASK;
-        bitLenInt tPauliPart = generators[target] & PAULI_MASK;
-        bitLenInt tSignPart = generators[target] & SIGN_MASK;
+        char cPauliPart = generators[control] & PAULI_MASK;
+        char cSignPart = generators[control] & SIGN_MASK;
+        char tPauliPart = generators[target] & PAULI_MASK;
+        char tSignPart = generators[target] & SIGN_MASK;
 
         // Still debugging this.
         // WARNING: Double "local sign" flips might still be missing in this truth table.
@@ -245,6 +269,8 @@ public:
             case I_P:
             case Z_P:
                 tSignPart ^= SIGN_MASK;
+                break;
+            default:
                 break;
             }
             break;
@@ -276,6 +302,8 @@ public:
                     cSignPart ^= SIGN_MASK;
                 }
                 break;
+            default:
+                break;
             }
             break;
         case Y_M:
@@ -304,6 +332,8 @@ public:
                 cPauliPart = X_P;
                 tPauliPart = Y_P;
                 break;
+            default:
+                break;
             }
             break;
         case I_M:
@@ -311,32 +341,39 @@ public:
             case Y_P:
                 cPauliPart = Z_P;
                 break;
+            default:
+                break;
             }
             break;
         case I_P:
         case Z_P:
             // Nothing.
             break;
+        default:
+            break;
         }
 
-        generators[control] = cPauliPart | cSignPart;
-        generators[target] = tPauliPart | tSignPart;
+        generators[control] = (Pauli)(cPauliPart | cSignPart);
+        generators[target] = (Pauli)(tPauliPart | tSignPart);
     }
-    
+
     // TODO: Custom implementations for all that follows:
-    void CZ(const bitLenInt& control, const bitLenInt& target) {
+    void CZ(const bitLenInt& control, const bitLenInt& target)
+    {
         H(target);
         CNOT(control, target);
         H(target);
     }
-    
-    void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2) {
+
+    void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
         CNOT(qubit1, qubit2);
         CNOT(qubit2, qubit1);
         CNOT(qubit1, qubit2);
     }
-    
-    void ISwap(const bitLenInt& qubit1, const bitLenInt& qubit2) {
+
+    void ISwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
         S(qubit1);
         S(qubit2);
         H(qubit1);
