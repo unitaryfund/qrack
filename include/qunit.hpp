@@ -211,7 +211,11 @@ public:
             break;
         case X_M:
         case X_P:
-            if (tPauliPart == Y_P) {
+            if (tPauliPart == I_P) {
+                tPauliPart = X_P;
+            } else if (tPauliPart == X_P) {
+                tPauliPart = I_P;
+            } else if (tPauliPart == Y_P) {
                 cPauliPart = Y_P;
                 tPauliPart = Z_P;
             } else if (tPauliPart == Z_P) {
@@ -219,7 +223,6 @@ public:
                 tPauliPart = Y_P;
                 tSignPart ^= SIGN_MASK;
             }
-            // TODO:
         case Y_M:
         case Y_P:
             if (tPauliPart == X_P) {
