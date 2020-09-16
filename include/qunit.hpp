@@ -133,8 +133,6 @@ public:
         case Y_P:
             signPart = Rand() ? SIGN_MASK : 0U;
             break;
-        default:
-            break;
         }
 
         result = signPart;
@@ -158,8 +156,6 @@ public:
         case Y_P:
             signPart ^= SIGN_MASK;
             break;
-        default:
-            break;
         }
 
         generators[target] = pauliPart | signPart;
@@ -175,13 +171,54 @@ public:
             pauliPart = Y_P;
             signPart ^= SIGN_MASK;
             break;
-        case Z_P:
-            break;
         case Y_P:
             pauliPart = X_P;
             signPart ^= SIGN_MASK;
             break;
-        default:
+        }
+
+        generators[target] = pauliPart | signPart;
+    }
+    
+    void X(const bitLenInt& target)
+    {
+        bitLenInt pauliPart = generators[target] & PAULI_MASK;
+        bitLenInt signPart = generators[target] & SIGN_MASK;
+
+        switch (pauliPart) {
+        case Y_P:
+        case Z_P:
+            signPart ^= SIGN_MASK;
+            break;
+        }
+
+        generators[target] = pauliPart | signPart;
+    }
+    
+    void Y(const bitLenInt& target)
+    {
+        bitLenInt pauliPart = generators[target] & PAULI_MASK;
+        bitLenInt signPart = generators[target] & SIGN_MASK;
+
+        switch (pauliPart) {
+        case X_P:
+        case Z_P:
+            signPart ^= SIGN_MASK;
+            break;
+        }
+
+        generators[target] = pauliPart | signPart;
+    }
+    
+    void Z(const bitLenInt& target)
+    {
+        bitLenInt pauliPart = generators[target] & PAULI_MASK;
+        bitLenInt signPart = generators[target] & SIGN_MASK;
+
+        switch (pauliPart) {
+        case X_P:
+        case Y_P:
+            signPart ^= SIGN_MASK;
             break;
         }
 
@@ -280,12 +317,32 @@ public:
         case Z_P:
             // Nothing.
             break;
-        default:
-            break;
         }
 
         generators[control] = cPauliPart | cSignPart;
         generators[target] = tPauliPart | tSignPart;
+    }
+    
+    // TODO: Custom implementations for all that follows:
+    void CZ(const bitLenInt& control, const bitLenInt& target) {
+        H(target);
+        CNOT(control, target);
+        H(target);
+    }
+    
+    void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2) {
+        CNOT(qubit1, qubit2);
+        CNOT(qubit2, qubit1);
+        CNOT(qubit1, qubit2);
+    }
+    
+    void ISwap(const bitLenInt& qubit1, const bitLenInt& qubit2) {
+        S(qubit1);
+        S(qubit2);
+        H(qubit1);
+        CNOT(qubit1, qubit2);
+        CNOT(qubit2, qubit1);
+        H(qubit2);
     }
 };
 
