@@ -231,7 +231,13 @@ public:
             case Z_P:
                 cPauliPart = Y_P;
                 tPauliPart = Y_P;
-                tSignPart ^= SIGN_MASK;
+                // The important property of Y is "local sign" parity, but making this gate 50/50 nondeterministic keeps
+                // the statistics right down the road.
+                if (Rand()) {
+                    tSignPart ^= SIGN_MASK;
+                } else {
+                    cSignPart ^= SIGN_MASK;
+                }
                 break;
             }
             break;
