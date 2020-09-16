@@ -202,15 +202,8 @@ public:
         case Z_M:
             switch (tPauliPart) {
             // Nothing for tPauliPart == I_P
-            case X_P:
-                cPauliPart = Y_P;
-                cSignPart = I_P;
-                tPauliPart = Y_P;
-                break;
-            case Y_P:
-                cPauliPart = Y_P;
-                tPauliPart = I_P;
-                break;
+            // Nothing for tPauliPart == X_P
+            // Nothing for tPauliPart == Y_P
             case Z_P:
                 tSignPart ^= SIGN_MASK;
                 break;
@@ -230,9 +223,7 @@ public:
                 tPauliPart = Z_P;
                 break;
             case Z_P:
-                cPauliPart = Y_P;
-                tPauliPart = Y_P;
-                tSignPart ^= SIGN_MASK;
+                tPauliPart = X_P;
                 break;
             }
             break;
@@ -240,8 +231,7 @@ public:
         case Y_P:
             switch (tPauliPart) {
             case I_P:
-                cPauliPart = Z_P;
-                tPauliPart = Y_P;
+                tPauliPart = X_P;
                 break;
             case X_P:
                 tPauliPart = I_P;
@@ -254,7 +244,7 @@ public:
                 if (tSignPart == I_M) {
                     tSignPart = I_P;
                 } else {
-                    cSignPart = ~cSignPart & SIGN_MASK;
+                    cSignPart ^= SIGN_MASK;
                 }
                 break;
             case Z_P:
@@ -265,6 +255,8 @@ public:
             break;
         case I_M:
         case I_P:
+            cSignPart ^= SIGN_MASK;
+            tSignPart ^= SIGN_MASK;
             switch (tPauliPart) {
             // Nothing for tPauliPart == I_P
             // Nothing for tPauliPart == X_P
