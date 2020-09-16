@@ -225,13 +225,23 @@ public:
             }
         case Y_M:
         case Y_P:
-            if (tPauliPart == X_P) {
+            if (tPauliPart == I_P) {
+                cPauliPart = Z_P;
+                tPauliPart = Y_P;
+            } else if (tPauliPart == X_P) {
+                tPauliPart = I_P;
+            } else if (tPauliPart == Y_P) {
+                // This is basically a critical fold-over on actual stabilizer implementation.
+                // CNOT(Y1, Y2) cannot increase the number of "local negatives" overall.
+                cPauliPart = X_P;
                 tPauliPart = Z_P;
+                if (tSignPart == I_M) {
+                    tSignPart = I_P;
+                } else {
+                    cSignPart = ~cSignPart & SIGN_MASK;
+                }
             } else if (tPauliPart == Z_P) {
                 cPauliPart = X_P;
-                tPauliPart = Y_P;
-            } else if (tPauliPart == I_P) {
-                cPauliPart = Z_P;
                 tPauliPart = Y_P;
             }
             // TODO:
