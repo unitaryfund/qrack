@@ -322,10 +322,18 @@ public:
                 // CNOT(Y1, Y2) cannot increase the number of "local negatives" overall.
                 cPauliPart = X_P;
                 tPauliPart = Z_P;
-                if (tSignPart == I_M) {
+                if (tSignPart == cSignPart) {
+                    // The important property of Y is "local sign" parity, but making this gate 50/50 nondeterministic
+                    // keeps the statistics right down the road.
+                    if (Rand()) {
+                        tSignPart ^= SIGN_MASK;
+                    } else {
+                        cSignPart ^= SIGN_MASK;
+                    }
+                } else if (tSignPart == I_M) {
                     tSignPart = I_P;
                 } else {
-                    cSignPart ^= SIGN_MASK;
+                    cSignPart = I_P;
                 }
                 break;
             case Z_P:
