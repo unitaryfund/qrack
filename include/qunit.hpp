@@ -63,7 +63,7 @@ enum Pauli : char {
     X_MI = 13,
     Y_MI = 14,
     Z_MI = 15,
-    PAULI_MASK = Z_M,
+    PAULI_MASK = Z_P,
     SIGN_MASK = I_M,
     IMAG_MASK = I_PI,
     PHASE_MASK = I_MI
