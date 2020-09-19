@@ -147,6 +147,12 @@ GATE_1_PHASE(Z, ONE_CMPLX, -ONE_CMPLX);
 /// Hadamard gate
 GATE_1_BIT(H, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2);
 
+/// Y-basis transformation gate
+GATE_1_BIT(SH, C_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2, -C_I_SQRT1_2);
+
+/// Inverse Y-basis transformation gate
+GATE_1_BIT(HIS, C_SQRT1_2, -C_I_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2);
+
 /// Square root of Hadamard gate
 GATE_1_BIT(SqrtH, complex((ONE_R1 + M_SQRT2) / (2 * M_SQRT2), (-ONE_R1 + M_SQRT2) / (2 * M_SQRT2)),
     complex(M_SQRT1_2 / 2, -M_SQRT1_2 / 2), complex(M_SQRT1_2 / 2, -M_SQRT1_2 / 2),

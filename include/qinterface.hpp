@@ -605,6 +605,20 @@ public:
     virtual void SqrtH(bitLenInt qubitIndex);
 
     /**
+     * Y-basis transformation gate
+     *
+     * Converts from Pauli Z basis to Y, (via H then S gates).
+     */
+    virtual void SH(bitLenInt qubitIndex);
+
+    /**
+     * Y-basis (inverse) transformation gate
+     *
+     * Converts from Pauli Y basis to Z, (via IS then H gates).
+     */
+    virtual void HIS(bitLenInt qubitIndex);
+
+    /**
      * Measurement gate
      *
      * Measures the qubit at "qubitIndex" and returns either "true" or "false."
@@ -1188,6 +1202,12 @@ public:
 
     /** Bitwise Hadamard */
     virtual void H(bitLenInt start, bitLenInt length);
+
+    /** Bitwise Y-basis transformation gate */
+    virtual void SH(bitLenInt start, bitLenInt length);
+
+    /** Bitwise inverse Y-basis transformation gate */
+    virtual void HIS(bitLenInt start, bitLenInt length);
 
     /** Bitwise square root of Hadamard */
     virtual void SqrtH(bitLenInt start, bitLenInt length);
