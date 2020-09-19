@@ -387,6 +387,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
     REQUIRE_THAT(qftReg, HasProbability(0x03));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_sh")
+{
+    qftReg->SH(0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    qftReg->HIS(0, 2);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0.5);
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
 {
     qftReg->SetPermutation(0xCAC00);

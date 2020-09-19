@@ -167,6 +167,12 @@ REG_GATE_1(ISqrtXConjT);
 /// Apply Hadamard gate to each bit in "length," starting from bit index "start"
 REG_GATE_1(H);
 
+/// Apply Y-basis transformation gate to each bit in "length," starting from bit index "start"
+REG_GATE_1(SH);
+
+/// Apply inverse Y-basis transformation gate to each bit in "length," starting from bit index "start"
+REG_GATE_1(HIS);
+
 /// Apply square root of Hadamard gate to each bit in "length," starting from bit index "start"
 REG_GATE_1(SqrtH);
 
