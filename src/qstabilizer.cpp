@@ -580,11 +580,11 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
             nX.insert(nX.begin() + lengthx2, qubitCount - start, 0);
             nZ.insert(nZ.begin() + lengthx2, qubitCount - start, 0);
 
-            nX.insert(nX.begin() + lengthx2, start, 0);
-            nZ.insert(nZ.begin() + lengthx2, start, 0);
+            nX.insert(nX.begin() + length, start, 0);
+            nZ.insert(nZ.begin() + length, start, 0);
 
-            x.insert(x.begin() + qubitCount + start + i, nX);
-            z.insert(z.begin() + qubitCount + start + i, nZ);
+            x.insert(x.begin() + qubitCount + i, nX);
+            z.insert(z.begin() + qubitCount + i, nZ);
 
             nX = toCopy->x[i - start];
             nZ = toCopy->x[i - start];
@@ -595,8 +595,8 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
             nX.insert(nX.begin(), start, 0);
             nZ.insert(nZ.begin(), start, 0);
 
-            x.insert(x.begin() + start + i, nX);
-            z.insert(z.begin() + start + i, nZ);
+            x.insert(x.begin() + i, nX);
+            z.insert(z.begin() + i, nZ);
         }
     }
 
