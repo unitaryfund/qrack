@@ -47,6 +47,7 @@ int main(int argc, char* argv[])
     bool opencl_multi = false;
     bool hybrid = false;
     bool hybrid_multi = false;
+    bool stabilizer = false;
 
     using namespace Catch::clara;
 
@@ -62,6 +63,7 @@ int main(int argc, char* argv[])
         Opt(opencl_multi)["--proc-opencl-multi"]("Multiple processor OpenCL tests") |
         Opt(hybrid_multi)["--proc-hybrid-multi"]("Multiple processor hybrid CPU/OpenCL tests") |
         Opt(hybrid)["--proc-hybrid"]("Enable CPU/OpenCL hybrid implementation tests") |
+        Opt(stabilizer)["--proc-stabilizer"]("Enable (hybrid) stabilizer implementation tests") |
         Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware "
                                                             "random number generation, which this option turns off. "
                                                             "(Hardware generation is on by default, if available.)") |
@@ -118,12 +120,13 @@ int main(int argc, char* argv[])
         // qunit_qpager = true;
     }
 
-    if (!cpu && !opencl_single && !opencl_multi && !hybrid && !hybrid_multi) {
+    if (!cpu && !opencl_single && !opencl_multi && !hybrid && !hybrid_multi && !stabilizer) {
         cpu = true;
         opencl_single = true;
         opencl_multi = true;
         hybrid = true;
         hybrid_multi = true;
+        stabilizer = true;
     }
 
     int num_failed = 0;
@@ -152,6 +155,13 @@ int main(int argc, char* argv[])
             testSubEngineType = QINTERFACE_HYBRID;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
+
+            if (num_failed == 0 && stabilizer) {
+                testEngineType = QINTERFACE_STABILIZER_HYBRID;
+                testSubEngineType = QINTERFACE_HYBRID;
+                CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+                num_failed = session.run();
+            }
         }
 #endif
     }

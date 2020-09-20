@@ -97,6 +97,11 @@ enum QInterfaceEngine {
     QINTERFACE_HYBRID,
 
     /**
+     * Create a QStabilizerHybrid, switching between a QStabilizer and a QHybrid as efficient.
+     */
+    QINTERFACE_STABILIZER_HYBRID,
+
+    /**
      * Create a QPager, which breaks up the work of a QEngine into equally sized "pages."
      */
     QINTERFACE_QPAGER,
