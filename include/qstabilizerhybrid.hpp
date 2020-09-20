@@ -357,6 +357,7 @@ public:
 
         if (topRight == bottomLeft) {
             stabilizer->X(target);
+            return;
         }
 
         if (topRight == -bottomLeft) {
