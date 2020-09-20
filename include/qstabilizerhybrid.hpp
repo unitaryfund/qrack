@@ -44,7 +44,7 @@ public:
         bool useSparseStateVec = false, real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored = {},
         bitLenInt qubitThreshold = 0);
 
-    QStabilizerPtr MakeStabilizer();
+    QStabilizerPtr MakeStabilizer(const bitCapInt& perm);
     QInterfacePtr MakeEngine();
 
     virtual void SetConcurrency(uint32_t threadCount)
@@ -62,6 +62,10 @@ public:
      */
     virtual void SwitchToEngine()
     {
+        if (engine) {
+            return;
+        }
+
         complex* stateVec = new complex[maxQPower];
         stabilizer->GetQuantumState(stateVec);
         stabilizer = NULL;
@@ -90,6 +94,7 @@ public:
             engine->H(target);
         }
     }
+
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
     virtual void S(const bitLenInt& target)
     {
@@ -385,12 +390,21 @@ public:
             return;
         }
 
+        if (controlLen > 1U) {
+            SwitchToEngine();
+        }
+
+        if (engine) {
+            engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+            return;
+        }
+
         if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
-            ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[2]);
+            ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
             return;
         }
         if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
-            ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[3]);
+            ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
             return;
         }
 
@@ -456,12 +470,21 @@ public:
             return;
         }
 
+        if (controlLen > 1U) {
+            SwitchToEngine();
+        }
+
+        if (engine) {
+            engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+            return;
+        }
+
         if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
-            ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[2]);
+            ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
             return;
         }
         if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
-            ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[3]);
+            ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
             return;
         }
 

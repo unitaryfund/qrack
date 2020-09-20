@@ -30,12 +30,12 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, bitLenInt qBitCount, 
     , thresholdQubits(qubitThreshold)
 {
     concurrency = std::thread::hardware_concurrency();
-    stabilizer = MakeStabilizer();
+    stabilizer = MakeStabilizer(initState);
 }
 
-QStabilizerPtr QStabilizerHybrid::MakeStabilizer()
+QStabilizerPtr QStabilizerHybrid::MakeStabilizer(const bitCapInt& perm)
 {
-    return std::make_shared<QStabilizer>(qubitCount, 0, useRDRAND, rand_generator);
+    return std::make_shared<QStabilizer>(qubitCount, perm, useRDRAND, rand_generator);
 }
 
 QInterfacePtr QStabilizerHybrid::MakeEngine()
