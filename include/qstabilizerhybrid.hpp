@@ -387,10 +387,6 @@ public:
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
     {
-        if (IsIdentity(mtrx, true)) {
-            return;
-        }
-
         if (controlLen > 1U) {
             SwitchToEngine();
         }
@@ -416,6 +412,11 @@ public:
     virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topLeft, const complex bottomRight)
     {
+        if (!controlLen) {
+            ApplySinglePhase(topLeft, bottomRight, target);
+            return;
+        }
+
         if ((topLeft != ONE_CMPLX) || (controlLen > 1U)) {
             SwitchToEngine();
         }
@@ -441,6 +442,11 @@ public:
     virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft)
     {
+        if (!controlLen) {
+            ApplySingleInvert(topRight, bottomLeft, target);
+            return;
+        }
+
         if ((topRight != ONE_CMPLX) || (controlLen > 1U)) {
             SwitchToEngine();
         }
@@ -456,6 +462,7 @@ public:
         }
 
         if (bottomLeft == -ONE_CMPLX) {
+            stabilizer->CNOT(controls[0], target);
             stabilizer->CZ(controls[0], target);
             return;
         }
@@ -467,10 +474,6 @@ public:
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
     {
-        if (IsIdentity(mtrx, true)) {
-            return;
-        }
-
         if (controlLen > 1U) {
             SwitchToEngine();
         }
@@ -496,6 +499,11 @@ public:
     virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topLeft, const complex bottomRight)
     {
+        if (!controlLen) {
+            ApplySinglePhase(topLeft, bottomRight, target);
+            return;
+        }
+
         if ((topLeft != ONE_CMPLX) || (controlLen > 1U)) {
             SwitchToEngine();
         }
@@ -523,6 +531,11 @@ public:
     virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft)
     {
+        if (!controlLen) {
+            ApplySingleInvert(topRight, bottomLeft, target);
+            return;
+        }
+
         if ((topRight != ONE_CMPLX) || (controlLen > 1U)) {
             SwitchToEngine();
         }
