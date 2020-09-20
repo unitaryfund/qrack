@@ -610,24 +610,39 @@ void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& leng
     // qubit.)
 
     bitLenInt end = start + length;
-    bitLenInt endQubitCount = qubitCount - (start + length);
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if ((i < start) || (i >= end)) {
+            x[i].erase(x[i].begin() + qubitCount + start, x[i].begin() + qubitCount + length);
+            z[i].erase(z[i].begin() + qubitCount + start, z[i].begin() + qubitCount + length);
+
             x[i].erase(x[i].begin() + start, x[i].begin() + length);
             z[i].erase(z[i].begin() + start, z[i].begin() + length);
         } else {
-            x[i].erase(x[i].begin() + start + length, x[i].begin() + endQubitCount);
+            x[i].erase(x[i].begin() + qubitCount + end, x[i].begin() + (qubitCount << 1U));
+            x[i].erase(x[i].begin() + qubitCount, x[i].begin() + qubitCount + start);
+            x[i].erase(x[i].begin() + end, x[i].begin() + qubitCount);
             x[i].erase(x[i].begin(), x[i].begin() + start);
-            z[i].erase(z[i].begin() + start + length, z[i].begin() + endQubitCount);
+
+            z[i].erase(z[i].begin() + qubitCount + end, z[i].begin() + (qubitCount << 1U));
+            z[i].erase(z[i].begin() + qubitCount, z[i].begin() + qubitCount + start);
+            z[i].erase(z[i].begin() + end, z[i].begin() + qubitCount);
             z[i].erase(z[i].begin(), z[i].begin() + start);
 
             if (toCopy) {
                 toCopy->x[i - start] = x[i];
                 toCopy->z[i - start] = z[i];
                 toCopy->r[i - start] = r[i];
+
+                toCopy->x[qubitCount + (i - start)] = x[qubitCount + i];
+                toCopy->z[qubitCount + (i - start)] = z[qubitCount + i];
+                toCopy->r[qubitCount + (i - start)] = r[qubitCount + i];
             }
         }
+
+        x.erase(x.begin() + qubitCount + start, x.begin() + qubitCount + length);
+        z.erase(z.begin() + qubitCount + start, z.begin() + qubitCount + length);
+        r.erase(r.begin() + qubitCount, r.begin() + qubitCount + length);
 
         x.erase(x.begin() + start, x.begin() + length);
         z.erase(z.begin() + start, z.begin() + length);

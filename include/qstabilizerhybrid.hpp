@@ -640,6 +640,7 @@ public:
     }
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
+        SwitchToEngine();
         engine->INCS(toAdd, start, length, overflowIndex);
     }
     virtual void INCSC(
@@ -653,7 +654,11 @@ public:
         SwitchToEngine();
         engine->INCSC(toAdd, start, length, carryIndex);
     }
-    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) { engine->INCBCD(toAdd, start, length); }
+    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+    {
+        SwitchToEngine();
+        engine->INCBCD(toAdd, start, length);
+    }
     virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         SwitchToEngine();
