@@ -563,6 +563,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
     // instances are valid.
 
     bitLenInt length = toCopy->qubitCount;
+    bitLenInt lengthx2 = length << 1U;
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
 
     for (bitLenInt i = 0; i < nQubitCount; i++) {
@@ -573,17 +574,23 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
             x[i].insert(x[i].begin() + start, length, 0);
             z[i].insert(z[i].begin() + start, length, 0);
         } else {
-            std::vector<PAULI> nX = toCopy->x[i - start];
-            std::vector<PAULI> nZ = toCopy->x[i - start];
+            std::vector<PAULI> nX = toCopy->x[length + (i - start)];
+            std::vector<PAULI> nZ = toCopy->x[length + (i - start)];
 
-            nX.insert(nX.begin() + qubitCount + length, qubitCount, 0);
-            nZ.insert(nZ.begin() + qubitCount + length, qubitCount, 0);
+            nX.insert(nX.begin() + lengthx2, qubitCount - start, 0);
+            nZ.insert(nZ.begin() + lengthx2, qubitCount - start, 0);
 
-            nX.insert(nX.begin() + length, qubitCount, 0);
-            nZ.insert(nZ.begin() + length, qubitCount, 0);
+            nX.insert(nX.begin() + lengthx2, start, 0);
+            nZ.insert(nZ.begin() + lengthx2, start, 0);
 
-            nX.insert(nX.begin() + qubitCount, start, 0);
-            nZ.insert(nZ.begin() + qubitCount, start, 0);
+            x.insert(x.begin() + qubitCount + start + i, nX);
+            z.insert(z.begin() + qubitCount + start + i, nZ);
+
+            nX = toCopy->x[i - start];
+            nZ = toCopy->x[i - start];
+
+            nX.insert(nX.begin() + length, qubitCount - start, 0);
+            nZ.insert(nZ.begin() + length, qubitCount - start, 0);
 
             nX.insert(nX.begin(), start, 0);
             nZ.insert(nZ.begin(), start, 0);
@@ -594,7 +601,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
     }
 
     r.insert(r.begin() + qubitCount + start, length);
-    std::copy(toCopy->r.begin() + length, toCopy->r.begin() + (length << 1U), r.begin() + qubitCount + start);
+    std::copy(toCopy->r.begin() + length, toCopy->r.begin() + lengthx2, r.begin() + qubitCount + start);
     r.insert(r.begin() + start, length);
     std::copy(toCopy->r.begin(), toCopy->r.begin() + length, r.begin() + start);
 
