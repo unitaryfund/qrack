@@ -50,6 +50,7 @@ int main(int argc, char* argv[])
     bool opencl_multi = false;
     bool hybrid = false;
     bool hybrid_multi = false;
+    bool stabilizer = false;
 
     int mxQbts = 24;
 
@@ -67,6 +68,7 @@ int main(int argc, char* argv[])
         Opt(opencl_multi)["--proc-opencl-multi"]("Multiple processor OpenCL tests") |
         Opt(hybrid)["--proc-hybrid"]("Enable CPU/OpenCL hybrid implementation tests") |
         Opt(hybrid_multi)["--proc-hybrid-multi"]("Multiple processor hybrid CPU/OpenCL tests") |
+        Opt(stabilizer)["--proc-stabilizer"]("Enable (hybrid) stabilizer implementation tests") |
         Opt(async_time)["--async-time"]("Time based on asynchronous return") |
         Opt(enable_normalization)["--enable-normalization"](
             "Enable state vector normalization. (Usually not "
@@ -118,11 +120,13 @@ int main(int argc, char* argv[])
         // qunit_qpager = true;
     }
 
-    if (!cpu && !opencl_single && !opencl_multi && !hybrid && !hybrid_multi) {
+    if (!cpu && !opencl_single && !opencl_multi && !hybrid && !hybrid_multi && !stabilizer) {
         cpu = true;
         opencl_single = true;
         opencl_multi = true;
         hybrid = true;
+        hybrid_multi = true;
+        stabilizer = true;
     }
 
     if (mxQbts == -1) {
@@ -184,11 +188,18 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 
-        if (num_failed == 0 && hybrid) {
-            session.config().stream() << "############ QHybrid ############" << std::endl;
-            testEngineType = QINTERFACE_HYBRID;
+        if (num_failed == 0 && stabilizer) {
+            session.config().stream() << "############ QStabilizerHybrid -> QHybrid ############" << std::endl;
+            testEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubEngineType = QINTERFACE_HYBRID;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            num_failed = session.run();
+        }
+#else
+        if (num_failed == 0 && stabilizer) {
+            session.config().stream() << "############ QStabilizerHybrid -> QEngineCPU ############" << std::endl;
+            testEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }
 #endif

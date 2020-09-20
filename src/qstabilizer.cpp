@@ -189,7 +189,7 @@ bitLenInt QStabilizer::gaussian()
 
     for (j = 0; j < n; j++) {
         j5 = genIndex(j);
-        pw = modPow2(j5);
+        pw = modPow2(j);
 
         // Find a generator containing X in jth column
         for (k = i; k < maxLcv; k++) {
@@ -216,7 +216,7 @@ bitLenInt QStabilizer::gaussian()
 
     for (j = 0; j < n; j++) {
         j5 = genIndex(j);
-        pw = modPow2(j5);
+        pw = modPow2(j);
 
         // Find a generator containing Z in jth column
         for (k = i; k < maxLcv; k++) {
@@ -567,14 +567,23 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
 
     for (bitLenInt i = 0; i < nQubitCount; i++) {
         if ((i < start) || (i >= (start + length))) {
+            x[i].insert(x[i].begin() + qubitCount + start, length, 0);
+            z[i].insert(z[i].begin() + qubitCount + start, length, 0);
+
             x[i].insert(x[i].begin() + start, length, 0);
             z[i].insert(z[i].begin() + start, length, 0);
         } else {
             std::vector<PAULI> nX = toCopy->x[i - start];
             std::vector<PAULI> nZ = toCopy->x[i - start];
 
+            nX.insert(nX.begin() + qubitCount + length, qubitCount, 0);
+            nZ.insert(nZ.begin() + qubitCount + length, qubitCount, 0);
+
             nX.insert(nX.begin() + length, qubitCount, 0);
             nZ.insert(nZ.begin() + length, qubitCount, 0);
+
+            nX.insert(nX.begin() + qubitCount, start, 0);
+            nZ.insert(nZ.begin() + qubitCount, start, 0);
 
             nX.insert(nX.begin(), start, 0);
             nZ.insert(nZ.begin(), start, 0);
@@ -584,6 +593,8 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
         }
     }
 
+    r.insert(r.begin() + qubitCount + start, length);
+    std::copy(toCopy->r.begin() + length, toCopy->r.begin() + (length << 1U), r.begin() + qubitCount + start);
     r.insert(r.begin() + start, length);
     std::copy(toCopy->r.begin(), toCopy->r.begin() + length, r.begin() + start);
 
