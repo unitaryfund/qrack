@@ -155,13 +155,18 @@ int main(int argc, char* argv[])
             testSubEngineType = QINTERFACE_HYBRID;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
-
-            if (num_failed == 0 && stabilizer) {
-                testEngineType = QINTERFACE_STABILIZER_HYBRID;
-                testSubEngineType = QINTERFACE_HYBRID;
-                CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
-                num_failed = session.run();
-            }
+        }
+        if (num_failed == 0 && stabilizer) {
+            testEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubEngineType = QINTERFACE_HYBRID;
+            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            num_failed = session.run();
+        }
+#else
+        if (num_failed == 0 && stabilizer) {
+            testEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubEngineType = QINTERFACE_CPU;
+            num_failed = session.run();
         }
 #endif
     }

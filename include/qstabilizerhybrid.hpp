@@ -71,6 +71,99 @@ public:
         delete[] stateVec;
     }
 
+    /// Apply a CNOT gate with control and target
+    virtual void CNOT(const bitLenInt& control, const bitLenInt& target)
+    {
+        if (stabilizer) {
+            stabilizer->CNOT(control, target);
+        } else {
+            engine->CNOT(control, target);
+        }
+    }
+
+    /// Apply a Hadamard gate to target
+    virtual void H(const bitLenInt& target)
+    {
+        if (stabilizer) {
+            stabilizer->H(target);
+        } else {
+            engine->H(target);
+        }
+    }
+    /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
+    virtual void S(const bitLenInt& target)
+    {
+        if (stabilizer) {
+            stabilizer->S(target);
+        } else {
+            engine->S(target);
+        }
+    }
+
+    // TODO: Custom implementations for decompositions:
+    virtual void Z(const bitLenInt& target)
+    {
+        if (stabilizer) {
+            stabilizer->Z(target);
+        } else {
+            engine->Z(target);
+        }
+    }
+
+    virtual void IS(const bitLenInt& target)
+    {
+        if (stabilizer) {
+            stabilizer->IS(target);
+        } else {
+            engine->IS(target);
+        }
+    }
+
+    virtual void X(const bitLenInt& target)
+    {
+        if (stabilizer) {
+            stabilizer->X(target);
+        } else {
+            engine->X(target);
+        }
+    }
+
+    virtual void Y(const bitLenInt& target)
+    {
+        if (stabilizer) {
+            stabilizer->Y(target);
+        } else {
+            engine->Y(target);
+        }
+    }
+
+    virtual void CZ(const bitLenInt& control, const bitLenInt& target)
+    {
+        if (stabilizer) {
+            stabilizer->CZ(control, target);
+        } else {
+            engine->CZ(control, target);
+        }
+    }
+
+    virtual void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
+        if (stabilizer) {
+            stabilizer->Swap(qubit1, qubit2);
+        } else {
+            engine->Swap(qubit1, qubit2);
+        }
+    }
+
+    virtual void ISwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
+        if (stabilizer) {
+            stabilizer->ISwap(qubit1, qubit2);
+        } else {
+            engine->ISwap(qubit1, qubit2);
+        }
+    }
+
     using QInterface::Compose;
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy)
     {
