@@ -176,6 +176,10 @@ public:
 
     virtual void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
+        if (qubit1 == qubit2) {
+            return;
+        }
+
         CNOT(qubit1, qubit2);
         CNOT(qubit2, qubit1);
         CNOT(qubit1, qubit2);
@@ -183,6 +187,10 @@ public:
 
     virtual void ISwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
+        if (qubit1 == qubit2) {
+            return;
+        }
+
         S(qubit1);
         S(qubit2);
         H(qubit1);
