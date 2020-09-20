@@ -566,38 +566,40 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
     bitLenInt lengthx2 = length << 1U;
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
 
-    for (bitLenInt i = 0; i < nQubitCount; i++) {
-        if ((i < start) || (i >= (start + length))) {
-            x[i].insert(x[i].begin() + qubitCount + start, length, 0);
-            z[i].insert(z[i].begin() + qubitCount + start, length, 0);
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        x[qubitCount + i].insert(x[qubitCount + i].begin() + start, length, 0);
+        z[qubitCount + i].insert(z[qubitCount + i].begin() + start, length, 0);
 
-            x[i].insert(x[i].begin() + start, length, 0);
-            z[i].insert(z[i].begin() + start, length, 0);
-        } else {
-            std::vector<PAULI> nX = toCopy->x[length + (i - start)];
-            std::vector<PAULI> nZ = toCopy->x[length + (i - start)];
+        x[i].insert(x[i].begin() + start, length, 0);
+        z[i].insert(z[i].begin() + start, length, 0);
+    }
 
-            nX.insert(nX.begin() + lengthx2, qubitCount - start, 0);
-            nZ.insert(nZ.begin() + lengthx2, qubitCount - start, 0);
+    for (bitLenInt i = 0; i < length; i++) {
+        std::vector<PAULI> nX = toCopy->x[length + i];
+        std::vector<PAULI> nZ = toCopy->x[length + i];
 
-            nX.insert(nX.begin() + length, start, 0);
-            nZ.insert(nZ.begin() + length, start, 0);
+        nX.insert(nX.end(), qubitCount - start, 0);
+        nZ.insert(nZ.end(), qubitCount - start, 0);
 
-            x.insert(x.begin() + qubitCount + i, nX);
-            z.insert(z.begin() + qubitCount + i, nZ);
+        nX.insert(nX.begin(), start, 0);
+        nZ.insert(nZ.begin(), start, 0);
 
-            nX = toCopy->x[i - start];
-            nZ = toCopy->x[i - start];
+        x.insert(x.begin() + qubitCount + i, nX);
+        z.insert(z.begin() + qubitCount + i, nZ);
+    }
 
-            nX.insert(nX.begin() + length, qubitCount - start, 0);
-            nZ.insert(nZ.begin() + length, qubitCount - start, 0);
+    for (bitLenInt i = 0; i < length; i++) {
+        std::vector<PAULI> nX = toCopy->x[i];
+        std::vector<PAULI> nZ = toCopy->x[i];
 
-            nX.insert(nX.begin(), start, 0);
-            nZ.insert(nZ.begin(), start, 0);
+        nX.insert(nX.end(), qubitCount - start, 0);
+        nZ.insert(nZ.end(), qubitCount - start, 0);
 
-            x.insert(x.begin() + i, nX);
-            z.insert(z.begin() + i, nZ);
-        }
+        nX.insert(nX.begin(), start, 0);
+        nZ.insert(nZ.begin(), start, 0);
+
+        x.insert(x.begin() + i, nX);
+        z.insert(z.begin() + i, nZ);
     }
 
     r.insert(r.begin() + qubitCount + start, length);
