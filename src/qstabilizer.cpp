@@ -561,12 +561,14 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
     // We simply insert the (elsewhere initialized and valid) "toCopy" stabilizers and destabilizers in corresponding
     // position, and we set the new padding to 0. This is immediately a valid state, if the two original QStablizer
     // instances are valid.
+    
+    bitLenInt i;
 
     bitLenInt length = toCopy->qubitCount;
     bitLenInt lengthx2 = length << 1U;
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
 
-    for (bitLenInt i = 0; i < qubitCount; i++) {
+    for (i = 0; i < qubitCount; i++) {
         x[qubitCount + i].insert(x[qubitCount + i].begin() + start, length, 0);
         z[qubitCount + i].insert(z[qubitCount + i].begin() + start, length, 0);
 
@@ -574,9 +576,9 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
         z[i].insert(z[i].begin() + start, length, 0);
     }
 
-    for (bitLenInt i = 0; i < length; i++) {
+    for (i = 0; i < length; i++) {
         std::vector<PAULI> nX = toCopy->x[length + i];
-        std::vector<PAULI> nZ = toCopy->x[length + i];
+        std::vector<PAULI> nZ = toCopy->z[length + i];
 
         nX.insert(nX.end(), qubitCount - start, 0);
         nZ.insert(nZ.end(), qubitCount - start, 0);
@@ -588,9 +590,9 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
         z.insert(z.begin() + qubitCount + i, nZ);
     }
 
-    for (bitLenInt i = 0; i < length; i++) {
+    for (i = 0; i < length; i++) {
         std::vector<PAULI> nX = toCopy->x[i];
-        std::vector<PAULI> nZ = toCopy->x[i];
+        std::vector<PAULI> nZ = toCopy->z[i];
 
         nX.insert(nX.end(), qubitCount - start, 0);
         nZ.insert(nZ.end(), qubitCount - start, 0);
