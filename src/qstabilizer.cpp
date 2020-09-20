@@ -312,7 +312,7 @@ void QStabilizer::setBasisState(const real1& nrm, complex* stateVec)
         j5 = genIndex(j);
         pw = modPow2(j);
         if (x[elemCount][j5] & pw) {
-            perm |= pw;
+            perm |= pow2(j);
         }
     }
 
