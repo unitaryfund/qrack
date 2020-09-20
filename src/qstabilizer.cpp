@@ -59,14 +59,11 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
     bitLenInt rowCount = (qubitCount << 1U) + 1U;
     bitLenInt obc = overBitCap();
 
-    x = std::vector<std::vector<PAULI>>(rowCount);
-    z = std::vector<std::vector<PAULI>>(rowCount);
+    x = std::vector<std::vector<PAULI>>(rowCount, std::vector<PAULI>(obc, 0));
+    z = std::vector<std::vector<PAULI>>(rowCount, std::vector<PAULI>(obc, 0));
     r = std::vector<uint8_t>(rowCount);
 
     for (bitLenInt i = 0; i < rowCount; i++) {
-        x[i] = std::vector<PAULI>(obc);
-        z[i] = std::vector<PAULI>(obc);
-
         if (i < qubitCount) {
             x[i][genIndex(i)] = modPow2(i);
         } else if (i < (qubitCount << 1U)) {
@@ -561,53 +558,51 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
     // We simply insert the (elsewhere initialized and valid) "toCopy" stabilizers and destabilizers in corresponding
     // position, and we set the new padding to 0. This is immediately a valid state, if the two original QStablizer
     // instances are valid.
-    
+
     bitLenInt i;
 
     bitLenInt length = toCopy->qubitCount;
-    bitLenInt lengthx2 = length << 1U;
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
+    std::vector<PAULI> row;
 
     for (i = 0; i < qubitCount; i++) {
-        x[qubitCount + i].insert(x[qubitCount + i].begin() + start, length, 0);
-        z[qubitCount + i].insert(z[qubitCount + i].begin() + start, length, 0);
+        row = x[i];
+        x[i] = std::vector<PAULI>(nQubitCount, 0);
+        std::copy(row.begin(), row.end(), x[i].begin() + start);
 
-        x[i].insert(x[i].begin() + start, length, 0);
-        z[i].insert(z[i].begin() + start, length, 0);
+        row = z[i];
+        z[i] = std::vector<PAULI>(nQubitCount, 0);
+        std::copy(row.begin(), row.end(), z[i].begin() + start);
+
+        row = x[qubitCount + i];
+        x[qubitCount + i] = std::vector<PAULI>(nQubitCount, 0);
+        std::copy(row.begin(), row.end(), x[qubitCount + i].begin() + start);
+
+        row = z[qubitCount + i];
+        z[qubitCount + i] = std::vector<PAULI>(nQubitCount, 0);
+        std::copy(row.begin(), row.end(), z[qubitCount + i].begin() + start);
     }
 
+    std::vector<std::vector<PAULI>> xGroup(length, std::vector<PAULI>(nQubitCount, 0));
+    std::vector<std::vector<PAULI>> zGroup(length, std::vector<PAULI>(nQubitCount, 0));
     for (i = 0; i < length; i++) {
-        std::vector<PAULI> nX = toCopy->x[length + i];
-        std::vector<PAULI> nZ = toCopy->z[length + i];
-
-        nX.insert(nX.end(), qubitCount - start, 0);
-        nZ.insert(nZ.end(), qubitCount - start, 0);
-
-        nX.insert(nX.begin(), start, 0);
-        nZ.insert(nZ.begin(), start, 0);
-
-        x.insert(x.begin() + qubitCount + i, nX);
-        z.insert(z.begin() + qubitCount + i, nZ);
+        std::copy(toCopy->x[i].begin(), toCopy->x[i].end(), xGroup[i].begin() + start);
+        std::copy(toCopy->z[i].begin(), toCopy->z[i].end(), zGroup[i].begin() + start);
     }
+    x.insert(x.begin() + start, xGroup.begin(), xGroup.end());
+    z.insert(z.begin() + start, zGroup.begin(), zGroup.end());
 
+    std::vector<std::vector<PAULI>> xGroup2(length, std::vector<PAULI>(nQubitCount, 0));
+    std::vector<std::vector<PAULI>> zGroup2(length, std::vector<PAULI>(nQubitCount, 0));
     for (i = 0; i < length; i++) {
-        std::vector<PAULI> nX = toCopy->x[i];
-        std::vector<PAULI> nZ = toCopy->z[i];
-
-        nX.insert(nX.end(), qubitCount - start, 0);
-        nZ.insert(nZ.end(), qubitCount - start, 0);
-
-        nX.insert(nX.begin(), start, 0);
-        nZ.insert(nZ.begin(), start, 0);
-
-        x.insert(x.begin() + i, nX);
-        z.insert(z.begin() + i, nZ);
+        std::copy(toCopy->x[length + i].begin(), toCopy->x[length + i].end(), xGroup2[i].begin() + start);
+        std::copy(toCopy->z[length + i].begin(), toCopy->z[length + i].end(), zGroup2[i].begin() + start);
     }
+    x.insert(x.begin() + start, xGroup2.begin(), xGroup2.end());
+    z.insert(z.begin() + start, zGroup2.begin(), zGroup2.end());
 
-    r.insert(r.begin() + qubitCount + start, length);
-    std::copy(toCopy->r.begin() + length, toCopy->r.begin() + lengthx2, r.begin() + qubitCount + start);
-    r.insert(r.begin() + start, length);
-    std::copy(toCopy->r.begin(), toCopy->r.begin() + length, r.begin() + start);
+    r.insert(r.begin() + start, toCopy->r.begin(), toCopy->r.begin() + length);
+    r.insert(r.begin() + nQubitCount + start, toCopy->r.begin() + length, toCopy->r.begin() + (length << 1U));
 
     qubitCount = nQubitCount;
 
@@ -620,47 +615,61 @@ void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& leng
     // outside inter- "toCopy" cross terms. (Usually, we're "decomposing" the representation of a just-measured single
     // qubit.)
 
-    bitLenInt end = start + length;
+    bitLenInt i;
 
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        if ((i < start) || (i >= end)) {
-            x[i].erase(x[i].begin() + qubitCount + start, x[i].begin() + qubitCount + length);
-            z[i].erase(z[i].begin() + qubitCount + start, z[i].begin() + qubitCount + length);
+    bitLenInt nQubitCount = qubitCount - length;
+    bitLenInt secondStart = nQubitCount + start;
+    std::vector<PAULI> row;
 
-            x[i].erase(x[i].begin() + start, x[i].begin() + length);
-            z[i].erase(z[i].begin() + start, z[i].begin() + length);
-        } else {
-            x[i].erase(x[i].begin() + qubitCount + end, x[i].begin() + (qubitCount << 1U));
-            x[i].erase(x[i].begin() + qubitCount, x[i].begin() + qubitCount + start);
-            x[i].erase(x[i].begin() + end, x[i].begin() + qubitCount);
-            x[i].erase(x[i].begin(), x[i].begin() + start);
+    for (i = 0; i < qubitCount; i++) {
+        row = x[i];
+        x[i] = std::vector<PAULI>(nQubitCount, 0);
+        std::copy(row.begin(), row.begin() + start, x[i].begin());
+        std::copy(row.begin() + start + length, row.begin() + qubitCount, x[i].begin() + start);
 
-            z[i].erase(z[i].begin() + qubitCount + end, z[i].begin() + (qubitCount << 1U));
-            z[i].erase(z[i].begin() + qubitCount, z[i].begin() + qubitCount + start);
-            z[i].erase(z[i].begin() + end, z[i].begin() + qubitCount);
-            z[i].erase(z[i].begin(), z[i].begin() + start);
+        row = z[i];
+        z[i] = std::vector<PAULI>(nQubitCount, 0);
+        std::copy(row.begin(), row.begin() + start, z[i].begin());
+        std::copy(row.begin() + start + length, row.begin() + qubitCount, z[i].begin() + start);
 
-            if (toCopy) {
-                toCopy->x[i - start] = x[i];
-                toCopy->z[i - start] = z[i];
-                toCopy->r[i - start] = r[i];
+        row = x[qubitCount + i];
+        x[qubitCount + i] = std::vector<PAULI>(nQubitCount, 0);
+        std::copy(row.begin(), row.begin() + start, x[qubitCount + i].begin());
+        std::copy(row.begin() + start + length, row.begin() + qubitCount, x[qubitCount + i].begin() + start);
 
-                toCopy->x[qubitCount + (i - start)] = x[qubitCount + i];
-                toCopy->z[qubitCount + (i - start)] = z[qubitCount + i];
-                toCopy->r[qubitCount + (i - start)] = r[qubitCount + i];
-            }
-        }
-
-        x.erase(x.begin() + qubitCount + start, x.begin() + qubitCount + length);
-        z.erase(z.begin() + qubitCount + start, z.begin() + qubitCount + length);
-        r.erase(r.begin() + qubitCount, r.begin() + qubitCount + length);
-
-        x.erase(x.begin() + start, x.begin() + length);
-        z.erase(z.begin() + start, z.begin() + length);
-        r.erase(r.begin(), r.begin() + length);
+        row = z[qubitCount + i];
+        z[qubitCount + i] = std::vector<PAULI>(nQubitCount, 0);
+        std::copy(row.begin(), row.begin() + start, z[qubitCount + i].begin());
+        std::copy(row.begin() + start + length, row.begin() + qubitCount, z[qubitCount + i].begin() + start);
     }
 
-    qubitCount -= length;
+    if (toCopy) {
+        for (i = 0; i < length; i++) {
+            std::copy(x[start + i].begin(), x[start + i].end(), toCopy->x[i].begin());
+            std::copy(z[start + i].begin(), z[start + i].end(), toCopy->z[i].begin());
+        }
+    }
+    x.erase(x.begin() + start, x.begin() + start + length);
+    z.erase(z.begin() + start, z.begin() + start + length);
+
+    if (toCopy) {
+        for (i = 0; i < length; i++) {
+            std::copy(x[secondStart + i].begin(), x[secondStart + i].end(), toCopy->x[i + length].begin());
+            std::copy(z[secondStart + i].begin(), z[secondStart + i].end(), toCopy->z[i + length].begin());
+        }
+    }
+    x.erase(x.begin() + secondStart, x.begin() + secondStart + length);
+    z.erase(z.begin() + secondStart, z.begin() + secondStart + length);
+
+    if (toCopy) {
+        std::copy(r.begin() + start, r.begin() + start + length, toCopy->r.begin());
+        std::copy(r.begin() + secondStart, r.begin() + secondStart + length, toCopy->r.begin() + length);
+    }
+
+    r.erase(r.begin() + start, r.begin() + start + length);
+    r.erase(r.begin() + secondStart, r.begin() + secondStart + length);
+
+    qubitCount = nQubitCount;
 }
 
 bool QStabilizer::ApproxCompare(QStabilizerPtr o)

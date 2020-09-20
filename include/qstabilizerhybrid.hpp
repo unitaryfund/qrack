@@ -192,19 +192,24 @@ public:
     }
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy, bitLenInt start)
     {
+        bitLenInt toRet;
+
         if (engine) {
             if (toCopy->stabilizer) {
                 toCopy->SwitchToEngine();
             }
-            return engine->Compose(toCopy->engine, start);
-        }
-
-        if (toCopy->engine) {
+            toRet = engine->Compose(toCopy->engine, start);
+            SetQubitCount(engine->GetQubitCount());
+        } else if (toCopy->engine) {
             SwitchToEngine();
-            return engine->Compose(toCopy->engine, start);
+            toRet = engine->Compose(toCopy->engine, start);
+            SetQubitCount(engine->GetQubitCount());
+        } else {
+            toRet = stabilizer->Compose(toCopy->stabilizer, start);
+            SetQubitCount(stabilizer->GetQubitCount());
         }
 
-        return stabilizer->Compose(toCopy->stabilizer, start);
+        return toRet;
     }
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
@@ -220,30 +225,38 @@ public:
             if (dest->stabilizer) {
                 dest->SwitchToEngine();
             }
-            return engine->Decompose(start, length, dest->engine);
+            engine->Decompose(start, length, dest->engine);
+            SetQubitCount(engine->GetQubitCount());
+            return;
         }
 
         if (dest->engine) {
             SwitchToEngine();
-            return engine->Decompose(start, length, dest->engine);
+            engine->Decompose(start, length, dest->engine);
+            SetQubitCount(engine->GetQubitCount());
         }
 
-        return stabilizer->Decompose(start, length, dest->stabilizer);
+        stabilizer->Decompose(start, length, dest->stabilizer);
+        SetQubitCount(stabilizer->GetQubitCount());
     }
     virtual void Dispose(bitLenInt start, bitLenInt length)
     {
         if (engine) {
             engine->Dispose(start, length);
+            SetQubitCount(engine->GetQubitCount());
         } else if (stabilizer) {
             stabilizer->Dispose(start, length);
+            SetQubitCount(stabilizer->GetQubitCount());
         }
     }
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
         if (engine) {
             engine->Dispose(start, length, disposedPerm);
+            SetQubitCount(engine->GetQubitCount());
         } else if (stabilizer) {
             stabilizer->Dispose(start, length);
+            SetQubitCount(stabilizer->GetQubitCount());
         }
     }
 
@@ -838,6 +851,7 @@ public:
         }
 
         real1 prob = ONE_R1;
+        qubitCount = GetQubitCount();
         for (bitLenInt i = 0; i < qubitCount; i++) {
             if (stabilizer->IsSeparableZ(i)) {
                 if ((fullRegister & pow2(i)) != stabilizer->M(i)) {
@@ -859,6 +873,7 @@ public:
 
         bitCapInt pw;
         real1 prob = ONE_R1;
+        qubitCount = GetQubitCount();
         for (bitLenInt i = 0; i < qubitCount; i++) {
             pw = pow2(i);
             if (!(mask && pw)) {
@@ -958,6 +973,6 @@ public:
         }
 
         return engine->GetMaxSize();
-    };
+    }
 };
 } // namespace Qrack

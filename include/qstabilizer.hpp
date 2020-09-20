@@ -78,6 +78,10 @@ public:
     QStabilizer(const bitLenInt& n, const bitCapInt& perm = 0, const bool& useHardwareRNG = true,
         qrack_rand_gen_ptr rgp = nullptr);
 
+    bitLenInt GetQubitCount() { return qubitCount; }
+
+    bitLenInt GetMaxQPower() { return pow2(qubitCount); }
+
     void SetPermutation(const bitCapInt& perm);
 
     void SetRandomSeed(uint32_t seed)
