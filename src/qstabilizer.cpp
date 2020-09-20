@@ -606,6 +606,10 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
 
     qubitCount = nQubitCount;
 
+    nQubitCount <<= 1U;
+    x[nQubitCount] = std::vector<PAULI>(qubitCount, 0);
+    z[nQubitCount] = std::vector<PAULI>(qubitCount, 0);
+
     return start;
 }
 
@@ -670,6 +674,10 @@ void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& leng
     r.erase(r.begin() + secondStart, r.begin() + secondStart + length);
 
     qubitCount = nQubitCount;
+
+    nQubitCount <<= 1U;
+    x[nQubitCount] = std::vector<PAULI>(qubitCount, 0);
+    z[nQubitCount] = std::vector<PAULI>(qubitCount, 0);
 }
 
 bool QStabilizer::ApproxCompare(QStabilizerPtr o)

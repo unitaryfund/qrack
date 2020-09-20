@@ -846,51 +846,13 @@ public:
     }
     virtual real1 ProbAll(bitCapInt fullRegister)
     {
-        if (engine) {
-            return engine->ProbAll(fullRegister);
-        }
-
-        real1 prob = ONE_R1;
-        qubitCount = GetQubitCount();
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            if (stabilizer->IsSeparableZ(i)) {
-                if ((fullRegister & pow2(i)) != stabilizer->M(i)) {
-                    return ZERO_R1;
-                }
-                // else, preserves full remaining probability
-            } else {
-                prob /= 2;
-            }
-        }
-
-        return prob;
+        SwitchToEngine();
+        return engine->ProbAll(fullRegister);
     }
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     {
-        if (engine) {
-            return engine->ProbMask(mask, permutation);
-        }
-
-        bitCapInt pw;
-        real1 prob = ONE_R1;
-        qubitCount = GetQubitCount();
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            pw = pow2(i);
-            if (!(mask && pw)) {
-                continue;
-            }
-
-            if (stabilizer->IsSeparableZ(i)) {
-                if ((permutation & pow2(i)) != stabilizer->M(i)) {
-                    return ZERO_R1;
-                }
-                // else, preserves full remaining probability
-            } else {
-                prob /= 2;
-            }
-        }
-
-        return prob;
+        SwitchToEngine();
+        return engine->ProbMask(mask, permutation);
     }
 
     virtual bool ApproxCompare(QInterfacePtr toCompare)
