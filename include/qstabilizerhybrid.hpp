@@ -76,7 +76,7 @@ public:
     }
 
     /// Apply a CNOT gate with control and target
-    virtual void CNOT(const bitLenInt& control, const bitLenInt& target)
+    virtual void CNOT(bitLenInt control, bitLenInt target)
     {
         if (stabilizer) {
             stabilizer->CNOT(control, target);
@@ -86,7 +86,7 @@ public:
     }
 
     /// Apply a Hadamard gate to target
-    virtual void H(const bitLenInt& target)
+    virtual void H(bitLenInt target)
     {
         if (stabilizer) {
             stabilizer->H(target);
@@ -96,7 +96,7 @@ public:
     }
 
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
-    virtual void S(const bitLenInt& target)
+    virtual void S(bitLenInt target)
     {
         if (stabilizer) {
             stabilizer->S(target);
@@ -106,7 +106,7 @@ public:
     }
 
     // TODO: Custom implementations for decompositions:
-    virtual void Z(const bitLenInt& target)
+    virtual void Z(bitLenInt target)
     {
         if (stabilizer) {
             stabilizer->Z(target);
@@ -115,7 +115,7 @@ public:
         }
     }
 
-    virtual void IS(const bitLenInt& target)
+    virtual void IS(bitLenInt target)
     {
         if (stabilizer) {
             stabilizer->IS(target);
@@ -124,7 +124,7 @@ public:
         }
     }
 
-    virtual void X(const bitLenInt& target)
+    virtual void X(bitLenInt target)
     {
         if (stabilizer) {
             stabilizer->X(target);
@@ -133,7 +133,7 @@ public:
         }
     }
 
-    virtual void Y(const bitLenInt& target)
+    virtual void Y(bitLenInt target)
     {
         if (stabilizer) {
             stabilizer->Y(target);
@@ -142,7 +142,7 @@ public:
         }
     }
 
-    virtual void CZ(const bitLenInt& control, const bitLenInt& target)
+    virtual void CZ(bitLenInt control, bitLenInt target)
     {
         if (stabilizer) {
             stabilizer->CZ(control, target);
@@ -151,7 +151,7 @@ public:
         }
     }
 
-    virtual void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)
+    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
             stabilizer->Swap(qubit1, qubit2);
@@ -160,7 +160,7 @@ public:
         }
     }
 
-    virtual void ISwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
+    virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
             stabilizer->ISwap(qubit1, qubit2);
@@ -580,6 +580,12 @@ public:
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask)
     {
+        // If there are no controls, this is equivalent to the single bit gate.
+        if (controlLen == 0) {
+            ApplySingleBit(mtrxs, qubitIndex);
+            return;
+        }
+
         SwitchToEngine();
         engine->UniformlyControlledSingleBit(
             controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
@@ -588,12 +594,22 @@ public:
     virtual void CSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
+        if (controlLen == 0) {
+            Swap(qubit1, qubit2);
+            return;
+        }
+
         SwitchToEngine();
         engine->CSwap(controls, controlLen, qubit1, qubit2);
     }
     virtual void AntiCSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
+        if (controlLen == 0) {
+            Swap(qubit1, qubit2);
+            return;
+        }
+
         SwitchToEngine();
         engine->AntiCSwap(controls, controlLen, qubit1, qubit2);
     }
@@ -800,22 +816,6 @@ public:
         engine->Hash(start, length, values);
     }
 
-    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
-    {
-        if (stabilizer) {
-            stabilizer->Swap(qubitIndex1, qubitIndex2);
-        } else {
-            engine->Swap(qubitIndex1, qubitIndex2);
-        }
-    }
-    virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
-    {
-        if (stabilizer) {
-            stabilizer->ISwap(qubitIndex1, qubitIndex2);
-        } else {
-            engine->ISwap(qubitIndex1, qubitIndex2);
-        }
-    }
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         SwitchToEngine();
