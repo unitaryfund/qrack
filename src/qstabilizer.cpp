@@ -622,10 +622,10 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
     return start;
 }
 
-void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& length, QStabilizerPtr toCopy)
+void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& length, QStabilizerPtr dest)
 {
     // We assume that the bits to "decompose" the representation of already have 0 cross-terms in their generators
-    // outside inter- "toCopy" cross terms. (Usually, we're "decomposing" the representation of a just-measured single
+    // outside inter- "dest" cross terms. (Usually, we're "decomposing" the representation of a just-measured single
     // qubit.)
 
     bitLenInt i, j;
@@ -636,7 +636,30 @@ void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& leng
     bitLenInt secondEnd = nQubitCount + end;
     std::vector<PAULI> row;
 
-    for (i = 0; i < qubitCount; i++) {
+    if (dest) {
+        for (i = 0; i < length; i++) {
+            j = start + i;
+            std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[i].begin());
+            std::copy(z[j].begin() + start, z[j].begin() + end, dest->z[i].begin());
+
+            j = qubitCount + start + i;
+            std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[i + length].begin());
+            std::copy(z[j].begin() + start, z[j].begin() + end, dest->z[i + length].begin());
+        }
+        j = start;
+        std::copy(r.begin() + j, r.begin() + j + length, dest->r.begin());
+        j = qubitCount + start;
+        std::copy(r.begin() + j, r.begin() + j + length, dest->r.begin() + length);
+    }
+
+    x.erase(x.begin() + start, x.begin() + end);
+    x.erase(x.begin() + secondStart, x.begin() + secondEnd);
+    z.erase(z.begin() + start, z.begin() + end);
+    z.erase(z.begin() + secondStart, z.begin() + secondEnd);
+    r.erase(r.begin() + start, r.begin() + end);
+    r.erase(r.begin() + secondStart, r.begin() + secondEnd);
+
+    for (i = 0; i < nQubitCount; i++) {
         row = x[i];
         x[i] = std::vector<PAULI>(nQubitCount, 0);
         std::copy(row.begin(), row.begin() + start, x[i].begin());
@@ -647,7 +670,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& leng
         std::copy(row.begin(), row.begin() + start, z[i].begin());
         std::copy(row.begin() + end, row.begin() + qubitCount, z[i].begin() + start);
 
-        j = qubitCount + i;
+        j = nQubitCount + i;
 
         row = x[j];
         x[j] = std::vector<PAULI>(nQubitCount, 0);
@@ -655,37 +678,10 @@ void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& leng
         std::copy(row.begin() + end, row.begin() + qubitCount, x[j].begin() + start);
 
         row = z[j];
-        z[qubitCount + i] = std::vector<PAULI>(nQubitCount, 0);
+        z[j] = std::vector<PAULI>(nQubitCount, 0);
         std::copy(row.begin(), row.begin() + start, z[j].begin());
         std::copy(row.begin() + end, row.begin() + qubitCount, z[j].begin() + start);
     }
-
-    if (toCopy) {
-        for (i = 0; i < length; i++) {
-            j = start + i;
-            std::copy(x[j].begin() + start, x[j].begin() + end, toCopy->x[i].begin());
-            std::copy(z[j].begin() + start, z[j].begin() + end, toCopy->z[i].begin());
-        }
-    }
-    x.erase(x.begin() + start, x.begin() + end);
-    z.erase(z.begin() + start, z.begin() + end);
-
-    if (toCopy) {
-        for (i = 0; i < length; i++) {
-            j = nQubitCount + start + i;
-            std::copy(x[j].begin() + start, x[j].begin() + end, toCopy->x[i + length].begin());
-            std::copy(z[j].begin() + start, z[j].begin() + end, toCopy->z[i + length].begin());
-        }
-    }
-    x.erase(x.begin() + secondStart, x.begin() + secondEnd);
-    z.erase(z.begin() + secondStart, z.begin() + secondEnd);
-
-    if (toCopy) {
-        std::copy(r.begin() + start, r.begin() + end, toCopy->r.begin());
-        std::copy(r.begin() + secondStart, r.begin() + secondEnd, toCopy->r.begin() + length);
-    }
-    r.erase(r.begin() + start, r.begin() + end);
-    r.erase(r.begin() + secondStart, r.begin() + secondEnd);
 
     qubitCount = nQubitCount;
 

@@ -3538,12 +3538,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_clone")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
 {
-    QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng,
-        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng);
+    QInterfacePtr qftReg2 =
+        CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x02, rng);
+    qftReg->Compose(qftReg2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 
-    qftReg->SetPermutation(0x2b);
     qftReg->Decompose(0, 4, qftReg2);
-
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
 
