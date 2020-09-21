@@ -473,6 +473,7 @@ QInterfacePtr QUnit::EntangleRange(
 bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
 {
     bool didSeparate = false;
+    bool didSeparatePart;
     for (bitLenInt i = 0; i < length; i++) {
         if (shards[start + i].GetQubitCount() == 1) {
             didSeparate = true;
@@ -481,7 +482,38 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
 
         // This is usually all that's worth trying:
         real1 prob = ProbBase(start + i);
-        didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
+        didSeparatePart = (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
+        didSeparate |= didSeparatePart;
+
+        /*QEngineShard& shard = shards[start + i];
+
+        if (didSeparatePart || !*(shard.isClifford)) {
+            continue;
+        }
+
+        shard.unit->H(shard.mapped);
+        prob = ProbBase(start + i);
+        didSeparatePart = (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
+        didSeparate |= didSeparatePart;
+
+        if (didSeparatePart) {
+            H(start + i);
+            continue;
+        }
+
+        shard.unit->S(shard.mapped);
+        prob = ProbBase(start + i);
+        didSeparatePart = (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
+        didSeparate |= didSeparatePart;
+
+        if (didSeparatePart) {
+            S(start + i);
+            H(start + i);
+            continue;
+        }
+
+        shard.unit->S(shard.mapped);
+        shard.unit->H(shard.mapped);*/
     }
 
     return didSeparate;
