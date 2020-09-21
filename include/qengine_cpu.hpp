@@ -51,10 +51,7 @@ public:
         int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored3 = {}, bitLenInt ignored4 = 0);
 
-    virtual ~QEngineCPU()
-    {
-        // Intentionally left blank
-    }
+    virtual ~QEngineCPU() { Dump(); }
 
     virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
 
