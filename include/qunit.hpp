@@ -147,7 +147,7 @@ public:
 
     void MakeDirty()
     {
-        if (isProbDirty || isPhaseDirty) {
+        if (isProbDirty || isPhaseDirty || !(unit->isClifford())) {
             isProbDirty = true;
         } else {
             amp0 = M_SQRT1_2;

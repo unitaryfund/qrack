@@ -75,6 +75,8 @@ public:
         delete[] stateVec;
     }
 
+    virtual bool isClifford() { return !engine; }
+
     /// Apply a CNOT gate with control and target
     virtual void CNOT(bitLenInt control, bitLenInt target)
     {
@@ -263,13 +265,47 @@ public:
     virtual void SetQuantumState(const complex* inputState)
     {
         if (qubitCount == 1U) {
+            bool isClifford = false;
+            bool isSet = false;
+            bool isX = false;
+            bool isY = false;
             if (inputState[1] == ZERO_CMPLX) {
-                stabilizer = MakeStabilizer(0);
-                engine = NULL;
-                return;
+                isSet = false;
+                isClifford = true;
             } else if (inputState[0] == ZERO_CMPLX) {
-                stabilizer = MakeStabilizer(1);
+                isSet = true;
+                isClifford = true;
+            } else if (inputState[0] == inputState[1]) {
+                isX = true;
+                isSet = false;
+                isClifford = true;
+            } else if (inputState[0] == -inputState[1]) {
+                isX = true;
+                isSet = true;
+                isClifford = true;
+            } else if ((I_CMPLX * inputState[0]) == inputState[1]) {
+                isY = true;
+                isSet = false;
+                isClifford = true;
+            } else if ((I_CMPLX * inputState[0]) == -inputState[1]) {
+                isY = true;
+                isSet = true;
+                isClifford = true;
+            }
+
+            if (isClifford) {
                 engine = NULL;
+                if (stabilizer) {
+                    stabilizer->SetPermutation(isSet ? 1 : 0);
+                } else {
+                    stabilizer = MakeStabilizer(isSet ? 1 : 0);
+                }
+                if (isX || isY) {
+                    stabilizer->H(0);
+                }
+                if (isY) {
+                    stabilizer->S(0);
+                }
                 return;
             }
         }
@@ -851,7 +887,7 @@ public:
         }
 
         if (stabilizer->IsSeparableZ(qubitIndex)) {
-            return stabilizer->M(qubitIndex);
+            return stabilizer->M(qubitIndex) ? ONE_R1 : ZERO_R1;
         } else {
             return ONE_R1 / 2;
         }

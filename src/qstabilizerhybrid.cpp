@@ -40,9 +40,8 @@ QStabilizerPtr QStabilizerHybrid::MakeStabilizer(const bitCapInt& perm)
 
 QInterfacePtr QStabilizerHybrid::MakeEngine()
 {
-    QInterfacePtr toRet = CreateQuantumInterface(QINTERFACE_HYBRID, qubitCount, 0, rand_generator, phaseFactor,
-        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, std::vector<int>{},
-        thresholdQubits);
+    QInterfacePtr toRet = CreateQuantumInterface(engineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, std::vector<int>{}, thresholdQubits);
     toRet->SetConcurrency(concurrency);
     return toRet;
 }
