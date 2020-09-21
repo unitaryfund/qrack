@@ -262,6 +262,18 @@ public:
 
     virtual void SetQuantumState(const complex* inputState)
     {
+        if (qubitCount == 1U) {
+            if (inputState[1] == ZERO_CMPLX) {
+                stabilizer = MakeStabilizer(0);
+                engine = NULL;
+                return;
+            } else if (inputState[0] == ZERO_CMPLX) {
+                stabilizer = MakeStabilizer(1);
+                engine = NULL;
+                return;
+            }
+        }
+
         SwitchToEngine();
         engine->SetQuantumState(inputState);
     }

@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <cfloat>
 #include <functional>
 #include <memory>
 #include <random>
