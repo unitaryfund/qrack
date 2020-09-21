@@ -14,7 +14,9 @@
 #include "qengine.hpp"
 #include "qstabilizer.hpp"
 
+#if ENABLE_QUNIT_CPU_PARALLEL
 #include "common/dispatchqueue.hpp"
+#endif
 
 namespace Qrack {
 
@@ -38,10 +40,33 @@ protected:
     bool isSparse;
     uint32_t concurrency;
     bitLenInt thresholdQubits;
+#if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
+#endif
 
     typedef std::function<void(void)> DispatchFn;
-    virtual void Dispatch(DispatchFn fn) { dispatchQueue.dispatch(fn); }
+    virtual void Dispatch(DispatchFn fn)
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.dispatch(fn);
+#else
+        fn();
+#endif
+    }
+
+    virtual void FinishStabilizer()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.finish();
+#endif
+    }
+
+    virtual void Dump()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.dump();
+#endif
+    }
 
 public:
     QStabilizerHybrid(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -57,16 +82,21 @@ public:
 
     virtual void Finish()
     {
-        dispatchQueue.finish();
-
         if (engine) {
             engine->Finish();
+        } else {
+            FinishStabilizer();
         }
     };
 
-    virtual bool isFinished() { return dispatchQueue.isFinished() && (!engine || engine->isFinished()); }
-
-    virtual void Dump() { dispatchQueue.dump(); }
+    virtual bool isFinished()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        return dispatchQueue.isFinished() && (!engine || engine->isFinished());
+#else
+        return !engine || engine->isFinished();
+#endif
+    }
 
     virtual void SetConcurrency(uint32_t threadCount)
     {
@@ -88,7 +118,7 @@ public:
         }
 
         complex* stateVec = new complex[maxQPower];
-        dispatchQueue.finish();
+        FinishStabilizer();
         stabilizer->GetQuantumState(stateVec);
         stabilizer = NULL;
 
@@ -208,7 +238,7 @@ public:
             return engine->Compose(toCopy->engine);
         }
 
-        dispatchQueue.finish();
+        FinishStabilizer();
 
         return stabilizer->Compose(toCopy->stabilizer);
     }
@@ -231,7 +261,7 @@ public:
             toRet = engine->Compose(toCopy->engine, start);
             SetQubitCount(engine->GetQubitCount());
         } else {
-            dispatchQueue.finish();
+            FinishStabilizer();
             toRet = stabilizer->Compose(toCopy->stabilizer, start);
             SetQubitCount(stabilizer->GetQubitCount());
         }
@@ -263,7 +293,7 @@ public:
             SetQubitCount(engine->GetQubitCount());
         }
 
-        dispatchQueue.finish();
+        FinishStabilizer();
 
         stabilizer->Decompose(start, length, dest->stabilizer);
         SetQubitCount(stabilizer->GetQubitCount());
@@ -349,7 +379,7 @@ public:
     virtual void GetQuantumState(complex* outputState)
     {
         if (stabilizer) {
-            dispatchQueue.finish();
+            FinishStabilizer();
             stabilizer->GetQuantumState(outputState);
         } else {
             engine->GetQuantumState(outputState);
@@ -359,7 +389,7 @@ public:
     {
         if (stabilizer) {
             complex* stateVec = new complex[maxQPower];
-            dispatchQueue.finish();
+            FinishStabilizer();
             stabilizer->GetQuantumState(stateVec);
             for (bitCapInt i = 0; i < maxQPower; i++) {
                 outputProbs[i] = norm(stateVec[i]);
@@ -750,7 +780,7 @@ public:
         }
 
         if (stabilizer) {
-            dispatchQueue.finish();
+            FinishStabilizer();
             return stabilizer->M(qubit, doForce, result);
         }
 
@@ -944,7 +974,7 @@ public:
             return engine->Prob(qubitIndex);
         }
 
-        dispatchQueue.finish();
+        FinishStabilizer();
 
         if (stabilizer->IsSeparableZ(qubitIndex)) {
             return stabilizer->M(qubitIndex) ? ONE_R1 : ZERO_R1;
@@ -974,7 +1004,7 @@ public:
             return false;
         }
 
-        dispatchQueue.finish();
+        FinishStabilizer();
 
         if (stabilizer) {
             return stabilizer->ApproxCompare(toCompare->stabilizer);
