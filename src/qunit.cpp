@@ -237,9 +237,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         if (dest) {
             dest->EntangleRange(0, length);
             dest->OrderContiguous(dest->shards[0].unit);
-
             destEngine = dest->shards[0].unit;
-            *(dest->shards[0].isClifford) = *(shards[start].isClifford);
         }
     }
 
@@ -248,10 +246,12 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     bitLenInt unitLength = unit->GetQubitCount();
 
     if (dest) {
+        BoolPtr isClifford = std::make_shared<bool>(*(shards[start].isClifford));
         for (bitLenInt i = 0; i < length; i++) {
-            QInterfacePtr tempUnit = dest->shards[start + i].unit;
-            dest->shards[start + i] = QEngineShard(shards[start + i]);
-            dest->shards[start + i].unit = tempUnit;
+            QInterfacePtr tempUnit = dest->shards[i].unit;
+            dest->shards[i] = QEngineShard(shards[start + i]);
+            dest->shards[i].unit = tempUnit;
+            dest->shards[i].isClifford = isClifford;
         }
 
         unit->Decompose(mapped, length, destEngine);
