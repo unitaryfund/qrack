@@ -120,7 +120,7 @@ public:
         complex* stateVec = new complex[maxQPower];
         FinishStabilizer();
         stabilizer->GetQuantumState(stateVec);
-        stabilizer = NULL;
+        stabilizer.reset();
 
         engine = MakeEngine();
         engine->SetQuantumState(stateVec);
@@ -280,7 +280,7 @@ public:
     {
         if (engine) {
             if (dest->stabilizer) {
-                dest->stabilizer = NULL;
+                dest->stabilizer.reset();
                 dest->engine = dest->MakeEngine();
             }
             engine->Decompose(start, length, dest->engine);
@@ -289,7 +289,7 @@ public:
         }
 
         if (dest->engine) {
-            dest->engine = NULL;
+            dest->engine.reset();
             dest->stabilizer = dest->MakeStabilizer(0);
         }
 
@@ -324,7 +324,7 @@ public:
     virtual void SetQuantumState(const complex* inputState)
     {
         Dump();
-#if 0
+
         if (qubitCount == 1U) {
             bool isClifford = false;
             bool isSet = false;
@@ -355,7 +355,7 @@ public:
             }
 
             if (isClifford) {
-                engine = NULL;
+                engine.reset();
                 if (stabilizer) {
                     stabilizer->SetPermutation(isSet ? 1 : 0);
                 } else {
@@ -370,7 +370,7 @@ public:
                 return;
             }
         }
-#endif
+
         SwitchToEngine();
         engine->SetQuantumState(inputState);
     }
