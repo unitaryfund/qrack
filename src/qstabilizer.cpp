@@ -561,24 +561,19 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
 
     bitLenInt i, j;
 
+    bitLenInt rowCount = (qubitCount << 1U) + 1U;
+
     bitLenInt length = toCopy->qubitCount;
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
     bitLenInt secondStart = nQubitCount + start;
     const std::vector<PAULI> row(length, 0);
 
-    for (i = 0; i < qubitCount; i++) {
+    for (i = 0; i < rowCount; i++) {
         x[i].insert(x[i].begin() + start, row.begin(), row.end());
         z[i].insert(z[i].begin() + start, row.begin(), row.end());
-
-        j = qubitCount + i;
-
-        x[j].insert(x[j].begin() + start, row.begin(), row.end());
-        z[j].insert(z[j].begin() + start, row.begin(), row.end());
     }
 
     i = qubitCount;
-    x[i].insert(x[i].begin() + start, row.begin(), row.end());
-    z[i].insert(z[i].begin() + start, row.begin(), row.end());
 
     std::vector<std::vector<PAULI>> xGroup(length, std::vector<PAULI>(nQubitCount, 0));
     std::vector<std::vector<PAULI>> zGroup(length, std::vector<PAULI>(nQubitCount, 0));
@@ -588,6 +583,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
     }
     x.insert(x.begin() + start, xGroup.begin(), xGroup.end());
     z.insert(z.begin() + start, zGroup.begin(), zGroup.end());
+    r.insert(r.begin() + start, toCopy->r.begin(), toCopy->r.begin() + length);
 
     std::vector<std::vector<PAULI>> xGroup2(length, std::vector<PAULI>(nQubitCount, 0));
     std::vector<std::vector<PAULI>> zGroup2(length, std::vector<PAULI>(nQubitCount, 0));
@@ -598,8 +594,6 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
     }
     x.insert(x.begin() + secondStart, xGroup2.begin(), xGroup2.end());
     z.insert(z.begin() + secondStart, zGroup2.begin(), zGroup2.end());
-
-    r.insert(r.begin() + start, toCopy->r.begin(), toCopy->r.begin() + length);
     r.insert(r.begin() + secondStart, toCopy->r.begin() + length, toCopy->r.begin() + (length << 1U));
 
     qubitCount = nQubitCount;
@@ -647,20 +641,14 @@ void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& leng
     z.erase(z.begin() + secondStart, z.begin() + secondEnd);
     r.erase(r.begin() + secondStart, r.begin() + secondEnd);
 
-    for (i = 0; i < nQubitCount; i++) {
+    qubitCount = nQubitCount;
+
+    bitLenInt rowCount = (qubitCount << 1U) + 1U;
+
+    for (i = 0; i < rowCount; i++) {
         x[i].erase(x[i].begin() + start, x[i].begin() + end);
         z[i].erase(z[i].begin() + start, z[i].begin() + end);
-
-        j = nQubitCount + i;
-
-        x[j].erase(x[j].begin() + start, x[j].begin() + end);
-        z[j].erase(z[j].begin() + start, z[j].begin() + end);
     }
-    j = nQubitCount << 1U;
-    x[j].erase(x[j].begin() + start, x[j].begin() + end);
-    z[j].erase(z[j].begin() + start, z[j].begin() + end);
-
-    qubitCount = nQubitCount;
 }
 
 bool QStabilizer::ApproxCompare(QStabilizerPtr o)
