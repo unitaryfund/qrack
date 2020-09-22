@@ -30,8 +30,8 @@ namespace Qrack {
 
 QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, const bool& useHardwareRNG, qrack_rand_gen_ptr rgp)
     : qubitCount(n)
-    , x((n << 1U) + 1U, std::vector<bool>(qubitCount, false))
-    , z((n << 1U) + 1U, std::vector<bool>(qubitCount, false))
+    , x((n << 1U) + 1U, std::vector<bool>(n))
+    , z((n << 1U) + 1U, std::vector<bool>(n))
     , r((n << 1U) + 1U, 0)
     , rand_distribution(0.0, 1.0)
 {
@@ -66,6 +66,7 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
     for (bitLenInt i = 0; i < rowCount; i++) {
         x[i].assign(qubitCount, false);
         z[i].assign(qubitCount, false);
+
         if (i < qubitCount) {
             x[i][i] = true;
         } else if (i < (qubitCount << 1U)) {
