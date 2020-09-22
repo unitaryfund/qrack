@@ -282,6 +282,7 @@ public:
     {
         if (engine) {
             if (dest->stabilizer) {
+                dest->Dump();
                 dest->stabilizer.reset();
                 dest->engine = dest->MakeEngine();
             }
@@ -371,8 +372,9 @@ public:
                 return;
             }
         }
+        * /
 
-        SwitchToEngine();
+            SwitchToEngine();
         engine->SetQuantumState(inputState);
     }
     virtual void GetQuantumState(complex* outputState)
