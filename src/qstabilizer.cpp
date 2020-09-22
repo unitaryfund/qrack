@@ -61,11 +61,11 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
 
     bitLenInt rowCount = (qubitCount << 1U) + 1U;
 
-    x.assign(rowCount, std::vector<bool>(qubitCount, false));
-    z.assign(rowCount, std::vector<bool>(qubitCount, false));
     r.assign(rowCount, 0);
 
     for (bitLenInt i = 0; i < rowCount; i++) {
+        x[i].assign(qubitCount, false);
+        z[i].assign(qubitCount, false);
         if (i < qubitCount) {
             x[i][i] = true;
         } else if (i < (qubitCount << 1U)) {
