@@ -1848,8 +1848,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
-    if ((testEngineType != QINTERFACE_STABILIZER_HYBRID) && (testSubEngineType != QINTERFACE_STABILIZER_HYBRID) &&
-        (testEngineType != QINTERFACE_HYBRID) && (testSubEngineType != QINTERFACE_HYBRID) &&
+    if ((testEngineType != QINTERFACE_HYBRID) && (testSubEngineType != QINTERFACE_HYBRID) &&
         (testEngineType != QINTERFACE_QPAGER) && (testSubEngineType != QINTERFACE_QPAGER)) {
         qftReg->UniformlyControlledRY(controls, 2, 0, angles);
         qftReg2->QInterface::UniformlyControlledRY(controls, 2, 0, angles);
@@ -2074,8 +2073,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
-    if ((testEngineType != QINTERFACE_STABILIZER_HYBRID) && (testSubEngineType != QINTERFACE_STABILIZER_HYBRID) &&
-        (testEngineType != QINTERFACE_HYBRID) && (testSubEngineType != QINTERFACE_HYBRID) &&
+    if ((testEngineType != QINTERFACE_HYBRID) && (testSubEngineType != QINTERFACE_HYBRID) &&
         (testEngineType != QINTERFACE_QPAGER) && (testSubEngineType != QINTERFACE_QPAGER)) {
         qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
         qftReg2->QInterface::UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
@@ -4527,8 +4525,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve_uniform")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
 {
-    if ((testEngineType == QINTERFACE_STABILIZER_HYBRID) || (testSubEngineType == QINTERFACE_STABILIZER_HYBRID) ||
-        (testEngineType == QINTERFACE_HYBRID) || (testSubEngineType == QINTERFACE_HYBRID) ||
+    if ((testEngineType == QINTERFACE_HYBRID) || (testSubEngineType == QINTERFACE_HYBRID) ||
         (testEngineType == QINTERFACE_QPAGER) || (testSubEngineType == QINTERFACE_QPAGER)) {
         return;
     }

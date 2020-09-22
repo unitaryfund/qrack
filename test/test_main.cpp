@@ -247,7 +247,7 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 
-        if (num_failed == 0 && hybrid_multi) {
+        if (num_failed == 0 && hybrid_multi && stabilizer) {
             session.config().stream() << "############ QUnitMulti -> QStabilizerHybrid -> QHybrid ############"
                                       << std::endl;
             testEngineType = QINTERFACE_QUNIT_MULTI;
