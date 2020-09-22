@@ -226,21 +226,24 @@ public:
     using QInterface::Compose;
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy)
     {
+        bitLenInt toRet;
+
         if (engine) {
             if (toCopy->stabilizer) {
                 toCopy->SwitchToEngine();
             }
-            return engine->Compose(toCopy->engine);
-        }
-
-        if (toCopy->engine) {
+            toRet = engine->Compose(toCopy->engine);
+        } else if (toCopy->engine) {
             SwitchToEngine();
-            return engine->Compose(toCopy->engine);
+            toRet = engine->Compose(toCopy->engine);
+        } else {
+            FinishStabilizer();
+            toRet = stabilizer->Compose(toCopy->stabilizer);
         }
 
-        FinishStabilizer();
+        SetQubitCount(qubitCount + toCopy->qubitCount);
 
-        return stabilizer->Compose(toCopy->stabilizer);
+        return toRet;
     }
     virtual bitLenInt Compose(QInterfacePtr toCopy)
     {
@@ -255,16 +258,15 @@ public:
                 toCopy->SwitchToEngine();
             }
             toRet = engine->Compose(toCopy->engine, start);
-            SetQubitCount(engine->GetQubitCount());
         } else if (toCopy->engine) {
             SwitchToEngine();
             toRet = engine->Compose(toCopy->engine, start);
-            SetQubitCount(engine->GetQubitCount());
         } else {
             FinishStabilizer();
             toRet = stabilizer->Compose(toCopy->stabilizer, start);
-            SetQubitCount(stabilizer->GetQubitCount());
         }
+
+        SetQubitCount(qubitCount + toCopy->qubitCount);
 
         return toRet;
     }
@@ -284,7 +286,7 @@ public:
                 dest->engine = dest->MakeEngine();
             }
             engine->Decompose(start, length, dest->engine);
-            SetQubitCount(engine->GetQubitCount());
+            SetQubitCount(qubitCount - length);
             return;
         }
 
@@ -296,29 +298,29 @@ public:
         FinishStabilizer();
 
         stabilizer->Decompose(start, length, dest->stabilizer);
-        SetQubitCount(stabilizer->GetQubitCount());
+        SetQubitCount(qubitCount - length);
     }
     virtual void Dispose(bitLenInt start, bitLenInt length)
     {
         if (engine) {
             engine->Dispose(start, length);
-            SetQubitCount(engine->GetQubitCount());
         } else {
             FinishStabilizer();
             stabilizer->Dispose(start, length);
-            SetQubitCount(stabilizer->GetQubitCount());
         }
+
+        SetQubitCount(qubitCount - length);
     }
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
         if (engine) {
             engine->Dispose(start, length, disposedPerm);
-            SetQubitCount(engine->GetQubitCount());
         } else {
             FinishStabilizer();
             stabilizer->Dispose(start, length);
-            SetQubitCount(stabilizer->GetQubitCount());
         }
+
+        SetQubitCount(qubitCount - length);
     }
 
     virtual void SetQuantumState(const complex* inputState)
