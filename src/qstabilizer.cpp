@@ -294,8 +294,7 @@ void QStabilizer::setBasisState(const real1& nrm, complex* stateVec)
         }
     }
 
-    // TODO: This += probably isn't necessary.
-    stateVec[perm] += amp;
+    stateVec[perm] = amp;
 }
 
 /// Convert the state to ket notation (warning: could be huge!)

@@ -296,7 +296,6 @@ public:
         }
 
         FinishStabilizer();
-
         stabilizer->Decompose(start, length, dest->stabilizer);
         SetQubitCount(qubitCount - length);
     }

@@ -53,6 +53,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     QStabilizerHybridPtr c = std::dynamic_pointer_cast<QStabilizerHybrid>(CreateQuantumInterface(
         QINTERFACE_STABILIZER_HYBRID, engineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
         randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, std::vector<int>{}, thresholdQubits));
+
     if (stabilizer) {
         c->stabilizer = std::make_shared<QStabilizer>(*stabilizer);
     } else {
