@@ -24,13 +24,12 @@
 
 #pragma once
 
+#include <bitset>
 #include <cstdint>
 
 #include "common/qrack_types.hpp"
 #include "common/rdrandwrapper.hpp"
 
-// #define PAULI bitCapInt
-#define PAULI uint8_t
 namespace Qrack {
 
 class QStabilizer;
@@ -41,9 +40,9 @@ protected:
     // # of qubits
     bitLenInt qubitCount;
     // (2n+1)*n matrix for stabilizer/destabilizer x bits (there's one "scratch row" at the bottom)
-    std::vector<std::vector<PAULI>> x;
+    std::vector<std::vector<bool>> x;
     // (2n+1)*n matrix for z bits
-    std::vector<std::vector<PAULI>> z;
+    std::vector<std::vector<bool>> z;
     // Phase bits: 0 for +1, 1 for i, 2 for -1, 3 for -i.  Normally either 0 or 2.
     std::vector<uint8_t> r;
 
@@ -52,27 +51,7 @@ protected:
     std::uniform_real_distribution<real1> rand_distribution;
     std::shared_ptr<RdRandom> hardware_rand_generator;
 
-    // const PAULI BitCapMask = bitsInCap - ONE_BCI;
-
-    bitLenInt overBitCap()
-    {
-        // return (qubitCount / 8U) + 1U;
-        return qubitCount;
-    }
-
-    bitLenInt genIndex(const bitLenInt& qubit)
-    {
-        // return qubit >> (bitLenInt)QBCAPPOW;
-        return qubit;
-    }
-
     bitCapInt pow2(const bitLenInt& qubit) { return ONE_BCI << (bitCapInt)qubit; }
-
-    PAULI modPow2(const bitLenInt& qubit)
-    {
-        // return (PAULI)pow2(qubit & BitCapMask);
-        return 1 << (uint8_t)(qubit & 1U);
-    }
 
 public:
     QStabilizer(const bitLenInt& n, const bitCapInt& perm = 0, const bool& useHardwareRNG = true,
@@ -121,13 +100,13 @@ protected:
     bitLenInt gaussian();
 
     /**
-     * Finds a PAULI operator P such that the basis state P|0...0> occurs with nonzero amplitude in q, and
+     * Finds a Pauli operator P such that the basis state P|0...0> occurs with nonzero amplitude in q, and
      * writes P to the scratch space of q.  For this to work, Gaussian elimination must already have been
      * performed on q.  g is the return value from gaussian(q).
      */
     void seed(const bitLenInt& g);
 
-    /// Returns the result of applying the PAULI operator in the "scratch space" of q to |0...0>
+    /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
     void setBasisState(const real1& nrm, complex* stateVec);
 
     void DecomposeDispose(const bitLenInt& start, const bitLenInt& length, QStabilizerPtr toCopy);
