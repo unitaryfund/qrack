@@ -32,7 +32,7 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, const bool& 
     : qubitCount(n)
     , x((n << 1U) + 1U, std::vector<bool>(n))
     , z((n << 1U) + 1U, std::vector<bool>(n))
-    , r((n << 1U) + 1U, 0)
+    , r((n << 1U) + 1U)
     , rand_distribution(0.0, 1.0)
 {
     if (useHardwareRNG) {
