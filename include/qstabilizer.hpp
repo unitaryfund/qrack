@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include <bitset>
 #include <cstdint>
 
 #include "common/qrack_types.hpp"

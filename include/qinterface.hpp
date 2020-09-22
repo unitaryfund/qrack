@@ -198,6 +198,10 @@ public:
     {
         SetQubitCount(n);
 
+#if !ENABLE_RDRAND
+        useHardwareRNG = false;
+#endif
+
         if (useHardwareRNG) {
             hardware_rand_generator = std::make_shared<RdRandom>();
 #if !ENABLE_RNDFILE
@@ -207,7 +211,7 @@ public:
 #endif
         }
 
-        if (rgp == NULL) {
+        if (!useHardwareRNG && (rgp == NULL)) {
             rand_generator = std::make_shared<qrack_rand_gen>();
             randomSeed = std::time(0);
             SetRandomSeed(randomSeed);
@@ -224,9 +228,6 @@ public:
     {
         // Intentionally left blank
     }
-
-    /** Destructor of QInterface */
-    virtual ~QInterface(){};
 
     virtual void SetRandomSeed(uint32_t seed)
     {
