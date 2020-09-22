@@ -280,7 +280,8 @@ public:
     {
         if (engine) {
             if (dest->stabilizer) {
-                dest->SwitchToEngine();
+                dest->stabilizer = NULL;
+                dest->engine = dest->MakeEngine();
             }
             engine->Decompose(start, length, dest->engine);
             SetQubitCount(engine->GetQubitCount());
@@ -288,9 +289,8 @@ public:
         }
 
         if (dest->engine) {
-            SwitchToEngine();
-            engine->Decompose(start, length, dest->engine);
-            SetQubitCount(engine->GetQubitCount());
+            dest->engine = NULL;
+            dest->stabilizer = dest->MakeStabilizer(0);
         }
 
         FinishStabilizer();
@@ -304,10 +304,9 @@ public:
             engine->Dispose(start, length);
             SetQubitCount(engine->GetQubitCount());
         } else {
-            Dispatch([this, start, length] {
-                stabilizer->Dispose(start, length);
-                SetQubitCount(stabilizer->GetQubitCount());
-            });
+            FinishStabilizer();
+            stabilizer->Dispose(start, length);
+            SetQubitCount(stabilizer->GetQubitCount());
         }
     }
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
@@ -316,17 +315,16 @@ public:
             engine->Dispose(start, length, disposedPerm);
             SetQubitCount(engine->GetQubitCount());
         } else {
-            Dispatch([this, start, length] {
-                stabilizer->Dispose(start, length);
-                SetQubitCount(stabilizer->GetQubitCount());
-            });
+            FinishStabilizer();
+            stabilizer->Dispose(start, length);
+            SetQubitCount(stabilizer->GetQubitCount());
         }
     }
 
     virtual void SetQuantumState(const complex* inputState)
     {
         Dump();
-
+#if 0
         if (qubitCount == 1U) {
             bool isClifford = false;
             bool isSet = false;
@@ -372,7 +370,7 @@ public:
                 return;
             }
         }
-
+#endif
         SwitchToEngine();
         engine->SetQuantumState(inputState);
     }
