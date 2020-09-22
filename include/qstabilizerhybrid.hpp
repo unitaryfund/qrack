@@ -521,6 +521,11 @@ public:
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
     {
+        if (!controlLen) {
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
         if (controlLen > 1U) {
             SwitchToEngine();
         }
@@ -530,11 +535,12 @@ public:
             return;
         }
 
-        if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
+        if (!norm(mtrx[1]) && !norm(mtrx[2])) {
             ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
             return;
         }
-        if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
+
+        if (!norm(mtrx[0]) && !norm(mtrx[3])) {
             ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
             return;
         }
@@ -613,6 +619,11 @@ public:
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
     {
+        if (!controlLen) {
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
         if (controlLen > 1U) {
             SwitchToEngine();
         }
@@ -622,11 +633,12 @@ public:
             return;
         }
 
-        if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
+        if (!norm(mtrx[1]) && !norm(mtrx[2])) {
             ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
             return;
         }
-        if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
+
+        if (!norm(mtrx[0]) && !norm(mtrx[3])) {
             ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
             return;
         }

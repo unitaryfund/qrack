@@ -225,6 +225,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     }
 
     QInterfacePtr destEngine;
+    BoolPtr isClifford;
     if (length == 1U) {
         EndEmulation(start);
         if (dest) {
@@ -238,6 +239,8 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
             dest->EntangleRange(0, length);
             dest->OrderContiguous(dest->shards[0].unit);
             destEngine = dest->shards[0].unit;
+            isClifford = dest->shards[0].isClifford;
+            *isClifford = *(shards[start].isClifford);
         }
     }
 
@@ -246,11 +249,9 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     bitLenInt unitLength = unit->GetQubitCount();
 
     if (dest) {
-        BoolPtr isClifford = std::make_shared<bool>(*(shards[start].isClifford));
         for (bitLenInt i = 0; i < length; i++) {
-            QInterfacePtr tempUnit = dest->shards[i].unit;
             dest->shards[i] = QEngineShard(shards[start + i]);
-            dest->shards[i].unit = tempUnit;
+            dest->shards[i].unit = destEngine;
             dest->shards[i].isClifford = isClifford;
         }
 
@@ -952,7 +953,7 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
     const bitCapInt& mtrxSkipValueMask)
 {
     // If there are no controls, this is equivalent to the single bit gate.
-    if (controlLen == 0) {
+    if (!controlLen) {
         ApplySingleBit(mtrxs, qubitIndex);
         return;
     }
@@ -972,7 +973,7 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
     }
 
     // If all controls are in eigenstates, we can avoid entangling them.
-    if (trimmedControls.size() == 0) {
+    if (!trimmedControls.size()) {
         bitCapInt controlPerm = GetCachedPermutation(controls, controlLen);
         complex mtrx[4];
         std::copy(
@@ -1659,7 +1660,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     const bitLenInt& cTarget, const complex topLeft, const complex bottomRight)
 {
     // Commutes with controlled phase optimizations
-    if (controlLen == 0) {
+    if (!controlLen) {
         ApplySinglePhase(topLeft, bottomRight, cTarget);
         return;
     }
@@ -1781,7 +1782,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     const bitLenInt& cTarget, const complex topLeft, const complex bottomRight)
 {
     // Commutes with controlled phase optimizations
-    if (controlLen == 0) {
+    if (!controlLen) {
         ApplySinglePhase(topLeft, bottomRight, cTarget);
         return;
     }
@@ -1885,11 +1886,11 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
+    if (!norm(mtrx[1]) && !norm(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
     }
-    if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
+    if (!norm(mtrx[0]) && !norm(mtrx[3])) {
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
@@ -1934,12 +1935,12 @@ void QUnit::ApplyControlledSingleBit(
         return;
     }
 
-    if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
+    if (!norm(mtrx[1]) && !norm(mtrx[2])) {
         ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
         return;
     }
 
-    if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
+    if (!norm(mtrx[0]) && !norm(mtrx[3])) {
         ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
         return;
     }
@@ -1954,12 +1955,12 @@ void QUnit::ApplyAntiControlledSingleBit(
         return;
     }
 
-    if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
+    if (!norm(mtrx[1]) && !norm(mtrx[2])) {
         ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
         return;
     }
 
-    if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
+    if (!norm(mtrx[0]) && !norm(mtrx[3])) {
         ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
         return;
     }
@@ -2055,7 +2056,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         }
     }
 
-    if (controlVec.size() == 0) {
+    if (!controlVec.size()) {
         // Here, the gate is guaranteed to act as if it wasn't controlled, so we apply the gate without controls,
         // avoiding an entangled representation.
         fn();
@@ -2114,7 +2115,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
 bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
 {
-    if (controlLen == 0) {
+    if (!controlLen) {
         return false;
     }
 
@@ -2261,7 +2262,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
 {
     // Keep the bits separate, if cheap to do so:
     toMod &= pow2Mask(length);
-    if (toMod == 0) {
+    if (!toMod) {
         return;
     }
 
@@ -2393,7 +2394,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         }
     }
 
-    if ((toMod == 0) && (length == 0)) {
+    if (!toMod && !length) {
         // We were able to avoid entangling the carry.
         if (hasCarry && carry) {
             if (controlLen == 1U) {
@@ -2474,7 +2475,7 @@ void QUnit::INTS(
     bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex, bool hasCarry)
 {
     toMod &= pow2Mask(length);
-    if (toMod == 0) {
+    if (!toMod) {
         return;
     }
 
@@ -2600,7 +2601,7 @@ void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     // Keep the bits separate, if cheap to do so:
-    if (toMul == 0U) {
+    if (!toMul) {
         SetReg(inOutStart, length, 0U);
         SetReg(carryStart, length, 0U);
         return;
@@ -2658,7 +2659,7 @@ void QUnit::xMULModNOut(
     bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length, bool inverse)
 {
     // Inexpensive edge case
-    if (toMod == 0U) {
+    if (!toMod) {
         SetReg(outStart, length, 0U);
         return;
     }
@@ -2779,7 +2780,7 @@ QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt s
 
     QInterfacePtr unit = Entangle(ebits);
 
-    controlsMapped->resize(controlVec.size() == 0 ? 1 : controlVec.size());
+    controlsMapped->resize(!controlVec.size() ? 1 : controlVec.size());
     for (bitLenInt i = 0; i < controlVec.size(); i++) {
         (*controlsMapped)[i] = shards[controlVec[i]].mapped;
         shards[controlVec[i]].isPhaseDirty = true;
@@ -2825,7 +2826,7 @@ void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt st
 void QUnit::CMUL(
     bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    if (controlLen == 0U) {
+    if (!controlLen) {
         MUL(toMod, start, carryStart, length);
         return;
     }
@@ -2836,7 +2837,7 @@ void QUnit::CMUL(
 void QUnit::CDIV(
     bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
 {
-    if (controlLen == 0U) {
+    if (!controlLen) {
         DIV(toMod, start, carryStart, length);
         return;
     }
@@ -2854,7 +2855,7 @@ void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bit
         return;
     }
 
-    if (controlVec.size() == 0U) {
+    if (!controlVec.size()) {
         if (inverse) {
             IMULModNOut(toMod, modN, inStart, outStart, length);
         } else {
@@ -2917,7 +2918,7 @@ void QUnit::CIMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bit
 void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
-    if (controlLen == 0U) {
+    if (!controlLen) {
         POWModNOut(toMod, modN, inStart, outStart, length);
         return;
     }
