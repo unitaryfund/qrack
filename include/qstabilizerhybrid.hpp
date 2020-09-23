@@ -229,9 +229,7 @@ public:
         bitLenInt toRet;
 
         if (engine) {
-            if (toCopy->stabilizer) {
-                toCopy->SwitchToEngine();
-            }
+            toCopy->SwitchToEngine();
             toRet = engine->Compose(toCopy->engine);
         } else if (toCopy->engine) {
             SwitchToEngine();
@@ -254,9 +252,7 @@ public:
         bitLenInt toRet;
 
         if (engine) {
-            if (toCopy->stabilizer) {
-                toCopy->SwitchToEngine();
-            }
+            toCopy->SwitchToEngine();
             toRet = engine->Compose(toCopy->engine, start);
         } else if (toCopy->engine) {
             SwitchToEngine();
@@ -280,12 +276,19 @@ public:
     }
     virtual void Decompose(bitLenInt start, bitLenInt length, QStabilizerHybridPtr dest)
     {
+        if (length == qubitCount) {
+            dest->stabilizer = stabilizer;
+            stabilizer = NULL;
+            dest->engine = engine;
+            engine = NULL;
+
+            SetQubitCount(1);
+            stabilizer = MakeStabilizer(0);
+            return;
+        }
+
         if (engine) {
-            if (dest->stabilizer) {
-                dest->Dump();
-                dest->stabilizer.reset();
-                dest->engine = dest->MakeEngine();
-            }
+            dest->SwitchToEngine();
             engine->Decompose(start, length, dest->engine);
             SetQubitCount(qubitCount - length);
             return;
@@ -302,6 +305,15 @@ public:
     }
     virtual void Dispose(bitLenInt start, bitLenInt length)
     {
+        if (length == qubitCount) {
+            stabilizer = NULL;
+            engine = NULL;
+
+            SetQubitCount(1);
+            stabilizer = MakeStabilizer(0);
+            return;
+        }
+
         if (engine) {
             engine->Dispose(start, length);
         } else {
@@ -313,6 +325,15 @@ public:
     }
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
+        if (length == qubitCount) {
+            stabilizer = NULL;
+            engine = NULL;
+
+            SetQubitCount(1);
+            stabilizer = MakeStabilizer(0);
+            return;
+        }
+
         if (engine) {
             engine->Dispose(start, length, disposedPerm);
         } else {

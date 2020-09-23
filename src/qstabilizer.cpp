@@ -34,7 +34,12 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, const bool& 
     , z((n << 1U) + 1U, std::vector<bool>(n))
     , r((n << 1U) + 1U)
     , rand_distribution(0.0, 1.0)
+    , hardware_rand_generator(NULL)
 {
+#if !ENABLE_RDRAND
+    useHardwareRNG = false;
+#endif
+
     if (useHardwareRNG) {
         hardware_rand_generator = std::make_shared<RdRandom>();
 #if !ENABLE_RNDFILE
@@ -44,7 +49,7 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, const bool& 
 #endif
     }
 
-    if (rgp == NULL) {
+    if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
         rand_generator = std::make_shared<qrack_rand_gen>();
         randomSeed = std::time(0);
         SetRandomSeed(randomSeed);
