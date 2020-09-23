@@ -310,7 +310,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
 {
     if (qubitCount == 1) {
         if (!x[1][0]) {
-            if (M(0)) {
+            if (r[1] & 2U) {
                 stateVec[0] = ZERO_CMPLX;
                 stateVec[1] = ONE_CMPLX;
             } else {
@@ -324,7 +324,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
         H(0);
 
         if (!x[1][0]) {
-            if (M(0)) {
+            if (r[1] & 2U) {
                 stateVec[0] = C_SQRT1_2;
                 stateVec[1] = -C_SQRT1_2;
             } else {
@@ -338,7 +338,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
 
         S(0);
 
-        if (M(0)) {
+        if (r[1] & 2U) {
             stateVec[0] = C_SQRT1_2;
             stateVec[1] = -C_I_SQRT1_2;
         } else {

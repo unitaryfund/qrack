@@ -369,11 +369,11 @@ public:
                 isX = true;
                 isSet = true;
                 isClifford = true;
-            } else if ((I_CMPLX * inputState[0]) == inputState[1]) {
+            } else if ((I_CMPLX * inputState[0]) == -inputState[1]) {
                 isY = true;
                 isSet = false;
                 isClifford = true;
-            } else if ((I_CMPLX * inputState[0]) == -inputState[1]) {
+            } else if ((I_CMPLX * inputState[0]) == inputState[1]) {
                 isY = true;
                 isSet = true;
                 isClifford = true;
