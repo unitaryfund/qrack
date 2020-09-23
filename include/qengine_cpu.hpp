@@ -193,7 +193,7 @@ public:
         return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy), start);
     }
 
-    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual void Decompose(bitLenInt start, QInterfacePtr dest);
 
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);

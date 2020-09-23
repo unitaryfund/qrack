@@ -255,7 +255,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
             dest->shards[i].isClifford = isClifford;
         }
 
-        unit->Decompose(mapped, length, destEngine);
+        unit->Decompose(mapped, destEngine);
     } else {
         unit->Dispose(mapped, length);
     }
@@ -276,7 +276,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     }
 }
 
-void QUnit::Decompose(bitLenInt start, bitLenInt length, QUnitPtr dest) { Detach(start, length, dest); }
+void QUnit::Decompose(bitLenInt start, QUnitPtr dest) { Detach(start, dest->GetQubitCount(), dest); }
 
 void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
 

@@ -365,7 +365,7 @@ public:
      * QInterface, it can be measured with M(), or else all qubits <i>other
      * than</i> the subsystem can be measured.
      */
-    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest) = 0;
+    virtual void Decompose(bitLenInt start, QInterfacePtr dest) = 0;
 
     /**
      * Minimally decompose a set of contiguous bits from the separably composed unit,
@@ -609,6 +609,20 @@ public:
      * Applies the square root of the Hadamard gate on qubit at "qubitIndex."
      */
     virtual void SqrtH(bitLenInt qubitIndex);
+
+    /**
+     * Y-basis transformation gate
+     *
+     * Converts from Pauli Z basis to Y, (via H then S gates).
+     */
+    virtual void SH(bitLenInt qubitIndex);
+
+    /**
+     * Y-basis (inverse) transformation gate
+     *
+     * Converts from Pauli Y basis to Z, (via IS then H gates).
+     */
+    virtual void HIS(bitLenInt qubitIndex);
 
     /**
      * Measurement gate
@@ -1194,6 +1208,12 @@ public:
 
     /** Bitwise Hadamard */
     virtual void H(bitLenInt start, bitLenInt length);
+
+    /** Bitwise Y-basis transformation gate */
+    virtual void SH(bitLenInt start, bitLenInt length);
+
+    /** Bitwise inverse Y-basis transformation gate */
+    virtual void HIS(bitLenInt start, bitLenInt length);
 
     /** Bitwise square root of Hadamard */
     virtual void SqrtH(bitLenInt start, bitLenInt length);

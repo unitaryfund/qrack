@@ -93,17 +93,17 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QHybrid>(toCopy), start);
     }
-    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
-        Decompose(start, length, std::dynamic_pointer_cast<QHybrid>(dest));
+        Decompose(start, std::dynamic_pointer_cast<QHybrid>(dest));
     }
-    virtual void Decompose(bitLenInt start, bitLenInt length, QHybridPtr dest)
+    virtual void Decompose(bitLenInt start, QHybridPtr dest)
     {
-        bitLenInt nQubitCount = qubitCount - length;
+        bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
         SwitchModes(nQubitCount >= thresholdQubits);
         dest->SwitchModes(isGpu);
         SetQubitCount(nQubitCount);
-        return engine->Decompose(start, length, dest->engine);
+        return engine->Decompose(start, dest->engine);
     }
     virtual void Dispose(bitLenInt start, bitLenInt length)
     {

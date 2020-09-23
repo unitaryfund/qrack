@@ -393,6 +393,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
     REQUIRE_THAT(qftReg, HasProbability(0x03));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_sh")
+{
+    qftReg->SH(0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+    qftReg->HIS(0, 2);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0);
+    REQUIRE_FLOAT(qftReg->Prob(1), 0.5);
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
 {
     qftReg->SetPermutation(0xCAC00);
@@ -3546,7 +3555,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
     qftReg->Compose(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 
-    qftReg->Decompose(0, 4, qftReg2);
+    qftReg->Decompose(0, qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
 
@@ -3557,7 +3566,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
         complex(ONE_R1, ZERO_R1), enable_normalization, true, true, device_id, !disable_hardware_rng, sparse);
 
     qftReg->SetPermutation(0x2b);
-    qftReg->Decompose(0, 4, qftReg2);
+    qftReg->Decompose(0, qftReg2);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));

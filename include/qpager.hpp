@@ -112,11 +112,11 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QPager>(toCopy), start);
     }
-    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
-        Decompose(start, length, std::dynamic_pointer_cast<QPager>(dest));
+        Decompose(start, std::dynamic_pointer_cast<QPager>(dest));
     }
-    virtual void Decompose(bitLenInt start, bitLenInt length, QPagerPtr dest);
+    virtual void Decompose(bitLenInt start, QPagerPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 

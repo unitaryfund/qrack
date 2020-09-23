@@ -270,12 +270,14 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QStabilizerHybrid>(toCopy), start);
     }
-    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
-        Decompose(start, length, std::dynamic_pointer_cast<QStabilizerHybrid>(dest));
+        Decompose(start, std::dynamic_pointer_cast<QStabilizerHybrid>(dest));
     }
-    virtual void Decompose(bitLenInt start, bitLenInt length, QStabilizerHybridPtr dest)
+    virtual void Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     {
+        bitLenInt length = dest->qubitCount;
+
         if (length == qubitCount) {
             dest->stabilizer = stabilizer;
             stabilizer = NULL;
@@ -289,7 +291,7 @@ public:
 
         if (engine) {
             dest->SwitchToEngine();
-            engine->Decompose(start, length, dest->engine);
+            engine->Decompose(start, dest->engine);
             SetQubitCount(qubitCount - length);
             return;
         }
@@ -300,7 +302,7 @@ public:
         }
 
         FinishStabilizer();
-        stabilizer->Decompose(start, length, dest->stabilizer);
+        stabilizer->Decompose(start, dest->stabilizer);
         SetQubitCount(qubitCount - length);
     }
     virtual void Dispose(bitLenInt start, bitLenInt length)

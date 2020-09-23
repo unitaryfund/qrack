@@ -208,9 +208,9 @@ public:
 
     bitLenInt Compose(QStabilizerPtr toCopy) { return Compose(toCopy, qubitCount); }
     bitLenInt Compose(QStabilizerPtr toCopy, const bitLenInt& start);
-    void Decompose(const bitLenInt& start, const bitLenInt& length, QStabilizerPtr destination)
+    void Decompose(const bitLenInt& start, QStabilizerPtr destination)
     {
-        DecomposeDispose(start, length, destination);
+        DecomposeDispose(start, destination->GetQubitCount(), destination);
     }
 
     void Dispose(const bitLenInt& start, const bitLenInt& length)
