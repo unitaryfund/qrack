@@ -351,8 +351,8 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
     /* Change the source parameters to the correct newly mapped bit indexes. */
     /* Also update isClifford metadata. */
     for (auto bit = first; bit < last; bit++) {
-        **bit = shards[**bit].mapped;
         shards[**bit].isClifford = isClifford;
+        **bit = shards[**bit].mapped;
     }
 
     return unit1;
