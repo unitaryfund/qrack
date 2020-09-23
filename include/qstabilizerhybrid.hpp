@@ -372,9 +372,8 @@ public:
                 return;
             }
         }
-        * /
 
-            SwitchToEngine();
+        SwitchToEngine();
         engine->SetQuantumState(inputState);
     }
     virtual void GetQuantumState(complex* outputState)
