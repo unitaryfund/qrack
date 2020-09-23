@@ -18,7 +18,7 @@ namespace Qrack {
 QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceId,
     bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<int> ignored, bitLenInt qubitThreshold)
-    : QInterface(qBitCount, rgp, false, useHardwareRNG, false, norm_thresh)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , engineType(eng)
     , engine(NULL)
     , devID(deviceId)
@@ -38,7 +38,7 @@ QStabilizerPtr QStabilizerHybrid::MakeStabilizer(const bitCapInt& perm)
     return std::make_shared<QStabilizer>(qubitCount, perm, useRDRAND, rand_generator);
 }
 
-QInterfacePtr QStabilizerHybrid::MakeEngine()
+QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
 {
     QInterfacePtr toRet = CreateQuantumInterface(engineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
         randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, std::vector<int>{}, thresholdQubits);

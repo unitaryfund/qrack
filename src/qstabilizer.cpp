@@ -302,9 +302,56 @@ void QStabilizer::setBasisState(const real1& nrm, complex* stateVec)
     stateVec[perm] = amp;
 }
 
+#define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
+#define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
+
 /// Convert the state to ket notation (warning: could be huge!)
 void QStabilizer::GetQuantumState(complex* stateVec)
 {
+    if (qubitCount == 1) {
+        if (!x[1][0]) {
+            if (M(0)) {
+                stateVec[0] = ZERO_CMPLX;
+                stateVec[1] = ONE_CMPLX;
+            } else {
+                stateVec[0] = ONE_CMPLX;
+                stateVec[1] = ZERO_CMPLX;
+            }
+
+            return;
+        }
+
+        H(0);
+
+        if (!x[1][0]) {
+            if (M(0)) {
+                stateVec[0] = C_SQRT1_2;
+                stateVec[1] = -C_SQRT1_2;
+            } else {
+                stateVec[0] = C_SQRT1_2;
+                stateVec[1] = C_SQRT1_2;
+            }
+
+            H(0);
+            return;
+        }
+
+        S(0);
+
+        if (M(0)) {
+            stateVec[0] = C_SQRT1_2;
+            stateVec[1] = -C_I_SQRT1_2;
+        } else {
+            stateVec[0] = C_SQRT1_2;
+            stateVec[1] = C_I_SQRT1_2;
+        }
+
+        Z(0);
+        S(0);
+        H(0);
+        return;
+    }
+
     bitCapInt t;
     bitCapInt t2;
     bitLenInt i;
@@ -452,6 +499,7 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& target)
     S(target);
 
     if (IsSeparableZ(target)) {
+        Z(target);
         S(target);
         H(target);
         return 3;
@@ -536,7 +584,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
     bitLenInt rowCount = (qubitCount << 1U) + 1U;
 
     bitLenInt length = toCopy->qubitCount;
-    bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
+    bitLenInt nQubitCount = qubitCount + length;
     bitLenInt secondStart = nQubitCount + start;
     const std::vector<bool> row(length, 0);
 
