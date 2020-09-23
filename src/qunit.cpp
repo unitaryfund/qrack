@@ -225,6 +225,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     }
 
     QInterfacePtr destEngine;
+    BoolPtr isClifford;
     if (length == 1U) {
         EndEmulation(start);
         if (dest) {
@@ -239,7 +240,8 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
             dest->OrderContiguous(dest->shards[0].unit);
 
             destEngine = dest->shards[0].unit;
-            *(dest->shards[0].isClifford) = *(shards[start].isClifford);
+            isClifford = dest->shards[0].isClifford;
+            *isClifford = *(shards[start].isClifford);
         }
     }
 
@@ -249,9 +251,9 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 
     if (dest) {
         for (bitLenInt i = 0; i < length; i++) {
-            QInterfacePtr tempUnit = dest->shards[start + i].unit;
-            dest->shards[start + i] = QEngineShard(shards[start + i]);
-            dest->shards[start + i].unit = tempUnit;
+            dest->shards[i] = QEngineShard(shards[start + i]);
+            dest->shards[i].unit = destEngine;
+            dest->shards[i].isClifford = isClifford;
         }
 
         unit->Decompose(mapped, destEngine);
