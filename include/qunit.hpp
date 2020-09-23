@@ -722,11 +722,11 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QUnit>(toCopy), start);
     }
-    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest)
+    virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
-        Decompose(start, length, std::dynamic_pointer_cast<QUnit>(dest));
+        Decompose(start, std::dynamic_pointer_cast<QUnit>(dest));
     }
-    virtual void Decompose(bitLenInt start, bitLenInt length, QUnitPtr dest);
+    virtual void Decompose(bitLenInt start, QUnitPtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 

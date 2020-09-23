@@ -3551,7 +3551,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
         ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
 
     qftReg->SetPermutation(0x2b);
-    qftReg->Decompose(0, 4, qftReg2);
+    qftReg->Decompose(0, qftReg2);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
@@ -3563,7 +3563,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
         complex(ONE_R1, ZERO_R1), enable_normalization, true, true, device_id, !disable_hardware_rng, sparse);
 
     qftReg->SetPermutation(0x2b);
-    qftReg->Decompose(0, 4, qftReg2);
+    qftReg->Decompose(0, qftReg2);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
