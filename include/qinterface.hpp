@@ -359,7 +359,7 @@ public:
      * QInterface, it can be measured with M(), or else all qubits <i>other
      * than</i> the subsystem can be measured.
      */
-    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest) = 0;
+    virtual void Decompose(bitLenInt start, QInterfacePtr dest) = 0;
 
     /**
      * Minimally decompose a set of contiguous bits from the separably composed unit,

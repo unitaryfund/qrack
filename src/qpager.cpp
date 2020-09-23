@@ -392,11 +392,11 @@ bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
     return toRet;
 }
 
-void QPager::Decompose(bitLenInt start, bitLenInt length, QPagerPtr dest)
+void QPager::Decompose(bitLenInt start, QPagerPtr dest)
 {
     CombineEngines();
     dest->CombineEngines();
-    qPages[0]->Decompose(start, length, dest->qPages[0]);
+    qPages[0]->Decompose(start, dest->qPages[0]);
     SetQubitCount(qPages[0]->GetQubitCount());
 }
 

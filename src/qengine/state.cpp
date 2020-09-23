@@ -841,9 +841,9 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     delete[] partStateAngle;
 }
 
-void QEngineCPU::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
+void QEngineCPU::Decompose(bitLenInt start, QInterfacePtr destination)
 {
-    DecomposeDispose(start, length, std::dynamic_pointer_cast<QEngineCPU>(destination));
+    DecomposeDispose(start, destination->GetQubitCount(), std::dynamic_pointer_cast<QEngineCPU>(destination));
 }
 
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QEngineCPUPtr)NULL); }

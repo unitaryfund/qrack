@@ -1229,9 +1229,9 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer });
 }
 
-void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
+void QEngineOCL::Decompose(bitLenInt start, QInterfacePtr destination)
 {
-    DecomposeDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination));
+    DecomposeDispose(start, destination->GetQubitCount(), std::dynamic_pointer_cast<QEngineOCL>(destination));
 }
 
 void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QEngineOCLPtr)NULL); }
