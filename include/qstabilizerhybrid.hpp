@@ -356,27 +356,27 @@ public:
             bool isX = false;
             bool isY = false;
             if (inputState[1] == ZERO_CMPLX) {
-                isSet = false;
                 isClifford = true;
+                isSet = false;
             } else if (inputState[0] == ZERO_CMPLX) {
-                isSet = true;
                 isClifford = true;
+                isSet = true;
             } else if (inputState[0] == inputState[1]) {
-                isX = true;
-                isSet = false;
                 isClifford = true;
+                isSet = false;
+                isX = true;
             } else if (inputState[0] == -inputState[1]) {
+                isClifford = true;
+                isSet = true;
                 isX = true;
-                isSet = true;
-                isClifford = true;
-            } else if ((I_CMPLX * inputState[0]) == -inputState[1]) {
-                isY = true;
-                isSet = false;
-                isClifford = true;
             } else if ((I_CMPLX * inputState[0]) == inputState[1]) {
-                isY = true;
-                isSet = true;
                 isClifford = true;
+                isSet = false;
+                isY = true;
+            } else if ((I_CMPLX * inputState[0]) == -inputState[1]) {
+                isClifford = true;
+                isSet = true;
+                isY = true;
             }
 
             if (isClifford) {

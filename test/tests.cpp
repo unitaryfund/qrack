@@ -45,6 +45,9 @@ using namespace Qrack;
         (testSubSubEngineType == QINTERFACE_HYBRID) || (testEngineType == QINTERFACE_OPENCL) ||                        \
         (testSubEngineType == QINTERFACE_OPENCL) || (testSubSubEngineType == QINTERFACE_OPENCL))
 
+#define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
+#define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
+
 void print_bin(int bits, int d);
 void log(QInterfacePtr p);
 
@@ -359,6 +362,65 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_base_case")
 
     qftReg->IS(0);
     qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0x1));
+
+    complex result[2];
+
+    amp[0] = ONE_CMPLX;
+    amp[1] = ZERO_CMPLX;
+    qftReg->SetQuantumState(amp);
+    qftReg->GetQuantumState(result);
+    REQUIRE_CMPLX(amp[0], result[0]);
+    REQUIRE_CMPLX(amp[1], result[1]);
+
+    amp[0] = ZERO_CMPLX;
+    amp[1] = ONE_CMPLX;
+    qftReg->SetQuantumState(amp);
+    qftReg->GetQuantumState(result);
+    REQUIRE_CMPLX(amp[0], result[0]);
+    REQUIRE_CMPLX(amp[1], result[1]);
+
+    amp[0] = C_SQRT1_2;
+    amp[1] = C_SQRT1_2;
+    qftReg->SetQuantumState(amp);
+    qftReg->GetQuantumState(result);
+    REQUIRE_CMPLX(amp[0], result[0]);
+    REQUIRE_CMPLX(amp[1], result[1]);
+
+    amp[0] = C_SQRT1_2;
+    amp[1] = -C_SQRT1_2;
+    qftReg->SetQuantumState(amp);
+    qftReg->GetQuantumState(result);
+    REQUIRE_CMPLX(amp[0], result[0]);
+    REQUIRE_CMPLX(amp[1], result[1]);
+
+    amp[0] = C_SQRT1_2;
+    amp[1] = C_I_SQRT1_2;
+    qftReg->SetQuantumState(amp);
+    qftReg->GetQuantumState(result);
+    REQUIRE_CMPLX(amp[0], result[0]);
+    REQUIRE_CMPLX(amp[1], result[1]);
+
+    amp[0] = C_SQRT1_2;
+    amp[1] = -C_I_SQRT1_2;
+    qftReg->SetQuantumState(amp);
+    qftReg->GetQuantumState(result);
+    REQUIRE_CMPLX(amp[0], result[0]);
+    REQUIRE_CMPLX(amp[1], result[1]);
+
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1U, 0, rng,
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+
+    qftReg->SetPermutation(1);
+    qftReg2->SetPermutation(0);
+
+    qftReg->H(0);
+    qftReg2->H(0);
+
+    qftReg->Compose(qftReg2);
+
+    qftReg->H(0, 2);
+
     REQUIRE_THAT(qftReg, HasProbability(0x1));
 }
 

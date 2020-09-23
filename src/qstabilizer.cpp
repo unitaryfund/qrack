@@ -346,8 +346,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
             stateVec[1] = C_I_SQRT1_2;
         }
 
-        Z(0);
-        S(0);
+        IS(0);
         H(0);
         return;
     }
@@ -513,6 +512,16 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& target)
  */
 bool QStabilizer::M(const bitLenInt& t, const bool& doForce, const bool& result)
 {
+    if (qubitCount == 1) {
+        if (!x[1][0]) {
+            return (r[1] & 2U);
+        } else {
+            bool rand = doForce ? result : (Rand() ? 2 : 0);
+            SetPermutation(rand ? 1 : 0);
+            return rand;
+        }
+    }
+
     bitLenInt elemCount = qubitCount << 1U;
 
     // Is the outcome random?
