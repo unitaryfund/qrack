@@ -32,6 +32,12 @@ using namespace Qrack;
         REQUIRE(__tmp_a < (__tmp_b + EPSILON));                                                                        \
         REQUIRE(__tmp_a > (__tmp_b - EPSILON));                                                                        \
     } while (0);
+#define REQUIRE_CMPLX(A, B)                                                                                            \
+    do {                                                                                                               \
+        complex __tmp_a = A;                                                                                           \
+        complex __tmp_b = B;                                                                                           \
+        REQUIRE(std::norm(__tmp_a - __tmp_b) < EPSILON);                                                               \
+    } while (0);
 
 #define QINTERFACE_RESTRICTED                                                                                          \
     ((testEngineType == QINTERFACE_STABILIZER_HYBRID) || (testSubEngineType == QINTERFACE_STABILIZER_HYBRID) ||        \
@@ -311,6 +317,49 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_setconcurrency")
 {
     // Make sure it doesn't throw:
     qftReg->SetConcurrency(1);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_base_case")
+{
+    // TODO: Fix QUnit base cases
+    if (testEngineType == QINTERFACE_QUNIT) {
+        return;
+    }
+
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1U, 0, rng, ONE_CMPLX,
+        enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+
+    complex amp[2];
+
+    qftReg->SetPermutation(0);
+    REQUIRE_THAT(qftReg, HasProbability(0x0));
+
+    qftReg->H(0);
+    qftReg->GetQuantumState(amp);
+    REQUIRE_CMPLX(amp[0], amp[1]);
+
+    qftReg->S(0);
+    qftReg->GetQuantumState(amp);
+    REQUIRE_CMPLX(I_CMPLX * amp[0], amp[1]);
+
+    qftReg->IS(0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0x0));
+
+    qftReg->SetPermutation(1);
+    REQUIRE_THAT(qftReg, HasProbability(0x1));
+
+    qftReg->H(0);
+    qftReg->GetQuantumState(amp);
+    REQUIRE_CMPLX(amp[0], -amp[1]);
+
+    qftReg->S(0);
+    qftReg->GetQuantumState(amp);
+    REQUIRE_CMPLX(I_CMPLX * amp[0], -amp[1]);
+
+    qftReg->IS(0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0x1));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
