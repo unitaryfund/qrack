@@ -207,6 +207,10 @@ public:
 
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
     {
+        if (qubit1 == qubit2) {
+            return;
+        }
+
         if (stabilizer) {
             Dispatch([this, qubit1, qubit2] { stabilizer->Swap(qubit1, qubit2); });
         } else {
@@ -216,6 +220,10 @@ public:
 
     virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2)
     {
+        if (qubit1 == qubit2) {
+            return;
+        }
+
         if (stabilizer) {
             Dispatch([this, qubit1, qubit2] { stabilizer->ISwap(qubit1, qubit2); });
         } else {

@@ -345,7 +345,6 @@ void QStabilizer::GetQuantumState(complex* stateVec)
             stateVec[0] = C_SQRT1_2;
             stateVec[1] = C_I_SQRT1_2;
         }
-
         IS(0);
         H(0);
         return;
@@ -635,6 +634,9 @@ void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& leng
     if (length == 0) {
         return;
     }
+
+    // Ensure a separable length has identity operators outside of its separable sub-unit:
+    gaussian();
 
     // We assume that the bits to "decompose" the representation of already have 0 cross-terms in their generators
     // outside inter- "dest" cross terms. (Usually, we're "decomposing" the representation of a just-measured single

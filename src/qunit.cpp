@@ -650,12 +650,15 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         didSeparate = true;
     }
 
+    // TODO: Remove
+    // return prob;
+
     if (!didSeparate) {
-        return norm(shard.amp1);
+        return prob;
     }
 
     if (shardQbCount != 2) {
-        return norm(shard.amp1);
+        return prob;
     }
 
     bitLenInt partnerIndex;
@@ -669,7 +672,9 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     QEngineShard& partnerShard = shards[partnerIndex];
     complex amps[2];
     partnerShard.unit->GetQuantumState(amps);
-    if (IS_NORM_ZERO(amps[0]) || IS_NORM_ZERO(amps[1])) {
+    if (IS_NORM_ZERO(amps[0]) || IS_NORM_ZERO(amps[1]) || IS_NORM_ZERO(amps[0] - amps[1]) ||
+        IS_NORM_ZERO(amps[0] + amps[1]) || IS_NORM_ZERO((I_CMPLX * amps[0]) - amps[1]) ||
+        IS_NORM_ZERO((I_CMPLX * amps[0]) + amps[1])) {
         partnerShard.isClifford = std::make_shared<bool>(true);
     } else {
         partnerShard.isClifford = std::make_shared<bool>(false);
@@ -684,7 +689,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         partnerShard.ClampAmps(amplitudeFloor);
     }
 
-    return norm(shard.amp1);
+    return prob;
 }
 
 real1 QUnit::Prob(bitLenInt qubit)
@@ -872,9 +877,9 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    *(shard1.isClifford) = false;
     QInterfacePtr unit = Entangle({ qubit1, qubit2 });
     unit->SqrtSwap(shards[qubit1].mapped, shards[qubit2].mapped);
-    *(shards[qubit1].isClifford) = false;
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
@@ -900,9 +905,9 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    *(shard1.isClifford) = false;
     QInterfacePtr unit = Entangle({ qubit1, qubit2 });
     unit->ISqrtSwap(shards[qubit1].mapped, shards[qubit2].mapped);
-    *(shards[qubit1].isClifford) = false;
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
@@ -943,9 +948,9 @@ void QUnit::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    *(shard1.isClifford) = false;
     QInterfacePtr unit = Entangle({ qubit1, qubit2 });
     unit->FSim(theta, phi, shards[qubit1].mapped, shards[qubit2].mapped);
-    *(shards[qubit1].isClifford) = false;
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
