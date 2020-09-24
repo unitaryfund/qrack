@@ -422,6 +422,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_base_case")
     qftReg->H(0, 2);
 
     REQUIRE_THAT(qftReg, HasProbability(0x1));
+
+    qftReg->SetPermutation(1);
+    qftReg->Dispose(1, 1, 0);
+
+    qftReg2->SetPermutation(0);
+
+    qftReg->RY(1.0, 0);
+    qftReg2->H(0);
+
+    qftReg->Compose(qftReg2);
+
+    qftReg->RY(-1.0, 0);
+    qftReg->H(1);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
