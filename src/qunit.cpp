@@ -650,9 +650,6 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         didSeparate = true;
     }
 
-    // TODO: Remove
-    // return prob;
-
     if (!didSeparate) {
         return prob;
     }
@@ -669,13 +666,25 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         }
     }
 
+    RevertBasis1Qb(partnerIndex);
+
     QEngineShard& partnerShard = shards[partnerIndex];
+
     complex amps[2];
     partnerShard.unit->GetQuantumState(amps);
-    if (IS_NORM_ZERO(amps[0]) || IS_NORM_ZERO(amps[1]) || IS_NORM_ZERO(amps[0] - amps[1]) ||
-        IS_NORM_ZERO(amps[0] + amps[1]) || IS_NORM_ZERO((I_CMPLX * amps[0]) - amps[1]) ||
+    if (IS_NORM_ZERO(amps[0]) || IS_NORM_ZERO(amps[1]) || IS_NORM_ZERO((I_CMPLX * amps[0]) - amps[1]) ||
         IS_NORM_ZERO((I_CMPLX * amps[0]) + amps[1])) {
         partnerShard.isClifford = std::make_shared<bool>(true);
+    } else if (IS_NORM_ZERO(amps[0] - amps[1])) {
+        partnerShard.isClifford = std::make_shared<bool>(true);
+        partnerShard.isPlusMinus = !partnerShard.isPlusMinus;
+        amps[0] = ONE_CMPLX;
+        amps[1] = ZERO_CMPLX;
+    } else if (IS_NORM_ZERO(amps[0] + amps[1])) {
+        partnerShard.isClifford = std::make_shared<bool>(true);
+        partnerShard.isPlusMinus = !partnerShard.isPlusMinus;
+        amps[0] = ZERO_CMPLX;
+        amps[1] = ONE_CMPLX;
     } else {
         partnerShard.isClifford = std::make_shared<bool>(false);
     }
@@ -683,7 +692,6 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     partnerShard.amp1 = amps[1];
     partnerShard.isProbDirty = false;
     partnerShard.isPhaseDirty = false;
-    partnerShard.mapped = 0;
     partnerShard.unit = NULL;
     if (doNormalize) {
         partnerShard.ClampAmps(amplitudeFloor);

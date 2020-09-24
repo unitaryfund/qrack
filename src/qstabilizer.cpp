@@ -345,8 +345,10 @@ void QStabilizer::GetQuantumState(complex* stateVec)
             stateVec[0] = C_SQRT1_2;
             stateVec[1] = C_I_SQRT1_2;
         }
+
         IS(0);
         H(0);
+
         return;
     }
 
