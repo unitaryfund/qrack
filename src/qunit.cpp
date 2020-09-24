@@ -238,6 +238,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         if (dest) {
             dest->EntangleRange(0, length);
             dest->OrderContiguous(dest->shards[0].unit);
+
             destEngine = dest->shards[0].unit;
             isClifford = dest->shards[0].isClifford;
             *isClifford = *(shards[start].isClifford);
