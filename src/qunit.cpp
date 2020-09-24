@@ -2125,11 +2125,11 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 
     // TODO: Find a better way to leverage Clifford set separability potential.
-    // if (*(shards[targets[0]].isClifford)) {
-    //     for (i = 0; i < allBits.size(); i++) {
-    //         TrySeparate(allBits[i]);
-    //     }
-    // }
+    if (*(shards[targets[0]].isClifford)) {
+        for (i = 0; i < allBits.size(); i++) {
+            TrySeparate(allBits[i]);
+        }
+    }
 }
 
 bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
