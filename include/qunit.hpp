@@ -1068,6 +1068,7 @@ protected:
     void DirtyShardRange(bitLenInt start, bitLenInt length)
     {
         for (bitLenInt i = 0; i < length; i++) {
+            *(shards[start + i].isClifford) = false;
             shards[start + i].MakeDirty();
         }
     }
@@ -1075,6 +1076,7 @@ protected:
     void DirtyShardRangePhase(bitLenInt start, bitLenInt length)
     {
         for (bitLenInt i = 0; i < length; i++) {
+            *(shards[start + i].isClifford) = false;
             shards[start + i].isPhaseDirty = true;
         }
     }
@@ -1082,6 +1084,7 @@ protected:
     void DirtyShardIndexVector(std::vector<bitLenInt> bitIndices)
     {
         for (bitLenInt i = 0; i < bitIndices.size(); i++) {
+            *(shards[bitIndices[i]].isClifford) = false;
             shards[bitIndices[i]].MakeDirty();
         }
     }

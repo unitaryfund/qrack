@@ -2206,36 +2206,31 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
 
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    DirtyShardRange(start, length);
+    DirtyShardRangePhase(start, length);
+    *(shards[flagIndex].isClifford) = false;
+    shards[flagIndex].MakeDirty();
+
     EntangleRange(start, length);
     QInterfacePtr unit = Entangle({ start, flagIndex });
-
-    *(shards[start].isClifford) = false;
-    DirtyShardRangePhase(start, length);
-    shards[flagIndex].isPhaseDirty = true;
-
     ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flagIndex].mapped);
-
-    DirtyShardRange(start, length);
-    shards[flagIndex].MakeDirty();
 }
 
 void QUnit::INCxx(
     INCxxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flag1Index, bitLenInt flag2Index)
 {
     /* Make sure the flag bits are entangled in the same QU. */
+    DirtyShardRange(start, length);
+    DirtyShardRangePhase(start, length);
+    *(shards[flag1Index].isClifford) = false;
+    shards[flag1Index].MakeDirty();
+    *(shards[flag2Index].isClifford) = false;
+    shards[flag2Index].MakeDirty();
+
     EntangleRange(start, length);
     QInterfacePtr unit = Entangle({ start, flag1Index, flag2Index });
 
-    *(shards[start].isClifford) = false;
-    DirtyShardRangePhase(start, length);
-    shards[flag1Index].isPhaseDirty = true;
-    shards[flag2Index].isPhaseDirty = true;
-
     ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flag1Index].mapped, shards[flag2Index].mapped);
-
-    DirtyShardRange(start, length);
-    shards[flag1Index].MakeDirty();
-    shards[flag2Index].MakeDirty();
 }
 
 /// Check if overflow arithmetic can be optimized
@@ -2404,15 +2399,14 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
 
                 // If toAdd == inReg, this prevents superposition of the carry-out. The carry out of the truth table
                 // is independent of the superposed output value of the quantum bit.
-                EntangleRange(start, partLength);
                 // TODO: Can we conceptualize the full-adder as Clifford?
-                *(shards[start].isClifford) = false;
                 DirtyShardRange(start, partLength);
+                EntangleRange(start, partLength);
                 if (controlLen) {
                     allBits[controlLen] = start;
                     ebits[controlLen] = &allBits[controlLen];
-                    QInterfacePtr unit = Entangle(ebits);
                     DirtyShardIndexVector(allBits);
+                    QInterfacePtr unit = Entangle(ebits);
                     for (bitLenInt cIndex = 0; cIndex < controlLen; cIndex++) {
                         lControls[cIndex] = shards[cIndex].mapped;
                     }
@@ -2456,18 +2450,16 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             // implement, once the QEngine methods were in place.
             throw "ERROR: Controlled-with-carry arithmetic is not implemented!";
         } else {
-            EntangleRange(start, length, carryIndex, 1);
-            shards[start].unit->INCC(toMod, shards[start].mapped, length, shards[carryIndex].mapped);
-            // TODO: Can we conceptualize the full-adder as Clifford?
-            *(shards[start].isClifford) = false;
+            // TODO: Can we conceptualize the full-adder as Clifford
             DirtyShardRange(start, length);
             DirtyShardRange(carryIndex, 1U);
+            EntangleRange(start, length, carryIndex, 1);
+            shards[start].unit->INCC(toMod, shards[start].mapped, length, shards[carryIndex].mapped);
         }
     } else {
-        EntangleRange(start, length);
         // TODO: Can we conceptualize the full-adder as Clifford?
-        *(shards[start].isClifford) = false;
         DirtyShardRange(start, length);
+        EntangleRange(start, length);
         if (controlLen) {
             allBits[controlLen] = start;
             ebits[controlLen] = &allBits[controlLen];
@@ -2597,11 +2589,10 @@ void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
 void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     // BCD variants are low priority for optimization, for the time being.
+    // TODO: Can we conceptualize BCD arithmetic as Clifford?
+    DirtyShardRange(start, length);
     EntangleRange(start, length);
     shards[start].unit->INCBCD(toMod, shards[start].mapped, length);
-    // TODO: Can we conceptualize BCD arithmetic as Clifford?
-    *(shards[start].isClifford) = false;
-    DirtyShardRange(start, length);
 }
 
 void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -2624,11 +2615,10 @@ void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
 void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     // BCD variants are low priority for optimization, for the time being.
+    // TODO: Can we conceptualize BCD arithmetic as Clifford?
+    DirtyShardRange(start, length);
     EntangleRange(start, length);
     shards[start].unit->DECBCD(toMod, shards[start].mapped, length);
-    // TODO: Can we conceptualize BCD arithmetic as Clifford?
-    *(shards[start].isClifford) = false;
-    DirtyShardRange(start, length);
 }
 
 void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -2657,13 +2647,13 @@ void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bit
         return;
     }
 
+    // TODO: Can we conceptualize arithmetic as Clifford?
+    DirtyShardRange(inOutStart, length);
+    DirtyShardRange(carryStart, length);
+
     // Otherwise, form the potentially entangled representation:
     EntangleRange(inOutStart, length, carryStart, length);
     shards[inOutStart].unit->MUL(toMul, shards[inOutStart].mapped, shards[carryStart].mapped, length);
-    // TODO: Can we conceptualize arithmetic as Clifford?
-    *(shards[inOutStart].isClifford) = false;
-    DirtyShardRange(inOutStart, length);
-    DirtyShardRange(carryStart, length);
 }
 
 void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
@@ -2685,13 +2675,13 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
         return;
     }
 
+    // TODO: Can we conceptualize arithmetic as Clifford?
+    DirtyShardRange(inOutStart, length);
+    DirtyShardRange(carryStart, length);
+
     // Otherwise, form the potentially entangled representation:
     EntangleRange(inOutStart, length, carryStart, length);
     shards[inOutStart].unit->DIV(toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, length);
-    // TODO: Can we conceptualize arithmetic as Clifford?
-    *(shards[inOutStart].isClifford) = false;
-    DirtyShardRange(inOutStart, length);
-    DirtyShardRange(carryStart, length);
 }
 
 void QUnit::xMULModNOut(
@@ -2744,6 +2734,9 @@ void QUnit::xMULModNOut(
         }
     }
 
+    DirtyShardRangePhase(inStart, length);
+    DirtyShardRange(outStart, length);
+
     // Otherwise, form the potentially entangled representation:
     EntangleRange(inStart, length, outStart, length);
     if (inverse) {
@@ -2751,10 +2744,6 @@ void QUnit::xMULModNOut(
     } else {
         shards[inStart].unit->MULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
     }
-    // TODO: Can we conceptualize arithmetic as Clifford?
-    *(shards[inStart].isClifford) = false;
-    DirtyShardRangePhase(inStart, length);
-    DirtyShardRange(outStart, length);
 }
 
 void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
@@ -2783,26 +2772,23 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
 
     SetReg(outStart, length, 0);
 
+    // TODO: Can we conceptualize arithmetic as Clifford?
+    DirtyShardRangePhase(inStart, length);
+    DirtyShardRange(outStart, length);
+
     // Otherwise, form the potentially entangled representation:
     EntangleRange(inStart, length, outStart, length);
     shards[inStart].unit->POWModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
-    // TODO: Can we conceptualize arithmetic as Clifford?
-    *(shards[inStart].isClifford) = false;
-    DirtyShardRangePhase(inStart, length);
-    DirtyShardRange(outStart, length);
 }
 
 QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt start, bitLenInt carryStart,
     bitLenInt length, std::vector<bitLenInt>* controlsMapped)
 {
     // TODO: Can we conceptualize arithmetic as Clifford?
-    EntangleRange(start, length);
-    *(shards[start].isClifford) = false;
     DirtyShardRangePhase(start, length);
-    EntangleRange(carryStart, length);
-    *(shards[carryStart].isClifford) = false;
-    DirtyShardRangePhase(carryStart, length);
     DirtyShardRange(carryStart, length);
+    EntangleRange(start, length);
+    EntangleRange(carryStart, length);
 
     std::vector<bitLenInt> bits(controlVec.size() + 2);
     for (bitLenInt i = 0; i < controlVec.size(); i++) {
@@ -2857,8 +2843,6 @@ void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt st
     ((*unit).*fn)(
         toMod, modN, shards[start].mapped, shards[carryStart].mapped, length, &(controlsMapped[0]), controlVec.size());
 
-    // TODO: Can we conceptualize arithmetic as Clifford?
-    *(shards[start].isClifford) = false;
     DirtyShardRangePhase(start, length);
 }
 
@@ -3005,10 +2989,9 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
     }
 
     // Otherwise, form the potentially entangled representation:
+    DirtyShardRange(start, length);
     EntangleRange(start, length);
     shards[start].unit->PhaseFlipIfLess(greaterPerm, shards[start].mapped, length);
-    *(shards[start].isClifford) = false;
-    DirtyShardRange(start, length);
 }
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -3025,11 +3008,11 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     }
 
     // Otherwise, form the potentially entangled representation:
+    DirtyShardRange(start, length);
+    *(shards[flagIndex].isClifford) = false;
+    shards[flagIndex].isPhaseDirty = true;
     EntangleRange(start, length, flagIndex, 1);
     shards[start].unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
-    *(shards[start].isClifford) = false;
-    DirtyShardRange(start, length);
-    shards[flagIndex].isPhaseDirty = true;
 }
 
 void QUnit::PhaseFlip()
@@ -3090,14 +3073,13 @@ bitCapInt QUnit::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 #endif
     }
 
+    DirtyShardRangePhase(indexStart, indexLength);
+    DirtyShardRange(valueStart, valueLength);
+
     EntangleRange(indexStart, indexLength, valueStart, valueLength);
 
     bitCapInt toRet = shards[indexStart].unit->IndexedLDA(
         shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values, resetValue);
-
-    *(shards[indexStart].isClifford) = false;
-    DirtyShardRangePhase(indexStart, indexLength);
-    DirtyShardRange(valueStart, valueLength);
 
     return toRet;
 }
@@ -3128,16 +3110,15 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
         return 0;
     }
 #endif
+    DirtyShardRangePhase(indexStart, indexLength);
+    DirtyShardRange(valueStart, valueLength);
+    *(shards[carryIndex].isClifford) = false;
+    shards[carryIndex].MakeDirty();
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
     bitCapInt toRet = shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength,
         shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
-
-    *(shards[indexStart].isClifford) = false;
-    DirtyShardRangePhase(indexStart, indexLength);
-    DirtyShardRange(valueStart, valueLength);
-    shards[carryIndex].MakeDirty();
 
     return toRet;
 }
@@ -3168,16 +3149,14 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
         return 0;
     }
 #endif
+    DirtyShardRangePhase(indexStart, indexLength);
+    DirtyShardRange(valueStart, valueLength);
+    *(shards[carryIndex].isClifford) = false;
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
     bitCapInt toRet = shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength,
         shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
-
-    *(shards[indexStart].isClifford) = false;
-    DirtyShardRangePhase(indexStart, indexLength);
-    DirtyShardRange(valueStart, valueLength);
-    shards[carryIndex].MakeDirty();
 
     return toRet;
 }
@@ -3195,10 +3174,9 @@ void QUnit::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
         return;
     }
 
-    *(shards[start].isClifford) = false;
+    DirtyShardRange(start, length);
     EntangleRange(start, length);
     shards[start].unit->Hash(shards[start].mapped, length, values);
-    DirtyShardRangePhase(start, length);
 }
 
 bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1 param1, real1 param2, int32_t param3)
