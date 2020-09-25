@@ -99,8 +99,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 }
 
-// TODO: This const bool& parameter is a hack that should be removed. See qstabilizerhybrid.hpp.
-void QUnit::SetQuantumState(const complex* inputState, const bool& unused)
+void QUnit::SetQuantumState(const complex* inputState)
 {
     Dump();
 

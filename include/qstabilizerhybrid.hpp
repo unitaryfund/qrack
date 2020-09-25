@@ -357,12 +357,11 @@ public:
         SetQubitCount(qubitCount - length);
     }
 
-    // TODO: This "noClifford" parameter is a hack that should be removed.
-    virtual void SetQuantumState(const complex* inputState, const bool& noClifford = false)
+    virtual void SetQuantumState(const complex* inputState)
     {
         Dump();
 
-        if (!noClifford && (qubitCount == 1U)) {
+        if (qubitCount == 1U) {
             bool isClifford = false;
             bool isSet = false;
             bool isX = false;

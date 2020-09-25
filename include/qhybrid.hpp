@@ -120,11 +120,7 @@ public:
         return engine->Dispose(start, length, disposedPerm);
     }
 
-    // TODO: This const bool& parameter is a hack that should be removed. See qstabilizerhybrid.hpp.
-    virtual void SetQuantumState(const complex* inputState, const bool& unused = false)
-    {
-        engine->SetQuantumState(inputState);
-    }
+    virtual void SetQuantumState(const complex* inputState) { engine->SetQuantumState(inputState); }
     virtual void GetQuantumState(complex* outputState) { engine->GetQuantumState(outputState); }
     virtual void GetProbs(real1* outputProbs) { engine->GetProbs(outputProbs); }
     virtual complex GetAmplitude(bitCapInt perm) { return engine->GetAmplitude(perm); }

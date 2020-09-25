@@ -126,9 +126,8 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
     runningNorm = ONE_R1;
 }
 
-// TODO: This const bool& parameter is a hack that should be removed. See qstabilizerhybrid.hpp.
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QEngineCPU::SetQuantumState(const complex* inputState, const bool& unused)
+void QEngineCPU::SetQuantumState(const complex* inputState)
 {
     Dump();
 

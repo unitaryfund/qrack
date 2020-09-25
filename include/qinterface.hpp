@@ -259,7 +259,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void SetQuantumState(const complex* inputState, const bool& noClifford = false) = 0;
+    virtual void SetQuantumState(const complex* inputState) = 0;
 
     /** Get the pure quantum state representation
      *
