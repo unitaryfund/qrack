@@ -287,6 +287,14 @@ void QUnit::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) {
 QInterfacePtr QUnit::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
+    BoolPtr isClifford = std::make_shared<bool>(true);
+    for (auto bit = first; bit < last; bit++) {
+        *isClifford &= *(shards[**bit].isClifford);
+        if (!(*isClifford)) {
+            break;
+        }
+    }
+
     for (auto bit = first; bit < last; bit++) {
         EndEmulation(shards[**bit]);
     }
@@ -296,8 +304,6 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
 
     QInterfacePtr unit1 = shards[**first].unit;
     std::map<QInterfacePtr, bool> found;
-
-    BoolPtr isClifford = std::make_shared<bool>(true);
 
     /* Walk through all of the supplied bits and create a unique list to compose. */
     for (auto bit = first; bit < last; bit++) {
