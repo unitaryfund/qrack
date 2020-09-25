@@ -677,12 +677,12 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         partnerShard.isClifford = std::make_shared<bool>(true);
     } else if (IS_NORM_ZERO(amps[0] - amps[1])) {
         partnerShard.isClifford = std::make_shared<bool>(true);
-        partnerShard.isPlusMinus = !partnerShard.isPlusMinus;
+        partnerShard.isPlusMinus = true;
         amps[0] = ONE_CMPLX;
         amps[1] = ZERO_CMPLX;
     } else if (IS_NORM_ZERO(amps[0] + amps[1])) {
         partnerShard.isClifford = std::make_shared<bool>(true);
-        partnerShard.isPlusMinus = !partnerShard.isPlusMinus;
+        partnerShard.isPlusMinus = true;
         amps[0] = ZERO_CMPLX;
         amps[1] = ONE_CMPLX;
     } else {
