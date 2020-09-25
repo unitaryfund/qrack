@@ -316,50 +316,6 @@ void QStabilizer::setBasisState(const real1& nrm, complex* stateVec)
 /// Convert the state to ket notation (warning: could be huge!)
 void QStabilizer::GetQuantumState(complex* stateVec)
 {
-    if (qubitCount == 1) {
-        if (!x[1][0]) {
-            if (r[1] & 2U) {
-                stateVec[0] = ZERO_CMPLX;
-                stateVec[1] = ONE_CMPLX;
-            } else {
-                stateVec[0] = ONE_CMPLX;
-                stateVec[1] = ZERO_CMPLX;
-            }
-
-            return;
-        }
-
-        H(0);
-
-        if (!x[1][0]) {
-            if (r[1] & 2U) {
-                stateVec[0] = C_SQRT1_2;
-                stateVec[1] = -C_SQRT1_2;
-            } else {
-                stateVec[0] = C_SQRT1_2;
-                stateVec[1] = C_SQRT1_2;
-            }
-
-            H(0);
-            return;
-        }
-
-        S(0);
-
-        if (r[1] & 2U) {
-            stateVec[0] = C_SQRT1_2;
-            stateVec[1] = -C_I_SQRT1_2;
-        } else {
-            stateVec[0] = C_SQRT1_2;
-            stateVec[1] = C_I_SQRT1_2;
-        }
-
-        IS(0);
-        H(0);
-
-        return;
-    }
-
     bitCapInt t;
     bitCapInt t2;
     bitLenInt i;
@@ -412,11 +368,6 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 /// Apply a Hadamard gate to target
 void QStabilizer::H(const bitLenInt& t)
 {
-    // TODO: Where are these cases coming from?
-    // if (t >= qubitCount) {
-    //    throw "Mistake.";
-    //}
-
     bool tmp;
 
     bitLenInt maxLcv = qubitCount << 1U;
@@ -466,11 +417,11 @@ bool QStabilizer::IsSeparableZ(const bitLenInt& t)
 /**
  * Returns "true" if target qubit is an X basis eigenstate
  */
-bool QStabilizer::IsSeparableX(const bitLenInt& target)
+bool QStabilizer::IsSeparableX(const bitLenInt& t)
 {
-    H(target);
-    bool isSeparable = IsSeparableZ(target);
-    H(target);
+    H(t);
+    bool isSeparable = IsSeparableZ(t);
+    H(t);
 
     return isSeparable;
 }
@@ -478,13 +429,13 @@ bool QStabilizer::IsSeparableX(const bitLenInt& target)
 /**
  * Returns "true" if target qubit is a Y basis eigenstate
  */
-bool QStabilizer::IsSeparableY(const bitLenInt& target)
+bool QStabilizer::IsSeparableY(const bitLenInt& t)
 {
-    H(target);
-    S(target);
-    bool isSeparable = IsSeparableZ(target);
-    S(target);
-    H(target);
+    H(t);
+    S(t);
+    bool isSeparable = IsSeparableZ(t);
+    S(t);
+    H(t);
 
     return isSeparable;
 }
@@ -496,25 +447,25 @@ bool QStabilizer::IsSeparableY(const bitLenInt& target)
  * 2 if target qubit is an X basis eigenstate
  * 3 if target qubit is a Y basis eigenstate
  */
-uint8_t QStabilizer::IsSeparable(const bitLenInt& target)
+uint8_t QStabilizer::IsSeparable(const bitLenInt& t)
 {
-    if (IsSeparableZ(target)) {
+    if (IsSeparableZ(t)) {
         return 1;
     }
 
-    H(target);
+    H(t);
 
-    if (IsSeparableZ(target)) {
-        H(target);
+    if (IsSeparableZ(t)) {
+        H(t);
         return 2;
     }
 
-    S(target);
+    S(t);
 
-    if (IsSeparableZ(target)) {
-        Z(target);
-        S(target);
-        H(target);
+    if (IsSeparableZ(t)) {
+        Z(t);
+        S(t);
+        H(t);
         return 3;
     }
 
@@ -526,7 +477,7 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& target)
  */
 bool QStabilizer::M(const bitLenInt& t, const bool& doForce, const bool& result)
 {
-    if (qubitCount == 1) {
+    if (qubitCount == 1U) {
         if (!x[1][0]) {
             return (r[1] & 2U);
         } else {
@@ -707,7 +658,9 @@ bool QStabilizer::ApproxCompare(QStabilizerPtr o)
         return false;
     }
 
-    for (bitLenInt i = 0; i < qubitCount; i++) {
+    bitLenInt rowCount = (qubitCount << 1U) + 1U;
+
+    for (bitLenInt i = 0; i < rowCount; i++) {
         if (x[i] != o->x[i]) {
             return false;
         }

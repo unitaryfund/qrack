@@ -486,11 +486,12 @@ bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
     bitLenInt bitRand = unusedBitsPtr->size() * qReg->Rand();
     if (bitRand >= unusedBitsPtr->size()) {
-        bitRand = unusedBitsPtr->size() - 1;
+        bitRand = unusedBitsPtr->size() - 1U;
     }
     std::advance(bitIterator, bitRand);
+    bitRand = *bitIterator;
     unusedBitsPtr->erase(bitIterator);
-    return *bitIterator;
+    return bitRand;
 }
 
 TEST_CASE("test_quantum_triviality", "[supreme]")

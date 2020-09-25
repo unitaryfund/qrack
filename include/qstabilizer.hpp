@@ -206,7 +206,12 @@ public:
      */
     uint8_t IsSeparable(const bitLenInt& target);
 
-    bitLenInt Compose(QStabilizerPtr toCopy) { return Compose(toCopy, qubitCount); }
+    bitLenInt Compose(QStabilizerPtr toCopy)
+    {
+        bitLenInt toRet = qubitCount;
+        Compose(toCopy, qubitCount);
+        return toRet;
+    }
     bitLenInt Compose(QStabilizerPtr toCopy, const bitLenInt& start);
     void Decompose(const bitLenInt& start, QStabilizerPtr destination)
     {

@@ -355,7 +355,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
 
     /* Also update isClifford metadata. */
     for (auto&& shard : shards) {
-        if (shard.unit == shards[**first].unit) {
+        if (shard.unit == unit1) {
             shard.isClifford = isClifford;
         }
     }
