@@ -496,8 +496,10 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
             continue;
         }
 
+        QEngineShard& shard = shards[start + i];
+
         // We check X basis:
-        H(start + i);
+        shard.unit->H(shard.mapped);
         prob = ProbBase(start + i);
         didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
         H(start + i);
@@ -2198,6 +2200,7 @@ void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* 
     // All cached classical control bits have been removed from controlVec.
     bitLenInt* lControls = new bitLenInt[controlVec.size()];
     std::copy(controlVec.begin(), controlVec.end(), lControls);
+    DirtyShardIndexVector(controlVec);
 
     INT(toMod, start, length, 0xFF, false, lControls, controlVec.size());
 
@@ -3078,10 +3081,8 @@ bitCapInt QUnit::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength);
 
-    bitCapInt toRet = shards[indexStart].unit->IndexedLDA(
+    return shards[indexStart].unit->IndexedLDA(
         shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values, resetValue);
-
-    return toRet;
 }
 
 bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
@@ -3117,10 +3118,8 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    bitCapInt toRet = shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength,
-        shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
-
-    return toRet;
+    return shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
+        valueLength, shards[carryIndex].mapped, values);
 }
 
 bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
@@ -3155,10 +3154,8 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    bitCapInt toRet = shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength,
-        shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
-
-    return toRet;
+    return shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
+        valueLength, shards[carryIndex].mapped, values);
 }
 
 void QUnit::Hash(bitLenInt start, bitLenInt length, unsigned char* values)

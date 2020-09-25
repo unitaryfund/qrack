@@ -1121,6 +1121,7 @@ protected:
     void EndAllEmulation()
     {
         for (bitLenInt i = 0; i < qubitCount; i++) {
+            *(shards[i].isClifford) = false;
             EndEmulation(i);
         }
     }

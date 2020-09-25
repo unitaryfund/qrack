@@ -94,6 +94,10 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
 /// Sets row i equal to row k
 void QStabilizer::rowcopy(const bitLenInt& i, const bitLenInt& k)
 {
+    if (i == k) {
+        return;
+    }
+
     for (bitLenInt j = 0; j < qubitCount; j++) {
         x[i][j] = x[k][j];
         z[i][j] = z[k][j];
@@ -104,6 +108,10 @@ void QStabilizer::rowcopy(const bitLenInt& i, const bitLenInt& k)
 /// Swaps row i and row k
 void QStabilizer::rowswap(const bitLenInt& i, const bitLenInt& k)
 {
+    if (i == k) {
+        return;
+    }
+
     rowcopy(qubitCount << 1U, k);
     rowcopy(k, i);
     rowcopy(i, qubitCount << 1U);
@@ -404,6 +412,11 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 /// Apply a Hadamard gate to target
 void QStabilizer::H(const bitLenInt& t)
 {
+    // TODO: Where are these cases coming from?
+    // if (t >= qubitCount) {
+    //    throw "Mistake.";
+    //}
+
     bool tmp;
 
     bitLenInt maxLcv = qubitCount << 1U;
