@@ -281,7 +281,8 @@ public:
     virtual void SetDevice(const int& dID, const bool& forceReInit = false);
     virtual int GetDeviceID() { return deviceID; }
 
-    virtual void SetQuantumState(const complex* inputState);
+    // TODO: This const bool& parameter is a hack that should be removed. See qstabilizerhybrid.hpp.
+    virtual void SetQuantumState(const complex* inputState, const bool& unused = false);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm);

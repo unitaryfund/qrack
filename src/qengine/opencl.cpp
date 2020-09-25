@@ -2250,8 +2250,9 @@ void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
     PhaseFlipX(OCL_API_PHASEFLIPIFLESS, bciArgs);
 }
 
+// TODO: This const bool& parameter is a hack that should be removed. See qstabilizerhybrid.hpp.
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
-void QEngineOCL::SetQuantumState(const complex* inputState)
+void QEngineOCL::SetQuantumState(const complex* inputState, const bool& unused)
 {
     clDump();
 

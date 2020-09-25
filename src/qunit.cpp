@@ -100,7 +100,8 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 }
 
-void QUnit::SetQuantumState(const complex* inputState)
+// TODO: This const bool& parameter is a hack that should be removed. See qstabilizerhybrid.hpp.
+void QUnit::SetQuantumState(const complex* inputState, const bool& unused)
 {
     Dump();
 
@@ -886,6 +887,7 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     }
 
     *(shard1.isClifford) = false;
+    *(shard2.isClifford) = false;
     QInterfacePtr unit = Entangle({ qubit1, qubit2 });
     unit->SqrtSwap(shards[qubit1].mapped, shards[qubit2].mapped);
 
@@ -914,6 +916,7 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     }
 
     *(shard1.isClifford) = false;
+    *(shard2.isClifford) = false;
     QInterfacePtr unit = Entangle({ qubit1, qubit2 });
     unit->ISqrtSwap(shards[qubit1].mapped, shards[qubit2].mapped);
 
@@ -957,6 +960,7 @@ void QUnit::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
     }
 
     *(shard1.isClifford) = false;
+    *(shard2.isClifford) = false;
     QInterfacePtr unit = Entangle({ qubit1, qubit2 });
     unit->FSim(theta, phi, shards[qubit1].mapped, shards[qubit2].mapped);
 
@@ -2099,14 +2103,16 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::sort(allBits.begin(), allBits.end());
 
     std::vector<bitLenInt*> ebits(allBits.size());
-    for (i = 0; i < ebits.size(); i++) {
+    for (i = 0; i < allBits.size(); i++) {
         ebits[i] = &allBits[i];
     }
 
-    QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
     if (!isClifford || (allBits.size() > 2U)) {
-        *(shards[targets[0]].isClifford) = false;
+        for (i = 0; i < allBits.size(); i++) {
+            *(shards[allBits[i]].isClifford) = false;
+        }
     }
+    QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
 
     std::vector<bitLenInt> controlsMapped(controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {

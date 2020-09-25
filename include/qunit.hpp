@@ -708,7 +708,7 @@ public:
             ZERO_R1, ZERO_R1, threadsPerEngine);
     }
 
-    virtual void SetQuantumState(const complex* inputState);
+    virtual void SetQuantumState(const complex* inputState, const bool& noClifford = false);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm);
@@ -1091,7 +1091,7 @@ protected:
         if (!shard.unit) {
             complex bitState[2] = { shard.amp0, shard.amp1 };
             shard.unit = MakeEngine(1, 0);
-            shard.unit->SetQuantumState(bitState);
+            shard.unit->SetQuantumState(bitState, !*(shard.isClifford));
         }
     }
 

@@ -414,7 +414,8 @@ void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     SetQubitCount(qPages[0]->GetQubitCount());
 }
 
-void QPager::SetQuantumState(const complex* inputState)
+// TODO: This const bool& parameter is a hack that should be removed. See qstabilizerhybrid.hpp.
+void QPager::SetQuantumState(const complex* inputState, const bool& unused)
 {
     bitCapInt pagePerm = 0;
     bitCapInt pagePower = pageMaxQPower();
