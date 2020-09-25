@@ -658,7 +658,7 @@ public:
         }
 
         return unit->Prob(mapped);
-    };
+    }
 };
 
 class QUnit;
@@ -708,7 +708,7 @@ public:
             ZERO_R1, ZERO_R1, threadsPerEngine);
     }
 
-    virtual void SetQuantumState(const complex* inputState, const bool& unused);
+    virtual void SetQuantumState(const complex* inputState, const bool& noClifford = false);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm);
@@ -1068,6 +1068,7 @@ protected:
     void DirtyShardRange(bitLenInt start, bitLenInt length)
     {
         for (bitLenInt i = 0; i < length; i++) {
+            *(shards[start + i].isClifford) = false;
             shards[start + i].MakeDirty();
         }
     }
@@ -1075,6 +1076,7 @@ protected:
     void DirtyShardRangePhase(bitLenInt start, bitLenInt length)
     {
         for (bitLenInt i = 0; i < length; i++) {
+            *(shards[start + i].isClifford) = false;
             shards[start + i].isPhaseDirty = true;
         }
     }
@@ -1082,6 +1084,7 @@ protected:
     void DirtyShardIndexVector(std::vector<bitLenInt> bitIndices)
     {
         for (bitLenInt i = 0; i < bitIndices.size(); i++) {
+            *(shards[bitIndices[i]].isClifford) = false;
             shards[bitIndices[i]].MakeDirty();
         }
     }
@@ -1091,7 +1094,7 @@ protected:
         if (!shard.unit) {
             complex bitState[2] = { shard.amp0, shard.amp1 };
             shard.unit = MakeEngine(1, 0);
-            shard.unit->SetQuantumState(bitState, *(shard.isClifford));
+            shard.unit->SetQuantumState(bitState, !*(shard.isClifford));
         }
     }
 
@@ -1118,6 +1121,7 @@ protected:
     void EndAllEmulation()
     {
         for (bitLenInt i = 0; i < qubitCount; i++) {
+            *(shards[i].isClifford) = false;
             EndEmulation(i);
         }
     }
