@@ -2775,13 +2775,13 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
 
     SetReg(outStart, length, 0);
 
+    // Otherwise, form the potentially entangled representation:
+    *(shards[inStart].isClifford) = false;
+    EntangleRange(inStart, length, outStart, length);
+    shards[inStart].unit->POWModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
     // TODO: Can we conceptualize arithmetic as Clifford?
     DirtyShardRangePhase(inStart, length);
     DirtyShardRange(outStart, length);
-
-    // Otherwise, form the potentially entangled representation:
-    EntangleRange(inStart, length, outStart, length);
-    shards[inStart].unit->POWModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
 }
 
 QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt start, bitLenInt carryStart,
@@ -3011,11 +3011,11 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     }
 
     // Otherwise, form the potentially entangled representation:
-    DirtyShardRange(start, length);
-    *(shards[flagIndex].isClifford) = false;
-    shards[flagIndex].isPhaseDirty = true;
     EntangleRange(start, length, flagIndex, 1);
     shards[start].unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
+    *(shards[start].isClifford) = false;
+    DirtyShardRange(start, length);
+    shards[flagIndex].isPhaseDirty = true;
 }
 
 void QUnit::PhaseFlip()
@@ -3076,13 +3076,16 @@ bitCapInt QUnit::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 #endif
     }
 
+    *(shards[indexStart].isClifford) = false;
+    EntangleRange(indexStart, indexLength, valueStart, valueLength);
+
+    bitCapInt toRet = shards[indexStart].unit->IndexedLDA(
+        shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values, resetValue);
+
     DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
 
-    EntangleRange(indexStart, indexLength, valueStart, valueLength);
-
-    return shards[indexStart].unit->IndexedLDA(
-        shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values, resetValue);
+    return toRet;
 }
 
 bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
@@ -3111,15 +3114,17 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
         return 0;
     }
 #endif
-    DirtyShardRangePhase(indexStart, indexLength);
-    DirtyShardRange(valueStart, valueLength);
-    *(shards[carryIndex].isClifford) = false;
-    shards[carryIndex].MakeDirty();
-
+    *(shards[indexStart].isClifford) = false;
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    return shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
-        valueLength, shards[carryIndex].mapped, values);
+    bitCapInt toRet = shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength,
+        shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
+
+    DirtyShardRangePhase(indexStart, indexLength);
+    DirtyShardRange(valueStart, valueLength);
+    shards[carryIndex].MakeDirty();
+
+    return toRet;
 }
 
 bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
@@ -3148,14 +3153,17 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
         return 0;
     }
 #endif
-    DirtyShardRangePhase(indexStart, indexLength);
-    DirtyShardRange(valueStart, valueLength);
-    *(shards[carryIndex].isClifford) = false;
-
+    *(shards[indexStart].isClifford) = false;
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    return shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
-        valueLength, shards[carryIndex].mapped, values);
+    bitCapInt toRet = shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength,
+        shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
+
+    DirtyShardRangePhase(indexStart, indexLength);
+    DirtyShardRange(valueStart, valueLength);
+    shards[carryIndex].MakeDirty();
+
+    return toRet;
 }
 
 void QUnit::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
