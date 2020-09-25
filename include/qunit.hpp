@@ -55,7 +55,6 @@ class QEngineShard;
 typedef QEngineShard* QEngineShardPtr;
 typedef std::shared_ptr<PhaseShard> PhaseShardPtr;
 typedef std::map<QEngineShardPtr, PhaseShardPtr> ShardToPhaseMap;
-typedef std::shared_ptr<bool> BoolPtr;
 
 /** Associates a QInterface object with a set of bits. */
 class QEngineShard {
@@ -83,7 +82,6 @@ public:
     ShardToPhaseMap targetOfShards;
     // Shards of which this shard is an (anti-controlled) target
     ShardToPhaseMap antiTargetOfShards;
-    BoolPtr isClifford;
     // For FindShardIndex
     bool found;
 
@@ -110,7 +108,6 @@ public:
         , antiTargetOfShards()
         , found(false)
     {
-        isClifford = std::make_shared<bool>(true);
     }
 
     QEngineShard(const bool& set, const real1 amp_thresh = min_norm)
@@ -126,13 +123,12 @@ public:
         , antiTargetOfShards()
         , found(false)
     {
-        isClifford = std::make_shared<bool>(true);
         amp0 = set ? ZERO_CMPLX : ONE_CMPLX;
         amp1 = set ? ONE_CMPLX : ZERO_CMPLX;
     }
 
     // Dirty state constructor:
-    QEngineShard(QInterfacePtr u, const bitLenInt& mapping, BoolPtr isClif, const real1 amp_thresh = min_norm)
+    QEngineShard(QInterfacePtr u, const bitLenInt& mapping, const real1 amp_thresh = min_norm)
         : unit(u)
         , mapped(mapping)
         , amplitudeThreshold(amp_thresh)
@@ -145,19 +141,13 @@ public:
         , antiControlsShards()
         , targetOfShards()
         , antiTargetOfShards()
-        , isClifford(isClif)
         , found(false)
     {
     }
 
     void MakeDirty()
     {
-        if (isProbDirty || isPhaseDirty || !(*isClifford)) {
-            isProbDirty = true;
-        } else {
-            amp0 = M_SQRT1_2;
-            amp1 = M_SQRT1_2;
-        }
+        isProbDirty = true;
         isPhaseDirty = true;
     }
 
@@ -962,8 +952,7 @@ protected:
 
     template <typename CF, typename F>
     void ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-        const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F f, const bool& isClifford,
-        const bool& inCurrentBasis = false);
+        const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F f, const bool& inCurrentBasis = false);
 
     bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
@@ -1068,7 +1057,6 @@ protected:
     void DirtyShardRange(bitLenInt start, bitLenInt length)
     {
         for (bitLenInt i = 0; i < length; i++) {
-            *(shards[start + i].isClifford) = false;
             shards[start + i].MakeDirty();
         }
     }
@@ -1076,7 +1064,6 @@ protected:
     void DirtyShardRangePhase(bitLenInt start, bitLenInt length)
     {
         for (bitLenInt i = 0; i < length; i++) {
-            *(shards[start + i].isClifford) = false;
             shards[start + i].isPhaseDirty = true;
         }
     }
@@ -1084,7 +1071,6 @@ protected:
     void DirtyShardIndexVector(std::vector<bitLenInt> bitIndices)
     {
         for (bitLenInt i = 0; i < bitIndices.size(); i++) {
-            *(shards[bitIndices[i]].isClifford) = false;
             shards[bitIndices[i]].MakeDirty();
         }
     }
@@ -1094,7 +1080,7 @@ protected:
         if (!shard.unit) {
             complex bitState[2] = { shard.amp0, shard.amp1 };
             shard.unit = MakeEngine(1, 0);
-            shard.unit->SetQuantumState(bitState, !*(shard.isClifford));
+            shard.unit->SetQuantumState(bitState);
         }
     }
 
@@ -1121,7 +1107,6 @@ protected:
     void EndAllEmulation()
     {
         for (bitLenInt i = 0; i < qubitCount; i++) {
-            *(shards[i].isClifford) = false;
             EndEmulation(i);
         }
     }
