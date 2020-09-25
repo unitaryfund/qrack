@@ -479,6 +479,7 @@ QInterfacePtr QUnit::EntangleRange(
 
 bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
 {
+    real1 prob;
     bool didSeparate = false;
     for (bitLenInt i = 0; i < length; i++) {
         if (shards[start + i].GetQubitCount() == 1) {
@@ -486,9 +487,20 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
             continue;
         }
 
-        // This is usually all that's worth trying:
-        real1 prob = ProbBase(start + i);
+        // We check Z basis:
+        prob = ProbBase(start + i);
         didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
+
+        // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
+        if (!IS_ZERO_R1(prob - ONE_R1 / 2)) {
+            continue;
+        }
+
+        // We check X basis:
+        H(start + i);
+        prob = ProbBase(start + i);
+        didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
+        H(start + i);
     }
 
     return didSeparate;
@@ -1016,8 +1028,11 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
         ebits[i] = &bits[i];
     }
 
+    for (i = 0; i < bits.size(); i++) {
+        *(shards[bits[i]].isClifford) = false;
+    }
+
     QInterfacePtr unit = Entangle(ebits);
-    *(shards[qubitIndex].isClifford) = false;
 
     bitLenInt* mappedControls = new bitLenInt[trimmedControls.size()];
     for (i = 0; i < trimmedControls.size(); i++) {
