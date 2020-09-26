@@ -30,6 +30,7 @@ typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
 class QStabilizerHybrid : public QInterface {
 protected:
     QInterfaceEngine engineType;
+    QInterfaceEngine subEngineType;
     QInterfacePtr engine;
     QStabilizerPtr stabilizer;
     int devID;
@@ -72,11 +73,21 @@ protected:
     QInterfacePtr MakeEngine(const bitCapInt& perm = 0);
 
 public:
-    QStabilizerHybrid(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
+    QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored = {},
         bitLenInt qubitThreshold = 0);
+
+    QStabilizerHybrid(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
+        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true,
+        bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
+        bool useSparseStateVec = false, real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored = {},
+        bitLenInt qubitThreshold = 0)
+        : QStabilizerHybrid(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem,
+              deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold)
+    {
+    }
 
     virtual ~QStabilizerHybrid() { Dump(); }
 
@@ -120,11 +131,38 @@ public:
         complex* stateVec = new complex[maxQPower];
         FinishStabilizer();
         stabilizer->GetQuantumState(stateVec);
-        stabilizer.reset();
 
         engine = MakeEngine();
         engine->SetQuantumState(stateVec);
         delete[] stateVec;
+
+        if (engineType != QINTERFACE_QUNIT) {
+            stabilizer.reset();
+            return;
+        }
+
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            if (stabilizer->IsSeparableZ(i)) {
+                engine->SetBit(i, stabilizer->M(i));
+                continue;
+            }
+
+            stabilizer->H(i);
+            if (stabilizer->IsSeparableZ(i)) {
+                engine->SetBit(i, stabilizer->M(i));
+                engine->H(i);
+                continue;
+            }
+
+            stabilizer->S(i);
+            if (stabilizer->IsSeparableZ(i)) {
+                engine->SetBit(i, stabilizer->M(i));
+                engine->H(i);
+                engine->S(i);
+            }
+        }
+
+        stabilizer.reset();
     }
 
     virtual bool isClifford() { return !engine; }
@@ -839,15 +877,22 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
-        // TODO: QStabilizer::M() appears to be bugged, or not decomposable after measurement.
-        // Comment-out to pass test_forcem
-        // if (stabilizer) {
-        //     FinishStabilizer();
-        //     return stabilizer->M(qubit, result, doForce, doApply);
-        // }
+        // TODO: QStabilizer appears not to be decomposable after measurement, and in many cases where a bit is in an
+        // eigenstate.
+        if (stabilizer) {
+            FinishStabilizer();
+            return stabilizer->M(qubit, result, doForce, doApply);
+        }
 
         SwitchToEngine();
         return engine->ForceM(qubit, result, doForce, doApply);
+    }
+
+    virtual std::map<bitCapInt, int> MultiShotMeasureMask(
+        const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
+    {
+        SwitchToEngine();
+        return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)

@@ -223,8 +223,9 @@ int main(int argc, char* argv[])
         }
 
         if (num_failed == 0 && stabilizer) {
-            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QHybrid ############" << std::endl;
-            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            session.config().stream() << "############ QStabilizerHybrid -> QUnit -> QHybrid ############" << std::endl;
+            testEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubEngineType = QINTERFACE_QUNIT;
             testSubSubEngineType = QINTERFACE_HYBRID;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
@@ -249,19 +250,20 @@ int main(int argc, char* argv[])
         }
 
         if (num_failed == 0 && hybrid_multi && stabilizer) {
-            session.config().stream() << "############ QUnitMulti -> QStabilizerHybrid -> QHybrid ############"
+            session.config().stream() << "############ QStabilizerHybrid -> QUnitMulti -> QHybrid ############"
                                       << std::endl;
-            testEngineType = QINTERFACE_QUNIT_MULTI;
-            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubEngineType = QINTERFACE_QUNIT_MULTI;
             testSubSubEngineType = QINTERFACE_HYBRID;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
 #else
         if (num_failed == 0 && stabilizer) {
-            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QEngineCPU ############"
+            session.config().stream() << "############ QStabilizerHybrid -> QUnit -> QEngineCPU ############"
                                       << std::endl;
-            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubEngineType = QINTERFACE_QUNIT;
             testSubSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }

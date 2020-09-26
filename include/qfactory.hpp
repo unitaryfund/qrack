@@ -41,7 +41,7 @@ QInterfacePtr CreateQuantumInterface(
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(subengine1, args...);
     case QINTERFACE_STABILIZER_HYBRID:
-        return std::make_shared<QStabilizerHybrid>(subengine1, args...);
+        return std::make_shared<QStabilizerHybrid>(subengine1, subengine2, args...);
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine1, subengine2, args...);
 #if ENABLE_OPENCL

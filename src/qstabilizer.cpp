@@ -353,6 +353,7 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
         if (x[i][c]) {
             x[i][t] = !x[i][t];
         }
+
         if (z[i][t]) {
             z[i][c] = !z[i][c];
         }
@@ -517,6 +518,7 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
                 rowmult(i, p);
             }
         }
+
         return result;
     }
 

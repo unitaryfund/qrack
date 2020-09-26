@@ -15,11 +15,13 @@
 
 namespace Qrack {
 
-QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
-    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceId,
-    bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<int> ignored, bitLenInt qubitThreshold)
+QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
+    bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem,
+    int deviceId, bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<int> ignored,
+    bitLenInt qubitThreshold)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , engineType(eng)
+    , subEngineType(subEng)
     , engine(NULL)
     , devID(deviceId)
     , phaseFactor(phaseFac)
@@ -40,8 +42,9 @@ QStabilizerPtr QStabilizerHybrid::MakeStabilizer(const bitCapInt& perm)
 
 QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
 {
-    QInterfacePtr toRet = CreateQuantumInterface(engineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, std::vector<int>{}, thresholdQubits);
+    QInterfacePtr toRet = CreateQuantumInterface(engineType, subEngineType, qubitCount, 0, rand_generator, phaseFactor,
+        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, std::vector<int>{},
+        thresholdQubits);
     toRet->SetConcurrency(concurrency);
     return toRet;
 }
@@ -50,9 +53,10 @@ QInterfacePtr QStabilizerHybrid::Clone()
 {
     Finish();
 
-    QStabilizerHybridPtr c = std::dynamic_pointer_cast<QStabilizerHybrid>(CreateQuantumInterface(
-        QINTERFACE_STABILIZER_HYBRID, engineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, std::vector<int>{}, thresholdQubits));
+    QStabilizerHybridPtr c =
+        std::dynamic_pointer_cast<QStabilizerHybrid>(CreateQuantumInterface(QINTERFACE_STABILIZER_HYBRID, engineType,
+            subEngineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
+            useRDRAND, isSparse, amplitudeFloor, std::vector<int>{}, thresholdQubits));
 
     if (stabilizer) {
         c->stabilizer = std::make_shared<QStabilizer>(*stabilizer);
