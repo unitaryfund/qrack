@@ -547,6 +547,10 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
         }
     }
 
+    if (doForce && (!r[elemCount] == result)) {
+        throw "Tried to force a measurement result with 0 probability!";
+    }
+
     return r[elemCount];
 }
 

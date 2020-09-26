@@ -530,7 +530,7 @@ public:
             return;
         }
 
-        complex sTest = bottomLeft / topRight;
+        complex sTest = topRight / bottomLeft;
 
         if (sTest == I_CMPLX) {
             Dispatch([this, target] {
@@ -622,7 +622,7 @@ public:
             return;
         }
 
-        if ((topRight != ONE_CMPLX) || (controlLen > 1U)) {
+        if (((topRight != ONE_CMPLX) && (bottomLeft != ONE_CMPLX)) || (controlLen > 1U)) {
             SwitchToEngine();
         }
 
@@ -631,17 +631,26 @@ public:
             return;
         }
 
-        if (bottomLeft == ONE_CMPLX) {
+        if ((topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
             bitLenInt control = controls[0];
             Dispatch([this, control, target] { stabilizer->CNOT(control, target); });
             return;
         }
 
-        if (bottomLeft == -ONE_CMPLX) {
+        if ((topRight == ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
             bitLenInt control = controls[0];
             Dispatch([this, control, target] {
                 stabilizer->CNOT(control, target);
                 stabilizer->CZ(control, target);
+            });
+            return;
+        }
+
+        if ((topRight == -ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
+            bitLenInt control = controls[0];
+            Dispatch([this, control, target] {
+                stabilizer->CZ(control, target);
+                stabilizer->CNOT(control, target);
             });
             return;
         }
@@ -724,7 +733,7 @@ public:
             return;
         }
 
-        if ((topRight != ONE_CMPLX) || (controlLen > 1U)) {
+        if (((topRight != ONE_CMPLX) && (bottomLeft != ONE_CMPLX)) || (controlLen > 1U)) {
             SwitchToEngine();
         }
 
@@ -733,7 +742,7 @@ public:
             return;
         }
 
-        if (bottomLeft == ONE_CMPLX) {
+        if ((topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
             bitLenInt control = controls[0];
             Dispatch([this, control, target] {
                 stabilizer->X(control);
@@ -743,11 +752,23 @@ public:
             return;
         }
 
-        if (bottomLeft == -ONE_CMPLX) {
+        if ((topRight == ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
+            bitLenInt control = controls[0];
+            Dispatch([this, control, target] {
+                stabilizer->X(control);
+                stabilizer->CNOT(control, target);
+                stabilizer->CZ(control, target);
+                stabilizer->X(control);
+            });
+            return;
+        }
+
+        if ((topRight == -ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
             bitLenInt control = controls[0];
             Dispatch([this, control, target] {
                 stabilizer->X(control);
                 stabilizer->CZ(control, target);
+                stabilizer->CNOT(control, target);
                 stabilizer->X(control);
             });
             return;
@@ -821,11 +842,10 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
-        // TODO: Stabilizer ForceM is bugged.
-        // if (stabilizer) {
-        //     FinishStabilizer();
-        //     return stabilizer->M(qubit, result, doForce, doApply);
-        // }
+        if (stabilizer) {
+            FinishStabilizer();
+            return stabilizer->M(qubit, result, doForce, doApply);
+        }
 
         FinishStabilizer();
         SwitchToEngine();
