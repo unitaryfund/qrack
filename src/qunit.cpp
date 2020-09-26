@@ -727,9 +727,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     QEngineShard& shard = shards[qubit];
 
     bool result;
-    if (CACHED_CLASSICAL(shard)) {
-        result = doForce ? res : SHARD_STATE(shard);
-    } else if (!shard.isProbDirty && (shard.GetQubitCount() == 1U)) {
+    if (!shard.isProbDirty) {
         result = doForce ? res : (Rand() <= norm(shard.amp1));
     } else {
         EndEmulation(qubit);
@@ -752,9 +750,11 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     }
 
     // This is critical: it's the "nonlocal correlation" of "wave function collapse".
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (shards[i].unit == shard.unit) {
-            shards[i].MakeDirty();
+    if (shard.unit) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            if (shards[i].unit == shard.unit) {
+                shards[i].MakeDirty();
+            }
         }
     }
 

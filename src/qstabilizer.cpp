@@ -517,7 +517,7 @@ bool QStabilizer::M(const bitLenInt& t, const bool& doForce, const bool& result)
         rowset(p + n, t + n);
 
         // moment of quantum randomness
-        r[p + n] = doForce ? result : (Rand() ? 2 : 0);
+        r[p + n] = doForce ? (result ? 2 : 0) : (Rand() ? 2 : 0);
         // Now update the Xbar's and Zbar's that don't commute with Z_b
         for (bitLenInt i = 0; i < elemCount; i++) {
             if ((i != p) && x[i][t]) {
