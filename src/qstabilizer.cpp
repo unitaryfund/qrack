@@ -481,7 +481,7 @@ bool QStabilizer::M(const bitLenInt& t, const bool& doForce, const bool& result)
         if (!x[1][0]) {
             return (r[1] & 2U);
         } else {
-            bool rand = doForce ? result : (Rand() ? 2 : 0);
+            bool rand = doForce ? (result ? 2 : 0) : (Rand() ? 2 : 0);
             SetPermutation(rand ? 1 : 0);
             return rand;
         }
