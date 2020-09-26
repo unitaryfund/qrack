@@ -363,7 +363,7 @@ public:
 
         if (qubitCount == 1U) {
             bool isClifford = false;
-            bool isSet = false;
+            bool isSet;
             bool isX = false;
             bool isY = false;
             if (inputState[1] == ZERO_CMPLX) {
@@ -821,14 +821,14 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
-        if (doApply == false) {
-            SwitchToEngine();
-        }
+        // if (doApply == false) {
+        SwitchToEngine();
+        // }
 
-        if (stabilizer) {
-            FinishStabilizer();
-            return stabilizer->M(qubit, doForce, result);
-        }
+        // if (stabilizer) {
+        FinishStabilizer();
+        //     return stabilizer->M(qubit, doForce, result);
+        // }
 
         return engine->ForceM(qubit, result, doForce, doApply);
     }
