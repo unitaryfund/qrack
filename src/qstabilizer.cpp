@@ -601,9 +601,6 @@ void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& leng
         return;
     }
 
-    // Ensure a separable length has identity operators outside of its separable sub-unit:
-    gaussian();
-
     // We assume that the bits to "decompose" the representation of already have 0 cross-terms in their generators
     // outside inter- "dest" cross terms. (Usually, we're "decomposing" the representation of a just-measured single
     // qubit.)
