@@ -500,20 +500,23 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
 
     // If outcome is indeterminate
     if (ran) {
+        if (!doApply) {
+            result = (doForce ? result : Rand());
+            return result;
+        }
+
         // Set Xbar_p := Zbar_p
         rowcopy(p, p + n);
         // Set Zbar_p := Z_b
         rowset(p + n, t + n);
 
         // moment of quantum randomness
-        if (doApply) {
-            result = (doForce ? result : Rand());
-            r[p + n] = result ? 2 : 0;
-            // Now update the Xbar's and Zbar's that don't commute with Z_b
-            for (bitLenInt i = 0; i < elemCount; i++) {
-                if ((i != p) && x[i][t]) {
-                    rowmult(i, p);
-                }
+        result = (doForce ? result : Rand());
+        r[p + n] = result ? 2 : 0;
+        // Now update the Xbar's and Zbar's that don't commute with Z_b
+        for (bitLenInt i = 0; i < elemCount; i++) {
+            if ((i != p) && x[i][t]) {
+                rowmult(i, p);
             }
         }
         return result;

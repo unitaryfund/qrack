@@ -632,6 +632,9 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex(sqrt(prob), ZERO_R1);
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
+    // TODO: Remove this
+    // return prob;
+
     bool didSeparate = false;
     if (IS_NORM_ZERO(shard.amp1)) {
         SeparateBit(false, qubit);
@@ -730,7 +733,6 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     if (!shard.isProbDirty) {
         result = doForce ? res : (Rand() <= norm(shard.amp1));
     } else {
-        EndEmulation(qubit);
         result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
     }
 
@@ -758,6 +760,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
         }
     }
 
+    // TODO: Restore this
     SeparateBit(result, qubit);
 
     return result;
