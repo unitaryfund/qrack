@@ -821,14 +821,14 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
-        // if (doApply == false) {
-        SwitchToEngine();
+        // TODO: Stabilizer ForceM is bugged.
+        // if (stabilizer) {
+        //     FinishStabilizer();
+        //     return stabilizer->M(qubit, result, doForce, doApply);
         // }
 
-        // if (stabilizer) {
         FinishStabilizer();
-        //     return stabilizer->M(qubit, doForce, result);
-        // }
+        SwitchToEngine();
 
         return engine->ForceM(qubit, result, doForce, doApply);
     }

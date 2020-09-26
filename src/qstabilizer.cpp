@@ -474,15 +474,17 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& t)
 /**
  * Measure qubit b
  */
-bool QStabilizer::M(const bitLenInt& t, const bool& doForce, const bool& result)
+bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const bool& doApply)
 {
     if (qubitCount == 1U) {
         if (!x[1][0]) {
             return (r[1] & 2U);
         } else {
-            bool rand = doForce ? result : Rand();
-            SetPermutation(rand ? 1 : 0);
-            return rand;
+            result = doForce ? result : Rand();
+            if (doApply) {
+                SetPermutation(result ? 1 : 0);
+            }
+            return result;
         }
     }
 
@@ -516,14 +518,16 @@ bool QStabilizer::M(const bitLenInt& t, const bool& doForce, const bool& result)
         rowset(p + n, t + n);
 
         // moment of quantum randomness
-        r[p + n] = (doForce ? result : Rand()) ? 2 : 0;
-        // Now update the Xbar's and Zbar's that don't commute with Z_b
-        for (bitLenInt i = 0; i < elemCount; i++) {
-            if ((i != p) && x[i][t]) {
-                rowmult(i, p);
+        if (doApply) {
+            r[p + n] = (doForce ? result : Rand()) ? 2 : 0;
+            // Now update the Xbar's and Zbar's that don't commute with Z_b
+            for (bitLenInt i = 0; i < elemCount; i++) {
+                if ((i != p) && x[i][t]) {
+                    rowmult(i, p);
+                }
             }
         }
-        return r[p + n];
+        return result;
     }
 
     // If outcome is determinate
