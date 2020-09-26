@@ -39,6 +39,8 @@ add_library (qrack STATIC
     src/qunit.cpp
     src/qpager.cpp
     src/qhybrid.cpp
+    src/qstabilizer.cpp
+    src/qstabilizerhybrid.cpp
     )
 	
 add_library (qrack_pinvoke SHARED
@@ -205,6 +207,8 @@ install (FILES
     include/qneuron.hpp
     include/qpager.hpp
     include/qhybrid.hpp
+    include/qstabilizer.hpp
+    include/qstabilizerhybrid.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 

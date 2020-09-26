@@ -97,6 +97,11 @@ enum QInterfaceEngine {
     QINTERFACE_HYBRID,
 
     /**
+     * Create a QStabilizerHybrid, switching between a QStabilizer and a QHybrid as efficient.
+     */
+    QINTERFACE_STABILIZER_HYBRID,
+
+    /**
      * Create a QPager, which breaks up the work of a QEngine into equally sized "pages."
      */
     QINTERFACE_QPAGER,
@@ -193,6 +198,10 @@ public:
     {
         SetQubitCount(n);
 
+#if !ENABLE_RDRAND
+        useHardwareRNG = false;
+#endif
+
         if (useHardwareRNG) {
             hardware_rand_generator = std::make_shared<RdRandom>();
 #if !ENABLE_RNDFILE
@@ -202,7 +211,7 @@ public:
 #endif
         }
 
-        if (rgp == NULL) {
+        if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
             rand_generator = std::make_shared<qrack_rand_gen>();
             randomSeed = std::time(0);
             SetRandomSeed(randomSeed);
@@ -219,9 +228,6 @@ public:
     {
         // Intentionally left blank
     }
-
-    /** Destructor of QInterface */
-    virtual ~QInterface(){};
 
     virtual void SetRandomSeed(uint32_t seed)
     {
@@ -318,7 +324,7 @@ public:
      * Returns the quantum bit offset that the QInterface was appended at, such
      * that bit 5 in toCopy is equal to offset+5 in this object.
      */
-    virtual bitLenInt Compose(QInterfacePtr toCopy) = 0;
+    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(toCopy, qubitCount); }
     virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start) = 0;
 
@@ -2093,6 +2099,13 @@ public:
      */
 
     virtual bool isFinished() { return true; };
+
+    /**
+     * Returns "true" if current state is identifiably within the Clifford set, or "false" if it is not or cannot be
+     * determined.
+     */
+
+    virtual bool isClifford() { return false; };
 
     /**
      *  Qrack::QUnit types maintain explicit separation of representations of qubits, which reduces memory usage and

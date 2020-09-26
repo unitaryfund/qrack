@@ -32,6 +32,21 @@ using namespace Qrack;
         REQUIRE(__tmp_a < (__tmp_b + EPSILON));                                                                        \
         REQUIRE(__tmp_a > (__tmp_b - EPSILON));                                                                        \
     } while (0);
+#define REQUIRE_CMPLX(A, B)                                                                                            \
+    do {                                                                                                               \
+        complex __tmp_a = A;                                                                                           \
+        complex __tmp_b = B;                                                                                           \
+        REQUIRE(std::norm(__tmp_a - __tmp_b) < EPSILON);                                                               \
+    } while (0);
+
+#define QINTERFACE_RESTRICTED                                                                                          \
+    ((testEngineType == QINTERFACE_STABILIZER_HYBRID) || (testSubEngineType == QINTERFACE_STABILIZER_HYBRID) ||        \
+        (testEngineType == QINTERFACE_HYBRID) || (testSubEngineType == QINTERFACE_HYBRID) ||                           \
+        (testSubSubEngineType == QINTERFACE_HYBRID) || (testEngineType == QINTERFACE_OPENCL) ||                        \
+        (testSubEngineType == QINTERFACE_OPENCL) || (testSubSubEngineType == QINTERFACE_OPENCL))
+
+#define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
+#define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
 
 void print_bin(int bits, int d);
 void log(QInterfacePtr p);
@@ -305,6 +320,121 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_setconcurrency")
 {
     // Make sure it doesn't throw:
     qftReg->SetConcurrency(1);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_base_case")
+{
+    // TODO: Fix QUnit base cases
+    if (testEngineType == QINTERFACE_QUNIT) {
+        return;
+    }
+
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1U, 0, rng, ONE_CMPLX,
+        enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+
+    complex amp[2];
+
+    qftReg->SetPermutation(0);
+    REQUIRE_THAT(qftReg, HasProbability(0x0));
+
+    qftReg->H(0);
+    qftReg->GetQuantumState(amp);
+    REQUIRE_CMPLX(amp[0], amp[1]);
+
+    qftReg->S(0);
+    qftReg->GetQuantumState(amp);
+    REQUIRE_CMPLX(I_CMPLX * amp[0], amp[1]);
+
+    qftReg->IS(0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0x0));
+
+    qftReg->SetPermutation(1);
+    REQUIRE_THAT(qftReg, HasProbability(0x1));
+
+    qftReg->H(0);
+    qftReg->GetQuantumState(amp);
+    REQUIRE_CMPLX(amp[0], -amp[1]);
+
+    qftReg->S(0);
+    qftReg->GetQuantumState(amp);
+    REQUIRE_CMPLX(I_CMPLX * amp[0], -amp[1]);
+
+    qftReg->IS(0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0x1));
+
+    complex result[2];
+
+    amp[0] = ONE_CMPLX;
+    amp[1] = ZERO_CMPLX;
+    qftReg->SetQuantumState(amp);
+    qftReg->GetQuantumState(result);
+    REQUIRE_CMPLX(amp[0], result[0]);
+    REQUIRE_CMPLX(amp[1], result[1]);
+
+    amp[0] = ZERO_CMPLX;
+    amp[1] = ONE_CMPLX;
+    qftReg->SetQuantumState(amp);
+    qftReg->GetQuantumState(result);
+    REQUIRE_CMPLX(amp[0], result[0]);
+    REQUIRE_CMPLX(amp[1], result[1]);
+
+    amp[0] = C_SQRT1_2;
+    amp[1] = C_SQRT1_2;
+    qftReg->SetQuantumState(amp);
+    qftReg->GetQuantumState(result);
+    REQUIRE_CMPLX(amp[0], result[0]);
+    REQUIRE_CMPLX(amp[1], result[1]);
+
+    amp[0] = C_SQRT1_2;
+    amp[1] = -C_SQRT1_2;
+    qftReg->SetQuantumState(amp);
+    qftReg->GetQuantumState(result);
+    REQUIRE_CMPLX(amp[0], result[0]);
+    REQUIRE_CMPLX(amp[1], result[1]);
+
+    amp[0] = C_SQRT1_2;
+    amp[1] = C_I_SQRT1_2;
+    qftReg->SetQuantumState(amp);
+    qftReg->GetQuantumState(result);
+    REQUIRE_CMPLX(amp[0], result[0]);
+    REQUIRE_CMPLX(amp[1], result[1]);
+
+    amp[0] = C_SQRT1_2;
+    amp[1] = -C_I_SQRT1_2;
+    qftReg->SetQuantumState(amp);
+    qftReg->GetQuantumState(result);
+    REQUIRE_CMPLX(amp[0], result[0]);
+    REQUIRE_CMPLX(amp[1], result[1]);
+
+    QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1U, 0, rng,
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+
+    qftReg->SetPermutation(1);
+    qftReg2->SetPermutation(0);
+
+    qftReg->H(0);
+    qftReg2->H(0);
+
+    qftReg->Compose(qftReg2);
+
+    qftReg->H(0, 2);
+
+    REQUIRE_THAT(qftReg, HasProbability(0x1));
+
+    qftReg->SetPermutation(1);
+    qftReg->Dispose(1, 1, 0);
+
+    qftReg2->SetPermutation(0);
+
+    qftReg->RY(1.0, 0);
+    qftReg2->H(0);
+
+    qftReg->Compose(qftReg2);
+
+    qftReg->RY(-1.0, 0);
+    qftReg->H(1);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
@@ -1857,8 +1987,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
-    if ((testEngineType != QINTERFACE_HYBRID) && (testSubEngineType != QINTERFACE_HYBRID) &&
-        (testEngineType != QINTERFACE_QPAGER) && (testSubEngineType != QINTERFACE_QPAGER)) {
+    if (!QINTERFACE_RESTRICTED) {
         qftReg->UniformlyControlledRY(controls, 2, 0, angles);
         qftReg2->QInterface::UniformlyControlledRY(controls, 2, 0, angles);
 
@@ -2082,8 +2211,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x02));
 
-    if ((testEngineType != QINTERFACE_HYBRID) && (testSubEngineType != QINTERFACE_HYBRID) &&
-        (testEngineType != QINTERFACE_QPAGER) && (testSubEngineType != QINTERFACE_QPAGER)) {
+    if (!QINTERFACE_RESTRICTED) {
         qftReg->UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
         qftReg2->QInterface::UniformlyControlledSingleBit(controls, 2, 0, pauliRYs);
 
@@ -3261,9 +3389,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qft_h")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished")
 {
-    if ((testEngineType == QINTERFACE_HYBRID) || (testSubEngineType == QINTERFACE_HYBRID) ||
-        (testSubSubEngineType == QINTERFACE_HYBRID) || (testEngineType == QINTERFACE_OPENCL) ||
-        (testSubEngineType == QINTERFACE_OPENCL) || (testSubSubEngineType == QINTERFACE_OPENCL)) {
+    if (QINTERFACE_RESTRICTED) {
         // Just check that this doesn't throw execption.
         // (Might be in engine initialization, still, or not.)
         qftReg->isFinished();
@@ -3547,12 +3673,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_clone")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
 {
-    QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng,
-        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x0b, rng);
+    QInterfacePtr qftReg2 =
+        CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x02, rng);
+    qftReg->Compose(qftReg2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 
-    qftReg->SetPermutation(0x2b);
     qftReg->Decompose(0, qftReg2);
-
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
 
@@ -4533,8 +4660,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve_uniform")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
 {
-    if ((testEngineType == QINTERFACE_HYBRID) || (testSubEngineType == QINTERFACE_HYBRID) ||
-        (testEngineType == QINTERFACE_QPAGER) || (testSubEngineType == QINTERFACE_QPAGER)) {
+    if (QINTERFACE_RESTRICTED) {
         return;
     }
 

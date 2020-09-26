@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <cfloat>
 #include <functional>
 #include <memory>
 #include <random>
@@ -27,10 +28,12 @@
 #endif
 
 #if ENABLE_PURE32
+#define bitsInCap 32
 #define bitCapIntOcl uint32_t
 #define bitCapInt uint32_t
 #define ONE_BCI 1U
 #elif ENABLE_UINT128
+#define bitsInCap 128
 #ifdef BOOST_AVAILABLE
 #include <boost/multiprecision/cpp_int.hpp>
 #define bitCapIntOcl uint64_t
@@ -42,6 +45,7 @@
 #define ONE_BCI 1ULL
 #endif
 #elif QBCAPPOW > 7
+#define bitsInCap (8U * (1U << QBCAPPOW))
 #include <boost/multiprecision/cpp_int.hpp>
 #define bitCapIntOcl uint64_t
 #define bitCapInt                                                                                                      \
@@ -49,6 +53,7 @@
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
 #define ONE_BCI 1ULL
 #else
+#define bitsInCap 64
 #define bitCapIntOcl uint64_t
 #define bitCapInt uint64_t
 #define ONE_BCI 1ULL

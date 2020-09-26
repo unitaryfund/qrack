@@ -486,11 +486,12 @@ bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
     bitLenInt bitRand = unusedBitsPtr->size() * qReg->Rand();
     if (bitRand >= unusedBitsPtr->size()) {
-        bitRand = unusedBitsPtr->size() - 1;
+        bitRand = unusedBitsPtr->size() - 1U;
     }
     std::advance(bitIterator, bitRand);
+    bitRand = *bitIterator;
     unusedBitsPtr->erase(bitIterator);
-    return *bitIterator;
+    return bitRand;
 }
 
 TEST_CASE("test_quantum_triviality", "[supreme]")
@@ -705,7 +706,7 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
 
                     gateRand = maxGates * qReg->Rand();
 
-                    if (gateRand < ONE_R1) {
+                    if ((unusedBits.size() == 0) || (gateRand < ONE_R1)) {
                         qReg->Swap(b1, b2);
                     } else {
                         b3 = pickRandomBit(qReg, &unusedBits);
@@ -911,7 +912,7 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
 
                     if (gateRand < ONE_R1) {
                         qReg->CZ(b1, b2);
-                    } else if (gateRand < 2) {
+                    } else if ((unusedBits.size() == 0) || (gateRand < 2)) {
                         qReg->CNOT(b1, b2);
                     } else if (gateRand < 3) {
                         b3 = pickRandomBit(qReg, &unusedBits);

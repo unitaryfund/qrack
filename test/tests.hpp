@@ -75,13 +75,13 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr
 {
     bitCapInt i;
 
-    double maxProb = 0;
+    float maxProb = 0;
     bitCapInt maxProbIdx = 0;
-    double totalProb = 0;
+    float totalProb = 0;
 
     // Iterate through all possible values of the bit array
     for (i = 0; i < qftReg->GetMaxQPower(); i++) {
-        double prob = qftReg->ProbAll(i);
+        float prob = (float)qftReg->ProbAll(i);
         totalProb += prob;
         if (prob > maxProb) {
             maxProb = prob;

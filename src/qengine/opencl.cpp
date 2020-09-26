@@ -73,9 +73,11 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored, real1 norm_thresh,
     std::vector<int> devList, bitLenInt qubitThreshold)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
+    , stateVec(NULL)
     , deviceID(devID)
     , wait_refs()
     , nrmArray(NULL)
+    , nrmGroupSize(0)
     , unlockHostMem(false)
 {
     maxQPowerOcl = pow2Ocl(qubitCount);
