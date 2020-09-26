@@ -348,9 +348,6 @@ public:
             engine->Dispose(start, length, disposedPerm);
         } else {
             FinishStabilizer();
-            for (bitLenInt i = 0; i < length; i++) {
-                stabilizer->M(start + i);
-            }
             stabilizer->Dispose(start, length);
         }
 
