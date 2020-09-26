@@ -727,7 +727,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     QEngineShard& shard = shards[qubit];
 
     bool result;
-    if (!shard.isProbDirty) {
+    if (!shard.isProbDirty && !shard.unit) {
         result = doForce ? res : (Rand() <= norm(shard.amp1));
     } else {
         result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
@@ -755,10 +755,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
                 shards[i].MakeDirty();
             }
         }
-    }
 
-    // TODO: Restore this
-    if (shard.unit && !(shard.unit->isClifford())) {
         SeparateBit(result, qubit);
     }
 

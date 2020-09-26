@@ -840,7 +840,7 @@ public:
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
         // TODO: QStabilizer::M() appears to be bugged, or not decomposable after measurement.
-        // Comment-out with undone TODO changes in QUnit to pass test_forcem
+        // Comment-out to pass test_forcem
         // if (stabilizer) {
         //     FinishStabilizer();
         //     return stabilizer->M(qubit, result, doForce, doApply);
