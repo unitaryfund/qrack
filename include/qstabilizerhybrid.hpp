@@ -177,28 +177,34 @@ public:
         }
     }
 
-#if 0
     virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     {
+        real1 prob;
+
         if (stabilizer) {
-            if (stabilizer->IsSeparableZ(control1)) {
-                if (stabilizer->M(control1)) {
-                    CNOT(control2, target);
-                }
+            prob = Prob(control1);
+            if (prob == ZERO_R1) {
                 return;
-            } else if (stabilizer->IsSeparableZ(control2)) {
-                if (stabilizer->M(control2)) {
-                    CNOT(control1, target);
-                }
-                return;
-            } else {
-                SwitchToEngine();
             }
+            if (prob == ONE_R1) {
+                stabilizer->CNOT(control2, target);
+                return;
+            }
+
+            prob = Prob(control2);
+            if (prob == ZERO_R1) {
+                return;
+            }
+            if (prob == ONE_R1) {
+                stabilizer->CNOT(control1, target);
+                return;
+            }
+
+            SwitchToEngine();
         }
 
         engine->CCNOT(control1, control2, target);
     }
-#endif
 
     /// Apply a Hadamard gate to target
     virtual void H(bitLenInt target)
@@ -266,28 +272,34 @@ public:
         }
     }
 
-#if 0
     virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     {
+        real1 prob;
+
         if (stabilizer) {
-            if (stabilizer->IsSeparableZ(control1)) {
-                if (stabilizer->M(control1)) {
-                    CZ(control2, target);
-                }
+            prob = Prob(control1);
+            if (prob == ZERO_R1) {
                 return;
-            } else if (stabilizer->IsSeparableZ(control2)) {
-                if (stabilizer->M(control2)) {
-                    CZ(control1, target);
-                }
-                return;
-            } else {
-                SwitchToEngine();
             }
+            if (prob == ONE_R1) {
+                stabilizer->CZ(control2, target);
+                return;
+            }
+
+            prob = Prob(control2);
+            if (prob == ZERO_R1) {
+                return;
+            }
+            if (prob == ONE_R1) {
+                stabilizer->CZ(control1, target);
+                return;
+            }
+
+            SwitchToEngine();
         }
 
         engine->CCZ(control1, control2, target);
     }
-#endif
 
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
     {
@@ -669,10 +681,10 @@ public:
         }
 
         // TODO: Generalize to trim all possible controls, like in QUnit.
-        // if ((controlLen == 2U) && (topLeft == ONE_CMPLX) && (bottomRight == -ONE_CMPLX)) {
-        //     CCZ(controls[0], controls[1], target);
-        //     return;
-        // }
+        if ((controlLen == 2U) && (topLeft == ONE_CMPLX) && (bottomRight == -ONE_CMPLX)) {
+            CCZ(controls[0], controls[1], target);
+            return;
+        }
 
         if ((topLeft != ONE_CMPLX) || (controlLen > 1U)) {
             SwitchToEngine();
@@ -706,10 +718,10 @@ public:
         }
 
         // TODO: Generalize to trim all possible controls, like in QUnit.
-        // if ((controlLen == 2U) && (topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-        //     CCNOT(controls[0], controls[1], target);
-        //     return;
-        // }
+        if ((controlLen == 2U) && (topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
+            CCNOT(controls[0], controls[1], target);
+            return;
+        }
 
         if (controlLen > 1U) {
             SwitchToEngine();
