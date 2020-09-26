@@ -719,7 +719,7 @@ public:
         }
 
         SwitchToEngine();
-        engine->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
+        engine->ApplyAntiControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
     }
 
     virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -841,14 +841,12 @@ public:
     {
         // TODO: QStabilizer::M() appears to be bugged, or not decomposable after measurement.
         // Comment-out with undone TODO changes in QUnit to pass test_forcem
-        if (stabilizer) {
-            FinishStabilizer();
-            return stabilizer->M(qubit, result, doForce, doApply);
-        }
+        // if (stabilizer) {
+        //     FinishStabilizer();
+        //     return stabilizer->M(qubit, result, doForce, doApply);
+        // }
 
-        FinishStabilizer();
         SwitchToEngine();
-
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
