@@ -434,7 +434,7 @@ bool QStabilizer::IsSeparableY(const bitLenInt& t)
     H(t);
     S(t);
     bool isSeparable = IsSeparableZ(t);
-    S(t);
+    IS(t);
     H(t);
 
     return isSeparable;
@@ -463,8 +463,7 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& t)
     S(t);
 
     if (IsSeparableZ(t)) {
-        Z(t);
-        S(t);
+        IS(t);
         H(t);
         return 3;
     }
