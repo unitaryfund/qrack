@@ -66,6 +66,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , freezeBasisH(false)
     , freezeBasis2Qb(false)
     , thresholdQubits(qubitThreshold)
+    , doNotBuffer(eng == QINTERFACE_STABILIZER_HYBRID)
 {
     if ((engine == QINTERFACE_CPU) || (engine == QINTERFACE_OPENCL)) {
         subEngine = engine;
@@ -1193,7 +1194,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     bool pmBasis = (cShard.isPlusMinus && tShard.isPlusMinus && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
 
-    if (!freezeBasis2Qb && !pmBasis) {
+    if (!doNotBuffer && !freezeBasis2Qb && !pmBasis) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
 
         bool isInvert = cShard.IsInvertControlOf(&tShard);
@@ -1273,7 +1274,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
-    if (!freezeBasis2Qb) {
+    if (!doNotBuffer && !freezeBasis2Qb) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS);
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
@@ -1401,7 +1402,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!freezeBasis2Qb) {
+    if (!doNotBuffer && !freezeBasis2Qb) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
 
         bool isInvert = cShard.IsInvertControlOf(&tShard);
@@ -1699,7 +1700,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    if (!freezeBasis2Qb && (controlLen == 1U)) {
+    if (!doNotBuffer && !freezeBasis2Qb && (controlLen == 1U)) {
         bitLenInt control = controls[0];
         delete[] controls;
         QEngineShard& cShard = shards[control];
@@ -1801,7 +1802,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         }
     }
 
-    if (!freezeBasis2Qb && (controlLen == 1U)) {
+    if (!doNotBuffer && !freezeBasis2Qb && (controlLen == 1U)) {
         bitLenInt control = controls[0];
         delete[] controls;
         QEngineShard& cShard = shards[control];
