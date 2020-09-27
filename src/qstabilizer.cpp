@@ -62,6 +62,8 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, const bool& 
 
 void QStabilizer::SetPermutation(const bitCapInt& perm)
 {
+    Dump();
+
     bitLenInt j;
 
     bitLenInt rowCount = (qubitCount << 1U) + 1U;
@@ -316,6 +318,8 @@ void QStabilizer::setBasisState(const real1& nrm, complex* stateVec)
 /// Convert the state to ket notation (warning: could be huge!)
 void QStabilizer::GetQuantumState(complex* stateVec)
 {
+    Finish();
+
     bitCapInt t;
     bitCapInt t2;
     bitLenInt i;
@@ -347,51 +351,57 @@ void QStabilizer::GetQuantumState(complex* stateVec)
 /// Apply a CNOT gate with control and target
 void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 {
-    bitLenInt maxLcv = qubitCount << 1U;
+    Dispatch([this, c, t] {
+        bitLenInt maxLcv = qubitCount << 1U;
 
-    for (bitLenInt i = 0; i < maxLcv; i++) {
-        if (x[i][c]) {
-            x[i][t] = !x[i][t];
-        }
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            if (x[i][c]) {
+                x[i][t] = !x[i][t];
+            }
 
-        if (z[i][t]) {
-            z[i][c] = !z[i][c];
-        }
+            if (z[i][t]) {
+                z[i][c] = !z[i][c];
+            }
 
-        if (x[i][c] && z[i][t] && (x[i][t] == z[i][c])) {
-            r[i] = (r[i] + 2) & 0x3;
+            if (x[i][c] && z[i][t] && (x[i][t] == z[i][c])) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
         }
-    }
+    });
 }
 
 /// Apply a Hadamard gate to target
 void QStabilizer::H(const bitLenInt& t)
 {
-    bool tmp;
+    Dispatch([this, t] {
+        bool tmp;
 
-    bitLenInt maxLcv = qubitCount << 1U;
+        bitLenInt maxLcv = qubitCount << 1U;
 
-    for (bitLenInt i = 0; i < maxLcv; i++) {
-        tmp = x[i][t];
-        x[i][t] = x[i][t] ^ (x[i][t] ^ z[i][t]);
-        z[i][t] = z[i][t] ^ (z[i][t] ^ tmp);
-        if (x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3;
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            tmp = x[i][t];
+            x[i][t] = x[i][t] ^ (x[i][t] ^ z[i][t]);
+            z[i][t] = z[i][t] ^ (z[i][t] ^ tmp);
+            if (x[i][t] && z[i][t]) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
         }
-    }
+    });
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
 void QStabilizer::S(const bitLenInt& t)
 {
-    bitLenInt maxLcv = qubitCount << 1U;
+    Dispatch([this, t] {
+        bitLenInt maxLcv = qubitCount << 1U;
 
-    for (bitLenInt i = 0; i < maxLcv; i++) {
-        if (x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3;
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            if (x[i][t] && z[i][t]) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
+            z[i][t] = z[i][t] ^ x[i][t];
         }
-        z[i][t] = z[i][t] ^ x[i][t];
-    }
+    });
 }
 
 /**
@@ -399,6 +409,8 @@ void QStabilizer::S(const bitLenInt& t)
  */
 bool QStabilizer::IsSeparableZ(const bitLenInt& t)
 {
+    Finish();
+
     // for brevity
     bitLenInt n = qubitCount;
 
@@ -475,6 +487,8 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& t)
  */
 bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const bool& doApply)
 {
+    Finish();
+
     bitLenInt elemCount = qubitCount << 1U;
 
     // Is the outcome random?
@@ -542,11 +556,14 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
     return r[elemCount];
 }
 
-bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
+bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
 {
     // We simply insert the (elsewhere initialized and valid) "toCopy" stabilizers and destabilizers in corresponding
     // position, and we set the new padding to 0. This is immediately a valid state, if the two original QStablizer
     // instances are valid.
+
+    Finish();
+    toCopy->Finish();
 
     bitLenInt i, j;
 
@@ -590,11 +607,13 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt& start)
     return start;
 }
 
-void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& length, QStabilizerPtr dest)
+void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr dest)
 {
     if (length == 0) {
         return;
     }
+
+    Finish();
 
     // We assume that the bits to "decompose" the representation of already have 0 cross-terms in their generators
     // outside inter- "dest" cross terms. (Usually, we're "decomposing" the representation of a just-measured single
@@ -608,6 +627,8 @@ void QStabilizer::DecomposeDispose(const bitLenInt& start, const bitLenInt& leng
     bitLenInt secondEnd = nQubitCount + end;
 
     if (dest) {
+        dest->Finish();
+
         for (i = 0; i < length; i++) {
             j = start + i;
             std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[i].begin());
@@ -645,6 +666,9 @@ bool QStabilizer::ApproxCompare(QStabilizerPtr o)
     if (qubitCount != o->qubitCount) {
         return false;
     }
+
+    Finish();
+    o->Finish();
 
     if (r != o->r) {
         return false;

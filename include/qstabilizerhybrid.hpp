@@ -41,33 +41,6 @@ protected:
     bool isSparse;
     uint32_t concurrency;
     bitLenInt thresholdQubits;
-#if ENABLE_QUNIT_CPU_PARALLEL
-    DispatchQueue dispatchQueue;
-#endif
-
-    typedef std::function<void(void)> DispatchFn;
-    virtual void Dispatch(DispatchFn fn)
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.dispatch(fn);
-#else
-        fn();
-#endif
-    }
-
-    virtual void FinishStabilizer()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.finish();
-#endif
-    }
-
-    virtual void Dump()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.dump();
-#endif
-    }
 
     QStabilizerPtr MakeStabilizer(const bitCapInt& perm = 0);
     QInterfacePtr MakeEngine(const bitCapInt& perm = 0);
@@ -89,25 +62,16 @@ public:
     {
     }
 
-    virtual ~QStabilizerHybrid() { Dump(); }
-
     virtual void Finish()
     {
-        if (engine) {
-            engine->Finish();
+        if (stabilizer) {
+            stabilizer->Finish();
         } else {
-            FinishStabilizer();
+            engine->Finish();
         }
     };
 
-    virtual bool isFinished()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        return dispatchQueue.isFinished() && (!engine || engine->isFinished());
-#else
-        return !engine || engine->isFinished();
-#endif
-    }
+    virtual bool isFinished() { return (!stabilizer || stabilizer->isFinished()) && (!engine || engine->isFinished()); }
 
     virtual void SetConcurrency(uint32_t threadCount)
     {
@@ -129,7 +93,6 @@ public:
         }
 
         complex* stateVec = new complex[maxQPower];
-        FinishStabilizer();
         stabilizer->GetQuantumState(stateVec);
 
         engine = MakeEngine();
@@ -171,7 +134,7 @@ public:
     virtual void CNOT(bitLenInt control, bitLenInt target)
     {
         if (stabilizer) {
-            Dispatch([this, control, target] { stabilizer->CNOT(control, target); });
+            stabilizer->CNOT(control, target);
         } else {
             engine->CNOT(control, target);
         }
@@ -208,7 +171,7 @@ public:
     virtual void H(bitLenInt target)
     {
         if (stabilizer) {
-            Dispatch([this, target] { stabilizer->H(target); });
+            stabilizer->H(target);
         } else {
             engine->H(target);
         }
@@ -236,7 +199,7 @@ public:
     virtual void S(bitLenInt target)
     {
         if (stabilizer) {
-            Dispatch([this, target] { stabilizer->S(target); });
+            stabilizer->S(target);
         } else {
             engine->S(target);
         }
@@ -264,7 +227,7 @@ public:
     virtual void Z(bitLenInt target)
     {
         if (stabilizer) {
-            Dispatch([this, target] { stabilizer->Z(target); });
+            stabilizer->Z(target);
         } else {
             engine->Z(target);
         }
@@ -273,7 +236,7 @@ public:
     virtual void IS(bitLenInt target)
     {
         if (stabilizer) {
-            Dispatch([this, target] { stabilizer->IS(target); });
+            stabilizer->IS(target);
         } else {
             engine->IS(target);
         }
@@ -300,7 +263,7 @@ public:
     virtual void X(bitLenInt target)
     {
         if (stabilizer) {
-            Dispatch([this, target] { stabilizer->X(target); });
+            stabilizer->X(target);
         } else {
             engine->X(target);
         }
@@ -309,7 +272,7 @@ public:
     virtual void Y(bitLenInt target)
     {
         if (stabilizer) {
-            Dispatch([this, target] { stabilizer->Y(target); });
+            stabilizer->Y(target);
         } else {
             engine->Y(target);
         }
@@ -318,7 +281,7 @@ public:
     virtual void CZ(bitLenInt control, bitLenInt target)
     {
         if (stabilizer) {
-            Dispatch([this, control, target] { stabilizer->CZ(control, target); });
+            stabilizer->CZ(control, target);
         } else {
             engine->CZ(control, target);
         }
@@ -358,7 +321,7 @@ public:
         }
 
         if (stabilizer) {
-            Dispatch([this, qubit1, qubit2] { stabilizer->Swap(qubit1, qubit2); });
+            stabilizer->Swap(qubit1, qubit2);
         } else {
             engine->Swap(qubit1, qubit2);
         }
@@ -371,7 +334,7 @@ public:
         }
 
         if (stabilizer) {
-            Dispatch([this, qubit1, qubit2] { stabilizer->ISwap(qubit1, qubit2); });
+            stabilizer->ISwap(qubit1, qubit2);
         } else {
             engine->ISwap(qubit1, qubit2);
         }
@@ -389,7 +352,6 @@ public:
             SwitchToEngine();
             toRet = engine->Compose(toCopy->engine);
         } else {
-            FinishStabilizer();
             toRet = stabilizer->Compose(toCopy->stabilizer);
         }
 
@@ -412,7 +374,6 @@ public:
             SwitchToEngine();
             toRet = engine->Compose(toCopy->engine, start);
         } else {
-            FinishStabilizer();
             toRet = stabilizer->Compose(toCopy->stabilizer, start);
         }
 
@@ -455,7 +416,6 @@ public:
             dest->stabilizer = dest->MakeStabilizer(0);
         }
 
-        FinishStabilizer();
         stabilizer->Decompose(start, dest->stabilizer);
         SetQubitCount(qubitCount - length);
     }
@@ -473,7 +433,6 @@ public:
         if (engine) {
             engine->Dispose(start, length);
         } else {
-            FinishStabilizer();
             stabilizer->Dispose(start, length);
         }
 
@@ -493,7 +452,6 @@ public:
         if (engine) {
             engine->Dispose(start, length, disposedPerm);
         } else {
-            FinishStabilizer();
             stabilizer->Dispose(start, length);
         }
 
@@ -502,8 +460,6 @@ public:
 
     virtual void SetQuantumState(const complex* inputState)
     {
-        Dump();
-
         if (qubitCount == 1U) {
             bool isClifford = false;
             bool isSet;
@@ -556,7 +512,6 @@ public:
     virtual void GetQuantumState(complex* outputState)
     {
         if (stabilizer) {
-            FinishStabilizer();
             stabilizer->GetQuantumState(outputState);
         } else {
             engine->GetQuantumState(outputState);
@@ -566,7 +521,6 @@ public:
     {
         if (stabilizer) {
             complex* stateVec = new complex[maxQPower];
-            FinishStabilizer();
             stabilizer->GetQuantumState(stateVec);
             for (bitCapInt i = 0; i < maxQPower; i++) {
                 outputProbs[i] = norm(stateVec[i]);
@@ -588,10 +542,8 @@ public:
     }
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG)
     {
-        Dump();
-
         if (stabilizer) {
-            Dispatch([this, perm] { stabilizer->SetPermutation(perm); });
+            stabilizer->SetPermutation(perm);
         } else {
             engine->SetPermutation(perm, phaseFac);
         }
@@ -633,19 +585,19 @@ public:
         }
 
         if (topLeft == -bottomRight) {
-            Dispatch([this, target] { stabilizer->Z(target); });
+            stabilizer->Z(target);
             return;
         }
 
         complex sTest = bottomRight / topLeft;
 
         if (sTest == I_CMPLX) {
-            Dispatch([this, target] { stabilizer->S(target); });
+            stabilizer->S(target);
             return;
         }
 
         if (sTest == -I_CMPLX) {
-            Dispatch([this, target] { stabilizer->IS(target); });
+            stabilizer->IS(target);
             return;
         }
 
@@ -661,33 +613,27 @@ public:
         }
 
         if (topRight == bottomLeft) {
-            Dispatch([this, target] { stabilizer->X(target); });
+            stabilizer->X(target);
             return;
         }
 
         if (topRight == -bottomLeft) {
-            Dispatch([this, target] {
-                stabilizer->Z(target);
-                stabilizer->X(target);
-            });
+            stabilizer->Z(target);
+            stabilizer->X(target);
             return;
         }
 
         complex sTest = topRight / bottomLeft;
 
         if (sTest == I_CMPLX) {
-            Dispatch([this, target] {
-                stabilizer->S(target);
-                stabilizer->X(target);
-            });
+            stabilizer->S(target);
+            stabilizer->X(target);
             return;
         }
 
         if (sTest == -I_CMPLX) {
-            Dispatch([this, target] {
-                stabilizer->IS(target);
-                stabilizer->X(target);
-            });
+            stabilizer->IS(target);
+            stabilizer->X(target);
             return;
         }
 
@@ -766,8 +712,7 @@ public:
         }
 
         if (bottomRight == -ONE_CMPLX) {
-            bitLenInt control = controls[0];
-            Dispatch([this, control, target] { stabilizer->CZ(control, target); });
+            stabilizer->CZ(controls[0], target);
             return;
         }
 
@@ -799,36 +744,26 @@ public:
         }
 
         if ((topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-            bitLenInt control = controls[0];
-            Dispatch([this, control, target] { stabilizer->CNOT(control, target); });
+            stabilizer->CNOT(controls[0], target);
             return;
         }
 
         if ((topRight == ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
-            bitLenInt control = controls[0];
-            Dispatch([this, control, target] {
-                stabilizer->CNOT(control, target);
-                stabilizer->CZ(control, target);
-            });
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->CZ(controls[0], target);
             return;
         }
 
         if ((topRight == -ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-            bitLenInt control = controls[0];
-            Dispatch([this, control, target] {
-                stabilizer->CZ(control, target);
-                stabilizer->CNOT(control, target);
-            });
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
             return;
         }
 
         if ((topRight == -ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
-            bitLenInt control = controls[0];
-            Dispatch([this, control, target] {
-                stabilizer->CZ(control, target);
-                stabilizer->CNOT(control, target);
-                stabilizer->CZ(control, target);
-            });
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->CZ(controls[0], target);
             return;
         }
 
@@ -903,12 +838,9 @@ public:
         }
 
         if (bottomRight == -ONE_CMPLX) {
-            bitLenInt control = controls[0];
-            Dispatch([this, control, target] {
-                stabilizer->X(control);
-                stabilizer->CZ(control, target);
-                stabilizer->X(control);
-            });
+            stabilizer->X(controls[0]);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->X(controls[0]);
             return;
         }
 
@@ -934,34 +866,25 @@ public:
         }
 
         if ((topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-            bitLenInt control = controls[0];
-            Dispatch([this, control, target] {
-                stabilizer->X(control);
-                stabilizer->CNOT(control, target);
-                stabilizer->X(control);
-            });
+            stabilizer->X(controls[0]);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->X(controls[0]);
             return;
         }
 
         if ((topRight == ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
-            bitLenInt control = controls[0];
-            Dispatch([this, control, target] {
-                stabilizer->X(control);
-                stabilizer->CNOT(control, target);
-                stabilizer->CZ(control, target);
-                stabilizer->X(control);
-            });
+            stabilizer->X(controls[0]);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->X(controls[0]);
             return;
         }
 
         if ((topRight == -ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-            bitLenInt control = controls[0];
-            Dispatch([this, control, target] {
-                stabilizer->X(control);
-                stabilizer->CZ(control, target);
-                stabilizer->CNOT(control, target);
-                stabilizer->X(control);
-            });
+            stabilizer->X(controls[0]);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->X(controls[0]);
             return;
         }
 
@@ -1036,7 +959,6 @@ public:
         // TODO: QStabilizer appears not to be decomposable after measurement, and in many cases where a bit is in an
         // eigenstate.
         if (stabilizer) {
-            FinishStabilizer();
             return stabilizer->M(qubit, result, doForce, doApply);
         }
 
@@ -1238,8 +1160,6 @@ public:
             return engine->Prob(qubitIndex);
         }
 
-        FinishStabilizer();
-
         if (stabilizer->IsSeparableZ(qubitIndex)) {
             return stabilizer->M(qubitIndex) ? ONE_R1 : ZERO_R1;
         } else {
@@ -1267,8 +1187,6 @@ public:
         if (!stabilizer == !(toCompare->engine)) {
             return false;
         }
-
-        FinishStabilizer();
 
         if (stabilizer) {
             return stabilizer->ApproxCompare(toCompare->stabilizer);
