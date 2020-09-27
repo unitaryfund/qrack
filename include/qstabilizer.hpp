@@ -29,6 +29,10 @@
 #include "common/qrack_types.hpp"
 #include "common/rdrandwrapper.hpp"
 
+#if ENABLE_QUNIT_CPU_PARALLEL
+#include "common/dispatchqueue.hpp"
+#endif
+
 namespace Qrack {
 
 class QStabilizer;
@@ -50,11 +54,64 @@ protected:
     std::uniform_real_distribution<real1> rand_distribution;
     std::shared_ptr<RdRandom> hardware_rand_generator;
 
+#if ENABLE_QUNIT_CPU_PARALLEL
+    DispatchQueue dispatchQueue;
+#endif
+
+    typedef std::function<void(void)> DispatchFn;
+    void Dispatch(DispatchFn fn)
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.dispatch(fn);
+#else
+        fn();
+#endif
+    }
+
+    void Dump()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.dump();
+#endif
+    }
+
     bitCapInt pow2(const bitLenInt& qubit) { return ONE_BCI << (bitCapInt)qubit; }
 
 public:
     QStabilizer(const bitLenInt& n, const bitCapInt& perm = 0, const bool& useHardwareRNG = true,
         qrack_rand_gen_ptr rgp = nullptr);
+
+    QStabilizer(QStabilizer& s)
+    {
+        s.Finish();
+
+        qubitCount = s.qubitCount;
+        x = s.x;
+        z = s.z;
+        r = s.r;
+        randomSeed = s.randomSeed;
+        rand_generator = s.rand_generator;
+        rand_distribution = s.rand_distribution;
+        hardware_rand_generator = s.hardware_rand_generator;
+    }
+
+    ~QStabilizer() { Dump(); }
+
+    void Finish()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.finish();
+#endif
+    }
+
+    bool isFinished()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        return dispatchQueue.isFinished();
+#else
+        return true;
+#endif
+    }
 
     bitLenInt GetQubitCount() { return qubitCount; }
 
@@ -108,7 +165,7 @@ protected:
     /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
     void setBasisState(const real1& nrm, complex* stateVec);
 
-    void DecomposeDispose(const bitLenInt& start, const bitLenInt& length, QStabilizerPtr toCopy);
+    void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
 public:
     /// Apply a CNOT gate with control and target
@@ -206,16 +263,11 @@ public:
      */
     uint8_t IsSeparable(const bitLenInt& target);
 
-    bitLenInt Compose(QStabilizerPtr toCopy)
-    {
-        bitLenInt toRet = qubitCount;
-        Compose(toCopy, qubitCount);
-        return toRet;
-    }
-    bitLenInt Compose(QStabilizerPtr toCopy, const bitLenInt& start);
+    bitLenInt Compose(QStabilizerPtr toCopy) { return Compose(toCopy, qubitCount); }
+    bitLenInt Compose(QStabilizerPtr toCopy, const bitLenInt start);
     void Decompose(const bitLenInt& start, QStabilizerPtr destination)
     {
-        DecomposeDispose(start, destination->GetQubitCount(), destination);
+        DecomposeDispose(start, destination->qubitCount, destination);
     }
 
     void Dispose(const bitLenInt& start, const bitLenInt& length)
