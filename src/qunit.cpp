@@ -48,6 +48,7 @@
     (!shard.isProbDirty && !shard.isPlusMinus && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
 #define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp0))
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp1))
+#define IS_SAME_UNIT(shard1, shard2) ((shard1.unit || shard2.unit) && (shard1.unit == shard2.unit))
 
 namespace Qrack {
 
@@ -1203,27 +1204,29 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
+        if (!IS_SAME_UNIT(cShard, tShard)) {
+            tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
 
-        if (!isInvert) {
+            if (!isInvert) {
+                return;
+            }
+
+            ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
+
+            if (phaseShard == tShard.targetOfShards.end()) {
+                return;
+            }
+
+            real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
+            PhaseShardPtr buffer = phaseShard->second;
+
+            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
+                ApplyBuffer(buffer, control, target, false);
+                shards[target].RemovePhaseControl(&cShard);
+            }
+
             return;
         }
-
-        ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
-
-        if (phaseShard == tShard.targetOfShards.end()) {
-            return;
-        }
-
-        real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
-        PhaseShardPtr buffer = phaseShard->second;
-
-        if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
-            ApplyBuffer(buffer, control, target, false);
-            shards[target].RemovePhaseControl(&cShard);
-        }
-
-        return;
     }
 
     bitLenInt controls[1] = { control };
@@ -1279,8 +1282,10 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS);
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
-        return;
+        if (!IS_SAME_UNIT(cShard, tShard)) {
+            shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
+            return;
+        }
     }
 
     CTRLED_PHASE_INVERT_WRAP(AntiCNOT(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), X(target), true, true,
@@ -1412,27 +1417,29 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        tShard.AddPhaseAngles(&cShard, ONE_CMPLX, -ONE_CMPLX);
+        if (!IS_SAME_UNIT(cShard, tShard)) {
+            tShard.AddPhaseAngles(&cShard, ONE_CMPLX, -ONE_CMPLX);
 
-        if (isInvert) {
+            if (isInvert) {
+                return;
+            }
+
+            ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
+
+            if (phaseShard == tShard.targetOfShards.end()) {
+                return;
+            }
+
+            real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
+            PhaseShardPtr buffer = phaseShard->second;
+
+            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
+                ApplyBuffer(buffer, control, target, false);
+                tShard.RemovePhaseControl(&cShard);
+            }
+
             return;
         }
-
-        ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
-
-        if (phaseShard == tShard.targetOfShards.end()) {
-            return;
-        }
-
-        real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
-        PhaseShardPtr buffer = phaseShard->second;
-
-        if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
-            ApplyBuffer(buffer, control, target, false);
-            tShard.RemovePhaseControl(&cShard);
-        }
-
-        return;
     }
 
     bitLenInt controls[1] = { control };
@@ -1702,7 +1709,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
     if (!doNotBuffer && !freezeBasis2Qb && (controlLen == 1U)) {
         bitLenInt control = controls[0];
-        delete[] controls;
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
         if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
@@ -1713,6 +1719,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
                 Flush0Eigenstate(control);
             }
 
+            delete[] controls;
             return;
         }
 
@@ -1720,23 +1727,26 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         RevertBasis2Qb(target, ONLY_INVERT, IS_ONE_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
 
-        tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
+        if (!IS_SAME_UNIT(cShard, tShard)) {
+            delete[] controls;
+            tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
 
-        ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
+            ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
 
-        if ((phaseShard == tShard.targetOfShards.end()) || phaseShard->second->isInvert) {
+            if ((phaseShard == tShard.targetOfShards.end()) || phaseShard->second->isInvert) {
+                return;
+            }
+
+            real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
+            PhaseShardPtr buffer = phaseShard->second;
+
+            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
+                ApplyBuffer(buffer, control, target, false);
+                tShard.RemovePhaseControl(&cShard);
+            }
+
             return;
         }
-
-        real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
-        PhaseShardPtr buffer = phaseShard->second;
-
-        if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
-            ApplyBuffer(buffer, control, target, false);
-            tShard.RemovePhaseControl(&cShard);
-        }
-
-        return;
     }
 
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSinglePhase(CTRL_P_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
@@ -1804,7 +1814,6 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
     if (!doNotBuffer && !freezeBasis2Qb && (controlLen == 1U)) {
         bitLenInt control = controls[0];
-        delete[] controls;
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
         if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
@@ -1814,6 +1823,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
                 Flush0Eigenstate(control);
                 ApplySinglePhase(topLeft, bottomRight, target);
             }
+            delete[] controls;
             return;
         }
 
@@ -1822,23 +1832,26 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         RevertBasis2Qb(
             target, ONLY_INVERT, IS_ONE_CMPLX(bottomRight) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
 
-        tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
+        if (!IS_SAME_UNIT(cShard, tShard)) {
+            delete[] controls;
+            tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
 
-        ShardToPhaseMap::iterator phaseShard = tShard.antiTargetOfShards.find(&cShard);
+            ShardToPhaseMap::iterator phaseShard = tShard.antiTargetOfShards.find(&cShard);
 
-        if ((phaseShard == tShard.antiTargetOfShards.end()) || phaseShard->second->isInvert) {
+            if ((phaseShard == tShard.antiTargetOfShards.end()) || phaseShard->second->isInvert) {
+                return;
+            }
+
+            real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
+            PhaseShardPtr buffer = phaseShard->second;
+
+            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
+                ApplyBuffer(buffer, control, target, true);
+                tShard.RemovePhaseAntiControl(&cShard);
+            }
+
             return;
         }
-
-        real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
-        PhaseShardPtr buffer = phaseShard->second;
-
-        if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
-            ApplyBuffer(buffer, control, target, true);
-            tShard.RemovePhaseAntiControl(&cShard);
-        }
-
-        return;
     }
 
     CTRLED_PHASE_INVERT_WRAP(ApplyAntiControlledSinglePhase(CTRL_P_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
