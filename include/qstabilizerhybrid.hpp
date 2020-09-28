@@ -86,47 +86,7 @@ public:
      * the current mode.) Mode switching happens automatically when qubit counts change, but Compose() and Decompose()
      * might leave their destination QInterface parameters in the opposite mode.
      */
-    virtual void SwitchToEngine()
-    {
-        if (engine) {
-            return;
-        }
-
-        complex* stateVec = new complex[maxQPower];
-        stabilizer->GetQuantumState(stateVec);
-
-        engine = MakeEngine();
-        engine->SetQuantumState(stateVec);
-        delete[] stateVec;
-
-        if (engineType != QINTERFACE_QUNIT) {
-            stabilizer.reset();
-            return;
-        }
-
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            if (stabilizer->IsSeparableZ(i)) {
-                engine->SetBit(i, stabilizer->M(i));
-                continue;
-            }
-
-            stabilizer->H(i);
-            if (stabilizer->IsSeparableZ(i)) {
-                engine->SetBit(i, stabilizer->M(i));
-                engine->H(i);
-                continue;
-            }
-
-            stabilizer->S(i);
-            if (stabilizer->IsSeparableZ(i)) {
-                engine->SetBit(i, stabilizer->M(i));
-                engine->H(i);
-                engine->S(i);
-            }
-        }
-
-        stabilizer.reset();
-    }
+    virtual void SwitchToEngine();
 
     virtual bool isClifford() { return !engine; }
 
@@ -140,32 +100,7 @@ public:
         }
     }
 
-    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
-    {
-        if (stabilizer) {
-            real1 prob = Prob(control1);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                stabilizer->CNOT(control2, target);
-                return;
-            }
-
-            prob = Prob(control2);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                stabilizer->CNOT(control1, target);
-                return;
-            }
-
-            SwitchToEngine();
-        }
-
-        engine->CCNOT(control1, control2, target);
-    }
+    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
     /// Apply a Hadamard gate to target
     virtual void H(bitLenInt target)
@@ -177,23 +112,7 @@ public:
         }
     }
 
-    virtual void CH(bitLenInt control, bitLenInt target)
-    {
-        if (stabilizer) {
-            real1 prob = Prob(control);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                stabilizer->H(target);
-                return;
-            }
-
-            SwitchToEngine();
-        }
-
-        engine->CH(control, target);
-    }
+    virtual void CH(bitLenInt control, bitLenInt target);
 
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
     virtual void S(bitLenInt target)
@@ -205,23 +124,7 @@ public:
         }
     }
 
-    virtual void CS(bitLenInt control, bitLenInt target)
-    {
-        if (stabilizer) {
-            real1 prob = Prob(control);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                stabilizer->S(target);
-                return;
-            }
-
-            SwitchToEngine();
-        }
-
-        engine->CS(control, target);
-    }
+    virtual void CS(bitLenInt control, bitLenInt target);
 
     // TODO: Custom implementations for decompositions:
     virtual void Z(bitLenInt target)
@@ -242,23 +145,7 @@ public:
         }
     }
 
-    virtual void CIS(bitLenInt control, bitLenInt target)
-    {
-        if (stabilizer) {
-            real1 prob = Prob(control);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                stabilizer->IS(target);
-                return;
-            }
-
-            SwitchToEngine();
-        }
-
-        engine->CIS(control, target);
-    }
+    virtual void CIS(bitLenInt control, bitLenInt target);
 
     virtual void X(bitLenInt target)
     {
@@ -287,32 +174,7 @@ public:
         }
     }
 
-    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
-    {
-        if (stabilizer) {
-            real1 prob = Prob(control1);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                stabilizer->CZ(control2, target);
-                return;
-            }
-
-            prob = Prob(control2);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                stabilizer->CZ(control1, target);
-                return;
-            }
-
-            SwitchToEngine();
-        }
-
-        engine->CCZ(control1, control2, target);
-    }
+    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
     {
@@ -389,126 +251,11 @@ public:
     {
         Decompose(start, std::dynamic_pointer_cast<QStabilizerHybrid>(dest));
     }
-    virtual void Decompose(bitLenInt start, QStabilizerHybridPtr dest)
-    {
-        bitLenInt length = dest->qubitCount;
+    virtual void Decompose(bitLenInt start, QStabilizerHybridPtr dest);
+    virtual void Dispose(bitLenInt start, bitLenInt length);
+    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
-        if (length == qubitCount) {
-            dest->stabilizer = stabilizer;
-            stabilizer = NULL;
-            dest->engine = engine;
-            engine = NULL;
-
-            SetQubitCount(1);
-            stabilizer = MakeStabilizer(0);
-            return;
-        }
-
-        if (engine) {
-            dest->SwitchToEngine();
-            engine->Decompose(start, dest->engine);
-            SetQubitCount(qubitCount - length);
-            return;
-        }
-
-        if (dest->engine) {
-            dest->engine.reset();
-            dest->stabilizer = dest->MakeStabilizer(0);
-        }
-
-        stabilizer->Decompose(start, dest->stabilizer);
-        SetQubitCount(qubitCount - length);
-    }
-    virtual void Dispose(bitLenInt start, bitLenInt length)
-    {
-        if (length == qubitCount) {
-            stabilizer = NULL;
-            engine = NULL;
-
-            SetQubitCount(1);
-            stabilizer = MakeStabilizer(0);
-            return;
-        }
-
-        if (engine) {
-            engine->Dispose(start, length);
-        } else {
-            stabilizer->Dispose(start, length);
-        }
-
-        SetQubitCount(qubitCount - length);
-    }
-    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
-    {
-        if (length == qubitCount) {
-            stabilizer = NULL;
-            engine = NULL;
-
-            SetQubitCount(1);
-            stabilizer = MakeStabilizer(0);
-            return;
-        }
-
-        if (engine) {
-            engine->Dispose(start, length, disposedPerm);
-        } else {
-            stabilizer->Dispose(start, length);
-        }
-
-        SetQubitCount(qubitCount - length);
-    }
-
-    virtual void SetQuantumState(const complex* inputState)
-    {
-        if (qubitCount == 1U) {
-            bool isClifford = false;
-            bool isSet;
-            bool isX = false;
-            bool isY = false;
-            if (inputState[1] == ZERO_CMPLX) {
-                isClifford = true;
-                isSet = false;
-            } else if (inputState[0] == ZERO_CMPLX) {
-                isClifford = true;
-                isSet = true;
-            } else if (inputState[0] == inputState[1]) {
-                isClifford = true;
-                isSet = false;
-                isX = true;
-            } else if (inputState[0] == -inputState[1]) {
-                isClifford = true;
-                isSet = true;
-                isX = true;
-            } else if ((I_CMPLX * inputState[0]) == inputState[1]) {
-                isClifford = true;
-                isSet = false;
-                isY = true;
-            } else if ((I_CMPLX * inputState[0]) == -inputState[1]) {
-                isClifford = true;
-                isSet = true;
-                isY = true;
-            }
-
-            if (isClifford) {
-                engine.reset();
-                if (stabilizer) {
-                    stabilizer->SetPermutation(isSet ? 1 : 0);
-                } else {
-                    stabilizer = MakeStabilizer(isSet ? 1 : 0);
-                }
-                if (isX || isY) {
-                    stabilizer->H(0);
-                }
-                if (isY) {
-                    stabilizer->S(0);
-                }
-                return;
-            }
-        }
-
-        SwitchToEngine();
-        engine->SetQuantumState(inputState);
-    }
+    virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState)
     {
         if (stabilizer) {
@@ -517,19 +264,7 @@ public:
             engine->GetQuantumState(outputState);
         }
     }
-    virtual void GetProbs(real1* outputProbs)
-    {
-        if (stabilizer) {
-            complex* stateVec = new complex[maxQPower];
-            stabilizer->GetQuantumState(stateVec);
-            for (bitCapInt i = 0; i < maxQPower; i++) {
-                outputProbs[i] = norm(stateVec[i]);
-            }
-            delete[] stateVec;
-        } else {
-            engine->GetProbs(outputProbs);
-        }
-    }
+    virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm)
     {
         SwitchToEngine();
@@ -549,348 +284,29 @@ public:
         }
     }
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt target)
-    {
-        if (IsIdentity(mtrx, true)) {
-            return;
-        }
+    virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
 
-        if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
-            ApplySinglePhase(mtrx[0], mtrx[3], target);
-            return;
-        }
-        if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
-            ApplySingleInvert(mtrx[1], mtrx[2], target);
-            return;
-        }
-        if ((mtrx[0] == complex(M_SQRT1_2, ZERO_R1)) && (mtrx[0] == mtrx[1]) && (mtrx[0] == mtrx[2]) &&
-            (mtrx[2] == -mtrx[3])) {
-            H(target);
-            return;
-        }
+    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target);
 
-        SwitchToEngine();
-        engine->ApplySingleBit(mtrx, target);
-    }
-
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
-    {
-        if (engine) {
-            engine->ApplySinglePhase(topLeft, bottomRight, target);
-            return;
-        }
-
-        if (topLeft == bottomRight) {
-            return;
-        }
-
-        if (topLeft == -bottomRight) {
-            stabilizer->Z(target);
-            return;
-        }
-
-        complex sTest = bottomRight / topLeft;
-
-        if (sTest == I_CMPLX) {
-            stabilizer->S(target);
-            return;
-        }
-
-        if (sTest == -I_CMPLX) {
-            stabilizer->IS(target);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->ApplySinglePhase(topLeft, bottomRight, target);
-    }
-
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
-    {
-        if (engine) {
-            engine->ApplySingleInvert(topRight, bottomLeft, target);
-            return;
-        }
-
-        if (topRight == bottomLeft) {
-            stabilizer->X(target);
-            return;
-        }
-
-        if (topRight == -bottomLeft) {
-            stabilizer->Z(target);
-            stabilizer->X(target);
-            return;
-        }
-
-        complex sTest = topRight / bottomLeft;
-
-        if (sTest == I_CMPLX) {
-            stabilizer->S(target);
-            stabilizer->X(target);
-            return;
-        }
-
-        if (sTest == -I_CMPLX) {
-            stabilizer->IS(target);
-            stabilizer->X(target);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->ApplySingleInvert(topRight, bottomLeft, target);
-    }
+    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target);
 
     virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
-    {
-        if (!controlLen) {
-            ApplySingleBit(mtrx, target);
-            return;
-        }
-
-        if (engine) {
-            engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
-            return;
-        }
-
-        if (!norm(mtrx[1]) && !norm(mtrx[2])) {
-            ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
-            return;
-        }
-
-        if (!norm(mtrx[0]) && !norm(mtrx[3])) {
-            ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
-            return;
-        }
-
-        if ((controlLen == 1U) && (mtrx[0] == complex(M_SQRT1_2, ZERO_R1)) && (mtrx[0] == mtrx[1]) &&
-            (mtrx[0] == mtrx[2]) && (mtrx[2] == -mtrx[3])) {
-            CH(controls[0], target);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
-    }
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight)
-    {
-        if (!controlLen) {
-            ApplySinglePhase(topLeft, bottomRight, target);
-            return;
-        }
-
-        // TODO: Generalize to trim all possible controls, like in QUnit.
-        if ((controlLen == 2U) && (topLeft == ONE_CMPLX) && (bottomRight == -ONE_CMPLX)) {
-            CCZ(controls[0], controls[1], target);
-            return;
-        }
-
-        if ((topLeft != ONE_CMPLX) || (controlLen > 1U)) {
-            SwitchToEngine();
-        }
-
-        if (engine) {
-            engine->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
-            return;
-        }
-
-        if (bottomRight == I_CMPLX) {
-            CS(controls[0], target);
-            return;
-        }
-
-        if (bottomRight == -I_CMPLX) {
-            CIS(controls[0], target);
-            return;
-        }
-
-        if (bottomRight == ONE_CMPLX) {
-            return;
-        }
-
-        if (bottomRight == -ONE_CMPLX) {
-            stabilizer->CZ(controls[0], target);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
-    }
+        const bitLenInt& target, const complex topLeft, const complex bottomRight);
 
     virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft)
-    {
-        if (!controlLen) {
-            ApplySingleInvert(topRight, bottomLeft, target);
-            return;
-        }
-
-        // TODO: Generalize to trim all possible controls, like in QUnit.
-        if ((controlLen == 2U) && (topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-            CCNOT(controls[0], controls[1], target);
-            return;
-        }
-
-        if (controlLen > 1U) {
-            SwitchToEngine();
-        }
-
-        if (engine) {
-            engine->ApplyControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
-            return;
-        }
-
-        if ((topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-            stabilizer->CNOT(controls[0], target);
-            return;
-        }
-
-        if ((topRight == ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            return;
-        }
-
-        if ((topRight == -ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            return;
-        }
-
-        if ((topRight == -ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->ApplyControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
-    }
+        const bitLenInt& target, const complex topRight, const complex bottomLeft);
 
     virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
-    {
-        if (!controlLen) {
-            ApplySingleBit(mtrx, target);
-            return;
-        }
-
-        if (controlLen > 1U) {
-            SwitchToEngine();
-        }
-
-        if (engine) {
-            engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
-            return;
-        }
-
-        if (!norm(mtrx[1]) && !norm(mtrx[2])) {
-            ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
-            return;
-        }
-
-        if (!norm(mtrx[0]) && !norm(mtrx[3])) {
-            ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
-    }
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight)
-    {
-        if (!controlLen) {
-            ApplySinglePhase(topLeft, bottomRight, target);
-            return;
-        }
-
-        if ((topLeft != ONE_CMPLX) || (controlLen > 1U)) {
-            SwitchToEngine();
-        }
-
-        if (engine) {
-            engine->ApplyAntiControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
-            return;
-        }
-
-        if (bottomRight == I_CMPLX) {
-            X(controls[0]);
-            CS(controls[0], target);
-            X(controls[0]);
-            return;
-        }
-
-        if (bottomRight == -I_CMPLX) {
-            X(controls[0]);
-            CIS(controls[0], target);
-            X(controls[0]);
-            return;
-        }
-
-        if (bottomRight == ONE_CMPLX) {
-            return;
-        }
-
-        if (bottomRight == -ONE_CMPLX) {
-            stabilizer->X(controls[0]);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->X(controls[0]);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->ApplyAntiControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
-    }
+        const bitLenInt& target, const complex topLeft, const complex bottomRight);
 
     virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft)
-    {
-        if (!controlLen) {
-            ApplySingleInvert(topRight, bottomLeft, target);
-            return;
-        }
-
-        if (((topRight != ONE_CMPLX) && (bottomLeft != ONE_CMPLX)) || (controlLen > 1U)) {
-            SwitchToEngine();
-        }
-
-        if (engine) {
-            engine->ApplyAntiControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
-            return;
-        }
-
-        if ((topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-            stabilizer->X(controls[0]);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->X(controls[0]);
-            return;
-        }
-
-        if ((topRight == ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
-            stabilizer->X(controls[0]);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->X(controls[0]);
-            return;
-        }
-
-        if ((topRight == -ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-            stabilizer->X(controls[0]);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->X(controls[0]);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->ApplyAntiControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
-    }
+        const bitLenInt& target, const complex topRight, const complex bottomLeft);
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
@@ -965,6 +381,8 @@ public:
         SwitchToEngine();
         return engine->ForceM(qubit, result, doForce, doApply);
     }
+
+    virtual void Collapse(const bitLenInt& qubitIndex) {}
 
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
