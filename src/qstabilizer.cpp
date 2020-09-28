@@ -546,6 +546,12 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
         }
     }
 
+    if (m >= n) {
+        // TODO: Repeating deterministic measurement to the exhaustion of this check might fix Decompose()/Dispose()
+        // separability issues.
+        return r[elemCount];
+    }
+
     rowcopy(elemCount, m + n);
     for (bitLenInt i = m + 1U; i < n; i++) {
         if (x[i][t]) {
