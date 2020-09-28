@@ -67,7 +67,6 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , freezeBasisH(false)
     , freezeBasis2Qb(false)
     , thresholdQubits(qubitThreshold)
-    , doNotBuffer(eng == QINTERFACE_STABILIZER_HYBRID)
 {
     if ((engine == QINTERFACE_CPU) || (engine == QINTERFACE_OPENCL)) {
         subEngine = engine;
@@ -1195,7 +1194,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     bool pmBasis = (cShard.isPlusMinus && tShard.isPlusMinus && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
 
-    if (!doNotBuffer && !freezeBasis2Qb && !pmBasis) {
+    if (!freezeBasis2Qb && !pmBasis) {
         bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
@@ -1285,7 +1284,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
-    if (!doNotBuffer && !freezeBasis2Qb) {
+    if (!freezeBasis2Qb) {
         bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS);
@@ -1422,7 +1421,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!doNotBuffer && !freezeBasis2Qb) {
+    if (!freezeBasis2Qb) {
         bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
@@ -1729,7 +1728,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    if (!doNotBuffer && !freezeBasis2Qb && (controlLen == 1U)) {
+    if (!freezeBasis2Qb && (controlLen == 1U)) {
         bitLenInt control = controls[0];
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
@@ -1834,7 +1833,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         }
     }
 
-    if (!doNotBuffer && !freezeBasis2Qb && (controlLen == 1U)) {
+    if (!freezeBasis2Qb && (controlLen == 1U)) {
         bitLenInt control = controls[0];
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
