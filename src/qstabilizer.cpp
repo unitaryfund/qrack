@@ -491,9 +491,6 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
 
     bitLenInt elemCount = qubitCount << 1U;
 
-    // Is the outcome random?
-    bool ran = false;
-
     // pivot row in stabilizer
     bitLenInt p;
     // pivot row in destabilizer
@@ -505,14 +502,14 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
     // loop over stabilizer generators
     for (p = 0; p < n; p++) {
         // if a Zbar does NOT commute with Z_b (the operator being measured), then outcome is random
-        ran = x[p + n][t];
-        if (ran) {
+        if (x[p + n][t]) {
+            // The outcome is random
             break;
         }
     }
 
     // If outcome is indeterminate
-    if (ran) {
+    if (p < n) {
         if (!doApply) {
             result = (doForce ? result : Rand());
             return result;
@@ -544,6 +541,12 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
         if (x[m][t]) {
             break;
         }
+    }
+
+    if (m >= n) {
+        // TODO: Repeating deterministic measurement to the exhaustion of this check might fix Decompose()/Dispose()
+        // separability issues.
+        return r[elemCount];
     }
 
     rowcopy(elemCount, m + n);
