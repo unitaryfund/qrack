@@ -2064,7 +2064,6 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-
     virtual bool ApproxCompare(QInterfacePtr toCompare) = 0;
 
     /**
@@ -2073,7 +2072,6 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-
     virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
     /**
@@ -2082,7 +2080,6 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-
     virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
     /**
@@ -2090,21 +2087,18 @@ public:
      * timely return values. QEngines and other layers will always internally "Finish" when necessary for correct return
      * values. This is primarily for debugging and benchmarking.
      */
-
     virtual void Finish(){};
 
     /**
      * Returns "false" if asynchronous work is still running, and "true" if all previously dispatched asynchronous work
      * is done.
      */
-
     virtual bool isFinished() { return true; };
 
     /**
      * Returns "true" if current state is identifiably within the Clifford set, or "false" if it is not or cannot be
      * determined.
      */
-
     virtual bool isClifford() { return false; };
 
     /**
