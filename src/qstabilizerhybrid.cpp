@@ -299,25 +299,25 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
         bool isSet;
         bool isX = false;
         bool isY = false;
-        if (inputState[1] == ZERO_CMPLX) {
+        if (norm(inputState[1]) <= REAL1_EPSILON) {
             isClifford = true;
             isSet = false;
-        } else if (inputState[0] == ZERO_CMPLX) {
+        } else if (norm(inputState[0]) <= REAL1_EPSILON) {
             isClifford = true;
             isSet = true;
-        } else if (inputState[0] == inputState[1]) {
+        } else if (norm(inputState[0] - inputState[1]) <= REAL1_EPSILON) {
             isClifford = true;
             isSet = false;
             isX = true;
-        } else if (inputState[0] == -inputState[1]) {
+        } else if (norm(inputState[0] + inputState[1]) <= REAL1_EPSILON) {
             isClifford = true;
             isSet = true;
             isX = true;
-        } else if ((I_CMPLX * inputState[0]) == inputState[1]) {
+        } else if (norm((I_CMPLX * inputState[0]) - inputState[1]) <= REAL1_EPSILON) {
             isClifford = true;
             isSet = false;
             isY = true;
-        } else if ((I_CMPLX * inputState[0]) == -inputState[1]) {
+        } else if (norm((I_CMPLX * inputState[0]) + inputState[1]) <= REAL1_EPSILON) {
             isClifford = true;
             isSet = true;
             isY = true;
@@ -665,7 +665,17 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* control
         return;
     }
 
-    if (((topRight != ONE_CMPLX) && (bottomLeft != ONE_CMPLX)) || (controlLen > 1U)) {
+    // TODO: Generalize to trim all possible controls, like in QUnit.
+    if (stabilizer && (controlLen == 2U) && (topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
+        stabilizer->X(controls[0]);
+        stabilizer->X(controls[1]);
+        CCNOT(controls[0], controls[1], target);
+        stabilizer->X(controls[0]);
+        stabilizer->X(controls[1]);
+        return;
+    }
+
+    if (controlLen > 1U) {
         SwitchToEngine();
     }
 
@@ -693,6 +703,15 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* control
         stabilizer->X(controls[0]);
         stabilizer->CZ(controls[0], target);
         stabilizer->CNOT(controls[0], target);
+        stabilizer->X(controls[0]);
+        return;
+    }
+
+    if ((topRight == -ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
+        stabilizer->X(controls[0]);
+        stabilizer->CZ(controls[0], target);
+        stabilizer->CNOT(controls[0], target);
+        stabilizer->CZ(controls[0], target);
         stabilizer->X(controls[0]);
         return;
     }
