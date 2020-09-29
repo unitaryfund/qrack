@@ -667,12 +667,27 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* control
 
     // TODO: Generalize to trim all possible controls, like in QUnit.
     if (stabilizer && (controlLen == 2U) && (topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-        stabilizer->X(controls[0]);
-        stabilizer->X(controls[1]);
-        CCNOT(controls[0], controls[1], target);
-        stabilizer->X(controls[0]);
-        stabilizer->X(controls[1]);
-        return;
+        real1 prob = Prob(controls[0]);
+        if (prob == ZERO_R1) {
+            stabilizer->X(controls[1]);
+            stabilizer->CNOT(controls[1], target);
+            stabilizer->X(controls[1]);
+            return;
+        }
+        if (prob == ONE_R1) {
+            return;
+        }
+
+        prob = Prob(controls[1]);
+        if (prob == ZERO_R1) {
+            stabilizer->X(controls[0]);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->X(controls[0]);
+            return;
+        }
+        if (prob == ONE_R1) {
+            return;
+        }
     }
 
     if (controlLen > 1U) {
