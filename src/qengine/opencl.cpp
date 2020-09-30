@@ -2291,7 +2291,7 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
 
     runningNorm -= norm(GetAmplitude(perm));
     runningNorm += norm(amp);
-    if (runningNorm <= min_norm) {
+    if (runningNorm <= amplitudeFloor) {
         ZeroAmplitudes();
         return;
     } else if (!stateBuffer) {
@@ -2461,7 +2461,7 @@ void QEngineOCL::UpdateRunningNorm(real1 norm_thresh)
 
     WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
 
-    if (runningNorm <= min_norm) {
+    if (runningNorm <= amplitudeFloor) {
         ZeroAmplitudes();
     }
 }

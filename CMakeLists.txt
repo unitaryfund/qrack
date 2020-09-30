@@ -35,7 +35,6 @@ add_library (qrack STATIC
     src/qengine/arithmetic.cpp
     src/qengine/state.cpp
     src/qengine/utility.cpp
-    src/bitbuffer.cpp
     src/qunit.cpp
     src/qpager.cpp
     src/qhybrid.cpp
@@ -193,7 +192,6 @@ install (FILES
 
 # Install qrack library headers
 install (FILES
-    include/bitbuffer.hpp
     include/hamiltonian.hpp
     include/statevector.hpp
     include/pinvoke_api.hpp

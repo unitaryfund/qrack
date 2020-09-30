@@ -189,7 +189,7 @@ protected:
 
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
-        bool randomGlobalPhase = true, real1 norm_thresh = REAL1_EPSILON)
+        bool randomGlobalPhase = true, real1 norm_thresh = min_norm)
         : rand_distribution(0.0, 1.0)
         , hardware_rand_generator(NULL)
         , doNormalize(doNorm)
@@ -217,10 +217,6 @@ public:
             SetRandomSeed(randomSeed);
         } else {
             rand_generator = rgp;
-        }
-
-        if (amplitudeFloor < 0) {
-            amplitudeFloor = min_norm;
         }
     }
 
