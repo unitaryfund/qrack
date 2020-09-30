@@ -288,10 +288,10 @@ int main(int argc, char* argv[])
         }
 #else
         if (num_failed == 0 && stabilizer) {
-            session.config().stream() << "############ QStabilizerHybrid -> QUnit -> QEngineCPU ############"
+            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QEngineCPU ############"
                                       << std::endl;
-            testEngineType = QINTERFACE_STABILIZER_HYBRID;
-            testSubEngineType = QINTERFACE_QUNIT;
+            testEngineType = QINTERFACE_QUNIT;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }
