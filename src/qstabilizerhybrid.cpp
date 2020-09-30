@@ -389,7 +389,7 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
         return;
     }
 
-    if (topLeft == bottomRight) {
+    if (norm(topLeft - bottomRight) < REAL1_EPSILON) {
         return;
     }
 
@@ -400,12 +400,12 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
 
     complex sTest = bottomRight / topLeft;
 
-    if (sTest == I_CMPLX) {
+    if (norm(sTest - I_CMPLX) < REAL1_EPSILON) {
         stabilizer->S(target);
         return;
     }
 
-    if (sTest == -I_CMPLX) {
+    if (norm(sTest + I_CMPLX) < REAL1_EPSILON) {
         stabilizer->IS(target);
         return;
     }
