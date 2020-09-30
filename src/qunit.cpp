@@ -54,7 +54,7 @@ namespace Qrack {
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
     bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
-    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : 0)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , engine(eng)
     , subEngine(subEng)
     , devID(deviceID)
@@ -2071,9 +2071,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         }
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         bool isEigenstate = false;
-        // if (shards[controls[i]].unit && shards[controls[i]].unit->isClifford()) {
-        //     ProbBase(controls[i]);
-        // }
+        if (shards[controls[i]].unit && shards[controls[i]].unit->isClifford()) {
+            ProbBase(controls[i]);
+        }
         if (!shards[controls[i]].isProbDirty) {
             // This might determine that we can just skip out of the whole gate, in which case it returns this
             // method:

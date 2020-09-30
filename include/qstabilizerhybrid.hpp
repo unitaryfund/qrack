@@ -384,8 +384,6 @@ public:
 
     virtual bitCapInt MAll();
 
-    virtual void Collapse(const bitLenInt& qubitIndex) {}
-
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
     {
