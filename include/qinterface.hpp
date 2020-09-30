@@ -1799,6 +1799,8 @@ public:
     /** Measure permutation state of a register */
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length) { return ForceMReg(start, length, 0, false); }
 
+    virtual bitCapInt MAll() { return MReg(0, qubitCount); }
+
     /**
      * Act as if is a measurement was applied, except force the (usually random) result
      *
