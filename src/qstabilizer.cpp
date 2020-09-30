@@ -624,12 +624,6 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
 
     bitLenInt i, j;
 
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (IsSeparableZ(i)) {
-            M(i);
-        }
-    }
-
     bitLenInt end = start + length;
     bitLenInt nQubitCount = qubitCount - length;
     bitLenInt secondStart = nQubitCount + start;
