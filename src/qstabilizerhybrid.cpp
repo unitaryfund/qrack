@@ -378,6 +378,16 @@ void QStabilizerHybrid::ApplySingleBit(const complex* mtrx, bitLenInt target)
         return;
     }
 
+    complex sTest = mtrx[0] / mtrx[1];
+
+    if (!engine && (norm(sTest - I_CMPLX) < REAL1_EPSILON) && (norm(mtrx[0] - mtrx[3]) < REAL1_EPSILON) &&
+        (norm(mtrx[1] - mtrx[2]) < REAL1_EPSILON)) {
+        S(target);
+        H(target);
+        S(target);
+        return;
+    }
+
     SwitchToEngine();
     engine->ApplySingleBit(mtrx, target);
 }
