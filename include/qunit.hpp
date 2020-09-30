@@ -668,6 +668,7 @@ protected:
     bool freezeBasisH;
     bool freezeBasis2Qb;
     bitLenInt thresholdQubits;
+    bool doSkipBuffer;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
@@ -779,6 +780,7 @@ public:
     using QInterface::ForceMReg;
     virtual bitCapInt ForceMReg(
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
+    virtual bitCapInt MAll();
 
     /** @} */
 

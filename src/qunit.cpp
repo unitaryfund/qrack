@@ -67,6 +67,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , freezeBasisH(false)
     , freezeBasis2Qb(false)
     , thresholdQubits(qubitThreshold)
+    , doSkipBuffer(eng == QINTERFACE_STABILIZER_HYBRID)
 {
     if ((engine == QINTERFACE_CPU) || (engine == QINTERFACE_OPENCL)) {
         subEngine = engine;
@@ -769,6 +770,44 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
     return QInterface::ForceMReg(start, length, result, doForce, doApply);
 }
 
+bitCapInt QUnit::MAll()
+{
+    ToPermBasisAllMeasure();
+
+    std::vector<bitCapInt> partResults;
+    bitCapInt toRet = 0;
+
+    std::vector<QInterfacePtr> units;
+    for (bitLenInt i = 0; i < shards.size(); i++) {
+        QInterfacePtr toFind = shards[i].unit;
+        if (!toFind) {
+            if (Rand() <= norm(shards[i].amp1)) {
+                shards[i].amp0 = ZERO_CMPLX;
+                shards[i].amp1 = ONE_CMPLX;
+                toRet |= pow2(i);
+            } else {
+                shards[i].amp0 = ONE_CMPLX;
+                shards[i].amp1 = ZERO_CMPLX;
+            }
+        } else if (find(units.begin(), units.end(), toFind) == units.end()) {
+            units.push_back(toFind);
+            partResults.push_back(toFind->MAll());
+        }
+    }
+
+    for (bitLenInt i = 0; i < shards.size(); i++) {
+        if (!shards[i].unit) {
+            continue;
+        }
+        bitLenInt offset = find(units.begin(), units.end(), shards[i].unit) - units.begin();
+        toRet |= ((partResults[offset] >> shards[i].mapped) & 1U) << i;
+    }
+
+    SetPermutation(toRet);
+
+    return toRet;
+}
+
 /// Set register bits to given permutation
 void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
@@ -1011,7 +1050,7 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (!freezeBasisH) {
+    if (!doSkipBuffer && !freezeBasisH) {
         CommuteH(target);
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
@@ -1194,7 +1233,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     bool pmBasis = (cShard.isPlusMinus && tShard.isPlusMinus && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
 
-    if (!freezeBasis2Qb && !pmBasis) {
+    if (!doSkipBuffer && !freezeBasis2Qb && !pmBasis) {
         bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
@@ -1284,7 +1323,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
-    if (!freezeBasis2Qb) {
+    if (!doSkipBuffer && !freezeBasis2Qb) {
         bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS);
@@ -1421,7 +1460,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!freezeBasis2Qb) {
+    if (!doSkipBuffer && !freezeBasis2Qb) {
         bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
@@ -1728,7 +1767,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
     }
 
-    if (!freezeBasis2Qb && (controlLen == 1U)) {
+    if (!doSkipBuffer && !freezeBasis2Qb && (controlLen == 1U)) {
         bitLenInt control = controls[0];
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
@@ -1833,7 +1872,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         }
     }
 
-    if (!freezeBasis2Qb && (controlLen == 1U)) {
+    if (!doSkipBuffer && !freezeBasis2Qb && (controlLen == 1U)) {
         bitLenInt control = controls[0];
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];

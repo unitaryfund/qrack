@@ -223,9 +223,9 @@ int main(int argc, char* argv[])
         }
 
         if (num_failed == 0 && stabilizer) {
-            session.config().stream() << "############ QStabilizerHybrid -> QUnit -> QHybrid ############" << std::endl;
-            testEngineType = QINTERFACE_STABILIZER_HYBRID;
-            testSubEngineType = QINTERFACE_QUNIT;
+            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QHybrid ############" << std::endl;
+            testEngineType = QINTERFACE_QUNIT;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_HYBRID;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
@@ -250,20 +250,20 @@ int main(int argc, char* argv[])
         }
 
         if (num_failed == 0 && hybrid_multi && stabilizer) {
-            session.config().stream() << "############ QStabilizerHybrid -> QUnitMulti -> QHybrid ############"
+            session.config().stream() << "############ QUnitMulti -> QStabilizerHybrid -> QHybrid ############"
                                       << std::endl;
-            testEngineType = QINTERFACE_STABILIZER_HYBRID;
-            testSubEngineType = QINTERFACE_QUNIT_MULTI;
+            testEngineType = QINTERFACE_QUNIT_MULTI;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_HYBRID;
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
             num_failed = session.run();
         }
 #else
         if (num_failed == 0 && stabilizer) {
-            session.config().stream() << "############ QStabilizerHybrid -> QUnit -> QEngineCPU ############"
+            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QEngineCPU ############"
                                       << std::endl;
-            testEngineType = QINTERFACE_STABILIZER_HYBRID;
-            testSubEngineType = QINTERFACE_QUNIT;
+            testEngineType = QINTERFACE_QUNIT;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }

@@ -558,7 +558,7 @@ TEST_CASE("test_quantum_triviality", "[supreme]")
                 }
             }
 
-            qReg->MReg(0, n);
+            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -612,7 +612,7 @@ TEST_CASE("test_stabilizer", "[supreme]")
                 }
             }
 
-            qReg->MReg(0, n);
+            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -658,7 +658,7 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
                 }
             }
 
-            qReg->MReg(0, n);
+            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -715,7 +715,7 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
                 }
             }
 
-            qReg->MReg(0, n);
+            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -781,7 +781,7 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
                 }
             }
 
-            qReg->MReg(0, n);
+            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -856,7 +856,7 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                 }
             }
 
-            qReg->MReg(0, n);
+            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -924,7 +924,7 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
                 }
             }
 
-            qReg->MReg(0, n);
+            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -1077,7 +1077,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // std::cout<<"New iteration."<<std::endl;
 
         // We measure all bits once, after the circuit is run.
-        qReg->MReg(0, n);
+        qReg->MAll();
     });
 }
 
