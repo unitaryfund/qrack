@@ -382,6 +382,8 @@ public:
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
+    virtual bitCapInt MAll();
+
     virtual void Collapse(const bitLenInt& qubitIndex) {}
 
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(

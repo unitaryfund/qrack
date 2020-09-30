@@ -4807,7 +4807,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 2));
 
     qftReg->CNOT(1, 0);
-    qftReg->MReg(0, 20);
+    qftReg->MAll();
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
 }
 

@@ -734,4 +734,18 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* control
     SwitchToEngine();
     engine->ApplyAntiControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
 }
+
+bitCapInt QStabilizerHybrid::MAll()
+{
+    if (stabilizer) {
+        bitCapInt toRet = 0;
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            toRet |= ((stabilizer->M(i) ? 1 : 0) << i);
+        }
+        return toRet;
+    }
+
+    SwitchToEngine();
+    return engine->MAll();
+}
 } // namespace Qrack
