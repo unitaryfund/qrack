@@ -13,6 +13,8 @@
 #include "qfactory.hpp"
 #include "qstabilizerhybrid.hpp"
 
+#define IS_NORM_ZERO(c) (norm(c) <= amplitudeFloor)
+
 namespace Qrack {
 
 QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
