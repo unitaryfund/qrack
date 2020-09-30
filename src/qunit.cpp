@@ -29,10 +29,9 @@
 #include "qunit.hpp"
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_NORM_ZERO(c) (c == ZERO_CMPLX)
-#define IS_ZERO_R1(r) (r == ZERO_R1)
-#define IS_ONE_R1(r) (r == ONE_R1)
-#define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
+#define IS_ZERO_R1(r) (abs(r) <= amplitudeFloor)
+#define IS_ONE_R1(r) (abs(r - ONE_R1) <= amplitudeFloor)
+#define IS_ONE_CMPLX(c) (norm(c - ONE_CMPLX) <= amplitudeFloor)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard)                                                                                            \
     ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0) ||                                       \
@@ -55,7 +54,7 @@ namespace Qrack {
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
     bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
-    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : 0)
     , engine(eng)
     , subEngine(subEng)
     , devID(deviceID)
@@ -793,6 +792,10 @@ bitCapInt QUnit::MAll()
                 shards[i].amp0 = ONE_CMPLX;
                 shards[i].amp1 = ZERO_CMPLX;
             }
+        } else if (!(toFind->isClifford())) {
+            if (M(i)) {
+                toRet |= pow2(i);
+            }
         } else if (find(units.begin(), units.end(), toFind) == units.end()) {
             units.push_back(toFind);
             partResults.push_back(toFind->MAll());
@@ -1267,7 +1270,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
                 return;
             }
 
-            real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
             PhaseShardPtr buffer = phaseShard->second;
 
             if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
@@ -1494,7 +1496,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
                 return;
             }
 
-            real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
             PhaseShardPtr buffer = phaseShard->second;
 
             if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
@@ -1604,7 +1605,6 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
-    real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
     if (IS_SAME(topLeft, bottomRight) && (randGlobalPhase || IS_ARG_0(topLeft))) {
         return;
     }
@@ -1666,7 +1666,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
 void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
 {
-    real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
     if (IS_SAME(topRight, bottomLeft) && (randGlobalPhase || IS_ONE_CMPLX(topRight))) {
         X(target);
         return;
@@ -1723,7 +1722,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         return;
     }
 
-    real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
     if ((controlLen == 1) && IS_SAME(topLeft, bottomRight)) {
         ApplySinglePhase(ONE_CMPLX, bottomRight, cControls[0]);
         return;
@@ -1801,7 +1799,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
                 return;
             }
 
-            real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
             PhaseShardPtr buffer = phaseShard->second;
 
             if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
@@ -1822,7 +1819,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex topRight, const complex bottomLeft)
 {
-    real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
     if ((controlLen == 1U) && IS_ARG_0(topRight) && IS_ARG_0(bottomLeft)) {
         CNOT(controls[0], target);
         return;
@@ -1841,7 +1837,6 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         return;
     }
 
-    real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
     if ((controlLen == 1) && IS_SAME(topLeft, bottomRight)) {
         ApplySinglePhase(topLeft, ONE_CMPLX, cControls[0]);
         return;
@@ -1906,7 +1901,6 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
                 return;
             }
 
-            real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
             PhaseShardPtr buffer = phaseShard->second;
 
             if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
@@ -1927,7 +1921,6 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topRight, const complex bottomLeft)
 {
-    real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
     if ((controlLen == 1U) && IS_ARG_0(topRight) && IS_ARG_0(bottomLeft)) {
         AntiCNOT(controls[0], target);
         return;
@@ -3430,8 +3423,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     if (!QUEUED_PHASE(shard)) {
         return;
     }
-
-    real1 amplitudeThreshold = doNormalize ? amplitudeFloor : ZERO_R1;
 
     complex polarDiff, polarSame;
     ShardToPhaseMap::iterator phaseShard;

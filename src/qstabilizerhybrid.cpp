@@ -33,6 +33,7 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
 {
     concurrency = std::thread::hardware_concurrency();
     stabilizer = MakeStabilizer(initState);
+    amplitudeFloor = REAL1_EPSILON;
 }
 
 QStabilizerPtr QStabilizerHybrid::MakeStabilizer(const bitCapInt& perm)
@@ -364,24 +365,23 @@ void QStabilizerHybrid::ApplySingleBit(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if ((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) {
+    if (IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
     }
-    if ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)) {
+    if (IS_NORM_ZERO(mtrx[0]) && IS_NORM_ZERO(mtrx[3])) {
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
-    if ((mtrx[0] == complex(M_SQRT1_2, ZERO_R1)) && (mtrx[0] == mtrx[1]) && (mtrx[0] == mtrx[2]) &&
-        (mtrx[2] == -mtrx[3])) {
+    if (IS_SAME(mtrx[0], complex(M_SQRT1_2, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) &&
+        IS_SAME(mtrx[2], -mtrx[3])) {
         H(target);
         return;
     }
 
     complex sTest = mtrx[0] / mtrx[1];
 
-    if (!engine && (norm(sTest - I_CMPLX) < REAL1_EPSILON) && (norm(mtrx[0] - mtrx[3]) < REAL1_EPSILON) &&
-        (norm(mtrx[1] - mtrx[2]) < REAL1_EPSILON)) {
+    if (!engine && IS_SAME(sTest, I_CMPLX) && IS_SAME(mtrx[0], mtrx[3]) && IS_SAME(mtrx[1], mtrx[2])) {
         S(target);
         H(target);
         S(target);
@@ -399,23 +399,23 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
         return;
     }
 
-    if (norm(topLeft - bottomRight) < REAL1_EPSILON) {
+    if (IS_SAME(topLeft, bottomRight)) {
         return;
     }
 
-    if (topLeft == -bottomRight) {
+    if (IS_SAME(topLeft, -bottomRight)) {
         stabilizer->Z(target);
         return;
     }
 
     complex sTest = bottomRight / topLeft;
 
-    if (norm(sTest - I_CMPLX) < REAL1_EPSILON) {
+    if (IS_SAME(sTest, I_CMPLX)) {
         stabilizer->S(target);
         return;
     }
 
-    if (norm(sTest + I_CMPLX) < REAL1_EPSILON) {
+    if (IS_SAME(sTest, -I_CMPLX)) {
         stabilizer->IS(target);
         return;
     }
@@ -431,12 +431,12 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
         return;
     }
 
-    if (topRight == bottomLeft) {
+    if (IS_SAME(topRight, bottomLeft)) {
         stabilizer->X(target);
         return;
     }
 
-    if (topRight == -bottomLeft) {
+    if (IS_SAME(topRight, -bottomLeft)) {
         stabilizer->Z(target);
         stabilizer->X(target);
         return;
@@ -444,13 +444,13 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
 
     complex sTest = topRight / bottomLeft;
 
-    if (sTest == I_CMPLX) {
+    if (IS_SAME(sTest, I_CMPLX)) {
         stabilizer->S(target);
         stabilizer->X(target);
         return;
     }
 
-    if (sTest == -I_CMPLX) {
+    if (IS_SAME(sTest, -I_CMPLX)) {
         stabilizer->IS(target);
         stabilizer->X(target);
         return;
@@ -473,18 +473,18 @@ void QStabilizerHybrid::ApplyControlledSingleBit(
         return;
     }
 
-    if (!norm(mtrx[1]) && !norm(mtrx[2])) {
+    if (IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
         ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
         return;
     }
 
-    if (!norm(mtrx[0]) && !norm(mtrx[3])) {
+    if (IS_NORM_ZERO(mtrx[0]) && IS_NORM_ZERO(mtrx[3])) {
         ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
         return;
     }
 
-    if ((controlLen == 1U) && (mtrx[0] == complex(M_SQRT1_2, ZERO_R1)) && (mtrx[0] == mtrx[1]) &&
-        (mtrx[0] == mtrx[2]) && (mtrx[2] == -mtrx[3])) {
+    if ((controlLen == 1U) && IS_SAME(mtrx[0], complex(M_SQRT1_2, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
+        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[2], -mtrx[3])) {
         CH(controls[0], target);
         return;
     }
@@ -502,12 +502,12 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* controls, co
     }
 
     // TODO: Generalize to trim all possible controls, like in QUnit.
-    if ((controlLen == 2U) && (topLeft == ONE_CMPLX) && (bottomRight == -ONE_CMPLX)) {
+    if ((controlLen == 2U) && IS_SAME(topLeft, ONE_CMPLX) && IS_SAME(bottomRight, -ONE_CMPLX)) {
         CCZ(controls[0], controls[1], target);
         return;
     }
 
-    if ((topLeft != ONE_CMPLX) || (controlLen > 1U)) {
+    if (!IS_SAME(topLeft, ONE_CMPLX) || (controlLen > 1U)) {
         SwitchToEngine();
     }
 
@@ -516,21 +516,21 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* controls, co
         return;
     }
 
-    if (bottomRight == I_CMPLX) {
+    if (IS_SAME(bottomRight, I_CMPLX)) {
         CS(controls[0], target);
         return;
     }
 
-    if (bottomRight == -I_CMPLX) {
+    if (IS_SAME(bottomRight, -I_CMPLX)) {
         CIS(controls[0], target);
         return;
     }
 
-    if (bottomRight == ONE_CMPLX) {
+    if (IS_SAME(bottomRight, ONE_CMPLX)) {
         return;
     }
 
-    if (bottomRight == -ONE_CMPLX) {
+    if (IS_SAME(bottomRight, -ONE_CMPLX)) {
         stabilizer->CZ(controls[0], target);
         return;
     }
@@ -548,7 +548,7 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* controls, c
     }
 
     // TODO: Generalize to trim all possible controls, like in QUnit.
-    if ((controlLen == 2U) && (topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
+    if ((controlLen == 2U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
         CCNOT(controls[0], controls[1], target);
         return;
     }
@@ -562,28 +562,32 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* controls, c
         return;
     }
 
-    if ((topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-        stabilizer->CNOT(controls[0], target);
-        return;
+    if (IS_SAME(topRight, ONE_CMPLX)) {
+        if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+            stabilizer->CNOT(controls[0], target);
+            return;
+        }
+
+        if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->CZ(controls[0], target);
+            return;
+        }
     }
 
-    if ((topRight == ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
-        stabilizer->CNOT(controls[0], target);
-        stabilizer->CZ(controls[0], target);
-        return;
-    }
+    if (IS_SAME(topRight, -ONE_CMPLX)) {
+        if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
+            return;
+        }
 
-    if ((topRight == -ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-        stabilizer->CZ(controls[0], target);
-        stabilizer->CNOT(controls[0], target);
-        return;
-    }
-
-    if ((topRight == -ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
-        stabilizer->CZ(controls[0], target);
-        stabilizer->CNOT(controls[0], target);
-        stabilizer->CZ(controls[0], target);
-        return;
+        if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->CZ(controls[0], target);
+            return;
+        }
     }
 
     SwitchToEngine();
@@ -607,12 +611,12 @@ void QStabilizerHybrid::ApplyAntiControlledSingleBit(
         return;
     }
 
-    if (!norm(mtrx[1]) && !norm(mtrx[2])) {
+    if (IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
         ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
         return;
     }
 
-    if (!norm(mtrx[0]) && !norm(mtrx[3])) {
+    if (IS_NORM_ZERO(mtrx[0]) && IS_NORM_ZERO(mtrx[3])) {
         ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
         return;
     }
@@ -629,7 +633,7 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* controls
         return;
     }
 
-    if ((topLeft != ONE_CMPLX) || (controlLen > 1U)) {
+    if (!IS_SAME(topLeft, ONE_CMPLX) || (controlLen > 1U)) {
         SwitchToEngine();
     }
 
@@ -638,25 +642,25 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* controls
         return;
     }
 
-    if (bottomRight == I_CMPLX) {
+    if (IS_SAME(bottomRight, I_CMPLX)) {
         X(controls[0]);
         CS(controls[0], target);
         X(controls[0]);
         return;
     }
 
-    if (bottomRight == -I_CMPLX) {
+    if (IS_SAME(bottomRight, -I_CMPLX)) {
         X(controls[0]);
         CIS(controls[0], target);
         X(controls[0]);
         return;
     }
 
-    if (bottomRight == ONE_CMPLX) {
+    if (IS_SAME(bottomRight, ONE_CMPLX)) {
         return;
     }
 
-    if (bottomRight == -ONE_CMPLX) {
+    if (IS_SAME(bottomRight, -ONE_CMPLX)) {
         stabilizer->X(controls[0]);
         stabilizer->CZ(controls[0], target);
         stabilizer->X(controls[0]);
@@ -676,7 +680,7 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* control
     }
 
     // TODO: Generalize to trim all possible controls, like in QUnit.
-    if (stabilizer && (controlLen == 2U) && (topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
+    if (stabilizer && (controlLen == 2U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
         real1 prob = Prob(controls[0]);
         if (prob == ZERO_R1) {
             stabilizer->X(controls[1]);
@@ -709,36 +713,40 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* control
         return;
     }
 
-    if ((topRight == ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-        stabilizer->X(controls[0]);
-        stabilizer->CNOT(controls[0], target);
-        stabilizer->X(controls[0]);
-        return;
+    if (IS_SAME(topRight, ONE_CMPLX)) {
+        if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+            stabilizer->X(controls[0]);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->X(controls[0]);
+            return;
+        }
+
+        if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            stabilizer->X(controls[0]);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->X(controls[0]);
+            return;
+        }
     }
 
-    if ((topRight == ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
-        stabilizer->X(controls[0]);
-        stabilizer->CNOT(controls[0], target);
-        stabilizer->CZ(controls[0], target);
-        stabilizer->X(controls[0]);
-        return;
-    }
+    if (IS_SAME(topRight, -ONE_CMPLX)) {
+        if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+            stabilizer->X(controls[0]);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->X(controls[0]);
+            return;
+        }
 
-    if ((topRight == -ONE_CMPLX) && (bottomLeft == ONE_CMPLX)) {
-        stabilizer->X(controls[0]);
-        stabilizer->CZ(controls[0], target);
-        stabilizer->CNOT(controls[0], target);
-        stabilizer->X(controls[0]);
-        return;
-    }
-
-    if ((topRight == -ONE_CMPLX) && (bottomLeft == -ONE_CMPLX)) {
-        stabilizer->X(controls[0]);
-        stabilizer->CZ(controls[0], target);
-        stabilizer->CNOT(controls[0], target);
-        stabilizer->CZ(controls[0], target);
-        stabilizer->X(controls[0]);
-        return;
+        if (IS_SAME(topRight, -ONE_CMPLX) && IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            stabilizer->X(controls[0]);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->X(controls[0]);
+            return;
+        }
     }
 
     SwitchToEngine();

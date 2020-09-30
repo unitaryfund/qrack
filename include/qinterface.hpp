@@ -189,7 +189,7 @@ protected:
 
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
-        bool randomGlobalPhase = true, real1 norm_thresh = REAL1_DEFAULT_ARG)
+        bool randomGlobalPhase = true, real1 norm_thresh = REAL1_EPSILON)
         : rand_distribution(0.0, 1.0)
         , hardware_rand_generator(NULL)
         , doNormalize(doNorm)
