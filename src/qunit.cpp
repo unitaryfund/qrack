@@ -772,6 +772,10 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
 
 bitCapInt QUnit::MAll()
 {
+    if (engine != QINTERFACE_STABILIZER_HYBRID) {
+        return MReg(0, qubitCount);
+    }
+
     ToPermBasisAllMeasure();
 
     std::vector<bitCapInt> partResults;
@@ -1050,7 +1054,7 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (!doSkipBuffer && !freezeBasisH) {
+    if (!freezeBasisH) {
         CommuteH(target);
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
@@ -2074,6 +2078,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         }
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         bool isEigenstate = false;
+        // if (shards[controls[i]].unit && shards[controls[i]].unit->isClifford()) {
+        //     ProbBase(controls[i]);
+        // }
         if (!shards[controls[i]].isProbDirty) {
             // This might determine that we can just skip out of the whole gate, in which case it returns this
             // method:
