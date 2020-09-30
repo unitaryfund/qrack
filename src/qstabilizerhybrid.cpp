@@ -19,7 +19,7 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
     bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem,
     int deviceId, bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<int> ignored,
     bitLenInt qubitThreshold)
-    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1)
     , engineType(eng)
     , subEngineType(subEng)
     , engine(NULL)
