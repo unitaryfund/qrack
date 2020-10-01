@@ -1060,7 +1060,7 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (!doSkipBuffer && !freezeBasisH) {
+    if (!freezeBasisH) {
         CommuteH(target);
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
