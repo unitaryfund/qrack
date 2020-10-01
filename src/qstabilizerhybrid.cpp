@@ -469,11 +469,6 @@ void QStabilizerHybrid::ApplyControlledSingleBit(
         return;
     }
 
-    if (engine) {
-        engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
-        return;
-    }
-
     if (IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
         ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
         return;
@@ -508,7 +503,7 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* controls, co
         return;
     }
 
-    if (!IS_SAME(topLeft, ONE_CMPLX) || (controlLen > 1U)) {
+    if (controlLen > 1U) {
         SwitchToEngine();
     }
 
@@ -517,23 +512,40 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* controls, co
         return;
     }
 
-    if (IS_SAME(bottomRight, I_CMPLX)) {
-        CS(controls[0], target);
-        return;
-    }
+    if (IS_SAME(topLeft, ONE_CMPLX)) {
+        if (IS_SAME(bottomRight, I_CMPLX)) {
+            CS(controls[0], target);
+            return;
+        }
 
-    if (IS_SAME(bottomRight, -I_CMPLX)) {
-        CIS(controls[0], target);
-        return;
-    }
+        if (IS_SAME(bottomRight, -I_CMPLX)) {
+            CIS(controls[0], target);
+            return;
+        }
 
-    if (IS_SAME(bottomRight, ONE_CMPLX)) {
-        return;
-    }
+        if (IS_SAME(bottomRight, ONE_CMPLX)) {
+            return;
+        }
 
-    if (IS_SAME(bottomRight, -ONE_CMPLX)) {
-        stabilizer->CZ(controls[0], target);
-        return;
+        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            stabilizer->CZ(controls[0], target);
+            return;
+        }
+    } else if (IS_SAME(topLeft, -ONE_CMPLX)) {
+        if (IS_SAME(bottomRight, ONE_CMPLX)) {
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
+            return;
+        }
+
+        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
+            return;
+        }
     }
 
     SwitchToEngine();
@@ -603,15 +615,6 @@ void QStabilizerHybrid::ApplyAntiControlledSingleBit(
         return;
     }
 
-    if (controlLen > 1U) {
-        SwitchToEngine();
-    }
-
-    if (engine) {
-        engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
-        return;
-    }
-
     if (IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
         ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
         return;
@@ -634,7 +637,7 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* controls
         return;
     }
 
-    if (!IS_SAME(topLeft, ONE_CMPLX) || (controlLen > 1U)) {
+    if (controlLen > 1U) {
         SwitchToEngine();
     }
 
@@ -643,29 +646,36 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* controls
         return;
     }
 
-    if (IS_SAME(bottomRight, I_CMPLX)) {
-        X(controls[0]);
-        CS(controls[0], target);
-        X(controls[0]);
-        return;
-    }
+    if (IS_SAME(topLeft, ONE_CMPLX)) {
+        if (IS_SAME(bottomRight, ONE_CMPLX)) {
+            return;
+        }
 
-    if (IS_SAME(bottomRight, -I_CMPLX)) {
-        X(controls[0]);
-        CIS(controls[0], target);
-        X(controls[0]);
-        return;
-    }
+        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            stabilizer->X(controls[0]);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->X(controls[0]);
+            return;
+        }
+    } else if (IS_SAME(topLeft, -ONE_CMPLX)) {
+        if (IS_SAME(bottomRight, ONE_CMPLX)) {
+            stabilizer->X(controls[0]);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->X(controls[0]);
+            return;
+        }
 
-    if (IS_SAME(bottomRight, ONE_CMPLX)) {
-        return;
-    }
-
-    if (IS_SAME(bottomRight, -ONE_CMPLX)) {
-        stabilizer->X(controls[0]);
-        stabilizer->CZ(controls[0], target);
-        stabilizer->X(controls[0]);
-        return;
+        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            stabilizer->X(controls[0]);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->CZ(controls[0], target);
+            stabilizer->CNOT(controls[0], target);
+            stabilizer->X(controls[0]);
+            return;
+        }
     }
 
     SwitchToEngine();
