@@ -46,8 +46,8 @@ struct PhaseShard {
     }
 };
 
-#define IS_SAME(c1, c2) (norm((c1) - (c2)) <= amplitudeThreshold)
-#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= amplitudeThreshold)
+#define IS_SAME(c1, c2) (norm((c1) - (c2)) <= amplitudeFloor)
+#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= amplitudeFloor)
 #define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)
 #define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX)
 
@@ -68,7 +68,7 @@ protected:
 public:
     QInterfacePtr unit;
     bitLenInt mapped;
-    real1 amplitudeThreshold;
+    real1 amplitudeFloor;
     bool isProbDirty;
     bool isPhaseDirty;
     complex amp0;
@@ -96,7 +96,7 @@ public:
     QEngineShard(const real1 amp_thresh = min_norm)
         : unit(NULL)
         , mapped(0)
-        , amplitudeThreshold(amp_thresh)
+        , amplitudeFloor(amp_thresh)
         , isProbDirty(false)
         , isPhaseDirty(false)
         , amp0(ONE_CMPLX)
@@ -113,7 +113,7 @@ public:
     QEngineShard(const bool& set, const real1 amp_thresh = min_norm)
         : unit(NULL)
         , mapped(0)
-        , amplitudeThreshold(amp_thresh)
+        , amplitudeFloor(amp_thresh)
         , isProbDirty(false)
         , isPhaseDirty(false)
         , isPlusMinus(false)
@@ -131,7 +131,7 @@ public:
     QEngineShard(QInterfacePtr u, const bitLenInt& mapping, const real1 amp_thresh = min_norm)
         : unit(u)
         , mapped(mapping)
-        , amplitudeThreshold(amp_thresh)
+        , amplitudeFloor(amp_thresh)
         , isProbDirty(true)
         , isPhaseDirty(true)
         , amp0(ONE_CMPLX)
@@ -676,12 +676,12 @@ public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored = {},
+        bool useSparseStateVec = false, real1 norm_thresh = min_norm, std::vector<int> ignored = {},
         bitLenInt qubitThreshold = 0);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = true, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0)
+        real1 norm_thresh = min_norm, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0)
         : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId,
               useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold)
     {

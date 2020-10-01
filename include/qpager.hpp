@@ -78,8 +78,8 @@ protected:
 public:
     QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool ignored = false, bool ignored2 = false, bool useHostMem = false,
-        int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 ignored3 = REAL1_DEFAULT_ARG, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0);
+        int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false, real1 ignored3 = min_norm,
+        std::vector<int> devList = {}, bitLenInt qubitThreshold = 0);
 
     virtual void SetConcurrency(uint32_t threadsPerEngine)
     {

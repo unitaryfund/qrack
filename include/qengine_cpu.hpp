@@ -48,8 +48,8 @@ protected:
 public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored = false,
-        int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<int> ignored3 = {}, bitLenInt ignored4 = 0);
+        int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false, real1 norm_thresh = min_norm,
+        std::vector<int> ignored3 = {}, bitLenInt ignored4 = 0);
 
     virtual ~QEngineCPU() { Dump(); }
 
