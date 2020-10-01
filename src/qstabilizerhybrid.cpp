@@ -381,22 +381,12 @@ void QStabilizerHybrid::ApplySingleBit(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if (!engine && IS_SAME(mtrx[0], mtrx[3]) && IS_SAME(mtrx[1], mtrx[2])) {
-        complex sTest = mtrx[0] / mtrx[1];
-
-        if (IS_SAME(sTest, I_CMPLX)) {
-            S(target);
-            H(target);
-            S(target);
-            return;
-        }
-
-        if (IS_SAME(sTest, -I_CMPLX)) {
-            IS(target);
-            H(target);
-            IS(target);
-            return;
-        }
+    if (stabilizer && IS_SAME(mtrx[0], complex(ONE_R1 / 2, ONE_R1 / 2)) &&
+        IS_SAME(mtrx[1], complex(ONE_R1 / 2, -ONE_R1 / 2)) && IS_SAME(mtrx[0], mtrx[3]) && IS_SAME(mtrx[1], mtrx[2])) {
+        IS(target);
+        H(target);
+        IS(target);
+        return;
     }
 
     SwitchToEngine();

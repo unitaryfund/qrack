@@ -665,16 +665,14 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
 
     complex amps[2];
     partnerShard.unit->GetQuantumState(amps);
-    if (!doSkipBuffer) {
-        if (IS_NORM_ZERO(amps[0] - amps[1])) {
-            partnerShard.isPlusMinus = true;
-            amps[0] = ONE_CMPLX;
-            amps[1] = ZERO_CMPLX;
-        } else if (IS_NORM_ZERO(amps[0] + amps[1])) {
-            partnerShard.isPlusMinus = true;
-            amps[0] = ZERO_CMPLX;
-            amps[1] = ONE_CMPLX;
-        }
+    if (IS_NORM_ZERO(amps[0] - amps[1])) {
+        partnerShard.isPlusMinus = true;
+        amps[0] = ONE_CMPLX;
+        amps[1] = ZERO_CMPLX;
+    } else if (IS_NORM_ZERO(amps[0] + amps[1])) {
+        partnerShard.isPlusMinus = true;
+        amps[0] = ZERO_CMPLX;
+        amps[1] = ONE_CMPLX;
     }
     partnerShard.amp0 = amps[0];
     partnerShard.amp1 = amps[1];
@@ -1060,7 +1058,7 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (!doSkipBuffer && !freezeBasisH) {
+    if (!freezeBasisH) {
         CommuteH(target);
         shard.isPlusMinus = !shard.isPlusMinus;
         return;
