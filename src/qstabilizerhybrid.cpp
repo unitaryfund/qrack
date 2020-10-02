@@ -33,6 +33,22 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
     , isSparse(useSparseStateVec)
     , thresholdQubits(qubitThreshold)
 {
+    if (subEngineType == QINTERFACE_STABILIZER_HYBRID) {
+#if ENABLE_OPENCL
+        subEngineType = QINTERFACE_HYBRID;
+#else
+        subEngineType = QINTERFACE_CPU;
+#endif
+    }
+
+    if (engineType == QINTERFACE_STABILIZER_HYBRID) {
+#if ENABLE_OPENCL
+        engineType = QINTERFACE_HYBRID;
+#else
+        engineType = QINTERFACE_CPU;
+#endif
+    }
+
     concurrency = std::thread::hardware_concurrency();
     stabilizer = MakeStabilizer(initState);
     amplitudeFloor = REAL1_EPSILON;
