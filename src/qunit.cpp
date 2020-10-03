@@ -634,6 +634,10 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex(sqrt(prob), ZERO_R1);
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
+    if (doSkipBuffer) {
+        return prob;
+    }
+
     bool didSeparate = false;
     if (IS_NORM_ZERO(shard.amp1)) {
         SeparateBit(false, qubit);
@@ -758,7 +762,9 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
             }
         }
 
-        SeparateBit(result, qubit);
+        if (!doSkipBuffer) {
+            SeparateBit(result, qubit);
+        }
     }
 
     return result;
