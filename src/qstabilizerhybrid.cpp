@@ -33,6 +33,22 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
     , isSparse(useSparseStateVec)
     , thresholdQubits(qubitThreshold)
 {
+    if (subEngineType == QINTERFACE_STABILIZER_HYBRID) {
+#if ENABLE_OPENCL
+        subEngineType = QINTERFACE_HYBRID;
+#else
+        subEngineType = QINTERFACE_CPU;
+#endif
+    }
+
+    if (engineType == QINTERFACE_STABILIZER_HYBRID) {
+#if ENABLE_OPENCL
+        engineType = QINTERFACE_HYBRID;
+#else
+        engineType = QINTERFACE_CPU;
+#endif
+    }
+
     concurrency = std::thread::hardware_concurrency();
     stabilizer = MakeStabilizer(initState);
     amplitudeFloor = REAL1_EPSILON;
@@ -438,22 +454,22 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
     }
 
     if (IS_SAME(topRight, -bottomLeft)) {
-        stabilizer->Z(target);
         stabilizer->X(target);
+        stabilizer->Z(target);
         return;
     }
 
     complex sTest = topRight / bottomLeft;
 
     if (IS_SAME(sTest, I_CMPLX)) {
-        stabilizer->S(target);
         stabilizer->X(target);
+        stabilizer->S(target);
         return;
     }
 
     if (IS_SAME(sTest, -I_CMPLX)) {
-        stabilizer->IS(target);
         stabilizer->X(target);
+        stabilizer->IS(target);
         return;
     }
 
