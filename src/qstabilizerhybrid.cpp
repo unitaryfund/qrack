@@ -453,9 +453,9 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
         return;
     }
 
-    if (IS_SAME(-topRight, bottomLeft)) {
-        stabilizer->Z(target);
+    if (IS_SAME(topRight, -bottomLeft)) {
         stabilizer->X(target);
+        stabilizer->Z(target);
         return;
     }
 

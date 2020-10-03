@@ -2084,9 +2084,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         }
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         bool isEigenstate = false;
-        if (shards[controls[i]].unit && shards[controls[i]].unit->isClifford()) {
-            ProbBase(controls[i]);
-        }
+        // if (shards[controls[i]].unit && shards[controls[i]].unit->isClifford()) {
+        //     ProbBase(controls[i]);
+        // }
         if (!shards[controls[i]].isProbDirty) {
             // This might determine that we can just skip out of the whole gate, in which case it returns this
             // method:
