@@ -762,9 +762,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
             }
         }
 
-        if (!doSkipBuffer) {
-            SeparateBit(result, qubit);
-        }
+        SeparateBit(result, qubit);
     }
 
     return result;
