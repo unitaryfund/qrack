@@ -325,7 +325,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_setconcurrency")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_base_case")
 {
     // TODO: Fix QUnit base cases
-    if (testEngineType == QINTERFACE_QUNIT) {
+    if ((testEngineType == QINTERFACE_QUNIT) || (testEngineType == QINTERFACE_QUNIT_MULTI)) {
         return;
     }
 
