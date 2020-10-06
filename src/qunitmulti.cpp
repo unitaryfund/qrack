@@ -26,16 +26,6 @@ QUnitMulti::QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt 
     // The "shard" engine type must be QINTERFACE_OPENCL or QINTERFACE_HYBRID, with or without an intermediate QPager
     // layer.
 
-    if ((engine != QINTERFACE_HYBRID) && (engine != QINTERFACE_OPENCL) && (engine != QINTERFACE_QPAGER)) {
-        throw "Invalid sub-engine type: QUnitMulti must layer over only QEngineOCL or QHybrid, with or without an "
-              "intermediate QPager layer.";
-    }
-
-    if ((subEngine != QINTERFACE_HYBRID) && (subEngine != QINTERFACE_OPENCL)) {
-        throw "Invalid sub-engine type: QUnitMulti must layer over only QEngineOCL or QHybrid, with or without an "
-              "intermediate QPager layer.";
-    }
-
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance()->GetDeviceContextPtrVector();
 
     if (devList.size() == 0) {
