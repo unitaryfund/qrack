@@ -51,7 +51,7 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, const bool& 
 
     if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
         rand_generator = std::make_shared<qrack_rand_gen>();
-        randomSeed = std::time(0);
+        randomSeed = time(0);
         SetRandomSeed(randomSeed);
     } else {
         rand_generator = rgp;
