@@ -28,7 +28,7 @@
 
 namespace Qrack {
 
-QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, const bool& useHardwareRNG, qrack_rand_gen_ptr rgp)
+QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHardwareRNG, qrack_rand_gen_ptr rgp)
     : qubitCount(n)
     , x((n << 1U) + 1U, std::vector<bool>(n))
     , z((n << 1U) + 1U, std::vector<bool>(n))

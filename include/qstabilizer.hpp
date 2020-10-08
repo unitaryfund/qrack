@@ -78,7 +78,7 @@ protected:
     bitCapInt pow2(const bitLenInt& qubit) { return ONE_BCI << (bitCapInt)qubit; }
 
 public:
-    QStabilizer(const bitLenInt& n, const bitCapInt& perm = 0, const bool& useHardwareRNG = true,
+    QStabilizer(const bitLenInt& n, const bitCapInt& perm = 0, bool useHardwareRNG = true,
         qrack_rand_gen_ptr rgp = nullptr);
 
     QStabilizer(QStabilizer& s)
@@ -95,7 +95,7 @@ public:
         hardware_rand_generator = s.hardware_rand_generator;
     }
 
-    ~QStabilizer() { Dump(); }
+    virtual ~QStabilizer() { Dump(); }
 
     void Finish()
     {
