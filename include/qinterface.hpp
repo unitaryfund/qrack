@@ -222,6 +222,11 @@ public:
         // Intentionally left blank
     }
 
+    virtual ~QInterface()
+    {
+        // Virtual destructor for inheritance
+    }
+
     virtual void SetRandomSeed(uint32_t seed)
     {
         if (rand_generator != NULL) {
