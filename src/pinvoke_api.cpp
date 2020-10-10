@@ -51,24 +51,7 @@ void mul2x2(const complex& scalar, const complex* inMtrx, complex* outMtrx)
 
 void TransformPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds)
 {
-    const complex adjHyGate[4] = { complex(M_SQRT1_2, 0), complex(0, -M_SQRT1_2), complex(M_SQRT1_2, 0),
-        complex(0, M_SQRT1_2) };
-
-    for (unsigned i = 0; i < len; i++) {
-        switch (bases[i]) {
-        case PauliX:
-            simulator->H(shards[simulator][qubitIds[i]]);
-            break;
-        case PauliY:
-            simulator->ApplySingleBit(adjHyGate, shards[simulator][qubitIds[i]]);
-            break;
-        }
-    }
-}
-
-void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds)
-{
-    const complex hyGate[4] = { complex(M_SQRT1_2, 0), complex(M_SQRT1_2, 0), complex(0, M_SQRT1_2),
+    const complex hsGate[4] = { complex(M_SQRT1_2, 0), complex(M_SQRT1_2, 0), complex(0, M_SQRT1_2),
         complex(0, -M_SQRT1_2) };
 
     for (unsigned i = 0; i < len; i++) {
@@ -77,7 +60,24 @@ void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, un
             simulator->H(shards[simulator][qubitIds[i]]);
             break;
         case PauliY:
-            simulator->ApplySingleBit(hyGate, shards[simulator][qubitIds[i]]);
+            simulator->ApplySingleBit(hsGate, shards[simulator][qubitIds[i]]);
+            break;
+        }
+    }
+}
+
+void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds)
+{
+    const complex ishGate[4] = { complex(M_SQRT1_2, 0), complex(0, -M_SQRT1_2), complex(M_SQRT1_2, 0),
+        complex(0, M_SQRT1_2) };
+
+    for (unsigned i = 0; i < len; i++) {
+        switch (bases[i]) {
+        case PauliX:
+            simulator->H(shards[simulator][qubitIds[i]]);
+            break;
+        case PauliY:
+            simulator->ApplySingleBit(ishGate, shards[simulator][qubitIds[i]]);
             break;
         }
     }
