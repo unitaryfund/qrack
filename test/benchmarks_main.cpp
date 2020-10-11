@@ -36,7 +36,7 @@ bool single_qubit_run = false;
 std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput = false;
-int benchmarkSamples;
+int benchmarkSamples = 100;
 
 int main(int argc, char* argv[])
 {
