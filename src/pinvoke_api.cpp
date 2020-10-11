@@ -59,12 +59,12 @@ void TransformPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases,
             break;
         case PauliY:
             simulator->IS(shards[simulator][qubitIds[i]]);
-			simulator->H(shards[simulator][qubitIds[i]]);
+            simulator->H(shards[simulator][qubitIds[i]]);
             break;
-		case PauliZ:
-		case PauliI:
-		default:
-		    break;
+        case PauliZ:
+        case PauliI:
+        default:
+            break;
         }
     }
 }
@@ -78,12 +78,12 @@ void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, un
             break;
         case PauliY:
             simulator->H(shards[simulator][qubitIds[i]]);
-			simulator->S(shards[simulator][qubitIds[i]]);
+            simulator->S(shards[simulator][qubitIds[i]]);
             break;
-		case PauliZ:
-		case PauliI:
-		default:
-		    break;
+        case PauliZ:
+        case PauliI:
+        default:
+            break;
         }
     }
 }
