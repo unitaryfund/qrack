@@ -40,6 +40,7 @@ enum Pauli {
 
 qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>(std::time(0));
 std::vector<QInterfacePtr> simulators;
+std::vector<bool> simulatorReservations;
 std::map<QInterfacePtr, std::map<unsigned, bitLenInt>> shards;
 
 void mul2x2(const complex& scalar, const complex* inMtrx, complex* outMtrx)
@@ -60,6 +61,10 @@ void TransformPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases,
             simulator->H(shards[simulator][qubitIds[i]]);
 			simulator->S(shards[simulator][qubitIds[i]]);
             break;
+		case PauliZ:
+		case PauliI:
+		default:
+		    break;
         }
     }
 }
@@ -75,6 +80,10 @@ void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, un
             simulator->IS(shards[simulator][qubitIds[i]]);
 			simulator->H(shards[simulator][qubitIds[i]]);
             break;
+		case PauliZ:
+		case PauliI:
+		default:
+		    break;
         }
     }
 }
@@ -259,7 +268,7 @@ extern "C" {
 /**
  * (External API) Initialize a simulator ID with 0 qubits
  */
-MICROSOFT_QUANTUM_DECL unsigned init() { return init_count(4); }
+MICROSOFT_QUANTUM_DECL unsigned init() { return init_count(0); }
 
 MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 {
@@ -268,13 +277,18 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
     unsigned sid = simulators.size();
 
     for (unsigned i = 0; i < simulators.size(); i++) {
-        if (simulators[i] == NULL) {
+        if (simulatorReservations[i] == false) {
             sid = i;
+            simulatorReservations[i] = true;
             break;
         }
     }
 
-    QInterfacePtr simulator = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, q, 0, rng);
+    if (sid == simulators.size()) {
+        simulatorReservations.push_back(true);
+    }
+
+    QInterfacePtr simulator = q ? CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, q, 0, rng) : NULL;
     if (sid == simulators.size()) {
         simulators.push_back(simulator);
     } else {
@@ -299,6 +313,7 @@ MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid)
 
     shards.erase(simulators[sid]);
     simulators[sid] = NULL;
+    simulatorReservations[sid] = false;
 }
 
 /**
@@ -470,6 +485,7 @@ MICROSOFT_QUANTUM_DECL void release(_In_ unsigned sid, _In_ unsigned q)
 
     if (simulator->GetQubitCount() == 1U) {
         shards.erase(simulator);
+        simulators[sid] = NULL;
     } else {
         SIMULATOR_LOCK_GUARD(sid)
         bitLenInt oIndex = shards[simulator][q];
