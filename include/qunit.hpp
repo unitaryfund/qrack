@@ -780,6 +780,7 @@ public:
     using QInterface::ForceMReg;
     virtual bitCapInt ForceMReg(
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
+    virtual bitCapInt MAll();
 
     /** @} */
 

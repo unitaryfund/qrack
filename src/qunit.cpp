@@ -818,6 +818,52 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
     return QInterface::ForceMReg(start, length, result, doForce, doApply);
 }
 
+bitCapInt QUnit::MAll()
+{
+    if (engine != QINTERFACE_STABILIZER_HYBRID) {
+        return MReg(0, qubitCount);
+    }
+
+    ToPermBasisAllMeasure();
+
+    std::vector<bitCapInt> partResults;
+    bitCapInt toRet = 0;
+
+    std::vector<QInterfacePtr> units;
+    for (bitLenInt i = 0; i < shards.size(); i++) {
+        QInterfacePtr toFind = shards[i].unit;
+        if (!toFind) {
+            if (Rand() <= norm(shards[i].amp1)) {
+                shards[i].amp0 = ZERO_CMPLX;
+                shards[i].amp1 = ONE_CMPLX;
+                toRet |= pow2(i);
+            } else {
+                shards[i].amp0 = ONE_CMPLX;
+                shards[i].amp1 = ZERO_CMPLX;
+            }
+        } else if (!(toFind->isClifford())) {
+            if (M(i)) {
+                toRet |= pow2(i);
+            }
+        } else if (find(units.begin(), units.end(), toFind) == units.end()) {
+            units.push_back(toFind);
+            partResults.push_back(toFind->MAll());
+        }
+    }
+
+    for (bitLenInt i = 0; i < shards.size(); i++) {
+        if (!shards[i].unit) {
+            continue;
+        }
+        bitLenInt offset = find(units.begin(), units.end(), shards[i].unit) - units.begin();
+        toRet |= ((partResults[offset] >> shards[i].mapped) & 1U) << i;
+    }
+
+    SetPermutation(toRet);
+
+    return toRet;
+}
+
 /// Set register bits to given permutation
 void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
