@@ -635,6 +635,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
     if (doSkipBuffer) {
+        CheckCliffordSeparable(qubit);
         return prob;
     }
 
@@ -647,11 +648,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         didSeparate = true;
     }
 
-    if (!didSeparate) {
-        return prob;
-    }
-
-    if (shardQbCount != 2) {
+    if (!didSeparate || (shardQbCount != 2)) {
         return prob;
     }
 
@@ -688,6 +685,43 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     }
 
     return prob;
+}
+
+bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
+{
+    QInterfacePtr unit = shards[qubit].unit;
+
+    std::vector<bitLenInt> partnerIndices;
+    std::vector<bool> partnerStates;
+
+    for (bitLenInt partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
+        QEngineShard& partnerShard = shards[partnerIndex];
+
+        if (unit != partnerShard.unit) {
+            continue;
+        }
+
+        if (partnerShard.isProbDirty) {
+            return false;
+        }
+
+        if (IS_NORM_ZERO(partnerShard.amp0)) {
+            partnerStates.push_back(true);
+        } else if (IS_NORM_ZERO(partnerShard.amp1)) {
+            partnerStates.push_back(false);
+        } else {
+            return false;
+        }
+
+        partnerIndices.push_back(partnerIndex);
+    }
+
+    // If we made it this far, the Clifford engine is entirely separable into single qubit Z and/or X eigenstates.
+    for (bitLenInt i = 0; i < partnerIndices.size(); i++) {
+        SeparateBit(partnerStates[i], partnerIndices[i]);
+    }
+
+    return true;
 }
 
 real1 QUnit::Prob(bitLenInt qubit)
@@ -756,13 +790,23 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 
     // This is critical: it's the "nonlocal correlation" of "wave function collapse".
     if (shard.unit) {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            if (shards[i].unit == shard.unit) {
-                shards[i].MakeDirty();
+        if (shard.unit->isClifford()) {
+            for (bitLenInt i = 0; i < qubitCount; i++) {
+                if (shards[i].unit == shard.unit) {
+                    ProbBase(i);
+                }
             }
-        }
 
-        SeparateBit(result, qubit);
+            CheckCliffordSeparable(qubit);
+        } else {
+            for (bitLenInt i = 0; i < qubitCount; i++) {
+                if (shards[i].unit == shard.unit) {
+                    shards[i].MakeDirty();
+                }
+            }
+
+            SeparateBit(result, qubit);
+        }
     }
 
     return result;
@@ -772,52 +816,6 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
 {
     ToPermBasisMeasure(start, length);
     return QInterface::ForceMReg(start, length, result, doForce, doApply);
-}
-
-bitCapInt QUnit::MAll()
-{
-    if (engine != QINTERFACE_STABILIZER_HYBRID) {
-        return MReg(0, qubitCount);
-    }
-
-    ToPermBasisAllMeasure();
-
-    std::vector<bitCapInt> partResults;
-    bitCapInt toRet = 0;
-
-    std::vector<QInterfacePtr> units;
-    for (bitLenInt i = 0; i < shards.size(); i++) {
-        QInterfacePtr toFind = shards[i].unit;
-        if (!toFind) {
-            if (Rand() <= norm(shards[i].amp1)) {
-                shards[i].amp0 = ZERO_CMPLX;
-                shards[i].amp1 = ONE_CMPLX;
-                toRet |= pow2(i);
-            } else {
-                shards[i].amp0 = ONE_CMPLX;
-                shards[i].amp1 = ZERO_CMPLX;
-            }
-        } else if (!(toFind->isClifford())) {
-            if (M(i)) {
-                toRet |= pow2(i);
-            }
-        } else if (find(units.begin(), units.end(), toFind) == units.end()) {
-            units.push_back(toFind);
-            partResults.push_back(toFind->MAll());
-        }
-    }
-
-    for (bitLenInt i = 0; i < shards.size(); i++) {
-        if (!shards[i].unit) {
-            continue;
-        }
-        bitLenInt offset = find(units.begin(), units.end(), shards[i].unit) - units.begin();
-        toRet |= ((partResults[offset] >> shards[i].mapped) & 1U) << i;
-    }
-
-    SetPermutation(toRet);
-
-    return toRet;
 }
 
 /// Set register bits to given permutation

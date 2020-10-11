@@ -780,7 +780,6 @@ public:
     using QInterface::ForceMReg;
     virtual bitCapInt ForceMReg(
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
-    virtual bitCapInt MAll();
 
     /** @} */
 
@@ -879,6 +878,7 @@ protected:
     virtual void XBase(const bitLenInt& target);
     virtual void ZBase(const bitLenInt& target);
     virtual real1 ProbBase(const bitLenInt& qubit);
+    virtual bool CheckCliffordSeparable(const bitLenInt& qubit);
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
