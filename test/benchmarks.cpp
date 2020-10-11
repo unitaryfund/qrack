@@ -74,7 +74,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     std::cout << "3rd Quartile (ms), ";
     std::cout << "Slowest (ms)" << std::endl;
 
-    real1 trialClocks[benchmarkSamples];
+    real1* trialClocks = new real1[benchmarkSamples];
 
     bitLenInt i, j, numBits;
 
@@ -206,6 +206,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         }
         std::cout << formatTime(trialClocks[benchmarkSamples - 1], logNormal) << std::endl; /* Slowest (ms) */
     }
+
+    delete[] trialClocks;
 }
 
 void benchmarkLoop(std::function<void(QInterfacePtr, bitLenInt)> fn, bool resetRandomPerm = true,
