@@ -38,7 +38,7 @@ enum Pauli {
     PauliZ = 2U
 };
 
-qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>(std::time(0));
+qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>(time(0));
 std::vector<QInterfacePtr> simulators;
 std::vector<bool> simulatorReservations;
 std::map<QInterfacePtr, std::map<unsigned, bitLenInt>> shards;
@@ -58,8 +58,8 @@ void TransformPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases,
             simulator->H(shards[simulator][qubitIds[i]]);
             break;
         case PauliY:
-            simulator->H(shards[simulator][qubitIds[i]]);
-			simulator->S(shards[simulator][qubitIds[i]]);
+            simulator->IS(shards[simulator][qubitIds[i]]);
+			simulator->H(shards[simulator][qubitIds[i]]);
             break;
 		case PauliZ:
 		case PauliI:
@@ -77,8 +77,8 @@ void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, un
             simulator->H(shards[simulator][qubitIds[i]]);
             break;
         case PauliY:
-            simulator->IS(shards[simulator][qubitIds[i]]);
-			simulator->H(shards[simulator][qubitIds[i]]);
+            simulator->H(shards[simulator][qubitIds[i]]);
+			simulator->S(shards[simulator][qubitIds[i]]);
             break;
 		case PauliZ:
 		case PauliI:
