@@ -33,6 +33,7 @@ bitLenInt max_qubits = 24;
 std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput;
+int benchmarkSamples;
 
 int main(int argc, char* argv[])
 {
@@ -70,6 +71,8 @@ int main(int argc, char* argv[])
         Opt(device_id, "device-id")["-d"]["--device-id"]("Opencl device ID (\"-1\" for default device)");
 
     session.cli(cli);
+
+    benchmarkSamples = session.configData().benchmarkSamples;
 
     /* Set some defaults for convenience. */
     session.configData().useColour = Catch::UseColour::No;
