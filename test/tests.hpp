@@ -40,6 +40,7 @@ extern bool single_qubit_run;
 extern std::string mOutputFileName;
 extern std::ofstream mOutputFile;
 extern bool isBinaryOutput;
+extern int benchmarkSamples;
 
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
