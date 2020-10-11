@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
         // If we're talking about a particular OpenCL device,
         // we have an API designed to tell us device capabilities and limitations,
         // like maximum RAM allocation.
-        if (opencl_single || hybrid || hybrid_multi) {
+        if (opencl_single || hybrid || hybrid_multi || stabilizer) {
 #if ENABLE_OPENCL
             // Make sure the context singleton is initialized.
             CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();

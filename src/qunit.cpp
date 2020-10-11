@@ -635,6 +635,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
     if (doSkipBuffer) {
+        CheckCliffordSeparable(qubit);
         return prob;
     }
 
@@ -647,11 +648,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
         didSeparate = true;
     }
 
-    if (!didSeparate) {
-        return prob;
-    }
-
-    if (shardQbCount != 2) {
+    if (!didSeparate || (shardQbCount != 2)) {
         return prob;
     }
 
@@ -688,6 +685,43 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     }
 
     return prob;
+}
+
+bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
+{
+    QInterfacePtr unit = shards[qubit].unit;
+
+    std::vector<bitLenInt> partnerIndices;
+    std::vector<bool> partnerStates;
+
+    for (bitLenInt partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
+        QEngineShard& partnerShard = shards[partnerIndex];
+
+        if (unit != partnerShard.unit) {
+            continue;
+        }
+
+        if (partnerShard.isProbDirty) {
+            return false;
+        }
+
+        if (IS_NORM_ZERO(partnerShard.amp0)) {
+            partnerStates.push_back(true);
+        } else if (IS_NORM_ZERO(partnerShard.amp1)) {
+            partnerStates.push_back(false);
+        } else {
+            return false;
+        }
+
+        partnerIndices.push_back(partnerIndex);
+    }
+
+    // If we made it this far, the Clifford engine is entirely separable into single qubit Z and/or X eigenstates.
+    for (bitLenInt i = 0; i < partnerIndices.size(); i++) {
+        SeparateBit(partnerStates[i], partnerIndices[i]);
+    }
+
+    return true;
 }
 
 real1 QUnit::Prob(bitLenInt qubit)
@@ -756,13 +790,23 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 
     // This is critical: it's the "nonlocal correlation" of "wave function collapse".
     if (shard.unit) {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            if (shards[i].unit == shard.unit) {
-                shards[i].MakeDirty();
+        if (shard.unit->isClifford()) {
+            for (bitLenInt i = 0; i < qubitCount; i++) {
+                if (shards[i].unit == shard.unit) {
+                    ProbBase(i);
+                }
             }
-        }
 
-        SeparateBit(result, qubit);
+            CheckCliffordSeparable(qubit);
+        } else {
+            for (bitLenInt i = 0; i < qubitCount; i++) {
+                if (shards[i].unit == shard.unit) {
+                    shards[i].MakeDirty();
+                }
+            }
+
+            SeparateBit(result, qubit);
+        }
     }
 
     return result;
