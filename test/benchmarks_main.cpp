@@ -36,6 +36,7 @@ bool single_qubit_run = false;
 std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput = false;
+int benchmarkSamples;
 
 int main(int argc, char* argv[])
 {
@@ -88,7 +89,8 @@ int main(int argc, char* argv[])
                                                "human-readable.)") |
         Opt(single_qubit_run)["--single"]("Only run single (maximum) qubit count for tests") |
         Opt(sparse)["--sparse"](
-            "(For QEngineCPU, under QUnit:) Use a state vector optimized for sparse representation and iteration.");
+            "(For QEngineCPU, under QUnit:) Use a state vector optimized for sparse representation and iteration.") |
+        Opt(benchmarkSamples, "samples")["--benchmark-samples"]("number of samples to collect (default: 100)");
 
     session.cli(cli);
 

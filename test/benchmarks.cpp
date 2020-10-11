@@ -62,12 +62,9 @@ QInterfacePtr MakeRandQubit()
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bitLenInt mxQbts,
     bool resetRandomPerm = true, bool hadamardRandomBits = false, bool logNormal = false, bool qUniverse = false)
 {
-
-    const int ITERATIONS = 100;
-
     std::cout << std::endl;
     std::cout << ">>> '" << Catch::getResultCapture().getCurrentTestName() << "':" << std::endl;
-    std::cout << ITERATIONS << " iterations" << std::endl;
+    std::cout << benchmarkSamples << " iterations" << std::endl;
     std::cout << "# of Qubits, ";
     std::cout << "Average Time (ms), ";
     std::cout << "Sample Std. Deviation (ms), ";
@@ -77,7 +74,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     std::cout << "3rd Quartile (ms), ";
     std::cout << "Slowest (ms)" << std::endl;
 
-    real1 trialClocks[ITERATIONS];
+    real1 trialClocks[benchmarkSamples];
 
     bitLenInt i, j, numBits;
 
@@ -96,7 +93,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
         if (isBinaryOutput) {
             mOutputFile << std::endl << ">>> '" << Catch::getResultCapture().getCurrentTestName() << "':" << std::endl;
-            mOutputFile << ITERATIONS << " iterations" << std::endl;
+            mOutputFile << benchmarkSamples << " iterations" << std::endl;
             mOutputFile << (int)numBits << " qubits" << std::endl;
             mOutputFile << sizeof(bitCapInt) << " bytes in bitCapInt" << std::endl;
         }
@@ -110,7 +107,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         }
         avgt = 0.0;
 
-        for (i = 0; i < ITERATIONS; i++) {
+        for (i = 0; i < benchmarkSamples; i++) {
             if (!qUniverse) {
                 if (resetRandomPerm) {
                     qftReg->SetPermutation((bitCapIntOcl)(qftReg->Rand() * (bitCapIntOcl)qftReg->GetMaxQPower()));
@@ -168,41 +165,46 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 }
             }
         }
-        avgt /= ITERATIONS;
+        avgt /= benchmarkSamples;
 
         stdet = 0.0;
-        for (i = 0; i < ITERATIONS; i++) {
+        for (i = 0; i < benchmarkSamples; i++) {
             stdet += (trialClocks[i] - avgt) * (trialClocks[i] - avgt);
         }
-        stdet = sqrt(stdet / ITERATIONS);
+        stdet = sqrt(stdet / benchmarkSamples);
 
-        std::sort(trialClocks, trialClocks + ITERATIONS);
+        std::sort(trialClocks, trialClocks + benchmarkSamples);
 
         std::cout << (int)numBits << ", "; /* # of Qubits */
         std::cout << formatTime(avgt, logNormal) << ","; /* Average Time (ms) */
         std::cout << formatTime(stdet, logNormal) << ","; /* Sample Std. Deviation (ms) */
         std::cout << formatTime(trialClocks[0], logNormal) << ","; /* Fastest (ms) */
-        if (ITERATIONS % 4 == 0) {
-            std::cout << formatTime((trialClocks[ITERATIONS / 4 - 1] + trialClocks[ITERATIONS / 4]) / 2, logNormal)
+        if (benchmarkSamples % 4 == 0) {
+            std::cout << formatTime(
+                             (trialClocks[benchmarkSamples / 4 - 1] + trialClocks[benchmarkSamples / 4]) / 2, logNormal)
                       << ","; /* 1st Quartile (ms) */
         } else {
-            std::cout << formatTime(trialClocks[ITERATIONS / 4 - 1] / 2, logNormal) << ","; /* 1st Quartile (ms) */
+            std::cout << formatTime(trialClocks[benchmarkSamples / 4 - 1] / 2, logNormal)
+                      << ","; /* 1st Quartile (ms) */
         }
-        if (ITERATIONS % 2 == 0) {
-            std::cout << formatTime((trialClocks[ITERATIONS / 2 - 1] + trialClocks[ITERATIONS / 2]) / 2, logNormal)
+        if (benchmarkSamples % 2 == 0) {
+            std::cout << formatTime(
+                             (trialClocks[benchmarkSamples / 2 - 1] + trialClocks[benchmarkSamples / 2]) / 2, logNormal)
                       << ","; /* Median (ms) */
         } else {
-            std::cout << formatTime(trialClocks[ITERATIONS / 2 - 1] / 2, logNormal) << ","; /* Median (ms) */
+            std::cout << formatTime(trialClocks[benchmarkSamples / 2 - 1] / 2, logNormal) << ","; /* Median (ms) */
         }
-        if (ITERATIONS % 4 == 0) {
+        if (benchmarkSamples % 4 == 0) {
             std::cout << formatTime(
-                             (trialClocks[(3 * ITERATIONS) / 4 - 1] + trialClocks[(3 * ITERATIONS) / 4]) / 2, logNormal)
+                             (trialClocks[(3 * benchmarkSamples) / 4 - 1] + trialClocks[(3 * benchmarkSamples) / 4]) /
+                                 2,
+                             logNormal)
                       << ","; /* 3rd Quartile (ms) */
         } else {
-            std::cout << formatTime(trialClocks[(3 * ITERATIONS) / 4 - 1] / 2, logNormal)
+            std::cout << formatTime(trialClocks[(3 * benchmarkSamples) / 4 - 1] / 2, logNormal)
                       << ","; /* 3rd Quartile (ms) */
         }
-        std::cout << formatTime(trialClocks[ITERATIONS - 1], logNormal) << std::endl; /* Slowest (ms) */
+        std::cout << formatTime(trialClocks[benchmarkSamples - 1], logNormal) << std::endl; /* Slowest (ms) */
     }
 }
 

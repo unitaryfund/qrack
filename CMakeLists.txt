@@ -163,11 +163,11 @@ if (APPLE)
 endif (APPLE)
 
 target_compile_options (qrack PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (qrack_pinvoke PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (qrack_pinvoke PUBLIC ${QRACK_COMPILE_OPTS})
 target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
 target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
 
 set_target_properties (qrack PROPERTIES
     VERSION ${PROJECT_VERSION}
