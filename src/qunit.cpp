@@ -768,7 +768,13 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
     std::advance(mapping, 1);
     for (; mapping != mappings.end(); mapping++) {
         nOddChance = mapping->first->ProbParity(mapping->second);
-        oddChance = ONE_R1 - ((oddChance * nOddChance) + ((ONE_R1 - oddChance) * (ONE_R1 - nOddChance)));
+        // Like XOR -
+        // - even and even is even
+        // - odd and odd is even
+        // - even and odd is odd
+        // - odd and even is odd
+        // (iteratively, over any set larger than one)
+        oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
     }
 
     return oddChance;
