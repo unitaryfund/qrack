@@ -858,6 +858,7 @@ public:
 
     virtual real1 Prob(bitLenInt qubit);
     virtual real1 ProbAll(bitCapInt fullRegister);
+    virtual real1 ProbParity(const bitCapInt& mask);
     virtual bool ApproxCompare(QInterfacePtr toCompare)
     {
         return ApproxCompare(std::dynamic_pointer_cast<QUnit>(toCompare));

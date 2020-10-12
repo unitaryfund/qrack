@@ -732,6 +732,48 @@ real1 QUnit::Prob(bitLenInt qubit)
 
 real1 QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))); }
 
+real1 QUnit::ProbParity(const bitCapInt& mask)
+{
+    bitCapInt v = mask; // count the number of bits set in v
+    bitCapInt oldV;
+    bitLenInt length; // c accumulates the total bits set in v
+    std::vector<bitLenInt> qIndices;
+    for (length = 0; v; length++) {
+        oldV = v;
+        v &= v - ONE_BCI; // clear the least significant bit set
+        qIndices.push_back(log2((v ^ oldV) & oldV));
+    }
+
+    std::map<QInterfacePtr, bitCapInt> mappings;
+
+    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+        ToPermBasis(i);
+        EndEmulation(i);
+        QEngineShard& shard = shards[qIndices[i]];
+        if (mappings.find(shard.unit) == mappings.end()) {
+            mappings[shard.unit] = pow2(shard.mapped);
+        } else {
+            mappings[shard.unit] |= pow2(shard.mapped);
+        }
+    }
+
+    real1 oddChance = ProbParity(mappings[shards[qIndices[0]].unit]);
+
+    if (mappings.size() == 1) {
+        return oddChance;
+    }
+
+    real1 nOddChance;
+    std::map<QInterfacePtr, bitCapInt>::iterator mapping = mappings.begin();
+    std::advance(mapping, 1);
+    for (; mapping != mappings.end(); mapping++) {
+        nOddChance = mapping->first->ProbParity(mapping->second);
+        oddChance = ONE_R1 - ((oddChance * nOddChance) + ((ONE_R1 - oddChance) * (ONE_R1 - nOddChance)));
+    }
+
+    return oddChance;
+}
+
 void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 {
     QInterfacePtr unit = shards[qubit].unit;

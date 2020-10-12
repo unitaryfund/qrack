@@ -211,6 +211,12 @@ public:
     virtual real1 Prob(bitLenInt qubitIndex);
     virtual real1 ProbAll(bitCapInt fullRegister);
     virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
+    // TODO: QPager not yet used in Q#, but this would need a real implementation:
+    virtual real1 ProbParity(const bitCapInt& mask)
+    {
+        CombineEngines();
+        return qPages[0]->ProbParity(mask);
+    }
 
     virtual bool ApproxCompare(QInterfacePtr toCompare);
     virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);

@@ -1502,6 +1502,19 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     delete[] skipPowers;
 }
 
+/// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
+real1 QEngineOCL::ProbParity(const bitCapInt& mask)
+{
+    // If only one bit in mask:
+    if (!(mask & (mask - ONE_BCI))) {
+        return Prob(log2(mask));
+    }
+
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    return Probx(OCL_API_PROB, bciArgs);
+}
+
 void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if (length == 0) {

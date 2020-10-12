@@ -804,6 +804,52 @@ void kernel probmaskall(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     }
 }
 
+void kernel probparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer,
+    local real1* lProbBuffer)
+{
+    bitCapIntOcl Nthreads, lcv, locID, locNthreads;
+
+    Nthreads = get_global_size(0);
+
+    bitCapIntOcl2 args = vload2(0, bitCapIntOclPtr);
+    bitCapIntOcl maxI = args.x;
+    bitCapIntOcl mask = args.y;
+
+    real1 oneChancePart = ZERO_R1;
+    cmplx amp;
+    bitCapIntOcl v;
+    bool parity;
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        parity = false;
+        v = lcv & mask;
+        while (v) {
+            parity = !parity;
+            v = v & (v - ONE_BCI);
+        }
+
+        if (parity) {
+            amp = stateVec[lcv];
+            oneChancePart += dot(amp, amp);
+        }
+    }
+
+    locID = get_local_id(0);
+    locNthreads = get_local_size(0);
+    lProbBuffer[locID] = oneChancePart;
+
+    for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (locID < lcv) {
+            lProbBuffer[locID] += lProbBuffer[locID + lcv];
+        }
+    }
+
+    if (locID == 0U) {
+        oneChanceBuffer[get_group_id(0)] = lProbBuffer[0];
+    }
+}
+
 void kernel rol(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
 {
     bitCapIntOcl Nthreads, lcv;

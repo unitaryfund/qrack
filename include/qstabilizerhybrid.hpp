@@ -594,6 +594,12 @@ public:
         SwitchToEngine();
         return engine->ProbMask(mask, permutation);
     }
+    // TODO: Good opportunity to optimize
+    virtual real1 ProbParity(const bitCapInt& mask)
+    {
+        SwitchToEngine();
+        return engine->ProbParity(mask);
+    }
 
     virtual bool ApproxCompare(QInterfacePtr toCompare)
     {
