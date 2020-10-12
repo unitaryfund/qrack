@@ -3680,6 +3680,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmaskall")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
+{
+    qftReg->SetPermutation(0x02);
+    REQUIRE(qftReg->ProbParity(0x7) > 0.99);
+    qftReg->X(0);
+    REQUIRE(qftReg->ProbParity(0x7) < 0.01);
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_multishotmeasuremask")
 {
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 8, 0, rng);

@@ -1512,7 +1512,7 @@ real1 QEngineOCL::ProbParity(const bitCapInt& mask)
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-    return Probx(OCL_API_PROB, bciArgs);
+    return Probx(OCL_API_PROBPARITY, bciArgs);
 }
 
 void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length)

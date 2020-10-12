@@ -747,8 +747,8 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
     std::map<QInterfacePtr, bitCapInt> mappings;
 
     for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        ToPermBasis(i);
-        EndEmulation(i);
+        ToPermBasis(qIndices[i]);
+        EndEmulation(qIndices[i]);
         QEngineShard& shard = shards[qIndices[i]];
         if (mappings.find(shard.unit) == mappings.end()) {
             mappings[shard.unit] = pow2(shard.mapped);
@@ -757,7 +757,7 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
         }
     }
 
-    real1 oddChance = ProbParity(mappings[shards[qIndices[0]].unit]);
+    real1 oddChance = shards[qIndices[0]].unit->ProbParity(mappings[shards[qIndices[0]].unit]);
 
     if (mappings.size() == 1) {
         return oddChance;
@@ -765,7 +765,7 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
 
     real1 nOddChance;
     std::map<QInterfacePtr, bitCapInt>::iterator mapping = mappings.begin();
-    std::advance(mapping, 1);
+    mapping++;
     for (; mapping != mappings.end(); mapping++) {
         nOddChance = mapping->first->ProbParity(mapping->second);
         // Like XOR -
