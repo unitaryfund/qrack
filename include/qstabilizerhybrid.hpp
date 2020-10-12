@@ -597,6 +597,10 @@ public:
     // TODO: Good opportunity to optimize
     virtual real1 ProbParity(const bitCapInt& mask)
     {
+        if (qubitCount == 1U) {
+            return Prob(0);
+        }
+
         SwitchToEngine();
         return engine->ProbParity(mask);
     }
