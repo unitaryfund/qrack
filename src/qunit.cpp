@@ -734,39 +734,40 @@ real1 QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))
 
 real1 QUnit::ProbParity(const bitCapInt& mask)
 {
+    if (!mask) {
+        return ZERO_R1;
+    }
+
     bitCapInt v = mask; // count the number of bits set in v
     bitCapInt oldV;
-    bitLenInt length; // c accumulates the total bits set in v
     std::vector<bitLenInt> qIndices;
-    for (length = 0; v; length++) {
+    for (; v;) {
         oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         qIndices.push_back(log2((v ^ oldV) & oldV));
     }
 
     std::map<QInterfacePtr, bitCapInt> mappings;
+    bitLenInt index;
+    real1 oddChance = 0;
+    real1 nOddChance;
 
     for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        ToPermBasis(qIndices[i]);
-        EndEmulation(qIndices[i]);
-        QEngineShard& shard = shards[qIndices[i]];
-        if (mappings.find(shard.unit) == mappings.end()) {
+        index = qIndices[i];
+        ToPermBasis(index);
+        QEngineShard& shard = shards[index];
+        if (shard.unit == NULL) {
+            nOddChance = shard.Prob();
+            oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
+        } else if (mappings.find(shard.unit) == mappings.end()) {
             mappings[shard.unit] = pow2(shard.mapped);
         } else {
             mappings[shard.unit] |= pow2(shard.mapped);
         }
     }
 
-    real1 oddChance = shards[qIndices[0]].unit->ProbParity(mappings[shards[qIndices[0]].unit]);
-
-    if (mappings.size() == 1) {
-        return oddChance;
-    }
-
-    real1 nOddChance;
-    std::map<QInterfacePtr, bitCapInt>::iterator mapping = mappings.begin();
-    mapping++;
-    for (; mapping != mappings.end(); mapping++) {
+    std::map<QInterfacePtr, bitCapInt>::iterator mapping;
+    for (mapping = mappings.begin(); mapping != mappings.end(); mapping++) {
         nOddChance = mapping->first->ProbParity(mapping->second);
         // Like XOR -
         // - even and even is even

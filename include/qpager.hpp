@@ -214,6 +214,10 @@ public:
     // TODO: QPager not yet used in Q#, but this would need a real implementation:
     virtual real1 ProbParity(const bitCapInt& mask)
     {
+        if (!mask) {
+            return ZERO_R1;
+        }
+
         CombineEngines();
         return qPages[0]->ProbParity(mask);
     }

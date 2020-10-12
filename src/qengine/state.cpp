@@ -1038,7 +1038,7 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
 real1 QEngineCPU::ProbParity(const bitCapInt& mask)
 {
-    if (!stateVec) {
+    if (!stateVec || !mask) {
         return ZERO_R1;
     }
 

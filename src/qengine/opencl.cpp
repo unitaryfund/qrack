@@ -1505,6 +1505,11 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineOCL::ProbParity(const bitCapInt& mask)
 {
+    // If no bits in mask:
+    if (!mask) {
+        return ZERO_R1;
+    }
+
     // If only one bit in mask:
     if (!(mask & (mask - ONE_BCI))) {
         return Prob(log2(mask));

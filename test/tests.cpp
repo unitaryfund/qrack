@@ -3686,6 +3686,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
     REQUIRE(qftReg->ProbParity(0x7) > 0.99);
     qftReg->X(0);
     REQUIRE(qftReg->ProbParity(0x7) < 0.01);
+    qftReg->SetPermutation(0x0);
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->X(0);
+    REQUIRE(qftReg->ProbParity(0x3) > 0.99);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_multishotmeasuremask")
