@@ -415,7 +415,26 @@ double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QIn
 
     std::sort(qSortedPowers->begin(), qSortedPowers->end());
 
-    return simulator->ProbParity(mask);
+    bitCapInt pow2n = pow2(n);
+    double jointProb = 0;
+    bitCapInt perm;
+    bool isOdd;
+
+    for (bitCapInt i = 0; i < pow2n; i++) {
+        perm = 0U;
+        isOdd = false;
+        for (bitLenInt j = 0; j < n; j++) {
+            if (i & pow2(j)) {
+                perm |= (*qSortedPowers)[j];
+                isOdd = !isOdd;
+            }
+        }
+        if (isOdd) {
+            jointProb += simulator->ProbMask(mask, perm);
+        }
+    }
+
+    return jointProb;
 }
 
 /**
