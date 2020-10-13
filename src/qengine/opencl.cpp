@@ -1502,7 +1502,6 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     delete[] skipPowers;
 }
 
-/// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1 QEngineOCL::ProbParity(const bitCapInt& mask)
 {
     // If no bits in mask:
@@ -1518,6 +1517,33 @@ real1 QEngineOCL::ProbParity(const bitCapInt& mask)
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     return Probx(OCL_API_PROBPARITY, bciArgs);
+}
+
+bool QEngineOCL::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
+{
+    // If no bits in mask:
+    if (!mask) {
+        return ZERO_R1;
+    }
+
+    // If only one bit in mask:
+    if (!(mask & (mask - ONE_BCI))) {
+        return ForceM(log2(mask), result, doForce);
+    }
+
+    if (!doForce) {
+        result = (Rand() <= ProbParity(mask));
+    }
+
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, result ? ONE_BCI : 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    runningNorm = Probx(OCL_API_FORCEMPARITY, bciArgs);
+
+    if (!doNormalize) {
+        NormalizeState();
+    }
+
+    return result;
 }
 
 void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length)

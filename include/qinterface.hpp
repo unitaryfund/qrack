@@ -679,6 +679,19 @@ public:
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true) = 0;
 
     /**
+     * Act as if is a measurement of parity of the masked set of qubits was applied, except force the (usually random)
+     * result
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true) = 0;
+
+    /**
+     * Measure (and collapse) parity of the masked set of qubits
+     */
+    virtual bool MParity(const bitCapInt& mask) { return ForceMParity(mask, false, false); }
+
+    /**
      * S gate
      *
      * Applies a 1/4 phase rotation to the qubit at "qubitIndex."

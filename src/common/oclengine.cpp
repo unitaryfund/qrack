@@ -72,6 +72,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_PROBMASK, "probmask"),
     OCLKernelHandle(OCL_API_PROBMASKALL, "probmaskall"),
     OCLKernelHandle(OCL_API_PROBPARITY, "probparity"),
+    OCLKernelHandle(OCL_API_FORCEMPARITY, "forcemparity"),
     OCLKernelHandle(OCL_API_ROL, "rol"),
     OCLKernelHandle(OCL_API_INC, "inc"),
     OCLKernelHandle(OCL_API_CINC, "cinc"),

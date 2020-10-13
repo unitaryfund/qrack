@@ -221,6 +221,15 @@ public:
         CombineEngines();
         return qPages[0]->ProbParity(mask);
     }
+    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true)
+    {
+        if (!mask) {
+            return ZERO_R1;
+        }
+
+        CombineEngines();
+        return qPages[0]->ForceMParity(mask, result, doForce);
+    }
 
     virtual bool ApproxCompare(QInterfacePtr toCompare);
     virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);

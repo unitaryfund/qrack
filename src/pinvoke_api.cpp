@@ -415,7 +415,7 @@ double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QIn
 
     std::sort(qSortedPowers->begin(), qSortedPowers->end());
 
-    return simulator->ProbParity(mask);
+    return (double)(simulator->ProbParity(mask));
 }
 
 /**

@@ -1083,6 +1083,59 @@ real1 QEngineCPU::ProbParity(const bitCapInt& mask)
     return clampProb(oddChance);
 }
 
+bool QEngineCPU::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
+{
+    if (!stateVec || !mask) {
+        return ZERO_R1;
+    }
+
+    if (!doForce) {
+        result = (Rand() <= ProbParity(mask));
+    }
+
+    real1 oddChance = 0;
+
+    int numCores = GetConcurrencyLevel();
+    real1* oddChanceBuff = new real1[numCores]();
+
+    ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
+        bool parity = false;
+        bitCapInt v = lcv & mask;
+        while (v) {
+            parity = !parity;
+            v = v & (v - ONE_BCI);
+        }
+
+        if (parity == result) {
+            oddChanceBuff[cpu] += norm(stateVec->read(lcv));
+        } else {
+            stateVec->write(lcv, ZERO_CMPLX);
+        }
+    };
+
+    stateVec->isReadLocked = false;
+    if (stateVec->is_sparse()) {
+        par_for_set(CastStateVecSparse()->iterable(), fn);
+    } else {
+        par_for(0, maxQPower, fn);
+    }
+    stateVec->isReadLocked = true;
+
+    for (int i = 0; i < numCores; i++) {
+        oddChance += oddChanceBuff[i];
+    }
+
+    delete[] oddChanceBuff;
+
+    runningNorm = oddChance;
+
+    if (!doNormalize) {
+        NormalizeState();
+    }
+
+    return result;
+}
+
 bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
 {
     // If the qubit counts are unequal, these can't be approximately equal objects.
