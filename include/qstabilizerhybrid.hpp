@@ -612,7 +612,7 @@ public:
     {
         // If no bits in mask:
         if (!mask) {
-            return ZERO_R1;
+            return false;
         }
 
         // If only one bit in mask:
@@ -621,7 +621,7 @@ public:
         }
 
         SwitchToEngine();
-        return engine->ProbParity(mask);
+        return engine->ForceMParity(mask, result, doForce);
     }
 
     virtual bool ApproxCompare(QInterfacePtr toCompare)
