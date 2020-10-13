@@ -783,8 +783,14 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
 
 bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 {
+    // If no bits in mask:
     if (!mask) {
         return false;
+    }
+
+    // If only one bit in mask:
+    if (!(mask & (mask - ONE_BCI))) {
+        return ForceM(log2(mask), result, doForce);
     }
 
     bitCapInt v = mask; // count the number of bits set in v
