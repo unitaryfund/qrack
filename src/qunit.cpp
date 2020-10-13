@@ -803,7 +803,7 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     }
 
     QInterfacePtr unit = Entangle(qIndices);
-    
+
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (shards[i].unit == unit) {
             shards[i].MakeDirty();

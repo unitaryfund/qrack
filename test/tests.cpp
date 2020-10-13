@@ -3686,24 +3686,47 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
     REQUIRE(qftReg->ProbParity(0x7) > 0.99);
     qftReg->X(0);
     REQUIRE(qftReg->ProbParity(0x7) < 0.01);
+
     qftReg->SetPermutation(0x0);
     qftReg->H(0);
     qftReg->CNOT(0, 1);
     qftReg->X(0);
     REQUIRE(qftReg->ProbParity(0x3) > 0.99);
+
+    qftReg->SetPermutation(0x0);
+    qftReg->H(0);
+    REQUIRE_FLOAT(qftReg->ProbParity(0x3), ONE_R1 / 2);
+
+    qftReg->SetPermutation(0x0);
+    qftReg->H(1);
+    REQUIRE_FLOAT(qftReg->ProbParity(0x3), ONE_R1 / 2);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mparity")
 {
+    qftReg->SetPermutation(0x0);
+    qftReg->H(0);
+    REQUIRE(qftReg->ForceMParity(0x1, true, true));
+    REQUIRE(qftReg->MParity(0x1));
+
     qftReg->SetPermutation(0x02);
     REQUIRE(qftReg->MParity(0x7));
     qftReg->X(0);
     REQUIRE(!(qftReg->MParity(0x7)));
+
     qftReg->SetPermutation(0x0);
     qftReg->H(0);
     qftReg->CNOT(0, 1);
     REQUIRE(!(qftReg->ForceMParity(0x3, false, true)));
     REQUIRE(!(qftReg->MParity(0x3)));
+
+    qftReg->SetPermutation(0x0);
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->CNOT(1, 2);
+    REQUIRE(!(qftReg->ForceMParity(0x3, false, true)));
+    REQUIRE_THAT(qftReg, HasProbability(0x0));
+
     qftReg->SetPermutation(0x0);
     qftReg->H(0);
     qftReg->CNOT(0, 1);
