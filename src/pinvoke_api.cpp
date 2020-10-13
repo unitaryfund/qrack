@@ -384,7 +384,8 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::si
 }
 
 double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QInterfacePtr simulator,
-    std::vector<unsigned>* bVec, std::vector<unsigned>* qVec, std::vector<bitCapInt>* qSortedPowers)
+    std::vector<unsigned>* bVec, std::vector<unsigned>* qVec, std::vector<bitCapInt>* qSortedPowers,
+    bool doMeasure = false)
 {
 
     if (n == 0) {
@@ -415,7 +416,7 @@ double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QIn
 
     std::sort(qSortedPowers->begin(), qSortedPowers->end());
 
-    return (double)(simulator->ProbParity(mask));
+    return (double)(doMeasure ? (simulator->MParity(mask) ? ONE_R1 : ZERO_R1) : simulator->ProbParity(mask));
 }
 
 /**
@@ -884,34 +885,9 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
 
     TransformPauliBasis(simulator, n, b, q);
 
-    double jointProb = _JointEnsembleProbabilityHelper(n, b, q, simulator, &bVec, &qVec, &qSortedPowers);
+    double jointProb = _JointEnsembleProbabilityHelper(n, b, q, simulator, &bVec, &qVec, &qSortedPowers, true);
 
-    unsigned toRet = jointProb < simulator->Rand() ? 0U : 1U;
-    bitCapInt len = qVec.size();
-    bitCapInt maxQPower = simulator->GetMaxQPower();
-    bool isOdd;
-
-    if (jointProb != 0.0 && jointProb != 1.0) {
-        complex* nStateVec = new complex[(bitCapIntOcl)simulator->GetMaxQPower()]();
-        simulator->GetQuantumState(nStateVec);
-        real1 nrmlzr = 0.0;
-        for (bitCapIntOcl i = 0; i < maxQPower; i++) {
-            isOdd = false;
-            for (bitLenInt j = 0; j < len; j++) {
-                if (i & qSortedPowers[j]) {
-                    isOdd = !isOdd;
-                }
-            }
-            if (isOdd == toRet) {
-                nrmlzr += norm(nStateVec[i]);
-            } else {
-                nStateVec[i] = ZERO_CMPLX;
-            }
-        }
-        simulator->SetQuantumState(nStateVec);
-        delete[] nStateVec;
-        simulator->NormalizeState(nrmlzr);
-    }
+    unsigned toRet = (jointProb < (ONE_R1 / 2)) ? 0U : 1U;
 
     RevertPauliBasis(simulator, n, b, q);
 
