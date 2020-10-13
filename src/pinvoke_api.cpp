@@ -383,10 +383,21 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::si
     return dist(*rng.get());
 }
 
-double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QInterfacePtr simulator,
-    std::vector<unsigned>* bVec, std::vector<unsigned>* qVec, std::vector<bitCapInt>* qSortedPowers,
-    bool doMeasure = false)
+double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, unsigned* b, unsigned* q, bool doMeasure)
 {
+
+    if (n == 0) {
+        return 0.0;
+    }
+
+    std::vector<unsigned> bVec(n);
+    std::vector<unsigned> qVec(n);
+
+    std::copy(b, b + n, bVec.begin());
+    std::copy(q, q + n, qVec.begin());
+
+    removeIdentities(&bVec, &qVec);
+    n = qVec.size();
 
     if (n == 0) {
         return 0.0;
@@ -394,27 +405,10 @@ double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QIn
 
     bitCapInt mask = 0;
 
-    bVec->resize(n);
-    qVec->resize(n);
-
-    std::copy(b, b + n, bVec->begin());
-    std::copy(q, q + n, qVec->begin());
-
-    removeIdentities(bVec, qVec);
-    n = qVec->size();
-    qSortedPowers->resize(n);
-
-    if (n == 0) {
-        return 0.0;
-    }
-
     for (bitLenInt i = 0; i < n; i++) {
-        bitCapInt bit = pow2(shards[simulator][(*qVec)[i]]);
-        (*qSortedPowers)[i] = bit;
+        bitCapInt bit = pow2(shards[simulator][qVec[i]]);
         mask |= bit;
     }
-
-    std::sort(qSortedPowers->begin(), qSortedPowers->end());
 
     return (double)(doMeasure ? (simulator->MParity(mask) ? ONE_R1 : ZERO_R1) : simulator->ProbParity(mask));
 }
@@ -429,13 +423,9 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
 
     QInterfacePtr simulator = simulators[sid];
 
-    std::vector<unsigned> bVec;
-    std::vector<unsigned> qVec;
-    std::vector<bitCapInt> qSortedPowers;
-
     TransformPauliBasis(simulator, n, b, q);
 
-    double jointProb = _JointEnsembleProbabilityHelper(n, b, q, simulator, &bVec, &qVec, &qSortedPowers);
+    double jointProb = _JointEnsembleProbabilityHelper(simulator, n, b, q, false);
 
     RevertPauliBasis(simulator, n, b, q);
 
@@ -881,11 +871,10 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
 
     std::vector<unsigned> bVec;
     std::vector<unsigned> qVec;
-    std::vector<bitCapInt> qSortedPowers;
 
     TransformPauliBasis(simulator, n, b, q);
 
-    double jointProb = _JointEnsembleProbabilityHelper(n, b, q, simulator, &bVec, &qVec, &qSortedPowers, true);
+    double jointProb = _JointEnsembleProbabilityHelper(simulator, n, b, q, true);
 
     unsigned toRet = (jointProb < (ONE_R1 / 2)) ? 0U : 1U;
 
