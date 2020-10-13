@@ -784,7 +784,7 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
 bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 {
     if (!mask) {
-        return ZERO_R1;
+        return false;
     }
 
     bitCapInt v = mask; // count the number of bits set in v
@@ -796,70 +796,12 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
         qIndices.push_back(log2((v ^ oldV) & oldV));
     }
 
-    std::map<QInterfacePtr, bitCapInt> mappings;
-    std::vector<bitLenInt> toEntangle;
-    std::vector<bitLenInt> shardIndices;
-    bool separableParity = false;
-    bitLenInt index;
-    real1 oddChance = 0;
-    real1 nOddChance;
-
-    for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        index = qIndices[i];
-        ToPermBasis(index);
-        QEngineShard& shard = shards[index];
-        if (shard.unit == NULL) {
-            nOddChance = shard.Prob();
-            if (IS_ONE_R1(nOddChance)) {
-                separableParity = !separableParity;
-            } else if (!IS_ZERO_R1(nOddChance)) {
-                toEntangle.push_back(index);
-                oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
-            }
-        } else if (mappings.find(shard.unit) == mappings.end()) {
-            shardIndices.push_back(index);
-            mappings[shard.unit] = pow2(shard.mapped);
-        } else {
-            mappings[shard.unit] |= pow2(shard.mapped);
-        }
-    }
-
-    std::map<QInterfacePtr, bitCapInt>::iterator mapping;
-    bitLenInt offset = 0;
-    for (mapping = mappings.begin(); mapping != mappings.end(); mapping++) {
-        nOddChance = mapping->first->ProbParity(mapping->second);
-        // Like XOR -
-        // - even and even is even
-        // - odd and odd is even
-        // - even and odd is odd
-        // - odd and even is odd
-        // (iteratively, over any set larger than one)
-        if (IS_ONE_R1(nOddChance)) {
-            separableParity = !separableParity;
-        } else if (!IS_ZERO_R1(nOddChance)) {
-            toEntangle.push_back(shardIndices[offset]);
-            oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
-        }
-
-        offset++;
-    }
-
-    QInterfacePtr unit;
-    if (toEntangle.size() == 0) {
-        return separableParity;
-    } else if (toEntangle.size() == 1) {
-        unit = shards[toEntangle[0]].unit;
-    } else {
-        unit = Entangle(toEntangle);
-    }
-
-    if (!doForce) {
-        result = (Rand() <= oddChance);
-    }
+    QInterfacePtr unit = Entangle(qIndices);
 
     bitCapInt mappedMask = 0;
-    for (bitLenInt i = 0; i < toEntangle.size(); i++) {
-        mappedMask |= pow2(shards[toEntangle[i]].mapped);
+    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+        shards[qIndices[i]].MakeDirty();
+        mappedMask |= pow2(shards[qIndices[i]].mapped);
     }
 
     return unit->ForceMParity(mappedMask, result, doForce);
