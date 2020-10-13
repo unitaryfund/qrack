@@ -797,10 +797,15 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     }
 
     QInterfacePtr unit = Entangle(qIndices);
+    
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (shards[i].unit == unit) {
+            shards[i].MakeDirty();
+        }
+    }
 
     bitCapInt mappedMask = 0;
     for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        shards[qIndices[i]].MakeDirty();
         mappedMask |= pow2(shards[qIndices[i]].mapped);
     }
 
