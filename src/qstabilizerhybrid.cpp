@@ -463,13 +463,13 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
 
     if (IS_SAME(sTest, I_CMPLX)) {
         stabilizer->X(target);
-        stabilizer->IS(target);
+        stabilizer->S(target);
         return;
     }
 
     if (IS_SAME(sTest, -I_CMPLX)) {
         stabilizer->X(target);
-        stabilizer->S(target);
+        stabilizer->IS(target);
         return;
     }
 
