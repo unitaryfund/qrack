@@ -594,6 +594,35 @@ public:
         SwitchToEngine();
         return engine->ProbMask(mask, permutation);
     }
+    // TODO: Good opportunity to optimize
+    virtual real1 ProbParity(const bitCapInt& mask)
+    {
+        if (!mask) {
+            return ZERO_R1;
+        }
+
+        if (qubitCount == 1U) {
+            return Prob(0);
+        }
+
+        SwitchToEngine();
+        return engine->ProbParity(mask);
+    }
+    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true)
+    {
+        // If no bits in mask:
+        if (!mask) {
+            return false;
+        }
+
+        // If only one bit in mask:
+        if (!(mask & (mask - ONE_BCI))) {
+            return ForceM(log2(mask), result, doForce);
+        }
+
+        SwitchToEngine();
+        return engine->ForceMParity(mask, result, doForce);
+    }
 
     virtual bool ApproxCompare(QInterfacePtr toCompare)
     {

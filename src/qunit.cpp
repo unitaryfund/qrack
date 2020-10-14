@@ -732,6 +732,80 @@ real1 QUnit::Prob(bitLenInt qubit)
 
 real1 QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))); }
 
+real1 QUnit::ProbParity(const bitCapInt& mask)
+{
+    // If no bits in mask:
+    if (!mask) {
+        return false;
+    }
+
+    // If only one bit in mask:
+    if (!(mask & (mask - ONE_BCI))) {
+        return Prob(log2(mask));
+    }
+
+    bitCapInt v = mask; // count the number of bits set in v
+    bitCapInt oldV;
+    std::vector<bitLenInt> qIndices;
+    for (; v;) {
+        oldV = v;
+        v &= v - ONE_BCI; // clear the least significant bit set
+        qIndices.push_back(log2((v ^ oldV) & oldV));
+    }
+
+    QInterfacePtr unit = Entangle(qIndices);
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (shards[i].unit == unit) {
+            shards[i].MakeDirty();
+        }
+    }
+
+    bitCapInt mappedMask = 0;
+    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+        mappedMask |= pow2(shards[qIndices[i]].mapped);
+    }
+
+    return unit->ProbParity(mappedMask);
+}
+
+bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
+{
+    // If no bits in mask:
+    if (!mask) {
+        return false;
+    }
+
+    // If only one bit in mask:
+    if (!(mask & (mask - ONE_BCI))) {
+        return ForceM(log2(mask), result, doForce);
+    }
+
+    bitCapInt v = mask; // count the number of bits set in v
+    bitCapInt oldV;
+    std::vector<bitLenInt> qIndices;
+    for (; v;) {
+        oldV = v;
+        v &= v - ONE_BCI; // clear the least significant bit set
+        qIndices.push_back(log2((v ^ oldV) & oldV));
+    }
+
+    QInterfacePtr unit = Entangle(qIndices);
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (shards[i].unit == unit) {
+            shards[i].MakeDirty();
+        }
+    }
+
+    bitCapInt mappedMask = 0;
+    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+        mappedMask |= pow2(shards[qIndices[i]].mapped);
+    }
+
+    return unit->ForceMParity(mappedMask, result, doForce);
+}
+
 void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 {
     QInterfacePtr unit = shards[qubit].unit;

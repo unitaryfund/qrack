@@ -679,6 +679,19 @@ public:
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true) = 0;
 
     /**
+     * Act as if is a measurement of parity of the masked set of qubits was applied, except force the (usually random)
+     * result
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true) = 0;
+
+    /**
+     * Measure (and collapse) parity of the masked set of qubits
+     */
+    virtual bool MParity(const bitCapInt& mask) { return ForceMParity(mask, false, false); }
+
+    /**
      * S gate
      *
      * Applies a 1/4 phase rotation to the qubit at "qubitIndex."
@@ -1797,6 +1810,7 @@ public:
     /** Measure permutation state of a register */
     virtual bitCapInt MReg(bitLenInt start, bitLenInt length) { return ForceMReg(start, length, 0, false); }
 
+    /** Measure permutation state of all coherent bits */
     virtual bitCapInt MAll() { return MReg(0, qubitCount); }
 
     /**
@@ -2029,6 +2043,9 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
+
+    /** Overall probability of any odd permutation of the masked set of bits */
+    virtual real1 ProbParity(const bitCapInt& mask) = 0;
 
     /**
      * Statistical measure of masked permutation probability

@@ -643,7 +643,7 @@ public:
     bitLenInt GetQubitCount() { return unit ? unit->GetQubitCount() : 1U; };
     real1 Prob()
     {
-        if (!isProbDirty) {
+        if (!isProbDirty || !unit) {
             return norm(amp1);
         }
 
@@ -858,6 +858,8 @@ public:
 
     virtual real1 Prob(bitLenInt qubit);
     virtual real1 ProbAll(bitCapInt fullRegister);
+    virtual real1 ProbParity(const bitCapInt& mask);
+    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
     virtual bool ApproxCompare(QInterfacePtr toCompare)
     {
         return ApproxCompare(std::dynamic_pointer_cast<QUnit>(toCompare));

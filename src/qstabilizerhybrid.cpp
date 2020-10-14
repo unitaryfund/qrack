@@ -397,6 +397,14 @@ void QStabilizerHybrid::ApplySingleBit(const complex* mtrx, bitLenInt target)
         return;
     }
 
+    if (stabilizer && IS_SAME(mtrx[0], complex(ONE_R1 / 2, -ONE_R1 / 2)) &&
+        IS_SAME(mtrx[1], complex(ONE_R1 / 2, ONE_R1 / 2)) && IS_SAME(mtrx[0], mtrx[3]) && IS_SAME(mtrx[1], mtrx[2])) {
+        S(target);
+        H(target);
+        S(target);
+        return;
+    }
+
     if (stabilizer && IS_SAME(mtrx[0], complex(ONE_R1 / 2, ONE_R1 / 2)) &&
         IS_SAME(mtrx[1], complex(ONE_R1 / 2, -ONE_R1 / 2)) && IS_SAME(mtrx[0], mtrx[3]) && IS_SAME(mtrx[1], mtrx[2])) {
         IS(target);
@@ -529,16 +537,6 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* controls, co
     }
 
     if (IS_SAME(topLeft, ONE_CMPLX)) {
-        if (IS_SAME(bottomRight, I_CMPLX)) {
-            CS(controls[0], target);
-            return;
-        }
-
-        if (IS_SAME(bottomRight, -I_CMPLX)) {
-            CIS(controls[0], target);
-            return;
-        }
-
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
             return;
         }
