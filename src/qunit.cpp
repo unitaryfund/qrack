@@ -734,8 +734,14 @@ real1 QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))
 
 real1 QUnit::ProbParity(const bitCapInt& mask)
 {
+    // If no bits in mask:
     if (!mask) {
-        return ZERO_R1;
+        return false;
+    }
+
+    // If only one bit in mask:
+    if (!(mask & (mask - ONE_BCI))) {
+        return Prob(log2(mask));
     }
 
     bitCapInt v = mask; // count the number of bits set in v
@@ -747,38 +753,20 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
         qIndices.push_back(log2((v ^ oldV) & oldV));
     }
 
-    std::map<QInterfacePtr, bitCapInt> mappings;
-    bitLenInt index;
-    real1 oddChance = 0;
-    real1 nOddChance;
+    QInterfacePtr unit = Entangle(qIndices);
 
-    for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        index = qIndices[i];
-        ToPermBasis(index);
-        QEngineShard& shard = shards[index];
-        if (shard.unit == NULL) {
-            nOddChance = shard.Prob();
-            oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
-        } else if (mappings.find(shard.unit) == mappings.end()) {
-            mappings[shard.unit] = pow2(shard.mapped);
-        } else {
-            mappings[shard.unit] |= pow2(shard.mapped);
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (shards[i].unit == unit) {
+            shards[i].MakeDirty();
         }
     }
 
-    std::map<QInterfacePtr, bitCapInt>::iterator mapping;
-    for (mapping = mappings.begin(); mapping != mappings.end(); mapping++) {
-        nOddChance = mapping->first->ProbParity(mapping->second);
-        // Like XOR -
-        // - even and even is even
-        // - odd and odd is even
-        // - even and odd is odd
-        // - odd and even is odd
-        // (iteratively, over any set larger than one)
-        oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
+    bitCapInt mappedMask = 0;
+    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+        mappedMask |= pow2(shards[qIndices[i]].mapped);
     }
 
-    return oddChance;
+    return unit->ProbParity(mappedMask);
 }
 
 bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
