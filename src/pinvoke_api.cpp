@@ -454,9 +454,12 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 /**
  * (External API) Release 1 qubit with the given qubit ID, under the simulator ID
  */
-MICROSOFT_QUANTUM_DECL void release(_In_ unsigned sid, _In_ unsigned q)
+MICROSOFT_QUANTUM_DECL bool release(_In_ unsigned sid, _In_ unsigned q)
 {
     QInterfacePtr simulator = simulators[sid];
+
+    // Check that the qubit is in the |0> state, to within a small tolerance.
+    bool toRet = simulator->Prob(shards[simulator][q]) < (ONE_R1 / 100);
 
     if (simulator->GetQubitCount() == 1U) {
         shards.erase(simulator);
@@ -472,6 +475,8 @@ MICROSOFT_QUANTUM_DECL void release(_In_ unsigned sid, _In_ unsigned q)
         }
         shards[simulator].erase(q);
     }
+
+    return toRet;
 }
 
 MICROSOFT_QUANTUM_DECL unsigned num_qubits(_In_ unsigned sid)
