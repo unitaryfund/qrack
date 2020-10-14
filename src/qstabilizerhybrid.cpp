@@ -529,16 +529,6 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* controls, co
     }
 
     if (IS_SAME(topLeft, ONE_CMPLX)) {
-        if (IS_SAME(bottomRight, I_CMPLX)) {
-            CS(controls[0], target);
-            return;
-        }
-
-        if (IS_SAME(bottomRight, -I_CMPLX)) {
-            CIS(controls[0], target);
-            return;
-        }
-
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
             return;
         }
