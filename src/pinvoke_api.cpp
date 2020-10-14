@@ -533,7 +533,7 @@ MICROSOFT_QUANTUM_DECL void S(_In_ unsigned sid, _In_ unsigned q)
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->IS(shards[simulator][q]);
+    simulator->S(shards[simulator][q]);
 }
 
 /**
@@ -544,7 +544,7 @@ MICROSOFT_QUANTUM_DECL void T(_In_ unsigned sid, _In_ unsigned q)
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->IT(shards[simulator][q]);
+    simulator->T(shards[simulator][q]);
 }
 
 /**
@@ -555,7 +555,7 @@ MICROSOFT_QUANTUM_DECL void AdjS(_In_ unsigned sid, _In_ unsigned q)
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->S(shards[simulator][q]);
+    simulator->IS(shards[simulator][q]);
 }
 
 /**
@@ -566,7 +566,7 @@ MICROSOFT_QUANTUM_DECL void AdjT(_In_ unsigned sid, _In_ unsigned q)
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->T(shards[simulator][q]);
+    simulator->IT(shards[simulator][q]);
 }
 
 /**
