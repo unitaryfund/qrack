@@ -87,7 +87,7 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
     }
 
     for (j = 0; j < qubitCount; j++) {
-        if (perm & pow2(j)) {
+        if (perm & pow2Ocl(j)) {
             X(j);
         }
     }
@@ -302,10 +302,10 @@ void QStabilizer::setBasisState(const real1& nrm, complex* stateVec)
         amp *= -ONE_CMPLX;
     }
 
-    bitCapInt perm = 0;
+    bitCapIntOcl perm = 0;
     for (j = 0; j < qubitCount; j++) {
         if (x[elemCount][j]) {
-            perm |= pow2(j);
+            perm |= pow2Ocl(j);
         }
     }
 
@@ -320,27 +320,27 @@ void QStabilizer::GetQuantumState(complex* stateVec)
 {
     Finish();
 
-    bitCapInt t;
-    bitCapInt t2;
+    bitCapIntOcl t;
+    bitCapIntOcl t2;
     bitLenInt i;
 
     // log_2 of number of nonzero basis states
     bitLenInt g = gaussian();
-    bitCapInt permCount = pow2(g);
-    bitCapInt permCountMin1 = permCount - ONE_BCI;
+    bitCapIntOcl permCount = pow2Ocl(g);
+    bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
     bitLenInt elemCount = qubitCount << 1U;
     real1 nrm = sqrt(ONE_R1 / permCount);
 
     seed(g);
 
     // init stateVec as all 0 values
-    std::fill(stateVec, stateVec + pow2(qubitCount), ZERO_CMPLX);
+    std::fill(stateVec, stateVec + pow2Ocl(qubitCount), ZERO_CMPLX);
 
     setBasisState(nrm, stateVec);
     for (t = 0; t < permCountMin1; t++) {
         t2 = t ^ (t + 1);
         for (i = 0; i < g; i++) {
-            if (t2 & pow2(i)) {
+            if (t2 & pow2Ocl(i)) {
                 rowmult(elemCount, qubitCount + i);
             }
         }

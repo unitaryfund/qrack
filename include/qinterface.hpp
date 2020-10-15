@@ -2151,7 +2151,7 @@ public:
     /**
      *  Get maximum number of amplitudes that can be allocated on current device.
      */
-    bitCapIntOcl GetMaxSize() { return pow2(sizeof(bitCapInt) * 8); };
+    bitCapIntOcl GetMaxSize() { return pow2Ocl(sizeof(bitCapInt) * 8); };
 
     /** @} */
 };

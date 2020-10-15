@@ -145,7 +145,7 @@ void QEngineCPU::SetQuantumState(const complex* inputState)
 void QEngineCPU::GetQuantumState(complex* outputState)
 {
     if (!stateVec) {
-        std::fill(outputState, outputState + maxQPower, ZERO_CMPLX);
+        std::fill(outputState, outputState + (bitCapIntOcl)maxQPower, ZERO_CMPLX);
         return;
     }
 
@@ -162,7 +162,7 @@ void QEngineCPU::GetQuantumState(complex* outputState)
 void QEngineCPU::GetProbs(real1* outputProbs)
 {
     if (!stateVec) {
-        std::fill(outputProbs, outputProbs + maxQPower, ZERO_R1);
+        std::fill(outputProbs, outputProbs + (bitCapIntOcl)maxQPower, ZERO_R1);
         return;
     }
 

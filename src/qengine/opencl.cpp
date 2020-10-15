@@ -89,13 +89,13 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 void QEngineOCL::GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
 {
     if (!stateBuffer) {
-        std::fill(pagePtr, pagePtr + length, ZERO_CMPLX);
+        std::fill(pagePtr, pagePtr + (bitCapIntOcl)length, ZERO_CMPLX);
         return;
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
-    queue.enqueueReadBuffer(
-        *stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr, waitVec.get());
+    queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
+        sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
 }
 
 void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
@@ -105,8 +105,8 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
-    queue.enqueueWriteBuffer(
-        *stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr, waitVec.get());
+    queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
+        sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
 
     runningNorm = ONE_R1;
 }
@@ -122,7 +122,7 @@ void QEngineOCL::SetAmplitudePage(
     }
 
     if (!oStateBuffer) {
-        ClearBuffer(stateBuffer, dstOffset, length, ResetWaitEvents());
+        ClearBuffer(stateBuffer, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length, ResetWaitEvents());
         return;
     }
 
@@ -134,8 +134,8 @@ void QEngineOCL::SetAmplitudePage(
     clFinish();
     pageEngineOclPtr->clFinish();
 
-    queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, sizeof(complex) * srcOffset, sizeof(complex) * dstOffset,
-        sizeof(complex) * length);
+    queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, sizeof(complex) * (bitCapIntOcl)srcOffset,
+        sizeof(complex) * (bitCapIntOcl)dstOffset, sizeof(complex) * (bitCapIntOcl)length);
 
     queue.finish();
 
@@ -528,7 +528,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     poolItems.clear();
     poolItems.push_back(std::make_shared<PoolItem>(context));
-    powersBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2(QBCAPPOW));
+    powersBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
 }
 
 real1 QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
@@ -1514,7 +1514,7 @@ real1 QEngineOCL::ProbParity(const bitCapInt& mask)
         return Prob(log2(mask));
     }
 
-    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, 0, 0, 0, 0, 0, 0, 0, 0 };
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     return Probx(OCL_API_PROBPARITY, bciArgs);
 }
@@ -1535,7 +1535,7 @@ bool QEngineOCL::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
         result = (Rand() <= ProbParity(mask));
     }
 
-    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, result ? ONE_BCI : 0, 0, 0, 0, 0, 0, 0, 0 };
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, result ? ONE_BCI : 0, 0, 0, 0, 0, 0, 0, 0 };
 
     runningNorm = Probx(OCL_API_FORCEMPARITY, bciArgs);
 

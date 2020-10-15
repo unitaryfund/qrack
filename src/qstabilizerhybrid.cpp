@@ -80,7 +80,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     if (stabilizer) {
         c->stabilizer = std::make_shared<QStabilizer>(*stabilizer);
     } else {
-        complex* stateVec = new complex[maxQPower];
+        complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
         engine->GetQuantumState(stateVec);
         c->SwitchToEngine();
         c->engine->SetQuantumState(stateVec);
@@ -96,7 +96,7 @@ void QStabilizerHybrid::SwitchToEngine()
         return;
     }
 
-    complex* stateVec = new complex[maxQPower];
+    complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
     stabilizer->GetQuantumState(stateVec);
 
     engine = MakeEngine();
@@ -366,9 +366,9 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
 void QStabilizerHybrid::GetProbs(real1* outputProbs)
 {
     if (stabilizer) {
-        complex* stateVec = new complex[maxQPower];
+        complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
         stabilizer->GetQuantumState(stateVec);
-        for (bitCapInt i = 0; i < maxQPower; i++) {
+        for (bitCapIntOcl i = 0; i < maxQPower; i++) {
             outputProbs[i] = norm(stateVec[i]);
         }
         delete[] stateVec;
@@ -781,11 +781,11 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* control
 bitCapInt QStabilizerHybrid::MAll()
 {
     if (stabilizer) {
-        bitCapInt toRet = 0;
+        bitCapIntOcl toRet = 0;
         for (bitLenInt i = 0; i < qubitCount; i++) {
             toRet |= ((stabilizer->M(i) ? 1 : 0) << i);
         }
-        return toRet;
+        return (bitCapInt)toRet;
     }
 
     SwitchToEngine();

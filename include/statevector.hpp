@@ -126,7 +126,8 @@ public:
     void copy_in(StateVectorPtr copyInSv, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
     {
         if (copyInSv) {
-            const complex* copyIn = std::dynamic_pointer_cast<StateVectorArray>(copyInSv)->amplitudes + srcOffset;
+            const complex* copyIn =
+                std::dynamic_pointer_cast<StateVectorArray>(copyInSv)->amplitudes + (bitCapIntOcl)srcOffset;
             std::copy(copyIn, copyIn + (bitCapIntOcl)length, amplitudes + (bitCapIntOcl)dstOffset);
         } else {
             std::fill(amplitudes + (bitCapIntOcl)dstOffset, amplitudes + (bitCapIntOcl)dstOffset + (bitCapIntOcl)length,
@@ -345,7 +346,7 @@ public:
     void shuffle(StateVectorSparsePtr svp)
     {
         complex amp;
-        size_t halfCap = capacity >> ONE_BCI;
+        size_t halfCap = (size_t)(capacity >> ONE_BCI);
         mtx.lock();
         for (bitCapInt i = 0; i < halfCap; i++) {
             amp = svp->read(i);
