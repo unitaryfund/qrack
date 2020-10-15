@@ -45,8 +45,8 @@ protected:
         QInterface::SetQubitCount(qb);
 
         baseQubitsPerPage = (qubitCount < thresholdQubitsPerPage) ? qubitCount : thresholdQubitsPerPage;
-        basePageCount = pow2(qubitCount - baseQubitsPerPage);
-        basePageMaxQPower = pow2(baseQubitsPerPage);
+        basePageCount = pow2Ocl(qubitCount - baseQubitsPerPage);
+        basePageMaxQPower = pow2Ocl(baseQubitsPerPage);
     }
 
     bitCapInt pageMaxQPower() { return maxQPower / qPages.size(); }
@@ -83,7 +83,7 @@ public:
 
     virtual void SetConcurrency(uint32_t threadsPerEngine)
     {
-        for (bitCapInt i = 0; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->SetConcurrency(threadsPerEngine);
         }
     }
@@ -93,12 +93,12 @@ public:
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm)
     {
-        bitCapInt subIndex = perm / pageMaxQPower();
+        bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pageMaxQPower());
         return qPages[subIndex]->GetAmplitude(perm - (subIndex * pageMaxQPower()));
     }
     virtual void SetAmplitude(bitCapInt perm, complex amp)
     {
-        bitCapInt subIndex = perm / pageMaxQPower();
+        bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pageMaxQPower());
         return qPages[subIndex]->SetAmplitude(perm - (subIndex * pageMaxQPower()), amp);
     }
 
@@ -238,14 +238,14 @@ public:
 
     virtual void Finish()
     {
-        for (bitLenInt i = 0; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->Finish();
         }
     };
 
     virtual bool isFinished()
     {
-        for (bitCapInt i = 0; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             if (!qPages[i]->isFinished()) {
                 return false;
             }
@@ -263,7 +263,7 @@ public:
         deviceIDs.clear();
         deviceIDs.push_back(dID);
 
-        for (bitCapInt i = 0; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->SetDevice(dID, forceReInit);
         }
     }

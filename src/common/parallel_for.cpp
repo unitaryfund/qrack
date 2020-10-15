@@ -47,7 +47,7 @@ namespace Qrack {
  */
 void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, IncrementFunc inc, ParallelFunc fn)
 {
-    const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+    const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
 
     if ((itemCount / Stride) < (bitCapInt)numCores) {
         bitCapInt maxLcv = begin + itemCount;
@@ -63,7 +63,7 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, 
     for (int cpu = 0; cpu < numCores; cpu++) {
         futures[cpu] = ATOMIC_ASYNC(cpu, &idx, begin, itemCount, inc, fn)
         {
-            const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+            const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
 
             bitCapInt i, j, l;
             bitCapInt k = 0;
@@ -224,7 +224,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
         return par_norm_exact(maxQPower, stateArray);
     }
 
-    const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+    const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
 
     real1 nrmSqr = 0;
     if ((maxQPower / Stride) < (bitCapInt)numCores) {
@@ -242,7 +242,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
         for (int cpu = 0; cpu != numCores; ++cpu) {
             futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray, &norm_thresh)
             {
-                const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+                const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
 
                 real1 sqrNorm = ZERO_R1;
                 real1 nrm;
@@ -277,7 +277,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
 
 real1 ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray)
 {
-    const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+    const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
 
     real1 nrmSqr = 0;
     if ((maxQPower / Stride) < (bitCapInt)numCores) {
@@ -293,7 +293,7 @@ real1 ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVectorPt
     for (int cpu = 0; cpu != numCores; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray)
         {
-            const bitCapInt Stride = (ONE_BCI << (bitCapInt)PSTRIDEPOW);
+            const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
 
             real1 sqrNorm = ZERO_R1;
             bitCapInt i, j;

@@ -75,7 +75,7 @@ protected:
 #endif
     }
 
-    bitCapInt pow2(const bitLenInt& qubit) { return ONE_BCI << (bitCapInt)qubit; }
+    bitCapIntOcl pow2Ocl(const bitLenInt& qubit) { return ONE_BCI << (bitCapIntOcl)qubit; }
 
 public:
     QStabilizer(
@@ -115,7 +115,7 @@ public:
 
     bitLenInt GetQubitCount() { return qubitCount; }
 
-    bitLenInt GetMaxQPower() { return pow2(qubitCount); }
+    bitCapIntOcl GetMaxQPower() { return pow2Ocl(qubitCount); }
 
     void SetPermutation(const bitCapInt& perm);
 

@@ -93,7 +93,7 @@ public:
         if (stateVec) {
             stateVec->copy_out(pagePtr, offset, length);
         } else {
-            std::fill(pagePtr, pagePtr + length, ZERO_CMPLX);
+            std::fill(pagePtr, pagePtr + (bitCapIntOcl)length, ZERO_CMPLX);
         }
     }
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
@@ -165,7 +165,7 @@ public:
 
         complex* sv;
         if (isSparse) {
-            sv = new complex[maxQPower];
+            sv = new complex[(bitCapIntOcl)maxQPower];
         } else {
             sv = std::dynamic_pointer_cast<StateVectorArray>(stateVec)->amplitudes;
         }
