@@ -753,20 +753,29 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
         qIndices.push_back(log2((v ^ oldV) & oldV));
     }
 
-    QInterfacePtr unit = Entangle(qIndices);
-
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (shards[i].unit == unit) {
-            shards[i].MakeDirty();
+    std::map<QInterfacePtr, bitCapInt> units;
+    real1 oddChance = ZERO_R1;
+    real1 nOddChance;
+    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+        ToPermBasis(qIndices[i]);
+        QEngineShard& shard = shards[qIndices[i]];
+        if (!(shard.unit)) {
+            nOddChance = shard.Prob();
+            oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
+        } else if (units.find(shard.unit) == units.end()) {
+            units[shard.unit] = pow2(shard.mapped);
+        } else {
+            units[shard.unit] |= pow2(shard.mapped);
         }
     }
 
-    bitCapInt mappedMask = 0;
-    for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        mappedMask |= pow2(shards[qIndices[i]].mapped);
+    std::map<QInterfacePtr, bitCapInt>::iterator unit;
+    for (unit = units.begin(); unit != units.end(); unit++) {
+        nOddChance = unit->first->ProbParity(unit->second);
+        oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
     }
 
-    return unit->ProbParity(mappedMask);
+    return oddChance;
 }
 
 bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
@@ -790,7 +799,33 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
         qIndices.push_back(log2((v ^ oldV) & oldV));
     }
 
-    QInterfacePtr unit = Entangle(qIndices);
+    bool flipResult = false;
+    std::vector<bitLenInt> eIndices;
+    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+        ToPermBasis(qIndices[i]);
+        QEngineShard& shard = shards[qIndices[i]];
+
+        if (CACHED_ZERO(shard)) {
+            continue;
+        }
+
+        if (CACHED_ONE(shard)) {
+            flipResult = !flipResult;
+            continue;
+        }
+
+        eIndices.push_back(qIndices[i]);
+    }
+
+    if (eIndices.size() == 0) {
+        return flipResult;
+    }
+
+    if (eIndices.size() == 1U) {
+        return flipResult ^ M(eIndices[0]);
+    }
+
+    QInterfacePtr unit = Entangle(eIndices);
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (shards[i].unit == unit) {
@@ -799,11 +834,11 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     }
 
     bitCapInt mappedMask = 0;
-    for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        mappedMask |= pow2(shards[qIndices[i]].mapped);
+    for (bitLenInt i = 0; i < eIndices.size(); i++) {
+        mappedMask |= pow2(shards[eIndices[i]].mapped);
     }
 
-    return unit->ForceMParity(mappedMask, result, doForce);
+    return flipResult ^ (unit->ForceMParity(mappedMask, result ^ flipResult, doForce));
 }
 
 void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)

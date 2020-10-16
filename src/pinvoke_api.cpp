@@ -903,7 +903,8 @@ MICROSOFT_QUANTUM_DECL void SWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsi
     simulator->Swap(qi1, qi2);
 }
 
-MICROSOFT_QUANTUM_DECL void CSWAP(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned qi1, _In_ unsigned qi2)
+MICROSOFT_QUANTUM_DECL void CSWAP(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned qi1, _In_ unsigned qi2)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
