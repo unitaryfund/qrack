@@ -750,6 +750,8 @@ MICROSOFT_QUANTUM_DECL void MCU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
     }
 
     simulator->CU(ctrlsArray, n, shards[simulator][q], theta, phi, lambda);
+
+    delete[] ctrlsArray;
 }
 
 /**
@@ -891,6 +893,29 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
     RevertPauliBasis(simulator, n, b, q);
 
     return toRet;
+}
+
+MICROSOFT_QUANTUM_DECL void SWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->Swap(qi1, qi2);
+}
+
+MICROSOFT_QUANTUM_DECL void CSWAP(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    bitLenInt* ctrlsArray = new bitLenInt[n];
+    for (unsigned i = 0; i < n; i++) {
+        ctrlsArray[i] = shards[simulator][c[i]];
+    }
+
+    simulator->CSwap(ctrlsArray, n, qi1, qi2);
+
+    delete[] ctrlsArray;
 }
 
 MICROSOFT_QUANTUM_DECL void AND(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
