@@ -736,7 +736,7 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
 {
     // If no bits in mask:
     if (!mask) {
-        return false;
+        return ZERO_R1;
     }
 
     // If only one bit in mask:
@@ -754,6 +754,12 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
     }
 
     QInterfacePtr unit = Entangle(qIndices);
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (shards[i].unit == unit) {
+            shards[i].MakeDirty();
+        }
+    }
 
     bitCapInt mappedMask = 0;
     for (bitLenInt i = 0; i < qIndices.size(); i++) {
