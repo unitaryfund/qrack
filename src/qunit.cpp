@@ -634,7 +634,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex(sqrt(prob), ZERO_R1);
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (doSkipBuffer) {
+    if (doSkipBuffer && (IS_NORM_ZERO(shard.amp1) || IS_NORM_ZERO(shard.amp0))) {
         CheckCliffordSeparable(qubit);
         return prob;
     }
@@ -702,7 +702,7 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
         }
 
         if (partnerShard.isProbDirty) {
-            return false;
+            ProbBase(partnerIndex);
         }
 
         if (IS_NORM_ZERO(partnerShard.amp0)) {
@@ -754,12 +754,6 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
     }
 
     QInterfacePtr unit = Entangle(qIndices);
-
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (shards[i].unit == unit) {
-            shards[i].MakeDirty();
-        }
-    }
 
     bitCapInt mappedMask = 0;
     for (bitLenInt i = 0; i < qIndices.size(); i++) {
@@ -864,21 +858,18 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 
     // This is critical: it's the "nonlocal correlation" of "wave function collapse".
     if (shard.unit) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            if (shards[i].unit == shard.unit) {
+                shards[i].MakeDirty();
+            }
+        }
         if (shard.unit->isClifford()) {
             for (bitLenInt i = 0; i < qubitCount; i++) {
                 if (shards[i].unit == shard.unit) {
                     ProbBase(i);
                 }
             }
-
-            CheckCliffordSeparable(qubit);
         } else {
-            for (bitLenInt i = 0; i < qubitCount; i++) {
-                if (shards[i].unit == shard.unit) {
-                    shards[i].MakeDirty();
-                }
-            }
-
             SeparateBit(result, qubit);
         }
     }
@@ -1954,9 +1945,15 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex topRight, const complex bottomLeft)
 {
-    if ((controlLen == 1U) && IS_ARG_0(topRight) && IS_ARG_0(bottomLeft)) {
-        CNOT(controls[0], target);
-        return;
+    if (IS_ARG_0(topRight) && IS_ARG_0(bottomLeft)) {
+        if (controlLen == 2U) {
+            CCNOT(controls[0], controls[1], target);
+            return;
+        }
+        if (controlLen == 1U) {
+            CNOT(controls[0], target);
+            return;
+        }
     }
 
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
