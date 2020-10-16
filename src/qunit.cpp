@@ -822,7 +822,7 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     }
 
     if (eIndices.size() == 1U) {
-        return flipResult ^ M(eIndices[0]);
+        return flipResult ^ ForceM(eIndices[0], result ^ flipResult, doForce);
     }
 
     QInterfacePtr unit = Entangle(eIndices);
