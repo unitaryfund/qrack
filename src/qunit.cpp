@@ -751,10 +751,6 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
         qIndices.push_back(log2((v ^ nV) & v));
     }
 
-    if ((qIndices.size() != 2) || (qIndices[0] != 0) || (qIndices[1] != 1)) {
-        throw "Fail";
-    }
-
     std::map<QInterfacePtr, bitCapInt> units;
     real1 oddChance = ZERO_R1;
     real1 nOddChance;
