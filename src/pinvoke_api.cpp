@@ -391,8 +391,8 @@ double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int*
     std::copy(b, b + n, bVec.begin());
     std::copy(q, q + n, qVec.begin());
 
-    //removeIdentities(&bVec, &qVec);
-    //n = qVec.size();
+    removeIdentities(&bVec, &qVec);
+    n = qVec.size();
 
     if (n == 0) {
         return 0.0;
