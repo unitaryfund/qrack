@@ -135,11 +135,10 @@ void QUnit::SetQuantumState(const complex* inputState)
 
 void QUnit::GetQuantumState(complex* outputState)
 {
-    ToPermBasisAll();
-    EndAllEmulation();
-
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
-    clone->OrderContiguous(clone->EntangleAll());
+    clone->ToPermBasisAll();
+    clone->EndAllEmulation();
+    clone->EntangleAll();
     clone->shards[0].unit->GetQuantumState(outputState);
 }
 
@@ -149,7 +148,7 @@ void QUnit::GetProbs(real1* outputProbs)
     EndAllEmulation();
 
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
-    clone->OrderContiguous(clone->EntangleAll());
+    clone->EntangleAll();
     clone->shards[0].unit->GetProbs(outputProbs);
 }
 
@@ -3428,11 +3427,9 @@ bool QUnit::ApproxCompare(QUnitPtr toCompare)
 
     QUnitPtr thisCopy = std::dynamic_pointer_cast<QUnit>(Clone());
     thisCopy->EntangleAll();
-    thisCopy->OrderContiguous(thisCopy->shards[0].unit);
 
     QUnitPtr thatCopy = std::dynamic_pointer_cast<QUnit>(toCompare->Clone());
     thatCopy->EntangleAll();
-    thatCopy->OrderContiguous(thatCopy->shards[0].unit);
 
     return thisCopy->shards[0].unit->ApproxCompare(thatCopy->shards[0].unit);
 }

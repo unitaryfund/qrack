@@ -135,7 +135,7 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
 
     switch (b) {
     case PauliI: {
-        complex phaseFac = std::exp(complex(ZERO_R1, phi / 2));
+        complex phaseFac = complex(cosine, sine);
         simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], phaseFac, phaseFac);
         break;
     }

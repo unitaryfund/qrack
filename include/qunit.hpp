@@ -924,7 +924,11 @@ protected:
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
     virtual QInterfacePtr EntangleRange(
         bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
-    virtual QInterfacePtr EntangleAll() { return EntangleRange(0, qubitCount); }
+    virtual QInterfacePtr EntangleAll() {
+        QInterfacePtr toRet = EntangleRange(0, qubitCount);
+        OrderContiguous(toRet);
+        return toRet;
+    }
 
     virtual QInterfacePtr CloneBody(QUnitPtr copyPtr);
 
