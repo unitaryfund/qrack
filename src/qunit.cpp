@@ -744,13 +744,15 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
         return Prob(log2(mask));
     }
 
-    bitCapInt v = mask; // count the number of bits set in v
-    bitCapInt oldV;
+    bitCapInt nV = mask;
     std::vector<bitLenInt> qIndices;
-    for (; v;) {
-        oldV = v;
-        v &= v - ONE_BCI; // clear the least significant bit set
-        qIndices.push_back(log2((v ^ oldV) & oldV));
+    for (bitCapInt v = mask; v; v = nV) {
+        nV &= (v - ONE_BCI); // clear the least significant bit set
+        qIndices.push_back(log2((v ^ nV) & v));
+    }
+
+    if ((qIndices.size() != 2) || (qIndices[0] != 0) || (qIndices[1] != 1)) {
+        throw "Fail";
     }
 
     std::map<QInterfacePtr, bitCapInt> units;
@@ -760,6 +762,9 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
         ToPermBasis(qIndices[i]);
         QEngineShard& shard = shards[qIndices[i]];
         if (!(shard.unit)) {
+            if (qIndices[i] != 0) {
+                throw "Fail";
+            }
             nOddChance = shard.Prob();
             oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
         } else if (units.find(shard.unit) == units.end()) {
@@ -767,6 +772,10 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
         } else {
             units[shard.unit] |= pow2(shard.mapped);
         }
+    }
+
+    if (qIndices.size() == 0) {
+        return oddChance;
     }
 
     std::map<QInterfacePtr, bitCapInt>::iterator unit;
@@ -790,13 +799,11 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
         return ForceM(log2(mask), result, doForce);
     }
 
-    bitCapInt v = mask; // count the number of bits set in v
-    bitCapInt oldV;
+    bitCapInt nV = mask;
     std::vector<bitLenInt> qIndices;
-    for (; v;) {
-        oldV = v;
-        v &= v - ONE_BCI; // clear the least significant bit set
-        qIndices.push_back(log2((v ^ oldV) & oldV));
+    for (bitCapInt v = mask; v; v = nV) {
+        nV &= (v - ONE_BCI); // clear the least significant bit set
+        qIndices.push_back(log2((v ^ nV) & v));
     }
 
     bool flipResult = false;
@@ -1218,9 +1225,12 @@ void QUnit::H(bitLenInt target)
         return;
     }
 
+    if (shard.unit) {
+        shard.unit->H(shard.mapped);
+    }
+
     if (DIRTY(shard)) {
         shard.MakeDirty();
-        shard.unit->H(shard.mapped);
         return;
     }
 
