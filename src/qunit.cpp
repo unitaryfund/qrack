@@ -114,13 +114,13 @@ void QUnit::SetQuantumState(const complex* inputState)
         shard.amp1 = inputState[1];
         shard.isPlusMinus = false;
         if (IS_NORM_ZERO(shard.amp0 - shard.amp1)) {
-            shard.isPlusMinus = !shard.isPlusMinus;
-            shard.amp0 = ZERO_R1;
-            shard.amp1 = shard.amp0 / norm(shard.amp0);
-        } else if (IS_NORM_ZERO(shard.amp0 + shard.amp1)) {
-            shard.isPlusMinus = !shard.isPlusMinus;
+            shard.isPlusMinus = true;
             shard.amp0 = shard.amp0 / norm(shard.amp0);
             shard.amp1 = ZERO_R1;
+        } else if (IS_NORM_ZERO(shard.amp0 + shard.amp1)) {
+            shard.isPlusMinus = true;
+            shard.amp1 = shard.amp0 / norm(shard.amp0);
+            shard.amp0 = ZERO_R1;
         }
         return;
     }
@@ -668,12 +668,12 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     partnerShard.unit->GetQuantumState(amps);
     if (IS_NORM_ZERO(amps[0] - amps[1])) {
         partnerShard.isPlusMinus = true;
-        amps[0] = ONE_CMPLX;
+        amps[0] = amps[0] / norm(amps[0]);
         amps[1] = ZERO_CMPLX;
     } else if (IS_NORM_ZERO(amps[0] + amps[1])) {
         partnerShard.isPlusMinus = true;
+        amps[1] = amps[0] / norm(amps[0]);
         amps[0] = ZERO_CMPLX;
-        amps[1] = ONE_CMPLX;
     }
     partnerShard.amp0 = amps[0];
     partnerShard.amp1 = amps[1];
@@ -2493,7 +2493,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         return;
     }
 
-    std::vector<bitLenInt> allBits(controlLen + 1U);
+    std::vector<bitLenInt> allBits(controlLen + 1);
     std::copy(controls, controls + controlLen, allBits.begin());
     std::sort(allBits.begin(), allBits.begin() + controlLen);
 
