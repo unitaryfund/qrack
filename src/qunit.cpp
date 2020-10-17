@@ -115,11 +115,11 @@ void QUnit::SetQuantumState(const complex* inputState)
         shard.isPlusMinus = false;
         if (IS_NORM_ZERO(shard.amp0 - shard.amp1)) {
             shard.isPlusMinus = true;
-            shard.amp0 = shard.amp0 / norm(shard.amp0);
+            shard.amp0 = shard.amp0 / abs(shard.amp0);
             shard.amp1 = ZERO_R1;
         } else if (IS_NORM_ZERO(shard.amp0 + shard.amp1)) {
             shard.isPlusMinus = true;
-            shard.amp1 = shard.amp0 / norm(shard.amp0);
+            shard.amp1 = shard.amp0 / abs(shard.amp0);
             shard.amp0 = ZERO_R1;
         }
         return;
@@ -144,10 +144,9 @@ void QUnit::GetQuantumState(complex* outputState)
 
 void QUnit::GetProbs(real1* outputProbs)
 {
-    ToPermBasisAll();
-    EndAllEmulation();
-
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
+    clone->EntangleAll();
+    clone->EndAllEmulation();
     clone->EntangleAll();
     clone->shards[0].unit->GetProbs(outputProbs);
 }
@@ -667,11 +666,11 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     partnerShard.unit->GetQuantumState(amps);
     if (IS_NORM_ZERO(amps[0] - amps[1])) {
         partnerShard.isPlusMinus = true;
-        amps[0] = amps[0] / norm(amps[0]);
+        amps[0] = amps[0] / abs(amps[0]);
         amps[1] = ZERO_CMPLX;
     } else if (IS_NORM_ZERO(amps[0] + amps[1])) {
         partnerShard.isPlusMinus = true;
-        amps[1] = amps[0] / norm(amps[0]);
+        amps[1] = amps[0] / abs(amps[0]);
         amps[0] = ZERO_CMPLX;
     }
     partnerShard.amp0 = amps[0];
