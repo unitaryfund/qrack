@@ -1221,7 +1221,6 @@ void QUnit::H(bitLenInt target)
     if (shard.unit) {
         shard.unit->H(shard.mapped);
     }
-
     if (DIRTY(shard)) {
         shard.MakeDirty();
         return;
@@ -1239,9 +1238,11 @@ void QUnit::XBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
+    if (shard.unit) {
+        shard.unit->X(shard.mapped);
+    }
     if (DIRTY(shard)) {
         shard.MakeDirty();
-        shard.unit->X(shard.mapped);
         return;
     }
 
@@ -1252,9 +1253,11 @@ void QUnit::ZBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
+    if (shard.unit) {
+        shard.unit->Z(shard.mapped);
+    }
     if (DIRTY(shard)) {
         shard.MakeDirty();
-        shard.unit->Z(shard.mapped);
         return;
     }
 
@@ -1799,9 +1802,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     if (!shard.isPlusMinus) {
 
+        if (shard.unit) {
+            shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped);
+        }
         if (DIRTY(shard)) {
             shard.MakeDirty();
-            shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped);
             return;
         }
 
@@ -1814,9 +1819,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
         TransformPhase(topLeft, bottomRight, mtrx);
 
+        if (shard.unit) {
+            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+        }
         if (DIRTY(shard)) {
             shard.MakeDirty();
-            shard.unit->ApplySingleBit(mtrx, shard.mapped);
             return;
         }
 
@@ -1851,9 +1858,11 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
+        if (shard.unit) {
+            shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped);
+        }
         if (DIRTY(shard)) {
             shard.MakeDirty();
-            shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped);
             return;
         }
 
@@ -1867,9 +1876,11 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
         TransformInvert(topRight, bottomLeft, mtrx);
 
+        if (shard.unit) {
+            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+        }
         if (DIRTY(shard)) {
             shard.MakeDirty();
-            shard.unit->ApplySingleBit(mtrx, shard.mapped);
             return;
         }
 
@@ -2138,9 +2149,11 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         Transform2x2(mtrx, trnsMtrx);
     }
 
+    if (shard.unit) {
+        shard.unit->ApplySingleBit(trnsMtrx, shard.mapped);
+    }
     if (DIRTY(shard)) {
         shard.MakeDirty();
-        shard.unit->ApplySingleBit(trnsMtrx, shard.mapped);
         return;
     }
 
@@ -3141,9 +3154,11 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
         if (GetCachedPermutation(start, length) < greaterPerm) {
             // This has no physical effect, but we do it to respect direct simulator check of amplitudes:
             QEngineShard& shard = shards[start];
+            if (shard.unit) {
+                shard.unit->PhaseFlip();
+            }
             if (DIRTY(shard)) {
                 shard.MakeDirty();
-                shard.unit->PhaseFlip();
                 return;
             }
 
@@ -3185,9 +3200,11 @@ void QUnit::PhaseFlip()
     if (!randGlobalPhase) {
         RevertBasis1Qb(0);
 
+        if (shard.unit) {
+            shard.unit->PhaseFlip();
+        }
         if (DIRTY(shard)) {
             shard.MakeDirty();
-            shard.unit->PhaseFlip();
             return;
         }
 
