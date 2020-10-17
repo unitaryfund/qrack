@@ -758,9 +758,6 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
         ToPermBasis(qIndices[i]);
         QEngineShard& shard = shards[qIndices[i]];
         if (!(shard.unit)) {
-            if (qIndices[i] != 0) {
-                throw "Fail";
-            }
             nOddChance = shard.Prob();
             oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
         } else if (units.find(shard.unit) == units.end()) {
