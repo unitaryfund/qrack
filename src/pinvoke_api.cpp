@@ -99,9 +99,14 @@ void RHelper(unsigned sid, unsigned b, double phi, unsigned q)
     QInterfacePtr simulator = simulators[sid];
 
     switch (b) {
-    case PauliI:
-        simulator->Exp(phi, shards[simulator][q]);
+    case PauliI: {
+        // This is a global phase factor, with no measurable physical effect.
+        // However, the underlying QInterface will not execute the gate
+        // UNLESS it is specifically "keeping book" for non-measurable phase effects.
+        complex phaseFac = std::exp(complex(ZERO_R1, phi / 2));
+        simulator->ApplySinglePhase(phaseFac, phaseFac, shards[simulator][q]);
         break;
+    }
     case PauliX:
         simulator->RX(phi, shards[simulator][q]);
         break;
@@ -124,15 +129,16 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
         ctrlsArray[i] = shards[simulator][c[i]];
     }
 
-    real1 cosine = cos(phi / 2.0);
-    real1 sine = sin(phi / 2.0);
+    real1 cosine = cos(phi / 2);
+    real1 sine = sin(phi / 2);
     complex pauliR[4];
 
     switch (b) {
-    case PauliI:
-        simulator->ApplyControlledSinglePhase(
-            ctrlsArray, n, shards[simulator][q], complex(cosine, sine), complex(cosine, sine));
+    case PauliI: {
+        complex phaseFac = complex(cosine, sine);
+        simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], phaseFac, phaseFac);
         break;
+    }
     case PauliX:
         pauliR[0] = complex(cosine, ZERO_R1);
         pauliR[1] = complex(ZERO_R1, -sine);
@@ -200,7 +206,7 @@ inline complex iExp(int power)
     case 3:
         return -I_CMPLX;
     }
-    return 0;
+    return ZERO_CMPLX;
 }
 
 void apply_controlled_exp(std::vector<complex>& wfn, std::vector<int> const& b, double phi,
@@ -385,11 +391,8 @@ double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int*
         return 0.0;
     }
 
-    std::vector<int> bVec(n);
-    std::vector<unsigned> qVec(n);
-
-    std::copy(b, b + n, bVec.begin());
-    std::copy(q, q + n, qVec.begin());
+    std::vector<int> bVec(b, b + n);
+    std::vector<unsigned> qVec(q, q + n);
 
     removeIdentities(&bVec, &qVec);
     n = qVec.size();
@@ -783,11 +786,8 @@ MICROSOFT_QUANTUM_DECL void Exp(
 
     SIMULATOR_LOCK_GUARD(sid)
 
-    std::vector<int> bVec(n);
-    std::vector<unsigned> qVec(n);
-
-    std::copy(b, b + n, bVec.begin());
-    std::copy(q, q + n, qVec.begin());
+    std::vector<int> bVec(b, b + n);
+    std::vector<unsigned> qVec(q, q + n);
 
     unsigned someQubit = qVec.front();
 
@@ -802,13 +802,11 @@ MICROSOFT_QUANTUM_DECL void Exp(
         std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
         simulator->GetQuantumState(&(wfn[0]));
 
-        std::vector<int> bVec(n);
-        std::copy(b, b + n, bVec.begin());
+        std::vector<int> bVec(b, b + n);
 
         std::vector<unsigned> csVec;
 
-        std::vector<unsigned> qVec(n);
-        std::copy(q, q + n, qVec.begin());
+        std::vector<unsigned> qVec(q, q + n);
 
         apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
 
@@ -828,11 +826,8 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
 
     SIMULATOR_LOCK_GUARD(sid)
 
-    std::vector<int> bVec(n);
-    std::vector<unsigned> qVec(n);
-
-    std::copy(b, b + n, bVec.begin());
-    std::copy(q, q + n, qVec.begin());
+    std::vector<int> bVec(b, b + n);
+    std::vector<unsigned> qVec(q, q + n);
 
     unsigned someQubit = qVec.front();
 
@@ -847,8 +842,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
         simulator->GetQuantumState(&(wfn[0]));
 
-        std::vector<unsigned> csVec(nc);
-        std::copy(cs, cs + nc, csVec.begin());
+        std::vector<unsigned> csVec(cs, cs + nc);
 
         apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
 
