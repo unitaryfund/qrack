@@ -29,13 +29,13 @@ using namespace Qrack;
 
 enum Pauli {
     /// Pauli Identity operator. Corresponds to Q# constant "PauliI."
-    PauliI = 0U,
+    PauliI = 0,
     /// Pauli X operator. Corresponds to Q# constant "PauliX."
-    PauliX = 1U,
+    PauliX = 1,
     /// Pauli Y operator. Corresponds to Q# constant "PauliY."
-    PauliY = 3U,
+    PauliY = 3,
     /// Pauli Z operator. Corresponds to Q# constant "PauliZ."
-    PauliZ = 2U
+    PauliZ = 2
 };
 
 qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>(time(0));
@@ -43,14 +43,7 @@ std::vector<QInterfacePtr> simulators;
 std::vector<bool> simulatorReservations;
 std::map<QInterfacePtr, std::map<unsigned, bitLenInt>> shards;
 
-void mul2x2(const complex& scalar, const complex* inMtrx, complex* outMtrx)
-{
-    for (unsigned i = 0; i < 4; i++) {
-        outMtrx[i] = scalar * inMtrx[i];
-    }
-}
-
-void TransformPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds)
+void TransformPauliBasis(QInterfacePtr simulator, unsigned len, int* bases, unsigned* qubitIds)
 {
     for (unsigned i = 0; i < len; i++) {
         switch (bases[i]) {
@@ -69,7 +62,7 @@ void TransformPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases,
     }
 }
 
-void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds)
+void RevertPauliBasis(QInterfacePtr simulator, unsigned len, int* bases, unsigned* qubitIds)
 {
     for (unsigned i = 0; i < len; i++) {
         switch (bases[i]) {
@@ -88,7 +81,7 @@ void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, un
     }
 }
 
-void removeIdentities(std::vector<unsigned>* b, std::vector<unsigned>* qs)
+void removeIdentities(std::vector<int>* b, std::vector<unsigned>* qs)
 {
     unsigned i = 0;
     while (i != b->size()) {
@@ -165,7 +158,7 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
     delete[] ctrlsArray;
 }
 
-inline bool isDiagonal(std::vector<unsigned> const& b)
+inline bool isDiagonal(std::vector<int> const& b)
 {
     for (auto x : b) {
         if (x == PauliX || x == PauliY) {
@@ -210,7 +203,7 @@ inline complex iExp(int power)
     return 0;
 }
 
-void apply_controlled_exp(std::vector<complex>& wfn, std::vector<unsigned> const& b, double phi,
+void apply_controlled_exp(std::vector<complex>& wfn, std::vector<int> const& b, double phi,
     std::vector<unsigned> const& cs, std::vector<unsigned> const& qs)
 {
     std::size_t cmask = make_mask(cs);
@@ -385,14 +378,14 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::si
     return dist(*rng.get());
 }
 
-double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, unsigned* b, unsigned* q, bool doMeasure)
+double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int* b, unsigned* q, bool doMeasure)
 {
 
     if (n == 0) {
         return 0.0;
     }
 
-    std::vector<unsigned> bVec(n);
+    std::vector<int> bVec(n);
     std::vector<unsigned> qVec(n);
 
     std::copy(b, b + n, bVec.begin());
@@ -406,7 +399,6 @@ double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, unsi
     }
 
     bitCapInt mask = 0;
-
     for (bitLenInt i = 0; i < n; i++) {
         bitCapInt bit = pow2(shards[simulator][qVec[i]]);
         mask |= bit;
@@ -419,7 +411,7 @@ double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, unsi
  * (External API) Find the joint probability for all specified qubits under the respective Pauli basis transformations.
  */
 MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
-    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q)
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_reads_(n) unsigned* q)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
@@ -482,6 +474,10 @@ MICROSOFT_QUANTUM_DECL bool release(_In_ unsigned sid, _In_ unsigned q)
 MICROSOFT_QUANTUM_DECL unsigned num_qubits(_In_ unsigned sid)
 {
     SIMULATOR_LOCK_GUARD(sid)
+
+    if (simulators[sid] == NULL) {
+        return 0U;
+    }
 
     return (unsigned)simulators[sid]->GetQubitCount();
 }
@@ -750,6 +746,8 @@ MICROSOFT_QUANTUM_DECL void MCU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
     }
 
     simulator->CU(ctrlsArray, n, shards[simulator][q], theta, phi, lambda);
+
+    delete[] ctrlsArray;
 }
 
 /**
@@ -777,7 +775,7 @@ MICROSOFT_QUANTUM_DECL void MCR(
  * (External API) Exponentiation of Pauli operators
  */
 MICROSOFT_QUANTUM_DECL void Exp(
-    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi, _In_reads_(n) unsigned* q)
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_ double phi, _In_reads_(n) unsigned* q)
 {
     if (n == 0) {
         return;
@@ -785,7 +783,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
 
     SIMULATOR_LOCK_GUARD(sid)
 
-    std::vector<unsigned> bVec(n);
+    std::vector<int> bVec(n);
     std::vector<unsigned> qVec(n);
 
     std::copy(b, b + n, bVec.begin());
@@ -804,7 +802,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
         std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
         simulator->GetQuantumState(&(wfn[0]));
 
-        std::vector<unsigned> bVec(n);
+        std::vector<int> bVec(n);
         std::copy(b, b + n, bVec.begin());
 
         std::vector<unsigned> csVec;
@@ -821,7 +819,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
 /**
  * (External API) Controlled exponentiation of Pauli operators
  */
-MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi,
+MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_ double phi,
     _In_ unsigned nc, _In_reads_(nc) unsigned* cs, _In_reads_(n) unsigned* q)
 {
     if (n == 0) {
@@ -830,7 +828,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
 
     SIMULATOR_LOCK_GUARD(sid)
 
-    std::vector<unsigned> bVec(n);
+    std::vector<int> bVec(n);
     std::vector<unsigned> qVec(n);
 
     std::copy(b, b + n, bVec.begin());
@@ -873,7 +871,7 @@ MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q)
  * (External API) Measure bits in specified Pauli bases
  */
 MICROSOFT_QUANTUM_DECL unsigned Measure(
-    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q)
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_reads_(n) unsigned* q)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
@@ -891,6 +889,30 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
     RevertPauliBasis(simulator, n, b, q);
 
     return toRet;
+}
+
+MICROSOFT_QUANTUM_DECL void SWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->Swap(qi1, qi2);
+}
+
+MICROSOFT_QUANTUM_DECL void CSWAP(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    bitLenInt* ctrlsArray = new bitLenInt[n];
+    for (unsigned i = 0; i < n; i++) {
+        ctrlsArray[i] = shards[simulator][c[i]];
+    }
+
+    simulator->CSwap(ctrlsArray, n, qi1, qi2);
+
+    delete[] ctrlsArray;
 }
 
 MICROSOFT_QUANTUM_DECL void AND(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)

@@ -634,7 +634,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex(sqrt(prob), ZERO_R1);
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (doSkipBuffer) {
+    if (doSkipBuffer && (IS_NORM_ZERO(shard.amp1) || IS_NORM_ZERO(shard.amp0))) {
         CheckCliffordSeparable(qubit);
         return prob;
     }
@@ -702,7 +702,7 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
         }
 
         if (partnerShard.isProbDirty) {
-            return false;
+            ProbBase(partnerIndex);
         }
 
         if (IS_NORM_ZERO(partnerShard.amp0)) {
@@ -736,7 +736,7 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
 {
     // If no bits in mask:
     if (!mask) {
-        return false;
+        return ZERO_R1;
     }
 
     // If only one bit in mask:
@@ -744,29 +744,40 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
         return Prob(log2(mask));
     }
 
-    bitCapInt v = mask; // count the number of bits set in v
-    bitCapInt oldV;
+    bitCapInt nV = mask;
     std::vector<bitLenInt> qIndices;
-    for (; v;) {
-        oldV = v;
-        v &= v - ONE_BCI; // clear the least significant bit set
-        qIndices.push_back(log2((v ^ oldV) & oldV));
+    for (bitCapInt v = mask; v; v = nV) {
+        nV &= (v - ONE_BCI); // clear the least significant bit set
+        qIndices.push_back(log2((v ^ nV) & v));
     }
 
-    QInterfacePtr unit = Entangle(qIndices);
-
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (shards[i].unit == unit) {
-            shards[i].MakeDirty();
+    std::map<QInterfacePtr, bitCapInt> units;
+    real1 oddChance = ZERO_R1;
+    real1 nOddChance;
+    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+        ToPermBasis(qIndices[i]);
+        QEngineShard& shard = shards[qIndices[i]];
+        if (!(shard.unit)) {
+            nOddChance = shard.Prob();
+            oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
+        } else if (units.find(shard.unit) == units.end()) {
+            units[shard.unit] = pow2(shard.mapped);
+        } else {
+            units[shard.unit] |= pow2(shard.mapped);
         }
     }
 
-    bitCapInt mappedMask = 0;
-    for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        mappedMask |= pow2(shards[qIndices[i]].mapped);
+    if (qIndices.size() == 0) {
+        return oddChance;
     }
 
-    return unit->ProbParity(mappedMask);
+    std::map<QInterfacePtr, bitCapInt>::iterator unit;
+    for (unit = units.begin(); unit != units.end(); unit++) {
+        nOddChance = unit->first->ProbParity(unit->second);
+        oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
+    }
+
+    return oddChance;
 }
 
 bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
@@ -781,16 +792,40 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
         return ForceM(log2(mask), result, doForce);
     }
 
-    bitCapInt v = mask; // count the number of bits set in v
-    bitCapInt oldV;
+    bitCapInt nV = mask;
     std::vector<bitLenInt> qIndices;
-    for (; v;) {
-        oldV = v;
-        v &= v - ONE_BCI; // clear the least significant bit set
-        qIndices.push_back(log2((v ^ oldV) & oldV));
+    for (bitCapInt v = mask; v; v = nV) {
+        nV &= (v - ONE_BCI); // clear the least significant bit set
+        qIndices.push_back(log2((v ^ nV) & v));
     }
 
-    QInterfacePtr unit = Entangle(qIndices);
+    bool flipResult = false;
+    std::vector<bitLenInt> eIndices;
+    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+        ToPermBasis(qIndices[i]);
+        QEngineShard& shard = shards[qIndices[i]];
+
+        if (CACHED_ZERO(shard)) {
+            continue;
+        }
+
+        if (CACHED_ONE(shard)) {
+            flipResult = !flipResult;
+            continue;
+        }
+
+        eIndices.push_back(qIndices[i]);
+    }
+
+    if (eIndices.size() == 0) {
+        return flipResult;
+    }
+
+    if (eIndices.size() == 1U) {
+        return flipResult ^ ForceM(eIndices[0], result ^ flipResult, doForce);
+    }
+
+    QInterfacePtr unit = Entangle(eIndices);
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (shards[i].unit == unit) {
@@ -799,11 +834,11 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     }
 
     bitCapInt mappedMask = 0;
-    for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        mappedMask |= pow2(shards[qIndices[i]].mapped);
+    for (bitLenInt i = 0; i < eIndices.size(); i++) {
+        mappedMask |= pow2(shards[eIndices[i]].mapped);
     }
 
-    return unit->ForceMParity(mappedMask, result, doForce);
+    return flipResult ^ (unit->ForceMParity(mappedMask, result ^ flipResult, doForce));
 }
 
 void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
@@ -864,21 +899,18 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 
     // This is critical: it's the "nonlocal correlation" of "wave function collapse".
     if (shard.unit) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            if (shards[i].unit == shard.unit) {
+                shards[i].MakeDirty();
+            }
+        }
         if (shard.unit->isClifford()) {
             for (bitLenInt i = 0; i < qubitCount; i++) {
                 if (shards[i].unit == shard.unit) {
                     ProbBase(i);
                 }
             }
-
-            CheckCliffordSeparable(qubit);
         } else {
-            for (bitLenInt i = 0; i < qubitCount; i++) {
-                if (shards[i].unit == shard.unit) {
-                    shards[i].MakeDirty();
-                }
-            }
-
             SeparateBit(result, qubit);
         }
     }
@@ -1186,9 +1218,11 @@ void QUnit::H(bitLenInt target)
         return;
     }
 
+    if (shard.unit) {
+        shard.unit->H(shard.mapped);
+    }
     if (DIRTY(shard)) {
         shard.MakeDirty();
-        shard.unit->H(shard.mapped);
         return;
     }
 
@@ -1204,9 +1238,11 @@ void QUnit::XBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
+    if (shard.unit) {
+        shard.unit->X(shard.mapped);
+    }
     if (DIRTY(shard)) {
         shard.MakeDirty();
-        shard.unit->X(shard.mapped);
         return;
     }
 
@@ -1217,9 +1253,11 @@ void QUnit::ZBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
 
+    if (shard.unit) {
+        shard.unit->Z(shard.mapped);
+    }
     if (DIRTY(shard)) {
         shard.MakeDirty();
-        shard.unit->Z(shard.mapped);
         return;
     }
 
@@ -1764,9 +1802,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     if (!shard.isPlusMinus) {
 
+        if (shard.unit) {
+            shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped);
+        }
         if (DIRTY(shard)) {
             shard.MakeDirty();
-            shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped);
             return;
         }
 
@@ -1779,9 +1819,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
         TransformPhase(topLeft, bottomRight, mtrx);
 
+        if (shard.unit) {
+            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+        }
         if (DIRTY(shard)) {
             shard.MakeDirty();
-            shard.unit->ApplySingleBit(mtrx, shard.mapped);
             return;
         }
 
@@ -1816,9 +1858,11 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
     shard.FlipPhaseAnti();
 
     if (!shard.isPlusMinus) {
+        if (shard.unit) {
+            shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped);
+        }
         if (DIRTY(shard)) {
             shard.MakeDirty();
-            shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped);
             return;
         }
 
@@ -1832,9 +1876,11 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
         TransformInvert(topRight, bottomLeft, mtrx);
 
+        if (shard.unit) {
+            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+        }
         if (DIRTY(shard)) {
             shard.MakeDirty();
-            shard.unit->ApplySingleBit(mtrx, shard.mapped);
             return;
         }
 
@@ -1954,9 +2000,15 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex topRight, const complex bottomLeft)
 {
-    if ((controlLen == 1U) && IS_ARG_0(topRight) && IS_ARG_0(bottomLeft)) {
-        CNOT(controls[0], target);
-        return;
+    if (IS_ARG_0(topRight) && IS_ARG_0(bottomLeft)) {
+        if (controlLen == 2U) {
+            CCNOT(controls[0], controls[1], target);
+            return;
+        }
+        if (controlLen == 1U) {
+            CNOT(controls[0], target);
+            return;
+        }
     }
 
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
@@ -2097,9 +2149,11 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         Transform2x2(mtrx, trnsMtrx);
     }
 
+    if (shard.unit) {
+        shard.unit->ApplySingleBit(trnsMtrx, shard.mapped);
+    }
     if (DIRTY(shard)) {
         shard.MakeDirty();
-        shard.unit->ApplySingleBit(trnsMtrx, shard.mapped);
         return;
     }
 
@@ -3100,9 +3154,11 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
         if (GetCachedPermutation(start, length) < greaterPerm) {
             // This has no physical effect, but we do it to respect direct simulator check of amplitudes:
             QEngineShard& shard = shards[start];
+            if (shard.unit) {
+                shard.unit->PhaseFlip();
+            }
             if (DIRTY(shard)) {
                 shard.MakeDirty();
-                shard.unit->PhaseFlip();
                 return;
             }
 
@@ -3144,9 +3200,11 @@ void QUnit::PhaseFlip()
     if (!randGlobalPhase) {
         RevertBasis1Qb(0);
 
+        if (shard.unit) {
+            shard.unit->PhaseFlip();
+        }
         if (DIRTY(shard)) {
             shard.MakeDirty();
-            shard.unit->PhaseFlip();
             return;
         }
 
