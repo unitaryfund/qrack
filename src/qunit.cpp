@@ -1318,8 +1318,8 @@ void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, c
 
 void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
 {
-    mtrxOut[0] = (ONE_R1 / 2) * (bottomLeft + topRight);
-    mtrxOut[1] = (ONE_R1 / 2) * (-bottomLeft + topRight);
+    mtrxOut[0] = (ONE_R1 / 2) * (topRight + bottomLeft);
+    mtrxOut[1] = (ONE_R1 / 2) * (-topRight + bottomLeft);
     mtrxOut[2] = -mtrxOut[1];
     mtrxOut[3] = -mtrxOut[0];
 }
