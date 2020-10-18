@@ -29,7 +29,7 @@
 #include "qunit.hpp"
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_NORM_ZERO(c) (c == ZERO_CMPLX)
+#define IS_NORM_0(c) (c == ZERO_CMPLX)
 #define IS_ZERO_R1(r) (r == ZERO_R1)
 #define IS_ONE_R1(r) (r == ONE_R1)
 #define IS_ONE_CMPLX(c) (c == ONE_CMPLX)
@@ -38,16 +38,16 @@
     ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0) ||                                       \
         (shard.antiTargetOfShards.size() != 0) || (shard.antiControlsShards.size() != 0))
 #define CACHED_PLUS_MINUS(shard) (shard.isPlusMinus && !DIRTY(shard) && !QUEUED_PHASE(shard))
-#define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && IS_NORM_ZERO(shard.amp1))
+#define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && IS_NORM_0(shard.amp1))
 #define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPlusMinus && !QUEUED_PHASE(shard))
-#define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
-#define CACHED_ONE(shard) (CACHED_PROB(shard) && IS_NORM_ZERO(shard.amp0))
-#define CACHED_ZERO(shard) (CACHED_PROB(shard) && IS_NORM_ZERO(shard.amp1))
+#define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
+#define CACHED_ONE(shard) (CACHED_PROB(shard) && IS_NORM_0(shard.amp0))
+#define CACHED_ZERO(shard) (CACHED_PROB(shard) && IS_NORM_0(shard.amp1))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
 #define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
-    (!shard.isProbDirty && !shard.isPlusMinus && (IS_NORM_ZERO(shard.amp0) || IS_NORM_ZERO(shard.amp1)))
-#define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp0))
-#define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_ZERO(shard.amp1))
+    (!shard.isProbDirty && !shard.isPlusMinus && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
+#define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_0(shard.amp0))
+#define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_0(shard.amp1))
 #define IS_SAME_UNIT(shard1, shard2) ((shard1.unit || shard2.unit) && (shard1.unit == shard2.unit))
 
 namespace Qrack {
@@ -113,11 +113,11 @@ void QUnit::SetQuantumState(const complex* inputState)
         shard.amp0 = inputState[0];
         shard.amp1 = inputState[1];
         shard.isPlusMinus = false;
-        if (IS_NORM_ZERO(shard.amp0 - shard.amp1)) {
+        if (IS_NORM_0(shard.amp0 - shard.amp1)) {
             shard.isPlusMinus = true;
             shard.amp0 = shard.amp0 / abs(shard.amp0);
             shard.amp1 = ZERO_R1;
-        } else if (IS_NORM_ZERO(shard.amp0 + shard.amp1)) {
+        } else if (IS_NORM_0(shard.amp0 + shard.amp1)) {
             shard.isPlusMinus = true;
             shard.amp1 = shard.amp0 / abs(shard.amp0);
             shard.amp0 = ZERO_R1;
@@ -171,7 +171,7 @@ complex QUnit::GetAmplitude(bitCapInt perm)
 
     for (auto&& qi : perms) {
         result *= qi.first->GetAmplitude(qi.second);
-        if (IS_NORM_ZERO(result)) {
+        if (IS_NORM_0(result)) {
             break;
         }
     }
@@ -632,16 +632,16 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex(sqrt(prob), ZERO_R1);
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (doSkipBuffer && (IS_NORM_ZERO(shard.amp1) || IS_NORM_ZERO(shard.amp0))) {
+    if (doSkipBuffer && (IS_NORM_0(shard.amp1) || IS_NORM_0(shard.amp0))) {
         CheckCliffordSeparable(qubit);
         return prob;
     }
 
     bool didSeparate = false;
-    if (IS_NORM_ZERO(shard.amp1)) {
+    if (IS_NORM_0(shard.amp1)) {
         SeparateBit(false, qubit);
         didSeparate = true;
-    } else if (IS_NORM_ZERO(shard.amp0)) {
+    } else if (IS_NORM_0(shard.amp0)) {
         SeparateBit(true, qubit);
         didSeparate = true;
     }
@@ -664,11 +664,11 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
 
     complex amps[2];
     partnerShard.unit->GetQuantumState(amps);
-    if (IS_NORM_ZERO(amps[0] - amps[1])) {
+    if (IS_NORM_0(amps[0] - amps[1])) {
         partnerShard.isPlusMinus = true;
         amps[0] = amps[0] / abs(amps[0]);
         amps[1] = ZERO_CMPLX;
-    } else if (IS_NORM_ZERO(amps[0] + amps[1])) {
+    } else if (IS_NORM_0(amps[0] + amps[1])) {
         partnerShard.isPlusMinus = true;
         amps[1] = amps[0] / abs(amps[0]);
         amps[0] = ZERO_CMPLX;
@@ -703,9 +703,9 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             ProbBase(partnerIndex);
         }
 
-        if (IS_NORM_ZERO(partnerShard.amp0)) {
+        if (IS_NORM_0(partnerShard.amp0)) {
             partnerStates.push_back(true);
-        } else if (IS_NORM_ZERO(partnerShard.amp1)) {
+        } else if (IS_NORM_0(partnerShard.amp1)) {
             partnerStates.push_back(false);
         } else {
             return false;
@@ -1378,10 +1378,10 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& tShard = shards[target];
 
     if (CACHED_PLUS_MINUS(tShard)) {
-        if (IS_NORM_ZERO(tShard.amp1)) {
+        if (IS_NORM_0(tShard.amp1)) {
             return;
         }
-        if (IS_NORM_ZERO(tShard.amp0)) {
+        if (IS_NORM_0(tShard.amp0)) {
             Z(control);
             return;
         }
@@ -1390,11 +1390,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     QEngineShard& cShard = shards[control];
 
     if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
-        if (IS_NORM_ZERO(cShard.amp1)) {
+        if (IS_NORM_0(cShard.amp1)) {
             Flush0Eigenstate(control);
             return;
         }
-        if (IS_NORM_ZERO(cShard.amp0)) {
+        if (IS_NORM_0(cShard.amp0)) {
             Flush1Eigenstate(control);
             X(target);
             return;
@@ -1435,7 +1435,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
             PhaseShardPtr buffer = phaseShard->second;
 
-            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
+            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
                 ApplyBuffer(buffer, control, target, false);
                 shards[target].RemovePhaseControl(&cShard);
             }
@@ -1478,12 +1478,12 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
     QEngineShard& cShard = shards[control];
     if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
-        if (IS_NORM_ZERO(cShard.amp1)) {
+        if (IS_NORM_0(cShard.amp1)) {
             Flush0Eigenstate(control);
             X(target);
             return;
         }
-        if (IS_NORM_ZERO(cShard.amp0)) {
+        if (IS_NORM_0(cShard.amp0)) {
             Flush1Eigenstate(control);
             return;
         }
@@ -1526,11 +1526,11 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
     if (!c1Shard.IsInvertTarget()) {
         if (UNSAFE_CACHED_CLASSICAL(c1Shard)) {
-            if (IS_NORM_ZERO(c1Shard.amp1)) {
+            if (IS_NORM_0(c1Shard.amp1)) {
                 Flush0Eigenstate(control1);
                 return;
             }
-            if (IS_NORM_ZERO(c1Shard.amp0)) {
+            if (IS_NORM_0(c1Shard.amp0)) {
                 Flush1Eigenstate(control1);
                 CNOT(control2, target);
                 return;
@@ -1540,11 +1540,11 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
     if (!c2Shard.IsInvertTarget()) {
         if (UNSAFE_CACHED_CLASSICAL(c2Shard)) {
-            if (IS_NORM_ZERO(c2Shard.amp1)) {
+            if (IS_NORM_0(c2Shard.amp1)) {
                 Flush0Eigenstate(control2);
                 return;
             }
-            if (IS_NORM_ZERO(c2Shard.amp0)) {
+            if (IS_NORM_0(c2Shard.amp0)) {
                 Flush1Eigenstate(control2);
                 CNOT(control1, target);
                 return;
@@ -1661,7 +1661,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
             PhaseShardPtr buffer = phaseShard->second;
 
-            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
+            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
                 ApplyBuffer(buffer, control, target, false);
                 tShard.RemovePhaseControl(&cShard);
             }
@@ -1704,11 +1704,11 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
     if (!c1Shard.IsInvertTarget()) {
         if (UNSAFE_CACHED_CLASSICAL(c1Shard)) {
-            if (IS_NORM_ZERO(c1Shard.amp1)) {
+            if (IS_NORM_0(c1Shard.amp1)) {
                 Flush0Eigenstate(control1);
                 return;
             }
-            if (IS_NORM_ZERO(c1Shard.amp0)) {
+            if (IS_NORM_0(c1Shard.amp0)) {
                 Flush1Eigenstate(control1);
                 CZ(control2, target);
                 return;
@@ -1718,11 +1718,11 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
     if (!c2Shard.IsInvertTarget()) {
         if (UNSAFE_CACHED_CLASSICAL(c2Shard)) {
-            if (IS_NORM_ZERO(c2Shard.amp1)) {
+            if (IS_NORM_0(c2Shard.amp1)) {
                 Flush0Eigenstate(control2);
                 return;
             }
-            if (IS_NORM_ZERO(c2Shard.amp0)) {
+            if (IS_NORM_0(c2Shard.amp0)) {
                 Flush1Eigenstate(control2);
                 CZ(control1, target);
                 return;
@@ -1732,11 +1732,11 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
     if (!tShard.IsInvertTarget()) {
         if (UNSAFE_CACHED_CLASSICAL(tShard)) {
-            if (IS_NORM_ZERO(tShard.amp1)) {
+            if (IS_NORM_0(tShard.amp1)) {
                 Flush0Eigenstate(target);
                 return;
             }
-            if (IS_NORM_ZERO(tShard.amp0)) {
+            if (IS_NORM_0(tShard.amp0)) {
                 Flush1Eigenstate(target);
                 CZ(control1, control2);
                 return;
@@ -1768,11 +1768,11 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
-    if (IS_SAME(topLeft, bottomRight) && (randGlobalPhase || IS_ARG_0(topLeft))) {
+    if (IS_NORM_0(topLeft - bottomRight) && (randGlobalPhase || IS_ONE_R1(topLeft))) {
         return;
     }
 
-    if (IS_OPPOSITE(topLeft, bottomRight) && (randGlobalPhase || IS_ARG_0(topLeft))) {
+    if (IS_NORM_0(topLeft + bottomRight) && (randGlobalPhase || IS_ONE_R1(topLeft))) {
         Z(target);
         return;
     }
@@ -1787,12 +1787,12 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             shard.CommutePhase(topLeft, bottomRight);
         }
     } else {
-        if (IS_ARG_0(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
+        if (IS_ONE_R1(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
             Flush0Eigenstate(target);
             return;
         }
 
-        if (IS_ARG_0(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
+        if (IS_ONE_R1(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
             Flush1Eigenstate(target);
             return;
         }
@@ -1837,7 +1837,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
 void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
 {
-    if (IS_SAME(topRight, bottomLeft) && (randGlobalPhase || IS_ONE_CMPLX(topRight))) {
+    if (IS_NORM_0(topRight - bottomLeft) && (randGlobalPhase || IS_ONE_CMPLX(topRight))) {
         X(target);
         return;
     }
@@ -1901,7 +1901,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         return;
     }
 
-    if ((controlLen == 1) && IS_SAME(topLeft, bottomRight)) {
+    if ((controlLen == 1) && IS_NORM_0(topLeft - bottomRight)) {
         ApplySinglePhase(ONE_CMPLX, bottomRight, cControls[0]);
         return;
     }
@@ -1912,20 +1912,20 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
     QEngineShard& shard = shards[target];
 
-    if (IS_ARG_0(bottomRight) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard))) {
+    if (IS_ONE_R1(bottomRight) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard))) {
         Flush1Eigenstate(target);
         delete[] controls;
         return;
     }
 
-    if (IS_ARG_0(topLeft)) {
+    if (IS_ONE_R1(topLeft)) {
         if (!shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard)) {
             Flush0Eigenstate(target);
             delete[] controls;
             return;
         }
 
-        if (IS_ARG_PI(bottomRight)) {
+        if (IS_ONE_R1(-bottomRight)) {
             if (controlLen == 2U) {
                 CCZ(controls[0], controls[1], target);
                 delete[] controls;
@@ -1980,7 +1980,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
             PhaseShardPtr buffer = phaseShard->second;
 
-            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
+            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
                 ApplyBuffer(buffer, control, target, false);
                 tShard.RemovePhaseControl(&cShard);
             }
@@ -1998,7 +1998,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
     const complex topRight, const complex bottomLeft)
 {
-    if (IS_ARG_0(topRight) && IS_ARG_0(bottomLeft)) {
+    if (IS_ONE_R1(topRight) && IS_ONE_R1(bottomLeft)) {
         if (controlLen == 2U) {
             CCNOT(controls[0], controls[1], target);
             return;
@@ -2022,7 +2022,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         return;
     }
 
-    if ((controlLen == 1) && IS_SAME(topLeft, bottomRight)) {
+    if ((controlLen == 1) && IS_NORM_0(topLeft - bottomRight)) {
         ApplySinglePhase(topLeft, ONE_CMPLX, cControls[0]);
         return;
     }
@@ -2033,13 +2033,13 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
     QEngineShard& shard = shards[target];
 
-    if (IS_ARG_0(topLeft) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard))) {
+    if (IS_ONE_R1(topLeft) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard))) {
         Flush0Eigenstate(target);
         delete[] controls;
         return;
     }
 
-    if (IS_ARG_0(bottomRight)) {
+    if (IS_ONE_R1(bottomRight)) {
         if (!shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard)) {
             Flush1Eigenstate(target);
             delete[] controls;
@@ -2088,7 +2088,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
             PhaseShardPtr buffer = phaseShard->second;
 
-            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
+            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
                 ApplyBuffer(buffer, control, target, true);
                 tShard.RemovePhaseAntiControl(&cShard);
             }
@@ -2106,7 +2106,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topRight, const complex bottomLeft)
 {
-    if ((controlLen == 1U) && IS_ARG_0(topRight) && IS_ARG_0(bottomLeft)) {
+    if ((controlLen == 1U) && IS_ONE_R1(topRight) && IS_ONE_R1(bottomLeft)) {
         AntiCNOT(controls[0], target);
         return;
     }
@@ -2265,7 +2265,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             // This might determine that we can just skip out of the whole gate, in which case it returns this
             // method:
             shard = shards[controls[i]];
-            if (IS_NORM_ZERO(shard.amp1)) {
+            if (IS_NORM_0(shard.amp1)) {
                 if (!inCurrentBasis) {
                     Flush0Eigenstate(controls[i]);
                 }
@@ -2275,7 +2275,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
                 }
                 /* This control has 100% chance to "fire," so don't entangle it. */
                 isEigenstate = true;
-            } else if (IS_NORM_ZERO(shard.amp0)) {
+            } else if (IS_NORM_0(shard.amp0)) {
                 if (!inCurrentBasis) {
                     Flush1Eigenstate(controls[i]);
                 }
