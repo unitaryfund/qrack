@@ -1435,7 +1435,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
             PhaseShardPtr buffer = phaseShard->second;
 
-            if (IS_NORM_0(buffer->cmplxDiff, buffer->cmplxSame)) {
+            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
                 ApplyBuffer(buffer, control, target, false);
                 shards[target].RemovePhaseControl(&cShard);
             }
