@@ -1206,6 +1206,41 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
     delete[] mappedControls;
 }
 
+void QUnit::UniformParityRZ(const bitLenInt* targets, const bitLenInt& targetLen, const real1& angle)
+{
+    bool flipResult = false;
+    std::vector<bitLenInt> qIndices;
+    for (bitLenInt i = 0; i < targetLen; i++) {
+        ToPermBasis(targets[i]);
+        QEngineShard& shard = shards[targets[i]];
+
+        if (CACHED_ZERO(shard)) {
+            continue;
+        }
+
+        if (CACHED_ONE(shard)) {
+            flipResult = !flipResult;
+            continue;
+        }
+
+        qIndices.push_back(targets[i]);
+    }
+
+    if (qIndices.size() == 0) {
+        return;
+    }
+
+    if (qIndices.size() == 1U) {
+        real1 cosine = cos(angle);
+        real1 sine = sin(angle);
+        return ApplySinglePhase(complex(cosine, -sine), complex(cosine, sine), qIndices[0]);
+    }
+
+    QInterfacePtr unit = Entangle(qIndices);
+
+    return unit->UniformParityRZ(&(qIndices[0]), qIndices.size(), flipResult ? -angle : angle);
+}
+
 void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];

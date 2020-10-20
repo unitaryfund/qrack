@@ -437,6 +437,51 @@ void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* b
     }
 }
 
+void kernel uniformparityrz(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplx_ptr)
+{
+    bitCapIntOcl Nthreads, lcv;
+
+    Nthreads = get_global_size(0);
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl qMask = bitCapIntOclPtr[1];
+    cmplx phaseFac = cmplx_ptr[0];
+    cmplx phaseFacAdj = cmplx_ptr[1];
+    bitCapIntOcl i, iLow, iHigh, perm;
+    bitLenInt c;
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        perm = lcv & qMask;
+        for (c = 0; perm; c++) {
+            // clear the least significant bit set
+            perm &= perm - ONE_BCI;
+        }
+        stateVec[lcv] = stateVec[lcv] * ((c & 1U) ? phaseFac : phaseFacAdj);
+    }
+}
+
+void kernel uniformparityrznorm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplx_ptr)
+{
+    bitCapIntOcl Nthreads, lcv;
+
+    Nthreads = get_global_size(0);
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl qMask = bitCapIntOclPtr[1];
+    cmplx phaseFac = cmplx_ptr[0];
+    cmplx phaseFacAdj = cmplx_ptr[1];
+    cmplx nrm = cmplx_ptr[2];
+    bitCapIntOcl i, iLow, iHigh, perm;
+    bitLenInt c;
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        perm = lcv & qMask;
+        for (c = 0; perm; c++) {
+            // clear the least significant bit set
+            perm &= perm - ONE_BCI;
+        }
+        stateVec[lcv] = nrm * stateVec[lcv] * ((c & 1U) ? phaseFac : phaseFacAdj);
+    }
+}
+
 void kernel compose(
     global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
 {

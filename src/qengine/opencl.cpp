@@ -971,6 +971,41 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     delete[] qPowers;
 }
 
+void QEngineOCL::UniformParityRZ(const bitLenInt* targets, const bitLenInt& targetLen, const real1& angle)
+{
+    CHECK_ZERO_SKIP();
+
+    bitCapInt mask = 0;
+    for (bitLenInt i = 0; i < targetLen; i++) {
+        mask |= pow2(targets[i]);
+    }
+
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, 0, 0, 0, 0, 0, 0, 0, 0 };
+    real1 cosine = cos(angle);
+    real1 sine = sin(angle);
+    complex phaseFacs[3] = { complex(cosine, sine), complex(cosine, -sine), (ONE_R1 / std::sqrt(runningNorm)) };
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    cl::Event writeArgsEvent, writeNormEvent;
+    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent);
+    BufferPtr locCmplxBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * 3);
+    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex) * 3, &phaseFacs, writeNormEvent);
+
+    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
+    writeNormEvent.wait();
+
+    QueueCall((runningNorm == ONE_R1) ? OCL_API_UNIFORMPARITYRZ : OCL_API_UNIFORMPARITYRZ_NORM, ngc, ngs,
+        { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
+
+    runningNorm = ONE_R1;
+}
+
 void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapIntOcl* bciArgs, complex nrm)
 {
     CHECK_ZERO_SKIP();

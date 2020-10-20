@@ -211,6 +211,7 @@ public:
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
+    virtual void UniformParityRZ(const bitLenInt* targets, const bitLenInt& targetLen, const real1& angle);
 
     /* Operations that have an improved implementation. */
     using QEngine::X;

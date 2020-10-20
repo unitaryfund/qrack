@@ -589,6 +589,12 @@ void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLe
         { qubitIndex }, controls, controlLen);
 }
 
+void QPager::UniformParityRZ(const bitLenInt* targets, const bitLenInt& targetLen, const real1& angle)
+{
+    CombineAndOpControlled(
+        [&](QEnginePtr engine) { engine->UniformParityRZ(targets, targetLen, angle); }, { 0 }, targets, targetLen);
+}
+
 void QPager::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {

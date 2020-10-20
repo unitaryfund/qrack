@@ -580,6 +580,40 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     delete[] qPowers;
 }
 
+void QEngineCPU::UniformParityRZ(const bitLenInt* targets, const bitLenInt& targetLen, const real1& angle)
+{
+    CHECK_ZERO_SKIP();
+
+    bitCapInt mask = 0;
+    for (bitLenInt i = 0; i < targetLen; i++) {
+        mask |= pow2(targets[i]);
+    }
+
+    Dispatch([this, mask, angle] {
+        real1 cosine = cos(angle);
+        real1 sine = sin(angle);
+        complex phaseFac(cosine, sine);
+        complex phaseFacAdj(cosine, -sine);
+        ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt perm = lcv & mask;
+            // From https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
+            // c accumulates the total bits set in v
+            bitLenInt c;
+            for (c = 0; perm; c++) {
+                // clear the least significant bit set
+                perm &= perm - ONE_BCI;
+            }
+            stateVec->write(lcv, stateVec->read(lcv) * ((c & 1U) ? phaseFac : phaseFacAdj));
+        };
+
+        if (stateVec->is_sparse()) {
+            par_for_set(CastStateVecSparse()->iterable(), fn);
+        } else {
+            par_for(0, maxQPower, fn);
+        }
+    });
+}
+
 /**
  * Combine (a copy of) another QEngineCPU with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up

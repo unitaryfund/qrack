@@ -1154,6 +1154,12 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
 
     /**
+     * If the target qubit set parity is odd, this applies a phase factor of e^{i angle}. If the target qubit set parity
+     * is even, this applies the conjugate, e^{-i angle}.
+     */
+    virtual void UniformParityRZ(const bitLenInt* targets, const bitLenInt& targetLen, const real1& angle) = 0;
+
+    /**
      * Z axis rotation gate
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
