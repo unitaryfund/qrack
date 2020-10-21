@@ -1237,12 +1237,12 @@ void QUnit::UniformParityRZ(const bitLenInt* targets, const bitLenInt& targetLen
     }
 
     for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        shards[qIndices[i]].MakeDirty();
+        shards[qIndices[i]].isPhaseDirty = true;
     }
 
     QInterfacePtr unit = Entangle(qIndices);
 
-    return unit->UniformParityRZ(&(qIndices[0]), qIndices.size(), flipResult ? -angle : angle);
+    unit->UniformParityRZ(&(qIndices[0]), qIndices.size(), flipResult ? -angle : angle);
 }
 
 void QUnit::H(bitLenInt target)

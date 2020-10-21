@@ -803,8 +803,11 @@ MICROSOFT_QUANTUM_DECL void Exp(
         QInterfacePtr simulator = simulators[sid];
 		
 		if (isDiagonal(bVec)) {
-			std::vector<bitLenInt> safeVec(qVec.begin(), qVec.end());
-            return simulator->UniformParityRZ(&(safeVec[0]), safeVec.size(), -phi);
+            bitLenInt* targets = new bitLenInt[qVec.size()];
+            std::copy(qVec.begin(), qVec.end(), targets);
+            simulator->UniformParityRZ(targets, qVec.size(), -phi);
+            delete[] targets;
+            return;
         }
 		
 		std::vector<bitLenInt> csVec;
