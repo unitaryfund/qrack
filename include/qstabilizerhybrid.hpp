@@ -329,6 +329,13 @@ public:
         engine->UniformParityRZ(mask, angle);
     }
 
+    virtual void CUniformParityRZ(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle)
+    {
+        SwitchToEngine();
+        engine->CUniformParityRZ(controls, controlLen, mask, angle);
+    }
+
     virtual void CSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {

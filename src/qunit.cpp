@@ -1273,6 +1273,97 @@ void QUnit::UniformParityRZ(const bitCapInt& mask, const real1& angle)
     unit->UniformParityRZ(mappedMask, flipResult ? -angle : angle);
 }
 
+void QUnit::CUniformParityRZ(
+    const bitLenInt* cControls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle)
+{
+    std::vector<bitLenInt> controls;
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        QEngineShard& shard = shards[cControls[i]];
+
+        if (!CACHED_PROB(shard)) {
+            continue;
+        }
+
+        if (IS_NORM_0(shard.amp1)) {
+            // Gate does nothing
+            return;
+        }
+
+        if (!IS_NORM_0(shard.amp0)) {
+            // Control becomes entangled
+            controls.push_back(cControls[i]);
+        }
+    }
+
+    if (controls.size() == 0) {
+        return UniformParityRZ(mask, angle);
+    }
+
+    bitCapInt nV = mask;
+    std::vector<bitLenInt> qIndices;
+    for (bitCapInt v = mask; v; v = nV) {
+        nV &= (v - ONE_BCI); // clear the least significant bit set
+        qIndices.push_back(log2((v ^ nV) & v));
+    }
+
+    bool flipResult = false;
+    std::vector<bitLenInt> eIndices;
+    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+        ToPermBasis(qIndices[i]);
+        QEngineShard& shard = shards[qIndices[i]];
+
+        if (CACHED_ZERO(shard)) {
+            continue;
+        }
+
+        if (CACHED_ONE(shard)) {
+            flipResult = !flipResult;
+            continue;
+        }
+
+        eIndices.push_back(qIndices[i]);
+    }
+
+    if (eIndices.size() == 0) {
+        real1 cosine = cos(angle);
+        real1 sine = sin(angle);
+        complex phaseFac;
+        if (flipResult) {
+            phaseFac = complex(cosine, sine);
+        } else {
+            phaseFac = complex(cosine, -sine);
+        }
+        return ApplyControlledSinglePhase(&(controls[0]), controls.size(), 0, phaseFac, phaseFac);
+    }
+
+    if (eIndices.size() == 1U) {
+        real1 cosine = cos(angle);
+        real1 sine = sin(angle);
+        complex phaseFac, phaseFacAdj;
+        if (flipResult) {
+            phaseFac = complex(cosine, -sine);
+            phaseFacAdj = complex(cosine, sine);
+        } else {
+            phaseFac = complex(cosine, sine);
+            phaseFacAdj = complex(cosine, -sine);
+        }
+        return ApplyControlledSinglePhase(&(controls[0]), controls.size(), eIndices[0], phaseFacAdj, phaseFac);
+    }
+
+    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+        shards[eIndices[i]].isPhaseDirty = true;
+    }
+
+    QInterfacePtr unit = Entangle(eIndices);
+
+    bitCapInt mappedMask = 0;
+    for (bitLenInt i = 0; i < eIndices.size(); i++) {
+        mappedMask |= pow2(shards[eIndices[i]].mapped);
+    }
+
+    unit->CUniformParityRZ(&(controls[0]), controls.size(), mappedMask, flipResult ? -angle : angle);
+}
+
 void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];

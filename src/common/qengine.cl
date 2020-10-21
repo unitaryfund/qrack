@@ -482,6 +482,39 @@ void kernel uniformparityrznorm(global cmplx* stateVec, constant bitCapIntOcl* b
     }
 }
 
+void kernel cuniformparityrz(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* cmplx_ptr, constant bitCapIntOcl* qPowers)
+{
+    bitCapIntOcl Nthreads, lcv;
+
+    Nthreads = get_global_size(0);
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl qMask = bitCapIntOclPtr[1];
+    bitCapIntOcl cMask = bitCapIntOclPtr[2];
+    bitCapIntOcl cLen = bitCapIntOclPtr[3];
+    cmplx phaseFac = cmplx_ptr[0];
+    cmplx phaseFacAdj = cmplx_ptr[1];
+    bitCapIntOcl perm, i, iLow, iHigh, p;
+    bitLenInt c;
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        iHigh = lcv;
+        i = 0U;
+        for (p = 0U; p < cLen; p++) {
+            iLow = iHigh & (qPowers[p] - ONE_BCI);
+            i |= iLow;
+            iHigh = (iHigh ^ iLow) << ONE_BCI;
+        }
+        i |= iHigh | cMask;
+        
+        perm = i & qMask;
+        for (c = 0; perm; c++) {
+            // clear the least significant bit set
+            perm &= perm - ONE_BCI;
+        }
+        stateVec[i] = zmul(stateVec[i], ((c & 1U) ? phaseFac : phaseFacAdj));
+    }
+}
+
 void kernel compose(
     global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
 {

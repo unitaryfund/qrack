@@ -212,6 +212,8 @@ public:
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
     virtual void UniformParityRZ(const bitCapInt& mask, const real1& angle);
+    virtual void CUniformParityRZ(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle);
 
     /* Operations that have an improved implementation. */
     using QEngine::X;
