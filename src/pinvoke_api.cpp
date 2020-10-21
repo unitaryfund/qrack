@@ -216,16 +216,7 @@ void apply_controlled_exp(std::vector<complex>& wfn, std::vector<int> const& b, 
 {
     std::size_t cmask = make_mask(cs);
 
-    if (isDiagonal(b)) {
-        std::size_t mask = make_mask(qs);
-        complex phase = std::exp(complex(0., -phi));
-
-        for (std::intptr_t x = 0; x < static_cast<std::intptr_t>(wfn.size()); x++) {
-            if ((x & cmask) == cmask) {
-                wfn[x] *= (poppar(x & mask) ? phase : std::conj(phase));
-            }
-        }
-    } else { // see Exp-implementation-details.txt for the explanation of the algorithm below
+    // see Exp-implementation-details.txt for the explanation of the algorithm below
         std::size_t xy_bits = 0;
         std::size_t yz_bits = 0;
         int y_count = 0;
@@ -261,7 +252,6 @@ void apply_controlled_exp(std::vector<complex>& wfn, std::vector<int> const& b, 
                 wfn[t] = alpha * b + (parity ? -gamma : gamma) * a;
             }
         }
-    }
 }
 
 extern "C" {
@@ -843,10 +833,15 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         MCRHelper(sid, bVec.front(), -2. * phi, nc, cs, qVec.front());
     } else {
         QInterfacePtr simulator = simulators[sid];
+        std::vector<bitLenInt> csVec(cs, cs + nc);
+
+        if (isDiagonal(bVec)) {
+            std::size_t mask = make_mask(qVec);
+            return simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), mask, -phi);
+        }
+
         std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
         simulator->GetQuantumState(&(wfn[0]));
-
-        std::vector<bitLenInt> csVec(cs, cs + nc);
 
         apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
 
