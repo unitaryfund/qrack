@@ -975,9 +975,9 @@ void QEngineOCL::UniformParityRZ(const bitLenInt* targets, const bitLenInt& targ
 {
     CHECK_ZERO_SKIP();
 
-    bitCapInt mask = 0;
+    bitCapIntOcl mask = 0;
     for (bitLenInt i = 0; i < targetLen; i++) {
-        mask |= pow2(targets[i]);
+        mask |= pow2Ocl(targets[i]);
     }
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -990,7 +990,6 @@ void QEngineOCL::UniformParityRZ(const bitLenInt* targets, const bitLenInt& targ
 
     cl::Event writeArgsEvent, writeNormEvent;
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent);
-    BufferPtr locCmplxBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * 3);
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex) * 3, &phaseFacs, writeNormEvent);
 
     size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
@@ -999,6 +998,7 @@ void QEngineOCL::UniformParityRZ(const bitLenInt* targets, const bitLenInt& targ
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
     writeNormEvent.wait();
+    wait_refs.clear();
 
     QueueCall((runningNorm == ONE_R1) ? OCL_API_UNIFORMPARITYRZ : OCL_API_UNIFORMPARITYRZ_NORM, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });

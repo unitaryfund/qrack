@@ -3735,6 +3735,29 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mparity")
     REQUIRE_THAT(qftReg, HasProbability(0x4));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniformparityrz")
+{
+    bitLenInt targets[3] = { 0, 2, 1 };
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->UniformParityRZ(targets, 1, M_PI_2);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0x1));
+
+    qftReg->SetPermutation(0x3);
+    qftReg->H(0, 3);
+    qftReg->UniformParityRZ(targets, 3, M_PI_2);
+    qftReg->H(0, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0x4));
+
+    qftReg->SetPermutation(0x1);
+    qftReg->H(0, 3);
+    qftReg->UniformParityRZ(targets, 3, M_PI_2);
+    qftReg->UniformParityRZ(targets, 3, M_PI_2);
+    qftReg->H(0, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0x1));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_multishotmeasuremask")
 {
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 8, 0, rng);

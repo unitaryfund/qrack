@@ -1236,6 +1236,10 @@ void QUnit::UniformParityRZ(const bitLenInt* targets, const bitLenInt& targetLen
         return ApplySinglePhase(complex(cosine, -sine), complex(cosine, sine), qIndices[0]);
     }
 
+    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+        shards[qIndices[i]].MakeDirty();
+    }
+
     QInterfacePtr unit = Entangle(qIndices);
 
     return unit->UniformParityRZ(&(qIndices[0]), qIndices.size(), flipResult ? -angle : angle);
