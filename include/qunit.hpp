@@ -763,6 +763,11 @@ public:
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     using QInterface::UniformlyControlledSingleBit;
+    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
+        bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
+        const bitCapInt& mtrxSkipValueMask);
+    virtual void CUniformParityRZ(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle);
     virtual void CSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     virtual void AntiCSwap(
@@ -882,10 +887,6 @@ protected:
     virtual void ZBase(const bitLenInt& target);
     virtual real1 ProbBase(const bitLenInt& qubit);
     virtual bool CheckCliffordSeparable(const bitLenInt& qubit);
-
-    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
-        bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
-        const bitCapInt& mtrxSkipValueMask);
 
     typedef void (QInterface::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
     typedef void (QInterface::*INCxxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt, bitLenInt);

@@ -3735,6 +3735,72 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mparity")
     REQUIRE_THAT(qftReg, HasProbability(0x4));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniformparityrz")
+{
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->UniformParityRZ(1, M_PI_2);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0x1));
+
+    qftReg->SetPermutation(0x3);
+    qftReg->H(0, 3);
+    qftReg->UniformParityRZ(0x7, M_PI_2);
+    qftReg->H(0, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0x4));
+
+    qftReg->SetPermutation(0x1);
+    qftReg->H(0, 3);
+    qftReg->UniformParityRZ(0x7, M_PI_2);
+    qftReg->UniformParityRZ(0x7, M_PI_2);
+    qftReg->H(0, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0x1));
+
+    qftReg->SetPermutation(0x01);
+    qftReg->H(0);
+    qftReg->UniformParityRZ(1, -M_PI_4);
+    qftReg->S(0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cuniformparityrz")
+{
+    bitLenInt controls[2] = { 3, 4 };
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->CUniformParityRZ(controls, 2, 1, M_PI_2);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0));
+
+    qftReg->SetPermutation(0x18);
+    qftReg->H(0);
+    qftReg->CUniformParityRZ(controls, 2, 1, M_PI_2);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0x1 | 0x18));
+
+    qftReg->SetPermutation(0x3 | 0x18);
+    qftReg->H(0, 3);
+    qftReg->CUniformParityRZ(controls, 1, 0x7, M_PI_2);
+    qftReg->H(0, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0x4 | 0x18));
+
+    qftReg->SetPermutation(0x1 | 0x18);
+    qftReg->H(0, 3);
+    qftReg->CUniformParityRZ(controls, 2, 0x7, M_PI_2);
+    qftReg->CUniformParityRZ(controls, 2, 0x7, M_PI_2);
+    qftReg->H(0, 3);
+    REQUIRE_THAT(qftReg, HasProbability(0x1 | 0x18));
+
+    qftReg->SetPermutation(0x01 | 0x18);
+    qftReg->H(0);
+    qftReg->CUniformParityRZ(controls, 2, 1, -M_PI_4);
+    qftReg->S(0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0x0 | 0x18));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_multishotmeasuremask")
 {
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 8, 0, rng);

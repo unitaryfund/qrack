@@ -589,6 +589,21 @@ void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLe
         { qubitIndex }, controls, controlLen);
 }
 
+void QPager::UniformParityRZ(const bitCapInt& mask, const real1& angle)
+{
+    // TODO: Identify highest bit, and CombineAndOp()
+    CombineEngines();
+    qPages[0]->UniformParityRZ(mask, angle);
+}
+
+void QPager::CUniformParityRZ(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle)
+{
+    // TODO: Identify highest bit, and CombineAndOp()
+    CombineEngines();
+    qPages[0]->CUniformParityRZ(controls, controlLen, mask, angle);
+}
+
 void QPager::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {

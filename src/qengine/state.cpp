@@ -580,6 +580,78 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     delete[] qPowers;
 }
 
+void QEngineCPU::UniformParityRZ(const bitCapInt& mask, const real1& angle)
+{
+    CHECK_ZERO_SKIP();
+
+    Dispatch([this, mask, angle] {
+        real1 cosine = cos(angle);
+        real1 sine = sin(angle);
+        complex phaseFac(cosine, sine);
+        complex phaseFacAdj(cosine, -sine);
+        ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt perm = lcv & mask;
+            // From https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
+            // c accumulates the total bits set in v
+            bitLenInt c;
+            for (c = 0; perm; c++) {
+                // clear the least significant bit set
+                perm &= perm - ONE_BCI;
+            }
+            stateVec->write(lcv, stateVec->read(lcv) * ((c & 1U) ? phaseFac : phaseFacAdj));
+        };
+
+        if (stateVec->is_sparse()) {
+            par_for_set(CastStateVecSparse()->iterable(), fn);
+        } else {
+            par_for(0, maxQPower, fn);
+        }
+    });
+}
+
+void QEngineCPU::CUniformParityRZ(
+    const bitLenInt* cControls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle)
+{
+    if (!controlLen) {
+        return UniformParityRZ(mask, angle);
+    }
+
+    CHECK_ZERO_SKIP();
+
+    std::vector<bitLenInt> controls(cControls, cControls + controlLen);
+    std::sort(controls.begin(), controls.end());
+
+    Dispatch([this, controls, mask, angle] {
+        bitCapInt controlMask = 0;
+        bitCapInt* controlPowers = new bitCapInt[controls.size()];
+        for (bitLenInt i = 0; i < controls.size(); i++) {
+            controlPowers[i] = pow2(controls[i]);
+            controlMask |= controlPowers[i];
+        }
+
+        real1 cosine = cos(angle);
+        real1 sine = sin(angle);
+        complex phaseFac(cosine, sine);
+        complex phaseFacAdj(cosine, -sine);
+
+        ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt perm = lcv & mask;
+            // From https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
+            // c accumulates the total bits set in v
+            bitLenInt c;
+            for (c = 0; perm; c++) {
+                // clear the least significant bit set
+                perm &= perm - ONE_BCI;
+            }
+            stateVec->write(controlMask | lcv, stateVec->read(controlMask | lcv) * ((c & 1U) ? phaseFac : phaseFacAdj));
+        };
+
+        par_for_mask(0, maxQPower, controlPowers, controls.size(), fn);
+
+        delete[] controlPowers;
+    });
+}
+
 /**
  * Combine (a copy of) another QEngineCPU with this one, after the last bit
  * index of this one. (If the programmer doesn't want to "cheat," it is left up
