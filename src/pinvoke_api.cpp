@@ -217,41 +217,41 @@ void apply_controlled_exp(std::vector<complex>& wfn, std::vector<int> const& b, 
     std::size_t cmask = make_mask(cs);
 
     // see Exp-implementation-details.txt for the explanation of the algorithm below
-        std::size_t xy_bits = 0;
-        std::size_t yz_bits = 0;
-        int y_count = 0;
-        for (unsigned i = 0; i < b.size(); ++i) {
-            switch (b[i]) {
-            case PauliX:
-                xy_bits |= (1ull << qs[i]);
-                break;
-            case PauliY:
-                xy_bits |= (1ull << qs[i]);
-                yz_bits |= (1ull << qs[i]);
-                ++y_count;
-                break;
-            case PauliZ:
-                yz_bits |= (1ull << qs[i]);
-                break;
-            case PauliI:
-                break;
-            }
+    std::size_t xy_bits = 0;
+    std::size_t yz_bits = 0;
+    int y_count = 0;
+    for (unsigned i = 0; i < b.size(); ++i) {
+        switch (b[i]) {
+        case PauliX:
+            xy_bits |= (1ull << qs[i]);
+            break;
+        case PauliY:
+            xy_bits |= (1ull << qs[i]);
+            yz_bits |= (1ull << qs[i]);
+            ++y_count;
+            break;
+        case PauliZ:
+            yz_bits |= (1ull << qs[i]);
+            break;
+        case PauliI:
+            break;
         }
+    }
 
-        real1 alpha = (real1)std::cos(phi);
-        complex beta = (real1)std::sin(phi) * iExp(3 * y_count + 1);
-        complex gamma = (real1)std::sin(phi) * iExp(y_count + 1);
+    real1 alpha = (real1)std::cos(phi);
+    complex beta = (real1)std::sin(phi) * iExp(3 * y_count + 1);
+    complex gamma = (real1)std::sin(phi) * iExp(y_count + 1);
 
-        for (std::intptr_t x = 0; x < static_cast<std::intptr_t>(wfn.size()); x++) {
-            std::intptr_t t = x ^ xy_bits;
-            if (x < t && ((x & cmask) == cmask)) {
-                auto parity = poppar(x & yz_bits);
-                auto a = wfn[x];
-                auto b = wfn[t];
-                wfn[x] = alpha * a + (parity ? -beta : beta) * b;
-                wfn[t] = alpha * b + (parity ? -gamma : gamma) * a;
-            }
+    for (std::intptr_t x = 0; x < static_cast<std::intptr_t>(wfn.size()); x++) {
+        std::intptr_t t = x ^ xy_bits;
+        if (x < t && ((x & cmask) == cmask)) {
+            auto parity = poppar(x & yz_bits);
+            auto a = wfn[x];
+            auto b = wfn[t];
+            wfn[x] = alpha * a + (parity ? -beta : beta) * b;
+            wfn[t] = alpha * b + (parity ? -gamma : gamma) * a;
         }
+    }
 }
 
 extern "C" {
