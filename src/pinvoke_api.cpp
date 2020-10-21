@@ -81,7 +81,7 @@ void RevertPauliBasis(QInterfacePtr simulator, unsigned len, int* bases, unsigne
     }
 }
 
-void removeIdentities(std::vector<int>* b, std::vector<unsigned>* qs)
+void removeIdentities(std::vector<int>* b, std::vector<bitLenInt>* qs)
 {
     unsigned i = 0;
     while (i != b->size()) {
@@ -186,7 +186,7 @@ inline bool poppar(unsigned perm)
     return c & 1U;
 }
 
-inline std::size_t make_mask(std::vector<unsigned> const& qs)
+inline std::size_t make_mask(std::vector<bitLenInt> const& qs)
 {
     std::size_t mask = 0;
     for (std::size_t q : qs)
@@ -212,7 +212,7 @@ inline complex iExp(int power)
 }
 
 void apply_controlled_exp(std::vector<complex>& wfn, std::vector<int> const& b, double phi,
-    std::vector<unsigned> const& cs, std::vector<unsigned> const& qs)
+    std::vector<bitLenInt> const& cs, std::vector<bitLenInt> const& qs)
 {
     std::size_t cmask = make_mask(cs);
 
@@ -394,7 +394,7 @@ double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int*
     }
 
     std::vector<int> bVec(b, b + n);
-    std::vector<unsigned> qVec(q, q + n);
+    std::vector<bitLenInt> qVec(q, q + n);
 
     removeIdentities(&bVec, &qVec);
     n = qVec.size();
@@ -789,7 +789,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
     SIMULATOR_LOCK_GUARD(sid)
 
     std::vector<int> bVec(b, b + n);
-    std::vector<unsigned> qVec(q, q + n);
+    std::vector<bitLenInt> qVec(q, q + n);
 
     unsigned someQubit = qVec.front();
 
@@ -801,14 +801,16 @@ MICROSOFT_QUANTUM_DECL void Exp(
         RHelper(sid, bVec.front(), -2. * phi, qVec.front());
     } else {
         QInterfacePtr simulator = simulators[sid];
-        std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
+		
+		if (isDiagonal(bVec)) {
+			std::vector<bitLenInt> safeVec(qVec.begin(), qVec.end());
+            return simulator->UniformParityRZ(&(safeVec[0]), safeVec.size(), -phi);
+        }
+		
+		std::vector<bitLenInt> csVec;
+		
+		std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
         simulator->GetQuantumState(&(wfn[0]));
-
-        std::vector<int> bVec(b, b + n);
-
-        std::vector<unsigned> csVec;
-
-        std::vector<unsigned> qVec(q, q + n);
 
         apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
 
@@ -829,7 +831,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
     SIMULATOR_LOCK_GUARD(sid)
 
     std::vector<int> bVec(b, b + n);
-    std::vector<unsigned> qVec(q, q + n);
+    std::vector<bitLenInt> qVec(q, q + n);
 
     unsigned someQubit = qVec.front();
 
@@ -844,7 +846,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
         simulator->GetQuantumState(&(wfn[0]));
 
-        std::vector<unsigned> csVec(cs, cs + nc);
+        std::vector<bitLenInt> csVec(cs, cs + nc);
 
         apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
 
