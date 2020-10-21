@@ -580,14 +580,9 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     delete[] qPowers;
 }
 
-void QEngineCPU::UniformParityRZ(const bitLenInt* targets, const bitLenInt& targetLen, const real1& angle)
+void QEngineCPU::UniformParityRZ(const bitCapInt& mask, const real1& angle)
 {
     CHECK_ZERO_SKIP();
-
-    bitCapInt mask = 0;
-    for (bitLenInt i = 0; i < targetLen; i++) {
-        mask |= pow2(targets[i]);
-    }
 
     Dispatch([this, mask, angle] {
         real1 cosine = cos(angle);

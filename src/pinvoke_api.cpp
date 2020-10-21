@@ -801,18 +801,15 @@ MICROSOFT_QUANTUM_DECL void Exp(
         RHelper(sid, bVec.front(), -2. * phi, qVec.front());
     } else {
         QInterfacePtr simulator = simulators[sid];
-		
-		if (isDiagonal(bVec)) {
-            bitLenInt* targets = new bitLenInt[qVec.size()];
-            std::copy(qVec.begin(), qVec.end(), targets);
-            simulator->UniformParityRZ(targets, qVec.size(), -phi);
-            delete[] targets;
-            return;
+
+        if (isDiagonal(bVec)) {
+            std::size_t mask = make_mask(qVec);
+            return simulator->UniformParityRZ(mask, -phi);
         }
-		
-		std::vector<bitLenInt> csVec;
-		
-		std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
+
+        std::vector<bitLenInt> csVec;
+
+        std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
         simulator->GetQuantumState(&(wfn[0]));
 
         apply_controlled_exp(wfn, bVec, phi, csVec, qVec);

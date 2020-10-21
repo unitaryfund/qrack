@@ -971,14 +971,9 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     delete[] qPowers;
 }
 
-void QEngineOCL::UniformParityRZ(const bitLenInt* targets, const bitLenInt& targetLen, const real1& angle)
+void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1& angle)
 {
     CHECK_ZERO_SKIP();
-
-    bitCapIntOcl mask = 0;
-    for (bitLenInt i = 0; i < targetLen; i++) {
-        mask |= pow2Ocl(targets[i]);
-    }
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, 0, 0, 0, 0, 0, 0, 0, 0 };
     real1 cosine = cos(angle);

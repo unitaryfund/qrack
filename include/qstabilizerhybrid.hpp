@@ -323,10 +323,10 @@ public:
             controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
     }
 
-    virtual void UniformParityRZ(const bitLenInt* targets, const bitLenInt& targetLen, const real1& angle)
+    virtual void UniformParityRZ(const bitCapInt& mask, const real1& angle)
     {
         SwitchToEngine();
-        engine->UniformParityRZ(targets, targetLen, angle);
+        engine->UniformParityRZ(mask, angle);
     }
 
     virtual void CSwap(
