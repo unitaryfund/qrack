@@ -1214,6 +1214,8 @@ void QUnit::CUniformParityRZ(
         QEngineShard& shard = shards[cControls[i]];
 
         if (!CACHED_PROB(shard)) {
+            // Control becomes entangled
+            controls.push_back(cControls[i]);
             continue;
         }
 
@@ -1287,21 +1289,35 @@ void QUnit::CUniformParityRZ(
         }
     }
 
-    for (bitLenInt i = 0; i < qIndices.size(); i++) {
+    for (bitLenInt i = 0; i < eIndices.size(); i++) {
         shards[eIndices[i]].isPhaseDirty = true;
     }
-
-    QInterfacePtr unit = Entangle(eIndices);
-
-    bitCapInt mappedMask = 0;
+	
+	bitCapInt mappedMask = 0;
     for (bitLenInt i = 0; i < eIndices.size(); i++) {
         mappedMask |= pow2(shards[eIndices[i]].mapped);
     }
 
     if (controls.size() == 0) {
-        unit->UniformParityRZ(mappedMask, flipResult ? -angle : angle);
-    } else {
-        unit->CUniformParityRZ(&(controls[0]), controls.size(), mappedMask, flipResult ? -angle : angle);
+		Entangle(eIndices)->UniformParityRZ(mappedMask, flipResult ? -angle : angle);
+	} else {
+		std::vector<bitLenInt*> ebits(controls.size());
+        for (bitLenInt i = 0; i < controls.size(); i++) {
+            ebits[i] = &controls[i];
+        }
+
+        Entangle(ebits);
+		Entangle(eIndices);
+		QInterfacePtr unit = Entangle({ controls[0], eIndices[0] });
+		
+		std::vector<bitLenInt> controlsMapped(controls.size());
+        for (bitLenInt i = 0; i < controls.size(); i++) {
+            QEngineShard& cShard = shards[controls[i]];
+            controlsMapped[i] = cShard.mapped;
+            cShard.isPhaseDirty = true;
+        }
+		
+		unit->CUniformParityRZ(&(controls[0]), controls.size(), mappedMask, flipResult ? -angle : angle);
     }
 }
 
