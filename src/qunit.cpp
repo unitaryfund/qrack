@@ -1293,13 +1293,15 @@ void QUnit::CUniformParityRZ(
         shards[eIndices[i]].isPhaseDirty = true;
     }
 
+    QInterfacePtr unit = Entangle(eIndices);
+
     bitCapInt mappedMask = 0;
     for (bitLenInt i = 0; i < eIndices.size(); i++) {
         mappedMask |= pow2(shards[eIndices[i]].mapped);
     }
 
     if (controls.size() == 0) {
-        Entangle(eIndices)->UniformParityRZ(mappedMask, flipResult ? -angle : angle);
+        unit->UniformParityRZ(mappedMask, flipResult ? -angle : angle);
     } else {
         std::vector<bitLenInt*> ebits(controls.size());
         for (bitLenInt i = 0; i < controls.size(); i++) {
@@ -1307,8 +1309,7 @@ void QUnit::CUniformParityRZ(
         }
 
         Entangle(ebits);
-        Entangle(eIndices);
-        QInterfacePtr unit = Entangle({ controls[0], eIndices[0] });
+        unit = Entangle({ controls[0], eIndices[0] });
 
         std::vector<bitLenInt> controlsMapped(controls.size());
         for (bitLenInt i = 0; i < controls.size(); i++) {
@@ -1317,7 +1318,7 @@ void QUnit::CUniformParityRZ(
             cShard.isPhaseDirty = true;
         }
 
-        unit->CUniformParityRZ(&(controls[0]), controls.size(), mappedMask, flipResult ? -angle : angle);
+        unit->CUniformParityRZ(&(controlsMapped[0]), controlsMapped.size(), mappedMask, flipResult ? -angle : angle);
     }
 }
 
