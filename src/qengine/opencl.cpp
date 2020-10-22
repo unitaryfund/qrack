@@ -979,7 +979,7 @@ void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1& angle)
 {
     CHECK_ZERO_SKIP();
 
-    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, 0, 0, 0, 0, 0, 0, 0, 0 };
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, 0, 0, 0, 0, 0, 0, 0, 0 };
     real1 cosine = cos(angle);
     real1 sine = sin(angle);
     complex phaseFacs[3] = { complex(cosine, sine), complex(cosine, -sine), (ONE_R1 / std::sqrt(runningNorm)) };
@@ -1025,7 +1025,8 @@ void QEngineOCL::CUniformParityRZ(
     BufferPtr controlBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controlLen, controlPowers);
 
-    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> controlLen, mask, controlMask, controlLen, 0, 0, 0, 0, 0, 0 };
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> controlLen, (bitCapIntOcl)mask, controlMask, controlLen, 0, 0,
+        0, 0, 0, 0 };
     real1 cosine = cos(angle);
     real1 sine = sin(angle);
     complex phaseFacs[2] = { complex(cosine, sine), complex(cosine, -sine) };

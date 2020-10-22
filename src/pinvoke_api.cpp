@@ -81,7 +81,7 @@ void RevertPauliBasis(QInterfacePtr simulator, unsigned len, int* bases, unsigne
     }
 }
 
-void removeIdentities(std::vector<int>* b, std::vector<unsigned>* qs)
+void removeIdentities(std::vector<int>* b, std::vector<bitLenInt>* qs)
 {
     unsigned i = 0;
     while (i != b->size()) {
@@ -186,7 +186,7 @@ inline bool poppar(unsigned perm)
     return c & 1U;
 }
 
-inline std::size_t make_mask(std::vector<unsigned> const& qs)
+inline std::size_t make_mask(std::vector<bitLenInt> const& qs)
 {
     std::size_t mask = 0;
     for (std::size_t q : qs)
@@ -212,54 +212,44 @@ inline complex iExp(int power)
 }
 
 void apply_controlled_exp(std::vector<complex>& wfn, std::vector<int> const& b, double phi,
-    std::vector<unsigned> const& cs, std::vector<unsigned> const& qs)
+    std::vector<bitLenInt> const& cs, std::vector<bitLenInt> const& qs)
 {
     std::size_t cmask = make_mask(cs);
 
-    if (isDiagonal(b)) {
-        std::size_t mask = make_mask(qs);
-        complex phase = std::exp(complex(0., -phi));
-
-        for (std::intptr_t x = 0; x < static_cast<std::intptr_t>(wfn.size()); x++) {
-            if ((x & cmask) == cmask) {
-                wfn[x] *= (poppar(x & mask) ? phase : std::conj(phase));
-            }
+    // see Exp-implementation-details.txt for the explanation of the algorithm below
+    std::size_t xy_bits = 0;
+    std::size_t yz_bits = 0;
+    int y_count = 0;
+    for (unsigned i = 0; i < b.size(); ++i) {
+        switch (b[i]) {
+        case PauliX:
+            xy_bits |= (1ull << qs[i]);
+            break;
+        case PauliY:
+            xy_bits |= (1ull << qs[i]);
+            yz_bits |= (1ull << qs[i]);
+            ++y_count;
+            break;
+        case PauliZ:
+            yz_bits |= (1ull << qs[i]);
+            break;
+        case PauliI:
+            break;
         }
-    } else { // see Exp-implementation-details.txt for the explanation of the algorithm below
-        std::size_t xy_bits = 0;
-        std::size_t yz_bits = 0;
-        int y_count = 0;
-        for (unsigned i = 0; i < b.size(); ++i) {
-            switch (b[i]) {
-            case PauliX:
-                xy_bits |= (1ull << qs[i]);
-                break;
-            case PauliY:
-                xy_bits |= (1ull << qs[i]);
-                yz_bits |= (1ull << qs[i]);
-                ++y_count;
-                break;
-            case PauliZ:
-                yz_bits |= (1ull << qs[i]);
-                break;
-            case PauliI:
-                break;
-            }
-        }
+    }
 
-        real1 alpha = (real1)std::cos(phi);
-        complex beta = (real1)std::sin(phi) * iExp(3 * y_count + 1);
-        complex gamma = (real1)std::sin(phi) * iExp(y_count + 1);
+    real1 alpha = (real1)std::cos(phi);
+    complex beta = (real1)std::sin(phi) * iExp(3 * y_count + 1);
+    complex gamma = (real1)std::sin(phi) * iExp(y_count + 1);
 
-        for (std::intptr_t x = 0; x < static_cast<std::intptr_t>(wfn.size()); x++) {
-            std::intptr_t t = x ^ xy_bits;
-            if (x < t && ((x & cmask) == cmask)) {
-                auto parity = poppar(x & yz_bits);
-                auto a = wfn[x];
-                auto b = wfn[t];
-                wfn[x] = alpha * a + (parity ? -beta : beta) * b;
-                wfn[t] = alpha * b + (parity ? -gamma : gamma) * a;
-            }
+    for (std::intptr_t x = 0; x < static_cast<std::intptr_t>(wfn.size()); x++) {
+        std::intptr_t t = x ^ xy_bits;
+        if (x < t && ((x & cmask) == cmask)) {
+            auto parity = poppar(x & yz_bits);
+            auto a = wfn[x];
+            auto b = wfn[t];
+            wfn[x] = alpha * a + (parity ? -beta : beta) * b;
+            wfn[t] = alpha * b + (parity ? -gamma : gamma) * a;
         }
     }
 }
@@ -394,7 +384,7 @@ double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int*
     }
 
     std::vector<int> bVec(b, b + n);
-    std::vector<unsigned> qVec(q, q + n);
+    std::vector<bitLenInt> qVec(q, q + n);
 
     removeIdentities(&bVec, &qVec);
     n = qVec.size();
@@ -789,7 +779,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
     SIMULATOR_LOCK_GUARD(sid)
 
     std::vector<int> bVec(b, b + n);
-    std::vector<unsigned> qVec(q, q + n);
+    std::vector<bitLenInt> qVec(q, q + n);
 
     unsigned someQubit = qVec.front();
 
@@ -801,18 +791,13 @@ MICROSOFT_QUANTUM_DECL void Exp(
         RHelper(sid, bVec.front(), -2. * phi, qVec.front());
     } else {
         QInterfacePtr simulator = simulators[sid];
-        std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
-        simulator->GetQuantumState(&(wfn[0]));
 
-        std::vector<int> bVec(b, b + n);
+        TransformPauliBasis(simulator, n, b, q);
 
-        std::vector<unsigned> csVec;
+        std::size_t mask = make_mask(qVec);
+        simulator->UniformParityRZ(mask, -phi);
 
-        std::vector<unsigned> qVec(q, q + n);
-
-        apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
-
-        simulator->SetQuantumState(&(wfn[0]));
+        RevertPauliBasis(simulator, n, b, q);
     }
 }
 
@@ -829,7 +814,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
     SIMULATOR_LOCK_GUARD(sid)
 
     std::vector<int> bVec(b, b + n);
-    std::vector<unsigned> qVec(q, q + n);
+    std::vector<bitLenInt> qVec(q, q + n);
 
     unsigned someQubit = qVec.front();
 
@@ -841,14 +826,14 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         MCRHelper(sid, bVec.front(), -2. * phi, nc, cs, qVec.front());
     } else {
         QInterfacePtr simulator = simulators[sid];
-        std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
-        simulator->GetQuantumState(&(wfn[0]));
+        std::vector<bitLenInt> csVec(cs, cs + nc);
 
-        std::vector<unsigned> csVec(cs, cs + nc);
+        TransformPauliBasis(simulator, n, b, q);
 
-        apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
+        std::size_t mask = make_mask(qVec);
+        simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), mask, -phi);
 
-        simulator->SetQuantumState(&(wfn[0]));
+        RevertPauliBasis(simulator, n, b, q);
     }
 }
 
