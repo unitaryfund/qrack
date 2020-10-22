@@ -792,19 +792,12 @@ MICROSOFT_QUANTUM_DECL void Exp(
     } else {
         QInterfacePtr simulator = simulators[sid];
 
-        if (isDiagonal(bVec)) {
-            std::size_t mask = make_mask(qVec);
-            return simulator->UniformParityRZ(mask, -phi);
-        }
+        TransformPauliBasis(simulator, n, b, q);
 
-        std::vector<bitLenInt> csVec;
+        std::size_t mask = make_mask(qVec);
+        simulator->UniformParityRZ(mask, -phi);
 
-        std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
-        simulator->GetQuantumState(&(wfn[0]));
-
-        apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
-
-        simulator->SetQuantumState(&(wfn[0]));
+        RevertPauliBasis(simulator, n, b, q);
     }
 }
 
@@ -835,17 +828,12 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         QInterfacePtr simulator = simulators[sid];
         std::vector<bitLenInt> csVec(cs, cs + nc);
 
-        if (isDiagonal(bVec)) {
-            std::size_t mask = make_mask(qVec);
-            return simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), mask, -phi);
-        }
+        TransformPauliBasis(simulator, n, b, q);
 
-        std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
-        simulator->GetQuantumState(&(wfn[0]));
+        std::size_t mask = make_mask(qVec);
+        simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), mask, -phi);
 
-        apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
-
-        simulator->SetQuantumState(&(wfn[0]));
+        RevertPauliBasis(simulator, n, b, q);
     }
 }
 
