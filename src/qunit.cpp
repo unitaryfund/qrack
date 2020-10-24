@@ -870,11 +870,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 {
     ToPermBasis(qubit);
-    return ForceMHelper(qubit, res, doForce, doApply);
-}
 
-bool QUnit::ForceMHelper(bitLenInt qubit, bool res, bool doForce, bool doApply)
-{
     QEngineShard& shard = shards[qubit];
 
     bool result;
@@ -926,15 +922,11 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
         return MAll();
     }
 
+    // This will discard all buffered gates that don't affect Z basis probability,
+    // so it's safe to call ToPermBasis() without performance penalty, afterward.
     ToPermBasisMeasure(start, length);
 
-    bitCapInt res = 0;
-    bitCapInt power;
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        power = pow2(bit);
-        res |= ForceMHelper(start + bit, (bool)(power & result), doForce, doApply) ? power : 0;
-    }
-    return res;
+    return QInterface::ForceMReg(start, length, result, doForce, doApply);
 }
 
 bitCapInt QUnit::MAll()
