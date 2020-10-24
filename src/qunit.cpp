@@ -870,7 +870,11 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 {
     ToPermBasis(qubit);
+    return ForceMHelper(qubit, res, doForce, doApply);
+}
 
+bool QUnit::ForceMHelper(bitLenInt qubit, bool res, bool doForce, bool doApply)
+{
     QEngineShard& shard = shards[qubit];
 
     bool result;
@@ -918,8 +922,19 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 
 bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
+    if (!doForce && doApply && (length == qubitCount) && (engine == QINTERFACE_STABILIZER_HYBRID)) {
+        return MAll();
+    }
+
     ToPermBasisMeasure(start, length);
-    return QInterface::ForceMReg(start, length, result, doForce, doApply);
+
+    bitCapInt res = 0;
+    bitCapInt power;
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        power = pow2(bit);
+        res |= ForceMHelper(start + bit, (bool)(power & result), doForce, doApply) ? power : 0;
+    }
+    return res;
 }
 
 bitCapInt QUnit::MAll()

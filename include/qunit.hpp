@@ -883,6 +883,7 @@ public:
     /** @} */
 
 protected:
+    virtual bool ForceMHelper(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
     virtual void XBase(const bitLenInt& target);
     virtual void ZBase(const bitLenInt& target);
     virtual real1 ProbBase(const bitLenInt& qubit);
