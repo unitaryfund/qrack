@@ -487,6 +487,10 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& t)
  */
 bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const bool& doApply)
 {
+    if (doForce && !doApply) {
+        return result;
+    }
+
     Finish();
 
     bitLenInt elemCount = qubitCount << 1U;
@@ -556,7 +560,7 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
         }
     }
 
-    return r[elemCount];
+    return doForce ? result : r[elemCount];
 }
 
 bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
