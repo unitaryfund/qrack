@@ -560,7 +560,7 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
         }
     }
 
-    return doForce ? result : r[elemCount];
+    return r[elemCount];
 }
 
 bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
