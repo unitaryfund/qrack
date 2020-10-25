@@ -605,10 +605,6 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
             context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controlLen, controlPowers);
     }
 
-    if (controlPowers != NULL) {
-        delete[] controlPowers;
-    }
-
     nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     if (controlLen > 0) {
