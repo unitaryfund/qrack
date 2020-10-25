@@ -41,10 +41,10 @@ int main(int argc, char* argv[])
 
     // Layers
     bool qengine = false;
-    bool qpager = false;
+    // bool qpager = false;
     bool qunit = false;
     bool qunit_multi = false;
-    bool qunit_qpager = false;
+    // bool qunit_qpager = false;
 
     // Engines
     bool cpu = false;
@@ -58,10 +58,10 @@ int main(int argc, char* argv[])
      * Allow specific layers and processor types to be enabled.
      */
     auto cli = session.cli() | Opt(qengine)["--layer-qengine"]("Enable Basic QEngine tests") |
-        Opt(qpager)["--layer-qpager"]("Enable QPager implementation tests") |
+        // Opt(qpager)["--layer-qpager"]("Enable QPager implementation tests") |
         Opt(qunit)["--layer-qunit"]("Enable QUnit implementation tests") |
         Opt(qunit_multi)["--layer-qunit-multi"]("Enable QUnitMulti implementation tests") |
-        Opt(qunit_qpager)["--layer-qunit-qpager"]("Enable QUnit with QPager implementation tests") |
+        // Opt(qunit_qpager)["--layer-qunit-qpager"]("Enable QUnit with QPager implementation tests") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl)["--proc-opencl"]("Single (parallel) processor OpenCL tests") |
         Opt(hybrid)["--proc-hybrid"]("Enable CPU/OpenCL hybrid implementation tests") |
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
         session.config().stream() << " (Overridden by hardware generation!)" << std::endl;
     }
 
-    if (!qengine && !qpager && !qunit && !qunit_multi && !qunit_qpager) {
+    if (!qengine /*&& !qpager*/ && !qunit && !qunit_multi /*&& !qunit_qpager*/) {
         qunit = true;
         qunit_multi = true;
         qengine = true;
@@ -160,6 +160,7 @@ int main(int argc, char* argv[])
 #endif
     }
 
+#if 0
     if (num_failed == 0 && qpager) {
         testEngineType = QINTERFACE_QPAGER;
         if (num_failed == 0 && cpu) {
@@ -177,6 +178,7 @@ int main(int argc, char* argv[])
         }
 #endif
     }
+#endif
 
     if (num_failed == 0 && qunit) {
         testEngineType = QINTERFACE_QUNIT;
@@ -255,6 +257,7 @@ int main(int argc, char* argv[])
 #endif
     }
 
+#if 0
     if (num_failed == 0 && qunit_qpager) {
         testEngineType = QINTERFACE_QUNIT;
         testSubEngineType = QINTERFACE_QPAGER;
@@ -285,6 +288,7 @@ int main(int argc, char* argv[])
         }
 #endif
     }
+#endif
 
     return num_failed;
 }
