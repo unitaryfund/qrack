@@ -36,7 +36,6 @@ add_library (qrack STATIC
     src/qengine/state.cpp
     src/qengine/utility.cpp
     src/qunit.cpp
-    #src/qpager.cpp
     src/qhybrid.cpp
     src/qstabilizer.cpp
     src/qstabilizerhybrid.cpp
@@ -203,7 +202,6 @@ install (FILES
     include/qengine_opencl.hpp
     include/qinterface.hpp
     include/qneuron.hpp
-    #include/qpager.hpp
     include/qhybrid.hpp
     include/qstabilizer.hpp
     include/qstabilizerhybrid.hpp

@@ -102,11 +102,6 @@ enum QInterfaceEngine {
     QINTERFACE_STABILIZER_HYBRID,
 
     /**
-     * Create a QPager, which breaks up the work of a QEngine into equally sized "pages."
-     */
-    QINTERFACE_QPAGER,
-
-    /**
      * Create a QUnit, which utilizes other QInterface classes to minimize the amount of work that's needed for any
      * given operation based on the entanglement of the bits involved.
      *
