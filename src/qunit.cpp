@@ -922,7 +922,13 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
     // so it's safe to call ToPermBasis() without performance penalty, afterward.
     ToPermBasisMeasure(start, length);
 
-    return QInterface::ForceMReg(start, length, result, doForce, doApply);
+    bitCapInt toRet = QInterface::ForceMReg(start, length, result, doForce, doApply);
+
+    if (!doForce && doApply && (length == qubitCount) && (engine == QINTERFACE_STABILIZER_HYBRID)) {
+        SetPermutation(toRet);
+    }
+
+    return toRet;
 }
 
 bitCapInt QUnit::MAll()
