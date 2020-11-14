@@ -385,7 +385,7 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
-        // TODO: QStabilizer appears not to be decomposable after measurement, and in many cases where a bit is in an
+        // TODO: QStabilizer appears not to be decomposable after measurement and in many cases where a bit is in an
         // eigenstate.
         if (stabilizer && ((engineType == QINTERFACE_QUNIT) || (engineType == QINTERFACE_QUNIT_MULTI))) {
             return stabilizer->M(qubit, result, doForce, doApply);
@@ -669,14 +669,8 @@ public:
 
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1)
     {
-        // if (stabilizer) {
-        //     if (length == 1) {
-        //         return stabilizer->IsSeparable(start);
-        //     }
-        // }
-
         if (stabilizer) {
-            return false;
+            return stabilizer->CanDecomposeDispose(start, length);
         }
 
         return engine->TrySeparate(start, length);

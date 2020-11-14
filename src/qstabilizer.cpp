@@ -515,7 +515,9 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
     // If outcome is indeterminate
     if (p < n) {
         // moment of quantum randomness
-        result = (doForce ? result : Rand());
+        if (!doForce) {
+            result = Rand();
+        }
 
         if (!doApply) {
             return result;
@@ -612,6 +614,46 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
     qubitCount = nQubitCount;
 
     return start;
+}
+
+bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt length)
+{
+    bitLenInt i, j;
+    bitLenInt end = start + length;
+
+    for (i = 0; i < start; i++) {
+        for (j = 0; j < start; j++) {
+            if (x[i][j] || z[i][j]) {
+                return false;
+            }
+        }
+    }
+
+    for (i = 0; i < start; i++) {
+        for (j = end; j < qubitCount; j++) {
+            if (x[i][j] || z[i][j]) {
+                return false;
+            }
+        }
+    }
+
+    for (i = end; i < qubitCount; i++) {
+        for (j = 0; j < start; j++) {
+            if (x[i][j] || z[i][j]) {
+                return false;
+            }
+        }
+    }
+
+    for (i = end; i < qubitCount; i++) {
+        for (j = end; j < qubitCount; j++) {
+            if (x[i][j] || z[i][j]) {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr dest)
