@@ -669,14 +669,8 @@ public:
 
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1)
     {
-        // if (stabilizer) {
-        //     if (length == 1) {
-        //         return stabilizer->IsSeparable(start);
-        //     }
-        // }
-
         if (stabilizer) {
-            return false;
+            return stabilizer->CanDecomposeDispose(start, length);
         }
 
         return engine->TrySeparate(start, length);

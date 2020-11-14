@@ -274,6 +274,7 @@ public:
     {
         DecomposeDispose(start, length, (QStabilizerPtr)NULL);
     }
+    bool CanDecomposeDispose(const bitLenInt start, const bitLenInt length);
 
     bool ApproxCompare(QStabilizerPtr o);
 };

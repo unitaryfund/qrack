@@ -616,6 +616,46 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
     return start;
 }
 
+bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt length)
+{
+    bitLenInt i, j;
+    bitLenInt end = start + length;
+
+    for (i = 0; i < start; i++) {
+        for (j = 0; j < start; j++) {
+            if (x[i][j] || z[i][j]) {
+                return false;
+            }
+        }
+    }
+
+    for (i = 0; i < start; i++) {
+        for (j = end; j < qubitCount; j++) {
+            if (x[i][j] || z[i][j]) {
+                return false;
+            }
+        }
+    }
+
+    for (i = end; i < qubitCount; i++) {
+        for (j = 0; j < start; j++) {
+            if (x[i][j] || z[i][j]) {
+                return false;
+            }
+        }
+    }
+
+    for (i = end; i < qubitCount; i++) {
+        for (j = end; j < qubitCount; j++) {
+            if (x[i][j] || z[i][j]) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr dest)
 {
     if (length == 0) {

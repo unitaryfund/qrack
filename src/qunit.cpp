@@ -632,7 +632,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex(sqrt(prob), ZERO_R1);
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (doSkipBuffer) {
+    if (shard.unit && shard.unit->isClifford() && !shard.unit->TrySeparate(qubit)) {
         if (IS_NORM_0(shard.amp1) || IS_NORM_0(shard.amp0)) {
             CheckCliffordSeparable(qubit);
         }
@@ -912,7 +912,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
                 shards[i].MakeDirty();
             }
         }
-        if (!shard.unit->isClifford()) {
+        if (!shard.unit->isClifford() || shard.unit->TrySeparate(qubit)) {
             SeparateBit(result, qubit);
         }
     }
