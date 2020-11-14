@@ -385,7 +385,7 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
-        // TODO: QStabilizer appears not to be decomposable after measurement, and in many cases where a bit is in an
+        // TODO: QStabilizer appears not to be decomposable after measurement and in many cases where a bit is in an
         // eigenstate.
         if (stabilizer && ((engineType == QINTERFACE_QUNIT) || (engineType == QINTERFACE_QUNIT_MULTI))) {
             return stabilizer->M(qubit, result, doForce, doApply);

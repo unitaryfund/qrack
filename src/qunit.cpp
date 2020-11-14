@@ -632,8 +632,10 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex(sqrt(prob), ZERO_R1);
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (doSkipBuffer && (IS_NORM_0(shard.amp1) || IS_NORM_0(shard.amp0))) {
-        CheckCliffordSeparable(qubit);
+    if (doSkipBuffer) {
+        if (IS_NORM_0(shard.amp1) || IS_NORM_0(shard.amp0)) {
+            CheckCliffordSeparable(qubit);
+        }
         return prob;
     }
 
@@ -884,21 +886,20 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
         return result;
     }
 
-    if (shard.GetQubitCount() == 1U) {
-        shard.isProbDirty = false;
-        shard.isPhaseDirty = false;
-        shard.unit = NULL;
-        shard.amp0 = result ? ZERO_CMPLX : ONE_CMPLX;
-        shard.amp1 = result ? ONE_CMPLX : ZERO_CMPLX;
+    shard.isProbDirty = false;
+    shard.isPhaseDirty = false;
+    shard.amp0 = result ? ZERO_CMPLX : ONE_CMPLX;
+    shard.amp1 = result ? ONE_CMPLX : ZERO_CMPLX;
 
-        // If we're keeping the bits, and they're already in their own unit, there's nothing to do.
+    if (shard.GetQubitCount() == 1U) {
+        shard.unit = NULL;
         return result;
     }
 
     // This is critical: it's the "nonlocal correlation" of "wave function collapse".
     if (shard.unit) {
         for (bitLenInt i = 0; i < qubitCount; i++) {
-            if (shards[i].unit == shard.unit) {
+            if ((i != qubit) && shards[i].unit == shard.unit) {
                 shards[i].MakeDirty();
             }
         }
