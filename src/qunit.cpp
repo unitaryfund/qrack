@@ -902,13 +902,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
                 shards[i].MakeDirty();
             }
         }
-        if (shard.unit->isClifford()) {
-            for (bitLenInt i = 0; i < qubitCount; i++) {
-                if (shards[i].unit == shard.unit) {
-                    ProbBase(i);
-                }
-            }
-        } else {
+        if (!shard.unit->isClifford()) {
             SeparateBit(result, qubit);
         }
     }
@@ -924,7 +918,7 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
 
     bitCapInt toRet = QInterface::ForceMReg(start, length, result, doForce, doApply);
 
-    if (!doForce && doApply && (length == qubitCount) && (engine == QINTERFACE_STABILIZER_HYBRID)) {
+    if (doApply && (length == qubitCount) && (engine == QINTERFACE_STABILIZER_HYBRID)) {
         SetPermutation(toRet);
     }
 

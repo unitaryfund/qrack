@@ -515,7 +515,9 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
     // If outcome is indeterminate
     if (p < n) {
         // moment of quantum randomness
-        result = (doForce ? result : Rand());
+        if (!doForce) {
+            result = Rand();
+        }
 
         if (!doApply) {
             return result;
