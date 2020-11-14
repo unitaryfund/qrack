@@ -878,6 +878,15 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     bool result;
     if (!shard.isProbDirty && !shard.unit) {
         result = doForce ? res : (Rand() <= norm(shard.amp1));
+    } else if (shard.unit->isClifford()) {
+        real1 prob = shard.Prob();
+        if (prob == ZERO_R1) {
+            result = false;
+        } else if (prob == ONE_R1) {
+            result = true;
+        } else {
+            result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
+        }
     } else {
         result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
     }
