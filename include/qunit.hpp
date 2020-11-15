@@ -640,6 +640,30 @@ public:
 
     bool IsInvert() { return IsInvertTarget() || IsInvertControl(); }
 
+protected:
+    void ClearMapInvertPhase(ShardToPhaseMap& shards)
+    {
+        ShardToPhaseMap::iterator phaseShard;
+
+        for (phaseShard = shards.begin(); phaseShard != shards.end(); phaseShard++) {
+            if (phaseShard->second->isInvert) {
+                phaseShard->second->cmplxDiff = ONE_CMPLX;
+                phaseShard->second->cmplxSame = ONE_CMPLX;
+            }
+        }
+    }
+
+public:
+    void ClearInvertPhase()
+    {
+        // Upon measurement, buffered phase can sometimes be totally ignored.
+        // If we clear phase before applying buffered inversions, we can optimize application as CNOT.
+        ClearMapInvertPhase(controlsShards);
+        ClearMapInvertPhase(antiControlsShards);
+        ClearMapInvertPhase(targetOfShards);
+        ClearMapInvertPhase(antiTargetOfShards);
+    }
+
     bitLenInt GetQubitCount() { return unit ? unit->GetQubitCount() : 1U; };
     real1 Prob()
     {
@@ -1061,6 +1085,7 @@ protected:
             RevertBasis1Qb(i);
         }
         for (i = 0; i < qubitCount; i++) {
+            shards[i].ClearInvertPhase();
             RevertBasis2Qb(i, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, {}, true);
         }
     }
