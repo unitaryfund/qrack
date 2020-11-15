@@ -387,7 +387,9 @@ public:
     {
         // TODO: QStabilizer appears not to be decomposable after measurement and in many cases where a bit is in an
         // eigenstate.
-        if (stabilizer && ((engineType == QINTERFACE_QUNIT) || (engineType == QINTERFACE_QUNIT_MULTI))) {
+        if (stabilizer &&
+            (stabilizer->IsSeparableZ(qubit) ||
+                ((engineType == QINTERFACE_QUNIT) || (engineType == QINTERFACE_QUNIT_MULTI)))) {
             return stabilizer->M(qubit, result, doForce, doApply);
         }
 
