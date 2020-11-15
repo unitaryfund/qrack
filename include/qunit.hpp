@@ -73,7 +73,8 @@ public:
     bool isPhaseDirty;
     complex amp0;
     complex amp1;
-    bool isPlusMinus;
+    bool isPauliX;
+    bool isPauliY;
     // Shards which this shard controls
     ShardToPhaseMap controlsShards;
     // Shards which this shard (anti-)controls
@@ -101,7 +102,8 @@ public:
         , isPhaseDirty(false)
         , amp0(ONE_CMPLX)
         , amp1(ZERO_CMPLX)
-        , isPlusMinus(false)
+        , isPauliX(false)
+        , isPauliY(false)
         , controlsShards()
         , antiControlsShards()
         , targetOfShards()
@@ -116,7 +118,8 @@ public:
         , amplitudeFloor(amp_thresh)
         , isProbDirty(false)
         , isPhaseDirty(false)
-        , isPlusMinus(false)
+        , isPauliX(false)
+        , isPauliY(false)
         , controlsShards()
         , antiControlsShards()
         , targetOfShards()
@@ -136,7 +139,8 @@ public:
         , isPhaseDirty(true)
         , amp0(ONE_CMPLX)
         , amp1(ZERO_CMPLX)
-        , isPlusMinus(false)
+        , isPauliX(false)
+        , isPauliY(false)
         , controlsShards()
         , antiControlsShards()
         , targetOfShards()
@@ -993,13 +997,16 @@ protected:
         bitLenInt valueLength, unsigned char* values);
     bitCapInt GetIndexedEigenstate(bitLenInt start, bitLenInt length, unsigned char* values);
 
-    void Transform2x2(const complex* mtrxIn, complex* mtrxOut);
-    void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
-    void TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
+    void TransformX2x2(const complex* mtrxIn, complex* mtrxOut);
+    void TransformXPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
+    void TransformXInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
+    void TransformY2x2(const complex* mtrxIn, complex* mtrxOut);
+    void TransformYPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
+    void TransformYInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
 
-    void RevertBasis1Qb(const bitLenInt& i)
+    void RevertBasisX(const bitLenInt& i)
     {
-        if (freezeBasisH || !shards[i].isPlusMinus) {
+        if (freezeBasisH || !shards[i].isPauliX) {
             // Recursive call that should be blocked,
             // or already in target basis.
             return;
@@ -1007,8 +1014,32 @@ protected:
 
         freezeBasisH = true;
         H(i);
-        shards[i].isPlusMinus = false;
+        shards[i].isPauliX = false;
         freezeBasisH = false;
+    }
+
+    void RevertBasisY(const bitLenInt& i)
+    {
+        if (freezeBasisH || !shards[i].isPauliY) {
+            // Recursive call that should be blocked,
+            // or already in target basis.
+            return;
+        }
+
+        freezeBasisH = true;
+        H(i);
+        S(i);
+        shards[i].isPauliY = false;
+        freezeBasisH = false;
+    }
+
+    void RevertBasis1Qb(const bitLenInt& i)
+    {
+        if (shards[i].isPauliX) {
+            RevertBasisX(i);
+        } else if (shards[i].isPauliY) {
+            RevertBasisY(i);
+        }
     }
 
     enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
@@ -1041,14 +1072,14 @@ protected:
     }
     void ToPermBasis(const bitLenInt& i)
     {
-        RevertBasis1Qb(i);
+        RevertBasisX(i);
         RevertBasis2Qb(i);
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
     {
         bitLenInt i;
         for (i = 0; i < length; i++) {
-            RevertBasis1Qb(start + i);
+            RevertBasisX(start + i);
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i);
@@ -1070,7 +1101,7 @@ protected:
         }
 
         for (i = 0; i < length; i++) {
-            RevertBasis1Qb(start + i);
+            RevertBasisX(start + i);
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
@@ -1082,7 +1113,7 @@ protected:
     {
         bitLenInt i;
         for (i = 0; i < qubitCount; i++) {
-            RevertBasis1Qb(i);
+            RevertBasisX(i);
         }
         for (i = 0; i < qubitCount; i++) {
             shards[i].ClearInvertPhase();
