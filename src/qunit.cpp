@@ -938,7 +938,9 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
 bitCapInt QUnit::MAll()
 {
     bitCapInt toRet = MReg(0, qubitCount);
-    SetPermutation(toRet);
+    if (engine == QINTERFACE_STABILIZER_HYBRID) {
+        SetPermutation(toRet);
+    }
     return toRet;
 }
 
