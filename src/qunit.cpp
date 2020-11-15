@@ -1984,12 +1984,12 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     if (shard.isPauliY) {
         if (randGlobalPhase || IS_ONE_R1(topLeft)) {
-            if (IS_NORM_0(topLeft + (I_CMPLX * bottomRight))) {
+            if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
                 shard.isPauliX = true;
                 shard.isPauliY = false;
                 XBase(target);
                 return;
-            } else if (IS_NORM_0(topLeft - (I_CMPLX * bottomRight))) {
+            } else if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
                 shard.isPauliX = true;
                 shard.isPauliY = false;
                 return;
@@ -2363,6 +2363,18 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
     }
     if ((randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) && (mtrx[0] == mtrx[2]) &&
         (mtrx[2] == -mtrx[3])) {
+        H(target);
+        return;
+    }
+    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
+        (mtrx[2] == -mtrx[3]) && (I_CMPLX * mtrx[0] == mtrx[2])) {
+        H(target);
+        S(target);
+        return;
+    }
+    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[2]) &&
+        (mtrx[1] == -mtrx[3]) && (I_CMPLX * mtrx[2] == mtrx[3])) {
+        IS(target);
         H(target);
         return;
     }
