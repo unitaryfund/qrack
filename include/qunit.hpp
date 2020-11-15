@@ -999,11 +999,10 @@ protected:
     bitCapInt GetIndexedEigenstate(bitLenInt start, bitLenInt length, unsigned char* values);
 
     void TransformX2x2(const complex* mtrxIn, complex* mtrxOut);
-    void TransformXPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
     void TransformXInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
     void TransformY2x2(const complex* mtrxIn, complex* mtrxOut);
-    void TransformYPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
     void TransformYInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
+    void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
 
     void RevertBasisX(const bitLenInt& i)
     {

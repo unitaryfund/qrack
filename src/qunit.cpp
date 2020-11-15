@@ -1458,14 +1458,6 @@ void QUnit::TransformX2x2(const complex* mtrxIn, complex* mtrxOut)
     mtrxOut[3] = (ONE_R1 / 2) * (mtrxIn[0] - mtrxIn[1] - mtrxIn[2] + mtrxIn[3]);
 }
 
-void QUnit::TransformXPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut)
-{
-    mtrxOut[0] = (ONE_R1 / 2) * (topLeft + bottomRight);
-    mtrxOut[1] = (ONE_R1 / 2) * (topLeft - bottomRight);
-    mtrxOut[2] = mtrxOut[1];
-    mtrxOut[3] = mtrxOut[0];
-}
-
 void QUnit::TransformXInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
 {
     mtrxOut[0] = (ONE_R1 / 2) * (topRight + bottomLeft);
@@ -1482,20 +1474,20 @@ void QUnit::TransformY2x2(const complex* mtrxIn, complex* mtrxOut)
     mtrxOut[3] = (ONE_R1 / 2) * (mtrxIn[0] + I_CMPLX * (-mtrxIn[1] + mtrxIn[2]) + mtrxIn[3]);
 }
 
-void QUnit::TransformYPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut)
-{
-    mtrxOut[0] = (ONE_R1 / 2) * (topLeft + bottomRight);
-    mtrxOut[1] = (ONE_R1 / 2) * (topLeft - bottomRight);
-    mtrxOut[2] = mtrxOut[1];
-    mtrxOut[3] = mtrxOut[0];
-}
-
 void QUnit::TransformYInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
 {
     mtrxOut[0] = I_CMPLX * (ONE_R1 / 2) * (topRight - bottomLeft);
     mtrxOut[1] = I_CMPLX * (ONE_R1 / 2) * (-topRight - bottomLeft);
     mtrxOut[2] = -mtrxOut[1];
     mtrxOut[3] = -mtrxOut[0];
+}
+
+void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut)
+{
+    mtrxOut[0] = (ONE_R1 / 2) * (topLeft + bottomRight);
+    mtrxOut[1] = (ONE_R1 / 2) * (topLeft - bottomRight);
+    mtrxOut[2] = mtrxOut[1];
+    mtrxOut[3] = mtrxOut[0];
 }
 
 #define CTRLED_GEN_WRAP(ctrld, bare, anti)                                                                             \
@@ -1523,7 +1515,7 @@ void QUnit::TransformYInvert(const complex& topRight, const complex& bottomLeft,
                 if (isInvert) {                                                                                        \
                     TransformXInvert(top, bottom, trnsMtrx);                                                           \
                 } else {                                                                                               \
-                    TransformXPhase(top, bottom, trnsMtrx);                                                            \
+                    TransformPhase(top, bottom, trnsMtrx);                                                             \
                 }                                                                                                      \
                 unit->ctrldgen;                                                                                        \
             } else if (shards[target].isPauliY) {                                                                      \
@@ -1531,7 +1523,7 @@ void QUnit::TransformYInvert(const complex& topRight, const complex& bottomLeft,
                 if (isInvert) {                                                                                        \
                     TransformYInvert(top, bottom, trnsMtrx);                                                           \
                 } else {                                                                                               \
-                    TransformYPhase(top, bottom, trnsMtrx);                                                            \
+                    TransformPhase(top, bottom, trnsMtrx);                                                             \
                 }                                                                                                      \
                 unit->ctrldgen;                                                                                        \
             } else {                                                                                                   \
@@ -1997,7 +1989,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         }
 
         complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
-        TransformYPhase(topLeft, bottomRight, mtrx);
+        TransformPhase(topLeft, bottomRight, mtrx);
 
         if (shard.unit) {
             shard.unit->ApplySingleBit(mtrx, shard.mapped);
@@ -2029,7 +2021,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         }
 
         complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
-        TransformXPhase(topLeft, bottomRight, mtrx);
+        TransformPhase(topLeft, bottomRight, mtrx);
 
         if (shard.unit) {
             shard.unit->ApplySingleBit(mtrx, shard.mapped);
