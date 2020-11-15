@@ -912,6 +912,7 @@ public:
 
 protected:
     virtual void XBase(const bitLenInt& target);
+    virtual void YBase(const bitLenInt& target);
     virtual void ZBase(const bitLenInt& target);
     virtual real1 ProbBase(const bitLenInt& qubit);
     virtual bool CheckCliffordSeparable(const bitLenInt& qubit);

@@ -1378,6 +1378,23 @@ void QUnit::XBase(const bitLenInt& target)
     std::swap(shard.amp0, shard.amp1);
 }
 
+void QUnit::YBase(const bitLenInt& target)
+{
+    QEngineShard& shard = shards[target];
+
+    if (shard.unit) {
+        shard.unit->Y(shard.mapped);
+    }
+    if (DIRTY(shard)) {
+        shard.MakeDirty();
+        return;
+    }
+
+    complex Y0 = shard.amp0;
+    shard.amp0 = -I_CMPLX * shard.amp1;
+    shard.amp1 = I_CMPLX * Y0;
+}
+
 void QUnit::ZBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
@@ -1400,10 +1417,8 @@ void QUnit::X(bitLenInt target)
     shard.FlipPhaseAnti();
 
     if (shard.isPauliY) {
-        RevertBasis1Qb(target);
-    }
-
-    if (shard.isPauliX) {
+        YBase(target);
+    } else if (shard.isPauliX) {
         ZBase(target);
     } else {
         XBase(target);
@@ -1428,13 +1443,9 @@ void QUnit::Z(bitLenInt target)
         }
     }
 
-    if (shard.isPauliY) {
-        RevertBasis1Qb(target);
-    }
-
-    if (shard.isPauliX) {
+    if (shard.isPauliX || shard.isPauliY) {
         XBase(target);
-    } else {
+    } else if (!shard.isPauliY) {
         ZBase(target);
     }
 }
@@ -2353,12 +2364,6 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
     if ((randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) && (mtrx[0] == mtrx[2]) &&
         (mtrx[2] == -mtrx[3])) {
         H(target);
-        return;
-    }
-    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
-        (mtrx[2] == -mtrx[3]) && (I_CMPLX * mtrx[0] == mtrx[2])) {
-        H(target);
-        S(target);
         return;
     }
 
