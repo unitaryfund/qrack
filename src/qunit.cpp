@@ -2389,8 +2389,8 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         S(target);
         return;
     }
-    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
-        (mtrx[2] == -mtrx[3]) && (I_CMPLX * mtrx[1] == mtrx[3])) {
+    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[2]) &&
+        (mtrx[1] == -mtrx[3]) && (I_CMPLX * mtrx[2] == mtrx[3])) {
         IS(target);
         H(target);
         return;
@@ -3891,7 +3891,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        if (partner->isPauliX || buffer->isInvert) {
+        if (partner->isPauliX || partner->isPauliY || buffer->isInvert) {
             continue;
         }
 
@@ -3913,7 +3913,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        if (partner->isPauliX || buffer->isInvert) {
+        if (partner->isPauliX || partner->isPauliY || buffer->isInvert) {
             continue;
         }
 
@@ -3945,8 +3945,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
 
         // If isSame and !isInvert, application of this buffer is already "efficient."
-        isSame =
-            (buffer->isInvert || !partner->isPauliX || !partner->IsInvertTarget()) && IS_SAME(polarDiff, polarSame);
+        isSame = (buffer->isInvert || (!partner->isPauliX && !partner->isPauliY) || !partner->IsInvertTarget()) &&
+            IS_SAME(polarDiff, polarSame);
         isOpposite = !buffer->isInvert && IS_OPPOSITE(polarDiff, polarSame);
 
         if (isSame || isOpposite) {
@@ -3969,8 +3969,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
 
         // If isSame and !isInvert, application of this buffer is already "efficient."
-        isSame =
-            (buffer->isInvert || !partner->isPauliX || !partner->IsInvertTarget()) && IS_SAME(polarDiff, polarSame);
+        isSame = (buffer->isInvert || (!partner->isPauliX && !partner->isPauliY) || !partner->IsInvertTarget()) &&
+            IS_SAME(polarDiff, polarSame);
         isOpposite = !buffer->isInvert && IS_OPPOSITE(polarDiff, polarSame);
 
         if (isSame || isOpposite) {
