@@ -39,15 +39,15 @@
         (shard.antiTargetOfShards.size() != 0) || (shard.antiControlsShards.size() != 0))
 #define CACHED_PLUS_MINUS(shard) (shard.isPauliX && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && IS_NORM_0(shard.amp1))
-#define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPauliX && !QUEUED_PHASE(shard))
+#define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && !QUEUED_PHASE(shard))
 #define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
 #define CACHED_ONE(shard) (CACHED_PROB(shard) && IS_NORM_0(shard.amp0))
 #define CACHED_ZERO(shard) (CACHED_PROB(shard) && IS_NORM_0(shard.amp1))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
 #define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
     (!shard.isProbDirty && !shard.isPauliX && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
-#define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPauliX && IS_NORM_0(shard.amp0))
-#define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && IS_NORM_0(shard.amp1))
+#define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp0))
+#define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp1))
 #define IS_SAME_UNIT(shard1, shard2) ((shard1.unit || shard2.unit) && (shard1.unit == shard2.unit))
 
 namespace Qrack {
@@ -113,6 +113,7 @@ void QUnit::SetQuantumState(const complex* inputState)
         shard.amp0 = inputState[0];
         shard.amp1 = inputState[1];
         shard.isPauliX = false;
+        shard.isPauliY = false;
         if (IS_NORM_0(shard.amp0 - shard.amp1)) {
             shard.isPauliX = true;
             shard.isPauliY = false;
@@ -1361,13 +1362,13 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
+    if (shard.isPauliY) {
+        RevertBasis1Qb(target);
+    }
+
     if (!freezeBasisH) {
         CommuteH(target);
-        if (shard.isPauliY) {
-            XBase(target);
-        } else {
-            shard.isPauliX = !shard.isPauliX;
-        }
+        shard.isPauliX = !shard.isPauliX;
         return;
     }
 
