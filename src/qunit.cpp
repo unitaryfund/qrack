@@ -115,10 +115,22 @@ void QUnit::SetQuantumState(const complex* inputState)
         shard.isPauliX = false;
         if (IS_NORM_0(shard.amp0 - shard.amp1)) {
             shard.isPauliX = true;
+            shard.isPauliY = false;
             shard.amp0 = shard.amp0 / abs(shard.amp0);
             shard.amp1 = ZERO_R1;
         } else if (IS_NORM_0(shard.amp0 + shard.amp1)) {
             shard.isPauliX = true;
+            shard.isPauliY = false;
+            shard.amp1 = shard.amp0 / abs(shard.amp0);
+            shard.amp0 = ZERO_R1;
+        } else if (IS_NORM_0((I_CMPLX * inputState[0]) - inputState[1])) {
+            shard.isPauliX = false;
+            shard.isPauliY = true;
+            shard.amp0 = shard.amp0 / abs(shard.amp0);
+            shard.amp1 = ZERO_R1;
+        } else if (IS_NORM_0((I_CMPLX * inputState[0]) + inputState[1])) {
+            shard.isPauliX = false;
+            shard.isPauliY = true;
             shard.amp1 = shard.amp0 / abs(shard.amp0);
             shard.amp0 = ZERO_R1;
         }
@@ -668,10 +680,22 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     partnerShard.unit->GetQuantumState(amps);
     if (IS_NORM_0(amps[0] - amps[1])) {
         partnerShard.isPauliX = true;
+        partnerShard.isPauliY = false;
         amps[0] = amps[0] / abs(amps[0]);
         amps[1] = ZERO_CMPLX;
     } else if (IS_NORM_0(amps[0] + amps[1])) {
         partnerShard.isPauliX = true;
+        partnerShard.isPauliY = false;
+        amps[1] = amps[0] / abs(amps[0]);
+        amps[0] = ZERO_CMPLX;
+    } else if (IS_NORM_0((I_CMPLX * amps[0]) - amps[1])) {
+        shard.isPauliX = false;
+        shard.isPauliY = true;
+        amps[0] = amps[0] / abs(amps[0]);
+        amps[1] = ZERO_CMPLX;
+    } else if (IS_NORM_0((I_CMPLX * amps[0]) + amps[1])) {
+        shard.isPauliX = false;
+        shard.isPauliY = true;
         amps[1] = amps[0] / abs(amps[0]);
         amps[0] = ZERO_CMPLX;
     }
@@ -2008,11 +2032,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         }
     } else if (shard.isPauliX) {
         if (randGlobalPhase || IS_ONE_R1(topLeft)) {
-            if (IS_NORM_0(topLeft + (I_CMPLX * bottomRight))) {
+            if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
                 shard.isPauliX = false;
                 shard.isPauliY = true;
                 return;
-            } else if (IS_NORM_0(topLeft - (I_CMPLX * bottomRight))) {
+            } else if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
                 shard.isPauliX = false;
                 shard.isPauliY = true;
                 XBase(target);
@@ -2364,8 +2388,8 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         S(target);
         return;
     }
-    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[2]) &&
-        (mtrx[1] == -mtrx[3]) && (I_CMPLX * mtrx[2] == mtrx[3])) {
+    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
+        (mtrx[2] == -mtrx[3]) && (I_CMPLX * mtrx[1] == mtrx[3])) {
         IS(target);
         H(target);
         return;
