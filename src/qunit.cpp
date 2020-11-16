@@ -1362,7 +1362,12 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    RevertBasisY(target);
+    if (shard.isPauliY) {
+        complex mtrx[4] = { complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1),
+            complex(-M_SQRT1_2, ZERO_R1) };
+        ApplySingleBit(mtrx, target);
+        return;
+    }
 
     if (!freezeBasisH) {
         CommuteH(target);
@@ -2374,6 +2379,8 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         return;
     }
 
+    QEngineShard& shard = shards[target];
+
     if (!norm(mtrx[1]) && !norm(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
@@ -2382,7 +2389,7 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
-    if ((randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) && (mtrx[0] == mtrx[2]) &&
+    if (!shard.isPauliY && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) && (mtrx[0] == mtrx[2]) &&
         (mtrx[2] == -mtrx[3])) {
         H(target);
         return;
@@ -2399,8 +2406,6 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         H(target);
         return;
     }
-
-    QEngineShard& shard = shards[target];
 
     RevertBasis2Qb(target);
 
