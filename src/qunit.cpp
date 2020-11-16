@@ -1362,9 +1362,7 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.isPauliY) {
-        RevertBasis1Qb(target);
-    }
+    RevertBasisY(target);
 
     if (!freezeBasisH) {
         CommuteH(target);
@@ -1758,7 +1756,10 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     ApplyEitherControlled(
         controls, 2, { target }, false,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPauliX) {
+            if (shards[target].isPauliY) {
+                unit->ApplyControlledSingleInvert(
+                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, -I_CMPLX, I_CMPLX);
+            } else if (shards[target].isPauliX) {
                 if (mappedControls.size() == 2) {
                     unit->CCZ(CTRL_2_ARGS);
                 } else {
@@ -1787,7 +1788,10 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     ApplyEitherControlled(
         controls, 2, { target }, true,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPauliX) {
+            if (shards[target].isPauliY) {
+                unit->ApplyAntiControlledSingleInvert(
+                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, -I_CMPLX, I_CMPLX);
+            } else if (shards[target].isPauliX) {
                 unit->ApplyAntiControlledSinglePhase(
                     &(mappedControls[0]), mappedControls.size(), shards[target].mapped, ONE_CMPLX, -ONE_CMPLX);
             } else {
@@ -1803,7 +1807,7 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
-    if (shards[control].isPauliX && !shards[target].isPauliX) {
+    if (shards[control].isPauliX && !shards[target].isPauliX && !shards[target].isPauliY) {
         std::swap(control, target);
     }
 
@@ -1891,11 +1895,11 @@ void QUnit::CH(bitLenInt control, bitLenInt target)
 
 void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    if (shards[control1].isPauliX && !shards[target].isPauliX) {
+    if (shards[control1].isPauliX && !shards[target].isPauliX && !shards[target].isPauliY) {
         std::swap(control1, target);
     }
 
-    if (shards[control2].isPauliX && !shards[target].isPauliX) {
+    if (shards[control2].isPauliX && !shards[target].isPauliX && !shards[target].isPauliY) {
         std::swap(control2, target);
     }
 
@@ -1950,7 +1954,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     ApplyEitherControlled(
         controls, 2, { target }, false,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPauliX) {
+            if (shards[target].isPauliX || shards[target].isPauliY) {
                 if (mappedControls.size() == 2) {
                     unit->CCNOT(CTRL_2_ARGS);
                 } else {
@@ -2187,7 +2191,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             }
         }
 
-        if (!shards[target].isPauliX) {
+        if (!shards[target].isPauliX && !shards[target].isPauliY) {
             for (bitLenInt i = 0; i < controlLen; i++) {
                 if (shards[controls[i]].isPauliX) {
                     std::swap(controls[i], target);
@@ -2295,7 +2299,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
             return;
         }
 
-        if (!shards[target].isPauliX) {
+        if (!shards[target].isPauliX && !shards[target].isPauliY) {
             for (bitLenInt i = 0; i < controlLen; i++) {
                 if (shards[controls[i]].isPauliX) {
                     std::swap(controls[i], target);
