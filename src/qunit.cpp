@@ -2389,8 +2389,8 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
-    if (!shard.isPauliY && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) && (mtrx[0] == mtrx[2]) &&
-        (mtrx[2] == -mtrx[3])) {
+    if (!shard.isPauliY && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
+        (mtrx[0] == mtrx[2]) && (mtrx[2] == -mtrx[3])) {
         H(target);
         return;
     }
