@@ -885,6 +885,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_s")
     qftReg->S(0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0);
+    qftReg->S(0);
+    qftReg->IS(0);
+    qftReg->ApplySinglePhase(ONE_CMPLX, I_CMPLX, 0);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbParity(1));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_s_reg")
@@ -1007,6 +1014,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cs")
     qftReg->CS(4, 0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+
+    qftReg->SetPermutation(2);
+    qftReg->H(0);
+    qftReg->CS(1, 0);
+    REQUIRE_FLOAT(qftReg->Prob(0), 0.5);
+
+    qftReg->SetPermutation(2);
+    qftReg->H(0);
+    qftReg->CS(1, 0);
+    qftReg->CIS(1, 0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(2));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cs_reg")
@@ -3758,7 +3777,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniformparityrz")
 
     qftReg->SetPermutation(0x01);
     qftReg->H(0);
-    qftReg->UniformParityRZ(1, -M_PI_4);
+    qftReg->UniformParityRZ(1, M_PI_4);
     qftReg->S(0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0));
@@ -3795,7 +3814,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cuniformparityrz")
 
     qftReg->SetPermutation(0x01 | 0x18);
     qftReg->H(0);
-    qftReg->CUniformParityRZ(controls, 2, 1, -M_PI_4);
+    qftReg->CUniformParityRZ(controls, 2, 1, M_PI_4);
     qftReg->S(0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0x0 | 0x18));

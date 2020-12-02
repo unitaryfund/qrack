@@ -37,17 +37,17 @@
 #define QUEUED_PHASE(shard)                                                                                            \
     ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0) ||                                       \
         (shard.antiTargetOfShards.size() != 0) || (shard.antiControlsShards.size() != 0))
-#define CACHED_PLUS_MINUS(shard) (shard.isPlusMinus && !DIRTY(shard) && !QUEUED_PHASE(shard))
+#define CACHED_PLUS_MINUS(shard) (shard.isPauliX && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && IS_NORM_0(shard.amp1))
-#define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPlusMinus && !QUEUED_PHASE(shard))
+#define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && !QUEUED_PHASE(shard))
 #define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
 #define CACHED_ONE(shard) (CACHED_PROB(shard) && IS_NORM_0(shard.amp0))
 #define CACHED_ZERO(shard) (CACHED_PROB(shard) && IS_NORM_0(shard.amp1))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
 #define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
-    (!shard.isProbDirty && !shard.isPlusMinus && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
-#define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_0(shard.amp0))
-#define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPlusMinus && IS_NORM_0(shard.amp1))
+    (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
+#define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp0))
+#define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp1))
 #define IS_SAME_UNIT(shard1, shard2) ((shard1.unit || shard2.unit) && (shard1.unit == shard2.unit))
 
 namespace Qrack {
@@ -112,13 +112,26 @@ void QUnit::SetQuantumState(const complex* inputState)
         shard.isPhaseDirty = false;
         shard.amp0 = inputState[0];
         shard.amp1 = inputState[1];
-        shard.isPlusMinus = false;
+        shard.isPauliX = false;
+        shard.isPauliY = false;
         if (IS_NORM_0(shard.amp0 - shard.amp1)) {
-            shard.isPlusMinus = true;
+            shard.isPauliX = true;
+            shard.isPauliY = false;
             shard.amp0 = shard.amp0 / abs(shard.amp0);
             shard.amp1 = ZERO_R1;
         } else if (IS_NORM_0(shard.amp0 + shard.amp1)) {
-            shard.isPlusMinus = true;
+            shard.isPauliX = true;
+            shard.isPauliY = false;
+            shard.amp1 = shard.amp0 / abs(shard.amp0);
+            shard.amp0 = ZERO_R1;
+        } else if (IS_NORM_0((I_CMPLX * inputState[0]) - inputState[1])) {
+            shard.isPauliX = false;
+            shard.isPauliY = true;
+            shard.amp0 = shard.amp0 / abs(shard.amp0);
+            shard.amp1 = ZERO_R1;
+        } else if (IS_NORM_0((I_CMPLX * inputState[0]) + inputState[1])) {
+            shard.isPauliX = false;
+            shard.isPauliY = true;
             shard.amp1 = shard.amp0 / abs(shard.amp0);
             shard.amp0 = ZERO_R1;
         }
@@ -667,11 +680,23 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     complex amps[2];
     partnerShard.unit->GetQuantumState(amps);
     if (IS_NORM_0(amps[0] - amps[1])) {
-        partnerShard.isPlusMinus = true;
+        partnerShard.isPauliX = true;
+        partnerShard.isPauliY = false;
         amps[0] = amps[0] / abs(amps[0]);
         amps[1] = ZERO_CMPLX;
     } else if (IS_NORM_0(amps[0] + amps[1])) {
-        partnerShard.isPlusMinus = true;
+        partnerShard.isPauliX = true;
+        partnerShard.isPauliY = false;
+        amps[1] = amps[0] / abs(amps[0]);
+        amps[0] = ZERO_CMPLX;
+    } else if (IS_NORM_0((I_CMPLX * amps[0]) - amps[1])) {
+        shard.isPauliX = false;
+        shard.isPauliY = true;
+        amps[0] = amps[0] / abs(amps[0]);
+        amps[1] = ZERO_CMPLX;
+    } else if (IS_NORM_0((I_CMPLX * amps[0]) + amps[1])) {
+        shard.isPauliX = false;
+        shard.isPauliY = true;
         amps[1] = amps[0] / abs(amps[0]);
         amps[0] = ZERO_CMPLX;
     }
@@ -1338,8 +1363,9 @@ void QUnit::H(bitLenInt target)
     QEngineShard& shard = shards[target];
 
     if (!freezeBasisH) {
+        RevertBasisY(target);
         CommuteH(target);
-        shard.isPlusMinus = !shard.isPlusMinus;
+        shard.isPauliX = !shard.isPauliX;
         return;
     }
 
@@ -1374,6 +1400,23 @@ void QUnit::XBase(const bitLenInt& target)
     std::swap(shard.amp0, shard.amp1);
 }
 
+void QUnit::YBase(const bitLenInt& target)
+{
+    QEngineShard& shard = shards[target];
+
+    if (shard.unit) {
+        shard.unit->Y(shard.mapped);
+    }
+    if (DIRTY(shard)) {
+        shard.MakeDirty();
+        return;
+    }
+
+    complex Y0 = shard.amp0;
+    shard.amp0 = -I_CMPLX * shard.amp1;
+    shard.amp1 = I_CMPLX * Y0;
+}
+
 void QUnit::ZBase(const bitLenInt& target)
 {
     QEngineShard& shard = shards[target];
@@ -1395,10 +1438,12 @@ void QUnit::X(bitLenInt target)
 
     shard.FlipPhaseAnti();
 
-    if (!shard.isPlusMinus) {
-        XBase(target);
-    } else {
+    if (shard.isPauliY) {
+        YBase(target);
+    } else if (shard.isPauliX) {
         ZBase(target);
+    } else {
+        XBase(target);
     }
 }
 
@@ -1420,19 +1465,43 @@ void QUnit::Z(bitLenInt target)
         }
     }
 
-    if (!shard.isPlusMinus) {
-        ZBase(target);
-    } else {
+    if (shard.isPauliX || shard.isPauliY) {
         XBase(target);
+    } else if (!shard.isPauliY) {
+        ZBase(target);
     }
 }
 
-void QUnit::Transform2x2(const complex* mtrxIn, complex* mtrxOut)
+void QUnit::TransformX2x2(const complex* mtrxIn, complex* mtrxOut)
 {
     mtrxOut[0] = (ONE_R1 / 2) * (mtrxIn[0] + mtrxIn[1] + mtrxIn[2] + mtrxIn[3]);
     mtrxOut[1] = (ONE_R1 / 2) * (mtrxIn[0] - mtrxIn[1] + mtrxIn[2] - mtrxIn[3]);
     mtrxOut[2] = (ONE_R1 / 2) * (mtrxIn[0] + mtrxIn[1] - mtrxIn[2] - mtrxIn[3]);
     mtrxOut[3] = (ONE_R1 / 2) * (mtrxIn[0] - mtrxIn[1] - mtrxIn[2] + mtrxIn[3]);
+}
+
+void QUnit::TransformXInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
+{
+    mtrxOut[0] = (ONE_R1 / 2) * (topRight + bottomLeft);
+    mtrxOut[1] = (ONE_R1 / 2) * (-topRight + bottomLeft);
+    mtrxOut[2] = -mtrxOut[1];
+    mtrxOut[3] = -mtrxOut[0];
+}
+
+void QUnit::TransformY2x2(const complex* mtrxIn, complex* mtrxOut)
+{
+    mtrxOut[0] = (ONE_R1 / 2) * (mtrxIn[0] + I_CMPLX * (mtrxIn[1] - mtrxIn[2]) + mtrxIn[3]);
+    mtrxOut[1] = (ONE_R1 / 2) * (mtrxIn[0] + I_CMPLX * (-mtrxIn[1] - mtrxIn[2]) - mtrxIn[3]);
+    mtrxOut[2] = (ONE_R1 / 2) * (mtrxIn[0] + I_CMPLX * (mtrxIn[1] + mtrxIn[2]) - mtrxIn[3]);
+    mtrxOut[3] = (ONE_R1 / 2) * (mtrxIn[0] + I_CMPLX * (-mtrxIn[1] + mtrxIn[2]) + mtrxIn[3]);
+}
+
+void QUnit::TransformYInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
+{
+    mtrxOut[0] = I_CMPLX * (ONE_R1 / 2) * (topRight - bottomLeft);
+    mtrxOut[1] = I_CMPLX * (ONE_R1 / 2) * (-topRight - bottomLeft);
+    mtrxOut[2] = -mtrxOut[1];
+    mtrxOut[3] = -mtrxOut[0];
 }
 
 void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut)
@@ -1443,23 +1512,17 @@ void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, c
     mtrxOut[3] = mtrxOut[0];
 }
 
-void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
-{
-    mtrxOut[0] = (ONE_R1 / 2) * (topRight + bottomLeft);
-    mtrxOut[1] = (ONE_R1 / 2) * (-topRight + bottomLeft);
-    mtrxOut[2] = -mtrxOut[1];
-    mtrxOut[3] = -mtrxOut[0];
-}
-
 #define CTRLED_GEN_WRAP(ctrld, bare, anti)                                                                             \
     ApplyEitherControlled(                                                                                             \
         controls, controlLen, { target }, anti,                                                                        \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
             complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                                  \
-            if (!shards[target].isPlusMinus) {                                                                         \
-                std::copy(mtrx, mtrx + 4, trnsMtrx);                                                                   \
+            if (shards[target].isPauliX) {                                                                             \
+                TransformX2x2(mtrx, trnsMtrx);                                                                         \
+            } else if (shards[target].isPauliY) {                                                                      \
+                TransformY2x2(mtrx, trnsMtrx);                                                                         \
             } else {                                                                                                   \
-                Transform2x2(mtrx, trnsMtrx);                                                                          \
+                std::copy(mtrx, mtrx + 4, trnsMtrx);                                                                   \
             }                                                                                                          \
             unit->ctrld;                                                                                               \
         },                                                                                                             \
@@ -1469,16 +1532,24 @@ void QUnit::TransformInvert(const complex& topRight, const complex& bottomLeft, 
     ApplyEitherControlled(                                                                                             \
         controls, controlLen, { target }, anti,                                                                        \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
-            if (!shards[target].isPlusMinus) {                                                                         \
-                unit->ctrld;                                                                                           \
-            } else {                                                                                                   \
+            if (shards[target].isPauliX) {                                                                             \
                 complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                              \
                 if (isInvert) {                                                                                        \
-                    TransformInvert(top, bottom, trnsMtrx);                                                            \
+                    TransformXInvert(top, bottom, trnsMtrx);                                                           \
                 } else {                                                                                               \
                     TransformPhase(top, bottom, trnsMtrx);                                                             \
                 }                                                                                                      \
                 unit->ctrldgen;                                                                                        \
+            } else if (shards[target].isPauliY) {                                                                      \
+                complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                              \
+                if (isInvert) {                                                                                        \
+                    TransformYInvert(top, bottom, trnsMtrx);                                                           \
+                } else {                                                                                               \
+                    TransformPhase(top, bottom, trnsMtrx);                                                             \
+                }                                                                                                      \
+                unit->ctrldgen;                                                                                        \
+            } else {                                                                                                   \
+                unit->ctrld;                                                                                           \
             }                                                                                                          \
         },                                                                                                             \
         [&]() { bare; });
@@ -1528,9 +1599,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
     }
 
-    bool pmBasis = (cShard.isPlusMinus && tShard.isPlusMinus && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
+    bool pmBasis = (cShard.isPauliX && tShard.isPauliX && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
 
     if (!freezeBasis2Qb && !pmBasis) {
+        RevertBasisY(target);
+
         bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
@@ -1684,7 +1757,10 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     ApplyEitherControlled(
         controls, 2, { target }, false,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPlusMinus) {
+            if (shards[target].isPauliY) {
+                unit->ApplyControlledSingleInvert(
+                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, -I_CMPLX, I_CMPLX);
+            } else if (shards[target].isPauliX) {
                 if (mappedControls.size() == 2) {
                     unit->CCZ(CTRL_2_ARGS);
                 } else {
@@ -1713,7 +1789,10 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     ApplyEitherControlled(
         controls, 2, { target }, true,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPlusMinus) {
+            if (shards[target].isPauliY) {
+                unit->ApplyAntiControlledSingleInvert(
+                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, -I_CMPLX, I_CMPLX);
+            } else if (shards[target].isPauliX) {
                 unit->ApplyAntiControlledSinglePhase(
                     &(mappedControls[0]), mappedControls.size(), shards[target].mapped, ONE_CMPLX, -ONE_CMPLX);
             } else {
@@ -1729,7 +1808,7 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
-    if (shards[control].isPlusMinus && !shards[target].isPlusMinus) {
+    if (shards[control].isPauliX && !shards[target].isPauliX && !shards[target].isPauliY) {
         std::swap(control, target);
     }
 
@@ -1817,11 +1896,11 @@ void QUnit::CH(bitLenInt control, bitLenInt target)
 
 void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    if (shards[control1].isPlusMinus && !shards[target].isPlusMinus) {
+    if (shards[control1].isPauliX && !shards[target].isPauliX && !shards[target].isPauliY) {
         std::swap(control1, target);
     }
 
-    if (shards[control2].isPlusMinus && !shards[target].isPlusMinus) {
+    if (shards[control2].isPauliX && !shards[target].isPauliX && !shards[target].isPauliY) {
         std::swap(control2, target);
     }
 
@@ -1876,7 +1955,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     ApplyEitherControlled(
         controls, 2, { target }, false,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPlusMinus) {
+            if (shards[target].isPauliX || shards[target].isPauliY) {
                 if (mappedControls.size() == 2) {
                     unit->CCNOT(CTRL_2_ARGS);
                 } else {
@@ -1925,22 +2004,20 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         }
     }
 
-    if (!shard.isPlusMinus) {
+    if (!freezeBasisH && shard.isPauliY) {
+        if (randGlobalPhase || IS_ONE_R1(topLeft)) {
+            if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
+                shard.isPauliX = true;
+                shard.isPauliY = false;
+                XBase(target);
+                return;
+            } else if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
+                shard.isPauliX = true;
+                shard.isPauliY = false;
+                return;
+            }
+        }
 
-        if (shard.unit) {
-            shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped);
-        }
-        if (DIRTY(shard)) {
-            shard.MakeDirty();
-            return;
-        }
-
-        shard.amp0 *= topLeft;
-        shard.amp1 *= bottomRight;
-        if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
-        }
-    } else {
         complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
         TransformPhase(topLeft, bottomRight, mtrx);
 
@@ -1956,6 +2033,52 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
+        if (doNormalize) {
+            shard.ClampAmps(amplitudeFloor);
+        }
+    } else if (shard.isPauliX) {
+        if (!freezeBasisH && (randGlobalPhase || IS_ONE_R1(topLeft))) {
+            if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
+                shard.isPauliX = false;
+                shard.isPauliY = true;
+                return;
+            } else if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
+                shard.isPauliX = false;
+                shard.isPauliY = true;
+                XBase(target);
+                return;
+            }
+        }
+
+        complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
+        TransformPhase(topLeft, bottomRight, mtrx);
+
+        if (shard.unit) {
+            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+        }
+        if (DIRTY(shard)) {
+            shard.MakeDirty();
+            return;
+        }
+
+        complex Y0 = shard.amp0;
+
+        shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
+        shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
+        if (doNormalize) {
+            shard.ClampAmps(amplitudeFloor);
+        }
+    } else {
+        if (shard.unit) {
+            shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped);
+        }
+        if (DIRTY(shard)) {
+            shard.MakeDirty();
+            return;
+        }
+
+        shard.amp0 *= topLeft;
+        shard.amp1 *= bottomRight;
         if (doNormalize) {
             shard.ClampAmps(amplitudeFloor);
         }
@@ -1982,24 +2105,13 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 
     shard.FlipPhaseAnti();
 
-    if (!shard.isPlusMinus) {
-        if (shard.unit) {
-            shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped);
-        }
-        if (DIRTY(shard)) {
-            shard.MakeDirty();
-            return;
-        }
-
-        complex tempAmp1 = shard.amp0 * bottomLeft;
-        shard.amp0 = shard.amp1 * topRight;
-        shard.amp1 = tempAmp1;
-        if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
-        }
-    } else {
+    if (shard.isPauliX || shard.isPauliY) {
         complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
-        TransformInvert(topRight, bottomLeft, mtrx);
+        if (shard.isPauliX) {
+            TransformXInvert(topRight, bottomLeft, mtrx);
+        } else {
+            TransformYInvert(topRight, bottomLeft, mtrx);
+        }
 
         if (shard.unit) {
             shard.unit->ApplySingleBit(mtrx, shard.mapped);
@@ -2013,6 +2125,21 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
+        if (doNormalize) {
+            shard.ClampAmps(amplitudeFloor);
+        }
+    } else {
+        if (shard.unit) {
+            shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped);
+        }
+        if (DIRTY(shard)) {
+            shard.MakeDirty();
+            return;
+        }
+
+        complex tempAmp1 = shard.amp0 * bottomLeft;
+        shard.amp0 = shard.amp1 * topRight;
+        shard.amp1 = tempAmp1;
         if (doNormalize) {
             shard.ClampAmps(amplitudeFloor);
         }
@@ -2065,9 +2192,9 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             }
         }
 
-        if (!shards[target].isPlusMinus) {
+        if (!shards[target].isPauliX && !shards[target].isPauliY) {
             for (bitLenInt i = 0; i < controlLen; i++) {
-                if (shards[controls[i]].isPlusMinus) {
+                if (shards[controls[i]].isPauliX) {
                     std::swap(controls[i], target);
                     break;
                 }
@@ -2173,9 +2300,9 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
             return;
         }
 
-        if (!shards[target].isPlusMinus) {
+        if (!shards[target].isPauliX && !shards[target].isPauliY) {
             for (bitLenInt i = 0; i < controlLen; i++) {
-                if (shards[controls[i]].isPlusMinus) {
+                if (shards[controls[i]].isPauliX) {
                     std::swap(controls[i], target);
                     break;
                 }
@@ -2248,6 +2375,8 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         return;
     }
 
+    QEngineShard& shard = shards[target];
+
     if (!norm(mtrx[1]) && !norm(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
@@ -2256,22 +2385,34 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
-    if ((randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) && (mtrx[0] == mtrx[2]) &&
-        (mtrx[2] == -mtrx[3])) {
+    if (!shard.isPauliY && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
+        (mtrx[0] == mtrx[2]) && (mtrx[2] == -mtrx[3])) {
         H(target);
         return;
     }
-
-    QEngineShard& shard = shards[target];
+    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
+        (mtrx[2] == -mtrx[3]) && (I_CMPLX * mtrx[0] == mtrx[2])) {
+        H(target);
+        S(target);
+        return;
+    }
+    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[2]) &&
+        (mtrx[1] == -mtrx[3]) && (I_CMPLX * mtrx[2] == mtrx[3])) {
+        IS(target);
+        H(target);
+        return;
+    }
 
     RevertBasis2Qb(target);
 
     complex trnsMtrx[4];
 
-    if (!shard.isPlusMinus) {
-        std::copy(mtrx, mtrx + 4, trnsMtrx);
+    if (shard.isPauliY) {
+        TransformY2x2(mtrx, trnsMtrx);
+    } else if (shard.isPauliX) {
+        TransformX2x2(mtrx, trnsMtrx);
     } else {
-        Transform2x2(mtrx, trnsMtrx);
+        std::copy(mtrx, mtrx + 4, trnsMtrx);
     }
 
     if (shard.unit) {
@@ -2440,8 +2581,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::vector<bitLenInt> allBits(controlVec.size() + targets.size());
     std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
     std::copy(targets.begin(), targets.end(), allBits.begin() + controlVec.size());
-    // (Incidentally, we sort for the efficiency of QUnit's limited "mapper," a 1 dimensional array of qubits without
-    // nearest neighbor restriction.)
+    // (Incidentally, we sort for the efficiency of QUnit's limited "mapper," a 1 dimensional array of qubits
+    // without nearest neighbor restriction.)
     std::sort(allBits.begin(), allBits.end());
 
     std::vector<bitLenInt*> ebits(allBits.size());
@@ -3755,7 +3896,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        if (partner->isPlusMinus || buffer->isInvert) {
+        if (partner->isPauliX || partner->isPauliY || buffer->isInvert) {
             continue;
         }
 
@@ -3777,7 +3918,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        if (partner->isPlusMinus || buffer->isInvert) {
+        if (partner->isPauliX || partner->isPauliY || buffer->isInvert) {
             continue;
         }
 
@@ -3809,8 +3950,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
 
         // If isSame and !isInvert, application of this buffer is already "efficient."
-        isSame =
-            (buffer->isInvert || !partner->isPlusMinus || !partner->IsInvertTarget()) && IS_SAME(polarDiff, polarSame);
+        isSame = (buffer->isInvert || (!partner->isPauliX && !partner->isPauliY) || !partner->IsInvertTarget()) &&
+            IS_SAME(polarDiff, polarSame);
         isOpposite = !buffer->isInvert && IS_OPPOSITE(polarDiff, polarSame);
 
         if (isSame || isOpposite) {
@@ -3833,8 +3974,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
 
         // If isSame and !isInvert, application of this buffer is already "efficient."
-        isSame =
-            (buffer->isInvert || !partner->isPlusMinus || !partner->IsInvertTarget()) && IS_SAME(polarDiff, polarSame);
+        isSame = (buffer->isInvert || (!partner->isPauliX && !partner->isPauliY) || !partner->IsInvertTarget()) &&
+            IS_SAME(polarDiff, polarSame);
         isOpposite = !buffer->isInvert && IS_OPPOSITE(polarDiff, polarSame);
 
         if (isSame || isOpposite) {
