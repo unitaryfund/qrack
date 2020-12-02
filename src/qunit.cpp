@@ -1362,14 +1362,15 @@ void QUnit::H(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.isPauliY) {
+    /*if (shard.isPauliY) {
         complex mtrx[4] = { complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1),
             complex(-M_SQRT1_2, ZERO_R1) };
         ApplySingleBit(mtrx, target);
         return;
-    }
+    }*/
 
     if (!freezeBasisH) {
+        RevertBasisY(target);
         CommuteH(target);
         shard.isPauliX = !shard.isPauliX;
         return;
@@ -2009,7 +2010,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
     }
 
     if (shard.isPauliY) {
-        if (randGlobalPhase || IS_ONE_R1(topLeft)) {
+        if (!freezeBasisH && (randGlobalPhase || IS_ONE_R1(topLeft))) {
             if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
                 shard.isPauliX = true;
                 shard.isPauliY = false;
@@ -2041,7 +2042,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             shard.ClampAmps(amplitudeFloor);
         }
     } else if (shard.isPauliX) {
-        if (randGlobalPhase || IS_ONE_R1(topLeft)) {
+        if (!freezeBasisH && (randGlobalPhase || IS_ONE_R1(topLeft))) {
             if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
                 shard.isPauliX = false;
                 shard.isPauliY = true;

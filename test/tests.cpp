@@ -890,7 +890,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_s")
     qftReg->H(0);
     qftReg->S(0);
     qftReg->IS(0);
-    qftReg->ApplyControlledSinglePhase(NULL, 0, 0, ONE_CMPLX, I_CMPLX);
+    qftReg->ApplySinglePhase(ONE_CMPLX, I_CMPLX, 0);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbParity(1));
 }
 

@@ -1073,6 +1073,7 @@ protected:
     void ToPermBasis(const bitLenInt& i)
     {
         RevertBasisX(i);
+        RevertBasisY(i);
         RevertBasis2Qb(i);
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
@@ -1080,6 +1081,9 @@ protected:
         bitLenInt i;
         for (i = 0; i < length; i++) {
             RevertBasisX(start + i);
+        }
+        for (i = 0; i < length; i++) {
+            RevertBasisY(start + i);
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i);
@@ -1104,6 +1108,9 @@ protected:
             RevertBasisX(start + i);
         }
         for (i = 0; i < length; i++) {
+            RevertBasisY(start + i);
+        }
+        for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
             RevertBasis2Qb(
                 start + i, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, exceptBits, exceptBits, true);
@@ -1114,6 +1121,9 @@ protected:
         bitLenInt i;
         for (i = 0; i < qubitCount; i++) {
             RevertBasisX(i);
+        }
+        for (i = 0; i < qubitCount; i++) {
+            RevertBasisY(i);
         }
         for (i = 0; i < qubitCount; i++) {
             shards[i].ClearInvertPhase();
