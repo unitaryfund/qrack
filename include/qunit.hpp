@@ -1026,20 +1026,17 @@ protected:
             return;
         }
 
-        freezeBasisH = true;
-        H(i);
-        S(i);
         shards[i].isPauliY = false;
+        shards[i].isPauliX = true;
+        freezeBasisH = true;
+        S(i);
         freezeBasisH = false;
     }
 
     void RevertBasis1Qb(const bitLenInt& i)
     {
-        if (shards[i].isPauliX) {
-            RevertBasisX(i);
-        } else if (shards[i].isPauliY) {
-            RevertBasisY(i);
-        }
+        RevertBasisY(i);
+        RevertBasisX(i);
     }
 
     enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
@@ -1072,18 +1069,18 @@ protected:
     }
     void ToPermBasis(const bitLenInt& i)
     {
-        RevertBasisX(i);
         RevertBasisY(i);
+        RevertBasisX(i);
         RevertBasis2Qb(i);
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
     {
         bitLenInt i;
         for (i = 0; i < length; i++) {
-            RevertBasisX(start + i);
+            RevertBasisY(start + i);
         }
         for (i = 0; i < length; i++) {
-            RevertBasisY(start + i);
+            RevertBasisX(start + i);
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i);
@@ -1105,10 +1102,10 @@ protected:
         }
 
         for (i = 0; i < length; i++) {
-            RevertBasisX(start + i);
+            RevertBasisY(start + i);
         }
         for (i = 0; i < length; i++) {
-            RevertBasisY(start + i);
+            RevertBasisX(start + i);
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
@@ -1120,10 +1117,10 @@ protected:
     {
         bitLenInt i;
         for (i = 0; i < qubitCount; i++) {
-            RevertBasisX(i);
+            RevertBasisY(i);
         }
         for (i = 0; i < qubitCount; i++) {
-            RevertBasisY(i);
+            RevertBasisX(i);
         }
         for (i = 0; i < qubitCount; i++) {
             shards[i].ClearInvertPhase();
