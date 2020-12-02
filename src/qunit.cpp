@@ -1363,9 +1363,8 @@ void QUnit::H(bitLenInt target)
     QEngineShard& shard = shards[target];
 
     if (!freezeBasisH) {
+        RevertBasisY(target);
         CommuteH(target);
-        // TODO: This uses the isPauliX and isPauliY flags at the same time, if the latter is set, which is not yet
-        // handled.
         shard.isPauliX = !shard.isPauliX;
         return;
     }
@@ -2008,11 +2007,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
                 shard.isPauliX = true;
                 shard.isPauliY = false;
-                XBase(target);
                 return;
             } else if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
                 shard.isPauliX = true;
                 shard.isPauliY = false;
+                XBase(target);
                 return;
             }
         }
@@ -2040,11 +2039,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
                 shard.isPauliX = false;
                 shard.isPauliY = true;
+                XBase(target);
                 return;
             } else if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
                 shard.isPauliX = false;
                 shard.isPauliY = true;
-                XBase(target);
                 return;
             }
         }
@@ -2386,6 +2385,18 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
     }
     if (!shard.isPauliY && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
         (mtrx[0] == mtrx[2]) && (mtrx[2] == -mtrx[3])) {
+        H(target);
+        return;
+    }
+    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
+        (mtrx[2] == -mtrx[3]) && (I_CMPLX * mtrx[0] == mtrx[2])) {
+        H(target);
+        S(target);
+        return;
+    }
+    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[2]) &&
+        (mtrx[1] == -mtrx[3]) && (I_CMPLX * mtrx[2] == mtrx[3])) {
+        IS(target);
         H(target);
         return;
     }
