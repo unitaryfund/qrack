@@ -118,7 +118,7 @@ void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
     if (n == 2) {
-        ApplySinglePhase(ONE_CMPLX, I_CMPLX, qubit);
+        ApplySinglePhase(ONE_CMPLX, -I_CMPLX, qubit);
         return;
     }
 
@@ -136,7 +136,7 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
     if (n == 2) {
-        ApplySinglePhase(ONE_CMPLX, -I_CMPLX, qubit);
+        ApplySinglePhase(ONE_CMPLX, I_CMPLX, qubit);
         return;
     }
 

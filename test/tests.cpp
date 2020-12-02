@@ -3777,8 +3777,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniformparityrz")
 
     qftReg->SetPermutation(0x01);
     qftReg->H(0);
-    qftReg->UniformParityRZ(1, -M_PI_4);
     qftReg->S(0);
+    qftReg->UniformParityRZ(1, -M_PI_4);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0));
 }
