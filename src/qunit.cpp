@@ -2007,11 +2007,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
                 shard.isPauliX = true;
                 shard.isPauliY = false;
+                XBase(target);
                 return;
             } else if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
                 shard.isPauliX = true;
                 shard.isPauliY = false;
-                XBase(target);
                 return;
             }
         }
@@ -2039,11 +2039,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
                 shard.isPauliX = false;
                 shard.isPauliY = true;
-                XBase(target);
                 return;
             } else if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
                 shard.isPauliX = false;
                 shard.isPauliY = true;
+                XBase(target);
                 return;
             }
         }
