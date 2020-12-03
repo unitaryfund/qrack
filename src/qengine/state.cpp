@@ -53,7 +53,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     stateVec = AllocStateVec(maxQPower);
     stateVec->clear();
 
-    if (phaseFac == complex(-999.0, -999.0)) {
+    if (phaseFac == CMPLX_DEFAULT_ARG) {
         stateVec->write(initState, GetNonunitaryPhase());
     } else {
         stateVec->write(initState, phaseFac);
@@ -109,10 +109,10 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
 
     stateVec->clear();
 
-    if (phaseFac == complex(-999.0, -999.0)) {
+    if (phaseFac == CMPLX_DEFAULT_ARG) {
         complex phase;
         if (randGlobalPhase) {
-            real1 angle = Rand() * 2.0 * PI_R1;
+            real1 angle = Rand() * 2 * PI_R1;
             phase = complex(cos(angle), sin(angle));
         } else {
             phase = complex(ONE_R1, ZERO_R1);
