@@ -1599,11 +1599,11 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
     }
 
+    RevertBasisY(target);
+
     bool pmBasis = (cShard.isPauliX && tShard.isPauliX && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
 
     if (!freezeBasis2Qb && !pmBasis) {
-        RevertBasisY(target);
-
         bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
