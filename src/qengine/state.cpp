@@ -1208,7 +1208,7 @@ bool QEngineCPU::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     return result;
 }
 
-bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
+bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare, real1 error_tol)
 {
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
@@ -1244,7 +1244,7 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
 
     real1 nrmCompare = nrm;
     nrm = norm(toCompare->stateVec->read(basePerm));
-    if (abs(nrm - nrmCompare) >= approxcompare_error) {
+    if (abs(nrm - nrmCompare) > error_tol) {
         // If the amplitude we sample for global phase offset correction doesn't match, we're done.
         return false;
     }
@@ -1263,7 +1263,7 @@ bool QEngineCPU::ApproxCompare(QEngineCPUPtr toCompare)
 
     delete[] partError;
 
-    return totError < approxcompare_error;
+    return totError <= error_tol;
 }
 
 /// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU

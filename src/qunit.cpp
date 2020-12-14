@@ -3685,7 +3685,7 @@ bool QUnit::isFinished()
         [](QInterfacePtr unit, real1 unused1, real1 unused2, int32_t unused3) { return unit->isFinished(); });
 }
 
-bool QUnit::ApproxCompare(QUnitPtr toCompare)
+bool QUnit::ApproxCompare(QUnitPtr toCompare, real1 error_tol)
 {
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
@@ -3698,7 +3698,7 @@ bool QUnit::ApproxCompare(QUnitPtr toCompare)
     QUnitPtr thatCopy = std::dynamic_pointer_cast<QUnit>(toCompare->Clone());
     thatCopy->EntangleAll();
 
-    return thisCopy->shards[0].unit->ApproxCompare(thatCopy->shards[0].unit);
+    return thisCopy->shards[0].unit->ApproxCompare(thatCopy->shards[0].unit, error_tol);
 }
 
 QInterfacePtr QUnit::Clone()

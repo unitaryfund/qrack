@@ -639,12 +639,12 @@ public:
         return engine->ForceMParity(mask, result, doForce);
     }
 
-    virtual bool ApproxCompare(QInterfacePtr toCompare)
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1 error_tol = REAL1_EPSILON)
     {
-        return ApproxCompare(std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare));
+        return ApproxCompare(std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare), error_tol);
     }
 
-    virtual bool ApproxCompare(QStabilizerHybridPtr toCompare)
+    virtual bool ApproxCompare(QStabilizerHybridPtr toCompare, real1 error_tol = REAL1_EPSILON)
     {
         if (!stabilizer == !(toCompare->engine)) {
             return false;
@@ -654,7 +654,7 @@ public:
             return stabilizer->ApproxCompare(toCompare->stabilizer);
         }
 
-        return engine->ApproxCompare(toCompare->engine);
+        return engine->ApproxCompare(toCompare->engine, error_tol);
     }
     virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG)
     {
