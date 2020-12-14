@@ -3693,11 +3693,25 @@ real1 QUnit::SumSqrDiff(QUnitPtr toCompare)
         return 4.0f;
     }
 
-    QUnitPtr thisCopy = std::dynamic_pointer_cast<QUnit>(Clone());
-    thisCopy->EntangleAll();
+    QUnitPtr thisCopyShared, thatCopyShared;
+    QUnit* thisCopy;
+    QUnit* thatCopy;
 
-    QUnitPtr thatCopy = std::dynamic_pointer_cast<QUnit>(toCompare->Clone());
-    thatCopy->EntangleAll();
+    if (shards[0].unit->GetQubitCount() == qubitCount) {
+        thisCopy = this;
+    } else {
+        thisCopyShared = std::dynamic_pointer_cast<QUnit>(Clone());
+        thisCopyShared->EntangleAll();
+        thisCopy = thisCopyShared.get();
+    }
+
+    if (toCompare->shards[0].unit->GetQubitCount() == qubitCount) {
+        thatCopy = toCompare.get();
+    } else {
+        thatCopyShared = std::dynamic_pointer_cast<QUnit>(toCompare->Clone());
+        thatCopyShared->EntangleAll();
+        thatCopy = thatCopyShared.get();
+    }
 
     return thisCopy->shards[0].unit->SumSqrDiff(thatCopy->shards[0].unit);
 }
