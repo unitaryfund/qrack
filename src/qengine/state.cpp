@@ -1212,7 +1212,7 @@ real1 QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
 {
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
-        // Max square
+        // Max square difference:
         return 4.0f;
     }
 

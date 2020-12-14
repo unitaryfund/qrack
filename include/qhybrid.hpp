@@ -97,6 +97,10 @@ public:
     {
         Decompose(start, std::dynamic_pointer_cast<QHybrid>(dest));
     }
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1 error_tol = REAL1_EPSILON)
+    {
+        return TryDecompose(start, std::dynamic_pointer_cast<QHybrid>(dest), error_tol);
+    }
     virtual void Decompose(bitLenInt start, QHybridPtr dest)
     {
         bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
@@ -118,6 +122,20 @@ public:
         SwitchModes(nQubitCount >= thresholdQubits);
         SetQubitCount(nQubitCount);
         return engine->Dispose(start, length, disposedPerm);
+    }
+
+    virtual bool TryDecompose(bitLenInt start, QHybridPtr dest, real1 error_tol = REAL1_EPSILON)
+    {
+        bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
+        SwitchModes(nQubitCount >= thresholdQubits);
+        dest->SwitchModes(isGpu);
+        bool result = engine->TryDecompose(start, dest->engine, error_tol);
+        if (result) {
+            SetQubitCount(nQubitCount);
+        } else {
+            SwitchModes(qubitCount >= thresholdQubits);
+        }
+        return result;
     }
 
     virtual void SetQuantumState(const complex* inputState) { engine->SetQuantumState(inputState); }
@@ -342,7 +360,16 @@ public:
         return engine->ForceMParity(mask, result, doForce);
     }
 
-    virtual real1 SumSqrDiff(QInterfacePtr toCompare) { return engine->SumSqrDiff(toCompare); }
+    virtual real1 SumSqrDiff(QInterfacePtr toCompare)
+    {
+        return SumSqrDiff(std::dynamic_pointer_cast<QHybrid>(toCompare));
+    }
+    virtual real1 SumSqrDiff(QHybridPtr toCompare)
+    {
+        toCompare->SwitchModes(isGpu);
+        return engine->SumSqrDiff(toCompare->engine);
+    }
+
     virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG) { engine->UpdateRunningNorm(norm_thresh); }
     virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG)
     {

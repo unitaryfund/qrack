@@ -750,4 +750,30 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     return results;
 }
 
+bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1 error_tol)
+{
+    Finish();
+
+    bool tempDoNorm = doNormalize;
+    doNormalize = false;
+
+    QInterfacePtr unitCopy = Clone();
+
+    unitCopy->Decompose(start, dest);
+    unitCopy->Compose(dest, start);
+
+    Finish();
+
+    doNormalize = tempDoNorm;
+
+    bool didSeparate = ApproxCompare(unitCopy, error_tol);
+
+    if (didSeparate) {
+        // The subsystem is separable.
+        Dispose(start, dest->GetQubitCount());
+    }
+
+    return didSeparate;
+}
+
 } // namespace Qrack
