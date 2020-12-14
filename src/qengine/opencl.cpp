@@ -2458,7 +2458,8 @@ real1 QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 {
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
-        return false;
+        // Max square difference:
+        return 4.0f;
     }
 
     // Make sure both engines are normalized

@@ -658,7 +658,8 @@ public:
     virtual bool ApproxCompare(QStabilizerHybridPtr toCompare, real1 error_tol = REAL1_EPSILON)
     {
         if (!stabilizer == !(toCompare->engine)) {
-            return false;
+            // Max square difference:
+            return 4.0f;
         }
 
         if (stabilizer) {
