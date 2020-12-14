@@ -2454,7 +2454,7 @@ void QEngineOCL::GetQuantumState(complex* outputState)
 /// Get all probabilities, in unsigned int permutation basis
 void QEngineOCL::GetProbs(real1* outputProbs) { ProbRegAll(0, qubitCount, outputProbs); }
 
-bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
+real1 QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 {
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
@@ -2484,7 +2484,7 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
     real1 sumSqrErr = 0;
     WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
 
-    return sumSqrErr < approxcompare_error;
+    return sumSqrErr;
 }
 
 QInterfacePtr QEngineOCL::Clone()

@@ -102,12 +102,6 @@ typedef double real1;
 #define I_CMPLX complex(ZERO_R1, ONE_R1)
 #define CMPLX_DEFAULT_ARG complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG)
 
-// approxcompare_error is the maximum acceptable sum of probability amplitude difference for ApproxCompare to return
-// "true." When TrySeparate or TryDecohere is applied after the QFT followed by its inverse on a permutation, the sum of
-// square errors of probability is generally less than 10^-11, for float accuracy. (A small number of trials return many
-// orders larger error, but these cases should not be separated, as the code stands.)
-#define approxcompare_error 1e-7f
-
 namespace Qrack {
 typedef std::shared_ptr<complex> BitOp;
 
