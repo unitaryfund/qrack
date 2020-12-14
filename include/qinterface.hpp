@@ -2097,6 +2097,8 @@ public:
 
     virtual real1 SumSqrDiff(QInterfacePtr toCompare) = 0;
 
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1 error_tol = REAL1_EPSILON);
+
     /**
      * Force a calculation of the norm of the state vector, in order to make it unit length before the next probability
      * or measurement operation. (On an actual quantum computer, the state should never require manual normalization.)

@@ -646,7 +646,14 @@ public:
 
     virtual real1 SumSqrDiff(QStabilizerHybridPtr toCompare)
     {
+        // If the qubit counts are unequal, these can't be approximately equal objects.
+        if (qubitCount != toCompare->qubitCount) {
+            // Max square difference:
+            return 4.0f;
+        }
+
         SwitchToEngine();
+        toCompare->SwitchToEngine();
 
         return engine->SumSqrDiff(toCompare->engine);
     }
@@ -658,8 +665,8 @@ public:
     virtual bool ApproxCompare(QStabilizerHybridPtr toCompare, real1 error_tol = REAL1_EPSILON)
     {
         if (!stabilizer == !(toCompare->engine)) {
-            // Max square difference:
-            return 4.0f;
+            SwitchToEngine();
+            toCompare->SwitchToEngine();
         }
 
         if (stabilizer) {
