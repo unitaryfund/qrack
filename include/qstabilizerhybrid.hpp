@@ -639,6 +639,17 @@ public:
         return engine->ForceMParity(mask, result, doForce);
     }
 
+    virtual real1 SumSqrDiff(QInterfacePtr toCompare)
+    {
+        return SumSqrDiff(std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare));
+    }
+
+    virtual real1 SumSqrDiff(QStabilizerHybridPtr toCompare)
+    {
+        SwitchToEngine();
+
+        return engine->SumSqrDiff(toCompare->engine);
+    }
     virtual bool ApproxCompare(QInterfacePtr toCompare, real1 error_tol = REAL1_EPSILON)
     {
         return ApproxCompare(std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare), error_tol);

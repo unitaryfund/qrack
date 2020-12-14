@@ -272,11 +272,11 @@ public:
     virtual real1 ProbParity(const bitCapInt& mask);
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
     virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG);
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1 error_tol = REAL1_EPSILON)
+    virtual real1 SumSqrDiff(QInterfacePtr toCompare)
     {
-        return ApproxCompare(std::dynamic_pointer_cast<QEngineCPU>(toCompare), error_tol);
+        return SumSqrDiff(std::dynamic_pointer_cast<QEngineCPU>(toCompare));
     }
-    virtual bool ApproxCompare(QEngineCPUPtr toCompare, real1 error_tol = REAL1_EPSILON);
+    virtual real1 SumSqrDiff(QEngineCPUPtr toCompare);
     virtual QInterfacePtr Clone();
 
     /** @} */

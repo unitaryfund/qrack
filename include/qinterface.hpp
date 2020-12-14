@@ -2090,7 +2090,12 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1 error_tol = REAL1_EPSILON) = 0;
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1 error_tol = REAL1_EPSILON)
+    {
+        return SumSqrDiff(toCompare) <= error_tol;
+    }
+
+    virtual real1 SumSqrDiff(QInterfacePtr toCompare) = 0;
 
     /**
      * Force a calculation of the norm of the state vector, in order to make it unit length before the next probability

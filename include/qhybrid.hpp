@@ -342,10 +342,7 @@ public:
         return engine->ForceMParity(mask, result, doForce);
     }
 
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1 error_tol = REAL1_EPSILON)
-    {
-        return engine->ApproxCompare(toCompare, error_tol);
-    }
+    virtual real1 SumSqrDiff(QInterfacePtr toCompare) { return engine->SumSqrDiff(toCompare); }
     virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG) { engine->UpdateRunningNorm(norm_thresh); }
     virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG)
     {

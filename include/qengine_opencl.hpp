@@ -292,11 +292,11 @@ public:
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetAmplitude(bitCapInt perm, complex amp);
 
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1 error_tol = REAL1_EPSILON)
+    virtual real1 SumSqrDiff(QInterfacePtr toCompare)
     {
-        return ApproxCompare(std::dynamic_pointer_cast<QEngineOCL>(toCompare), error_tol);
+        return SumSqrDiff(std::dynamic_pointer_cast<QEngineOCL>(toCompare));
     }
-    virtual bool ApproxCompare(QEngineOCLPtr toCompare, real1 error_tol = REAL1_EPSILON);
+    virtual real1 SumSqrDiff(QEngineOCLPtr toCompare);
 
     virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG);
     virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);
