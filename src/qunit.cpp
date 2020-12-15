@@ -277,9 +277,11 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
                     if (subLen == 1U) {
                         pShard = &shard;
                     } else {
+                        bitLenInt mappedBefore = shards[decomposedUnits[unit]].mapped - 1U;
+                        bitLenInt mappedAfter = shards[decomposedUnits[unit]].mapped + subLen;
                         for (bitLenInt i = 0; i < shards.size(); i++) {
                             if ((shards[i].unit == unit) &&
-                                (shards[i].mapped == (shards[decomposedUnits[unit]].mapped + subLen))) {
+                                ((shards[i].mapped == mappedBefore) || (shards[i].mapped == mappedAfter))) {
                                 pShard = &shards[i];
                                 break;
                             }
