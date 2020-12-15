@@ -272,22 +272,32 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
                     shard.unit->Dispose(shard.mapped, subLen);
                 }
 
-                if (((subLen == 1U) && dest) || (subLen == (origLen - 1U))) {
+                if ((subLen == 1U) && dest) {
+                    complex amps[2];
+                    shard.unit->GetQuantumState(amps);
+                    shard.amp0 = amps[0];
+                    shard.amp1 = amps[1];
+                    shard.isProbDirty = false;
+                    shard.isPhaseDirty = false;
+                    shard.unit = NULL;
+                    shard.mapped = 0;
+                    if (doNormalize) {
+                        shard.ClampAmps(amplitudeFloor);
+                    }
+                }
+
+                if (subLen == (origLen - 1U)) {
                     QEngineShard* pShard = NULL;
-                    if (subLen == 1U) {
-                        pShard = &shard;
+                    bitLenInt mapped = shards[decomposedUnits[unit]].mapped;
+                    if (mapped == 0) {
+                        mapped += subLen;
                     } else {
-                        bitLenInt mapped = shards[decomposedUnits[unit]].mapped;
-                        if (mapped == 0) {
-                            mapped += subLen;
-                        } else {
-                            mapped = 0;
-                        }
-                        for (bitLenInt i = 0; i < shards.size(); i++) {
-                            if ((shards[i].unit == unit) && (shards[i].mapped == mapped)) {
-                                pShard = &shards[i];
-                                break;
-                            }
+                        mapped = 0;
+                    }
+                    for (bitLenInt i = 0; i < shards.size(); i++) {
+                        if ((shards[i].unit == unit) && (shards[i].mapped == mapped)) {
+                            pShard = &shards[i];
+                            break;
                         }
                     }
                     complex amps[2];
