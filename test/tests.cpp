@@ -3600,6 +3600,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
     qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0x02, rng);
     qftReg->H(1, 2);
     qftReg->CNOT(1, 3, 2);
+    qftReg->CNOT(1, 6);
+    qftReg->CNOT(3, 6);
     qftReg->Decompose(1, qftReg2);
     qftReg2->CNOT(0, 2, 2);
     qftReg2->H(0, 2);
