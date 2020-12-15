@@ -483,13 +483,13 @@ QInterfacePtr QUnit::EntangleRange(
     return toRet;
 }
 
-bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
+bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1 error_tol)
 {
     if (length > 1) {
         QInterfacePtr dest = std::make_shared<QUnit>(
             engine, subEngine, length, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
 
-        if (TryDecompose(start, dest)) {
+        if (TryDecompose(start, dest, error_tol)) {
             Compose(dest, start);
             return true;
         }
