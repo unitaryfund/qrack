@@ -262,13 +262,40 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         if (decomposedUnits.find(unit) == decomposedUnits.end()) {
             decomposedUnits[unit] = start + i;
             bitLenInt subLen = subunits[unit];
-            if (subLen != unit->GetQubitCount()) {
+            bitLenInt origLen = unit->GetQubitCount();
+            if (subLen != origLen) {
                 if (dest) {
                     QInterfacePtr nUnit = MakeEngine(subLen, 0);
                     shard.unit->Decompose(shard.mapped, nUnit);
                     shard.unit = nUnit;
                 } else {
                     shard.unit->Dispose(shard.mapped, subLen);
+                }
+
+                if (((subLen == 1U) && dest) || (subLen == (origLen - 1U))) {
+                    QEngineShard* pShard = NULL;
+                    if (subLen == 1U) {
+                        pShard = &shard;
+                    } else {
+                        for (bitLenInt i = 0; i < shards.size(); i++) {
+                            if ((shards[i].unit == unit) &&
+                                (shards[i].mapped == (shards[decomposedUnits[unit]].mapped + subLen))) {
+                                pShard = &shards[i];
+                                break;
+                            }
+                        }
+                    }
+                    complex amps[2];
+                    pShard->unit->GetQuantumState(amps);
+                    pShard->amp0 = amps[0];
+                    pShard->amp1 = amps[1];
+                    pShard->isProbDirty = false;
+                    pShard->isPhaseDirty = false;
+                    pShard->unit = NULL;
+                    pShard->mapped = 0;
+                    if (doNormalize) {
+                        pShard->ClampAmps(amplitudeFloor);
+                    }
                 }
             }
         } else {
