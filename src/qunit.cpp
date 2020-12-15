@@ -228,52 +228,69 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         RevertBasis2Qb(start + i);
     }
 
-    QInterfacePtr destEngine;
-    if (length == 1U) {
-        EndEmulation(start);
-        if (dest) {
-            dest->EndAllEmulation();
-        }
-    } else {
-        EntangleRange(start, length);
-        OrderContiguous(shards[start].unit);
-
-        if (dest) {
-            dest->EntangleRange(0, length);
-            dest->OrderContiguous(dest->shards[0].unit);
-            destEngine = dest->shards[0].unit;
+    // Move "emulated" bits immediately into the destination, which is initialized.
+    // Find a set of shard "units" to order contiguously. Also count how many bits to decompose are in each subunit.
+    std::map<QInterfacePtr, bitLenInt> subunits;
+    for (bitLenInt i = 0; i < length; i++) {
+        QEngineShard& shard = shards[start + i];
+        if (shard.unit) {
+            subunits[shard.unit]++;
+        } else if (dest) {
+            dest->shards[i] = shard;
         }
     }
 
-    QInterfacePtr unit = shards[start].unit;
-    bitLenInt mapped = shards[start].mapped;
-    bitLenInt unitLength = unit->GetQubitCount();
-
-    if (dest) {
-        for (bitLenInt i = 0; i < length; i++) {
-            dest->shards[i] = QEngineShard(shards[start + i]);
-            dest->shards[i].unit = destEngine;
-        }
-
-        unit->Decompose(mapped, destEngine);
-    } else {
-        unit->Dispose(mapped, length);
+    // Order the subsystem units contiguously. (They might be entangled at random with bits not involed in the
+    // operation.)
+    std::map<QInterfacePtr, bitLenInt>::iterator subunit;
+    for (subunit = subunits.begin(); subunit != subunits.end(); subunit++) {
+        OrderContiguous(subunit->first);
     }
 
-    unit->Finish();
-    shards.erase(shards.begin() + start, shards.begin() + start + length);
-    SetQubitCount(qubitCount - length);
+    // After ordering all subunits contiguously, since the top level mapping is a contiguous array, all subunit sets are
+    // also contiguous. From the lowest index bits, they are mapped simply for the length count of bits involved in the
+    // entire subunit.
+    std::map<QInterfacePtr, bitLenInt> decomposedUnits;
+    for (bitLenInt i = 0; i < length; i++) {
+        QEngineShard& shard = shards[start + i];
+        QInterfacePtr unit = shard.unit;
 
-    if (unitLength == length) {
-        return;
+        if (unit == NULL) {
+            continue;
+        }
+
+        if (decomposedUnits.find(unit) == decomposedUnits.end()) {
+            decomposedUnits[unit] = start + i;
+            bitLenInt subLen = subunits[unit];
+            if (subLen != unit->GetQubitCount()) {
+                if (dest) {
+                    QInterfacePtr nUnit = MakeEngine(subLen, 0);
+                    shard.unit->Decompose(shard.mapped, nUnit);
+                    shard.unit = nUnit;
+                } else {
+                    shard.unit->Dispose(shard.mapped, subLen);
+                }
+            }
+        } else {
+            shard.unit = shards[decomposedUnits[unit]].unit;
+        }
+
+        if (dest) {
+            dest->shards[i] = shard;
+        }
     }
 
     /* Find the rest of the qubits. */
     for (auto&& shard : shards) {
-        if (shard.unit == unit && shard.mapped >= (mapped + length)) {
-            shard.mapped -= length;
+        subunit = subunits.find(shard.unit);
+        if (subunit != subunits.end() &&
+            shard.mapped >= (shards[decomposedUnits[shard.unit]].mapped + subunit->second)) {
+            shard.mapped -= subunit->second;
         }
     }
+
+    shards.erase(shards.begin() + start, shards.begin() + start + length);
+    SetQubitCount(qubitCount - length);
 }
 
 void QUnit::Decompose(bitLenInt start, QUnitPtr dest) { Detach(start, dest->GetQubitCount(), dest); }
