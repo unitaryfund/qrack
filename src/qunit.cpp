@@ -485,31 +485,43 @@ QInterfacePtr QUnit::EntangleRange(
 
 bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
 {
-    real1 prob;
-    bool didSeparate = false;
-    for (bitLenInt i = 0; i < length; i++) {
-        if (shards[start + i].GetQubitCount() == 1) {
-            didSeparate = true;
-            continue;
+    if (length > 1) {
+        QInterfacePtr dest = std::make_shared<QUnit>(
+            engine, subEngine, length, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
+
+        if (TryDecompose(start, dest)) {
+            Compose(dest, start);
+            return true;
         }
 
-        // We check Z basis:
-        prob = ProbBase(start + i);
-        didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
-
-        // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
-        if (!IS_ZERO_R1(prob - ONE_R1 / 2)) {
-            continue;
-        }
-
-        QEngineShard& shard = shards[start + i];
-
-        // We check X basis:
-        shard.unit->H(shard.mapped);
-        prob = ProbBase(start + i);
-        didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
-        H(start + i);
+        return false;
     }
+
+    // Otherwise, we're trying to separate a single bit.
+
+    if (shards[start].GetQubitCount() == 1) {
+        return true;
+    }
+
+    // We check Z basis:
+    real1 prob = ProbBase(start);
+    bool didSeparate = (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
+
+    // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
+    if (!IS_ZERO_R1(prob - ONE_R1 / 2)) {
+        return didSeparate;
+    }
+
+    QEngineShard& shard = shards[start];
+
+    // We check X basis:
+    shard.unit->H(shard.mapped);
+    prob = ProbBase(start);
+    didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
+
+    // TODO: Y basis
+
+    H(start);
 
     return didSeparate;
 }
