@@ -759,12 +759,10 @@ bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1 error_t
 
     QInterfacePtr unitCopy = Clone();
 
+    doNormalize = tempDoNorm;
+
     unitCopy->Decompose(start, dest);
     unitCopy->Compose(dest, start);
-
-    Finish();
-
-    doNormalize = tempDoNorm;
 
     bool didSeparate = ApproxCompare(unitCopy, error_tol);
 

@@ -3769,6 +3769,7 @@ real1 QUnit::SumSqrDiff(QUnitPtr toCompare)
     QUnit* thatCopy;
 
     if (shards[0].unit->GetQubitCount() == qubitCount) {
+        OrderContiguous(shards[0].unit);
         thisCopy = this;
     } else {
         thisCopyShared = std::dynamic_pointer_cast<QUnit>(Clone());
@@ -3777,6 +3778,7 @@ real1 QUnit::SumSqrDiff(QUnitPtr toCompare)
     }
 
     if (toCompare->shards[0].unit->GetQubitCount() == qubitCount) {
+        toCompare->OrderContiguous(toCompare->shards[0].unit);
         thatCopy = toCompare.get();
     } else {
         thatCopyShared = std::dynamic_pointer_cast<QUnit>(toCompare->Clone());
