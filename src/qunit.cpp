@@ -228,52 +228,69 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         RevertBasis2Qb(start + i);
     }
 
-    QInterfacePtr destEngine;
-    if (length == 1U) {
-        EndEmulation(start);
-        if (dest) {
-            dest->EndAllEmulation();
-        }
-    } else {
-        EntangleRange(start, length);
-        OrderContiguous(shards[start].unit);
-
-        if (dest) {
-            dest->EntangleRange(0, length);
-            dest->OrderContiguous(dest->shards[0].unit);
-            destEngine = dest->shards[0].unit;
+    // Move "emulated" bits immediately into the destination, which is initialized.
+    // Find a set of shard "units" to order contiguously. Also count how many bits to decompose are in each subunit.
+    std::map<QInterfacePtr, bitLenInt> subunits;
+    for (bitLenInt i = 0; i < length; i++) {
+        QEngineShard& shard = shards[start + i];
+        if (shard.unit) {
+            subunits[shard.unit]++;
+        } else if (dest) {
+            dest->shards[i] = shard;
         }
     }
 
-    QInterfacePtr unit = shards[start].unit;
-    bitLenInt mapped = shards[start].mapped;
-    bitLenInt unitLength = unit->GetQubitCount();
-
-    if (dest) {
-        for (bitLenInt i = 0; i < length; i++) {
-            dest->shards[i] = QEngineShard(shards[start + i]);
-            dest->shards[i].unit = destEngine;
-        }
-
-        unit->Decompose(mapped, destEngine);
-    } else {
-        unit->Dispose(mapped, length);
+    // Order the subsystem units contiguously. (They might be entangled at random with bits not involed in the
+    // operation.)
+    std::map<QInterfacePtr, bitLenInt>::iterator subunit;
+    for (subunit = subunits.begin(); subunit != subunits.end(); subunit++) {
+        OrderContiguous(subunit->first);
     }
 
-    unit->Finish();
-    shards.erase(shards.begin() + start, shards.begin() + start + length);
-    SetQubitCount(qubitCount - length);
+    // After ordering all subunits contiguously, since the top level mapping is a contiguous array, all subunit sets are
+    // also contiguous. From the lowest index bits, they are mapped simply for the length count of bits involved in the
+    // entire subunit.
+    std::map<QInterfacePtr, bitLenInt> decomposedUnits;
+    for (bitLenInt i = 0; i < length; i++) {
+        QEngineShard& shard = shards[start + i];
+        QInterfacePtr unit = shard.unit;
 
-    if (unitLength == length) {
-        return;
+        if (unit == NULL) {
+            continue;
+        }
+
+        if (decomposedUnits.find(unit) == decomposedUnits.end()) {
+            decomposedUnits[unit] = start + i;
+            bitLenInt subLen = subunits[unit];
+            if (subLen != unit->GetQubitCount()) {
+                if (dest) {
+                    QInterfacePtr nUnit = MakeEngine(subLen, 0);
+                    shard.unit->Decompose(shard.mapped, nUnit);
+                    shard.unit = nUnit;
+                } else {
+                    shard.unit->Dispose(shard.mapped, subLen);
+                }
+            }
+        } else {
+            shard.unit = shards[decomposedUnits[unit]].unit;
+        }
+
+        if (dest) {
+            dest->shards[i] = shard;
+        }
     }
 
     /* Find the rest of the qubits. */
     for (auto&& shard : shards) {
-        if (shard.unit == unit && shard.mapped >= (mapped + length)) {
-            shard.mapped -= length;
+        subunit = subunits.find(shard.unit);
+        if (subunit != subunits.end() &&
+            shard.mapped >= (shards[decomposedUnits[shard.unit]].mapped + subunit->second)) {
+            shard.mapped -= subunit->second;
         }
     }
+
+    shards.erase(shards.begin() + start, shards.begin() + start + length);
+    SetQubitCount(qubitCount - length);
 }
 
 void QUnit::Decompose(bitLenInt start, QUnitPtr dest) { Detach(start, dest->GetQubitCount(), dest); }
@@ -466,33 +483,45 @@ QInterfacePtr QUnit::EntangleRange(
     return toRet;
 }
 
-bool QUnit::TrySeparate(bitLenInt start, bitLenInt length)
+bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1 error_tol)
 {
-    real1 prob;
-    bool didSeparate = false;
-    for (bitLenInt i = 0; i < length; i++) {
-        if (shards[start + i].GetQubitCount() == 1) {
-            didSeparate = true;
-            continue;
+    if (length > 1) {
+        QInterfacePtr dest = std::make_shared<QUnit>(
+            engine, subEngine, length, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
+
+        if (TryDecompose(start, dest, error_tol)) {
+            Compose(dest, start);
+            return true;
         }
 
-        // We check Z basis:
-        prob = ProbBase(start + i);
-        didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
-
-        // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
-        if (!IS_ZERO_R1(prob - ONE_R1 / 2)) {
-            continue;
-        }
-
-        QEngineShard& shard = shards[start + i];
-
-        // We check X basis:
-        shard.unit->H(shard.mapped);
-        prob = ProbBase(start + i);
-        didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
-        H(start + i);
+        return false;
     }
+
+    // Otherwise, we're trying to separate a single bit.
+
+    if (shards[start].GetQubitCount() == 1) {
+        return true;
+    }
+
+    // We check Z basis:
+    real1 prob = ProbBase(start);
+    bool didSeparate = (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
+
+    // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
+    if (!IS_ZERO_R1(prob - ONE_R1 / 2)) {
+        return didSeparate;
+    }
+
+    QEngineShard& shard = shards[start];
+
+    // We check X basis:
+    shard.unit->H(shard.mapped);
+    prob = ProbBase(start);
+    didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
+
+    // TODO: Y basis
+
+    H(start);
 
     return didSeparate;
 }

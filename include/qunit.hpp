@@ -904,7 +904,7 @@ public:
     virtual bool isFinished();
     virtual void Dump();
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1 error_tol = REAL1_EPSILON);
 
     virtual QInterfacePtr Clone();
 
