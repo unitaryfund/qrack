@@ -561,8 +561,6 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1 error_tol)
     prob = ProbBase(start);
     didSeparate |= (IS_ZERO_R1(prob) || IS_ONE_R1(prob));
 
-    // TODO: Y basis
-
     H(start);
 
     return didSeparate;
