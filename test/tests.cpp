@@ -3654,6 +3654,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
 {
+    if (testEngineType == QINTERFACE_QUNIT_MULTI) {
+        // Not yet supported.
+        return;
+    }
 
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 8, 0, rng, ONE_CMPLX);
     QInterfacePtr qftReg2 =
