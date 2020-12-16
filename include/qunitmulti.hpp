@@ -94,6 +94,7 @@ public:
         bitLenInt qubitThreshold = 0);
 
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1 error_tol = REAL1_EPSILON) { return false; }
 
     virtual QInterfacePtr Clone();
     virtual void GetQuantumState(complex* outputState);
