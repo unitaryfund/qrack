@@ -688,13 +688,13 @@ public:
         }
     }
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1)
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1 error_tol = REAL1_EPSILON) 
     {
         if (stabilizer) {
             return stabilizer->CanDecomposeDispose(start, length);
         }
 
-        return engine->TrySeparate(start, length);
+        return engine->TrySeparate(start, length, error_tol);
     }
 
     virtual QInterfacePtr Clone();
