@@ -380,7 +380,10 @@ public:
 
     virtual bool isFinished() { return engine->isFinished(); }
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1 error_tol = REAL1_EPSILON)  { return engine->TrySeparate(start, length, error_tol); }
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1 error_tol = REAL1_EPSILON)
+    {
+        return engine->TrySeparate(start, length, error_tol);
+    }
 
     virtual QInterfacePtr Clone();
 

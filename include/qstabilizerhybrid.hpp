@@ -688,7 +688,7 @@ public:
         }
     }
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1 error_tol = REAL1_EPSILON) 
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1 error_tol = REAL1_EPSILON)
     {
         if (stabilizer) {
             return stabilizer->CanDecomposeDispose(start, length);
