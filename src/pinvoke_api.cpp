@@ -261,6 +261,9 @@ extern "C" {
  */
 MICROSOFT_QUANTUM_DECL unsigned init() { return init_count(0); }
 
+/**
+ * (External API) Initialize a simulator ID with "q" qubits
+ */
 MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 {
     META_LOCK_GUARD()
@@ -294,6 +297,40 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
     }
 
     return sid;
+}
+
+/**
+ * (External API) Initialize a simulator ID that clones simulator ID "sid"
+ */
+MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
+{
+    META_LOCK_GUARD()
+
+    unsigned nsid = simulators.size();
+
+    for (unsigned i = 0; i < simulators.size(); i++) {
+        if (simulatorReservations[i] == false) {
+            nsid = i;
+            simulatorReservations[i] = true;
+            break;
+        }
+    }
+
+    QInterfacePtr simulator = simulators[sid]->Clone();
+    if (nsid == simulators.size()) {
+        simulatorReservations.push_back(true);
+        simulators.push_back(simulator);
+    } else {
+        simulatorReservations[nsid] = true;
+        simulators[nsid] = simulator;
+    }
+
+    shards[simulator] = {};
+    for (unsigned i = 0; i < simulator->GetQubitCount(); i++) {
+        shards[simulator][i] = shards[simulators[sid]][i];
+    }
+
+    return nsid;
 }
 
 /**
