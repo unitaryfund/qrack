@@ -309,6 +309,8 @@ public:
     void DispatchQueue(cl_event event, cl_int type);
 
 protected:
+    virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
+
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
     virtual void ResetStateVec(complex* sv);
     virtual void ResetStateBuffer(BufferPtr nStateBuffer);
