@@ -282,6 +282,8 @@ public:
     /** @} */
 
 protected:
+    virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
+
     virtual StateVectorPtr AllocStateVec(bitCapInt elemCount);
     virtual void ResetStateVec(StateVectorPtr sv);
 
