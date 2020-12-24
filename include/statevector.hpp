@@ -383,7 +383,7 @@ public:
 
         mtx.unlock();
 
-        for (i = (toRet.size() - 1); i >= 0; i--) {
+        for (i = (int32_t)(toRet.size() - 1); i >= 0; i--) {
             if (toRet[i].size() == 0) {
                 toRetIt = toRet.begin();
                 std::advance(toRetIt, i);
@@ -403,7 +403,7 @@ public:
                 toRet.pop_back();
             }
 
-            combineCount = toRet.size() / 2U;
+            combineCount = (int32_t)toRet.size() / 2U;
             std::vector<std::future<void>> futures(combineCount);
             for (i = (combineCount - 1U); i >= 0; i--) {
                 futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
@@ -459,7 +459,7 @@ public:
 
         mtx.unlock();
 
-        for (i = (toRet.size() - 1); i >= 0; i--) {
+        for (i = (int32_t)(toRet.size() - 1); i >= 0; i--) {
             if (toRet[i].size() == 0) {
                 toRetIt = toRet.begin();
                 std::advance(toRetIt, i);
@@ -479,7 +479,7 @@ public:
                 toRet.pop_back();
             }
 
-            combineCount = toRet.size() / 2U;
+            combineCount = (int32_t)(toRet.size()) / 2U;
             std::vector<std::future<void>> futures(combineCount);
             for (i = (combineCount - 1U); i >= 0; i--) {
                 futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
