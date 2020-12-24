@@ -202,7 +202,7 @@ TEST_CASE("test_qengine_cpu_par_for_skip_wide")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
-    const int NUM_ENTRIES = 2000;
+    const size_t NUM_ENTRIES = 2000;
 
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
@@ -211,7 +211,7 @@ TEST_CASE("test_qengine_cpu_par_for_skip_wide")
 
     int skipBit = 0x4; // Skip 0b100 when counting upwards.
 
-    for (int i = 0; i < NUM_ENTRIES; i++) {
+    for (size_t i = 0; i < NUM_ENTRIES; i++) {
         hit[i].store(false);
     }
 
