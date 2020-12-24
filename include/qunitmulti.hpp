@@ -93,6 +93,7 @@ public:
         bool useSparseStateVec = false, real1 norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
         bitLenInt qubitThreshold = 0);
 
+    using QUnit::TrySeparate;
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
     virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1 error_tol = REAL1_EPSILON) { return false; }
 
