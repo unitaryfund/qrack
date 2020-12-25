@@ -695,6 +695,7 @@ protected:
     bool isSparse;
     bool freezeBasisH;
     bool freezeBasis2Qb;
+    bool freezeClifford;
     bitLenInt thresholdQubits;
     bool doSkipBuffer;
 

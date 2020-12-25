@@ -68,6 +68,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , isSparse(useSparseStateVec)
     , freezeBasisH(false)
     , freezeBasis2Qb(false)
+    , freezeClifford(false)
     , thresholdQubits(qubitThreshold)
     , doSkipBuffer(engine == QINTERFACE_STABILIZER_HYBRID)
 {
@@ -808,6 +809,12 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
         return false;
     }
 
+    if (freezeClifford) {
+        return false;
+    }
+
+    freezeClifford = true;
+
     std::vector<bitLenInt> partnerIndices;
     std::vector<bool> partnerStates;
 
@@ -827,38 +834,9 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             partnerStates.push_back(false);
         } else if (IS_NORM_0(partnerShard.amp0)) {
             partnerStates.push_back(true);
-        } else if (!unit->TrySeparate(partnerShard.mapped)) {
-            return false;
         } else {
-            // Guaranteed to be an X or Y eigenstate.
-            unit->H(partnerShard.mapped);
-            H(partnerIndex);
-            ProbBase(partnerIndex);
-
-            if (IS_NORM_0(partnerShard.amp1)) {
-                partnerStates.push_back(false);
-            } else if (IS_NORM_0(partnerShard.amp0)) {
-                partnerStates.push_back(true);
-            } else if (!unit->TrySeparate(partnerShard.mapped)) {
-                // If we flushed unanticipated buffers, we might be stuck.
-                return false;
-            } else {
-                // Guaranteed to be a Y eigenstate.
-                unit->IS(partnerShard.mapped);
-                unit->H(partnerShard.mapped);
-                H(partnerIndex);
-                S(partnerIndex);
-                ProbBase(partnerIndex);
-
-                if (IS_NORM_0(partnerShard.amp1)) {
-                    partnerStates.push_back(false);
-                } else if (IS_NORM_0(partnerShard.amp0)) {
-                    partnerStates.push_back(true);
-                } else {
-                    // If we flushed unanticipated buffers, we're stuck.
-                    return false;
-                }
-            }
+            freezeClifford = false;
+            return false;
         }
 
         partnerIndices.push_back(partnerIndex);
@@ -868,6 +846,8 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
     for (bitLenInt i = 0; i < partnerIndices.size(); i++) {
         SeparateBit(partnerStates[i], partnerIndices[i], false);
     }
+
+    freezeClifford = false;
 
     return true;
 }
