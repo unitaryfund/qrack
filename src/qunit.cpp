@@ -810,8 +810,6 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
 
     std::vector<bitLenInt> partnerIndices;
     std::vector<bool> partnerStates;
-    std::vector<bool> partnerX;
-    std::vector<bool> partnerY;
 
     for (bitLenInt partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
         QEngineShard& partnerShard = shards[partnerIndex];
@@ -827,27 +825,44 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
 
         if (IS_NORM_0(partnerShard.amp1)) {
             partnerStates.push_back(false);
-            partnerX.push_back(false);
-            partnerY.push_back(false);
         } else if (IS_NORM_0(partnerShard.amp0)) {
             partnerStates.push_back(true);
-            partnerX.push_back(false);
-            partnerY.push_back(false);
-        } else {
+        } else if (!unit->TrySeparate(partnerShard.mapped)) {
             return false;
+        } else {
+            // Guaranteed to be an X or Y eigenstate.
+            H(partnerIndex);
+            ProbBase(partnerIndex);
+            if (IS_NORM_0(partnerShard.amp1)) {
+                partnerStates.push_back(false);
+            } else if (IS_NORM_0(partnerShard.amp0)) {
+                partnerStates.push_back(true);
+            } else {
+                H(partnerIndex);
+
+                // Guaranteed to be a Y eigenstate.
+                IS(partnerIndex);
+                H(partnerIndex);
+                ProbBase(partnerIndex);
+
+                if (IS_NORM_0(partnerShard.amp1)) {
+                    partnerStates.push_back(false);
+                } else {
+                    partnerStates.push_back(true);
+                }
+
+                H(partnerIndex);
+                S(partnerIndex);
+            }
         }
 
         partnerIndices.push_back(partnerIndex);
     }
 
-    freezeBasisH = true;
-
     // If we made it this far, the Clifford engine is entirely separable into single qubit X/Y/Z eigenstates.
     for (bitLenInt i = 0; i < partnerIndices.size(); i++) {
         SeparateBit(partnerStates[i], partnerIndices[i], false);
     }
-
-    freezeBasisH = false;
 
     return true;
 }
@@ -981,13 +996,11 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
     shards[qubit].amp0 = value ? ZERO_CMPLX : ONE_CMPLX;
     shards[qubit].amp1 = value ? ONE_CMPLX : ZERO_CMPLX;
 
-    if (!unit || (unit->GetQubitCount() == 1)) {
+    if (!doDispose || !unit || (unit->GetQubitCount() == 1)) {
         return;
     }
 
-    if (doDispose) {
-        unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
-    }
+    unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
 
     /* Update the mappings. */
     for (auto&& shard : shards) {
