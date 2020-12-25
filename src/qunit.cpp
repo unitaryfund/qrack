@@ -543,9 +543,14 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1 error_tol)
     }
 
     // Otherwise, we're trying to separate a single bit.
+    QEngineShard& shard = shards[start];
 
-    if (shards[start].GetQubitCount() == 1) {
+    if (shard.GetQubitCount() == 1) {
         return true;
+    }
+
+    if (shard.unit->isClifford()) {
+        return CheckCliffordSeparable(start);
     }
 
     // We check Z basis:
@@ -556,8 +561,6 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1 error_tol)
     if (!IS_0_R1(prob - ONE_R1 / 2)) {
         return didSeparate;
     }
-
-    QEngineShard& shard = shards[start];
 
     // We check X basis:
     shard.unit->H(shard.mapped);
