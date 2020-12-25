@@ -2747,6 +2747,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     for (i = 0; i < targets.size(); i++) {
         shards[targets[i]].MakeDirty();
     }
+
+    CheckCliffordSeparable(allBits[0]);
 }
 
 bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
