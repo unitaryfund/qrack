@@ -46,6 +46,8 @@
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
 #define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
     (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
+#define UNSAFE_CACHED_X(shard)                                                                                         \
+    (!shard.isProbDirty && shard.isPauliX && !shard.isPauliY && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
 #define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp0))
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp1))
 #define IS_SAME_UNIT(shard1, shard2) ((shard1.unit || shard2.unit) && (shard1.unit == shard2.unit))
@@ -1882,6 +1884,13 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
                 return;
             }
         }
+    }
+
+    if ((!tShard.IsInvertTarget()) && (UNSAFE_CACHED_X(tShard))) {
+        H(target);
+        CCZ(control1, control2, target);
+        H(target);
+        return;
     }
 
     bitLenInt controls[2] = { control1, control2 };
