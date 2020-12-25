@@ -835,8 +835,10 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             ProbBase(partnerIndex);
             if (IS_NORM_0(partnerShard.amp1)) {
                 partnerStates.push_back(false);
+                H(partnerIndex);
             } else if (IS_NORM_0(partnerShard.amp0)) {
                 partnerStates.push_back(true);
+                H(partnerIndex);
             } else {
                 H(partnerIndex);
 
