@@ -831,9 +831,7 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             return false;
         } else {
             // Guaranteed to be an X or Y eigenstate.
-            freezeBasisH = true;
-            H(partnerIndex);
-            freezeBasisH = false;
+            unit->H(partnerShard.mapped);
             ProbBase(partnerIndex);
 
             if (IS_NORM_0(partnerShard.amp1)) {
@@ -843,13 +841,11 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                 partnerStates.push_back(true);
                 H(partnerIndex);
             } else {
-                H(partnerIndex);
+                unit->H(partnerShard.mapped);
 
                 // Guaranteed to be a Y eigenstate.
-                freezeBasisH = true;
-                IS(partnerIndex);
-                H(partnerIndex);
-                freezeBasisH = false;
+                unit->IS(partnerShard.mapped);
+                unit->H(partnerShard.mapped);
                 ProbBase(partnerIndex);
 
                 if (IS_NORM_0(partnerShard.amp1)) {
