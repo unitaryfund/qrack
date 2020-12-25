@@ -821,6 +821,7 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
         }
 
         if (partnerShard.isProbDirty) {
+            // ProbBase will not revert X or Y basis, so we're checking all of X/Y/Z.
             ProbBase(partnerIndex);
         }
 
