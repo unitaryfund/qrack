@@ -729,7 +729,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex(sqrt(prob), ZERO_R1);
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (shard.unit && shard.unit->isClifford() && !shard.unit->TrySeparate(qubit)) {
+    if (unit && unit->isClifford() && !unit->TrySeparate(qubit)) {
         if (IS_NORM_0(shard.amp1) || IS_NORM_0(shard.amp0)) {
             CheckCliffordSeparable(qubit);
         }
@@ -832,24 +832,6 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             partnerStates.push_back(true);
             partnerX.push_back(false);
             partnerY.push_back(false);
-        } else if (partnerShard.isPhaseDirty) {
-            return false;
-        } else if (IS_NORM_0(partnerShard.amp0 - partnerShard.amp1)) {
-            partnerStates.push_back(false);
-            partnerX.push_back(true);
-            partnerY.push_back(false);
-        } else if (IS_NORM_0(partnerShard.amp0 + partnerShard.amp1)) {
-            partnerStates.push_back(true);
-            partnerX.push_back(true);
-            partnerY.push_back(false);
-        } else if (IS_NORM_0((I_CMPLX * partnerShard.amp0) - partnerShard.amp1)) {
-            partnerStates.push_back(false);
-            partnerX.push_back(false);
-            partnerY.push_back(true);
-        } else if (IS_NORM_0((I_CMPLX * partnerShard.amp0) + partnerShard.amp1)) {
-            partnerStates.push_back(true);
-            partnerX.push_back(false);
-            partnerY.push_back(true);
         } else {
             return false;
         }
@@ -859,23 +841,9 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
 
     freezeBasisH = true;
 
-    // If we made it this far, the Clifford engine is entirely separable into single qubit Z and/or X eigenstates.
+    // If we made it this far, the Clifford engine is entirely separable into single qubit X/Y/Z eigenstates.
     for (bitLenInt i = 0; i < partnerIndices.size(); i++) {
-        if (partnerY[i]) {
-            IS(partnerIndices[i]);
-        }
-        if (partnerX[i] || partnerY[i]) {
-            H(partnerIndices[i]);
-        }
-
-        SeparateBit(partnerStates[i], partnerIndices[i]);
-
-        if (partnerX[i] || partnerY[i]) {
-            H(partnerIndices[i]);
-        }
-        if (partnerY[i]) {
-            S(partnerIndices[i]);
-        }
+        SeparateBit(partnerStates[i], partnerIndices[i], false);
     }
 
     freezeBasisH = false;
