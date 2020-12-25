@@ -832,34 +832,30 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
         } else {
             // Guaranteed to be an X or Y eigenstate.
             unit->H(partnerShard.mapped);
+            H(partnerIndex);
             ProbBase(partnerIndex);
 
             if (IS_NORM_0(partnerShard.amp1)) {
                 partnerStates.push_back(false);
-                H(partnerIndex);
             } else if (IS_NORM_0(partnerShard.amp0)) {
                 partnerStates.push_back(true);
-                H(partnerIndex);
+            } else if (!unit->TrySeparate(partnerShard.mapped)) {
+                // If we flushed unanticipated buffers, we might be stuck.
+                return false;
             } else {
-                unit->H(partnerShard.mapped);
-
                 // Guaranteed to be a Y eigenstate.
                 unit->IS(partnerShard.mapped);
                 unit->H(partnerShard.mapped);
+                H(partnerIndex);
+                S(partnerIndex);
                 ProbBase(partnerIndex);
 
                 if (IS_NORM_0(partnerShard.amp1)) {
                     partnerStates.push_back(false);
-                    H(partnerIndex);
-                    S(partnerIndex);
                 } else if (IS_NORM_0(partnerShard.amp0)) {
                     partnerStates.push_back(true);
-                    H(partnerIndex);
-                    S(partnerIndex);
                 } else {
-                    // This branch should never be reached, but this ensures overall accuracy if something went wrong.
-                    H(partnerIndex);
-                    S(partnerIndex);
+                    // If we flushed unanticipated buffers, we're stuck.
                     return false;
                 }
             }
