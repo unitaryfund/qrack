@@ -852,13 +852,11 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                     partnerStates.push_back(false);
                     H(partnerIndex);
                     S(partnerIndex);
-                } else {
+                } else if (IS_NORM_0(partnerShard.amp0)) {
                     partnerStates.push_back(true);
                     H(partnerIndex);
                     S(partnerIndex);
-                }
-                else
-                {
+                } else {
                     // This branch should never be reached, but this ensures overall accuracy if something went wrong.
                     H(partnerIndex);
                     S(partnerIndex);
