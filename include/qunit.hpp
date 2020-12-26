@@ -1008,9 +1008,7 @@ protected:
 
     void RevertBasisX(const bitLenInt& i)
     {
-        QEngineShard& shard = shards[i];
-
-        if (freezeBasisH || !shard.isPauliX) {
+        if (freezeBasisH || !shards[i].isPauliX) {
             // Recursive call that should be blocked,
             // or already in target basis.
             return;
@@ -1018,24 +1016,22 @@ protected:
 
         freezeBasisH = true;
         H(i);
-        shard.isPauliX = false;
+        shards[i].isPauliX = false;
         freezeBasisH = false;
     }
 
     void RevertBasisY(const bitLenInt& i)
     {
-        QEngineShard& shard = shards[i];
-
-        if (freezeBasisH || !shard.isPauliY) {
+        if (freezeBasisH || !shards[i].isPauliY) {
             // Recursive call that should be blocked,
             // or already in target basis.
             return;
         }
 
+        shards[i].isPauliY = false;
+        shards[i].isPauliX = true;
         freezeBasisH = true;
         S(i);
-        shard.isPauliY = false;
-        shard.isPauliX = true;
         freezeBasisH = false;
     }
 

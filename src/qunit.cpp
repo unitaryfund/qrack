@@ -2807,7 +2807,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 
     // This is the original method with the maximum number of non-entangled controls excised, (potentially leaving a
-    // target bit in |+>/|-> basis and acting as if |0>/|1> basis by commutation).
+    // target bit in X or Y basis and acting as if Z basis by commutation).
     cfn(unit, controlsMapped);
 
     for (i = 0; i < targets.size(); i++) {
