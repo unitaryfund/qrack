@@ -1034,14 +1034,18 @@ protected:
             return;
         }
 
-        if (toYBasis && (!shard.isPauliX)) {
-            TransformBasisX(i, true);
+        if (shard.isPauliX != toYBasis) {
+            TransformBasisX(i, !shard.isPauliX);
         }
 
         shards[i].isPauliY = toYBasis;
         shards[i].isPauliX = !toYBasis;
         freezeBasisH = true;
-        S(i);
+        if (toYBasis) {
+            IS(i);
+        } else {
+            S(i);
+        }
         freezeBasisH = false;
     }
 
