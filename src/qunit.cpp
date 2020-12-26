@@ -837,9 +837,97 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             partnerStates.push_back(false);
         } else if (IS_NORM_0(partnerShard.amp0)) {
             partnerStates.push_back(true);
-        } else {
+        } else if (!unit->TrySeparate(partnerShard.mapped)) {
             freezeClifford = false;
             return false;
+        } else if (partnerShard.isPauliX) {
+            // Guaranteed to be an Y or X eigenstate.
+            unit->S(partnerShard.mapped);
+            partnerShard.isPauliX = false;
+            partnerShard.isPauliY = true;
+            ProbBase(partnerIndex);
+
+            if (IS_NORM_0(partnerShard.amp1)) {
+                partnerStates.push_back(false);
+            } else if (IS_NORM_0(partnerShard.amp0)) {
+                partnerStates.push_back(true);
+            } else {
+                // Guaranteed to be an X eigenstate.
+                unit->IS(partnerShard.mapped);
+                unit->H(partnerShard.mapped);
+                partnerShard.isPauliX = false;
+                partnerShard.isPauliY = false;
+                ProbBase(partnerIndex);
+
+                if (IS_NORM_0(partnerShard.amp1)) {
+                    partnerStates.push_back(false);
+                } else if (IS_NORM_0(partnerShard.amp0)) {
+                    partnerStates.push_back(true);
+                } else {
+                    // This branch should never be reached, but something might have went wrong with rounding or buffer
+                    // flushes.
+                    freezeClifford = false;
+                    return false;
+                }
+            }
+        } else if (partnerShard.isPauliY) {
+            // Guaranteed to be an Y or X eigenstate.
+            unit->IS(partnerShard.mapped);
+            partnerShard.isPauliX = true;
+            partnerShard.isPauliY = false;
+            ProbBase(partnerIndex);
+
+            if (IS_NORM_0(partnerShard.amp1)) {
+                partnerStates.push_back(false);
+            } else if (IS_NORM_0(partnerShard.amp0)) {
+                partnerStates.push_back(true);
+            } else {
+                // Guaranteed to be an X eigenstate.
+                unit->H(partnerShard.mapped);
+                partnerShard.isPauliX = false;
+                partnerShard.isPauliY = false;
+                ProbBase(partnerIndex);
+
+                if (IS_NORM_0(partnerShard.amp1)) {
+                    partnerStates.push_back(false);
+                } else if (IS_NORM_0(partnerShard.amp0)) {
+                    partnerStates.push_back(true);
+                } else {
+                    // This branch should never be reached, but something might have went wrong with rounding or buffer
+                    // flushes.
+                    freezeClifford = false;
+                    return false;
+                }
+            }
+        } else {
+            // Guaranteed to be an X or Y eigenstate.
+            unit->H(partnerShard.mapped);
+            partnerShard.isPauliX = true;
+            partnerShard.isPauliY = false;
+            ProbBase(partnerIndex);
+
+            if (IS_NORM_0(partnerShard.amp1)) {
+                partnerStates.push_back(false);
+            } else if (IS_NORM_0(partnerShard.amp0)) {
+                partnerStates.push_back(true);
+            } else {
+                // Guaranteed to be an Y eigenstate.
+                unit->S(partnerShard.mapped);
+                partnerShard.isPauliX = false;
+                partnerShard.isPauliY = true;
+                ProbBase(partnerIndex);
+
+                if (IS_NORM_0(partnerShard.amp1)) {
+                    partnerStates.push_back(false);
+                } else if (IS_NORM_0(partnerShard.amp0)) {
+                    partnerStates.push_back(true);
+                } else {
+                    // This branch should never be reached, but something might have went wrong with rounding or buffer
+                    // flushes.
+                    freezeClifford = false;
+                    return false;
+                }
+            }
         }
 
         partnerIndices.push_back(partnerIndex);
