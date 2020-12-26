@@ -1231,6 +1231,9 @@ real1 QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
         toCompare->Finish();
     }
 
+    stateVec->isReadLocked = false;
+    toCompare->stateVec->isReadLocked = false;
+
     int numCores = GetConcurrencyLevel();
     real1* partError = new real1[numCores]();
 
@@ -1253,6 +1256,9 @@ real1 QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
         real1 elemError = norm(basePhaseFac2 * stateVec->read(lcv) - basePhaseFac1 * toCompare->stateVec->read(lcv));
         partError[cpu] += elemError;
     });
+
+    stateVec->isReadLocked = true;
+    toCompare->stateVec->isReadLocked = true;
 
     real1 totError = ZERO_R1;
     for (int i = 0; i < numCores; i++) {
