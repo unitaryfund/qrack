@@ -2814,7 +2814,20 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shards[targets[i]].MakeDirty();
     }
 
-    CheckCliffordSeparable(allBits[0]);
+    bitLenInt n = allBits[0];
+
+    // Only continue if the sub-unit is still clifford.
+    if (!shards[n].unit || !shards[n].unit->isClifford()) {
+        return;
+    }
+
+    for (i = 0; i < allBits.size(); i++) {
+        n = allBits[i];
+        if (shards[n].unit && shards[n].unit->isClifford()) {
+            // ProbBase will separate as it can, but it's only cheap to check if the sub-unit is Clifford.
+            ProbBase(n);
+        }
+    }
 }
 
 bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
