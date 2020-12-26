@@ -818,6 +818,8 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
 
     freezeClifford = true;
 
+    real1 ampThresh = doNormalize ? amplitudeFloor : ZERO_R1;
+
     std::vector<bitLenInt> partnerIndices;
     std::vector<bool> partnerStates;
 
@@ -833,11 +835,11 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             ProbBase(partnerIndex);
         }
 
-        if (norm(partnerShard.amp1) <= amplitudeFloor) {
+        if (norm(partnerShard.amp1) <= ampThresh) {
             partnerStates.push_back(false);
-        } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
+        } else if (norm(partnerShard.amp0) <= ampThresh) {
             partnerStates.push_back(true);
-        } else if ((amplitudeFloor == 0) || !unit->TrySeparate(partnerShard.mapped)) {
+        } else if ((ampThresh == ZERO_R1) || !unit->TrySeparate(partnerShard.mapped)) {
             freezeClifford = false;
             return false;
         } else if (partnerShard.isPauliY) {
@@ -848,9 +850,9 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             partnerShard.MakeDirty();
             ProbBase(partnerIndex);
 
-            if (norm(partnerShard.amp1) <= amplitudeFloor) {
+            if (norm(partnerShard.amp1) <= ampThresh) {
                 partnerStates.push_back(false);
-            } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
+            } else if (norm(partnerShard.amp0) <= ampThresh) {
                 partnerStates.push_back(true);
             } else {
                 // Guaranteed to be a Z eigenstate.
@@ -860,9 +862,9 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                 partnerShard.MakeDirty();
                 ProbBase(partnerIndex);
 
-                if (norm(partnerShard.amp1) <= amplitudeFloor) {
+                if (norm(partnerShard.amp1) <= ampThresh) {
                     partnerStates.push_back(false);
-                } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
+                } else if (norm(partnerShard.amp0) <= ampThresh) {
                     partnerStates.push_back(true);
                 } else {
                     // This branch should never be reached, but something might have went wrong with rounding or buffer
@@ -879,9 +881,9 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             partnerShard.MakeDirty();
             ProbBase(partnerIndex);
 
-            if (norm(partnerShard.amp1) <= amplitudeFloor) {
+            if (norm(partnerShard.amp1) <= ampThresh) {
                 partnerStates.push_back(false);
-            } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
+            } else if (norm(partnerShard.amp0) <= ampThresh) {
                 partnerStates.push_back(true);
             } else {
                 // Guaranteed to be a Z eigenstate.
@@ -892,9 +894,9 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                 partnerShard.MakeDirty();
                 ProbBase(partnerIndex);
 
-                if (norm(partnerShard.amp1) <= amplitudeFloor) {
+                if (norm(partnerShard.amp1) <= ampThresh) {
                     partnerStates.push_back(false);
-                } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
+                } else if (norm(partnerShard.amp0) <= ampThresh) {
                     partnerStates.push_back(true);
                 } else {
                     // This branch should never be reached, but something might have went wrong with rounding or
@@ -911,9 +913,9 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             partnerShard.MakeDirty();
             ProbBase(partnerIndex);
 
-            if (norm(partnerShard.amp1) <= amplitudeFloor) {
+            if (norm(partnerShard.amp1) <= ampThresh) {
                 partnerStates.push_back(false);
-            } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
+            } else if (norm(partnerShard.amp0) <= ampThresh) {
                 partnerStates.push_back(true);
             } else {
                 // Guaranteed to be an Y eigenstate.
@@ -923,9 +925,9 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                 partnerShard.MakeDirty();
                 ProbBase(partnerIndex);
 
-                if (norm(partnerShard.amp1) <= amplitudeFloor) {
+                if (norm(partnerShard.amp1) <= ampThresh) {
                     partnerStates.push_back(false);
-                } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
+                } else if (norm(partnerShard.amp0) <= ampThresh) {
                     partnerStates.push_back(true);
                 } else {
                     // This branch should never be reached, but something might have went wrong with rounding or buffer
