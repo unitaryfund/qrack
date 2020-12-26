@@ -840,9 +840,9 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
         } else if (!unit->TrySeparate(partnerShard.mapped)) {
             freezeClifford = false;
             return false;
-        } else if (partnerShard.isPauliX) {
-            // Guaranteed to be a Z or Y eigenstate.
-            RevertBasisX(partnerIndex);
+        } else if (partnerShard.isPauliY) {
+            // Guaranteed to be an X or Z eigenstate.
+            RevertBasisY(partnerIndex);
             ProbBase(partnerIndex);
 
             if (IS_NORM_0(partnerShard.amp1)) {
@@ -850,8 +850,8 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             } else if (IS_NORM_0(partnerShard.amp0)) {
                 partnerStates.push_back(true);
             } else {
-                // Guaranteed to be an Y eigenstate.
-                TransformBasisY(partnerIndex, true);
+                // Guaranteed to be a Z eigenstate.
+                RevertBasisX(partnerIndex);
                 ProbBase(partnerIndex);
 
                 if (IS_NORM_0(partnerShard.amp1)) {
@@ -865,9 +865,9 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                     return false;
                 }
             }
-        } else if (partnerShard.isPauliY) {
-            // Guaranteed to be an X or Z eigenstate.
-            RevertBasisY(partnerIndex);
+        } else if (partnerShard.isPauliX) {
+            // Guaranteed to be an Y or Z eigenstate.
+            TransformBasisY(partnerIndex, true);
             ProbBase(partnerIndex);
 
             if (IS_NORM_0(partnerShard.amp1)) {
@@ -876,6 +876,7 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                 partnerStates.push_back(true);
             } else {
                 // Guaranteed to be a Z eigenstate.
+                RevertBasisY(partnerIndex);
                 RevertBasisX(partnerIndex);
                 ProbBase(partnerIndex);
 

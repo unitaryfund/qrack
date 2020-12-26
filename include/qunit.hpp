@@ -1034,10 +1034,6 @@ protected:
             return;
         }
 
-        if (shard.isPauliX != toYBasis) {
-            TransformBasisX(i, !shard.isPauliX);
-        }
-
         shards[i].isPauliY = toYBasis;
         shards[i].isPauliX = !toYBasis;
         freezeBasisH = true;
