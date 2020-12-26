@@ -734,6 +734,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
     if (unit && unit->isClifford() && !unit->TrySeparate(qubit)) {
+        CheckCliffordSeparable(qubit);
         return prob;
     }
 
@@ -836,11 +837,11 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             partnerStates.push_back(false);
         } else if (norm(partnerShard.amp0) <= ampThresh) {
             partnerStates.push_back(true);
-        } else if ((ampThresh == ZERO_R1) || !unit->TrySeparate(partnerShard.mapped)) {
+        } else if (ampThresh == ZERO_R1) {
             freezeClifford = false;
             return false;
         } else if (partnerShard.isPauliY) {
-            // Guaranteed to be an X or Z eigenstate.
+            // Could be an X or Z eigenstate
             unit->S(partnerShard.mapped);
             partnerShard.isPauliX = true;
             partnerShard.isPauliY = false;
@@ -852,7 +853,7 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             } else if (norm(partnerShard.amp0) <= ampThresh) {
                 partnerStates.push_back(true);
             } else {
-                // Guaranteed to be a Z eigenstate.
+                // Could be a Z eigenstate
                 unit->H(partnerShard.mapped);
                 partnerShard.isPauliX = false;
                 partnerShard.isPauliY = false;
@@ -864,14 +865,13 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                 } else if (norm(partnerShard.amp0) <= ampThresh) {
                     partnerStates.push_back(true);
                 } else {
-                    // This branch should never be reached, but something might have went wrong with rounding or buffer
-                    // flushes.
+                    // Not separable
                     freezeClifford = false;
                     return false;
                 }
             }
         } else if (partnerShard.isPauliX) {
-            // Guaranteed to be an Y or Z eigenstate.
+            // Could be a Y or Z eigenstate
             unit->IS(partnerShard.mapped);
             partnerShard.isPauliX = false;
             partnerShard.isPauliY = true;
@@ -883,7 +883,7 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             } else if (norm(partnerShard.amp0) <= ampThresh) {
                 partnerStates.push_back(true);
             } else {
-                // Guaranteed to be a Z eigenstate.
+                // Could be a Z eigenstate
                 unit->S(partnerShard.mapped);
                 unit->H(partnerShard.mapped);
                 partnerShard.isPauliX = false;
@@ -896,14 +896,13 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                 } else if (norm(partnerShard.amp0) <= ampThresh) {
                     partnerStates.push_back(true);
                 } else {
-                    // This branch should never be reached, but something might have went wrong with rounding or
-                    // buffer flushes.
+                    // Not separable
                     freezeClifford = false;
                     return false;
                 }
             }
         } else {
-            // Guaranteed to be an X or Y eigenstate.
+            // Could be an X or Y eigenstate
             unit->H(partnerShard.mapped);
             partnerShard.isPauliX = true;
             partnerShard.isPauliY = false;
@@ -915,7 +914,7 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             } else if (norm(partnerShard.amp0) <= ampThresh) {
                 partnerStates.push_back(true);
             } else {
-                // Guaranteed to be an Y eigenstate.
+                // Could be a Y eigenstate
                 unit->IS(partnerShard.mapped);
                 partnerShard.isPauliX = false;
                 partnerShard.isPauliY = true;
@@ -927,8 +926,7 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                 } else if (norm(partnerShard.amp0) <= ampThresh) {
                     partnerStates.push_back(true);
                 } else {
-                    // This branch should never be reached, but something might have went wrong with rounding or buffer
-                    // flushes.
+                    // Not separable
                     freezeClifford = false;
                     return false;
                 }
@@ -2818,7 +2816,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         return;
     }
 
-    if (CheckCliffordSeparable(n)) {
+    if (!shards[n].unit->TrySeparate(shards[n].mapped)) {
+        CheckCliffordSeparable(n);
         return;
     }
 
