@@ -734,9 +734,6 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
     if (unit && unit->isClifford() && !unit->TrySeparate(qubit)) {
-        if (IS_NORM_0(shard.amp1) || IS_NORM_0(shard.amp0)) {
-            CheckCliffordSeparable(qubit);
-        }
         return prob;
     }
 
@@ -2818,6 +2815,10 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
     // Only continue if the sub-unit is still clifford.
     if (!shards[n].unit || !shards[n].unit->isClifford()) {
+        return;
+    }
+
+    if (CheckCliffordSeparable(n)) {
         return;
     }
 
