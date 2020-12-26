@@ -837,7 +837,7 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             partnerStates.push_back(false);
         } else if (norm(partnerShard.amp0) <= ampThresh) {
             partnerStates.push_back(true);
-        } else if (ampThresh == ZERO_R1) {
+        } else if ((ampThresh == ZERO_R1) || !unit->TrySeparate(partnerShard.mapped)) {
             freezeClifford = false;
             return false;
         } else if (partnerShard.isPauliY) {
@@ -2720,7 +2720,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
     std::vector<bitLenInt> controlVec;
 
-    QEngineShard shard;
     for (i = 0; i < controlLen; i++) {
         if (!inCurrentBasis) {
             RevertBasis1Qb(controls[i]);
@@ -2734,7 +2733,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         if (!shards[controls[i]].isProbDirty) {
             // This might determine that we can just skip out of the whole gate, in which case it returns this
             // method:
-            shard = shards[controls[i]];
+            QEngineShard& shard = shards[controls[i]];
             if (IS_NORM_0(shard.amp1)) {
                 if (!inCurrentBasis) {
                     Flush0Eigenstate(controls[i]);
@@ -2809,7 +2808,18 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shards[targets[i]].MakeDirty();
     }
 
-    CheckCliffordSeparable(allBits[0]);
+    if (CheckCliffordSeparable(allBits[0])) {
+        return;
+    }
+
+    bitLenInt n;
+    for (i = 0; i < allBits.size(); i++) {
+        n = allBits[i];
+        unit = shards[n].unit;
+        if (unit && unit->isClifford() && unit->TrySeparate(shards[n].mapped)) {
+            ProbBase(n);
+        }
+    }
 }
 
 bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
