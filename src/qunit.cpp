@@ -733,7 +733,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex(sqrt(prob), ZERO_R1);
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (unit && unit->isClifford() && !unit->TrySeparate(qubit)) {
+    if (unit && unit->isClifford()) {
         CheckCliffordSeparable(qubit);
         return prob;
     }
@@ -818,6 +818,7 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
 
     real1 ampThresh = doNormalize ? amplitudeFloor : ZERO_R1;
 
+    bool allSeparable = true;
     std::vector<bitLenInt> partnerIndices;
     std::vector<bool> partnerStates;
 
@@ -835,13 +836,14 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
 
         if (norm(partnerShard.amp1) <= ampThresh) {
             partnerStates.push_back(false);
+            partnerIndices.push_back(partnerIndex);
         } else if (norm(partnerShard.amp0) <= ampThresh) {
             partnerStates.push_back(true);
+            partnerIndices.push_back(partnerIndex);
         } else if ((ampThresh == ZERO_R1) || !unit->TrySeparate(partnerShard.mapped)) {
-            freezeClifford = false;
-            return false;
+            allSeparable = false;
         } else if (partnerShard.isPauliY) {
-            // Could be an X or Z eigenstate
+            // Must be an X or Z eigenstate
             unit->S(partnerShard.mapped);
             partnerShard.isPauliX = true;
             partnerShard.isPauliY = false;
@@ -849,11 +851,11 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             ProbBase(partnerIndex);
 
             if (norm(partnerShard.amp1) <= ampThresh) {
-                partnerStates.push_back(false);
+                SeparateBit(false, partnerIndex);
             } else if (norm(partnerShard.amp0) <= ampThresh) {
-                partnerStates.push_back(true);
+                SeparateBit(true, partnerIndex);
             } else {
-                // Could be a Z eigenstate
+                // Must be a Z eigenstate
                 unit->H(partnerShard.mapped);
                 partnerShard.isPauliX = false;
                 partnerShard.isPauliY = false;
@@ -861,17 +863,16 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                 ProbBase(partnerIndex);
 
                 if (norm(partnerShard.amp1) <= ampThresh) {
-                    partnerStates.push_back(false);
+                    SeparateBit(false, partnerIndex);
                 } else if (norm(partnerShard.amp0) <= ampThresh) {
-                    partnerStates.push_back(true);
+                    SeparateBit(true, partnerIndex);
                 } else {
-                    // Not separable
-                    freezeClifford = false;
-                    return false;
+                    // This branch cannot be reached, except for rounding error or buffer flushing.
+                    allSeparable = false;
                 }
             }
         } else if (partnerShard.isPauliX) {
-            // Could be a Y or Z eigenstate
+            // Must be a Y or Z eigenstate
             unit->IS(partnerShard.mapped);
             partnerShard.isPauliX = false;
             partnerShard.isPauliY = true;
@@ -879,11 +880,11 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             ProbBase(partnerIndex);
 
             if (norm(partnerShard.amp1) <= ampThresh) {
-                partnerStates.push_back(false);
+                SeparateBit(false, partnerIndex);
             } else if (norm(partnerShard.amp0) <= ampThresh) {
-                partnerStates.push_back(true);
+                SeparateBit(true, partnerIndex);
             } else {
-                // Could be a Z eigenstate
+                // Must be a Z eigenstate
                 unit->S(partnerShard.mapped);
                 unit->H(partnerShard.mapped);
                 partnerShard.isPauliX = false;
@@ -892,17 +893,16 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                 ProbBase(partnerIndex);
 
                 if (norm(partnerShard.amp1) <= ampThresh) {
-                    partnerStates.push_back(false);
+                    SeparateBit(false, partnerIndex);
                 } else if (norm(partnerShard.amp0) <= ampThresh) {
-                    partnerStates.push_back(true);
+                    SeparateBit(true, partnerIndex);
                 } else {
-                    // Not separable
-                    freezeClifford = false;
-                    return false;
+                    // This branch cannot be reached, except for rounding error or buffer flushing.
+                    allSeparable = false;
                 }
             }
         } else {
-            // Could be an X or Y eigenstate
+            // Must be an X or Y eigenstate
             unit->H(partnerShard.mapped);
             partnerShard.isPauliX = true;
             partnerShard.isPauliY = false;
@@ -910,11 +910,11 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             ProbBase(partnerIndex);
 
             if (norm(partnerShard.amp1) <= ampThresh) {
-                partnerStates.push_back(false);
+                SeparateBit(false, partnerIndex);
             } else if (norm(partnerShard.amp0) <= ampThresh) {
-                partnerStates.push_back(true);
+                SeparateBit(true, partnerIndex);
             } else {
-                // Could be a Y eigenstate
+                // Must be a Y eigenstate
                 unit->IS(partnerShard.mapped);
                 partnerShard.isPauliX = false;
                 partnerShard.isPauliY = true;
@@ -922,28 +922,26 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
                 ProbBase(partnerIndex);
 
                 if (norm(partnerShard.amp1) <= ampThresh) {
-                    partnerStates.push_back(false);
+                    SeparateBit(false, partnerIndex);
                 } else if (norm(partnerShard.amp0) <= ampThresh) {
-                    partnerStates.push_back(true);
+                    SeparateBit(true, partnerIndex);
                 } else {
-                    // Not separable
-                    freezeClifford = false;
-                    return false;
+                    // This branch cannot be reached, except for rounding error or buffer flushing.
+                    allSeparable = false;
                 }
             }
         }
-
-        partnerIndices.push_back(partnerIndex);
     }
 
-    // If we made it this far, the Clifford engine is entirely separable into single qubit X/Y/Z eigenstates.
-    for (bitLenInt i = 0; i < partnerIndices.size(); i++) {
-        SeparateBit(partnerStates[i], partnerIndices[i], false);
+    if (allSeparable) {
+        // If we made it this far, the Clifford engine is entirely separable into single qubit X/Y/Z eigenstates.
+        for (bitLenInt i = 0; i < partnerIndices.size(); i++) {
+            SeparateBit(partnerStates[i], partnerIndices[i], false);
+        }
     }
 
     freezeClifford = false;
-
-    return true;
+    return allSeparable;
 }
 
 real1 QUnit::Prob(bitLenInt qubit)
@@ -2808,18 +2806,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shards[targets[i]].MakeDirty();
     }
 
-    if (CheckCliffordSeparable(allBits[0])) {
-        return;
-    }
-
-    bitLenInt n;
-    for (i = 0; i < allBits.size(); i++) {
-        n = allBits[i];
-        unit = shards[n].unit;
-        if (unit && unit->isClifford() && unit->TrySeparate(shards[n].mapped)) {
-            ProbBase(n);
-        }
-    }
+    CheckCliffordSeparable(allBits[0]);
 }
 
 bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
