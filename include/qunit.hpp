@@ -1006,11 +1006,11 @@ protected:
     void TransformYInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);
     void TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut);
 
-    void RevertBasisX(const bitLenInt& i) { TransformBasisX(i, false); }
-
-    void TransformBasisX(const bitLenInt& i, const bool& toXBasis)
+    void RevertBasisX(const bitLenInt& i)
     {
-        if (freezeBasisH || (shards[i].isPauliX == toXBasis)) {
+        QEngineShard& shard = shards[i];
+
+        if (freezeBasisH || !shard.isPauliX) {
             // Recursive call that should be blocked,
             // or already in target basis.
             return;
@@ -1018,30 +1018,24 @@ protected:
 
         freezeBasisH = true;
         H(i);
-        shards[i].isPauliX = toXBasis;
+        shard.isPauliX = false;
         freezeBasisH = false;
     }
 
-    void RevertBasisY(const bitLenInt& i) { TransformBasisY(i, false); }
-
-    void TransformBasisY(const bitLenInt& i, const bool& toYBasis)
+    void RevertBasisY(const bitLenInt& i)
     {
         QEngineShard& shard = shards[i];
 
-        if (freezeBasisH || (shard.isPauliY == toYBasis)) {
+        if (freezeBasisH || !shard.isPauliY) {
             // Recursive call that should be blocked,
             // or already in target basis.
             return;
         }
 
-        shards[i].isPauliY = toYBasis;
-        shards[i].isPauliX = !toYBasis;
         freezeBasisH = true;
-        if (toYBasis) {
-            IS(i);
-        } else {
-            S(i);
-        }
+        S(i);
+        shard.isPauliY = false;
+        shard.isPauliX = true;
         freezeBasisH = false;
     }
 

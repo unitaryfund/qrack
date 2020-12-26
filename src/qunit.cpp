@@ -833,30 +833,36 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             ProbBase(partnerIndex);
         }
 
-        if (IS_NORM_0(partnerShard.amp1)) {
+        if (norm(partnerShard.amp1) <= amplitudeFloor) {
             partnerStates.push_back(false);
-        } else if (IS_NORM_0(partnerShard.amp0)) {
+        } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
             partnerStates.push_back(true);
-        } else if (!unit->TrySeparate(partnerShard.mapped)) {
+        } else if ((amplitudeFloor == 0) || !unit->TrySeparate(partnerShard.mapped)) {
             freezeClifford = false;
             return false;
         } else if (partnerShard.isPauliY) {
             // Guaranteed to be an X or Z eigenstate.
-            RevertBasisY(partnerIndex);
+            unit->S(partnerShard.mapped);
+            partnerShard.isPauliX = true;
+            partnerShard.isPauliY = false;
+            partnerShard.MakeDirty();
             ProbBase(partnerIndex);
 
-            if (IS_NORM_0(partnerShard.amp1)) {
+            if (norm(partnerShard.amp1) <= amplitudeFloor) {
                 partnerStates.push_back(false);
-            } else if (IS_NORM_0(partnerShard.amp0)) {
+            } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
                 partnerStates.push_back(true);
             } else {
                 // Guaranteed to be a Z eigenstate.
-                RevertBasisX(partnerIndex);
+                unit->H(partnerShard.mapped);
+                partnerShard.isPauliX = false;
+                partnerShard.isPauliY = false;
+                partnerShard.MakeDirty();
                 ProbBase(partnerIndex);
 
-                if (IS_NORM_0(partnerShard.amp1)) {
+                if (norm(partnerShard.amp1) <= amplitudeFloor) {
                     partnerStates.push_back(false);
-                } else if (IS_NORM_0(partnerShard.amp0)) {
+                } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
                     partnerStates.push_back(true);
                 } else {
                     // This branch should never be reached, but something might have went wrong with rounding or buffer
@@ -867,47 +873,59 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             }
         } else if (partnerShard.isPauliX) {
             // Guaranteed to be an Y or Z eigenstate.
-            TransformBasisY(partnerIndex, true);
+            unit->IS(partnerShard.mapped);
+            partnerShard.isPauliX = false;
+            partnerShard.isPauliY = true;
+            partnerShard.MakeDirty();
             ProbBase(partnerIndex);
 
-            if (IS_NORM_0(partnerShard.amp1)) {
+            if (norm(partnerShard.amp1) <= amplitudeFloor) {
                 partnerStates.push_back(false);
-            } else if (IS_NORM_0(partnerShard.amp0)) {
+            } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
                 partnerStates.push_back(true);
             } else {
                 // Guaranteed to be a Z eigenstate.
-                RevertBasisY(partnerIndex);
-                RevertBasisX(partnerIndex);
+                unit->S(partnerShard.mapped);
+                unit->H(partnerShard.mapped);
+                partnerShard.isPauliX = false;
+                partnerShard.isPauliY = false;
+                partnerShard.MakeDirty();
                 ProbBase(partnerIndex);
 
-                if (IS_NORM_0(partnerShard.amp1)) {
+                if (norm(partnerShard.amp1) <= amplitudeFloor) {
                     partnerStates.push_back(false);
-                } else if (IS_NORM_0(partnerShard.amp0)) {
+                } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
                     partnerStates.push_back(true);
                 } else {
-                    // This branch should never be reached, but something might have went wrong with rounding or buffer
-                    // flushes.
+                    // This branch should never be reached, but something might have went wrong with rounding or
+                    // buffer flushes.
                     freezeClifford = false;
                     return false;
                 }
             }
         } else {
             // Guaranteed to be an X or Y eigenstate.
-            TransformBasisX(partnerIndex, true);
+            unit->H(partnerShard.mapped);
+            partnerShard.isPauliX = true;
+            partnerShard.isPauliY = false;
+            partnerShard.MakeDirty();
             ProbBase(partnerIndex);
 
-            if (IS_NORM_0(partnerShard.amp1)) {
+            if (norm(partnerShard.amp1) <= amplitudeFloor) {
                 partnerStates.push_back(false);
-            } else if (IS_NORM_0(partnerShard.amp0)) {
+            } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
                 partnerStates.push_back(true);
             } else {
                 // Guaranteed to be an Y eigenstate.
-                TransformBasisY(partnerIndex, true);
+                unit->IS(partnerShard.mapped);
+                partnerShard.isPauliX = false;
+                partnerShard.isPauliY = true;
+                partnerShard.MakeDirty();
                 ProbBase(partnerIndex);
 
-                if (IS_NORM_0(partnerShard.amp1)) {
+                if (norm(partnerShard.amp1) <= amplitudeFloor) {
                     partnerStates.push_back(false);
-                } else if (IS_NORM_0(partnerShard.amp0)) {
+                } else if (norm(partnerShard.amp0) <= amplitudeFloor) {
                     partnerStates.push_back(true);
                 } else {
                     // This branch should never be reached, but something might have went wrong with rounding or buffer
