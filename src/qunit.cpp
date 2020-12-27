@@ -151,6 +151,13 @@ void QUnit::SetQuantumState(const complex* inputState)
 
 void QUnit::GetQuantumState(complex* outputState)
 {
+    if ((qubitCount == 1) && !shards[0].unit) {
+        outputState[0] = shards[0].amp0;
+        outputState[1] = shards[0].amp1;
+
+        return;
+    }
+
     QUnitPtr thisCopyShared;
     QUnit* thisCopy;
 
@@ -169,6 +176,13 @@ void QUnit::GetQuantumState(complex* outputState)
 
 void QUnit::GetProbs(real1* outputProbs)
 {
+    if ((qubitCount == 1) && !shards[0].unit) {
+        outputProbs[0] = norm(shards[0].amp0);
+        outputProbs[1] = norm(shards[0].amp1);
+
+        return;
+    }
+
     QUnitPtr thisCopyShared;
     QUnit* thisCopy;
 
@@ -3948,6 +3962,24 @@ real1 QUnit::SumSqrDiff(QUnitPtr toCompare)
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
         return 4.0f;
+    }
+
+    if (qubitCount == 1) {
+        complex mAmps[2], oAmps[2];
+        if (shards[0].unit) {
+            shards[0].unit->GetQuantumState(mAmps);
+        } else {
+            mAmps[0] = shards[0].amp0;
+            mAmps[1] = shards[0].amp1;
+        }
+        if (!toCompare->shards[0].unit) {
+            toCompare->shards[0].unit->GetQuantumState(oAmps);
+        } else {
+            oAmps[0] = toCompare->shards[0].amp0;
+            oAmps[1] = toCompare->shards[0].amp1;
+        }
+
+        return norm(mAmps[0] - oAmps[0]) + norm(mAmps[1] - oAmps[1]);
     }
 
     QUnitPtr thisCopyShared, thatCopyShared;
