@@ -810,28 +810,36 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
         return false;
     }
 
-    if (freezeClifford) {
-        return false;
-    }
-
-    freezeClifford = true;
-
     real1 ampThresh = doNormalize ? amplitudeFloor : ZERO_R1;
 
-    bool allSeparable = true;
     std::vector<bitLenInt> partnerIndices;
     std::vector<bool> partnerStates;
 
+    if (!TrySeparateCliffordBit(qubit)) {
+        if (norm(shards[qubit].amp1) <= ampThresh) {
+            partnerStates.push_back(false);
+            partnerIndices.push_back(qubit);
+        } else if (norm(shards[qubit].amp0) <= ampThresh) {
+            partnerStates.push_back(true);
+            partnerIndices.push_back(qubit);
+        } else {
+            return false;
+        }
+    }
+
     for (bitLenInt partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
         QEngineShard& partnerShard = shards[partnerIndex];
+
+        if (partnerIndex == qubit) {
+            continue;
+        }
 
         if (unit != partnerShard.unit) {
             continue;
         }
 
-        if (partnerShard.isProbDirty) {
-            // ProbBase will not revert X or Y basis, so we're checking all of X/Y/Z.
-            ProbBase(partnerIndex);
+        if (TrySeparateCliffordBit(qubit)) {
+            continue;
         }
 
         if (norm(partnerShard.amp1) <= ampThresh) {
@@ -840,108 +848,136 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
         } else if (norm(partnerShard.amp0) <= ampThresh) {
             partnerStates.push_back(true);
             partnerIndices.push_back(partnerIndex);
-        } else if ((ampThresh == ZERO_R1) || !unit->TrySeparate(partnerShard.mapped)) {
-            allSeparable = false;
-        } else if (partnerShard.isPauliY) {
-            // Must be an X or Z eigenstate
-            unit->S(partnerShard.mapped);
-            partnerShard.isPauliX = true;
-            partnerShard.isPauliY = false;
-            partnerShard.MakeDirty();
-            ProbBase(partnerIndex);
-
-            if (norm(partnerShard.amp1) <= ampThresh) {
-                SeparateBit(false, partnerIndex);
-            } else if (norm(partnerShard.amp0) <= ampThresh) {
-                SeparateBit(true, partnerIndex);
-            } else {
-                // Must be a Z eigenstate
-                unit->H(partnerShard.mapped);
-                partnerShard.isPauliX = false;
-                partnerShard.isPauliY = false;
-                partnerShard.MakeDirty();
-                ProbBase(partnerIndex);
-
-                if (norm(partnerShard.amp1) <= ampThresh) {
-                    SeparateBit(false, partnerIndex);
-                } else if (norm(partnerShard.amp0) <= ampThresh) {
-                    SeparateBit(true, partnerIndex);
-                } else {
-                    // This branch cannot be reached, except for rounding error or buffer flushing.
-                    allSeparable = false;
-                }
-            }
-        } else if (partnerShard.isPauliX) {
-            // Must be a Y or Z eigenstate
-            unit->IS(partnerShard.mapped);
-            partnerShard.isPauliX = false;
-            partnerShard.isPauliY = true;
-            partnerShard.MakeDirty();
-            ProbBase(partnerIndex);
-
-            if (norm(partnerShard.amp1) <= ampThresh) {
-                SeparateBit(false, partnerIndex);
-            } else if (norm(partnerShard.amp0) <= ampThresh) {
-                SeparateBit(true, partnerIndex);
-            } else {
-                // Must be a Z eigenstate
-                unit->S(partnerShard.mapped);
-                unit->H(partnerShard.mapped);
-                partnerShard.isPauliX = false;
-                partnerShard.isPauliY = false;
-                partnerShard.MakeDirty();
-                ProbBase(partnerIndex);
-
-                if (norm(partnerShard.amp1) <= ampThresh) {
-                    SeparateBit(false, partnerIndex);
-                } else if (norm(partnerShard.amp0) <= ampThresh) {
-                    SeparateBit(true, partnerIndex);
-                } else {
-                    // This branch cannot be reached, except for rounding error or buffer flushing.
-                    allSeparable = false;
-                }
-            }
         } else {
-            // Must be an X or Y eigenstate
-            unit->H(partnerShard.mapped);
-            partnerShard.isPauliX = true;
-            partnerShard.isPauliY = false;
-            partnerShard.MakeDirty();
-            ProbBase(partnerIndex);
+            return false;
+        }
+    }
 
-            if (norm(partnerShard.amp1) <= ampThresh) {
-                SeparateBit(false, partnerIndex);
-            } else if (norm(partnerShard.amp0) <= ampThresh) {
-                SeparateBit(true, partnerIndex);
+    // If we made it this far, the Clifford engine is entirely separable into single qubit X/Y/Z eigenstates.
+    for (bitLenInt i = 0; i < partnerIndices.size(); i++) {
+        SeparateBit(partnerStates[i], partnerIndices[i], false);
+    }
+
+    return true;
+}
+
+bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
+{
+    QEngineShard& shard = shards[qubit];
+
+    if (shard.GetQubitCount() == 1) {
+        return true;
+    }
+
+    if (freezeClifford || !shard.unit->isClifford()) {
+        return false;
+    }
+
+    freezeClifford = true;
+
+    QInterfacePtr unit = shards[qubit].unit;
+
+    real1 ampThresh = doNormalize ? amplitudeFloor : ZERO_R1;
+
+    ProbBase(qubit);
+
+    if (norm(shard.amp1) <= ampThresh) {
+        SeparateBit(false, qubit);
+    } else if (norm(shard.amp0) <= ampThresh) {
+        SeparateBit(true, qubit);
+    } else if ((ampThresh == ZERO_R1) || !unit->TrySeparate(shard.mapped)) {
+        return false;
+    } else if (shard.isPauliY) {
+        // Must be an X or Z eigenstate
+        unit->S(shard.mapped);
+        shard.isPauliX = true;
+        shard.isPauliY = false;
+        shard.MakeDirty();
+        ProbBase(qubit);
+
+        if (norm(shard.amp1) <= ampThresh) {
+            SeparateBit(false, qubit);
+        } else if (norm(shard.amp0) <= ampThresh) {
+            SeparateBit(true, qubit);
+        } else {
+            // Must be a Z eigenstate
+            unit->H(shard.mapped);
+            shard.isPauliX = false;
+            shard.isPauliY = false;
+            shard.MakeDirty();
+            ProbBase(qubit);
+
+            if (norm(shard.amp1) <= ampThresh) {
+                SeparateBit(false, qubit);
+            } else if (norm(shard.amp0) <= ampThresh) {
+                SeparateBit(true, qubit);
             } else {
-                // Must be a Y eigenstate
-                unit->IS(partnerShard.mapped);
-                partnerShard.isPauliX = false;
-                partnerShard.isPauliY = true;
-                partnerShard.MakeDirty();
-                ProbBase(partnerIndex);
+                // This branch cannot be reached, except for rounding error or buffer flushing.
+                return false;
+            }
+        }
+    } else if (shard.isPauliX) {
+        // Must be a Y or Z eigenstate
+        unit->IS(shard.mapped);
+        shard.isPauliX = false;
+        shard.isPauliY = true;
+        shard.MakeDirty();
+        ProbBase(qubit);
 
-                if (norm(partnerShard.amp1) <= ampThresh) {
-                    SeparateBit(false, partnerIndex);
-                } else if (norm(partnerShard.amp0) <= ampThresh) {
-                    SeparateBit(true, partnerIndex);
-                } else {
-                    // This branch cannot be reached, except for rounding error or buffer flushing.
-                    allSeparable = false;
-                }
+        if (norm(shard.amp1) <= ampThresh) {
+            SeparateBit(false, qubit);
+        } else if (norm(shard.amp0) <= ampThresh) {
+            SeparateBit(true, qubit);
+        } else {
+            // Must be a Z eigenstate
+            unit->S(shard.mapped);
+            unit->H(shard.mapped);
+            shard.isPauliX = false;
+            shard.isPauliY = false;
+            shard.MakeDirty();
+            ProbBase(qubit);
+
+            if (norm(shard.amp1) <= ampThresh) {
+                SeparateBit(false, qubit);
+            } else if (norm(shard.amp0) <= ampThresh) {
+                SeparateBit(true, qubit);
+            } else {
+                // This branch cannot be reached, except for rounding error or buffer flushing.
+                return false;
+            }
+        }
+    } else {
+        // Must be an X or Y eigenstate
+        unit->H(shard.mapped);
+        shard.isPauliX = true;
+        shard.isPauliY = false;
+        shard.MakeDirty();
+        ProbBase(qubit);
+
+        if (norm(shard.amp1) <= ampThresh) {
+            SeparateBit(false, qubit);
+        } else if (norm(shard.amp0) <= ampThresh) {
+            SeparateBit(true, qubit);
+        } else {
+            // Must be a Y eigenstate
+            unit->IS(shard.mapped);
+            shard.isPauliX = false;
+            shard.isPauliY = true;
+            shard.MakeDirty();
+            ProbBase(qubit);
+
+            if (norm(shard.amp1) <= ampThresh) {
+                SeparateBit(false, qubit);
+            } else if (norm(shard.amp0) <= ampThresh) {
+                SeparateBit(true, qubit);
+            } else {
+                // This branch cannot be reached, except for rounding error or buffer flushing.
+                return false;
             }
         }
     }
 
-    if (allSeparable) {
-        // If we made it this far, the Clifford engine is entirely separable into single qubit X/Y/Z eigenstates.
-        for (bitLenInt i = 0; i < partnerIndices.size(); i++) {
-            SeparateBit(partnerStates[i], partnerIndices[i], false);
-        }
-    }
-
-    freezeClifford = false;
-    return allSeparable;
+    return true;
 }
 
 real1 QUnit::Prob(bitLenInt qubit)
