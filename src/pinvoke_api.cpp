@@ -211,49 +211,6 @@ inline complex iExp(int power)
     return ZERO_CMPLX;
 }
 
-void apply_controlled_exp(std::vector<complex>& wfn, std::vector<int> const& b, double phi,
-    std::vector<bitLenInt> const& cs, std::vector<bitLenInt> const& qs)
-{
-    std::size_t cmask = make_mask(cs);
-
-    // see Exp-implementation-details.txt for the explanation of the algorithm below
-    std::size_t xy_bits = 0;
-    std::size_t yz_bits = 0;
-    int y_count = 0;
-    for (unsigned i = 0; i < b.size(); ++i) {
-        switch (b[i]) {
-        case PauliX:
-            xy_bits |= (1ull << qs[i]);
-            break;
-        case PauliY:
-            xy_bits |= (1ull << qs[i]);
-            yz_bits |= (1ull << qs[i]);
-            ++y_count;
-            break;
-        case PauliZ:
-            yz_bits |= (1ull << qs[i]);
-            break;
-        case PauliI:
-            break;
-        }
-    }
-
-    real1 alpha = (real1)std::cos(phi);
-    complex beta = (real1)std::sin(phi) * iExp(3 * y_count + 1);
-    complex gamma = (real1)std::sin(phi) * iExp(y_count + 1);
-
-    for (std::intptr_t x = 0; x < static_cast<std::intptr_t>(wfn.size()); x++) {
-        std::intptr_t t = x ^ xy_bits;
-        if (x < t && ((x & cmask) == cmask)) {
-            auto parity = poppar(x & yz_bits);
-            auto a = wfn[x];
-            auto b = wfn[t];
-            wfn[x] = alpha * a + (parity ? -beta : beta) * b;
-            wfn[t] = alpha * b + (parity ? -gamma : gamma) * a;
-        }
-    }
-}
-
 extern "C" {
 
 /**
@@ -268,7 +225,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 {
     META_LOCK_GUARD()
 
-    unsigned sid = simulators.size();
+    unsigned sid = (unsigned)simulators.size();
 
     for (unsigned i = 0; i < simulators.size(); i++) {
         if (simulatorReservations[i] == false) {
@@ -306,7 +263,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
 {
     META_LOCK_GUARD()
 
-    unsigned nsid = simulators.size();
+    unsigned nsid = (unsigned)simulators.size();
 
     for (unsigned i = 0; i < simulators.size(); i++) {
         if (simulatorReservations[i] == false) {
@@ -424,7 +381,7 @@ double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int*
     std::vector<bitLenInt> qVec(q, q + n);
 
     removeIdentities(&bVec, &qVec);
-    n = qVec.size();
+    n = (unsigned)qVec.size();
 
     if (n == 0) {
         return 0.0;
