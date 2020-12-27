@@ -166,49 +166,12 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
     delete[] ctrlsArray;
 }
 
-inline bool isDiagonal(std::vector<int> const& b)
-{
-    for (auto x : b) {
-        if (x == PauliX || x == PauliY) {
-            return false;
-        }
-    }
-    return true;
-}
-
-inline bool poppar(unsigned perm)
-{
-    // From https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
-    unsigned int c; // c accumulates the total bits set in v
-    for (c = 0; perm; c++) {
-        perm &= perm - 1U; // clear the least significant bit set
-    }
-    return c & 1U;
-}
-
 inline std::size_t make_mask(std::vector<bitLenInt> const& qs)
 {
     std::size_t mask = 0;
     for (std::size_t q : qs)
         mask = mask | pow2Ocl(q);
     return mask;
-}
-
-// power of square root of -1
-inline complex iExp(int power)
-{
-    int p = ((power % 4) + 8) % 4;
-    switch (p) {
-    case 0:
-        return ONE_CMPLX;
-    case 1:
-        return I_CMPLX;
-    case 2:
-        return -ONE_CMPLX;
-    case 3:
-        return -I_CMPLX;
-    }
-    return ZERO_CMPLX;
 }
 
 extern "C" {
