@@ -151,20 +151,58 @@ void QUnit::SetQuantumState(const complex* inputState)
 
 void QUnit::GetQuantumState(complex* outputState)
 {
-    QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
-    clone->ToPermBasisAll();
-    clone->EndAllEmulation();
-    clone->EntangleAll();
-    clone->shards[0].unit->GetQuantumState(outputState);
+    if (qubitCount == 1U) {
+        RevertBasis1Qb(0);
+        if (!shards[0].unit) {
+            outputState[0] = shards[0].amp0;
+            outputState[1] = shards[0].amp1;
+
+            return;
+        }
+    }
+
+    QUnitPtr thisCopyShared;
+    QUnit* thisCopy;
+
+    if (shards[0].GetQubitCount() == qubitCount) {
+        ToPermBasisAll();
+        OrderContiguous(shards[0].unit);
+        thisCopy = this;
+    } else {
+        thisCopyShared = std::dynamic_pointer_cast<QUnit>(Clone());
+        thisCopyShared->EntangleAll();
+        thisCopy = thisCopyShared.get();
+    }
+
+    thisCopy->shards[0].unit->GetQuantumState(outputState);
 }
 
 void QUnit::GetProbs(real1* outputProbs)
 {
-    QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(Clone());
-    clone->EntangleAll();
-    clone->EndAllEmulation();
-    clone->EntangleAll();
-    clone->shards[0].unit->GetProbs(outputProbs);
+    if (qubitCount == 1U) {
+        RevertBasis1Qb(0);
+        if (!shards[0].unit) {
+            outputProbs[0] = norm(shards[0].amp0);
+            outputProbs[1] = norm(shards[0].amp1);
+
+            return;
+        }
+    }
+
+    QUnitPtr thisCopyShared;
+    QUnit* thisCopy;
+
+    if (shards[0].GetQubitCount() == qubitCount) {
+        ToPermBasisAll();
+        OrderContiguous(shards[0].unit);
+        thisCopy = this;
+    } else {
+        thisCopyShared = std::dynamic_pointer_cast<QUnit>(Clone());
+        thisCopyShared->EntangleAll();
+        thisCopy = thisCopyShared.get();
+    }
+
+    thisCopy->shards[0].unit->GetProbs(outputProbs);
 }
 
 complex QUnit::GetAmplitude(bitCapInt perm)
@@ -2842,7 +2880,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shards[targets[i]].MakeDirty();
     }
 
-    CheckCliffordSeparable(allBits[0]);
+    if (unit && unit->isClifford()) {
+        ProbBase(targets[0]);
+    }
 }
 
 bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
@@ -3930,11 +3970,32 @@ real1 QUnit::SumSqrDiff(QUnitPtr toCompare)
         return 4.0f;
     }
 
+    if (qubitCount == 1U) {
+        RevertBasis1Qb(0);
+        toCompare->RevertBasis1Qb(0);
+
+        complex mAmps[2], oAmps[2];
+        if (shards[0].unit) {
+            shards[0].unit->GetQuantumState(mAmps);
+        } else {
+            mAmps[0] = shards[0].amp0;
+            mAmps[1] = shards[0].amp1;
+        }
+        if (!toCompare->shards[0].unit) {
+            toCompare->shards[0].unit->GetQuantumState(oAmps);
+        } else {
+            oAmps[0] = toCompare->shards[0].amp0;
+            oAmps[1] = toCompare->shards[0].amp1;
+        }
+
+        return norm(mAmps[0] - oAmps[0]) + norm(mAmps[1] - oAmps[1]);
+    }
+
     QUnitPtr thisCopyShared, thatCopyShared;
     QUnit* thisCopy;
     QUnit* thatCopy;
 
-    if (shards[0].unit->GetQubitCount() == qubitCount) {
+    if (shards[0].GetQubitCount() == qubitCount) {
         ToPermBasisAll();
         OrderContiguous(shards[0].unit);
         thisCopy = this;
@@ -3944,7 +4005,7 @@ real1 QUnit::SumSqrDiff(QUnitPtr toCompare)
         thisCopy = thisCopyShared.get();
     }
 
-    if (toCompare->shards[0].unit->GetQubitCount() == qubitCount) {
+    if (toCompare->shards[0].GetQubitCount() == qubitCount) {
         toCompare->ToPermBasisAll();
         toCompare->OrderContiguous(toCompare->shards[0].unit);
         thatCopy = toCompare.get();
