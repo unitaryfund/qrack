@@ -1263,7 +1263,9 @@ bitCapInt QUnit::MAll()
             continue;
         }
         bitLenInt offset = find(units.begin(), units.end(), shards[i].unit) - units.begin();
-        toRet |= ((partResults[offset] >> shards[i].mapped) & 1U) << i;
+        if (offset < partResults.size()) {
+            toRet |= ((partResults[offset] >> shards[i].mapped) & 1U) << i;
+        }
     }
 
     SetPermutation(toRet);
