@@ -728,7 +728,7 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
 {
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 4;
-    const int Depth = 6;
+    const int Depth = 20;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
