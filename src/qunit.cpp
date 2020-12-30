@@ -82,7 +82,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((initState >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards[i] = QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1);
+        shards[i] = QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase());
     }
 }
 
@@ -100,7 +100,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((perm >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards[i] = QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1);
+        shards[i] = QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase());
     }
 }
 
@@ -1242,10 +1242,10 @@ bitCapInt QUnit::MAll()
         if (!toFind) {
             if (Rand() <= norm(shards[i].amp1)) {
                 shards[i].amp0 = ZERO_CMPLX;
-                shards[i].amp1 = ONE_CMPLX;
+                shards[i].amp1 = GetNonunitaryPhase();
                 toRet |= pow2(i);
             } else {
-                shards[i].amp0 = ONE_CMPLX;
+                shards[i].amp0 = GetNonunitaryPhase();
                 shards[i].amp1 = ZERO_CMPLX;
             }
         } else if (!(toFind->isClifford())) {
@@ -1281,7 +1281,7 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     bool bitState;
     for (bitLenInt i = 0; i < length; i++) {
         bitState = ((value >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards[i + start] = QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1);
+        shards[i + start] = QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase());
     }
 }
 

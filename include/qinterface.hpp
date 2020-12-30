@@ -179,6 +179,16 @@ protected:
 
     bool IsIdentity(const complex* mtrx, const bool isControlled = false);
 
+    complex GetNonunitaryPhase()
+    {
+        if (randGlobalPhase) {
+            real1 angle = Rand() * 2 * M_PI;
+            return complex(cos(angle), sin(angle));
+        } else {
+            return ONE_CMPLX;
+        }
+    }
+
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
         bool randomGlobalPhase = true, real1 norm_thresh = REAL1_EPSILON)

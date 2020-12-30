@@ -112,7 +112,7 @@ public:
     {
     }
 
-    QEngineShard(const bool& set, const real1 amp_thresh = REAL1_EPSILON)
+    QEngineShard(const bool& set, const real1 amp_thresh = REAL1_EPSILON, const complex rand_phase = ONE_CMPLX)
         : unit(NULL)
         , mapped(0)
         , amplitudeFloor(amp_thresh)
@@ -126,8 +126,8 @@ public:
         , antiTargetOfShards()
         , found(false)
     {
-        amp0 = set ? ZERO_CMPLX : ONE_CMPLX;
-        amp1 = set ? ONE_CMPLX : ZERO_CMPLX;
+        amp0 = set ? ZERO_CMPLX : rand_phase;
+        amp1 = set ? rand_phase : ZERO_CMPLX;
     }
 
     // Dirty state constructor:

@@ -31,16 +31,6 @@ protected:
     /// summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
     real1 runningNorm;
 
-    complex GetNonunitaryPhase()
-    {
-        if (randGlobalPhase) {
-            real1 angle = Rand() * 2 * M_PI;
-            return complex(cos(angle), sin(angle));
-        } else {
-            return ONE_CMPLX;
-        }
-    }
-
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, bool useHardwareRNG = true, real1 norm_thresh = REAL1_EPSILON)
