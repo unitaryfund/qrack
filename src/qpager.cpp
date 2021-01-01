@@ -228,11 +228,6 @@ void QPager::MetaControlled(
         bottom = ZERO_CMPLX;
     }
 
-    if (randGlobalPhase) {
-        bottom /= top;
-        top = ONE_CMPLX;
-    }
-
     bitCapIntOcl maxLCV = qPages.size() >> sortedMasks.size();
     std::vector<std::future<void>> futures(maxLCV);
     bitCapIntOcl i;
