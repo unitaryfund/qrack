@@ -274,5 +274,17 @@ public:
     virtual int GetDeviceID() { return qPages[0]->GetDeviceID(); }
 
     bitCapIntOcl GetMaxSize() { return qPages[0]->GetMaxSize(); };
+
+    virtual real1 SumSqrDiff(QInterfacePtr toCompare)
+    {
+        return SumSqrDiff(std::dynamic_pointer_cast<QPager>(toCompare));
+    }
+
+    virtual real1 SumSqrDiff(QPagerPtr toCompare)
+    {
+        CombineEngines();
+        toCompare->CombineEngines();
+        return qPages[0]->SumSqrDiff(toCompare->qPages[0]);
+    }
 };
 } // namespace Qrack

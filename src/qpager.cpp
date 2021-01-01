@@ -28,12 +28,13 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , deviceIDs(devList)
     , thresholdQubitsPerPage(qubitThreshold)
 {
-    if ((eng != QINTERFACE_CPU) && (eng != QINTERFACE_OPENCL)) {
-        throw std::invalid_argument("QPager sub-engine type must be QINTERFACE_CPU or QINTERFACE_OPENCL.");
+    if ((eng != QINTERFACE_CPU) && (eng != QINTERFACE_OPENCL) && (eng != QINTERFACE_HYBRID)) {
+        throw std::invalid_argument(
+            "QPager sub-engine type must be QINTERFACE_CPU, QINTERFACE_OPENCL or QINTERFACE_HYBRID.");
     }
 
 #if ENABLE_OPENCL
-    if ((thresholdQubitsPerPage == 0) && (eng == QINTERFACE_OPENCL)) {
+    if ((thresholdQubitsPerPage == 0) && ((eng == QINTERFACE_OPENCL) || (eng == QINTERFACE_HYBRID))) {
         // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
         // concurrency.
         thresholdQubitsPerPage =
