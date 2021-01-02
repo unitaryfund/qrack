@@ -22,13 +22,11 @@ typedef std::shared_ptr<QHybrid> QHybridPtr;
  * A "Qrack::QHybrid" internally switched between Qrack::QEngineCPU and Qrack::QEngineOCL to maximize
  * qubit-count-dependent performance.
  */
-class QHybrid : public QInterface {
+class QHybrid : public QEngine {
 protected:
     QEnginePtr engine;
     int devID;
     complex phaseFactor;
-    bool doNormalize;
-    bool useHostRam;
     bool useRDRAND;
     bool isSparse;
     uint32_t concurrency;
@@ -69,6 +67,41 @@ public:
         }
 
         isGpu = useGpu;
+    }
+
+    virtual void ZeroAmplitudes() { engine->ZeroAmplitudes(); }
+
+    virtual void CopyStateVec(QInterfacePtr src) { CopyStateVec(std::dynamic_pointer_cast<QHybrid>(src)); }
+    virtual void CopyStateVec(QHybridPtr src)
+    {
+        SwitchModes(src->isGpu);
+        engine->CopyStateVec(src->engine);
+    }
+
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        engine->GetAmplitudePage(pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        engine->SetAmplitudePage(pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(
+        QHybridPtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        engine->SetAmplitudePage(pageEnginePtr->engine, srcOffset, dstOffset, length);
+    }
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        SetAmplitudePage(std::dynamic_pointer_cast<QHybrid>(pageEnginePtr), srcOffset, dstOffset, length);
+    }
+    virtual void ShuffleBuffers(QEnginePtr oEngine) { ShuffleBuffers(std::dynamic_pointer_cast<QHybrid>(oEngine)); }
+    virtual void ShuffleBuffers(QHybridPtr oEngine) { engine->ShuffleBuffers(oEngine->engine); }
+    virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) { engine->ApplyM(regMask, result, nrm); }
+    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+    {
+        return engine->ProbReg(start, length, permutation);
     }
 
     using QInterface::Compose;
@@ -396,5 +429,50 @@ public:
     virtual int GetDeviceID() { return devID; }
 
     bitCapIntOcl GetMaxSize() { return engine->GetMaxSize(); };
+
+protected:
+    virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+    {
+        return engine->GetExpectation(valueStart, valueLength);
+    }
+
+    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        engine->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
+    }
+    virtual void ApplyControlled2x2(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    {
+        engine->ApplyControlled2x2(controls, controlLen, target, mtrx);
+    }
+    virtual void ApplyAntiControlled2x2(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    {
+        engine->ApplyAntiControlled2x2(controls, controlLen, target, mtrx);
+    }
+
+    virtual void FreeStateVec(complex* sv = NULL) { engine->FreeStateVec(sv); }
+
+    virtual void INCDECC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+    {
+        engine->INCDECC(toMod, inOutStart, length, carryIndex);
+    }
+    virtual void INCDECSC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+    {
+        engine->INCDECSC(toMod, inOutStart, length, carryIndex);
+    }
+    virtual void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
+        const bitLenInt& overflowIndex, const bitLenInt& carryIndex)
+    {
+        engine->INCDECSC(toMod, inOutStart, length, overflowIndex, carryIndex);
+    }
+    virtual void INCDECBCDC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+    {
+        engine->INCDECBCDC(toMod, inOutStart, length, carryIndex);
+    }
 };
 } // namespace Qrack
