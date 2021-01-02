@@ -81,6 +81,15 @@ public:
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false, real1 ignored3 = REAL1_EPSILON,
         std::vector<int> devList = {}, bitLenInt qubitThreshold = 0);
 
+    QPager(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool ignored = false, bool ignored2 = false, bool useHostMem = false,
+        int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false, real1 ignored3 = REAL1_EPSILON,
+        std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
+        : QPager(QINTERFACE_HYBRID, qBitCount, initState, rgp, phaseFac, ignored, ignored2, useHostMem, deviceId,
+              useHardwareRNG, useSparseStateVec, ignored3, devList, qubitThreshold)
+    {
+    }
+
     virtual void SetConcurrency(uint32_t threadsPerEngine)
     {
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {

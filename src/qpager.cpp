@@ -28,6 +28,12 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , deviceIDs(devList)
     , thresholdQubitsPerPage(qubitThreshold)
 {
+#if !ENABLE_OPENCL
+    if (eng == QINTERFACE_HYBRID) {
+        eng = QINTERFACE_CPU;
+    }
+#endif
+
     if ((eng != QINTERFACE_CPU) && (eng != QINTERFACE_OPENCL) && (eng != QINTERFACE_HYBRID)) {
         throw std::invalid_argument(
             "QPager sub-engine type must be QINTERFACE_CPU, QINTERFACE_OPENCL or QINTERFACE_HYBRID.");
