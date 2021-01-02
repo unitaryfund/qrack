@@ -68,9 +68,8 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     return stateVec->read(perm);
 }
@@ -79,9 +78,8 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 {
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     runningNorm -= norm(stateVec->read(perm));
     runningNorm += norm(amp);
@@ -151,9 +149,8 @@ void QEngineCPU::GetQuantumState(complex* outputState)
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     stateVec->copy_out(outputState);
 }
@@ -168,9 +165,8 @@ void QEngineCPU::GetProbs(real1* outputProbs)
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     stateVec->get_probs(outputProbs);
 }
@@ -670,9 +666,8 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
     stateVec->isReadLocked = false;
@@ -683,9 +678,8 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 
     if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
         toCopy->NormalizeState();
-    } else {
-        toCopy->Finish();
     }
+    toCopy->Finish();
 
     if (stateVec->is_sparse() || toCopy->stateVec->is_sparse()) {
         par_for_sparse_compose(
@@ -716,15 +710,13 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
-    if ((toCopy->doNormalize) && (toCopy->runningNorm != ONE_R1)) {
+    if (toCopy->doNormalize) {
         toCopy->NormalizeState();
-    } else {
-        toCopy->Finish();
     }
+    toCopy->Finish();
 
     StateVectorPtr nStateVec = AllocStateVec(nMaxQPower);
     stateVec->isReadLocked = false;
@@ -765,17 +757,15 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     for (i = 0; i < toComposeCount; i++) {
         QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[i]);
-        if ((src->doNormalize) && (src->runningNorm != ONE_R1)) {
+        if (src->doNormalize) {
             src->NormalizeState();
-        } else {
-            src->Finish();
         }
+        src->Finish();
         mask[i] = (src->GetMaxQPower() - ONE_BCI) << (bitCapIntOcl)nQubitCount;
         offset[i] = nQubitCount;
         ret[toCopy[i]] = nQubitCount;
@@ -829,9 +819,8 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt j, l;
@@ -936,9 +925,8 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     StateVectorPtr nStateVec = AllocStateVec(remainderPower);
     stateVec->isReadLocked = false;
@@ -989,9 +977,8 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     stateVec->isReadLocked = false;
     if (stateVec->is_sparse()) {
@@ -1019,9 +1006,8 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     return norm(stateVec->read(fullRegister));
 }
@@ -1042,9 +1028,8 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     stateVec->isReadLocked = false;
     if (stateVec->is_sparse()) {
@@ -1089,9 +1074,8 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     stateVec->isReadLocked = false;
     par_for_mask(0, maxQPower, skipPowers, skipPowersVec.size(),
@@ -1136,9 +1120,8 @@ real1 QEngineCPU::ProbParity(const bitCapInt& mask)
 
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
     stateVec->isReadLocked = false;
     if (stateVec->is_sparse()) {
@@ -1221,15 +1204,13 @@ real1 QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
     // Make sure both engines are normalized
     if (doNormalize) {
         NormalizeState();
-    } else {
-        Finish();
     }
+    Finish();
 
-    if (toCompare->doNormalize && (toCompare->runningNorm != ONE_R1)) {
+    if (toCompare->doNormalize) {
         toCompare->NormalizeState();
-    } else {
-        toCompare->Finish();
     }
+    toCompare->Finish();
 
     stateVec->isReadLocked = false;
     toCompare->stateVec->isReadLocked = false;

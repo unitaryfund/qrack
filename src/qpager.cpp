@@ -108,7 +108,6 @@ void QPager::CombineEngines(bitLenInt bit)
         for (j = 0; j < groupSize; j++) {
             nQPages.back()->SetAmplitudePage(qPages[j + (i * groupSize)], 0, j * pagePower, pagePower);
         }
-        nQPages.back()->UpdateRunningNorm();
     }
 
     qPages = nQPages;
@@ -133,7 +132,6 @@ void QPager::SeparateEngines(bitLenInt thresholdBits)
         for (j = 0; j < pagesPer; j++) {
             nQPages.push_back(MakeEngine(thresholdBits, 0, deviceIDs[(j + (i * pagesPer)) % deviceIDs.size()]));
             nQPages.back()->SetAmplitudePage(qPages[i], j * pageMaxQPower, 0, pageMaxQPower);
-            nQPages.back()->UpdateRunningNorm();
         }
     }
 
@@ -1025,20 +1023,10 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
 
             if (qubit1 == sqi) {
                 if (isIPhaseFac) {
-                    future1 = std::async(std::launch::async, [engine1, &sqi]() {
-                        engine1->ApplySinglePhase(ZERO_CMPLX, I_CMPLX, sqi);
-                        engine1->UpdateRunningNorm();
-                    });
-                    future2 = std::async(std::launch::async, [engine2, &sqi]() {
-                        engine2->ApplySinglePhase(I_CMPLX, ZERO_CMPLX, sqi);
-                        engine2->UpdateRunningNorm();
-                    });
-
-                    future1.get();
-                    future2.get();
-                } else {
-                    future1 = std::async(std::launch::async, [engine1]() { engine1->UpdateRunningNorm(); });
-                    future2 = std::async(std::launch::async, [engine2]() { engine2->UpdateRunningNorm(); });
+                    future1 = std::async(
+                        std::launch::async, [engine1, &sqi]() { engine1->ApplySinglePhase(ZERO_CMPLX, I_CMPLX, sqi); });
+                    future2 = std::async(
+                        std::launch::async, [engine2, &sqi]() { engine2->ApplySinglePhase(I_CMPLX, ZERO_CMPLX, sqi); });
 
                     future1.get();
                     future2.get();
@@ -1202,7 +1190,6 @@ QInterfacePtr QPager::Clone()
     bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         clone->qPages[i]->SetAmplitudePage(qPages[i], 0, 0, pagePower);
-        clone->qPages[i]->UpdateRunningNorm();
     }
 
     return clone;
