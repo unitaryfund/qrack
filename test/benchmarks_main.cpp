@@ -238,7 +238,7 @@ int main(int argc, char* argv[])
     }
 
 #if ENABLE_OPENCL
-    if (num_failed == 0 && stabilizer_qpager) {
+    if (num_failed == 0 && qengine && stabilizer_qpager) {
         testEngineType = QINTERFACE_STABILIZER_HYBRID;
         testSubEngineType = QINTERFACE_QPAGER;
         testSubSubEngineType = QINTERFACE_HYBRID;
