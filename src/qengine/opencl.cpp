@@ -121,8 +121,15 @@ void QEngineOCL::SetAmplitudePage(
         return;
     }
 
+    clFinish();
+    pageEngineOclPtr->clFinish();
+
     if (!oStateBuffer) {
-        ClearBuffer(stateBuffer, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length, ResetWaitEvents());
+        if (length == maxQPower) {
+            FreeStateVec();
+        } else {
+            ClearBuffer(stateBuffer, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length, ResetWaitEvents());
+        }
         return;
     }
 
@@ -130,9 +137,6 @@ void QEngineOCL::SetAmplitudePage(
         ReinitBuffer();
         ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
     }
-
-    clFinish();
-    pageEngineOclPtr->clFinish();
 
     queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, sizeof(complex) * (bitCapIntOcl)srcOffset,
         sizeof(complex) * (bitCapIntOcl)dstOffset, sizeof(complex) * (bitCapIntOcl)length);

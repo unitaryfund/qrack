@@ -122,6 +122,11 @@ public:
             return;
         }
 
+        if (!oStateVec && (length == maxQPower)) {
+            FreeStateVec();
+            return;
+        }
+
         if (!stateVec) {
             ResetStateVec(AllocStateVec(maxQPower));
             stateVec->clear();
