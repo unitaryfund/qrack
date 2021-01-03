@@ -89,6 +89,7 @@ public:
     virtual void SetAmplitudePage(
         QHybridPtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
     {
+        pageEnginePtr->SwitchModes(isGpu);
         engine->SetAmplitudePage(pageEnginePtr->engine, srcOffset, dstOffset, length);
     }
     virtual void SetAmplitudePage(
