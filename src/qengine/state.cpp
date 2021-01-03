@@ -346,6 +346,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             }
             runningNorm = rNrm;
             delete[] rngNrm;
+
+            if (runningNorm == ZERO_R1) {
+                FreeStateVec();
+            }
         }
     });
 }
