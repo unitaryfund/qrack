@@ -108,7 +108,7 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
     queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
         sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
 
-    runningNorm = ONE_R1;
+    runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineOCL::SetAmplitudePage(
@@ -126,7 +126,7 @@ void QEngineOCL::SetAmplitudePage(
 
     if (!oStateBuffer) {
         if (length == maxQPower) {
-            FreeStateVec();
+            ZeroAmplitudes();
         } else {
             ClearBuffer(stateBuffer, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length, ResetWaitEvents());
         }
@@ -143,7 +143,7 @@ void QEngineOCL::SetAmplitudePage(
 
     queue.finish();
 
-    runningNorm = ONE_R1;
+    runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
@@ -176,8 +176,8 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
 
     queue.finish();
 
-    runningNorm = ONE_R1;
-    engineOcl->runningNorm = ONE_R1;
+    runningNorm = REAL1_DEFAULT_ARG;
+    engineOcl->runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineOCL::LockSync(cl_int flags)
@@ -310,21 +310,6 @@ void QEngineOCL::WaitCall(
     clFinish();
 }
 
-void QEngineOCL::QueueCall(
-    OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args, size_t localBuffSize)
-{
-    QueueItem item(api_call, workItemCount, localGroupSize, args, localBuffSize);
-
-    queue_mutex.lock();
-    bool isBase = (wait_queue_items.size() == 0);
-    wait_queue_items.push_back(item);
-    queue_mutex.unlock();
-
-    if (isBase) {
-        DispatchQueue(NULL, CL_COMPLETE);
-    }
-}
-
 void CL_CALLBACK _PopQueue(cl_event event, cl_int type, void* user_data)
 {
     ((QEngineOCL*)user_data)->PopQueue(event, type);
@@ -361,6 +346,22 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 
     QueueItem item = wait_queue_items.front();
+
+    while (item.isSetDoNorm || item.isSetRunningNorm) {
+        if (item.isSetDoNorm) {
+            doNormalize = item.doNorm;
+        }
+        if (item.isSetRunningNorm) {
+            runningNorm = item.runningNorm;
+        }
+
+        wait_queue_items.pop_front();
+        if (wait_queue_items.size() == 0) {
+            return;
+        }
+        item = wait_queue_items.front();
+    }
+
     std::vector<BufferPtr> args = item.buffers;
 
     // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
@@ -762,7 +763,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
-    cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
+    cmplx[4] = complex(
+        (isUnitLength || (runningNorm == REAL1_DEFAULT_ARG)) ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
     cmplx[5] = norm_thresh;
 
     BufferPtr locCmplxBuffer;
@@ -909,6 +911,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
         // values into a single normalization constant.
         WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+        if (runningNorm == ZERO_R1) {
+            ZeroAmplitudes();
+        }
     } else if ((runningNorm == ZERO_R1) || ((bitCount == 1) && !isXGate && !isZGate && !isInvertGate && !isPhaseGate)) {
         runningNorm = ONE_R1;
     }

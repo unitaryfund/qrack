@@ -204,7 +204,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
-    real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
+    real1 nrm = doNormalize && (runningNorm != REAL1_DEFAULT_ARG) ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
 
     if (doCalcNorm) {
         runningNorm = ONE_R1;
@@ -346,6 +346,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             }
             runningNorm = rNrm;
             delete[] rngNrm;
+
+            if (runningNorm == ZERO_R1) {
+                ZeroAmplitudes();
+            }
         }
     });
 }

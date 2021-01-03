@@ -25,6 +25,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
+    , runningNorm(ONE_R1)
     , deviceIDs(devList)
     , thresholdQubitsPerPage(qubitThreshold)
 {
@@ -82,8 +83,8 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
 QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapInt perm, int deviceId)
 {
-    return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(
-        engine, length, perm, rand_generator, phaseFactor, false, false, useHostRam, deviceId, useRDRAND, isSparse));
+    return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engine, length, perm, rand_generator, phaseFactor,
+        false, false, useHostRam, deviceId, useRDRAND, isSparse, amplitudeFloor));
 }
 
 void QPager::CombineEngines(bitLenInt bit)
@@ -146,11 +147,26 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
 
     bitCapIntOcl i;
 
+    if (doNormalize) {
+        runningNorm = ZERO_R1;
+        for (i = 0; i < qPages.size(); i++) {
+            qPages[i]->Finish();
+            runningNorm += qPages[i]->GetRunningNorm();
+        }
+        for (i = 0; i < qPages.size(); i++) {
+            qPages[i]->QueueSetRunningNorm(runningNorm);
+            qPages[i]->QueueSetDoNormalize(true);
+        }
+    }
+
     if (target < qpp) {
         std::vector<std::future<void>> futures(qPages.size());
         for (i = 0; i < qPages.size(); i++) {
             QEnginePtr engine = qPages[i];
-            futures[i] = std::async(std::launch::async, [engine, fn, target]() { fn(engine, target); });
+            futures[i] = std::async(std::launch::async, [engine, fn, target]() {
+                fn(engine, target);
+                engine->QueueSetDoNormalize(false);
+            });
         }
         for (i = 0; i < qPages.size(); i++) {
             futures[i].get();
@@ -176,8 +192,14 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
             engine1->ShuffleBuffers(engine2);
 
             std::future<void> future1, future2;
-            future1 = std::async(std::launch::async, [fn, engine1, &sqi]() { fn(engine1, sqi); });
-            future2 = std::async(std::launch::async, [fn, engine2, &sqi]() { fn(engine2, sqi); });
+            future1 = std::async(std::launch::async, [fn, engine1, &sqi]() {
+                fn(engine1, sqi);
+                engine1->QueueSetDoNormalize(false);
+            });
+            future2 = std::async(std::launch::async, [fn, engine2, &sqi]() {
+                fn(engine2, sqi);
+                engine2->QueueSetDoNormalize(false);
+            });
             future1.get();
             future2.get();
 
@@ -420,6 +442,9 @@ void QPager::SetQuantumState(const complex* inputState)
     bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         qPages[i]->SetQuantumState(inputState + pagePerm);
+        if (doNormalize) {
+            qPages[i]->UpdateRunningNorm();
+        }
         pagePerm += pagePower;
     }
 }

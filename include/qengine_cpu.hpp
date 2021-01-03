@@ -107,7 +107,7 @@ public:
 
         stateVec->copy_in(pagePtr, offset, length);
 
-        runningNorm = ONE_R1;
+        runningNorm = REAL1_DEFAULT_ARG;
     }
     virtual void SetAmplitudePage(
         QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
@@ -123,7 +123,7 @@ public:
         }
 
         if (!oStateVec && (length == maxQPower)) {
-            FreeStateVec();
+            ZeroAmplitudes();
             return;
         }
 
@@ -134,7 +134,7 @@ public:
 
         stateVec->copy_in(oStateVec, srcOffset, dstOffset, length);
 
-        runningNorm = ONE_R1;
+        runningNorm = REAL1_DEFAULT_ARG;
     }
     virtual void ShuffleBuffers(QEnginePtr engine)
     {
@@ -159,8 +159,8 @@ public:
 
         stateVec->shuffle(engineCpu->stateVec);
 
-        runningNorm = ONE_R1;
-        engineCpu->runningNorm = ONE_R1;
+        runningNorm = REAL1_DEFAULT_ARG;
+        engineCpu->runningNorm = REAL1_DEFAULT_ARG;
     }
 
     virtual void CopyStateVec(QInterfacePtr src)
@@ -181,6 +181,15 @@ public:
             SetQuantumState(sv);
             delete[] sv;
         }
+    }
+
+    virtual void QueueSetDoNormalize(const bool& doNorm)
+    {
+        Dispatch([this, doNorm] { doNormalize = doNorm; });
+    }
+    virtual void QueueSetRunningNorm(const real1& runningNrm)
+    {
+        Dispatch([this, runningNrm] { runningNorm = runningNrm; });
     }
 
     virtual void SetQuantumState(const complex* inputState);

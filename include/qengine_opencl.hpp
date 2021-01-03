@@ -42,6 +42,10 @@ struct QueueItem {
     size_t localGroupSize;
     std::vector<BufferPtr> buffers;
     size_t localBuffSize;
+    bool isSetDoNorm;
+    bool isSetRunningNorm;
+    bool doNorm;
+    real1 runningNorm;
 
     QueueItem(OCLAPI ac, size_t wic, size_t lgs, std::vector<BufferPtr> b, size_t lbs)
         : api_call(ac)
@@ -49,6 +53,36 @@ struct QueueItem {
         , localGroupSize(lgs)
         , buffers(b)
         , localBuffSize(lbs)
+        , isSetDoNorm(false)
+        , isSetRunningNorm(false)
+        , doNorm(false)
+        , runningNorm(ONE_R1)
+    {
+    }
+
+    QueueItem(const bool& doNrm)
+        : api_call()
+        , workItemCount(0)
+        , localGroupSize(0)
+        , buffers()
+        , localBuffSize(0)
+        , isSetDoNorm(true)
+        , isSetRunningNorm(false)
+        , doNorm(doNrm)
+        , runningNorm(ONE_R1)
+    {
+    }
+
+    QueueItem(const real1& runningNrm)
+        : api_call()
+        , workItemCount(0)
+        , localGroupSize(0)
+        , buffers()
+        , localBuffSize(0)
+        , isSetDoNorm(false)
+        , isSetRunningNorm(true)
+        , doNorm(false)
+        , runningNorm(runningNrm)
     {
     }
 };
@@ -202,6 +236,25 @@ public:
     virtual void SetAmplitudePage(
         QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length);
     virtual void ShuffleBuffers(QEnginePtr engine);
+
+    virtual void QueueSetDoNormalize(const bool& doNorm) { AddQueueItem(QueueItem(doNorm)); }
+    virtual void QueueSetRunningNorm(const real1& runningNrm) { AddQueueItem(QueueItem(runningNrm)); }
+    virtual void AddQueueItem(const QueueItem& item)
+    {
+        queue_mutex.lock();
+        bool isBase = (wait_queue_items.size() == 0);
+        wait_queue_items.push_back(item);
+        queue_mutex.unlock();
+
+        if (isBase) {
+            DispatchQueue(NULL, CL_COMPLETE);
+        }
+    }
+    virtual void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
+        size_t localBuffSize = 0)
+    {
+        AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, args, localBuffSize));
+    }
 
     bitCapIntOcl GetMaxSize() { return maxAlloc / sizeof(complex); };
 
@@ -391,8 +444,6 @@ protected:
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     /* Utility functions used by the operations above. */
-    void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
-        size_t localBuffSize = 0);
     void WaitCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0);
     EventVecPtr ResetWaitEvents(bool waitQueue = true);
