@@ -126,7 +126,7 @@ void QEngineOCL::SetAmplitudePage(
 
     if (!oStateBuffer) {
         if (length == maxQPower) {
-            FreeStateVec();
+            ZeroAmplitudes();
         } else {
             ClearBuffer(stateBuffer, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length, ResetWaitEvents());
         }

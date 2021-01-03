@@ -123,7 +123,7 @@ public:
         }
 
         if (!oStateVec && (length == maxQPower)) {
-            FreeStateVec();
+            ZeroAmplitudes();
             return;
         }
 
