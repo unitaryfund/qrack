@@ -51,6 +51,8 @@ public:
 
     virtual ~QEngine() { Finish(); }
 
+    virtual real1 GetRunningNorm() { return runningNorm; }
+
     virtual void ZeroAmplitudes() = 0;
 
     virtual void CopyStateVec(QInterfacePtr src) = 0;
@@ -62,6 +64,9 @@ public:
     /** Swap the high half of this engine with the low half of another. This is necessary for gates which cross
      * sub-engine  boundaries. */
     virtual void ShuffleBuffers(QEnginePtr engine) = 0;
+
+    virtual void QueueSetDoNormalize(const bool& doNorm) = 0;
+    virtual void QueueSetRunningNorm(const real1& runningNrm) = 0;
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);

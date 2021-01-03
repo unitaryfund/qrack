@@ -98,6 +98,9 @@ public:
     }
     virtual void ShuffleBuffers(QEnginePtr oEngine) { ShuffleBuffers(std::dynamic_pointer_cast<QHybrid>(oEngine)); }
     virtual void ShuffleBuffers(QHybridPtr oEngine) { engine->ShuffleBuffers(oEngine->engine); }
+    virtual void QueueSetDoNormalize(const bool& doNorm) { engine->QueueSetDoNormalize(doNorm); }
+    virtual void QueueSetRunningNorm(const real1& runningNrm) { engine->QueueSetRunningNorm(runningNrm); }
+
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) { engine->ApplyM(regMask, result, nrm); }
     virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
     {

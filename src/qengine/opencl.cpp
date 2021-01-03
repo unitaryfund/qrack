@@ -310,21 +310,6 @@ void QEngineOCL::WaitCall(
     clFinish();
 }
 
-void QEngineOCL::QueueCall(
-    OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args, size_t localBuffSize)
-{
-    QueueItem item(api_call, workItemCount, localGroupSize, args, localBuffSize);
-
-    queue_mutex.lock();
-    bool isBase = (wait_queue_items.size() == 0);
-    wait_queue_items.push_back(item);
-    queue_mutex.unlock();
-
-    if (isBase) {
-        DispatchQueue(NULL, CL_COMPLETE);
-    }
-}
-
 void CL_CALLBACK _PopQueue(cl_event event, cl_int type, void* user_data)
 {
     ((QEngineOCL*)user_data)->PopQueue(event, type);
@@ -361,6 +346,22 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 
     QueueItem item = wait_queue_items.front();
+
+    while (item.isSetDoNorm || item.isSetRunningNorm) {
+        if (item.isSetDoNorm) {
+            doNormalize = item.doNorm;
+        }
+        if (item.isSetRunningNorm) {
+            runningNorm = item.runningNorm;
+        }
+
+        wait_queue_items.pop_front();
+        if (wait_queue_items.size() == 0) {
+            return;
+        }
+        item = wait_queue_items.front();
+    }
+
     std::vector<BufferPtr> args = item.buffers;
 
     // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
