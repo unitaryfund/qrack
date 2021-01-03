@@ -585,7 +585,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
     device_context->UnlockWaitEvents();
     queue.flush();
 
-    runningNorm = REAL1_DEFAULT_ARG;
+    runningNorm = ONE_R1;
 }
 
 void QEngineOCL::ArithmeticCall(
