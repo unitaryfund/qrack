@@ -122,7 +122,8 @@ public:
             return;
         }
 
-        if (!oStateVec) {
+        if (!oStateVec && (length == maxQPower)) {
+            Dump();
             FreeStateVec();
             return;
         }
