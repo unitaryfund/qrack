@@ -398,15 +398,21 @@ void QPager::CombineAndOpControlled(
 
 bitLenInt QPager::Compose(QPagerPtr toCopy)
 {
-    CombineEngines();
     toCopy->CombineEngines();
-    bitLenInt toRet = qPages[0]->Compose(toCopy->qPages[0]);
-    SetQubitCount(qPages[0]->GetQubitCount());
+    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+        qPages[i]->Compose(toCopy->qPages[0]);
+    }
+    bitLenInt toRet = qubitCount;
+    SetQubitCount(qubitCount + toCopy->qubitCount);
     return toRet;
 }
 
 bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
 {
+    if (start == qubitCount) {
+        return Compose(toCopy);
+    }
+
     CombineEngines();
     toCopy->CombineEngines();
     bitLenInt toRet = qPages[0]->Compose(toCopy->qPages[0], start);
