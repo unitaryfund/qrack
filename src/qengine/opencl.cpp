@@ -108,7 +108,7 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
     queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
         sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
 
-    runningNorm = ONE_R1;
+    runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineOCL::SetAmplitudePage(
@@ -143,7 +143,7 @@ void QEngineOCL::SetAmplitudePage(
 
     queue.finish();
 
-    runningNorm = ONE_R1;
+    runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
@@ -176,8 +176,8 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
 
     queue.finish();
 
-    runningNorm = ONE_R1;
-    engineOcl->runningNorm = ONE_R1;
+    runningNorm = REAL1_DEFAULT_ARG;
+    engineOcl->runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineOCL::LockSync(cl_int flags)
@@ -585,7 +585,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
     device_context->UnlockWaitEvents();
     queue.flush();
 
-    runningNorm = ONE_R1;
+    runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineOCL::ArithmeticCall(
@@ -763,7 +763,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
-    cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
+    cmplx[4] = complex(
+        (isUnitLength || (runningNorm == REAL1_DEFAULT_ARG)) ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
     cmplx[5] = norm_thresh;
 
     BufferPtr locCmplxBuffer;
