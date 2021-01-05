@@ -933,8 +933,25 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
             H(qubit);
         } else {
             unit->H(shard.mapped);
+
+            unit->S(shard.mapped);
+            unit->H(shard.mapped);
             ProbBase(qubit);
-            return false;
+
+            if (IS_NORM_0(shard.amp1)) {
+                SeparateBit(false, qubit);
+                H(qubit);
+                IS(qubit);
+            } else if (IS_NORM_0(shard.amp0)) {
+                SeparateBit(true, qubit);
+                H(qubit);
+                IS(qubit);
+            } else {
+                unit->H(shard.mapped);
+                unit->IS(shard.mapped);
+                ProbBase(qubit);
+                return false;
+            }
         }
     }
 
