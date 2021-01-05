@@ -848,16 +848,14 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
         return false;
     }
 
-    real1 ampThresh = doNormalize ? amplitudeFloor : ZERO_R1;
-
     std::vector<bitLenInt> partnerIndices;
     std::vector<bool> partnerStates;
 
     if (!TrySeparateCliffordBit(qubit)) {
-        if (norm(shards[qubit].amp1) <= ampThresh) {
+        if (norm(shards[qubit].amp1) <= REAL1_EPSILON) {
             partnerStates.push_back(false);
             partnerIndices.push_back(qubit);
-        } else if (norm(shards[qubit].amp0) <= ampThresh) {
+        } else if (norm(shards[qubit].amp0) <= REAL1_EPSILON) {
             partnerStates.push_back(true);
             partnerIndices.push_back(qubit);
         } else {
@@ -880,10 +878,10 @@ bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
             continue;
         }
 
-        if (norm(partnerShard.amp1) <= ampThresh) {
+        if (norm(partnerShard.amp1) <= REAL1_EPSILON) {
             partnerStates.push_back(false);
             partnerIndices.push_back(partnerIndex);
-        } else if (norm(partnerShard.amp0) <= ampThresh) {
+        } else if (norm(partnerShard.amp0) <= REAL1_EPSILON) {
             partnerStates.push_back(true);
             partnerIndices.push_back(partnerIndex);
         } else {
@@ -915,15 +913,13 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
 
     QInterfacePtr unit = shards[qubit].unit;
 
-    real1 ampThresh = doNormalize ? amplitudeFloor : ZERO_R1;
-
     ProbBase(qubit);
 
-    if (norm(shard.amp1) <= ampThresh) {
+    if (norm(shard.amp1) <= REAL1_EPSILON) {
         SeparateBit(false, qubit);
-    } else if (norm(shard.amp0) <= ampThresh) {
+    } else if (norm(shard.amp0) <= REAL1_EPSILON) {
         SeparateBit(true, qubit);
-    } else if ((ampThresh == ZERO_R1) || !unit->TrySeparate(shard.mapped)) {
+    } else if (!unit->TrySeparate(shard.mapped)) {
         return false;
     } else if (shard.isPauliY) {
         // Must be an X or Z eigenstate
@@ -933,9 +929,9 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
         shard.MakeDirty();
         ProbBase(qubit);
 
-        if (norm(shard.amp1) <= ampThresh) {
+        if (norm(shard.amp1) <= REAL1_EPSILON) {
             SeparateBit(false, qubit);
-        } else if (norm(shard.amp0) <= ampThresh) {
+        } else if (norm(shard.amp0) <= REAL1_EPSILON) {
             SeparateBit(true, qubit);
         } else {
             // Must be a Z eigenstate
@@ -945,9 +941,9 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
             shard.MakeDirty();
             ProbBase(qubit);
 
-            if (norm(shard.amp1) <= ampThresh) {
+            if (norm(shard.amp1) <= REAL1_EPSILON) {
                 SeparateBit(false, qubit);
-            } else if (norm(shard.amp0) <= ampThresh) {
+            } else if (norm(shard.amp0) <= REAL1_EPSILON) {
                 SeparateBit(true, qubit);
             } else {
                 // This branch cannot be reached, except for rounding error or buffer flushing.
@@ -962,9 +958,9 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
         shard.MakeDirty();
         ProbBase(qubit);
 
-        if (norm(shard.amp1) <= ampThresh) {
+        if (norm(shard.amp1) <= REAL1_EPSILON) {
             SeparateBit(false, qubit);
-        } else if (norm(shard.amp0) <= ampThresh) {
+        } else if (norm(shard.amp0) <= REAL1_EPSILON) {
             SeparateBit(true, qubit);
         } else {
             // Must be a Z eigenstate
@@ -975,9 +971,9 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
             shard.MakeDirty();
             ProbBase(qubit);
 
-            if (norm(shard.amp1) <= ampThresh) {
+            if (norm(shard.amp1) <= REAL1_EPSILON) {
                 SeparateBit(false, qubit);
-            } else if (norm(shard.amp0) <= ampThresh) {
+            } else if (norm(shard.amp0) <= REAL1_EPSILON) {
                 SeparateBit(true, qubit);
             } else {
                 // This branch cannot be reached, except for rounding error or buffer flushing.
@@ -992,9 +988,9 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
         shard.MakeDirty();
         ProbBase(qubit);
 
-        if (norm(shard.amp1) <= ampThresh) {
+        if (norm(shard.amp1) <= REAL1_EPSILON) {
             SeparateBit(false, qubit);
-        } else if (norm(shard.amp0) <= ampThresh) {
+        } else if (norm(shard.amp0) <= REAL1_EPSILON) {
             SeparateBit(true, qubit);
         } else {
             // Must be a Y eigenstate
@@ -1004,9 +1000,9 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
             shard.MakeDirty();
             ProbBase(qubit);
 
-            if (norm(shard.amp1) <= ampThresh) {
+            if (norm(shard.amp1) <= REAL1_EPSILON) {
                 SeparateBit(false, qubit);
-            } else if (norm(shard.amp0) <= ampThresh) {
+            } else if (norm(shard.amp0) <= REAL1_EPSILON) {
                 SeparateBit(true, qubit);
             } else {
                 // This branch cannot be reached, except for rounding error or buffer flushing.
