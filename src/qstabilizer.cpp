@@ -618,6 +618,9 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
 
 bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt length)
 {
+    Finish();
+    gaussian();
+
     bitLenInt i, j;
     bitLenInt end = start + length;
 
