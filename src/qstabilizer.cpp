@@ -619,6 +619,9 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
 bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt length)
 {
     Finish();
+
+    // We want to have the maximum number of 0 cross terms possible.
+    // TODO: Determine whether this is the fundamentally ideal form adjustment.
     gaussian();
 
     bitLenInt i, j;
