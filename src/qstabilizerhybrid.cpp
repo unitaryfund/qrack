@@ -49,6 +49,14 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
 #endif
     }
 
+    if ((engineType == QINTERFACE_QPAGER) && (subEngineType == QINTERFACE_QPAGER)) {
+#if ENABLE_OPENCL
+        subEngineType = QINTERFACE_HYBRID;
+#else
+        subEngineType = QINTERFACE_CPU;
+#endif
+    }
+
     concurrency = std::thread::hardware_concurrency();
     stabilizer = MakeStabilizer(initState);
     amplitudeFloor = REAL1_EPSILON;
