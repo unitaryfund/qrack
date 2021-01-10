@@ -430,7 +430,7 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
         // "dest" as the line above, hence we can take just the first one and "Dispose" the rest. (This might pose a
         // problem or limitation for "approximate separability.")
         for (bitCapIntOcl i = 1; i < qPages.size(); i++) {
-            qPages[i]->Dispose(start, dest->qubitCount);
+            qPages[i]->Dispose(qPages[i]->GetQubitCount() - dest->qubitCount, dest->qubitCount);
         }
         SetQubitCount(qubitCount - dest->qubitCount);
         return;
