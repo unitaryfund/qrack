@@ -87,6 +87,8 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
     switch (engine) {
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+    case QINTERFACE_QPAGER:
+        return std::make_shared<QPager>(args...);
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);
