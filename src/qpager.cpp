@@ -426,6 +426,9 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
         CombineEngines(dest->qubitCount);
         dest->CombineEngines();
         qPages[0]->Decompose(qPages[0]->GetQubitCount() - dest->qubitCount, dest->qPages[0]);
+        // To be clear, under the assumption of perfect decomposibility, all further pages should produce the exact same
+        // "dest" as the line above, hence we can take just the first one and "Dispose" the rest. (This might pose a
+        // problem or limitation for "approximate separability.")
         for (bitCapIntOcl i = 1; i < qPages.size(); i++) {
             qPages[i]->Dispose(start, dest->qubitCount);
         }
