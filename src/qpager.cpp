@@ -413,16 +413,14 @@ bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
         return Compose(toCopy);
     }
 
-    bitLenInt inPage = qubitCount - start;
-
-    CombineEngines(inPage);
+    CombineEngines(start);
     toCopy->CombineEngines();
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-        qPages[i]->Compose(toCopy->qPages[0], qPages[i]->GetQubitCount() - inPage);
+        qPages[i]->Compose(toCopy->qPages[0], start);
     }
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
-    return inPage;
+    return start;
 }
 
 void QPager::Decompose(bitLenInt start, QPagerPtr dest)
