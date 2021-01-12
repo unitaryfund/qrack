@@ -4196,8 +4196,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         return;
     }
 
-    bool isSame, isOpposite;
-
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
@@ -4206,17 +4204,11 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        partner = phaseShard->first;
-
-        // If isSame and !isInvert, application of this buffer is already "efficient."
-        isSame = (buffer->isInvert || (!partner->isPauliX && !partner->isPauliY) || !partner->IsInvertTarget()) &&
-            IS_SAME(polarDiff, polarSame);
-        isOpposite = !buffer->isInvert && IS_OPPOSITE(polarDiff, polarSame);
-
-        if (isSame || isOpposite) {
+        if (IS_SAME(polarDiff, polarSame) || IS_OPPOSITE(polarDiff, polarSame)) {
             continue;
         }
 
+        partner = phaseShard->first;
         control = FindShardIndex(partner);
         ApplyBuffer(buffer, control, bitIndex, false);
         shard.RemovePhaseControl(partner);
@@ -4230,17 +4222,11 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarDiff = buffer->cmplxDiff;
         polarSame = buffer->cmplxSame;
 
-        partner = phaseShard->first;
-
-        // If isSame and !isInvert, application of this buffer is already "efficient."
-        isSame = (buffer->isInvert || (!partner->isPauliX && !partner->isPauliY) || !partner->IsInvertTarget()) &&
-            IS_SAME(polarDiff, polarSame);
-        isOpposite = !buffer->isInvert && IS_OPPOSITE(polarDiff, polarSame);
-
-        if (isSame || isOpposite) {
+        if (IS_SAME(polarDiff, polarSame) || IS_OPPOSITE(polarDiff, polarSame)) {
             continue;
         }
 
+        partner = phaseShard->first;
         control = FindShardIndex(partner);
         ApplyBuffer(buffer, control, bitIndex, true);
         shard.RemovePhaseAntiControl(partner);
