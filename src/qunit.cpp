@@ -4209,8 +4209,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
 
         // If isSame and !isInvert, application of this buffer is already "efficient."
-        isSame = (buffer->isInvert || (!partner->isPauliX && !partner->isPauliY) || !partner->IsInvertTarget()) &&
-            IS_SAME(polarDiff, polarSame);
+        isSame = IS_SAME(polarDiff, polarSame);
         isOpposite = !buffer->isInvert && IS_OPPOSITE(polarDiff, polarSame);
 
         if (isSame || isOpposite) {
@@ -4233,8 +4232,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
 
         // If isSame and !isInvert, application of this buffer is already "efficient."
-        isSame = (buffer->isInvert || (!partner->isPauliX && !partner->isPauliY) || !partner->IsInvertTarget()) &&
-            IS_SAME(polarDiff, polarSame);
+        isSame = IS_SAME(polarDiff, polarSame);
         isOpposite = !buffer->isInvert && IS_OPPOSITE(polarDiff, polarSame);
 
         if (isSame || isOpposite) {
