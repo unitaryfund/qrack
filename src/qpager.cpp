@@ -1246,12 +1246,12 @@ real1 QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     return maskChance;
 }
 
-bool QPager::ApproxCompare(QInterfacePtr toCompare)
+bool QPager::ApproxCompare(QInterfacePtr toCompare, real1 error_tol)
 {
     QPagerPtr toComparePager = std::dynamic_pointer_cast<QPager>(toCompare);
     CombineEngines();
     toComparePager->CombineEngines();
-    bool toRet = qPages[0]->ApproxCompare(toComparePager->qPages[0]);
+    bool toRet = qPages[0]->ApproxCompare(toComparePager->qPages[0], error_tol);
     return toRet;
 }
 void QPager::UpdateRunningNorm(real1 norm_thresh)
