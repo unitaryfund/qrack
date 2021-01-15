@@ -244,7 +244,7 @@ public:
         return qPages[0]->ForceMParity(mask, result, doForce);
     }
 
-    virtual bool ApproxCompare(QInterfacePtr toCompare);
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1 error_tol = REAL1_EPSILON);
     virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG) {
     } // TODO: skip implementation for now
@@ -267,7 +267,7 @@ public:
         return true;
     };
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1) { return false; }
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1 error_tol = REAL1_EPSILON) { return false; }
 
     virtual QInterfacePtr Clone();
 
