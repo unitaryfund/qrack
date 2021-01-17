@@ -588,7 +588,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1 error_tol)
     }
 
     if (shard.unit->isClifford()) {
-        return CheckCliffordSeparable(start);
+        return TrySeparateCliffordBit(start);
     }
 
     // We check Z basis:
@@ -771,8 +771,7 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex(sqrt(prob), ZERO_R1);
     shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (unit && unit->isClifford()) {
-        CheckCliffordSeparable(qubit);
+    if (unit && unit->isClifford() && !TrySeparateCliffordBit(qubit)) {
         return prob;
     }
 
@@ -834,67 +833,6 @@ real1 QUnit::ProbBase(const bitLenInt& qubit)
     }
 
     return prob;
-}
-
-bool QUnit::CheckCliffordSeparable(const bitLenInt& qubit)
-{
-    QInterfacePtr unit = shards[qubit].unit;
-
-    if (!unit) {
-        return true;
-    }
-
-    if (!unit->isClifford()) {
-        return false;
-    }
-
-    std::vector<bitLenInt> partnerIndices;
-    std::vector<bool> partnerStates;
-
-    if (!TrySeparateCliffordBit(qubit)) {
-        if (IS_NORM_0(shards[qubit].amp1)) {
-            partnerStates.push_back(false);
-            partnerIndices.push_back(qubit);
-        } else if (IS_NORM_0(shards[qubit].amp0)) {
-            partnerStates.push_back(true);
-            partnerIndices.push_back(qubit);
-        } else {
-            return false;
-        }
-    }
-
-    for (bitLenInt partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
-        QEngineShard& partnerShard = shards[partnerIndex];
-
-        if (partnerIndex == qubit) {
-            continue;
-        }
-
-        if (unit != partnerShard.unit) {
-            continue;
-        }
-
-        if (TrySeparateCliffordBit(qubit)) {
-            continue;
-        }
-
-        if (IS_NORM_0(partnerShard.amp1)) {
-            partnerStates.push_back(false);
-            partnerIndices.push_back(partnerIndex);
-        } else if (IS_NORM_0(partnerShard.amp0)) {
-            partnerStates.push_back(true);
-            partnerIndices.push_back(partnerIndex);
-        } else {
-            return false;
-        }
-    }
-
-    // If we made it this far, the Clifford engine is entirely separable into single qubit X/Y/Z eigenstates.
-    for (bitLenInt i = 0; i < partnerIndices.size(); i++) {
-        SeparateBit(partnerStates[i], partnerIndices[i], false);
-    }
-
-    return true;
 }
 
 bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
@@ -2823,7 +2761,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 
     if (unit && unit->isClifford()) {
-        ProbBase(targets[0]);
+        for (i = 0; i < allBits.size(); i++) {
+            ProbBase(allBits[i]);
+        }
     }
 }
 
