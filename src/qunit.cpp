@@ -2526,7 +2526,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         }
     }
 
-    if (!doSkipBuffer && !freezeBasis2Qb && (controlLen == 1U)) {
+    if (!freezeBasis2Qb && (controlLen == 1U)) {
         bitLenInt control = controls[0];
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
