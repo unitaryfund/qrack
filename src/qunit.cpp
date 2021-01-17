@@ -1072,8 +1072,8 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 
     shard.isProbDirty = false;
     shard.isPhaseDirty = false;
-    shard.amp0 = result ? ZERO_CMPLX : ONE_CMPLX;
-    shard.amp1 = result ? ONE_CMPLX : ZERO_CMPLX;
+    shard.amp0 = result ? ZERO_CMPLX : GetNonunitaryPhase();
+    shard.amp1 = result ? GetNonunitaryPhase() : ZERO_CMPLX;
 
     if (shard.GetQubitCount() == 1U) {
         shard.unit = NULL;
