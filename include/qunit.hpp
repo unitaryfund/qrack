@@ -697,7 +697,6 @@ protected:
     bool freezeBasis2Qb;
     bool freezeClifford;
     bitLenInt thresholdQubits;
-    bool doSkipBuffer;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
