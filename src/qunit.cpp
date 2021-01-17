@@ -1016,14 +1016,19 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 {
     QInterfacePtr unit = shards[qubit].unit;
+
+    if (unit == NULL) {
+        return;
+    }
+
     bitLenInt mapped = shards[qubit].mapped;
 
     shards[qubit].unit = NULL;
     shards[qubit].mapped = 0;
     shards[qubit].isProbDirty = false;
     shards[qubit].isPhaseDirty = false;
-    shards[qubit].amp0 = value ? ZERO_CMPLX : ONE_CMPLX;
-    shards[qubit].amp1 = value ? ONE_CMPLX : ZERO_CMPLX;
+    shards[qubit].amp0 = value ? ZERO_CMPLX : GetNonunitaryPhase();
+    shards[qubit].amp1 = value ? GetNonunitaryPhase() : ZERO_CMPLX;
 
     if (!doDispose || !unit || (unit->GetQubitCount() == 1)) {
         return;
