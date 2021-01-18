@@ -70,7 +70,6 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , freezeBasis2Qb(false)
     , freezeClifford(false)
     , thresholdQubits(qubitThreshold)
-    , doSkipBuffer(engine == QINTERFACE_STABILIZER_HYBRID)
 {
     if ((engine == QINTERFACE_CPU) || (engine == QINTERFACE_OPENCL)) {
         subEngine = engine;
@@ -1605,11 +1604,7 @@ void QUnit::Z(bitLenInt target)
 
     if (shard.IsInvertTarget()) {
         RevertBasis1Qb(target);
-        if (doSkipBuffer) {
-            RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
-        } else {
-            shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
-        }
+        shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
     } else {
         if (UNSAFE_CACHED_ZERO(shard)) {
             Flush0Eigenstate(target);
@@ -2146,11 +2141,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     if (shard.IsInvertTarget()) {
         RevertBasis1Qb(target);
-        if (doSkipBuffer) {
-            RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
-        } else {
-            shard.CommutePhase(topLeft, bottomRight);
-        }
+        shard.CommutePhase(topLeft, bottomRight);
     } else {
         if (IS_1_R1(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
             Flush0Eigenstate(target);
@@ -2255,11 +2246,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 
     if (shard.IsInvertTarget()) {
         RevertBasis1Qb(target);
-        if (doSkipBuffer) {
-            RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
-        } else {
-            shard.CommutePhase(bottomLeft, topRight);
-        }
+        shard.CommutePhase(bottomLeft, topRight);
     }
 
     shard.FlipPhaseAnti();
