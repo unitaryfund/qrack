@@ -680,7 +680,7 @@ public:
 };
 
 class QEngineShardMap {
-private:
+protected:
     std::vector<QEngineShard> shards;
     std::vector<bitLenInt> swapMap;
 
@@ -715,17 +715,17 @@ public:
 
     iterator end() { return (iterator)(&shards[swapMap.back()] + 1U); }
 
-    void insert(iterator position, iterator begin, iterator end)
+    void insert(iterator position, QEngineShardMap& toInsert)
     {
         bitLenInt oSize = swapMap.size();
-        bitLenInt length = end - begin;
+        bitLenInt length = toInsert.size();
         bitLenInt start = position - shards.begin();
 
-        shards.insert(position, begin, end);
-        swapMap.insert(swapMap.begin() + start, length, 0);
+        shards.insert(position, toInsert.shards.begin(), toInsert.shards.end());
+        swapMap.insert(swapMap.begin() + start, toInsert.swapMap.begin(), toInsert.swapMap.end());
 
         for (bitLenInt i = 0; i < length; i++) {
-            swapMap[start + i] = oSize + i;
+            swapMap[start + i] += oSize;
         }
     }
 

@@ -253,7 +253,7 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(toCopy->Clone());
 
     /* Insert the new shards in the middle */
-    shards.insert(shards.begin() + start, clone->shards.begin(), clone->shards.end());
+    shards.insert(shards.begin() + start, clone->shards);
 
     SetQubitCount(qubitCount + toCopy->GetQubitCount());
 
