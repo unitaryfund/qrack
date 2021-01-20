@@ -75,13 +75,13 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
         subEngine = engine;
     }
 
-    shards.resize(qBitCount);
+    shards = QEngineShardMap();
 
     bool bitState;
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((initState >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards[i] = QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase());
+        shards.push_back(QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase()));
     }
 }
 
@@ -97,9 +97,11 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
     Dump();
 
+    shards = QEngineShardMap();
+
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((perm >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards[i] = QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase());
+        shards.push_back(QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase()));
     }
 }
 
@@ -253,7 +255,7 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(toCopy->Clone());
 
     /* Insert the new shards in the middle */
-    shards.insert(shards.begin() + start, clone->shards.begin(), clone->shards.end());
+    shards.insert(start, clone->shards);
 
     SetQubitCount(qubitCount + toCopy->GetQubitCount());
 
@@ -371,7 +373,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         }
     }
 
-    shards.erase(shards.begin() + start, shards.begin() + start + length);
+    shards.erase(start, start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -1173,26 +1175,8 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    RevertBasis2Qb(qubit1, ONLY_INVERT);
-    RevertBasis2Qb(qubit2, ONLY_INVERT);
-
-    QEngineShard& shard1 = shards[qubit1];
-    QEngineShard& shard2 = shards[qubit2];
-
-    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2)) {
-        // We can avoid dirtying the cache and entangling, since the bits are classical.
-        if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
-            X(qubit1);
-            X(qubit2);
-        }
-        return;
-    }
-
-    RevertBasis2Qb(qubit1);
-    RevertBasis2Qb(qubit2);
-
     // Simply swap the bit mapping.
-    std::swap(shards[qubit1], shards[qubit2]);
+    shards.swap(qubit1, qubit2);
 
     QInterfacePtr unit = shards[qubit1].unit;
     if (unit && (unit == shards[qubit2].unit)) {
@@ -3838,6 +3822,10 @@ bool QUnit::isFinished()
 
 real1 QUnit::SumSqrDiff(QUnitPtr toCompare)
 {
+    if (this == toCompare.get()) {
+        return ZERO_R1;
+    }
+
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
@@ -3863,6 +3851,17 @@ real1 QUnit::SumSqrDiff(QUnitPtr toCompare)
         }
 
         return norm(mAmps[0] - oAmps[0]) + norm(mAmps[1] - oAmps[1]);
+    }
+
+    if (CheckBitsPermutation(0, qubitCount)) {
+        if (toCompare->CheckBitsPermutation(0, qubitCount) &&
+            (GetCachedPermutation((bitLenInt)0, qubitCount) ==
+                toCompare->GetCachedPermutation((bitLenInt)0, qubitCount))) {
+            return ZERO_R1;
+        }
+
+        // Necessarily max difference:
+        return 4.0f;
     }
 
     QUnitPtr thisCopyShared, thatCopyShared;
