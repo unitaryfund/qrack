@@ -737,7 +737,6 @@ public:
         for (iterator shard = begin; shard < end; shard++) {
             swapMapShard = swapMap.begin() + (shard - shards.begin());
             index = *swapMapShard;
-            swapMap.erase(swapMapShard);
 
             for (lcv = 0; lcv < swapMap.size(); lcv++) {
                 if (swapMap[lcv] > index) {
@@ -747,6 +746,7 @@ public:
         }
 
         shards.erase(begin, end);
+        swapMap.erase(swapMap.begin() + (begin - shards.begin()), swapMap.begin() + (end - shards.begin()));
     }
 
     void swap(bitLenInt qubit1, bitLenInt qubit2) { std::swap(swapMap[qubit1], swapMap[qubit2]); }
