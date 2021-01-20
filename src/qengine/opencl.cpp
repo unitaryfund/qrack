@@ -2487,6 +2487,10 @@ void QEngineOCL::GetProbs(real1* outputProbs) { ProbRegAll(0, qubitCount, output
 
 real1 QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 {
+    if (this == toCompare.get()) {
+        return ZERO_R1;
+    }
+
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:

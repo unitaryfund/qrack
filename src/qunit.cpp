@@ -75,13 +75,13 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
         subEngine = engine;
     }
 
-    shards = QEngineShardMap(qBitCount);
+    shards = QEngineShardMap();
 
     bool bitState;
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((initState >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards[i] = QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase());
+        shards.push_back(QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase()));
     }
 }
 
@@ -97,9 +97,11 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
     Dump();
 
+    shards = QEngineShardMap();
+
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((perm >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards[i] = QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase());
+        shards.push_back(QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase()));
     }
 }
 
@@ -3820,6 +3822,10 @@ bool QUnit::isFinished()
 
 real1 QUnit::SumSqrDiff(QUnitPtr toCompare)
 {
+    if (this == toCompare.get()) {
+        return ZERO_R1;
+    }
+
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
