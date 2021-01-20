@@ -1173,26 +1173,8 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    RevertBasis2Qb(qubit1, ONLY_INVERT);
-    RevertBasis2Qb(qubit2, ONLY_INVERT);
-
-    QEngineShard& shard1 = shards[qubit1];
-    QEngineShard& shard2 = shards[qubit2];
-
-    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2)) {
-        // We can avoid dirtying the cache and entangling, since the bits are classical.
-        if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
-            X(qubit1);
-            X(qubit2);
-        }
-        return;
-    }
-
-    RevertBasis2Qb(qubit1);
-    RevertBasis2Qb(qubit2);
-
     // Simply swap the bit mapping.
-    std::swap(shards[qubit1], shards[qubit2]);
+    shards.swap(qubit1, qubit2);
 
     QInterfacePtr unit = shards[qubit1].unit;
     if (unit && (unit == shards[qubit2].unit)) {
