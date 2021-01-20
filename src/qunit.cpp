@@ -371,7 +371,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         }
     }
 
-    shards.erase(shards.begin() + start, shards.begin() + start + length);
+    shards.erase(start, start + length);
     SetQubitCount(qubitCount - length);
 }
 

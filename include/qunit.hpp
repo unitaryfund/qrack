@@ -703,6 +703,10 @@ public:
 
     QEngineShard& operator[](const bitLenInt& i) { return shards[swapMap[i]]; }
 
+    iterator begin() { return shards.begin(); }
+
+    iterator end() { return shards.end(); }
+
     bitLenInt size() { return shards.size(); }
 
     void push_back(const QEngineShard& shard)
@@ -710,10 +714,6 @@ public:
         shards.push_back(shard);
         swapMap.push_back(swapMap.size());
     }
-
-    iterator begin() { return (iterator)&shards[swapMap.front()]; }
-
-    iterator end() { return (iterator)(&shards[swapMap.back()] + 1U); }
 
     void insert(bitLenInt start, QEngineShardMap& toInsert)
     {
@@ -727,24 +727,22 @@ public:
         }
     }
 
-    void erase(iterator begin, iterator end)
+    void erase(bitLenInt begin, bitLenInt end)
     {
-        bitLenInt index, lcv;
-        std::vector<bitLenInt>::iterator swapMapShard;
+        bitLenInt offset, lcv;
 
-        for (iterator shard = begin; shard < end; shard++) {
-            swapMapShard = swapMap.begin() + (shard - shards.begin());
-            index = *swapMapShard;
+        for (bitLenInt index = begin; index < end; index++) {
+            offset = swapMap[index];
+            shards.erase(shards.begin() + offset);
 
             for (lcv = 0; lcv < swapMap.size(); lcv++) {
-                if (swapMap[lcv] > index) {
+                if (swapMap[lcv] > offset) {
                     swapMap[lcv]--;
                 }
             }
         }
 
-        shards.erase(begin, end);
-        swapMap.erase(swapMap.begin() + (begin - shards.begin()), swapMap.begin() + (end - shards.begin()));
+        swapMap.erase(swapMap.begin() + begin, swapMap.begin() + end);
     }
 
     void swap(bitLenInt qubit1, bitLenInt qubit2) { std::swap(swapMap[qubit1], swapMap[qubit2]); }
