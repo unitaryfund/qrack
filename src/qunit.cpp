@@ -3853,10 +3853,9 @@ real1 QUnit::SumSqrDiff(QUnitPtr toCompare)
         return norm(mAmps[0] - oAmps[0]) + norm(mAmps[1] - oAmps[1]);
     }
 
-    if (CheckBitsPermutation(0, qubitCount)) {
-        if (toCompare->CheckBitsPermutation(0, qubitCount) &&
-            (GetCachedPermutation((bitLenInt)0, qubitCount) ==
-                toCompare->GetCachedPermutation((bitLenInt)0, qubitCount))) {
+    if (CheckBitsPermutation(0, qubitCount) && toCompare->CheckBitsPermutation(0, qubitCount)) {
+        if (GetCachedPermutation((bitLenInt)0, qubitCount) ==
+            toCompare->GetCachedPermutation((bitLenInt)0, qubitCount)) {
             return ZERO_R1;
         }
 
