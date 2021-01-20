@@ -75,7 +75,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
         subEngine = engine;
     }
 
-    shards.resize(qBitCount);
+    shards = QEngineShardMap(qBitCount);
 
     bool bitState;
 

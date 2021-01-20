@@ -679,6 +679,77 @@ public:
     }
 };
 
+class QEngineShardMap {
+private:
+    std::vector<QEngineShard> shards;
+    std::vector<bitLenInt> swapMap;
+
+public:
+    QEngineShardMap()
+    {
+        // Intentionally left blank
+    }
+
+    QEngineShardMap(const bitLenInt& size)
+        : shards(size)
+        , swapMap(size)
+    {
+        for (bitLenInt i = 0; i < size; i++) {
+            swapMap[i] = i;
+        }
+    }
+
+    typedef std::vector<QEngineShard>::iterator iterator;
+
+    QEngineShard& operator[](const bitLenInt& i) { return shards[swapMap[i]]; }
+
+    bitLenInt size() { return shards.size(); }
+
+    void push_back(const QEngineShard& shard)
+    {
+        shards.push_back(shard);
+        swapMap.push_back(swapMap.size());
+    }
+
+    iterator begin() { return (iterator)&shards[swapMap.front()]; }
+
+    iterator end() { return (iterator)(&shards[swapMap.back()] + 1U); }
+
+    void insert(iterator position, iterator begin, iterator end)
+    {
+        bitLenInt oSize = swapMap.size();
+        bitLenInt length = end - begin;
+        bitLenInt start = position - shards.begin();
+
+        shards.insert(position, begin, end);
+        swapMap.insert(swapMap.begin() + start, length, 0);
+
+        for (bitLenInt i = 0; i < length; i++) {
+            swapMap[start + i] = oSize + i;
+        }
+    }
+
+    void erase(iterator begin, iterator end)
+    {
+        bitLenInt index, lcv;
+        std::vector<bitLenInt>::iterator swapMapShard;
+        
+        for (iterator shard = begin; shard < end; shard++) {
+            swapMapShard = swapMap.begin() + (shard - shards.begin());
+            index = *swapMapShard;
+            swapMap.erase(swapMapShard);
+            
+            for (lcv = 0; lcv < swapMap.size(); lcv++) {
+                if (swapMap[lcv] > index) {
+                    swapMap[lcv]--;
+                }
+            }
+        }
+        
+        shards.erase(begin, end);
+    }
+};
+
 class QUnit;
 typedef std::shared_ptr<QUnit> QUnitPtr;
 
@@ -687,7 +758,7 @@ protected:
     QInterfaceEngine engine;
     QInterfaceEngine subEngine;
     int devID;
-    std::vector<QEngineShard> shards;
+    QEngineShardMap shards;
     complex phaseFactor;
     bool doNormalize;
     bool useHostRam;
