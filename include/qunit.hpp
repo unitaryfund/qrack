@@ -720,10 +720,10 @@ public:
         bitLenInt oSize = size();
 
         shards.insert(shards.end(), toInsert.shards.begin(), toInsert.shards.end());
-        swapMap.insert(swapMap.end(), toInsert.swapMap.begin(), toInsert.swapMap.end());
+        swapMap.insert(swapMap.begin() + start, toInsert.swapMap.begin(), toInsert.swapMap.end());
 
-        for (bitLenInt lcv = oSize; lcv < size(); lcv++) {
-            swapMap[lcv] += oSize;
+        for (bitLenInt lcv = 0; lcv < toInsert.size(); lcv++) {
+            swapMap[start + lcv] += oSize;
         }
     }
 
@@ -736,7 +736,7 @@ public:
             shards.erase(shards.begin() + offset);
 
             for (lcv = 0; lcv < swapMap.size(); lcv++) {
-                if (swapMap[lcv] > offset) {
+                if (swapMap[lcv] >= offset) {
                     swapMap[lcv]--;
                 }
             }
