@@ -715,17 +715,15 @@ public:
 
     iterator end() { return (iterator)(&shards[swapMap.back()] + 1U); }
 
-    void insert(iterator position, QEngineShardMap& toInsert)
+    void insert(bitLenInt start, QEngineShardMap& toInsert)
     {
-        bitLenInt oSize = swapMap.size();
-        bitLenInt length = toInsert.size();
-        bitLenInt start = position - shards.begin();
+        bitLenInt oSize = size();
 
-        shards.insert(position, toInsert.shards.begin(), toInsert.shards.end());
-        swapMap.insert(swapMap.begin() + start, toInsert.swapMap.begin(), toInsert.swapMap.end());
+        shards.insert(shards.end(), toInsert.shards.begin(), toInsert.shards.end());
+        swapMap.insert(swapMap.end(), toInsert.swapMap.begin(), toInsert.swapMap.end());
 
-        for (bitLenInt i = 0; i < length; i++) {
-            swapMap[start + i] += oSize;
+        for (bitLenInt lcv = oSize; lcv < size(); lcv++) {
+            swapMap[lcv] += oSize;
         }
     }
 
