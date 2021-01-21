@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This example demonstrates an example of a "quantum associative memory" network with the Qrack::QNeuron
 // class. QNeuron is a type of "neuron" that can learn and predict in superposition, for general machine learning

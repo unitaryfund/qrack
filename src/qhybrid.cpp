@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2020. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // QPager breaks a QEngine instance into pages of contiguous amplitudes.
 //
