@@ -17,7 +17,6 @@
 #include <unordered_set>
 
 #include "qengineshard.hpp"
-#include "qinterface.hpp"
 
 namespace Qrack {
 
