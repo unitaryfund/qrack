@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // QUnitMulti is a multiprocessor variant of QUnit.
 // QUnit maintains explicit separability of qubits as an optimization on a QEngine.

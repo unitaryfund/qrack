@@ -198,6 +198,7 @@ install (FILES
     include/qfactory.hpp
     include/qengine.hpp
     include/qengine_cpu.hpp
+    include/qengineshard.hpp
     include/qunit.hpp
     include/qunitmulti.hpp
     include/qengine_opencl.hpp

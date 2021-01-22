@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This class allows access to on-chip RNG capabilities. The class is adapted from these two sources:
 // https://codereview.stackexchange.com/questions/147656/checking-if-cpu-supports-rdrand/150230

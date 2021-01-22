@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This header defines buffers for Qrack::QFusion.
 // QFusion adds an optional "gate fusion" layer on top of a QEngine or QUnit.
