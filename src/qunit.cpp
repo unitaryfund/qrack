@@ -37,20 +37,21 @@
 #define QUEUED_PHASE(shard)                                                                                            \
     ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0) ||                                       \
         (shard.antiTargetOfShards.size() != 0) || (shard.antiControlsShards.size() != 0))
-#define CACHED_PLUS_MINUS(shard) (shard.isPauliX && !DIRTY(shard) && !QUEUED_PHASE(shard))
-#define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && IS_NORM_0(shard.amp1))
 #define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && !QUEUED_PHASE(shard))
-#define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
+#define CACHED_Z(shard) (CACHED_PROB(shard) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
 #define CACHED_ONE(shard) (CACHED_PROB(shard) && IS_NORM_0(shard.amp0))
 #define CACHED_ZERO(shard) (CACHED_PROB(shard) && IS_NORM_0(shard.amp1))
+#define CACHED_X(shard) (shard.isPauliX && !DIRTY(shard) && !QUEUED_PHASE(shard))
+#define CACHED_PLUS(shard) (CACHED_X(shard) && IS_NORM_0(shard.amp1))
+#define CACHED_Y(shard) (shard.isPauliY && !DIRTY(shard) && !QUEUED_PHASE(shard))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
-#define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
+#define UNSAFE_CACHED_Z(shard)                                                                                         \
     (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
 #define UNSAFE_CACHED_X(shard)                                                                                         \
     (!shard.isProbDirty && shard.isPauliX && !shard.isPauliY && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
 #define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp0))
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp1))
-#define IS_SAME_UNIT(shard1, shard2) ((shard1.unit || shard2.unit) && (shard1.unit == shard2.unit))
+#define IS_SAME_UNIT(shard1, shard2) ((shard1.unit == shard2.unit) && (shard1.unit || shard2.unit))
 
 namespace Qrack {
 
@@ -697,7 +698,7 @@ bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurre
         ToPermBasis(qubitIndex);
     }
     QEngineShard& shard = shards[qubitIndex];
-    if (UNSAFE_CACHED_CLASSICAL(shard)) {
+    if (UNSAFE_CACHED_Z(shard)) {
         return true;
     } else {
         return false;
@@ -928,8 +929,15 @@ real1 QUnit::ProbParity(const bitCapInt& mask)
     real1 oddChance = ZERO_R1;
     real1 nOddChance;
     for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        ToPermBasis(qIndices[i]);
         QEngineShard& shard = shards[qIndices[i]];
+
+        if (CACHED_X(shard) || CACHED_Y(shard)) {
+            nOddChance = ONE_R1 / 2;
+            oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
+            continue;
+        }
+
+        ToPermBasis(qIndices[i]);
         if (!(shard.unit)) {
             nOddChance = shard.Prob();
             oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
@@ -1196,7 +1204,7 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2)) {
+    if (UNSAFE_CACHED_Z(shard1) && UNSAFE_CACHED_Z(shard2)) {
         // We can avoid dirtying the cache and entangling, since the bits are classical.
         if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
             XBase(qubit1);
@@ -1231,8 +1239,7 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
-        (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+    if (UNSAFE_CACHED_Z(shard1) && UNSAFE_CACHED_Z(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         return;
     }
@@ -1258,8 +1265,7 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
-        (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+    if (UNSAFE_CACHED_Z(shard1) && UNSAFE_CACHED_Z(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         return;
     }
@@ -1297,8 +1303,7 @@ void QUnit::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
-        (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+    if (UNSAFE_CACHED_Z(shard1) && UNSAFE_CACHED_Z(shard2) && (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         if (SHARD_STATE(shard1)) {
             ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, phi)));
@@ -1706,7 +1711,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
 
-    if (CACHED_PLUS_MINUS(tShard)) {
+    if (CACHED_X(tShard)) {
         if (IS_NORM_0(tShard.amp1)) {
             return;
         }
@@ -1718,7 +1723,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     QEngineShard& cShard = shards[control];
 
-    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_Z(cShard)) {
         if (IS_NORM_0(cShard.amp1)) {
             Flush0Eigenstate(control);
             return;
@@ -1808,7 +1813,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     }
 
     QEngineShard& cShard = shards[control];
-    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_Z(cShard)) {
         if (IS_NORM_0(cShard.amp1)) {
             Flush0Eigenstate(control);
             X(target);
@@ -1856,7 +1861,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     QEngineShard& c2Shard = shards[control2];
 
     if (!c1Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_CLASSICAL(c1Shard)) {
+        if (UNSAFE_CACHED_Z(c1Shard)) {
             if (IS_NORM_0(c1Shard.amp1)) {
                 Flush0Eigenstate(control1);
                 return;
@@ -1870,7 +1875,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     if (!c2Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_CLASSICAL(c2Shard)) {
+        if (UNSAFE_CACHED_Z(c2Shard)) {
             if (IS_NORM_0(c2Shard.amp1)) {
                 Flush0Eigenstate(control2);
                 return;
@@ -1953,7 +1958,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
 
-    if (!tShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(tShard)) {
+    if (!tShard.IsInvertTarget() && UNSAFE_CACHED_Z(tShard)) {
         if (SHARD_STATE(tShard)) {
             Flush1Eigenstate(target);
             Z(control);
@@ -1963,7 +1968,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_Z(cShard)) {
         if (SHARD_STATE(cShard)) {
             Flush1Eigenstate(control);
             Z(target);
@@ -2047,7 +2052,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     QEngineShard& c2Shard = shards[control2];
 
     if (!c1Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_CLASSICAL(c1Shard)) {
+        if (UNSAFE_CACHED_Z(c1Shard)) {
             if (IS_NORM_0(c1Shard.amp1)) {
                 Flush0Eigenstate(control1);
                 return;
@@ -2061,7 +2066,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     if (!c2Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_CLASSICAL(c2Shard)) {
+        if (UNSAFE_CACHED_Z(c2Shard)) {
             if (IS_NORM_0(c2Shard.amp1)) {
                 Flush0Eigenstate(control2);
                 return;
@@ -2075,7 +2080,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     if (!tShard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_CLASSICAL(tShard)) {
+        if (UNSAFE_CACHED_Z(tShard)) {
             if (IS_NORM_0(tShard.amp1)) {
                 Flush0Eigenstate(target);
                 return;
@@ -2336,7 +2341,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         bitLenInt control = controls[0];
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
-        if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
+        if (!cShard.IsInvertTarget() && UNSAFE_CACHED_Z(cShard)) {
             if (SHARD_STATE(cShard)) {
                 Flush1Eigenstate(control);
                 ApplySinglePhase(topLeft, bottomRight, target);
@@ -2444,7 +2449,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         bitLenInt control = controls[0];
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
-        if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
+        if (!cShard.IsInvertTarget() && UNSAFE_CACHED_Z(cShard)) {
             if (SHARD_STATE(cShard)) {
                 Flush1Eigenstate(control);
             } else {
