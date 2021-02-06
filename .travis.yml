@@ -20,7 +20,7 @@ script:
 #  - cd build && python -m pytest . && cd ..
   - git clone https://github.com/vm6502q/qiskit-qrack-provider.git && cd qiskit-qrack-provider
   - python -m pip install .
-# Warnings exceed max log length, so shunt to /dev/null for now
+# Warnings exceed max log length, so shunt to /dev/null for now.
   - python -m stestr run > /dev/null 2>&1 && cd ..
 #  - cd .. && git clone https://github.com/XanaduAI/pennylane-pq.git && cd pennylane-pq
 #  - python -m pip install .
