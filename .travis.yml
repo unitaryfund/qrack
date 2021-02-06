@@ -6,7 +6,7 @@ install:
   - sudo apt-get update
   - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake
   - python -m pip install --upgrade pip numpy setuptools wheel
-  - python -m pip install cvxpy cython ddt stestr qiskit pennylane
+  - python -m pip install cvxpy cython ddt stestr qiskit==0.23.2 pennylane
 script:
   - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
   - sudo make install
@@ -20,7 +20,8 @@ script:
 #  - cd build && python -m pytest . && cd ..
   - git clone https://github.com/vm6502q/qiskit-qrack-provider.git && cd qiskit-qrack-provider
   - python -m pip install .
-  - python -m stestr run && cd ..
+# Warnings exceed max log length, so shunt to /dev/null for now.
+  - python -m stestr run > /dev/null 2>&1 && cd ..
 #  - cd .. && git clone https://github.com/XanaduAI/pennylane-pq.git && cd pennylane-pq
 #  - python -m pip install .
 #  - python -m pytest .

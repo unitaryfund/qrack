@@ -37,20 +37,21 @@
 #define QUEUED_PHASE(shard)                                                                                            \
     ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0) ||                                       \
         (shard.antiTargetOfShards.size() != 0) || (shard.antiControlsShards.size() != 0))
-#define CACHED_PLUS_MINUS(shard) (shard.isPauliX && !DIRTY(shard) && !QUEUED_PHASE(shard))
-#define CACHED_PLUS(shard) (CACHED_PLUS_MINUS(shard) && IS_NORM_0(shard.amp1))
-#define CACHED_PROB(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && !QUEUED_PHASE(shard))
-#define CACHED_CLASSICAL(shard) (CACHED_PROB(shard) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
-#define CACHED_ONE(shard) (CACHED_PROB(shard) && IS_NORM_0(shard.amp0))
-#define CACHED_ZERO(shard) (CACHED_PROB(shard) && IS_NORM_0(shard.amp1))
+#define CACHED_Z(shard) (!shard.isPauliX && !shard.isPauliY && !DIRTY(shard) && !QUEUED_PHASE(shard))
+#define CACHED_ZERO_OR_ONE(shard) (CACHED_Z(shard) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
+#define CACHED_ZERO(shard) (CACHED_Z(shard) && IS_NORM_0(shard.amp1))
+#define CACHED_ONE(shard) (CACHED_Z(shard) && IS_NORM_0(shard.amp0))
+#define CACHED_X(shard) (shard.isPauliX && !DIRTY(shard) && !QUEUED_PHASE(shard))
+#define CACHED_PLUS_OR_MINUS(shard) (CACHED_X(shard) && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
+#define CACHED_PLUS(shard) (CACHED_X(shard) && IS_NORM_0(shard.amp1))
 /* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
-#define UNSAFE_CACHED_CLASSICAL(shard)                                                                                 \
+#define UNSAFE_CACHED_ZERO_OR_ONE(shard)                                                                               \
     (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
 #define UNSAFE_CACHED_X(shard)                                                                                         \
     (!shard.isProbDirty && shard.isPauliX && !shard.isPauliY && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
 #define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp0))
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp1))
-#define IS_SAME_UNIT(shard1, shard2) ((shard1.unit || shard2.unit) && (shard1.unit == shard2.unit))
+#define IS_SAME_UNIT(shard1, shard2) ((shard1.unit == shard2.unit) && (shard1.unit || shard2.unit))
 
 namespace Qrack {
 
@@ -697,7 +698,7 @@ bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurre
         ToPermBasis(qubitIndex);
     }
     QEngineShard& shard = shards[qubitIndex];
-    if (UNSAFE_CACHED_CLASSICAL(shard)) {
+    if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
         return true;
     } else {
         return false;
@@ -1196,7 +1197,7 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2)) {
+    if (UNSAFE_CACHED_ZERO_OR_ONE(shard1) && UNSAFE_CACHED_ZERO_OR_ONE(shard2)) {
         // We can avoid dirtying the cache and entangling, since the bits are classical.
         if (SHARD_STATE(shard1) != SHARD_STATE(shard2)) {
             XBase(qubit1);
@@ -1231,7 +1232,7 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
+    if (UNSAFE_CACHED_ZERO_OR_ONE(shard1) && UNSAFE_CACHED_ZERO_OR_ONE(shard2) &&
         (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         return;
@@ -1258,7 +1259,7 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
+    if (UNSAFE_CACHED_ZERO_OR_ONE(shard1) && UNSAFE_CACHED_ZERO_OR_ONE(shard2) &&
         (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         return;
@@ -1297,7 +1298,7 @@ void QUnit::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_CLASSICAL(shard1) && UNSAFE_CACHED_CLASSICAL(shard2) &&
+    if (UNSAFE_CACHED_ZERO_OR_ONE(shard1) && UNSAFE_CACHED_ZERO_OR_ONE(shard2) &&
         (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         if (SHARD_STATE(shard1)) {
@@ -1384,7 +1385,7 @@ void QUnit::CUniformParityRZ(
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[cControls[i]];
 
-        if (!CACHED_PROB(shard)) {
+        if (!CACHED_Z(shard)) {
             // Control becomes entangled
             controls.push_back(cControls[i]);
             continue;
@@ -1706,7 +1707,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
 
-    if (CACHED_PLUS_MINUS(tShard)) {
+    if (CACHED_X(tShard)) {
         if (IS_NORM_0(tShard.amp1)) {
             return;
         }
@@ -1718,7 +1719,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     QEngineShard& cShard = shards[control];
 
-    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
         if (IS_NORM_0(cShard.amp1)) {
             Flush0Eigenstate(control);
             return;
@@ -1735,8 +1736,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     bool pmBasis = (cShard.isPauliX && tShard.isPauliX && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
 
     if (!freezeBasis2Qb && !pmBasis) {
-        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
-
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
 
         bool isInvert = cShard.IsInvertControlOf(&tShard);
@@ -1744,31 +1743,19 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
             RevertBasis1Qb(target);
         }
 
+        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
         std::set<bitLenInt> except;
         if (!isSameUnit) {
             except.insert(control);
         }
 
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, except);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, except, except);
 
         if (!isSameUnit) {
             tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
 
-            if (!isInvert) {
-                return;
-            }
-
-            ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
-
-            if (phaseShard == tShard.targetOfShards.end()) {
-                return;
-            }
-
-            PhaseShardPtr buffer = phaseShard->second;
-
-            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
-                ApplyBuffer(buffer, control, target, false);
-                shards[target].RemovePhaseControl(&cShard);
+            if (isInvert) {
+                OptimizePairBuffers(control, target, false);
             }
 
             return;
@@ -1808,7 +1795,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     }
 
     QEngineShard& cShard = shards[control];
-    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
         if (IS_NORM_0(cShard.amp1)) {
             Flush0Eigenstate(control);
             X(target);
@@ -1824,16 +1811,16 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     bitLenInt controlLen = 1;
 
     if (!freezeBasis2Qb) {
-        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS);
 
+        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
         std::set<bitLenInt> except;
         if (!isSameUnit) {
             except.insert(control);
         }
 
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, except);
+        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, except, except);
 
         if (!isSameUnit) {
             shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
@@ -1856,7 +1843,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     QEngineShard& c2Shard = shards[control2];
 
     if (!c1Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_CLASSICAL(c1Shard)) {
+        if (UNSAFE_CACHED_ZERO_OR_ONE(c1Shard)) {
             if (IS_NORM_0(c1Shard.amp1)) {
                 Flush0Eigenstate(control1);
                 return;
@@ -1870,7 +1857,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     if (!c2Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_CLASSICAL(c2Shard)) {
+        if (UNSAFE_CACHED_ZERO_OR_ONE(c2Shard)) {
             if (IS_NORM_0(c2Shard.amp1)) {
                 Flush0Eigenstate(control2);
                 return;
@@ -1953,7 +1940,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     QEngineShard& tShard = shards[target];
     QEngineShard& cShard = shards[control];
 
-    if (!tShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(tShard)) {
+    if (!tShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(tShard)) {
         if (SHARD_STATE(tShard)) {
             Flush1Eigenstate(target);
             Z(control);
@@ -1963,7 +1950,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         return;
     }
 
-    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
         if (SHARD_STATE(cShard)) {
             Flush1Eigenstate(control);
             Z(target);
@@ -1974,8 +1961,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis2Qb) {
-        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
-
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
 
         bool isInvert = cShard.IsInvertControlOf(&tShard);
@@ -1983,31 +1968,19 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
             RevertBasis1Qb(target);
         }
 
+        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
         std::set<bitLenInt> except;
         if (!isSameUnit) {
             except.insert(control);
         }
 
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, {}, except);
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, except, except);
 
         if (!isSameUnit) {
             tShard.AddPhaseAngles(&cShard, ONE_CMPLX, -ONE_CMPLX);
 
             if (isInvert) {
-                return;
-            }
-
-            ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
-
-            if (phaseShard == tShard.targetOfShards.end()) {
-                return;
-            }
-
-            PhaseShardPtr buffer = phaseShard->second;
-
-            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
-                ApplyBuffer(buffer, control, target, false);
-                tShard.RemovePhaseControl(&cShard);
+                OptimizePairBuffers(control, target, false);
             }
 
             return;
@@ -2047,7 +2020,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     QEngineShard& c2Shard = shards[control2];
 
     if (!c1Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_CLASSICAL(c1Shard)) {
+        if (UNSAFE_CACHED_ZERO_OR_ONE(c1Shard)) {
             if (IS_NORM_0(c1Shard.amp1)) {
                 Flush0Eigenstate(control1);
                 return;
@@ -2061,7 +2034,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     if (!c2Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_CLASSICAL(c2Shard)) {
+        if (UNSAFE_CACHED_ZERO_OR_ONE(c2Shard)) {
             if (IS_NORM_0(c2Shard.amp1)) {
                 Flush0Eigenstate(control2);
                 return;
@@ -2075,7 +2048,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     if (!tShard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_CLASSICAL(tShard)) {
+        if (UNSAFE_CACHED_ZERO_OR_ONE(tShard)) {
             if (IS_NORM_0(tShard.amp1)) {
                 Flush0Eigenstate(target);
                 return;
@@ -2336,7 +2309,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         bitLenInt control = controls[0];
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
-        if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
+        if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
             if (SHARD_STATE(cShard)) {
                 Flush1Eigenstate(control);
                 ApplySinglePhase(topLeft, bottomRight, target);
@@ -2350,24 +2323,20 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
 
-        RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
+        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
+        std::set<bitLenInt> except;
+        if (!isSameUnit) {
+            except.insert(control);
+        }
 
-        if (!IS_SAME_UNIT(cShard, tShard)) {
+        RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI,
+            except, except);
+
+        if (!isSameUnit) {
             delete[] controls;
             tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
 
-            ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
-
-            if ((phaseShard == tShard.targetOfShards.end()) || phaseShard->second->isInvert) {
-                return;
-            }
-
-            PhaseShardPtr buffer = phaseShard->second;
-
-            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
-                ApplyBuffer(buffer, control, target, false);
-                tShard.RemovePhaseControl(&cShard);
-            }
+            OptimizePairBuffers(control, target, false);
 
             return;
         }
@@ -2444,7 +2413,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         bitLenInt control = controls[0];
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
-        if (!cShard.IsInvertTarget() && UNSAFE_CACHED_CLASSICAL(cShard)) {
+        if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
             if (SHARD_STATE(cShard)) {
                 Flush1Eigenstate(control);
             } else {
@@ -2457,25 +2426,20 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
 
-        RevertBasis2Qb(
-            target, ONLY_INVERT, IS_1_CMPLX(bottomRight) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI);
+        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
+        std::set<bitLenInt> except;
+        if (!isSameUnit) {
+            except.insert(control);
+        }
 
-        if (!IS_SAME_UNIT(cShard, tShard)) {
+        RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(bottomRight) ? ONLY_TARGETS : CONTROLS_AND_TARGETS,
+            CTRL_AND_ANTI, except, except);
+
+        if (!isSameUnit) {
             delete[] controls;
             tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
 
-            ShardToPhaseMap::iterator phaseShard = tShard.antiTargetOfShards.find(&cShard);
-
-            if ((phaseShard == tShard.antiTargetOfShards.end()) || phaseShard->second->isInvert) {
-                return;
-            }
-
-            PhaseShardPtr buffer = phaseShard->second;
-
-            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
-                ApplyBuffer(buffer, control, target, true);
-                tShard.RemovePhaseAntiControl(&cShard);
-            }
+            OptimizePairBuffers(control, target, true);
 
             return;
         }
@@ -4177,6 +4141,45 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     }
 
     shard.CommuteH();
+}
+
+void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& target, const bool& anti)
+{
+    QEngineShard& cShard = shards[control];
+    QEngineShard& tShard = shards[target];
+
+    ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
+
+    if (phaseShard == tShard.targetOfShards.end()) {
+        return;
+    }
+
+    PhaseShardPtr buffer = phaseShard->second;
+
+    if ((!phaseShard->second->isInvert) || (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame))) {
+        ApplyBuffer(buffer, control, target, anti);
+        tShard.RemovePhaseControl(&cShard);
+        return;
+    }
+
+    ShardToPhaseMap::iterator antiShard = tShard.antiTargetOfShards.find(&cShard);
+
+    if ((antiShard == tShard.antiTargetOfShards.end()) ||
+        (phaseShard->second->isInvert != antiShard->second->isInvert)) {
+        return;
+    }
+
+    PhaseShardPtr aBuffer = antiShard->second;
+
+    if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxSame) && IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxDiff)) {
+        if (phaseShard->second->isInvert) {
+            ApplySingleInvert(buffer->cmplxDiff, buffer->cmplxSame, target);
+        } else {
+            ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
+        }
+        tShard.RemovePhaseControl(&cShard);
+        tShard.RemovePhaseAntiControl(&cShard);
+    }
 }
 
 } // namespace Qrack
