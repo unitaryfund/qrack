@@ -1755,7 +1755,9 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         if (!isSameUnit) {
             tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
 
-            OptimizePairBuffers(control, target, false);
+            if (isInvert) {
+                OptimizePairBuffers(control, target, false);
+            }
 
             return;
         }
@@ -1979,7 +1981,9 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         if (!isSameUnit) {
             tShard.AddPhaseAngles(&cShard, ONE_CMPLX, -ONE_CMPLX);
 
-            OptimizePairBuffers(control, target, false);
+            if (isInvert) {
+                OptimizePairBuffers(control, target, false);
+            }
 
             return;
         }
