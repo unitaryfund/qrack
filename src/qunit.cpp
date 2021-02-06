@@ -51,7 +51,7 @@
     (!shard.isProbDirty && shard.isPauliX && !shard.isPauliY && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
 #define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp0))
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp1))
-#define IS_SAME_UNIT(shard1, shard2) ((shard1.unit == shard2.unit) && (shard1.unit || shard2.unit))
+#define IS_SAME_UNIT(shard1, shard2) (shard1.unit && (shard1.unit == shard2.unit))
 
 namespace Qrack {
 
