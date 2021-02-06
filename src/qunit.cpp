@@ -1759,18 +1759,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
                 return;
             }
 
-            ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
-
-            if (phaseShard == tShard.targetOfShards.end()) {
-                return;
-            }
-
-            PhaseShardPtr buffer = phaseShard->second;
-
-            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
-                ApplyBuffer(buffer, control, target, false);
-                shards[target].RemovePhaseControl(&cShard);
-            }
+            OptimizePairBuffers(control, target, false);
 
             return;
         }
@@ -1998,34 +1987,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
                 return;
             }
 
-            ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
-
-            if (phaseShard == tShard.targetOfShards.end()) {
-                return;
-            }
-
-            PhaseShardPtr buffer = phaseShard->second;
-
-            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
-                ApplyBuffer(buffer, control, target, false);
-                tShard.RemovePhaseControl(&cShard);
-                return;
-            }
-
-            ShardToPhaseMap::iterator antiShard = tShard.antiTargetOfShards.find(&cShard);
-
-            if (antiShard == tShard.antiTargetOfShards.end()) {
-                return;
-            }
-
-            PhaseShardPtr aBuffer = antiShard->second;
-
-            if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxDiff) &&
-                IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxSame)) {
-                ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
-                tShard.RemovePhaseControl(&cShard);
-                tShard.RemovePhaseAntiControl(&cShard);
-            }
+            OptimizePairBuffers(control, target, false);
 
             return;
         }
@@ -2373,18 +2335,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             delete[] controls;
             tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
 
-            ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
-
-            if ((phaseShard == tShard.targetOfShards.end()) || phaseShard->second->isInvert) {
-                return;
-            }
-
-            PhaseShardPtr buffer = phaseShard->second;
-
-            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
-                ApplyBuffer(buffer, control, target, false);
-                tShard.RemovePhaseControl(&cShard);
-            }
+            OptimizePairBuffers(control, target, false);
 
             return;
         }
@@ -2481,18 +2432,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
             delete[] controls;
             tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
 
-            ShardToPhaseMap::iterator phaseShard = tShard.antiTargetOfShards.find(&cShard);
-
-            if ((phaseShard == tShard.antiTargetOfShards.end()) || phaseShard->second->isInvert) {
-                return;
-            }
-
-            PhaseShardPtr buffer = phaseShard->second;
-
-            if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
-                ApplyBuffer(buffer, control, target, true);
-                tShard.RemovePhaseAntiControl(&cShard);
-            }
+            OptimizePairBuffers(control, target, true);
 
             return;
         }
@@ -4194,6 +4134,40 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     }
 
     shard.CommuteH();
+}
+
+void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& target, const bool& anti)
+{
+    QEngineShard& cShard = shards[control];
+    QEngineShard& tShard = shards[target];
+
+    ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
+
+    if ((phaseShard == tShard.targetOfShards.end()) || phaseShard->second->isInvert) {
+        return;
+    }
+
+    PhaseShardPtr buffer = phaseShard->second;
+
+    if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
+        ApplyBuffer(buffer, control, target, anti);
+        tShard.RemovePhaseControl(&cShard);
+        return;
+    }
+
+    ShardToPhaseMap::iterator antiShard = tShard.antiTargetOfShards.find(&cShard);
+
+    if ((antiShard == tShard.antiTargetOfShards.end()) || antiShard->second->isInvert) {
+        return;
+    }
+
+    PhaseShardPtr aBuffer = antiShard->second;
+
+    if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxDiff) && IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxSame)) {
+        ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
+        tShard.RemovePhaseControl(&cShard);
+        tShard.RemovePhaseAntiControl(&cShard);
+    }
 }
 
 } // namespace Qrack

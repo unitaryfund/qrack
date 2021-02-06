@@ -541,6 +541,8 @@ protected:
     }
 
     void CommuteH(const bitLenInt& bitIndex);
+
+    void OptimizePairBuffers(const bitLenInt& control, const bitLenInt& target, const bool& anti);
 };
 
 } // namespace Qrack
