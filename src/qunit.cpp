@@ -4143,13 +4143,13 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
 
     ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
 
-    if ((phaseShard == tShard.targetOfShards.end()) || phaseShard->second->isInvert) {
+    if (phaseShard == tShard.targetOfShards.end()) {
         return;
     }
 
     PhaseShardPtr buffer = phaseShard->second;
 
-    if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
+    if ((!phaseShard->second->isInvert) || (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame))) {
         ApplyBuffer(buffer, control, target, anti);
         tShard.RemovePhaseControl(&cShard);
         return;
@@ -4157,14 +4157,19 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
 
     ShardToPhaseMap::iterator antiShard = tShard.antiTargetOfShards.find(&cShard);
 
-    if ((antiShard == tShard.antiTargetOfShards.end()) || antiShard->second->isInvert) {
+    if ((antiShard == tShard.antiTargetOfShards.end()) ||
+        (phaseShard->second->isInvert != antiShard->second->isInvert)) {
         return;
     }
 
     PhaseShardPtr aBuffer = antiShard->second;
 
     if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxSame) && IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxDiff)) {
-        ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
+        if (phaseShard->second->isInvert) {
+            ApplySingleInvert(buffer->cmplxDiff, buffer->cmplxSame, target);
+        } else {
+            ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
+        }
         tShard.RemovePhaseControl(&cShard);
         tShard.RemovePhaseAntiControl(&cShard);
     }
