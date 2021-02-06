@@ -4090,8 +4090,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         }
 
         control = FindShardIndex(partner);
-        ApplyBuffer(buffer, control, bitIndex, false);
         shard.RemovePhaseControl(partner);
+        ApplyBuffer(buffer, control, bitIndex, false);
     }
 
     targetOfShards = shard.antiTargetOfShards;
@@ -4114,8 +4114,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         }
 
         control = FindShardIndex(partner);
-        ApplyBuffer(buffer, control, bitIndex, true);
         shard.RemovePhaseAntiControl(partner);
+        ApplyBuffer(buffer, control, bitIndex, true);
     }
 
     shard.CommuteH();
@@ -4135,8 +4135,8 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     PhaseShardPtr buffer = phaseShard->second;
 
     if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
-        ApplyBuffer(buffer, control, target, anti);
         tShard.RemovePhaseControl(&cShard);
+        ApplyBuffer(buffer, control, target, anti);
         return;
     }
 
@@ -4149,9 +4149,9 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     PhaseShardPtr aBuffer = antiShard->second;
 
     if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxSame) && IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxDiff)) {
-        ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
         tShard.RemovePhaseControl(&cShard);
         tShard.RemovePhaseAntiControl(&cShard);
+        ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
     }
 }
 
