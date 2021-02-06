@@ -1747,7 +1747,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
         if (!isSameUnit) {
             tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
-
             OptimizePairBuffers(control, target, false);
 
             return;
@@ -1964,7 +1963,6 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
         if (!isSameUnit) {
             tShard.AddPhaseAngles(&cShard, ONE_CMPLX, -ONE_CMPLX);
-
             OptimizePairBuffers(control, target, false);
 
             return;
@@ -2318,7 +2316,6 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         if (!isSameUnit) {
             delete[] controls;
             tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
-
             OptimizePairBuffers(control, target, false);
 
             return;
@@ -2420,7 +2417,6 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         if (!isSameUnit) {
             delete[] controls;
             tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
-
             OptimizePairBuffers(control, target, true);
 
             return;
@@ -4132,13 +4128,13 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
 
     ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
 
-    if (phaseShard == tShard.targetOfShards.end()) {
+    if ((phaseShard == tShard.targetOfShards.end()) || phaseShard->second->isInvert) {
         return;
     }
 
     PhaseShardPtr buffer = phaseShard->second;
 
-    if ((!phaseShard->second->isInvert) || (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame))) {
+    if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
         ApplyBuffer(buffer, control, target, anti);
         tShard.RemovePhaseControl(&cShard);
         return;
@@ -4146,8 +4142,7 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
 
     ShardToPhaseMap::iterator antiShard = tShard.antiTargetOfShards.find(&cShard);
 
-    if ((antiShard == tShard.antiTargetOfShards.end()) ||
-        (phaseShard->second->isInvert != antiShard->second->isInvert)) {
+    if ((antiShard == tShard.antiTargetOfShards.end()) || antiShard->second->isInvert) {
         return;
     }
 
