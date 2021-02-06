@@ -4149,11 +4149,7 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     PhaseShardPtr aBuffer = antiShard->second;
 
     if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxSame) && IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxDiff)) {
-        if (phaseShard->second->isInvert) {
-            ApplySingleInvert(buffer->cmplxDiff, buffer->cmplxSame, target);
-        } else {
-            ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
-        }
+        ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
         tShard.RemovePhaseControl(&cShard);
         tShard.RemovePhaseAntiControl(&cShard);
     }
