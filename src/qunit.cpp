@@ -51,7 +51,7 @@
     (!shard.isProbDirty && shard.isPauliX && !shard.isPauliY && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1)))
 #define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp0))
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp1))
-#define IS_SAME_UNIT(shard1, shard2) ((shard1.unit == shard2.unit) && (shard1.unit || shard2.unit))
+#define IS_SAME_UNIT(shard1, shard2) (shard1.unit && (shard1.unit == shard2.unit))
 
 namespace Qrack {
 
@@ -1736,16 +1736,16 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     bool pmBasis = (cShard.isPauliX && tShard.isPauliX && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
 
     if (!freezeBasis2Qb && !pmBasis) {
-        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+
         std::set<bitLenInt> except;
-        if (!isSameUnit) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             except.insert(control);
         }
 
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, except, except);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, except, except);
 
-        if (!isSameUnit) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
             OptimizePairBuffers(control, target, false);
 
@@ -1803,17 +1803,15 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis2Qb) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS);
 
-        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
         std::set<bitLenInt> except;
-        if (!isSameUnit) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             except.insert(control);
         }
 
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, except, except);
 
-        if (!isSameUnit) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
             return;
         }
@@ -1952,16 +1950,16 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis2Qb) {
-        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+
         std::set<bitLenInt> except;
-        if (!isSameUnit) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             except.insert(control);
         }
 
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, except, except);
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, except, except);
 
-        if (!isSameUnit) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             tShard.AddPhaseAngles(&cShard, ONE_CMPLX, -ONE_CMPLX);
             OptimizePairBuffers(control, target, false);
 
@@ -2303,17 +2301,17 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             return;
         }
 
-        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+
         std::set<bitLenInt> except;
-        if (!isSameUnit) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             except.insert(control);
         }
 
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, except, except);
         RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI,
             except, except);
 
-        if (!isSameUnit) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             delete[] controls;
             tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
             OptimizePairBuffers(control, target, false);
@@ -2404,17 +2402,17 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
             return;
         }
 
-        bool isSameUnit = IS_SAME_UNIT(cShard, tShard);
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+
         std::set<bitLenInt> except;
-        if (!isSameUnit) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             except.insert(control);
         }
 
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, except, except);
         RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(bottomRight) ? ONLY_TARGETS : CONTROLS_AND_TARGETS,
             CTRL_AND_ANTI, except, except);
 
-        if (!isSameUnit) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             delete[] controls;
             tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
             OptimizePairBuffers(control, target, true);
