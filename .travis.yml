@@ -20,7 +20,8 @@ script:
 #  - cd build && python -m pytest . && cd ..
   - git clone https://github.com/vm6502q/qiskit-qrack-provider.git && cd qiskit-qrack-provider
   - python -m pip install .
-  - python -m stestr run && cd ..
+# Deprecation warnings exceed log length, so direct output to /dev/null
+  - python -m stestr run > /dev/null 2>&1 && cd ..
 #  - cd .. && git clone https://github.com/XanaduAI/pennylane-pq.git && cd pennylane-pq
 #  - python -m pip install .
 #  - python -m pytest .
