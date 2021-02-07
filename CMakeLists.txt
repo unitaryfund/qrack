@@ -11,7 +11,7 @@ include_directories ("include" "include/common")
 
 set(PSTRIDEPOW "9" CACHE STRING "Stride of parallel for loops (as a power of 2)")
 
-set(QBCAPPOW "6" CACHE STRING "Log2 of maximum qubit capacity of a single QInterface (must be at least 5, equivalent to >= 32 qubits)")
+set(QBCAPPOW "7" CACHE STRING "Log2 of maximum qubit capacity of a single QInterface (must be at least 5, equivalent to >= 32 qubits)")
 if (QBCAPPOW LESS 5)
     message(FATAL_ERROR "QBCAPPOW must be at least 5, equivalent to >= 32 qubits!")
 endif (QBCAPPOW LESS 5)
