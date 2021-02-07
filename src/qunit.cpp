@@ -1191,6 +1191,14 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    QEngineShard& shard1 = shards[qubit1];
+    QEngineShard& shard2 = shards[qubit2];
+
+    if (IS_SAME_UNIT(shard1, shard2)) {
+        shard1.unit->ISwap(shards[qubit1].mapped, shards[qubit2].mapped);
+        return;
+    }
+
     bitLenInt control[1] = { qubit1 };
     ApplyAntiControlledSinglePhase(control, 1U, qubit2, ONE_CMPLX, I_CMPLX);
     control[0] = qubit2;
@@ -1200,7 +1208,7 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     shards.swap(qubit1, qubit2);
 
     QInterfacePtr unit = shards[qubit1].unit;
-    if (unit && (unit == shards[qubit2].unit)) {
+    if (unit && (unit == shard2.unit)) {
         OrderContiguous(unit);
     }
 }
