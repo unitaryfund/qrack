@@ -1176,11 +1176,21 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
+    QEngineShard& shard1 = shards[qubit1];
+    QEngineShard& shard2 = shards[qubit2];
+
+    if (IS_SAME_UNIT(shard1, shard2)) {
+        Entangle({ qubit1, qubit2 })->Swap(shard1.mapped, shard2.mapped);
+        shard1.MakeDirty();
+        shard2.MakeDirty();
+        return;
+    }
+
     // Simply swap the bit mapping.
     shards.swap(qubit1, qubit2);
 
-    QInterfacePtr unit = shards[qubit1].unit;
-    if (unit && (unit == shards[qubit2].unit)) {
+    QInterfacePtr unit = shard1.unit;
+    if (unit && (unit == shard2.unit)) {
         OrderContiguous(unit);
     }
 }
@@ -1195,7 +1205,7 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard2 = shards[qubit2];
 
     if (IS_SAME_UNIT(shard1, shard2)) {
-        shard1.unit->ISwap(shards[qubit1].mapped, shards[qubit2].mapped);
+        Entangle({ qubit1, qubit2 })->ISwap(shard1.mapped, shard2.mapped);
         shard1.MakeDirty();
         shard2.MakeDirty();
         return;
@@ -1208,11 +1218,6 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 
     // Simply swap the bit mapping.
     shards.swap(qubit1, qubit2);
-
-    QInterfacePtr unit = shards[qubit1].unit;
-    if (unit && (unit == shard2.unit)) {
-        OrderContiguous(unit);
-    }
 }
 
 void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -1233,13 +1238,12 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    QInterfacePtr unit = Entangle({ qubit1, qubit2 });
-    unit->SqrtSwap(shards[qubit1].mapped, shards[qubit2].mapped);
+    Entangle({ qubit1, qubit2 })->SqrtSwap(shard1.mapped, shard2.mapped);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
-    shards[qubit1].MakeDirty();
-    shards[qubit2].MakeDirty();
+    shard1.MakeDirty();
+    shard2.MakeDirty();
 }
 
 void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -1260,13 +1264,12 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    QInterfacePtr unit = Entangle({ qubit1, qubit2 });
-    unit->ISqrtSwap(shards[qubit1].mapped, shards[qubit2].mapped);
+    Entangle({ qubit1, qubit2 })->ISqrtSwap(shard1.mapped, shard2.mapped);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
-    shards[qubit1].MakeDirty();
-    shards[qubit2].MakeDirty();
+    shard1.MakeDirty();
+    shard2.MakeDirty();
 }
 
 void QUnit::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
@@ -1302,13 +1305,12 @@ void QUnit::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    QInterfacePtr unit = Entangle({ qubit1, qubit2 });
-    unit->FSim(theta, phi, shards[qubit1].mapped, shards[qubit2].mapped);
+    Entangle({ qubit1, qubit2 })->FSim(theta, phi, shard1.mapped, shard2.mapped);
 
     // TODO: If we multiply out cached amplitudes, we can optimize this.
 
-    shards[qubit1].MakeDirty();
-    shards[qubit2].MakeDirty();
+    shard1.MakeDirty();
+    shard2.MakeDirty();
 }
 
 void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
