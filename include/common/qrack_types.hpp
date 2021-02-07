@@ -36,13 +36,10 @@
 #endif
 
 #if QBCAPPOW < 6
-#define ONE_BCI 1U
 #define bitCapInt uint32_t
 #elif QBCAPPOW < 7
-#define ONE_BCI 1UL
 #define bitCapInt uint64_t
 #elif QBCAPPOW < 8
-#define ONE_BCI 1ULL
 #ifdef BOOST_AVAILABLE
 #include <boost/multiprecision/cpp_int.hpp>
 #define bitCapInt boost::multiprecision::uint128_t
@@ -52,11 +49,9 @@
 #else
 #define bitsInCap (8U * (1U << QBCAPPOW))
 #include <boost/multiprecision/cpp_int.hpp>
-#define ONE_BCI 1ULL
 #define bitCapInt                                                                                                      \
     boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1 << QBCAPPOW, 1 << QBCAPPOW,                 \
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-#endif
 #endif
 
 #define bitsInByte 8
