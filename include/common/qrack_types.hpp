@@ -36,10 +36,13 @@
 #endif
 
 #if QBCAPPOW < 6
+#define bitsInCap 32
 #define bitCapInt uint32_t
 #elif QBCAPPOW < 7
+#define bitsInCap 64
 #define bitCapInt uint64_t
 #elif QBCAPPOW < 8
+#define bitsInCap 128
 #ifdef BOOST_AVAILABLE
 #include <boost/multiprecision/cpp_int.hpp>
 #define bitCapInt boost::multiprecision::uint128_t
