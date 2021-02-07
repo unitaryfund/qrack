@@ -27,26 +27,28 @@
 #define bitLenInt uint64_t
 #endif
 
-#if ENABLE_UINT128
-#define ONE_BCI 1ULL
-#define bitCapIntOcl uint64_t
-#ifdef BOOST_AVAILABLE
-#include <boost/multiprecision/cpp_int.hpp>
-#define bitCapInt boost::multiprecision::uint128_t
-#else
-#define bitCapInt __uint128_t
-#endif
-#else
 #if ENABLE_PURE32
 #define ONE_BCI 1U
 #define bitCapIntOcl uint32_t
+#else
+#define ONE_BCI 1UL
+#define bitCapIntOcl uint64_t
 #endif
+
 #if QBCAPPOW < 6
 #define ONE_BCI 1U
 #define bitCapInt uint32_t
 #elif QBCAPPOW < 7
 #define ONE_BCI 1UL
 #define bitCapInt uint64_t
+#elif QBCAPPOW < 8
+#define ONE_BCI 1ULL
+#ifdef BOOST_AVAILABLE
+#include <boost/multiprecision/cpp_int.hpp>
+#define bitCapInt boost::multiprecision::uint128_t
+#else
+#define bitCapInt __uint128_t
+#endif
 #else
 #define bitsInCap (8U * (1U << QBCAPPOW))
 #include <boost/multiprecision/cpp_int.hpp>
