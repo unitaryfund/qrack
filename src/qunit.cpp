@@ -1188,11 +1188,6 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
 
     // Simply swap the bit mapping.
     shards.swap(qubit1, qubit2);
-
-    QInterfacePtr unit = shard1.unit;
-    if (unit && (unit == shard2.unit)) {
-        OrderContiguous(unit);
-    }
 }
 
 void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
