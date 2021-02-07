@@ -1196,6 +1196,8 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 
     if (IS_SAME_UNIT(shard1, shard2)) {
         shard1.unit->ISwap(shards[qubit1].mapped, shards[qubit2].mapped);
+        shard1.MakeDirty();
+        shard2.MakeDirty();
         return;
     }
 
