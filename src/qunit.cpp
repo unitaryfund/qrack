@@ -1176,21 +1176,6 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    QEngineShard& shard1 = shards[qubit1];
-    QEngineShard& shard2 = shards[qubit2];
-
-    if (IS_SAME_UNIT(shard1, shard2)) {
-        Entangle({ qubit1, qubit2 })->Swap(shard1.mapped, shard2.mapped);
-
-        // If either bit has cached probability, this correctly updates all affected caches.
-        std::swap(shard1.isProbDirty, shard2.isProbDirty);
-        std::swap(shard1.isPhaseDirty, shard2.isPhaseDirty);
-        std::swap(shard1.amp0, shard2.amp0);
-        std::swap(shard1.amp1, shard2.amp1);
-
-        return;
-    }
-
     // Simply swap the bit mapping.
     shards.swap(qubit1, qubit2);
 }
