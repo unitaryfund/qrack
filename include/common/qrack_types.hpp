@@ -17,6 +17,8 @@
 #include <memory>
 #include <random>
 
+#include "config.h"
+
 #if QBCAPPOW < 8
 #define bitLenInt uint8_t
 #elif QBCAPPOW < 16
