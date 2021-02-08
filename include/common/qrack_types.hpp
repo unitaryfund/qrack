@@ -17,6 +17,8 @@
 #include <memory>
 #include <random>
 
+#include "config.h"
+
 #if QBCAPPOW < 8
 #define bitLenInt uint8_t
 #elif QBCAPPOW < 16
@@ -27,36 +29,34 @@
 #define bitLenInt uint64_t
 #endif
 
-#if ENABLE_PURE32
-#define bitsInCap 32
-#define bitCapIntOcl uint32_t
-#define bitCapInt uint32_t
+#if ENABLE_UINT32
 #define ONE_BCI 1U
-#elif ENABLE_UINT128
+#define bitCapIntOcl uint32_t
+#else
+#define ONE_BCI 1UL
+#define bitCapIntOcl uint64_t
+#endif
+
+#if QBCAPPOW < 6
+#define bitsInCap 32
+#define bitCapInt uint32_t
+#elif QBCAPPOW < 7
+#define bitsInCap 64
+#define bitCapInt uint64_t
+#elif QBCAPPOW < 8
 #define bitsInCap 128
 #ifdef BOOST_AVAILABLE
 #include <boost/multiprecision/cpp_int.hpp>
-#define bitCapIntOcl uint64_t
 #define bitCapInt boost::multiprecision::uint128_t
-#define ONE_BCI 1ULL
 #else
-#define bitCapIntOcl uint64_t
 #define bitCapInt __uint128_t
-#define ONE_BCI 1ULL
 #endif
-#elif QBCAPPOW > 7
+#else
 #define bitsInCap (8U * (1U << QBCAPPOW))
 #include <boost/multiprecision/cpp_int.hpp>
-#define bitCapIntOcl uint64_t
 #define bitCapInt                                                                                                      \
     boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1 << QBCAPPOW, 1 << QBCAPPOW,                 \
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-#define ONE_BCI 1ULL
-#else
-#define bitsInCap 64
-#define bitCapIntOcl uint64_t
-#define bitCapInt uint64_t
-#define ONE_BCI 1ULL
 #endif
 
 #define bitsInByte 8
