@@ -8,10 +8,10 @@ install:
   - python -m pip install --upgrade pip numpy setuptools wheel
   - python -m pip install rust cvxpy cython ddt stestr qiskit==0.23.2 pennylane
 script:
-  - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=OFF .. && make -j 8 all
+  - mkdir _build && cd _build && cmake -DENABLE_COMPLEX8=OFF .. && make -j 8 all
   - sudo make install
   - cd .. && sudo rm -r _build
-  - mkdir _build && cd _build && cmake -DENABLE_OPENCL=OFF -DENABLE_COMPLEX8=ON .. && make -j 8 all
+  - mkdir _build && cd _build && cmake -DENABLE_COMPLEX8=ON .. && make -j 8 all
   - ./unittest
   - cd ../..
 #  - cd ../.. && git clone -b qrack_unit_tests https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
