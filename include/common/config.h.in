@@ -5,6 +5,5 @@
 #cmakedefine ENABLE_OCL_MEM_GUARDS 1
 #cmakedefine ENABLE_UINT32 1
 #cmakedefine ENABLE_UINT128 1
-#cmakedefine ENABLE_PURE32 1
 #cmakedefine PSTRIDEPOW @PSTRIDEPOW@
 #cmakedefine QBCAPPOW @QBCAPPOW@
