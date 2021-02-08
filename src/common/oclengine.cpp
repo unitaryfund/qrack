@@ -284,7 +284,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
 
-#if ENABLE_PURE32
+#if ENABLE_UINT32
     sources.push_back({ (const char*)qheader32_cl, (long unsigned int)qheader32_cl_len });
 #elif ENABLE_COMPLEX8
     sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
