@@ -27,7 +27,7 @@
 #define bitLenInt uint64_t
 #endif
 
-#if ENABLE_PURE32
+#if ENABLE_UINT32
 #define ONE_BCI 1U
 #define bitCapIntOcl uint32_t
 #else
