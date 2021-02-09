@@ -4078,9 +4078,11 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
-    ShardToPhaseMap::iterator phaseShard = tShard.targetOfShards.find(&cShard);
+    ShardToPhaseMap& targets = anti ? tShard.antiTargetOfShards : tShard.targetOfShards;
 
-    if ((phaseShard == tShard.targetOfShards.end()) || phaseShard->second->isInvert) {
+    ShardToPhaseMap::iterator phaseShard = targets.find(&cShard);
+
+    if ((phaseShard == targets.end()) || phaseShard->second->isInvert) {
         return;
     }
 
@@ -4092,9 +4094,11 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
         return;
     }
 
+    ShardToPhaseMap& antiTargets = anti ? tShard.targetOfShards : tShard.antiTargetOfShards;
+
     ShardToPhaseMap::iterator antiShard = tShard.antiTargetOfShards.find(&cShard);
 
-    if ((antiShard == tShard.antiTargetOfShards.end()) || antiShard->second->isInvert) {
+    if ((antiShard == antiTargets.end()) || antiShard->second->isInvert) {
         return;
     }
 
@@ -4103,7 +4107,11 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxSame) && IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxDiff)) {
         tShard.RemovePhaseControl(&cShard);
         tShard.RemovePhaseAntiControl(&cShard);
-        ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
+        if (anti) {
+            ApplySinglePhase(buffer->cmplxSame, buffer->cmplxDiff, target);
+        } else {
+            ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
+        }
     }
 }
 
