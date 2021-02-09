@@ -1783,6 +1783,8 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
         if (!IS_SAME_UNIT(cShard, tShard)) {
             shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
+            OptimizePairBuffers(control, target, true);
+
             return;
         }
     }
