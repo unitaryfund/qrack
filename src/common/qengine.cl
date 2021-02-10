@@ -1861,7 +1861,7 @@ void kernel cpowmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 }
 
 void kernel indexedLda(
-    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitLenInt* values)
+    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant uchar* values)
 {
     bitCapIntOcl Nthreads, lcv;
 
@@ -1883,8 +1883,14 @@ void kernel indexedLda(
         inputRes = i & inputMask;
         inputInt = inputRes >> inputStart;
         outputInt = 0U;
-        for (j = 0U; j < valueBytes; j++) {
-            outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+        if (valueBytes == 1) {
+            outputInt = values[inputInt];
+        } else if (valueBytes == 2) {
+            outputInt = ((constant ushort*)values)[inputInt];
+        } else {
+            for (j = 0U; j < valueBytes; j++) {
+                outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+            }
         }
         outputRes = outputInt << outputStart;
         nStateVec[outputRes | i] = stateVec[i];
@@ -1892,7 +1898,7 @@ void kernel indexedLda(
 }
 
 void kernel indexedAdc(
-    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitLenInt* values)
+    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant uchar* values)
 {
     bitCapIntOcl Nthreads, lcv;
 
@@ -1919,8 +1925,14 @@ void kernel indexedAdc(
         inputInt = inputRes >> inputStart;
         outputRes = i & outputMask;
         outputInt = 0U;
-        for (j = 0U; j < valueBytes; j++) {
-            outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+        if (valueBytes == 1) {
+            outputInt = values[inputInt];
+        } else if (valueBytes == 2) {
+            outputInt = ((constant ushort*)values)[inputInt];
+        } else {
+            for (j = 0U; j < valueBytes; j++) {
+                outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+            }
         }
         outputInt += (outputRes >> outputStart) + carryIn;
 
@@ -1936,7 +1948,7 @@ void kernel indexedAdc(
 }
 
 void kernel indexedSbc(
-    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitLenInt* values)
+    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant uchar* values)
 {
     bitCapIntOcl Nthreads, lcv;
 
@@ -1963,8 +1975,14 @@ void kernel indexedSbc(
         inputInt = inputRes >> inputStart;
         outputRes = i & outputMask;
         outputInt = 0U;
-        for (j = 0U; j < valueBytes; j++) {
-            outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+        if (valueBytes == 1) {
+            outputInt = values[inputInt];
+        } else if (valueBytes == 2) {
+            outputInt = ((constant ushort*)values)[inputInt];
+        } else {
+            for (j = 0U; j < valueBytes; j++) {
+                outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+            }
         }
         outputInt = (outputRes >> outputStart) + (lengthPower - (outputInt + carryIn));
 
@@ -1980,7 +1998,7 @@ void kernel indexedSbc(
 }
 
 void kernel hash(
-    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitLenInt* values)
+    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant uchar* values)
 {
     bitCapIntOcl Nthreads, lcv;
 
@@ -1995,8 +2013,14 @@ void kernel hash(
         inputRes = lcv & inputMask;
         inputInt = inputRes >> start;
         outputInt = 0U;
-        for (j = 0U; j < bytes; j++) {
-            outputInt |= values[inputInt * bytes + j] << (8U * j);
+        if (bytes == 1) {
+            outputInt = values[inputInt];
+        } else if (bytes == 2) {
+            outputInt = ((constant ushort*)values)[inputInt];
+        } else {
+            for (j = 0U; j < bytes; j++) {
+                outputInt |= values[inputInt * bytes + j] << (8U * j);
+            }
         }
         outputRes = outputInt << start;
         nStateVec[outputRes | (lcv & ~inputRes)] = stateVec[lcv];

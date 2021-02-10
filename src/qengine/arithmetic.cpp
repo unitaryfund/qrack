@@ -1150,8 +1150,16 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
         bitCapInt inputRes = lcv & inputMask;
         bitCapIntOcl inputInt = (bitCapIntOcl)(inputRes >> start);
         bitCapInt outputInt = 0;
-        for (bitCapIntOcl j = 0; j < bytes; j++) {
-            outputInt |= values[inputInt * bytes + j] << (8U * j);
+        if (bytes == 1) {
+            outputInt = values[inputInt];
+        } else if (bytes == 2) {
+            outputInt = ((uint16_t*)values)[inputInt];
+        } else if (bytes == 4) {
+            outputInt = ((uint32_t*)values)[inputInt];
+        } else {
+            for (bitCapIntOcl j = 0; j < bytes; j++) {
+                outputInt |= values[inputInt * bytes + j] << (8U * j);
+            }
         }
         bitCapInt outputRes = outputInt << start;
         nStateVec->write(outputRes | (lcv & ~inputRes), stateVec->read(lcv));
