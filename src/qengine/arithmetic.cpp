@@ -10,6 +10,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <memory>
+
 #include "qengine_cpu.hpp"
 
 #define CHECK_ZERO_SKIP()                                                                                              \
@@ -862,6 +864,18 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
             nStateVec->write(
                 lcv | (values[(bitCapIntOcl)((lcv & inputMask) >> indexStart)] << valueStart), stateVec->read(lcv));
         };
+    } else if (valueBytes == 2) {
+        uint16_t* inputIntPtr = (uint16_t*)values;
+        fn = [&](const bitCapInt lcv, const int cpu) {
+            nStateVec->write(lcv | (inputIntPtr[(bitCapIntOcl)((lcv & inputMask) >> indexStart)] << valueStart),
+                stateVec->read(lcv));
+        };
+    } else if (valueBytes == 4) {
+        uint32_t* inputIntPtr = (uint32_t*)values;
+        fn = [&](const bitCapInt lcv, const int cpu) {
+            nStateVec->write(lcv | (inputIntPtr[(bitCapIntOcl)((lcv & inputMask) >> indexStart)] << valueStart),
+                stateVec->read(lcv));
+        };
     } else {
         fn = [&](const bitCapInt lcv, const int cpu) {
             bitCapIntOcl inputInt = (bitCapIntOcl)((lcv & inputMask) >> indexStart);
@@ -955,8 +969,16 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
         // "outputStart" register value its entangled with in this
         // iteration of the loop.
         bitCapInt outputInt = 0;
-        for (bitCapIntOcl j = 0; j < valueBytes; j++) {
-            outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+        if (valueBytes == 1) {
+            outputInt = values[inputInt];
+        } else if (valueBytes == 2) {
+            outputInt = ((uint16_t*)values)[inputInt];
+        } else if (valueBytes == 4) {
+            outputInt = ((uint32_t*)values)[inputInt];
+        } else {
+            for (bitCapIntOcl j = 0; j < valueBytes; j++) {
+                outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+            }
         }
         outputInt += (outputRes >> valueStart) + carryIn;
 
@@ -1059,8 +1081,16 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
         // from "outputStart" register value its entangled with in this
         // iteration of the loop.
         bitCapInt outputInt = 0;
-        for (bitCapIntOcl j = 0; j < valueBytes; j++) {
-            outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+        if (valueBytes == 1) {
+            outputInt = values[inputInt];
+        } else if (valueBytes == 2) {
+            outputInt = ((uint16_t*)values)[inputInt];
+        } else if (valueBytes == 4) {
+            outputInt = ((uint32_t*)values)[inputInt];
+        } else {
+            for (bitCapIntOcl j = 0; j < valueBytes; j++) {
+                outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+            }
         }
         outputInt = (outputRes >> valueStart) + (lengthPower - (outputInt + carryIn));
 
