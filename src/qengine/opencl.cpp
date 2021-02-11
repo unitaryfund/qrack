@@ -1257,6 +1257,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     } else {
         bciArgs[0] = partPower;
 
+        destination->clFinish();
+
         poolItem = GetFreePoolItem();
         EventVecPtr waitVec2 = ResetWaitEvents();
         DISPATCH_WRITE(waitVec2, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs);
