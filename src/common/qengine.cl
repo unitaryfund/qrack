@@ -653,10 +653,15 @@ void kernel decomposeamp(
 
     Nthreads = get_global_size(0);
     bitCapIntOcl maxQPower = bitCapIntOclPtr[0];
-    real1 angle;
+    real1 angle, prob;
     for (lcv = ID; lcv < maxQPower; lcv += Nthreads) {
         angle = stateAngle[lcv];
-        nStateVec[lcv] = sqrt(stateProb[lcv]) * sin((cmplx)(angle + SineShift, angle));
+        prob = stateProb[lcv];
+        if (prob > ZERO_R1) {
+            nStateVec[lcv] = sqrt(stateProb[lcv]) * sin((cmplx)(angle + SineShift, angle));
+        } else {
+            nStateVec[lcv] = (cmplx)(ZERO_R1, ZERO_R1);
+        }
     }
 }
 
