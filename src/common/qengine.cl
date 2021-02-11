@@ -1861,7 +1861,7 @@ void kernel cpowmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 }
 
 void kernel indexedLda(
-    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitLenInt* values)
+    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant uchar* values)
 {
     bitCapIntOcl Nthreads, lcv;
 
@@ -1892,7 +1892,7 @@ void kernel indexedLda(
 }
 
 void kernel indexedAdc(
-    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitLenInt* values)
+    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant uchar* values)
 {
     bitCapIntOcl Nthreads, lcv;
 
@@ -1936,7 +1936,7 @@ void kernel indexedAdc(
 }
 
 void kernel indexedSbc(
-    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitLenInt* values)
+    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant uchar* values)
 {
     bitCapIntOcl Nthreads, lcv;
 
@@ -1980,7 +1980,7 @@ void kernel indexedSbc(
 }
 
 void kernel hash(
-    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant bitLenInt* values)
+    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant uchar* values)
 {
     bitCapIntOcl Nthreads, lcv;
 
