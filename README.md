@@ -123,6 +123,13 @@ $ cmake -DENABLE_PURE32=ON ..
 ```
 This option is needed for certain older or simpler hardware. This removes all use of 64 bit types from the OpenCL kernels, as well as completely removing the use of SIMD intrinsics. Note that this build option theoretically supports only up to 32 qubits, whereas `-DENABLE_PURE32=OFF` could support up to 64 qubits, (if the memory requirements were realistically attainable for either 32-bit or 64-bit hardware, or in limited cases available for QUnit Schmidt decomposition). `-DENABLE_PURE32=ON` is necessary to support the VC4CL OpenCL compiler for the VideoCore GPU of the Raspberry Pi 3. (Additionally, for that platform, the RDRAND instruction is not available, and you should `-DENABLE_RDRAND=OFF`. VC4CL for the VideoCore GPU is currently fully supported.)
 
+## Reduced or increased coherent qubit addressing
+
+```
+$ cmake [-DENABLE_UINT32=ON] [-DENABLE_UINT128=ON] [-DQBCAPPOW=n] ..
+```
+Qrack uses an unsigned integer primitive for ubiquitous qubit masking operations. This limits the maximum qubit capacity of any coherent QInterface to the total number of bits in the masking type. By default, a 64-bit unsigned integer is used, corresponding to a maximum of 64 qubits in any coherent QInterface (if attainable, such as in limited cases with QUnit). `-DENABLE_UINT32=ON` reduces the masking type to 32 bits, which might also be important with accelerators that might not support 64-bit types. `-DENABLE_UINT128=ON` will use the Boost big integer header for 128-bit masking, or it will try to fall back to the (incomplete implementation of the) GCC unsigned 128-bit integer type, if the Boost header is not available. `-DQBCAPPOW=n` sets the maximum power of bits in "paged" or QUnit types as potentially larger than single "pages" or "subunits," for "n" >= 5, with n=5 being 2^5=32 qubits. Large "n" is possible with the Boost big integer header. (Setting n=5 when `-DENABLE_UINT32` is on can avoid casting between "subunit" and "global qubit" masking types, if "paging" or larger QUnit widths are not needed.)
+
 ## Precompiled OpenCL kernels
 
 ```
