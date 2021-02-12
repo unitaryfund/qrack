@@ -606,7 +606,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
             nrm = dot(amp, amp);
             partProb += nrm;
 
-            if (nrm > min_norm) {
+            if (nrm >= REAL1_EPSILON) {
                 currentAngle = arg(amp);
                 if (firstAngle < angleThresh) {
                     firstAngle = currentAngle;
@@ -633,7 +633,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
             nrm = dot(amp, amp);
             partProb += nrm;
 
-            if (nrm > min_norm) {
+            if (nrm >= REAL1_EPSILON) {
                 currentAngle = arg(stateVec[l]);
                 if (firstAngle < angleThresh) {
                     firstAngle = currentAngle;
@@ -2091,14 +2091,14 @@ void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, cons
         amp = stateVec1[basePerm];
         nrm = dot(amp, amp);
         basePerm++;
-    } while (nrm < min_norm);
+    } while (nrm < REAL1_EPSILON);
 
     basePerm--;
     amp = stateVec1[basePerm];
     nrm = dot(amp, amp);
 
     // If the amplitude we sample for global phase offset correction doesn't match, we're done.
-    if (nrm > min_norm) {
+    if (nrm >= REAL1_EPSILON) {
         basePhaseFac1 = (ONE_R1 / sqrt(nrm)) * amp;
 
         amp = stateVec2[basePerm];
