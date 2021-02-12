@@ -657,11 +657,7 @@ void kernel decomposeamp(
     for (lcv = ID; lcv < maxQPower; lcv += Nthreads) {
         angle = stateAngle[lcv];
         prob = stateProb[lcv];
-        if (prob > ZERO_R1) {
-            nStateVec[lcv] = sqrt(stateProb[lcv]) * sin((cmplx)(angle + SineShift, angle));
-        } else {
-            nStateVec[lcv] = (cmplx)(ZERO_R1, ZERO_R1);
-        }
+        nStateVec[lcv] = sqrt(stateProb[lcv]) * sin((cmplx)(angle + SineShift, angle));
     }
 }
 

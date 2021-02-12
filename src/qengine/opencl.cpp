@@ -1227,6 +1227,18 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     bitCapIntOcl remainderPower = pow2Ocl(nLength);
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0, 0, 0, 0, 0, 0 };
 
+    // The "remainder" bits will always be maintained.
+    BufferPtr probBuffer1 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * remainderPower);
+    ClearBuffer(probBuffer1, 0, remainderPower >> ONE_BCI);
+    BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * remainderPower);
+    ClearBuffer(angleBuffer1, 0, remainderPower >> ONE_BCI);
+
+    // The removed "part" is only necessary for Decompose.
+    BufferPtr probBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
+    ClearBuffer(probBuffer2, 0, partPower >> ONE_BCI);
+    BufferPtr angleBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
+    ClearBuffer(angleBuffer2, 0, partPower >> ONE_BCI);
+
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -1236,14 +1248,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     size_t ngc = FixWorkItemCount(largerPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-
-    // The "remainder" bits will always be maintained.
-    BufferPtr probBuffer1 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * remainderPower);
-    BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * remainderPower);
-
-    // The removed "part" is only necessary for Decompose.
-    BufferPtr probBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
-    BufferPtr angleBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
 
     // Call the kernel that calculates bit probability and angle, retaining both parts.
     QueueCall(api_call, ngc, ngs,
