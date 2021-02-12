@@ -1221,8 +1221,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     bitLenInt nLength = qubitCount - length;
 
-    OCLAPI api_call = OCL_API_DECOMPOSEPROB;
-
     bitCapIntOcl partPower = pow2Ocl(length);
     bitCapIntOcl remainderPower = pow2Ocl(nLength);
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0, 0, 0, 0, 0, 0 };
@@ -1234,10 +1232,13 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     ClearBuffer(angleBuffer1, 0, remainderPower >> ONE_BCI);
 
     // The removed "part" is only necessary for Decompose.
-    BufferPtr probBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
-    ClearBuffer(probBuffer2, 0, partPower >> ONE_BCI);
-    BufferPtr angleBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
-    ClearBuffer(angleBuffer2, 0, partPower >> ONE_BCI);
+    BufferPtr probBuffer2, angleBuffer2;
+    if (destination) {
+        probBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
+        ClearBuffer(probBuffer2, 0, partPower >> ONE_BCI);
+        angleBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
+        ClearBuffer(angleBuffer2, 0, partPower >> ONE_BCI);
+    }
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1250,13 +1251,17 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Call the kernel that calculates bit probability and angle, retaining both parts.
-    QueueCall(api_call, ngc, ngs,
-        { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 });
+    if (destination) {
+        QueueCall(OCL_API_DECOMPOSEPROB, ngc, ngs,
+            { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 });
+    } else {
+        QueueCall(OCL_API_DISPOSEPROB, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1 });
+    }
 
     SetQubitCount(nLength);
 
     // If we Decompose, calculate the state of the bit system removed.
-    if (destination == NULL) {
+    if (!destination) {
         clFinish();
     } else {
         bciArgs[0] = partPower;
