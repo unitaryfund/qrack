@@ -2273,7 +2273,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI,
             {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard) && !ARE_CLIFFORD(cShard, tShard)) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             delete[] controls;
             tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
             OptimizePairBuffers(control, target, false);
@@ -2368,7 +2368,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(bottomRight) ? ONLY_TARGETS : CONTROLS_AND_TARGETS,
             CTRL_AND_ANTI, {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard) && !ARE_CLIFFORD(cShard, tShard)) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             delete[] controls;
             tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
             OptimizePairBuffers(control, target, true);
