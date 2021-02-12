@@ -661,6 +661,68 @@ void kernel decomposeamp(
     }
 }
 
+void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
+    global real1* remainderStateProb, global real1* remainderStateAngle)
+{
+    bitCapIntOcl Nthreads, lcv;
+
+    Nthreads = get_global_size(0);
+
+    bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    bitCapIntOcl partPower = args.x;
+    bitCapIntOcl remainderPower = args.y;
+    bitCapIntOcl start = args.z;
+    bitCapIntOcl startMask = (ONE_BCI << start) - ONE_BCI;
+    bitCapIntOcl len = args.w;
+
+    bitCapIntOcl j, k, l;
+    cmplx amp;
+    real1 partProb, nrm, firstAngle, currentAngle;
+
+    const real1 angleThresh = -8 * PI_R1;
+    const real1 initAngle = -16 * PI_R1;
+
+    for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
+        j = lcv & startMask;
+        j |= (lcv ^ j) << len;
+
+        partProb = ZERO_R1;
+
+        for (k = 0U; k < partPower; k++) {
+            l = j | (k << start);
+
+            amp = stateVec[l];
+            nrm = dot(amp, amp);
+            partProb += nrm;
+        }
+
+        remainderStateProb[lcv] = partProb;
+    }
+
+    for (lcv = ID; lcv < partPower; lcv += Nthreads) {
+        j = lcv << start;
+
+        firstAngle = initAngle;
+
+        for (k = 0U; k < remainderPower; k++) {
+            l = k & startMask;
+            l |= (k ^ l) << len;
+            l = j | l;
+
+            amp = stateVec[l];
+            nrm = dot(amp, amp);
+
+            if (nrm >= REAL1_EPSILON) {
+                currentAngle = arg(stateVec[l]);
+                if (firstAngle < angleThresh) {
+                    firstAngle = currentAngle;
+                }
+                remainderStateAngle[k] = currentAngle - firstAngle;
+            }
+        }
+    }
+}
+
 void kernel dispose(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
 {
     bitCapIntOcl Nthreads, lcv;

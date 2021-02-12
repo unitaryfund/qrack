@@ -818,66 +818,108 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     real1* remainderStateProb = new real1[remainderPower]();
     real1* remainderStateAngle = new real1[remainderPower]();
-    real1* partStateAngle = new real1[partPower]();
-    real1* partStateProb = new real1[partPower]();
+    real1* partStateAngle;
+    real1* partStateProb;
+    if (destination) {
+        partStateAngle = new real1[partPower]();
+        partStateProb = new real1[partPower]();
+    }
 
     if (doNormalize) {
         NormalizeState();
     }
     Finish();
 
-    par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt j, l;
-        bitCapIntOcl k;
-        j = lcv & pow2Mask(start);
-        j |= (lcv ^ j) << length;
+    if (destination) {
+        par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt j, l;
+            bitCapIntOcl k;
+            j = lcv & pow2Mask(start);
+            j |= (lcv ^ j) << length;
 
-        real1 firstAngle = -16 * M_PI;
-        real1 currentAngle;
-        real1 nrm;
+            real1 firstAngle = -16 * M_PI;
+            real1 currentAngle;
+            real1 nrm;
 
-        for (k = 0; k < partPower; k++) {
-            l = j | (k << start);
+            for (k = 0; k < partPower; k++) {
+                l = j | (k << start);
 
-            nrm = norm(stateVec->read(l));
-            remainderStateProb[(bitCapIntOcl)lcv] += nrm;
+                nrm = norm(stateVec->read(l));
+                remainderStateProb[(bitCapIntOcl)lcv] += nrm;
 
-            if (nrm > amplitudeFloor) {
-                currentAngle = arg(stateVec->read(l));
-                if (firstAngle < (-8 * M_PI)) {
-                    firstAngle = currentAngle;
+                if (nrm > amplitudeFloor) {
+                    currentAngle = arg(stateVec->read(l));
+                    if (firstAngle < (-8 * M_PI)) {
+                        firstAngle = currentAngle;
+                    }
+                    partStateAngle[k] = currentAngle - firstAngle;
                 }
-                partStateAngle[k] = currentAngle - firstAngle;
             }
-        }
-    });
+        });
 
-    par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt j, l;
-        bitCapIntOcl k;
-        j = lcv << start;
+        par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt j, l;
+            bitCapIntOcl k;
+            j = lcv << start;
 
-        real1 firstAngle = -16 * M_PI;
-        real1 currentAngle;
-        real1 nrm;
+            real1 firstAngle = -16 * M_PI;
+            real1 currentAngle;
+            real1 nrm;
 
-        for (k = 0; k < remainderPower; k++) {
-            l = k & pow2Mask(start);
-            l |= (k ^ l) << length;
-            l = j | l;
+            for (k = 0; k < remainderPower; k++) {
+                l = k & pow2Mask(start);
+                l |= (k ^ l) << length;
+                l = j | l;
 
-            nrm = norm(stateVec->read(l));
-            partStateProb[(bitCapIntOcl)lcv] += nrm;
+                nrm = norm(stateVec->read(l));
+                partStateProb[(bitCapIntOcl)lcv] += nrm;
 
-            if (nrm > amplitudeFloor) {
-                currentAngle = arg(stateVec->read(l));
-                if (firstAngle < (-8 * M_PI)) {
-                    firstAngle = currentAngle;
+                if (nrm > amplitudeFloor) {
+                    currentAngle = arg(stateVec->read(l));
+                    if (firstAngle < (-8 * M_PI)) {
+                        firstAngle = currentAngle;
+                    }
+                    remainderStateAngle[k] = currentAngle - firstAngle;
                 }
-                remainderStateAngle[k] = currentAngle - firstAngle;
             }
-        }
-    });
+        });
+    } else {
+        par_for(0, remainderPower, [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt j, l;
+            bitCapIntOcl k;
+            j = lcv & pow2Mask(start);
+            j |= (lcv ^ j) << length;
+
+            for (k = 0; k < partPower; k++) {
+                l = j | (k << start);
+
+                remainderStateProb[(bitCapIntOcl)lcv] += norm(stateVec->read(l));
+            }
+        });
+
+        par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt j, l;
+            bitCapIntOcl k;
+            j = lcv << start;
+
+            real1 firstAngle = -16 * M_PI;
+            real1 currentAngle;
+
+            for (k = 0; k < remainderPower; k++) {
+                l = k & pow2Mask(start);
+                l |= (k ^ l) << length;
+                l = j | l;
+
+                if (norm(stateVec->read(l)) > amplitudeFloor) {
+                    currentAngle = arg(stateVec->read(l));
+                    if (firstAngle < (-8 * M_PI)) {
+                        firstAngle = currentAngle;
+                    }
+                    remainderStateAngle[k] = currentAngle - firstAngle;
+                }
+            }
+        });
+    }
 
     if (destination != nullptr) {
         destination->Dump();
@@ -904,8 +946,10 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
-    delete[] partStateProb;
-    delete[] partStateAngle;
+    if (destination) {
+        delete[] partStateProb;
+        delete[] partStateAngle;
+    }
 }
 
 void QEngineCPU::Decompose(bitLenInt start, QInterfacePtr destination)
