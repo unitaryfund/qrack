@@ -128,14 +128,14 @@ void QEngineOCL::SetAmplitudePage(
         if (length == maxQPower) {
             ZeroAmplitudes();
         } else {
-            ClearBuffer(stateBuffer, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length, ResetWaitEvents());
+            ClearBuffer(stateBuffer, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length);
         }
         return;
     }
 
     if (!stateBuffer) {
         ReinitBuffer();
-        ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
+        ClearBuffer(stateBuffer, 0, maxQPowerOcl);
     }
 
     queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, sizeof(complex) * (bitCapIntOcl)srcOffset,
@@ -156,12 +156,12 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
 
     if (!stateBuffer) {
         ReinitBuffer();
-        ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
+        ClearBuffer(stateBuffer, 0, maxQPowerOcl);
     }
 
     if (!(engineOcl->stateBuffer)) {
         engineOcl->ReinitBuffer();
-        engineOcl->ClearBuffer(engineOcl->stateBuffer, 0, engineOcl->maxQPowerOcl, engineOcl->ResetWaitEvents());
+        engineOcl->ClearBuffer(engineOcl->stateBuffer, 0, engineOcl->maxQPowerOcl);
     }
 
     size_t halfSize = sizeof(complex) * (maxQPowerOcl >> ONE_BCI);
@@ -567,7 +567,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
         ReinitBuffer();
     }
 
-    ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
+    ClearBuffer(stateBuffer, 0, maxQPowerOcl);
 
     // If "permutationAmp" amp is in (read-only) use, this method complicates supersedes that application anyway.
 
@@ -620,7 +620,7 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
         device_context->UnlockWaitEvents();
         queue.flush();
     } else {
-        ClearBuffer(nStateBuffer, 0, maxQPowerOcl, waitVec);
+        ClearBuffer(nStateBuffer, 0, maxQPowerOcl);
     }
 
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1202,9 +1202,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         destination->NormalizeState();
     }
 
-    // int destinationDevID = 0;
     if (destination) {
-        // destinationDevID = destination->GetDeviceID();
         destination->SetDevice(deviceID);
     }
 
@@ -1213,7 +1211,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             destination->ResetStateVec(stateVec);
             destination->stateBuffer = stateBuffer;
             stateVec = NULL;
-            // destination->SetDevice(destinationDevID);
         }
         // This will be cleared by the destructor:
         ResetStateVec(AllocStateVec(2));
@@ -1224,41 +1221,52 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     bitLenInt nLength = qubitCount - length;
 
-    OCLAPI api_call = OCL_API_DECOMPOSEPROB;
-
     bitCapIntOcl partPower = pow2Ocl(length);
     bitCapIntOcl remainderPower = pow2Ocl(nLength);
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0, 0, 0, 0, 0, 0 };
+
+    // The "remainder" bits will always be maintained.
+    BufferPtr probBuffer1 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * remainderPower);
+    ClearBuffer(probBuffer1, 0, remainderPower >> ONE_BCI);
+    BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * remainderPower);
+    ClearBuffer(angleBuffer1, 0, remainderPower >> ONE_BCI);
+
+    // The removed "part" is only necessary for Decompose.
+    BufferPtr probBuffer2, angleBuffer2;
+    if (destination) {
+        probBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
+        ClearBuffer(probBuffer2, 0, partPower >> ONE_BCI);
+        angleBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
+        ClearBuffer(angleBuffer2, 0, partPower >> ONE_BCI);
+    }
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs);
 
-    size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
+    bitCapInt largerPower = partPower > remainderPower ? partPower : remainderPower;
+
+    size_t ngc = FixWorkItemCount(largerPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    // The "remainder" bits will always be maintained.
-    BufferPtr probBuffer1 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * remainderPower);
-    BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * remainderPower);
-
-    // The removed "part" is only necessary for Decompose.
-    BufferPtr probBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
-    BufferPtr angleBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
-
     // Call the kernel that calculates bit probability and angle, retaining both parts.
-    QueueCall(api_call, ngc, ngs,
-        { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 });
+    if (destination) {
+        QueueCall(OCL_API_DECOMPOSEPROB, ngc, ngs,
+            { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 });
+    } else {
+        QueueCall(OCL_API_DISPOSEPROB, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1 });
+    }
 
     SetQubitCount(nLength);
 
     // If we Decompose, calculate the state of the bit system removed.
-    if (destination == NULL) {
+    if (!destination) {
         clFinish();
     } else {
-        destination->Finish();
-
         bciArgs[0] = partPower;
+
+        destination->clFinish();
 
         poolItem = GetFreePoolItem();
         EventVecPtr waitVec2 = ResetWaitEvents();
@@ -1287,8 +1295,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             FreeAligned(destination->stateVec);
             destination->stateVec = NULL;
         }
-
-        // destination->SetDevice(destinationDevID);
     }
 
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
@@ -2117,7 +2123,7 @@ void QEngineOCL::xMULx(OCLAPI api_call, bitCapIntOcl* bciArgs, BufferPtr control
     complex* nStateVec = AllocStateVec(maxQPowerOcl);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
-    ClearBuffer(nStateBuffer, 0, maxQPowerOcl, waitVec);
+    ClearBuffer(nStateBuffer, 0, maxQPowerOcl);
 
     PoolItemPtr poolItem = GetFreePoolItem();
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 10, bciArgs);
@@ -2448,7 +2454,7 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         return;
     } else if (!stateBuffer) {
         ReinitBuffer();
-        ClearBuffer(stateBuffer, 0, maxQPowerOcl, ResetWaitEvents());
+        ClearBuffer(stateBuffer, 0, maxQPowerOcl);
     }
 
     // "permutationAmp" might be in use, so we clFinish(), first, to guarantee it is not.
@@ -2665,7 +2671,7 @@ void QEngineOCL::ReinitBuffer()
     ResetStateBuffer(MakeStateVecBuffer(stateVec));
 }
 
-void QEngineOCL::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size, EventVecPtr waitVec)
+void QEngineOCL::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size)
 {
     PoolItemPtr poolItem = GetFreePoolItem();
 

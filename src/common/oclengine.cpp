@@ -68,6 +68,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_COMPOSE_MID, "composemid"),
     OCLKernelHandle(OCL_API_DECOMPOSEPROB, "decomposeprob"),
     OCLKernelHandle(OCL_API_DECOMPOSEAMP, "decomposeamp"),
+    OCLKernelHandle(OCL_API_DISPOSEPROB, "disposeprob"),
     OCLKernelHandle(OCL_API_DISPOSE, "dispose"),
     OCLKernelHandle(OCL_API_PROB, "prob"),
     OCLKernelHandle(OCL_API_PROBREG, "probreg"),

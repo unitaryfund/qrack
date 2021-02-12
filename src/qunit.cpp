@@ -52,6 +52,8 @@
 #define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp0))
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp1))
 #define IS_SAME_UNIT(shard1, shard2) (shard1.unit && (shard1.unit == shard2.unit))
+#define ARE_CLIFFORD(shard1, shard2)                                                                                   \
+    ((engine == QINTERFACE_STABILIZER_HYBRID) && shard1.isClifford() && shard2.isClifford())
 
 namespace Qrack {
 
@@ -1721,7 +1723,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard)) {
+        if (!IS_SAME_UNIT(cShard, tShard) && !ARE_CLIFFORD(cShard, tShard)) {
             tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
             OptimizePairBuffers(control, target, false);
 
@@ -1781,7 +1783,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard)) {
+        if (!IS_SAME_UNIT(cShard, tShard) && !ARE_CLIFFORD(cShard, tShard)) {
             shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
             OptimizePairBuffers(control, target, true);
 
@@ -1925,7 +1927,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard)) {
+        if (!IS_SAME_UNIT(cShard, tShard) && !ARE_CLIFFORD(cShard, tShard)) {
             tShard.AddPhaseAngles(&cShard, ONE_CMPLX, -ONE_CMPLX);
             OptimizePairBuffers(control, target, false);
 
