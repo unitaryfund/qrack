@@ -4000,16 +4000,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     // We search for 100. All values in lookup table are 1 except a single match.
 
     const bitLenInt indexLength = 8;
-    const bitLenInt valueLength = 8;
+    const bitLenInt valueLength = 9;
     const bitLenInt carryIndex = indexLength + valueLength;
     const bitCapIntOcl TARGET_VALUE = 100;
     const bitCapIntOcl TARGET_KEY = 230;
 
-    unsigned char* toLoad = cl_alloc(1 << indexLength);
-    for (i = 0; i < (1 << indexLength); i++) {
+    unsigned char* toLoad = cl_alloc(2 * (1 << indexLength));
+    for (i = 0; i < (2 * (1 << indexLength)); i += 2) {
         toLoad[i] = 1;
+        toLoad[i + 1] = 0;
     }
-    toLoad[TARGET_KEY] = TARGET_VALUE;
+    toLoad[2 * TARGET_KEY] = TARGET_VALUE;
 
     // Our input to the subroutine "oracle" is 8 bits.
     qftReg->SetPermutation(0);

@@ -1946,8 +1946,14 @@ void kernel indexedLda(
         inputRes = i & inputMask;
         inputInt = inputRes >> inputStart;
         outputInt = 0U;
-        for (j = 0U; j < valueBytes; j++) {
-            outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+        if (valueBytes == 1) {
+            outputInt = values[inputInt];
+        } else if (valueBytes == 2) {
+            outputInt = ((constant ushort*)values)[inputInt];
+        } else {
+            for (j = 0U; j < valueBytes; j++) {
+                outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+            }
         }
         outputRes = outputInt << outputStart;
         nStateVec[outputRes | i] = stateVec[i];
@@ -1982,8 +1988,14 @@ void kernel indexedAdc(
         inputInt = inputRes >> inputStart;
         outputRes = i & outputMask;
         outputInt = 0U;
-        for (j = 0U; j < valueBytes; j++) {
-            outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+        if (valueBytes == 1) {
+            outputInt = values[inputInt];
+        } else if (valueBytes == 2) {
+            outputInt = ((constant ushort*)values)[inputInt];
+        } else {
+            for (j = 0U; j < valueBytes; j++) {
+                outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+            }
         }
         outputInt += (outputRes >> outputStart) + carryIn;
 
@@ -2026,8 +2038,14 @@ void kernel indexedSbc(
         inputInt = inputRes >> inputStart;
         outputRes = i & outputMask;
         outputInt = 0U;
-        for (j = 0U; j < valueBytes; j++) {
-            outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+        if (valueBytes == 1) {
+            outputInt = values[inputInt];
+        } else if (valueBytes == 2) {
+            outputInt = ((constant ushort*)values)[inputInt];
+        } else {
+            for (j = 0U; j < valueBytes; j++) {
+                outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+            }
         }
         outputInt = (outputRes >> outputStart) + (lengthPower - (outputInt + carryIn));
 
@@ -2058,8 +2076,14 @@ void kernel hash(
         inputRes = lcv & inputMask;
         inputInt = inputRes >> start;
         outputInt = 0U;
-        for (j = 0U; j < bytes; j++) {
-            outputInt |= values[inputInt * bytes + j] << (8U * j);
+        if (bytes == 1) {
+            outputInt = values[inputInt];
+        } else if (bytes == 2) {
+            outputInt = ((constant ushort*)values)[inputInt];
+        } else {
+            for (j = 0U; j < bytes; j++) {
+                outputInt |= values[inputInt * bytes + j] << (8U * j);
+            }
         }
         outputRes = outputInt << start;
         nStateVec[outputRes | (lcv & ~inputRes)] = stateVec[lcv];
