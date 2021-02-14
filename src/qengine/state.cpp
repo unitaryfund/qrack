@@ -1276,7 +1276,7 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
     for (basePerm = 0; basePerm < maxQPower; basePerm++) {
         nrm = norm(stateVec->read(basePerm));
         if (nrm > amplitudeFloor) {
-            basePhaseFac1 = (ONE_R1 / (real1)sqrt(nrm)) * stateVec->read(basePerm);
+            basePhaseFac1 = (real1)(ONE_R1 / (real1)sqrt(nrm)) * (complex)stateVec->read(basePerm);
             break;
         }
     }
@@ -1288,10 +1288,10 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
 
     nrm = norm(toCompare->stateVec->read(basePerm));
 
-    complex basePhaseFac2 = (ONE_R1 / (real1)sqrt(nrm)) * toCompare->stateVec->read(basePerm);
+    complex basePhaseFac2 = (real1)(ONE_R1 / (real1)sqrt(nrm)) * (complex)toCompare->stateVec->read(basePerm);
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        real1 elemError = norm(basePhaseFac2 * stateVec->read(lcv) - basePhaseFac1 * toCompare->stateVec->read(lcv));
+        real1 elemError = norm(basePhaseFac2 * (complex)stateVec->read(lcv) - basePhaseFac1 * (complex)toCompare->stateVec->read(lcv));
         partError[cpu] += elemError;
     });
 
@@ -1395,9 +1395,12 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
     });
 }
 
-void QEngineCPU::NormalizeState(real1_f nrm, real1_f norm_thresh)
+void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f)
 {
     CHECK_ZERO_SKIP();
+    
+    real1 nrm = (real1)nrm_f;
+    real1 norm_thresh = (real1)norm_thresh_f;
 
     Finish();
 

@@ -1590,40 +1590,40 @@ void QUnit::Z(bitLenInt target)
 
 void QUnit::TransformX2x2(const complex* mtrxIn, complex* mtrxOut)
 {
-    mtrxOut[0] = (ONE_R1 / 2) * (mtrxIn[0] + mtrxIn[1] + mtrxIn[2] + mtrxIn[3]);
-    mtrxOut[1] = (ONE_R1 / 2) * (mtrxIn[0] - mtrxIn[1] + mtrxIn[2] - mtrxIn[3]);
-    mtrxOut[2] = (ONE_R1 / 2) * (mtrxIn[0] + mtrxIn[1] - mtrxIn[2] - mtrxIn[3]);
-    mtrxOut[3] = (ONE_R1 / 2) * (mtrxIn[0] - mtrxIn[1] - mtrxIn[2] + mtrxIn[3]);
+    mtrxOut[0] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] + mtrxIn[1] + mtrxIn[2] + mtrxIn[3]);
+    mtrxOut[1] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] - mtrxIn[1] + mtrxIn[2] - mtrxIn[3]);
+    mtrxOut[2] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] + mtrxIn[1] - mtrxIn[2] - mtrxIn[3]);
+    mtrxOut[3] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] - mtrxIn[1] - mtrxIn[2] + mtrxIn[3]);
 }
 
 void QUnit::TransformXInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
 {
-    mtrxOut[0] = (ONE_R1 / 2) * (topRight + bottomLeft);
-    mtrxOut[1] = (ONE_R1 / 2) * (-topRight + bottomLeft);
+    mtrxOut[0] = (real1)(ONE_R1 / 2) * (complex)(topRight + bottomLeft);
+    mtrxOut[1] = (real1)(ONE_R1 / 2) * (complex)(-topRight + bottomLeft);
     mtrxOut[2] = -mtrxOut[1];
     mtrxOut[3] = -mtrxOut[0];
 }
 
 void QUnit::TransformY2x2(const complex* mtrxIn, complex* mtrxOut)
 {
-    mtrxOut[0] = (ONE_R1 / 2) * (mtrxIn[0] + I_CMPLX * (mtrxIn[1] - mtrxIn[2]) + mtrxIn[3]);
-    mtrxOut[1] = (ONE_R1 / 2) * (mtrxIn[0] + I_CMPLX * (-mtrxIn[1] - mtrxIn[2]) - mtrxIn[3]);
-    mtrxOut[2] = (ONE_R1 / 2) * (mtrxIn[0] + I_CMPLX * (mtrxIn[1] + mtrxIn[2]) - mtrxIn[3]);
-    mtrxOut[3] = (ONE_R1 / 2) * (mtrxIn[0] + I_CMPLX * (-mtrxIn[1] + mtrxIn[2]) + mtrxIn[3]);
+    mtrxOut[0] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] + I_CMPLX * (mtrxIn[1] - mtrxIn[2]) + mtrxIn[3]);
+    mtrxOut[1] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] + I_CMPLX * (-mtrxIn[1] - mtrxIn[2]) - mtrxIn[3]);
+    mtrxOut[2] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] + I_CMPLX * (mtrxIn[1] + mtrxIn[2]) - mtrxIn[3]);
+    mtrxOut[3] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] + I_CMPLX * (-mtrxIn[1] + mtrxIn[2]) + mtrxIn[3]);
 }
 
 void QUnit::TransformYInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
 {
-    mtrxOut[0] = I_CMPLX * (ONE_R1 / 2) * (topRight - bottomLeft);
-    mtrxOut[1] = I_CMPLX * (ONE_R1 / 2) * (-topRight - bottomLeft);
+    mtrxOut[0] = I_CMPLX * (real1)(ONE_R1 / 2) * (complex)(topRight - bottomLeft);
+    mtrxOut[1] = I_CMPLX * (real1)(ONE_R1 / 2) * (complex)(-topRight - bottomLeft);
     mtrxOut[2] = -mtrxOut[1];
     mtrxOut[3] = -mtrxOut[0];
 }
 
 void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, complex* mtrxOut)
 {
-    mtrxOut[0] = (ONE_R1 / 2) * (topLeft + bottomRight);
-    mtrxOut[1] = (ONE_R1 / 2) * (topLeft - bottomRight);
+    mtrxOut[0] = (real1)(ONE_R1 / 2) * (complex)(topLeft + bottomRight);
+    mtrxOut[1] = (real1)(ONE_R1 / 2) * (complex)(topLeft - bottomRight);
     mtrxOut[2] = mtrxOut[1];
     mtrxOut[3] = mtrxOut[0];
 }
