@@ -2562,7 +2562,7 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh)
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    real1 r1_args[2] = { norm_thresh, (real1)ONE_R1 / std::sqrt(nrm) };
+    real1 r1_args[2] = { (real1)norm_thresh, (real1)(ONE_R1 / std::sqrt(nrm)) };
     cl::Event writeRealArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1) * 2, r1_args, writeRealArgsEvent);
 
@@ -2602,7 +2602,7 @@ void QEngineOCL::UpdateRunningNorm(real1_f norm_thresh)
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    real1 r1_args[1] = { norm_thresh };
+    real1 r1_args[1] = { (real1)norm_thresh };
     cl::Event writeRealArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1), r1_args, writeRealArgsEvent);
 

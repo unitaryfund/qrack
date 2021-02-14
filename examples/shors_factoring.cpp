@@ -39,7 +39,7 @@ bitCapInt continued_fraction_step(bitCapInt* numerator, bitCapInt* denominator)
     return intPart;
 }
 
-real1 calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* numerator, bitCapInt* denominator)
+real1_f calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* numerator, bitCapInt* denominator)
 {
     bitCapInt approxNumer = 1;
     bitCapInt approxDenom = denominators.back();
