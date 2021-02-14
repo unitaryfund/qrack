@@ -16,10 +16,10 @@
 #include "qengine_cpu.hpp"
 
 #if ENABLE_COMPLEX_X2
-#if ENABLE_COMPLEX8
+#if FPPOW == 5
 #include "common/complex8x2simd.hpp"
 #define complex2 Complex8x2Simd
-#else
+#elif FPPOW == 6
 #include "common/complex16x2simd.hpp"
 #define complex2 Complex16x2Simd
 #endif
@@ -242,7 +242,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
                             rngNrm[cpu] += dotMulRes;
                         }
 
-#if ENABLE_COMPLEX8
+#if FPPOW < 6
                         stateVec->write(lcv + offset1, qubit.cmplx[0]);
                         stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
@@ -257,7 +257,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
                         rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
 
-#if ENABLE_COMPLEX8
+#if FPPOW < 6
                         stateVec->write(lcv + offset1, qubit.cmplx[0]);
                         stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
@@ -286,7 +286,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
                             rngNrm[cpu] += dotMulRes;
                         }
 
-#if ENABLE_COMPLEX8
+#if FPPOW < 6
                         stateVec->write(lcv + offset1, qubit.cmplx[0]);
                         stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
@@ -301,7 +301,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
                         rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[1]);
 
-#if ENABLE_COMPLEX8
+#if FPPOW < 6
                         stateVec->write(lcv + offset1, qubit.cmplx[0]);
                         stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
@@ -315,7 +315,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
                 ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
                 qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-#if ENABLE_COMPLEX8
+#if FPPOW < 6
                 stateVec->write(lcv + offset1, qubit.cmplx[0]);
                 stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
