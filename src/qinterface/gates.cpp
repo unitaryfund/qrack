@@ -125,7 +125,7 @@ void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
     if (n == 3) {
-        ApplySinglePhase(ONE_CMPLX, C_SQRT_I, qubit);
+        ApplySinglePhase(ONE_CMPLX, C_SQRT_N_I, qubit);
         return;
     }
 
@@ -147,7 +147,7 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
     if (n == 3) {
-        ApplySinglePhase(ONE_CMPLX, C_SQRT_N_I, qubit);
+        ApplySinglePhase(ONE_CMPLX, C_SQRT_I, qubit);
         return;
     }
 
@@ -295,7 +295,7 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         return;
     }
     if (n == 3) {
-        ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_I);
+        ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_N_I);
         return;
     }
 
@@ -320,7 +320,7 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         return;
     }
     if (n == 3) {
-        ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_N_I);
+        ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_I);
         return;
     }
 
