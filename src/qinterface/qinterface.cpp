@@ -47,7 +47,7 @@ namespace Qrack {
     }
 
 #define REG_GATE_1R(gate)                                                                                              \
-    void QInterface::gate(real1_f radians, bitLenInt start, bitLenInt length)                                            \
+    void QInterface::gate(real1_f radians, bitLenInt start, bitLenInt length)                                          \
     {                                                                                                                  \
         for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
             gate(radians, start + bit);                                                                                \
@@ -75,7 +75,7 @@ namespace Qrack {
     }
 
 #define REG_GATE_C1_1R(gate)                                                                                           \
-    void QInterface::gate(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length)                        \
+    void QInterface::gate(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length)                      \
     {                                                                                                                  \
         ControlledLoopFixture(length, [&](bitLenInt bit) { gate(radians, control + bit, target + bit); });             \
     }

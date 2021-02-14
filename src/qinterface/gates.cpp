@@ -100,7 +100,8 @@ void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 }
 
 /// Controlled general unitary gate
-void QInterface::CU(bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
+void QInterface::CU(
+    bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
     real1 cos0 = cos(theta / 2);
     real1 sin0 = sin(theta / 2);
@@ -286,9 +287,9 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         CZ(control, target);
         return;
     }
-    
+
     bitLenInt controls[1] = { control };
-    
+
     if (n == 2) {
         ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, I_CMPLX);
         return;
@@ -297,7 +298,7 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_I);
         return;
     }
-    
+
     ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))));
 }
 
@@ -311,9 +312,9 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         CZ(control, target);
         return;
     }
-    
+
     bitLenInt controls[1] = { control };
-    
+
     if (n == 2) {
         ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, -I_CMPLX);
         return;
@@ -322,7 +323,7 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_N_I);
         return;
     }
-    
+
     ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))));
 }
 
@@ -352,7 +353,7 @@ void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
 {
     real1 timeDiff = (real1)timeDiff_f;
-    
+
     // Exponentiation of an arbitrary serial string of gates, each HamiltonianOp component times timeDiff, e^(-i * H *
     // t) as e^(-i * H_(N - 1) * t) * e^(-i * H_(N - 2) * t) * ... e^(-i * H_0 * t)
 
