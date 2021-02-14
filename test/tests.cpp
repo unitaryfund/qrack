@@ -24,7 +24,7 @@
 
 using namespace Qrack;
 
-#define EPSILON 0.001
+#define EPSILON 0.01f
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
         real1 __tmp_a = A;                                                                                             \
