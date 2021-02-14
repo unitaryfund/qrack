@@ -47,7 +47,8 @@ public:
     }
 #endif
     bool SupportsRDRAND();
-    real1 Next();
+    real1_f Next();
+
 #if ENABLE_RNDFILE
 private:
     bool didInit = false;

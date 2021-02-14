@@ -140,7 +140,7 @@ bool RdRandom::SupportsRDRAND()
 #endif
 }
 
-real1 RdRandom::Next()
+real1_f RdRandom::Next()
 {
     real1 res = 0;
     real1 part = 1;

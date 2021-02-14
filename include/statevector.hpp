@@ -45,7 +45,7 @@ public:
     complex* amplitudes;
 
 protected:
-    static real1 normHelper(const complex& c) { return norm(c); }
+    static real1_f normHelper(const complex& c) { return norm(c); }
 
     complex* Alloc(bitCapInt elemCount)
     {

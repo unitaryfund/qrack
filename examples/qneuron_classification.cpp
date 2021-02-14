@@ -82,7 +82,7 @@ struct dfObservation {
     real1 df;
     bool cat;
 
-    dfObservation(real1 dfValue, bool c)
+    dfObservation(real1_f dfValue, bool c)
     {
         df = dfValue;
         cat = c;
@@ -212,7 +212,7 @@ std::vector<dfObservation> predict(
     return dfObs;
 }
 
-real1 calculateAuc(std::vector<std::vector<BoolH>>& rawYX, std::vector<dfObservation>& dfObs)
+real1_f calculateAuc(std::vector<std::vector<BoolH>>& rawYX, std::vector<dfObservation>& dfObs)
 {
     size_t rowCount = rawYX.size();
     size_t rowIndex;

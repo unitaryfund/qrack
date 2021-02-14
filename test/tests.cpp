@@ -24,7 +24,7 @@
 
 using namespace Qrack;
 
-#define EPSILON 0.001
+#define EPSILON 0.01f
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
         real1 __tmp_a = A;                                                                                             \
@@ -4526,7 +4526,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers", "[supreme]")
 {
     qftReg->SetPermutation(2);
     qftReg->H(0);

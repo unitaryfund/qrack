@@ -49,7 +49,7 @@ public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored = false,
         int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_EPSILON, std::vector<int> ignored3 = {}, bitLenInt ignored4 = 0);
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored3 = {}, bitLenInt ignored4 = 0);
 
     virtual ~QEngineCPU() { Dump(); }
 
@@ -187,7 +187,7 @@ public:
     {
         Dispatch([this, doNorm] { doNormalize = doNorm; });
     }
-    virtual void QueueSetRunningNorm(const real1& runningNrm)
+    virtual void QueueSetRunningNorm(const real1_f& runningNrm)
     {
         Dispatch([this, runningNrm] { runningNorm = runningNrm; });
     }
@@ -267,9 +267,9 @@ public:
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
-    virtual void UniformParityRZ(const bitCapInt& mask, const real1& angle);
+    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle);
     virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle);
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle);
 
     /** @} */
 
@@ -279,24 +279,24 @@ public:
      * @{
      */
 
-    virtual real1 Prob(bitLenInt qubitIndex);
-    virtual real1 ProbAll(bitCapInt fullRegister);
-    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
-    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
-    virtual real1 ProbParity(const bitCapInt& mask);
+    virtual real1_f Prob(bitLenInt qubitIndex);
+    virtual real1_f ProbAll(bitCapInt fullRegister);
+    virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
+    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
+    virtual real1_f ProbParity(const bitCapInt& mask);
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
-    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG);
-    virtual real1 SumSqrDiff(QInterfacePtr toCompare)
+    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
         return SumSqrDiff(std::dynamic_pointer_cast<QEngineCPU>(toCompare));
     }
-    virtual real1 SumSqrDiff(QEngineCPUPtr toCompare);
+    virtual real1_f SumSqrDiff(QEngineCPUPtr toCompare);
     virtual QInterfacePtr Clone();
 
     /** @} */
 
 protected:
-    virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
+    virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     virtual StateVectorPtr AllocStateVec(bitCapInt elemCount);
     virtual void ResetStateVec(StateVectorPtr sv);
@@ -319,8 +319,8 @@ protected:
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = REAL1_DEFAULT_ARG);
-    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     virtual void INCDECC(

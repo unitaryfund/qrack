@@ -73,10 +73,10 @@ public:
         const bitLenInt& highStart, ParallelFunc fn);
 
     /** Calculate the normal for the array, (with flooring). */
-    real1 par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1 norm_thresh = ZERO_R1);
+    real1_f par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1_f norm_thresh = ZERO_R1);
 
     /** Calculate the normal for the array, (without flooring. */
-    real1 par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray);
+    real1_f par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray);
 };
 
 } // namespace Qrack

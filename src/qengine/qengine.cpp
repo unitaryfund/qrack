@@ -438,7 +438,7 @@ void QEngine::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 }
 
 /// "fSim" gate, (useful in the simulation of particles with fermionic statistics)
-void QEngine::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
+void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
     real1 cosTheta = cos(theta);
     real1 sinTheta = sin(theta);

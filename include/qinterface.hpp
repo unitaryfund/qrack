@@ -141,7 +141,7 @@ protected:
     bitCapInt maxQPower;
     uint32_t randomSeed;
     qrack_rand_gen_ptr rand_generator;
-    std::uniform_real_distribution<real1> rand_distribution;
+    std::uniform_real_distribution<real1_f> rand_distribution;
     std::shared_ptr<RdRandom> hardware_rand_generator;
     bool doNormalize;
     bool randGlobalPhase;
@@ -155,9 +155,9 @@ protected:
 
     // Compilers have difficulty figuring out types and overloading if the "norm" handle is passed to std::transform. If
     // you need a safe pointer to norm(), try this:
-    static inline real1 normHelper(complex c) { return norm(c); }
+    static inline real1_f normHelper(complex c) { return norm(c); }
 
-    static inline real1 clampProb(real1 toClamp)
+    static inline real1_f clampProb(real1_f toClamp)
     {
         if (toClamp < ZERO_R1) {
             toClamp = ZERO_R1;
@@ -196,7 +196,7 @@ protected:
 
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
-        bool randomGlobalPhase = true, real1 norm_thresh = REAL1_EPSILON)
+        bool randomGlobalPhase = true, real1_f norm_thresh = REAL1_EPSILON)
         : rand_distribution(0.0, 1.0)
         , hardware_rand_generator(NULL)
         , doNormalize(doNorm)
@@ -254,7 +254,7 @@ public:
     bitCapInt GetMaxQPower() { return maxQPower; }
 
     /** Generate a random real number between 0 and 1 */
-    real1 Rand()
+    real1_f Rand()
     {
         if (hardware_rand_generator != NULL) {
             return hardware_rand_generator->Next();
@@ -514,7 +514,7 @@ public:
      * bit, form their composition into one gate by the intended right-to-left fusion and apply them as a single
      * HamiltonianOp.)
      */
-    virtual void TimeEvolve(Hamiltonian h, real1 timeDiff);
+    virtual void TimeEvolve(Hamiltonian h, real1_f timeDiff);
 
     /**
      * Apply a swap with arbitrary control bits.
@@ -586,14 +586,14 @@ public:
      * Applies a gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible single bit
      * unitary gates, (up to a global phase factor which has no effect on Hermitian operator expectation values).
      */
-    virtual void U(bitLenInt target, real1 theta, real1 phi, real1 lambda);
+    virtual void U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
 
     /**
      * 2-parameter unitary gate
      *
      * Applies a gate guaranteed to be unitary, from two angles, as commonly defined.
      */
-    virtual void U2(bitLenInt target, real1 phi, real1 lambda) { U(target, M_PI / 2, phi, lambda); }
+    virtual void U2(bitLenInt target, real1_f phi, real1_f lambda) { U(target, M_PI / 2, phi, lambda); }
 
     /**
      * Controlled general unitary gate
@@ -602,7 +602,8 @@ public:
      * single bit unitary gates, (up to a global phase factor which has no effect on Hermitian operator expectation
      * values).
      */
-    virtual void CU(bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1 theta, real1 phi, real1 lambda);
+    virtual void CU(
+        bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
 
     /**
      * Hadamard gate
@@ -1001,7 +1002,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
      */
-    virtual void RT(real1 radians, bitLenInt qubitIndex);
+    virtual void RT(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction phase shift gate
@@ -1016,7 +1017,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
      */
-    virtual void RX(real1 radians, bitLenInt qubitIndex);
+    virtual void RX(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction X axis rotation gate
@@ -1030,7 +1031,7 @@ public:
      *
      * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
      */
-    virtual void Exp(real1 radians, bitLenInt qubitIndex);
+    virtual void Exp(real1_f radians, bitLenInt qubitIndex);
 
     /**
      *  Imaginary exponentiation of arbitrary 2x2 gate
@@ -1053,7 +1054,7 @@ public:
      *
      * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
      */
-    virtual void ExpX(real1 radians, bitLenInt qubitIndex);
+    virtual void ExpX(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Pauli X exponentiation gate
@@ -1068,7 +1069,7 @@ public:
      *
      * Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
      */
-    virtual void ExpY(real1 radians, bitLenInt qubitIndex);
+    virtual void ExpY(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Pauli Y exponentiation gate
@@ -1083,7 +1084,7 @@ public:
      *
      * Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
      */
-    virtual void ExpZ(real1 radians, bitLenInt qubitIndex);
+    virtual void ExpZ(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Pauli Z exponentiation gate
@@ -1098,7 +1099,7 @@ public:
      *
      * If "control" is 1, rotates as \f$ e^{-i*\theta/2} \f$ on Pauli x axis.
      */
-    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void CRX(real1_f radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction X axis rotation gate
@@ -1112,7 +1113,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
      */
-    virtual void RY(real1 radians, bitLenInt qubitIndex);
+    virtual void RY(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Y axis rotation gate
@@ -1127,7 +1128,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Y axis.
      */
-    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction y axis rotation gate
@@ -1167,7 +1168,10 @@ public:
      * If the target qubit set parity is odd, this applies a phase factor of e^{i angle}. If the target qubit set parity
      * is even, this applies the conjugate, e^{-i angle}.
      */
-    virtual void UniformParityRZ(const bitCapInt& mask, const real1& angle) { CUniformParityRZ(NULL, 0, mask, angle); }
+    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
+    {
+        CUniformParityRZ(NULL, 0, mask, angle);
+    }
 
     /**
      * If the controls are set and the target qubit set parity is odd, this applies a phase factor of e^{i angle}. If
@@ -1175,14 +1179,14 @@ public:
      * Otherwise, do nothing if any control is not set.
      */
     virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle) = 0;
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle) = 0;
 
     /**
      * Z axis rotation gate
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
      */
-    virtual void RZ(real1 radians, bitLenInt qubitIndex);
+    virtual void RZ(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Z axis rotation gate
@@ -1197,7 +1201,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Zaxis.
      */
-    virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void CRZ(real1_f radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction Z axis rotation gate
@@ -1214,7 +1218,7 @@ public:
      * \f$ around |1> state.
      */
 
-    virtual void CRT(real1 radians, bitLenInt control, bitLenInt target);
+    virtual void CRT(real1_f radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction "phase shift gate"
@@ -1236,10 +1240,10 @@ public:
      */
 
     /** Bitwise general unitary */
-    virtual void U(bitLenInt start, bitLenInt length, real1 theta, real1 phi, real1 lambda);
+    virtual void U(bitLenInt start, bitLenInt length, real1_f theta, real1_f phi, real1_f lambda);
 
     /** Bitwise 2-parameter unitary */
-    virtual void U2(bitLenInt start, bitLenInt length, real1 phi, real1 lambda);
+    virtual void U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lambda);
 
     /** Bitwise Hadamard */
     virtual void H(bitLenInt start, bitLenInt length);
@@ -1361,7 +1365,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
      */
-    virtual void RT(real1 radians, bitLenInt start, bitLenInt length);
+    virtual void RT(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise dyadic fraction phase shift gate
@@ -1376,7 +1380,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
      */
-    virtual void RX(real1 radians, bitLenInt start, bitLenInt length);
+    virtual void RX(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise dyadic fraction X axis rotation gate
@@ -1390,7 +1394,7 @@ public:
      *
      * If "control" is 1, rotates as \f$ e^{-i*\theta/2} \f$ on Pauli x axis.
      */
-    virtual void CRX(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CRX(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled dyadic fraction X axis rotation gate
@@ -1404,7 +1408,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
      */
-    virtual void RY(real1 radians, bitLenInt start, bitLenInt length);
+    virtual void RY(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise dyadic fraction Y axis rotation gate
@@ -1420,7 +1424,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Y axis.
      */
-    virtual void CRY(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled dyadic fraction y axis rotation gate
@@ -1435,7 +1439,7 @@ public:
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
      */
-    virtual void RZ(real1 radians, bitLenInt start, bitLenInt length);
+    virtual void RZ(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise dyadic fraction Z axis rotation gate
@@ -1450,7 +1454,7 @@ public:
      * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
      * Pauli Zaxis.
      */
-    virtual void CRZ(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CRZ(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled dyadic fraction Z axis rotation gate
@@ -1466,7 +1470,7 @@ public:
      * If control bit is set to 1, rotates target bit as \f$ e^{-i*\theta/2}
      * \f$ around |1> state.
      */
-    virtual void CRT(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length);
+    virtual void CRT(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled dyadic fraction "phase shift gate"
@@ -1481,7 +1485,7 @@ public:
      *
      * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
      */
-    virtual void Exp(real1 radians, bitLenInt start, bitLenInt length);
+    virtual void Exp(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise Dyadic fraction (identity) exponentiation gate
@@ -1496,7 +1500,7 @@ public:
      *
      * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
      */
-    virtual void ExpX(real1 radians, bitLenInt start, bitLenInt length);
+    virtual void ExpX(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise Dyadic fraction Pauli X exponentiation gate
@@ -1511,7 +1515,7 @@ public:
      *
      * Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
      */
-    virtual void ExpY(real1 radians, bitLenInt start, bitLenInt length);
+    virtual void ExpY(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise Dyadic fraction Pauli Y exponentiation gate
@@ -1526,7 +1530,7 @@ public:
      *
      * Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
      */
-    virtual void ExpZ(real1 radians, bitLenInt start, bitLenInt length);
+    virtual void ExpZ(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise Dyadic fraction Pauli Z exponentiation gate
@@ -2003,10 +2007,10 @@ public:
     virtual void ISqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** The 2-qubit "fSim" gate, (useful in the simulation of particles with fermionic statistics) */
-    virtual void FSim(real1 theta, real1 phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
 
     /** Bitwise "fSim" */
-    virtual void FSim(real1 theta, real1 phi, bitLenInt start1, bitLenInt start2, bitLenInt length);
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)
@@ -2031,21 +2035,21 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1 Prob(bitLenInt qubitIndex) = 0;
+    virtual real1_f Prob(bitLenInt qubitIndex) = 0;
 
     /**
      * Direct measure of full permutation probability
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1 ProbAll(bitCapInt fullRegister) = 0;
+    virtual real1_f ProbAll(bitCapInt fullRegister) = 0;
 
     /**
      * Direct measure of register permutation probability
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
+    virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
 
     /**
      * Direct measure of masked permutation probability
@@ -2056,7 +2060,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
+    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
 
     /**
      * Direct measure of masked permutation probability
@@ -2069,7 +2073,7 @@ public:
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
     /** Overall probability of any odd permutation of the masked set of bits */
-    virtual real1 ProbParity(const bitCapInt& mask) = 0;
+    virtual real1_f ProbParity(const bitCapInt& mask) = 0;
 
     /**
      * Statistical measure of masked permutation probability
@@ -2105,14 +2109,14 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1 error_tol = REAL1_EPSILON)
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = REAL1_EPSILON)
     {
         return SumSqrDiff(toCompare) <= error_tol;
     }
 
-    virtual real1 SumSqrDiff(QInterfacePtr toCompare) = 0;
+    virtual real1_f SumSqrDiff(QInterfacePtr toCompare) = 0;
 
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1 error_tol = REAL1_EPSILON);
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = REAL1_EPSILON);
 
     /**
      * Force a calculation of the norm of the state vector, in order to make it unit length before the next probability
@@ -2120,7 +2124,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
+    virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
     /**
      * Apply the normalization factor found by UpdateRunningNorm() or on the fly by a single bit gate. (On an actual
@@ -2128,7 +2132,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
+    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
     /**
      * If asynchronous work is still running, block until it finishes. Note that this is never necessary to get correct,
@@ -2162,7 +2166,7 @@ public:
      * for simulation optimization purposes. This is not a truly quantum computational operation, but it also does not
      * lead to nonphysical effects.
      */
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1 error_tol = REAL1_EPSILON) { return false; }
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON) { return false; }
 
     /**
      *  Clone this QInterface

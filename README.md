@@ -78,10 +78,10 @@ CMake on Windows will set up a 32-bit Visual Studio project by default, (if usin
 ```
     $ mkdir _build
     $ cd _build
-    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DENABLE_COMPLEX8=OFF -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" ..
+    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DFPPOW=6 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" ..
 ```
 
-After CMake, the project must be built in Visual Studio. (`-DENABLE_COMPLEX8=OFF` disables single `float` accuracy in favor of `double`, which should usually be used for building the Q# runtime with `QrackSimulator`.)
+After CMake, the project must be built in Visual Studio. (`-DFPPOW=6` disables single `float` accuracy in favor of `double`, which should usually be used for building the Q# runtime with `QrackSimulator`.)
 
 ## Performing code coverage
 
@@ -126,9 +126,16 @@ This option is needed for certain older or simpler hardware. This removes all us
 ## Reduced or increased coherent qubit addressing
 
 ```
-$ cmake [-DENABLE_UINT32=ON] [-DENABLE_UINT128=ON] [-DQBCAPPOW=n] ..
+$ cmake [-DUINTPOW=n] [-DQBCAPPOW=n] ..
 ```
-Qrack uses an unsigned integer primitive for ubiquitous qubit masking operations. This limits the maximum qubit capacity of any coherent QInterface to the total number of bits in the masking type. By default, a 64-bit unsigned integer is used, corresponding to a maximum of 64 qubits in any coherent QInterface (if attainable, such as in limited cases with QUnit). `-DENABLE_UINT32=ON` reduces the masking type to 32 bits, which might also be important with accelerators that might not support 64-bit types. `-DENABLE_UINT128=ON` will use the Boost big integer header for 128-bit masking, or it will try to fall back to the (incomplete implementation of the) GCC unsigned 128-bit integer type, if the Boost header is not available. `-DQBCAPPOW=n` sets the maximum power of bits in "paged" or QUnit types as potentially larger than single "pages" or "subunits," for "n" >= 5, with n=5 being 2^5=32 qubits. Large "n" is possible with the Boost big integer header. (Setting n=5 when `-DENABLE_UINT32` is on can avoid casting between "subunit" and "global qubit" masking types, if "paging" or larger QUnit widths are not needed.)
+Qrack uses an unsigned integer primitive for ubiquitous qubit masking operations, for "local" qubits (`QEngine`) and "global" qubits (`QUnit` and `QPager`). This limits the maximum qubit capacity of any coherent QInterface to the total number of bits in the global (or local) masking type. By default, a 64-bit unsigned integer is used, corresponding to a maximum of 64 qubits in any coherent `QInterface` (if attainable, such as in limited cases with `QUnit`). `-DUINTPOW=n` reduces the "local" masking type to 2^n bits, (ex.: for max OpenCL sub-unit or page qubit width,) which might also be important with accelerators that might not support 64-bit types. `-DQBCAPPOW=n` sets the maximum power of "global" qubits in "paged" or `QUnit` types as potentially larger than single "pages" or "sub-units," for "n" >= 5, with n=5 being 2^5=32 qubits. Large "n" is possible with the Boost big integer header. (Setting "n" the same for both build options can avoid casting between "subunit" and "global qubit" masking types, if larger "paging" or `QUnit` widths than `QEngine` types are not needed.)
+
+## Variable floating point precision
+
+```
+$ cmake [-FPPOW=n] ..
+```
+Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to n^2. By default n=5, for 5^2=32 bit floating point precision. "half" and "double" availability depend on the system, but n=6 for "double" is commonly supported on modern hardware, and n=4 is supported on ARM, which has a native "half" type.
 
 ## Precompiled OpenCL kernels
 

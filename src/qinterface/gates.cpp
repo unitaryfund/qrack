@@ -14,6 +14,8 @@
 
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
 #define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
+#define C_SQRT_I complex(M_SQRT1_2, M_SQRT1_2)
+#define C_SQRT_N_I complex(M_SQRT1_2, -M_SQRT1_2)
 #define ONE_PLUS_I_DIV_2 complex(ONE_R1 / 2, ONE_R1 / 2)
 #define ONE_MINUS_I_DIV_2 complex(ONE_R1 / 2, -ONE_R1 / 2)
 
@@ -88,7 +90,7 @@ void QInterface::ApplyAntiControlledSingleInvert(const bitLenInt* controls, cons
 }
 
 /// General unitary gate
-void QInterface::U(bitLenInt target, real1 theta, real1 phi, real1 lambda)
+void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
     real1 cos0 = cos(theta / 2);
     real1 sin0 = sin(theta / 2);
@@ -98,7 +100,8 @@ void QInterface::U(bitLenInt target, real1 theta, real1 phi, real1 lambda)
 }
 
 /// Controlled general unitary gate
-void QInterface::CU(bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1 theta, real1 phi, real1 lambda)
+void QInterface::CU(
+    bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
     real1 cos0 = cos(theta / 2);
     real1 sin0 = sin(theta / 2);
@@ -121,6 +124,12 @@ void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
         ApplySinglePhase(ONE_CMPLX, I_CMPLX, qubit);
         return;
     }
+#if FPPOW < 5
+    if (n == 3) {
+        ApplySinglePhase(ONE_CMPLX, C_SQRT_I, qubit);
+        return;
+    }
+#endif
 
     ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))), qubit);
 }
@@ -139,6 +148,12 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
         ApplySinglePhase(ONE_CMPLX, -I_CMPLX, qubit);
         return;
     }
+#if FPPOW < 5
+    if (n == 3) {
+        ApplySinglePhase(ONE_CMPLX, C_SQRT_N_I, qubit);
+        return;
+    }
+#endif
 
     ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))), qubit);
 }
@@ -269,14 +284,54 @@ void QInterface::AntiCNOT(bitLenInt control, bitLenInt target)
 /// Apply controlled "PhaseRootN" gate to bit
 void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 {
+    if (n == 0) {
+        return;
+    }
+    if (n == 1) {
+        CZ(control, target);
+        return;
+    }
+
     bitLenInt controls[1] = { control };
+
+    if (n == 2) {
+        ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, I_CMPLX);
+        return;
+    }
+#if FPPOW < 5
+    if (n == 3) {
+        ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_I);
+        return;
+    }
+#endif
+
     ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))));
 }
 
 /// Apply controlled "IPhaseRootN" gate to bit
 void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
 {
+    if (n == 0) {
+        return;
+    }
+    if (n == 1) {
+        CZ(control, target);
+        return;
+    }
+
     bitLenInt controls[1] = { control };
+
+    if (n == 2) {
+        ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, -I_CMPLX);
+        return;
+    }
+#if FPPOW < 5
+    if (n == 3) {
+        ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_N_I);
+        return;
+    }
+#endif
+
     ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))));
 }
 
@@ -303,8 +358,10 @@ void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     }
 }
 
-void QInterface::TimeEvolve(Hamiltonian h, real1 timeDiff)
+void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
 {
+    real1 timeDiff = (real1)timeDiff_f;
+
     // Exponentiation of an arbitrary serial string of gates, each HamiltonianOp component times timeDiff, e^(-i * H *
     // t) as e^(-i * H_(N - 1) * t) * e^(-i * H_(N - 2) * t) * ... e^(-i * H_0 * t)
 

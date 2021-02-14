@@ -26,7 +26,7 @@ QInterfacePtr QEngineCPU::Clone()
     return clone;
 }
 
-real1 QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+real1_f QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
 {
     real1 average = ZERO_R1;
     real1 prob;

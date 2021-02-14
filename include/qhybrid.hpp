@@ -37,7 +37,7 @@ public:
     QHybrid(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0);
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0);
 
     QEnginePtr MakeEngine(bool isOpenCL, bitCapInt initState = 0);
 
@@ -100,10 +100,10 @@ public:
     virtual void ShuffleBuffers(QEnginePtr oEngine) { ShuffleBuffers(std::dynamic_pointer_cast<QHybrid>(oEngine)); }
     virtual void ShuffleBuffers(QHybridPtr oEngine) { engine->ShuffleBuffers(oEngine->engine); }
     virtual void QueueSetDoNormalize(const bool& doNorm) { engine->QueueSetDoNormalize(doNorm); }
-    virtual void QueueSetRunningNorm(const real1& runningNrm) { engine->QueueSetRunningNorm(runningNrm); }
+    virtual void QueueSetRunningNorm(const real1_f& runningNrm) { engine->QueueSetRunningNorm(runningNrm); }
 
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) { engine->ApplyM(regMask, result, nrm); }
-    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+    virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
     {
         return engine->ProbReg(start, length, permutation);
     }
@@ -134,7 +134,7 @@ public:
     {
         Decompose(start, std::dynamic_pointer_cast<QHybrid>(dest));
     }
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1 error_tol = REAL1_EPSILON)
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = REAL1_EPSILON)
     {
         return TryDecompose(start, std::dynamic_pointer_cast<QHybrid>(dest), error_tol);
     }
@@ -161,7 +161,7 @@ public:
         return engine->Dispose(start, length, disposedPerm);
     }
 
-    virtual bool TryDecompose(bitLenInt start, QHybridPtr dest, real1 error_tol = REAL1_EPSILON)
+    virtual bool TryDecompose(bitLenInt start, QHybridPtr dest, real1_f error_tol = REAL1_EPSILON)
     {
         bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
         SwitchModes(nQubitCount >= thresholdQubits);
@@ -211,9 +211,9 @@ public:
         engine->UniformlyControlledSingleBit(
             controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
     }
-    virtual void UniformParityRZ(const bitCapInt& mask, const real1& angle) { engine->UniformParityRZ(mask, angle); }
+    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle) { engine->UniformParityRZ(mask, angle); }
     virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle)
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
     {
         engine->CUniformParityRZ(controls, controlLen, mask, angle);
     }
@@ -380,35 +380,35 @@ public:
     {
         engine->ISqrtSwap(qubitIndex1, qubitIndex2);
     }
-    virtual void FSim(real1 theta, real1 phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         engine->FSim(theta, phi, qubitIndex1, qubitIndex2);
     }
 
-    virtual real1 Prob(bitLenInt qubitIndex) { return engine->Prob(qubitIndex); }
-    virtual real1 ProbAll(bitCapInt fullRegister) { return engine->ProbAll(fullRegister); }
-    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+    virtual real1_f Prob(bitLenInt qubitIndex) { return engine->Prob(qubitIndex); }
+    virtual real1_f ProbAll(bitCapInt fullRegister) { return engine->ProbAll(fullRegister); }
+    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     {
         return engine->ProbMask(mask, permutation);
     }
-    virtual real1 ProbParity(const bitCapInt& mask) { return engine->ProbParity(mask); }
+    virtual real1_f ProbParity(const bitCapInt& mask) { return engine->ProbParity(mask); }
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true)
     {
         return engine->ForceMParity(mask, result, doForce);
     }
 
-    virtual real1 SumSqrDiff(QInterfacePtr toCompare)
+    virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
         return SumSqrDiff(std::dynamic_pointer_cast<QHybrid>(toCompare));
     }
-    virtual real1 SumSqrDiff(QHybridPtr toCompare)
+    virtual real1_f SumSqrDiff(QHybridPtr toCompare)
     {
         toCompare->SwitchModes(isGpu);
         return engine->SumSqrDiff(toCompare->engine);
     }
 
-    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG) { engine->UpdateRunningNorm(norm_thresh); }
-    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG)
+    virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG) { engine->UpdateRunningNorm(norm_thresh); }
+    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         engine->NormalizeState(nrm, norm_thresh);
     }
@@ -417,7 +417,7 @@ public:
 
     virtual bool isFinished() { return engine->isFinished(); }
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1 error_tol = REAL1_EPSILON)
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON)
     {
         return engine->TrySeparate(start, length, error_tol);
     }
@@ -435,13 +435,13 @@ public:
     bitCapIntOcl GetMaxSize() { return engine->GetMaxSize(); };
 
 protected:
-    virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+    virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
     {
         return engine->GetExpectation(valueStart, valueLength);
     }
 
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = REAL1_DEFAULT_ARG)
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         engine->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
     }

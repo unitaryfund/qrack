@@ -69,20 +69,22 @@
 #define QRACK_ALIGN_SIZE 64
 
 #if FPPOW < 5
-#include <boost/cstdfloat.hpp>
 namespace Qrack {
-typedef std::complex<boost::float16_t> complex;
-typedef boost::float16_t real1;
+//#include <arm_fp16.h>
+typedef std::complex<__fp16> complex;
+typedef __fp16 real1;
+typedef float real1_f;
 #define ZERO_R1 ((real1)0.0f)
 #define ONE_R1 ((real1)1.0f)
-#define PI_R1 (((real1)M_PI)
+#define PI_R1 ((real1)M_PI)
 #define REAL1_DEFAULT_ARG ((real1)-999.0f)
-#define REAL1_EPSILON ((real1)FLT_EPSILON)
+#define REAL1_EPSILON ((real1)5.9604645e-08f)
 } // namespace Qrack
 #elif FPPOW < 6
 namespace Qrack {
 typedef std::complex<float> complex;
 typedef float real1;
+typedef float real1_f;
 #define ZERO_R1 0.0f
 #define ONE_R1 1.0f
 #define PI_R1 ((real1)M_PI)
@@ -93,6 +95,7 @@ typedef float real1;
 namespace Qrack {
 typedef std::complex<double> complex;
 typedef double real1;
+typedef double real1_f;
 #define ZERO_R1 0.0
 #define ONE_R1 1.0
 #define PI_R1 M_PI

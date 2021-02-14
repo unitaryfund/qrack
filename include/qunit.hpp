@@ -45,12 +45,12 @@ public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1 norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {},
+        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {},
         bitLenInt qubitThreshold = 0);
     QUnit(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0)
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0)
         : QUnit(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId,
               useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold)
     {
@@ -61,7 +61,7 @@ public:
     virtual void SetConcurrency(uint32_t threadsPerEngine)
     {
         ParallelUnitApply(
-            [](QInterfacePtr unit, real1 unused1, real1 unused2, int32_t threadsPerEngine) {
+            [](QInterfacePtr unit, real1_f unused1, real1_f unused2, int32_t threadsPerEngine) {
                 unit->SetConcurrency(threadsPerEngine);
                 return true;
             },
@@ -136,7 +136,7 @@ public:
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
     virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle);
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle);
     virtual void CSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     virtual void AntiCSwap(
@@ -220,7 +220,7 @@ public:
     virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
-    virtual void FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
 
     /** @} */
 
@@ -230,23 +230,23 @@ public:
      * @{
      */
 
-    virtual real1 Prob(bitLenInt qubit);
-    virtual real1 ProbAll(bitCapInt fullRegister);
-    virtual real1 ProbParity(const bitCapInt& mask);
+    virtual real1_f Prob(bitLenInt qubit);
+    virtual real1_f ProbAll(bitCapInt fullRegister);
+    virtual real1_f ProbParity(const bitCapInt& mask);
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
-    virtual real1 SumSqrDiff(QInterfacePtr toCompare)
+    virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
         return SumSqrDiff(std::dynamic_pointer_cast<QUnit>(toCompare));
     }
-    virtual real1 SumSqrDiff(QUnitPtr toCompare);
-    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);
-    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_threshold = REAL1_DEFAULT_ARG);
+    virtual real1_f SumSqrDiff(QUnitPtr toCompare);
+    virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_threshold = REAL1_DEFAULT_ARG);
     virtual void Finish();
     virtual bool isFinished();
     virtual void Dump();
 
     using QInterface::TrySeparate;
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1 error_tol = REAL1_EPSILON);
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON);
 
     virtual QInterfacePtr Clone();
 
@@ -256,7 +256,7 @@ protected:
     virtual void XBase(const bitLenInt& target);
     virtual void YBase(const bitLenInt& target);
     virtual void ZBase(const bitLenInt& target);
-    virtual real1 ProbBase(const bitLenInt& qubit);
+    virtual real1_f ProbBase(const bitLenInt& qubit);
     virtual bool TrySeparateCliffordBit(const bitLenInt& qubit);
 
     typedef void (QInterface::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
@@ -315,8 +315,8 @@ protected:
     virtual QInterfacePtr EntangleInCurrentBasis(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
-    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1 param1, real1 param2, int32_t param3);
-    bool ParallelUnitApply(ParallelUnitFn fn, real1 param1 = ZERO_R1, real1 param2 = ZERO_R1, int32_t param3 = 0);
+    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1_f param1, real1_f param2, int32_t param3);
+    bool ParallelUnitApply(ParallelUnitFn fn, real1_f param1 = ZERO_R1, real1_f param2 = ZERO_R1, int32_t param3 = 0);
 
     virtual void SeparateBit(bool value, bitLenInt qubit, bool doDispose = true);
 

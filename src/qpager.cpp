@@ -17,7 +17,7 @@ namespace Qrack {
 
 QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
     bool ignored, bool ignored2, bool useHostMem, int deviceId, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
+    real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
     : QInterface(qBitCount, rgp, false, useHardwareRNG, false, norm_thresh)
     , engine(eng)
     , devID(deviceId)
@@ -673,7 +673,7 @@ void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLe
         { qubitIndex }, controls, controlLen);
 }
 
-void QPager::UniformParityRZ(const bitCapInt& mask, const real1& angle)
+void QPager::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
 {
     // TODO: Identify highest bit, and CombineAndOp()
     CombineEngines();
@@ -681,7 +681,7 @@ void QPager::UniformParityRZ(const bitCapInt& mask, const real1& angle)
 }
 
 void QPager::CUniformParityRZ(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle)
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
 {
     // TODO: Identify highest bit, and CombineAndOp()
     CombineEngines();
@@ -1198,7 +1198,7 @@ void QPager::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
     CombineAndOp([&](QEnginePtr engine) { engine->ISqrtSwap(qubit1, qubit2); }, { qubit1, qubit2 });
 }
-void QPager::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
+void QPager::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (qubit1 == qubit2) {
         return;
@@ -1207,7 +1207,7 @@ void QPager::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
     CombineAndOp([&](QEnginePtr engine) { engine->FSim(theta, phi, qubit1, qubit2); }, { qubit1, qubit2 });
 }
 
-real1 QPager::Prob(bitLenInt qubitIndex)
+real1_f QPager::Prob(bitLenInt qubitIndex)
 {
     if (qubitIndex >= qubitsPerPage()) {
         CombineEngines(qubitIndex + 1U);
@@ -1222,7 +1222,7 @@ real1 QPager::Prob(bitLenInt qubitIndex)
     real1 oneChance = ZERO_R1;
     bitCapIntOcl i;
 
-    std::vector<std::future<real1>> futures(qPages.size());
+    std::vector<std::future<real1_f>> futures(qPages.size());
     for (i = 0; i < qPages.size(); i++) {
         QEnginePtr engine = qPages[i];
         futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
@@ -1233,20 +1233,20 @@ real1 QPager::Prob(bitLenInt qubitIndex)
 
     return oneChance;
 }
-real1 QPager::ProbAll(bitCapInt fullRegister)
+real1_f QPager::ProbAll(bitCapInt fullRegister)
 {
     bitCapIntOcl subIndex = (bitCapIntOcl)(fullRegister / pageMaxQPower());
     fullRegister -= subIndex * pageMaxQPower();
     return qPages[subIndex]->ProbAll(fullRegister);
 }
-real1 QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     CombineEngines();
     real1 maskChance = qPages[0]->ProbMask(mask, permutation);
     return maskChance;
 }
 
-bool QPager::ApproxCompare(QInterfacePtr toCompare, real1 error_tol)
+bool QPager::ApproxCompare(QInterfacePtr toCompare, real1_f error_tol)
 {
     QPagerPtr toComparePager = std::dynamic_pointer_cast<QPager>(toCompare);
     CombineEngines();
@@ -1254,7 +1254,7 @@ bool QPager::ApproxCompare(QInterfacePtr toCompare, real1 error_tol)
     bool toRet = qPages[0]->ApproxCompare(toComparePager->qPages[0], error_tol);
     return toRet;
 }
-void QPager::UpdateRunningNorm(real1 norm_thresh)
+void QPager::UpdateRunningNorm(real1_f norm_thresh)
 {
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         qPages[i]->UpdateRunningNorm(norm_thresh);
