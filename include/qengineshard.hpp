@@ -86,7 +86,7 @@ protected:
     ShardToPhaseMap& GetAntiTargetOfShards() { return antiTargetOfShards; }
 
 public:
-    QEngineShard(const real1 amp_thresh = REAL1_EPSILON)
+    QEngineShard(const real1_f amp_thresh = REAL1_EPSILON)
         : unit(NULL)
         , mapped(0)
         , amplitudeFloor(amp_thresh)
@@ -104,7 +104,7 @@ public:
     {
     }
 
-    QEngineShard(const bool& set, const real1 amp_thresh = REAL1_EPSILON, const complex rand_phase = ONE_CMPLX)
+    QEngineShard(const bool& set, const real1_f amp_thresh = REAL1_EPSILON, const complex rand_phase = ONE_CMPLX)
         : unit(NULL)
         , mapped(0)
         , amplitudeFloor(amp_thresh)
@@ -123,7 +123,7 @@ public:
     }
 
     // Dirty state constructor:
-    QEngineShard(QInterfacePtr u, const bitLenInt& mapping, const real1 amp_thresh = REAL1_EPSILON)
+    QEngineShard(QInterfacePtr u, const bitLenInt& mapping, const real1_f amp_thresh = REAL1_EPSILON)
         : unit(u)
         , mapped(mapping)
         , amplitudeFloor(amp_thresh)
@@ -147,7 +147,7 @@ public:
         isPhaseDirty = true;
     }
 
-    bool ClampAmps(real1 norm_thresh)
+    bool ClampAmps(real1_f norm_thresh)
     {
         bool didClamp = false;
         if (norm(amp0) < norm_thresh) {
@@ -661,7 +661,7 @@ public:
     }
 
     bitLenInt GetQubitCount() { return unit ? unit->GetQubitCount() : 1U; };
-    real1 Prob()
+    real1_f Prob()
     {
         if (!isProbDirty || !unit) {
             return norm(amp1);

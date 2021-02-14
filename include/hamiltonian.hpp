@@ -95,7 +95,7 @@ struct UniformHamiltonianOp : HamiltonianOp {
         uniform = true;
     }
 
-#if !ENABLE_PURE32
+#if FPPOW < 6 && !ENABLE_COMPLEX_X2
     UniformHamiltonianOp(_QrackTimeEvolveOpHeader teoh, double* mtrx)
         : HamiltonianOp()
     {

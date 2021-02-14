@@ -281,7 +281,7 @@ void QStabilizer::seed(const bitLenInt& g)
 }
 
 /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
-void QStabilizer::setBasisState(const real1& nrm, complex* stateVec)
+void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
 {
     bitLenInt elemCount = qubitCount << 1U;
     bitLenInt j;

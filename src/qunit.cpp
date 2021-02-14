@@ -59,7 +59,7 @@ namespace Qrack {
 
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
-    bool useHardwareRNG, bool useSparseStateVec, real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
+    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , engine(eng)
     , subEngine(subEng)
@@ -570,7 +570,7 @@ QInterfacePtr QUnit::EntangleRange(
     return toRet;
 }
 
-bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1 error_tol)
+bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
 {
     if (length > 1) {
         QInterfacePtr dest = std::make_shared<QUnit>(
@@ -758,7 +758,7 @@ bool QUnit::CheckBitsPlus(const bitLenInt& qubitIndex, const bitLenInt& length)
     return isHBasis;
 }
 
-real1 QUnit::ProbBase(const bitLenInt& qubit)
+real1_f QUnit::ProbBase(const bitLenInt& qubit)
 {
     QEngineShard& shard = shards[qubit];
 
@@ -900,15 +900,15 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
     return true;
 }
 
-real1 QUnit::Prob(bitLenInt qubit)
+real1_f QUnit::Prob(bitLenInt qubit)
 {
     ToPermBasis(qubit);
     return ProbBase(qubit);
 }
 
-real1 QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))); }
+real1_f QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))); }
 
-real1 QUnit::ProbParity(const bitCapInt& mask)
+real1_f QUnit::ProbParity(const bitCapInt& mask)
 {
     // If no bits in mask:
     if (!mask) {
@@ -1259,7 +1259,7 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     shard2.MakeDirty();
 }
 
-void QUnit::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
+void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
     bitLenInt controls[1] = { qubit1 };
     real1 sinTheta = sin(theta);
@@ -1363,7 +1363,7 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
 }
 
 void QUnit::CUniformParityRZ(
-    const bitLenInt* cControls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle)
+    const bitLenInt* cControls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
 {
     std::vector<bitLenInt> controls;
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -3656,7 +3656,7 @@ void QUnit::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
     shards[start].unit->Hash(shards[start].mapped, length, values);
 }
 
-bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1 param1, real1 param2, int32_t param3)
+bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1_f param1, real1_f param2, int32_t param3)
 {
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0; i < shards.size(); i++) {
@@ -3672,22 +3672,22 @@ bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1 param1, real1 param2, int
     return true;
 }
 
-void QUnit::UpdateRunningNorm(real1 norm_thresh)
+void QUnit::UpdateRunningNorm(real1_f norm_thresh)
 {
     EndAllEmulation();
     ParallelUnitApply(
-        [](QInterfacePtr unit, real1 norm_thresh, real1 unused2, int32_t unused3) {
+        [](QInterfacePtr unit, real1_f norm_thresh, real1_f unused2, int32_t unused3) {
             unit->UpdateRunningNorm(norm_thresh);
             return true;
         },
         norm_thresh);
 }
 
-void QUnit::NormalizeState(real1 nrm, real1 norm_thresh)
+void QUnit::NormalizeState(real1_f nrm, real1_f norm_thresh)
 {
     EndAllEmulation();
     ParallelUnitApply(
-        [](QInterfacePtr unit, real1 nrm, real1 norm_thresh, int32_t unused) {
+        [](QInterfacePtr unit, real1_f nrm, real1_f norm_thresh, int32_t unused) {
             unit->NormalizeState(nrm, norm_thresh);
             return true;
         },
@@ -3696,7 +3696,7 @@ void QUnit::NormalizeState(real1 nrm, real1 norm_thresh)
 
 void QUnit::Finish()
 {
-    ParallelUnitApply([](QInterfacePtr unit, real1 unused1, real1 unused2, int32_t unused3) {
+    ParallelUnitApply([](QInterfacePtr unit, real1_f unused1, real1_f unused2, int32_t unused3) {
         unit->Finish();
         return true;
     });
@@ -3704,7 +3704,7 @@ void QUnit::Finish()
 
 void QUnit::Dump()
 {
-    ParallelUnitApply([](QInterfacePtr unit, real1 unused1, real1 unused2, int32_t unused3) {
+    ParallelUnitApply([](QInterfacePtr unit, real1_f unused1, real1_f unused2, int32_t unused3) {
         unit.reset();
         return true;
     });
@@ -3713,10 +3713,10 @@ void QUnit::Dump()
 bool QUnit::isFinished()
 {
     return ParallelUnitApply(
-        [](QInterfacePtr unit, real1 unused1, real1 unused2, int32_t unused3) { return unit->isFinished(); });
+        [](QInterfacePtr unit, real1_f unused1, real1_f unused2, int32_t unused3) { return unit->isFinished(); });
 }
 
-real1 QUnit::SumSqrDiff(QUnitPtr toCompare)
+real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)
 {
     if (this == toCompare.get()) {
         return ZERO_R1;

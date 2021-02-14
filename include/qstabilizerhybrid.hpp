@@ -49,13 +49,13 @@ public:
     QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1 norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {},
+        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {},
         bitLenInt qubitThreshold = 0);
 
     QStabilizerHybrid(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1 norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {},
+        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {},
         bitLenInt qubitThreshold = 0)
         : QStabilizerHybrid(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem,
               deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold)
@@ -323,14 +323,14 @@ public:
             controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
     }
 
-    virtual void UniformParityRZ(const bitCapInt& mask, const real1& angle)
+    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
     {
         SwitchToEngine();
         engine->UniformParityRZ(mask, angle);
     }
 
     virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle)
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
     {
         SwitchToEngine();
         engine->CUniformParityRZ(controls, controlLen, mask, angle);
@@ -581,13 +581,13 @@ public:
         SwitchToEngine();
         engine->ISqrtSwap(qubitIndex1, qubitIndex2);
     }
-    virtual void FSim(real1 theta, real1 phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         SwitchToEngine();
         engine->FSim(theta, phi, qubitIndex1, qubitIndex2);
     }
 
-    virtual real1 Prob(bitLenInt qubitIndex)
+    virtual real1_f Prob(bitLenInt qubitIndex)
     {
         if (engine) {
             return engine->Prob(qubitIndex);
@@ -599,18 +599,18 @@ public:
             return ONE_R1 / 2;
         }
     }
-    virtual real1 ProbAll(bitCapInt fullRegister)
+    virtual real1_f ProbAll(bitCapInt fullRegister)
     {
         SwitchToEngine();
         return engine->ProbAll(fullRegister);
     }
-    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     {
         SwitchToEngine();
         return engine->ProbMask(mask, permutation);
     }
     // TODO: Good opportunity to optimize
-    virtual real1 ProbParity(const bitCapInt& mask)
+    virtual real1_f ProbParity(const bitCapInt& mask)
     {
         if (!mask) {
             return ZERO_R1;
@@ -639,12 +639,12 @@ public:
         return engine->ForceMParity(mask, result, doForce);
     }
 
-    virtual real1 SumSqrDiff(QInterfacePtr toCompare)
+    virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
         return SumSqrDiff(std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare));
     }
 
-    virtual real1 SumSqrDiff(QStabilizerHybridPtr toCompare)
+    virtual real1_f SumSqrDiff(QStabilizerHybridPtr toCompare)
     {
         // If the qubit counts are unequal, these can't be approximately equal objects.
         if (qubitCount != toCompare->qubitCount) {
@@ -657,12 +657,12 @@ public:
 
         return engine->SumSqrDiff(toCompare->engine);
     }
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1 error_tol = REAL1_EPSILON)
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = REAL1_EPSILON)
     {
         return ApproxCompare(std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare), error_tol);
     }
 
-    virtual bool ApproxCompare(QStabilizerHybridPtr toCompare, real1 error_tol = REAL1_EPSILON)
+    virtual bool ApproxCompare(QStabilizerHybridPtr toCompare, real1_f error_tol = REAL1_EPSILON)
     {
         if (!stabilizer == !(toCompare->engine)) {
             SwitchToEngine();
@@ -675,20 +675,20 @@ public:
 
         return engine->ApproxCompare(toCompare->engine, error_tol);
     }
-    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG)
+    virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         if (engine) {
             engine->UpdateRunningNorm(norm_thresh);
         }
     }
-    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG)
+    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         if (engine) {
             engine->NormalizeState(nrm, norm_thresh);
         }
     }
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1 error_tol = REAL1_EPSILON)
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON)
     {
         if (stabilizer) {
             return stabilizer->CanDecomposeDispose(start, length);

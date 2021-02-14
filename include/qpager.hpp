@@ -80,12 +80,12 @@ public:
     QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored = false, bool useHostMem = false,
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0);
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0);
 
     QPager(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored = false, bool useHostMem = false,
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
         : QPager(QINTERFACE_HYBRID, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem, deviceId,
               useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold)
     {
@@ -152,9 +152,9 @@ public:
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
-    virtual void UniformParityRZ(const bitCapInt& mask, const real1& angle);
+    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle);
     virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle);
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle);
 
     virtual void CSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
@@ -219,13 +219,13 @@ public:
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
-    virtual void FSim(real1 theta, real1 phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    virtual real1 Prob(bitLenInt qubitIndex);
-    virtual real1 ProbAll(bitCapInt fullRegister);
-    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
+    virtual real1_f Prob(bitLenInt qubitIndex);
+    virtual real1_f ProbAll(bitCapInt fullRegister);
+    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
     // TODO: QPager not yet used in Q#, but this would need a real implementation:
-    virtual real1 ProbParity(const bitCapInt& mask)
+    virtual real1_f ProbParity(const bitCapInt& mask)
     {
         if (!mask) {
             return ZERO_R1;
@@ -244,9 +244,9 @@ public:
         return qPages[0]->ForceMParity(mask, result, doForce);
     }
 
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1 error_tol = REAL1_EPSILON);
-    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);
-    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG) {
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = REAL1_EPSILON);
+    virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) {
     } // TODO: skip implementation for now
 
     virtual void Finish()
@@ -267,7 +267,7 @@ public:
         return true;
     };
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1 error_tol = REAL1_EPSILON) { return false; }
+    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON) { return false; }
 
     virtual QInterfacePtr Clone();
 
@@ -285,12 +285,12 @@ public:
 
     bitCapIntOcl GetMaxSize() { return qPages[0]->GetMaxSize(); };
 
-    virtual real1 SumSqrDiff(QInterfacePtr toCompare)
+    virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
         return SumSqrDiff(std::dynamic_pointer_cast<QPager>(toCompare));
     }
 
-    virtual real1 SumSqrDiff(QPagerPtr toCompare)
+    virtual real1_f SumSqrDiff(QPagerPtr toCompare)
     {
         CombineEngines();
         toCompare->CombineEngines();

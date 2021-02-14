@@ -44,7 +44,7 @@ namespace Qrack {
  */
 QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG, bool useSparseStateVec,
-    real1 norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
+    real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
 {
@@ -192,7 +192,7 @@ union ComplexUnion {
 };
 
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* matrix, const bitLenInt bitCount,
-    const bitCapInt* qPowsSorted, bool doCalcNorm, real1 nrm_thresh)
+    const bitCapInt* qPowsSorted, bool doCalcNorm, real1_f nrm_thresh)
 {
     CHECK_ZERO_SKIP();
 
@@ -355,7 +355,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 }
 #else
 void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* matrix, const bitLenInt bitCount,
-    const bitCapInt* qPowsSorted, bool doCalcNorm, real1 nrm_thresh)
+    const bitCapInt* qPowsSorted, bool doCalcNorm, real1_f nrm_thresh)
 {
     CHECK_ZERO_SKIP();
 
@@ -582,7 +582,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     delete[] qPowers;
 }
 
-void QEngineCPU::UniformParityRZ(const bitCapInt& mask, const real1& angle)
+void QEngineCPU::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
 {
     CHECK_ZERO_SKIP();
 
@@ -612,7 +612,7 @@ void QEngineCPU::UniformParityRZ(const bitCapInt& mask, const real1& angle)
 }
 
 void QEngineCPU::CUniformParityRZ(
-    const bitLenInt* cControls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle)
+    const bitLenInt* cControls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
 {
     if (!controlLen) {
         return UniformParityRZ(mask, angle);
@@ -1007,7 +1007,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
-real1 QEngineCPU::Prob(bitLenInt qubit)
+real1_f QEngineCPU::Prob(bitLenInt qubit)
 {
     if (!stateVec) {
         return ZERO_R1;
@@ -1046,7 +1046,7 @@ real1 QEngineCPU::Prob(bitLenInt qubit)
 }
 
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
-real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
+real1_f QEngineCPU::ProbAll(bitCapInt fullRegister)
 {
     if (!stateVec) {
         return ZERO_R1;
@@ -1061,7 +1061,7 @@ real1 QEngineCPU::ProbAll(bitCapInt fullRegister)
 }
 
 // Returns probability of permutation of the register
-real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+real1_f QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
     if (!stateVec) {
         return ZERO_R1;
@@ -1098,7 +1098,7 @@ real1 QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 }
 
 // Returns probability of permutation of the mask
-real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+real1_f QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     if (!stateVec) {
         return ZERO_R1;
@@ -1142,7 +1142,7 @@ real1 QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     return clampProb(prob);
 }
 
-real1 QEngineCPU::ProbParity(const bitCapInt& mask)
+real1_f QEngineCPU::ProbParity(const bitCapInt& mask)
 {
     if (!stateVec || !mask) {
         return ZERO_R1;
@@ -1241,7 +1241,7 @@ bool QEngineCPU::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     return result;
 }
 
-real1 QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
+real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
 {
     if (this == toCompare.get()) {
         return ZERO_R1;
@@ -1395,7 +1395,7 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
     });
 }
 
-void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
+void QEngineCPU::NormalizeState(real1_f nrm, real1_f norm_thresh)
 {
     CHECK_ZERO_SKIP();
 
@@ -1432,7 +1432,7 @@ void QEngineCPU::NormalizeState(real1 nrm, real1 norm_thresh)
     runningNorm = ONE_R1;
 }
 
-void QEngineCPU::UpdateRunningNorm(real1 norm_thresh)
+void QEngineCPU::UpdateRunningNorm(real1_f norm_thresh)
 {
     Finish();
 

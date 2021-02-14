@@ -72,19 +72,11 @@ public:
     void par_for_sparse_compose(const std::vector<bitCapInt>& lowSet, const std::vector<bitCapInt>& highSet,
         const bitLenInt& highStart, ParallelFunc fn);
 
-#if FPPOW < 5
     /** Calculate the normal for the array, (with flooring). */
-    float par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, float norm_thresh = ZERO_R1);
+    real1_f par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1_f norm_thresh = ZERO_R1);
 
     /** Calculate the normal for the array, (without flooring. */
-    float par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray);
-#else
-    /** Calculate the normal for the array, (with flooring). */
-    real1 par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1 norm_thresh = ZERO_R1);
-
-    /** Calculate the normal for the array, (without flooring. */
-    real1 par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray);
-#endif
+    real1_f par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray);
 };
 
 } // namespace Qrack

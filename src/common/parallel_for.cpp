@@ -218,11 +218,7 @@ void ParallelFor::par_for_mask(
     delete[] masks;
 }
 
-#if FPPOW < 5
-float ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, float norm_thresh)
-#else
-real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1 norm_thresh)
-#endif
+real1_f ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1_f norm_thresh)
 {
     if (norm_thresh <= ZERO_R1) {
         return par_norm_exact(maxQPower, stateArray);
@@ -279,11 +275,7 @@ real1 ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr stat
     return nrmSqr;
 }
 
-#if FPPOW < 5
-float ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray)
-#else
-real1 ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray)
-#endif
+real1_f ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray)
 {
     const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
 

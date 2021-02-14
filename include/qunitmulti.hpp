@@ -71,7 +71,7 @@ public:
     QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
         : QUnitMulti(QINTERFACE_OPTIMAL, QINTERFACE_OPTIMAL, qBitCount, initState, rgp, phaseFac, doNorm,
               randomGlobalPhase, useHostMem, deviceID, useHardwareRNG, useSparseStateVec, norm_thresh, devList,
               qubitThreshold)
@@ -81,7 +81,7 @@ public:
     QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
         : QUnitMulti(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceID,
               useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold)
     {
@@ -90,12 +90,12 @@ public:
     QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1 norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
+        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
         bitLenInt qubitThreshold = 0);
 
     using QUnit::TrySeparate;
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1 error_tol = REAL1_EPSILON) { return false; }
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = REAL1_EPSILON) { return false; }
 
     virtual QInterfacePtr Clone();
     virtual void GetQuantumState(complex* outputState);

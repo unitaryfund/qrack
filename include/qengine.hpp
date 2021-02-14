@@ -33,7 +33,7 @@ protected:
 
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, bool useHardwareRNG = true, real1 norm_thresh = REAL1_EPSILON)
+        bool useHostMem = false, bool useHardwareRNG = true, real1_f norm_thresh = REAL1_EPSILON)
         : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
         , useHostRam(useHostMem)
         , runningNorm(ONE_R1)
@@ -51,7 +51,7 @@ public:
 
     virtual ~QEngine() { Finish(); }
 
-    virtual real1 GetRunningNorm() { return runningNorm; }
+    virtual real1_f GetRunningNorm() { return runningNorm; }
 
     virtual void ZeroAmplitudes() = 0;
 
@@ -66,7 +66,7 @@ public:
     virtual void ShuffleBuffers(QEnginePtr engine) = 0;
 
     virtual void QueueSetDoNormalize(const bool& doNorm) = 0;
-    virtual void QueueSetRunningNorm(const real1& runningNrm) = 0;
+    virtual void QueueSetRunningNorm(const real1_f& runningNrm) = 0;
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
@@ -107,11 +107,11 @@ public:
     using QInterface::ISqrtSwap;
     virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::FSim;
-    virtual void FSim(real1 theta, real1 phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) = 0;
+    virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) = 0;
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
-    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
+    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
 
     virtual void INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
@@ -124,14 +124,14 @@ public:
     virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
-    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
+    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
     // TODO: Assess whether it's acceptable for these to be public on QEngine
     // protected:
-    virtual real1 GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;
+    virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;
 
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
     virtual void ApplyControlled2x2(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void ApplyAntiControlled2x2(

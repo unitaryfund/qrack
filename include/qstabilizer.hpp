@@ -51,7 +51,7 @@ protected:
 
     uint32_t randomSeed;
     qrack_rand_gen_ptr rand_generator;
-    std::uniform_real_distribution<real1> rand_distribution;
+    std::uniform_real_distribution<real1_f> rand_distribution;
     std::shared_ptr<RdRandom> hardware_rand_generator;
 
 #if ENABLE_QUNIT_CPU_PARALLEL
@@ -163,7 +163,7 @@ protected:
     void seed(const bitLenInt& g);
 
     /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
-    void setBasisState(const real1& nrm, complex* stateVec);
+    void setBasisState(const real1_f& nrm, complex* stateVec);
 
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 

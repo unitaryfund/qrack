@@ -47,7 +47,7 @@ namespace Qrack {
     }
 
 #define REG_GATE_1R(gate)                                                                                              \
-    void QInterface::gate(real1 radians, bitLenInt start, bitLenInt length)                                            \
+    void QInterface::gate(real1_f radians, bitLenInt start, bitLenInt length)                                            \
     {                                                                                                                  \
         for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
             gate(radians, start + bit);                                                                                \
@@ -75,7 +75,7 @@ namespace Qrack {
     }
 
 #define REG_GATE_C1_1R(gate)                                                                                           \
-    void QInterface::gate(real1 radians, bitLenInt control, bitLenInt target, bitLenInt length)                        \
+    void QInterface::gate(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length)                        \
     {                                                                                                                  \
         ControlledLoopFixture(length, [&](bitLenInt bit) { gate(radians, control + bit, target + bit); });             \
     }
@@ -87,7 +87,7 @@ namespace Qrack {
             length, [&](bitLenInt bit) { gate(numerator, denominator, control + bit, target + bit); });                \
     }
 
-inline real1 dyadAngle(int numerator, int denomPower) { return (-M_PI * numerator * 2) / pow(2, denomPower); };
+inline real1_f dyadAngle(int numerator, int denomPower) { return (-M_PI * numerator * 2) / pow(2, denomPower); };
 
 template <typename GateFunc> void QInterface::ControlledLoopFixture(bitLenInt length, GateFunc gate)
 {
@@ -115,7 +115,7 @@ REG_GATE_2(SqrtSwap);
 /// Bit-wise apply inverse square root of swap to two registers
 REG_GATE_2(ISqrtSwap);
 
-void QInterface::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
+void QInterface::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         FSim(theta, phi, qubit1 + bit, qubit2 + bit);
@@ -390,7 +390,7 @@ void QInterface::CRZDyad(int numerator, int denomPower, bitLenInt control, bitLe
 REG_GATE_C1_1D(CRZDyad);
 
 /// Apply general unitary gate to each bit in "length," starting from bit index "start"
-void QInterface::U(bitLenInt start, bitLenInt length, real1 theta, real1 phi, real1 lambda)
+void QInterface::U(bitLenInt start, bitLenInt length, real1_f theta, real1_f phi, real1_f lambda)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         U(start + bit, theta, phi, lambda);
@@ -398,7 +398,7 @@ void QInterface::U(bitLenInt start, bitLenInt length, real1 theta, real1 phi, re
 }
 
 /// Apply 2-parameter unitary gate to each bit in "length," starting from bit index "start"
-void QInterface::U2(bitLenInt start, bitLenInt length, real1 phi, real1 lambda)
+void QInterface::U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lambda)
 {
     for (bitLenInt bit = 0; bit < length; bit++) {
         U2(start + bit, phi, lambda);
@@ -596,7 +596,7 @@ bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, con
 }
 
 /// Returns probability of permutation of the register
-real1 QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+real1_f QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
     real1 prob = ONE_R1;
     for (bitLenInt i = 0; i < length; i++) {
@@ -610,7 +610,7 @@ real1 QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const
 }
 
 /// Returns probability of permutation of the mask
-real1 QInterface::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+real1_f QInterface::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     real1 prob = ZERO_R1;
     for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
@@ -750,7 +750,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     return results;
 }
 
-bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1 error_tol)
+bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol)
 {
     Finish();
 

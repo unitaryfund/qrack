@@ -70,7 +70,7 @@ namespace Qrack {
     }
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored, real1 norm_thresh,
+    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored, real1_f norm_thresh,
     std::vector<int> devList, bitLenInt qubitThreshold)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , stateVec(NULL)
@@ -397,7 +397,7 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     queue.flush();
 }
 
-real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
+real1_f QEngineOCL::ProbAll(bitCapInt fullRegister)
 {
     if (doNormalize) {
         NormalizeState();
@@ -536,7 +536,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     powersBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
 }
 
-real1 QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
+real1_f QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
 {
     // This interface is potentially parallelizable, but, for now, better performance is probably given by implementing
     // it as a serial loop.
@@ -697,7 +697,7 @@ void QEngineOCL::ApplySinglePhase(const complex topLeft, const complex bottomRig
 }
 
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1 norm_thresh)
+    const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh)
 {
     CHECK_ZERO_SKIP();
 
@@ -980,7 +980,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     delete[] qPowers;
 }
 
-void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1& angle)
+void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
 {
     CHECK_ZERO_SKIP();
 
@@ -1011,7 +1011,7 @@ void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1& angle)
 }
 
 void QEngineOCL::CUniformParityRZ(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1& angle)
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
 {
     if (!controlLen) {
         return UniformParityRZ(mask, angle);
@@ -1374,7 +1374,7 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     ResetStateBuffer(nStateBuffer);
 }
 
-real1 QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
+real1_f QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
 {
     if (doNormalize) {
         NormalizeState();
@@ -1405,7 +1405,7 @@ real1 QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
-real1 QEngineOCL::Prob(bitLenInt qubit)
+real1_f QEngineOCL::Prob(bitLenInt qubit)
 {
     if (qubitCount == 1) {
         return ProbAll(1);
@@ -1419,7 +1419,7 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 }
 
 // Returns probability of permutation of the register
-real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+real1_f QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
     if (start == 0 && qubitCount == length) {
         return ProbAll(permutation);
@@ -1467,7 +1467,7 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
 }
 
 // Returns probability of permutation of the register
-real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+real1_f QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     if (doNormalize) {
         NormalizeState();
@@ -1594,7 +1594,7 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     delete[] skipPowers;
 }
 
-real1 QEngineOCL::ProbParity(const bitCapInt& mask)
+real1_f QEngineOCL::ProbParity(const bitCapInt& mask)
 {
     // If no bits in mask:
     if (!mask) {
@@ -2241,7 +2241,7 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
     delete[] controlPowers;
 }
 
-real1 QEngineOCL::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+real1_f QEngineOCL::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
 {
     real1 average = ZERO_R1;
     real1 prob;
@@ -2491,7 +2491,7 @@ void QEngineOCL::GetQuantumState(complex* outputState)
 /// Get all probabilities, in unsigned int permutation basis
 void QEngineOCL::GetProbs(real1* outputProbs) { ProbRegAll(0, qubitCount, outputProbs); }
 
-real1 QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
+real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 {
     if (this == toCompare.get()) {
         return ZERO_R1;
@@ -2544,7 +2544,7 @@ QInterfacePtr QEngineOCL::Clone()
     return copyPtr;
 }
 
-void QEngineOCL::NormalizeState(real1 nrm, real1 norm_thresh)
+void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh)
 {
     // We might have async execution of gates still happening.
     clFinish();
@@ -2590,7 +2590,7 @@ void QEngineOCL::NormalizeState(real1 nrm, real1 norm_thresh)
     runningNorm = ONE_R1;
 }
 
-void QEngineOCL::UpdateRunningNorm(real1 norm_thresh)
+void QEngineOCL::UpdateRunningNorm(real1_f norm_thresh)
 {
     if (!stateBuffer) {
         return;
