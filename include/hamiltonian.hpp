@@ -96,7 +96,10 @@ struct UniformHamiltonianOp : HamiltonianOp {
     }
 
 #if FPPOW < 6 && !ENABLE_COMPLEX_X2
+    UniformHamiltonianOp(_QrackTimeEvolveOpHeader teoh, real1_f* mtrx)
+#else
     UniformHamiltonianOp(_QrackTimeEvolveOpHeader teoh, double* mtrx)
+#endif
         : HamiltonianOp()
     {
         targetBit = (bitLenInt)(teoh.target);
@@ -116,7 +119,6 @@ struct UniformHamiltonianOp : HamiltonianOp {
             matrix.get()[i] = complex((real1)mtrx[i * 2U], (real1)mtrx[(i * 2U) + 1U]);
         }
     }
-#endif
 };
 
 /**
