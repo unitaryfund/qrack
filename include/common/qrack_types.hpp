@@ -13,11 +13,23 @@
 #pragma once
 
 #include <cfloat>
+#include <complex>
 #include <functional>
 #include <memory>
 #include <random>
 
 #include "config.h"
+
+#if UINTPOW < 5
+#define ONE_BCI ((uint16_t)1U)
+#define bitCapIntOcl uint16_t
+#elif UINTPOW < 6
+#define ONE_BCI 1U
+#define bitCapIntOcl uint32_t
+#else
+#define ONE_BCI 1UL
+#define bitCapIntOcl uint64_t
+#endif
 
 #if QBCAPPOW < 8
 #define bitLenInt uint8_t
@@ -27,14 +39,6 @@
 #define bitLenInt uint32_t
 #else
 #define bitLenInt uint64_t
-#endif
-
-#if ENABLE_UINT32
-#define ONE_BCI 1U
-#define bitCapIntOcl uint32_t
-#else
-#define ONE_BCI 1UL
-#define bitCapIntOcl uint64_t
 #endif
 
 #if QBCAPPOW < 6
@@ -64,37 +68,37 @@
 #define qrack_rand_gen_ptr std::shared_ptr<qrack_rand_gen>
 #define QRACK_ALIGN_SIZE 64
 
-#include "config.h"
-
-#include <complex>
-
-#if ENABLE_COMPLEX8
+#if FPPOW < 5
+#include <boost/cstdfloat.hpp>
+namespace Qrack {
+typedef std::complex<boost::float16_t> complex;
+typedef boost::float16_t real1;
+#define ZERO_R1 ((real1)0.0f)
+#define ONE_R1 ((real1)1.0f)
+#define PI_R1 (((real1)M_PI)
+#define REAL1_DEFAULT_ARG ((real1)-999.0f)
+#define REAL1_EPSILON ((real1)FLT_EPSILON)
+} // namespace Qrack
+#elif FPPOW < 6
 namespace Qrack {
 typedef std::complex<float> complex;
 typedef float real1;
-} // namespace Qrack
 #define ZERO_R1 0.0f
 #define ONE_R1 1.0f
-#define PI_R1 (real1) M_PI
-// min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on
-// the results of the tests in accuracy.cpp.
-#define min_norm 1e-14f
+#define PI_R1 ((real1)M_PI)
 #define REAL1_DEFAULT_ARG -999.0f
 #define REAL1_EPSILON FLT_EPSILON
+} // namespace Qrack
 #else
-//#include "complex16simd.hpp"
 namespace Qrack {
 typedef std::complex<double> complex;
 typedef double real1;
-} // namespace Qrack
 #define ZERO_R1 0.0
 #define ONE_R1 1.0
 #define PI_R1 M_PI
-// min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on
-// the results of the tests in accuracy.cpp.
-#define min_norm 1e-30
 #define REAL1_DEFAULT_ARG -999.0
 #define REAL1_EPSILON DBL_EPSILON
+} // namespace Qrack
 #endif
 
 #define ONE_CMPLX complex(ONE_R1, ZERO_R1)

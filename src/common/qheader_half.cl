@@ -10,12 +10,13 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#define cmplx float2
-#define cmplx2 float4
-#define cmplx4 float8
-#define real1 float
-#define ZERO_R1 0.0f
-#define ONE_R1 1.0f
-#define SineShift M_PI_2_F
-#define PI_R1 M_PI_F
-#define REAL1_EPSILON FLT_EPSILON
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#define cmplx half2
+#define cmplx2 half4
+#define cmplx4 half8
+#define real1 half
+#define ZERO_R1 0.0h
+#define ONE_R1 1.0h
+#define SineShift M_PI_2_H
+#define PI_R1 M_PI_H
+#define REAL1_EPSILON HALF_EPSILON

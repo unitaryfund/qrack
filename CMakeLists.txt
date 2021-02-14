@@ -11,15 +11,6 @@ include_directories ("include" "include/common")
 
 set(PSTRIDEPOW "9" CACHE STRING "Stride of parallel for loops (as a power of 2)")
 
-set(QBCAPPOW "6" CACHE STRING "Log2 of maximum qubit capacity of a single QInterface (must be at least 5, equivalent to >= 32 qubits)")
-if (QBCAPPOW LESS 5)
-    message(FATAL_ERROR "QBCAPPOW must be at least 5, equivalent to >= 32 qubits!")
-endif (QBCAPPOW LESS 5)
-
-if (QBCAPPOW GREATER 31)
-    message(FATAL_ERROR "QBCAPPOW must be less than 32, equivalent to < 2^32 qubits!")
-endif (QBCAPPOW GREATER 31)
-
 # Declare the library
 add_library (qrack STATIC
     src/common/parallel_for.cpp
@@ -100,32 +91,26 @@ target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
 # Included after the library and other modules have been declared
 option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
 option (ENABLE_SNUCL "Use SnuCL framework for clusters" OFF)
-include ("cmake/Examples.cmake")
-include ("cmake/UInt.cmake")
-include ("cmake/OpenCL.cmake" )
-include ("cmake/Complex8.cmake")
+include ("cmake/QbCapPow.cmake")
+include ("cmake/UIntPow.cmake")
+include ("cmake/FpPow.cmake")
 include ("cmake/Complex_x2.cmake")
 include ("cmake/Pure32.cmake")
 include ("cmake/Boost.cmake")
 include ("cmake/QUnit_CPU_Parallel.cmake")
 include ("cmake/OclMemGuards.cmake")
+include ("cmake/Examples.cmake")
 include ("cmake/VM6502Q.cmake")
-
-target_compile_definitions (qrack PUBLIC QBCAPPOW=${QBCAPPOW})
+include ("cmake/OpenCL.cmake" )
 
 message ("Qubit capacity power is: ${QBCAPPOW}")
+message ("Floating-point capacity power is: ${FPPOW}")
+message ("UInt capacity power is: ${UINTPOW}")
 message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
-message ("128-bit compilation is: ${ENABLE_UINT128}")
-message ("Single accuracy is: ${ENABLE_COMPLEX8}")
-message ("UInt accuracy is: ${ENABLE_UINT32}")
 message ("Complex_x2/AVX support is: ${ENABLE_COMPLEX_X2}")
 message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
 message ("OpenCL memory guards are: ${ENABLE_OCL_MEM_GUARDS}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
-
-if (ENABLE_UINT128 AND ENABLE_UINT32)
-    message(FATAL_ERROR "You cannot require both ENABLE_UINT128 and ENABLE_UINT32 (or ENABLE_PURE32) at the same time! 128 bit and pure 32 bit modes are mutually exclusive.")
-endif (ENABLE_UINT128 AND ENABLE_UINT32)
 
 if (MSVC)
     set(QRACK_COMPILE_OPTS -std=c++11 -Wall)

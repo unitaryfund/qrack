@@ -10,12 +10,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#define cmplx float2
-#define cmplx2 float4
-#define cmplx4 float8
-#define real1 float
-#define ZERO_R1 0.0f
-#define ONE_R1 1.0f
-#define SineShift M_PI_2_F
-#define PI_R1 M_PI_F
-#define REAL1_EPSILON FLT_EPSILON
+#define ONE_BCI ((ushort)2U)
+#define bitCapIntOcl ushort
+#define bitCapIntOcl2 ushort2
+#define bitCapIntOcl4 ushort4
+#define bitLenInt uchar
