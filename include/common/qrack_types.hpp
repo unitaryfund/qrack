@@ -78,7 +78,7 @@ typedef float real1_f;
 #define ONE_R1 ((real1)1.0f)
 #define PI_R1 ((real1)M_PI)
 #define REAL1_DEFAULT_ARG ((real1)-999.0f)
-#define REAL1_EPSILON ((real1)FLT_EPSILON)
+#define REAL1_EPSILON ((real1)1.0e-10f)
 } // namespace Qrack
 #elif FPPOW < 6
 namespace Qrack {
