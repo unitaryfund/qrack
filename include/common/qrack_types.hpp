@@ -69,10 +69,15 @@
 #define QRACK_ALIGN_SIZE 64
 
 #if FPPOW < 5
-#include <boost/cstdfloat.hpp>
 namespace Qrack {
+#ifdef BOOST_AVAILABLE
+#include <boost/cstdfloat.hpp>
 typedef std::complex<boost::float16_t> complex;
 typedef boost::float16_t real1;
+#else
+typedef std::complex<_fp16> complex;
+typedef _fp16 real1;
+#endif
 #define ZERO_R1 ((real1)0.0f)
 #define ONE_R1 ((real1)1.0f)
 #define PI_R1 (((real1)M_PI)
