@@ -47,7 +47,13 @@ public:
     }
 #endif
     bool SupportsRDRAND();
+
+#if FPPOW < 5
+    float Next();
+#else
     real1 Next();
+#endif
+
 #if ENABLE_RNDFILE
 private:
     bool didInit = false;

@@ -140,7 +140,11 @@ bool RdRandom::SupportsRDRAND()
 #endif
 }
 
-real1 RdRandom::Next()
+#if FPPOW < 5
+    float RdRandom::Next()
+#else
+    real1 RdRandom::Next()
+#endif
 {
     real1 res = 0;
     real1 part = 1;
