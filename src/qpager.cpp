@@ -46,6 +46,13 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
         // concurrency.
         thresholdQubitsPerPage =
             log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 12U;
+
+        bitLenInt maxAllocQubits =
+            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+
+        if (thresholdQubitsPerPage > maxAllocQubits) {
+            thresholdQubitsPerPage = maxAllocQubits;
+        }
     }
 #endif
 

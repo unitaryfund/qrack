@@ -233,6 +233,8 @@ public:
         return nrmGroupCount;
     }
 
+    size_t GetMaxAlloc() { return device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>(); }
+
     friend class OCLEngine;
 };
 
