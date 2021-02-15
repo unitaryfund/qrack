@@ -155,7 +155,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
     nrm = phase / (real1)(std::sqrt(nrmlzr));
 
-    if (doApply && (nrmlzr != ONE_BCI)) {
+    if (doApply && (nrmlzr != ONE_R1)) {
         ApplyM(regMask, result, nrm);
     }
 
