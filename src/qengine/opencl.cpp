@@ -1195,7 +1195,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         return;
     }
 
-    if (!stateVec) {
+    if (!stateBuffer) {
         SetQubitCount(qubitCount - length);
         return;
     }
@@ -1341,7 +1341,7 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
         return;
     }
 
-    if (!stateVec) {
+    if (!stateBuffer) {
         SetQubitCount(qubitCount - length);
         return;
     }
