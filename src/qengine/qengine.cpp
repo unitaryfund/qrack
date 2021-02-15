@@ -44,7 +44,7 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         throw "ERROR: Forced a measurement result with 0 probability";
     }
 
-    if (doApply) {
+    if (doApply && (nrmlzr != ONE_R1)) {
         bitCapInt qPower = pow2(qubit);
         ApplyM(qPower, result, GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr)));
     }
@@ -101,7 +101,9 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
         }
         nrmlzr = ProbMask(regMask, result);
         nrm = phase / (real1)(std::sqrt(nrmlzr));
-        ApplyM(regMask, result, nrm);
+        if (nrmlzr != ONE_R1) {
+            ApplyM(regMask, result, nrm);
+        }
 
         // No need to check against probabilities:
         return result;
@@ -153,7 +155,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
     nrm = phase / (real1)(std::sqrt(nrmlzr));
 
-    if (doApply) {
+    if (doApply && (nrmlzr != ONE_BCI)) {
         ApplyM(regMask, result, nrm);
     }
 
