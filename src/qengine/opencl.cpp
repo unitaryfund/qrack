@@ -1195,6 +1195,11 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         return;
     }
 
+    if (!stateVec) {
+        SetQubitCount(qubitCount - length);
+        return;
+    }
+
     if (doNormalize) {
         NormalizeState();
     }
@@ -1333,6 +1338,11 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(s
 void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
     if (length == 0) {
+        return;
+    }
+
+    if (!stateVec) {
+        SetQubitCount(qubitCount - length);
         return;
     }
 
