@@ -811,6 +811,11 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         return;
     }
 
+    if (!stateVec) {
+        SetQubitCount(qubitCount - length);
+        return;
+    }
+
     bitLenInt nLength = qubitCount - length;
 
     bitCapIntOcl partPower = pow2Ocl(length);
@@ -962,6 +967,11 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(s
 void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
     if (length == 0) {
+        return;
+    }
+
+    if (!stateVec) {
+        SetQubitCount(qubitCount - length);
         return;
     }
 
