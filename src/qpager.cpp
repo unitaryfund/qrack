@@ -788,9 +788,61 @@ void QPager::AntiCISqrtSwap(
 
 bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
-    CombineEngines();
-    bool toRet = qPages[0]->ForceM(qubit, result, doForce, doApply);
-    return toRet;
+    real1 oneChance = Prob(qubit);
+    if (!doForce) {
+        if (oneChance >= ONE_R1) {
+            result = true;
+        } else if (oneChance <= ZERO_R1) {
+            result = false;
+        } else {
+            real1 prob = Rand();
+            result = (prob <= oneChance);
+        }
+    }
+
+    real1 nrmlzr;
+    if (result) {
+        nrmlzr = oneChance;
+    } else {
+        nrmlzr = ONE_R1 - oneChance;
+    }
+
+    if (nrmlzr <= ZERO_R1) {
+        throw "ERROR: Forced a measurement result with 0 probability";
+    }
+
+    if (doApply && (nrmlzr != ONE_BCI)) {
+        bitLenInt qpp = qubitsPerPage();
+        std::vector<std::future<void>> futures(qPages.size());
+        bitCapIntOcl i;
+        if (qubit < qpp) {
+            complex nrmFac = GetNonunitaryPhase() / (real1)std::sqrt(nrmlzr);
+            bitCapIntOcl qPower = pow2Ocl(qubit);
+            for (i = 0; i < qPages.size(); i++) {
+                QEnginePtr engine = qPages[i];
+                futures[i] = (std::async(std::launch::async,
+                    [engine, qPower, result, nrmFac]() { engine->ApplyM(qPower, result, nrmFac); }));
+            }
+        } else {
+            bitLenInt metaQubit = qubit - qpp;
+            bitCapIntOcl qPower = pow2Ocl(metaQubit);
+            for (i = 0; i < qPages.size(); i++) {
+                QEnginePtr engine = qPages[i];
+                if (!(i & qPower) == !result) {
+                    futures[i] =
+                        (std::async(std::launch::async, [engine, nrmlzr]() { engine->NormalizeState(nrmlzr); }));
+                } else {
+                    futures[i] = (std::async(std::launch::async, [engine]() { engine->ZeroAmplitudes(); }));
+                }
+            }
+        }
+
+        for (i = 0; i < qPages.size(); i++) {
+            futures[i].get();
+        }
+    }
+
+    return result;
 }
 
 void QPager::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
@@ -934,7 +986,7 @@ void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         std::vector<std::future<void>> futures;
         for (i = 0; i < qPages.size(); i++) {
             if ((i & mask) == 0U) {
-                QInterfacePtr engine = qPages[i];
+                QEnginePtr engine = qPages[i];
                 futures.push_back(std::async(std::launch::async, [engine]() { engine->PhaseFlip(); }));
             }
         }
@@ -954,7 +1006,7 @@ void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         std::vector<std::future<void>> futures;
         for (i = 0; i < qPages.size(); i++) {
             if ((i & mask) == 0U) {
-                QInterfacePtr engine = qPages[i];
+                QEnginePtr engine = qPages[i];
                 futures.push_back(std::async(std::launch::async,
                     [engine, &start, &remainderLen]() { engine->ZeroPhaseFlip(start, remainderLen); }));
             }
@@ -970,7 +1022,7 @@ void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     // Contained in sub-units
     std::vector<std::future<void>> futures(qPages.size());
     for (i = 0; i < qPages.size(); i++) {
-        QInterfacePtr engine = qPages[i];
+        QEnginePtr engine = qPages[i];
         futures[i] =
             std::async(std::launch::async, [engine, &start, &length]() { engine->ZeroPhaseFlip(start, length); });
     }
