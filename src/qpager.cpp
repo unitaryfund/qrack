@@ -446,23 +446,15 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
 
     bitLenInt inPage = qubitCount - (start + dest->qubitCount);
 
-    if (start <= inPage) {
-        CombineEngines(start + dest->qubitCount);
-        qPages[0]->Decompose(start, dest->qPages[0]);
-        // To be clear, under the assumption of perfect decomposibility, all further pages should produce the exact same
-        // "dest" as the line above, hence we can take just the first one and "Dispose" the rest. (This might pose a
-        // problem or limitation for "approximate separability.")
-        for (bitCapIntOcl i = 1; i < qPages.size(); i++) {
-            qPages[i]->Dispose(start, dest->qubitCount);
-        }
-    } else {
-        CombineEngines(inPage + dest->qubitCount);
-        qPages[0]->Decompose(qPages[0]->GetQubitCount() - (inPage + dest->qubitCount), dest->qPages[0]);
-        // (Same as above)
-        for (bitCapIntOcl i = 1; i < qPages.size(); i++) {
-            qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qubitCount);
-        }
+    CombineEngines(inPage + dest->qubitCount);
+    qPages[0]->Decompose(qPages[0]->GetQubitCount() - (inPage + dest->qubitCount), dest->qPages[0]);
+    // To be clear, under the assumption of perfect decomposibility, all further pages should produce the exact same
+    // "dest" as the line above, hence we can take just the first one and "Dispose" the rest. (This might pose a
+    // problem or limitation for "approximate separability.")
+    for (bitCapIntOcl i = 1; i < qPages.size(); i++) {
+        qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qubitCount);
     }
+
     SetQubitCount(qubitCount - dest->qubitCount);
 }
 
@@ -470,17 +462,11 @@ void QPager::Dispose(bitLenInt start, bitLenInt length)
 {
     bitLenInt inPage = qubitCount - (start + length);
 
-    if (start <= inPage) {
-        CombineEngines(start + length);
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->Dispose(start, length);
-        }
-    } else {
-        CombineEngines(inPage + length);
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + length), length);
-        }
+    CombineEngines(inPage + length);
+    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+        qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + length), length);
     }
+
     SetQubitCount(qubitCount - length);
 }
 
@@ -488,17 +474,11 @@ void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
     bitLenInt inPage = qubitCount - (start + length);
 
-    if (start <= inPage) {
-        CombineEngines(start + length);
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->Dispose(start, length, disposedPerm);
-        }
-    } else {
-        CombineEngines(inPage + length);
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + length), length, disposedPerm);
-        }
+    CombineEngines(inPage + length);
+    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+        qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + length), length, disposedPerm);
     }
+
     SetQubitCount(qubitCount - length);
 }
 
@@ -682,17 +662,28 @@ void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLe
 
 void QPager::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
 {
-    // TODO: Identify highest bit, and CombineAndOp()
-    CombineEngines();
-    qPages[0]->UniformParityRZ(mask, angle);
+    bitCapInt partMask = 0;
+    bitCapInt partPower = 1;
+    for (partMask = mask; partMask; partMask &= (partMask - ONE_BCI)) {
+        partPower = partMask;
+    }
+    bitLenInt maxQubit = log2(partPower);
+
+    CombineAndOp([&](QEnginePtr engine) { engine->UniformParityRZ(mask, angle); }, { maxQubit });
 }
 
 void QPager::CUniformParityRZ(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
 {
-    // TODO: Identify highest bit, and CombineAndOp()
-    CombineEngines();
-    qPages[0]->CUniformParityRZ(controls, controlLen, mask, angle);
+    bitCapInt partMask = 0;
+    bitCapInt partPower = 1;
+    for (partMask = mask; partMask; partMask &= (partMask - ONE_BCI)) {
+        partPower = partMask;
+    }
+    bitLenInt maxQubit = log2(partPower);
+
+    CombineAndOpControlled([&](QEnginePtr engine) { engine->CUniformParityRZ(controls, controlLen, mask, angle); },
+        { maxQubit }, controls, controlLen);
 }
 
 void QPager::CSwap(
