@@ -662,28 +662,14 @@ void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLe
 
 void QPager::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
 {
-    bitCapInt partMask = 0;
-    bitCapInt partPower = 1;
-    for (partMask = mask; partMask; partMask &= (partMask - ONE_BCI)) {
-        partPower = partMask;
-    }
-    bitLenInt maxQubit = log2(partPower);
-
-    CombineAndOp([&](QEnginePtr engine) { engine->UniformParityRZ(mask, angle); }, { maxQubit });
+    CombineAndOp([&](QEnginePtr engine) { engine->UniformParityRZ(mask, angle); }, { log2(mask) });
 }
 
 void QPager::CUniformParityRZ(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
 {
-    bitCapInt partMask = 0;
-    bitCapInt partPower = 1;
-    for (partMask = mask; partMask; partMask &= (partMask - ONE_BCI)) {
-        partPower = partMask;
-    }
-    bitLenInt maxQubit = log2(partPower);
-
     CombineAndOpControlled([&](QEnginePtr engine) { engine->CUniformParityRZ(controls, controlLen, mask, angle); },
-        { maxQubit }, controls, controlLen);
+        { log2(mask) }, controls, controlLen);
 }
 
 void QPager::CSwap(
@@ -1283,6 +1269,7 @@ real1_f QPager::Prob(bitLenInt qubitIndex)
 
     return oneChance;
 }
+
 real1_f QPager::ProbAll(bitCapInt fullRegister)
 {
     bitCapIntOcl subIndex = (bitCapIntOcl)(fullRegister / pageMaxQPower());
@@ -1291,8 +1278,12 @@ real1_f QPager::ProbAll(bitCapInt fullRegister)
 }
 real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
-    CombineEngines();
-    real1 maskChance = qPages[0]->ProbMask(mask, permutation);
+    CombineEngines(log2(mask));
+
+    real1 maskChance = 0;
+    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+        maskChance += qPages[i]->ProbMask(mask, permutation);
+    }
     return maskChance;
 }
 

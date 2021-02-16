@@ -1424,6 +1424,10 @@ real1_f QEngineOCL::Prob(bitLenInt qubit)
         return ProbAll(1);
     }
 
+    if (!stateBuffer) {
+        return ZERO_R1;
+    }
+
     bitCapIntOcl qPower = pow2Ocl(qubit);
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> ONE_BCI, qPower, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -2610,6 +2614,7 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh)
 void QEngineOCL::UpdateRunningNorm(real1_f norm_thresh)
 {
     if (!stateBuffer) {
+        runningNorm = ZERO_R1;
         return;
     }
 

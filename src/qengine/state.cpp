@@ -1019,6 +1019,11 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
 real1_f QEngineCPU::Prob(bitLenInt qubit)
 {
+    if (doNormalize) {
+        NormalizeState();
+    }
+    Finish();
+
     if (!stateVec) {
         return ZERO_R1;
     }
@@ -1032,11 +1037,6 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
     ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
         oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
     };
-
-    if (doNormalize) {
-        NormalizeState();
-    }
-    Finish();
 
     stateVec->isReadLocked = false;
     if (stateVec->is_sparse()) {
@@ -1058,14 +1058,14 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
 /// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
 real1_f QEngineCPU::ProbAll(bitCapInt fullRegister)
 {
-    if (!stateVec) {
-        return ZERO_R1;
-    }
-
     if (doNormalize) {
         NormalizeState();
     }
     Finish();
+
+    if (!stateVec) {
+        return ZERO_R1;
+    }
 
     return norm(stateVec->read(fullRegister));
 }
@@ -1073,6 +1073,11 @@ real1_f QEngineCPU::ProbAll(bitCapInt fullRegister)
 // Returns probability of permutation of the register
 real1_f QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
+    if (doNormalize) {
+        NormalizeState();
+    }
+    Finish();
+
     if (!stateVec) {
         return ZERO_R1;
     }
@@ -1083,11 +1088,6 @@ real1_f QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, con
     bitCapInt perm = permutation << start;
 
     ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec->read(lcv | perm)); };
-
-    if (doNormalize) {
-        NormalizeState();
-    }
-    Finish();
 
     stateVec->isReadLocked = false;
     if (stateVec->is_sparse()) {
@@ -1110,6 +1110,11 @@ real1_f QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, con
 // Returns probability of permutation of the mask
 real1_f QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
+    if (doNormalize) {
+        NormalizeState();
+    }
+    Finish();
+
     if (!stateVec) {
         return ZERO_R1;
     }
@@ -1130,11 +1135,6 @@ real1_f QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation
     int num_threads = GetConcurrencyLevel();
     real1* probs = new real1[num_threads]();
 
-    if (doNormalize) {
-        NormalizeState();
-    }
-    Finish();
-
     stateVec->isReadLocked = false;
     par_for_mask(0, maxQPower, skipPowers, skipPowersVec.size(),
         [&](const bitCapInt lcv, const int cpu) { probs[cpu] += norm(stateVec->read(lcv | permutation)); });
@@ -1154,6 +1154,11 @@ real1_f QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation
 
 real1_f QEngineCPU::ProbParity(const bitCapInt& mask)
 {
+    if (doNormalize) {
+        NormalizeState();
+    }
+    Finish();
+
     if (!stateVec || !mask) {
         return ZERO_R1;
     }
@@ -1175,11 +1180,6 @@ real1_f QEngineCPU::ProbParity(const bitCapInt& mask)
             oddChanceBuff[cpu] += norm(stateVec->read(lcv));
         }
     };
-
-    if (doNormalize) {
-        NormalizeState();
-    }
-    Finish();
 
     stateVec->isReadLocked = false;
     if (stateVec->is_sparse()) {
@@ -1451,6 +1451,7 @@ void QEngineCPU::UpdateRunningNorm(real1_f norm_thresh)
     Finish();
 
     if (!stateVec) {
+        runningNorm = ZERO_R1;
         return;
     }
 

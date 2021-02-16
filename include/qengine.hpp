@@ -51,11 +51,15 @@ public:
 
     virtual ~QEngine() { Finish(); }
 
-    virtual real1_f GetRunningNorm() { return runningNorm; }
+    virtual real1_f GetRunningNorm()
+    {
+        Finish();
+        return runningNorm;
+    }
 
     virtual void ZeroAmplitudes() = 0;
 
-    virtual void CopyStateVec(QInterfacePtr src) = 0;
+    virtual void CopyStateVec(QEnginePtr src) = 0;
 
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;

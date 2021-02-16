@@ -163,7 +163,7 @@ public:
         engineCpu->runningNorm = REAL1_DEFAULT_ARG;
     }
 
-    virtual void CopyStateVec(QInterfacePtr src)
+    virtual void CopyStateVec(QEnginePtr src)
     {
         Finish();
         src->Finish();
@@ -181,6 +181,8 @@ public:
             SetQuantumState(sv);
             delete[] sv;
         }
+
+        runningNorm = src->GetRunningNorm();
     }
 
     virtual void QueueSetDoNormalize(const bool& doNorm)
