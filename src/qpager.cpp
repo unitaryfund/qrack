@@ -526,7 +526,7 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
         isPermInPage &= (perm < pagePerm);
 
         if (isPermInPage) {
-            qPages[i]->SetPermutation(perm - (pagePerm - pagePower));
+            qPages[i]->SetPermutation(perm - (pagePerm - pagePower), phaseFac);
             continue;
         }
 
@@ -1313,6 +1313,8 @@ void QPager::UpdateRunningNorm(real1_f norm_thresh)
 
 QInterfacePtr QPager::Clone()
 {
+    CombineEngines(baseQubitsPerPage);
+
     bitLenInt qpp = qubitsPerPage();
 
     QPagerPtr clone = std::dynamic_pointer_cast<QPager>(
@@ -1320,10 +1322,10 @@ QInterfacePtr QPager::Clone()
             randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse));
 
     clone->CombineEngines(qpp);
+    clone->SeparateEngines(qpp);
 
-    bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-        clone->qPages[i]->SetAmplitudePage(qPages[i], 0, 0, pagePower);
+        clone->qPages[i] = std::dynamic_pointer_cast<QEngine>(qPages[i]->Clone());
     }
 
     return clone;

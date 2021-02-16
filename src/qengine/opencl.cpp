@@ -117,12 +117,12 @@ void QEngineOCL::SetAmplitudePage(
     QEngineOCLPtr pageEngineOclPtr = std::dynamic_pointer_cast<QEngineOCL>(pageEnginePtr);
     BufferPtr oStateBuffer = pageEngineOclPtr->stateBuffer;
 
+    clFinish();
+    pageEngineOclPtr->clFinish();
+
     if (!stateBuffer && !oStateBuffer) {
         return;
     }
-
-    clFinish();
-    pageEngineOclPtr->clFinish();
 
     if (!oStateBuffer) {
         if (length == maxQPower) {
@@ -130,6 +130,9 @@ void QEngineOCL::SetAmplitudePage(
         } else {
             ClearBuffer(stateBuffer, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length);
         }
+
+        runningNorm = ZERO_R1;
+
         return;
     }
 
@@ -2548,7 +2551,11 @@ QInterfacePtr QEngineOCL::Clone()
     copyPtr->runningNorm = runningNorm;
 
     EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPowerOcl);
+    if (stateBuffer) {
+        DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPowerOcl);
+    } else {
+        copyPtr->ZeroAmplitudes();
+    }
     Finish();
 
     return copyPtr;

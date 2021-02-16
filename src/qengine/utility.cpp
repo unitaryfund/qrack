@@ -18,10 +18,13 @@ QInterfacePtr QEngineCPU::Clone()
 {
     Finish();
 
-    QInterfacePtr clone = CreateQuantumInterface(QINTERFACE_CPU, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse);
+    QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(
+        CreateQuantumInterface(QINTERFACE_CPU, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+            false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse));
     if (stateVec) {
-        std::dynamic_pointer_cast<QEngineCPU>(clone)->stateVec->copy(stateVec);
+        clone->stateVec->copy(stateVec);
+    } else {
+        clone->ZeroAmplitudes();
     }
     return clone;
 }
