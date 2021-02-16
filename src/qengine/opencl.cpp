@@ -2551,7 +2551,11 @@ QInterfacePtr QEngineOCL::Clone()
     copyPtr->runningNorm = runningNorm;
 
     EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPowerOcl);
+    if (stateBuffer) {
+        DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPowerOcl);
+    } else {
+        copyPtr->ZeroAmplitudes();
+    }
     Finish();
 
     return copyPtr;
