@@ -1243,27 +1243,44 @@ void QPager::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2
     CombineAndOp([&](QEnginePtr engine) { engine->FSim(theta, phi, qubit1, qubit2); }, { qubit1, qubit2 });
 }
 
-real1_f QPager::Prob(bitLenInt qubitIndex)
+real1_f QPager::Prob(bitLenInt qubit)
 {
-    if (qubitIndex >= qubitsPerPage()) {
-        CombineEngines(qubitIndex + 1U);
-    } else {
-        SeparateEngines(qubitIndex + 1U);
+    if (qubit < qubitsPerPage()) {
+        SeparateEngines(qubit + 1U);
     }
 
     if (qPages.size() == 1U) {
-        return qPages[0]->Prob(qubitIndex);
+        return qPages[0]->Prob(qubit);
     }
 
     real1 oneChance = ZERO_R1;
     bitCapIntOcl i;
+    bitLenInt qpp = qubitsPerPage();
+    std::vector<std::future<real1_f>> futures;
 
-    std::vector<std::future<real1_f>> futures(qPages.size());
-    for (i = 0; i < qPages.size(); i++) {
-        QEnginePtr engine = qPages[i];
-        futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
+    if (qubit < qpp) {
+        for (i = 0; i < qPages.size(); i++) {
+            QEnginePtr engine = qPages[i];
+            futures.push_back(std::async(std::launch::async, [engine, qubit]() { return engine->Prob(qubit); }));
+        }
+    } else {
+        bitCapIntOcl qPower = pow2Ocl(qubit - qpp);
+        bitCapIntOcl qMask = qPower - ONE_BCI;
+        bitCapIntOcl fSize = qPages.size() >> ONE_BCI;
+        bitCapIntOcl j;
+        for (i = 0; i < fSize; i++) {
+            j = i & qMask;
+            j |= qPower | ((i ^ j) << ONE_BCI);
+
+            QEnginePtr engine = qPages[j];
+            futures.push_back(std::async(std::launch::async, [engine]() {
+                engine->UpdateRunningNorm();
+                return engine->GetRunningNorm();
+            }));
+        }
     }
-    for (i = 0; i < qPages.size(); i++) {
+
+    for (i = 0; i < futures.size(); i++) {
         oneChance += futures[i].get();
     }
 
