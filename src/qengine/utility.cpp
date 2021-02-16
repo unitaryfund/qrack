@@ -22,6 +22,8 @@ QInterfacePtr QEngineCPU::Clone()
         randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse);
     if (stateVec) {
         std::dynamic_pointer_cast<QEngineCPU>(clone)->stateVec->copy(stateVec);
+    } else {
+        std::dynamic_pointer_cast<QEngineCPU>(clone)->ZeroAmplitudes();
     }
     return clone;
 }
