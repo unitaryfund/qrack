@@ -1245,9 +1245,7 @@ void QPager::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2
 
 real1_f QPager::Prob(bitLenInt qubit)
 {
-    if (qubit < qubitsPerPage()) {
-        SeparateEngines(qubit + 1U);
-    }
+    SeparateEngines(qubit + 1U);
 
     if (qPages.size() == 1U) {
         return qPages[0]->Prob(qubit);
