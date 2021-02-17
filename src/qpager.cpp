@@ -146,7 +146,8 @@ void QPager::SeparateEngines(bitLenInt thresholdBits)
     qPages = nQPages;
 }
 
-template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn)
+template <typename Qubit1Fn>
+void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isMetaCtrl, const bool& isAnti)
 {
     SeparateEngines(target + 1U);
 
@@ -189,29 +190,71 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
     bitCapIntOcl maxLCV = qPages.size() >> ONE_BCI;
     std::vector<std::future<void>> futures(maxLCV);
     for (i = 0; i < maxLCV; i++) {
-        futures[i] = std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi]() {
-            bitCapIntOcl j = i & targetMask;
-            j |= (i ^ j) << ONE_BCI;
+        if (isMetaCtrl) {
+            if (isAnti) {
+                futures[i] = std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi]() {
+                    bitCapIntOcl j = i & targetMask;
+                    j |= (i ^ j) << ONE_BCI;
 
-            QEnginePtr engine1 = qPages[j];
-            QEnginePtr engine2 = qPages[j + targetPow];
+                    QEnginePtr engine1 = qPages[j];
+                    QEnginePtr engine2 = qPages[j + targetPow];
 
-            engine1->ShuffleBuffers(engine2);
+                    engine1->ShuffleBuffers(engine2);
 
-            std::future<void> future1, future2;
-            future1 = std::async(std::launch::async, [fn, engine1, &sqi]() {
-                fn(engine1, sqi);
-                engine1->QueueSetDoNormalize(false);
+                    std::future<void> future1;
+                    future1 = std::async(std::launch::async, [fn, engine1, &sqi]() {
+                        fn(engine1, sqi);
+                        engine1->QueueSetDoNormalize(false);
+                    });
+                    future1.get();
+
+                    engine1->ShuffleBuffers(engine2);
+                });
+            } else {
+                futures[i] = std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi]() {
+                    bitCapIntOcl j = i & targetMask;
+                    j |= (i ^ j) << ONE_BCI;
+
+                    QEnginePtr engine1 = qPages[j];
+                    QEnginePtr engine2 = qPages[j + targetPow];
+
+                    engine1->ShuffleBuffers(engine2);
+
+                    std::future<void> future2;
+                    future2 = std::async(std::launch::async, [fn, engine2, &sqi]() {
+                        fn(engine2, sqi);
+                        engine2->QueueSetDoNormalize(false);
+                    });
+                    future2.get();
+
+                    engine1->ShuffleBuffers(engine2);
+                });
+            }
+        } else {
+            futures[i] = std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi]() {
+                bitCapIntOcl j = i & targetMask;
+                j |= (i ^ j) << ONE_BCI;
+
+                QEnginePtr engine1 = qPages[j];
+                QEnginePtr engine2 = qPages[j + targetPow];
+
+                engine1->ShuffleBuffers(engine2);
+
+                std::future<void> future1, future2;
+                future1 = std::async(std::launch::async, [fn, engine1, &sqi]() {
+                    fn(engine1, sqi);
+                    engine1->QueueSetDoNormalize(false);
+                });
+                future2 = std::async(std::launch::async, [fn, engine2, &sqi]() {
+                    fn(engine2, sqi);
+                    engine2->QueueSetDoNormalize(false);
+                });
+                future1.get();
+                future2.get();
+
+                engine1->ShuffleBuffers(engine2);
             });
-            future2 = std::async(std::launch::async, [fn, engine2, &sqi]() {
-                fn(engine2, sqi);
-                engine2->QueueSetDoNormalize(false);
-            });
-            future1.get();
-            future2.get();
-
-            engine1->ShuffleBuffers(engine2);
-        });
+        }
     }
     for (i = 0; i < maxLCV; i++) {
         futures[i].get();
@@ -646,6 +689,8 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
                 std::find(intraControls.begin(), intraControls.end(), qpp - 1U);
             if (intraControl != intraControls.end()) {
                 intraControls.erase(intraControl);
+                SingleBitGate(target, sg, true, anti);
+                return;
             }
         }
         SingleBitGate(target, sg);
