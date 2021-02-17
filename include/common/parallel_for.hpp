@@ -75,7 +75,7 @@ public:
     /** Calculate the normal for the array, (with flooring). */
     real1_f par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1_f norm_thresh = ZERO_R1);
 
-    /** Calculate the normal for the array, (without flooring. */
+    /** Calculate the normal for the array, (without flooring.) */
     real1_f par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray);
 };
 

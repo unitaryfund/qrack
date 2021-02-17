@@ -65,8 +65,8 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, 
         {
             const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
 
-            bitCapInt i, j, l;
-            bitCapInt k = 0;
+            bitCapIntOcl i, j, l;
+            bitCapIntOcl k = 0;
             for (;;) {
                 ATOMIC_INC();
                 l = i * Stride;
@@ -158,8 +158,8 @@ void ParallelFor::par_for_skip(
         return;
     }
 
-    bitCapInt lowMask = skipMask - ONE_BCI;
-    bitCapInt highMask = ~lowMask;
+    bitCapIntOcl lowMask = skipMask - ONE_BCI;
+    bitCapIntOcl highMask = ~lowMask;
 
     IncrementFunc incFn;
     if (lowMask == 0) {
@@ -225,11 +225,12 @@ real1_f ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr st
     }
 
     const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
+    const bitCapIntOcl itemCount = maxQPower;
 
-    real1 nrmSqr = 0;
-    if ((maxQPower / Stride) < (bitCapInt)numCores) {
+    real1 nrmSqr = ZERO_R1;
+    if ((itemCount / Stride) < (bitCapIntOcl)numCores) {
         real1 nrm;
-        for (bitCapInt j = 0; j < maxQPower; j++) {
+        for (bitCapIntOcl j = 0; j < itemCount; j++) {
             nrm = norm(stateArray->read(j));
             if (nrm >= norm_thresh) {
                 nrmSqr += nrm;
@@ -240,19 +241,19 @@ real1_f ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr st
         idx = 0;
         std::vector<std::future<real1>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
-            futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray, &norm_thresh)
+            futures[cpu] = ATOMIC_ASYNC(&idx, itemCount, stateArray, &norm_thresh)
             {
                 const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
 
                 real1 sqrNorm = ZERO_R1;
                 real1 nrm;
-                bitCapInt i, j;
-                bitCapInt k = 0;
+                bitCapIntOcl i, j;
+                bitCapIntOcl k = 0;
                 for (;;) {
                     ATOMIC_INC();
                     for (j = 0; j < Stride; j++) {
                         k = i * Stride + j;
-                        if (k >= maxQPower)
+                        if (k >= itemCount)
                             break;
 
                         nrm = norm(stateArray->read(k));
@@ -260,7 +261,7 @@ real1_f ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr st
                             sqrNorm += nrm;
                         }
                     }
-                    if (k >= maxQPower)
+                    if (k >= itemCount)
                         break;
                 }
                 return sqrNorm;
@@ -278,10 +279,11 @@ real1_f ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr st
 real1_f ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray)
 {
     const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
+    const bitCapIntOcl itemCount = maxQPower;
 
-    real1 nrmSqr = 0;
-    if ((maxQPower / Stride) < (bitCapInt)numCores) {
-        for (bitCapInt j = 0; j < maxQPower; j++) {
+    real1 nrmSqr = ZERO_R1;
+    if ((itemCount / Stride) < (bitCapInt)numCores) {
+        for (bitCapIntOcl j = 0; j < maxQPower; j++) {
             nrmSqr += norm(stateArray->read(j));
         }
 
@@ -291,23 +293,23 @@ real1_f ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVector
     idx = 0;
     std::vector<std::future<real1>> futures(numCores);
     for (int cpu = 0; cpu != numCores; ++cpu) {
-        futures[cpu] = ATOMIC_ASYNC(&idx, maxQPower, stateArray)
+        futures[cpu] = ATOMIC_ASYNC(&idx, itemCount, stateArray)
         {
             const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
 
             real1 sqrNorm = ZERO_R1;
-            bitCapInt i, j;
-            bitCapInt k = 0;
+            bitCapIntOcl i, j;
+            bitCapIntOcl k = 0;
             for (;;) {
                 ATOMIC_INC();
                 for (j = 0; j < Stride; j++) {
                     k = i * Stride + j;
-                    if (k >= maxQPower)
+                    if (k >= itemCount)
                         break;
 
                     sqrNorm += norm(stateArray->read(k));
                 }
-                if (k >= maxQPower)
+                if (k >= itemCount)
                     break;
             }
             return sqrNorm;

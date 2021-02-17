@@ -627,7 +627,7 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
         }
     }
 
-    auto sg = [anti, mtrx, intraControls](QEnginePtr engine, bitLenInt lTarget) {
+    auto sg = [anti, mtrx, &intraControls](QEnginePtr engine, bitLenInt lTarget) {
         if (intraControls.size()) {
             if (anti) {
                 engine->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
@@ -635,11 +635,22 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
                 engine->ApplyControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
             }
         } else {
+
             engine->ApplySingleBit(mtrx, lTarget);
         }
     };
 
     if (metaControls.size() == 0) {
+        if (target >= qpp) {
+            std::vector<bitLenInt>::iterator intraControl = intraControls.begin();
+            while (intraControl < intraControls.end()) {
+                if (*intraControl == (qpp - 1U)) {
+                    intraControls.erase(intraControl);
+                } else {
+                    intraControl++;
+                }
+            }
+        }
         SingleBitGate(target, sg);
     } else if (target < qpp) {
         SemiMetaControlled(anti, metaControls, target, sg);
@@ -1319,16 +1330,11 @@ void QPager::UpdateRunningNorm(real1_f norm_thresh)
 
 QInterfacePtr QPager::Clone()
 {
-    CombineEngines(baseQubitsPerPage);
-
-    bitLenInt qpp = qubitsPerPage();
+    SeparateEngines();
 
     QPagerPtr clone = std::dynamic_pointer_cast<QPager>(
         CreateQuantumInterface(QINTERFACE_QPAGER, engine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
             randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse));
-
-    clone->CombineEngines(qpp);
-    clone->SeparateEngines(qpp);
 
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         clone->qPages[i] = std::dynamic_pointer_cast<QEngine>(qPages[i]->Clone());
