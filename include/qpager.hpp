@@ -59,7 +59,8 @@ protected:
     void SeparateEngines(bitLenInt thresholdBits);
     void SeparateEngines() { SeparateEngines(baseQubitsPerPage); }
 
-    template <typename Qubit1Fn> void SingleBitGate(bitLenInt target, Qubit1Fn fn);
+    template <typename Qubit1Fn>
+    void SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isMetaCtrl = false, const bool& isAnti = false);
     template <typename Qubit1Fn>
     void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, const complex* mtrx);
     template <typename Qubit1Fn>
