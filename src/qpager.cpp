@@ -191,8 +191,9 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isMetaCtrl
     std::vector<std::future<void>> futures(maxLCV);
     for (i = 0; i < maxLCV; i++) {
         if (isMetaCtrl) {
+            bool doNorm = doNormalize;
             if (isAnti) {
-                futures[i] = std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi]() {
+                futures[i] = std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi, doNorm]() {
                     bitCapIntOcl j = i & targetMask;
                     j |= (i ^ j) << ONE_BCI;
 
@@ -206,12 +207,17 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isMetaCtrl
                         fn(engine1, sqi);
                         engine1->QueueSetDoNormalize(false);
                     });
+
+                    if (doNormalize) {
+                        engine2->QueueSetDoNormalize(false);
+                    }
+
                     future1.get();
 
                     engine1->ShuffleBuffers(engine2);
                 });
             } else {
-                futures[i] = std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi]() {
+                futures[i] = std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi, doNorm]() {
                     bitCapIntOcl j = i & targetMask;
                     j |= (i ^ j) << ONE_BCI;
 
@@ -219,6 +225,10 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isMetaCtrl
                     QEnginePtr engine2 = qPages[j + targetPow];
 
                     engine1->ShuffleBuffers(engine2);
+
+                    if (doNormalize) {
+                        engine1->QueueSetDoNormalize(false);
+                    }
 
                     std::future<void> future2;
                     future2 = std::async(std::launch::async, [fn, engine2, &sqi]() {
