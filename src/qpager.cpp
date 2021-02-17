@@ -642,13 +642,10 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
 
     if (metaControls.size() == 0) {
         if (target >= qpp) {
-            std::vector<bitLenInt>::iterator intraControl = intraControls.begin();
-            while (intraControl < intraControls.end()) {
-                if (*intraControl == (qpp - 1U)) {
-                    intraControls.erase(intraControl);
-                } else {
-                    intraControl++;
-                }
+            std::vector<bitLenInt>::iterator intraControl =
+                std::find(intraControls.begin(), intraControls.end(), qpp - 1U);
+            if (intraControl != intraControls.end()) {
+                intraControls.erase(intraControl);
             }
         }
         SingleBitGate(target, sg);
