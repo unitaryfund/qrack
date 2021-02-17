@@ -627,7 +627,7 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
         }
     }
 
-    auto sg = [anti, mtrx, intraControls](QEnginePtr engine, bitLenInt lTarget) {
+    auto sg = [anti, mtrx, &intraControls](QEnginePtr engine, bitLenInt lTarget) {
         if (intraControls.size()) {
             if (anti) {
                 engine->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
@@ -635,11 +635,19 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
                 engine->ApplyControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
             }
         } else {
+
             engine->ApplySingleBit(mtrx, lTarget);
         }
     };
 
     if (metaControls.size() == 0) {
+        if (target >= qpp) {
+            std::vector<bitLenInt>::iterator intraControl =
+                std::find(intraControls.begin(), intraControls.end(), qpp - 1U);
+            if (intraControl != intraControls.end()) {
+                intraControls.erase(intraControl);
+            }
+        }
         SingleBitGate(target, sg);
     } else if (target < qpp) {
         SemiMetaControlled(anti, metaControls, target, sg);
@@ -662,28 +670,14 @@ void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLe
 
 void QPager::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
 {
-    bitCapInt partMask = 0;
-    bitCapInt partPower = 1;
-    for (partMask = mask; partMask; partMask &= (partMask - ONE_BCI)) {
-        partPower = partMask;
-    }
-    bitLenInt maxQubit = log2(partPower);
-
-    CombineAndOp([&](QEnginePtr engine) { engine->UniformParityRZ(mask, angle); }, { maxQubit });
+    CombineAndOp([&](QEnginePtr engine) { engine->UniformParityRZ(mask, angle); }, { log2(mask) });
 }
 
 void QPager::CUniformParityRZ(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
 {
-    bitCapInt partMask = 0;
-    bitCapInt partPower = 1;
-    for (partMask = mask; partMask; partMask &= (partMask - ONE_BCI)) {
-        partPower = partMask;
-    }
-    bitLenInt maxQubit = log2(partPower);
-
     CombineAndOpControlled([&](QEnginePtr engine) { engine->CUniformParityRZ(controls, controlLen, mask, angle); },
-        { maxQubit }, controls, controlLen);
+        { log2(mask) }, controls, controlLen);
 }
 
 void QPager::CSwap(
@@ -1257,32 +1251,48 @@ void QPager::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2
     CombineAndOp([&](QEnginePtr engine) { engine->FSim(theta, phi, qubit1, qubit2); }, { qubit1, qubit2 });
 }
 
-real1_f QPager::Prob(bitLenInt qubitIndex)
+real1_f QPager::Prob(bitLenInt qubit)
 {
-    if (qubitIndex >= qubitsPerPage()) {
-        CombineEngines(qubitIndex + 1U);
-    } else {
-        SeparateEngines(qubitIndex + 1U);
-    }
+    SeparateEngines(qubit + 1U);
 
     if (qPages.size() == 1U) {
-        return qPages[0]->Prob(qubitIndex);
+        return qPages[0]->Prob(qubit);
     }
 
     real1 oneChance = ZERO_R1;
     bitCapIntOcl i;
+    bitLenInt qpp = qubitsPerPage();
+    std::vector<std::future<real1_f>> futures;
 
-    std::vector<std::future<real1_f>> futures(qPages.size());
-    for (i = 0; i < qPages.size(); i++) {
-        QEnginePtr engine = qPages[i];
-        futures[i] = std::async(std::launch::async, [engine, qubitIndex]() { return engine->Prob(qubitIndex); });
+    if (qubit < qpp) {
+        for (i = 0; i < qPages.size(); i++) {
+            QEnginePtr engine = qPages[i];
+            futures.push_back(std::async(std::launch::async, [engine, qubit]() { return engine->Prob(qubit); }));
+        }
+    } else {
+        bitCapIntOcl qPower = pow2Ocl(qubit - qpp);
+        bitCapIntOcl qMask = qPower - ONE_BCI;
+        bitCapIntOcl fSize = qPages.size() >> ONE_BCI;
+        bitCapIntOcl j;
+        for (i = 0; i < fSize; i++) {
+            j = i & qMask;
+            j |= qPower | ((i ^ j) << ONE_BCI);
+
+            QEnginePtr engine = qPages[j];
+            futures.push_back(std::async(std::launch::async, [engine]() {
+                engine->UpdateRunningNorm();
+                return engine->GetRunningNorm();
+            }));
+        }
     }
-    for (i = 0; i < qPages.size(); i++) {
+
+    for (i = 0; i < futures.size(); i++) {
         oneChance += futures[i].get();
     }
 
     return oneChance;
 }
+
 real1_f QPager::ProbAll(bitCapInt fullRegister)
 {
     bitCapIntOcl subIndex = (bitCapIntOcl)(fullRegister / pageMaxQPower());
@@ -1291,8 +1301,12 @@ real1_f QPager::ProbAll(bitCapInt fullRegister)
 }
 real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
-    CombineEngines();
-    real1 maskChance = qPages[0]->ProbMask(mask, permutation);
+    CombineEngines(log2(mask));
+
+    real1 maskChance = 0;
+    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+        maskChance += qPages[i]->ProbMask(mask, permutation);
+    }
     return maskChance;
 }
 
@@ -1313,16 +1327,11 @@ void QPager::UpdateRunningNorm(real1_f norm_thresh)
 
 QInterfacePtr QPager::Clone()
 {
-    CombineEngines(baseQubitsPerPage);
-
-    bitLenInt qpp = qubitsPerPage();
+    SeparateEngines();
 
     QPagerPtr clone = std::dynamic_pointer_cast<QPager>(
         CreateQuantumInterface(QINTERFACE_QPAGER, engine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
             randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse));
-
-    clone->CombineEngines(qpp);
-    clone->SeparateEngines(qpp);
 
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         clone->qPages[i] = std::dynamic_pointer_cast<QEngine>(qPages[i]->Clone());

@@ -69,9 +69,11 @@ public:
         isGpu = useGpu;
     }
 
+    virtual real1_f GetRunningNorm() { return engine->GetRunningNorm(); }
+
     virtual void ZeroAmplitudes() { engine->ZeroAmplitudes(); }
 
-    virtual void CopyStateVec(QInterfacePtr src) { CopyStateVec(std::dynamic_pointer_cast<QHybrid>(src)); }
+    virtual void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QHybrid>(src)); }
     virtual void CopyStateVec(QHybridPtr src)
     {
         SwitchModes(src->isGpu);

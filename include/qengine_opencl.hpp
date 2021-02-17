@@ -221,7 +221,7 @@ public:
         }
     }
 
-    virtual void CopyStateVec(QInterfacePtr src)
+    virtual void CopyStateVec(QEnginePtr src)
     {
         Finish();
         src->Finish();
@@ -229,6 +229,8 @@ public:
         LockSync(CL_MAP_WRITE);
         src->GetQuantumState(stateVec);
         UnlockSync();
+
+        runningNorm = src->GetRunningNorm();
     }
 
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length);
