@@ -44,7 +44,11 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     if ((thresholdQubitsPerPage == 0) && ((eng == QINTERFACE_OPENCL) || (eng == QINTERFACE_HYBRID))) {
         // Try 2 less than device maximum, (as is typically optimal on the developer's RTX 2070).
         thresholdQubitsPerPage =
-            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 2U;
+            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
+
+        if ((qubitCount - 2U) < thresholdQubitsPerPage) {
+            thresholdQubitsPerPage = qubitCount - 2U;
+        }
 
         // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
         // concurrency.
@@ -57,8 +61,13 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 #endif
 
     if (thresholdQubitsPerPage == 0) {
-        // TODO: Tune for QEngineCPU
-        thresholdQubitsPerPage = 18;
+        thresholdQubitsPerPage = qubitCount - 2U;
+
+        bitLenInt minQubits = log2(std::thread::hardware_concurrency()) + PSTRIDEPOW;
+
+        if (thresholdQubitsPerPage < minQubits) {
+            thresholdQubitsPerPage = minQubits;
+        }
     }
 
     if (deviceIDs.size() == 0) {
