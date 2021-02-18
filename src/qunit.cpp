@@ -3274,17 +3274,19 @@ QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt s
     bits[controlVec.size() + 1] = carryStart;
     std::sort(bits.begin(), bits.end());
 
-    std::vector<bitLenInt*> ebits(controlVec.size() + 2);
-    for (bitLenInt i = 0; i < (controlVec.size() + 2); i++) {
+    std::vector<bitLenInt*> ebits(bits.size());
+    for (bitLenInt i = 0; i < ebits.size(); i++) {
         ebits[i] = &bits[i];
     }
 
     QInterfacePtr unit = Entangle(ebits);
 
-    controlsMapped->resize(!controlVec.size() ? 1 : controlVec.size());
-    for (bitLenInt i = 0; i < controlVec.size(); i++) {
-        (*controlsMapped)[i] = shards[controlVec[i]].mapped;
-        shards[controlVec[i]].isPhaseDirty = true;
+    if (controlVec.size()) {
+        controlsMapped->resize(controlVec.size());
+        for (bitLenInt i = 0; i < controlVec.size(); i++) {
+            (*controlsMapped)[i] = shards[controlVec[i]].mapped;
+            shards[controlVec[i]].isPhaseDirty = true;
+        }
     }
 
     return unit;
@@ -3304,8 +3306,8 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
     std::vector<bitLenInt> controlsMapped;
     QInterfacePtr unit = CMULEntangle(controlVec, start, carryStart, length, &controlsMapped);
 
-    ((*unit).*fn)(
-        toMod, shards[start].mapped, shards[carryStart].mapped, length, &(controlsMapped[0]), controlVec.size());
+    ((*unit).*fn)(toMod, shards[start].mapped, shards[carryStart].mapped, length,
+        controlVec.size() ? &(controlsMapped[0]) : NULL, controlVec.size());
 
     DirtyShardRange(start, length);
 }
@@ -3316,8 +3318,8 @@ void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt st
     std::vector<bitLenInt> controlsMapped;
     QInterfacePtr unit = CMULEntangle(controlVec, start, carryStart, length, &controlsMapped);
 
-    ((*unit).*fn)(
-        toMod, modN, shards[start].mapped, shards[carryStart].mapped, length, &(controlsMapped[0]), controlVec.size());
+    ((*unit).*fn)(toMod, modN, shards[start].mapped, shards[carryStart].mapped, length,
+        controlVec.size() ? &(controlsMapped[0]) : NULL, controlVec.size());
 
     DirtyShardRangePhase(start, length);
 }
