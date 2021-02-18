@@ -4155,6 +4155,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_entanglement")
         qftReg->X(i);
     }
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x1));
+
+    qftReg->SetPermutation(0xffffff);
+    for (bitLenInt i = qftReg->GetQubitCount() - 3; i > 2; i -= 3) {
+        qftReg->CCNOT(i - 2, i - 1, i);
+    }
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xdb6df));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_bit")

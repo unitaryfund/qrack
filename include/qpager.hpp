@@ -60,9 +60,10 @@ protected:
     void SeparateEngines() { SeparateEngines(baseQubitsPerPage); }
 
     template <typename Qubit1Fn>
-    void SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isMetaCtrl = false, const bool& isAnti = false);
+    void SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl = false, const bool& isAnti = false);
     template <typename Qubit1Fn>
-    void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, const complex* mtrx);
+    void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, const complex* mtrx,
+        const bool& isSqiCtrl = false, const bool& isAnti = false);
     template <typename Qubit1Fn>
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
     void MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac);

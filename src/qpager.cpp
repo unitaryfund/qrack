@@ -81,6 +81,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
     }
 
+    initState &= maxQPower - ONE_BCI;
     bool isPermInPage;
     bitCapIntOcl pagePerm = 0;
     for (bitCapIntOcl i = 0; i < basePageCount; i++) {
@@ -156,7 +157,7 @@ void QPager::SeparateEngines(bitLenInt thresholdBits)
 }
 
 template <typename Qubit1Fn>
-void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isMetaCtrl, const bool& isAnti)
+void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl, const bool& isAnti)
 {
     SeparateEngines(target + 1U);
 
@@ -199,58 +200,8 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isMetaCtrl
     bitCapIntOcl maxLCV = qPages.size() >> ONE_BCI;
     std::vector<std::future<void>> futures(maxLCV);
     for (i = 0; i < maxLCV; i++) {
-        if (isMetaCtrl) {
-            bool doNorm = doNormalize;
-            if (isAnti) {
-                futures[i] = std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi, doNorm]() {
-                    bitCapIntOcl j = i & targetMask;
-                    j |= (i ^ j) << ONE_BCI;
-
-                    QEnginePtr engine1 = qPages[j];
-                    QEnginePtr engine2 = qPages[j + targetPow];
-
-                    engine1->ShuffleBuffers(engine2);
-
-                    std::future<void> future1;
-                    future1 = std::async(std::launch::async, [fn, engine1, &sqi]() {
-                        fn(engine1, sqi);
-                        engine1->QueueSetDoNormalize(false);
-                    });
-
-                    if (doNormalize) {
-                        engine2->QueueSetDoNormalize(false);
-                    }
-
-                    future1.get();
-
-                    engine1->ShuffleBuffers(engine2);
-                });
-            } else {
-                futures[i] = std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi, doNorm]() {
-                    bitCapIntOcl j = i & targetMask;
-                    j |= (i ^ j) << ONE_BCI;
-
-                    QEnginePtr engine1 = qPages[j];
-                    QEnginePtr engine2 = qPages[j + targetPow];
-
-                    engine1->ShuffleBuffers(engine2);
-
-                    if (doNormalize) {
-                        engine1->QueueSetDoNormalize(false);
-                    }
-
-                    std::future<void> future2;
-                    future2 = std::async(std::launch::async, [fn, engine2, &sqi]() {
-                        fn(engine2, sqi);
-                        engine2->QueueSetDoNormalize(false);
-                    });
-                    future2.get();
-
-                    engine1->ShuffleBuffers(engine2);
-                });
-            }
-        } else {
-            futures[i] = std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi]() {
+        futures[i] =
+            std::async(std::launch::async, [this, i, fn, &targetPow, &targetMask, &sqi, &isSqiCtrl, &isAnti]() {
                 bitCapIntOcl j = i & targetMask;
                 j |= (i ^ j) << ONE_BCI;
 
@@ -260,12 +211,16 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isMetaCtrl
                 engine1->ShuffleBuffers(engine2);
 
                 std::future<void> future1, future2;
-                future1 = std::async(std::launch::async, [fn, engine1, &sqi]() {
-                    fn(engine1, sqi);
+                future1 = std::async(std::launch::async, [fn, engine1, &sqi, &isSqiCtrl, &isAnti]() {
+                    if (!isSqiCtrl || isAnti) {
+                        fn(engine1, sqi);
+                    }
                     engine1->QueueSetDoNormalize(false);
                 });
-                future2 = std::async(std::launch::async, [fn, engine2, &sqi]() {
-                    fn(engine2, sqi);
+                future2 = std::async(std::launch::async, [fn, engine2, &sqi, &isSqiCtrl, &isAnti]() {
+                    if (isSqiCtrl || !isAnti) {
+                        fn(engine2, sqi);
+                    }
                     engine2->QueueSetDoNormalize(false);
                 });
                 future1.get();
@@ -273,7 +228,6 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isMetaCtrl
 
                 engine1->ShuffleBuffers(engine2);
             });
-        }
     }
     for (i = 0; i < maxLCV; i++) {
         futures[i].get();
@@ -283,8 +237,8 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isMetaCtrl
 // This is like the QEngineCPU and QEngineOCL logic for register-like CNOT and CCNOT, just swapping sub-engine indices
 // instead of amplitude indices.
 template <typename Qubit1Fn>
-void QPager::MetaControlled(
-    bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, const complex* mtrx)
+void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn,
+    const complex* mtrx, const bool& isSqiCtrl, const bool& isAnti)
 {
     bitLenInt qpp = qubitsPerPage();
     target -= qpp;
@@ -328,7 +282,8 @@ void QPager::MetaControlled(
     bitCapIntOcl i;
     for (i = 0; i < maxLCV; i++) {
         futures[i] = std::async(std::launch::async,
-            [this, i, fn, &sqi, &controlMask, &targetPow, &sortedMasks, &isSpecial, &isInvert, &top, &bottom]() {
+            [this, i, fn, &sqi, &controlMask, &targetPow, &sortedMasks, &isSpecial, &isInvert, &top, &bottom,
+                &isSqiCtrl, &isAnti]() {
                 bitCapIntOcl j, k, jLo, jHi;
                 jHi = i;
                 j = 0;
@@ -348,28 +303,42 @@ void QPager::MetaControlled(
 
                 std::future<void> future1, future2;
                 if (isSpecial) {
-                    if (top != ONE_CMPLX) {
+                    bool doTop = (top != ONE_CMPLX) && !(isSqiCtrl && !isAnti);
+                    bool doBottom = (bottom != ONE_CMPLX) && !(isSqiCtrl && isAnti);
+
+                    if (doTop) {
                         future1 = std::async(
                             std::launch::async, [engine1, &top]() { engine1->ApplySinglePhase(top, top, 0); });
                     }
-                    if (bottom != ONE_CMPLX) {
+                    if (doBottom) {
                         future2 = std::async(
                             std::launch::async, [engine2, &bottom]() { engine2->ApplySinglePhase(bottom, bottom, 0); });
                     }
 
-                    if (top != ONE_CMPLX) {
+                    if (doTop) {
                         future1.get();
                     }
-                    if (bottom != ONE_CMPLX) {
+                    if (doBottom) {
                         future2.get();
                     }
                 } else {
                     engine1->ShuffleBuffers(engine2);
 
-                    future1 = std::async(std::launch::async, [engine1, fn, &sqi]() { fn(engine1, sqi); });
-                    future2 = std::async(std::launch::async, [engine2, fn, &sqi]() { fn(engine2, sqi); });
-                    future1.get();
-                    future2.get();
+                    bool doTop = !isSqiCtrl || isAnti;
+                    bool doBottom = !isSqiCtrl || !isAnti;
+
+                    if (doTop) {
+                        future1 = std::async(std::launch::async, [engine1, fn, &sqi]() { fn(engine1, sqi); });
+                    }
+                    if (doBottom) {
+                        future2 = std::async(std::launch::async, [engine2, fn, &sqi]() { fn(engine2, sqi); });
+                    }
+                    if (doTop) {
+                        future1.get();
+                    }
+                    if (doBottom) {
+                        future2.get();
+                    }
 
                     engine1->ShuffleBuffers(engine2);
                 }
@@ -632,6 +601,7 @@ void QPager::GetProbs(real1* outputProbs)
 
 void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
 {
+    perm &= maxQPower - ONE_BCI;
     bool isPermInPage;
     bitCapIntOcl pagePerm = 0;
     bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
@@ -750,26 +720,25 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
                 engine->ApplyControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
             }
         } else {
-
             engine->ApplySingleBit(mtrx, lTarget);
         }
     };
 
-    if (metaControls.size() == 0) {
-        if (target >= qpp) {
-            std::vector<bitLenInt>::iterator intraControl =
-                std::find(intraControls.begin(), intraControls.end(), qpp - 1U);
-            if (intraControl != intraControls.end()) {
-                intraControls.erase(intraControl);
-                SingleBitGate(target, sg, true, anti);
-                return;
-            }
+    bool isSqiCtrl = false;
+    if (target >= qpp) {
+        std::vector<bitLenInt>::iterator intraControl = std::find(intraControls.begin(), intraControls.end(), qpp - 1U);
+        if (intraControl != intraControls.end()) {
+            intraControls.erase(intraControl);
+            isSqiCtrl = true;
         }
-        SingleBitGate(target, sg);
+    }
+
+    if (metaControls.size() == 0) {
+        SingleBitGate(target, sg, isSqiCtrl, anti);
     } else if (target < qpp) {
         SemiMetaControlled(anti, metaControls, target, sg);
     } else {
-        MetaControlled(anti, metaControls, target, sg, mtrx);
+        MetaControlled(anti, metaControls, target, sg, mtrx, isSqiCtrl, anti);
     }
 }
 
