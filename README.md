@@ -29,6 +29,8 @@ $ mkdir _build && cd _build && cmake .. && make all install
 
 Instantiate a Qrack::QUnit, specifying the desired number of qubits. (Optionally, also specify the initial bit permutation state in the constructor.) QUnits can be (Schmidt) "composed" and "decomposed" with and from each other, to join and separate the representations of qubit "registers" that are not entangled at the point (de)composition. Both single quantum gate commands and register-like multi-bit commands are available.
 
+For distributed simulation, the Qrack::QPager layer will segment a single register into a power-of-two count of equal length pages, running on an arbitrary number of OpenCL accelerators. The QPager layer also scales to arbitrarily small as well as large qubit counts, such that it can be appropriate for use on a single accelerator for small width simulations. The QPager layer is also compatible with Clifford set preamble circuits simulated with QStabilizerHybrid, as a layer over QPager, and QHybrid for CPU/GPU switching can be used as the "engine" layer under it. For Qrack in a cluster environment, we support the SnuCL and VirtualCL OpenCL virtualization layers, with OpenCL v1.1 compliant host code without required "host pointers."
+
 For more information, compile the doxygen.config in the root folder, and then check the "doc" folder.
 
 ## Documentation
