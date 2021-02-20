@@ -1028,7 +1028,7 @@ void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitL
 
 void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    SeparateEngines(start + length);
+    SeparateEngines(start);
 
     bitLenInt qpp = qubitsPerPage();
 
@@ -1047,7 +1047,7 @@ void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         return;
     }
 
-    if ((start + length) >= qpp) {
+    if ((start + length) > qpp) {
         // Semi-meta-
         bitLenInt metaLen = (start + length) - qpp;
         bitLenInt remainderLen = length - metaLen;
