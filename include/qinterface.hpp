@@ -1821,7 +1821,7 @@ public:
     virtual void IQFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
 
     /** Reverse the phase of the state where the register equals zero. */
-    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length) = 0;
+    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
 
     /** The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation. */
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) = 0;
@@ -1830,7 +1830,7 @@ public:
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length) = 0;
 
     /** Phase flip always - equivalent to Z X Z X on any bit in the QInterface */
-    virtual void PhaseFlip() = 0;
+    virtual void PhaseFlip();
 
     /** Set register bits to given permutation */
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);

@@ -349,7 +349,6 @@ public:
         engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
     }
 
-    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length) { engine->ZeroPhaseFlip(start, length); }
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
         engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
@@ -358,7 +357,6 @@ public:
     {
         engine->PhaseFlipIfLess(greaterPerm, start, length);
     }
-    virtual void PhaseFlip() { engine->PhaseFlip(); }
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true)

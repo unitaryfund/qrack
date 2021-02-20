@@ -358,6 +358,33 @@ void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     }
 }
 
+void QInterface::PhaseFlip()
+{
+    if (!randGlobalPhase) {
+        ApplySinglePhase(ONE_CMPLX, ONE_CMPLX, 0);
+    }
+}
+
+void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
+{
+    if (!length) {
+        return;
+    }
+
+    if (length == 1U) {
+        ApplySinglePhase(-ONE_CMPLX, ONE_CMPLX, start);
+        return;
+    }
+
+    bitLenInt min1 = length - 1U;
+    bitLenInt* controls = new bitLenInt[min1];
+    for (bitLenInt i = 0; i < min1; i++) {
+        controls[i] = start + i + 1U;
+    }
+    ApplyAntiControlledSinglePhase(controls, min1, start, -ONE_CMPLX, ONE_CMPLX);
+    delete[] controls;
+}
+
 void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
 {
     real1 timeDiff = (real1)timeDiff_f;

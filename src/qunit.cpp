@@ -3436,34 +3436,6 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
     CMULModx(&QInterface::CPOWModNOut, toMod, modN, inStart, outStart, length, controlVec);
 }
 
-void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
-{
-    if (!length) {
-        return;
-    }
-
-    if (length == 1U) {
-        ApplySinglePhase(-ONE_CMPLX, ONE_CMPLX, start);
-        return;
-    }
-
-    if ((engine == QINTERFACE_QPAGER) || (subEngine == QINTERFACE_QPAGER)) {
-        // TODO: Case below this should work for QPager, but doesn't
-        EntangleRange(start, length);
-        shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
-        DirtyShardRange(start, length);
-        return;
-    }
-
-    bitLenInt min1 = length - 1U;
-    bitLenInt* controls = new bitLenInt[min1];
-    for (bitLenInt i = 0; i < min1; i++) {
-        controls[i] = start + i + 1U;
-    }
-    ApplyAntiControlledSinglePhase(controls, min1, start, -ONE_CMPLX, ONE_CMPLX);
-    delete[] controls;
-}
-
 void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
     // Keep the bits separate, if cheap to do so:
@@ -3509,25 +3481,6 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     shards[start].unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
     DirtyShardRange(start, length);
     shards[flagIndex].isPhaseDirty = true;
-}
-
-void QUnit::PhaseFlip()
-{
-    QEngineShard& shard = shards[0];
-    if (!randGlobalPhase) {
-        RevertBasis1Qb(0);
-
-        if (shard.unit) {
-            shard.unit->PhaseFlip();
-        }
-        if (DIRTY(shard)) {
-            shard.MakeDirty();
-            return;
-        }
-
-        shard.amp0 = -shard.amp0;
-        shard.amp1 = -shard.amp1;
-    }
 }
 
 bitCapInt QUnit::GetIndexedEigenstate(

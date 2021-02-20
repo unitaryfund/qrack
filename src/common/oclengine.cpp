@@ -104,8 +104,6 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_UPDATENORM, "updatenorm"),
     OCLKernelHandle(OCL_API_APPLYM, "applym"),
     OCLKernelHandle(OCL_API_APPLYMREG, "applymreg"),
-    OCLKernelHandle(OCL_API_PHASEFLIP, "phaseflip"),
-    OCLKernelHandle(OCL_API_ZEROPHASEFLIP, "zerophaseflip"),
     OCLKernelHandle(OCL_API_CPHASEFLIPIFLESS, "cphaseflipifless"),
     OCLKernelHandle(OCL_API_PHASEFLIPIFLESS, "phaseflipifless"),
     OCLKernelHandle(OCL_API_MUL, "mul"),
