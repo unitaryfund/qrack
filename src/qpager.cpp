@@ -178,16 +178,10 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl,
     }
 
     if (target < qpp) {
-        std::vector<std::future<void>> futures(qPages.size());
         for (i = 0; i < qPages.size(); i++) {
             QEnginePtr engine = qPages[i];
-            futures[i] = std::async(std::launch::async, [engine, fn, target]() {
-                fn(engine, target);
-                engine->QueueSetDoNormalize(false);
-            });
-        }
-        for (i = 0; i < qPages.size(); i++) {
-            futures[i].get();
+            fn(engine, target);
+            engine->QueueSetDoNormalize(false);
         }
 
         return;
@@ -210,21 +204,15 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl,
 
                 engine1->ShuffleBuffers(engine2);
 
-                std::future<void> future1, future2;
-                future1 = std::async(std::launch::async, [fn, engine1, &sqi, &isSqiCtrl, &isAnti]() {
-                    if (!isSqiCtrl || isAnti) {
-                        fn(engine1, sqi);
-                    }
-                    engine1->QueueSetDoNormalize(false);
-                });
-                future2 = std::async(std::launch::async, [fn, engine2, &sqi, &isSqiCtrl, &isAnti]() {
-                    if (isSqiCtrl || !isAnti) {
-                        fn(engine2, sqi);
-                    }
-                    engine2->QueueSetDoNormalize(false);
-                });
-                future1.get();
-                future2.get();
+                if (!isSqiCtrl || isAnti) {
+                    fn(engine1, sqi);
+                }
+                engine1->QueueSetDoNormalize(false);
+
+                if (isSqiCtrl || !isAnti) {
+                    fn(engine2, sqi);
+                }
+                engine2->QueueSetDoNormalize(false);
 
                 engine1->ShuffleBuffers(engine2);
             });
@@ -301,25 +289,15 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
                 QEnginePtr engine1 = qPages[j];
                 QEnginePtr engine2 = qPages[j + targetPow];
 
-                std::future<void> future1, future2;
                 if (isSpecial) {
                     bool doTop = (top != ONE_CMPLX) && !(isSqiCtrl && !isAnti);
                     bool doBottom = (bottom != ONE_CMPLX) && !(isSqiCtrl && isAnti);
 
                     if (doTop) {
-                        future1 = std::async(
-                            std::launch::async, [engine1, &top]() { engine1->ApplySinglePhase(top, top, 0); });
+                        engine1->ApplySinglePhase(top, top, 0);
                     }
                     if (doBottom) {
-                        future2 = std::async(
-                            std::launch::async, [engine2, &bottom]() { engine2->ApplySinglePhase(bottom, bottom, 0); });
-                    }
-
-                    if (doTop) {
-                        future1.get();
-                    }
-                    if (doBottom) {
-                        future2.get();
+                        engine2->ApplySinglePhase(bottom, bottom, 0);
                     }
                 } else {
                     engine1->ShuffleBuffers(engine2);
@@ -328,16 +306,10 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
                     bool doBottom = !isSqiCtrl || !isAnti;
 
                     if (doTop) {
-                        future1 = std::async(std::launch::async, [engine1, fn, &sqi]() { fn(engine1, sqi); });
+                        fn(engine1, sqi);
                     }
                     if (doBottom) {
-                        future2 = std::async(std::launch::async, [engine2, fn, &sqi]() { fn(engine2, sqi); });
-                    }
-                    if (doTop) {
-                        future1.get();
-                    }
-                    if (doBottom) {
-                        future2.get();
+                        fn(engine2, sqi);
                     }
 
                     engine1->ShuffleBuffers(engine2);
@@ -370,25 +342,19 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
     std::sort(sortedMasks.begin(), sortedMasks.end());
 
     bitCapIntOcl maxLCV = qPages.size() >> sortedMasks.size();
-    std::vector<std::future<void>> futures(maxLCV);
     bitCapIntOcl i;
     for (i = 0; i < maxLCV; i++) {
-        futures[i] = std::async(std::launch::async, [this, i, fn, &controlMask, &target, &sortedMasks]() {
-            bitCapIntOcl j, k, jLo, jHi;
-            jHi = i;
-            j = 0;
-            for (k = 0; k < (sortedMasks.size()); k++) {
-                jLo = jHi & sortedMasks[k];
-                jHi = (jHi ^ jLo) << ONE_BCI;
-                j |= jLo;
-            }
-            j |= jHi | controlMask;
+        bitCapIntOcl j, k, jLo, jHi;
+        jHi = i;
+        j = 0;
+        for (k = 0; k < (sortedMasks.size()); k++) {
+            jLo = jHi & sortedMasks[k];
+            jHi = (jHi ^ jLo) << ONE_BCI;
+            j |= jLo;
+        }
+        j |= jHi | controlMask;
 
-            fn(qPages[j], target);
-        });
-    }
-    for (i = 0; i < maxLCV; i++) {
-        futures[i].get();
+        fn(qPages[j], target);
     }
 }
 
@@ -413,13 +379,9 @@ template <typename F> void QPager::CombineAndOp(F fn, std::vector<bitLenInt> bit
         SeparateEngines(highestBit + 1U);
     }
 
-    std::vector<std::future<void>> futures(qPages.size());
     bitCapIntOcl i;
     for (i = 0; i < qPages.size(); i++) {
-        futures[i] = std::async(std::launch::async, [this, fn, i]() { fn(qPages[i]); });
-    }
-    for (i = 0; i < qPages.size(); i++) {
-        futures[i].get();
+        fn(qPages[i]);
     }
 }
 
@@ -664,23 +626,11 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
                 std::swap(qPages[j], qPages[j + targetPow]);
             }
 
-            QEnginePtr engine1 = qPages[j];
-            QEnginePtr engine2 = qPages[j + targetPow];
-
-            std::future<void> future1, future2;
             if (top != ONE_CMPLX) {
-                future1 = std::async(std::launch::async, [engine1, top]() { engine1->ApplySinglePhase(top, top, 0); });
+                qPages[j]->ApplySinglePhase(top, top, 0);
             }
             if (bottom != ONE_CMPLX) {
-                future2 = std::async(
-                    std::launch::async, [engine2, bottom]() { engine2->ApplySinglePhase(bottom, bottom, 0); });
-            }
-
-            if (top != ONE_CMPLX) {
-                future1.get();
-            }
-            if (bottom != ONE_CMPLX) {
-                future2.get();
+                qPages[j + targetPow]->ApplySinglePhase(bottom, bottom, 0);
             }
         });
     }
@@ -1054,16 +1004,10 @@ void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         // Entirely meta-
         start -= qpp;
         bitCapIntOcl mask = pow2Ocl(start + length) - pow2Ocl(start);
-        std::vector<std::future<void>> futures;
         for (i = 0; i < qPages.size(); i++) {
             if ((i & mask) == 0U) {
-                QEnginePtr engine = qPages[i];
-                futures.push_back(std::async(std::launch::async, [engine]() { engine->PhaseFlip(); }));
+                qPages[i]->PhaseFlip();
             }
-        }
-
-        for (i = 0; i < futures.size(); i++) {
-            futures[i].get();
         }
 
         return;
@@ -1074,31 +1018,18 @@ void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         bitLenInt metaLen = (start + length) - qpp;
         bitLenInt remainderLen = length - metaLen;
         bitCapIntOcl mask = pow2Ocl(metaLen) - ONE_BCI;
-        std::vector<std::future<void>> futures;
         for (i = 0; i < qPages.size(); i++) {
             if ((i & mask) == 0U) {
-                QEnginePtr engine = qPages[i];
-                futures.push_back(std::async(std::launch::async,
-                    [engine, &start, &remainderLen]() { engine->ZeroPhaseFlip(start, remainderLen); }));
+                qPages[i]->ZeroPhaseFlip(start, remainderLen);
             }
-        }
-
-        for (i = 0; i < futures.size(); i++) {
-            futures[i].get();
         }
 
         return;
     }
 
     // Contained in sub-units
-    std::vector<std::future<void>> futures(qPages.size());
     for (i = 0; i < qPages.size(); i++) {
-        QEnginePtr engine = qPages[i];
-        futures[i] =
-            std::async(std::launch::async, [engine, &start, &length]() { engine->ZeroPhaseFlip(start, length); });
-    }
-    for (i = 0; i < qPages.size(); i++) {
-        futures[i].get();
+        qPages[i]->ZeroPhaseFlip(start, length);
     }
 }
 void QPager::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -1189,16 +1120,8 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
                 return;
             }
 
-            QEnginePtr engine1 = qPages[j + qubit1Pow];
-            QEnginePtr engine2 = qPages[j + qubit2Pow];
-
-            std::future<void> future1, future2;
-
-            future1 = std::async(std::launch::async, [engine1]() { engine1->ApplySinglePhase(I_CMPLX, I_CMPLX, 0); });
-            future2 = std::async(std::launch::async, [engine2]() { engine2->ApplySinglePhase(I_CMPLX, I_CMPLX, 0); });
-
-            future1.get();
-            future2.get();
+            qPages[j + qubit1Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+            qPages[j + qubit2Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
         });
     }
 
@@ -1233,31 +1156,21 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
 
             engine1->ShuffleBuffers(engine2);
 
-            std::future<void> future1, future2;
-
             if (qubit1 == sqi) {
                 if (isIPhaseFac) {
-                    future1 = std::async(
-                        std::launch::async, [engine1, &sqi]() { engine1->ApplySinglePhase(ZERO_CMPLX, I_CMPLX, sqi); });
-                    future2 = std::async(
-                        std::launch::async, [engine2, &sqi]() { engine2->ApplySinglePhase(I_CMPLX, ZERO_CMPLX, sqi); });
-
-                    future1.get();
-                    future2.get();
+                    engine1->ApplySinglePhase(ZERO_CMPLX, I_CMPLX, sqi);
+                    engine2->ApplySinglePhase(I_CMPLX, ZERO_CMPLX, sqi);
                 }
                 return;
             }
 
             if (isIPhaseFac) {
-                future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi]() { engine1->ISwap(qubit1, sqi); });
-                future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi]() { engine2->ISwap(qubit1, sqi); });
+                engine1->ISwap(qubit1, sqi);
+                engine2->ISwap(qubit1, sqi);
             } else {
-                future1 = std::async(std::launch::async, [engine1, &qubit1, &sqi]() { engine1->Swap(qubit1, sqi); });
-                future2 = std::async(std::launch::async, [engine2, &qubit1, &sqi]() { engine2->Swap(qubit1, sqi); });
+                engine1->Swap(qubit1, sqi);
+                engine2->Swap(qubit1, sqi);
             }
-
-            future1.get();
-            future2.get();
 
             engine1->ShuffleBuffers(engine2);
         });
