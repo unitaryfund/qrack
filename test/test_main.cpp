@@ -34,6 +34,7 @@ std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput;
 int benchmarkSamples;
+std::vector<int> devList;
 
 int main(int argc, char* argv[])
 {
@@ -52,6 +53,8 @@ int main(int argc, char* argv[])
     bool hybrid = false;
     bool stabilizer = false;
     bool stabilizer_qpager = false;
+
+    std::string devListStr;
 
     using namespace Catch::clara;
 
@@ -86,7 +89,9 @@ int main(int argc, char* argv[])
                                                "human-readable.)") |
         Opt(sparse)["--sparse"](
             "(For QEngineCPU, under QUnit:) Use a state vector optimized for sparse representation and iteration.") |
-        Opt(benchmarkSamples, "samples")["--benchmark-samples"]("number of samples to collect (default: 100)");
+        Opt(benchmarkSamples, "samples")["--benchmark-samples"]("number of samples to collect (default: 100)") |
+        Opt(devListStr, "devices")["--devices"](
+            "list of devices, for QPager (default is solely default OpenCL device)");
 
     session.cli(cli);
 
@@ -126,6 +131,15 @@ int main(int argc, char* argv[])
         stabilizer = true;
         // Unstable:
         // stabilizer_qpager = true;
+    }
+
+    if (devListStr.compare("") != 0) {
+        std::stringstream devListStr_stream(devListStr);
+        while (devListStr_stream.good()) {
+            std::string substr;
+            getline(devListStr_stream, substr, ',');
+            devList.push_back(stoi(substr));
+        }
     }
 
     int num_failed = 0;
@@ -348,5 +362,5 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     rng->seed(rngSeed);
 
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20, 0, rng, ONE_CMPLX,
-        enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+        enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 }

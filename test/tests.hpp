@@ -41,6 +41,7 @@ extern std::string mOutputFileName;
 extern std::ofstream mOutputFile;
 extern bool isBinaryOutput;
 extern int benchmarkSamples;
+extern std::vector<int> devList;
 
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
