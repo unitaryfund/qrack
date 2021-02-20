@@ -64,7 +64,6 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
         thresholdQubitsPerPage = qubitCount - 2U;
 
         bitLenInt minQubits = log2(std::thread::hardware_concurrency()) + PSTRIDEPOW;
-
         if (thresholdQubitsPerPage < minQubits) {
             thresholdQubitsPerPage = minQubits;
         }
