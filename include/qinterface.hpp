@@ -1666,12 +1666,6 @@ public:
     /** Add a classical integer to the register, with sign and with (phase-based) carry. */
     virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
-    /** Add classical BCD integer (without sign) */
-    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
-
-    /** Add classical BCD integer (without sign, with carry) */
-    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
-
     /** Subtract classical integer (without sign) */
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
 
@@ -1692,11 +1686,19 @@ public:
     /** Subtract a classical integer from the register, with sign and with carry. */
     virtual void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
+#if ENABLE_BCD
+    /** Add classical BCD integer (without sign) */
+    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
+
+    /** Add classical BCD integer (without sign, with carry) */
+    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+
     /** Subtract BCD integer (without sign) */
     virtual void DECBCD(bitCapInt toSub, bitLenInt start, bitLenInt length);
 
     /** Subtract BCD integer (without sign, with carry) */
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+#endif
 
     /** Multiply by integer */
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length) = 0;

@@ -305,7 +305,9 @@ public:
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+#if ENABLE_BCD
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+#endif
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
@@ -387,8 +389,10 @@ protected:
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
     virtual void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
         const bitLenInt& overflowIndex, const bitLenInt& carryIndex);
+#if ENABLE_BCD
     virtual void INCDECBCDC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
+#endif
 
     void InitOCL(int devID);
     PoolItemPtr GetFreePoolItem();
@@ -470,9 +474,11 @@ protected:
         const bitLenInt carryIndex);
     void INTSC(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt overflowIndex, const bitLenInt carryIndex);
+#if ENABLE_BCD
     void INTBCD(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length);
     void INTBCDC(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt carryIndex);
+#endif
     void xMULx(OCLAPI api_call, bitCapIntOcl* bciArgs, BufferPtr controlBuffer);
     void MULx(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
         const bitLenInt length);

@@ -899,16 +899,6 @@ void QPager::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt
     CombineAndOp([&](QEnginePtr engine) { engine->INCSC(toAdd, start, length, carryIndex); },
         { static_cast<bitLenInt>(start + length - 1U), carryIndex });
 }
-void QPager::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
-{
-    CombineAndOp([&](QEnginePtr engine) { engine->INCBCD(toAdd, start, length); },
-        { static_cast<bitLenInt>(start + length - 1U) });
-}
-void QPager::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    CombineAndOp([&](QEnginePtr engine) { engine->INCBCDC(toAdd, start, length, carryIndex); },
-        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
-}
 void QPager::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->DECC(toSub, start, length, carryIndex); },
@@ -924,11 +914,23 @@ void QPager::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt
     CombineAndOp([&](QEnginePtr engine) { engine->DECSC(toSub, start, length, carryIndex); },
         { static_cast<bitLenInt>(start + length - 1U), carryIndex });
 }
+#if ENABLE_BCD
+void QPager::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->INCBCD(toAdd, start, length); },
+        { static_cast<bitLenInt>(start + length - 1U) });
+}
+void QPager::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->INCBCDC(toAdd, start, length, carryIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
+}
 void QPager::DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->DECBCDC(toSub, start, length, carryIndex); },
         { static_cast<bitLenInt>(start + length - 1U), carryIndex });
 }
+#endif
 void QPager::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->MUL(toMul, inOutStart, carryStart, length); },
