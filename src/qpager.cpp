@@ -448,7 +448,7 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
         // To be clear, under the assumption of perfect decomposibility, all further pages should produce the exact same
         // "dest" as the line above, hence we can take just the first nonzero one and "Dispose" the rest. (This might
         // pose a problem or limitation for "approximate separability.")
-        for (bitCapIntOcl i = 1; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             if (!didDecompose && !qPages[i]->IsZeroAmplitude()) {
                 qPages[i]->Decompose(start, dest->qPages[0]);
                 didDecompose = true;
@@ -463,7 +463,7 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
             CombineEngines(inPage + dest->qubitCount);
         }
         // (Same as above)
-        for (bitCapIntOcl i = 1; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qubitCount);
             if (!didDecompose && !qPages[i]->IsZeroAmplitude()) {
                 qPages[i]->Decompose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qPages[0]);
@@ -663,8 +663,11 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
 
     std::vector<bitLenInt> metaControls;
     std::vector<bitLenInt> intraControls;
+    bool isSqiCtrl = false;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        if (controls[i] < qpp) {
+        if ((target >= qpp) && (controls[i] == (qpp - 1U))) {
+            isSqiCtrl = true;
+        } else if (controls[i] < qpp) {
             intraControls.push_back(controls[i]);
         } else {
             metaControls.push_back(controls[i]);
@@ -682,15 +685,6 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
             engine->ApplySingleBit(mtrx, lTarget);
         }
     };
-
-    bool isSqiCtrl = false;
-    if (target >= qpp) {
-        std::vector<bitLenInt>::iterator intraControl = std::find(intraControls.begin(), intraControls.end(), qpp - 1U);
-        if (intraControl != intraControls.end()) {
-            intraControls.erase(intraControl);
-            isSqiCtrl = true;
-        }
-    }
 
     if (metaControls.size() == 0) {
         SingleBitGate(target, sg, isSqiCtrl, anti);
