@@ -3438,6 +3438,23 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
 
 void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
+    if (!length) {
+        return;
+    }
+
+    if (length == 1U) {
+        ApplySinglePhase(-ONE_CMPLX, ONE_CMPLX, start);
+        return;
+    }
+
+    if ((engine == QINTERFACE_QPAGER) || (subEngine == QINTERFACE_QPAGER)) {
+        // TODO: Case below this should work for QPager, but doesn't
+        EntangleRange(start, length);
+        shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
+        DirtyShardRange(start, length);
+        return;
+    }
+
     bitLenInt min1 = length - 1U;
     bitLenInt* controls = new bitLenInt[min1];
     for (bitLenInt i = 0; i < min1; i++) {
