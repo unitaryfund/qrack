@@ -48,7 +48,7 @@ double formatTime(double t, bool logNormal)
 QInterfacePtr MakeRandQubit()
 {
     QInterfacePtr qubit = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1U, 0, rng,
-        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng);
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
     real1 theta = 2 * M_PI * qubit->Rand();
     real1 phi = 2 * M_PI * qubit->Rand();
@@ -103,7 +103,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 qftReg.reset();
             }
             qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits, 0, rng,
-                ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+                ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON,
+                devList);
         }
         avgt = 0.0;
 

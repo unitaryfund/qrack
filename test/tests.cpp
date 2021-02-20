@@ -66,7 +66,7 @@ void log(QInterfacePtr p) { std::cout << std::endl << std::showpoint << p << std
 QInterfacePtr MakeEngine(bitLenInt qubitCount)
 {
     return CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, qubitCount, 0, rng,
-        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 }
 
 TEST_CASE("test_complex")
@@ -507,7 +507,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")
 
     QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20U, 0, rng,
         ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_DEFAULT_ARG,
-        std::vector<int>{}, 10);
+        devList, 10);
 
     control[0] = 9;
     qftReg2->SetPermutation((1U << 9U) | (1U << 10U));
@@ -3342,7 +3342,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
 
     QInterfacePtr qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 20U, 0, rng,
         ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_DEFAULT_ARG,
-        std::vector<int>{}, 10);
+        devList, 10);
 
     qftReg2->SetPermutation(3U << 9U);
     qftReg2->H(10);
@@ -3592,7 +3592,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
 
     // Try across device/heap allocation case:
     qftReg2 = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 0, rng,
-        complex(ONE_R1, ZERO_R1), enable_normalization, true, true, device_id, !disable_hardware_rng, sparse);
+        complex(ONE_R1, ZERO_R1), enable_normalization, true, true, device_id, !disable_hardware_rng, sparse,
+        REAL1_EPSILON, devList);
 
     qftReg->SetPermutation(0x2b);
     qftReg->Decompose(0, qftReg2);
@@ -4587,7 +4588,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers", "[supreme]")
     std::map<bitCapInt, int> testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
 
     QInterfacePtr goldStandard = CreateQuantumInterface(testSubEngineType, testSubSubEngineType, 8, 0, rng, ONE_CMPLX,
-        false, true, false, device_id, !disable_hardware_rng);
+        false, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
     goldStandard->SetPermutation(0);
     goldStandard->H(0);
@@ -4856,7 +4857,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         false, true, false, device_id, !disable_hardware_rng);
 
     QInterfacePtr testCase = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, n, 0, rng,
-        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
     for (int trial = 0; trial < TRIALS; trial++) {
         std::vector<std::vector<int>> gate1QbRands(Depth);
@@ -5082,7 +5083,7 @@ TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
         false, true, false, device_id, !disable_hardware_rng);
 
     QInterfacePtr testCase = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, n, 0, rng,
-        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
     for (int trial = 0; trial < TRIALS; trial++) {
         std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };

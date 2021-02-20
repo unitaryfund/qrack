@@ -37,6 +37,7 @@ std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput = false;
 int benchmarkSamples = 100;
+std::vector<int> devList;
 
 int main(int argc, char* argv[])
 {
@@ -55,6 +56,8 @@ int main(int argc, char* argv[])
     bool hybrid = false;
     bool stabilizer = false;
     bool stabilizer_qpager = false;
+
+    std::string devListStr;
 
     int mxQbts = 24;
 
@@ -94,7 +97,9 @@ int main(int argc, char* argv[])
         Opt(single_qubit_run)["--single"]("Only run single (maximum) qubit count for tests") |
         Opt(sparse)["--sparse"](
             "(For QEngineCPU, under QUnit:) Use a state vector optimized for sparse representation and iteration.") |
-        Opt(benchmarkSamples, "samples")["--benchmark-samples"]("number of samples to collect (default: 100)");
+        Opt(benchmarkSamples, "samples")["--benchmark-samples"]("number of samples to collect (default: 100)") |
+        Opt(devListStr, "devices")["--devices"](
+            "list of devices, for QPager (default is solely default OpenCL device)");
 
     session.cli(cli);
 
@@ -134,6 +139,15 @@ int main(int argc, char* argv[])
         stabilizer = true;
         // Unstable:
         // stabilizer_qpager = true;
+    }
+
+    if (devListStr.compare("") != 0) {
+        std::stringstream devListStr_stream(devListStr);
+        while (devListStr_stream.good()) {
+            std::string substr;
+            getline(devListStr_stream, substr, ',');
+            devList.push_back(stoi(substr));
+        }
     }
 
     if (mxQbts == -1) {
