@@ -1028,8 +1028,6 @@ void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitL
 
 void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
-    SeparateEngines(start + length);
-
     bitLenInt qpp = qubitsPerPage();
 
     bitCapIntOcl i;
@@ -1047,7 +1045,7 @@ void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         return;
     }
 
-    if ((start + length) >= qpp) {
+    if ((start + length) > qpp) {
         // Semi-meta-
         bitLenInt metaLen = (start + length) - qpp;
         bitLenInt remainderLen = length - metaLen;
@@ -1330,6 +1328,7 @@ real1_f QPager::ProbAll(bitCapInt fullRegister)
     fullRegister -= subIndex * pageMaxQPower();
     return qPages[subIndex]->ProbAll(fullRegister);
 }
+
 real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     CombineEngines(log2(mask));
@@ -1349,6 +1348,7 @@ bool QPager::ApproxCompare(QInterfacePtr toCompare, real1_f error_tol)
     bool toRet = qPages[0]->ApproxCompare(toComparePager->qPages[0], error_tol);
     return toRet;
 }
+
 void QPager::UpdateRunningNorm(real1_f norm_thresh)
 {
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
