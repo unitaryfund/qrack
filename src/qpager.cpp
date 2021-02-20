@@ -437,6 +437,7 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
     dest->CombineEngines();
 
     bitLenInt inPage = qubitCount - (start + dest->qubitCount);
+    bool didDecompose = false;
 
     if (start <= inPage) {
         if (start == 0) {
@@ -444,12 +445,16 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
         } else {
             CombineEngines(start + dest->qubitCount);
         }
-        qPages[0]->Decompose(start, dest->qPages[0]);
         // To be clear, under the assumption of perfect decomposibility, all further pages should produce the exact same
-        // "dest" as the line above, hence we can take just the first one and "Dispose" the rest. (This might pose a
-        // problem or limitation for "approximate separability.")
+        // "dest" as the line above, hence we can take just the first nonzero one and "Dispose" the rest. (This might
+        // pose a problem or limitation for "approximate separability.")
         for (bitCapIntOcl i = 1; i < qPages.size(); i++) {
-            qPages[i]->Dispose(start, dest->qubitCount);
+            if (!didDecompose && !qPages[i]->IsZeroAmplitude()) {
+                qPages[i]->Decompose(start, dest->qPages[0]);
+                didDecompose = true;
+            } else {
+                qPages[i]->Dispose(start, dest->qubitCount);
+            }
         }
     } else {
         if ((qPages[0]->GetQubitCount() - (inPage + dest->qubitCount)) == 0) {
@@ -457,10 +462,15 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
         } else {
             CombineEngines(inPage + dest->qubitCount);
         }
-        qPages[0]->Decompose(qPages[0]->GetQubitCount() - (inPage + dest->qubitCount), dest->qPages[0]);
         // (Same as above)
         for (bitCapIntOcl i = 1; i < qPages.size(); i++) {
             qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qubitCount);
+            if (!didDecompose && !qPages[i]->IsZeroAmplitude()) {
+                qPages[i]->Decompose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qPages[0]);
+                didDecompose = true;
+            } else {
+                qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qubitCount);
+            }
         }
     }
 
@@ -953,6 +963,11 @@ void QPager::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLe
 void QPager::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
     bitLenInt controlLen)
 {
+    if (!controlLen) {
+        MUL(toMul, inOutStart, carryStart, length);
+        return;
+    }
+
     CombineAndOpControlled(
         [&](QEnginePtr engine) { engine->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen); },
         { static_cast<bitLenInt>(inOutStart + length - 1U), static_cast<bitLenInt>(carryStart + length - 1U) },
@@ -961,6 +976,11 @@ void QPager::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, b
 void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
     bitLenInt controlLen)
 {
+    if (!controlLen) {
+        DIV(toDiv, inOutStart, carryStart, length);
+        return;
+    }
+
     CombineAndOpControlled(
         [&](QEnginePtr engine) { engine->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen); },
         { static_cast<bitLenInt>(inOutStart + length - 1U), static_cast<bitLenInt>(carryStart + length - 1U) },
@@ -969,6 +989,11 @@ void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, b
 void QPager::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
+    if (!controlLen) {
+        MULModNOut(toMul, modN, inStart, outStart, length);
+        return;
+    }
+
     CombineAndOpControlled(
         [&](QEnginePtr engine) { engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen); },
         { static_cast<bitLenInt>(inStart + length - 1U), static_cast<bitLenInt>(outStart + length - 1U) }, controls,
@@ -977,6 +1002,11 @@ void QPager::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bit
 void QPager::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
+    if (!controlLen) {
+        IMULModNOut(toMul, modN, inStart, outStart, length);
+        return;
+    }
+
     CombineAndOpControlled(
         [&](QEnginePtr engine) { engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen); },
         { static_cast<bitLenInt>(inStart + length - 1U), static_cast<bitLenInt>(outStart + length - 1U) }, controls,
@@ -985,6 +1015,11 @@ void QPager::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bi
 void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
+    if (!controlLen) {
+        POWModNOut(base, modN, inStart, outStart, length);
+        return;
+    }
+
     CombineAndOpControlled(
         [&](QEnginePtr engine) { engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen); },
         { static_cast<bitLenInt>(inStart + length - 1U), static_cast<bitLenInt>(outStart + length - 1U) }, controls,
@@ -1049,7 +1084,7 @@ void QPager::PhaseFlip()
 }
 
 bitCapInt QPager::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
-    unsigned char* values, bool resetValue)
+    unsigned char* values, bool ignored)
 {
     CombineAndOp(
         [&](QEnginePtr engine) { engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, true); },
@@ -1251,8 +1286,6 @@ void QPager::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2
 
 real1_f QPager::Prob(bitLenInt qubit)
 {
-    SeparateEngines(qubit + 1U);
-
     if (qPages.size() == 1U) {
         return qPages[0]->Prob(qubit);
     }

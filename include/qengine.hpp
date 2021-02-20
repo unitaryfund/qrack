@@ -61,6 +61,8 @@ public:
 
     virtual void CopyStateVec(QEnginePtr src) = 0;
 
+    virtual bool IsZeroAmplitude() = 0;
+
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
     virtual void SetAmplitudePage(

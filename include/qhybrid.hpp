@@ -73,6 +73,8 @@ public:
 
     virtual void ZeroAmplitudes() { engine->ZeroAmplitudes(); }
 
+    virtual bool IsZeroAmplitude() { return engine->IsZeroAmplitude(); }
+
     virtual void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QHybrid>(src)); }
     virtual void CopyStateVec(QHybridPtr src)
     {
