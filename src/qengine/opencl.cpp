@@ -1104,6 +1104,12 @@ void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
 
 void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy)
 {
+    if (!stateBuffer) {
+        // Compose will have a wider but 0 stateVec
+        SetQubitCount(qubitCount + toCopy->qubitCount);
+        return;
+    }
+
     if (doNormalize) {
         NormalizeState();
     }
@@ -1200,6 +1206,9 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     if (!stateBuffer) {
         SetQubitCount(qubitCount - length);
+        if (destination) {
+            destination->ZeroAmplitudes();
+        }
         return;
     }
 

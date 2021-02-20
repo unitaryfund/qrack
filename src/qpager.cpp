@@ -437,6 +437,7 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
     dest->CombineEngines();
 
     bitLenInt inPage = qubitCount - (start + dest->qubitCount);
+    bool didDecompose = false;
 
     if (start <= inPage) {
         if (start == 0) {
@@ -444,12 +445,16 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
         } else {
             CombineEngines(start + dest->qubitCount);
         }
-        qPages[0]->Decompose(start, dest->qPages[0]);
         // To be clear, under the assumption of perfect decomposibility, all further pages should produce the exact same
-        // "dest" as the line above, hence we can take just the first one and "Dispose" the rest. (This might pose a
-        // problem or limitation for "approximate separability.")
+        // "dest" as the line above, hence we can take just the first nonzero one and "Dispose" the rest. (This might
+        // pose a problem or limitation for "approximate separability.")
         for (bitCapIntOcl i = 1; i < qPages.size(); i++) {
-            qPages[i]->Dispose(start, dest->qubitCount);
+            if (!didDecompose && !qPages[i]->IsZeroAmplitude()) {
+                qPages[i]->Decompose(start, dest->qPages[0]);
+                didDecompose = true;
+            } else {
+                qPages[i]->Dispose(start, dest->qubitCount);
+            }
         }
     } else {
         if ((qPages[0]->GetQubitCount() - (inPage + dest->qubitCount)) == 0) {
@@ -457,10 +462,15 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
         } else {
             CombineEngines(inPage + dest->qubitCount);
         }
-        qPages[0]->Decompose(qPages[0]->GetQubitCount() - (inPage + dest->qubitCount), dest->qPages[0]);
         // (Same as above)
         for (bitCapIntOcl i = 1; i < qPages.size(); i++) {
             qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qubitCount);
+            if (!didDecompose && !qPages[i]->IsZeroAmplitude()) {
+                qPages[i]->Decompose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qPages[0]);
+                didDecompose = true;
+            } else {
+                qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qubitCount);
+            }
         }
     }
 

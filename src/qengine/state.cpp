@@ -662,8 +662,14 @@ void QEngineCPU::CUniformParityRZ(
 bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 {
     bitLenInt result = qubitCount;
-
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
+
+    if (!stateVec) {
+        // Compose will have a wider but 0 stateVec
+        SetQubitCount(nQubitCount);
+        return result;
+    }
+
     bitCapInt nMaxQPower = pow2(nQubitCount);
     bitCapInt startMask = maxQPower - ONE_BCI;
     bitCapInt endMask = (toCopy->maxQPower - ONE_BCI) << qubitCount;
@@ -705,8 +711,15 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
  */
 bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 {
+    bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
+
+    if (!stateVec) {
+        // Compose will have a wider but 0 stateVec
+        SetQubitCount(nQubitCount);
+        return start;
+    }
+
     bitLenInt oQubitCount = toCopy->qubitCount;
-    bitLenInt nQubitCount = qubitCount + oQubitCount;
     bitCapInt nMaxQPower = pow2(nQubitCount);
     bitCapInt startMask = pow2Mask(start);
     bitCapInt midMask = bitRegMask(start, oQubitCount);
@@ -813,6 +826,9 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     if (!stateVec) {
         SetQubitCount(qubitCount - length);
+        if (destination) {
+            destination->ZeroAmplitudes();
+        }
         return;
     }
 
