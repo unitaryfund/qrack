@@ -960,7 +960,7 @@ MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
     return simulator->Prob(shards[simulator][q]);
 }
 
-#if FPPOW > 4 || ENABLE_COMPLEX_X2
+#if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
 /**
  * (External API) Simulate a Hamiltonian
  */
