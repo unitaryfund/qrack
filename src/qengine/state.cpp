@@ -204,7 +204,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
-    real1 nrm = doNormalize && (runningNorm != REAL1_DEFAULT_ARG) ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
+    real1 nrm = (doNormalize && (runningNorm != REAL1_DEFAULT_ARG)) ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
 
     if (doCalcNorm) {
         runningNorm = ONE_R1;
@@ -367,7 +367,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
-    real1 nrm = doNormalize ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
+    real1 nrm = (doNormalize && (runningNorm != REAL1_DEFAULT_ARG)) ? (ONE_R1 / std::sqrt(runningNorm)) : ONE_R1;
 
     if (doCalcNorm) {
         runningNorm = ONE_R1;
@@ -1333,39 +1333,6 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
     delete[] partError;
 
     return totError;
-}
-
-/// Phase flip always - equivalent to Z X Z X on any bit in the QEngineCPU
-void QEngineCPU::PhaseFlip()
-{
-    CHECK_ZERO_SKIP();
-
-    // This gate has no physical consequence. We only enable it for "book-keeping," if the engine is not using global
-    // phase offsets.
-    if (randGlobalPhase) {
-        return;
-    }
-
-    Dispatch([this] {
-        ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); };
-
-        if (stateVec->is_sparse()) {
-            par_for_set(CastStateVecSparse()->iterable(), fn);
-        } else {
-            par_for(0, maxQPower, fn);
-        }
-    });
-}
-
-/// For chips with a zero flag, flip the phase of the state where the register equals zero.
-void QEngineCPU::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
-{
-    CHECK_ZERO_SKIP();
-
-    Dispatch([this, start, length] {
-        par_for_skip(0, maxQPower, pow2(start), length,
-            [&](const bitCapInt lcv, const int cpu) { stateVec->write(lcv, -stateVec->read(lcv)); });
-    });
 }
 
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.

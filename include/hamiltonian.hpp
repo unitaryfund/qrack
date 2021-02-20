@@ -95,11 +95,7 @@ struct UniformHamiltonianOp : HamiltonianOp {
         uniform = true;
     }
 
-#if FPPOW < 6 && !ENABLE_COMPLEX_X2
-    UniformHamiltonianOp(_QrackTimeEvolveOpHeader teoh, real1_f* mtrx)
-#else
     UniformHamiltonianOp(_QrackTimeEvolveOpHeader teoh, double* mtrx)
-#endif
         : HamiltonianOp()
     {
         targetBit = (bitLenInt)(teoh.target);

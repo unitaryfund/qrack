@@ -2399,25 +2399,6 @@ void QEngineOCL::PhaseFlipX(OCLAPI api_call, bitCapIntOcl* bciArgs)
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
 }
 
-void QEngineOCL::PhaseFlip()
-{
-    // This gate has no physical consequence. We only enable it for "book-keeping," if the engine is not using global
-    // phase offsets.
-    if (!randGlobalPhase) {
-        bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-        PhaseFlipX(OCL_API_PHASEFLIP, bciArgs);
-    }
-}
-
-/// For chips with a zero flag, flip the phase of the state where the register equals zero.
-void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
-{
-    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> (bitCapIntOcl)length, pow2Ocl(start), length, 0, 0, 0, 0, 0,
-        0, 0 };
-
-    PhaseFlipX(OCL_API_ZEROPHASEFLIP, bciArgs);
-}
-
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> (bitCapIntOcl)ONE_BCI, bitRegMaskOcl(start, length),

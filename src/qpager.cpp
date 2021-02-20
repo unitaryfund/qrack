@@ -158,8 +158,6 @@ void QPager::SeparateEngines(bitLenInt thresholdBits)
 template <typename Qubit1Fn>
 void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl, const bool& isAnti)
 {
-    SeparateEngines(target + 1U);
-
     bitLenInt qpp = qubitsPerPage();
 
     bitCapIntOcl i;
@@ -592,60 +590,19 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
 
 void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
 {
+    SeparateEngines();
     SingleBitGate(target, [mtrx](QEnginePtr engine, bitLenInt lTarget) { engine->ApplySingleBit(mtrx, lTarget); });
 }
 
 void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom, bitLenInt target)
 {
-    if (target < qubitsPerPage()) {
-        SeparateEngines(target + 1U);
-        if (isInvert) {
-            SingleBitGate(target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) {
-                engine->ApplySingleInvert(top, bottom, lTarget);
-            });
-        } else {
-            SingleBitGate(target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) {
-                engine->ApplySinglePhase(top, bottom, lTarget);
-            });
-        }
-        return;
-    }
-
     SeparateEngines();
-    bitLenInt qpp = qubitsPerPage();
-
-    target -= qpp;
-    bitCapIntOcl targetPow = pow2Ocl(target);
-    bitCapIntOcl qMask = targetPow - 1U;
-
-    if (randGlobalPhase) {
-        bottom /= top;
-        top = ONE_CMPLX;
-    }
-
-    bitCapIntOcl maxLCV = qPages.size() >> 1U;
-    std::vector<std::future<void>> futures(maxLCV);
-    bitCapIntOcl i;
-    for (i = 0; i < maxLCV; i++) {
-        futures[i] = std::async(std::launch::async, [this, i, &isInvert, &top, &bottom, &targetPow, &qMask]() {
-            bitCapIntOcl j = i & qMask;
-            j |= (i ^ j) << ONE_BCI;
-
-            if (isInvert) {
-                std::swap(qPages[j], qPages[j + targetPow]);
-            }
-
-            if (top != ONE_CMPLX) {
-                qPages[j]->ApplySinglePhase(top, top, 0);
-            }
-            if (bottom != ONE_CMPLX) {
-                qPages[j + targetPow]->ApplySinglePhase(bottom, bottom, 0);
-            }
-        });
-    }
-
-    for (i = 0; i < maxLCV; i++) {
-        futures[i].get();
+    if (isInvert) {
+        SingleBitGate(target,
+            [top, bottom](QEnginePtr engine, bitLenInt lTarget) { engine->ApplySingleInvert(top, bottom, lTarget); });
+    } else {
+        SingleBitGate(target,
+            [top, bottom](QEnginePtr engine, bitLenInt lTarget) { engine->ApplySinglePhase(top, bottom, lTarget); });
     }
 }
 
@@ -1020,44 +977,6 @@ void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitL
         controlLen);
 }
 
-void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
-{
-    bitLenInt qpp = qubitsPerPage();
-
-    bitCapIntOcl i;
-
-    if (start >= qpp) {
-        // Entirely meta-
-        start -= qpp;
-        bitCapIntOcl mask = pow2Ocl(start + length) - pow2Ocl(start);
-        for (i = 0; i < qPages.size(); i++) {
-            if ((i & mask) == 0U) {
-                qPages[i]->PhaseFlip();
-            }
-        }
-
-        return;
-    }
-
-    if ((start + length) > qpp) {
-        // Semi-meta-
-        bitLenInt metaLen = (start + length) - qpp;
-        bitLenInt remainderLen = length - metaLen;
-        bitCapIntOcl mask = pow2Ocl(metaLen) - ONE_BCI;
-        for (i = 0; i < qPages.size(); i++) {
-            if ((i & mask) == 0U) {
-                qPages[i]->ZeroPhaseFlip(start, remainderLen);
-            }
-        }
-
-        return;
-    }
-
-    // Contained in sub-units
-    for (i = 0; i < qPages.size(); i++) {
-        qPages[i]->ZeroPhaseFlip(start, length);
-    }
-}
 void QPager::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex); },
@@ -1067,12 +986,6 @@ void QPager::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 {
     CombineAndOp([&](QEnginePtr engine) { engine->PhaseFlipIfLess(greaterPerm, start, length); },
         { static_cast<bitLenInt>(start + length - 1U) });
-}
-void QPager::PhaseFlip()
-{
-    for (bitLenInt i = 0; i < qPages.size(); i++) {
-        qPages[i]->PhaseFlip();
-    }
 }
 
 bitCapInt QPager::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,

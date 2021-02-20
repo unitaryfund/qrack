@@ -2252,35 +2252,6 @@ void kernel applymreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOc
     }
 }
 
-void kernel phaseflip(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
-{
-    bitCapIntOcl Nthreads, lcv;
-
-    Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        stateVec[lcv] = -stateVec[lcv];
-    }
-}
-
-void kernel zerophaseflip(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
-{
-    bitCapIntOcl Nthreads, lcv;
-    bitCapIntOcl i, iLow, iHigh;
-
-    Nthreads = get_global_size(0);
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl skipMask = bitCapIntOclPtr[1] - ONE_BCI;
-    bitCapIntOcl skipLength = bitCapIntOclPtr[2];
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        iHigh = lcv;
-        iLow = iHigh & skipMask;
-        i = iLow | ((iHigh ^ iLow) << skipLength);
-
-        stateVec[i] = -stateVec[i];
-    }
-}
-
 void kernel cphaseflipifless(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl Nthreads, lcv;

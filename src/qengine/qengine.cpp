@@ -366,12 +366,13 @@ void QEngine::ApplyAntiControlled2x2(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1U];
+    bitCapInt targetMask = pow2Ocl(target);
     for (bitLenInt i = 0U; i < controlLen; i++) {
         qPowersSorted[i] = pow2(controls[i]);
     }
-    qPowersSorted[controlLen] = pow2(target);
+    qPowersSorted[controlLen] = targetMask;
     std::sort(qPowersSorted, qPowersSorted + controlLen + 1U);
-    Apply2x2(0U, pow2(target), mtrx, controlLen + 1U, qPowersSorted, false);
+    Apply2x2(0, targetMask, mtrx, controlLen + 1U, qPowersSorted, false);
     delete[] qPowersSorted;
 }
 
