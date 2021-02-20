@@ -163,10 +163,17 @@ public:
         engineCpu->runningNorm = REAL1_DEFAULT_ARG;
     }
 
+    virtual bool IsZeroAmplitude() { return !stateVec; }
+
     virtual void CopyStateVec(QEnginePtr src)
     {
         Finish();
         src->Finish();
+
+        if (src->IsZeroAmplitude()) {
+            ZeroAmplitudes();
+            return;
+        }
 
         complex* sv;
         if (isSparse) {

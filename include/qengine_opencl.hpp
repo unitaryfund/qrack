@@ -221,10 +221,17 @@ public:
         }
     }
 
+    virtual bool IsZeroAmplitude() { return !stateBuffer; }
+
     virtual void CopyStateVec(QEnginePtr src)
     {
         Finish();
         src->Finish();
+
+        if (src->IsZeroAmplitude()) {
+            ZeroAmplitudes();
+            return;
+        }
 
         LockSync(CL_MAP_WRITE);
         src->GetQuantumState(stateVec);
