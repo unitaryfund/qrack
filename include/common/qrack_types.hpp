@@ -78,7 +78,10 @@ typedef float real1_f;
 #define ONE_R1 ((real1)1.0f)
 #define PI_R1 ((real1)M_PI)
 #define REAL1_DEFAULT_ARG ((real1)-999.0f)
-#define REAL1_EPSILON ((real1)5.9604645e-08f)
+// Half of the amplitude of 16 maximally superposed qubits in any permutation
+#define REAL1_EPSILON ((real1)2e-17f)
+// Minimum representable difference from 1
+#define FP_NORM_EPSILON ((real1)0.0009765625f)
 } // namespace Qrack
 #elif FPPOW < 6
 namespace Qrack {
@@ -89,7 +92,10 @@ typedef float real1_f;
 #define ONE_R1 1.0f
 #define PI_R1 ((real1)M_PI)
 #define REAL1_DEFAULT_ARG -999.0f
-#define REAL1_EPSILON FLT_EPSILON
+// Half of the amplitude of 32 maximally superposed qubits in any permutation
+#define REAL1_EPSILON 2e-33f
+// Minimum representable difference from 1
+#define FP_NORM_EPSILON 1.192092896e-07f
 } // namespace Qrack
 #else
 namespace Qrack {
@@ -100,7 +106,10 @@ typedef double real1_f;
 #define ONE_R1 1.0
 #define PI_R1 M_PI
 #define REAL1_DEFAULT_ARG -999.0
-#define REAL1_EPSILON DBL_EPSILON
+// Half of the amplitude of 64 maximally superposed qubits in any permutation
+#define REAL1_EPSILON 2e-65
+// Minimum representable difference from 1
+#define FP_NORM_EPSILON 2.2204460492503131e-16
 } // namespace Qrack
 #endif
 

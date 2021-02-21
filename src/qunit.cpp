@@ -29,7 +29,7 @@
 #include "qunit.hpp"
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_NORM_0(c) (c == ZERO_CMPLX)
+#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 #define IS_0_R1(r) (r == ZERO_R1)
 #define IS_1_R1(r) (r == ONE_R1)
 #define IS_1_CMPLX(c) (c == ONE_CMPLX)
@@ -85,7 +85,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((initState >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards.push_back(QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase()));
+        shards.push_back(QEngineShard(bitState, GetNonunitaryPhase()));
     }
 }
 
@@ -105,7 +105,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((perm >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards.push_back(QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase()));
+        shards.push_back(QEngineShard(bitState, GetNonunitaryPhase()));
     }
 }
 
@@ -150,7 +150,7 @@ void QUnit::SetQuantumState(const complex* inputState)
     unit->SetQuantumState(inputState);
 
     for (bitLenInt idx = 0; idx < qubitCount; idx++) {
-        shards[idx] = QEngineShard(unit, idx, doNormalize ? amplitudeFloor : ZERO_R1);
+        shards[idx] = QEngineShard(unit, idx);
     }
 }
 
@@ -620,7 +620,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
         complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
     prob = ProbBase(start);
-    didSeparate |= (IS_0_R1(prob) || IS_0_R1(ONE_R1 - prob));
+    didSeparate |= (IS_0_R1(prob) || IS_1_R1(prob));
 
     H(start);
     S(start);
@@ -1169,7 +1169,7 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     bool bitState;
     for (bitLenInt i = 0; i < length; i++) {
         bitState = ((value >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards[i + start] = QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase());
+        shards[i + start] = QEngineShard(bitState, GetNonunitaryPhase());
     }
 }
 

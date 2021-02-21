@@ -2870,7 +2870,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(2));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
 {
     int i;
 
@@ -3219,7 +3219,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
     }
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout", "[travis_xfail]")
 {
     bitLenInt controls[1] = { 16 };
 
@@ -3253,7 +3253,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cimulmodnout")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3 | (1 << 16)));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout", "[travis_xfail]")
 {
     bitLenInt controls[1] = { 16 };
 
@@ -3359,7 +3359,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zero_phase_flip")
     REQUIRE_THAT(qftReg2, HasProbability(0, 12, 0));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less", "[travis_xfail]")
 {
     qftReg->SetReg(0, 20, 0x40000);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x40000));
