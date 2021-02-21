@@ -12,7 +12,7 @@ script:
   - sudo make install
   - cd .. && sudo rm -r _build
   - mkdir _build && cd _build && cmake -DFPPOW=5 .. && make -j 8 all
-  - ./unittest
+  - ./unittest ~[travis_xfail]
   - cd ../..
 #  - cd ../.. && git clone -b qrack_unit_tests https://github.com/vm6502q/ProjectQ.git && cd ProjectQ
 #  - python -m pip install -r requirements.txt
