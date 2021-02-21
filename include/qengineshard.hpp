@@ -21,8 +21,8 @@
 
 #include "qinterface.hpp"
 
-#define IS_SAME(c1, c2) (norm((c1) - (c2)) <= REAL1_EPSILON)
-#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= REAL1_EPSILON)
+#define IS_SAME(c1, c2) (norm((c1) - (c2)) <= FP_NORM_EPSILON)
+#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= FP_NORM_EPSILON)
 #define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)
 #define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX)
 
