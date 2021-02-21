@@ -1233,6 +1233,15 @@ void QPager::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2
     CombineAndOp([&](QEnginePtr engine) { engine->FSim(theta, phi, qubit1, qubit2); }, { qubit1, qubit2 });
 }
 
+void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
+{
+    // TODO: Get rid of this entirely. The need for this points to a bug in the general area of
+    // ApplyAntiControlledSingleBit().
+
+    CombineAndOp([&](QEnginePtr engine) { engine->ZeroPhaseFlip(start, length); },
+        { static_cast<bitLenInt>(start + length - 1U) });
+}
+
 real1_f QPager::Prob(bitLenInt qubit)
 {
     if (qPages.size() == 1U) {

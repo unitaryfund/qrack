@@ -221,6 +221,7 @@ public:
     virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
 
     /** @} */
 
