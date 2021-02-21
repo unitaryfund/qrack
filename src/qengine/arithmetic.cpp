@@ -670,6 +670,7 @@ void QEngineCPU::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
         controls, controlLen);
 }
 
+#if ENABLE_BCD
 /// Add BCD integer (without sign)
 void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
@@ -833,6 +834,7 @@ void QEngineCPU::INCDECBCDC(
     });
     ResetStateVec(nStateVec);
 }
+#endif
 
 /// Set 8 bit register bits based on read from classical memory
 bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,

@@ -2824,38 +2824,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(382));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcd")
-{
-    int i;
-
-    qftReg->SetPermutation(0x95);
-    for (i = 0; i < 8; i++) {
-        qftReg->INCBCD(1, 0, 8);
-        if (i < 4) {
-            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x96 + i));
-        } else {
-            REQUIRE_THAT(qftReg, HasProbability(0, 8, i - 4));
-        }
-    }
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcdc")
-{
-    int i;
-
-    qftReg->SetPermutation(0x095);
-    for (i = 0; i < 8; i++) {
-        qftReg->INCBCDC(1, 0, 8, 8);
-        if (i < 4) {
-            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x096 + i));
-        } else if (i == 4) {
-            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x100));
-        } else {
-            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02 + i - 5));
-        }
-    }
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
 {
     int i;
@@ -3000,38 +2968,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
     }
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcd")
-{
-    int i;
-
-    qftReg->SetPermutation(0x94);
-    for (i = 0; i < 8; i++) {
-        qftReg->DECBCD(1, 0, 8);
-        if (i < 4) {
-            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x93 - i));
-        } else {
-            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x89 - i + 4));
-        }
-    }
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcdc")
-{
-    int i;
-
-    qftReg->SetPermutation(0x005);
-    for (i = 0; i < 8; i++) {
-        qftReg->DECBCDC(1, 0, 8, 8);
-        if (i < 4) {
-            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x103 - i));
-        } else if (i == 4) {
-            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x099));
-        } else {
-            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x197 - i + 5));
-        }
-    }
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 {
     int i;
@@ -3082,6 +3018,72 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec")
         REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
     }
 }
+
+#if ENABLE_BCD
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcd")
+{
+    int i;
+
+    qftReg->SetPermutation(0x95);
+    for (i = 0; i < 8; i++) {
+        qftReg->INCBCD(1, 0, 8);
+        if (i < 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x96 + i));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, i - 4));
+        }
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcdc")
+{
+    int i;
+
+    qftReg->SetPermutation(0x095);
+    for (i = 0; i < 8; i++) {
+        qftReg->INCBCDC(1, 0, 8, 8);
+        if (i < 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x096 + i));
+        } else if (i == 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x100));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02 + i - 5));
+        }
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcd")
+{
+    int i;
+
+    qftReg->SetPermutation(0x94);
+    for (i = 0; i < 8; i++) {
+        qftReg->DECBCD(1, 0, 8);
+        if (i < 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x93 - i));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x89 - i + 4));
+        }
+    }
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcdc")
+{
+    int i;
+
+    qftReg->SetPermutation(0x005);
+    for (i = 0; i < 8; i++) {
+        qftReg->DECBCDC(1, 0, 8, 8);
+        if (i < 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x103 - i));
+        } else if (i == 4) {
+            REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x099));
+        } else {
+            REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x197 - i + 5));
+        }
+    }
+}
+#endif
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mul")
 {

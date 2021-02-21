@@ -33,6 +33,10 @@
 
 #include "qenginecl.hpp"
 
+#if ENABLE_BCD
+#include "qheader_bcdcl.hpp"
+#endif
+
 namespace Qrack {
 
 /// "Qrack::OCLEngine" manages the single OpenCL context
@@ -92,8 +96,10 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_INCS, "incs"),
     OCLKernelHandle(OCL_API_INCDECSC_1, "incdecsc1"),
     OCLKernelHandle(OCL_API_INCDECSC_2, "incdecsc2"),
+#if ENABLE_BCD
     OCLKernelHandle(OCL_API_INCBCD, "incbcd"),
     OCLKernelHandle(OCL_API_INCDECBCDC, "incdecbcdc"),
+#endif
     OCLKernelHandle(OCL_API_INDEXEDLDA, "indexedLda"),
     OCLKernelHandle(OCL_API_INDEXEDADC, "indexedAdc"),
     OCLKernelHandle(OCL_API_INDEXEDSBC, "indexedSbc"),
@@ -308,6 +314,10 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 #endif
 
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
+
+#if ENABLE_BCD
+    sources.push_back({ (const char*)qheader_bcd_cl, (long unsigned int)qheader_bcd_cl_len });
+#endif
 
     int plat_id = -1;
     std::vector<cl::Context> all_contexts;

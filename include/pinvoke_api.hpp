@@ -22,7 +22,7 @@
 typedef void (*IdCallback)(unsigned);
 typedef bool (*ProbAmpCallback)(size_t, double, double);
 
-#if !ENABLE_PURE32
+#if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
 struct _QrackTimeEvolveOpHeader;
 #endif
 
@@ -115,7 +115,7 @@ MICROSOFT_QUANTUM_DECL void CLXNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigne
 
 MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q);
 
-#if !ENABLE_PURE32
+#if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
 MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ unsigned sid, _In_ double t, _In_ unsigned n,
     _In_reads_(n) _QrackTimeEvolveOpHeader* teos, unsigned mn, _In_reads_(mn) double* mtrx);
 #endif

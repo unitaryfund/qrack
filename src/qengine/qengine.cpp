@@ -637,6 +637,7 @@ void QEngine::DECSC(
     INCDECSC(invToSub, inOutStart, length, overflowIndex, carryIndex);
 }
 
+#if ENABLE_BCD
 /// Add BCD integer (without sign, with carry)
 void QEngine::INCBCDC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
@@ -664,5 +665,6 @@ void QEngine::DECBCDC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
     bitCapInt invToSub = maxVal - toSub;
     INCDECBCDC(invToSub, inOutStart, length, carryIndex);
 }
+#endif
 
 } // namespace Qrack

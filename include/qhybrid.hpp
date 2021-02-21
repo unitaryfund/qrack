@@ -281,11 +281,6 @@ public:
     {
         engine->INCSC(toAdd, start, length, carryIndex);
     }
-    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) { engine->INCBCD(toAdd, start, length); }
-    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        engine->INCBCDC(toAdd, start, length, carryIndex);
-    }
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         engine->DECC(toSub, start, length, carryIndex);
@@ -299,10 +294,17 @@ public:
     {
         engine->DECSC(toSub, start, length, carryIndex);
     }
+#if ENABLE_BCD
+    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) { engine->INCBCD(toAdd, start, length); }
+    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        engine->INCBCDC(toAdd, start, length, carryIndex);
+    }
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         engine->DECBCDC(toSub, start, length, carryIndex);
     }
+#endif
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
         engine->MUL(toMul, inOutStart, carryStart, length);
@@ -475,10 +477,12 @@ protected:
     {
         engine->INCDECSC(toMod, inOutStart, length, overflowIndex, carryIndex);
     }
+#if ENABLE_BCD
     virtual void INCDECBCDC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
     {
         engine->INCDECBCDC(toMod, inOutStart, length, carryIndex);
     }
+#endif
 };
 } // namespace Qrack

@@ -3069,6 +3069,18 @@ void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt 
     INCx(&QInterface::INCSC, toMod, start, length, carryIndex);
 }
 
+void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    // The phase effect of the overflow is undetectable, if this check passes:
+    if (INTCOptimize(toMod, start, length, false, carryIndex)) {
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
+    INCx(&QInterface::DECSC, toMod, start, length, carryIndex);
+}
+
+#if ENABLE_BCD
 void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     // BCD variants are low priority for optimization, for the time being.
@@ -3081,17 +3093,6 @@ void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
 {
     // BCD variants are low priority for optimization, for the time being.
     INCx(&QInterface::INCBCDC, toMod, start, length, carryIndex);
-}
-
-void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    // The phase effect of the overflow is undetectable, if this check passes:
-    if (INTCOptimize(toMod, start, length, false, carryIndex)) {
-        return;
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    INCx(&QInterface::DECSC, toMod, start, length, carryIndex);
 }
 
 void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
@@ -3107,6 +3108,7 @@ void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenIn
     // BCD variants are low priority for optimization, for the time being.
     INCx(&QInterface::DECBCDC, toMod, start, length, carryIndex);
 }
+#endif
 
 void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {

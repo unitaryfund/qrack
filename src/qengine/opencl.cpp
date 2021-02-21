@@ -1878,6 +1878,7 @@ void QEngineOCL::INCDECSC(bitCapInt toAdd, const bitLenInt& start, const bitLenI
     INTSC(OCL_API_INCDECSC_2, (bitCapIntOcl)toAdd, start, length, carryIndex);
 }
 
+#if ENABLE_BCD
 /// Add or Subtract integer (BCD)
 void QEngineOCL::INTBCD(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt start, const bitLenInt length)
 {
@@ -1945,6 +1946,7 @@ void QEngineOCL::INCDECBCDC(
 {
     INTBCDC(OCL_API_INCDECBCDC, (bitCapIntOcl)toAdd, start, length, carryIndex);
 }
+#endif
 
 /** Multiply by integer */
 void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
