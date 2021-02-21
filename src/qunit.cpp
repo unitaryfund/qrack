@@ -620,7 +620,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
         complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
     prob = ProbBase(start);
-    didSeparate |= (IS_0_R1(prob) || IS_0_R1(ONE_R1 - prob));
+    didSeparate |= (IS_0_R1(prob) || IS_1_R1(prob));
 
     H(start);
     S(start);
