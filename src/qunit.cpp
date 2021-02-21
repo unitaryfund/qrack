@@ -29,7 +29,7 @@
 #include "qunit.hpp"
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_NORM_0(c) (norm(c) <= REAL1_EPSILON)
+#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 #define IS_0_R1(r) (r == ZERO_R1)
 #define IS_1_R1(r) (r == ONE_R1)
 #define IS_1_CMPLX(c) (c == ONE_CMPLX)
