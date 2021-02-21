@@ -29,10 +29,10 @@
 #include "qunit.hpp"
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_NORM_0(c) (c == ZERO_CMPLX)
-#define IS_0_R1(r) (r == ZERO_R1)
-#define IS_1_R1(r) (r == ONE_R1)
-#define IS_1_CMPLX(c) (c == ONE_CMPLX)
+#define IS_NORM_0(c) (norm(c) <= amplitudeFloor)
+#define IS_0_R1(r) (abs(r) <= amplitudeFloor)
+#define IS_1_R1(r) (abs(ONE_R1 - r) <= amplitudeFloor)
+#define IS_1_CMPLX(c) (norm(ONE_CMPLX - c) <= amplitudeFloor)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard)                                                                                            \
     ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0) ||                                       \
