@@ -30,7 +30,7 @@
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_NORM_0(c) (norm(c) <= REAL1_EPSILON)
-#define IS_0_R1(r) (r == ZERO_R1)
+#define IS_0_R1(r) (abs(r) <= REAL1_EPSILON)
 #define IS_1_R1(r) (r == ONE_R1)
 #define IS_1_CMPLX(c) (c == ONE_CMPLX)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
