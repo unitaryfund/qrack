@@ -223,8 +223,6 @@ public:
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
-
     virtual real1_f Prob(bitLenInt qubitIndex);
     virtual real1_f ProbAll(bitCapInt fullRegister);
     virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);

@@ -1301,28 +1301,6 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
     shard2.MakeDirty();
 }
 
-void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
-{
-    if (!length) {
-        return;
-    }
-
-    if (length == 1U) {
-        ApplySinglePhase(-ONE_CMPLX, ONE_CMPLX, start);
-        return;
-    }
-
-    if ((engine == QINTERFACE_QPAGER) || (subEngine == QINTERFACE_QPAGER)) {
-        // TODO: Case below this should work for QPager, but doesn't
-        EntangleRange(start, length);
-        shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
-        DirtyShardRange(start, length);
-        return;
-    }
-
-    QInterface::ZeroPhaseFlip(start, length);
-}
-
 void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
     const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)

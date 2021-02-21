@@ -229,13 +229,13 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
         return false;
     }
 
-    // Now, we now that mtrx[1] and mtrx[2] are 0 and mtrx[0]==mtrx[3].
+    // Now, we know that mtrx[1] and mtrx[2] are 0 and mtrx[0]==mtrx[3].
 
     // If the global phase offset has been randomized, we assume that global phase offsets are inconsequential, for
     // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
-    // the global phase offset (but shouldn't).
+    // the global phase offset.
 
-    if ((isControlled || !randGlobalPhase) && (imag(mtrx[0]) != 0)) {
+    if ((isControlled || !randGlobalPhase) && (imag(mtrx[0]) != ONE_R1)) {
         return false;
     }
 
