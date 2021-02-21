@@ -361,7 +361,7 @@ void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 void QInterface::PhaseFlip()
 {
     if (!randGlobalPhase) {
-        ApplySinglePhase(ONE_CMPLX, ONE_CMPLX, 0);
+        ApplySinglePhase(-ONE_CMPLX, -ONE_CMPLX, 0);
     }
 }
 
