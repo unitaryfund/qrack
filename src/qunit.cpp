@@ -85,7 +85,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((initState >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards.push_back(QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase()));
+        shards.push_back(QEngineShard(bitState, GetNonunitaryPhase()));
     }
 }
 
@@ -105,7 +105,7 @@ void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         bitState = ((perm >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards.push_back(QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase()));
+        shards.push_back(QEngineShard(bitState, GetNonunitaryPhase()));
     }
 }
 
@@ -150,7 +150,7 @@ void QUnit::SetQuantumState(const complex* inputState)
     unit->SetQuantumState(inputState);
 
     for (bitLenInt idx = 0; idx < qubitCount; idx++) {
-        shards[idx] = QEngineShard(unit, idx, doNormalize ? amplitudeFloor : ZERO_R1);
+        shards[idx] = QEngineShard(unit, idx);
     }
 }
 
@@ -1169,7 +1169,7 @@ void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     bool bitState;
     for (bitLenInt i = 0; i < length; i++) {
         bitState = ((value >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards[i + start] = QEngineShard(bitState, doNormalize ? amplitudeFloor : ZERO_R1, GetNonunitaryPhase());
+        shards[i + start] = QEngineShard(bitState, GetNonunitaryPhase());
     }
 }
 
