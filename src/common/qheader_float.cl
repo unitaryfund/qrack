@@ -18,4 +18,4 @@
 #define ONE_R1 1.0f
 #define SineShift M_PI_2_F
 #define PI_R1 M_PI_F
-#define REAL1_EPSILON FLT_EPSILON
+#define REAL1_EPSILON 2e-33f
