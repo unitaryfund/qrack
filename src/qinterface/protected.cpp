@@ -225,7 +225,7 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
 {
     // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
     // operator, then we can discard this buffer without applying it.
-    if ((mtrx[0] != mtrx[3]) || (norm(mtrx[1]) != 0) || (norm(mtrx[2]) != 0)) {
+    if ((mtrx[0] != mtrx[3]) || (mtrx[1] != ZERO_CMPLX) || (mtrx[2] != ZERO_CMPLX)) {
         return false;
     }
 
