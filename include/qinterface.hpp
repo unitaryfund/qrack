@@ -182,7 +182,7 @@ protected:
         toFree = NULL;
     }
 
-    bool IsIdentity(const complex* mtrx, const bool isControlled = false);
+    bool IsIdentity(const complex* mtrx, const bool isControlled);
 
     complex GetNonunitaryPhase()
     {
