@@ -235,7 +235,7 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
     // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
     // the global phase offset.
 
-    if ((isControlled || !randGlobalPhase) && (imag(mtrx[0]) != ONE_CMPLX)) {
+    if ((isControlled || !randGlobalPhase) && (mtrx[0] != ONE_CMPLX)) {
         return false;
     }
 
