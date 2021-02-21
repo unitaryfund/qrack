@@ -21,8 +21,8 @@
 
 #include "qinterface.hpp"
 
-#define IS_SAME(c1, c2) (norm((c1) - (c2)) <= amplitudeFloor)
-#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= amplitudeFloor)
+#define IS_SAME(c1, c2) (norm((c1) - (c2)) <= REAL1_EPSILON)
+#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= REAL1_EPSILON)
 #define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)
 #define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX)
 
@@ -60,7 +60,6 @@ protected:
 public:
     QInterfacePtr unit;
     bitLenInt mapped;
-    real1 amplitudeFloor;
     bool isProbDirty;
     bool isPhaseDirty;
     complex amp0;
@@ -86,10 +85,9 @@ protected:
     ShardToPhaseMap& GetAntiTargetOfShards() { return antiTargetOfShards; }
 
 public:
-    QEngineShard(const real1_f amp_thresh = REAL1_EPSILON)
+    QEngineShard()
         : unit(NULL)
         , mapped(0)
-        , amplitudeFloor(amp_thresh)
         , isProbDirty(false)
         , isPhaseDirty(false)
         , amp0(ONE_CMPLX)
@@ -104,10 +102,9 @@ public:
     {
     }
 
-    QEngineShard(const bool& set, const real1_f amp_thresh = REAL1_EPSILON, const complex rand_phase = ONE_CMPLX)
+    QEngineShard(const bool& set, const complex rand_phase = ONE_CMPLX)
         : unit(NULL)
         , mapped(0)
-        , amplitudeFloor(amp_thresh)
         , isProbDirty(false)
         , isPhaseDirty(false)
         , isPauliX(false)
@@ -123,10 +120,9 @@ public:
     }
 
     // Dirty state constructor:
-    QEngineShard(QInterfacePtr u, const bitLenInt& mapping, const real1_f amp_thresh = REAL1_EPSILON)
+    QEngineShard(QInterfacePtr u, const bitLenInt& mapping)
         : unit(u)
         , mapped(mapping)
-        , amplitudeFloor(amp_thresh)
         , isProbDirty(true)
         , isPhaseDirty(true)
         , amp0(ONE_CMPLX)
