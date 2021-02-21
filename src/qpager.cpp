@@ -1233,6 +1233,48 @@ void QPager::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2
     CombineAndOp([&](QEnginePtr engine) { engine->FSim(theta, phi, qubit1, qubit2); }, { qubit1, qubit2 });
 }
 
+void QPager::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
+{
+    // TODO: Get rid of this entirely. The need for this points to a bug in the general area of
+    // ApplyAntiControlledSingleBit().
+
+    bitLenInt qpp = qubitsPerPage();
+
+    bitCapIntOcl i;
+
+    if (start >= qpp) {
+        // Entirely meta-
+        start -= qpp;
+        bitCapIntOcl mask = pow2Ocl(start + length) - pow2Ocl(start);
+        for (i = 0; i < qPages.size(); i++) {
+            if ((i & mask) == 0U) {
+                qPages[i]->PhaseFlip();
+            }
+        }
+
+        return;
+    }
+
+    if ((start + length) > qpp) {
+        // Semi-meta-
+        bitLenInt metaLen = (start + length) - qpp;
+        bitLenInt remainderLen = length - metaLen;
+        bitCapIntOcl mask = pow2Ocl(metaLen) - ONE_BCI;
+        for (i = 0; i < qPages.size(); i++) {
+            if ((i & mask) == 0U) {
+                qPages[i]->ZeroPhaseFlip(start, remainderLen);
+            }
+        }
+
+        return;
+    }
+
+    // Contained in sub-units
+    for (i = 0; i < qPages.size(); i++) {
+        qPages[i]->ZeroPhaseFlip(start, length);
+    }
+}
+
 real1_f QPager::Prob(bitLenInt qubit)
 {
     if (qPages.size() == 1U) {
