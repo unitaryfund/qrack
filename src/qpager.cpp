@@ -597,12 +597,54 @@ void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
 void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom, bitLenInt target)
 {
     SeparateEngines();
-    if (isInvert) {
-        SingleBitGate(target,
-            [top, bottom](QEnginePtr engine, bitLenInt lTarget) { engine->ApplySingleInvert(top, bottom, lTarget); });
-    } else {
-        SingleBitGate(target,
-            [top, bottom](QEnginePtr engine, bitLenInt lTarget) { engine->ApplySinglePhase(top, bottom, lTarget); });
+    bitLenInt qpp = qubitsPerPage();
+
+    if (target < qpp) {
+        if (isInvert) {
+            SingleBitGate(target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) {
+                engine->ApplySingleInvert(top, bottom, lTarget);
+            });
+        } else {
+            SingleBitGate(target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) {
+                engine->ApplySinglePhase(top, bottom, lTarget);
+            });
+        }
+
+        return;
+    }
+
+    if (randGlobalPhase) {
+        bottom /= top;
+        top = ONE_CMPLX;
+    }
+
+    target -= qpp;
+    bitCapIntOcl targetPow = pow2Ocl(target);
+    bitCapIntOcl qMask = targetPow - 1U;
+
+    bitCapIntOcl maxLCV = qPages.size() >> 1U;
+    std::vector<std::future<void>> futures(maxLCV);
+    bitCapIntOcl i;
+    for (i = 0; i < maxLCV; i++) {
+        futures[i] = std::async(std::launch::async, [this, i, &isInvert, &top, &bottom, &targetPow, &qMask]() {
+            bitCapIntOcl j = i & qMask;
+            j |= (i ^ j) << ONE_BCI;
+
+            if (isInvert) {
+                std::swap(qPages[j], qPages[j + targetPow]);
+            }
+
+            if (top != ONE_CMPLX) {
+                qPages[j]->ApplySinglePhase(top, top, 0);
+            }
+            if (bottom != ONE_CMPLX) {
+                qPages[j + targetPow]->ApplySinglePhase(bottom, bottom, 0);
+            }
+        });
+    }
+
+    for (i = 0; i < maxLCV; i++) {
+        futures[i].get();
     }
 }
 
