@@ -97,6 +97,9 @@ After CMake, the project must be built in Visual Studio. (`-DFPPOW=6` disables s
     $ python -m http.server
 ```
 
+## QPager distributed simulation options
+QPager attempts to smartly allocate low qubit widths for maximum performance. For wider qubit simulations, based on `clinfo`, you can segment your maximum OpenCL accelerator state vector page allocation into global qubits with the environment variable `QRACK_SEGMENT_GLOBAL_QB=n`, where n is an integer >=0. The default n is 0, meaning that maximum allocation segment of your GPU RAM is a single page. (For 1 global qubit, one segment would have 2 pages, akin to 2 single amplitudes, therefore one "global qubit," or 4 pages for n=2, because 2^2=4, etc., by exponent.)
+
 ## Vectorization optimization
 
 ```
