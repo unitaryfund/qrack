@@ -42,9 +42,9 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
 #if ENABLE_OPENCL
     if ((thresholdQubitsPerPage == 0) && ((eng == QINTERFACE_OPENCL) || (eng == QINTERFACE_HYBRID))) {
-        // Try 2 less than device maximum, (as is typically optimal on the developer's RTX 2070).
+        // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment.
         thresholdQubitsPerPage =
-            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - 1U;
+            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
 
         if ((qubitCount - 2U) < thresholdQubitsPerPage) {
             thresholdQubitsPerPage = qubitCount - 2U;
