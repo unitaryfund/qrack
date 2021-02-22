@@ -8,7 +8,12 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <direct.h>
+#endif
+
 #include <future>
+#include <string>
 
 #include "qfactory.hpp"
 #include "qpager.hpp"
@@ -42,9 +47,16 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
 #if ENABLE_OPENCL
     if ((thresholdQubitsPerPage == 0) && ((eng == QINTERFACE_OPENCL) || (eng == QINTERFACE_HYBRID))) {
-        // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment.
+        // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
+        // environment variable.
+
+        bitLenInt pps = 0;
+        if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
+            pps = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
+        }
+
         thresholdQubitsPerPage =
-            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - pps;
 
         if ((qubitCount - 2U) < thresholdQubitsPerPage) {
             thresholdQubitsPerPage = qubitCount - 2U;
