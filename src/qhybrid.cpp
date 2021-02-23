@@ -25,9 +25,18 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     , isSparse(useSparseStateVec)
 {
     concurrency = std::thread::hardware_concurrency();
-    thresholdQubits = (qubitThreshold != 0)
-        ? qubitThreshold
-        : (concurrency == 1 ? PSTRIDEPOW : (log2(concurrency - 1) + PSTRIDEPOW + 1));
+
+    if (qubitThreshold != 0) {
+        thresholdQubits = qubitThreshold;
+    } else {
+        // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
+        // concurrency.
+        bitLenInt gpuQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+        bitLenInt cpuQubits = (concurrency == 1 ? PSTRIDEPOW : (log2(concurrency - 1) + PSTRIDEPOW + 1));
+
+        thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
+    }
+
     isGpu = (qubitCount >= thresholdQubits);
     engine = MakeEngine(qubitCount >= thresholdQubits, initState);
 }
