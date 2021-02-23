@@ -105,6 +105,7 @@ if (ENABLE_OPENCL)
         ${COMPILED_RESOURCES}
         src/common/oclengine.cpp
         src/qengine/opencl.cpp
+        src/qhybrid.cpp
         src/qunitmulti.cpp
         )
 
