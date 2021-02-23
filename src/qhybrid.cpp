@@ -10,6 +10,7 @@
 
 #include <thread>
 
+#include "common/oclengine.hpp"
 #include "qfactory.hpp"
 #include "qhybrid.hpp"
 
