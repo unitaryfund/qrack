@@ -28,7 +28,6 @@ add_library (qrack STATIC
     src/qengine/utility.cpp
     src/qunit.cpp
     src/qpager.cpp
-    src/qhybrid.cpp
     src/qstabilizer.cpp
     src/qstabilizerhybrid.cpp
     )
