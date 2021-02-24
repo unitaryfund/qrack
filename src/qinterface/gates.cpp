@@ -379,9 +379,9 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     bitLenInt min1 = length - 1U;
     bitLenInt* controls = new bitLenInt[min1];
     for (bitLenInt i = 0; i < min1; i++) {
-        controls[i] = start + i + 1U;
+        controls[i] = start + i;
     }
-    ApplyAntiControlledSinglePhase(controls, min1, start, -ONE_CMPLX, ONE_CMPLX);
+    ApplyAntiControlledSinglePhase(controls, min1, start + min1, -ONE_CMPLX, ONE_CMPLX);
     delete[] controls;
 }
 

@@ -169,7 +169,7 @@ void QEngine::ApplySingleBit(const complex* mtrx, bitLenInt qubit)
     }
 
     bool doCalcNorm = doNormalize &&
-        !(((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) || ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)));
+        !(((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) || ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)));
 
     bitCapInt qPowers[1];
     qPowers[0] = pow2(qubit);
@@ -189,7 +189,7 @@ void QEngine::ApplyControlledSingleBit(
     }
 
     bool doCalcNorm = doNormalize &&
-        !(((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) || ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)));
+        !(((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) || ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)));
 
     ApplyControlled2x2(controls, controlLen, target, mtrx);
     if (doCalcNorm) {
@@ -210,7 +210,7 @@ void QEngine::ApplyAntiControlledSingleBit(
     }
 
     bool doCalcNorm = doNormalize &&
-        !(((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) || ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)));
+        !(((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) || ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)));
 
     ApplyAntiControlled2x2(controls, controlLen, target, mtrx);
     if (doCalcNorm) {
@@ -348,6 +348,7 @@ void QEngine::ApplyControlled2x2(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1U];
+    bitCapInt targetMask = pow2Ocl(target);
     bitCapInt fullMask = 0U;
     bitCapInt controlMask;
     for (bitLenInt i = 0U; i < controlLen; i++) {
@@ -355,8 +356,8 @@ void QEngine::ApplyControlled2x2(
         fullMask |= qPowersSorted[i];
     }
     controlMask = fullMask;
-    qPowersSorted[controlLen] = pow2(target);
-    fullMask |= pow2(target);
+    qPowersSorted[controlLen] = targetMask;
+    fullMask |= targetMask;
     std::sort(qPowersSorted, qPowersSorted + controlLen + 1U);
     Apply2x2(controlMask, fullMask, mtrx, controlLen + 1U, qPowersSorted, false);
     delete[] qPowersSorted;
