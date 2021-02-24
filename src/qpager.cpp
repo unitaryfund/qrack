@@ -235,7 +235,7 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl,
 // instead of amplitude indices.
 template <typename Qubit1Fn>
 void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn,
-    const complex* mtrx, const bool& isSqiCtrl, const bool& isAnti)
+    const complex* mtrx, const bool& isSqiCtrl)
 {
     bitLenInt qpp = qubitsPerPage();
     target -= qpp;
@@ -280,7 +280,7 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
     for (i = 0; i < maxLCV; i++) {
         futures[i] = std::async(std::launch::async,
             [this, i, fn, &sqi, &controlMask, &targetPow, &sortedMasks, &isSpecial, &isInvert, &top, &bottom,
-                &isSqiCtrl, &isAnti]() {
+                &isSqiCtrl, &anti]() {
                 bitCapIntOcl j, k, jLo, jHi;
                 jHi = i;
                 j = 0;
@@ -299,8 +299,8 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
                 QEnginePtr engine2 = qPages[j + targetPow];
 
                 if (isSpecial) {
-                    bool doTop = (top != ONE_CMPLX) && !(isSqiCtrl && !isAnti);
-                    bool doBottom = (bottom != ONE_CMPLX) && !(isSqiCtrl && isAnti);
+                    bool doTop = (top != ONE_CMPLX) && !(isSqiCtrl && !anti);
+                    bool doBottom = (bottom != ONE_CMPLX) && !(isSqiCtrl && anti);
 
                     if (doTop) {
                         engine1->ApplySinglePhase(top, top, 0);
@@ -311,8 +311,8 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
                 } else {
                     engine1->ShuffleBuffers(engine2);
 
-                    bool doTop = !isSqiCtrl || isAnti;
-                    bool doBottom = !isSqiCtrl || !isAnti;
+                    bool doTop = !isSqiCtrl || anti;
+                    bool doBottom = !isSqiCtrl || !anti;
 
                     if (doTop) {
                         fn(engine1, sqi);
@@ -676,7 +676,7 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
     std::vector<bitLenInt> intraControls;
     bool isSqiCtrl = false;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        if ((target >= qpp) && (controls[i] == (qpp - 1U))) {
+        if (controls[i] == (qpp - 1U)) {
             isSqiCtrl = true;
         } else if (controls[i] < qpp) {
             intraControls.push_back(controls[i]);
@@ -685,7 +685,11 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
         }
     }
 
-    auto sg = [anti, mtrx, &intraControls](QEnginePtr engine, bitLenInt lTarget) {
+    if (isSqiCtrl && metaControls.size() && (target < qpp)) {
+        intraControls.push_back(qpp - 1U);
+    }
+
+    auto sg = [anti, mtrx, intraControls](QEnginePtr engine, bitLenInt lTarget) {
         if (intraControls.size()) {
             if (anti) {
                 engine->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
@@ -702,7 +706,7 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
     } else if (target < qpp) {
         SemiMetaControlled(anti, metaControls, target, sg);
     } else {
-        MetaControlled(anti, metaControls, target, sg, mtrx, isSqiCtrl, anti);
+        MetaControlled(anti, metaControls, target, sg, mtrx, isSqiCtrl);
     }
 }
 
