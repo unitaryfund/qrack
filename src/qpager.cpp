@@ -129,13 +129,13 @@ void QPager::CombineEngines(bitLenInt bit)
     bitCapIntOcl groupSize = (bitCapIntOcl)(qPages.size() / groupCount);
     bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
     std::vector<QEnginePtr> nQPages;
-
     bitCapIntOcl i, j;
 
     for (i = 0; i < groupCount; i++) {
         nQPages.push_back(MakeEngine(bit, 0, deviceIDs[i % deviceIDs.size()]));
+        QEnginePtr engine = nQPages.back();
         for (j = 0; j < groupSize; j++) {
-            nQPages.back()->SetAmplitudePage(qPages[j + (i * groupSize)], 0, j * pagePower, pagePower);
+            engine->SetAmplitudePage(qPages[j + (i * groupSize)], 0, j * pagePower, pagePower);
         }
     }
 
@@ -152,9 +152,9 @@ void QPager::SeparateEngines(bitLenInt thresholdBits)
         return;
     }
 
-    bitCapIntOcl i, j;
     bitCapIntOcl pagesPer = pow2Ocl(qubitCount - thresholdBits) / qPages.size();
     bitCapIntOcl pageMaxQPower = pow2Ocl(thresholdBits);
+    bitCapIntOcl i, j;
 
     std::vector<QEnginePtr> nQPages;
     for (i = 0; i < qPages.size(); i++) {
