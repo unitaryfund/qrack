@@ -149,8 +149,7 @@ void QEngineOCL::SetAmplitudePage(
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs);
 
-    QueueCall(OCL_API_COPYPAGE, nrmGroupCount, nrmGroupSize, { oStateBuffer, stateBuffer, poolItem->ulongBuffer },
-        sizeof(real1) * nrmGroupSize);
+    WaitCall(OCL_API_COPYPAGE, nrmGroupCount, nrmGroupSize, { oStateBuffer, stateBuffer, poolItem->ulongBuffer });
 
     runningNorm = REAL1_DEFAULT_ARG;
 }
@@ -184,7 +183,7 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs);
 
     WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
-        { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer }, sizeof(real1) * nrmGroupSize);
+        { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
 
     runningNorm = REAL1_DEFAULT_ARG;
     engineOcl->runningNorm = REAL1_DEFAULT_ARG;
