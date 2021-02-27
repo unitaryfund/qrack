@@ -2156,3 +2156,15 @@ void kernel clearbuffer(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
         stateVec[lcv] = amp0;
     }
 }
+
+void kernel shufflebuffers(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl* bitCapIntOclPtr)
+{
+    bitCapIntOcl Nthreads = get_global_size(0);
+    bitCapIntOcl halfMaxI = bitCapIntOclPtr[0];
+    cmplx amp0;
+    for (bitCapIntOcl lcv = ID; lcv < halfMaxI; lcv += Nthreads) {
+        amp0 = stateVec1[lcv + halfMaxI];
+        stateVec1[lcv + halfMaxI] = stateVec2[lcv];
+        stateVec2[lcv] = amp0;
+    }
+}

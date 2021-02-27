@@ -124,7 +124,8 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_CPOWMODN_OUT, "cpowmodnout"),
     OCLKernelHandle(OCL_API_FULLADD, "fulladd"),
     OCLKernelHandle(OCL_API_IFULLADD, "ifulladd"),
-    OCLKernelHandle(OCL_API_CLEARBUFFER, "clearbuffer")
+    OCLKernelHandle(OCL_API_CLEARBUFFER, "clearbuffer"),
+    OCLKernelHandle(OCL_API_SHUFFLEBUFFERS, "shufflebuffers")
 };
 // clang-format on
 
