@@ -47,14 +47,10 @@ if (ENABLE_OPENCL)
         target_link_directories (pearson32 PRIVATE ${QRACK_OpenCL_LINK_DIRS})
         target_link_directories (teleport PRIVATE ${QRACK_OpenCL_LINK_DIRS})
         target_link_directories (qneuron_classification PRIVATE ${QRACK_OpenCL_LINK_DIRS})
-
-        target_compile_definitions (qrack PUBLIC ENABLE_SNUCL=1)
     else (ENABLE_SNUCL)
         set(QRACK_OpenCL_LIBRARIES ${OpenCL_LIBRARIES})
         set(QRACK_OpenCL_INCLUDE_DIRS ${OpenCL_INCLUDE_DIRS})
         set(QRACK_OpenCL_COMPILATION_OPTIONS ${OpenCL_COMPILATION_OPTIONS})
-
-        target_compile_definitions (qrack PUBLIC ENABLE_SNUCL=0)
     endif (ENABLE_SNUCL)
 
     message ("SnuCL Support is: ${ENABLE_SNUCL}")
@@ -108,7 +104,4 @@ if (ENABLE_OPENCL)
         src/qhybrid.cpp
         src/qunitmulti.cpp
         )
-
-else (ENABLE_OPENCL)
-    target_compile_definitions (qrack PUBLIC ENABLE_OPENCL=0)
 endif (ENABLE_OPENCL)
