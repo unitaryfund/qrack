@@ -167,17 +167,18 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
         engineOcl->ClearBuffer(engineOcl->stateBuffer, 0, engineOcl->maxQPowerOcl);
     }
 
-    size_t halfSize = sizeof(complex) * (maxQPowerOcl >> ONE_BCI);
-    cl::Buffer tempBuffer = cl::Buffer(context, CL_MEM_READ_WRITE, halfSize);
-
     engineOcl->clFinish();
     clFinish();
 
-    queue.enqueueCopyBuffer(*stateBuffer, tempBuffer, halfSize, 0, halfSize);
-    queue.enqueueCopyBuffer(*(engineOcl->stateBuffer), *stateBuffer, 0, halfSize, halfSize);
-    queue.enqueueCopyBuffer(tempBuffer, *(engineOcl->stateBuffer), 0, 0, halfSize);
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> ONE_BCI, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-    queue.finish();
+    EventVecPtr waitVec = ResetWaitEvents();
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs);
+
+    WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
+        { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
 
     runningNorm = REAL1_DEFAULT_ARG;
     engineOcl->runningNorm = REAL1_DEFAULT_ARG;
