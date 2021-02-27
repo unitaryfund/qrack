@@ -107,6 +107,7 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
     EventVecPtr waitVec = ResetWaitEvents();
     queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
         sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
+    queue.finish();
 
     runningNorm = REAL1_DEFAULT_ARG;
 }
@@ -141,10 +142,15 @@ void QEngineOCL::SetAmplitudePage(
         ClearBuffer(stateBuffer, 0, maxQPowerOcl);
     }
 
-    queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, sizeof(complex) * (bitCapIntOcl)srcOffset,
-        sizeof(complex) * (bitCapIntOcl)dstOffset, sizeof(complex) * (bitCapIntOcl)length);
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)srcOffset, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length, 0, 0,
+        0, 0, 0, 0, 0 };
 
-    queue.finish();
+    EventVecPtr waitVec = ResetWaitEvents();
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs);
+
+    WaitCall(OCL_API_COPYPAGE, nrmGroupCount, nrmGroupSize, { oStateBuffer, stateBuffer, poolItem->ulongBuffer });
 
     runningNorm = REAL1_DEFAULT_ARG;
 }
@@ -178,7 +184,7 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs);
 
     WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
-        { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
+        { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
 
     runningNorm = REAL1_DEFAULT_ARG;
     engineOcl->runningNorm = REAL1_DEFAULT_ARG;

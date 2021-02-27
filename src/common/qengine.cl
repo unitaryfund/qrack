@@ -2168,3 +2168,14 @@ void kernel shufflebuffers(global cmplx* stateVec1, global cmplx* stateVec2, con
         stateVec2[lcv] = amp0;
     }
 }
+
+void kernel copypage(global cmplx* srcStateVec, global cmplx* destStateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+{
+    bitCapIntOcl Nthreads = get_global_size(0);
+    bitCapIntOcl srcOffset = bitCapIntOclPtr[0];
+    bitCapIntOcl destOffset = bitCapIntOclPtr[1];
+    bitCapIntOcl len = bitCapIntOclPtr[2];
+    for (bitCapIntOcl lcv = ID; lcv < len; lcv += Nthreads) {
+        destStateVec[lcv + destOffset] = srcStateVec[lcv + srcOffset];
+    }
+}
