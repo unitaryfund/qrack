@@ -107,6 +107,7 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
     EventVecPtr waitVec = ResetWaitEvents();
     queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
         sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
+    queue.finish();
 
     runningNorm = REAL1_DEFAULT_ARG;
 }
