@@ -190,7 +190,7 @@ public:
     {
         clDump();
         runningNorm = ZERO_R1;
-        stateBuffer.reset();
+        ResetStateBuffer(NULL);
         FreeStateVec();
     }
 
