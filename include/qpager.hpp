@@ -34,6 +34,9 @@ protected:
     std::vector<QEnginePtr> qPages;
     std::vector<int> deviceIDs;
 
+    bool useHardwareThreshold;
+    bitLenInt minPageQubits;
+    bitLenInt maxPageQubits;
     bitLenInt thresholdQubitsPerPage;
     bitLenInt baseQubitsPerPage;
     bitCapInt basePageCount;
@@ -44,6 +47,28 @@ protected:
     virtual void SetQubitCount(bitLenInt qb)
     {
         QInterface::SetQubitCount(qb);
+
+        if (useHardwareThreshold && ((engine == QINTERFACE_OPENCL) || (engine == QINTERFACE_HYBRID))) {
+            // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
+            // environment variable.
+
+            thresholdQubitsPerPage = maxPageQubits;
+
+            if ((qubitCount - 2U) < thresholdQubitsPerPage) {
+                thresholdQubitsPerPage = qubitCount - 2U;
+            }
+
+            if (thresholdQubitsPerPage < minPageQubits) {
+                thresholdQubitsPerPage = minPageQubits;
+            }
+        } else if (useHardwareThreshold) {
+            thresholdQubitsPerPage = qubitCount - 2U;
+
+            minPageQubits = log2(std::thread::hardware_concurrency()) + PSTRIDEPOW;
+            if (thresholdQubitsPerPage < minPageQubits) {
+                thresholdQubitsPerPage = minPageQubits;
+            }
+        }
 
         baseQubitsPerPage = (qubitCount < thresholdQubitsPerPage) ? qubitCount : thresholdQubitsPerPage;
         basePageCount = pow2Ocl(qubitCount - baseQubitsPerPage);
@@ -56,7 +81,7 @@ protected:
 
     void CombineEngines(bitLenInt thresholdBits);
     void CombineEngines() { CombineEngines(qubitCount); }
-    void SeparateEngines(bitLenInt thresholdBits);
+    void SeparateEngines(bitLenInt thresholdBits, bool noBaseFloor = false);
     void SeparateEngines() { SeparateEngines(baseQubitsPerPage); }
 
     template <typename Qubit1Fn>

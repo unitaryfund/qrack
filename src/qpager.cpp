@@ -32,21 +32,24 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , isSparse(useSparseStateVec)
     , runningNorm(ONE_R1)
     , deviceIDs(devList)
+    , useHardwareThreshold(false)
     , thresholdQubitsPerPage(qubitThreshold)
 {
 #if !ENABLE_OPENCL
-    if (eng == QINTERFACE_HYBRID) {
+    if (engine == QINTERFACE_HYBRID) {
         eng = QINTERFACE_CPU;
     }
 #endif
 
-    if ((eng != QINTERFACE_CPU) && (eng != QINTERFACE_OPENCL) && (eng != QINTERFACE_HYBRID)) {
+    if ((engine != QINTERFACE_CPU) && (engine != QINTERFACE_OPENCL) && (engine != QINTERFACE_HYBRID)) {
         throw std::invalid_argument(
             "QPager sub-engine type must be QINTERFACE_CPU, QINTERFACE_OPENCL or QINTERFACE_HYBRID.");
     }
 
 #if ENABLE_OPENCL
-    if ((thresholdQubitsPerPage == 0) && ((eng == QINTERFACE_OPENCL) || (eng == QINTERFACE_HYBRID))) {
+    if ((thresholdQubitsPerPage == 0) && ((engine == QINTERFACE_OPENCL) || (engine == QINTERFACE_HYBRID))) {
+        useHardwareThreshold = true;
+
         // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
         // environment variable.
 
@@ -55,8 +58,9 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
             pps = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
         }
 
-        thresholdQubitsPerPage =
-            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - pps;
+        maxPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - pps;
+
+        thresholdQubitsPerPage = maxPageQubits;
 
         if ((qubitCount - 2U) < thresholdQubitsPerPage) {
             thresholdQubitsPerPage = qubitCount - 2U;
@@ -64,20 +68,24 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
         // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
         // concurrency.
-        bitLenInt minQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+        minPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
 
-        if (thresholdQubitsPerPage < minQubits) {
-            thresholdQubitsPerPage = minQubits;
+        if (thresholdQubitsPerPage < minPageQubits) {
+            thresholdQubitsPerPage = minPageQubits;
         }
     }
 #endif
 
     if (thresholdQubitsPerPage == 0) {
+        useHardwareThreshold = true;
+
         thresholdQubitsPerPage = qubitCount - 2U;
 
-        bitLenInt minQubits = log2(std::thread::hardware_concurrency()) + PSTRIDEPOW;
-        if (thresholdQubitsPerPage < minQubits) {
-            thresholdQubitsPerPage = minQubits;
+        maxPageQubits = -1;
+        minPageQubits = log2(std::thread::hardware_concurrency()) + PSTRIDEPOW;
+
+        if (thresholdQubitsPerPage < minPageQubits) {
+            thresholdQubitsPerPage = minPageQubits;
         }
     }
 
@@ -142,9 +150,9 @@ void QPager::CombineEngines(bitLenInt bit)
     qPages = nQPages;
 }
 
-void QPager::SeparateEngines(bitLenInt thresholdBits)
+void QPager::SeparateEngines(bitLenInt thresholdBits, bool noBaseFloor)
 {
-    if (thresholdBits < baseQubitsPerPage) {
+    if (!noBaseFloor && (thresholdBits < baseQubitsPerPage)) {
         thresholdBits = baseQubitsPerPage;
     }
 
@@ -408,11 +416,19 @@ void QPager::CombineAndOpControlled(
 bitLenInt QPager::Compose(QPagerPtr toCopy)
 {
     toCopy->CombineEngines();
+
+    bitLenInt qpp = qubitsPerPage();
+    if ((qpp + toCopy->qubitCount) > maxPageQubits) {
+        SeparateEngines((toCopy->qubitCount < qpp) ? (qpp - toCopy->qubitCount) : 1U, true);
+    }
+
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         qPages[i]->Compose(toCopy->qPages[0]);
     }
+
     bitLenInt toRet = qubitCount;
     SetQubitCount(qubitCount + toCopy->qubitCount);
+
     return toRet;
 }
 
@@ -423,6 +439,11 @@ bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
     }
 
     toCopy->CombineEngines();
+
+    bitLenInt qpp = qubitsPerPage();
+    if ((qpp + toCopy->qubitCount) > maxPageQubits) {
+        SeparateEngines((toCopy->qubitCount < qpp) ? (qpp - toCopy->qubitCount) : 1U, true);
+    }
 
     bitLenInt inPage = qubitCount - start;
 
