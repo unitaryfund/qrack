@@ -34,10 +34,6 @@ QInterfacePtr CreateQuantumInterface(
     switch (engine) {
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
-#if ENABLE_OPENCL
-    case QINTERFACE_OPENCL:
-        return std::make_shared<QEngineOCL>(args...);
-#endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(subengine1, args...);
     case QINTERFACE_STABILIZER_HYBRID:
@@ -45,6 +41,8 @@ QInterfacePtr CreateQuantumInterface(
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine1, subengine2, args...);
 #if ENABLE_OPENCL
+    case QINTERFACE_OPENCL:
+        return std::make_shared<QEngineOCL>(args...);
     case QINTERFACE_HYBRID:
         return std::make_shared<QHybrid>(args...);
     case QINTERFACE_QUNIT_MULTI:
@@ -61,10 +59,6 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
     switch (engine) {
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
-#if ENABLE_OPENCL
-    case QINTERFACE_OPENCL:
-        return std::make_shared<QEngineOCL>(args...);
-#endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(subengine, args...);
     case QINTERFACE_STABILIZER_HYBRID:
@@ -72,6 +66,8 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine, args...);
 #if ENABLE_OPENCL
+    case QINTERFACE_OPENCL:
+        return std::make_shared<QEngineOCL>(args...);
     case QINTERFACE_HYBRID:
         return std::make_shared<QHybrid>(args...);
     case QINTERFACE_QUNIT_MULTI:
@@ -89,6 +85,10 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
         return std::make_shared<QEngineCPU>(args...);
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(args...);
+    case QINTERFACE_STABILIZER_HYBRID:
+        return std::make_shared<QStabilizerHybrid>(args...);
+    case QINTERFACE_QUNIT:
+        return std::make_shared<QUnit>(args...);
 #if ENABLE_OPENCL
     case QINTERFACE_OPENCL:
         return std::make_shared<QEngineOCL>(args...);

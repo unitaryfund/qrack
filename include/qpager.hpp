@@ -113,8 +113,8 @@ public:
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored = false, bool useHostMem = false,
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
-        : QPager(QINTERFACE_HYBRID, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem, deviceId,
-              useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold)
+        : QPager(QINTERFACE_OPTIMAL_SINGLE_PAGE, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem,
+              deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold)
     {
     }
 

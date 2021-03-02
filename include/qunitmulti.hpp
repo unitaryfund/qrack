@@ -68,15 +68,11 @@ protected:
     std::vector<DeviceInfo> deviceList;
 
 public:
-    QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
-        : QUnitMulti(QINTERFACE_OPTIMAL, QINTERFACE_OPTIMAL, qBitCount, initState, rgp, phaseFac, doNorm,
-              randomGlobalPhase, useHostMem, deviceID, useHardwareRNG, useSparseStateVec, norm_thresh, devList,
-              qubitThreshold)
-    {
-    }
+    QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
+        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
+        bool randomGlobalPhase = true, bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true,
+        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
+        bitLenInt qubitThreshold = 0);
 
     QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
@@ -87,11 +83,15 @@ public:
     {
     }
 
-    QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
-        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
-        bool randomGlobalPhase = true, bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true,
-        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
-        bitLenInt qubitThreshold = 0);
+    QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
+        bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
+        : QUnitMulti(QINTERFACE_OPTIMAL_G0_CHILD, QINTERFACE_OPTIMAL_G1_CHILD, qBitCount, initState, rgp, phaseFac,
+              doNorm, randomGlobalPhase, useHostMem, deviceID, useHardwareRNG, useSparseStateVec, norm_thresh, devList,
+              qubitThreshold)
+    {
+    }
 
     using QUnit::TrySeparate;
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);

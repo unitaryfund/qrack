@@ -75,10 +75,6 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , freezeClifford(false)
     , thresholdQubits(qubitThreshold)
 {
-    if ((engine == QINTERFACE_CPU) || (engine == QINTERFACE_OPENCL)) {
-        subEngine = engine;
-    }
-
     shards = QEngineShardMap();
 
     bool bitState;
