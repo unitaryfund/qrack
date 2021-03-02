@@ -417,6 +417,12 @@ bitLenInt QPager::Compose(QPagerPtr toCopy)
 {
     bitLenInt qpp = qubitsPerPage();
     bitLenInt tcqpp = toCopy->qubitsPerPage();
+
+    if ((qpp + tcqpp) > maxPageQubits) {
+        tcqpp = (tcqpp < (maxPageQubits - qpp)) ? maxPageQubits - qpp : 1U;
+        toCopy->SeparateEngines(tcqpp, true);
+    }
+
     if ((qpp + tcqpp) > maxPageQubits) {
         SeparateEngines((tcqpp < qpp) ? (qpp - tcqpp) : 1U, true);
     }
