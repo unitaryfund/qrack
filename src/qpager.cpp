@@ -415,16 +415,27 @@ void QPager::CombineAndOpControlled(
 
 bitLenInt QPager::Compose(QPagerPtr toCopy)
 {
-    toCopy->CombineEngines();
-
     bitLenInt qpp = qubitsPerPage();
-    if ((qpp + toCopy->qubitCount) > maxPageQubits) {
-        SeparateEngines((toCopy->qubitCount < qpp) ? (qpp - toCopy->qubitCount) : 1U, true);
+    bitLenInt tcqpp = toCopy->qubitsPerPage();
+    if ((qpp + tcqpp) > maxPageQubits) {
+        SeparateEngines((tcqpp < qpp) ? (qpp - tcqpp) : 1U, true);
     }
 
-    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-        qPages[i]->Compose(toCopy->qPages[0]);
+    bitCapIntOcl i, j;
+    bitCapInt maxJ = (toCopy->qPages.size() - 1U);
+    std::vector<QEnginePtr> nQPages;
+
+    for (i = 0; i < qPages.size(); i++) {
+        QEnginePtr engine = qPages[i];
+        for (j = 0; j < maxJ; j++) {
+            nQPages.push_back(std::dynamic_pointer_cast<QEngine>(engine->Clone()));
+            nQPages.back()->Compose(toCopy->qPages[j]);
+        }
+        nQPages.push_back(engine);
+        nQPages.back()->Compose(toCopy->qPages[maxJ]);
     }
+
+    qPages = nQPages;
 
     bitLenInt toRet = qubitCount;
     SetQubitCount(qubitCount + toCopy->qubitCount);
