@@ -198,7 +198,8 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
         }
     }
 
-    QInterfacePtr simulator = q ? CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_STABILIZER_HYBRID, QINTERFACE_QPAGER, q, 0, rng) : NULL;
+    QInterfacePtr simulator =
+        q ? CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_STABILIZER_HYBRID, QINTERFACE_QPAGER, q, 0, rng) : NULL;
     if (sid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
