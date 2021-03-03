@@ -75,6 +75,14 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , freezeClifford(false)
     , thresholdQubits(qubitThreshold)
 {
+    if ((engine == QINTERFACE_QUNIT) || (engine == QINTERFACE_QUNIT_MULTI)) {
+        engine = QINTERFACE_OPTIMAL_G0_CHILD;
+    }
+
+    if ((subEngine == QINTERFACE_QUNIT) || (subEngine == QINTERFACE_QUNIT_MULTI)) {
+        subEngine = QINTERFACE_OPTIMAL_G1_CHILD;
+    }
+
     shards = QEngineShardMap();
 
     bool bitState;
