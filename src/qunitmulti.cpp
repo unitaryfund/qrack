@@ -27,6 +27,14 @@ QUnitMulti::QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt 
     // The "shard" engine type must be QINTERFACE_OPENCL or QINTERFACE_HYBRID, with or without an intermediate QPager
     // layer.
 
+    if ((engine == QINTERFACE_QUNIT) || (engine == QINTERFACE_QUNIT_MULTI)) {
+        engine = QINTERFACE_OPTIMAL_G0_CHILD;
+    }
+
+    if ((subEngine == QINTERFACE_QUNIT) || (subEngine == QINTERFACE_QUNIT_MULTI)) {
+        subEngine = QINTERFACE_OPTIMAL_G1_CHILD;
+    }
+
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance()->GetDeviceContextPtrVector();
 
     if (devList.size() == 0) {
@@ -56,6 +64,13 @@ QUnitMulti::QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt 
     if (devList.size() == 0) {
         std::sort(deviceList.begin() + 1, deviceList.end(), std::greater<DeviceInfo>());
     }
+}
+
+QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
+{
+    // Suppress passing device list, since QUnitMulti occupies all devices in the list
+    return CreateQuantumInterface(engine, subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, std::vector<int>{}, thresholdQubits);
 }
 
 std::vector<QEngineInfo> QUnitMulti::GetQInfos()
