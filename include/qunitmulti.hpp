@@ -67,6 +67,8 @@ protected:
     int defaultDeviceID;
     std::vector<DeviceInfo> deviceList;
 
+    QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
+
 public:
     QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,

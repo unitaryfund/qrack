@@ -74,6 +74,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , freezeBasis2Qb(false)
     , freezeClifford(false)
     , thresholdQubits(qubitThreshold)
+    , deviceIDs(devList)
 {
     if ((engine == QINTERFACE_QUNIT) || (engine == QINTERFACE_QUNIT_MULTI)) {
         engine = QINTERFACE_OPTIMAL_G0_CHILD;
@@ -96,7 +97,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
 {
     return CreateQuantumInterface(engine, subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, std::vector<int>{}, thresholdQubits);
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, deviceIDs, thresholdQubits);
 }
 
 void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)

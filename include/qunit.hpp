@@ -38,6 +38,7 @@ protected:
     bool freezeBasis2Qb;
     bool freezeClifford;
     bitLenInt thresholdQubits;
+    std::vector<int> deviceIDs;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
 
