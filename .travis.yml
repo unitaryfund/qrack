@@ -20,13 +20,15 @@ script:
 #  - cd build && python -m pytest . && cd ..
   - git clone https://github.com/vm6502q/qiskit-qrack-provider.git && cd qiskit-qrack-provider
   - python -m pip install .
-  - python -m stestr run && cd ..
+# Temporarily disable Qiskit tests
+#  - python -m stestr run && cd ..
 #  - cd .. && git clone https://github.com/XanaduAI/pennylane-pq.git && cd pennylane-pq
 #  - python -m pip install .
 #  - python -m pytest .
   - git clone https://github.com/vm6502q/pennylane-qiskit.git && cd pennylane-qiskit
   - python -m pip install .
-  - python -m pytest . && cd ..
+# Temporarily disable Qiskit tests
+#  - python -m pytest . && cd ..
 #  - cd .. && git clone https://github.com/SoftwareQuTech/SimulaQron.git && cd SimulaQron
 #  - python -m pip install .
 #  - echo "import simulaqron" > simulaqron_tests.py && echo "simulaqron.tests()" >> simulaqron_tests.py
