@@ -46,6 +46,11 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
             "QPager sub-engine type must be QINTERFACE_CPU, QINTERFACE_OPENCL or QINTERFACE_HYBRID.");
     }
 
+    bitLenInt qpd = 2U;
+    if (getenv("QRACK_DEVICE_GLOBAL_QB")) {
+        qpd = (bitLenInt)std::stoi(std::string(getenv("QRACK_DEVICE_GLOBAL_QB")));
+    }
+
 #if ENABLE_OPENCL
     if ((thresholdQubitsPerPage == 0) && ((engine == QINTERFACE_OPENCL) || (engine == QINTERFACE_HYBRID))) {
         useHardwareThreshold = true;
@@ -62,8 +67,8 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
         thresholdQubitsPerPage = maxPageQubits;
 
-        if ((qubitCount - 2U) < thresholdQubitsPerPage) {
-            thresholdQubitsPerPage = qubitCount - 2U;
+        if ((qubitCount - qpd) < thresholdQubitsPerPage) {
+            thresholdQubitsPerPage = qubitCount - qpd;
         }
 
         // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
@@ -79,7 +84,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     if (thresholdQubitsPerPage == 0) {
         useHardwareThreshold = true;
 
-        thresholdQubitsPerPage = qubitCount - 2U;
+        thresholdQubitsPerPage = qubitCount - qpd;
 
         maxPageQubits = -1;
         minPageQubits = log2(std::thread::hardware_concurrency()) + PSTRIDEPOW;
