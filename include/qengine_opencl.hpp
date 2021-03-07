@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include "common/qrack_types.hpp"
+
 #if !ENABLE_OPENCL
 #error OpenCL has not been enabled
 #endif
