@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -16,6 +16,12 @@
 
 #include "common/qrack_types.hpp"
 
+struct _QrackTimeEvolveOpHeader {
+    unsigned target;
+    unsigned controlLen;
+    unsigned controls[32];
+};
+
 namespace Qrack {
 
 /**
@@ -29,6 +35,17 @@ struct HamiltonianOp {
     bool anti;
     bool* toggles;
     bool uniform;
+
+    HamiltonianOp()
+        : targetBit(0)
+        , matrix(NULL)
+        , controls(NULL)
+        , controlLen(0)
+        , anti(false)
+        , toggles(NULL)
+        , uniform(false)
+    {
+    }
 
     HamiltonianOp(bitLenInt target, BitOp mtrx)
         : targetBit(target)
@@ -75,9 +92,28 @@ struct UniformHamiltonianOp : HamiltonianOp {
     UniformHamiltonianOp(bitLenInt* ctrls, bitLenInt ctrlLen, bitLenInt target, BitOp mtrx)
         : HamiltonianOp(ctrls, ctrlLen, target, mtrx)
     {
-        std::copy(ctrls, ctrls + ctrlLen, controls);
+        uniform = true;
+    }
+
+    UniformHamiltonianOp(_QrackTimeEvolveOpHeader teoh, double* mtrx)
+        : HamiltonianOp()
+    {
+        targetBit = (bitLenInt)(teoh.target);
+
+        controlLen = (bitLenInt)teoh.controlLen;
+        controls = new bitLenInt[controlLen];
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            controls[i] = (bitLenInt)teoh.controls[i];
+        }
 
         uniform = true;
+
+        bitCapIntOcl mtrxTermCount = (ONE_BCI << (bitCapIntOcl)controlLen) * 4U;
+        BitOp m(new complex[mtrxTermCount], std::default_delete<complex[]>());
+        matrix = std::move(m);
+        for (bitCapIntOcl i = 0; i < mtrxTermCount; i++) {
+            matrix.get()[i] = complex((real1)mtrx[i * 2U], (real1)mtrx[(i * 2U) + 1U]);
+        }
     }
 };
 

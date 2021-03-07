@@ -1,12 +1,12 @@
 # Qrack
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3785646.svg)](https://zenodo.org/badge/latestdoi/114947047) [![Qrack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=master)](https://travis-ci.org/vm6502q/qrack/builds) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3369483.svg)](https://doi.org/10.5281/zenodo.3369483) [![Qrack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=main)](https://travis-ci.org/vm6502q/qrack/builds) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)
 
 [![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
 
 The open source vm6502q/qrack library and its associated plugins and projects under the vm6502q organization header comprise a framework for full-stack quantum computing development, via high performance and fundamentally optimized simulation. The intent of "Qrack" is to provide maximum performance for the simulation of an ideal, virtually error-free quantum computer, across the broadest possible set of hardware and operating systems.
 
-Using the C++11 standard, at base, Qrack has an external-dependency-free CPU simulator "engine," as well as a GPU simulator engine that depends only on OpenCL. The "QUnit" layer provides novel, fundamental optimizations in the simulation algorithm, based on "[Schmidt decomposition](https://arxiv.org/abs/1710.05867)," transformation of basis, 2 qubit controlled gate buffer caching and "fusion," the physical nonobservability of arbitrary global phase factors on a state vector, and many other "synergistic" and incidental points of optimization between these approaches and in addition to them. "QUnit" can be placed "on top" of either CPU or GPU engine types, and an additional "QFusion" ("gate fusion") layer can sit between these, or in place of QUnit. Optimizations and hardware support are highly configurable, particularly at build time.
+Using the C++11 standard, at base, Qrack has an external-dependency-free CPU simulator "engine," as well as a GPU simulator engine that depends only on OpenCL. The "QUnit" layer provides novel, fundamental optimizations in the simulation algorithm, based on "[Schmidt decomposition](https://arxiv.org/abs/1710.05867)," transformation of basis, 2 qubit controlled gate buffer caching, the physical nonobservability of arbitrary global phase factors on a state vector, and many other "synergistic" and incidental points of optimization between these approaches and in addition to them. "QUnit" can be placed "on top" of either CPU, GPU, or hybrid engine types, and an additional "QPager" layer can sit between these, or in place of QUnit. Optimizations and hardware support are highly configurable, particularly at build time.
 
 A QUnit or QEngine can be thought of as like simply a one-dimensional array of qubits, within which any qubit has the capacity to directly and fully entangle with any and all others. Bits can be manipulated on by a single bit gate at a time, or gates and higher level quantum instructions can be acted over arbitrary contiguous sets of bits. A qubit start index and a length is specified for parallel operation of gates over bits or for higher level instructions, like arithmetic on abitrary width registers. Some methods are designed for (bitwise and register-like) interface between quantum and classical bits. See the Doxygen for the purpose of gate-like and register-like functions.
 
@@ -28,6 +28,8 @@ $ mkdir _build && cd _build && cmake .. && make all install
 ```
 
 Instantiate a Qrack::QUnit, specifying the desired number of qubits. (Optionally, also specify the initial bit permutation state in the constructor.) QUnits can be (Schmidt) "composed" and "decomposed" with and from each other, to join and separate the representations of qubit "registers" that are not entangled at the point (de)composition. Both single quantum gate commands and register-like multi-bit commands are available.
+
+For distributed simulation, the Qrack::QPager layer will segment a single register into a power-of-two count of equal length pages, running on an arbitrary number of OpenCL accelerators. The QPager layer also scales to arbitrarily small as well as large qubit counts, such that it can be appropriate for use on a single accelerator for small width simulations. The QPager layer is also compatible with Clifford set preamble circuits simulated with QStabilizerHybrid, as a layer over QPager, and QHybrid for CPU/GPU switching can be used as the "engine" layer under it. For Qrack in a cluster environment, we support the SnuCL and VirtualCL OpenCL virtualization layers, with OpenCL v1.1 compliant host code without required "host pointers."
 
 For more information, compile the doxygen.config in the root folder, and then check the "doc" folder.
 
@@ -78,10 +80,10 @@ CMake on Windows will set up a 32-bit Visual Studio project by default, (if usin
 ```
     $ mkdir _build
     $ cd _build
-    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DENABLE_COMPLEX8=OFF -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" ..
+    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DFPPOW=6 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" ..
 ```
 
-After CMake, the project must be built in Visual Studio. (`-DENABLE_COMPLEX8=OFF` disables single `float` accuracy in favor of `double`, which should usually be used for building the Q# runtime with `QrackSimulator`.)
+After CMake, the project must be built in Visual Studio. (`-DFPPOW=6` disables single `float` accuracy in favor of `double`, which should usually be used for building the Q# runtime with `QrackSimulator`.)
 
 ## Performing code coverage
 
@@ -94,6 +96,11 @@ After CMake, the project must be built in Visual Studio. (`-DENABLE_COMPLEX8=OFF
     $ cd coverage_results
     $ python -m http.server
 ```
+
+## QPager distributed simulation options
+QPager attempts to smartly allocate low qubit widths for maximum performance. For wider qubit simulations, based on `clinfo`, you can segment your maximum OpenCL accelerator state vector page allocation into global qubits with the environment variable `QRACK_SEGMENT_GLOBAL_QB=n`, where n is an integer >=0. The default n is 0, meaning that maximum allocation segment of your GPU RAM is a single page. (For 1 global qubit, one segment would have 2 pages, akin to 2 single amplitudes, therefore one "global qubit," or 4 pages for n=2, because 2^2=4, etc., by exponent.)
+
+`QRACK_DEVICE_GLOBAL_QB=n`, alternatively, lets the user also choose the performance "hint" for preferred global qubits per device. By default, n=2, for 2 global qubits or equivalently 4 pages per device. Despite the "hint," `QPager` will allocate fewer pages per OpenCL device for small-enough widths, to keep processing elements better occupied. Also, `QPager` will allocate more qubits than the hint, per device, if the maximum allocation segment is exceeded as specified by `QRACK_SEGMENT_GLOBAL_QB`.
 
 ## Vectorization optimization
 
@@ -123,6 +130,20 @@ $ cmake -DENABLE_PURE32=ON ..
 ```
 This option is needed for certain older or simpler hardware. This removes all use of 64 bit types from the OpenCL kernels, as well as completely removing the use of SIMD intrinsics. Note that this build option theoretically supports only up to 32 qubits, whereas `-DENABLE_PURE32=OFF` could support up to 64 qubits, (if the memory requirements were realistically attainable for either 32-bit or 64-bit hardware, or in limited cases available for QUnit Schmidt decomposition). `-DENABLE_PURE32=ON` is necessary to support the VC4CL OpenCL compiler for the VideoCore GPU of the Raspberry Pi 3. (Additionally, for that platform, the RDRAND instruction is not available, and you should `-DENABLE_RDRAND=OFF`. VC4CL for the VideoCore GPU is currently fully supported.)
 
+## Reduced or increased coherent qubit addressing
+
+```
+$ cmake [-DUINTPOW=n] [-DQBCAPPOW=n] ..
+```
+Qrack uses an unsigned integer primitive for ubiquitous qubit masking operations, for "local" qubits (`QEngine`) and "global" qubits (`QUnit` and `QPager`). This limits the maximum qubit capacity of any coherent QInterface to the total number of bits in the global (or local) masking type. By default, a 64-bit unsigned integer is used, corresponding to a maximum of 64 qubits in any coherent `QInterface` (if attainable, such as in limited cases with `QUnit`). `-DUINTPOW=n` reduces the "local" masking type to 2^n bits, (ex.: for max OpenCL sub-unit or page qubit width,) which might also be important with accelerators that might not support 64-bit types. `-DQBCAPPOW=n` sets the maximum power of "global" qubits in "paged" or `QUnit` types as potentially larger than single "pages" or "sub-units," for "n" >= 5, with n=5 being 2^5=32 qubits. Large "n" is possible with the Boost big integer header. (Setting "n" the same for both build options can avoid casting between "subunit" and "global qubit" masking types, if larger "paging" or `QUnit` widths than `QEngine` types are not needed.)
+
+## Variable floating point precision
+
+```
+$ cmake [-FPPOW=n] ..
+```
+Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to n^2. By default n=5, for 5^2=32 bit floating point precision. "half" and "double" availability depend on the system, but n=6 for "double" is commonly supported on modern hardware, and n=4 is supported on ARM, which has a native "half" type.
+
 ## Precompiled OpenCL kernels
 
 ```
@@ -150,9 +171,11 @@ Qrack was originally written so that the disassembler of VM6502Q should show the
 
 ## Copyright, License, and Acknowledgements
 
-Copyright (c) Daniel Strano and the Qrack contributors 2017-2020. All rights reserved.
+Copyright (c) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 
-Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of QUnit and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. We thank the Unitary Fund for its generous support, in a project to help standardize benchmarks across quantum computer simulator software! (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).) Thank you to any and all contributors!
+Daniel Strano would like to specifically note that Benn Bollay is almost entirely responsible for the initial implementation of QUnit and tooling, including unit tests, in addition to large amounts of work on the documentation and many other various contributions in intensive reviews. Also, thank you to Marek Karcz for supplying an awesome base classical 6502 emulator for proof-of-concept. For unit tests and benchmarks, Qrack uses Catch v2.13.2 under the Boost Software License, Version 1.0. The `QStabilizer` partial simulator "engine" is adapted from CHP by Scott Aaronson, for non-commercial use. (Additionally, the font for the Qrack logo is "Electrickle," distributed as "Freeware" from [https://www.fontspace.com/fontastic/electrickle](https://www.fontspace.com/fontastic/electrickle).)
+
+We thank the Unitary Fund for its generous support, in a project to help standardize benchmarks across quantum computer simulator software!  Thank you to any and all contributors!
 
 Licensed under the GNU Lesser General Public License V3.
 

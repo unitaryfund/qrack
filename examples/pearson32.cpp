@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2020. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This example demonstrates the application of a simple hash function with Qrack.
 // A quantum computer could be used to load and process many potential hashing inputs

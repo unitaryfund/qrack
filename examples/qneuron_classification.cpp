@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This example demonstrates an example of a "quantum associative memory" network with the Qrack::QNeuron
 // class. QNeuron is a type of "neuron" that can learn and predict in superposition, for general machine learning
@@ -82,7 +82,7 @@ struct dfObservation {
     real1 df;
     bool cat;
 
-    dfObservation(real1 dfValue, bool c)
+    dfObservation(real1_f dfValue, bool c)
     {
         df = dfValue;
         cat = c;
@@ -92,9 +92,9 @@ struct dfObservation {
 void makeGeoPowerSetQnn(
     const bitLenInt& predictorCount, QInterfacePtr qReg, std::vector<QNeuronPtr>& outputLayer, std::vector<real1>& etas)
 {
-    bitCapInt neuronCount = pow2(predictorCount);
+    bitCapIntOcl neuronCount = pow2Ocl(predictorCount);
 
-    bitCapInt i, x, y, z;
+    bitCapIntOcl i, x, y, z;
 
     std::vector<bitLenInt> allInputIndices(predictorCount);
     for (bitLenInt i = 0; i < predictorCount; i++) {
@@ -119,7 +119,7 @@ void makeGeoPowerSetQnn(
         }
 
         outputLayer.push_back(std::make_shared<QNeuron>(qReg, &(inputIndices[0]), z, 0));
-        etas.push_back((ONE_R1 / nCr(predictorCount, x)) / pow2(x));
+        etas.push_back((ONE_R1 / nCr(predictorCount, x)) / pow2Ocl(x));
     }
 }
 
@@ -130,7 +130,7 @@ void train(std::vector<std::vector<BoolH>>& rawYX, std::vector<real1>& etas, QIn
     size_t i;
     size_t rowCount = rawYX.size();
     bitLenInt qRegSize = qReg->GetQubitCount();
-    bitCapInt perm;
+    bitCapIntOcl perm;
     std::vector<bitLenInt> permH;
 
     std::cout << "Learning..." << std::endl;
@@ -144,7 +144,7 @@ void train(std::vector<std::vector<BoolH>>& rawYX, std::vector<real1>& etas, QIn
         permH.clear();
         for (i = 0; i < qRegSize; i++) {
             if (row[i] == BOOLH_T) {
-                perm |= pow2(i);
+                perm |= pow2Ocl(i);
             } else if (row[i] == BOOLH_H) {
                 permH.push_back(i);
             }
@@ -161,7 +161,7 @@ void train(std::vector<std::vector<BoolH>>& rawYX, std::vector<real1>& etas, QIn
             }
         } else {
             for (i = 0; i < outputLayer.size(); i++) {
-                outputLayer[i]->Learn(row[0], etas[i] / (rowCount * pow2(permH.size())));
+                outputLayer[i]->Learn(row[0], etas[i] / (rowCount * pow2Ocl(permH.size())));
             }
         }
     }
@@ -175,7 +175,7 @@ std::vector<dfObservation> predict(
     size_t i, rowIndex;
     size_t rowCount = rawYX.size();
     bitLenInt qRegSize = qReg->GetQubitCount();
-    bitCapInt perm;
+    bitCapIntOcl perm;
     std::vector<bitLenInt> permH;
 
     std::vector<dfObservation> dfObs;
@@ -187,7 +187,7 @@ std::vector<dfObservation> predict(
         permH.clear();
         for (i = 0; i < qRegSize; i++) {
             if (row[i] == BOOLH_T) {
-                perm |= pow2(i);
+                perm |= pow2Ocl(i);
             } else if (row[i] == BOOLH_H) {
                 permH.push_back(i);
             }
@@ -198,7 +198,7 @@ std::vector<dfObservation> predict(
             qReg->H(permH[i]);
         }
 
-        for (bitCapInt i = 0; i < outputLayer.size(); i++) {
+        for (bitCapIntOcl i = 0; i < outputLayer.size(); i++) {
             outputLayer[i]->Predict();
         }
 
@@ -212,7 +212,7 @@ std::vector<dfObservation> predict(
     return dfObs;
 }
 
-real1 calculateAuc(std::vector<std::vector<BoolH>>& rawYX, std::vector<dfObservation>& dfObs)
+real1_f calculateAuc(std::vector<std::vector<BoolH>>& rawYX, std::vector<dfObservation>& dfObs)
 {
     size_t rowCount = rawYX.size();
     size_t rowIndex;

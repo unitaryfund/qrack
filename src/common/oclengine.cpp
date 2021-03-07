@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -15,15 +15,27 @@
 
 #include "oclengine.hpp"
 
-#if ENABLE_PURE32
-#include "qheader32cl.hpp"
-#elif ENABLE_COMPLEX8
+#if FPPOW < 5
+#include "qheader_halfcl.hpp"
+#elif FPPOW < 6
 #include "qheader_floatcl.hpp"
 #else
 #include "qheader_doublecl.hpp"
 #endif
 
+#if UINTPOW < 5
+#include "qheader_uint16cl.hpp"
+#elif UINTPOW < 6
+#include "qheader_uint32cl.hpp"
+#else
+#include "qheader_uint64cl.hpp"
+#endif
+
 #include "qenginecl.hpp"
+
+#if ENABLE_BCD
+#include "qheader_bcdcl.hpp"
+#endif
 
 namespace Qrack {
 
@@ -51,7 +63,14 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_APPLY2X2_SINGLE_WIDE, "apply2x2singlewide"),
     OCLKernelHandle(OCL_API_APPLY2X2_NORM_SINGLE_WIDE, "apply2x2normsinglewide"),
     OCLKernelHandle(OCL_API_APPLY2X2_DOUBLE_WIDE, "apply2x2doublewide"),
+    OCLKernelHandle(OCL_API_PHASE_SINGLE, "phasesingle"),
+    OCLKernelHandle(OCL_API_PHASE_SINGLE_WIDE, "phasesinglewide"),
+    OCLKernelHandle(OCL_API_INVERT_SINGLE, "invertsingle"),
+    OCLKernelHandle(OCL_API_INVERT_SINGLE_WIDE, "invertsinglewide"),
     OCLKernelHandle(OCL_API_UNIFORMLYCONTROLLED, "uniformlycontrolled"),
+    OCLKernelHandle(OCL_API_UNIFORMPARITYRZ, "uniformparityrz"),
+    OCLKernelHandle(OCL_API_UNIFORMPARITYRZ_NORM, "uniformparityrznorm"),
+    OCLKernelHandle(OCL_API_CUNIFORMPARITYRZ, "cuniformparityrz"),
     OCLKernelHandle(OCL_API_X_SINGLE, "xsingle"),
     OCLKernelHandle(OCL_API_X_SINGLE_WIDE, "xsinglewide"),
     OCLKernelHandle(OCL_API_Z_SINGLE, "zsingle"),
@@ -61,12 +80,15 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_COMPOSE_MID, "composemid"),
     OCLKernelHandle(OCL_API_DECOMPOSEPROB, "decomposeprob"),
     OCLKernelHandle(OCL_API_DECOMPOSEAMP, "decomposeamp"),
+    OCLKernelHandle(OCL_API_DISPOSEPROB, "disposeprob"),
     OCLKernelHandle(OCL_API_DISPOSE, "dispose"),
     OCLKernelHandle(OCL_API_PROB, "prob"),
     OCLKernelHandle(OCL_API_PROBREG, "probreg"),
     OCLKernelHandle(OCL_API_PROBREGALL, "probregall"),
     OCLKernelHandle(OCL_API_PROBMASK, "probmask"),
     OCLKernelHandle(OCL_API_PROBMASKALL, "probmaskall"),
+    OCLKernelHandle(OCL_API_PROBPARITY, "probparity"),
+    OCLKernelHandle(OCL_API_FORCEMPARITY, "forcemparity"),
     OCLKernelHandle(OCL_API_ROL, "rol"),
     OCLKernelHandle(OCL_API_INC, "inc"),
     OCLKernelHandle(OCL_API_CINC, "cinc"),
@@ -74,8 +96,10 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_INCS, "incs"),
     OCLKernelHandle(OCL_API_INCDECSC_1, "incdecsc1"),
     OCLKernelHandle(OCL_API_INCDECSC_2, "incdecsc2"),
+#if ENABLE_BCD
     OCLKernelHandle(OCL_API_INCBCD, "incbcd"),
     OCLKernelHandle(OCL_API_INCDECBCDC, "incdecbcdc"),
+#endif
     OCLKernelHandle(OCL_API_INDEXEDLDA, "indexedLda"),
     OCLKernelHandle(OCL_API_INDEXEDADC, "indexedAdc"),
     OCLKernelHandle(OCL_API_INDEXEDSBC, "indexedSbc"),
@@ -86,8 +110,6 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_UPDATENORM, "updatenorm"),
     OCLKernelHandle(OCL_API_APPLYM, "applym"),
     OCLKernelHandle(OCL_API_APPLYMREG, "applymreg"),
-    OCLKernelHandle(OCL_API_PHASEFLIP, "phaseflip"),
-    OCLKernelHandle(OCL_API_ZEROPHASEFLIP, "zerophaseflip"),
     OCLKernelHandle(OCL_API_CPHASEFLIPIFLESS, "cphaseflipifless"),
     OCLKernelHandle(OCL_API_PHASEFLIPIFLESS, "phaseflipifless"),
     OCLKernelHandle(OCL_API_MUL, "mul"),
@@ -101,7 +123,10 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_CIMULMODN_OUT, "cimulmodnout"),
     OCLKernelHandle(OCL_API_CPOWMODN_OUT, "cpowmodnout"),
     OCLKernelHandle(OCL_API_FULLADD, "fulladd"),
-    OCLKernelHandle(OCL_API_IFULLADD, "ifulladd")
+    OCLKernelHandle(OCL_API_IFULLADD, "ifulladd"),
+    OCLKernelHandle(OCL_API_CLEARBUFFER, "clearbuffer"),
+    OCLKernelHandle(OCL_API_SHUFFLEBUFFERS, "shufflebuffers"),
+    OCLKernelHandle(OCL_API_COPYPAGE, "copypage")
 };
 // clang-format on
 
@@ -147,7 +172,7 @@ cl::Program OCLEngine::MakeProgram(
                           << std::endl;
             }
 
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
             program = cl::Program(devCntxt->context, { devCntxt->device },
                 { std::pair<const void*, unsigned long>(&buffer[0], buffer.size()) }, &binaryStatus, &buildError);
 #else
@@ -198,7 +223,7 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     }
 
     FILE* clBinFile = fopen((path + fileName).c_str(), "w");
-#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__))
+#if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
     std::vector<char*> clBinaries = program.getInfo<CL_PROGRAM_BINARIES>();
     char* clBinary = clBinaries[clBinIndex];
     fwrite(clBinary, clBinSize, sizeof(char), clBinFile);
@@ -261,18 +286,40 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     // prefer the last device because that's usually a GPU or accelerator; device[0] is usually the CPU
     int dev = deviceCount - 1;
+    if (getenv("QRACK_OCL_DEFAULT_DEVICE")) {
+        dev = std::stoi(std::string(getenv("QRACK_OCL_DEFAULT_DEVICE")));
+        if ((dev < 0) || (dev > (deviceCount - 1))) {
+            std::cout << "WARNING: Invalid QRACK_OCL_DEFAULT_DEVICE selection. (Falling back to highest index device "
+                         "as default.)"
+                      << std::endl;
+            dev = deviceCount - 1;
+        }
+    }
 
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
 
-#if ENABLE_PURE32
-    sources.push_back({ (const char*)qheader32_cl, (long unsigned int)qheader32_cl_len });
-#elif ENABLE_COMPLEX8
+#if FPPOW < 5
+    sources.push_back({ (const char*)qheader_half_cl, (long unsigned int)qheader_half_cl_len });
+#elif FPPOW < 6
     sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
 #else
     sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
 #endif
+
+#if UINTPOW < 5
+    sources.push_back({ (const char*)qheader_uint16_cl, (long unsigned int)qheader_uint16_cl_len });
+#elif UINTPOW < 6
+    sources.push_back({ (const char*)qheader_uint32_cl, (long unsigned int)qheader_uint32_cl_len });
+#else
+    sources.push_back({ (const char*)qheader_uint64_cl, (long unsigned int)qheader_uint64_cl_len });
+#endif
+
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
+
+#if ENABLE_BCD
+    sources.push_back({ (const char*)qheader_bcd_cl, (long unsigned int)qheader_bcd_cl_len });
+#endif
 
     int plat_id = -1;
     std::vector<cl::Context> all_contexts;
@@ -284,7 +331,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
             all_contexts.push_back(cl::Context(all_platforms_devices[plat_id]));
         }
         std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
-            devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], plat_id);
+            devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], i, plat_id);
 
         std::string fileName = binary_file_prefix + std::to_string(i) + binary_file_ext;
         std::string clBinName = home + fileName;

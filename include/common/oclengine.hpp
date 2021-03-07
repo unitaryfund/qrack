@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -32,7 +32,7 @@
 #if defined(__APPLE__)
 #define CL_SILENCE_DEPRECATION
 #include <OpenCL/cl.hpp>
-#elif defined(_WIN32)
+#elif defined(_WIN32) || ENABLE_SNUCL
 #include <CL/cl.hpp>
 #else
 #include <CL/cl2.hpp>
@@ -89,6 +89,7 @@ public:
     cl::Device device;
     cl::Context context;
     int context_id;
+    int device_id;
     cl::CommandQueue queue;
     EventVecPtr wait_events;
 
@@ -98,11 +99,12 @@ protected:
     std::map<OCLAPI, std::unique_ptr<std::mutex>> mutexes;
 
 public:
-    OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int cntxt_id)
+    OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int dev_id, int cntxt_id)
         : platform(p)
         , device(d)
         , context(c)
         , context_id(cntxt_id)
+        , device_id(dev_id)
     {
         cl_int error;
         queue = cl::CommandQueue(context, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &error);
@@ -123,18 +125,43 @@ public:
     {
         std::lock_guard<std::mutex> guard(waitEventsMutex);
         EventVecPtr waitVec = std::move(wait_events);
-        wait_events = std::make_shared<std::vector<cl::Event>>();
+        wait_events =
+            std::shared_ptr<std::vector<cl::Event>>(new std::vector<cl::Event>(), [](std::vector<cl::Event>* vec) {
+                vec->clear();
+                delete vec;
+            });
         return waitVec;
     }
+
+    void LockWaitEvents() { waitEventsMutex.lock(); }
+
+    void UnlockWaitEvents() { waitEventsMutex.unlock(); }
 
     void WaitOnAllEvents()
     {
         std::lock_guard<std::mutex> guard(waitEventsMutex);
-        for (unsigned int i = 0; i < (wait_events.get())->size(); i++) {
-            (*wait_events.get())[i].wait();
+        if ((wait_events.get())->size()) {
+            cl::Event::waitForEvents((const std::vector<cl::Event>&)*(wait_events.get()));
+            wait_events->clear();
         }
-        wait_events->clear();
     }
+
+    size_t GetPreferredConcurrency()
+    {
+        size_t nrmGroupSize =
+            calls[OCL_API_APPLY2X2_SINGLE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
+        size_t procElemCount = device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+        size_t maxWorkItems = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+
+        size_t nrmGroupCount = procElemCount * nrmGroupSize;
+        if (nrmGroupCount > maxWorkItems) {
+            nrmGroupCount = maxWorkItems;
+        }
+
+        return nrmGroupCount;
+    }
+
+    size_t GetMaxAlloc() { return device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>(); }
 
     friend class OCLEngine;
 };
@@ -156,7 +183,7 @@ public:
     /// Get the count of devices in the current list.
     int GetDeviceCount() { return all_device_contexts.size(); }
     /// Get default device ID.
-    int GetDefaultDeviceID() { return default_device_context->context_id; }
+    int GetDefaultDeviceID() { return default_device_context->device_id; }
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
     /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -72,8 +72,11 @@ public:
     void par_for_sparse_compose(const std::vector<bitCapInt>& lowSet, const std::vector<bitCapInt>& highSet,
         const bitLenInt& highStart, ParallelFunc fn);
 
-    /** Calculate the normal for the array. */
-    real1 par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1 norm_thresh = REAL1_DEFAULT_ARG);
+    /** Calculate the normal for the array, (with flooring). */
+    real1_f par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1_f norm_thresh = ZERO_R1);
+
+    /** Calculate the normal for the array, (without flooring.) */
+    real1_f par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray);
 };
 
 } // namespace Qrack

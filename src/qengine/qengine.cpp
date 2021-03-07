@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -44,7 +44,7 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         throw "ERROR: Forced a measurement result with 0 probability";
     }
 
-    if (doApply) {
+    if (doApply && (nrmlzr != ONE_R1)) {
         bitCapInt qPower = pow2(qubit);
         ApplyM(qPower, result, GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr)));
     }
@@ -101,7 +101,9 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
         }
         nrmlzr = ProbMask(regMask, result);
         nrm = phase / (real1)(std::sqrt(nrmlzr));
-        ApplyM(regMask, result, nrm);
+        if (nrmlzr != ONE_R1) {
+            ApplyM(regMask, result, nrm);
+        }
 
         // No need to check against probabilities:
         return result;
@@ -153,7 +155,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
     nrm = phase / (real1)(std::sqrt(nrmlzr));
 
-    if (doApply) {
+    if (doApply && (nrmlzr != ONE_R1)) {
         ApplyM(regMask, result, nrm);
     }
 
@@ -162,12 +164,12 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
 void QEngine::ApplySingleBit(const complex* mtrx, bitLenInt qubit)
 {
-    if (IsIdentity(mtrx)) {
+    if (IsIdentity(mtrx, false)) {
         return;
     }
 
     bool doCalcNorm = doNormalize &&
-        !(((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) || ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)));
+        !(((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) || ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)));
 
     bitCapInt qPowers[1];
     qPowers[0] = pow2(qubit);
@@ -177,7 +179,7 @@ void QEngine::ApplySingleBit(const complex* mtrx, bitLenInt qubit)
 void QEngine::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    if (IsIdentity(mtrx)) {
+    if (IsIdentity(mtrx, true)) {
         return;
     }
 
@@ -187,7 +189,7 @@ void QEngine::ApplyControlledSingleBit(
     }
 
     bool doCalcNorm = doNormalize &&
-        !(((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) || ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)));
+        !(((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) || ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)));
 
     ApplyControlled2x2(controls, controlLen, target, mtrx);
     if (doCalcNorm) {
@@ -198,7 +200,7 @@ void QEngine::ApplyControlledSingleBit(
 void QEngine::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    if (IsIdentity(mtrx)) {
+    if (IsIdentity(mtrx, true)) {
         return;
     }
 
@@ -208,7 +210,7 @@ void QEngine::ApplyAntiControlledSingleBit(
     }
 
     bool doCalcNorm = doNormalize &&
-        !(((norm(mtrx[1]) == 0) && (norm(mtrx[2]) == 0)) || ((norm(mtrx[0]) == 0) && (norm(mtrx[3]) == 0)));
+        !(((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) || ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)));
 
     ApplyAntiControlled2x2(controls, controlLen, target, mtrx);
     if (doCalcNorm) {
@@ -346,6 +348,7 @@ void QEngine::ApplyControlled2x2(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1U];
+    bitCapInt targetMask = pow2Ocl(target);
     bitCapInt fullMask = 0U;
     bitCapInt controlMask;
     for (bitLenInt i = 0U; i < controlLen; i++) {
@@ -353,8 +356,8 @@ void QEngine::ApplyControlled2x2(
         fullMask |= qPowersSorted[i];
     }
     controlMask = fullMask;
-    qPowersSorted[controlLen] = pow2(target);
-    fullMask |= pow2(target);
+    qPowersSorted[controlLen] = targetMask;
+    fullMask |= targetMask;
     std::sort(qPowersSorted, qPowersSorted + controlLen + 1U);
     Apply2x2(controlMask, fullMask, mtrx, controlLen + 1U, qPowersSorted, false);
     delete[] qPowersSorted;
@@ -364,12 +367,13 @@ void QEngine::ApplyAntiControlled2x2(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     bitCapInt* qPowersSorted = new bitCapInt[controlLen + 1U];
+    bitCapInt targetMask = pow2Ocl(target);
     for (bitLenInt i = 0U; i < controlLen; i++) {
         qPowersSorted[i] = pow2(controls[i]);
     }
-    qPowersSorted[controlLen] = pow2(target);
+    qPowersSorted[controlLen] = targetMask;
     std::sort(qPowersSorted, qPowersSorted + controlLen + 1U);
-    Apply2x2(0U, pow2(target), mtrx, controlLen + 1U, qPowersSorted, false);
+    Apply2x2(0, targetMask, mtrx, controlLen + 1U, qPowersSorted, false);
     delete[] qPowersSorted;
 }
 
@@ -438,7 +442,7 @@ void QEngine::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 }
 
 /// "fSim" gate, (useful in the simulation of particles with fermionic statistics)
-void QEngine::FSim(real1 theta, real1 phi, bitLenInt qubit1, bitLenInt qubit2)
+void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
     real1 cosTheta = cos(theta);
     real1 sinTheta = sin(theta);
@@ -634,6 +638,7 @@ void QEngine::DECSC(
     INCDECSC(invToSub, inOutStart, length, overflowIndex, carryIndex);
 }
 
+#if ENABLE_BCD
 /// Add BCD integer (without sign, with carry)
 void QEngine::INCBCDC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
@@ -661,5 +666,6 @@ void QEngine::DECBCDC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
     bitCapInt invToSub = maxVal - toSub;
     INCDECBCDC(invToSub, inOutStart, length, carryIndex);
 }
+#endif
 
 } // namespace Qrack

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This example demonstrates Grover's search, applied for the purpose of inverting a black box function. (This is
 // probably the most canonical form and application of Grover's search.)

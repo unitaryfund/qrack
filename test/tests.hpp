@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -40,6 +40,8 @@ extern bool single_qubit_run;
 extern std::string mOutputFileName;
 extern std::ofstream mOutputFile;
 extern bool isBinaryOutput;
+extern int benchmarkSamples;
+extern std::vector<int> devList;
 
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
@@ -75,19 +77,19 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr
 {
     bitCapInt i;
 
-    double maxProb = 0;
+    float maxProb = 0;
     bitCapInt maxProbIdx = 0;
-    double totalProb = 0;
+    float totalProb = 0;
 
     // Iterate through all possible values of the bit array
     for (i = 0; i < qftReg->GetMaxQPower(); i++) {
-        double prob = qftReg->ProbAll(i);
+        float prob = (float)qftReg->ProbAll(i);
         totalProb += prob;
         if (prob > maxProb) {
             maxProb = prob;
             maxProbIdx = i;
         }
-        // if (prob > 0.0) {
+        // if (prob != ZERO_R1) {
         //    std::cout<<"(Perm "<<(int)i<<" "<<prob<<std::endl;
         //}
     }
@@ -163,7 +165,7 @@ public:
         for (bitLenInt j = 0; j < length; j++) {
             /* Consider anything more than a 50% probability as a '1'. */
             bool bit = (qftReg->Prob(j + start) > QRACK_TEST_EPSILON);
-            if (bit != !!(mask & (1U << j))) {
+            if (bit == !(mask & (1ULL << j))) {
                 return false;
             }
         }
@@ -175,7 +177,7 @@ public:
         std::ostringstream ss;
         ss << "matches bit pattern [" << (int)start << "," << start + length << "]: " << (int)length << "/";
         for (int j = (length - 1); j >= 0; j--) {
-            ss << !!((int)(mask & (1 << j)));
+            ss << !!((int)(mask & (1ULL << j)));
         }
         return ss.str();
     }

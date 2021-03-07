@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -17,13 +17,13 @@
 namespace Qrack {
 
 /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
-void QInterface::RT(real1 radians, bitLenInt qubit)
+void QInterface::RT(real1_f radians, bitLenInt qubit)
 {
     ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex(cos(radians / 2.0), sin(radians / 2.0)), qubit);
 }
 
 /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
-void QInterface::RX(real1 radians, bitLenInt qubit)
+void QInterface::RX(real1_f radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
@@ -33,7 +33,7 @@ void QInterface::RX(real1 radians, bitLenInt qubit)
 }
 
 /// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
-void QInterface::RY(real1 radians, bitLenInt qubit)
+void QInterface::RY(real1_f radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
@@ -43,7 +43,7 @@ void QInterface::RY(real1 radians, bitLenInt qubit)
 }
 
 /// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
-void QInterface::RZ(real1 radians, bitLenInt qubit)
+void QInterface::RZ(real1_f radians, bitLenInt qubit)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
@@ -99,7 +99,7 @@ void QInterface::UniformlyControlledRZ(
 }
 
 /// Exponentiate identity operator
-void QInterface::Exp(real1 radians, bitLenInt qubit)
+void QInterface::Exp(real1_f radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
     ApplySinglePhase(phaseFac, phaseFac, qubit);
@@ -124,28 +124,28 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
 }
 
 /// Exponentiate Pauli X operator
-void QInterface::ExpX(real1 radians, bitLenInt qubit)
+void QInterface::ExpX(real1_f radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
     ApplySingleInvert(phaseFac, phaseFac, qubit);
 }
 
 /// Exponentiate Pauli Y operator
-void QInterface::ExpY(real1 radians, bitLenInt qubit)
+void QInterface::ExpY(real1_f radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
     ApplySingleInvert(phaseFac * complex(ZERO_R1, -ONE_R1), phaseFac * complex(ZERO_R1, ONE_R1), qubit);
 }
 
 /// Exponentiate Pauli Z operator
-void QInterface::ExpZ(real1 radians, bitLenInt qubit)
+void QInterface::ExpZ(real1_f radians, bitLenInt qubit)
 {
     complex phaseFac = complex(cos(radians), sin(radians));
     ApplySinglePhase(phaseFac, -phaseFac, qubit);
 }
 
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state
-void QInterface::CRT(real1 radians, bitLenInt control, bitLenInt target)
+void QInterface::CRT(real1_f radians, bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
     ApplyControlledSinglePhase(
@@ -153,7 +153,7 @@ void QInterface::CRT(real1 radians, bitLenInt control, bitLenInt target)
 }
 
 /// Controlled x axis rotation - if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis
-void QInterface::CRX(real1 radians, bitLenInt control, bitLenInt target)
+void QInterface::CRX(real1_f radians, bitLenInt control, bitLenInt target)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
@@ -164,7 +164,7 @@ void QInterface::CRX(real1 radians, bitLenInt control, bitLenInt target)
 }
 
 /// Controlled y axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli y axis
-void QInterface::CRY(real1 radians, bitLenInt control, bitLenInt target)
+void QInterface::CRY(real1_f radians, bitLenInt control, bitLenInt target)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);
@@ -175,7 +175,7 @@ void QInterface::CRY(real1 radians, bitLenInt control, bitLenInt target)
 }
 
 /// Controlled z axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli z axis
-void QInterface::CRZ(real1 radians, bitLenInt control, bitLenInt target)
+void QInterface::CRZ(real1_f radians, bitLenInt control, bitLenInt target)
 {
     real1 cosine = cos(radians / 2.0);
     real1 sine = sin(radians / 2.0);

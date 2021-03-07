@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -12,9 +12,24 @@
 
 #pragma once
 
+#include <cfloat>
+#include <complex>
 #include <functional>
 #include <memory>
 #include <random>
+
+#include "config.h"
+
+#if UINTPOW < 5
+#define ONE_BCI ((uint16_t)1U)
+#define bitCapIntOcl uint16_t
+#elif UINTPOW < 6
+#define ONE_BCI 1U
+#define bitCapIntOcl uint32_t
+#else
+#define ONE_BCI 1UL
+#define bitCapIntOcl uint64_t
+#endif
 
 #if QBCAPPOW < 8
 #define bitLenInt uint8_t
@@ -26,12 +41,44 @@
 #define bitLenInt uint64_t
 #endif
 
+#if QBCAPPOW < 6
+#define bitsInCap 32
+#define bitCapInt uint32_t
+#elif QBCAPPOW < 7
+#define bitsInCap 64
+#define bitCapInt uint64_t
+#elif QBCAPPOW < 8
+#define bitsInCap 128
+#ifdef BOOST_AVAILABLE
+#include <boost/multiprecision/cpp_int.hpp>
+#define bitCapInt boost::multiprecision::uint128_t
+#else
+#define bitCapInt __uint128_t
+#endif
+#else
+#define bitsInCap (8U * (1U << QBCAPPOW))
+#include <boost/multiprecision/cpp_int.hpp>
+#define bitCapInt                                                                                                      \
+    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1 << QBCAPPOW, 1 << QBCAPPOW,                 \
+        boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
+#endif
+
+#define bitsInByte 8
+#define qrack_rand_gen std::mt19937_64
+#define qrack_rand_gen_ptr std::shared_ptr<qrack_rand_gen>
+#define QRACK_ALIGN_SIZE 64
+
 #if ENABLE_CUDA
 #include <cuda_runtime.h>
-#if ENABLE_PURE32
-#define SineShift M_PI_2_F
-#define bitCapIntOcl2 uint2
-#define bitCapIntOcl4 uint4
+#if QBCAPPOW < 5
+#define qCudaReal1 half
+#define qCudaReal2 half2
+#define qCudaReal4 half4
+#define qCudaCmplx half2
+#define qCudaCmplx2 half4
+#define make_qCudaCmplx make_half2
+#define make_qCudaCmplx2 make_half4
+#elif QBCAPPOW < 6
 #define qCudaReal1 float
 #define qCudaReal2 float2
 #define qCudaReal4 float4
@@ -40,19 +87,6 @@
 #define make_qCudaCmplx make_float2
 #define make_qCudaCmplx2 make_float4
 #else
-#define bitCapIntOcl2 ulong2
-#define bitCapIntOcl4 ulong4
-#if ENABLE_COMPLEX8
-#define SineShift M_PI_2_F
-#define qCudaReal1 float
-#define qCudaReal2 float2
-#define qCudaReal4 float4
-#define qCudaCmplx float2
-#define qCudaCmplx2 float4
-#define make_qCudaCmplx make_float2
-#define make_qCudaCmplx2 make_float4
-#else
-#define SineShift M_PI_2
 #define qCudaReal1 double
 #define qCudaReal2 double2
 #define qCudaReal4 double4
@@ -62,84 +96,56 @@
 #define make_qCudaCmplx2 make_double4
 #endif
 #endif
-#endif
 
-#if ENABLE_PURE32
-#define bitCapIntOcl uint32_t
-#define bitCapInt uint32_t
-#define ONE_BCI 1U
-#elif ENABLE_UINT128
-#ifdef BOOST_AVAILABLE
-#include <boost/multiprecision/cpp_int.hpp>
-#define bitCapIntOcl uint64_t
-#define bitCapInt boost::multiprecision::uint128_t
-#define ONE_BCI 1ULL
-#else
-#define bitCapIntOcl uint64_t
-#define bitCapInt __uint128_t
-#define ONE_BCI 1ULL
-#endif
-#elif QBCAPPOW > 7
-#include <boost/multiprecision/cpp_int.hpp>
-#define bitCapIntOcl uint64_t
-#define bitCapInt                                                                                                      \
-    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1 << QBCAPPOW, 1 << QBCAPPOW,                 \
-        boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
-#define ONE_BCI 1ULL
-#else
-#define bitCapIntOcl uint64_t
-#define bitCapInt uint64_t
-#define ONE_BCI 1ULL
-#endif
-
-#define bitsInByte 8
-#define qrack_rand_gen std::mt19937_64
-#define qrack_rand_gen_ptr std::shared_ptr<qrack_rand_gen>
-#define QRACK_ALIGN_SIZE 64
-
-#include "config.h"
-
-#include <complex>
-
-#if ENABLE_COMPLEX8
+#if FPPOW < 5
+namespace Qrack {
+//#include <arm_fp16.h>
+typedef std::complex<__fp16> complex;
+typedef __fp16 real1;
+typedef float real1_f;
+#define ZERO_R1 ((real1)0.0f)
+#define ONE_R1 ((real1)1.0f)
+#define PI_R1 ((real1)M_PI)
+#define REAL1_DEFAULT_ARG ((real1)-999.0f)
+// Half of the amplitude of 16 maximally superposed qubits in any permutation
+#define REAL1_EPSILON ((real1)2e-17f)
+// Minimum representable difference from 1
+#define FP_NORM_EPSILON ((real1)0.0009765625f)
+} // namespace Qrack
+#elif FPPOW < 6
 namespace Qrack {
 typedef std::complex<float> complex;
 typedef float real1;
-} // namespace Qrack
+typedef float real1_f;
 #define ZERO_R1 0.0f
 #define ONE_R1 1.0f
-#define PI_R1 (real1) M_PI
-// min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on
-// the results of the tests in accuracy.cpp.
-#define min_norm 1e-14f
+#define PI_R1 ((real1)M_PI)
 #define REAL1_DEFAULT_ARG -999.0f
-#define REAL1_EPSILON FLT_EPSILON
+// Half of the amplitude of 32 maximally superposed qubits in any permutation
+#define REAL1_EPSILON 2e-33f
+// Minimum representable difference from 1
+#define FP_NORM_EPSILON 1.192092896e-07f
+} // namespace Qrack
 #else
-//#include "complex16simd.hpp"
 namespace Qrack {
 typedef std::complex<double> complex;
 typedef double real1;
-} // namespace Qrack
+typedef double real1_f;
 #define ZERO_R1 0.0
 #define ONE_R1 1.0
 #define PI_R1 M_PI
-// min_norm is the minimum probability neighborhood to check for exactly 1 or 0 probability. Values were chosen based on
-// the results of the tests in accuracy.cpp.
-#define min_norm 1e-30
 #define REAL1_DEFAULT_ARG -999.0
-#define REAL1_EPSILON DBL_EPSILON
+// Half of the amplitude of 64 maximally superposed qubits in any permutation
+#define REAL1_EPSILON 2e-65
+// Minimum representable difference from 1
+#define FP_NORM_EPSILON 2.2204460492503131e-16
+} // namespace Qrack
 #endif
 
 #define ONE_CMPLX complex(ONE_R1, ZERO_R1)
 #define ZERO_CMPLX complex(ZERO_R1, ZERO_R1)
 #define I_CMPLX complex(ZERO_R1, ONE_R1)
 #define CMPLX_DEFAULT_ARG complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG)
-
-// approxcompare_error is the maximum acceptable sum of probability amplitude difference for ApproxCompare to return
-// "true." When TrySeparate or TryDecohere is applied after the QFT followed by its inverse on a permutation, the sum of
-// square errors of probability is generally less than 10^-11, for float accuracy. (A small number of trials return many
-// orders larger error, but these cases should not be separated, as the code stands.)
-#define approxcompare_error 1e-7f
 
 namespace Qrack {
 typedef std::shared_ptr<complex> BitOp;
@@ -176,8 +182,13 @@ public:
     virtual void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) = 0;
     virtual void clear() = 0;
     virtual void copy_in(const complex* inArray) = 0;
+    virtual void copy_in(const complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
+    virtual void copy_in(
+        StateVectorPtr copyInSv, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length) = 0;
     virtual void copy_out(complex* outArray) = 0;
+    virtual void copy_out(complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
     virtual void copy(StateVectorPtr toCopy) = 0;
+    virtual void shuffle(StateVectorPtr svp) = 0;
     virtual void get_probs(real1* outArray) = 0;
     virtual bool is_sparse() = 0;
 };

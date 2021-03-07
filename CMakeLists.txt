@@ -9,21 +9,13 @@ include ("cmake/Format.cmake")
 
 include_directories ("include" "include/common")
 
-set(PSTRIDE "64" CACHE STRING "Stride of parallel for loops (must be power of 2)")
-
-set(QBCAPPOW "6" CACHE STRING "Log2 of maximum qubit capacity of a single QInterface (must be at least 5, equivalent to >= 32 qubits)")
-if (QBCAPPOW LESS 5)
-    message(FATAL_ERROR "QBCAPPOW must be at least 5, equivalent to >= 32 qubits!")
-endif (QBCAPPOW LESS 5)
-
-if (QBCAPPOW GREATER 31)
-    message(FATAL_ERROR "QBCAPPOW must be less than 32, equivalent to < 2^32 qubits!")
-endif (QBCAPPOW GREATER 31)
+set(PSTRIDEPOW "9" CACHE STRING "Stride of parallel for loops (as a power of 2)")
 
 # Declare the library
 add_library (qrack STATIC
     src/common/parallel_for.cpp
     src/common/rdrandwrapper.cpp
+    src/common/dispatchqueue.cpp
     src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
@@ -32,11 +24,12 @@ add_library (qrack STATIC
     src/qinterface/rotational.cpp
     src/qengine/qengine.cpp
     src/qengine/arithmetic.cpp
-    src/qengine/gates.cpp
     src/qengine/state.cpp
     src/qengine/utility.cpp
-    src/bitbuffer.cpp
     src/qunit.cpp
+    src/qpager.cpp
+    src/qstabilizer.cpp
+    src/qstabilizerhybrid.cpp
     )
 	
 add_library (qrack_pinvoke SHARED
@@ -49,7 +42,11 @@ else (MSVC)
     if (APPLE)
         set(QRACK_LIBS qrack pthread)
     else (APPLE)
-        set(QRACK_LIBS qrack pthread atomic)
+        if (ANDROID)
+            set(QRACK_LIBS qrack atomic)
+        else (ANDROID)
+            set(QRACK_LIBS qrack pthread atomic)
+        endif(ANDROID)
     endif (APPLE)
 endif (MSVC)
 
@@ -75,10 +72,6 @@ add_executable (benchmarks
 
 target_link_libraries (benchmarks ${QRACK_LIBS})
 
-add_test (NAME qrack_benchmarks
-    COMMAND benchmarks
-    )
-
 # Declare the accuracy executable
 add_executable (accuracy
     test/accuracy_main.cpp
@@ -87,10 +80,6 @@ add_executable (accuracy
 
 target_link_libraries (accuracy ${QRACK_LIBS})
 
-add_test (NAME qrack_accuracy
-    COMMAND accuracy
-    )
-
 # Declare the OCL precompilation executable
 add_executable (qrack_cl_precompile
     src/qrack_cl_precompile.cpp
@@ -98,42 +87,32 @@ add_executable (qrack_cl_precompile
 
 target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
 
-add_test (NAME qrack_cl_precompile
-    COMMAND qrack_cl_precompile
-    )
-
 # Included after the library and other modules have been declared
 option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
-include ("cmake/Examples.cmake")
-include ("cmake/UInt128.cmake")
-include ("cmake/OpenCL.cmake")
-include ("cmake/CUDA.cmake")
-include ("cmake/Complex8.cmake")
+option (ENABLE_SNUCL "Use SnuCL framework for clusters" OFF)
+include ("cmake/QbCapPow.cmake")
+include ("cmake/UIntPow.cmake")
+include ("cmake/FpPow.cmake")
+include ("cmake/Bcd.cmake")
 include ("cmake/Complex_x2.cmake")
 include ("cmake/Pure32.cmake")
 include ("cmake/Boost.cmake")
+include ("cmake/QUnit_CPU_Parallel.cmake")
+include ("cmake/OclMemGuards.cmake")
+include ("cmake/Examples.cmake")
 include ("cmake/VM6502Q.cmake")
-
-target_compile_definitions (qrack PUBLIC QBCAPPOW=${QBCAPPOW})
+include ("cmake/OpenCL.cmake" )
+include ("cmake/CUDA.cmake")
 
 message ("Qubit capacity power is: ${QBCAPPOW}")
-if (QBCAPPOW EQUAL 5)
-    message ("Pure 32-bit compilation is: ON")
-else (QBCAPPOW EQUAL 5)
-    message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
-endif (QBCAPPOW EQUAL 5)
-if (QBCAPPOW EQUAL 7)
-    message ("128-bit compilation is: ON")
-else (QBCAPPOW EQUAL 7)
-    message ("128-bit compilation is: ${ENABLE_UINT128}")
-endif (QBCAPPOW EQUAL 7)
-message ("Single accuracy is: ${ENABLE_COMPLEX8}")
-message ("Complex_x2/AVX Support is: ${ENABLE_COMPLEX_X2}")
+message ("Floating-point capacity power is: ${FPPOW}")
+message ("UInt capacity power is: ${UINTPOW}")
+message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
+message ("Complex_x2/AVX support is: ${ENABLE_COMPLEX_X2}")
+message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
+message ("OpenCL memory guards are: ${ENABLE_OCL_MEM_GUARDS}")
+message ("BCD ALU API inclusion is: ${ENABLE_BCD}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
-
-if (ENABLE_UINT128 AND ENABLE_PURE32)
-    message(FATAL_ERROR "You cannot require both ENABLE_UINT128 and ENABLE_PURE32 at the same time! 128 bit and pure 32 bit modes are mutually exclusive.")
-endif (ENABLE_UINT128 AND ENABLE_PURE32)
 
 if (MSVC)
     set(QRACK_COMPILE_OPTS -std=c++11 -Wall)
@@ -141,13 +120,18 @@ if (MSVC)
     set(TEST_COMPILE_OPTS -std=c++11 -Wall)
 else (MSVC)
     set(QRACK_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror -fPIC)
-    set(QRACK_CUDA_COMPILE_OPTS -O3 -std=c++11 -Werror all-warnings)
+    set(QRACK_CUDA_COMPILE_OPTS -O3 -std=c++11 --compiler-options -Werror all-warnings)
     set(TEST_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror)
 endif(MSVC)
 
-if (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
+if (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5)
     set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mavx)
-endif (ENABLE_COMPLEX_X2 AND NOT ENABLE_COMPLEX8)
+endif (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5)
+
+if (FPPOW LESS 5)
+    set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mfp16-format=ieee)
+    set(TEST_COMPILE_OPTS ${TEST_COMPILE_OPTS} -mfp16-format=ieee)
+endif (FPPOW LESS 5)
 
 include ("cmake/RDRand.cmake")
 
@@ -180,7 +164,7 @@ target_compile_options (qrack_pinvoke PUBLIC
 target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
 target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
 
 set_target_properties (qrack PROPERTIES
     VERSION ${PROJECT_VERSION}
@@ -200,24 +184,29 @@ install (FILES
     include/common/parallel_for.hpp
     include/common/rdrandwrapper.hpp
     include/common/cuda_kernels.cuh
+    include/common/dispatchqueue.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 
 # Install qrack library headers
 install (FILES
-    include/bitbuffer.hpp
     include/hamiltonian.hpp
     include/statevector.hpp
     include/pinvoke_api.hpp
     include/qfactory.hpp
     include/qengine.hpp
     include/qengine_cpu.hpp
+    include/qengineshard.hpp
     include/qunit.hpp
     include/qunitmulti.hpp
     include/qengine_opencl.hpp
     include/qengine_cuda.hpp
     include/qinterface.hpp
     include/qneuron.hpp
+    include/qpager.hpp
+    include/qhybrid.hpp
+    include/qstabilizer.hpp
+    include/qstabilizerhybrid.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 

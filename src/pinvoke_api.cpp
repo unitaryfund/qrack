@@ -1,12 +1,13 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2020. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
 #include "pinvoke_api.hpp"
+#include "hamiltonian.hpp"
 
 // for details.
 
@@ -28,61 +29,59 @@ using namespace Qrack;
 
 enum Pauli {
     /// Pauli Identity operator. Corresponds to Q# constant "PauliI."
-    PauliI = 0U,
+    PauliI = 0,
     /// Pauli X operator. Corresponds to Q# constant "PauliX."
-    PauliX = 1U,
+    PauliX = 1,
     /// Pauli Y operator. Corresponds to Q# constant "PauliY."
-    PauliY = 3U,
+    PauliY = 3,
     /// Pauli Z operator. Corresponds to Q# constant "PauliZ."
-    PauliZ = 2U
+    PauliZ = 2
 };
 
-qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>(std::time(0));
+qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>(time(0));
 std::vector<QInterfacePtr> simulators;
+std::vector<bool> simulatorReservations;
 std::map<QInterfacePtr, std::map<unsigned, bitLenInt>> shards;
 
-void mul2x2(const complex& scalar, const complex* inMtrx, complex* outMtrx)
+void TransformPauliBasis(QInterfacePtr simulator, unsigned len, int* bases, unsigned* qubitIds)
 {
-    for (unsigned i = 0; i < 4; i++) {
-        outMtrx[i] = scalar * inMtrx[i];
-    }
-}
-
-void TransformPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds)
-{
-    const complex adjHyGate[4] = { complex(M_SQRT1_2, 0), complex(0, -M_SQRT1_2), complex(M_SQRT1_2, 0),
-        complex(0, M_SQRT1_2) };
-
     for (unsigned i = 0; i < len; i++) {
         switch (bases[i]) {
         case PauliX:
             simulator->H(shards[simulator][qubitIds[i]]);
             break;
         case PauliY:
-            simulator->ApplySingleBit(adjHyGate, shards[simulator][qubitIds[i]]);
+            simulator->IS(shards[simulator][qubitIds[i]]);
+            simulator->H(shards[simulator][qubitIds[i]]);
+            break;
+        case PauliZ:
+        case PauliI:
+        default:
             break;
         }
     }
 }
 
-void RevertPauliBasis(QInterfacePtr simulator, unsigned len, unsigned* bases, unsigned* qubitIds)
+void RevertPauliBasis(QInterfacePtr simulator, unsigned len, int* bases, unsigned* qubitIds)
 {
-    const complex hyGate[4] = { complex(M_SQRT1_2, 0), complex(M_SQRT1_2, 0), complex(0, M_SQRT1_2),
-        complex(0, -M_SQRT1_2) };
-
     for (unsigned i = 0; i < len; i++) {
         switch (bases[i]) {
         case PauliX:
             simulator->H(shards[simulator][qubitIds[i]]);
             break;
         case PauliY:
-            simulator->ApplySingleBit(hyGate, shards[simulator][qubitIds[i]]);
+            simulator->H(shards[simulator][qubitIds[i]]);
+            simulator->S(shards[simulator][qubitIds[i]]);
+            break;
+        case PauliZ:
+        case PauliI:
+        default:
             break;
         }
     }
 }
 
-void removeIdentities(std::vector<unsigned>* b, std::vector<unsigned>* qs)
+void removeIdentities(std::vector<int>* b, std::vector<bitLenInt>* qs)
 {
     unsigned i = 0;
     while (i != b->size()) {
@@ -100,9 +99,14 @@ void RHelper(unsigned sid, unsigned b, double phi, unsigned q)
     QInterfacePtr simulator = simulators[sid];
 
     switch (b) {
-    case PauliI:
-        simulator->Exp(phi, shards[simulator][q]);
+    case PauliI: {
+        // This is a global phase factor, with no measurable physical effect.
+        // However, the underlying QInterface will not execute the gate
+        // UNLESS it is specifically "keeping book" for non-measurable phase effects.
+        complex phaseFac = std::exp(complex(ZERO_R1, phi / 4));
+        simulator->ApplySinglePhase(phaseFac, phaseFac, shards[simulator][q]);
         break;
+    }
     case PauliX:
         simulator->RX(phi, shards[simulator][q]);
         break;
@@ -125,15 +129,17 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
         ctrlsArray[i] = shards[simulator][c[i]];
     }
 
-    real1 cosine = cos(phi / 2.0);
-    real1 sine = sin(phi / 2.0);
+    if (b == PauliI) {
+        complex phaseFac = std::exp(complex(ZERO_R1, phi / 4));
+        simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], phaseFac, phaseFac);
+        return;
+    }
+
+    real1 cosine = cos(phi / 2);
+    real1 sine = sin(phi / 2);
     complex pauliR[4];
 
     switch (b) {
-    case PauliI:
-        simulator->ApplyControlledSinglePhase(
-            ctrlsArray, n, shards[simulator][q], complex(cosine, sine), complex(cosine, sine));
-        break;
     case PauliX:
         pauliR[0] = complex(cosine, ZERO_R1);
         pauliR[1] = complex(ZERO_R1, -sine);
@@ -152,6 +158,7 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
         simulator->ApplyControlledSinglePhase(
             ctrlsArray, n, shards[simulator][q], complex(cosine, -sine), complex(cosine, sine));
         break;
+    case PauliI:
     default:
         break;
     }
@@ -159,27 +166,7 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
     delete[] ctrlsArray;
 }
 
-inline bool isDiagonal(std::vector<unsigned> const& b)
-{
-    for (auto x : b) {
-        if (x == PauliX || x == PauliY) {
-            return false;
-        }
-    }
-    return true;
-}
-
-inline bool poppar(unsigned perm)
-{
-    // From https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
-    unsigned int c; // c accumulates the total bits set in v
-    for (c = 0; perm; c++) {
-        perm &= perm - 1U; // clear the least significant bit set
-    }
-    return c & 1U;
-}
-
-inline std::size_t make_mask(std::vector<unsigned> const& qs)
+inline std::size_t make_mask(std::vector<bitLenInt> const& qs)
 {
     std::size_t mask = 0;
     for (std::size_t q : qs)
@@ -187,102 +174,83 @@ inline std::size_t make_mask(std::vector<unsigned> const& qs)
     return mask;
 }
 
-// power of square root of -1
-inline complex iExp(int power)
-{
-    int p = ((power % 4) + 8) % 4;
-    switch (p) {
-    case 0:
-        return ONE_CMPLX;
-    case 1:
-        return I_CMPLX;
-    case 2:
-        return -ONE_CMPLX;
-    case 3:
-        return -I_CMPLX;
-    }
-    return 0;
-}
-
-void apply_controlled_exp(std::vector<complex>& wfn, std::vector<unsigned> const& b, double phi,
-    std::vector<unsigned> const& cs, std::vector<unsigned> const& qs)
-{
-    std::size_t cmask = make_mask(cs);
-
-    if (isDiagonal(b)) {
-        std::size_t mask = make_mask(qs);
-        complex phase = std::exp(complex(0., -phi));
-
-        for (std::intptr_t x = 0; x < static_cast<std::intptr_t>(wfn.size()); x++) {
-            if ((x & cmask) == cmask) {
-                wfn[x] *= (poppar(x & mask) ? phase : std::conj(phase));
-            }
-        }
-    } else { // see Exp-implementation-details.txt for the explanation of the algorithm below
-        std::size_t xy_bits = 0;
-        std::size_t yz_bits = 0;
-        int y_count = 0;
-        for (unsigned i = 0; i < b.size(); ++i) {
-            switch (b[i]) {
-            case PauliX:
-                xy_bits |= (1ull << qs[i]);
-                break;
-            case PauliY:
-                xy_bits |= (1ull << qs[i]);
-                yz_bits |= (1ull << qs[i]);
-                ++y_count;
-                break;
-            case PauliZ:
-                yz_bits |= (1ull << qs[i]);
-                break;
-            case PauliI:
-                break;
-            }
-        }
-
-        real1 alpha = (real1)std::cos(phi);
-        complex beta = (real1)std::sin(phi) * iExp(3 * y_count + 1);
-        complex gamma = (real1)std::sin(phi) * iExp(y_count + 1);
-
-        for (std::intptr_t x = 0; x < static_cast<std::intptr_t>(wfn.size()); x++) {
-            std::intptr_t t = x ^ xy_bits;
-            if (x < t && ((x & cmask) == cmask)) {
-                auto parity = poppar(x & yz_bits);
-                auto a = wfn[x];
-                auto b = wfn[t];
-                wfn[x] = alpha * a + (parity ? -beta : beta) * b;
-                wfn[t] = alpha * b + (parity ? -gamma : gamma) * a;
-            }
-        }
-    }
-}
-
 extern "C" {
 
 /**
  * (External API) Initialize a simulator ID with 0 qubits
  */
-MICROSOFT_QUANTUM_DECL unsigned init()
+MICROSOFT_QUANTUM_DECL unsigned init() { return init_count(0); }
+
+/**
+ * (External API) Initialize a simulator ID with "q" qubits
+ */
+MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 {
     META_LOCK_GUARD()
 
-    unsigned sid = simulators.size();
+    unsigned sid = (unsigned)simulators.size();
 
     for (unsigned i = 0; i < simulators.size(); i++) {
-        if (simulators[i] == NULL) {
+        if (simulatorReservations[i] == false) {
             sid = i;
+            simulatorReservations[i] = true;
             break;
         }
     }
 
-    QInterfacePtr simulator = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, 4, 0, rng);
+    QInterfacePtr simulator = q ? CreateQuantumInterface(QINTERFACE_OPTIMAL, q, 0, rng) : NULL;
     if (sid == simulators.size()) {
+        simulatorReservations.push_back(true);
         simulators.push_back(simulator);
     } else {
+        simulatorReservations[sid] = true;
         simulators[sid] = simulator;
     }
 
+    if (!q) {
+        return sid;
+    }
+
+    shards[simulator] = {};
+    for (unsigned i = 0; i < q; i++) {
+        shards[simulator][i] = (bitLenInt)i;
+    }
+
     return sid;
+}
+
+/**
+ * (External API) Initialize a simulator ID that clones simulator ID "sid"
+ */
+MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
+{
+    META_LOCK_GUARD()
+
+    unsigned nsid = (unsigned)simulators.size();
+
+    for (unsigned i = 0; i < simulators.size(); i++) {
+        if (simulatorReservations[i] == false) {
+            nsid = i;
+            simulatorReservations[i] = true;
+            break;
+        }
+    }
+
+    QInterfacePtr simulator = simulators[sid]->Clone();
+    if (nsid == simulators.size()) {
+        simulatorReservations.push_back(true);
+        simulators.push_back(simulator);
+    } else {
+        simulatorReservations[nsid] = true;
+        simulators[nsid] = simulator;
+    }
+
+    shards[simulator] = {};
+    for (unsigned i = 0; i < simulator->GetQubitCount(); i++) {
+        shards[simulator][i] = shards[simulators[sid]][i];
+    }
+
+    return nsid;
 }
 
 /**
@@ -293,7 +261,9 @@ MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid)
     META_LOCK_GUARD()
     // SIMULATOR_LOCK_GUARD(sid)
 
+    shards.erase(simulators[sid]);
     simulators[sid] = NULL;
+    simulatorReservations[sid] = false;
 }
 
 /**
@@ -305,6 +275,18 @@ MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s)
 
     if (simulators[sid] != NULL) {
         simulators[sid]->SetRandomSeed(s);
+    }
+}
+
+/**
+ * (External API) Set concurrency level per QEngine shard
+ */
+MICROSOFT_QUANTUM_DECL void set_concurrency(_In_ unsigned sid, _In_ unsigned p)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    if (simulators[sid] != NULL) {
+        simulators[sid]->SetConcurrency(p);
     }
 }
 
@@ -351,77 +333,45 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::si
     return dist(*rng.get());
 }
 
-double _JointEnsembleProbabilityHelper(unsigned n, unsigned* b, unsigned* q, QInterfacePtr simulator,
-    std::vector<unsigned>* bVec, std::vector<unsigned>* qVec, std::vector<bitCapInt>* qSortedPowers)
+double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int* b, unsigned* q, bool doMeasure)
 {
+
+    if (n == 0) {
+        return 0.0;
+    }
+
+    std::vector<int> bVec(b, b + n);
+    std::vector<bitLenInt> qVec(q, q + n);
+
+    removeIdentities(&bVec, &qVec);
+    n = (unsigned)qVec.size();
 
     if (n == 0) {
         return 0.0;
     }
 
     bitCapInt mask = 0;
-
-    bVec->resize(n);
-    qVec->resize(n);
-
-    std::copy(b, b + n, bVec->begin());
-    std::copy(q, q + n, qVec->begin());
-
-    removeIdentities(bVec, qVec);
-    n = qVec->size();
-    qSortedPowers->resize(n);
-
-    if (n == 0) {
-        return 0.0;
-    }
-
     for (bitLenInt i = 0; i < n; i++) {
-        bitCapInt bit = pow2(shards[simulator][(*qVec)[i]]);
-        (*qSortedPowers)[i] = bit;
+        bitCapInt bit = pow2(shards[simulator][qVec[i]]);
         mask |= bit;
     }
 
-    std::sort(qSortedPowers->begin(), qSortedPowers->end());
-
-    bitCapInt pow2n = pow2(n);
-    double jointProb = 0;
-    bitCapInt perm;
-    bool isOdd;
-
-    for (bitCapInt i = 0; i < pow2n; i++) {
-        perm = 0U;
-        isOdd = false;
-        for (bitLenInt j = 0; j < n; j++) {
-            if (i & pow2(j)) {
-                perm |= (*qSortedPowers)[j];
-                isOdd = !isOdd;
-            }
-        }
-        if (isOdd) {
-            jointProb += simulator->ProbMask(mask, perm);
-        }
-    }
-
-    return jointProb;
+    return (double)(doMeasure ? (simulator->MParity(mask) ? ONE_R1 : ZERO_R1) : simulator->ProbParity(mask));
 }
 
 /**
  * (External API) Find the joint probability for all specified qubits under the respective Pauli basis transformations.
  */
 MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
-    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q)
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_reads_(n) unsigned* q)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
 
-    std::vector<unsigned> bVec;
-    std::vector<unsigned> qVec;
-    std::vector<bitCapInt> qSortedPowers;
-
     TransformPauliBasis(simulator, n, b, q);
 
-    double jointProb = _JointEnsembleProbabilityHelper(n, b, q, simulator, &bVec, &qVec, &qSortedPowers);
+    double jointProb = _JointEnsembleProbabilityHelper(simulator, n, b, q, false);
 
     RevertPauliBasis(simulator, n, b, q);
 
@@ -435,9 +385,10 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
-    QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, 1, 0, rng);
+    QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_OPTIMAL, 1, 0, rng);
     if (simulators[sid] == NULL) {
         simulators[sid] = nQubit;
+        shards[simulators[sid]] = {};
     } else {
         simulators[sid]->Compose(nQubit);
     }
@@ -447,12 +398,16 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 /**
  * (External API) Release 1 qubit with the given qubit ID, under the simulator ID
  */
-MICROSOFT_QUANTUM_DECL void release(_In_ unsigned sid, _In_ unsigned q)
+MICROSOFT_QUANTUM_DECL bool release(_In_ unsigned sid, _In_ unsigned q)
 {
     QInterfacePtr simulator = simulators[sid];
 
+    // Check that the qubit is in the |0> state, to within a small tolerance.
+    bool toRet = simulator->Prob(shards[simulator][q]) < (ONE_R1 / 100);
+
     if (simulator->GetQubitCount() == 1U) {
         shards.erase(simulator);
+        simulators[sid] = NULL;
     } else {
         SIMULATOR_LOCK_GUARD(sid)
         bitLenInt oIndex = shards[simulator][q];
@@ -464,11 +419,17 @@ MICROSOFT_QUANTUM_DECL void release(_In_ unsigned sid, _In_ unsigned q)
         }
         shards[simulator].erase(q);
     }
+
+    return toRet;
 }
 
 MICROSOFT_QUANTUM_DECL unsigned num_qubits(_In_ unsigned sid)
 {
     SIMULATOR_LOCK_GUARD(sid)
+
+    if (simulators[sid] == NULL) {
+        return 0U;
+    }
 
     return (unsigned)simulators[sid]->GetQubitCount();
 }
@@ -525,7 +486,7 @@ MICROSOFT_QUANTUM_DECL void S(_In_ unsigned sid, _In_ unsigned q)
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->IS(shards[simulator][q]);
+    simulator->S(shards[simulator][q]);
 }
 
 /**
@@ -536,7 +497,7 @@ MICROSOFT_QUANTUM_DECL void T(_In_ unsigned sid, _In_ unsigned q)
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->IT(shards[simulator][q]);
+    simulator->T(shards[simulator][q]);
 }
 
 /**
@@ -547,7 +508,7 @@ MICROSOFT_QUANTUM_DECL void AdjS(_In_ unsigned sid, _In_ unsigned q)
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->S(shards[simulator][q]);
+    simulator->IS(shards[simulator][q]);
 }
 
 /**
@@ -558,7 +519,19 @@ MICROSOFT_QUANTUM_DECL void AdjT(_In_ unsigned sid, _In_ unsigned q)
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->T(shards[simulator][q]);
+    simulator->IT(shards[simulator][q]);
+}
+
+/**
+ * (External API) 3-parameter unitary gate
+ */
+MICROSOFT_QUANTUM_DECL void U(
+    _In_ unsigned sid, _In_ unsigned q, _In_ double theta, _In_ double phi, _In_ double lambda)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->U(shards[simulator][q], theta, phi, lambda);
 }
 
 /**
@@ -649,7 +622,7 @@ MICROSOFT_QUANTUM_DECL void MCS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
         ctrlsArray[i] = shards[simulator][c[i]];
     }
 
-    simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / 2));
+    simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, I_CMPLX);
 
     delete[] ctrlsArray;
 }
@@ -667,7 +640,8 @@ MICROSOFT_QUANTUM_DECL void MCT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
         ctrlsArray[i] = shards[simulator][c[i]];
     }
 
-    simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / 4));
+    simulator->ApplyControlledSinglePhase(
+        ctrlsArray, n, shards[simulator][q], ONE_CMPLX, complex(M_SQRT1_2, M_SQRT1_2));
 
     delete[] ctrlsArray;
 }
@@ -685,7 +659,7 @@ MICROSOFT_QUANTUM_DECL void MCAdjS(_In_ unsigned sid, _In_ unsigned n, _In_reads
         ctrlsArray[i] = shards[simulator][c[i]];
     }
 
-    simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / 2));
+    simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, -I_CMPLX);
 
     delete[] ctrlsArray;
 }
@@ -703,7 +677,27 @@ MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads
         ctrlsArray[i] = shards[simulator][c[i]];
     }
 
-    simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / 4));
+    simulator->ApplyControlledSinglePhase(
+        ctrlsArray, n, shards[simulator][q], ONE_CMPLX, complex(M_SQRT1_2, -M_SQRT1_2));
+
+    delete[] ctrlsArray;
+}
+
+/**
+ * (External API) Controlled 3-parameter unitary gate
+ */
+MICROSOFT_QUANTUM_DECL void MCU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q,
+    _In_ double theta, _In_ double phi, _In_ double lambda)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    bitLenInt* ctrlsArray = new bitLenInt[n];
+    for (unsigned i = 0; i < n; i++) {
+        ctrlsArray[i] = shards[simulator][c[i]];
+    }
+
+    simulator->CU(ctrlsArray, n, shards[simulator][q], theta, phi, lambda);
 
     delete[] ctrlsArray;
 }
@@ -733,7 +727,7 @@ MICROSOFT_QUANTUM_DECL void MCR(
  * (External API) Exponentiation of Pauli operators
  */
 MICROSOFT_QUANTUM_DECL void Exp(
-    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi, _In_reads_(n) unsigned* q)
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_ double phi, _In_reads_(n) unsigned* q)
 {
     if (n == 0) {
         return;
@@ -741,11 +735,8 @@ MICROSOFT_QUANTUM_DECL void Exp(
 
     SIMULATOR_LOCK_GUARD(sid)
 
-    std::vector<unsigned> bVec(n);
-    std::vector<unsigned> qVec(n);
-
-    std::copy(b, b + n, bVec.begin());
-    std::copy(q, q + n, qVec.begin());
+    std::vector<int> bVec(b, b + n);
+    std::vector<bitLenInt> qVec(q, q + n);
 
     unsigned someQubit = qVec.front();
 
@@ -757,27 +748,20 @@ MICROSOFT_QUANTUM_DECL void Exp(
         RHelper(sid, bVec.front(), -2. * phi, qVec.front());
     } else {
         QInterfacePtr simulator = simulators[sid];
-        std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
-        simulator->GetQuantumState(&(wfn[0]));
 
-        std::vector<unsigned> bVec(n);
-        std::copy(b, b + n, bVec.begin());
+        TransformPauliBasis(simulator, n, b, q);
 
-        std::vector<unsigned> csVec;
+        std::size_t mask = make_mask(qVec);
+        simulator->UniformParityRZ(mask, -phi);
 
-        std::vector<unsigned> qVec(n);
-        std::copy(q, q + n, qVec.begin());
-
-        apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
-
-        simulator->SetQuantumState(&(wfn[0]));
+        RevertPauliBasis(simulator, n, b, q);
     }
 }
 
 /**
  * (External API) Controlled exponentiation of Pauli operators
  */
-MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_ double phi,
+MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_ double phi,
     _In_ unsigned nc, _In_reads_(nc) unsigned* cs, _In_reads_(n) unsigned* q)
 {
     if (n == 0) {
@@ -786,11 +770,8 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
 
     SIMULATOR_LOCK_GUARD(sid)
 
-    std::vector<unsigned> bVec(n);
-    std::vector<unsigned> qVec(n);
-
-    std::copy(b, b + n, bVec.begin());
-    std::copy(q, q + n, qVec.begin());
+    std::vector<int> bVec(b, b + n);
+    std::vector<bitLenInt> qVec(q, q + n);
 
     unsigned someQubit = qVec.front();
 
@@ -802,15 +783,14 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         MCRHelper(sid, bVec.front(), -2. * phi, nc, cs, qVec.front());
     } else {
         QInterfacePtr simulator = simulators[sid];
-        std::vector<complex> wfn((bitCapIntOcl)simulator->GetMaxQPower());
-        simulator->GetQuantumState(&(wfn[0]));
+        std::vector<bitLenInt> csVec(cs, cs + nc);
 
-        std::vector<unsigned> csVec(nc);
-        std::copy(cs, cs + nc, csVec.begin());
+        TransformPauliBasis(simulator, n, b, q);
 
-        apply_controlled_exp(wfn, bVec, phi, csVec, qVec);
+        std::size_t mask = make_mask(qVec);
+        simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), mask, -phi);
 
-        simulator->SetQuantumState(&(wfn[0]));
+        RevertPauliBasis(simulator, n, b, q);
     }
 }
 
@@ -829,7 +809,7 @@ MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q)
  * (External API) Measure bits in specified Pauli bases
  */
 MICROSOFT_QUANTUM_DECL unsigned Measure(
-    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* b, _In_reads_(n) unsigned* q)
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_reads_(n) unsigned* q)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
@@ -837,41 +817,167 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
 
     std::vector<unsigned> bVec;
     std::vector<unsigned> qVec;
-    std::vector<bitCapInt> qSortedPowers;
 
     TransformPauliBasis(simulator, n, b, q);
 
-    double jointProb = _JointEnsembleProbabilityHelper(n, b, q, simulator, &bVec, &qVec, &qSortedPowers);
+    double jointProb = _JointEnsembleProbabilityHelper(simulator, n, b, q, true);
 
-    unsigned toRet = jointProb < simulator->Rand() ? 0U : 1U;
-    bitCapInt len = qVec.size();
-    bitCapInt maxQPower = simulator->GetMaxQPower();
-    bool isOdd;
-
-    if (jointProb != 0.0 && jointProb != 1.0) {
-        complex* nStateVec = new complex[(bitCapIntOcl)simulator->GetMaxQPower()]();
-        simulator->GetQuantumState(nStateVec);
-        real1 nrmlzr = 0.0;
-        for (bitCapIntOcl i = 0; i < maxQPower; i++) {
-            isOdd = false;
-            for (bitLenInt j = 0; j < len; j++) {
-                if (i & qSortedPowers[j]) {
-                    isOdd = !isOdd;
-                }
-            }
-            if (isOdd == toRet) {
-                nrmlzr += norm(nStateVec[i]);
-            } else {
-                nStateVec[i] = ZERO_CMPLX;
-            }
-        }
-        simulator->SetQuantumState(nStateVec);
-        delete[] nStateVec;
-        simulator->NormalizeState(nrmlzr);
-    }
+    unsigned toRet = (jointProb < (ONE_R1 / 2)) ? 0U : 1U;
 
     RevertPauliBasis(simulator, n, b, q);
 
     return toRet;
 }
+
+MICROSOFT_QUANTUM_DECL void SWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->Swap(qi1, qi2);
+}
+
+MICROSOFT_QUANTUM_DECL void CSWAP(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    bitLenInt* ctrlsArray = new bitLenInt[n];
+    for (unsigned i = 0; i < n; i++) {
+        ctrlsArray[i] = shards[simulator][c[i]];
+    }
+
+    simulator->CSwap(ctrlsArray, n, qi1, qi2);
+
+    delete[] ctrlsArray;
+}
+
+MICROSOFT_QUANTUM_DECL void AND(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->AND(qi1, qi2, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void OR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->OR(qi1, qi2, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void XOR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->XOR(qi1, qi2, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void NAND(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->NAND(qi1, qi2, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void NOR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->NOR(qi1, qi2, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void XNOR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->XNOR(qi1, qi2, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void CLAND(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->CLAND(ci, qi, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void CLOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->CLOR(ci, qi, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void CLXOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->CLXOR(ci, qi, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void CLNAND(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->CLNAND(ci, qi, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void CLNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->CLNOR(ci, qi, qo);
+}
+
+MICROSOFT_QUANTUM_DECL void CLXNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->CLXNOR(ci, qi, qo);
+}
+
+/**
+ * (External API) Get the probability that a qubit is in the |1> state.
+ */
+MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    return simulator->Prob(shards[simulator][q]);
+}
+
+#if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
+/**
+ * (External API) Simulate a Hamiltonian
+ */
+MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ unsigned sid, _In_ double t, _In_ unsigned n,
+    _In_reads_(n) _QrackTimeEvolveOpHeader* teos, unsigned mn, _In_reads_(mn) double* mtrx)
+{
+    bitCapIntOcl mtrxOffset = 0;
+    Hamiltonian h(n);
+    for (unsigned i = 0; i < n; i++) {
+        h[i] = std::make_shared<UniformHamiltonianOp>(teos[i], mtrx + mtrxOffset);
+        mtrxOffset += pow2Ocl(teos[i].controlLen) * 8U;
+    }
+
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->TimeEvolve(h, (real1)t);
+}
+#endif
 }

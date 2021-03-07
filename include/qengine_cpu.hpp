@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -17,6 +17,10 @@
 #include "common/parallel_for.hpp"
 #include "qengine.hpp"
 #include "statevector.hpp"
+
+#if ENABLE_QUNIT_CPU_PARALLEL
+#include "common/dispatchqueue.hpp"
+#endif
 
 namespace Qrack {
 
@@ -35,6 +39,9 @@ class QEngineCPU : virtual public QEngine, public ParallelFor {
 protected:
     StateVectorPtr stateVec;
     bool isSparse;
+#if ENABLE_QUNIT_CPU_PARALLEL
+    DispatchQueue dispatchQueue;
+#endif
 
     StateVectorSparsePtr CastStateVecSparse() { return std::dynamic_pointer_cast<StateVectorSparse>(stateVec); }
 
@@ -42,14 +49,157 @@ public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored = false,
         int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1 norm_thresh = REAL1_DEFAULT_ARG, std::vector<bitLenInt> ignored3 = {});
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored3 = {}, bitLenInt ignored4 = 0);
 
-    virtual ~QEngineCPU()
+    virtual ~QEngineCPU() { Dump(); }
+
+    virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
+
+    virtual void Finish()
     {
-        // Intentionally left blank
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.finish();
+#endif
+    };
+
+    virtual bool isFinished()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        return dispatchQueue.isFinished();
+#else
+        return true;
+#endif
     }
 
-    virtual void FreeStateVec() { stateVec = NULL; }
+    virtual void Dump()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.dump();
+#endif
+    }
+
+    virtual void ZeroAmplitudes()
+    {
+        runningNorm = ZERO_R1;
+        FreeStateVec();
+    }
+
+    virtual void FreeStateVec(complex* sv = NULL) { stateVec.reset(); }
+
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        Finish();
+
+        if (stateVec) {
+            stateVec->copy_out(pagePtr, offset, length);
+        } else {
+            std::fill(pagePtr, pagePtr + (bitCapIntOcl)length, ZERO_CMPLX);
+        }
+    }
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        Finish();
+
+        if (!stateVec) {
+            ResetStateVec(AllocStateVec(maxQPower));
+            stateVec->clear();
+        }
+
+        stateVec->copy_in(pagePtr, offset, length);
+
+        runningNorm = REAL1_DEFAULT_ARG;
+    }
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
+        StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
+
+        Finish();
+        pageEngineCpuPtr->Finish();
+
+        if (!stateVec && !oStateVec) {
+            return;
+        }
+
+        if (!oStateVec && (length == maxQPower)) {
+            ZeroAmplitudes();
+            return;
+        }
+
+        if (!stateVec) {
+            ResetStateVec(AllocStateVec(maxQPower));
+            stateVec->clear();
+        }
+
+        stateVec->copy_in(oStateVec, srcOffset, dstOffset, length);
+
+        runningNorm = REAL1_DEFAULT_ARG;
+    }
+    virtual void ShuffleBuffers(QEnginePtr engine)
+    {
+        QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);
+
+        Finish();
+        engineCpu->Finish();
+
+        if (!stateVec && !(engineCpu->stateVec)) {
+            return;
+        }
+
+        if (!stateVec) {
+            ResetStateVec(AllocStateVec(maxQPower));
+            stateVec->clear();
+        }
+
+        if (!(engineCpu->stateVec)) {
+            engineCpu->ResetStateVec(engineCpu->AllocStateVec(maxQPower));
+            engineCpu->stateVec->clear();
+        }
+
+        stateVec->shuffle(engineCpu->stateVec);
+
+        runningNorm = REAL1_DEFAULT_ARG;
+        engineCpu->runningNorm = REAL1_DEFAULT_ARG;
+    }
+
+    virtual bool IsZeroAmplitude() { return !stateVec; }
+
+    virtual void CopyStateVec(QEnginePtr src)
+    {
+        Finish();
+        src->Finish();
+
+        if (src->IsZeroAmplitude()) {
+            ZeroAmplitudes();
+            return;
+        }
+
+        complex* sv;
+        if (isSparse) {
+            sv = new complex[(bitCapIntOcl)maxQPower];
+        } else {
+            sv = std::dynamic_pointer_cast<StateVectorArray>(stateVec)->amplitudes;
+        }
+
+        src->GetQuantumState(sv);
+
+        if (isSparse) {
+            SetQuantumState(sv);
+            delete[] sv;
+        }
+
+        runningNorm = src->GetRunningNorm();
+    }
+
+    virtual void QueueSetDoNormalize(const bool& doNorm)
+    {
+        Dispatch([this, doNorm] { doNormalize = doNorm; });
+    }
+    virtual void QueueSetRunningNorm(const real1_f& runningNrm)
+    {
+        Dispatch([this, runningNrm] { runningNorm = runningNrm; });
+    }
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
@@ -66,7 +216,7 @@ public:
         return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy), start);
     }
 
-    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual void Decompose(bitLenInt start, QInterfacePtr dest);
 
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
@@ -84,7 +234,9 @@ public:
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
+#if ENABLE_BCD
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+#endif
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
@@ -111,10 +263,8 @@ public:
      * @{
      */
 
-    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
-    virtual void PhaseFlip();
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true);
@@ -126,6 +276,9 @@ public:
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
+    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle);
+    virtual void CUniformParityRZ(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle);
 
     /** @} */
 
@@ -135,28 +288,48 @@ public:
      * @{
      */
 
-    virtual real1 Prob(bitLenInt qubitIndex);
-    virtual real1 ProbAll(bitCapInt fullRegister);
-    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
-    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
-    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG);
-    virtual bool ApproxCompare(QInterfacePtr toCompare)
+    virtual real1_f Prob(bitLenInt qubitIndex);
+    virtual real1_f ProbAll(bitCapInt fullRegister);
+    virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
+    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
+    virtual real1_f ProbParity(const bitCapInt& mask);
+    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
+    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
-        return ApproxCompare(std::dynamic_pointer_cast<QEngineCPU>(toCompare));
+        return SumSqrDiff(std::dynamic_pointer_cast<QEngineCPU>(toCompare));
     }
-    virtual bool ApproxCompare(QEngineCPUPtr toCompare);
+    virtual real1_f SumSqrDiff(QEngineCPUPtr toCompare);
     virtual QInterfacePtr Clone();
 
     /** @} */
 
 protected:
+    virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
+
     virtual StateVectorPtr AllocStateVec(bitCapInt elemCount);
     virtual void ResetStateVec(StateVectorPtr sv);
 
+    typedef std::function<void(void)> DispatchFn;
+    virtual void Dispatch(DispatchFn fn)
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        const bitCapInt Stride = pow2(PSTRIDEPOW);
+        if (maxQPower < Stride) {
+            dispatchQueue.dispatch(fn);
+        } else {
+            Finish();
+            fn();
+        }
+#else
+        fn();
+#endif
+    }
+
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = REAL1_DEFAULT_ARG);
-    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     virtual void INCDECC(
@@ -165,8 +338,10 @@ protected:
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
     virtual void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
         const bitLenInt& overflowIndex, const bitLenInt& carryIndex);
+#if ENABLE_BCD
     virtual void INCDECBCDC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
+#endif
 
     typedef std::function<bitCapInt(const bitCapInt&, const bitCapInt&)> IOFn;
     void MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& toMul, const bitLenInt& inOutStart,

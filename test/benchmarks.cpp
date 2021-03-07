@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017, 2018. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -34,7 +34,7 @@ using namespace Qrack;
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
 
-const double clockFactor = 1000.0 / CLOCKS_PER_SEC; // Report in ms
+const double clockFactor = 1.0 / 1000.0; // Report in ms
 
 double formatTime(double t, bool logNormal)
 {
@@ -47,8 +47,8 @@ double formatTime(double t, bool logNormal)
 
 QInterfacePtr MakeRandQubit()
 {
-    QInterfacePtr qubit = CreateQuantumInterface(testEngineType, testSubEngineType, 1U, 0, rng, ONE_CMPLX,
-        enable_normalization, true, false, device_id, !disable_hardware_rng);
+    QInterfacePtr qubit = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1U, 0, rng,
+        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
     real1 theta = 2 * M_PI * qubit->Rand();
     real1 phi = 2 * M_PI * qubit->Rand();
@@ -62,12 +62,9 @@ QInterfacePtr MakeRandQubit()
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bitLenInt mxQbts,
     bool resetRandomPerm = true, bool hadamardRandomBits = false, bool logNormal = false, bool qUniverse = false)
 {
-
-    const int ITERATIONS = 100;
-
     std::cout << std::endl;
     std::cout << ">>> '" << Catch::getResultCapture().getCurrentTestName() << "':" << std::endl;
-    std::cout << ITERATIONS << " iterations" << std::endl;
+    std::cout << benchmarkSamples << " iterations" << std::endl;
     std::cout << "# of Qubits, ";
     std::cout << "Average Time (ms), ";
     std::cout << "Sample Std. Deviation (ms), ";
@@ -77,8 +74,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     std::cout << "3rd Quartile (ms), ";
     std::cout << "Slowest (ms)" << std::endl;
 
-    clock_t tClock, iterClock;
-    real1 trialClocks[ITERATIONS];
+    real1* trialClocks = new real1[benchmarkSamples];
 
     bitLenInt i, j, numBits;
 
@@ -97,7 +93,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
         if (isBinaryOutput) {
             mOutputFile << std::endl << ">>> '" << Catch::getResultCapture().getCurrentTestName() << "':" << std::endl;
-            mOutputFile << ITERATIONS << " iterations" << std::endl;
+            mOutputFile << benchmarkSamples << " iterations" << std::endl;
             mOutputFile << (int)numBits << " qubits" << std::endl;
             mOutputFile << sizeof(bitCapInt) << " bytes in bitCapInt" << std::endl;
         }
@@ -106,12 +102,13 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             if (qftReg != NULL) {
                 qftReg.reset();
             }
-            qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, numBits, 0, rng, ONE_CMPLX,
-                enable_normalization, true, false, device_id, !disable_hardware_rng, sparse);
+            qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits, 0, rng,
+                ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON,
+                devList);
         }
         avgt = 0.0;
 
-        for (i = 0; i < ITERATIONS; i++) {
+        for (i = 0; i < benchmarkSamples; i++) {
             if (!qUniverse) {
                 if (resetRandomPerm) {
                     qftReg->SetPermutation((bitCapIntOcl)(qftReg->Rand() * (bitCapIntOcl)qftReg->GetMaxQPower()));
@@ -136,7 +133,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             }
             qftReg->Finish();
 
-            iterClock = clock();
+            auto iterClock = std::chrono::high_resolution_clock::now();
 
             // Run loop body
             fn(qftReg, numBits);
@@ -146,11 +143,12 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             }
 
             // Collect interval data
-            tClock = clock() - iterClock;
+            auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::high_resolution_clock::now() - iterClock);
             if (logNormal) {
-                trialClocks[i] = log2(tClock * clockFactor);
+                trialClocks[i] = log2(tClock.count() * clockFactor);
             } else {
-                trialClocks[i] = tClock * clockFactor;
+                trialClocks[i] = tClock.count() * clockFactor;
             }
             avgt += trialClocks[i];
 
@@ -168,42 +166,49 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 }
             }
         }
-        avgt /= ITERATIONS;
+        avgt /= benchmarkSamples;
 
         stdet = 0.0;
-        for (i = 0; i < ITERATIONS; i++) {
+        for (i = 0; i < benchmarkSamples; i++) {
             stdet += (trialClocks[i] - avgt) * (trialClocks[i] - avgt);
         }
-        stdet = sqrt(stdet / ITERATIONS);
+        stdet = sqrt(stdet / benchmarkSamples);
 
-        std::sort(trialClocks, trialClocks + ITERATIONS);
+        std::sort(trialClocks, trialClocks + benchmarkSamples);
 
         std::cout << (int)numBits << ", "; /* # of Qubits */
         std::cout << formatTime(avgt, logNormal) << ","; /* Average Time (ms) */
         std::cout << formatTime(stdet, logNormal) << ","; /* Sample Std. Deviation (ms) */
         std::cout << formatTime(trialClocks[0], logNormal) << ","; /* Fastest (ms) */
-        if (ITERATIONS % 4 == 0) {
-            std::cout << formatTime((trialClocks[ITERATIONS / 4 - 1] + trialClocks[ITERATIONS / 4]) / 2, logNormal)
+        if (benchmarkSamples % 4 == 0) {
+            std::cout << formatTime(
+                             (trialClocks[benchmarkSamples / 4 - 1] + trialClocks[benchmarkSamples / 4]) / 2, logNormal)
                       << ","; /* 1st Quartile (ms) */
         } else {
-            std::cout << formatTime(trialClocks[ITERATIONS / 4 - 1] / 2, logNormal) << ","; /* 1st Quartile (ms) */
+            std::cout << formatTime(trialClocks[benchmarkSamples / 4 - 1] / 2, logNormal)
+                      << ","; /* 1st Quartile (ms) */
         }
-        if (ITERATIONS % 2 == 0) {
-            std::cout << formatTime((trialClocks[ITERATIONS / 2 - 1] + trialClocks[ITERATIONS / 2]) / 2, logNormal)
+        if (benchmarkSamples % 2 == 0) {
+            std::cout << formatTime(
+                             (trialClocks[benchmarkSamples / 2 - 1] + trialClocks[benchmarkSamples / 2]) / 2, logNormal)
                       << ","; /* Median (ms) */
         } else {
-            std::cout << formatTime(trialClocks[ITERATIONS / 2 - 1] / 2, logNormal) << ","; /* Median (ms) */
+            std::cout << formatTime(trialClocks[benchmarkSamples / 2 - 1] / 2, logNormal) << ","; /* Median (ms) */
         }
-        if (ITERATIONS % 4 == 0) {
+        if (benchmarkSamples % 4 == 0) {
             std::cout << formatTime(
-                             (trialClocks[(3 * ITERATIONS) / 4 - 1] + trialClocks[(3 * ITERATIONS) / 4]) / 2, logNormal)
+                             (trialClocks[(3 * benchmarkSamples) / 4 - 1] + trialClocks[(3 * benchmarkSamples) / 4]) /
+                                 2,
+                             logNormal)
                       << ","; /* 3rd Quartile (ms) */
         } else {
-            std::cout << formatTime(trialClocks[(3 * ITERATIONS) / 4 - 1] / 2, logNormal)
+            std::cout << formatTime(trialClocks[(3 * benchmarkSamples) / 4 - 1] / 2, logNormal)
                       << ","; /* 3rd Quartile (ms) */
         }
-        std::cout << formatTime(trialClocks[ITERATIONS - 1], logNormal) << std::endl; /* Slowest (ms) */
+        std::cout << formatTime(trialClocks[benchmarkSamples - 1], logNormal) << std::endl; /* Slowest (ms) */
     }
+
+    delete[] trialClocks;
 }
 
 void benchmarkLoop(std::function<void(QInterfacePtr, bitLenInt)> fn, bool resetRandomPerm = true,
@@ -486,11 +491,135 @@ bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
     bitLenInt bitRand = unusedBitsPtr->size() * qReg->Rand();
     if (bitRand >= unusedBitsPtr->size()) {
-        bitRand = unusedBitsPtr->size() - 1;
+        bitRand = unusedBitsPtr->size() - 1U;
     }
     std::advance(bitIterator, bitRand);
+    bitRand = *bitIterator;
     unusedBitsPtr->erase(bitIterator);
-    return *bitIterator;
+    return bitRand;
+}
+
+TEST_CASE("test_quantum_triviality", "[supreme]")
+{
+    const int GateCount1Qb = 4;
+    const int GateCountMultiQb = 5;
+    const int Depth = 20;
+
+    benchmarkLoop(
+        [&](QInterfacePtr qReg, bitLenInt n) {
+            int d;
+            bitLenInt i;
+            real1 gateRand;
+            bitLenInt b1, b2, b3;
+            int maxGates;
+
+            for (d = 0; d < Depth; d++) {
+
+                for (i = 0; i < n; i++) {
+                    gateRand = qReg->Rand();
+                    if (gateRand < (ONE_R1 / GateCount1Qb)) {
+                        // qReg->H(i);
+                    } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
+                        qReg->X(i);
+                    } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
+                        qReg->Y(i);
+                    } else {
+                        qReg->T(i);
+                    }
+                }
+
+                std::set<bitLenInt> unusedBits;
+                for (i = 0; i < n; i++) {
+                    // In the past, "qReg->TrySeparate(i)" was also used, here, to attempt optimization. Be aware that
+                    // the method can give performance advantages, under opportune conditions, but it does not, here.
+                    unusedBits.insert(unusedBits.end(), i);
+                }
+
+                while (unusedBits.size() > 1) {
+                    b1 = pickRandomBit(qReg, &unusedBits);
+                    b2 = pickRandomBit(qReg, &unusedBits);
+
+                    if (unusedBits.size() > 0) {
+                        maxGates = GateCountMultiQb;
+                    } else {
+                        maxGates = GateCountMultiQb - 2U;
+                    }
+
+                    gateRand = maxGates * qReg->Rand();
+
+                    if (gateRand < ONE_R1) {
+                        qReg->Swap(b1, b2);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        qReg->CZ(b1, b2);
+                    } else if ((unusedBits.size() == 0) || (gateRand < (3 * ONE_R1))) {
+                        qReg->CNOT(b1, b2);
+                    } else if (gateRand < (4 * ONE_R1)) {
+                        b3 = pickRandomBit(qReg, &unusedBits);
+                        qReg->CCZ(b1, b2, b3);
+                    } else {
+                        b3 = pickRandomBit(qReg, &unusedBits);
+                        qReg->CCNOT(b1, b2, b3);
+                    }
+                }
+            }
+
+            qReg->MAll();
+        },
+        false, false, testEngineType == QINTERFACE_QUNIT);
+}
+
+TEST_CASE("test_stabilizer", "[supreme]")
+{
+    const int GateCount1Qb = 4;
+    const int GateCountMultiQb = 2;
+    const int Depth = 20;
+
+    benchmarkLoop(
+        [&](QInterfacePtr qReg, bitLenInt n) {
+            int d;
+            bitLenInt i;
+            real1 gateRand;
+            bitLenInt b1, b2;
+
+            for (d = 0; d < Depth; d++) {
+
+                for (i = 0; i < n; i++) {
+                    gateRand = qReg->Rand();
+                    if (gateRand < (ONE_R1 / GateCount1Qb)) {
+                        qReg->H(i);
+                    } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
+                        qReg->X(i);
+                    } else if (gateRand < (3 * ONE_R1 / GateCount1Qb)) {
+                        qReg->Y(i);
+                    } else {
+                        qReg->S(i);
+                    }
+                }
+
+                std::set<bitLenInt> unusedBits;
+                for (i = 0; i < n; i++) {
+                    // In the past, "qReg->TrySeparate(i)" was also used, here, to attempt optimization. Be aware that
+                    // the method can give performance advantages, under opportune conditions, but it does not, here.
+                    unusedBits.insert(unusedBits.end(), i);
+                }
+
+                while (unusedBits.size() > 1) {
+                    b1 = pickRandomBit(qReg, &unusedBits);
+                    b2 = pickRandomBit(qReg, &unusedBits);
+
+                    gateRand = GateCountMultiQb * qReg->Rand();
+
+                    if (gateRand < ONE_R1) {
+                        qReg->CNOT(b1, b2);
+                    } else {
+                        qReg->CZ(b1, b2);
+                    }
+                }
+            }
+
+            qReg->MAll();
+        },
+        false, false, testEngineType == QINTERFACE_QUNIT);
 }
 
 TEST_CASE("test_universal_circuit_continuous", "[supreme]")
@@ -534,7 +663,7 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
                 }
             }
 
-            qReg->MReg(0, n);
+            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -582,7 +711,7 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
 
                     gateRand = maxGates * qReg->Rand();
 
-                    if (gateRand < ONE_R1) {
+                    if ((unusedBits.size() == 0) || (gateRand < ONE_R1)) {
                         qReg->Swap(b1, b2);
                     } else {
                         b3 = pickRandomBit(qReg, &unusedBits);
@@ -591,7 +720,7 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
                 }
             }
 
-            qReg->MReg(0, n);
+            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -657,7 +786,7 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
                 }
             }
 
-            qReg->MReg(0, n);
+            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -732,7 +861,7 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                 }
             }
 
-            qReg->MReg(0, n);
+            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -788,7 +917,7 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
 
                     if (gateRand < ONE_R1) {
                         qReg->CZ(b1, b2);
-                    } else if (gateRand < 2) {
+                    } else if ((unusedBits.size() == 0) || (gateRand < 2)) {
                         qReg->CNOT(b1, b2);
                     } else if (gateRand < 3) {
                         b3 = pickRandomBit(qReg, &unusedBits);
@@ -800,7 +929,7 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
                 }
             }
 
-            qReg->MReg(0, n);
+            qReg->MAll();
         },
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
@@ -953,7 +1082,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // std::cout<<"New iteration."<<std::endl;
 
         // We measure all bits once, after the circuit is run.
-        qReg->MReg(0, n);
+        qReg->MAll();
     });
 }
 
@@ -1137,8 +1266,8 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
     int maxGates;
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(
-        testSubEngineType, n, 0, rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng);
+    QInterfacePtr goldStandard = CreateQuantumInterface(testSubEngineType, testSubSubEngineType, n, 0, rng, ONE_CMPLX,
+        enable_normalization, true, false, device_id, !disable_hardware_rng);
 
     for (d = 0; d < Depth; d++) {
         std::vector<int>& layer1QbRands = gate1QbRands[d];

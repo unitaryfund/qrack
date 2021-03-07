@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -16,13 +16,37 @@ namespace Qrack {
 
 QInterfacePtr QEngineCPU::Clone()
 {
-    QInterfacePtr clone =
-        CreateQuantumInterface(QINTERFACE_CPU, qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize,
-            randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse);
+    Finish();
+
+    QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(
+        CreateQuantumInterface(QINTERFACE_CPU, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+            false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse));
     if (stateVec) {
-        std::dynamic_pointer_cast<QEngineCPU>(clone)->stateVec->copy(stateVec);
+        clone->stateVec->copy(stateVec);
+    } else {
+        clone->ZeroAmplitudes();
     }
     return clone;
+}
+
+real1_f QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+{
+    real1 average = ZERO_R1;
+    real1 prob;
+    real1 totProb = ZERO_R1;
+    bitCapInt i, outputInt;
+    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
+    for (i = 0; i < maxQPower; i++) {
+        outputInt = (i & outputMask) >> valueStart;
+        prob = norm(stateVec->read(i));
+        totProb += prob;
+        average += prob * outputInt;
+    }
+    if (totProb > ZERO_R1) {
+        average /= totProb;
+    }
+
+    return average;
 }
 
 } // namespace Qrack

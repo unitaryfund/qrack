@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -11,10 +11,6 @@
 // for details.
 
 #pragma once
-
-#if !ENABLE_CUDA
-#error CUDA has not been enabled
-#endif
 
 #include <list>
 #include <mutex>
@@ -28,7 +24,7 @@
 
 namespace Qrack {
 
-enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ };
+enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ, INVERT, PHASE };
 
 typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
@@ -42,6 +38,10 @@ struct QueueItem {
     size_t localGroupSize;
     std::vector<BufferPtr> buffers;
     size_t localBuffSize;
+    bool isSetDoNorm;
+    bool isSetRunningNorm;
+    bool doNorm;
+    real1 runningNorm;
 
     QueueItem(OCLAPI ac, size_t wic, size_t lgs, std::vector<BufferPtr> b, size_t lbs)
         : api_call(ac)
@@ -49,6 +49,36 @@ struct QueueItem {
         , localGroupSize(lgs)
         , buffers(b)
         , localBuffSize(lbs)
+        , isSetDoNorm(false)
+        , isSetRunningNorm(false)
+        , doNorm(false)
+        , runningNorm(ONE_R1)
+    {
+    }
+
+    QueueItem(const bool& doNrm)
+        : api_call()
+        , workItemCount(0)
+        , localGroupSize(0)
+        , buffers()
+        , localBuffSize(0)
+        , isSetDoNorm(true)
+        , isSetRunningNorm(false)
+        , doNorm(doNrm)
+        , runningNorm(ONE_R1)
+    {
+    }
+
+    QueueItem(const real1_f& runningNrm)
+        : api_call()
+        , workItemCount(0)
+        , localGroupSize(0)
+        , buffers()
+        , localBuffSize(0)
+        , isSetDoNorm(false)
+        , isSetRunningNorm(true)
+        , doNorm(false)
+        , runningNorm(runningNrm)
     {
     }
 };
@@ -78,14 +108,14 @@ typedef std::shared_ptr<PoolItem> PoolItemPtr;
 /**
  * OpenCL enhanced QEngineCPU implementation.
  *
- * QEngineOCL exposes asynchronous void-return public methods, wherever possible. While QEngine public methods run on a
+ * QEngineCUDA exposes asynchronous void-return public methods, wherever possible. While QEngine public methods run on a
  * secondary accelerator, such as a GPU, other code can be executed on the CPU at the same time. If only one (CPU)
  * OpenCL device is available, this engine type is still compatible with most CPUs, and this implementation will still
  * usually give a very significant performance boost over the non-OpenCL QEngineCPU implementation.
  *
- * Each QEngineOCL queues an independent event list of chained asynchronous methods. Multiple QEngineOCL instances may
- * share a single device. Any one QEngineOCL instance (or QEngineCPU instance) is NOT safe to access from multiple
- * threads, but different QEngineOCL instances may be accessed in respective threads. When a public method with a
+ * Each QEngineCUDA queues an independent event list of chained asynchronous methods. Multiple QEngineCUDA instances may
+ * share a single device. Any one QEngineCUDA instance (or QEngineCPU instance) is NOT safe to access from multiple
+ * threads, but different QEngineCUDA instances may be accessed in respective threads. When a public method with a
  * non-void return type is called, (such as Prob() or M() variants,) the engine wait list of OpenCL events will first be
  * finished, then the return value will be calculated based on all public method calls dispatched up to that point.
  * Asynchronous method dispatch is "transparent," in the sense that no explicit consideration for synchronization should
@@ -98,18 +128,29 @@ protected:
     bitCapIntOcl maxQPowerOcl;
     complex* stateVec;
     int deviceID;
+    DeviceContextPtr device_context;
     std::vector<EventVecPtr> wait_refs;
     std::list<QueueItem> wait_queue_items;
     std::mutex queue_mutex;
-    real1* nrmArray;
-    bitCapInt* powersArray;
+    cl::CommandQueue queue;
+    cl::Context context;
+    // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of
+    // QEngineCUDA itself, specifically by QEngineCUDAMulti.
+    BufferPtr stateBuffer;
+    BufferPtr nrmBuffer;
+    BufferPtr powersBuffer;
     std::vector<PoolItemPtr> poolItems;
+    real1* nrmArray;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
     size_t maxWorkItems;
     size_t maxMem;
     size_t maxAlloc;
     unsigned int procElemCount;
+    bool unlockHostMem;
+    cl_int lockSyncFlags;
+    bool usingHostRam;
+    complex permutationAmp;
 
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
@@ -117,31 +158,35 @@ public:
     static const bitCapIntOcl OclMemDenom = 3U;
 
     /**
-     * Initialize a Qrack::QEngineOCL object. Specify the number of qubits and an initial permutation state.
+     * Initialize a Qrack::QEngineCUDA object. Specify the number of qubits and an initial permutation state.
      * Additionally, optionally specify a pointer to a random generator engine object, a device ID from the list of
      * devices in the OCLEngine singleton, and a boolean that is set to "true" to initialize the state vector of the
      * object to zero norm.
      *
      * "devID" is the index of an OpenCL device in the OCLEngine singleton, to select the device to run this engine on.
-     * If "useHostMem" is set false, as by default, the QEngineOCL will attempt to allocate the state vector object
+     * If "useHostMem" is set false, as by default, the QEngineCUDA will attempt to allocate the state vector object
      * only on device memory. If "useHostMem" is set true, general host RAM will be used for the state vector buffers.
-     * If the state vector is too large to allocate only on device memory, the QEngineOCL will attempt to fall back to
+     * If the state vector is too large to allocate only on device memory, the QEngineCUDA will attempt to fall back to
      * allocating it in general host RAM.
      *
-     * \warning "useHostMem" is not conscious of allocation by other QEngineOCL instances on the same device. Attempting
-     * to allocate too much device memory across too many QEngineOCL instances, for which each instance would have
-     * sufficient device resources on its own, will probably cause the program to crash (and may lead to general system
-     * instability). For safety, "useHostMem" can be turned on.
+     * \warning "useHostMem" is not conscious of allocation by other QEngineCUDA instances on the same device.
+     * Attempting to allocate too much device memory across too many QEngineCUDA instances, for which each instance
+     * would have sufficient device resources on its own, will probably cause the program to crash (and may lead to
+     * general system instability). For safety, "useHostMem" can be turned on.
      */
 
     QEngineCUDA(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored = false,
-        int deviceId = -1, bool ignored2 = true, bool ignored3 = false, real1 norm_thresh = REAL1_DEFAULT_ARG,
-        std::vector<bitLenInt> ignored4 = {});
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
+        bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false,
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored2 = {}, bitLenInt ignored3 = 0);
 
-    virtual ~QEngineCUDA()
+    virtual ~QEngineCUDA() { ZeroAmplitudes(); }
+
+    virtual void ZeroAmplitudes()
     {
-        FreeAligned(nrmArray);
+        clDump();
+        runningNorm = ZERO_R1;
+        ResetStateBuffer(NULL);
         FreeStateVec();
     }
 
@@ -172,20 +217,71 @@ public:
         }
     }
 
+    virtual bool IsZeroAmplitude() { return !stateBuffer; }
+
+    virtual void CopyStateVec(QEnginePtr src)
+    {
+        Finish();
+        src->Finish();
+
+        if (src->IsZeroAmplitude()) {
+            ZeroAmplitudes();
+            return;
+        }
+
+        LockSync(CL_MAP_WRITE);
+        src->GetQuantumState(stateVec);
+        UnlockSync();
+
+        runningNorm = src->GetRunningNorm();
+    }
+
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length);
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length);
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length);
+    virtual void ShuffleBuffers(QEnginePtr engine);
+
+    virtual void QueueSetDoNormalize(const bool& doNorm) { AddQueueItem(QueueItem(doNorm)); }
+    virtual void QueueSetRunningNorm(const real1_f& runningNrm) { AddQueueItem(QueueItem(runningNrm)); }
+    virtual void AddQueueItem(const QueueItem& item)
+    {
+        queue_mutex.lock();
+        bool isBase = (wait_queue_items.size() == 0);
+        wait_queue_items.push_back(item);
+        queue_mutex.unlock();
+
+        if (isBase) {
+            DispatchQueue(NULL, CL_COMPLETE);
+        }
+    }
+    virtual void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
+        size_t localBuffSize = 0)
+    {
+        AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, args, localBuffSize));
+    }
+
     bitCapIntOcl GetMaxSize() { return maxAlloc / sizeof(complex); };
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
-    virtual real1 ProbAll(bitCapInt fullRegister);
+    virtual real1_f ProbAll(bitCapInt fullRegister);
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
+    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle);
+    virtual void CUniformParityRZ(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle);
 
     /* Operations that have an improved implementation. */
     using QEngine::X;
     virtual void X(bitLenInt target);
     using QEngine::Z;
     virtual void Z(bitLenInt target);
+    using QEngine::ApplySingleInvert;
+    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
+    using QEngine::ApplySinglePhase;
+    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
 
     using QEngine::Compose;
     virtual bitLenInt Compose(QEngineCUDAPtr toCopy);
@@ -195,7 +291,7 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QEngineCUDA>(toCopy), start);
     }
-    virtual void Decompose(bitLenInt start, bitLenInt length, QInterfacePtr dest);
+    virtual void Decompose(bitLenInt start, QInterfacePtr dest);
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
@@ -205,7 +301,9 @@ public:
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+#if ENABLE_BCD
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
+#endif
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
@@ -232,18 +330,18 @@ public:
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values);
 
-    virtual real1 Prob(bitLenInt qubit);
-    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
+    virtual real1_f Prob(bitLenInt qubit);
+    virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
-    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
+    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
+    virtual real1_f ProbParity(const bitCapInt& mask);
+    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
 
-    virtual void PhaseFlip();
-    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
 
-    virtual void SetDevice(const int& dID);
+    virtual void SetDevice(const int& dID, const bool& forceReInit = false);
     virtual int GetDeviceID() { return deviceID; }
 
     virtual void SetQuantumState(const complex* inputState);
@@ -252,15 +350,15 @@ public:
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetAmplitude(bitCapInt perm, complex amp);
 
-    virtual bool ApproxCompare(QInterfacePtr toCompare)
+    virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
-        return ApproxCompare(std::dynamic_pointer_cast<QEngineCUDA>(toCompare));
+        return SumSqrDiff(std::dynamic_pointer_cast<QEngineCUDA>(toCompare));
     }
-    virtual bool ApproxCompare(QEngineCUDAPtr toCompare);
+    virtual real1_f SumSqrDiff(QEngineCUDAPtr toCompare);
 
-    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG);
-    virtual void UpdateRunningNorm(real1 norm_thresh = REAL1_DEFAULT_ARG);
-    virtual void Finish() { cudaFinish(); };
+    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void Finish() { clFinish(); };
     virtual bool isFinished() { return (wait_queue_items.size() == 0); };
 
     virtual QInterfacePtr Clone();
@@ -269,8 +367,13 @@ public:
     void DispatchQueue(cl_event event, cl_int type);
 
 protected:
+    virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
+
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
     virtual void ResetStateVec(complex* sv);
+    virtual void ResetStateBuffer(BufferPtr nStateBuffer);
+    virtual BufferPtr MakeStateVecBuffer(complex* nStateVec);
+    virtual void ReinitBuffer();
 
     virtual void Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineCUDAPtr toCopy);
 
@@ -280,26 +383,51 @@ protected:
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
     virtual void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
         const bitLenInt& overflowIndex, const bitLenInt& carryIndex);
+#if ENABLE_BCD
     virtual void INCDECBCDC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
+#endif
 
-    void InitCUDA(int devID);
+    void InitOCL(int devID);
     PoolItemPtr GetFreePoolItem();
 
-    real1 ParSum(real1* toSum, bitCapIntOcl maxI);
+    real1_f ParSum(real1* toSum, bitCapIntOcl maxI);
+
+    /**
+     * Locks synchronization between the state vector buffer and general RAM, so the state vector can be directly read
+     * and/or written to.
+     *
+     * OpenCL buffers, even when allocated on "host" general RAM, are not safe to read from or write to unless "mapped."
+     * When mapped, a buffer cannot be used by OpenCL kernels. If the state vector needs to be directly manipulated, it
+     * needs to be temporarily mapped, and this can be accomplished with LockSync(). When direct reading from or writing
+     * to the state vector is done, before performing other OpenCL operations on it, it must be unmapped with
+     * UnlockSync().
+     */
+    void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
+    /**
+     * Unlocks synchronization between the state vector buffer and general RAM, so the state vector can be operated on
+     * with OpenCL kernels and operations.
+     *
+     * OpenCL buffers, even when allocated on "host" general RAM, are not safe to read from or write to unless "mapped."
+     * When mapped, a buffer cannot be used by OpenCL kernels. If the state vector needs to be directly manipulated, it
+     * needs to be temporarily mapped, and this can be accomplished with LockSync(). When direct reading from or writing
+     * to the state vector is done, before performing other OpenCL operations on it, it must be unmapped with
+     * UnlockSync().
+     */
+    void UnlockSync();
 
     /**
      * Finishes the asynchronous wait event list or queue of OpenCL events.
      *
      * By default (doHard = false) only the wait event list of this engine is finished. If doHard = true, the entire
-     * device queue is finished, (which might be shared by other QEngineOCL instances).
+     * device queue is finished, (which might be shared by other QEngineCUDA instances).
      */
-    virtual void cudaFinish();
+    virtual void clFinish(bool doHard = false);
 
     /**
      * Dumps the remaining asynchronous wait event list or queue of OpenCL events, for the current queue.
      */
-    virtual void cudaDump();
+    virtual void clDump();
 
     size_t FixWorkItemCount(size_t maxI, size_t wic);
     size_t FixGroupSize(size_t wic, size_t gs);
@@ -312,24 +440,22 @@ protected:
 
     using QEngine::Apply2x2;
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = REAL1_DEFAULT_ARG)
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, SPECIAL_2X2::NONE, norm_thresh);
     }
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1 norm_thresh = REAL1_DEFAULT_ARG);
+        const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh = REAL1_DEFAULT_ARG);
 
     virtual void ApplyM(bitCapInt mask, bool result, complex nrm);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
     /* Utility functions used by the operations above. */
-    void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
-        size_t localBuffSize = 0);
     void WaitCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0);
     EventVecPtr ResetWaitEvents(bool waitQueue = true);
     void ApplyMx(OCLAPI api_call, bitCapIntOcl* bciArgs, complex nrm);
-    real1 Probx(OCLAPI api_call, bitCapIntOcl* bciArgs);
+    real1_f Probx(OCLAPI api_call, bitCapIntOcl* bciArgs);
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);
     void INT(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length);
     void CINT(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt start, const bitLenInt length,
@@ -342,9 +468,11 @@ protected:
         const bitLenInt carryIndex);
     void INTSC(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt overflowIndex, const bitLenInt carryIndex);
+#if ENABLE_BCD
     void INTBCD(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length);
     void INTBCDC(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt length,
         const bitLenInt carryIndex);
+#endif
     void xMULx(OCLAPI api_call, bitCapIntOcl* bciArgs, BufferPtr controlBuffer);
     void MULx(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOutStart, const bitLenInt carryStart,
         const bitLenInt length);
@@ -360,6 +488,8 @@ protected:
 
     bitCapIntOcl OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLenInt indexStart, bitLenInt indexLength,
         bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+
+    void ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size);
 };
 
 } // namespace Qrack

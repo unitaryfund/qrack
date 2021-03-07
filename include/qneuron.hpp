@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -41,7 +41,7 @@ public:
      * variational parameters are Pauli Y-axis rotation angles divided by 2 * Pi (such that a learning parameter of 0.5
      * will train from a default output of 0.5/0.5 probability to either 1.0 or 0.0 on one training input). */
     QNeuron(
-        QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx, real1 tol = REAL1_EPSILON)
+        QInterfacePtr reg, bitLenInt* inputIndcs, bitLenInt inputCnt, bitLenInt outputIndx, real1_f tol = REAL1_EPSILON)
         : inputCount(inputCnt)
         , inputPower(pow2Ocl(inputCnt))
         , outputIndex(outputIndx)
@@ -85,7 +85,7 @@ public:
     /** Feed-forward from the inputs, loaded in "qReg", to a binary categorical distinction. "expected" flips the binary
      * categories, if false. "resetInit," if true, resets the result qubit to 0.5/0.5 |0>/|1> superposition before
      * proceeding to predict. */
-    real1 Predict(bool expected = true, bool resetInit = true)
+    real1_f Predict(bool expected = true, bool resetInit = true)
     {
         if (resetInit) {
             qReg->SetBit(outputIndex, false);
@@ -107,7 +107,7 @@ public:
     }
 
     /** "Uncompute" the Predict() method */
-    real1 Unpredict(bool expected = true)
+    real1_f Unpredict(bool expected = true)
     {
         if (inputCount == 0) {
             // If there are no controls, this "neuron" is actually just a bias.
@@ -115,7 +115,7 @@ public:
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
             real1* reverseAngles = new real1[inputPower];
-            std::transform(angles, angles + inputPower, reverseAngles, [](real1 r) { return -r; });
+            std::transform(angles, angles + inputPower, reverseAngles, [](real1_f r) { return -r; });
             qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, reverseAngles);
             delete[] reverseAngles;
         }
@@ -126,7 +126,7 @@ public:
         return prob;
     }
 
-    real1 LearnCycle(bool expected = true)
+    real1_f LearnCycle(bool expected = true)
     {
         real1 result = Predict(expected, false);
         Unpredict(expected);
@@ -141,7 +141,7 @@ public:
      * In the feedback process of learning, default initial conditions forward untrained predictions to 1/sqrt(2) * (|0>
      * + |1>) for the output bit. If you want to initialize other conditions before "Learn()," set "resetInit" to false.
      */
-    void Learn(bool expected, real1 eta, bool resetInit = true)
+    void Learn(bool expected, real1_f eta, bool resetInit = true)
     {
         real1 startProb = Predict(expected, resetInit);
         Unpredict(expected);
@@ -166,7 +166,7 @@ public:
      * + |1>) for the output bit. If you want to initialize other conditions before "LearnPermutation()," set
      * "resetInit" to false.
      */
-    void LearnPermutation(bool expected, real1 eta, bool resetInit = true)
+    void LearnPermutation(bool expected, real1_f eta, bool resetInit = true)
     {
         real1 startProb = Predict(expected, resetInit);
         Unpredict(expected);
@@ -187,7 +187,7 @@ public:
     }
 
 protected:
-    real1 LearnInternal(bool expected, real1 eta, bitCapInt perm, real1 startProb)
+    real1_f LearnInternal(bool expected, real1_f eta, bitCapInt perm, real1_f startProb)
     {
         bitCapIntOcl permOcl = (bitCapIntOcl)perm;
         real1 endProb;

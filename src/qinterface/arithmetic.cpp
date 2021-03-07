@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -42,12 +42,14 @@ void QInterface::CDEC(
     CINC(invToSub, inOutStart, length, controls, controlLen);
 }
 
+#if ENABLE_BCD
 /// Subtract BCD integer (without sign)
 void QInterface::DECBCD(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
 {
     bitCapInt invToSub = intPow(10U, length / 4U) - toSub;
     INCBCD(invToSub, inOutStart, length);
 }
+#endif
 
 /// Quantum analog of classical "Full Adder" gate
 void QInterface::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -26,6 +26,8 @@ namespace Qrack {
 #define APPLY2X2_WIDE 0x08
 #define APPLY2X2_X 0x10
 #define APPLY2X2_Z 0x20
+#define APPLY2X2_PHASE 0x40
+#define APPLY2X2_INVERT 0x80
 
 // These are commonly used emplace patterns, for OpenCL buffer I/O.
 #define DISPATCH_TEMP_WRITE(waitVec, buff, size, array, clEvent)                                                       \
@@ -37,50 +39,155 @@ namespace Qrack {
     queue.flush();
 
 #define DISPATCH_WRITE(waitVec, buff, size, array)                                                                     \
+    device_context->LockWaitEvents();                                                                                  \
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, waitVec.get(), &(device_context->wait_events->back()));   \
+    device_context->UnlockWaitEvents();                                                                                \
     queue.flush()
 
 #define DISPATCH_READ(waitVec, buff, size, array)                                                                      \
+    device_context->LockWaitEvents();                                                                                  \
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueReadBuffer(buff, CL_FALSE, 0, size, array, waitVec.get(), &(device_context->wait_events->back()));    \
-    queue.flush()
-
-#define DISPATCH_FILL(waitVec, buff, size, value)                                                                      \
-    device_context->wait_events->emplace_back();                                                                       \
-    queue.enqueueFillBuffer(buff, value, 0, size, waitVec.get(), &(device_context->wait_events->back()));              \
+    device_context->UnlockWaitEvents();                                                                                \
     queue.flush()
 
 #define DISPATCH_COPY(waitVec, buff1, buff2, size)                                                                     \
+    device_context->LockWaitEvents();                                                                                  \
     device_context->wait_events->emplace_back();                                                                       \
     queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, waitVec.get(), &(device_context->wait_events->back()));          \
+    device_context->UnlockWaitEvents();                                                                                \
     queue.flush();
-
-#define WAIT_COPY(buff1, buff2, size)                                                                                  \
-    device_context->wait_events->emplace_back();                                                                       \
-    queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, NULL, &(device_context->wait_events->back()));                   \
-    device_context->wait_events->back().wait();                                                                        \
-    device_context->wait_events->pop_back()
 
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr)                                                                      \
     clFinish();                                                                                                        \
-    queue.enqueueMapBuffer(buff, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * (size));                                     \
-    *(sumPtr) = ParSum(array, size);                                                                                   \
-    device_context->wait_events->emplace_back();                                                                       \
-    queue.enqueueUnmapMemObject(buff, array, NULL, &(device_context->wait_events->back()));
+    queue.enqueueReadBuffer(buff, CL_TRUE, 0, sizeof(real1) * size, array, NULL, NULL);                                \
+    *(sumPtr) = ParSum(array, size);
+
+#define CHECK_ZERO_SKIP()                                                                                              \
+    if (!stateBuffer) {                                                                                                \
+        return;                                                                                                        \
+    }
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored, real1 norm_thresh,
-    std::vector<bitLenInt> devList)
+    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored, real1_f norm_thresh,
+    std::vector<int> devList, bitLenInt qubitThreshold)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
+    , stateVec(NULL)
     , deviceID(devID)
     , wait_refs()
     , nrmArray(NULL)
+    , nrmGroupSize(0)
     , unlockHostMem(false)
 {
     maxQPowerOcl = pow2Ocl(qubitCount);
     InitOCL(devID);
+    clFinish();
     SetPermutation(initState, phaseFac);
+}
+
+void QEngineOCL::GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+{
+    if (!stateBuffer) {
+        std::fill(pagePtr, pagePtr + (bitCapIntOcl)length, ZERO_CMPLX);
+        return;
+    }
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
+        sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
+}
+
+void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+{
+    if (!stateBuffer) {
+        ReinitBuffer();
+    }
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
+        sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
+    queue.finish();
+
+    runningNorm = REAL1_DEFAULT_ARG;
+}
+
+void QEngineOCL::SetAmplitudePage(
+    QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+{
+    QEngineOCLPtr pageEngineOclPtr = std::dynamic_pointer_cast<QEngineOCL>(pageEnginePtr);
+    BufferPtr oStateBuffer = pageEngineOclPtr->stateBuffer;
+
+    clFinish();
+    pageEngineOclPtr->clFinish();
+
+    if (!stateBuffer && !oStateBuffer) {
+        return;
+    }
+
+    if (!oStateBuffer) {
+        if (length == maxQPower) {
+            ZeroAmplitudes();
+        } else {
+            ClearBuffer(stateBuffer, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length);
+        }
+
+        runningNorm = ZERO_R1;
+
+        return;
+    }
+
+    if (!stateBuffer) {
+        ReinitBuffer();
+        ClearBuffer(stateBuffer, 0, maxQPowerOcl);
+    }
+
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)srcOffset, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length, 0, 0,
+        0, 0, 0, 0, 0 };
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs);
+
+    WaitCall(OCL_API_COPYPAGE, nrmGroupCount, nrmGroupSize, { oStateBuffer, stateBuffer, poolItem->ulongBuffer });
+
+    runningNorm = REAL1_DEFAULT_ARG;
+}
+
+void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
+{
+    QEngineOCLPtr engineOcl = std::dynamic_pointer_cast<QEngineOCL>(engine);
+
+    if (!stateBuffer && !(engineOcl->stateBuffer)) {
+        return;
+    }
+
+    if (!stateBuffer) {
+        ReinitBuffer();
+        ClearBuffer(stateBuffer, 0, maxQPowerOcl);
+    }
+
+    if (!(engineOcl->stateBuffer)) {
+        engineOcl->ReinitBuffer();
+        engineOcl->ClearBuffer(engineOcl->stateBuffer, 0, engineOcl->maxQPowerOcl);
+    }
+
+    engineOcl->clFinish();
+    clFinish();
+
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> ONE_BCI, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs);
+
+    WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
+        { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
+
+    runningNorm = REAL1_DEFAULT_ARG;
+    engineOcl->runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineOCL::LockSync(cl_int flags)
@@ -90,46 +197,39 @@ void QEngineOCL::LockSync(cl_int flags)
 
     if (stateVec) {
         unlockHostMem = true;
-        lockSyncStateBuffer = stateBuffer;
+        queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPowerOcl, NULL);
     } else {
         unlockHostMem = false;
         stateVec = AllocStateVec(maxQPowerOcl, true);
-        if (lockSyncFlags & CL_MAP_WRITE) {
-            lockSyncStateBuffer = MakeStateVecBuffer(stateVec);
-        } else {
-            // The OpenCL device will never have to read from this buffer, hence we can set it CL_MEM_WRITE_ONLY
-            lockSyncStateBuffer = std::make_shared<cl::Buffer>(
-                context, CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(complex) * maxQPowerOcl, stateVec);
+        if (lockSyncFlags & CL_MAP_READ) {
+            queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
         }
-        WAIT_COPY(*stateBuffer, *lockSyncStateBuffer, sizeof(complex) * maxQPowerOcl);
     }
-
-    queue.enqueueMapBuffer(*lockSyncStateBuffer, CL_TRUE, flags, 0, sizeof(complex) * maxQPowerOcl, NULL);
 }
 
 void QEngineOCL::UnlockSync()
 {
-    EventVecPtr waitVec = ResetWaitEvents();
-    cl::Event unmapEvent;
-    queue.enqueueUnmapMemObject(*lockSyncStateBuffer, stateVec, waitVec.get(), &unmapEvent);
-    unmapEvent.wait();
-    wait_refs.clear();
+    clFinish();
 
-    if (!unlockHostMem) {
+    if (unlockHostMem) {
+        cl::Event unmapEvent;
+        queue.enqueueUnmapMemObject(*stateBuffer, stateVec, NULL, &unmapEvent);
+        unmapEvent.wait();
+        wait_refs.clear();
+    } else {
         if (lockSyncFlags & CL_MAP_WRITE) {
-            WAIT_COPY(*lockSyncStateBuffer, *stateBuffer, sizeof(complex) * maxQPowerOcl);
+            queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
         }
         FreeStateVec();
         stateVec = NULL;
     }
 
-    lockSyncStateBuffer = NULL;
     lockSyncFlags = 0;
 }
 
 void QEngineOCL::clFinish(bool doHard)
 {
-    if (device_context == NULL) {
+    if (!device_context) {
         return;
     }
 
@@ -148,10 +248,11 @@ void QEngineOCL::clFinish(bool doHard)
 
 void QEngineOCL::clDump()
 {
-    if (device_context == NULL) {
+    if (!device_context) {
         return;
     }
 
+    wait_queue_items.clear();
     device_context->WaitOnAllEvents();
     wait_refs.clear();
 }
@@ -219,21 +320,6 @@ void QEngineOCL::WaitCall(
     clFinish();
 }
 
-void QEngineOCL::QueueCall(
-    OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args, size_t localBuffSize)
-{
-    QueueItem item(api_call, workItemCount, localGroupSize, args, localBuffSize);
-
-    queue_mutex.lock();
-    bool isBase = (wait_queue_items.size() == 0);
-    wait_queue_items.push_back(item);
-    queue_mutex.unlock();
-
-    if (isBase) {
-        DispatchQueue(NULL, CL_COMPLETE);
-    }
-}
-
 void CL_CALLBACK _PopQueue(cl_event event, cl_int type, void* user_data)
 {
     ((QEngineOCL*)user_data)->PopQueue(event, type);
@@ -270,6 +356,22 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 
     QueueItem item = wait_queue_items.front();
+
+    while (item.isSetDoNorm || item.isSetRunningNorm) {
+        if (item.isSetDoNorm) {
+            doNormalize = item.doNorm;
+        }
+        if (item.isSetRunningNorm) {
+            runningNorm = item.runningNorm;
+        }
+
+        wait_queue_items.pop_front();
+        if (wait_queue_items.size() == 0) {
+            return;
+        }
+        item = wait_queue_items.front();
+    }
+
     std::vector<BufferPtr> args = item.buffers;
 
     // We have to reserve the kernel, because its argument hooks are unique. The same kernel therefore can't be used by
@@ -283,28 +385,36 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
 
     // For all of our kernels, if a local memory buffer is used, there is always only one, as the last argument.
     if (item.localBuffSize) {
+#if ENABLE_SNUCL
+        ocl.call.setArg(args.size(), cl::__local(item.localBuffSize));
+#else
         ocl.call.setArg(args.size(), cl::Local(item.localBuffSize));
+#endif
     }
 
     // Dispatch the primary kernel, to apply the gate.
-    cl::Event kernelEvent;
-    kernelEvent.setCallback(CL_COMPLETE, _PopQueue, this);
     EventVecPtr kernelWaitVec = ResetWaitEvents(false);
+    device_context->LockWaitEvents();
+    device_context->wait_events->emplace_back();
+    device_context->wait_events->back().setCallback(CL_COMPLETE, _PopQueue, this);
     queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
         cl::NDRange(item.workItemCount), // global number of work items
         cl::NDRange(item.localGroupSize), // local number (per group)
         kernelWaitVec.get(), // vector of events to wait for
-        &kernelEvent); // handle to wait for the kernel
+        &(device_context->wait_events->back())); // handle to wait for the kernel
 
-    device_context->wait_events->push_back(kernelEvent);
-
+    device_context->UnlockWaitEvents();
     queue.flush();
 }
 
-real1 QEngineOCL::ProbAll(bitCapInt fullRegister)
+real1_f QEngineOCL::ProbAll(bitCapInt fullRegister)
 {
     if (doNormalize) {
         NormalizeState();
+    }
+
+    if (!stateBuffer) {
+        return ZERO_R1;
     }
 
     complex amp[1];
@@ -319,41 +429,34 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 {
     bool didInit = (nrmArray != NULL);
 
-    complex* nStateVec = NULL;
+    clFinish();
 
-    bool isSameContext = (device_context == NULL) ||
-        (device_context->context_id == OCLEngine::Instance()->GetDeviceContextPtr(dID)->context_id);
+    int oldContextId = device_context ? device_context->context_id : 0;
+    device_context = OCLEngine::Instance()->GetDeviceContextPtr(dID);
 
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
-        if ((!forceReInit) && (dID == deviceID)) {
+        if ((!forceReInit) && (oldContextId == device_context->context_id)) {
+            deviceID = dID;
+            context = device_context->context;
+            queue = device_context->queue;
+
             return;
         }
 
-        // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
-        // that's accessible in a new device. (The old buffer is definitely not accessible to the new device.)
-        if (!isSameContext) {
-            nStateVec = AllocStateVec(maxQPowerOcl, true);
-            LockSync(CL_MAP_READ);
-            std::copy(stateVec, stateVec + maxQPowerOcl, nStateVec);
-            UnlockSync();
+        if (stateBuffer) {
+            // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
+            LockSync();
         }
-
-        // We're about to switch to a new device, so finish the queue, first.
-        clFinish(true);
     }
 
-    cl::Context oldContext = context;
-    device_context = OCLEngine::Instance()->GetDeviceContextPtr(dID);
-    deviceID = device_context->context_id;
+    deviceID = dID;
     context = device_context->context;
-    cl::CommandQueue oldQueue = queue;
     queue = device_context->queue;
 
     OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLY2X2_NORM_SINGLE);
-    clFinish(true);
 
-    bitCapIntOcl oldNrmGroupCount = nrmGroupCount;
+    bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
     procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
     maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
@@ -370,7 +473,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         procElemPow <<= ONE_BCI;
     }
     procElemPow >>= ONE_BCI;
-    nrmGroupCount = procElemPow * nrmGroupSize * 2U;
+    nrmGroupCount = procElemPow * nrmGroupSize * 4U;
     while (nrmGroupCount > maxWorkItems) {
         nrmGroupCount >>= ONE_BCI;
     }
@@ -379,43 +482,31 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     // anyway.
     maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
     maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+#if ENABLE_OCL_MEM_GUARDS
     size_t stateVecSize = maxQPowerOcl * sizeof(complex);
-    bool usingHostRam;
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > maxAlloc) {
         throw "Error: State vector exceeds device maximum OpenCL allocation";
     } else if (useHostRam || ((OclMemDenom * stateVecSize) > maxMem)) {
         usingHostRam = true;
-        if (didInit && !stateVec && !nStateVec) {
-            nStateVec = AllocStateVec(maxQPowerOcl, true);
-            BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
-            oldQueue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl);
-            oldQueue.finish();
-            ResetStateVec(nStateVec);
-            ResetStateBuffer(nStateBuffer);
-            nStateVec = NULL;
-        }
     } else {
         usingHostRam = false;
-        if (didInit && stateVec && !nStateVec) {
-            BufferPtr nStateBuffer = MakeStateVecBuffer(NULL);
-            oldQueue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl);
-            oldQueue.finish();
-            ResetStateVec(NULL);
-            ResetStateBuffer(nStateBuffer);
-        }
     }
+#endif
 
-    size_t nrmVecAlignSize =
-        ((sizeof(real1) * nrmGroupCount) < QRACK_ALIGN_SIZE) ? QRACK_ALIGN_SIZE : (sizeof(real1) * nrmGroupCount);
+    size_t nrmVecAlignSize = ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
+        ? QRACK_ALIGN_SIZE
+        : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
 
-    if (didInit && (nrmGroupCount != oldNrmGroupCount)) {
+    bool doResize = (nrmGroupCount / nrmGroupSize) != oldNrmVecAlignSize;
+
+    if (didInit && doResize) {
         nrmBuffer = NULL;
         FreeAligned(nrmArray);
         nrmArray = NULL;
     }
 
-    if (!didInit || (nrmGroupCount != oldNrmGroupCount)) {
+    if (!didInit || doResize) {
 #if defined(__APPLE__)
         posix_memalign((void**)&nrmArray, QRACK_ALIGN_SIZE, nrmVecAlignSize);
 #elif defined(_WIN32) && !defined(__CYGWIN__)
@@ -423,23 +514,25 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 #else
         nrmArray = (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmVecAlignSize);
 #endif
+        nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize);
     }
 
     // create buffers on device (allocate space on GPU)
     if (didInit) {
-        // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a buffer
-        // that's accessible in a new device, if the old buffer is not.
-        if (!usingHostRam && nStateVec) {
-            // We did not have host allocation, so we copied from device-local memory to host memory, above.
-            // Now, we copy to the new device's memory.
-            stateBuffer = MakeStateVecBuffer(NULL);
-            queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, nStateVec);
-            FreeAligned(nStateVec);
-            ResetStateVec(NULL);
-        } else if (nStateVec) {
-            // We had host allocation; we will continue to have it.
-            ResetStateVec(nStateVec);
-            ResetStateBuffer(MakeStateVecBuffer(nStateVec));
+        if (stateBuffer) {
+            if (usingHostRam) {
+                ResetStateBuffer(MakeStateVecBuffer(stateVec));
+            } else {
+                ResetStateBuffer(MakeStateVecBuffer(NULL));
+                // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a
+                // buffer.
+                clFinish();
+                queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
+
+                ResetStateVec(NULL);
+            }
+
+            lockSyncFlags = 0;
         }
     } else {
         // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device
@@ -450,19 +543,10 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
     poolItems.clear();
     poolItems.push_back(std::make_shared<PoolItem>(context));
-    powersBuffer =
-        std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl) * 16);
-
-    if ((!didInit) || !isSameContext || (nrmGroupCount != oldNrmGroupCount)) {
-        nrmBuffer =
-            std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, nrmVecAlignSize, nrmArray);
-        EventVecPtr waitVec = ResetWaitEvents();
-        // GPUs can't always tolerate uninitialized host memory, even if they're not reading from it
-        DISPATCH_FILL(waitVec, *nrmBuffer, sizeof(real1) * nrmGroupCount, ZERO_R1);
-    }
+    powersBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
 }
 
-real1 QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
+real1_f QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
 {
     // This interface is potentially parallelizable, but, for now, better performance is probably given by implementing
     // it as a serial loop.
@@ -487,26 +571,28 @@ void QEngineOCL::ResetStateBuffer(BufferPtr nStateBuffer) { stateBuffer = nState
 
 void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
 {
-    EventVecPtr waitVec = ResetWaitEvents();
+    clDump();
 
-    cl::Event fillEvent1;
-    queue.enqueueFillBuffer(
-        *stateBuffer, complex(ZERO_R1, ZERO_R1), 0, sizeof(complex) * maxQPowerOcl, waitVec.get(), &fillEvent1);
-    queue.flush();
-
-    complex amp;
-    if (phaseFac == complex(-999.0, -999.0)) {
-        amp = GetNonunitaryPhase();
-    } else {
-        amp = phaseFac;
+    if (!stateBuffer) {
+        ReinitBuffer();
     }
 
-    fillEvent1.wait();
-    wait_refs.clear();
+    ClearBuffer(stateBuffer, 0, maxQPowerOcl);
 
+    // If "permutationAmp" amp is in (read-only) use, this method complicates supersedes that application anyway.
+
+    if (phaseFac == complex(-999.0, -999.0)) {
+        permutationAmp = GetNonunitaryPhase();
+    } else {
+        permutationAmp = phaseFac;
+    }
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    device_context->LockWaitEvents();
     device_context->wait_events->emplace_back();
-    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex), NULL,
-        &(device_context->wait_events->back()));
+    queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex),
+        &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
+    device_context->UnlockWaitEvents();
     queue.flush();
 
     runningNorm = ONE_R1;
@@ -521,8 +607,9 @@ void QEngineOCL::ArithmeticCall(
 void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], bitCapIntOcl* controlPowers,
     const bitLenInt controlLen, unsigned char* values, bitCapIntOcl valuesPower)
 {
+    CHECK_ZERO_SKIP();
+
     EventVecPtr waitVec = ResetWaitEvents();
-    PoolItemPtr poolItem = GetFreePoolItem();
 
     /* Allocate a temporary nStateVec, or use the one supplied. */
     complex* nStateVec = AllocStateVec(maxQPowerOcl);
@@ -533,18 +620,21 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
             context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controlLen, controlPowers);
     }
 
-    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * BCI_ARG_LEN, bciArgs);
-
     nStateBuffer = MakeStateVecBuffer(nStateVec);
 
     if (controlLen > 0) {
+        device_context->LockWaitEvents();
         device_context->wait_events->emplace_back();
         queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl, waitVec.get(),
             &(device_context->wait_events->back()));
+        device_context->UnlockWaitEvents();
         queue.flush();
     } else {
-        DISPATCH_FILL(waitVec, *nStateBuffer, sizeof(complex) * maxQPowerOcl, complex(ZERO_R1, ZERO_R1));
+        ClearBuffer(nStateBuffer, 0, maxQPowerOcl);
     }
+
+    PoolItemPtr poolItem = GetFreePoolItem();
+    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * BCI_ARG_LEN, bciArgs);
 
     bitCapIntOcl maxI = bciArgs[0];
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
@@ -571,34 +661,66 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
 /// NOT gate, which is also Pauli x matrix
 void QEngineOCL::X(bitLenInt qubit)
 {
-    const complex pauliX[4] = { complex(ZERO_R1, ZERO_R1), complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1),
-        complex(ZERO_R1, ZERO_R1) };
+    const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     bitCapInt qPowers[1];
     qPowers[0] = pow2(qubit);
-    Apply2x2(0, qPowers[0], pauliX, 1, qPowers, false, SPECIAL_2X2::PAULIX);
+    Apply2x2(0U, qPowers[0], pauliX, 1U, qPowers, false, SPECIAL_2X2::PAULIX);
 }
 
 /// Apply Pauli Z matrix to bit
 void QEngineOCL::Z(bitLenInt qubit)
 {
-    // if (qubit >= qubitCount)
-    //     throw std::invalid_argument("operation on bit index greater than total bits.");
-    const complex pauliZ[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(-ONE_R1, ZERO_R1) };
+    const complex pauliZ[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
     bitCapInt qPowers[1];
     qPowers[0] = pow2(qubit);
-    Apply2x2(0, qPowers[0], pauliZ, 1, qPowers, false, SPECIAL_2X2::PAULIZ);
+    Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PAULIZ);
+}
+
+void QEngineOCL::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
+{
+    if ((topRight == bottomLeft) && (randGlobalPhase || (topRight == ONE_CMPLX))) {
+        X(qubitIndex);
+        return;
+    }
+
+    const complex pauliX[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+    bitCapInt qPowers[1];
+    qPowers[0] = pow2(qubitIndex);
+    Apply2x2(0U, qPowers[0], pauliX, 1U, qPowers, false, SPECIAL_2X2::INVERT);
+}
+
+void QEngineOCL::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
+{
+    if ((topLeft == bottomRight) && (randGlobalPhase || (topLeft == ONE_CMPLX))) {
+        return;
+    }
+
+    if ((topLeft == -bottomRight) && (randGlobalPhase || (topLeft == ONE_CMPLX))) {
+        Z(qubitIndex);
+        return;
+    }
+
+    const complex pauliZ[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+    bitCapInt qPowers[1];
+    qPowers[0] = pow2(qubitIndex);
+    Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PHASE);
 }
 
 void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1 norm_thresh)
+    const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh)
 {
-    bool isXGate = (special == SPECIAL_2X2::PAULIX) && (!doNormalize || (runningNorm == ONE_R1));
-    bool isZGate = (special == SPECIAL_2X2::PAULIZ) && (!doNormalize || (runningNorm == ONE_R1));
+    CHECK_ZERO_SKIP();
+
+    bool skipNorm = !doNormalize || (runningNorm == ONE_R1);
+    bool isXGate = skipNorm && (special == SPECIAL_2X2::PAULIX);
+    bool isZGate = skipNorm && (special == SPECIAL_2X2::PAULIZ);
+    bool isInvertGate = skipNorm && (special == SPECIAL_2X2::INVERT);
+    bool isPhaseGate = skipNorm && (special == SPECIAL_2X2::PHASE);
 
     // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
     // every single permutation amplitude.
-    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (!isXGate) && (!isZGate) && (bitCount == 1);
+    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && !isXGate && !isZGate && !isInvertGate &&
+        !isPhaseGate && (bitCount == 1);
 
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     EventVecPtr waitVec;
@@ -651,7 +773,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
-    cmplx[4] = complex(isUnitLength ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
+    cmplx[4] = complex(
+        (isUnitLength || (runningNorm == REAL1_DEFAULT_ARG)) ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
     cmplx[5] = norm_thresh;
 
     BufferPtr locCmplxBuffer;
@@ -691,6 +814,10 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             kernelMask |= APPLY2X2_X;
         } else if (isZGate) {
             kernelMask |= APPLY2X2_Z;
+        } else if (isInvertGate) {
+            kernelMask |= APPLY2X2_INVERT;
+        } else if (isPhaseGate) {
+            kernelMask |= APPLY2X2_PHASE;
         } else if (doCalcNorm) {
             kernelMask |= APPLY2X2_NORM;
         }
@@ -715,6 +842,12 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     case APPLY2X2_SINGLE | APPLY2X2_Z:
         api_call = OCL_API_Z_SINGLE;
         break;
+    case APPLY2X2_SINGLE | APPLY2X2_INVERT:
+        api_call = OCL_API_INVERT_SINGLE;
+        break;
+    case APPLY2X2_SINGLE | APPLY2X2_PHASE:
+        api_call = OCL_API_PHASE_SINGLE;
+        break;
     case APPLY2X2_NORM | APPLY2X2_SINGLE:
         api_call = OCL_API_APPLY2X2_NORM_SINGLE;
         break;
@@ -732,6 +865,12 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         break;
     case APPLY2X2_SINGLE | APPLY2X2_WIDE | APPLY2X2_Z:
         api_call = OCL_API_Z_SINGLE_WIDE;
+        break;
+    case APPLY2X2_SINGLE | APPLY2X2_WIDE | APPLY2X2_INVERT:
+        api_call = OCL_API_INVERT_SINGLE_WIDE;
+        break;
+    case APPLY2X2_SINGLE | APPLY2X2_WIDE | APPLY2X2_PHASE:
+        api_call = OCL_API_PHASE_SINGLE_WIDE;
         break;
     case APPLY2X2_NORM | APPLY2X2_SINGLE | APPLY2X2_WIDE:
         api_call = OCL_API_APPLY2X2_NORM_SINGLE_WIDE;
@@ -782,7 +921,10 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
         // values into a single normalization constant.
         WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
-    } else if ((bitCount == 1) && (!isXGate) && (!isZGate)) {
+        if (runningNorm == ZERO_R1) {
+            ZeroAmplitudes();
+        }
+    } else if ((runningNorm == ZERO_R1) || ((bitCount == 1) && !isXGate && !isZGate && !isInvertGate && !isPhaseGate)) {
         runningNorm = ONE_R1;
     }
 }
@@ -791,6 +933,8 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)
 {
+    CHECK_ZERO_SKIP();
+
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controlLen == 0) {
         ApplySingleBit(mtrxs + (bitCapIntOcl)(mtrxSkipValueMask * 4U), qubitIndex);
@@ -846,8 +990,87 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     delete[] qPowers;
 }
 
+void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
+{
+    CHECK_ZERO_SKIP();
+
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, 0, 0, 0, 0, 0, 0, 0, 0 };
+    real1 cosine = cos(angle);
+    real1 sine = sin(angle);
+    complex phaseFacs[3] = { complex(cosine, sine), complex(cosine, -sine), (ONE_R1 / std::sqrt(runningNorm)) };
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    cl::Event writeArgsEvent, writeNormEvent;
+    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent);
+    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex) * 3, &phaseFacs, writeNormEvent);
+
+    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
+    writeNormEvent.wait();
+    wait_refs.clear();
+
+    QueueCall((runningNorm == ONE_R1) ? OCL_API_UNIFORMPARITYRZ : OCL_API_UNIFORMPARITYRZ_NORM, ngc, ngs,
+        { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
+
+    runningNorm = ONE_R1;
+}
+
+void QEngineOCL::CUniformParityRZ(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
+{
+    if (!controlLen) {
+        return UniformParityRZ(mask, angle);
+    }
+
+    CHECK_ZERO_SKIP();
+
+    bitCapIntOcl controlMask = 0;
+    bitCapIntOcl* controlPowers = new bitCapIntOcl[controlLen];
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        controlPowers[i] = pow2Ocl(controls[i]);
+        controlMask |= controlPowers[i];
+    }
+    std::sort(controlPowers, controlPowers + controlLen);
+
+    BufferPtr controlBuffer = std::make_shared<cl::Buffer>(
+        context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controlLen, controlPowers);
+
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> controlLen, (bitCapIntOcl)mask, controlMask, controlLen, 0, 0,
+        0, 0, 0, 0 };
+    real1 cosine = cos(angle);
+    real1 sine = sin(angle);
+    complex phaseFacs[2] = { complex(cosine, sine), complex(cosine, -sine) };
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    cl::Event writeArgsEvent, writeNormEvent;
+    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs, writeArgsEvent);
+    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex) * 2, &phaseFacs, writeNormEvent);
+
+    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
+    writeNormEvent.wait();
+    wait_refs.clear();
+
+    QueueCall(OCL_API_CUNIFORMPARITYRZ, ngc, ngs,
+        { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer, controlBuffer });
+
+    runningNorm = ONE_R1;
+}
+
 void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapIntOcl* bciArgs, complex nrm)
 {
+    CHECK_ZERO_SKIP();
+
     // We don't actually have to wait, so this is empty:
     EventVecPtr waitVec;
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -888,6 +1111,12 @@ void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
 
 void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy)
 {
+    if (!stateBuffer) {
+        // Compose will have a wider but 0 stateVec
+        SetQubitCount(qubitCount + toCopy->qubitCount);
+        return;
+    }
+
     if (doNormalize) {
         NormalizeState();
     }
@@ -895,7 +1124,8 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
         toCopy->NormalizeState();
     }
 
-    toCopy->Finish();
+    // int toCopyDevID = toCopy->GetDeviceID();
+    toCopy->SetDevice(deviceID);
 
     PoolItemPtr poolItem = GetFreePoolItem();
     EventVecPtr waitVec = ResetWaitEvents();
@@ -906,6 +1136,10 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     bitCapIntOcl nMaxQPower = bciArgs[0];
     bitCapIntOcl nQubitCount = bciArgs[1] + toCopy->qubitCount;
     size_t nStateVecSize = nMaxQPower * sizeof(complex);
+    maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+    if (nStateVecSize > maxAlloc) {
+        throw "Error: State vector exceeds device maximum OpenCL allocation";
+    }
 
     SetQubitCount(nQubitCount);
 
@@ -918,32 +1152,14 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     complex* nStateVec = AllocStateVec(maxQPowerOcl, forceAlloc);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
-    BufferPtr otherStateBuffer;
-    complex* otherStateVec;
+    toCopy->Finish();
 
-    bool isSameContext = (toCopy->device_context->context_id == device_context->context_id);
-
-    if (!isSameContext) {
-        toCopy->LockSync(CL_MAP_READ);
-        otherStateVec = AllocStateVec(toCopy->maxQPowerOcl, true);
-        std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPowerOcl, otherStateVec);
-        toCopy->UnlockSync();
-        otherStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY, sizeof(complex) * toCopy->maxQPowerOcl, otherStateVec);
-    } else {
-        otherStateVec = toCopy->stateVec;
-        otherStateBuffer = toCopy->stateBuffer;
-    }
-
-    if (!isSameContext) {
-        poolItem->otherStateVec = otherStateVec;
-        toCopy->stateVec = NULL;
-    }
-
-    WaitCall(apiCall, ngc, ngs, { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nStateBuffer });
+    WaitCall(apiCall, ngc, ngs, { stateBuffer, toCopy->stateBuffer, poolItem->ulongBuffer, nStateBuffer });
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
+
+    // toCopy->SetDevice(toCopyDevID);
 }
 
 bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
@@ -995,25 +1211,30 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         return;
     }
 
+    if (!stateBuffer) {
+        SetQubitCount(qubitCount - length);
+        if (destination) {
+            destination->ZeroAmplitudes();
+        }
+        return;
+    }
+
     if (doNormalize) {
         NormalizeState();
     }
+    if (destination && destination->doNormalize) {
+        destination->NormalizeState();
+    }
 
-    bool isSameContext = !destination || (destination->device_context->context_id == device_context->context_id);
+    if (destination) {
+        destination->SetDevice(deviceID);
+    }
 
     if (length == qubitCount) {
         if (destination != NULL) {
-            if (isSameContext) {
-                destination->ResetStateVec(stateVec);
-                destination->stateBuffer = stateBuffer;
-                stateVec = NULL;
-            } else {
-                LockSync();
-                destination->LockSync();
-                std::copy(stateVec, stateVec + maxQPowerOcl, destination->stateVec);
-                destination->UnlockSync();
-                UnlockSync();
-            }
+            destination->ResetStateVec(stateVec);
+            destination->stateBuffer = stateBuffer;
+            stateVec = NULL;
         }
         // This will be cleared by the destructor:
         ResetStateVec(AllocStateVec(2));
@@ -1024,49 +1245,52 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     bitLenInt nLength = qubitCount - length;
 
-    OCLAPI api_call = OCL_API_DECOMPOSEPROB;
-
     bitCapIntOcl partPower = pow2Ocl(length);
     bitCapIntOcl remainderPower = pow2Ocl(nLength);
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0, 0, 0, 0, 0, 0 };
+
+    // The "remainder" bits will always be maintained.
+    BufferPtr probBuffer1 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * remainderPower);
+    ClearBuffer(probBuffer1, 0, remainderPower >> ONE_BCI);
+    BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * remainderPower);
+    ClearBuffer(angleBuffer1, 0, remainderPower >> ONE_BCI);
+
+    // The removed "part" is only necessary for Decompose.
+    BufferPtr probBuffer2, angleBuffer2;
+    if (destination) {
+        probBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
+        ClearBuffer(probBuffer2, 0, partPower >> ONE_BCI);
+        angleBuffer2 = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
+        ClearBuffer(angleBuffer2, 0, partPower >> ONE_BCI);
+    }
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs);
 
-    size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
+    bitCapInt largerPower = partPower > remainderPower ? partPower : remainderPower;
+
+    size_t ngc = FixWorkItemCount(largerPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    // The "remainder" bits will always be maintained.
-    std::shared_ptr<real1> remainderStateProb(new real1[remainderPower](), [](real1* p) { delete[] p; });
-    std::shared_ptr<real1> remainderStateAngle(new real1[remainderPower](), [](real1* p) { delete[] p; });
-    BufferPtr probBuffer1 = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateProb.get());
-    BufferPtr angleBuffer1 = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * remainderPower, remainderStateAngle.get());
-
-    // The removed "part" is only necessary for Decompose.
-    real1* partStateProb = new real1[partPower]();
-    real1* partStateAngle = new real1[partPower]();
-    BufferPtr probBuffer2 = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateProb);
-    BufferPtr angleBuffer2 = std::make_shared<cl::Buffer>(
-        context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(real1) * partPower, partStateAngle);
-
     // Call the kernel that calculates bit probability and angle, retaining both parts.
-    QueueCall(api_call, ngc, ngs,
-        { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 });
+    if (destination) {
+        QueueCall(OCL_API_DECOMPOSEPROB, ngc, ngs,
+            { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1, probBuffer2, angleBuffer2 });
+    } else {
+        QueueCall(OCL_API_DISPOSEPROB, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, probBuffer1, angleBuffer1 });
+    }
 
     SetQubitCount(nLength);
 
     // If we Decompose, calculate the state of the bit system removed.
-    if (destination == NULL) {
+    if (!destination) {
         clFinish();
     } else {
-        destination->Finish();
-
         bciArgs[0] = partPower;
+
+        destination->clFinish();
 
         poolItem = GetFreePoolItem();
         EventVecPtr waitVec2 = ResetWaitEvents();
@@ -1075,36 +1299,12 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         size_t ngc2 = FixWorkItemCount(partPower, nrmGroupCount);
         size_t ngs2 = FixGroupSize(ngc2, nrmGroupSize);
 
-        BufferPtr otherStateBuffer;
-        complex* otherStateVec;
-        if (isSameContext) {
-            otherStateVec = destination->stateVec;
-            otherStateBuffer = destination->stateBuffer;
-        } else {
-            otherStateVec = AllocStateVec(destination->maxQPowerOcl, true);
-            otherStateBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
-                sizeof(complex) * destination->maxQPowerOcl, otherStateVec);
-
-            DISPATCH_FILL(
-                waitVec2, *otherStateBuffer, sizeof(complex) * destination->maxQPowerOcl, complex(ZERO_R1, ZERO_R1));
-        }
-
         size_t oNStateVecSize = maxQPowerOcl * sizeof(complex);
 
-        WaitCall(
-            OCL_API_DECOMPOSEAMP, ngc2, ngs2, { probBuffer2, angleBuffer2, poolItem->ulongBuffer, otherStateBuffer });
+        WaitCall(OCL_API_DECOMPOSEAMP, ngc2, ngs2,
+            { probBuffer2, angleBuffer2, poolItem->ulongBuffer, destination->stateBuffer });
 
-        if (!isSameContext) {
-            queue.enqueueMapBuffer(
-                *otherStateBuffer, CL_TRUE, CL_MAP_READ, 0, sizeof(real1) * destination->maxQPowerOcl);
-            destination->LockSync(CL_MAP_WRITE);
-            std::copy(otherStateVec, otherStateVec + destination->maxQPowerOcl, destination->stateVec);
-            cl::Event waitUnmap;
-            queue.enqueueUnmapMemObject(*otherStateBuffer, otherStateVec, NULL, &waitUnmap);
-            waitUnmap.wait();
-            destination->UnlockSync();
-            FreeAligned(otherStateVec);
-        } else if (!(destination->useHostRam) && destination->stateVec && oNStateVecSize <= destination->maxAlloc &&
+        if (!(destination->useHostRam) && destination->stateVec && oNStateVecSize <= destination->maxAlloc &&
             (2 * oNStateVecSize) <= destination->maxMem) {
 
             BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
@@ -1120,9 +1320,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             destination->stateVec = NULL;
         }
     }
-
-    delete[] partStateProb;
-    delete[] partStateAngle;
 
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
     bciArgs[0] = maxQPowerOcl;
@@ -1147,15 +1344,12 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
 
-    poolItem->probArray = remainderStateProb;
-    poolItem->angleArray = remainderStateAngle;
-
     QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer });
 }
 
-void QEngineOCL::Decompose(bitLenInt start, bitLenInt length, QInterfacePtr destination)
+void QEngineOCL::Decompose(bitLenInt start, QInterfacePtr destination)
 {
-    DecomposeDispose(start, length, std::dynamic_pointer_cast<QEngineOCL>(destination));
+    DecomposeDispose(start, destination->GetQubitCount(), std::dynamic_pointer_cast<QEngineOCL>(destination));
 }
 
 void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QEngineOCLPtr)NULL); }
@@ -1163,6 +1357,11 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(s
 void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
     if (length == 0) {
+        return;
+    }
+
+    if (!stateBuffer) {
+        SetQubitCount(qubitCount - length);
         return;
     }
 
@@ -1204,10 +1403,14 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     ResetStateBuffer(nStateBuffer);
 }
 
-real1 QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
+real1_f QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
 {
     if (doNormalize) {
         NormalizeState();
+    }
+
+    if (!stateBuffer) {
+        return ZERO_R1;
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -1231,10 +1434,14 @@ real1 QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
-real1 QEngineOCL::Prob(bitLenInt qubit)
+real1_f QEngineOCL::Prob(bitLenInt qubit)
 {
     if (qubitCount == 1) {
         return ProbAll(1);
+    }
+
+    if (!stateBuffer) {
+        return ZERO_R1;
     }
 
     bitCapIntOcl qPower = pow2Ocl(qubit);
@@ -1245,7 +1452,7 @@ real1 QEngineOCL::Prob(bitLenInt qubit)
 }
 
 // Returns probability of permutation of the register
-real1 QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+real1_f QEngineOCL::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
 {
     if (start == 0 && qubitCount == length) {
         return ProbAll(permutation);
@@ -1267,20 +1474,8 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
         NormalizeState();
     }
 
-    if ((lengthPower * lengthPower) < nrmGroupCount) {
-        // With "lengthPower" count of threads, compared to a redundancy of "lengthPower" with full utilization, this is
-        // close to the point where it becomes more efficient to rely on iterating through ProbReg calls.
-        if ((start == 0) && length == qubitCount) {
-            if (doNormalize) {
-                NormalizeState();
-            }
-
-            LockSync(CL_MAP_READ);
-            std::transform(stateVec, stateVec + maxQPowerOcl, probsArray, normHelper);
-            UnlockSync();
-        } else {
-            QEngine::ProbRegAll(start, length, probsArray);
-        }
+    if (!stateBuffer) {
+        std::fill(probsArray, probsArray + lengthPower, ZERO_R1);
         return;
     }
 
@@ -1291,8 +1486,7 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs);
 
-    BufferPtr probsBuffer =
-        std::make_shared<cl::Buffer>(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
+    BufferPtr probsBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
 
     size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -1306,8 +1500,16 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
 }
 
 // Returns probability of permutation of the register
-real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+real1_f QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
+    if (doNormalize) {
+        NormalizeState();
+    }
+
+    if (!stateBuffer) {
+        return ZERO_R1;
+    }
+
     bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
     bitCapIntOcl oldV;
     bitLenInt length; // c accumulates the total bits set in v
@@ -1320,10 +1522,6 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> length, (bitCapIntOcl)mask, (bitCapIntOcl)permutation, length,
         0, 0, 0, 0, 0, 0 };
-
-    if (doNormalize) {
-        NormalizeState();
-    }
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1353,6 +1551,10 @@ real1 QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 
 void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 {
+    if (doNormalize) {
+        NormalizeState();
+    }
+
     bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
     bitCapIntOcl oldV;
     bitLenInt length;
@@ -1366,8 +1568,9 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     bitCapIntOcl lengthPower = pow2Ocl(length);
     bitCapIntOcl maxJ = maxQPowerOcl >> length;
 
-    if (doNormalize) {
-        NormalizeState();
+    if (!stateBuffer) {
+        std::fill(probsArray, probsArray + lengthPower, ZERO_R1);
+        return;
     }
 
     if ((lengthPower * lengthPower) < nrmGroupCount) {
@@ -1422,6 +1625,50 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 
     delete[] powers;
     delete[] skipPowers;
+}
+
+real1_f QEngineOCL::ProbParity(const bitCapInt& mask)
+{
+    // If no bits in mask:
+    if (!mask) {
+        return ZERO_R1;
+    }
+
+    // If only one bit in mask:
+    if (!(mask & (mask - ONE_BCI))) {
+        return Prob(log2(mask));
+    }
+
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    return Probx(OCL_API_PROBPARITY, bciArgs);
+}
+
+bool QEngineOCL::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
+{
+    // If no bits in mask:
+    if (!mask) {
+        return ZERO_R1;
+    }
+
+    // If only one bit in mask:
+    if (!(mask & (mask - ONE_BCI))) {
+        return ForceM(log2(mask), result, doForce);
+    }
+
+    if (!doForce) {
+        result = (Rand() <= ProbParity(mask));
+    }
+
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, result ? ONE_BCI : 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    runningNorm = Probx(OCL_API_FORCEMPARITY, bciArgs);
+
+    if (!doNormalize) {
+        NormalizeState();
+    }
+
+    return result;
 }
 
 void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length)
@@ -1638,6 +1885,7 @@ void QEngineOCL::INCDECSC(bitCapInt toAdd, const bitLenInt& start, const bitLenI
     INTSC(OCL_API_INCDECSC_2, (bitCapIntOcl)toAdd, start, length, carryIndex);
 }
 
+#if ENABLE_BCD
 /// Add or Subtract integer (BCD)
 void QEngineOCL::INTBCD(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt start, const bitLenInt length)
 {
@@ -1705,10 +1953,13 @@ void QEngineOCL::INCDECBCDC(
 {
     INTBCDC(OCL_API_INCDECBCDC, (bitCapIntOcl)toAdd, start, length, carryIndex);
 }
+#endif
 
 /** Multiply by integer */
 void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
+    CHECK_ZERO_SKIP();
+
     SetReg(carryStart, length, 0);
 
     bitCapIntOcl lowPower = pow2Ocl(length);
@@ -1734,6 +1985,8 @@ void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart
 /** Multiplication modulo N by integer, (out of place) */
 void QEngineOCL::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    CHECK_ZERO_SKIP();
+
     SetReg(outStart, length, 0);
 
     MULModx(OCL_API_MULMODN_OUT, (bitCapIntOcl)toMul, (bitCapIntOcl)modN, inStart, outStart, length);
@@ -1741,12 +1994,16 @@ void QEngineOCL::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
 
 void QEngineOCL::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    CHECK_ZERO_SKIP();
+
     MULModx(OCL_API_IMULMODN_OUT, (bitCapIntOcl)toMul, (bitCapIntOcl)modN, inStart, outStart, length);
 }
 
 /** Raise a classical base to a quantum power, modulo N, (out of place) */
 void QEngineOCL::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
+    CHECK_ZERO_SKIP();
+
     if (base == ONE_BCI) {
         SetReg(outStart, length, ONE_BCI);
         return;
@@ -1770,6 +2027,8 @@ void QEngineOCL::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 void QEngineOCL::FullAdx(
     bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut, OCLAPI api_call)
 {
+    CHECK_ZERO_SKIP();
+
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> (bitCapIntOcl)2U, pow2Ocl(inputBit1), pow2Ocl(inputBit2),
         pow2Ocl(carryInSumOut), pow2Ocl(carryOut), 0, 0, 0, 0, 0 };
 
@@ -1793,6 +2052,8 @@ void QEngineOCL::FullAdx(
 void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
+    CHECK_ZERO_SKIP();
+
     if (controlLen == 0) {
         MUL(toMul, inOutStart, carryStart, length);
         return;
@@ -1833,6 +2094,8 @@ void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
 void QEngineOCL::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
+    CHECK_ZERO_SKIP();
+
     if (controlLen == 0) {
         MULModNOut(toMul, modN, inStart, outStart, length);
         return;
@@ -1872,6 +2135,8 @@ void QEngineOCL::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
 void QEngineOCL::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     bitLenInt* controls, bitLenInt controlLen)
 {
+    CHECK_ZERO_SKIP();
+
     if (controlLen == 0) {
         POWModNOut(base, modN, inStart, outStart, length);
         return;
@@ -1885,15 +2150,18 @@ void QEngineOCL::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, 
 
 void QEngineOCL::xMULx(OCLAPI api_call, bitCapIntOcl* bciArgs, BufferPtr controlBuffer)
 {
+    CHECK_ZERO_SKIP();
+
     EventVecPtr waitVec = ResetWaitEvents();
-    PoolItemPtr poolItem = GetFreePoolItem();
 
     /* Allocate a temporary nStateVec, or use the one supplied. */
     complex* nStateVec = AllocStateVec(maxQPowerOcl);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
+    ClearBuffer(nStateBuffer, 0, maxQPowerOcl);
+
+    PoolItemPtr poolItem = GetFreePoolItem();
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 10, bciArgs);
-    DISPATCH_FILL(waitVec, *nStateBuffer, sizeof(complex) * maxQPowerOcl, complex(ZERO_R1, ZERO_R1));
 
     size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -2008,10 +2276,36 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
     delete[] controlPowers;
 }
 
+real1_f QEngineOCL::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+{
+    real1 average = ZERO_R1;
+    real1 prob;
+    real1 totProb = ZERO_R1;
+    bitCapInt i, outputInt;
+    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
+    LockSync(CL_MAP_READ);
+    for (i = 0; i < maxQPower; i++) {
+        outputInt = (i & outputMask) >> valueStart;
+        prob = norm(stateVec[i]);
+        totProb += prob;
+        average += prob * outputInt;
+    }
+    UnlockSync();
+    if (totProb > ZERO_R1) {
+        average /= totProb;
+    }
+
+    return average;
+}
+
 /** Set 8 bit register bits based on read from classical memory */
 bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
     bitLenInt valueLength, unsigned char* values, bool resetValue)
 {
+    if (!stateBuffer) {
+        return 0U;
+    }
+
     if (resetValue) {
         SetReg(valueStart, valueLength, 0);
     }
@@ -2035,6 +2329,10 @@ bitCapInt QEngineOCL::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 bitCapIntOcl QEngineOCL::OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLenInt indexStart, bitLenInt indexLength,
     bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
 {
+    if (!stateBuffer) {
+        return 0U;
+    }
+
     bool carryRes = M(carryIndex);
     // The carry has to first to be measured for its input value.
     if (carryRes) {
@@ -2092,6 +2390,8 @@ void QEngineOCL::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
 
 void QEngineOCL::PhaseFlipX(OCLAPI api_call, bitCapIntOcl* bciArgs)
 {
+    CHECK_ZERO_SKIP();
+
     // We don't actually have to wait, so this is empty:
     EventVecPtr waitVec;
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -2106,25 +2406,6 @@ void QEngineOCL::PhaseFlipX(OCLAPI api_call, bitCapIntOcl* bciArgs)
     writeArgsEvent.wait();
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
-}
-
-void QEngineOCL::PhaseFlip()
-{
-    // This gate has no physical consequence. We only enable it for "book-keeping," if the engine is not using global
-    // phase offsets.
-    if (!randGlobalPhase) {
-        bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-        PhaseFlipX(OCL_API_PHASEFLIP, bciArgs);
-    }
-}
-
-/// For chips with a zero flag, flip the phase of the state where the register equals zero.
-void QEngineOCL::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
-{
-    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> (bitCapIntOcl)length, pow2Ocl(start), length, 0, 0, 0, 0, 0,
-        0, 0 };
-
-    PhaseFlipX(OCL_API_ZEROPHASEFLIP, bciArgs);
 }
 
 void QEngineOCL::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -2146,14 +2427,24 @@ void QEngineOCL::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 /// Set arbitrary pure quantum state, in unsigned int permutation basis
 void QEngineOCL::SetQuantumState(const complex* inputState)
 {
-    LockSync(CL_MAP_WRITE);
-    std::copy(inputState, inputState + maxQPowerOcl, stateVec);
-    runningNorm = ONE_R1;
-    UnlockSync();
+    clDump();
+
+    if (!stateBuffer) {
+        ReinitBuffer();
+    }
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, inputState, waitVec.get());
+
+    UpdateRunningNorm();
 }
 
 complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 {
+    if (!stateBuffer) {
+        return ZERO_CMPLX;
+    }
+
     if (doNormalize) {
         NormalizeState();
     }
@@ -2168,13 +2459,30 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 
 void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
 {
+    if (doNormalize) {
+        NormalizeState();
+    }
+
     runningNorm -= norm(GetAmplitude(perm));
     runningNorm += norm(amp);
+    if (runningNorm <= amplitudeFloor) {
+        ZeroAmplitudes();
+        return;
+    } else if (!stateBuffer) {
+        ReinitBuffer();
+        ClearBuffer(stateBuffer, 0, maxQPowerOcl);
+    }
+
+    // "permutationAmp" might be in use, so we clFinish(), first, to guarantee it is not.
+    clFinish();
+    permutationAmp = amp;
 
     EventVecPtr waitVec = ResetWaitEvents();
+    device_context->LockWaitEvents();
     device_context->wait_events->emplace_back();
-    queue.enqueueFillBuffer(*stateBuffer, amp, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex), waitVec.get(),
-        &(device_context->wait_events->back()));
+    queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex),
+        &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
+    device_context->UnlockWaitEvents();
     queue.flush();
 }
 
@@ -2185,19 +2493,30 @@ void QEngineOCL::GetQuantumState(complex* outputState)
         NormalizeState();
     }
 
-    LockSync(CL_MAP_READ);
-    std::copy(stateVec, stateVec + maxQPowerOcl, outputState);
-    UnlockSync();
+    if (!stateBuffer) {
+        std::fill(outputState, outputState + maxQPowerOcl, ZERO_CMPLX);
+        return;
+    }
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, outputState, waitVec.get());
+    queue.flush();
+    clFinish();
 }
 
 /// Get all probabilities, in unsigned int permutation basis
 void QEngineOCL::GetProbs(real1* outputProbs) { ProbRegAll(0, qubitCount, outputProbs); }
 
-bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
+real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 {
+    if (this == toCompare.get()) {
+        return ZERO_R1;
+    }
+
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
-        return false;
+        // Max square difference:
+        return 4.0f;
     }
 
     // Make sure both engines are normalized
@@ -2217,51 +2536,35 @@ bool QEngineOCL::ApproxCompare(QEngineOCLPtr toCompare)
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs);
 
-    bool isSameContext = (toCompare->device_context->context_id == device_context->context_id);
-
-    BufferPtr otherStateBuffer;
-    complex* otherStateVec;
-    if (isSameContext) {
-        otherStateVec = toCompare->stateVec;
-        otherStateBuffer = toCompare->stateBuffer;
-    } else {
-        otherStateVec = AllocStateVec(toCompare->maxQPowerOcl, true);
-        toCompare->LockSync(CL_MAP_READ);
-        std::copy(toCompare->stateVec, toCompare->stateVec + toCompare->maxQPowerOcl, otherStateVec);
-        toCompare->UnlockSync();
-        otherStateBuffer = std::make_shared<cl::Buffer>(
-            context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * toCompare->maxQPowerOcl, otherStateVec);
-    }
-
     QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
-        { stateBuffer, otherStateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
+        { stateBuffer, toCompare->stateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
 
     real1 sumSqrErr = 0;
     WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
 
-    if (!isSameContext) {
-        FreeAligned(otherStateVec);
-    }
-
-    return sumSqrErr < approxcompare_error;
+    return sumSqrErr;
 }
 
 QInterfacePtr QEngineOCL::Clone()
 {
-    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1),
-        doNormalize, randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
+    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
 
     copyPtr->Finish();
     copyPtr->runningNorm = runningNorm;
 
     EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), (bitCapIntOcl)(sizeof(complex) * maxQPower));
+    if (stateBuffer) {
+        DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPowerOcl);
+    } else {
+        copyPtr->ZeroAmplitudes();
+    }
     Finish();
 
     return copyPtr;
 }
 
-void QEngineOCL::NormalizeState(real1 nrm, real1 norm_thresh)
+void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh)
 {
     // We might have async execution of gates still happening.
     clFinish();
@@ -2269,7 +2572,7 @@ void QEngineOCL::NormalizeState(real1 nrm, real1 norm_thresh)
     if (nrm < ZERO_R1) {
         nrm = runningNorm;
     }
-    if (nrm == ONE_R1) {
+    if ((nrm <= ZERO_R1) || (nrm == ONE_R1)) {
         return;
     }
 
@@ -2279,7 +2582,7 @@ void QEngineOCL::NormalizeState(real1 nrm, real1 norm_thresh)
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    real1 r1_args[2] = { norm_thresh, (real1)ONE_R1 / std::sqrt(nrm) };
+    real1 r1_args[2] = { (real1)norm_thresh, (real1)(ONE_R1 / std::sqrt(nrm)) };
     cl::Event writeRealArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1) * 2, r1_args, writeRealArgsEvent);
 
@@ -2307,23 +2610,27 @@ void QEngineOCL::NormalizeState(real1 nrm, real1 norm_thresh)
     runningNorm = ONE_R1;
 }
 
-void QEngineOCL::UpdateRunningNorm(real1 norm_thresh)
+void QEngineOCL::UpdateRunningNorm(real1_f norm_thresh)
 {
+    if (!stateBuffer) {
+        runningNorm = ZERO_R1;
+        return;
+    }
+
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;
     }
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    real1 r1_args[1] = { norm_thresh };
+    real1 r1_args[1] = { (real1)norm_thresh };
     cl::Event writeRealArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1), r1_args, writeRealArgsEvent);
 
     runningNorm = ONE_R1;
 
-    bitCapIntOcl bciArgs[1] = { maxQPowerOcl };
     cl::Event writeBCIArgsEvent;
-    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, writeBCIArgsEvent);
+    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl), &maxQPowerOcl, writeBCIArgsEvent);
 
     size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -2337,6 +2644,10 @@ void QEngineOCL::UpdateRunningNorm(real1 norm_thresh)
         sizeof(real1) * ngs);
 
     WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+
+    if (runningNorm <= amplitudeFloor) {
+        ZeroAmplitudes();
+    }
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
@@ -2373,6 +2684,29 @@ BufferPtr QEngineOCL::MakeStateVecBuffer(complex* nStateVec)
     } else {
         return std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, sizeof(complex) * maxQPowerOcl);
     }
+}
+
+void QEngineOCL::ReinitBuffer()
+{
+    ResetStateVec(AllocStateVec(maxQPower, usingHostRam));
+    ResetStateBuffer(MakeStateVecBuffer(stateVec));
+}
+
+void QEngineOCL::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl size)
+{
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    bitCapIntOcl bciArgs[2] = { size, offset };
+    cl::Event writeArgsEvent;
+    DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent);
+
+    size_t ngc = FixWorkItemCount(size, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
+
+    QueueCall(OCL_API_CLEARBUFFER, ngc, ngs, { buff, poolItem->ulongBuffer });
 }
 
 } // namespace Qrack

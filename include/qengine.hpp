@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2019. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -31,24 +31,14 @@ protected:
     /// summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
     real1 runningNorm;
 
-    complex GetNonunitaryPhase()
-    {
-        if (randGlobalPhase) {
-            real1 angle = Rand() * 2 * M_PI;
-            return complex(cos(angle), sin(angle));
-        } else {
-            return ONE_CMPLX;
-        }
-    }
-
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, bool useHardwareRNG = true, real1 norm_thresh = REAL1_DEFAULT_ARG)
+        bool useHostMem = false, bool useHardwareRNG = true, real1_f norm_thresh = REAL1_EPSILON)
         : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
         , useHostRam(useHostMem)
         , runningNorm(ONE_R1)
     {
-        if (qBitCount > (sizeof(bitCapInt) * bitsInByte)) {
+        if (qBitCount > (sizeof(bitCapIntOcl) * bitsInByte)) {
             throw std::invalid_argument(
                 "Cannot instantiate a register with greater capacity than native types on emulating system.");
         }
@@ -60,6 +50,29 @@ public:
     }
 
     virtual ~QEngine() { Finish(); }
+
+    virtual real1_f GetRunningNorm()
+    {
+        Finish();
+        return runningNorm;
+    }
+
+    virtual void ZeroAmplitudes() = 0;
+
+    virtual void CopyStateVec(QEnginePtr src) = 0;
+
+    virtual bool IsZeroAmplitude() = 0;
+
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length) = 0;
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length) = 0;
+    /** Swap the high half of this engine with the low half of another. This is necessary for gates which cross
+     * sub-engine  boundaries. */
+    virtual void ShuffleBuffers(QEnginePtr engine) = 0;
+
+    virtual void QueueSetDoNormalize(const bool& doNorm) = 0;
+    virtual void QueueSetRunningNorm(const real1_f& runningNrm) = 0;
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
@@ -100,11 +113,11 @@ public:
     using QInterface::ISqrtSwap;
     virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     using QInterface::FSim;
-    virtual void FSim(real1 theta, real1 phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    virtual real1 ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) = 0;
+    virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation) = 0;
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
-    virtual real1 ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
+    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
 
     virtual void INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
@@ -114,18 +127,25 @@ public:
     virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
+#if ENABLE_BCD
     virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+#endif
 
-    virtual void NormalizeState(real1 nrm = REAL1_DEFAULT_ARG, real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
+    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
-protected:
+    // TODO: Assess whether it's acceptable for these to be public on QEngine
+    // protected:
+    virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;
+
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, real1 norm_thresh = REAL1_DEFAULT_ARG) = 0;
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
     virtual void ApplyControlled2x2(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void ApplyAntiControlled2x2(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+
+    virtual void FreeStateVec(complex* sv = NULL) = 0;
 
     /**
      * Common driver method behind INCC and DECC
@@ -142,10 +162,12 @@ protected:
      */
     virtual void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
         const bitLenInt& overflowIndex, const bitLenInt& carryIndex) = 0;
+#if ENABLE_BCD
     /**
      * Common driver method behind INCSC and DECSC (without overflow flag)
      */
     virtual void INCDECBCDC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex) = 0;
+#endif
 };
 } // namespace Qrack
