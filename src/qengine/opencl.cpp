@@ -12,9 +12,7 @@
 
 #include <memory>
 
-#include "oclengine.hpp"
 #include "qengine_opencl.hpp"
-#include "qfactory.hpp"
 
 namespace Qrack {
 
