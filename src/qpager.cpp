@@ -73,7 +73,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
         // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
         // concurrency.
-        minPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+        minPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 2U;
 
         if (thresholdQubitsPerPage < minPageQubits) {
             thresholdQubitsPerPage = minPageQubits;
