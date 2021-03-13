@@ -227,9 +227,9 @@ real1_f ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr st
     const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
     const bitCapIntOcl itemCount = maxQPower;
 
-    real1 nrmSqr = ZERO_R1;
+    real1_f nrmSqr = ZERO_R1;
     if ((itemCount / Stride) < (bitCapIntOcl)numCores) {
-        real1 nrm;
+        real1_f nrm;
         for (bitCapIntOcl j = 0; j < itemCount; j++) {
             nrm = norm(stateArray->read(j));
             if (nrm >= norm_thresh) {
@@ -239,14 +239,14 @@ real1_f ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr st
     } else {
         DECLARE_ATOMIC_BITCAPINT();
         idx = 0;
-        std::vector<std::future<real1>> futures(numCores);
+        std::vector<std::future<real1_f>> futures(numCores);
         for (int cpu = 0; cpu != numCores; ++cpu) {
             futures[cpu] = ATOMIC_ASYNC(&idx, itemCount, stateArray, &norm_thresh)
             {
                 const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
 
-                real1 sqrNorm = ZERO_R1;
-                real1 nrm;
+                real1_f sqrNorm = ZERO_R1;
+                real1_f nrm;
                 bitCapIntOcl i, j;
                 bitCapIntOcl k = 0;
                 for (;;) {
@@ -281,7 +281,7 @@ real1_f ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVector
     const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
     const bitCapIntOcl itemCount = maxQPower;
 
-    real1 nrmSqr = ZERO_R1;
+    real1_f nrmSqr = ZERO_R1;
     if ((itemCount / Stride) < (bitCapInt)numCores) {
         for (bitCapIntOcl j = 0; j < maxQPower; j++) {
             nrmSqr += norm(stateArray->read(j));
@@ -291,13 +291,13 @@ real1_f ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVector
     }
     DECLARE_ATOMIC_BITCAPINT();
     idx = 0;
-    std::vector<std::future<real1>> futures(numCores);
+    std::vector<std::future<real1_f>> futures(numCores);
     for (int cpu = 0; cpu != numCores; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(&idx, itemCount, stateArray)
         {
             const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
 
-            real1 sqrNorm = ZERO_R1;
+            real1_f sqrNorm = ZERO_R1;
             bitCapIntOcl i, j;
             bitCapIntOcl k = 0;
             for (;;) {

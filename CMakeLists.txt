@@ -127,8 +127,10 @@ if (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5)
 endif (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5)
 
 if (FPPOW LESS 5)
-    set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mfp16-format=ieee)
-    set(TEST_COMPILE_OPTS ${TEST_COMPILE_OPTS} -mfp16-format=ieee)
+    if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^arm")
+        set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mfp16-format=ieee)
+        set(TEST_COMPILE_OPTS ${TEST_COMPILE_OPTS} -mfp16-format=ieee)
+    endif ()
 endif (FPPOW LESS 5)
 
 include ("cmake/RDRand.cmake")

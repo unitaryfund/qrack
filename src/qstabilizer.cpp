@@ -33,7 +33,7 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
     , x((n << 1U) + 1U, std::vector<bool>(n))
     , z((n << 1U) + 1U, std::vector<bool>(n))
     , r((n << 1U) + 1U)
-    , rand_distribution(0.0, 1.0)
+    , rand_distribution(ZERO_R1, ONE_R1)
     , hardware_rand_generator(NULL)
 {
 #if !ENABLE_RDRAND
@@ -329,7 +329,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     bitCapIntOcl permCount = pow2Ocl(g);
     bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
     bitLenInt elemCount = qubitCount << 1U;
-    real1 nrm = sqrt(ONE_R1 / permCount);
+    real1_f nrm = sqrt(ONE_R1 / permCount);
 
     seed(g);
 

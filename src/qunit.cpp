@@ -97,7 +97,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
 {
     return CreateQuantumInterface(engine, subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, deviceIDs, thresholdQubits);
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits);
 }
 
 void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
