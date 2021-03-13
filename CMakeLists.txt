@@ -16,9 +16,6 @@ add_library (qrack STATIC
     src/common/parallel_for.cpp
     src/common/rdrandwrapper.cpp
     src/common/dispatchqueue.cpp
-    src/common/complex2.cpp
-    src/common/fp_extend.cpp
-    src/common/fp_trunc.cpp
     src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
@@ -133,8 +130,6 @@ if (FPPOW LESS 5)
     if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^arm")
         set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mfp16-format=ieee)
         set(TEST_COMPILE_OPTS ${TEST_COMPILE_OPTS} -mfp16-format=ieee)
-    else()
-        include ("cmake/Clang.cmake")
     endif ()
 endif (FPPOW LESS 5)
 
@@ -179,7 +174,6 @@ install (FILES
     include/common/parallel_for.hpp
     include/common/rdrandwrapper.hpp
     include/common/dispatchqueue.hpp
-    include/common/complex2.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 
