@@ -127,7 +127,7 @@ if (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5)
 endif (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5)
 
 if (FPPOW LESS 5)
-    if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^arm")
+    if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^arm" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mfp16-format=ieee)
         set(TEST_COMPILE_OPTS ${TEST_COMPILE_OPTS} -mfp16-format=ieee)
     endif ()
@@ -174,6 +174,7 @@ install (FILES
     include/common/parallel_for.hpp
     include/common/rdrandwrapper.hpp
     include/common/dispatchqueue.hpp
+    include/common/half.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 

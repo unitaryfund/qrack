@@ -69,18 +69,39 @@
 #define QRACK_ALIGN_SIZE 64
 
 #if FPPOW < 5
+#if !defined(__arm__)
+#include "half.hpp"
+#endif
 namespace Qrack {
+#ifdef __arm__
 typedef std::complex<__fp16> complex;
 typedef __fp16 real1;
 typedef float real1_f;
 #define ZERO_R1 0.0f
 #define ONE_R1 1.0f
 #define PI_R1 ((real1_f)M_PI)
+#define SQRT2_R1 ((real1_f)M_SQRT2)
+#define SQRT1_2_R1 ((real1_f)M_SQRT2)
 #define REAL1_DEFAULT_ARG -999.0f
 // Half of the amplitude of 16 maximally superposed qubits in any permutation
 #define REAL1_EPSILON 2e-17f
 // Minimum representable difference from 1
 #define FP_NORM_EPSILON 0.0009765625f
+#else
+typedef std::complex<half_float::half> complex;
+typedef half_float::half real1;
+typedef float real1_f;
+#define ZERO_R1 ((real1)0.0f)
+#define ONE_R1 ((real1)1.0f)
+#define PI_R1 ((real1)M_PI)
+#define SQRT2_R1 ((real1)M_SQRT2)
+#define SQRT1_2_R1 ((real1)M_SQRT1_2)
+#define REAL1_DEFAULT_ARG ((real1)-999.0f)
+// Half of the amplitude of 16 maximally superposed qubits in any permutation
+#define REAL1_EPSILON ((real1)2e-17f)
+// Minimum representable difference from 1
+#define FP_NORM_EPSILON ((real1)0.0009765625f)
+#endif
 } // namespace Qrack
 #elif FPPOW < 6
 namespace Qrack {

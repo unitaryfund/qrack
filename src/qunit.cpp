@@ -602,7 +602,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
     }
 
     // We check Z basis:
-    real1 prob = ProbBase(start);
+    real1_f prob = ProbBase(start);
     bool didSeparate = (IS_0_R1(prob) || IS_1_R1(prob));
 
     // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
@@ -621,8 +621,8 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
     }
 
     // We check Y basis:
-    complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
-        complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+    complex mtrx[4] = { complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
+        complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
     prob = ProbBase(start);
     didSeparate |= (IS_0_R1(prob) || IS_1_R1(prob));
@@ -777,9 +777,9 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     bitLenInt shardQbCount = shard.GetQubitCount();
     QInterfacePtr unit = shard.unit;
     bitLenInt mapped = shard.mapped;
-    real1 prob = unit->Prob(mapped);
-    shard.amp1 = complex(sqrt(prob), ZERO_R1);
-    shard.amp0 = complex(sqrt(ONE_R1 - prob), ZERO_R1);
+    real1_f prob = unit->Prob(mapped);
+    shard.amp1 = complex((real1)sqrt(prob), ZERO_R1);
+    shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
 
     if (unit && unit->isClifford() && !TrySeparateCliffordBit(qubit)) {
         return prob;
@@ -1064,7 +1064,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     if (!shard.isProbDirty && !shard.unit) {
         result = doForce ? res : (Rand() <= norm(shard.amp1));
     } else if (shard.unit->isClifford()) {
-        real1 prob = shard.Prob();
+        real1_f prob = shard.Prob();
         if (prob == ZERO_R1) {
             result = false;
         } else if (prob == ONE_R1) {
@@ -1268,16 +1268,16 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
     bitLenInt controls[1] = { qubit1 };
-    real1 sinTheta = sin(theta);
+    real1 sinTheta = (real1)sin(theta);
 
     if (IS_0_R1(sinTheta)) {
-        ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, phi)));
+        ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)));
         return;
     }
 
     if (IS_1_R1(-sinTheta)) {
         ISwap(qubit1, qubit2);
-        ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, phi)));
+        ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)));
         return;
     }
 
@@ -1293,7 +1293,7 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
         (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         if (SHARD_STATE(shard1)) {
-            ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, phi)));
+            ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)));
         }
         return;
     }
@@ -1440,8 +1440,8 @@ void QUnit::CUniformParityRZ(
     }
 
     if (eIndices.size() == 0) {
-        real1 cosine = cos(angle);
-        real1 sine = sin(angle);
+        real1 cosine = (real1)cos(angle);
+        real1 sine = (real1)sin(angle);
         complex phaseFac;
         if (flipResult) {
             phaseFac = complex(cosine, sine);
@@ -1456,8 +1456,8 @@ void QUnit::CUniformParityRZ(
     }
 
     if (eIndices.size() == 1U) {
-        real1 cosine = cos(angle);
-        real1 sine = sin(angle);
+        real1 cosine = (real1)cos(angle);
+        real1 sine = (real1)sin(angle);
         complex phaseFac, phaseFacAdj;
         if (flipResult) {
             phaseFac = complex(cosine, -sine);
@@ -2439,18 +2439,18 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
-    if (!shard.isPauliY && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
-        (mtrx[0] == mtrx[2]) && (mtrx[2] == -mtrx[3])) {
+    if (!shard.isPauliY && (randGlobalPhase || (mtrx[0] == complex((real1)M_SQRT1_2, ZERO_R1))) &&
+        (mtrx[0] == mtrx[1]) && (mtrx[0] == mtrx[2]) && (mtrx[2] == -mtrx[3])) {
         H(target);
         return;
     }
-    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
+    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex((real1)M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
         (mtrx[2] == -mtrx[3]) && (I_CMPLX * mtrx[0] == mtrx[2])) {
         H(target);
         S(target);
         return;
     }
-    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[2]) &&
+    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex((real1)M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[2]) &&
         (mtrx[1] == -mtrx[3]) && (I_CMPLX * mtrx[2] == mtrx[3])) {
         IS(target);
         H(target);
@@ -2686,7 +2686,7 @@ bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::
     bitLenInt controlIndex = 0;
 
     for (bitLenInt i = 0; i < controlLen; i++) {
-        real1 prob = Prob(controls[i]);
+        real1_f prob = Prob(controls[i]);
         if (IS_0_R1(prob)) {
             // If any control has zero probability, this gate will do nothing.
             return true;
@@ -3496,7 +3496,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 {
     // Keep the bits separate, if cheap to do so:
     if (!shards[flagIndex].isProbDirty) {
-        real1 prob = Prob(flagIndex);
+        real1_f prob = Prob(flagIndex);
         if (IS_0_R1(prob)) {
             return;
         } else if (IS_1_R1(prob)) {

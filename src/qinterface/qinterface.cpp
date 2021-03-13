@@ -719,7 +719,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     real1* probsArray = new real1[subsetCap];
     ProbMaskAll(mask, probsArray);
 
-    real1 totProb = 0;
+    real1 totProb = ZERO_R1;
     for (j = 0; j < subsetCap; j++) {
         totProb += probsArray[j];
     }

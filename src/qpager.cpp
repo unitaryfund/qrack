@@ -866,14 +866,14 @@ void QPager::AntiCISqrtSwap(
 
 bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
-    real1 oneChance = Prob(qubit);
+    real1_f oneChance = Prob(qubit);
     if (!doForce) {
         if (oneChance >= ONE_R1) {
             result = true;
         } else if (oneChance <= ZERO_R1) {
             result = false;
         } else {
-            real1 prob = Rand();
+            real1_f prob = Rand();
             result = (prob <= oneChance);
         }
     }
@@ -1381,7 +1381,7 @@ real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     CombineEngines(log2(mask));
 
-    real1 maskChance = 0;
+    real1_f maskChance = ZERO_R1;
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         maskChance += qPages[i]->ProbMask(mask, permutation);
     }

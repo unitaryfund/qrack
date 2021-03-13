@@ -23,9 +23,9 @@ void StatePrep(QInterfacePtr qReg)
     // "Alice" has a qubit to teleport.
 
     // (To test consistency, comment out this U() gate.)
-    real1 theta = 2 * PI_R1 * qReg->Rand();
-    real1 phi = 2 * PI_R1 * qReg->Rand();
-    real1 lambda = 2 * PI_R1 * qReg->Rand();
+    real1_f theta = 2 * PI_R1 * qReg->Rand();
+    real1_f phi = 2 * PI_R1 * qReg->Rand();
+    real1_f lambda = 2 * PI_R1 * qReg->Rand();
     qReg->U(0, theta, phi, lambda);
     std::cout << "Alice is sending: U(theta=" << theta << ", phi=" << phi << ", lambda=" << lambda << ")" << std::endl;
 

@@ -143,7 +143,7 @@ void QStabilizerHybrid::SwitchToEngine()
 void QStabilizerHybrid::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     if (stabilizer) {
-        real1 prob = Prob(control1);
+        real1_f prob = Prob(control1);
         if (prob == ZERO_R1) {
             return;
         }
@@ -170,7 +170,7 @@ void QStabilizerHybrid::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt 
 void QStabilizerHybrid::CH(bitLenInt control, bitLenInt target)
 {
     if (stabilizer) {
-        real1 prob = Prob(control);
+        real1_f prob = Prob(control);
         if (prob == ZERO_R1) {
             return;
         }
@@ -188,7 +188,7 @@ void QStabilizerHybrid::CH(bitLenInt control, bitLenInt target)
 void QStabilizerHybrid::CS(bitLenInt control, bitLenInt target)
 {
     if (stabilizer) {
-        real1 prob = Prob(control);
+        real1_f prob = Prob(control);
         if (prob == ZERO_R1) {
             return;
         }
@@ -206,7 +206,7 @@ void QStabilizerHybrid::CS(bitLenInt control, bitLenInt target)
 void QStabilizerHybrid::CIS(bitLenInt control, bitLenInt target)
 {
     if (stabilizer) {
-        real1 prob = Prob(control);
+        real1_f prob = Prob(control);
         if (prob == ZERO_R1) {
             return;
         }
@@ -224,7 +224,7 @@ void QStabilizerHybrid::CIS(bitLenInt control, bitLenInt target)
 void QStabilizerHybrid::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     if (stabilizer) {
-        real1 prob = Prob(control1);
+        real1_f prob = Prob(control1);
         if (prob == ZERO_R1) {
             return;
         }
@@ -399,22 +399,24 @@ void QStabilizerHybrid::ApplySingleBit(const complex* mtrx, bitLenInt target)
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
-    if (IS_SAME(mtrx[0], complex(M_SQRT1_2, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) &&
-        IS_SAME(mtrx[2], -mtrx[3])) {
+    if (IS_SAME(mtrx[0], complex((real1)M_SQRT1_2, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
+        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[2], -mtrx[3])) {
         H(target);
         return;
     }
 
-    if (stabilizer && IS_SAME(mtrx[0], complex(ONE_R1 / 2, -ONE_R1 / 2)) &&
-        IS_SAME(mtrx[1], complex(ONE_R1 / 2, ONE_R1 / 2)) && IS_SAME(mtrx[0], mtrx[3]) && IS_SAME(mtrx[1], mtrx[2])) {
+    if (stabilizer && IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
+        IS_SAME(mtrx[1], complex(ONE_R1, ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
+        IS_SAME(mtrx[1], mtrx[2])) {
         S(target);
         H(target);
         S(target);
         return;
     }
 
-    if (stabilizer && IS_SAME(mtrx[0], complex(ONE_R1 / 2, ONE_R1 / 2)) &&
-        IS_SAME(mtrx[1], complex(ONE_R1 / 2, -ONE_R1 / 2)) && IS_SAME(mtrx[0], mtrx[3]) && IS_SAME(mtrx[1], mtrx[2])) {
+    if (stabilizer && IS_SAME(mtrx[0], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
+        IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
+        IS_SAME(mtrx[1], mtrx[2])) {
         IS(target);
         H(target);
         IS(target);
@@ -511,7 +513,7 @@ void QStabilizerHybrid::ApplyControlledSingleBit(
         return;
     }
 
-    if ((controlLen == 1U) && IS_SAME(mtrx[0], complex(M_SQRT1_2, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
+    if ((controlLen == 1U) && IS_SAME(mtrx[0], complex((real1)M_SQRT1_2, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
         IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[2], -mtrx[3])) {
         CH(controls[0], target);
         return;
@@ -714,7 +716,7 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* control
 
     // TODO: Generalize to trim all possible controls, like in QUnit.
     if (stabilizer && (controlLen == 2U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
-        real1 prob = Prob(controls[0]);
+        real1_f prob = Prob(controls[0]);
         if (prob == ZERO_R1) {
             stabilizer->X(controls[1]);
             stabilizer->CNOT(controls[1], target);

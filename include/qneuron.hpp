@@ -99,7 +99,7 @@ public:
             // Otherwise, the action can always be represented as a uniformly controlled gate.
             qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, angles);
         }
-        real1 prob = qReg->Prob(outputIndex);
+        real1_f prob = qReg->Prob(outputIndex);
         if (!expected) {
             prob = ONE_R1 - prob;
         }
@@ -119,7 +119,7 @@ public:
             qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, reverseAngles);
             delete[] reverseAngles;
         }
-        real1 prob = qReg->Prob(outputIndex);
+        real1_f prob = qReg->Prob(outputIndex);
         if (!expected) {
             prob = ONE_R1 - prob;
         }
@@ -128,7 +128,7 @@ public:
 
     real1_f LearnCycle(bool expected = true)
     {
-        real1 result = Predict(expected, false);
+        real1_f result = Predict(expected, false);
         Unpredict(expected);
         return result;
     }
@@ -143,7 +143,7 @@ public:
      */
     void Learn(bool expected, real1_f eta, bool resetInit = true)
     {
-        real1 startProb = Predict(expected, resetInit);
+        real1_f startProb = Predict(expected, resetInit);
         Unpredict(expected);
         if ((ONE_R1 - startProb) <= tolerance) {
             return;
@@ -168,7 +168,7 @@ public:
      */
     void LearnPermutation(bool expected, real1_f eta, bool resetInit = true)
     {
-        real1 startProb = Predict(expected, resetInit);
+        real1_f startProb = Predict(expected, resetInit);
         Unpredict(expected);
         if ((ONE_R1 - startProb) <= tolerance) {
             return;
