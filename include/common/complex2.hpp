@@ -15,8 +15,13 @@
 namespace Qrack {
 
 struct Complex2 {
+#if defined(FPPOW) && (FPPOW < 5)
     __fp16 real;
     __fp16 imag;
+#else
+    float real;
+    float imag;
+#endif
 
     Complex2() {}
 

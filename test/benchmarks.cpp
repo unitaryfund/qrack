@@ -812,7 +812,7 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
 
                 for (i = 0; i < n; i++) {
                     gateRand = qReg->Rand();
-                    polar0 = std::polar(ONE_R1, (real1)(2 * M_PI * qReg->Rand()));
+                    polar0 = complex(std::polar(ONE_R1, (real1_f)(2 * M_PI * qReg->Rand())));
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         qReg->H(i);
                     } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
@@ -851,7 +851,7 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                         qReg->CCNOT(b1, b2, b3);
                     } else {
                         control[0] = b1;
-                        polar0 = std::polar(ONE_R1, (real1)(2 * M_PI * qReg->Rand()));
+                        polar0 = complex(std::polar(ONE_R1, (real1_f)(2 * M_PI * qReg->Rand())));
                         if (gateRand < (gateThreshold * ONE_R1 / gateMax)) {
                             qReg->ApplyControlledSinglePhase(control, 1U, b2, polar0, -polar0);
                         } else {
@@ -961,7 +961,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // std::cout<<"colLen="<<(int)colLen<<std::endl;
 
         // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
-        complex sixthRoot = std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0));
+        complex sixthRoot = pow(-ONE_CMPLX, (complex)(1.0 / 6.0));
 
         real1 gateRand;
         bitLenInt gate;

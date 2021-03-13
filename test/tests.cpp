@@ -78,12 +78,12 @@ TEST_CASE("test_complex")
 
     REQUIRE(cmplx1 != cmplx2);
 
-    REQUIRE(conj(cmplx1) == complex(1.0, 1.0));
+    REQUIRE(conj(cmplx1) == complex(ONE_R1, ONE_R1));
 
     test = ((real1)abs(cmplx1) > (real1)(sqrt(2.0) - EPSILON)) && ((real1)abs(cmplx1) < (real1)(sqrt(2.0) + EPSILON));
     REQUIRE(test);
 
-    cmplx3 = std::polar(1.0, M_PI / 2.0);
+    cmplx3 = complex(std::polar(ONE_R1, PI_R1 / 2));
     test = (real(cmplx3) > (real1)(0.0 - EPSILON)) && (real(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
     test = (imag(cmplx3) > (real1)(1.0 - EPSILON)) && (imag(cmplx3) < (real1)(1.0 + EPSILON));
@@ -5053,7 +5053,7 @@ TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
     std::cout << ">>> 'test_quantum_supremacy_cross_entropy':" << std::endl;
 
     // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
-    complex sixthRoot = std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0));
+    complex sixthRoot = pow(-ONE_CMPLX, (complex)(1.0 / 6.0));
 
     const int GateCount1Qb = 3;
     const int Depth = 3;
