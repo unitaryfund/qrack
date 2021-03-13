@@ -16,6 +16,7 @@ add_library (qrack STATIC
     src/common/parallel_for.cpp
     src/common/rdrandwrapper.cpp
     src/common/dispatchqueue.cpp
+    src/common/complex2.cpp
     src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
@@ -176,6 +177,7 @@ install (FILES
     include/common/parallel_for.hpp
     include/common/rdrandwrapper.hpp
     include/common/dispatchqueue.hpp
+    include/common/complex2.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 
