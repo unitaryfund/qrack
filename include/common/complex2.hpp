@@ -14,6 +14,7 @@
 
 namespace Qrack {
 
+#pragma pack(push, 1)
 struct Complex2 {
 #if defined(FPPOW) && (FPPOW < 5)
     __fp16 real;
@@ -23,7 +24,17 @@ struct Complex2 {
     float imag;
 #endif
 
-    Complex2() {}
+    Complex2()
+        : real()
+        , imag()
+    {
+    }
+
+    Complex2(const Complex2& o)
+        : real(o.real)
+        , imag(o.imag)
+    {
+    }
 
     Complex2(float r, float i)
         : real(r)
@@ -43,51 +54,68 @@ struct Complex2 {
     {
     }
 
+    Complex2& operator=(const Complex2& rhs)
+    {
+        real = (float)rhs.real;
+        imag = (float)rhs.imag;
+        return *this;
+    }
+
     bool operator==(const Complex2& rhs) const { return (real == rhs.real) && (imag == rhs.imag); }
 
     bool operator!=(const Complex2& rhs) const { return (real != rhs.real) || (imag != rhs.imag); }
 
     Complex2 operator-() const { return Complex2(-real, -imag); }
 
-    inline Complex2 operator+(const Complex2& rhs) const { return Complex2(real + rhs.real, imag + rhs.imag); }
+    Complex2 operator+(const Complex2& rhs) const { return Complex2(real + rhs.real, imag + rhs.imag); }
 
-    inline Complex2 operator-(const Complex2& rhs) const { return Complex2(real - rhs.real, imag - rhs.imag); }
+    Complex2 operator-(const Complex2& rhs) const { return Complex2(real - rhs.real, imag - rhs.imag); }
 
-    inline Complex2 operator*(const Complex2& rhs) const
+    Complex2 operator*(const Complex2& rhs) const
     {
         return Complex2(real * rhs.real - imag * rhs.imag, real * rhs.imag + imag * rhs.real);
     }
 
-    inline Complex2 operator*(const float& rhs) const { return Complex2(real * rhs, imag * rhs); }
+    Complex2 operator*(const float& rhs) const { return Complex2(real * rhs, imag * rhs); }
 
-    inline Complex2 operator*=(const float& rhs) { return Complex2(real *= rhs, imag *= rhs); }
+    Complex2& operator*=(const float& rhs)
+    {
+        real *= rhs;
+        imag *= rhs;
+        return *this;
+    }
 
-    inline Complex2 operator*=(const Complex2& rhs)
+    Complex2& operator*=(const Complex2& rhs)
     {
         Complex2 temp(real * rhs.real - imag * rhs.imag, real * rhs.imag + imag * rhs.real);
         real = temp.real;
         imag = temp.imag;
-        return temp;
+        return *this;
     }
 
-    inline Complex2 operator/(const Complex2& rhs) const
+    Complex2 operator/(const Complex2& rhs) const
     {
-        return (Complex2(real, imag) * Complex2(rhs.real, -rhs.imag)) / (rhs.real * rhs.real + rhs.imag * rhs.imag);
+        return (*this * Complex2(rhs.real, -rhs.imag)) / (rhs.real * rhs.real + rhs.imag * rhs.imag);
     }
 
-    inline Complex2 operator/(const float& rhs) const { return Complex2(real / rhs, imag / rhs); }
+    Complex2 operator/(const float& rhs) const { return Complex2(real / rhs, imag / rhs); }
 
-    inline Complex2 operator/=(const float& rhs) { return Complex2(real /= rhs, imag /= rhs); }
-
-    inline Complex2 operator/=(const Complex2& rhs)
+    Complex2& operator/=(const float& rhs)
     {
-        Complex2 temp =
-            (Complex2(real, imag) * Complex2(rhs.real, -rhs.imag)) / (rhs.real * rhs.real + rhs.imag * rhs.imag);
+        real /= rhs;
+        imag /= rhs;
+        return *this;
+    }
+
+    Complex2& operator/=(const Complex2& rhs)
+    {
+        Complex2 temp = (*this * Complex2(rhs.real, -rhs.imag)) / (rhs.real * rhs.real + rhs.imag * rhs.imag);
         real = temp.real;
         imag = temp.imag;
-        return temp;
+        return *this;
     }
 };
+#pragma pack(pop)
 
 } // namespace Qrack
 

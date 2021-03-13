@@ -75,7 +75,7 @@
 namespace Qrack {
 //#include <arm_fp16.h>
 #if defined(__clang__)
-typedef Qrack::Complex2 complex;
+typedef Complex2 complex;
 #else
 typedef std::complex<__fp16> complex;
 #endif
