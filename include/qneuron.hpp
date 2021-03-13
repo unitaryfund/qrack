@@ -196,7 +196,7 @@ protected:
         origAngle = angles[permOcl];
 
         // Try positive angle increment:
-        angles[permOcl] += eta * M_PI;
+        angles[permOcl] += eta * PI_R1;
         endProb = LearnCycle(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1;
@@ -207,7 +207,7 @@ protected:
 
         // If positive angle increment is not an improvement,
         // try negative angle increment:
-        angles[permOcl] -= 2 * eta * M_PI;
+        angles[permOcl] -= 2 * eta * PI_R1;
         endProb = LearnCycle(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1;
