@@ -211,7 +211,7 @@ protected:
     complex GetNonunitaryPhase()
     {
         if (randGlobalPhase) {
-            real1 angle = Rand() * 2 * M_PI;
+            real1_f angle = Rand() * 2 * PI_R1;
             return complex(cos(angle), sin(angle));
         } else {
             return ONE_CMPLX;
