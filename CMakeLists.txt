@@ -17,6 +17,8 @@ add_library (qrack STATIC
     src/common/rdrandwrapper.cpp
     src/common/dispatchqueue.cpp
     src/common/complex2.cpp
+    src/common/fp_extend.cpp
+    src/common/fp_trunc.cpp
     src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp

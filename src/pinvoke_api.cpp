@@ -103,7 +103,7 @@ void RHelper(unsigned sid, unsigned b, double phi, unsigned q)
         // This is a global phase factor, with no measurable physical effect.
         // However, the underlying QInterface will not execute the gate
         // UNLESS it is specifically "keeping book" for non-measurable phase effects.
-        complex phaseFac = std::exp(complex(ZERO_R1, phi / 4));
+        complex phaseFac = exp(complex(ZERO_R1, phi / 4));
         simulator->ApplySinglePhase(phaseFac, phaseFac, shards[simulator][q]);
         break;
     }
@@ -130,7 +130,7 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
     }
 
     if (b == PauliI) {
-        complex phaseFac = std::exp(complex(ZERO_R1, phi / 4));
+        complex phaseFac = exp(complex(ZERO_R1, phi / 4));
         simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], phaseFac, phaseFac);
         return;
     }

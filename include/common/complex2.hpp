@@ -101,6 +101,8 @@ Qrack::Complex2 exp(const Qrack::Complex2& c);
 
 Qrack::Complex2 pow(const Qrack::Complex2& b, const Qrack::Complex2& p);
 
+Qrack::Complex2 conj(const Qrack::Complex2& c);
+
 namespace Qrack {
 
 inline Complex2 operator*(const float& lhs, const Complex2& rhs) { return Complex2(lhs * rhs.real, lhs * rhs.imag); }

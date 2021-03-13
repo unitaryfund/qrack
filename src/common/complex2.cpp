@@ -30,3 +30,5 @@ Qrack::Complex2 pow(const Qrack::Complex2& b, const Qrack::Complex2& p)
 {
     return pow(std::complex<float>(b.real, b.imag), std::complex<float>(p.real, p.imag));
 }
+
+Qrack::Complex2 conj(const Qrack::Complex2& c) { return Qrack::Complex2(c.real, -c.imag); }
