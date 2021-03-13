@@ -1,3 +1,13 @@
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+//
+// This is a fill-in over the std::complex<__fp16> type, for Qrack.
+//
+// Licensed under the GNU Lesser General Public License V3.
+// See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
+// for details.
+
 #include <cmath>
 #include <complex>
 
