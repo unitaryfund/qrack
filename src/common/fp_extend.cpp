@@ -2,7 +2,11 @@
 //
 // Found via https://stackoverflow.com/questions/63812181/casting-fp16-to-float-fails-to-link-on-clang-9
 
-#ifdef __x86_64__
+#if defined(__clang__) && defined(__x86_64__)
+
+#include "config.h"
+
+#if FPPOW < 5
 
 #include <limits.h>
 #include <stdint.h>
@@ -115,4 +119,5 @@ __attribute__((noinline)) float __extendhfsf2(uint16_t a) { return __extendXfYf2
 
 extern "C" float __gnu_h2f_ieee(uint16_t a) { return __extendhfsf2(a); }
 
+#endif
 #endif
