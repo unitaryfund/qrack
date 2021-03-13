@@ -10,7 +10,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#pragma OPENCL EXTENSION cl_nv_fp16 : enable
 #define cmplx half2
 #define cmplx2 half4
 #define cmplx4 half8
