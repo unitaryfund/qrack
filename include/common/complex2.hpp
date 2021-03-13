@@ -72,7 +72,7 @@ struct Complex2 {
 
     inline Complex2 operator/(const Complex2& rhs) const
     {
-        return (Complex2(real, imag) * Complex2(rhs.real, -rhs.imag)) / sqrt(rhs.real * rhs.real + rhs.imag * rhs.imag);
+        return (Complex2(real, imag) * Complex2(rhs.real, -rhs.imag)) / (rhs.real * rhs.real + rhs.imag * rhs.imag);
     }
 
     inline Complex2 operator/(const float& rhs) const { return Complex2(real / rhs, imag / rhs); }
@@ -82,7 +82,7 @@ struct Complex2 {
     inline Complex2 operator/=(const Complex2& rhs)
     {
         Complex2 temp =
-            (Complex2(real, imag) * Complex2(rhs.real, -rhs.imag)) / sqrt(rhs.real * rhs.real + rhs.imag * rhs.imag);
+            (Complex2(real, imag) * Complex2(rhs.real, -rhs.imag)) / (rhs.real * rhs.real + rhs.imag * rhs.imag);
         real = temp.real;
         imag = temp.imag;
         return temp;
@@ -113,6 +113,6 @@ namespace Qrack {
 
 inline Complex2 operator*(const float& lhs, const Complex2& rhs) { return Complex2(lhs * rhs.real, lhs * rhs.imag); }
 
-inline Complex2 operator/(const float& lhs, const Complex2& rhs) { return (lhs * rhs) / abs(rhs); }
+inline Complex2 operator/(const float& lhs, const Complex2& rhs) { return (lhs * rhs) / norm(rhs); }
 
 } // namespace Qrack
