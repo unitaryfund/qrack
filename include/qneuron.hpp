@@ -89,7 +89,7 @@ public:
     {
         if (resetInit) {
             qReg->SetBit(outputIndex, false);
-            qReg->RY(M_PI_2, outputIndex);
+            qReg->RY(PI_R1, outputIndex);
         }
 
         if (inputCount == 0) {
