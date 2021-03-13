@@ -294,7 +294,7 @@ void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
         }
     }
 
-    complex amp = nrm;
+    complex amp((real1)nrm, ZERO_R1);
     if (e & 1) {
         amp *= I_CMPLX;
     }

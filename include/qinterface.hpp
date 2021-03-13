@@ -212,7 +212,7 @@ protected:
     {
         if (randGlobalPhase) {
             real1_f angle = Rand() * 2 * PI_R1;
-            return complex(cos(angle), sin(angle));
+            return complex((real1)cos(angle), (real1)sin(angle));
         } else {
             return ONE_CMPLX;
         }

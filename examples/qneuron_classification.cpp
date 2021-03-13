@@ -119,7 +119,7 @@ void makeGeoPowerSetQnn(
         }
 
         outputLayer.push_back(std::make_shared<QNeuron>(qReg, &(inputIndices[0]), z, 0));
-        etas.push_back((ONE_R1 / nCr(predictorCount, x)) / pow2Ocl(x));
+        etas.push_back((ONE_R1 / (real1)nCr(predictorCount, x)) / (real1)pow2Ocl(x));
     }
 }
 
@@ -219,12 +219,12 @@ real1_f calculateAuc(std::vector<std::vector<BoolH>>& rawYX, std::vector<dfObser
     size_t tp = 0, fp = 0, fn = 0, tn = 0;
     size_t oTp = 0, oFp = 0, oFn = 0, oTn = 0;
     size_t totT, totF;
-    real1 lTp = 0, lFp = 0;
-    real1 dTp, dFp;
-    real1 optimumCutoff = 0;
-    real1 cutoff;
-    real1 err, optimumErr;
-    real1 auc = 0;
+    real1_f lTp = 0, lFp = 0;
+    real1_f dTp, dFp;
+    real1_f optimumCutoff = 0;
+    real1_f cutoff;
+    real1_f err, optimumErr;
+    real1_f auc = 0;
 
     std::set<real1> dfVals;
     for (rowIndex = 0; rowIndex < dfObs.size(); rowIndex++) {

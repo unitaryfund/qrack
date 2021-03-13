@@ -25,7 +25,7 @@ int main()
     const bitLenInt OutputCount = 4;
     const bitCapInt InputPower = 1U << InputCount;
     // const bitCapInt OutputPower = 1U << OutputCount;
-    const real1 eta = 0.5;
+    const real1 eta = ONE_R1 / (real1)2.0f;
 
     // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
     // QEngineCPU.

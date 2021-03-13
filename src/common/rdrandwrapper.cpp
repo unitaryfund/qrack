@@ -142,8 +142,8 @@ bool RdRandom::SupportsRDRAND()
 
 real1_f RdRandom::Next()
 {
-    real1 res = 0;
-    real1 part = 1;
+    real1_f res = ZERO_R1;
+    real1_f part = ONE_R1;
 #if ENABLE_RNDFILE
     if (!didInit) {
         while ((data1.size() - dataOffset) < 4) {
@@ -176,7 +176,7 @@ real1_f RdRandom::Next()
         }
         isPageTwo = !isPageTwo;
     }
-    size_t precision = sizeof(real1) - 1U;
+    size_t precision = sizeof(real1_f) - 1U;
     for (unsigned int i = 0; i < precision; i++) {
         part /= 256;
         res += part * (data1[dataOffset + i] + 128);

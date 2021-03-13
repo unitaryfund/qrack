@@ -103,7 +103,7 @@ void RHelper(unsigned sid, unsigned b, double phi, unsigned q)
         // This is a global phase factor, with no measurable physical effect.
         // However, the underlying QInterface will not execute the gate
         // UNLESS it is specifically "keeping book" for non-measurable phase effects.
-        complex phaseFac = exp(complex(ZERO_R1, phi / 4));
+        complex phaseFac = exp(complex(ZERO_R1, (real1)(phi / 4)));
         simulator->ApplySinglePhase(phaseFac, phaseFac, shards[simulator][q]);
         break;
     }
@@ -130,13 +130,13 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
     }
 
     if (b == PauliI) {
-        complex phaseFac = exp(complex(ZERO_R1, phi / 4));
+        complex phaseFac = exp(complex(ZERO_R1, (real1)(phi / 4)));
         simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], phaseFac, phaseFac);
         return;
     }
 
-    real1 cosine = cos(phi / 2);
-    real1 sine = sin(phi / 2);
+    real1 cosine = (real1)cos(phi / 2);
+    real1 sine = (real1)sin(phi / 2);
     complex pauliR[4];
 
     switch (b) {
@@ -601,8 +601,8 @@ MICROSOFT_QUANTUM_DECL void MCH(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
         ctrlsArray[i] = shards[simulator][c[i]];
     }
 
-    const complex hGate[4] = { complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1),
-        complex(-M_SQRT1_2, ZERO_R1) };
+    const complex hGate[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+        complex(-SQRT1_2_R1, ZERO_R1) };
 
     simulator->ApplyControlledSingleBit(ctrlsArray, n, shards[simulator][q], hGate);
 
@@ -641,7 +641,7 @@ MICROSOFT_QUANTUM_DECL void MCT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
     }
 
     simulator->ApplyControlledSinglePhase(
-        ctrlsArray, n, shards[simulator][q], ONE_CMPLX, complex(M_SQRT1_2, M_SQRT1_2));
+        ctrlsArray, n, shards[simulator][q], ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1));
 
     delete[] ctrlsArray;
 }
@@ -678,7 +678,7 @@ MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads
     }
 
     simulator->ApplyControlledSinglePhase(
-        ctrlsArray, n, shards[simulator][q], ONE_CMPLX, complex(M_SQRT1_2, -M_SQRT1_2));
+        ctrlsArray, n, shards[simulator][q], ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1));
 
     delete[] ctrlsArray;
 }

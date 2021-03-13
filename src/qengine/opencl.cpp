@@ -548,7 +548,7 @@ real1_f QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
 {
     // This interface is potentially parallelizable, but, for now, better performance is probably given by implementing
     // it as a serial loop.
-    real1 totNorm = 0;
+    real1_f totNorm = ZERO_R1;
     for (bitCapIntOcl i = 0; i < maxI; i++) {
         totNorm += toSum[i];
     }
@@ -579,7 +579,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
 
     // If "permutationAmp" amp is in (read-only) use, this method complicates supersedes that application anyway.
 
-    if (phaseFac == complex(-999.0, -999.0)) {
+    if (phaseFac == CMPLX_DEFAULT_ARG) {
         permutationAmp = GetNonunitaryPhase();
     } else {
         permutationAmp = phaseFac;
@@ -772,8 +772,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
     cmplx[4] = complex(
-        (isUnitLength || (runningNorm == REAL1_DEFAULT_ARG)) ? ONE_R1 : (ONE_R1 / std::sqrt(runningNorm)), ZERO_R1);
-    cmplx[5] = norm_thresh;
+        (isUnitLength || (runningNorm == REAL1_DEFAULT_ARG)) ? ONE_R1 : (ONE_R1 / (real1)sqrt(runningNorm)), ZERO_R1);
+    cmplx[5] = (real1)norm_thresh;
 
     BufferPtr locCmplxBuffer;
     cl::Event writeGateEvent;
@@ -952,7 +952,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 5, bciArgs);
 
     BufferPtr nrmInBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1));
-    real1 nrm = (real1)(ONE_R1 / std::sqrt(runningNorm));
+    real1 nrm = (real1)(ONE_R1 / sqrt(runningNorm));
     DISPATCH_WRITE(waitVec, *nrmInBuffer, sizeof(real1), &nrm);
 
     BufferPtr uniformBuffer = std::make_shared<cl::Buffer>(
@@ -993,9 +993,9 @@ void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
     CHECK_ZERO_SKIP();
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, 0, 0, 0, 0, 0, 0, 0, 0 };
-    real1 cosine = cos(angle);
-    real1 sine = sin(angle);
-    complex phaseFacs[3] = { complex(cosine, sine), complex(cosine, -sine), (ONE_R1 / std::sqrt(runningNorm)) };
+    real1 cosine = (real1)cos(angle);
+    real1 sine = (real1)sin(angle);
+    complex phaseFacs[3] = { complex(cosine, sine), complex(cosine, -sine), (ONE_R1 / (real1)sqrt(runningNorm)) };
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1040,8 +1040,8 @@ void QEngineOCL::CUniformParityRZ(
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> controlLen, (bitCapIntOcl)mask, controlMask, controlLen, 0, 0,
         0, 0, 0, 0 };
-    real1 cosine = cos(angle);
-    real1 sine = sin(angle);
+    real1 cosine = (real1)cos(angle);
+    real1 sine = (real1)sin(angle);
     complex phaseFacs[2] = { complex(cosine, sine), complex(cosine, -sine) };
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -2537,7 +2537,7 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
     QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
         { stateBuffer, toCompare->stateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
 
-    real1 sumSqrErr = 0;
+    real1 sumSqrErr = ZERO_R1;
     WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
 
     return sumSqrErr;
@@ -2580,7 +2580,7 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh)
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    real1 r1_args[2] = { (real1)norm_thresh, (real1)(ONE_R1 / std::sqrt(nrm)) };
+    real1 r1_args[2] = { (real1)norm_thresh, (real1)(ONE_R1 / sqrt(nrm)) };
     cl::Event writeRealArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1) * 2, r1_args, writeRealArgsEvent);
 
