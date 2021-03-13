@@ -69,13 +69,20 @@
 #define QRACK_ALIGN_SIZE 64
 
 #if FPPOW < 5
+#if defined(__clang__)
+#include "common/complex2.hpp"
+#endif
 namespace Qrack {
 //#include <arm_fp16.h>
+#if defined(__clang__)
+typedef Qrack::Complex2 complex;
+#else
 typedef std::complex<__fp16> complex;
+#endif
 typedef __fp16 real1;
 typedef float real1_f;
-#define ZERO_R1 ((real1)0.0f)
-#define ONE_R1 ((real1)1.0f)
+#define ZERO_R1 0.0f
+#define ONE_R1 1.0f
 #define PI_R1 ((real1)M_PI)
 #define REAL1_DEFAULT_ARG ((real1)-999.0f)
 // Half of the amplitude of 16 maximally superposed qubits in any permutation

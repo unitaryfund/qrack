@@ -125,7 +125,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapInt perm, int deviceId)
 {
     return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engine, length, perm, rand_generator, phaseFactor,
-        false, false, useHostRam, deviceId, useRDRAND, isSparse, amplitudeFloor));
+        false, false, useHostRam, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor));
 }
 
 void QPager::CombineEngines(bitLenInt bit)

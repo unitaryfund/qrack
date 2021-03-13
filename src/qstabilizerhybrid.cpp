@@ -70,8 +70,8 @@ QStabilizerPtr QStabilizerHybrid::MakeStabilizer(const bitCapInt& perm)
 QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
 {
     QInterfacePtr toRet = CreateQuantumInterface(engineType, subEngineType, qubitCount, 0, rand_generator, phaseFactor,
-        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, amplitudeFloor, std::vector<int>{},
-        thresholdQubits);
+        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+        std::vector<int>{}, thresholdQubits);
     toRet->SetConcurrency(concurrency);
     return toRet;
 }
@@ -83,7 +83,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     QStabilizerHybridPtr c =
         std::dynamic_pointer_cast<QStabilizerHybrid>(CreateQuantumInterface(QINTERFACE_STABILIZER_HYBRID, engineType,
             subEngineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
-            useRDRAND, isSparse, amplitudeFloor, std::vector<int>{}, thresholdQubits));
+            useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits));
 
     if (stabilizer) {
         c->stabilizer = std::make_shared<QStabilizer>(*stabilizer);
