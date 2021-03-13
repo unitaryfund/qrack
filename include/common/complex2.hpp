@@ -72,7 +72,7 @@ struct Complex2 {
 
     inline Complex2 operator/(const Complex2& rhs) const
     {
-        return (Complex2(real, imag) * rhs) / (rhs.real * rhs.real + rhs.imag * rhs.imag);
+        return (Complex2(real, imag) * rhs) / sqrt(rhs.real * rhs.real + rhs.imag * rhs.imag);
     }
 
     inline Complex2 operator/(const float& rhs) const { return Complex2(real / rhs, imag / rhs); }
