@@ -15,6 +15,7 @@
 #define cmplx2 double4
 #define cmplx4 double8
 #define real1 double
+#define real1_f double
 #define ZERO_R1 0.0
 #define ONE_R1 1.0
 #define SineShift M_PI_2

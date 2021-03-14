@@ -309,15 +309,13 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
 #if FPPOW < 5
     sources.push_back({ (const char*)qheader_half_cl, (long unsigned int)qheader_half_cl_len });
-#else
-#if FPPOW < 6
+#elif FPPOW < 6
     sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
 #else
     sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
 #endif
 
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
-#endif
 
 #if ENABLE_BCD
     sources.push_back({ (const char*)qheader_bcd_cl, (long unsigned int)qheader_bcd_cl_len });
