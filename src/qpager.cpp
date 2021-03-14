@@ -34,6 +34,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , deviceIDs(devList)
     , useHardwareThreshold(false)
     , thresholdQubitsPerPage(qubitThreshold)
+    , pStridePow(PSTRIDEPOW)
 {
 #if !ENABLE_OPENCL
     if (engine == QINTERFACE_HYBRID) {
@@ -87,7 +88,11 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
         thresholdQubitsPerPage = qubitCount - qpd;
 
         maxPageQubits = -1;
-        minPageQubits = log2(std::thread::hardware_concurrency()) + PSTRIDEPOW;
+
+        pStridePow =
+            getenv("QRACK_PSTRIDEPOW") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW;
+
+        minPageQubits = log2(std::thread::hardware_concurrency()) + pStridePow;
 
         if (thresholdQubitsPerPage < minPageQubits) {
             thresholdQubitsPerPage = minPageQubits;

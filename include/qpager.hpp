@@ -38,6 +38,7 @@ protected:
     bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
     bitLenInt thresholdQubitsPerPage;
+    bitLenInt pStridePow;
     bitLenInt baseQubitsPerPage;
     bitCapInt basePageCount;
     bitCapIntOcl basePageMaxQPower;
@@ -69,7 +70,7 @@ protected:
         } else if (useHardwareThreshold) {
             thresholdQubitsPerPage = qubitCount - qpd;
 
-            minPageQubits = log2(std::thread::hardware_concurrency()) + PSTRIDEPOW;
+            minPageQubits = log2(std::thread::hardware_concurrency()) + pStridePow;
             if (thresholdQubitsPerPage < minPageQubits) {
                 thresholdQubitsPerPage = minPageQubits;
             }
