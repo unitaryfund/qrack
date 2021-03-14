@@ -15,20 +15,20 @@
 
 #include "oclengine.hpp"
 
-#if FPPOW < 5
-#include "qheader_halfcl.hpp"
-#elif FPPOW < 6
-#include "qheader_floatcl.hpp"
-#else
-#include "qheader_doublecl.hpp"
-#endif
-
 #if UINTPOW < 5
 #include "qheader_uint16cl.hpp"
 #elif UINTPOW < 6
 #include "qheader_uint32cl.hpp"
 #else
 #include "qheader_uint64cl.hpp"
+#endif
+
+#if FPPOW < 5
+#include "qheader_halfcl.hpp"
+#elif FPPOW < 6
+#include "qheader_floatcl.hpp"
+#else
+#include "qheader_doublecl.hpp"
 #endif
 
 #include "qenginecl.hpp"
@@ -299,14 +299,6 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
 
-#if FPPOW < 5
-    sources.push_back({ (const char*)qheader_half_cl, (long unsigned int)qheader_half_cl_len });
-#elif FPPOW < 6
-    sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
-#else
-    sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
-#endif
-
 #if UINTPOW < 5
     sources.push_back({ (const char*)qheader_uint16_cl, (long unsigned int)qheader_uint16_cl_len });
 #elif UINTPOW < 6
@@ -315,7 +307,17 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
     sources.push_back({ (const char*)qheader_uint64_cl, (long unsigned int)qheader_uint64_cl_len });
 #endif
 
+#if FPPOW < 5
+    sources.push_back({ (const char*)qheader_half_cl, (long unsigned int)qheader_half_cl_len });
+#else
+#if FPPOW < 6
+    sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
+#else
+    sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
+#endif
+
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
+#endif
 
 #if ENABLE_BCD
     sources.push_back({ (const char*)qheader_bcd_cl, (long unsigned int)qheader_bcd_cl_len });
