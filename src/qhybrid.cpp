@@ -8,6 +8,10 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#include <direct.h>
+#endif
+
 #include <thread>
 
 #include "common/oclengine.hpp"
@@ -34,7 +38,11 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
         // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
         // concurrency.
         bitLenInt gpuQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
-        bitLenInt cpuQubits = (concurrency == 1 ? PSTRIDEPOW : (log2(concurrency - 1) + PSTRIDEPOW + 1));
+
+        bitLenInt pStridePow =
+            getenv("QRACK_PSTRIDEPOW") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW;
+
+        bitLenInt cpuQubits = (concurrency == 1 ? pStridePow : (log2(concurrency - 1) + pStridePow + 1));
 
         thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
