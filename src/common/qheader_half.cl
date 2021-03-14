@@ -65,7 +65,7 @@ inline real1 arg(const cmplx cmp)
     bitCapIntOcl lcv, i;                                                                                               \
     bitCapIntOcl Nthreads = get_global_size(0);                                                                        \
                                                                                                                        \
-    cmplx4 mtrx = *((cmplx4*)cmplxPtr);                                                                                 \
+    cmplx4 mtrx = *((constant cmplx4*)cmplxPtr);                                                                                 \
     real1 nrm = cmplxPtr[8];                                                                                           \
                                                                                                                        \
     cmplx2 mulRes;
@@ -73,7 +73,7 @@ inline real1 arg(const cmplx cmp)
 #define PREP_2X2_WIDE()                                                                                                \
     bitCapIntOcl lcv, i;                                                                                               \
                                                                                                                        \
-    cmplx4 mtrx = *((cmplx4*)cmplxPtr);                                                                                 \
+    cmplx4 mtrx = *((constant cmplx4*)cmplxPtr);                                                                                 \
     real1 nrm = cmplxPtr[8];                                                                                           \
                                                                                                                        \
     cmplx2 mulRes;
@@ -546,7 +546,7 @@ void kernel compose(
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = *((bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl4 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
     // For reference:
     // bitCapIntOcl nMaxQPower = args.x;
     // bitCapIntOcl qubitCount = args.y;
@@ -562,7 +562,7 @@ void kernel composewide(
     global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
 {
     bitCapIntOcl lcv = ID;
-    bitCapIntOcl4 args = *((bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl4 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
     // For reference:
     // bitCapIntOcl nMaxQPower = args.x;
     // bitCapIntOcl qubitCount = args.y;
@@ -579,7 +579,7 @@ void kernel composemid(
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = *((bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl4 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
     bitCapIntOcl nMaxQPower = args.x;
     // bitCapIntOcl qubitCount = args.y;
     bitCapIntOcl oQubitCount = args.z;
@@ -602,7 +602,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = *((bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl4 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
     bitCapIntOcl partPower = args.x;
     bitCapIntOcl remainderPower = args.y;
     bitCapIntOcl start = args.z;
@@ -692,7 +692,7 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = *((bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl4 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
     bitCapIntOcl partPower = args.x;
     bitCapIntOcl remainderPower = args.y;
     bitCapIntOcl start = args.z;
@@ -772,7 +772,7 @@ void kernel prob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl2 args = *((bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl2 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
     bitCapIntOcl maxI = args.x;
     bitCapIntOcl qPower = args.y;
     bitCapIntOcl qMask = qPower - ONE_BCI;
@@ -811,7 +811,7 @@ void kernel probreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = *((bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl4 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
     bitCapIntOcl maxI = args.x;
     bitCapIntOcl perm = args.y;
     bitCapIntOcl start = args.z;
@@ -851,7 +851,7 @@ void kernel probregall(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = *((bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl4 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
     bitCapIntOcl maxI = args.x;
     bitCapIntOcl maxJ = args.y;
     bitCapIntOcl start = args.z;
@@ -883,7 +883,7 @@ void kernel probmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOcl
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = *((bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl4 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
     bitCapIntOcl maxI = args.x;
     //bitCapIntOcl mask = args.y;
     bitCapIntOcl perm = args.z;
@@ -930,7 +930,7 @@ void kernel probmaskall(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl4 args = *((bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl4 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
     bitCapIntOcl maxI = args.x;
     bitCapIntOcl maxJ = args.y;
     bitCapIntOcl maskLen = args.z;
@@ -976,7 +976,7 @@ void kernel probparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl2 args = *((bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl2 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
     bitCapIntOcl maxI = args.x;
     bitCapIntOcl mask = args.y;
 
@@ -1022,7 +1022,7 @@ void kernel forcemparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIn
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl2 args = *((bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl2 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
     bitCapIntOcl maxI = args.x;
     bitCapIntOcl mask = args.y;
     bool result = (bitCapIntOclPtr[2] == ONE_BCI);
