@@ -56,8 +56,8 @@ real1 __OVERLOADABLE__ dot(const half4 a, const half4 b) {
 }
 
 half2 __OVERLOADABLE__ sin(const half2 a) {
-    float2 af = (float2)((float)a.x, (float)a.y);
-    return sin(af);
+    float2 af = sin((float2)((float)a.x, (float)a.y));
+    return (half2)((half)af.x, (half)af.y);
 }
 
 half __OVERLOADABLE__ sqrt(const half a) {
