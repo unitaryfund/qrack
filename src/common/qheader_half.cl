@@ -65,8 +65,8 @@ half __OVERLOADABLE__ sqrt(const half a) {
 }
 
 half2 __OVERLOADABLE__ sqrt(const half2 a) {
-    float2 af = (float2)((float)a.x, (float)a.y);
-    return sqrt(af);
+    float2 af = sqrt((float2)((float)a.x, (float)a.y));
+    return (half2)((half)af.x, (half)af.y);
 }
 
 #define OFFSET2_ARG bitCapIntOclPtr[0]
