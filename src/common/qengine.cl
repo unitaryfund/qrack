@@ -307,7 +307,7 @@ void kernel zsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     APPLY_Z();
 }
 
-void kernel phasesingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel phasesingle(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl lcv, i;
     bitCapIntOcl Nthreads = get_global_size(0);
@@ -322,7 +322,7 @@ void kernel phasesingle(global cmplx* stateVec, constant real1* cmplxPtr, consta
     }
 }
 
-void kernel phasesinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel phasesinglewide(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl i;
     
@@ -335,7 +335,7 @@ void kernel phasesinglewide(global cmplx* stateVec, constant real1* cmplxPtr, co
     APPLY_PHASE();
 }
 
-void kernel invertsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel invertsingle(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl lcv, i;
     bitCapIntOcl Nthreads = get_global_size(0);
@@ -351,7 +351,7 @@ void kernel invertsingle(global cmplx* stateVec, constant real1* cmplxPtr, const
     }
 }
 
-void kernel invertsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel invertsinglewide(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl i;
     cmplx Y0;
