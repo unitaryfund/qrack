@@ -43,7 +43,7 @@ inline real1 arg(const cmplx cmp)
     return (real1)atan2((float)cmp.y, (float)cmp.x);
 }
 
-inline real1 dot(const half2 a, const half2 b) {
+real1 __OVERLOADABLE__ dot(const half2 a, const half2 b) {
     float2 af = (float2)((float)a.x, (float)a.y);
     float2 bf = (float2)((float)b.x, (float)b.y);
     return dot(af, bf);
