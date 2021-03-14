@@ -28,7 +28,7 @@ inline real1 arg(const cmplx cmp)
 {
     if (cmp.x == ZERO_R1 && cmp.y == ZERO_R1)
         return ZERO_R1;
-    return atan2(cmp.y, cmp.x);
+    return (real1)atan2((real1_f)cmp.y, (real1_f)cmp.x);
 }
 
 #define OFFSET2_ARG bitCapIntOclPtr[0]
@@ -41,7 +41,7 @@ inline real1 arg(const cmplx cmp)
     bitCapIntOcl lcv, i;                                                                                               \
     bitCapIntOcl Nthreads = get_global_size(0);                                                                        \
                                                                                                                        \
-    cmplx4 mtrx = vload8(0, cmplxPtr);                                                                                 \
+    cmplx4 mtrx = *((constant cmplx4*)cmplxPtr);                                                                                 \
     real1 nrm = cmplxPtr[8];                                                                                           \
                                                                                                                        \
     cmplx2 mulRes;
@@ -49,7 +49,7 @@ inline real1 arg(const cmplx cmp)
 #define PREP_2X2_WIDE()                                                                                                \
     bitCapIntOcl lcv, i;                                                                                               \
                                                                                                                        \
-    cmplx4 mtrx = vload8(0, cmplxPtr);                                                                                 \
+    cmplx4 mtrx = *((constant cmplx4*)cmplxPtr);                                                                                 \
     real1 nrm = cmplxPtr[8];                                                                                           \
                                                                                                                        \
     cmplx2 mulRes;
@@ -307,14 +307,14 @@ void kernel zsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     APPLY_Z();
 }
 
-void kernel phasesingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel phasesingle(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl lcv, i;
     bitCapIntOcl Nthreads = get_global_size(0);
 
     bitCapIntOcl qMask = bitCapIntOclPtr[3];
-    cmplx topLeft = vload2(0, cmplxPtr);
-    cmplx bottomRight = vload2(3, cmplxPtr);
+    cmplx topLeft = cmplxPtr[0];
+    cmplx bottomRight = cmplxPtr[3];
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
@@ -322,28 +322,28 @@ void kernel phasesingle(global cmplx* stateVec, constant real1* cmplxPtr, consta
     }
 }
 
-void kernel phasesinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel phasesinglewide(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl i;
     
     bitCapIntOcl qMask = bitCapIntOclPtr[2];
-    cmplx topLeft = vload2(0, cmplxPtr);
-    cmplx bottomRight = vload2(3, cmplxPtr);
+    cmplx topLeft = cmplxPtr[0];
+    cmplx bottomRight = cmplxPtr[3];
 
     bitCapIntOcl lcv = ID;
     PUSH_APART_1();
     APPLY_PHASE();
 }
 
-void kernel invertsingle(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel invertsingle(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl lcv, i;
     bitCapIntOcl Nthreads = get_global_size(0);
     cmplx Y0;
 
     bitCapIntOcl qMask = bitCapIntOclPtr[3];
-    cmplx topRight = vload2(1, cmplxPtr);
-    cmplx bottomLeft = vload2(2, cmplxPtr);
+    cmplx topRight = cmplxPtr[1];
+    cmplx bottomLeft = cmplxPtr[2];
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_1();
@@ -351,19 +351,20 @@ void kernel invertsingle(global cmplx* stateVec, constant real1* cmplxPtr, const
     }
 }
 
-void kernel invertsinglewide(global cmplx* stateVec, constant real1* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
+void kernel invertsinglewide(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl i;
     cmplx Y0;
     
     bitCapIntOcl qMask = bitCapIntOclPtr[2];
-    cmplx topRight = vload2(1, cmplxPtr);
-    cmplx bottomLeft = vload2(2, cmplxPtr);
+    cmplx topRight = cmplxPtr[1];
+    cmplx bottomLeft = cmplxPtr[2];
 
     bitCapIntOcl lcv = ID;
     PUSH_APART_1();
     APPLY_INVERT();
 }
+
 
 void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     constant bitCapIntOcl* qPowers, constant cmplx4* mtrxs, constant real1* nrmIn, global real1* nrmParts,
