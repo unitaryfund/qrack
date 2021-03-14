@@ -55,6 +55,20 @@ real1 __OVERLOADABLE__ dot(const half4 a, const half4 b) {
     return dot(af, bf);
 }
 
+half2 __OVERLOADABLE__ sin(const half2 a) {
+    float2 af = (float2)((float)a.x, (float)a.y);
+    return sin(af);
+}
+
+half __OVERLOADABLE__ sqrt(const half a) {
+    return sqrt((float)a);
+}
+
+half2 __OVERLOADABLE__ sqrt(const half2 a) {
+    float2 af = (float2)((float)a.x, (float)a.y);
+    return sqrt(af);
+}
+
 #define OFFSET2_ARG bitCapIntOclPtr[0]
 #define OFFSET1_ARG bitCapIntOclPtr[1]
 #define MAXI_ARG bitCapIntOclPtr[2]
@@ -772,7 +786,7 @@ void kernel prob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl2 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl2 args = *((constant bitCapIntOcl2*)bitCapIntOclPtr);
     bitCapIntOcl maxI = args.x;
     bitCapIntOcl qPower = args.y;
     bitCapIntOcl qMask = qPower - ONE_BCI;
@@ -976,7 +990,7 @@ void kernel probparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl2 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl2 args = *((constant bitCapIntOcl2*)bitCapIntOclPtr);
     bitCapIntOcl maxI = args.x;
     bitCapIntOcl mask = args.y;
 
@@ -1022,7 +1036,7 @@ void kernel forcemparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIn
 
     Nthreads = get_global_size(0);
 
-    bitCapIntOcl2 args = *((constant bitCapIntOcl4*)bitCapIntOclPtr);
+    bitCapIntOcl2 args = *((constant bitCapIntOcl2*)bitCapIntOclPtr);
     bitCapIntOcl maxI = args.x;
     bitCapIntOcl mask = args.y;
     bool result = (bitCapIntOclPtr[2] == ONE_BCI);
