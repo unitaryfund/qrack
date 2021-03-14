@@ -24,12 +24,11 @@ namespace Qrack {
 class ParallelFor {
 private:
     int32_t numCores;
+    bitCapIntOcl pStride;
 
 public:
-    ParallelFor()
-        : numCores(1)
-    {
-    }
+    ParallelFor();
+
     virtual ~ParallelFor() {}
 
     void SetConcurrencyLevel(int32_t num) { numCores = num; }
