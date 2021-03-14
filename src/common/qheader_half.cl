@@ -49,6 +49,12 @@ real1 __OVERLOADABLE__ dot(const half2 a, const half2 b) {
     return dot(af, bf);
 }
 
+real1 __OVERLOADABLE__ dot(const half4 a, const half4 b) {
+    float2 af = (float2)((float)a.x, (float)a.y, (float)a.z, (float)a.w);
+    float2 bf = (float2)((float)b.x, (float)b.y, (float)b.z, (float)b.w);
+    return dot(af, bf);
+}
+
 #define OFFSET2_ARG bitCapIntOclPtr[0]
 #define OFFSET1_ARG bitCapIntOclPtr[1]
 #define MAXI_ARG bitCapIntOclPtr[2]
