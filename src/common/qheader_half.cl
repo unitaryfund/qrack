@@ -50,8 +50,8 @@ real1 __OVERLOADABLE__ dot(const half2 a, const half2 b) {
 }
 
 real1 __OVERLOADABLE__ dot(const half4 a, const half4 b) {
-    float2 af = (float2)((float)a.x, (float)a.y, (float)a.z, (float)a.w);
-    float2 bf = (float2)((float)b.x, (float)b.y, (float)b.z, (float)b.w);
+    float2 af = (float4)((float)a.x, (float)a.y, (float)a.z, (float)a.w);
+    float2 bf = (float4)((float)b.x, (float)b.y, (float)b.z, (float)b.w);
     return dot(af, bf);
 }
 
