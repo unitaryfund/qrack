@@ -112,13 +112,6 @@ $ cmake -DENABLE_COMPLEX_X2=ON ..
 ```
 Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 for float. On by default, but can be turned off for double accuracy without the AVX requirement, or to completely remove vectorization with single float accuracy.
 
-## Increase accuracy from float to double
-
-```
-$ cmake -DENABLE_COMPLEX8=OFF ..
-```
-By default, Qrack builds for float accuracy. Turning the above option off increases to double accuracy for complex numbers. Requires twice as much RAM (basically reducing maximum by 1 available qubit, for QEngine types). Compatible with SSE 1.0 and single precision accelerator devices.
-
 ## On-Chip Hardware Random Number Generation 
 
 ```
