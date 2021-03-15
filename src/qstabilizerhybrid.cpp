@@ -35,7 +35,7 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
 {
     if (subEngineType == QINTERFACE_STABILIZER_HYBRID) {
 #if ENABLE_OPENCL
-        subEngineType = QINTERFACE_HYBRID;
+        subEngineType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
 #else
         subEngineType = QINTERFACE_CPU;
 #endif
@@ -43,7 +43,7 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
 
     if (engineType == QINTERFACE_STABILIZER_HYBRID) {
 #if ENABLE_OPENCL
-        engineType = QINTERFACE_HYBRID;
+        engineType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
 #else
         engineType = QINTERFACE_CPU;
 #endif
@@ -51,7 +51,7 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
 
     if ((engineType == QINTERFACE_QPAGER) && (subEngineType == QINTERFACE_QPAGER)) {
 #if ENABLE_OPENCL
-        subEngineType = QINTERFACE_HYBRID;
+        subEngineType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
 #else
         subEngineType = QINTERFACE_CPU;
 #endif

@@ -53,6 +53,10 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     }
 
 #if ENABLE_OPENCL
+    if (!(OCLEngine::Instance()->GetDeviceCount())) {
+        engine = QINTERFACE_CPU;
+    }
+
     if ((thresholdQubitsPerPage == 0) && ((engine == QINTERFACE_OPENCL) || (engine == QINTERFACE_HYBRID))) {
         useHardwareThreshold = true;
 

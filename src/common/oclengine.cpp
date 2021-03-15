@@ -257,7 +257,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     if (all_platforms.size() == 0) {
         std::cout << " No platforms found. Check OpenCL installation!\n";
-        exit(1);
+        return;
     }
 
     // get all devices
@@ -279,7 +279,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
     }
     if (all_devices.size() == 0) {
         std::cout << " No devices found. Check OpenCL installation!\n";
-        exit(1);
+        return;
     }
 
     int deviceCount = all_devices.size();
