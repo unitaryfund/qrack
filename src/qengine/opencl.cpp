@@ -427,6 +427,10 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 {
     bool didInit = (nrmArray != NULL);
 
+    if (!(OCLEngine::Instance()->GetDeviceCount())) {
+        throw std::runtime_error("Tried to initialize QEngineOCL, nut no available OpenCL devices.");
+    }
+
     clFinish();
 
     int oldContextId = device_context ? device_context->context_id : 0;
