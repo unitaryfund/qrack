@@ -425,11 +425,11 @@ real1_f QEngineOCL::ProbAll(bitCapInt fullRegister)
 
 void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 {
-    bool didInit = (nrmArray != NULL);
-
     if (!(OCLEngine::Instance()->GetDeviceCount())) {
-        throw std::runtime_error("Tried to initialize QEngineOCL, nut no available OpenCL devices.");
+        throw std::runtime_error("Tried to initialize QEngineOCL, but no available OpenCL devices.");
     }
+
+    bool didInit = (nrmArray != NULL);
 
     clFinish();
 
