@@ -1,4 +1,6 @@
-Qrack has adopted the Unitary Fund Contributor Covenant Code of Conduct. **We love our community, and planet Earth is our community, indiscriminately. You rock!**
+Qrack has adopted the Unitary Fund Contributor Covenant Code of Conduct.
+
+**We love our community, indiscriminately, and planet Earth is our community. You rock!**
 
 # Contributor Covenant Code of Conduct
 
@@ -57,7 +59,8 @@ further defined and clarified by project maintainers.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team at info@unitary.fund. All
+reported by contacting the vm6502q project team at stranoj@gmail.com, or the 
+Unitary Fund project team can be contacted at info@unitary.fund. All
 complaints will be reviewed and investigated and will result in a response that
 is deemed necessary and appropriate to the circumstances. The project team is
 obligated to maintain confidentiality with regard to the reporter of an incident.
