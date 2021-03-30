@@ -20,6 +20,11 @@
 #define CATCH_CONFIG_RUNNER /* Access to the configuration. */
 #include "tests.hpp"
 
+#define SHOW_OCL_BANNER()                                                                                              \
+    if (OCLEngine::Instance()->GetDeviceCount()) {                                                                     \
+        CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();                                                       \
+    }
+
 using namespace Qrack;
 
 enum QInterfaceEngine testEngineType = QINTERFACE_CPU;
@@ -107,7 +112,7 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QEngine -> OpenCL ############" << std::endl;
             testEngineType = QINTERFACE_OPENCL;
             testSubEngineType = QINTERFACE_OPENCL;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 #endif
@@ -125,7 +130,7 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && opencl_single) {
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 #endif
