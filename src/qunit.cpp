@@ -81,7 +81,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     }
 
     if ((subEngine == QINTERFACE_QUNIT) || (subEngine == QINTERFACE_QUNIT_MULTI)) {
-        subEngine = QINTERFACE_OPTIMAL_G1_CHILD;
+        subEngine = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_OPTIMAL_G1_CHILD : QINTERFACE_CPU;
     }
 
     shards = QEngineShardMap();
