@@ -3984,12 +3984,12 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         buffer = phaseShard->second;
         partner = phaseShard->first;
 
-        polarDiff = buffer->cmplxDiff;
-        polarSame = buffer->cmplxSame;
-
         if (partner->isPauliX || partner->isPauliY || buffer->isInvert) {
             continue;
         }
+
+        polarDiff = buffer->cmplxDiff;
+        polarSame = buffer->cmplxSame;
 
         if (IS_ARG_0(polarDiff) && IS_ARG_PI(polarSame)) {
             shard.RemovePhaseTarget(partner);
@@ -4006,12 +4006,12 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         buffer = phaseShard->second;
         partner = phaseShard->first;
 
-        polarDiff = buffer->cmplxDiff;
-        polarSame = buffer->cmplxSame;
-
         if (partner->isPauliX || partner->isPauliY || buffer->isInvert) {
             continue;
         }
+
+        polarDiff = buffer->cmplxDiff;
+        polarSame = buffer->cmplxSame;
 
         if (IS_ARG_0(polarDiff) && IS_ARG_PI(polarSame)) {
             shard.RemovePhaseAntiTarget(partner);
