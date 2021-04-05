@@ -340,12 +340,20 @@ int main(int argc, char* argv[])
     }
 
     if (num_failed == 0 && qunit_multi) {
+        testEngineType = QINTERFACE_QUNIT_MULTI;
         if (num_failed == 0 && qpager) {
             session.config().stream() << "############ QUnitMulti -> QPager -> QHybrid ############" << std::endl;
-            testEngineType = QINTERFACE_QUNIT_MULTI;
             testSubEngineType = QINTERFACE_QPAGER;
             testSubSubEngineType = QINTERFACE_HYBRID;
             SHOW_OCL_BANNER();
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && stabilizer_qpager) {
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_QPAGER;
+            session.config().stream() << "########### QUnit -> QStabilizerHybrid -> QPager -> QHybrid ###########"
+                                      << std::endl;
             num_failed = session.run();
         }
 #endif
