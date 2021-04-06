@@ -82,7 +82,7 @@ protected:
     }
 
     bitCapInt pageMaxQPower() { return maxQPower / qPages.size(); }
-    bitLenInt pagedQubitCount() { return log2(qPages.size()); }
+    bitLenInt pagedQubitCount() { return log2((bitCapInt)qPages.size()); }
     bitLenInt qubitsPerPage() { return log2(pageMaxQPower()); }
 
     void CombineEngines(bitLenInt thresholdBits);

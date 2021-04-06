@@ -111,7 +111,7 @@ void ParallelFor::par_for(const bitCapInt begin, const bitCapInt end, ParallelFu
 void ParallelFor::par_for_set(const std::set<bitCapInt>& sparseSet, ParallelFunc fn)
 {
     par_for_inc(
-        0, sparseSet.size(),
+        0, (bitCapInt)sparseSet.size(),
         [&sparseSet](const bitCapInt i, int cpu) {
             auto it = sparseSet.begin();
             std::advance(it, i);
@@ -123,7 +123,7 @@ void ParallelFor::par_for_set(const std::set<bitCapInt>& sparseSet, ParallelFunc
 void ParallelFor::par_for_set(const std::vector<bitCapInt>& sparseSet, ParallelFunc fn)
 {
     par_for_inc(
-        0, sparseSet.size(),
+        0, (bitCapInt)sparseSet.size(),
         [&sparseSet](const bitCapInt i, int cpu) {
             auto it = sparseSet.begin();
             std::advance(it, i);
@@ -135,9 +135,9 @@ void ParallelFor::par_for_set(const std::vector<bitCapInt>& sparseSet, ParallelF
 void ParallelFor::par_for_sparse_compose(const std::vector<bitCapInt>& lowSet, const std::vector<bitCapInt>& highSet,
     const bitLenInt& highStart, ParallelFunc fn)
 {
-    bitCapInt lowSize = lowSet.size();
+    bitCapInt lowSize = (bitCapInt)lowSet.size();
     par_for_inc(
-        0, lowSize * highSet.size(),
+        0, lowSize * (bitCapInt)highSet.size(),
         [&lowSize, &highStart, &lowSet, &highSet](const bitCapInt i, int cpu) {
             bitCapInt lowPerm = i % lowSize;
             bitCapInt highPerm = (i - lowPerm) / lowSize;

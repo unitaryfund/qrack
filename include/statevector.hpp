@@ -350,8 +350,8 @@ public:
         mtx.lock();
         for (bitCapInt i = 0; i < halfCap; i++) {
             amp = svp->read(i);
-            svp->write(i, read(i + halfCap));
-            write(i + halfCap, amp);
+            svp->write(i, read(i + (bitCapInt)halfCap));
+            write(i + (bitCapInt)halfCap, amp);
         }
         mtx.unlock();
     }
@@ -375,7 +375,7 @@ public:
 
         mtx.lock();
 
-        par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
+        par_for(0, (bitCapInt)amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
             auto it = amplitudes.begin();
             std::advance(it, lcv);
             toRet[cpu].push_back(it->first);
@@ -440,7 +440,7 @@ public:
         mtx.lock();
 
         if ((filterMask == 0) && (filterValues == 0)) {
-            par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
+            par_for(0, (bitCapInt)amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
                 auto it = amplitudes.begin();
                 std::advance(it, lcv);
                 toRet[cpu].insert(it->first & unsetMask);
@@ -448,7 +448,7 @@ public:
         } else {
             bitCapInt unfilterMask = ~filterMask;
 
-            par_for(0, amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
+            par_for(0, (bitCapInt)amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
                 auto it = amplitudes.begin();
                 std::advance(it, lcv);
                 if ((it->first & filterMask) == filterValues) {

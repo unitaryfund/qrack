@@ -752,7 +752,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
         TransformPauliBasis(simulator, n, b, q);
 
         std::size_t mask = make_mask(qVec);
-        simulator->UniformParityRZ(mask, -phi);
+        simulator->UniformParityRZ((bitCapInt)mask, -phi);
 
         RevertPauliBasis(simulator, n, b, q);
     }
@@ -788,7 +788,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         TransformPauliBasis(simulator, n, b, q);
 
         std::size_t mask = make_mask(qVec);
-        simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), mask, -phi);
+        simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), (bitCapInt)mask, -phi);
 
         RevertPauliBasis(simulator, n, b, q);
     }
