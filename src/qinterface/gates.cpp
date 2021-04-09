@@ -126,12 +126,10 @@ void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
         ApplySinglePhase(ONE_CMPLX, I_CMPLX, qubit);
         return;
     }
-#if FPPOW < 5
     if (n == 3) {
         ApplySinglePhase(ONE_CMPLX, C_SQRT_I, qubit);
         return;
     }
-#endif
 
     ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), qubit);
 }
@@ -150,12 +148,10 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
         ApplySinglePhase(ONE_CMPLX, -I_CMPLX, qubit);
         return;
     }
-#if FPPOW < 5
     if (n == 3) {
         ApplySinglePhase(ONE_CMPLX, C_SQRT_N_I, qubit);
         return;
     }
-#endif
 
     ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), qubit);
 }
@@ -300,12 +296,10 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, I_CMPLX);
         return;
     }
-#if FPPOW < 5
     if (n == 3) {
         ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_I);
         return;
     }
-#endif
 
     ApplyControlledSinglePhase(
         controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))));
@@ -328,12 +322,10 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, -I_CMPLX);
         return;
     }
-#if FPPOW < 5
     if (n == 3) {
         ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_N_I);
         return;
     }
-#endif
 
     ApplyControlledSinglePhase(
         controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))));
