@@ -116,12 +116,6 @@ public:
         }
     }
 
-    virtual void SetQubitCount(bitLenInt qb)
-    {
-        QInterface::SetQubitCount(qb);
-        shards.resize(qb);
-    }
-
     virtual void FlushBuffers()
     {
         bitLenInt i;
@@ -327,9 +321,6 @@ public:
     using QInterface::Compose;
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy)
     {
-        FlushBuffers();
-        toCopy->FlushBuffers();
-
         bitLenInt toRet;
 
         if (engine) {
@@ -341,6 +332,8 @@ public:
         } else {
             toRet = stabilizer->Compose(toCopy->stabilizer);
         }
+
+        shards.insert(shards.end(), toCopy->shards.begin(), toCopy->shards.end());
 
         SetQubitCount(qubitCount + toCopy->qubitCount);
 
@@ -366,6 +359,8 @@ public:
         } else {
             toRet = stabilizer->Compose(toCopy->stabilizer, start);
         }
+
+        shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
 
         SetQubitCount(qubitCount + toCopy->qubitCount);
 

@@ -79,8 +79,6 @@ QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
 
 QInterfacePtr QStabilizerHybrid::Clone()
 {
-    FlushBuffers();
-
     Finish();
 
     QStabilizerHybridPtr c =
@@ -90,6 +88,11 @@ QInterfacePtr QStabilizerHybrid::Clone()
 
     if (stabilizer) {
         c->stabilizer = std::make_shared<QStabilizer>(*stabilizer);
+        for (bitLenInt i = 0; i < shards.size(); i++) {
+            if (shards[i]) {
+                c->shards[i] = std::make_shared<QStabilizerShard>(shards[i]->gate);
+            }
+        }
     } else {
         complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
         engine->GetQuantumState(stateVec);
@@ -265,9 +268,6 @@ void QStabilizerHybrid::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt ta
 
 void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
 {
-    FlushBuffers();
-    dest->FlushBuffers();
-
     bitLenInt length = dest->qubitCount;
 
     if (length == qubitCount) {
@@ -275,6 +275,9 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
         stabilizer = NULL;
         dest->engine = engine;
         engine = NULL;
+
+        dest->shards = shards;
+        DumpBuffers();
 
         SetQubitCount(1);
         stabilizer = MakeStabilizer(0);
@@ -294,6 +297,8 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     }
 
     stabilizer->Decompose(start, dest->stabilizer);
+    std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
+    shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -304,6 +309,8 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
     if (length == qubitCount) {
         stabilizer = NULL;
         engine = NULL;
+
+        DumpBuffers();
 
         SetQubitCount(1);
         stabilizer = MakeStabilizer(0);
@@ -316,6 +323,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
         stabilizer->Dispose(start, length);
     }
 
+    shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -326,6 +334,8 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
     if (length == qubitCount) {
         stabilizer = NULL;
         engine = NULL;
+
+        DumpBuffers();
 
         SetQubitCount(1);
         stabilizer = MakeStabilizer(0);
@@ -338,6 +348,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
         stabilizer->Dispose(start, length);
     }
 
+    shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
