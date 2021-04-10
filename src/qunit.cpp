@@ -925,23 +925,18 @@ real1_f QUnit::ProbParity(const bitCapInt& mask)
         return ZERO_R1;
     }
 
-    // If only one bit in mask:
-    if (!(mask & (mask - ONE_BCI))) {
-        return Prob(log2(mask));
-    }
-
     bitCapInt nV = mask;
     std::vector<bitLenInt> qIndices;
     for (bitCapInt v = mask; v; v = nV) {
         nV &= (v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
+        ToPermBasis(qIndices.back());
     }
 
     std::map<QInterfacePtr, bitCapInt> units;
     real1 oddChance = ZERO_R1;
     real1 nOddChance;
     for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        ToPermBasis(qIndices[i]);
         QEngineShard& shard = shards[qIndices[i]];
         if (!(shard.unit)) {
             nOddChance = shard.Prob();
@@ -973,22 +968,17 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
         return false;
     }
 
-    // If only one bit in mask:
-    if (!(mask & (mask - ONE_BCI))) {
-        return ForceM(log2(mask), result, doForce);
-    }
-
     bitCapInt nV = mask;
     std::vector<bitLenInt> qIndices;
     for (bitCapInt v = mask; v; v = nV) {
         nV &= (v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
+        ToPermBasis(qIndices.back());
     }
 
     bool flipResult = false;
     std::vector<bitLenInt> eIndices;
     for (bitLenInt i = 0; i < qIndices.size(); i++) {
-        ToPermBasis(qIndices[i]);
         QEngineShard& shard = shards[qIndices[i]];
 
         if (CACHED_ZERO(shard)) {
