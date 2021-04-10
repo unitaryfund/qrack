@@ -20,8 +20,32 @@
 
 namespace Qrack {
 
+class QStabilizerShard;
+typedef std::shared_ptr<QStabilizerShard> QStabilizerShardPtr;
+
 class QStabilizerHybrid;
 typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
+
+struct QStabilizerShard {
+    complex gate[4];
+
+    QStabilizerShard()
+    {
+        gate[0] = ONE_CMPLX;
+        gate[1] = ZERO_CMPLX;
+        gate[2] = ZERO_CMPLX;
+        gate[3] = ONE_CMPLX;
+    }
+
+    QStabilizerShard(complex* g) { std::copy(g, g + 4, gate); }
+
+    void Compose(const complex* g)
+    {
+        complex o[4];
+        std::copy(gate, gate + 4, o);
+        mul2x2((complex*)g, o, gate);
+    }
+};
 
 /**
  * A "Qrack::QStabilizerHybrid" internally switched between Qrack::QEngineCPU and Qrack::QEngineOCL to maximize
@@ -33,6 +57,7 @@ protected:
     QInterfaceEngine subEngineType;
     QInterfacePtr engine;
     QStabilizerPtr stabilizer;
+    std::vector<QStabilizerShardPtr> shards;
     int devID;
     complex phaseFactor;
     bool doNormalize;
@@ -91,6 +116,48 @@ public:
         }
     }
 
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        QInterface::SetQubitCount(qb);
+        shards.resize(qb);
+    }
+
+    virtual void FlushBuffers()
+    {
+        bitLenInt i;
+
+        if (stabilizer) {
+            for (i = 0; i < qubitCount; i++) {
+                if (shards[i]) {
+                    // This will call FlushBuffers() again after no longer stabilizer.
+                    SwitchToEngine();
+                    return;
+                }
+            }
+        }
+
+        if (stabilizer) {
+            return;
+        }
+
+        for (i = 0; i < qubitCount; i++) {
+            QStabilizerShardPtr shard = shards[i];
+            if (shard) {
+                shards[i] = NULL;
+                ApplySingleBit(shard->gate, i);
+            }
+        }
+    }
+
+    virtual void DumpBuffers()
+    {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            if (shards[i]) {
+                shards[i] = NULL;
+            }
+        }
+    }
+
     /**
      * Switches between CPU and GPU used modes. (This will not incur a performance penalty, if the chosen mode matches
      * the current mode.) Mode switching happens automatically when qubit counts change, but Compose() and Decompose()
@@ -103,6 +170,8 @@ public:
     /// Apply a CNOT gate with control and target
     virtual void CNOT(bitLenInt control, bitLenInt target)
     {
+        FlushBuffers();
+
         if (stabilizer) {
             stabilizer->CNOT(control, target);
         } else {
@@ -115,6 +184,13 @@ public:
     /// Apply a Hadamard gate to target
     virtual void H(bitLenInt target)
     {
+        if (shards[target]) {
+            complex mtrx[4] = { complex((real1)M_SQRT1_2, ZERO_R1), complex((real1)M_SQRT1_2, ZERO_R1),
+                complex((real1)M_SQRT1_2, ZERO_R1), complex((real1)-M_SQRT1_2, ZERO_R1) };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
         if (stabilizer) {
             stabilizer->H(target);
         } else {
@@ -127,6 +203,12 @@ public:
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
     virtual void S(bitLenInt target)
     {
+        if (shards[target]) {
+            complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
         if (stabilizer) {
             stabilizer->S(target);
         } else {
@@ -139,6 +221,12 @@ public:
     // TODO: Custom implementations for decompositions:
     virtual void Z(bitLenInt target)
     {
+        if (shards[target]) {
+            complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
         if (stabilizer) {
             stabilizer->Z(target);
         } else {
@@ -148,6 +236,12 @@ public:
 
     virtual void IS(bitLenInt target)
     {
+        if (shards[target]) {
+            complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
         if (stabilizer) {
             stabilizer->IS(target);
         } else {
@@ -159,6 +253,12 @@ public:
 
     virtual void X(bitLenInt target)
     {
+        if (shards[target]) {
+            complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
         if (stabilizer) {
             stabilizer->X(target);
         } else {
@@ -168,6 +268,12 @@ public:
 
     virtual void Y(bitLenInt target)
     {
+        if (shards[target]) {
+            complex mtrx[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
         if (stabilizer) {
             stabilizer->Y(target);
         } else {
@@ -177,6 +283,8 @@ public:
 
     virtual void CZ(bitLenInt control, bitLenInt target)
     {
+        FlushBuffers();
+
         if (stabilizer) {
             stabilizer->CZ(control, target);
         } else {
@@ -192,6 +300,8 @@ public:
             return;
         }
 
+        FlushBuffers();
+
         if (stabilizer) {
             stabilizer->Swap(qubit1, qubit2);
         } else {
@@ -205,6 +315,8 @@ public:
             return;
         }
 
+        FlushBuffers();
+
         if (stabilizer) {
             stabilizer->ISwap(qubit1, qubit2);
         } else {
@@ -215,6 +327,9 @@ public:
     using QInterface::Compose;
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy)
     {
+        FlushBuffers();
+        toCopy->FlushBuffers();
+
         bitLenInt toRet;
 
         if (engine) {
@@ -237,6 +352,9 @@ public:
     }
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy, bitLenInt start)
     {
+        FlushBuffers();
+        toCopy->FlushBuffers();
+
         bitLenInt toRet;
 
         if (engine) {
@@ -268,6 +386,8 @@ public:
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState)
     {
+        FlushBuffers();
+
         if (stabilizer) {
             stabilizer->GetQuantumState(outputState);
         } else {
@@ -287,6 +407,8 @@ public:
     }
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG)
     {
+        DumpBuffers();
+
         if (stabilizer) {
             stabilizer->SetPermutation(perm);
         } else {
@@ -395,6 +517,8 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
+        FlushBuffers();
+
         // TODO: QStabilizer appears not to be decomposable after measurement and in many cases where a bit is in an
         // eigenstate.
         if (stabilizer &&
@@ -601,6 +725,8 @@ public:
 
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
+        FlushBuffers();
+
         if (engine) {
             return engine->Prob(qubitIndex);
         }
@@ -676,6 +802,9 @@ public:
 
     virtual bool ApproxCompare(QStabilizerHybridPtr toCompare, real1_f error_tol = REAL1_EPSILON)
     {
+        FlushBuffers();
+        toCompare->FlushBuffers();
+
         if (!stabilizer == !(toCompare->engine)) {
             SwitchToEngine();
             toCompare->SwitchToEngine();
