@@ -4086,9 +4086,16 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     PhaseShardPtr buffer = phaseShard->second;
 
     if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
-        tShard.RemovePhaseControl(&cShard);
-        ApplyBuffer(buffer, control, target, anti);
-        return;
+        if (IS_1_CMPLX(buffer->cmplxDiff)) {
+            tShard.RemovePhaseControl(&cShard);
+            return;
+        }
+
+        if (!cShard.isClifford() && !tShard.isClifford()) {
+            tShard.RemovePhaseControl(&cShard);
+            ApplyBuffer(buffer, control, target, anti);
+            return;
+        }
     }
 
     ShardToPhaseMap& antiTargets = anti ? tShard.targetOfShards : tShard.antiTargetOfShards;
