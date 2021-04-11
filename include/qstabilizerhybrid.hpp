@@ -552,7 +552,17 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
-        FlushBuffers();
+        QStabilizerShardPtr shard = shards[qubit];
+        if (stabilizer && shard) {
+            if (shard->IsInvert()) {
+                X(qubit);
+                shards[qubit] = NULL;
+            } else if (shard->IsPhase()) {
+                shards[qubit] = NULL;
+            } else {
+                FlushBuffers();
+            }
+        }
 
         // TODO: QStabilizer appears not to be decomposable after measurement and in many cases where a bit is in an
         // eigenstate.
