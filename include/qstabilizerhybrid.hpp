@@ -191,6 +191,8 @@ public:
 
     virtual bool isClifford() { return !engine; }
 
+    virtual bool isClifford(const bitLenInt& qubit) { return !engine && !(shards[qubit]); };
+
     /// Apply a CNOT gate with control and target
     virtual void CNOT(bitLenInt control, bitLenInt target)
     {

@@ -53,7 +53,7 @@
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_NORM_0(shard.amp1))
 #define IS_SAME_UNIT(shard1, shard2) (shard1.unit && (shard1.unit == shard2.unit))
 #define ARE_CLIFFORD(shard1, shard2)                                                                                   \
-    ((engine == QINTERFACE_STABILIZER_HYBRID) && shard1.isClifford() && shard2.isClifford())
+    ((engine == QINTERFACE_STABILIZER_HYBRID) && (shard1.isClifford() || shard2.isClifford()))
 
 namespace Qrack {
 
@@ -2290,7 +2290,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             {}, { control });
 
         // This is not a Clifford gate, so we buffer for stabilizer:
-        if (!IS_SAME_UNIT(cShard, tShard) || tShard.isClifford()) {
+        if (!IS_SAME_UNIT(cShard, tShard) || !ARE_CLIFFORD(cShard, tShard)) {
             delete[] controls;
             tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
             OptimizePairBuffers(control, target, false);
@@ -2388,8 +2388,8 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
             CTRL_AND_ANTI, {}, { control });
 
         // If this is not a Clifford gate, we buffer for stabilizer:
-        if (!IS_SAME_UNIT(cShard, tShard) ||
-            (tShard.isClifford() && (!IS_1_CMPLX(topLeft) || !IS_1_CMPLX(-bottomRight)))) {
+        if (!IS_SAME_UNIT(cShard, tShard) &&
+            (!ARE_CLIFFORD(cShard, tShard) || !IS_1_CMPLX(topLeft) || !IS_1_CMPLX(-bottomRight))) {
             delete[] controls;
             tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
             OptimizePairBuffers(control, target, true);
