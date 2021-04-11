@@ -2055,13 +2055,15 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
-    if (IS_NORM_0(topLeft - bottomRight) && (randGlobalPhase || IS_1_R1(topLeft))) {
-        return;
-    }
+    if (randGlobalPhase || IS_1_R1(topLeft)) {
+        if (IS_NORM_0(topLeft - bottomRight)) {
+            return;
+        }
 
-    if (IS_NORM_0(topLeft + bottomRight) && (randGlobalPhase || IS_1_R1(topLeft))) {
-        Z(target);
-        return;
+        if (IS_NORM_0(topLeft + bottomRight)) {
+            Z(target);
+            return;
+        }
     }
 
     QEngineShard& shard = shards[target];
@@ -2081,71 +2083,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         }
     }
 
-    if (!freezeBasisH && shard.isPauliY) {
-        if (randGlobalPhase || IS_1_R1(topLeft)) {
-            if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
-                shard.isPauliX = true;
-                shard.isPauliY = false;
-                XBase(target);
-                return;
-            } else if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
-                shard.isPauliX = true;
-                shard.isPauliY = false;
-                return;
-            }
-        }
-
-        complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
-        TransformPhase(topLeft, bottomRight, mtrx);
-
-        if (shard.unit) {
-            shard.unit->ApplySingleBit(mtrx, shard.mapped);
-        }
-        if (DIRTY(shard)) {
-            shard.MakeDirty();
-            return;
-        }
-
-        complex Y0 = shard.amp0;
-
-        shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
-        shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
-        }
-    } else if (shard.isPauliX) {
-        if (!freezeBasisH && (randGlobalPhase || IS_1_R1(topLeft))) {
-            if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
-                shard.isPauliX = false;
-                shard.isPauliY = true;
-                return;
-            } else if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
-                shard.isPauliX = false;
-                shard.isPauliY = true;
-                XBase(target);
-                return;
-            }
-        }
-
-        complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
-        TransformPhase(topLeft, bottomRight, mtrx);
-
-        if (shard.unit) {
-            shard.unit->ApplySingleBit(mtrx, shard.mapped);
-        }
-        if (DIRTY(shard)) {
-            shard.MakeDirty();
-            return;
-        }
-
-        complex Y0 = shard.amp0;
-
-        shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
-        shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
-        }
-    } else {
+    if (!shard.isPauliX && !shard.isPauliY) {
         if (shard.unit) {
             shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped);
         }
@@ -2159,6 +2097,55 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         if (doNormalize) {
             shard.ClampAmps(amplitudeFloor);
         }
+
+        return;
+    }
+
+    if (!freezeBasisH) {
+        if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
+            if (shard.isPauliY) {
+                shard.isPauliX = true;
+                shard.isPauliY = false;
+                XBase(target);
+                return;
+            } else if (shard.isPauliX) {
+                shard.isPauliX = false;
+                shard.isPauliY = true;
+                return;
+            }
+        }
+
+        if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
+            if (shard.isPauliY) {
+                shard.isPauliX = true;
+                shard.isPauliY = false;
+                return;
+            } else if (shard.isPauliX) {
+                shard.isPauliX = false;
+                shard.isPauliY = true;
+                XBase(target);
+                return;
+            }
+        }
+    }
+
+    complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
+    TransformPhase(topLeft, bottomRight, mtrx);
+
+    if (shard.unit) {
+        shard.unit->ApplySingleBit(mtrx, shard.mapped);
+    }
+    if (DIRTY(shard)) {
+        shard.MakeDirty();
+        return;
+    }
+
+    complex Y0 = shard.amp0;
+
+    shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
+    shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
+    if (doNormalize) {
+        shard.ClampAmps(amplitudeFloor);
     }
 }
 
@@ -2228,9 +2215,16 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         return;
     }
 
-    if ((controlLen == 1) && IS_NORM_0(topLeft - bottomRight)) {
-        ApplySinglePhase(ONE_CMPLX, bottomRight, cControls[0]);
-        return;
+    if (controlLen == 1) {
+        if (IS_NORM_0(topLeft - bottomRight)) {
+            ApplySinglePhase(ONE_CMPLX, bottomRight, cControls[0]);
+            return;
+        }
+
+        if (IS_1_CMPLX(topLeft) && IS_1_CMPLX(-bottomRight)) {
+            CZ(cControls[0], cTarget);
+            return;
+        }
     }
 
     bitLenInt* controls = new bitLenInt[controlLen];
@@ -2295,7 +2289,8 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI,
             {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard)) {
+        // This is not a Clifford gate, so we buffer for stabilizer:
+        if (!IS_SAME_UNIT(cShard, tShard) || tShard.isClifford()) {
             delete[] controls;
             tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
             OptimizePairBuffers(control, target, false);
@@ -2337,9 +2332,11 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         return;
     }
 
-    if ((controlLen == 1) && IS_NORM_0(topLeft - bottomRight)) {
-        ApplySinglePhase(topLeft, ONE_CMPLX, cControls[0]);
-        return;
+    if (controlLen == 1) {
+        if (IS_NORM_0(topLeft - bottomRight)) {
+            ApplySinglePhase(topLeft, ONE_CMPLX, cControls[0]);
+            return;
+        }
     }
 
     bitLenInt* controls = new bitLenInt[controlLen];
@@ -2390,7 +2387,9 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(bottomRight) ? ONLY_TARGETS : CONTROLS_AND_TARGETS,
             CTRL_AND_ANTI, {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard)) {
+        // If this is not a Clifford gate, we buffer for stabilizer:
+        if (!IS_SAME_UNIT(cShard, tShard) ||
+            (tShard.isClifford() && (!IS_1_CMPLX(topLeft) || !IS_1_CMPLX(-bottomRight)))) {
             delete[] controls;
             tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
             OptimizePairBuffers(control, target, true);
@@ -4087,9 +4086,16 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     PhaseShardPtr buffer = phaseShard->second;
 
     if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
-        tShard.RemovePhaseControl(&cShard);
-        ApplyBuffer(buffer, control, target, anti);
-        return;
+        if (IS_1_CMPLX(buffer->cmplxDiff)) {
+            tShard.RemovePhaseControl(&cShard);
+            return;
+        }
+
+        if (!cShard.isClifford() && !tShard.isClifford()) {
+            tShard.RemovePhaseControl(&cShard);
+            ApplyBuffer(buffer, control, target, anti);
+            return;
+        }
     }
 
     ShardToPhaseMap& antiTargets = anti ? tShard.targetOfShards : tShard.antiTargetOfShards;
