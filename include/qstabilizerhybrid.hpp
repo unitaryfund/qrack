@@ -152,6 +152,32 @@ public:
         }
     }
 
+    virtual bool TrimControls(const bitLenInt* lControls, const bitLenInt& lControlLen, std::vector<bitLenInt>& output,
+        const bool& anti = false)
+    {
+        if (engine) {
+            output.insert(output.begin(), lControls, lControls + lControlLen);
+            return false;
+        }
+
+        real1_f prob;
+        for (bitLenInt i = 0; i < lControlLen; i++) {
+            prob = Prob(lControls[i]);
+            if (anti) {
+                prob = ONE_R1 - prob;
+            }
+
+            if (prob == ZERO_R1) {
+                return true;
+            }
+            if (prob != ONE_R1) {
+                output.push_back(lControls[i]);
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Switches between CPU and GPU used modes. (This will not incur a performance penalty, if the chosen mode matches
      * the current mode.) Mode switching happens automatically when qubit counts change, but Compose() and Decompose()
@@ -440,7 +466,7 @@ public:
         const bitCapInt& mtrxSkipValueMask)
     {
         // If there are no controls, this is equivalent to the single bit gate.
-        if (controlLen == 0) {
+        if (!controlLen) {
             ApplySingleBit(mtrxs, qubitIndex);
             return;
         }
@@ -464,26 +490,36 @@ public:
     }
 
     virtual void CSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+        const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        if (controlLen == 0) {
+        std::vector<bitLenInt> controls;
+        if (TrimControls(lControls, lControlLen, controls)) {
+            return;
+        }
+
+        if (!controls.size()) {
             Swap(qubit1, qubit2);
             return;
         }
 
         SwitchToEngine();
-        engine->CSwap(controls, controlLen, qubit1, qubit2);
+        engine->CSwap(lControls, lControlLen, qubit1, qubit2);
     }
     virtual void AntiCSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+        const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        if (controlLen == 0) {
+        std::vector<bitLenInt> controls;
+        if (TrimControls(lControls, lControlLen, controls, true)) {
+            return;
+        }
+
+        if (!controls.size()) {
             Swap(qubit1, qubit2);
             return;
         }
 
         SwitchToEngine();
-        engine->AntiCSwap(controls, controlLen, qubit1, qubit2);
+        engine->AntiCSwap(lControls, lControlLen, qubit1, qubit2);
     }
     virtual void CSqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
