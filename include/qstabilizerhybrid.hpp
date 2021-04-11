@@ -20,7 +20,7 @@
 
 namespace Qrack {
 
-class QStabilizerShard;
+struct QStabilizerShard;
 typedef std::shared_ptr<QStabilizerShard> QStabilizerShardPtr;
 
 class QStabilizerHybrid;
