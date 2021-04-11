@@ -152,14 +152,12 @@ public:
         }
     }
 
-    virtual std::vector<bitLenInt> TrimControls(
-        const bitLenInt* lControls, const bitLenInt& lControlLen, const bool& anti)
+    virtual bool TrimControls(const bitLenInt* lControls, const bitLenInt& lControlLen, std::vector<bitLenInt>& output,
+        const bool& anti = false)
     {
-        std::vector<bitLenInt> output;
-
         if (engine) {
             output.insert(output.begin(), lControls, lControls + lControlLen);
-            return output;
+            return false;
         }
 
         real1_f prob;
@@ -170,14 +168,14 @@ public:
             }
 
             if (prob == ZERO_R1) {
-                return std::vector<bitLenInt>();
+                return true;
             }
             if (prob != ONE_R1) {
                 output.push_back(lControls[i]);
             }
         }
 
-        return output;
+        return false;
     }
 
     /**
@@ -463,21 +461,19 @@ public:
     virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft);
 
-    virtual void UniformlyControlledSingleBit(const bitLenInt* lControls, const bitLenInt& lControlLen,
+    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask)
     {
-        std::vector<bitLenInt> controls = TrimControls(lControls, lControlLen);
-
         // If there are no controls, this is equivalent to the single bit gate.
-        if (controls.size() == 0) {
+        if (!controlLen) {
             ApplySingleBit(mtrxs, qubitIndex);
             return;
         }
 
         SwitchToEngine();
         engine->UniformlyControlledSingleBit(
-            lControls, lControlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
+            controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
     }
 
     virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
@@ -496,7 +492,10 @@ public:
     virtual void CSwap(
         const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        std::vector<bitLenInt> controls = TrimControls(lControls, lControlLen);
+        std::vector<bitLenInt> controls;
+        if (TrimControls(lControls, lControlLen, controls)) {
+            return;
+        }
 
         if (!controls.size()) {
             Swap(qubit1, qubit2);
@@ -509,7 +508,10 @@ public:
     virtual void AntiCSwap(
         const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        std::vector<bitLenInt> controls = TrimControls(lControls, lControlLen, true);
+        std::vector<bitLenInt> controls;
+        if (TrimControls(lControls, lControlLen, controls, true)) {
+            return;
+        }
 
         if (!controls.size()) {
             Swap(qubit1, qubit2);

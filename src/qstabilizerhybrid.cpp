@@ -562,7 +562,10 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
 void QStabilizerHybrid::ApplyControlledSingleBit(
     const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& target, const complex* mtrx)
 {
-    std::vector<bitLenInt> controls = TrimControls(lControls, lControlLen);
+    std::vector<bitLenInt> controls;
+    if (TrimControls(lControls, lControlLen, controls)) {
+        return;
+    }
 
     if (!controls.size()) {
         ApplySingleBit(mtrx, target);
@@ -598,7 +601,10 @@ void QStabilizerHybrid::ApplyControlledSingleBit(
 void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, const bitLenInt& lControlLen,
     const bitLenInt& target, const complex topLeft, const complex bottomRight)
 {
-    std::vector<bitLenInt> controls = TrimControls(lControls, lControlLen);
+    std::vector<bitLenInt> controls;
+    if (TrimControls(lControls, lControlLen, controls)) {
+        return;
+    }
 
     if (!controls.size()) {
         ApplySinglePhase(topLeft, bottomRight, target);
@@ -649,7 +655,10 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
 void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, const bitLenInt& lControlLen,
     const bitLenInt& target, const complex topRight, const complex bottomLeft)
 {
-    std::vector<bitLenInt> controls = TrimControls(lControls, lControlLen);
+    std::vector<bitLenInt> controls;
+    if (TrimControls(lControls, lControlLen, controls)) {
+        return;
+    }
 
     if (!controls.size()) {
         ApplySingleInvert(topRight, bottomLeft, target);
@@ -702,7 +711,10 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
 void QStabilizerHybrid::ApplyAntiControlledSingleBit(
     const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& target, const complex* mtrx)
 {
-    std::vector<bitLenInt> controls = TrimControls(lControls, lControlLen, true);
+    std::vector<bitLenInt> controls;
+    if (TrimControls(lControls, lControlLen, controls, true)) {
+        return;
+    }
 
     if (!controls.size()) {
         ApplySingleBit(mtrx, target);
@@ -732,7 +744,10 @@ void QStabilizerHybrid::ApplyAntiControlledSingleBit(
 void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControls, const bitLenInt& lControlLen,
     const bitLenInt& target, const complex topLeft, const complex bottomRight)
 {
-    std::vector<bitLenInt> controls = TrimControls(lControls, lControlLen, true);
+    std::vector<bitLenInt> controls;
+    if (TrimControls(lControls, lControlLen, controls, true)) {
+        return;
+    }
 
     if (!controls.size()) {
         ApplySinglePhase(topLeft, bottomRight, target);
@@ -789,7 +804,10 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControl
 void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lControls, const bitLenInt& lControlLen,
     const bitLenInt& target, const complex topRight, const complex bottomLeft)
 {
-    std::vector<bitLenInt> controls = TrimControls(lControls, lControlLen, true);
+    std::vector<bitLenInt> controls;
+    if (TrimControls(lControls, lControlLen, controls, true)) {
+        return;
+    }
 
     if (!controls.size()) {
         ApplySingleInvert(topRight, bottomLeft, target);
