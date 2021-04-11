@@ -45,6 +45,10 @@ struct QStabilizerShard {
         std::copy(gate, gate + 4, o);
         mul2x2((complex*)g, o, gate);
     }
+
+    bool IsPhase() { return (norm(gate[1]) <= FP_NORM_EPSILON) && (norm(gate[2]) <= FP_NORM_EPSILON); }
+
+    bool IsInvert() { return (norm(gate[0]) <= FP_NORM_EPSILON) && (norm(gate[3]) <= FP_NORM_EPSILON); }
 };
 
 /**
@@ -548,7 +552,17 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
-        FlushBuffers();
+        QStabilizerShardPtr shard = shards[qubit];
+        if (stabilizer && shard) {
+            if (shard->IsInvert()) {
+                X(qubit);
+                shards[qubit] = NULL;
+            } else if (shard->IsPhase()) {
+                shards[qubit] = NULL;
+            } else {
+                FlushBuffers();
+            }
+        }
 
         // TODO: QStabilizer appears not to be decomposable after measurement and in many cases where a bit is in an
         // eigenstate.
@@ -756,14 +770,22 @@ public:
 
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
-        FlushBuffers();
+        bool isInvert = false;
+        QStabilizerShardPtr shard = shards[qubitIndex];
+        if (stabilizer && shard) {
+            if (shard->IsInvert()) {
+                isInvert = true;
+            } else if (!shard->IsPhase()) {
+                FlushBuffers();
+            }
+        }
 
         if (engine) {
             return engine->Prob(qubitIndex);
         }
 
         if (stabilizer->IsSeparableZ(qubitIndex)) {
-            return stabilizer->M(qubitIndex) ? ONE_R1 : ZERO_R1;
+            return stabilizer->M(qubitIndex) ^ isInvert ? ONE_R1 : ZERO_R1;
         } else {
             return ONE_R1 / 2;
         }
