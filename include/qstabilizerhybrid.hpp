@@ -152,7 +152,8 @@ public:
         }
     }
 
-    virtual std::vector<bitLenInt> TrimControls(const bitLenInt* lControls, const bitLenInt& lControlLen)
+    virtual std::vector<bitLenInt> TrimControls(
+        const bitLenInt* lControls, const bitLenInt& lControlLen, const bool& anti)
     {
         std::vector<bitLenInt> output;
 
@@ -164,6 +165,10 @@ public:
         real1_f prob;
         for (bitLenInt i = 0; i < lControlLen; i++) {
             prob = Prob(lControls[i]);
+            if (anti) {
+                prob = ONE_R1 - prob;
+            }
+
             if (prob == ZERO_R1) {
                 return std::vector<bitLenInt>();
             }
@@ -493,7 +498,7 @@ public:
     {
         std::vector<bitLenInt> controls = TrimControls(lControls, lControlLen);
 
-        if (controls.size() == 0) {
+        if (!controls.size()) {
             Swap(qubit1, qubit2);
             return;
         }
@@ -504,9 +509,9 @@ public:
     virtual void AntiCSwap(
         const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        std::vector<bitLenInt> controls = TrimControls(lControls, lControlLen);
+        std::vector<bitLenInt> controls = TrimControls(lControls, lControlLen, true);
 
-        if (controls.size() == 0) {
+        if (!controls.size()) {
             Swap(qubit1, qubit2);
             return;
         }
