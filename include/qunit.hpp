@@ -257,6 +257,7 @@ public:
     virtual void Finish();
     virtual bool isFinished();
     virtual void Dump();
+    virtual bool isClifford(const bitLenInt& qubit) { return shards[qubit].isClifford(); };
 
     using QInterface::TrySeparate;
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON);

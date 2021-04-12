@@ -2180,6 +2180,12 @@ public:
     virtual bool isClifford() { return false; };
 
     /**
+     * Returns "true" if current qubit state is identifiably within the Clifford set, or "false" if it is not or cannot
+     * be determined.
+     */
+    virtual bool isClifford(const bitLenInt& qubit) { return false; };
+
+    /**
      *  Qrack::QUnit types maintain explicit separation of representations of qubits, which reduces memory usage and
      * increases gate speed. This method is used to manually attempt internal separation of a QUnit subsytem. We attempt
      * a Decompose() operation, on a state which might not be separable. If the state is not separable, we abort and
