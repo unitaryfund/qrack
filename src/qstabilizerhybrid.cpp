@@ -26,7 +26,7 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
     , subEngineType(subEng)
     , engine(NULL)
     , shards(qubitCount)
-    , shardsZ(qubitCount)
+    , shardsEigen(qubitCount)
     , devID(deviceId)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
@@ -93,7 +93,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
             if (shards[i]) {
                 c->shards[i] = std::make_shared<QStabilizerShard>(shards[i]->gate);
             }
-            c->shardsZ[i] = shardsZ[i];
+            c->shardsEigen[i] = shardsEigen[i];
         }
     } else {
         complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
@@ -279,7 +279,7 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
         engine = NULL;
 
         dest->shards = shards;
-        dest->shardsZ = shardsZ;
+        dest->shardsEigen = shardsEigen;
         DumpBuffers();
 
         SetQubitCount(1);
@@ -302,8 +302,8 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     stabilizer->Decompose(start, dest->stabilizer);
     std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     shards.erase(shards.begin() + start, shards.begin() + start + length);
-    std::copy(shardsZ.begin() + start, shardsZ.begin() + start + length, dest->shardsZ.begin());
-    shardsZ.erase(shardsZ.begin() + start, shardsZ.begin() + start + length);
+    std::copy(shardsEigen.begin() + start, shardsEigen.begin() + start + length, dest->shardsEigen.begin());
+    shardsEigen.erase(shardsEigen.begin() + start, shardsEigen.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -329,7 +329,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
     }
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
-    shardsZ.erase(shardsZ.begin() + start, shardsZ.begin() + start + length);
+    shardsEigen.erase(shardsEigen.begin() + start, shardsEigen.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -355,7 +355,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
     }
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
-    shardsZ.erase(shardsZ.begin() + start, shardsZ.begin() + start + length);
+    shardsEigen.erase(shardsEigen.begin() + start, shardsEigen.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -482,20 +482,61 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 
     if (stabilizer) {
         if (!wasCached) {
-            shardsZ[target] = stabilizer->IsSeparableZ(target);
-        }
-
-        if (shardsZ[target]) {
-            if ((norm(mtrx[1]) < REAL1_EPSILON) && (norm(mtrx[2]) < REAL1_EPSILON)) {
-                return;
-            }
-            if ((norm(mtrx[0]) < REAL1_EPSILON) && (norm(mtrx[3]) < REAL1_EPSILON)) {
-                X(target);
-                return;
+            if (stabilizer->IsSeparableZ(target)) {
+                shardsEigen[target] = PauliZ;
+            } else if (stabilizer->IsSeparableX(target)) {
+                shardsEigen[target] = PauliX;
+            } else if (stabilizer->IsSeparableY(target)) {
+                shardsEigen[target] = PauliY;
+            } else {
+                shardsEigen[target] = PauliI;
             }
         }
 
-        shards[target] = std::make_shared<QStabilizerShard>(mtrx);
+        QStabilizerShardPtr shard = std::make_shared<QStabilizerShard>(mtrx);
+        if (shardsEigen[target]) {
+            QStabilizerShardPtr nShard;
+            // If in PauliX or PauliY basis, compose gate with conversion from/to PauliZ basis.
+            if (shardsEigen[target] == PauliX) {
+                complex nMtrx[4] = { complex((real1)M_SQRT1_2, ZERO_R1), complex((real1)M_SQRT1_2, ZERO_R1),
+                    complex((real1)M_SQRT1_2, ZERO_R1), complex((real1)-M_SQRT1_2, ZERO_R1) };
+                nShard = std::make_shared<QStabilizerShard>(nMtrx);
+                nShard->Compose(shard->gate);
+                nShard->Compose(nMtrx);
+            } else if (shardsEigen[target] == PauliY) {
+                complex nMtrx[4] = { complex((real1)M_SQRT1_2, ZERO_R1), complex(ZERO_R1, (real1)-M_SQRT1_2),
+                    complex((real1)M_SQRT1_2, ZERO_R1), complex(ZERO_R1, (real1)-M_SQRT1_2) };
+                complex aMtrx[4] = { complex((real1)M_SQRT1_2, ZERO_R1), complex((real1)M_SQRT1_2, ZERO_R1),
+                    complex(ZERO_R1, (real1)M_SQRT1_2), complex(ZERO_R1, (real1)-M_SQRT1_2) };
+                nShard = std::make_shared<QStabilizerShard>(nMtrx);
+                nShard->Compose(shard->gate);
+                nShard->Compose(aMtrx);
+            } else {
+                nShard = std::make_shared<QStabilizerShard>(shard->gate);
+            }
+
+            if ((norm(nShard->gate[1]) < REAL1_EPSILON) && (norm(nShard->gate[2]) < REAL1_EPSILON)) {
+                return;
+            }
+            if ((norm(nShard->gate[0]) < REAL1_EPSILON) && (norm(nShard->gate[3]) < REAL1_EPSILON)) {
+                if (shardsEigen[target] == PauliZ) {
+                    X(target);
+                } else if (shardsEigen[target] == PauliX) {
+                    H(target);
+                    X(target);
+                    H(target);
+                } else {
+                    IS(target);
+                    H(target);
+                    X(target);
+                    H(target);
+                    S(target);
+                }
+                return;
+            }
+        }
+
+        shards[target] = shard;
         return;
     }
 
@@ -887,6 +928,41 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
 
     SwitchToEngine();
     engine->ApplyAntiControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
+}
+
+real1_f QStabilizerHybrid::Prob(bitLenInt qubitIndex)
+{
+    bool isCached;
+    bool isInvert = false;
+    QStabilizerShardPtr shard = shards[qubitIndex];
+    if (stabilizer && shard) {
+        isCached = true;
+        if (shard->IsInvert()) {
+            isInvert = true;
+        } else if (!shard->IsPhase()) {
+            FlushBuffers();
+        }
+    } else {
+        isCached = false;
+    }
+
+    if (engine) {
+        return engine->Prob(qubitIndex);
+    }
+
+    if (isCached) {
+        if (shardsEigen[qubitIndex] == PauliZ) {
+            return stabilizer->M(qubitIndex) ^ isInvert ? ONE_R1 : ZERO_R1;
+        } else {
+            return ONE_R1 / 2;
+        }
+    }
+
+    if (stabilizer->IsSeparableZ(qubitIndex)) {
+        return stabilizer->M(qubitIndex) ? ONE_R1 : ZERO_R1;
+    } else {
+        return ONE_R1 / 2;
+    }
 }
 
 bitCapInt QStabilizerHybrid::MAll()

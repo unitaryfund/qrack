@@ -27,17 +27,6 @@ std::mutex metaOperationMutex;
 
 using namespace Qrack;
 
-enum Pauli {
-    /// Pauli Identity operator. Corresponds to Q# constant "PauliI."
-    PauliI = 0,
-    /// Pauli X operator. Corresponds to Q# constant "PauliX."
-    PauliX = 1,
-    /// Pauli Y operator. Corresponds to Q# constant "PauliY."
-    PauliY = 3,
-    /// Pauli Z operator. Corresponds to Q# constant "PauliZ."
-    PauliZ = 2
-};
-
 qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>(time(0));
 std::vector<QInterfacePtr> simulators;
 std::vector<bool> simulatorReservations;
