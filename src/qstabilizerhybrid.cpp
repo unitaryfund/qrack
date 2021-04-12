@@ -431,17 +431,17 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
 
 void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
+    bool wasCached;
     complex mtrx[4];
     if (shards[target]) {
         QStabilizerShardPtr shard = shards[target];
         shard->Compose(lMtrx);
         std::copy(shard->gate, shard->gate + 4, mtrx);
         shards[target] = NULL;
+        wasCached = true;
     } else {
         std::copy(lMtrx, lMtrx + 4, mtrx);
-        if (stabilizer) {
-            shardsZ[target] = stabilizer->IsSeparableZ(target);
-        }
+        wasCached = false;
     }
 
     if (IsIdentity(mtrx, true)) {
@@ -481,6 +481,10 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     if (stabilizer) {
+        if (!wasCached) {
+            shardsZ[target] = stabilizer->IsSeparableZ(target);
+        }
+
         if (shardsZ[target]) {
             if ((norm(mtrx[1]) < REAL1_EPSILON) && (norm(mtrx[2]) < REAL1_EPSILON)) {
                 return;
