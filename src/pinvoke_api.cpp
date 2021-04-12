@@ -960,6 +960,35 @@ MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
     return simulator->Prob(shards[simulator][q]);
 }
 
+MICROSOFT_QUANTUM_DECL void QFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+#if (QBCAPPOW >= 16) && (QBCAPPOW < 32)
+    simulator->QFTR(c, n);
+#else
+    bitLenInt* q = new bitLenInt[n];
+    std::copy(c, c + n, q);
+    simulator->QFTR(q, n);
+    delete[] q;
+#endif
+}
+MICROSOFT_QUANTUM_DECL void IQFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+#if (QBCAPPOW >= 16) && (QBCAPPOW < 32)
+    simulator->IQFTR(c, n);
+#else
+    bitLenInt* q = new bitLenInt[n];
+    std::copy(c, c + n, q);
+    simulator->IQFTR(q, n);
+    delete[] q;
+#endif
+}
+
 #if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
 /**
  * (External API) Simulate a Hamiltonian

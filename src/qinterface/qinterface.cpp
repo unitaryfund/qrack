@@ -548,6 +548,47 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
     }
 }
 
+/// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
+void QInterface::QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate)
+{
+    if (length == 0) {
+        return;
+    }
+
+    bitLenInt end = (length - 1U);
+    bitLenInt i, j;
+    for (i = 0; i < length; i++) {
+        H(qubits[end - i]);
+        for (j = 0; j < ((length - 1U) - i); j++) {
+            CPhaseRootN(j + 2U, qubits[(end - i) - (j + 1U)], qubits[end - i]);
+        }
+
+        if (trySeparate) {
+            TrySeparate(qubits[end - i]);
+        }
+    }
+}
+
+/// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
+void QInterface::IQFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate)
+{
+    if (length == 0) {
+        return;
+    }
+
+    bitLenInt i, j;
+    for (i = 0; i < length; i++) {
+        for (j = 0; j < i; j++) {
+            CIPhaseRootN(j + 2U, qubits[i - (j + 1U)], qubits[i]);
+        }
+        H(qubits[i]);
+
+        if (trySeparate) {
+            TrySeparate(qubits[i]);
+        }
+    }
+}
+
 /// Set register bits to given permutation
 void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
