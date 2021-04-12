@@ -773,7 +773,22 @@ public:
         engine->FSim(theta, phi, qubitIndex1, qubitIndex2);
     }
 
-    virtual real1_f Prob(bitLenInt qubitIndex);
+    virtual real1_f Prob(bitLenInt qubitIndex)
+    {
+        if (stabilizer && shards[qubitIndex]) {
+            FlushBuffers();
+        }
+
+        if (engine) {
+            return engine->Prob(qubitIndex);
+        }
+
+        if (stabilizer->IsSeparableZ(qubitIndex)) {
+            return stabilizer->M(qubitIndex) ? ONE_R1 : ZERO_R1;
+        } else {
+            return ONE_R1 / 2;
+        }
+    }
 
     virtual real1_f ProbAll(bitCapInt fullRegister)
     {

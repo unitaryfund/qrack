@@ -930,41 +930,6 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
     engine->ApplyAntiControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
 }
 
-real1_f QStabilizerHybrid::Prob(bitLenInt qubitIndex)
-{
-    bool isCached;
-    bool isInvert = false;
-    QStabilizerShardPtr shard = shards[qubitIndex];
-    if (stabilizer && shard) {
-        isCached = true;
-        if (shard->IsInvert()) {
-            isInvert = true;
-        } else if (!shard->IsPhase()) {
-            FlushBuffers();
-        }
-    } else {
-        isCached = false;
-    }
-
-    if (engine) {
-        return engine->Prob(qubitIndex);
-    }
-
-    if (isCached) {
-        if (shardsEigen[qubitIndex] == PauliZ) {
-            return stabilizer->M(qubitIndex) ^ isInvert ? ONE_R1 : ZERO_R1;
-        } else {
-            return ONE_R1 / 2;
-        }
-    }
-
-    if (stabilizer->IsSeparableZ(qubitIndex)) {
-        return stabilizer->M(qubitIndex) ? ONE_R1 : ZERO_R1;
-    } else {
-        return ONE_R1 / 2;
-    }
-}
-
 bitCapInt QStabilizerHybrid::MAll()
 {
     FlushBuffers();
