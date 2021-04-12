@@ -75,6 +75,20 @@ class QInterface;
 typedef std::shared_ptr<QInterface> QInterfacePtr;
 
 /**
+ * Enumerated list of Pauli bases
+ */
+enum Pauli {
+    /// Pauli Identity operator. Corresponds to Q# constant "PauliI."
+    PauliI = 0,
+    /// Pauli X operator. Corresponds to Q# constant "PauliX."
+    PauliX = 1,
+    /// Pauli Y operator. Corresponds to Q# constant "PauliY."
+    PauliY = 3,
+    /// Pauli Z operator. Corresponds to Q# constant "PauliZ."
+    PauliZ = 2
+};
+
+/**
  * Enumerated list of supported engines.
  *
  * Use QINTERFACE_OPTIMAL for the best supported engine.

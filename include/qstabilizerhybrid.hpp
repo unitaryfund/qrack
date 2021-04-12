@@ -62,7 +62,7 @@ protected:
     QInterfacePtr engine;
     QStabilizerPtr stabilizer;
     std::vector<QStabilizerShardPtr> shards;
-    std::vector<bool> shardsZ;
+    std::vector<Pauli> shardsEigen;
     int devID;
     complex phaseFactor;
     bool doNormalize;
@@ -367,7 +367,7 @@ public:
         }
 
         shards.insert(shards.end(), toCopy->shards.begin(), toCopy->shards.end());
-        shardsZ.insert(shardsZ.end(), toCopy->shardsZ.begin(), toCopy->shardsZ.end());
+        shardsEigen.insert(shardsEigen.end(), toCopy->shardsEigen.begin(), toCopy->shardsEigen.end());
 
         SetQubitCount(qubitCount + toCopy->qubitCount);
 
@@ -395,7 +395,7 @@ public:
         }
 
         shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
-        shardsZ.insert(shardsZ.begin() + start, toCopy->shardsZ.begin(), toCopy->shardsZ.end());
+        shardsEigen.insert(shardsEigen.begin() + start, toCopy->shardsEigen.begin(), toCopy->shardsEigen.end());
 
         SetQubitCount(qubitCount + toCopy->qubitCount);
 
@@ -775,14 +775,8 @@ public:
 
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
-        bool isInvert = false;
-        QStabilizerShardPtr shard = shards[qubitIndex];
-        if (stabilizer && shard) {
-            if (shard->IsInvert()) {
-                isInvert = true;
-            } else if (!shard->IsPhase()) {
-                FlushBuffers();
-            }
+        if (stabilizer && shards[qubitIndex]) {
+            FlushBuffers();
         }
 
         if (engine) {
@@ -790,11 +784,12 @@ public:
         }
 
         if (stabilizer->IsSeparableZ(qubitIndex)) {
-            return stabilizer->M(qubitIndex) ^ isInvert ? ONE_R1 : ZERO_R1;
+            return stabilizer->M(qubitIndex) ? ONE_R1 : ZERO_R1;
         } else {
             return ONE_R1 / 2;
         }
     }
+
     virtual real1_f ProbAll(bitCapInt fullRegister)
     {
         SwitchToEngine();
