@@ -1838,6 +1838,14 @@ public:
      */
     virtual void QFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
 
+    /** Quantum Fourier Transform (random access) - Apply the quantum Fourier transform to the register.
+     *
+     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
+     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
+     * Otherwise, turning it on will probably take longer.
+     */
+    virtual void QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
+
     /** Inverse Quantum Fourier Transform - Apply the inverse quantum Fourier transform to the register.
      *
      * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
@@ -1845,6 +1853,14 @@ public:
      * Otherwise, turning it on will probably take longer.
      */
     virtual void IQFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
+
+    /** Inverse Quantum Fourier Transform (random access) - Apply the inverse quantum Fourier transform to the register.
+     *
+     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
+     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
+     * Otherwise, turning it on will probably take longer.
+     */
+    virtual void IQFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
 
     /** Reverse the phase of the state where the register equals zero. */
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
