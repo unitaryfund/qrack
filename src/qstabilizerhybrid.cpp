@@ -26,6 +26,7 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
     , subEngineType(subEng)
     , engine(NULL)
     , shards(qubitCount)
+    , shardsZ(qubitCount)
     , devID(deviceId)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
@@ -92,6 +93,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
             if (shards[i]) {
                 c->shards[i] = std::make_shared<QStabilizerShard>(shards[i]->gate);
             }
+            c->shardsZ[i] = shardsZ[i];
         }
     } else {
         complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
@@ -277,6 +279,7 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
         engine = NULL;
 
         dest->shards = shards;
+        dest->shardsZ = shardsZ;
         DumpBuffers();
 
         SetQubitCount(1);
@@ -299,6 +302,8 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     stabilizer->Decompose(start, dest->stabilizer);
     std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     shards.erase(shards.begin() + start, shards.begin() + start + length);
+    std::copy(shardsZ.begin() + start, shardsZ.begin() + start + length, dest->shardsZ.begin());
+    shardsZ.erase(shardsZ.begin() + start, shardsZ.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -324,6 +329,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
     }
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
+    shardsZ.erase(shardsZ.begin() + start, shardsZ.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -349,6 +355,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
     }
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
+    shardsZ.erase(shardsZ.begin() + start, shardsZ.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -424,17 +431,17 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
 
 void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
-    bool wasCached;
     complex mtrx[4];
     if (shards[target]) {
         QStabilizerShardPtr shard = shards[target];
         shard->Compose(lMtrx);
         std::copy(shard->gate, shard->gate + 4, mtrx);
         shards[target] = NULL;
-        wasCached = true;
     } else {
         std::copy(lMtrx, lMtrx + 4, mtrx);
-        wasCached = false;
+        if (stabilizer) {
+            shardsZ[target] = stabilizer->IsSeparableZ(target);
+        }
     }
 
     if (IsIdentity(mtrx, true)) {
@@ -474,7 +481,7 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     if (stabilizer) {
-        if (!wasCached && stabilizer->IsSeparableZ(target)) {
+        if (shardsZ[target]) {
             if ((norm(mtrx[1]) < REAL1_EPSILON) && (norm(mtrx[2]) < REAL1_EPSILON)) {
                 return;
             }
