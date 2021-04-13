@@ -197,7 +197,9 @@ public:
     /// Apply a CNOT gate with control and target
     virtual void CNOT(bitLenInt control, bitLenInt target)
     {
-        FlushBuffers();
+        if (shards[control] || shards[target]) {
+            FlushBuffers();
+        }
 
         if (stabilizer) {
             stabilizer->CNOT(control, target);
@@ -310,7 +312,9 @@ public:
 
     virtual void CZ(bitLenInt control, bitLenInt target)
     {
-        FlushBuffers();
+        if (shards[control] || shards[target]) {
+            FlushBuffers();
+        }
 
         if (stabilizer) {
             stabilizer->CZ(control, target);
@@ -327,7 +331,9 @@ public:
             return;
         }
 
-        FlushBuffers();
+        if (shards[qubit1] || shards[qubit2]) {
+            FlushBuffers();
+        }
 
         if (stabilizer) {
             stabilizer->Swap(qubit1, qubit2);
@@ -342,7 +348,9 @@ public:
             return;
         }
 
-        FlushBuffers();
+        if (shards[qubit1] || shards[qubit2]) {
+            FlushBuffers();
+        }
 
         if (stabilizer) {
             stabilizer->ISwap(qubit1, qubit2);
@@ -379,9 +387,6 @@ public:
     }
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy, bitLenInt start)
     {
-        FlushBuffers();
-        toCopy->FlushBuffers();
-
         bitLenInt toRet;
 
         if (engine) {
