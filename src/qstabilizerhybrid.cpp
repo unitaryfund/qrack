@@ -152,7 +152,9 @@ void QStabilizerHybrid::SwitchToEngine()
 
 void QStabilizerHybrid::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    FlushBuffers();
+    if (shards[control1] || shards[control2] || shards[target]) {
+        FlushBuffers();
+    }
 
     if (stabilizer) {
         real1_f prob = Prob(control1);
@@ -181,7 +183,9 @@ void QStabilizerHybrid::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt 
 
 void QStabilizerHybrid::CH(bitLenInt control, bitLenInt target)
 {
-    FlushBuffers();
+    if (shards[control] || shards[target]) {
+        FlushBuffers();
+    }
 
     if (stabilizer) {
         real1_f prob = Prob(control);
@@ -201,7 +205,9 @@ void QStabilizerHybrid::CH(bitLenInt control, bitLenInt target)
 
 void QStabilizerHybrid::CS(bitLenInt control, bitLenInt target)
 {
-    FlushBuffers();
+    if (shards[control] || shards[target]) {
+        FlushBuffers();
+    }
 
     if (stabilizer) {
         real1_f prob = Prob(control);
@@ -221,7 +227,9 @@ void QStabilizerHybrid::CS(bitLenInt control, bitLenInt target)
 
 void QStabilizerHybrid::CIS(bitLenInt control, bitLenInt target)
 {
-    FlushBuffers();
+    if (shards[control] || shards[target]) {
+        FlushBuffers();
+    }
 
     if (stabilizer) {
         real1_f prob = Prob(control);
@@ -241,7 +249,9 @@ void QStabilizerHybrid::CIS(bitLenInt control, bitLenInt target)
 
 void QStabilizerHybrid::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    FlushBuffers();
+    if (shards[control1] || shards[control2] || shards[target]) {
+        FlushBuffers();
+    }
 
     if (stabilizer) {
         real1_f prob = Prob(control1);
@@ -309,8 +319,6 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
 
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
 {
-    FlushBuffers();
-
     if (length == qubitCount) {
         stabilizer = NULL;
         engine = NULL;
@@ -335,8 +343,6 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
 
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
-    FlushBuffers();
-
     if (length == qubitCount) {
         stabilizer = NULL;
         engine = NULL;
@@ -680,7 +686,7 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
         SwitchToEngine();
     }
 
-    FlushBuffers();
+    FlushIfBlocked(controls, target);
 
     if (engine) {
         engine->ApplyControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
@@ -734,7 +740,7 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
         SwitchToEngine();
     }
 
-    FlushBuffers();
+    FlushIfBlocked(controls, target);
 
     if (engine) {
         engine->ApplyControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
@@ -823,7 +829,7 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControl
         SwitchToEngine();
     }
 
-    FlushBuffers();
+    FlushIfBlocked(controls, target);
 
     if (engine) {
         engine->ApplyAntiControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
@@ -879,7 +885,7 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
         return;
     }
 
-    FlushBuffers();
+    FlushIfBlocked(controls, target);
 
     if (controls.size() > 1U) {
         SwitchToEngine();
