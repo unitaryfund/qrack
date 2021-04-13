@@ -686,19 +686,7 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
         SwitchToEngine();
     }
 
-    bool isBlocked = (bool)shards[target];
-    if (!isBlocked) {
-        for (bitLenInt i = 0; i < controls.size(); i++) {
-            if (shards[controls[i]]) {
-                isBlocked = true;
-                break;
-            }
-        }
-    }
-
-    if (isBlocked) {
-        FlushBuffers();
-    }
+    FlushIfBlocked(controls, target);
 
     if (engine) {
         engine->ApplyControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
@@ -752,19 +740,7 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
         SwitchToEngine();
     }
 
-    bool isBlocked = (bool)shards[target];
-    if (!isBlocked) {
-        for (bitLenInt i = 0; i < controls.size(); i++) {
-            if (shards[controls[i]]) {
-                isBlocked = true;
-                break;
-            }
-        }
-    }
-
-    if (isBlocked) {
-        FlushBuffers();
-    }
+    FlushIfBlocked(controls, target);
 
     if (engine) {
         engine->ApplyControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
@@ -853,19 +829,7 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControl
         SwitchToEngine();
     }
 
-    bool isBlocked = (bool)shards[target];
-    if (!isBlocked) {
-        for (bitLenInt i = 0; i < controls.size(); i++) {
-            if (shards[controls[i]]) {
-                isBlocked = true;
-                break;
-            }
-        }
-    }
-
-    if (isBlocked) {
-        FlushBuffers();
-    }
+    FlushIfBlocked(controls, target);
 
     if (engine) {
         engine->ApplyAntiControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
@@ -921,19 +885,7 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
         return;
     }
 
-    bool isBlocked = (bool)shards[target];
-    if (!isBlocked) {
-        for (bitLenInt i = 0; i < controls.size(); i++) {
-            if (shards[controls[i]]) {
-                isBlocked = true;
-                break;
-            }
-        }
-    }
-
-    if (isBlocked) {
-        FlushBuffers();
-    }
+    FlushIfBlocked(controls, target);
 
     if (controls.size() > 1U) {
         SwitchToEngine();

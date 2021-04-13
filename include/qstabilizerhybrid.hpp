@@ -75,6 +75,23 @@ protected:
     QStabilizerPtr MakeStabilizer(const bitCapInt& perm = 0);
     QInterfacePtr MakeEngine(const bitCapInt& perm = 0);
 
+    void FlushIfBlocked(std::vector<bitLenInt> controls, bitLenInt target)
+    {
+        bool isBlocked = (bool)shards[target];
+        if (!isBlocked) {
+            for (bitLenInt i = 0; i < controls.size(); i++) {
+                if (shards[controls[i]]) {
+                    isBlocked = true;
+                    break;
+                }
+            }
+        }
+
+        if (isBlocked) {
+            FlushBuffers();
+        }
+    }
+
 public:
     QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
