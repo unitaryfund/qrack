@@ -22,15 +22,13 @@ typedef std::shared_ptr<QPager> QPagerPtr;
  * A "Qrack::QPager" splits a "Qrack::QEngine" implementation into equal-length "pages." This helps both optimization
  * and distribution of a single coherent quantum register across multiple devices.
  */
-class QPager : public QInterface {
+class QPager : public QEngine {
 protected:
     QInterfaceEngine engine;
     int devID;
     complex phaseFactor;
-    bool useHostRam;
     bool useRDRAND;
     bool isSparse;
-    real1 runningNorm;
     std::vector<QEnginePtr> qPages;
     std::vector<int> deviceIDs;
 
@@ -203,6 +201,15 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
+    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true)
+    {
+        return QInterface::ForceM(bits, length, values, doApply);
+    }
+    virtual bitCapInt ForceMReg(
+        bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true)
+    {
+        return QInterface::ForceMReg(start, length, result, doForce, doApply);
+    }
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void CINC(
@@ -281,8 +288,6 @@ public:
 
     virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = REAL1_EPSILON);
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) {
-    } // TODO: skip implementation for now
 
     virtual void Finish()
     {
@@ -331,5 +336,124 @@ public:
         toCompare->CombineEngines();
         return qPages[0]->SumSqrDiff(toCompare->qPages[0]);
     }
+
+    virtual void ZeroAmplitudes()
+    {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            qPages[i]->ZeroAmplitudes();
+        }
+    }
+    virtual void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QPager>(src)); }
+    virtual void CopyStateVec(QPagerPtr src)
+    {
+        if (qubitsPerPage() < src->qubitsPerPage()) {
+            CombineEngines(src->qubitsPerPage());
+        } else if (qubitsPerPage() > src->qubitsPerPage()) {
+            SeparateEngines(src->qubitsPerPage());
+        }
+
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            qPages[i]->CopyStateVec(src);
+        }
+    }
+    virtual bool IsZeroAmplitude()
+    {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            if (!qPages[i]->IsZeroAmplitude()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        CombineEngines();
+        qPages[0]->GetAmplitudePage(pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        CombineEngines();
+        qPages[0]->SetAmplitudePage(pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        SetAmplitudePage(std::dynamic_pointer_cast<QPager>(pageEnginePtr), srcOffset, dstOffset, length);
+    }
+    virtual void SetAmplitudePage(
+        QPagerPtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        CombineEngines();
+        pageEnginePtr->CombineEngines();
+        qPages[0]->SetAmplitudePage(pageEnginePtr->qPages[0], srcOffset, dstOffset, length);
+    }
+    virtual void ShuffleBuffers(QEnginePtr engine) { ShuffleBuffers(std::dynamic_pointer_cast<QPager>(engine)); }
+    virtual void ShuffleBuffers(QPagerPtr engine)
+    {
+        CombineEngines();
+        engine->CombineEngines();
+        qPages[0]->ShuffleBuffers(engine->qPages[0]);
+    }
+
+    virtual void QueueSetDoNormalize(const bool& doNorm)
+    {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            qPages[i]->QueueSetDoNormalize(doNorm);
+        }
+    }
+    virtual void QueueSetRunningNorm(const real1_f& runningNrm)
+    {
+        CombineEngines();
+        qPages[0]->QueueSetRunningNorm(runningNrm);
+    }
+
+    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        CombineEngines();
+        qPages[0]->NormalizeState(nrm, norm_thresh);
+    }
+
+    virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+    {
+        CombineEngines();
+        return qPages[0]->GetExpectation(valueStart, valueLength);
+    }
+
+    virtual void FreeStateVec(complex* sv = NULL)
+    {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            qPages[i]->FreeStateVec(sv);
+        }
+    }
+
+    virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) { throw "ApplyM not implemented."; }
+    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        throw "Apply2x2 not implemented.";
+    }
+    virtual void INCDECC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+    {
+        throw "Not implemented.";
+    }
+    virtual void INCDECSC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+    {
+        throw "Not implemented.";
+    }
+    virtual void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
+        const bitLenInt& overflowIndex, const bitLenInt& carryIndex)
+    {
+        throw "Not implemented.";
+    }
+#if ENABLE_BCD
+    virtual void INCDECBCDC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+    {
+        throw "Not implemented.";
+    }
+#endif
 };
 } // namespace Qrack

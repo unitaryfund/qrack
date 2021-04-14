@@ -23,28 +23,25 @@ namespace Qrack {
 QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
     bool ignored, bool ignored2, bool useHostMem, int deviceId, bool useHardwareRNG, bool useSparseStateVec,
     real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
-    : QInterface(qBitCount, rgp, false, useHardwareRNG, false, norm_thresh)
+    : QEngine(qBitCount, rgp, false, false, useHostMem, useHardwareRNG, norm_thresh)
     , engine(eng)
     , devID(deviceId)
     , phaseFactor(phaseFac)
-    , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
-    , runningNorm(ONE_R1)
     , deviceIDs(devList)
     , useHardwareThreshold(false)
     , thresholdQubitsPerPage(qubitThreshold)
     , pStridePow(PSTRIDEPOW)
 {
 #if !ENABLE_OPENCL
-    if (engine == QINTERFACE_HYBRID) {
+    if (engine == QINTERFACE_OPENCL) {
         eng = QINTERFACE_CPU;
     }
 #endif
 
-    if ((engine != QINTERFACE_CPU) && (engine != QINTERFACE_OPENCL) && (engine != QINTERFACE_HYBRID)) {
-        throw std::invalid_argument(
-            "QPager sub-engine type must be QINTERFACE_CPU, QINTERFACE_OPENCL or QINTERFACE_HYBRID.");
+    if ((engine != QINTERFACE_CPU) && (engine != QINTERFACE_OPENCL)) {
+        throw std::invalid_argument("QPager sub-engine type must be QINTERFACE_CPU, QINTERFACE_OPENCL.");
     }
 
     bitLenInt qpd = 2U;
@@ -57,7 +54,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
         engine = QINTERFACE_CPU;
     }
 
-    if ((thresholdQubitsPerPage == 0) && ((engine == QINTERFACE_OPENCL) || (engine == QINTERFACE_HYBRID))) {
+    if ((thresholdQubitsPerPage == 0) && (engine == QINTERFACE_OPENCL)) {
         useHardwareThreshold = true;
 
         // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with

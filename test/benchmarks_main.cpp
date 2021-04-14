@@ -247,25 +247,8 @@ int main(int argc, char* argv[])
             SHOW_OCL_BANNER();
             num_failed = session.run();
         }
-
-        if (num_failed == 0 && hybrid) {
-            session.config().stream() << "############ QPager -> QEngine -> Hybrid ############" << std::endl;
-            testSubEngineType = QINTERFACE_HYBRID;
-            SHOW_OCL_BANNER();
-            num_failed = session.run();
-        }
 #endif
     }
-
-#if ENABLE_OPENCL
-    if (num_failed == 0 && qengine && stabilizer_qpager) {
-        testEngineType = QINTERFACE_STABILIZER_HYBRID;
-        testSubEngineType = QINTERFACE_QPAGER;
-        testSubSubEngineType = QINTERFACE_HYBRID;
-        session.config().stream() << "############ QStabilizerHybrid -> QPager -> QHybrid ############" << std::endl;
-        num_failed = session.run();
-    }
-#endif
 
     if (num_failed == 0 && qunit) {
         testEngineType = QINTERFACE_QUNIT;
@@ -298,15 +281,6 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QHybrid ############" << std::endl;
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_HYBRID;
-            SHOW_OCL_BANNER();
-            num_failed = session.run();
-        }
-
-        if (num_failed == 0 && stabilizer_qpager) {
-            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QPager -> QHybrid ############"
-                                      << std::endl;
-            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
-            testSubSubEngineType = QINTERFACE_QPAGER;
             SHOW_OCL_BANNER();
             num_failed = session.run();
         }
@@ -367,40 +341,6 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QUnit -> QPager -> OpenCL ############" << std::endl;
             testSubSubEngineType = QINTERFACE_OPENCL;
             SHOW_OCL_BANNER();
-            num_failed = session.run();
-        }
-
-        if (num_failed == 0 && hybrid) {
-            session.config().stream() << "############ QUnit -> QPager -> QHybrid ############" << std::endl;
-            testSubSubEngineType = QINTERFACE_HYBRID;
-            SHOW_OCL_BANNER();
-            num_failed = session.run();
-        }
-
-        if (num_failed == 0 && stabilizer_qpager) {
-            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
-            testSubSubEngineType = QINTERFACE_QPAGER;
-            session.config().stream() << "########### QUnit -> QStabilizerHybrid -> QPager -> QHybrid ###########"
-                                      << std::endl;
-            num_failed = session.run();
-        }
-    }
-
-    if (num_failed == 0 && qunit_multi) {
-        testEngineType = QINTERFACE_QUNIT_MULTI;
-        if (num_failed == 0 && qpager) {
-            session.config().stream() << "############ QUnitMulti -> QPager -> QHybrid ############" << std::endl;
-            testSubEngineType = QINTERFACE_QPAGER;
-            testSubSubEngineType = QINTERFACE_HYBRID;
-            SHOW_OCL_BANNER();
-            num_failed = session.run();
-        }
-
-        if (num_failed == 0 && stabilizer_qpager) {
-            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
-            testSubSubEngineType = QINTERFACE_QPAGER;
-            session.config().stream() << "########### QUnit -> QStabilizerHybrid -> QPager -> QHybrid ###########"
-                                      << std::endl;
             num_failed = session.run();
         }
 #endif

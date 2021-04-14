@@ -19,6 +19,8 @@
 
 namespace Qrack {
 
+enum QHybridEngineType { TYPE_CPU = 0, TYPE_GPU = 1, TYPE_PAGER = 2 };
+
 class QHybrid;
 typedef std::shared_ptr<QHybrid> QHybridPtr;
 
@@ -35,7 +37,8 @@ protected:
     bool isSparse;
     uint32_t concurrency;
     bitLenInt thresholdQubits;
-    bool isGpu;
+    const bitLenInt pagingThresholdQubits = 21;
+    QHybridEngineType engineType;
 
 public:
     QHybrid(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
@@ -43,9 +46,9 @@ public:
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0);
 
-    QEnginePtr MakeEngine(bool isOpenCL, bitCapInt initState = 0);
+    virtual QEnginePtr MakeEngine(QHybridEngineType eType, bitCapInt initState = 0);
 
-    virtual bool IsOpencl() { return isGpu; }
+    virtual bool IsOpencl() { return (bool)engineType; }
 
     virtual void SetConcurrency(uint32_t threadCount)
     {
@@ -58,19 +61,28 @@ public:
      * the current mode.) Mode switching happens automatically when qubit counts change, but Compose() and Decompose()
      * might leave their destination QInterface parameters in the opposite mode.
      */
-    virtual void SwitchModes(bool useGpu)
+    virtual void SwitchModes(QHybridEngineType eType)
     {
-        if (!isGpu && useGpu) {
-            QEnginePtr nEngine = MakeEngine(true);
-            nEngine->CopyStateVec(engine);
-            engine = nEngine;
-        } else if (isGpu && !useGpu) {
-            QEnginePtr nEngine = MakeEngine(false);
-            nEngine->CopyStateVec(engine);
-            engine = nEngine;
+        if (engineType == eType) {
+            return;
         }
 
-        isGpu = useGpu;
+        QEnginePtr nEngine = MakeEngine(eType);
+        nEngine->CopyStateVec(engine);
+        engine = nEngine;
+
+        engineType = eType;
+    }
+
+    virtual void SwitchModes(bitLenInt qbWidth)
+    {
+        if (qbWidth >= pagingThresholdQubits) {
+            SwitchModes(TYPE_PAGER);
+        } else if (qbWidth >= thresholdQubits) {
+            SwitchModes(TYPE_GPU);
+        } else {
+            SwitchModes(TYPE_CPU);
+        }
     }
 
     virtual real1_f GetRunningNorm() { return engine->GetRunningNorm(); }
@@ -82,7 +94,7 @@ public:
     virtual void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QHybrid>(src)); }
     virtual void CopyStateVec(QHybridPtr src)
     {
-        SwitchModes(src->isGpu);
+        SwitchModes(src->engineType);
         engine->CopyStateVec(src->engine);
     }
 
@@ -97,7 +109,7 @@ public:
     virtual void SetAmplitudePage(
         QHybridPtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
     {
-        pageEnginePtr->SwitchModes(isGpu);
+        pageEnginePtr->SwitchModes(engineType);
         engine->SetAmplitudePage(pageEnginePtr->engine, srcOffset, dstOffset, length);
     }
     virtual void SetAmplitudePage(
@@ -120,8 +132,8 @@ public:
     virtual bitLenInt Compose(QHybridPtr toCopy)
     {
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
-        SwitchModes(nQubitCount >= thresholdQubits);
-        toCopy->SwitchModes(isGpu);
+        SwitchModes(nQubitCount);
+        toCopy->SwitchModes(engineType);
         SetQubitCount(nQubitCount);
         return engine->Compose(toCopy->engine);
     }
@@ -130,7 +142,7 @@ public:
     {
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
         SwitchModes(nQubitCount >= thresholdQubits);
-        toCopy->SwitchModes(isGpu);
+        toCopy->SwitchModes(engineType);
         SetQubitCount(nQubitCount);
         return engine->Compose(toCopy->engine, start);
     }
@@ -149,15 +161,15 @@ public:
     virtual void Decompose(bitLenInt start, QHybridPtr dest)
     {
         bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
-        SwitchModes(nQubitCount >= thresholdQubits);
-        dest->SwitchModes(isGpu);
+        SwitchModes(nQubitCount);
+        dest->SwitchModes(engineType);
         SetQubitCount(nQubitCount);
         return engine->Decompose(start, dest->engine);
     }
     virtual void Dispose(bitLenInt start, bitLenInt length)
     {
         bitLenInt nQubitCount = qubitCount - length;
-        SwitchModes(nQubitCount >= thresholdQubits);
+        SwitchModes(nQubitCount);
         SetQubitCount(nQubitCount);
         return engine->Dispose(start, length);
     }
@@ -172,13 +184,13 @@ public:
     virtual bool TryDecompose(bitLenInt start, QHybridPtr dest, real1_f error_tol = REAL1_EPSILON)
     {
         bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
-        SwitchModes(nQubitCount >= thresholdQubits);
-        dest->SwitchModes(isGpu);
+        SwitchModes(nQubitCount);
+        dest->SwitchModes(engineType);
         bool result = engine->TryDecompose(start, dest->engine, error_tol);
         if (result) {
             SetQubitCount(nQubitCount);
         } else {
-            SwitchModes(qubitCount >= thresholdQubits);
+            SwitchModes(qubitCount);
         }
         return result;
     }
@@ -411,7 +423,7 @@ public:
     }
     virtual real1_f SumSqrDiff(QHybridPtr toCompare)
     {
-        toCompare->SwitchModes(isGpu);
+        toCompare->SwitchModes(engineType);
         return engine->SumSqrDiff(toCompare->engine);
     }
 

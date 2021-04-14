@@ -12,8 +12,6 @@
 #include <direct.h>
 #endif
 
-#include <thread>
-
 #include "common/oclengine.hpp"
 
 #include "qfactory.hpp"
@@ -47,25 +45,39 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
         thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
 
-    isGpu = (qubitCount >= thresholdQubits);
-    engine = MakeEngine(qubitCount >= thresholdQubits, initState);
+    if (qubitCount >= pagingThresholdQubits) {
+        engineType = TYPE_PAGER;
+    } else if (qubitCount >= thresholdQubits) {
+        engineType = TYPE_GPU;
+    } else {
+        engineType = TYPE_CPU;
+    }
+    engine = MakeEngine(engineType, initState);
 }
 
-QEnginePtr QHybrid::MakeEngine(bool isOpenCL, bitCapInt initState)
+QEnginePtr QHybrid::MakeEngine(QHybridEngineType eType, bitCapInt initState)
 {
-    QEnginePtr toRet =
-        std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QINTERFACE_OPENCL : QINTERFACE_CPU,
-            qubitCount, initState, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
-            useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits));
+    QInterfaceEngine t;
+    if (eType == TYPE_CPU) {
+        t = QINTERFACE_CPU;
+    } else if (eType == TYPE_GPU) {
+        t = QINTERFACE_OPENCL;
+    } else {
+        t = QINTERFACE_QPAGER;
+    }
+
+    QEnginePtr toRet = std::dynamic_pointer_cast<QEngine>(
+        CreateQuantumInterface(t, qubitCount, initState, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
+            useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}));
     toRet->SetConcurrency(concurrency);
     return toRet;
 }
 
 QInterfacePtr QHybrid::Clone()
 {
-    QHybridPtr c = std::dynamic_pointer_cast<QHybrid>(CreateQuantumInterface(QINTERFACE_HYBRID, qubitCount, 0,
-        rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-        (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits));
+    QHybridPtr c = std::dynamic_pointer_cast<QHybrid>(
+        CreateQuantumInterface(QINTERFACE_HYBRID, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
+            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}));
     c->SetConcurrency(concurrency);
     c->engine->CopyStateVec(engine);
     return c;
