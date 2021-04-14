@@ -343,19 +343,23 @@ public:
             qPages[i]->ZeroAmplitudes();
         }
     }
-    virtual void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QPager>(src)); }
+
     virtual void CopyStateVec(QPagerPtr src)
     {
-        if (qubitsPerPage() < src->qubitsPerPage()) {
-            CombineEngines(src->qubitsPerPage());
-        } else if (qubitsPerPage() > src->qubitsPerPage()) {
-            SeparateEngines(src->qubitsPerPage());
-        }
+        bitLenInt qpp = qubitsPerPage();
+        src->CombineEngines(qpp);
+        src->SeparateEngines(qpp);
 
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->CopyStateVec(src);
         }
     }
+    virtual void CopyStateVec(QEnginePtr src)
+    {
+        CombineEngines();
+        qPages[0]->CopyStateVec(src);
+    }
+
     virtual bool IsZeroAmplitude()
     {
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {

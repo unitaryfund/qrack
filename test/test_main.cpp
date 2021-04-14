@@ -135,8 +135,7 @@ int main(int argc, char* argv[])
         opencl = true;
         hybrid = true;
         stabilizer = true;
-        // Unstable:
-        // stabilizer_qpager = true;
+        stabilizer_qpager = true;
     }
 
     if (devListStr.compare("") != 0) {
@@ -168,7 +167,7 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 
-        if (num_failed == 0 && stabilizer) {
+        if (num_failed == 0 && stabilizer_qpager) {
             session.config().stream() << "############ QStabilizerHybrid -> QHybrid ############" << std::endl;
             testEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubEngineType = QINTERFACE_HYBRID;
@@ -230,19 +229,10 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 
-        if (num_failed == 0 && stabilizer) {
+        if (num_failed == 0 && stabilizer_qpager) {
             session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QHybrid ############" << std::endl;
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_HYBRID;
-            SHOW_OCL_BANNER();
-            num_failed = session.run();
-        }
-
-        if (num_failed == 0 && stabilizer_qpager) {
-            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QPager -> QHybrid ############"
-                                      << std::endl;
-            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
-            testSubSubEngineType = QINTERFACE_QPAGER;
             SHOW_OCL_BANNER();
             num_failed = session.run();
         }
@@ -267,7 +257,7 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 
-        if (num_failed == 0 && stabilizer) {
+        if (num_failed == 0 && stabilizer_qpager) {
             session.config().stream() << "############ QUnitMulti -> QStabilizerHybrid -> QHybrid ############"
                                       << std::endl;
             testEngineType = QINTERFACE_QUNIT_MULTI;
