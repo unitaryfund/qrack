@@ -10,6 +10,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 
@@ -323,6 +324,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     int plat_id = -1;
     std::vector<cl::Context> all_contexts;
+    std::vector<std::string> all_filenames;
     for (int i = 0; i < deviceCount; i++) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
@@ -333,7 +335,8 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
             devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], i, plat_id);
 
-        std::string fileName = binary_file_prefix + std::to_string(i) + binary_file_ext;
+        std::string fileName = binary_file_prefix + all_devices[i].getInfo<CL_DEVICE_NAME>() + binary_file_ext;
+        std::replace(fileName.begin(), fileName.end(), ' ', '_');
         std::string clBinName = home + fileName;
 
         std::cout << "Device #" << i << ", ";
@@ -365,7 +368,8 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
             all_dev_contexts[i]->mutexes.emplace(kernelHandles[j].oclapi, new std::mutex);
         }
 
-        if (saveBinaries) {
+        std::vector<std::string>::iterator fileNameIt = std::find(all_filenames.begin(), all_filenames.end(), fileName);
+        if (saveBinaries && (fileNameIt == all_filenames.end())) {
             std::cout << "OpenCL program #" << i << ", ";
             SaveBinary(program, home, fileName);
         }
