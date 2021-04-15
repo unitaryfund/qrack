@@ -235,12 +235,15 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl,
                 if (!isSqiCtrl || isAnti) {
                     fn(engine1, sqi);
                 }
-                engine1->QueueSetDoNormalize(false);
 
                 if (!isSqiCtrl || !isAnti) {
                     fn(engine2, sqi);
                 }
-                engine2->QueueSetDoNormalize(false);
+
+                if (doNormalize) {
+                    engine1->QueueSetDoNormalize(false);
+                    engine2->QueueSetDoNormalize(false);
+                }
 
                 engine1->ShuffleBuffers(engine2);
             });
