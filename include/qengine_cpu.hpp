@@ -42,6 +42,7 @@ protected:
 #if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
 #endif
+    bitLenInt pStridePow;
 
     StateVectorSparsePtr CastStateVecSparse() { return std::dynamic_pointer_cast<StateVectorSparse>(stateVec); }
 
@@ -314,8 +315,7 @@ protected:
     virtual void Dispatch(DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
-        const bitCapInt Stride = pow2(PSTRIDEPOW);
-        if (maxQPower < Stride) {
+        if ((maxQPower / pStridePow) < (bitCapInt)GetConcurrencyLevel()) {
             dispatchQueue.dispatch(fn);
         } else {
             Finish();
