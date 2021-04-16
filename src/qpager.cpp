@@ -96,7 +96,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
         pStridePow =
             getenv("QRACK_PSTRIDEPOW") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW;
 
-        minPageQubits = log2(std::thread::hardware_concurrency()) + pStridePow;
+        minPageQubits = log2(std::thread::hardware_concurrency()) + 1U + pStridePow;
 
         if (thresholdQubitsPerPage < minPageQubits) {
             thresholdQubitsPerPage = minPageQubits;
