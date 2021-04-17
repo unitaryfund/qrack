@@ -104,6 +104,8 @@ QPager attempts to smartly allocate low qubit widths for maximum performance. Fo
 
 `QRACK_DEVICE_GLOBAL_QB=n`, alternatively, lets the user also choose the performance "hint" for preferred global qubits per device. By default, n=2, for 2 global qubits or equivalently 4 pages per device. Despite the "hint," `QPager` will allocate fewer pages per OpenCL device for small-enough widths, to keep processing elements better occupied. Also, `QPager` will allocate more qubits than the hint, per device, if the maximum allocation segment is exceeded as specified by `QRACK_SEGMENT_GLOBAL_QB`.
 
+If using `QPager` under the `QUnit` layer, then the environment variable `QRACK_QUNIT_PAGING_THRESHOLD` is the number of qubits in overall width at which `QUnit` will use paging, 21 qubits by default.
+
 ## QEngineCPU parallel stride
 QEngineCPU and QHybrid batch work items in groups of 2^`PSTRIDEPOW` before dispatching them to single CPU threads, potentially greatly reducing waiting on mutexes without signficantly hurting utilization and scheduling. The default for this option can be controlled at build time, by passing `-DPSTRIDEPOW=n` to CMake, with "n" being an integer greater than or equal to 0. (The default is n=9, which is approximately optimal on many typical PCs.) This can be overridden at run time by the enviroment variable `QRACK_PSTRIDEPOW=n`. If an environment variable is not defined for this option, the default from CMake build will be used.
 
