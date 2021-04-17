@@ -43,7 +43,6 @@ protected:
     std::vector<int> deviceIDs;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
-    QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm, bool isPaging);
 
     virtual void TurnOnPaging();
     virtual void TurnOffPaging();
