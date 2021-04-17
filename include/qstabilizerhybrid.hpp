@@ -138,6 +138,32 @@ public:
         }
     }
 
+    virtual void TurnOnPaging()
+    {
+        if (engineType == QINTERFACE_QPAGER) {
+            return;
+        }
+        engineType = QINTERFACE_QPAGER;
+
+        if (engine) {
+            QPagerPtr nEngine = std::dynamic_pointer_cast<QPager>(MakeEngine(0));
+            nEngine->LockEngine(std::dynamic_pointer_cast<QEngine>(engine));
+            engine = nEngine;
+        }
+    }
+
+    virtual void TurnOffPaging()
+    {
+        if (engineType != QINTERFACE_QPAGER) {
+            return;
+        }
+        engineType = subEngineType;
+
+        if (engine) {
+            engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
+        }
+    }
+
     virtual void FlushBuffers()
     {
         bitLenInt i;

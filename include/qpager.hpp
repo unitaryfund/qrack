@@ -131,6 +131,18 @@ public:
         }
     }
 
+    virtual QEnginePtr ReleaseEngine()
+    {
+        CombineEngines();
+        return qPages[0];
+    }
+
+    virtual void LockEngine(QEnginePtr eng)
+    {
+        CombineEngines();
+        qPages[0] = eng;
+    }
+
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);

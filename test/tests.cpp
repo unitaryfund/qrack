@@ -3679,6 +3679,39 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_qunit_paging")
+{
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 18, 1, rng, ONE_CMPLX);
+    QInterfacePtr qftReg2 =
+        CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 2, rng, ONE_CMPLX);
+
+    qftReg->H(0, 3);
+    qftReg->CCZ(0, 1, 2);
+
+    qftReg2->H(0, 3);
+    qftReg2->CCZ(0, 1, 2);
+
+    qftReg->Compose(qftReg2);
+
+    qftReg->CCZ(0, 1, 2);
+    qftReg->H(0, 3);
+
+    qftReg->CCZ(18, 19, 20);
+    qftReg->H(18, 3);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 22, 1 | (2 << 18)));
+
+    qftReg->H(0, 3);
+    qftReg->CCZ(0, 1, 2);
+
+    qftReg->Decompose(18, qftReg2);
+
+    qftReg->CCZ(0, 1, 2);
+    qftReg->H(0, 3);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 18, 1));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_setbit")
 {
     qftReg->SetPermutation(0x02);
