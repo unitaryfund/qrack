@@ -93,9 +93,10 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 #endif
     }
 
-    isPagingSuppressed = (qubitCount < pagingThresholdQubits) &&
-        ((engine == QINTERFACE_QPAGER) ||
-            ((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER)));
+    canSuppressPaging = ((engine == QINTERFACE_QPAGER) ||
+        ((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER)));
+
+    isPagingSuppressed = canSuppressPaging && (qubitCount < pagingThresholdQubits);
 
     shards = QEngineShardMap();
 
@@ -109,7 +110,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
 {
-    if (isPagingSuppressed) {
+    if (canSuppressPaging && isPagingSuppressed) {
         if (engine == QINTERFACE_QPAGER) {
             return CreateQuantumInterface(subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
                 randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
@@ -129,12 +130,7 @@ QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
 
 void QUnit::TurnOnPaging()
 {
-    if ((engine != QINTERFACE_QPAGER) &&
-        !((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER))) {
-        return;
-    }
-
-    if (!isPagingSuppressed) {
+    if (!canSuppressPaging || !isPagingSuppressed) {
         return;
     }
     isPagingSuppressed = false;
@@ -170,12 +166,7 @@ void QUnit::TurnOnPaging()
 
 void QUnit::TurnOffPaging()
 {
-    if ((engine != QINTERFACE_QPAGER) &&
-        !((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER))) {
-        return;
-    }
-
-    if (isPagingSuppressed) {
+    if (!canSuppressPaging || isPagingSuppressed) {
         return;
     }
     isPagingSuppressed = true;

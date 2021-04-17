@@ -38,6 +38,7 @@ protected:
     bool freezeBasis2Qb;
     bool freezeClifford;
     bool isPagingSuppressed;
+    bool canSuppressPaging;
     bitLenInt thresholdQubits;
     bitLenInt pagingThresholdQubits;
     std::vector<int> deviceIDs;
@@ -48,6 +49,10 @@ protected:
     virtual void TurnOffPaging();
     virtual void ConvertPaging(const bool& isPaging)
     {
+        if (!canSuppressPaging) {
+            return;
+        }
+
         if (isPaging) {
             TurnOnPaging();
         } else {
