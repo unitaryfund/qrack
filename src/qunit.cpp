@@ -152,14 +152,17 @@ void QUnit::TurnOnPaging()
     if (engine == QINTERFACE_QPAGER) {
         for (bitLenInt i = 0; i < qubitCount; i++) {
             QEnginePtr unit = std::dynamic_pointer_cast<QEngine>(shards[i].unit);
-            if (nEngines.find(unit) == nEngines.end()) {
+            if (unit && nEngines.find(unit) == nEngines.end()) {
                 nEngines[unit] = std::dynamic_pointer_cast<QPager>(MakeEngine(0, unit->GetQubitCount(), true));
                 nEngines[unit]->LockEngine(unit);
             }
         }
 
         for (bitLenInt i = 0; i < qubitCount; i++) {
-            shards[i].unit = nEngines[shards[i].unit];
+            QInterfacePtr unit = shards[i].unit;
+            if (unit) {
+                shards[i].unit = nEngines[shards[i].unit];
+            }
         }
     }
 }
@@ -179,14 +182,16 @@ void QUnit::TurnOffPaging()
     if (engine == QINTERFACE_QPAGER) {
         for (bitLenInt i = 0; i < qubitCount; i++) {
             QPagerPtr unit = std::dynamic_pointer_cast<QPager>(shards[i].unit);
-            if (nEngines.find(unit) == nEngines.end()) {
+            if (unit && nEngines.find(unit) == nEngines.end()) {
                 nEngines[unit] = unit->ReleaseEngine();
             }
         }
 
         for (bitLenInt i = 0; i < qubitCount; i++) {
             QPagerPtr unit = std::dynamic_pointer_cast<QPager>(shards[i].unit);
-            shards[i].unit = nEngines[unit];
+            if (unit) {
+                shards[i].unit = nEngines[unit];
+            }
         }
     }
 }
