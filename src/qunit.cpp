@@ -376,7 +376,10 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
 
 void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 {
-    /* TODO: This method should decompose the bits for the destination without composing the length first */
+    // Make sure "dest" and "this" are in compatible states:
+    if (dest) {
+        dest->ConvertPaging(qubitCount >= pagingThresholdQubits);
+    }
 
     for (bitLenInt i = 0; i < length; i++) {
         RevertBasis2Qb(start + i);
