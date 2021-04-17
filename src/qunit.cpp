@@ -81,7 +81,9 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
         pagingThresholdQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_QUNIT_PAGING_THRESHOLD")));
     }
 
-    isPagingSuppressed = (qubitCount < pagingThresholdQubits) && (engine == QINTERFACE_QPAGER);
+    isPagingSuppressed = (qubitCount < pagingThresholdQubits) &&
+        ((engine == QINTERFACE_QPAGER) ||
+            ((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER)));
 
     if ((engine == QINTERFACE_QUNIT) || (engine == QINTERFACE_QUNIT_MULTI)) {
         engine = QINTERFACE_OPTIMAL_G0_CHILD;
@@ -165,6 +167,15 @@ void QUnit::TurnOnPaging()
             }
         }
     }
+
+    if ((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER)) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            QStabilizerHybridPtr unit = std::dynamic_pointer_cast<QStabilizerHybrid>(shards[i].unit);
+            if (unit) {
+                unit->TurnOnPaging();
+            }
+        }
+    }
 }
 
 void QUnit::TurnOffPaging()
@@ -178,8 +189,8 @@ void QUnit::TurnOffPaging()
     }
     isPagingSuppressed = true;
 
-    std::map<QPagerPtr, QInterfacePtr> nEngines;
     if (engine == QINTERFACE_QPAGER) {
+        std::map<QPagerPtr, QInterfacePtr> nEngines;
         for (bitLenInt i = 0; i < qubitCount; i++) {
             QPagerPtr unit = std::dynamic_pointer_cast<QPager>(shards[i].unit);
             if (unit && nEngines.find(unit) == nEngines.end()) {
@@ -191,6 +202,15 @@ void QUnit::TurnOffPaging()
             QPagerPtr unit = std::dynamic_pointer_cast<QPager>(shards[i].unit);
             if (unit) {
                 shards[i].unit = nEngines[unit];
+            }
+        }
+    }
+
+    if ((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER)) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            QStabilizerHybridPtr unit = std::dynamic_pointer_cast<QStabilizerHybrid>(shards[i].unit);
+            if (unit) {
+                unit->TurnOffPaging();
             }
         }
     }
