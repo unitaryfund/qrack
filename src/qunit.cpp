@@ -81,9 +81,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
         pagingThresholdQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_QUNIT_PAGING_THRESHOLD")));
     }
 
-    isPagingSuppressed = (qubitCount < pagingThresholdQubits) &&
-        ((engine == QINTERFACE_QPAGER) ||
-            ((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER)));
+    isPagingSuppressed = (qubitCount < pagingThresholdQubits);
 
     if ((engine == QINTERFACE_QUNIT) || (engine == QINTERFACE_QUNIT_MULTI)) {
         engine = QINTERFACE_OPTIMAL_G0_CHILD;
