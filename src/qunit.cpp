@@ -74,8 +74,15 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , freezeBasis2Qb(false)
     , freezeClifford(false)
     , thresholdQubits(qubitThreshold)
+    , pagingThresholdQubits(21)
     , deviceIDs(devList)
 {
+    if (getenv("QRACK_QUNIT_PAGING_THRESHOLD")) {
+        pagingThresholdQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_QUNIT_PAGING_THRESHOLD")));
+    }
+
+    isPagingSuppressed = (qubitCount < pagingThresholdQubits) && (engine == QINTERFACE_QPAGER);
+
     if ((engine == QINTERFACE_QUNIT) || (engine == QINTERFACE_QUNIT_MULTI)) {
         engine = QINTERFACE_OPTIMAL_G0_CHILD;
     }
@@ -100,8 +107,88 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
 {
+    if (isPagingSuppressed) {
+        return CreateQuantumInterface((engine == QINTERFACE_QPAGER) ? subEngine : engine, length, perm, rand_generator,
+            phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+            deviceIDs, thresholdQubits);
+    }
+
     return CreateQuantumInterface(engine, subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
         randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits);
+}
+
+QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm, bool isPaging)
+{
+    if (!isPaging) {
+        if (engine == QINTERFACE_QPAGER) {
+            return CreateQuantumInterface(subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
+                randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+                thresholdQubits);
+        }
+
+        if (subEngine == QINTERFACE_QPAGER) {
+            return CreateQuantumInterface(engine, length, perm, rand_generator, phaseFactor, doNormalize,
+                randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+                thresholdQubits);
+        }
+    }
+
+    return CreateQuantumInterface(engine, subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits);
+}
+
+void QUnit::TurnOnPaging()
+{
+    if ((engine != QINTERFACE_QPAGER) && (subEngine != QINTERFACE_QPAGER)) {
+        return;
+    }
+
+    if (!isPagingSuppressed) {
+        return;
+    }
+    isPagingSuppressed = false;
+
+    std::map<QInterfacePtr, QPagerPtr> nEngines;
+    if (engine == QINTERFACE_QPAGER) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            QEnginePtr unit = std::dynamic_pointer_cast<QEngine>(shards[i].unit);
+            if (nEngines.find(unit) == nEngines.end()) {
+                nEngines[unit] = std::dynamic_pointer_cast<QPager>(MakeEngine(0, unit->GetQubitCount(), true));
+                nEngines[unit]->LockEngine(unit);
+            }
+        }
+
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            shards[i].unit = nEngines[shards[i].unit];
+        }
+    }
+}
+
+void QUnit::TurnOffPaging()
+{
+    if ((engine != QINTERFACE_QPAGER) && (subEngine != QINTERFACE_QPAGER)) {
+        return;
+    }
+
+    if (isPagingSuppressed) {
+        return;
+    }
+    isPagingSuppressed = true;
+
+    std::map<QPagerPtr, QInterfacePtr> nEngines;
+    if (engine == QINTERFACE_QPAGER) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            QPagerPtr unit = std::dynamic_pointer_cast<QPager>(shards[i].unit);
+            if (nEngines.find(unit) == nEngines.end()) {
+                nEngines[unit] = unit->ReleaseEngine();
+            }
+        }
+
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            QPagerPtr unit = std::dynamic_pointer_cast<QPager>(shards[i].unit);
+            shards[i].unit = nEngines[unit];
+        }
+    }
 }
 
 void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
@@ -267,10 +354,14 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
     /* Create a clone of the quantum state in toCopy. */
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(toCopy->Clone());
 
+    clone->ConvertPaging(qubitCount >= pagingThresholdQubits);
+
     /* Insert the new shards in the middle */
     shards.insert(start, clone->shards);
 
     SetQubitCount(qubitCount + toCopy->GetQubitCount());
+
+    ConvertPaging(qubitCount >= pagingThresholdQubits);
 
     return start;
 }
@@ -388,6 +479,11 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 
     shards.erase(start, start + length);
     SetQubitCount(qubitCount - length);
+
+    ConvertPaging(qubitCount >= pagingThresholdQubits);
+    if (dest) {
+        dest->ConvertPaging(dest->qubitCount >= dest->pagingThresholdQubits);
+    }
 }
 
 void QUnit::Decompose(bitLenInt start, QUnitPtr dest) { Detach(start, dest->GetQubitCount(), dest); }

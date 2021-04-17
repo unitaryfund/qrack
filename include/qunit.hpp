@@ -37,10 +37,24 @@ protected:
     bool freezeBasisH;
     bool freezeBasis2Qb;
     bool freezeClifford;
+    bool isPagingSuppressed;
     bitLenInt thresholdQubits;
+    bitLenInt pagingThresholdQubits;
     std::vector<int> deviceIDs;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
+    QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm, bool isPaging);
+
+    virtual void TurnOnPaging();
+    virtual void TurnOffPaging();
+    virtual void ConvertPaging(const bool& isPaging)
+    {
+        if (isPaging) {
+            TurnOnPaging();
+        } else {
+            TurnOffPaging();
+        }
+    }
 
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
