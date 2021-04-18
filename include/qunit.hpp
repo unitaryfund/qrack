@@ -487,11 +487,7 @@ protected:
         RevertBasis2Qb(qubit, ONLY_INVERT);
         RevertBasis2Qb(qubit, ONLY_PHASE, ONLY_CONTROLS);
 
-        QEngineShard& shard = shards[qubit];
-        shard.controlsShards.clear();
-        shard.antiControlsShards.clear();
-        shard.targetOfShards.clear();
-        shard.antiTargetOfShards.clear();
+        shards[qubit].DumpMultiBit();
     }
     void ToPermBasisMeasure(const bitLenInt& start, const bitLenInt& length)
     {
@@ -511,8 +507,8 @@ protected:
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
-            RevertBasis2Qb(
-                start + i, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, exceptBits, exceptBits, true);
+            RevertBasis2Qb(start + i, ONLY_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, exceptBits, exceptBits);
+            shards[start + i].DumpMultiBit();
         }
     }
     void ToPermBasisAllMeasure()
@@ -523,7 +519,8 @@ protected:
         }
         for (i = 0; i < qubitCount; i++) {
             shards[i].ClearInvertPhase();
-            RevertBasis2Qb(i, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, {}, true);
+            RevertBasis2Qb(i, ONLY_INVERT);
+            shards[i].DumpMultiBit();
         }
     }
 

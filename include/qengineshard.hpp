@@ -163,6 +163,13 @@ public:
         }
         return didClamp;
     }
+    void DumpMultiBit()
+    {
+        controlsShards.clear();
+        antiControlsShards.clear();
+        targetOfShards.clear();
+        antiTargetOfShards.clear();
+    }
 
 protected:
     void RemoveBuffer(QEngineShardPtr p, ShardToPhaseMap& localMap, GetBufferFn remoteMapGet)
