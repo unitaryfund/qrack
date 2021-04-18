@@ -461,6 +461,34 @@ protected:
         }
     }
     void ToPermBasisAll() { ToPermBasis(0, qubitCount); }
+    void ToPermBasisProb(const bitLenInt& qubit)
+    {
+        RevertBasis1Qb(qubit);
+        RevertBasis2Qb(qubit, ONLY_INVERT, ONLY_TARGETS);
+    }
+    void ToPermBasisProb(const bitLenInt& start, const bitLenInt& length)
+    {
+        bitLenInt i;
+        for (i = 0; i < length; i++) {
+            RevertBasis1Qb(start + i);
+        }
+        for (i = 0; i < length; i++) {
+            RevertBasis2Qb(start + i, ONLY_INVERT, ONLY_TARGETS);
+        }
+    }
+    void ToPermBasisMeasure(const bitLenInt& qubit)
+    {
+        if (qubitCount == 1U) {
+            ToPermBasisAllMeasure();
+            return;
+        }
+
+        RevertBasis1Qb(qubit);
+        RevertBasis2Qb(qubit, ONLY_INVERT);
+        RevertBasis2Qb(qubit, ONLY_PHASE, ONLY_CONTROLS);
+
+        shards[qubit].DumpMultiBit();
+    }
     void ToPermBasisMeasure(const bitLenInt& start, const bitLenInt& length)
     {
         if ((start == 0) && (length == qubitCount)) {
@@ -474,31 +502,25 @@ protected:
         for (i = 0; i < length; i++) {
             exceptBits.insert(start + i);
         }
-
         for (i = 0; i < length; i++) {
-            RevertBasisY(start + i);
-        }
-        for (i = 0; i < length; i++) {
-            RevertBasisX(start + i);
+            RevertBasis1Qb(start + i);
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
-            RevertBasis2Qb(
-                start + i, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, exceptBits, exceptBits, true);
+            RevertBasis2Qb(start + i, ONLY_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, exceptBits);
+            shards[start + i].DumpMultiBit();
         }
     }
     void ToPermBasisAllMeasure()
     {
         bitLenInt i;
         for (i = 0; i < qubitCount; i++) {
-            RevertBasisY(i);
-        }
-        for (i = 0; i < qubitCount; i++) {
-            RevertBasisX(i);
+            RevertBasis1Qb(i);
         }
         for (i = 0; i < qubitCount; i++) {
             shards[i].ClearInvertPhase();
-            RevertBasis2Qb(i, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, {}, true);
+            RevertBasis2Qb(i, ONLY_INVERT);
+            shards[i].DumpMultiBit();
         }
     }
 

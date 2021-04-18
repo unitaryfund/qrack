@@ -814,14 +814,11 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
 bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurrentBasis)
 {
     if (!inCurrentBasis) {
-        ToPermBasis(qubitIndex);
+        ToPermBasisProb(qubitIndex);
     }
     QEngineShard& shard = shards[qubitIndex];
-    if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
-        return true;
-    } else {
-        return false;
-    }
+
+    return UNSAFE_CACHED_ZERO_OR_ONE(shard);
 }
 
 /// Check if all qubits in the range have cached probabilities indicating that they are in permutation basis
@@ -830,8 +827,14 @@ bool QUnit::CheckBitsPermutation(const bitLenInt& start, const bitLenInt& length
 {
     // Certain optimizations become obvious, if all bits in a range are in permutation basis eigenstates.
     // Then, operations can often be treated as classical, instead of quantum.
+
+    if (!inCurrentBasis) {
+        ToPermBasisProb(start, length);
+    }
+
     for (bitLenInt i = 0; i < length; i++) {
-        if (!CheckBitPermutation(start + i, inCurrentBasis)) {
+        QEngineShard& shard = shards[start + i];
+        if (!UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
             return false;
         }
     }
@@ -1019,7 +1022,7 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
 
 real1_f QUnit::Prob(bitLenInt qubit)
 {
-    ToPermBasis(qubit);
+    ToPermBasisProb(qubit);
     return ProbBase(qubit);
 }
 
@@ -1092,8 +1095,7 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     for (bitCapInt v = mask; v; v = nV) {
         nV &= (v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
-        RevertBasis1Qb(qIndices.back());
-        RevertBasis2Qb(qIndices.back(), ONLY_INVERT, ONLY_TARGETS);
+        ToPermBasisProb(qIndices.back());
     }
 
     bool flipResult = false;
@@ -1170,7 +1172,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 {
-    ToPermBasis(qubit);
+    ToPermBasisMeasure(qubit);
 
     QEngineShard& shard = shards[qubit];
 
@@ -3974,7 +3976,7 @@ void QUnit::ApplyBufferMap(const bitLenInt& bitIndex, ShardToPhaseMap bufferMap,
             ((exclusivity == ONLY_PHASE) && phaseShard->second->isInvert)) {
             bufferMap.erase(phaseShard);
             if (dumpSkipped) {
-                shard.RemovePhaseTarget(partner);
+                shard.RemoveTarget(partner);
             }
             continue;
         }
@@ -3986,15 +3988,15 @@ void QUnit::ApplyBufferMap(const bitLenInt& bitIndex, ShardToPhaseMap bufferMap,
             if (dumpSkipped) {
                 if (isControl) {
                     if (isAnti) {
-                        shard.RemovePhaseAntiTarget(partner);
+                        shard.RemoveAntiTarget(partner);
                     } else {
-                        shard.RemovePhaseTarget(partner);
+                        shard.RemoveTarget(partner);
                     }
                 } else {
                     if (isAnti) {
-                        shard.RemovePhaseAntiControl(partner);
+                        shard.RemoveAntiControl(partner);
                     } else {
-                        shard.RemovePhaseControl(partner);
+                        shard.RemoveControl(partner);
                     }
                 }
             }
@@ -4003,16 +4005,16 @@ void QUnit::ApplyBufferMap(const bitLenInt& bitIndex, ShardToPhaseMap bufferMap,
 
         if (isControl) {
             if (isAnti) {
-                shard.RemovePhaseAntiTarget(partner);
+                shard.RemoveAntiTarget(partner);
             } else {
-                shard.RemovePhaseTarget(partner);
+                shard.RemoveTarget(partner);
             }
             ApplyBuffer(phaseShard->second, bitIndex, partnerIndex, isAnti);
         } else {
             if (isAnti) {
-                shard.RemovePhaseAntiControl(partner);
+                shard.RemoveAntiControl(partner);
             } else {
-                shard.RemovePhaseControl(partner);
+                shard.RemoveControl(partner);
             }
             ApplyBuffer(phaseShard->second, partnerIndex, bitIndex, isAnti);
         }
@@ -4101,10 +4103,10 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarSame = buffer->cmplxSame;
 
         if (IS_ARG_0(polarDiff) && IS_ARG_PI(polarSame)) {
-            shard.RemovePhaseTarget(partner);
+            shard.RemoveTarget(partner);
             shard.AddPhaseAngles(partner, ONE_CMPLX, -ONE_CMPLX);
         } else if (IS_ARG_PI(polarDiff) && IS_ARG_0(polarSame)) {
-            shard.RemovePhaseTarget(partner);
+            shard.RemoveTarget(partner);
             shard.AddAntiPhaseAngles(partner, -ONE_CMPLX, ONE_CMPLX);
         }
     }
@@ -4123,10 +4125,10 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         polarSame = buffer->cmplxSame;
 
         if (IS_ARG_0(polarDiff) && IS_ARG_PI(polarSame)) {
-            shard.RemovePhaseAntiTarget(partner);
+            shard.RemoveAntiTarget(partner);
             shard.AddAntiPhaseAngles(partner, ONE_CMPLX, -ONE_CMPLX);
         } else if (IS_ARG_PI(polarDiff) && IS_ARG_0(polarSame)) {
-            shard.RemovePhaseAntiTarget(partner);
+            shard.RemoveAntiTarget(partner);
             shard.AddPhaseAngles(partner, -ONE_CMPLX, ONE_CMPLX);
         }
     }
@@ -4159,7 +4161,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         }
 
         control = FindShardIndex(partner);
-        shard.RemovePhaseControl(partner);
+        shard.RemoveControl(partner);
         ApplyBuffer(buffer, control, bitIndex, false);
     }
 
@@ -4183,7 +4185,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         }
 
         control = FindShardIndex(partner);
-        shard.RemovePhaseAntiControl(partner);
+        shard.RemoveAntiControl(partner);
         ApplyBuffer(buffer, control, bitIndex, true);
     }
 
@@ -4207,12 +4209,12 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
 
     if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
         if (IS_1_CMPLX(buffer->cmplxDiff)) {
-            tShard.RemovePhaseControl(&cShard);
+            tShard.RemoveControl(&cShard);
             return;
         }
 
         if (!cShard.isClifford() && !tShard.isClifford()) {
-            tShard.RemovePhaseControl(&cShard);
+            tShard.RemoveControl(&cShard);
             ApplyBuffer(buffer, control, target, anti);
             return;
         }
@@ -4229,8 +4231,8 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     PhaseShardPtr aBuffer = antiShard->second;
 
     if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxSame) && IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxDiff)) {
-        tShard.RemovePhaseControl(&cShard);
-        tShard.RemovePhaseAntiControl(&cShard);
+        tShard.RemoveControl(&cShard);
+        tShard.RemoveAntiControl(&cShard);
         if (anti) {
             ApplySinglePhase(buffer->cmplxSame, buffer->cmplxDiff, target);
         } else {

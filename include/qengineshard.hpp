@@ -163,6 +163,31 @@ public:
         }
         return didClamp;
     }
+    void DumpMultiBit()
+    {
+        ShardToPhaseMap::iterator phaseShard;
+
+        phaseShard = controlsShards.begin();
+        while (phaseShard != controlsShards.end()) {
+            RemoveTarget(phaseShard->first);
+            phaseShard = controlsShards.begin();
+        }
+        phaseShard = targetOfShards.begin();
+        while (phaseShard != targetOfShards.end()) {
+            RemoveControl(phaseShard->first);
+            phaseShard = targetOfShards.begin();
+        }
+        phaseShard = antiControlsShards.begin();
+        while (phaseShard != antiControlsShards.end()) {
+            RemoveAntiTarget(phaseShard->first);
+            phaseShard = antiControlsShards.begin();
+        }
+        phaseShard = antiTargetOfShards.begin();
+        while (phaseShard != antiTargetOfShards.end()) {
+            RemoveAntiControl(phaseShard->first);
+            phaseShard = antiTargetOfShards.begin();
+        }
+    }
 
 protected:
     void RemoveBuffer(QEngineShardPtr p, ShardToPhaseMap& localMap, GetBufferFn remoteMapGet)
@@ -175,13 +200,13 @@ protected:
     }
 
 public:
-    void RemovePhaseControl(QEngineShardPtr p) { RemoveBuffer(p, targetOfShards, &QEngineShard::GetControlsShards); }
-    void RemovePhaseTarget(QEngineShardPtr p) { RemoveBuffer(p, controlsShards, &QEngineShard::GetTargetOfShards); }
-    void RemovePhaseAntiControl(QEngineShardPtr p)
+    void RemoveControl(QEngineShardPtr p) { RemoveBuffer(p, targetOfShards, &QEngineShard::GetControlsShards); }
+    void RemoveTarget(QEngineShardPtr p) { RemoveBuffer(p, controlsShards, &QEngineShard::GetTargetOfShards); }
+    void RemoveAntiControl(QEngineShardPtr p)
     {
         RemoveBuffer(p, antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
     }
-    void RemovePhaseAntiTarget(QEngineShardPtr p)
+    void RemoveAntiTarget(QEngineShardPtr p)
     {
         RemoveBuffer(p, antiControlsShards, &QEngineShard::GetAntiTargetOfShards);
     }
@@ -218,22 +243,18 @@ protected:
     }
 
 public:
-    void DumpControlOf()
-    {
-        DumpBuffer(&QEngineShard::OptimizeTargets, controlsShards, &QEngineShard::RemovePhaseTarget);
-    }
+    void DumpControlOf() { DumpBuffer(&QEngineShard::OptimizeTargets, controlsShards, &QEngineShard::RemoveTarget); }
     void DumpAntiControlOf()
     {
-        DumpBuffer(&QEngineShard::OptimizeAntiTargets, antiControlsShards, &QEngineShard::RemovePhaseAntiTarget);
+        DumpBuffer(&QEngineShard::OptimizeAntiTargets, antiControlsShards, &QEngineShard::RemoveAntiTarget);
     }
     void DumpSamePhaseControlOf()
     {
-        DumpSamePhaseBuffer(&QEngineShard::OptimizeTargets, controlsShards, &QEngineShard::RemovePhaseTarget);
+        DumpSamePhaseBuffer(&QEngineShard::OptimizeTargets, controlsShards, &QEngineShard::RemoveTarget);
     }
     void DumpSamePhaseAntiControlOf()
     {
-        DumpSamePhaseBuffer(
-            &QEngineShard::OptimizeAntiTargets, antiControlsShards, &QEngineShard::RemovePhaseAntiTarget);
+        DumpSamePhaseBuffer(&QEngineShard::OptimizeAntiTargets, antiControlsShards, &QEngineShard::RemoveAntiTarget);
     }
 
 protected:
@@ -285,12 +306,12 @@ public:
     void AddPhaseAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
     {
         AddAngles(control, cmplxDiff, cmplxSame, &QEngineShard::MakePhaseControlledBy, targetOfShards,
-            &QEngineShard::RemovePhaseControl);
+            &QEngineShard::RemoveControl);
     }
     void AddAntiPhaseAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
     {
         AddAngles(control, cmplxDiff, cmplxSame, &QEngineShard::MakePhaseAntiControlledBy, antiTargetOfShards,
-            &QEngineShard::RemovePhaseAntiControl);
+            &QEngineShard::RemoveAntiControl);
     }
     void AddInversionAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
     {
