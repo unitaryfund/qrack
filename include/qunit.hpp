@@ -507,7 +507,7 @@ protected:
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
-            RevertBasis2Qb(start + i, ONLY_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, exceptBits, exceptBits);
+            RevertBasis2Qb(start + i, ONLY_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, exceptBits);
             shards[start + i].DumpMultiBit();
         }
     }
