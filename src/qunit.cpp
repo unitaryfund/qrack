@@ -1038,10 +1038,10 @@ real1_f QUnit::ProbParity(const bitCapInt& mask)
         nV &= (v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
 
-        RevertBasis2Qb(qIndices.back(), ONLY_INVERT);
+        RevertBasis2Qb(qIndices.back(), ONLY_INVERT, ONLY_TARGETS);
 
         QEngineShard& shard = shards[qIndices.back()];
-        if (QUEUED_PHASE(shard)) {
+        if (shard.unit && QUEUED_PHASE(shard)) {
             RevertBasis1Qb(qIndices.back());
         }
     }
@@ -1093,7 +1093,7 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
         nV &= (v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
         RevertBasis1Qb(qIndices.back());
-        RevertBasis2Qb(qIndices.back(), ONLY_INVERT);
+        RevertBasis2Qb(qIndices.back(), ONLY_INVERT, ONLY_TARGETS);
     }
 
     bool flipResult = false;
