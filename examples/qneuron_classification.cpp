@@ -314,7 +314,7 @@ int main()
     std::cout << "Column count: " << rawYX[0].size() << std::endl;
     bitLenInt predictorCount = rawYX[0].size() - 1U;
 
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, predictorCount + 1U, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, predictorCount + 1U, 0);
 
     std::vector<QNeuronPtr> outputLayer;
     std::vector<real1> etas;

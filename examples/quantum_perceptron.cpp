@@ -27,7 +27,7 @@ int main()
 
     // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
     // QEngineCPU.
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, ControlCount + 1, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, ControlCount + 1, 0);
 
     bitLenInt inputIndices[ControlCount];
     for (bitLenInt i = 0; i < ControlCount; i++) {
