@@ -659,7 +659,7 @@ public:
     bitLenInt GetQubitCount() { return unit ? unit->GetQubitCount() : 1U; };
     real1_f Prob()
     {
-        if (!isProbDirty || !unit) {
+        if (!unit) {
             return norm(amp1);
         }
 
