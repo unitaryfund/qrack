@@ -1038,11 +1038,11 @@ real1_f QUnit::ProbParity(const bitCapInt& mask)
         nV &= (v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
 
+        RevertBasis2Qb(qIndices.back(), ONLY_INVERT);
+
         QEngineShard& shard = shards[qIndices.back()];
-        if (shard.isPauliX || shard.isPauliY) {
-            RevertBasis2Qb(qIndices.back());
-        } else {
-            RevertBasis2Qb(qIndices.back(), ONLY_INVERT);
+        if (QUEUED_PHASE(shard)) {
+            RevertBasis1Qb(qIndices.back());
         }
     }
 
