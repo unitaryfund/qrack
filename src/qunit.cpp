@@ -1037,7 +1037,13 @@ real1_f QUnit::ProbParity(const bitCapInt& mask)
     for (bitCapInt v = mask; v; v = nV) {
         nV &= (v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
-        ToPermBasis(qIndices.back());
+
+        RevertBasis2Qb(qIndices.back(), ONLY_INVERT);
+
+        QEngineShard& shard = shards[qIndices.back()];
+        if (QUEUED_PHASE(shard)) {
+            RevertBasis1Qb(qIndices.back());
+        }
     }
 
     std::map<QInterfacePtr, bitCapInt> units;
@@ -1046,9 +1052,15 @@ real1_f QUnit::ProbParity(const bitCapInt& mask)
     for (bitLenInt i = 0; i < qIndices.size(); i++) {
         QEngineShard& shard = shards[qIndices[i]];
         if (!(shard.unit)) {
-            nOddChance = shard.Prob();
+            nOddChance = (shard.isPauliX || shard.isPauliY) ? norm(((real1)M_SQRT1_2) * (shard.amp0 - shard.amp1))
+                                                            : shard.Prob();
             oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
-        } else if (units.find(shard.unit) == units.end()) {
+            continue;
+        }
+
+        RevertBasis1Qb(qIndices[i]);
+
+        if (units.find(shard.unit) == units.end()) {
             units[shard.unit] = pow2(shard.mapped);
         } else {
             units[shard.unit] |= pow2(shard.mapped);
@@ -1080,7 +1092,8 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     for (bitCapInt v = mask; v; v = nV) {
         nV &= (v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
-        ToPermBasis(qIndices.back());
+        RevertBasis1Qb(qIndices.back());
+        RevertBasis2Qb(qIndices.back(), ONLY_INVERT);
     }
 
     bool flipResult = false;
