@@ -814,14 +814,11 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
 bool QUnit::CheckBitPermutation(const bitLenInt& qubitIndex, const bool& inCurrentBasis)
 {
     if (!inCurrentBasis) {
-        ToPermBasis(qubitIndex);
+        ToPermBasisProb(qubitIndex);
     }
     QEngineShard& shard = shards[qubitIndex];
-    if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
-        return true;
-    } else {
-        return false;
-    }
+
+    return UNSAFE_CACHED_ZERO_OR_ONE(shard);
 }
 
 /// Check if all qubits in the range have cached probabilities indicating that they are in permutation basis
@@ -830,8 +827,14 @@ bool QUnit::CheckBitsPermutation(const bitLenInt& start, const bitLenInt& length
 {
     // Certain optimizations become obvious, if all bits in a range are in permutation basis eigenstates.
     // Then, operations can often be treated as classical, instead of quantum.
+
+    if (!inCurrentBasis) {
+        ToPermBasisProb(start, length);
+    }
+
     for (bitLenInt i = 0; i < length; i++) {
-        if (!CheckBitPermutation(start + i, inCurrentBasis)) {
+        QEngineShard& shard = shards[start + i];
+        if (!UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
             return false;
         }
     }
@@ -1019,8 +1022,7 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
 
 real1_f QUnit::Prob(bitLenInt qubit)
 {
-    RevertBasis1Qb(qubit);
-    RevertBasis2Qb(qubit, ONLY_INVERT, ONLY_TARGETS);
+    ToPermBasisProb(qubit);
     return ProbBase(qubit);
 }
 
@@ -1093,8 +1095,7 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     for (bitCapInt v = mask; v; v = nV) {
         nV &= (v - ONE_BCI); // clear the least significant bit set
         qIndices.push_back(log2((v ^ nV) & v));
-        RevertBasis1Qb(qIndices.back());
-        RevertBasis2Qb(qIndices.back(), ONLY_INVERT, ONLY_TARGETS);
+        ToPermBasisProb(qIndices.back());
     }
 
     bool flipResult = false;
@@ -1171,7 +1172,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 {
-    ToPermBasis(qubit);
+    ToPermBasisMeasure(qubit);
 
     QEngineShard& shard = shards[qubit];
 

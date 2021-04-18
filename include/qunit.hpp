@@ -461,6 +461,38 @@ protected:
         }
     }
     void ToPermBasisAll() { ToPermBasis(0, qubitCount); }
+    void ToPermBasisProb(const bitLenInt& qubit)
+    {
+        RevertBasis1Qb(qubit);
+        RevertBasis2Qb(qubit, ONLY_INVERT, ONLY_TARGETS);
+    }
+    void ToPermBasisProb(const bitLenInt& start, const bitLenInt& length)
+    {
+        bitLenInt i;
+        for (i = 0; i < length; i++) {
+            RevertBasis1Qb(start + i);
+        }
+        for (i = 0; i < length; i++) {
+            RevertBasis2Qb(start + i, ONLY_INVERT, ONLY_TARGETS);
+        }
+    }
+    void ToPermBasisMeasure(const bitLenInt& qubit)
+    {
+        if (qubitCount == 1U) {
+            ToPermBasisAllMeasure();
+            return;
+        }
+
+        RevertBasis1Qb(qubit);
+        RevertBasis2Qb(qubit, ONLY_INVERT);
+        RevertBasis2Qb(qubit, ONLY_PHASE, ONLY_CONTROLS);
+
+        QEngineShard& shard = shards[qubit];
+        shard.controlsShards.clear();
+        shard.antiControlsShards.clear();
+        shard.targetOfShards.clear();
+        shard.antiTargetOfShards.clear();
+    }
     void ToPermBasisMeasure(const bitLenInt& start, const bitLenInt& length)
     {
         if ((start == 0) && (length == qubitCount)) {
@@ -474,12 +506,8 @@ protected:
         for (i = 0; i < length; i++) {
             exceptBits.insert(start + i);
         }
-
         for (i = 0; i < length; i++) {
-            RevertBasisY(start + i);
-        }
-        for (i = 0; i < length; i++) {
-            RevertBasisX(start + i);
+            RevertBasis1Qb(start + i);
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
@@ -491,10 +519,7 @@ protected:
     {
         bitLenInt i;
         for (i = 0; i < qubitCount; i++) {
-            RevertBasisY(i);
-        }
-        for (i = 0; i < qubitCount; i++) {
-            RevertBasisX(i);
+            RevertBasis1Qb(i);
         }
         for (i = 0; i < qubitCount; i++) {
             shards[i].ClearInvertPhase();
