@@ -1019,7 +1019,8 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
 
 real1_f QUnit::Prob(bitLenInt qubit)
 {
-    ToPermBasis(qubit);
+    RevertBasis1Qb(qubit);
+    RevertBasis2Qb(qubit, ONLY_INVERT, ONLY_TARGETS);
     return ProbBase(qubit);
 }
 
