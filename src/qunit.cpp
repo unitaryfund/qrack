@@ -1101,11 +1101,11 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     for (bitLenInt i = 0; i < qIndices.size(); i++) {
         QEngineShard& shard = shards[qIndices[i]];
 
-        if (CACHED_ZERO(shard)) {
+        if (UNSAFE_CACHED_ZERO(shard)) {
             continue;
         }
 
-        if (CACHED_ONE(shard)) {
+        if (UNSAFE_CACHED_ONE(shard)) {
             flipResult = !flipResult;
             continue;
         }
