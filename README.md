@@ -82,10 +82,10 @@ CMake on Windows will set up a 32-bit Visual Studio project by default, (if usin
 ```
     $ mkdir _build
     $ cd _build
-    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DFPPOW=6 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" ..
+    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" ..
 ```
 
-After CMake, the project must be built in Visual Studio. (`-DFPPOW=6` disables single `float` accuracy in favor of `double`, which should usually be used for building the Q# runtime with `QrackSimulator`.)
+After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
 
 ## Performing code coverage
 
