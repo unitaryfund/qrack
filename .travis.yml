@@ -6,7 +6,7 @@ install:
   - sudo apt-get update
   - sudo apt-get install linuxdoc-tools linuxdoc-tools-info binutils-mingw-w64-i686 gcc-mingw-w64-i686 sshpass cmake
   - python -m pip install --upgrade pip numpy setuptools wheel
-  - python -m pip install rust cvxpy cython ddt stestr qiskit==0.24.1 pennylane
+  - python -m pip install rust cvxpy cython ddt stestr qiskit==0.24.1 pennylane==0.14.1
 script:
   - mkdir _build && cd _build && cmake -DFPPOW=6 .. && make -j 8 all
   - sudo make install
