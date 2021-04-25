@@ -883,7 +883,7 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex((real1)sqrt(prob), ZERO_R1);
     shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (unit && unit->isClifford() && !TrySeparateCliffordBit(qubit)) {
+    if (unit && unit->isClifford(mapped) && !TrySeparateCliffordBit(qubit)) {
         return prob;
     }
 
