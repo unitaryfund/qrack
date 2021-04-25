@@ -690,28 +690,21 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
     bitCapIntOcl qMask = targetPow - 1U;
 
     bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> 1U;
-    std::vector<std::future<void>> futures(maxLCV);
     bitCapIntOcl i;
     for (i = 0; i < maxLCV; i++) {
-        futures[i] = std::async(std::launch::async, [this, i, &isInvert, &top, &bottom, &targetPow, &qMask]() {
-            bitCapIntOcl j = i & qMask;
-            j |= (i ^ j) << ONE_BCI;
+        bitCapIntOcl j = i & qMask;
+        j |= (i ^ j) << ONE_BCI;
 
-            if (isInvert) {
-                std::swap(qPages[j], qPages[j + targetPow]);
-            }
+        if (isInvert) {
+            std::swap(qPages[j], qPages[j + targetPow]);
+        }
 
-            if (top != ONE_CMPLX) {
-                qPages[j]->ApplySinglePhase(top, top, 0);
-            }
-            if (bottom != ONE_CMPLX) {
-                qPages[j + targetPow]->ApplySinglePhase(bottom, bottom, 0);
-            }
-        });
-    }
-
-    for (i = 0; i < maxLCV; i++) {
-        futures[i].get();
+        if (top != ONE_CMPLX) {
+            qPages[j]->ApplySinglePhase(top, top, 0);
+        }
+        if (bottom != ONE_CMPLX) {
+            qPages[j + targetPow]->ApplySinglePhase(bottom, bottom, 0);
+        }
     }
 }
 
@@ -1154,29 +1147,22 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
     std::sort(sortedMasks.begin(), sortedMasks.end());
 
     bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> (bitCapIntOcl)sortedMasks.size();
-    std::vector<std::future<void>> futures(maxLCV);
     bitCapIntOcl i;
     for (i = 0; i < maxLCV; i++) {
-        futures[i] = std::async(std::launch::async, [this, i, &qubit1Pow, &qubit2Pow, &sortedMasks, &isIPhaseFac]() {
-            bitCapIntOcl j, jLo, jHi;
-            j = i & sortedMasks[0];
-            jHi = (i ^ j) << ONE_BCI;
-            jLo = jHi & sortedMasks[1];
-            j |= jLo | ((jHi ^ jLo) << ONE_BCI);
+        bitCapIntOcl j, jLo, jHi;
+        j = i & sortedMasks[0];
+        jHi = (i ^ j) << ONE_BCI;
+        jLo = jHi & sortedMasks[1];
+        j |= jLo | ((jHi ^ jLo) << ONE_BCI);
 
-            std::swap(qPages[j + qubit1Pow], qPages[j + qubit2Pow]);
+        std::swap(qPages[j + qubit1Pow], qPages[j + qubit2Pow]);
 
-            if (!isIPhaseFac) {
-                return;
-            }
+        if (!isIPhaseFac) {
+            return;
+        }
 
-            qPages[j + qubit1Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
-            qPages[j + qubit2Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
-        });
-    }
-
-    for (i = 0; i < maxLCV; i++) {
-        futures[i].get();
+        qPages[j + qubit1Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+        qPages[j + qubit2Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
     }
 }
 
