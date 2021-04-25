@@ -415,7 +415,6 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
             return;
         }
 
-        engine.reset();
         if (stabilizer) {
             stabilizer->SetPermutation(0);
         } else {
