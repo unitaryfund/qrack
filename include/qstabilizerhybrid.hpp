@@ -823,7 +823,7 @@ public:
 
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
-        if (stabilizer && shards[qubitIndex]) {
+        if (stabilizer && shards[qubitIndex] && !shards[qubitIndex]->IsPhase()) {
             FlushBuffers();
         }
 
