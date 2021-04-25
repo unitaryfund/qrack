@@ -398,8 +398,9 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
             isY = true;
         }
 
+        engine.reset();
+
         if (isClifford) {
-            engine.reset();
             if (stabilizer) {
                 stabilizer->SetPermutation(isSet ? 1 : 0);
             } else {
@@ -413,6 +414,20 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
             }
             return;
         }
+
+        if (stabilizer) {
+            stabilizer->SetPermutation(0);
+        } else {
+            stabilizer = MakeStabilizer(0);
+        }
+
+        real1 sqrtProb = sqrt(norm(inputState[1]));
+        real1 sqrt1MinProb = sqrt(norm(inputState[0]));
+        complex probMatrix[4] = { sqrt1MinProb, sqrtProb, sqrtProb, -sqrt1MinProb };
+        ApplySingleBit(probMatrix, 0);
+        ApplySinglePhase(inputState[0] / sqrt1MinProb, inputState[1] / sqrtProb, 0);
+
+        return;
     }
 
     SwitchToEngine();
