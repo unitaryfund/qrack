@@ -823,8 +823,13 @@ public:
 
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
+        bool isCachedInvert = false;
         if (stabilizer && shards[qubitIndex]) {
-            FlushBuffers();
+            if (shards[qubitIndex]->IsInvert()) {
+                isCachedInvert = true;
+            } else if (!shards[qubitIndex]->IsPhase()) {
+                FlushBuffers();
+            }
         }
 
         if (engine) {
@@ -832,7 +837,7 @@ public:
         }
 
         if (stabilizer->IsSeparableZ(qubitIndex)) {
-            return stabilizer->M(qubitIndex) ? ONE_R1 : ZERO_R1;
+            return (isCachedInvert != stabilizer->M(qubitIndex)) ? ONE_R1 : ZERO_R1;
         } else {
             return ONE_R1 / 2;
         }
