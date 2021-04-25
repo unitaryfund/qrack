@@ -1158,7 +1158,7 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
         std::swap(qPages[j + qubit1Pow], qPages[j + qubit2Pow]);
 
         if (!isIPhaseFac) {
-            return;
+            continue;
         }
 
         qPages[j + qubit1Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
