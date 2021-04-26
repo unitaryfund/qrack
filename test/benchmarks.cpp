@@ -503,7 +503,6 @@ TEST_CASE("test_quantum_triviality", "[supreme]")
 {
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 5;
-    const int Depth = 20;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
@@ -513,7 +512,7 @@ TEST_CASE("test_quantum_triviality", "[supreme]")
             bitLenInt b1, b2, b3;
             int maxGates;
 
-            for (d = 0; d < Depth; d++) {
+            for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
                     gateRand = qReg->Rand();
@@ -572,7 +571,6 @@ TEST_CASE("test_stabilizer", "[supreme]")
 {
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 2;
-    const int Depth = 20;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
@@ -581,7 +579,7 @@ TEST_CASE("test_stabilizer", "[supreme]")
             real1_f gateRand;
             bitLenInt b1, b2;
 
-            for (d = 0; d < Depth; d++) {
+            for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
                     gateRand = qReg->Rand();
@@ -625,7 +623,6 @@ TEST_CASE("test_stabilizer", "[supreme]")
 TEST_CASE("test_universal_circuit_continuous", "[supreme]")
 {
     const int GateCountMultiQb = 2;
-    const int Depth = 20;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
@@ -634,7 +631,7 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
             real1_f theta, phi, lambda;
             bitLenInt b1, b2;
 
-            for (d = 0; d < Depth; d++) {
+            for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
                     theta = 2 * M_PI * qReg->Rand();
@@ -672,7 +669,6 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
 {
     const int GateCount1Qb = 2;
     const int GateCountMultiQb = 2;
-    const int Depth = 20;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
@@ -682,7 +678,7 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
             bitLenInt b1, b2, b3;
             int maxGates;
 
-            for (d = 0; d < Depth; d++) {
+            for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
                     gateRand = qReg->Rand();
@@ -729,7 +725,6 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
 {
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 4;
-    const int Depth = 20;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
@@ -739,7 +734,7 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
             bitLenInt b1, b2, b3;
             int maxGates;
 
-            for (d = 0; d < Depth; d++) {
+            for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
                     gateRand = qReg->Rand();
@@ -795,7 +790,6 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
 {
     const int GateCount1Qb = 3;
     const int GateCountMultiQb = 4;
-    const int Depth = 20;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
@@ -808,7 +802,7 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
             bool canDo3;
             int gateThreshold, gateMax;
 
-            for (d = 0; d < Depth; d++) {
+            for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
                     gateRand = qReg->Rand();
@@ -871,7 +865,6 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
 
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 4;
-    const int Depth = 20;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
@@ -881,7 +874,7 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
             bitLenInt b1, b2, b3;
             int maxGates;
 
-            for (d = 0; d < Depth; d++) {
+            for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
                     gateRand = GateCount1Qb * qReg->Rand();
@@ -939,8 +932,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
     // This is an attempt to simulate the circuit argued to establish quantum supremacy.
     // See https://doi.org/10.1038/s41586-019-1666-5
 
-    const int depth = 20;
-
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
@@ -979,7 +970,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // We repeat the entire prepartion for "depth" iterations.
         // We can avoid maximal representational entanglement of the state as a single Schr{\"o}dinger method unit.
         // See https://arxiv.org/abs/1710.05867
-        for (d = 0; d < depth; d++) {
+        for (d = 0; d < benchmarkDepth; d++) {
             for (i = 0; i < n; i++) {
                 gateRand = qReg->Rand();
 

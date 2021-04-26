@@ -38,6 +38,7 @@ std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput = false;
 int benchmarkSamples = 100;
+int benchmarkDepth = 20;
 std::vector<int> devList;
 
 #define SHOW_OCL_BANNER()                                                                                              \
@@ -104,6 +105,9 @@ int main(int argc, char* argv[])
         Opt(sparse)["--sparse"](
             "(For QEngineCPU, under QUnit:) Use a state vector optimized for sparse representation and iteration.") |
         Opt(benchmarkSamples, "samples")["--benchmark-samples"]("number of samples to collect (default: 100)") |
+        Opt(benchmarkDepth, "depth")["--benchmark-depth"](
+            "depth of randomly constructed circuits, when applicable, with 1 round of single qubit and 1 round of "
+            "multi-qubit gates being 1 unit of depth (default: 20)") |
         Opt(devListStr, "devices")["--devices"](
             "list of devices, for QPager (default is solely default OpenCL device)");
 
