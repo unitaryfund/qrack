@@ -501,6 +501,8 @@ bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 
 TEST_CASE("test_quantum_triviality", "[supreme]")
 {
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 5;
 
@@ -569,6 +571,8 @@ TEST_CASE("test_quantum_triviality", "[supreme]")
 
 TEST_CASE("test_stabilizer", "[supreme]")
 {
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 2;
 
@@ -622,6 +626,8 @@ TEST_CASE("test_stabilizer", "[supreme]")
 
 TEST_CASE("test_universal_circuit_continuous", "[supreme]")
 {
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+
     const int GateCountMultiQb = 2;
 
     benchmarkLoop(
@@ -667,6 +673,8 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
 
 TEST_CASE("test_universal_circuit_discrete", "[supreme]")
 {
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+
     const int GateCount1Qb = 2;
     const int GateCountMultiQb = 2;
 
@@ -723,6 +731,8 @@ TEST_CASE("test_universal_circuit_discrete", "[supreme]")
 
 TEST_CASE("test_universal_circuit_digital", "[supreme]")
 {
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
@@ -788,6 +798,8 @@ TEST_CASE("test_universal_circuit_digital", "[supreme]")
 
 TEST_CASE("test_universal_circuit_analog", "[supreme]")
 {
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+
     const int GateCount1Qb = 3;
     const int GateCountMultiQb = 4;
 
@@ -862,6 +874,7 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
 
 TEST_CASE("test_ccz_ccx_h", "[supreme]")
 {
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
 
     const int GateCount1Qb = 4;
     const int GateCountMultiQb = 4;
@@ -929,6 +942,8 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
 
 TEST_CASE("test_quantum_supremacy", "[supreme]")
 {
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+
     // This is an attempt to simulate the circuit argued to establish quantum supremacy.
     // See https://doi.org/10.1038/s41586-019-1666-5
 
