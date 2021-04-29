@@ -2201,7 +2201,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped);
         }
         if (DIRTY(shard)) {
-            shard.MakeDirty();
+            shard.isPhaseDirty = true;
             return;
         }
 
@@ -2306,7 +2306,8 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
             shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped);
         }
         if (DIRTY(shard)) {
-            shard.MakeDirty();
+            shard.isPhaseDirty = true;
+            std::swap(shard.amp0, shard.amp1);
             return;
         }
 
