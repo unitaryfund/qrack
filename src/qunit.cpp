@@ -1648,7 +1648,8 @@ void QUnit::XBase(const bitLenInt& target)
         shard.unit->X(shard.mapped);
     }
     if (DIRTY(shard)) {
-        shard.MakeDirty();
+        shard.isPhaseDirty = true;
+        std::swap(shard.amp0, shard.amp1);
         return;
     }
 
@@ -1663,7 +1664,8 @@ void QUnit::YBase(const bitLenInt& target)
         shard.unit->Y(shard.mapped);
     }
     if (DIRTY(shard)) {
-        shard.MakeDirty();
+        shard.isPhaseDirty = true;
+        std::swap(shard.amp0, shard.amp1);
         return;
     }
 
@@ -1680,7 +1682,7 @@ void QUnit::ZBase(const bitLenInt& target)
         shard.unit->Z(shard.mapped);
     }
     if (DIRTY(shard)) {
-        shard.MakeDirty();
+        shard.isPhaseDirty = true;
         return;
     }
 
