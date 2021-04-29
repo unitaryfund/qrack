@@ -1803,7 +1803,7 @@ void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, c
                 unit->ctrld;                                                                                           \
             }                                                                                                          \
         },                                                                                                             \
-        [&]() { bare; });
+        [&]() { bare; }, !isInvert);
 
 #define CTRLED_SWAP_WRAP(ctrld, bare, anti)                                                                            \
     if (qubit1 == qubit2) {                                                                                            \
@@ -1883,7 +1883,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         ApplyEitherControlled(
             controls, controlLen, { target }, false,
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
-            [&]() { XBase(target); }, true);
+            [&]() { XBase(target); }, false, true);
         return;
     }
 
@@ -2670,7 +2670,8 @@ void QUnit::AntiCISqrtSwap(
 
 template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& inCurrentBasis)
+    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& isPhase,
+    const bool& inCurrentBasis)
 {
     bitLenInt i;
 
@@ -2764,7 +2765,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     cfn(unit, controlsMapped);
 
     for (i = 0; i < targets.size(); i++) {
-        shards[targets[i]].MakeDirty();
+        QEngineShard& shard = shards[targets[i]];
+        shard.isProbDirty |= !isPhase || shard.isPauliX || shard.isPauliY;
+        shard.isPhaseDirty = true;
     }
 
     if (unit && unit->isClifford()) {
