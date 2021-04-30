@@ -20,7 +20,7 @@ namespace Qrack {
 QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem,
     int deviceId, bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> ignored,
-    bitLenInt qubitThreshold)
+    bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1)
     , engineType(eng)
     , subEngineType(subEng)
@@ -33,6 +33,7 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
+    , separabilityThreshold(sep_thresh)
     , thresholdQubits(qubitThreshold)
 {
     if (subEngineType == QINTERFACE_STABILIZER_HYBRID) {
@@ -73,7 +74,7 @@ QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
 {
     QInterfacePtr toRet = CreateQuantumInterface(engineType, subEngineType, qubitCount, 0, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        std::vector<int>{}, thresholdQubits);
+        std::vector<int>{}, thresholdQubits, separabilityThreshold);
     toRet->SetConcurrency(concurrency);
     return toRet;
 }
@@ -85,7 +86,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     QStabilizerHybridPtr c =
         std::dynamic_pointer_cast<QStabilizerHybrid>(CreateQuantumInterface(QINTERFACE_STABILIZER_HYBRID, engineType,
             subEngineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
-            useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits));
+            useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
 
     if (stabilizer) {
         c->stabilizer = std::make_shared<QStabilizer>(*stabilizer);
