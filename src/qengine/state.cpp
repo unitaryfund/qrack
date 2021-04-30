@@ -667,7 +667,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     bitLenInt result = qubitCount;
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
 
-    if (!stateVec) {
+    if (!stateVec || !toCopy->stateVec) {
         // Compose will have a wider but 0 stateVec
         SetQubitCount(nQubitCount);
         return result;
