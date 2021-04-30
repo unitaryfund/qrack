@@ -719,17 +719,17 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
 
     // We check Z basis:
     real1_f prob = ProbBase(start);
-    bool didSeparate = ((prob <= separabilityThreshold) || ((ONE_R1 - prob) <= separabilityThreshold));
+    bool didSeparate = (shard.GetQubitCount() == 1);
 
     // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
-    if (abs(prob - ONE_R1 / 2) > separabilityThreshold) {
+    if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
         return didSeparate;
     }
 
     // We check X basis:
     shard.unit->H(shard.mapped);
     prob = ProbBase(start);
-    didSeparate |= ((prob <= separabilityThreshold) || ((ONE_R1 - prob) <= separabilityThreshold));
+    didSeparate |= (shard.GetQubitCount() == 1);
 
     if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
         H(start);
@@ -741,7 +741,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
         complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
     prob = ProbBase(start);
-    didSeparate |= ((prob <= separabilityThreshold) || ((ONE_R1 - prob) <= separabilityThreshold));
+    didSeparate |= (shard.GetQubitCount() == 1);
 
     H(start);
     S(start);
