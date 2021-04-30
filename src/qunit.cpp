@@ -2687,15 +2687,14 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             RevertBasis1Qb(controls[i]);
             RevertBasis2Qb(controls[i], ONLY_INVERT, ONLY_TARGETS);
         }
+        QEngineShard& shard = shards[controls[i]];
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         bool isEigenstate = false;
-        if (shards[controls[i]].unit && shards[controls[i]].unit->isClifford()) {
+        if (shard.unit && shard.unit->isClifford()) {
             ProbBase(controls[i]);
         }
-        if (!shards[controls[i]].isProbDirty) {
-            // This might determine that we can just skip out of the whole gate, in which case it returns this
-            // method:
-            QEngineShard& shard = shards[controls[i]];
+        if (!shard.isProbDirty) {
+            // This might determine that we can just skip out of the whole gate, in which case we return.
             if (IS_NORM_0(shard.amp1)) {
                 if (!inCurrentBasis) {
                     Flush0Eigenstate(controls[i]);
