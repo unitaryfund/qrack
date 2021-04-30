@@ -717,24 +717,36 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
         return TrySeparateCliffordBit(start);
     }
 
-    QInterfacePtr dest = MakeEngine(1, 0);
+    // We check Z basis:
+    real1_f prob = ProbBase(start);
+    bool didSeparate = (shard.GetQubitCount() == 1);
 
-    if (shard.unit->TryDecompose(shard.mapped, dest, error_tol)) {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            QEngineShard& oShard = shards[i];
-            if ((oShard.unit == shard.unit) && oShard.mapped > shard.mapped) {
-                oShard.mapped--;
-            }
-        }
-
-        shard.unit = dest;
-        shard.mapped = 0;
-        CacheSingleQubitShard(start);
-
-        return true;
+    // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
+    if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
+        return didSeparate;
     }
 
-    return false;
+    // We check X basis:
+    shard.unit->H(shard.mapped);
+    prob = ProbBase(start);
+    didSeparate = (shard.GetQubitCount() == 1);
+
+    if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
+        H(start);
+        return didSeparate;
+    }
+
+    // We check Y basis:
+    complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
+        complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
+    shard.unit->ApplySingleBit(mtrx, shard.mapped);
+    prob = ProbBase(start);
+    didSeparate = (shard.GetQubitCount() == 1);
+
+    H(start);
+    S(start);
+
+    return didSeparate;
 }
 
 void QUnit::OrderContiguous(QInterfacePtr unit)
