@@ -8,10 +8,6 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#include <direct.h>
-#endif
-
 #include <future>
 #include <string>
 
