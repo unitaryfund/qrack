@@ -743,8 +743,8 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
     prob = ProbBase(start);
     didSeparate |= (shard.GetQubitCount() == 1);
 
+    IS(start);
     H(start);
-    S(start);
 
     return didSeparate;
 }
