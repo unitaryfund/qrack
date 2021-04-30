@@ -667,7 +667,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     bitLenInt result = qubitCount;
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
 
-    if (!stateVec) {
+    if (!stateVec || !toCopy->stateVec) {
         // Compose will have a wider but 0 stateVec
         SetQubitCount(nQubitCount);
         return result;
@@ -833,6 +833,11 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             destination->ZeroAmplitudes();
         }
         return;
+    }
+
+    if (destination && !destination->stateVec) {
+        // Reinitialize stateVec RAM
+        destination->SetPermutation(0);
     }
 
     bitLenInt nLength = qubitCount - length;

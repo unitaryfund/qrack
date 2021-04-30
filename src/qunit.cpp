@@ -714,7 +714,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
         return true;
     }
 
-    if (shard.unit->isClifford()) {
+    if (shard.isClifford()) {
         return TrySeparateCliffordBit(start);
     }
 
@@ -959,7 +959,7 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
         return true;
     }
 
-    if (freezeClifford || !shard.unit->isClifford(shard.mapped)) {
+    if (freezeClifford || !shard.isClifford()) {
         return false;
     }
 
