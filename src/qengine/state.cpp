@@ -835,6 +835,11 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         return;
     }
 
+    if (!destination->stateVec) {
+        // Reinitialize stateVec RAM
+        destination->SetPermutation(0);
+    }
+
     bitLenInt nLength = qubitCount - length;
 
     bitCapIntOcl partPower = pow2Ocl(length);
