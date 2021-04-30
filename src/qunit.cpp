@@ -893,39 +893,22 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
 
     shard.isProbDirty = false;
 
-    bitLenInt shardQbCount = shard.GetQubitCount();
     QInterfacePtr unit = shard.unit;
     bitLenInt mapped = shard.mapped;
     real1_f prob = unit->Prob(mapped);
     shard.amp1 = complex((real1)sqrt(prob), ZERO_R1);
     shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (unit && unit->isClifford(mapped) && !TrySeparateCliffordBit(qubit)) {
+    if (unit && unit->isClifford(mapped)) {
+        TrySeparateCliffordBit(qubit);
         return prob;
     }
 
-    bool didSeparate = false;
     if (IS_NORM_0(shard.amp1)) {
         SeparateBit(false, qubit);
-        didSeparate = true;
     } else if (IS_NORM_0(shard.amp0)) {
         SeparateBit(true, qubit);
-        didSeparate = true;
     }
-
-    if (!didSeparate || (shardQbCount != 2)) {
-        return prob;
-    }
-
-    bitLenInt partnerIndex;
-    for (partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
-        QEngineShard& partnerShard = shards[partnerIndex];
-        if (unit == partnerShard.unit) {
-            break;
-        }
-    }
-
-    CacheSingleQubitShard(partnerIndex);
 
     return prob;
 }
@@ -975,7 +958,7 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
         return true;
     }
 
-    if (freezeClifford || !shard.unit->isClifford()) {
+    if (freezeClifford || !shard.unit->isClifford(shard.mapped)) {
         return false;
     }
 
@@ -1176,6 +1159,20 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
             shard.mapped--;
         }
     }
+
+    if (unit->GetQubitCount() != 1) {
+        return;
+    }
+
+    bitLenInt partnerIndex;
+    for (partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
+        QEngineShard& partnerShard = shards[partnerIndex];
+        if (unit == partnerShard.unit) {
+            break;
+        }
+    }
+
+    CacheSingleQubitShard(partnerIndex);
 }
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
@@ -2788,13 +2785,12 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shard.isPhaseDirty = true;
     }
 
-    if (unit && unit->isClifford()) {
-        for (i = 0; i < allBits.size(); i++) {
-            QEngineShard& shard = shards[allBits[i]];
-            if (unit->isClifford(shard.mapped)) {
-                ProbBase(allBits[i]);
-            }
-        }
+    if (!unit->isClifford()) {
+        return;
+    }
+
+    for (i = 0; i < allBits.size(); i++) {
+        TrySeparateCliffordBit(allBits[i]);
     }
 }
 
