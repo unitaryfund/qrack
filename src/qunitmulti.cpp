@@ -20,9 +20,9 @@ namespace Qrack {
 QUnitMulti::QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
-    bitLenInt qubitThreshold)
+    bitLenInt qubitThreshold, real1_f sep_thresh)
     : QUnit(eng, subEng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG,
-          useSparseStateVec, norm_thresh, devList, qubitThreshold)
+          useSparseStateVec, norm_thresh, devList, qubitThreshold, sep_thresh)
 {
     // The "shard" engine type must be QINTERFACE_OPENCL or QINTERFACE_HYBRID, with or without an intermediate QPager
     // layer.
@@ -71,7 +71,7 @@ QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
     // Suppress passing device list, since QUnitMulti occupies all devices in the list
     return CreateQuantumInterface(engine, subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
         randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{},
-        thresholdQubits);
+        thresholdQubits, separabilityThreshold);
 }
 
 std::vector<QEngineInfo> QUnitMulti::GetQInfos()

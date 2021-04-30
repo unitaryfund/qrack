@@ -60,7 +60,7 @@ namespace Qrack {
 QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
-    bitLenInt qubitThreshold)
+    bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , engine(eng)
     , subEngine(subEng)
@@ -75,7 +75,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , freezeClifford(false)
     , thresholdQubits(qubitThreshold)
     , pagingThresholdQubits(21)
-    , separabilityThreshold(FP_NORM_EPSILON)
+    , separabilityThreshold(sep_thresh)
     , deviceIDs(devList)
 {
     if (getenv("QRACK_QUNIT_PAGING_THRESHOLD")) {
@@ -119,18 +119,19 @@ QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
         if (engine == QINTERFACE_QPAGER) {
             return CreateQuantumInterface(subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
                 randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
-                thresholdQubits);
+                thresholdQubits, separabilityThreshold);
         }
 
         if ((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER)) {
             return CreateQuantumInterface(QINTERFACE_STABILIZER_HYBRID, QINTERFACE_HYBRID, length, perm, rand_generator,
                 phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-                (real1_f)amplitudeFloor, deviceIDs, thresholdQubits);
+                (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
         }
     }
 
     return CreateQuantumInterface(engine, subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits);
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+        separabilityThreshold);
 }
 
 void QUnit::TurnOnPaging()
