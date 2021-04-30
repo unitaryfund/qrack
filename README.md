@@ -77,12 +77,12 @@ Qrack supports building on Windows, but some special configuration is required. 
 
 Qrack requires the `xxd` command to convert its OpenCL kernel code into hexadecimal format for building. `xxd` is not natively available on Windows systems, but Windows executables for it are provided by sources including the [Vim editor Windows port](https://www.vim.org/download.php).
 
-CMake on Windows will set up a 32-bit Visual Studio project by default, (if using Visual Studio,) whereas 64-bit will probably be typically desired. Putting together all of the above considerations, after installing the CUDA Toolkit and Vim, a typical CMake command for Windows might look like this:
+CMake on Windows will set up a 32-bit Visual Studio project by default, (if using Visual Studio,) whereas 64-bit will probably be typically desired. `-DFPPOW=6` is used to set the systemic floating point accuracy to `double`, which is typically necessary for Q# accuracy tolerances. Putting together all of the above considerations, after installing the CUDA Toolkit and Vim, a typical CMake command for Windows might look like this:
 
 ```
     $ mkdir _build
     $ cd _build
-    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" ..
+    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" -DFPPOW=6 ..
 ```
 
 After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
@@ -98,6 +98,9 @@ After CMake, the project must be built in Visual Studio. Once installed, the `qr
     $ cd coverage_results
     $ python -m http.server
 ```
+
+## QUnit separability threshold
+QUnit caches and introspects information about single qubits, to proactively maintain a Schmidt decomposed representation of state. By default, QUnit tolerance for determining Z basis eigenstates is `FP_NORM_EPSILON` defined in `include/common/qrack_types.hpp`, and this can usually be considered an "exact" simulation. To override this separability threshold in an environment, define the `QRACK_QUNIT_SEPARABILITY_THRESHOLD` with a float value between 0 and 1. The lower the value, the more precise are Z basis eigenstate separability checks. Adjusting this threshold can trade off between precision/accuracy vs. RAM usage and execution time.
 
 ## QPager distributed simulation options
 QPager attempts to smartly allocate low qubit widths for maximum performance. For wider qubit simulations, based on `clinfo`, you can segment your maximum OpenCL accelerator state vector page allocation into global qubits with the environment variable `QRACK_SEGMENT_GLOBAL_QB=n`, where n is an integer >=0. The default n is 0, meaning that maximum allocation segment of your GPU RAM is a single page. (For 1 global qubit, one segment would have 2 pages, akin to 2 single amplitudes, therefore one "global qubit," or 4 pages for n=2, because 2^2=4, etc., by exponent.)

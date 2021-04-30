@@ -29,7 +29,7 @@
 #include "qunit.hpp"
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
+#define IS_NORM_0(c) (norm(c) <= separabilityThreshold)
 #define IS_0_R1(r) (r == ZERO_R1)
 #define IS_1_R1(r) (r == ONE_R1)
 #define IS_1_CMPLX(c) (c == ONE_CMPLX)
@@ -75,10 +75,15 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , freezeClifford(false)
     , thresholdQubits(qubitThreshold)
     , pagingThresholdQubits(21)
+    , separabilityThreshold(FP_NORM_EPSILON)
     , deviceIDs(devList)
 {
     if (getenv("QRACK_QUNIT_PAGING_THRESHOLD")) {
         pagingThresholdQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_QUNIT_PAGING_THRESHOLD")));
+    }
+
+    if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
+        separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
     }
 
     if ((engine == QINTERFACE_QUNIT) || (engine == QINTERFACE_QUNIT_MULTI)) {
