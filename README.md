@@ -77,12 +77,12 @@ Qrack supports building on Windows, but some special configuration is required. 
 
 Qrack requires the `xxd` command to convert its OpenCL kernel code into hexadecimal format for building. `xxd` is not natively available on Windows systems, but Windows executables for it are provided by sources including the [Vim editor Windows port](https://www.vim.org/download.php).
 
-CMake on Windows will set up a 32-bit Visual Studio project by default, (if using Visual Studio,) whereas 64-bit will probably be typically desired. Putting together all of the above considerations, after installing the CUDA Toolkit and Vim, a typical CMake command for Windows might look like this:
+CMake on Windows will set up a 32-bit Visual Studio project by default, (if using Visual Studio,) whereas 64-bit will probably be typically desired. `-DFPPOW=6` is used to set the systemic floating point accuracy to `double`, which is typically necessary for Q# accuracy tolerances. Putting together all of the above considerations, after installing the CUDA Toolkit and Vim, a typical CMake command for Windows might look like this:
 
 ```
     $ mkdir _build
     $ cd _build
-    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" ..
+    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" -DFPPOW=6 ..
 ```
 
 After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
