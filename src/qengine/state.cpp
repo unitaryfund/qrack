@@ -835,7 +835,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         return;
     }
 
-    if (!destination->stateVec) {
+    if (destination && !destination->stateVec) {
         // Reinitialize stateVec RAM
         destination->SetPermutation(0);
     }

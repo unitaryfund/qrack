@@ -1221,7 +1221,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         return;
     }
 
-    if (!destination->stateBuffer) {
+    if (destination && !destination->stateBuffer) {
         // Reinitialize stateVec RAM
         destination->SetPermutation(0);
     }
