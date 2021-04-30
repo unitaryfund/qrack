@@ -41,6 +41,7 @@ protected:
     bool canSuppressPaging;
     bitLenInt thresholdQubits;
     bitLenInt pagingThresholdQubits;
+    real1_f separabilityThreshold;
     std::vector<int> deviceIDs;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
