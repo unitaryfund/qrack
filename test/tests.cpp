@@ -3326,7 +3326,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
     qftReg->CNOT(0, 1);
     qftReg->CNOT(0, 2);
     qftReg->CNOT(0, 2);
-    qftReg->TrySeparate(0, 2);
+    qftReg->TrySeparate((bitLenInt)0, 2);
     qftReg->CNOT(0, 1);
     qftReg->Z(0);
     qftReg->H(0);
