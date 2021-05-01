@@ -92,7 +92,7 @@ public:
         FreeStateVec();
     }
 
-    virtual void FreeStateVec(complex* sv = NULL) { stateVec.reset(); }
+    virtual void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }
 
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
