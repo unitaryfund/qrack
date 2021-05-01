@@ -82,6 +82,12 @@ public:
 
     virtual void ZeroAmplitudes()
     {
+        if (!stateVec) {
+            runningNorm = ZERO_R1;
+            return;
+        }
+
+        Dump();
         runningNorm = ZERO_R1;
         FreeStateVec();
     }
