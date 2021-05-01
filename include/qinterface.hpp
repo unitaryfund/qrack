@@ -2228,6 +2228,7 @@ public:
      * for simulation optimization purposes. This is not a truly quantum computational operation, but it also does not
      * lead to nonphysical effects.
      */
+    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol = REAL1_EPSILON) { return false; }
     virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON) { return false; }
 
     /**
