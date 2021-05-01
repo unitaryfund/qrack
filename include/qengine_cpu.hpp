@@ -316,7 +316,7 @@ protected:
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     virtual StateVectorPtr AllocStateVec(bitCapInt elemCount);
-    virtual void ResetStateVec(StateVectorPtr sv);
+    virtual void ResetStateVec(StateVectorPtr sv) { stateVec = sv; }
 
     typedef std::function<void(void)> DispatchFn;
     virtual void Dispatch(DispatchFn fn)
