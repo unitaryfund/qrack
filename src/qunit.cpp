@@ -1152,8 +1152,10 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
         return;
     }
 
-    unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
-    if (separabilityThreshold > FP_NORM_EPSILON) {
+    if (separabilityThreshold <= FP_NORM_EPSILON) {
+        unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
+    } else {
+        unit->Dispose(mapped, 1);
         unit->UpdateRunningNorm();
         if (!doNormalize) {
             unit->NormalizeState();
