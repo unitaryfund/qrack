@@ -1153,6 +1153,12 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
     }
 
     unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
+    if (separabilityThreshold > FP_NORM_EPSILON) {
+        unit->UpdateRunningNorm();
+        if (!doNormalize) {
+            unit->NormalizeState();
+        }
+    }
 
     /* Update the mappings. */
     for (auto&& shard : shards) {
