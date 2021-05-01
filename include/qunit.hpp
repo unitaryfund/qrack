@@ -280,9 +280,9 @@ public:
     virtual void Dump();
     virtual bool isClifford(const bitLenInt& qubit) { return shards[qubit].isClifford(); };
 
-    using QInterface::TrySeparate;
-    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol = REAL1_EPSILON);
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON);
+    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol);
+    virtual bool TrySeparate(bitLenInt qubit);
+    virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
 
     virtual QInterfacePtr Clone();
 

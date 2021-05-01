@@ -937,13 +937,35 @@ public:
         }
     }
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON)
+    using QInterface::TrySeparate;
+    virtual bool TrySeparate(bitLenInt qubit)
     {
         if (stabilizer) {
-            return stabilizer->CanDecomposeDispose(start, length);
+            return stabilizer->CanDecomposeDispose(qubit, 1);
         }
 
-        return engine->TrySeparate(start, length, error_tol);
+        return engine->TrySeparate(qubit);
+    }
+
+    virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
+    {
+        if (stabilizer) {
+            if (qubit2 < qubit1) {
+                std::swap(qubit1, qubit2);
+            }
+
+            stabilizer->Swap(0, qubit1);
+            stabilizer->Swap(1, qubit2);
+
+            bool toRet = stabilizer->CanDecomposeDispose(0, 2);
+
+            stabilizer->Swap(0, qubit1);
+            stabilizer->Swap(1, qubit2);
+
+            return toRet;
+        }
+
+        return engine->TrySeparate(qubit1, qubit2);
     }
 
     virtual QInterfacePtr Clone();
