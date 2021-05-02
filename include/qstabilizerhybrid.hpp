@@ -946,7 +946,6 @@ public:
 
         return engine->TrySeparate(qubit);
     }
-
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
@@ -964,6 +963,28 @@ public:
         }
 
         return engine->TrySeparate(qubit1, qubit2);
+    }
+    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
+    {
+        if (stabilizer) {
+            std::vector<bitLenInt> q(length);
+            std::copy(qubits, qubits + length, q.begin());
+            std::sort(q.begin(), q.end());
+
+            for (bitLenInt i = 0; i < length; i++) {
+                Swap(i, q[i]);
+            }
+
+            bool toRet = stabilizer->CanDecomposeDispose(0, length);
+
+            for (bitLenInt i = 0; i < length; i++) {
+                Swap(i, q[i]);
+            }
+
+            return toRet;
+        }
+
+        return engine->TrySeparate(qubits, length, error_tol);
     }
 
     virtual QInterfacePtr Clone();
