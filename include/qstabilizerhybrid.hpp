@@ -937,7 +937,6 @@ public:
         }
     }
 
-    using QInterface::TrySeparate;
     virtual bool TrySeparate(bitLenInt qubit)
     {
         if (stabilizer) {
@@ -971,14 +970,14 @@ public:
             std::copy(qubits, qubits + length, q.begin());
             std::sort(q.begin(), q.end());
 
-            for (bitLenInt i = 0; i < length; i++) {
-                Swap(i, q[i]);
+            for (bitLenInt i = 1; i < length; i++) {
+                Swap(q[0] + i, q[i]);
             }
 
             bool toRet = stabilizer->CanDecomposeDispose(0, length);
 
-            for (bitLenInt i = 0; i < length; i++) {
-                Swap(i, q[i]);
+            for (bitLenInt i = 1; i < length; i++) {
+                Swap(q[0] + i, q[i]);
             }
 
             return toRet;
