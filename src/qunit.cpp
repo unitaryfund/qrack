@@ -226,6 +226,7 @@ void QUnit::SetQuantumState(const complex* inputState)
     if (qubitCount == 1U) {
         QEngineShard& shard = shards[0];
         shard.unit = NULL;
+        shard.mapped = 0;
         shard.isProbDirty = false;
         shard.isPhaseDirty = false;
         shard.amp0 = inputState[0];
@@ -988,6 +989,7 @@ void QUnit::CacheSingleQubitShard(bitLenInt target)
     shard.isProbDirty = false;
     shard.isPhaseDirty = false;
     shard.unit = NULL;
+    shard.mapped = 0;
     if (doNormalize) {
         shard.ClampAmps(amplitudeFloor);
     }
@@ -1257,6 +1259,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 
     if (shard.GetQubitCount() == 1U) {
         shard.unit = NULL;
+        shard.mapped = 0;
         return result;
     }
 
