@@ -887,6 +887,9 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
             bitLenInt b1, b2, b3;
             int maxGates;
 
+            // The TrySeparate() method works well with approximate simulation.
+            // qReg->SetAggressiveSeparate(true);
+
             for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
@@ -919,7 +922,6 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
 
                     gateRand = maxGates * qReg->Rand();
 
-                    // The TrySeparate() method works well with approximate simulation.
                     if (gateRand < ONE_R1) {
                         qReg->CZ(b1, b2);
                         // qReg->TrySeparate(b1, b2);

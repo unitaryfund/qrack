@@ -73,6 +73,8 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , freezeBasisH(false)
     , freezeBasis2Qb(false)
     , freezeClifford(false)
+    , freezeTrySeparate(false)
+    , isAggressiveSeparate(false)
     , thresholdQubits(qubitThreshold)
     , pagingThresholdQubits(21)
     , separabilityThreshold(sep_thresh)
@@ -729,12 +731,15 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return true;
     }
 
+    freezeTrySeparate = true;
+
     // We check Z basis:
     real1_f prob = ProbBase(qubit);
     bool didSeparate = (shard.GetQubitCount() == 1U);
 
     // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
     if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
+        freezeTrySeparate = false;
         return didSeparate;
     }
 
@@ -745,6 +750,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     didSeparate = (shard.GetQubitCount() == 1U);
 
     if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
+        freezeTrySeparate = false;
         return didSeparate;
     }
 
@@ -755,6 +761,8 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
     prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1U);
+
+    freezeTrySeparate = false;
 
     return didSeparate;
 }
@@ -781,7 +789,9 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit2);
 
     // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
+    freezeTrySeparate = true;
     CZ(qubit1, qubit2);
+    freezeTrySeparate = false;
     shard1.unit->CZ(shard1.mapped, shard2.mapped);
 
     // It's possible that either qubit is separable, but not both:
@@ -1869,7 +1879,7 @@ void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, c
                 unit->ctrld;                                                                                           \
             }                                                                                                          \
         },                                                                                                             \
-        [&]() { bare; }, !isInvert);
+        [&]() { bare; }, !isInvert, isInvert);
 
 #define CTRLED_SWAP_WRAP(ctrld, bare, anti)                                                                            \
     if (qubit1 == qubit2) {                                                                                            \
@@ -1949,7 +1959,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         ApplyEitherControlled(
             controls, controlLen, { target }, false,
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
-            [&]() { XBase(target); }, false, true);
+            [&]() { XBase(target); }, false, true, true);
         return;
     }
 
@@ -2063,7 +2073,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
                 }
             }
         },
-        [&]() { X(target); });
+        [&]() { X(target); }, false, true);
 }
 
 void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -2092,7 +2102,7 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
                 }
             }
         },
-        [&]() { X(target); });
+        [&]() { X(target); }, false, true);
 }
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
@@ -2736,7 +2746,7 @@ void QUnit::AntiCISqrtSwap(
 
 template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& isPhase,
+    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& isPhase, const bool& isInvert,
     const bool& inCurrentBasis)
 {
     bitLenInt i;
@@ -2835,12 +2845,23 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shard.isPhaseDirty = true;
     }
 
-    if (!unit->isClifford()) {
+    if (unit->isClifford()) {
+        for (i = 0; i < allBits.size(); i++) {
+            TrySeparateCliffordBit(allBits[i]);
+        }
         return;
     }
 
-    for (i = 0; i < allBits.size(); i++) {
-        TrySeparateCliffordBit(allBits[i]);
+    if (!isAggressiveSeparate || freezeTrySeparate || freezeBasis2Qb || (!isPhase && !isInvert) ||
+        (allBits.size() > 3U)) {
+        return;
+    }
+
+    TrySeparate(allBits[0], allBits[1]);
+
+    if (allBits.size() == 3U) {
+        TrySeparate(allBits[0], allBits[2]);
+        TrySeparate(allBits[1], allBits[2]);
     }
 }
 
