@@ -768,6 +768,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     // If either shard separates as a single bit, there's no point in checking for entanglement.
     bool isShard1Sep = TrySeparate(qubit1);
     bool isShard2Sep = TrySeparate(qubit2);
+
     if (isShard1Sep || isShard2Sep) {
         return isShard1Sep && isShard2Sep;
     }
@@ -789,8 +790,11 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     shard1.unit->CZ(shard1.mapped, shard2.mapped);
     CZ(qubit1, qubit2);
 
-    // Once we try both bits separately again, we've tried everything, for stabilizer states.
-    return TrySeparate(qubit1) && TrySeparate(qubit2);
+    // It's possible that either qubit is separable, but not both:
+    isShard1Sep = TrySeparate(qubit1);
+    isShard2Sep = TrySeparate(qubit2);
+
+    return isShard1Sep && isShard2Sep;
 }
 
 void QUnit::OrderContiguous(QInterfacePtr unit)
