@@ -2231,7 +2231,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
                 }
             }
         },
-        [&]() { Z(target); });
+        [&]() { Z(target); }, true);
 }
 
 void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
