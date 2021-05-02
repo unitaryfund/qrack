@@ -316,8 +316,6 @@ public:
         return true;
     };
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON) { return false; }
-
     virtual QInterfacePtr Clone();
 
     virtual void SetDevice(const int& dID, const bool& forceReInit = false)
