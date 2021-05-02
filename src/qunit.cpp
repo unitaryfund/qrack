@@ -739,24 +739,22 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
 
     // We check X basis:
+    H(qubit);
     shard.unit->H(shard.mapped);
     prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1U);
 
     if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
-        H(qubit);
         return didSeparate;
     }
 
     // We check Y basis:
+    S(qubit);
     complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
     prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1U);
-
-    H(qubit);
-    S(qubit);
 
     return didSeparate;
 }
@@ -783,8 +781,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit2);
 
     // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
-    shard1.unit->CZ(shard1.mapped, shard2.mapped);
     CZ(qubit1, qubit2);
+    shard1.unit->CZ(shard1.mapped, shard2.mapped);
 
     // It's possible that either qubit is separable, but not both:
     isShard1Sep = TrySeparate(qubit1);
