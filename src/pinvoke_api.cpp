@@ -978,6 +978,29 @@ MICROSOFT_QUANTUM_DECL void IQFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
 #endif
 }
 
+MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ unsigned sid, _In_ unsigned qi1)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    return simulators[sid]->TrySeparate(qi1);
+}
+
+MICROSOFT_QUANTUM_DECL bool TrySeparate2Qb(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    return simulators[sid]->TrySeparate(qi1, qi2);
+}
+
+MICROSOFT_QUANTUM_DECL bool TrySeparateTol(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ double tol)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    bitLenInt* qb = new bitLenInt[n];
+    std::copy(q, q + n, qb);
+
+    return simulators[sid]->TrySeparate(qb, (bitLenInt)n, (real1_f)tol);
+}
+
 #if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
 /**
  * (External API) Simulate a Hamiltonian
