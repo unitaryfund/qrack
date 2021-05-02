@@ -954,13 +954,11 @@ public:
                 std::swap(qubit1, qubit2);
             }
 
-            stabilizer->Swap(0, qubit1);
-            stabilizer->Swap(1, qubit2);
+            stabilizer->Swap(qubit1 + 1U, qubit2);
 
-            bool toRet = stabilizer->CanDecomposeDispose(0, 2);
+            bool toRet = stabilizer->CanDecomposeDispose(qubit1, 2);
 
-            stabilizer->Swap(0, qubit1);
-            stabilizer->Swap(1, qubit2);
+            stabilizer->Swap(qubit1 + 1U, qubit2);
 
             return toRet;
         }
