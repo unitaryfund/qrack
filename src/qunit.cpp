@@ -724,17 +724,13 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     // Otherwise, we're trying to separate a single bit.
     QEngineShard& shard = shards[qubit];
 
-    if (shard.isClifford()) {
-        return TrySeparateCliffordBit(qubit);
-    }
-
-    if (shard.GetQubitCount() == 1) {
+    if (TrySeparateCliffordBit(qubit) || (shard.GetQubitCount() == 1U)) {
         return true;
     }
 
     // We check Z basis:
     real1_f prob = ProbBase(qubit);
-    bool didSeparate = (shard.GetQubitCount() == 1);
+    bool didSeparate = (shard.GetQubitCount() == 1U);
 
     // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
     if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
@@ -744,7 +740,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     // We check X basis:
     shard.unit->H(shard.mapped);
     prob = ProbBase(qubit);
-    didSeparate = (shard.GetQubitCount() == 1);
+    didSeparate = (shard.GetQubitCount() == 1U);
 
     if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
         H(qubit);
@@ -756,7 +752,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
     prob = ProbBase(qubit);
-    didSeparate = (shard.GetQubitCount() == 1);
+    didSeparate = (shard.GetQubitCount() == 1U);
 
     H(qubit);
     S(qubit);
@@ -786,7 +782,6 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit2);
 
     // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
-
     shard1.unit->CZ(shard1.mapped, shard2.mapped);
     CZ(qubit1, qubit2);
 

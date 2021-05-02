@@ -1087,6 +1087,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, sixthRoot);
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
 
+                    // qReg->TrySeparate(b1, b2);
+
                     // std::cout<<"("<<b1<<", "<<b2<<")"<<std::endl;
                 }
             }
