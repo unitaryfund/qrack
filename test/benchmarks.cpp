@@ -872,12 +872,6 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
 
-// void try_separate(QInterfacePtr qReg, bitLenInt b1, bitLenInt b2)
-// {
-//     bitLenInt a[2] = { b1, b2 };
-//     qReg->TrySeparate(a, 2);
-// }
-
 TEST_CASE("test_ccz_ccx_h", "[supreme]")
 {
     std::cout << "(random circuit depth: " << benchmarkDepth << ")";
@@ -925,25 +919,25 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
 
                     gateRand = maxGates * qReg->Rand();
 
-                    // The try_separate method defined above works well with approximate simulation.
+                    // The TrySeparate() method works well with approximate simulation.
                     if (gateRand < ONE_R1) {
                         qReg->CZ(b1, b2);
-                        // try_separate(qReg, b1, b2);
+                        // qReg->TrySeparate(b1, b2);
                     } else if ((unusedBits.size() == 0) || (gateRand < 2)) {
                         qReg->CNOT(b1, b2);
-                        // try_separate(qReg, b1, b2);
+                        // qReg->TrySeparate(b1, b2);
                     } else if (gateRand < 3) {
                         b3 = pickRandomBit(qReg, &unusedBits);
                         qReg->CCZ(b1, b2, b3);
-                        // try_separate(qReg, b1, b2);
-                        // try_separate(qReg, b1, b3);
-                        // try_separate(qReg, b2, b3);
+                        // qReg->TrySeparate(b1, b2);
+                        // qReg->TrySeparate(b1, b3);
+                        // qReg->TrySeparate(b2, b3);
                     } else {
                         b3 = pickRandomBit(qReg, &unusedBits);
                         qReg->CCNOT(b1, b2, b3);
-                        // try_separate(qReg, b1, b2);
-                        // try_separate(qReg, b1, b3);
-                        // try_separate(qReg, b2, b3);
+                        // qReg->TrySeparate(b1, b2);
+                        // qReg->TrySeparate(b1, b3);
+                        // qReg->TrySeparate(b2, b3);
                     }
                 }
             }

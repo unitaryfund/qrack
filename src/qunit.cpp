@@ -704,7 +704,13 @@ bool QUnit::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
         Swap(i, q[i]);
     }
 
-    bool toRet = TrySeparate((bitLenInt)0U, length, error_tol);
+    QInterfacePtr dest = std::make_shared<QUnit>(
+        engine, subEngine, length, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
+
+    bool toRet = TryDecompose(0, dest, error_tol);
+    if (toRet) {
+        Compose(dest, 0);
+    }
 
     for (bitLenInt i = 0; i < length; i++) {
         Swap(i, q[i]);
@@ -713,54 +719,13 @@ bool QUnit::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
     return toRet;
 }
 
-bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
+bool QUnit::TrySeparate(bitLenInt qubit)
 {
-    if (length > 2U) {
-        QInterfacePtr dest = std::make_shared<QUnit>(
-            engine, subEngine, length, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
-
-        if (TryDecompose(start, dest, error_tol)) {
-            Compose(dest, start);
-            return true;
-        }
-
-        return false;
-    }
-
-    if (length == 2U) {
-        // If either shard separates as a single bit, there's no point in checking for entanglement.
-        bool isShard1Sep = TrySeparate(start);
-        bool isShard2Sep = TrySeparate(start + 1U);
-        if (isShard1Sep || isShard2Sep) {
-            return isShard1Sep && isShard2Sep;
-        }
-
-        QEngineShard& shard1 = shards[start];
-        QEngineShard& shard2 = shards[start + 1U];
-
-        // Both shards have non-null units, and we've tried everything, if they're not the same unit.
-        if (shard1.unit != shard2.unit) {
-            return false;
-        }
-
-        // Both shards are in the same unit. Try all remaining stabilizer states.
-        RevertBasis1Qb(start);
-        RevertBasis1Qb(start + 1U);
-
-        // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
-        QInterfacePtr unit = shard1.unit;
-        unit->CZ(shard1.mapped, shard2.mapped);
-        CZ(start, start + 1U);
-
-        // Once we try both bits separately again, we've tried everything, for stabilizer states.
-        return TrySeparate(start) && TrySeparate(start + 1U);
-    }
-
     // Otherwise, we're trying to separate a single bit.
-    QEngineShard& shard = shards[start];
+    QEngineShard& shard = shards[qubit];
 
     if (shard.isClifford()) {
-        return TrySeparateCliffordBit(start);
+        return TrySeparateCliffordBit(qubit);
     }
 
     if (shard.GetQubitCount() == 1) {
@@ -768,7 +733,7 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
     }
 
     // We check Z basis:
-    real1_f prob = ProbBase(start);
+    real1_f prob = ProbBase(qubit);
     bool didSeparate = (shard.GetQubitCount() == 1);
 
     // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
@@ -778,11 +743,11 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
 
     // We check X basis:
     shard.unit->H(shard.mapped);
-    prob = ProbBase(start);
+    prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1);
 
     if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
-        H(start);
+        H(qubit);
         return didSeparate;
     }
 
@@ -790,13 +755,46 @@ bool QUnit::TrySeparate(bitLenInt start, bitLenInt length, real1_f error_tol)
     complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
-    prob = ProbBase(start);
+    prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1);
 
-    H(start);
-    S(start);
+    H(qubit);
+    S(qubit);
 
     return didSeparate;
+}
+bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
+{
+    // If either shard separates as a single bit, there's no point in checking for entanglement.
+    bool isShard1Sep = TrySeparate(qubit1);
+    bool isShard2Sep = TrySeparate(qubit2);
+
+    if (isShard1Sep || isShard2Sep) {
+        return isShard1Sep && isShard2Sep;
+    }
+
+    QEngineShard& shard1 = shards[qubit1];
+    QEngineShard& shard2 = shards[qubit2];
+
+    // Both shards have non-null units, and we've tried everything, if they're not the same unit.
+    if (shard1.unit != shard2.unit) {
+        return false;
+    }
+
+    // Both shards are in the same unit. Try all remaining stabilizer states.
+    RevertBasis1Qb(qubit1);
+    RevertBasis1Qb(qubit2);
+
+    // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
+
+    shard1.unit->CZ(shard1.mapped, shard2.mapped);
+    CZ(qubit1, qubit2);
+
+    // It's possible that either qubit is separable, but not both:
+    isShard1Sep = TrySeparate(qubit1);
+    isShard2Sep = TrySeparate(qubit2);
+
+    return isShard1Sep && isShard2Sep;
 }
 
 void QUnit::OrderContiguous(QInterfacePtr unit)

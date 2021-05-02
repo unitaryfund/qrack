@@ -427,11 +427,6 @@ public:
 
     virtual bool isFinished() { return engine->isFinished(); }
 
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON)
-    {
-        return engine->TrySeparate(start, length, error_tol);
-    }
-
     virtual QInterfacePtr Clone();
 
     virtual void SetDevice(const int& dID, const bool& forceReInit = false)
