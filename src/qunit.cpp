@@ -29,6 +29,7 @@
 #include "qunit.hpp"
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
+#define IS_HYPER_SEPARATING(p) ((2 * abs(p - ONE_R1 / 2)) > M_SQRT1_2)
 #define IS_NORM_0(c) (norm(c) <= separabilityThreshold)
 #define IS_0_R1(r) (r == ZERO_R1)
 #define IS_1_R1(r) (r == ONE_R1)
@@ -965,6 +966,30 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
 
     if (unit->isClifford() && !unit->TrySeparate(shard.mapped)) {
         return prob;
+    }
+
+    if (IS_HYPER_SEPARATING(separabilityThreshold) && IS_HYPER_SEPARATING(prob)) {
+
+        // We have enough information to know another basis is closer.
+        // We can get a closer estimate, before approximating.
+
+        // If we're in X basis, try Y basis:
+        if (shard.isPauliX) {
+            shard.unit->IS(shard.mapped);
+            shard.isPauliX = false;
+            shard.isPauliY = true;
+            return ProbBase(qubit);
+        }
+
+        // If we're in Y basis, try Z basis:
+        if (shard.isPauliY) {
+            RevertBasis1Qb(qubit);
+            return ProbBase(qubit);
+        }
+
+        // If we're in Z basis, try X basis:
+        shard.unit->H(shard.mapped);
+        return ProbBase(qubit);
     }
 
     if (IS_NORM_0(shard.amp1)) {
