@@ -2237,6 +2237,14 @@ public:
      *  Two-qubit TrySeparate()
      */
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return false; }
+    /**
+     *  Set aggressive separation
+     */
+    virtual void SetAggressiveSeparate(const bool& isAggSep) {}
+    /**
+     *  Get aggressive separation
+     */
+    virtual bool GetAggressiveSeparate() { return false; }
 
     /**
      *  Clone this QInterface

@@ -37,6 +37,8 @@ protected:
     bool freezeBasisH;
     bool freezeBasis2Qb;
     bool freezeClifford;
+    bool freezeTrySeparate;
+    bool isAggressiveSeparate;
     bool isPagingSuppressed;
     bool canSuppressPaging;
     bitLenInt thresholdQubits;
@@ -100,6 +102,9 @@ public:
             },
             ZERO_R1, ZERO_R1, threadsPerEngine);
     }
+
+    virtual void SetAggressiveSeparate(const bool& isAggSep) { isAggressiveSeparate = isAggSep; }
+    virtual bool GetAggressiveSeparate() { return isAggressiveSeparate; }
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
@@ -371,7 +376,7 @@ protected:
     template <typename CF, typename F>
     void ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
         const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F f, const bool& isPhase = false,
-        const bool& inCurrentBasis = false);
+        const bool& isInvert = false, const bool& inCurrentBasis = false);
 
     bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values);
