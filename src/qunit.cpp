@@ -967,6 +967,11 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
         return prob;
     }
 
+    if ((2 * abs(prob - ONE_R1 / 2)) < (real1)M_SQRT1_2) {
+        // Projection on another basis is necessarily higher, so don't separate.
+        return prob;
+    }
+
     if (IS_NORM_0(shard.amp1)) {
         SeparateBit(false, qubit);
     } else if (IS_NORM_0(shard.amp0)) {
