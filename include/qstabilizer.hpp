@@ -148,14 +148,6 @@ protected:
     void rowmult(const bitLenInt& i, const bitLenInt& k);
 
     /**
-     * Do Gaussian elimination to put the stabilizer generators in the following form:
-     * At the top, a minimal set of generators containing X's and Y's, in "quasi-upper-triangular" form.
-     * (Return value = number of such generators = log_2 of number of nonzero basis states)
-     * At the bottom, generators containing Z's only in quasi-upper-triangular form.
-     */
-    bitLenInt gaussian();
-
-    /**
      * Finds a Pauli operator P such that the basis state P|0...0> occurs with nonzero amplitude in q, and
      * writes P to the scratch space of q.  For this to work, Gaussian elimination must already have been
      * performed on q.  g is the return value from gaussian(q).
@@ -168,6 +160,14 @@ protected:
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
 public:
+    /**
+     * Do Gaussian elimination to put the stabilizer generators in the following form:
+     * At the top, a minimal set of generators containing X's and Y's, in "quasi-upper-triangular" form.
+     * (Return value = number of such generators = log_2 of number of nonzero basis states)
+     * At the bottom, generators containing Z's only in quasi-upper-triangular form.
+     */
+    bitLenInt gaussian();
+
     /// Apply a CNOT gate with control and target
     void CNOT(const bitLenInt& control, const bitLenInt& target);
     /// Apply a Hadamard gate to target

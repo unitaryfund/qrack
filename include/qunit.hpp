@@ -36,7 +36,6 @@ protected:
     bool isSparse;
     bool freezeBasisH;
     bool freezeBasis2Qb;
-    bool freezeClifford;
     bool freezeTrySeparate;
     bool isReactiveSeparate;
     bool isPagingSuppressed;
@@ -298,7 +297,6 @@ protected:
     virtual void YBase(const bitLenInt& target);
     virtual void ZBase(const bitLenInt& target);
     virtual real1_f ProbBase(const bitLenInt& qubit);
-    virtual bool TrySeparateCliffordBit(const bitLenInt& qubit);
 
     typedef void (QInterface::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
     typedef void (QInterface::*INCxxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt, bitLenInt);
