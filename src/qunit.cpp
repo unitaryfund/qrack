@@ -765,9 +765,19 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
 
     // We check Y basis:
-    complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
-        complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
-    shard.unit->ApplySingleBit(mtrx, shard.mapped);
+    if (shard.unit && shard.unit->isClifford()) {
+        // Undo X basis transformation.
+        shard.unit->H(shard.mapped);
+
+        // Transform opposite direction, for Y basis.
+        shard.unit->IS(shard.mapped);
+        shard.unit->H(shard.mapped);
+    } else {
+        // Same thing as above in one gate:
+        complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
+            complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
+        shard.unit->ApplySingleBit(mtrx, shard.mapped);
+    }
     shard.isPauliX = false;
     shard.isPauliY = true;
     prob = ProbBase(qubit);
