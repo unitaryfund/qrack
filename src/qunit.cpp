@@ -755,7 +755,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     // We check X basis:
     shard.unit->H(shard.mapped);
-    shard.isPauliX = !shard.isPauliX;
+    shard.isPauliX = true;
     prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1U);
 
@@ -768,8 +768,8 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
-    shard.isPauliX = !shard.isPauliX;
-    shard.isPauliY = !shard.isPauliY;
+    shard.isPauliX = false;
+    shard.isPauliY = true;
     prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1U);
 
