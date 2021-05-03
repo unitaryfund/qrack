@@ -993,7 +993,7 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     }
 
     if ((2 * abs(prob - ONE_R1 / 2)) < (real1)M_SQRT1_2) {
-        // Projection on another basis is necessarily higher, so don't separate.
+        // Projection on another basis could be higher, so don't separate.
         return prob;
     }
 
