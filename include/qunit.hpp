@@ -38,7 +38,7 @@ protected:
     bool freezeBasis2Qb;
     bool freezeClifford;
     bool freezeTrySeparate;
-    bool isAggressiveSeparate;
+    bool isReactiveSeparate;
     bool isPagingSuppressed;
     bool canSuppressPaging;
     bitLenInt thresholdQubits;
@@ -103,8 +103,8 @@ public:
             ZERO_R1, ZERO_R1, threadsPerEngine);
     }
 
-    virtual void SetAggressiveSeparate(const bool& isAggSep) { isAggressiveSeparate = isAggSep; }
-    virtual bool GetAggressiveSeparate() { return isAggressiveSeparate; }
+    virtual void SetReactiveSeparate(const bool& isAggSep) { isReactiveSeparate = isAggSep; }
+    virtual bool GetReactiveSeparate() { return isReactiveSeparate; }
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);

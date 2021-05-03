@@ -888,7 +888,7 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
             int maxGates;
 
             // The TrySeparate() method works well with approximate simulation.
-            // qReg->SetAggressiveSeparate(true);
+            // qReg->SetReactiveSeparate(true);
 
             for (d = 0; d < benchmarkDepth; d++) {
 

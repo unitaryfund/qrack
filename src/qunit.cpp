@@ -74,7 +74,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , freezeBasis2Qb(false)
     , freezeClifford(false)
     , freezeTrySeparate(false)
-    , isAggressiveSeparate(false)
+    , isReactiveSeparate(false)
     , thresholdQubits(qubitThreshold)
     , pagingThresholdQubits(21)
     , separabilityThreshold(sep_thresh)
@@ -2852,7 +2852,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         return;
     }
 
-    if (!isAggressiveSeparate || freezeTrySeparate || freezeBasis2Qb || (!isPhase && !isInvert)) {
+    if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb || (!isPhase && !isInvert)) {
         return;
     }
 
