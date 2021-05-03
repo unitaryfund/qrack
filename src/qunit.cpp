@@ -752,23 +752,36 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
 
     // We check X basis:
-    H(qubit);
     shard.unit->H(shard.mapped);
     prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1U);
 
     if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
+        freezeBasisH = true;
+        H(qubit);
+        freezeBasisH = false;
+
         freezeTrySeparate = false;
         return didSeparate;
     }
 
     // We check Y basis:
-    S(qubit);
     complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
     prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1U);
+
+    if (didSeparate) {
+        freezeBasisH = true;
+        H(qubit);
+        S(qubit);
+        freezeBasisH = false;
+    } else {
+        complex rMtrx[4] = { complex(ONE_R1 * M_SQRT1_2, ZERO_R1), complex(ONE_R1 * M_SQRT1_2, ZERO_R1),
+            complex(ZERO_R1, ONE_R1 * M_SQRT1_2), complex(ZERO_R1, ONE_R1 * M_SQRT1_2) };
+        shard.unit->ApplySingleBit(rMtrx, shard.mapped);
+    }
 
     freezeTrySeparate = false;
 
