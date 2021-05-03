@@ -743,11 +743,12 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     RevertBasis1Qb(qubit);
 
     // We check Z basis:
-    real1_f prob = ProbBase(qubit);
+    real1_f probZ = ProbBase(qubit) - ONE_R1 / 2;
     bool didSeparate = !shard.unit;
+    bool willSeparate = IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1);
 
     // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
-    if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
+    if (didSeparate || (abs(probZ - ONE_R1 / 2) > separabilityThreshold)) {
         freezeTrySeparate = false;
         return didSeparate;
     }
@@ -756,10 +757,11 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     shard.unit->H(shard.mapped);
     shard.isPauliX = true;
     shard.MakeDirty();
-    prob = ProbBase(qubit);
+    real1_f probX = ProbBase(qubit) - ONE_R1 / 2;
     didSeparate = !shard.unit;
+    willSeparate |= IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1);
 
-    if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
+    if (didSeparate || (abs(probZ - ONE_R1 / 2) > separabilityThreshold)) {
         freezeTrySeparate = false;
         return didSeparate;
     }
@@ -771,10 +773,33 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     shard.isPauliX = false;
     shard.isPauliY = true;
     shard.MakeDirty();
-    prob = ProbBase(qubit);
+    real1_f probY = ProbBase(qubit) - ONE_R1 / 2;
     didSeparate = !shard.unit;
+    willSeparate |= IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1);
 
-    freezeTrySeparate = false;
+    if (didSeparate || !willSeparate) {
+        freezeTrySeparate = false;
+        return didSeparate;
+    }
+
+    // If we made it here, we're hyper-separating single bits, and we need to pick the best fit of the 3.
+
+    if ((abs(probY) >= abs(probZ)) && (abs(probY) >= abs(probX))) {
+        // Y is best.
+        SeparateBit(probY >= ZERO_R1, qubit);
+    }
+
+    if ((abs(probX) >= abs(probZ)) && (abs(probX) >= abs(probY))) {
+        // X is best.
+        shard.isPauliX = true;
+        shard.isPauliY = false;
+        SeparateBit(probX >= ZERO_R1, qubit);
+    }
+
+    // Z is best.
+    shard.isPauliX = false;
+    shard.isPauliY = false;
+    SeparateBit(probZ >= ZERO_R1, qubit);
 
     return didSeparate;
 }
