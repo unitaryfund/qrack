@@ -756,6 +756,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     // We check X basis:
     shard.unit->H(shard.mapped);
     shard.isPauliX = true;
+    shard.MakeDirty();
     prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1U);
 
@@ -765,21 +766,12 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
 
     // We check Y basis:
-    if (shard.unit && shard.unit->isClifford()) {
-        // Undo X basis transformation.
-        shard.unit->H(shard.mapped);
-
-        // Transform opposite direction, for Y basis.
-        shard.unit->IS(shard.mapped);
-        shard.unit->H(shard.mapped);
-    } else {
-        // Same thing as above in one gate:
-        complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
-            complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
-        shard.unit->ApplySingleBit(mtrx, shard.mapped);
-    }
+    complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
+        complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
+    shard.unit->ApplySingleBit(mtrx, shard.mapped);
     shard.isPauliX = false;
     shard.isPauliY = true;
+    shard.MakeDirty();
     prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1U);
 
