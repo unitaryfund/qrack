@@ -727,11 +727,21 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     // Otherwise, we're trying to separate a single bit.
     QEngineShard& shard = shards[qubit];
 
-    if (TrySeparateCliffordBit(qubit) || (shard.GetQubitCount() == 1U)) {
+    if (shard.GetQubitCount() == 1U) {
         return true;
     }
 
+    if (shard.unit->isClifford()) {
+        return TrySeparateCliffordBit(qubit);
+    }
+
+    if (freezeTrySeparate) {
+        return false;
+    }
+
     freezeTrySeparate = true;
+
+    RevertBasis1Qb(qubit);
 
     // We check Z basis:
     real1_f prob = ProbBase(qubit);
@@ -744,8 +754,9 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
 
     // We check X basis:
-    H(qubit);
     shard.unit->H(shard.mapped);
+    shard.isPauliX = true;
+    shard.MakeDirty();
     prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1U);
 
@@ -755,10 +766,12 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
 
     // We check Y basis:
-    S(qubit);
     complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
+    shard.isPauliX = false;
+    shard.isPauliY = true;
+    shard.MakeDirty();
     prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1U);
 
@@ -951,11 +964,6 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex((real1)sqrt(prob), ZERO_R1);
     shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (unit && unit->isClifford(mapped)) {
-        TrySeparateCliffordBit(qubit);
-        return prob;
-    }
-
     if (IS_NORM_0(shard.amp1)) {
         SeparateBit(false, qubit);
     } else if (IS_NORM_0(shard.amp0)) {
@@ -1020,46 +1028,42 @@ bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
     QInterfacePtr unit = shards[qubit].unit;
 
     ProbBase(qubit);
+    if (shard.GetQubitCount() == 1U) {
+        freezeClifford = false;
+        return true;
+    }
 
-    if (IS_NORM_0(shard.amp1)) {
-        SeparateBit(false, qubit);
-    } else if (IS_NORM_0(shard.amp0)) {
-        SeparateBit(true, qubit);
-    } else if (!unit->TrySeparate(shard.mapped)) {
+    if (!unit->TrySeparate(shard.mapped)) {
+        freezeClifford = false;
         return false;
+    }
+
+    unit->H(shard.mapped);
+    shard.MakeDirty();
+    ProbBase(qubit);
+
+    if (shard.GetQubitCount() == 1U) {
+        H(qubit);
     } else {
         unit->H(shard.mapped);
+        unit->S(shard.mapped);
+        unit->H(shard.mapped);
+        shard.MakeDirty();
         ProbBase(qubit);
 
-        if (IS_NORM_0(shard.amp1)) {
-            SeparateBit(false, qubit);
+        if (shard.GetQubitCount() == 1U) {
             H(qubit);
-        } else if (IS_NORM_0(shard.amp0)) {
-            SeparateBit(true, qubit);
-            H(qubit);
+            IS(qubit);
         } else {
             unit->H(shard.mapped);
-
-            unit->S(shard.mapped);
-            unit->H(shard.mapped);
-            ProbBase(qubit);
-
-            if (IS_NORM_0(shard.amp1)) {
-                SeparateBit(false, qubit);
-                H(qubit);
-                IS(qubit);
-            } else if (IS_NORM_0(shard.amp0)) {
-                SeparateBit(true, qubit);
-                H(qubit);
-                IS(qubit);
-            } else {
-                unit->H(shard.mapped);
-                unit->IS(shard.mapped);
-                ProbBase(qubit);
-                return false;
-            }
+            unit->IS(shard.mapped);
+            shard.MakeDirty();
+            freezeClifford = false;
+            return false;
         }
     }
+
+    freezeClifford = false;
 
     return true;
 }
