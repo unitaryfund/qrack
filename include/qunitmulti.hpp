@@ -98,7 +98,7 @@ public:
     }
 
     using QUnit::TrySeparate;
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
+    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol);
     virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = REAL1_EPSILON) { return false; }
 
     virtual QInterfacePtr Clone();
@@ -108,7 +108,7 @@ public:
 protected:
     virtual std::vector<QEngineInfo> GetQInfos();
 
-    virtual void SeparateBit(bool value, bitLenInt qubit, bool doDispose = true);
+    virtual void SeparateBit(bool value, bitLenInt qubit);
 
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     {

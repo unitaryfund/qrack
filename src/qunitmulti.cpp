@@ -210,9 +210,9 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     return toRet;
 }
 
-bool QUnitMulti::TrySeparate(bitLenInt start, bitLenInt length)
+bool QUnitMulti::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
 {
-    bool toRet = QUnit::TrySeparate(start, length);
+    bool toRet = QUnit::TrySeparate(qubits, length, error_tol);
     if (toRet) {
         RedistributeQEngines();
     }
@@ -220,9 +220,9 @@ bool QUnitMulti::TrySeparate(bitLenInt start, bitLenInt length)
     return toRet;
 }
 
-void QUnitMulti::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
+void QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
 {
-    QUnit::SeparateBit(value, qubit, doDispose);
+    QUnit::SeparateBit(value, qubit);
     RedistributeQEngines();
 }
 

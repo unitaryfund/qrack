@@ -357,7 +357,7 @@ protected:
     typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1_f param1, real1_f param2, int32_t param3);
     bool ParallelUnitApply(ParallelUnitFn fn, real1_f param1 = ZERO_R1, real1_f param2 = ZERO_R1, int32_t param3 = 0);
 
-    virtual void SeparateBit(bool value, bitLenInt qubit, bool doDispose = true);
+    virtual void SeparateBit(bool value, bitLenInt qubit);
 
     void OrderContiguous(QInterfacePtr unit);
 

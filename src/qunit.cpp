@@ -726,7 +726,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     // Otherwise, we're trying to separate a single bit.
     QEngineShard& shard = shards[qubit];
 
-    if (shard.GetQubitCount() == 1U) {
+    if (!shard.unit) {
         return true;
     }
 
@@ -744,7 +744,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     // We check Z basis:
     real1_f prob = ProbBase(qubit);
-    bool didSeparate = (shard.GetQubitCount() == 1U);
+    bool didSeparate = !shard.unit;
 
     // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
     if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
@@ -757,7 +757,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     shard.isPauliX = true;
     shard.MakeDirty();
     prob = ProbBase(qubit);
-    didSeparate = (shard.GetQubitCount() == 1U);
+    didSeparate = !shard.unit;
 
     if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
         freezeTrySeparate = false;
@@ -772,7 +772,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     shard.isPauliY = true;
     shard.MakeDirty();
     prob = ProbBase(qubit);
-    didSeparate = (shard.GetQubitCount() == 1U);
+    didSeparate = !shard.unit;
 
     freezeTrySeparate = false;
 
@@ -1133,14 +1133,9 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     return flipResult ^ (unit->ForceMParity(mappedMask, result ^ flipResult, doForce));
 }
 
-void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
+void QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
     QInterfacePtr unit = shards[qubit].unit;
-
-    if (unit == NULL) {
-        return;
-    }
-
     bitLenInt mapped = shards[qubit].mapped;
 
     shards[qubit].unit = NULL;
@@ -1150,7 +1145,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit, bool doDispose)
     shards[qubit].amp0 = value ? ZERO_CMPLX : GetNonunitaryPhase();
     shards[qubit].amp1 = value ? GetNonunitaryPhase() : ZERO_CMPLX;
 
-    if (!doDispose || !unit || (unit->GetQubitCount() == 1)) {
+    if (!unit || (unit->GetQubitCount() == 1U)) {
         return;
     }
 
