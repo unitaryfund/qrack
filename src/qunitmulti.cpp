@@ -210,16 +210,6 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     return toRet;
 }
 
-bool QUnitMulti::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
-{
-    bool toRet = QUnit::TrySeparate(qubits, length, error_tol);
-    if (toRet) {
-        RedistributeQEngines();
-    }
-
-    return toRet;
-}
-
 void QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
 {
     QUnit::SeparateBit(value, qubit);
