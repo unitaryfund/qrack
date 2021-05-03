@@ -1278,9 +1278,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
                 shards[i].MakeDirty();
             }
         }
-        if (!shard.unit->isClifford() || shard.unit->TrySeparate(qubit)) {
-            SeparateBit(result, qubit);
-        }
+        SeparateBit(result, qubit);
     }
 
     return result;
