@@ -727,8 +727,12 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     // Otherwise, we're trying to separate a single bit.
     QEngineShard& shard = shards[qubit];
 
-    if (TrySeparateCliffordBit(qubit) || (shard.GetQubitCount() == 1U)) {
+    if (shard.GetQubitCount() == 1U) {
         return true;
+    }
+
+    if (freezeTrySeparate) {
+        return false;
     }
 
     freezeTrySeparate = true;
@@ -952,7 +956,7 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
 
     if (unit && unit->isClifford(mapped)) {
-        TrySeparateCliffordBit(qubit);
+        TrySeparate(qubit);
         return prob;
     }
 
@@ -1001,67 +1005,6 @@ void QUnit::CacheSingleQubitShard(bitLenInt target)
     if (doNormalize) {
         shard.ClampAmps(amplitudeFloor);
     }
-}
-
-bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
-{
-    QEngineShard& shard = shards[qubit];
-
-    if (shard.GetQubitCount() == 1) {
-        return true;
-    }
-
-    if (freezeClifford || !shard.isClifford()) {
-        return false;
-    }
-
-    freezeClifford = true;
-
-    QInterfacePtr unit = shards[qubit].unit;
-
-    ProbBase(qubit);
-
-    if (IS_NORM_0(shard.amp1)) {
-        SeparateBit(false, qubit);
-    } else if (IS_NORM_0(shard.amp0)) {
-        SeparateBit(true, qubit);
-    } else if (!unit->TrySeparate(shard.mapped)) {
-        return false;
-    } else {
-        unit->H(shard.mapped);
-        ProbBase(qubit);
-
-        if (IS_NORM_0(shard.amp1)) {
-            SeparateBit(false, qubit);
-            H(qubit);
-        } else if (IS_NORM_0(shard.amp0)) {
-            SeparateBit(true, qubit);
-            H(qubit);
-        } else {
-            unit->H(shard.mapped);
-
-            unit->S(shard.mapped);
-            unit->H(shard.mapped);
-            ProbBase(qubit);
-
-            if (IS_NORM_0(shard.amp1)) {
-                SeparateBit(false, qubit);
-                H(qubit);
-                IS(qubit);
-            } else if (IS_NORM_0(shard.amp0)) {
-                SeparateBit(true, qubit);
-                H(qubit);
-                IS(qubit);
-            } else {
-                unit->H(shard.mapped);
-                unit->IS(shard.mapped);
-                ProbBase(qubit);
-                return false;
-            }
-        }
-    }
-
-    return true;
 }
 
 real1_f QUnit::Prob(bitLenInt qubit)
@@ -2847,9 +2790,8 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
     if (unit->isClifford()) {
         for (i = 0; i < allBits.size(); i++) {
-            TrySeparateCliffordBit(allBits[i]);
+            TrySeparate(allBits[i]);
         }
-        return;
     }
 
     if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb || (!isPhase && !isInvert)) {
