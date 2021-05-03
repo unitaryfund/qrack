@@ -735,6 +735,10 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
+    if (shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped)) {
+        return false;
+    }
+
     freezeTrySeparate = true;
 
     // We check Z basis:
