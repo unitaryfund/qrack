@@ -2852,16 +2852,16 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         return;
     }
 
-    if (!isAggressiveSeparate || freezeTrySeparate || freezeBasis2Qb || (!isPhase && !isInvert) ||
-        (allBits.size() > 3U)) {
+    if (!isAggressiveSeparate || freezeTrySeparate || freezeBasis2Qb || (!isPhase && !isInvert)) {
         return;
     }
 
-    TrySeparate(allBits[0], allBits[1]);
+    bitLenInt j;
 
-    if (allBits.size() == 3U) {
-        TrySeparate(allBits[0], allBits[2]);
-        TrySeparate(allBits[1], allBits[2]);
+    for (i = 0; i < (allBits.size() - 1U); i++) {
+        for (j = i + 1; j < allBits.size(); j++) {
+            TrySeparate(allBits[i], allBits[j]);
+        }
     }
 }
 
