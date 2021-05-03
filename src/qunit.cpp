@@ -735,7 +735,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
-    if (shard.unit && shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped)) {
+    if (shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped)) {
         return false;
     }
 
@@ -760,20 +760,20 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     prob = ProbBase(qubit);
     didSeparate = (shard.GetQubitCount() == 1U);
 
-    if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
-        freezeTrySeparate = false;
-        return didSeparate;
-    }
+    // if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
+    //     freezeTrySeparate = false;
+    //     return didSeparate;
+    //}
 
     // We check Y basis:
-    complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
-        complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
-    shard.unit->ApplySingleBit(mtrx, shard.mapped);
-    shard.isPauliX = false;
-    shard.isPauliY = true;
-    shard.MakeDirty();
-    prob = ProbBase(qubit);
-    didSeparate = (shard.GetQubitCount() == 1U);
+    // complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
+    //    complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
+    // shard.unit->ApplySingleBit(mtrx, shard.mapped);
+    // shard.isPauliX = false;
+    // shard.isPauliY = true;
+    // shard.MakeDirty();
+    // prob = ProbBase(qubit);
+    // didSeparate = (shard.GetQubitCount() == 1U);
 
     freezeTrySeparate = false;
 
