@@ -72,7 +72,6 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , isSparse(useSparseStateVec)
     , freezeBasisH(false)
     , freezeBasis2Qb(false)
-    , freezeClifford(false)
     , freezeTrySeparate(false)
     , isReactiveSeparate(false)
     , thresholdQubits(qubitThreshold)
@@ -731,8 +730,8 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return true;
     }
 
-    if (shard.unit->isClifford()) {
-        return TrySeparateCliffordBit(qubit);
+    if (shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped)) {
+        return false;
     }
 
     if (freezeTrySeparate) {
@@ -964,6 +963,10 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex((real1)sqrt(prob), ZERO_R1);
     shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
 
+    if (unit->isClifford() && !unit->TrySeparate(shard.mapped)) {
+        return prob;
+    }
+
     if (IS_NORM_0(shard.amp1)) {
         SeparateBit(false, qubit);
     } else if (IS_NORM_0(shard.amp0)) {
@@ -1009,63 +1012,6 @@ void QUnit::CacheSingleQubitShard(bitLenInt target)
     if (doNormalize) {
         shard.ClampAmps(amplitudeFloor);
     }
-}
-
-bool QUnit::TrySeparateCliffordBit(const bitLenInt& qubit)
-{
-    QEngineShard& shard = shards[qubit];
-
-    if (shard.GetQubitCount() == 1) {
-        return true;
-    }
-
-    if (freezeClifford || !shard.isClifford()) {
-        return false;
-    }
-
-    freezeClifford = true;
-
-    QInterfacePtr unit = shards[qubit].unit;
-
-    ProbBase(qubit);
-    if (shard.GetQubitCount() == 1U) {
-        freezeClifford = false;
-        return true;
-    }
-
-    if (!unit->TrySeparate(shard.mapped)) {
-        freezeClifford = false;
-        return false;
-    }
-
-    unit->H(shard.mapped);
-    shard.MakeDirty();
-    ProbBase(qubit);
-
-    if (shard.GetQubitCount() == 1U) {
-        H(qubit);
-    } else {
-        unit->H(shard.mapped);
-        unit->S(shard.mapped);
-        unit->H(shard.mapped);
-        shard.MakeDirty();
-        ProbBase(qubit);
-
-        if (shard.GetQubitCount() == 1U) {
-            H(qubit);
-            IS(qubit);
-        } else {
-            unit->H(shard.mapped);
-            unit->IS(shard.mapped);
-            shard.MakeDirty();
-            freezeClifford = false;
-            return false;
-        }
-    }
-
-    freezeClifford = false;
-
-    return true;
 }
 
 real1_f QUnit::Prob(bitLenInt qubit)
@@ -2847,14 +2793,12 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shard.isPhaseDirty = true;
     }
 
-    if (unit->isClifford()) {
-        for (i = 0; i < allBits.size(); i++) {
-            TrySeparateCliffordBit(allBits[i]);
-        }
-        return;
-    }
-
     if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb || (!isPhase && !isInvert)) {
+        if (unit->isClifford()) {
+            for (i = 0; i < allBits.size(); i++) {
+                TrySeparate(allBits[i]);
+            }
+        }
         return;
     }
 
