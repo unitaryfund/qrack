@@ -787,19 +787,19 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     if ((abs(probY) >= abs(probZ)) && (abs(probY) >= abs(probX))) {
         // Y is best.
         SeparateBit(probY >= ZERO_R1, qubit);
-    }
-
-    if ((abs(probX) >= abs(probZ)) && (abs(probX) >= abs(probY))) {
+    } else if ((abs(probX) >= abs(probZ)) && (abs(probX) >= abs(probY))) {
         // X is best.
         shard.isPauliX = true;
         shard.isPauliY = false;
         SeparateBit(probX >= ZERO_R1, qubit);
+    } else {
+        // Z is best.
+        shard.isPauliX = false;
+        shard.isPauliY = false;
+        SeparateBit(probZ >= ZERO_R1, qubit);
     }
 
-    // Z is best.
-    shard.isPauliX = false;
-    shard.isPauliY = false;
-    SeparateBit(probZ >= ZERO_R1, qubit);
+    freezeTrySeparate = false;
 
     return didSeparate;
 }
