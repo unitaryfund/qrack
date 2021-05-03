@@ -2238,13 +2238,13 @@ public:
      */
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return false; }
     /**
-     *  Set aggressive separation
+     *  Set Reactive separation
      */
-    virtual void SetAggressiveSeparate(const bool& isAggSep) {}
+    virtual void SetReactiveSeparate(const bool& isAggSep) {}
     /**
-     *  Get aggressive separation
+     *  Get Reactive separation
      */
-    virtual bool GetAggressiveSeparate() { return false; }
+    virtual bool GetReactiveSeparate() { return false; }
 
     /**
      *  Clone this QInterface
