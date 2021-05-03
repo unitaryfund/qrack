@@ -29,7 +29,7 @@
 #include "qunit.hpp"
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_HYPER_SEPARATING(p) ((2 * abs(p - ONE_R1 / 2)) > M_SQRT1_2)
+#define IS_HYPER_SEPARATING(p) ((2 * abs(p - ONE_R1 / 2)) < M_SQRT1_2)
 #define IS_NORM_0(c) (norm(c) <= separabilityThreshold)
 #define IS_0_R1(r) (r == ZERO_R1)
 #define IS_1_R1(r) (r == ONE_R1)
