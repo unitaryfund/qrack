@@ -933,7 +933,7 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
                 }
 
                 // The TrySeparate() method works well with approximate simulation.
-                qReg->SetReactiveSeparate(d < 4);
+                qReg->SetReactiveSeparate(d < 3);
             }
 
             qReg->MAll();
