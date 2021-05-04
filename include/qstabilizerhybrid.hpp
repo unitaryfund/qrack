@@ -259,8 +259,8 @@ public:
     virtual void H(bitLenInt target)
     {
         if (shards[target]) {
-            complex mtrx[4] = { complex((real1)M_SQRT1_2, ZERO_R1), complex((real1)M_SQRT1_2, ZERO_R1),
-                complex((real1)M_SQRT1_2, ZERO_R1), complex((real1)-M_SQRT1_2, ZERO_R1) };
+            complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+                complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
             ApplySingleBit(mtrx, target);
             return;
         }
