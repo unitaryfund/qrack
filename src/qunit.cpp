@@ -748,7 +748,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     bool willSeparate = IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1);
 
     // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
-    if (didSeparate || (!willSeparate && (abs(probZ - ONE_R1 / 2) > separabilityThreshold))) {
+    if (didSeparate || (!willSeparate && (abs(probZ) > separabilityThreshold))) {
         freezeTrySeparate = false;
         return didSeparate;
     }
@@ -761,7 +761,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     didSeparate = !shard.unit;
     willSeparate |= IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1);
 
-    if (didSeparate || (!willSeparate && (abs(probX - ONE_R1 / 2) > separabilityThreshold))) {
+    if (didSeparate || (!willSeparate && (abs(probX) > separabilityThreshold))) {
         freezeTrySeparate = false;
         return didSeparate;
     }
