@@ -417,6 +417,23 @@ protected:
 
     void RevertBasis1Qb(const bitLenInt& i)
     {
+        if (freezeBasisH) {
+            return;
+        }
+
+        QEngineShard& shard = shards[i];
+
+        if (shard.unit && shard.isPauliY) {
+            complex mtrx[4] = { complex(ONE_R1 / (real1)M_SQRT1_2, ZERO_R1),
+                complex(ONE_R1 / (real1)M_SQRT1_2, ZERO_R1), complex(ZERO_R1, ONE_R1 / (real1)M_SQRT1_2),
+                complex(ZERO_R1, -ONE_R1 / (real1)M_SQRT1_2) };
+            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+            shard.MakeDirty();
+            shard.isPauliY = false;
+            shard.isPauliX = false;
+            return;
+        }
+
         RevertBasisY(i);
         RevertBasisX(i);
     }
