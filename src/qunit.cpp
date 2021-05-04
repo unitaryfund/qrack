@@ -1137,22 +1137,24 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 
 void QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
-    QInterfacePtr unit = shards[qubit].unit;
-    bitLenInt mapped = shards[qubit].mapped;
+    QEngineShard& shard = shards[qubit];
+    QInterfacePtr unit = shard.unit;
+    bitLenInt mapped = shard.mapped;
+    real1 prob = norm(shard.amp1);
 
-    shards[qubit].unit = NULL;
-    shards[qubit].mapped = 0;
-    shards[qubit].isProbDirty = false;
-    shards[qubit].isPhaseDirty = false;
-    shards[qubit].amp0 = value ? ZERO_CMPLX : GetNonunitaryPhase();
-    shards[qubit].amp1 = value ? GetNonunitaryPhase() : ZERO_CMPLX;
+    shard.unit = NULL;
+    shard.mapped = 0;
+    shard.isProbDirty = false;
+    shard.isPhaseDirty = false;
+    shard.amp0 = value ? ZERO_CMPLX : GetNonunitaryPhase();
+    shard.amp1 = value ? GetNonunitaryPhase() : ZERO_CMPLX;
 
     if (!unit || (unit->GetQubitCount() == 1U)) {
         return;
     }
 
     unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
-    if (separabilityThreshold > FP_NORM_EPSILON) {
+    if ((ONE_R1 / 2 - abs(prob - ONE_R1 / 2)) > FP_NORM_EPSILON) {
         unit->UpdateRunningNorm();
         if (!doNormalize) {
             unit->NormalizeState();
@@ -1160,9 +1162,9 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     }
 
     /* Update the mappings. */
-    for (auto&& shard : shards) {
-        if ((shard.unit == unit) && (shard.mapped > mapped)) {
-            shard.mapped--;
+    for (auto&& s : shards) {
+        if ((s.unit == unit) && (s.mapped > mapped)) {
+            s.mapped--;
         }
     }
 
