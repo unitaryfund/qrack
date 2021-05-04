@@ -761,7 +761,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     didSeparate = !shard.unit;
     willSeparate |= IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1);
 
-    if (didSeparate || (abs(probZ - ONE_R1 / 2) > separabilityThreshold)) {
+    if (didSeparate || (abs(probX - ONE_R1 / 2) > separabilityThreshold)) {
         freezeTrySeparate = false;
         return didSeparate;
     }
