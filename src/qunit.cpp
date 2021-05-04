@@ -730,11 +730,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return true;
     }
 
-    if (shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped)) {
-        return false;
-    }
-
-    if (freezeTrySeparate) {
+    if (freezeTrySeparate || (shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped))) {
         return false;
     }
 
@@ -743,12 +739,11 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     RevertBasis1Qb(qubit);
 
     // We check Z basis:
-    real1_f probZ = ProbBase(qubit) - ONE_R1 / 2;
+    real1_f prob = ProbBase(qubit) - ONE_R1 / 2;
     bool didSeparate = !shard.unit;
-    bool willSeparate = IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1);
 
     // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
-    if (didSeparate || (!willSeparate && (abs(probZ) > separabilityThreshold))) {
+    if (didSeparate || (abs(prob) > separabilityThreshold)) {
         freezeTrySeparate = false;
         return didSeparate;
     }
@@ -757,11 +752,10 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     shard.unit->H(shard.mapped);
     shard.isPauliX = true;
     shard.MakeDirty();
-    real1_f probX = ProbBase(qubit) - ONE_R1 / 2;
+    prob = ProbBase(qubit) - ONE_R1 / 2;
     didSeparate = !shard.unit;
-    willSeparate |= IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1);
 
-    if (didSeparate || (!willSeparate && (abs(probX) > separabilityThreshold))) {
+    if (didSeparate || (abs(prob) > separabilityThreshold)) {
         freezeTrySeparate = false;
         return didSeparate;
     }
@@ -773,45 +767,10 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     shard.isPauliX = false;
     shard.isPauliY = true;
     shard.MakeDirty();
-    real1_f probY = ProbBase(qubit) - ONE_R1 / 2;
+    prob = ProbBase(qubit) - ONE_R1 / 2;
     didSeparate = !shard.unit;
-    willSeparate |= IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1);
-
-    if (didSeparate || !willSeparate) {
-        freezeTrySeparate = false;
-        return didSeparate;
-    }
-
-    // If we made it here, we're hyper-separating single bits, and we need to pick the best fit of the 3.
-
-    if ((abs(probY) >= abs(probZ)) && (abs(probY) >= abs(probX))) {
-        // Y is best.
-        if (!shard.unit->isClifford() || shard.unit->TrySeparate(shard.mapped)) {
-            SeparateBit(probY >= ZERO_R1, qubit);
-        }
-    } else if ((abs(probX) >= abs(probZ)) && (abs(probX) >= abs(probY))) {
-        // X is best.
-        mtrx[0] = complex(ONE_R1, ONE_R1) / (real1)2.0f;
-        mtrx[1] = complex(ONE_R1, -ONE_R1) / (real1)2.0f;
-        mtrx[2] = complex(ONE_R1, -ONE_R1) / (real1)2.0f;
-        mtrx[3] = complex(ONE_R1, ONE_R1) / (real1)2.0f;
-        shard.unit->ApplySingleBit(mtrx, shard.mapped);
-        shard.isPauliX = true;
-        shard.isPauliY = false;
-        shard.MakeDirty();
-        if (!shard.unit->isClifford() || shard.unit->TrySeparate(shard.mapped)) {
-            SeparateBit(probX >= ZERO_R1, qubit);
-        }
-    } else {
-        // Z is best.
-        RevertBasis1Qb(qubit);
-        if (!shard.unit->isClifford() || shard.unit->TrySeparate(shard.mapped)) {
-            SeparateBit(probZ >= ZERO_R1, qubit);
-        }
-    }
 
     freezeTrySeparate = false;
-
     return didSeparate;
 }
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
