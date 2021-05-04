@@ -481,23 +481,21 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
-    if (IS_SAME(mtrx[0], complex((real1)M_SQRT1_2, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
-        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[2], -mtrx[3])) {
+    if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) &&
+        IS_SAME(mtrx[2], -mtrx[3])) {
         H(target);
         return;
     }
 
-    if (stabilizer && IS_SAME(mtrx[0], complex(ONE_R1 / (real1)M_SQRT1_2, ZERO_R1)) &&
-        IS_SAME(mtrx[3], complex(ZERO_R1, -ONE_R1 / (real1)M_SQRT1_2))) {
-        if (IS_SAME(mtrx[1], complex(ONE_R1 / (real1)M_SQRT1_2, ZERO_R1)) &&
-            IS_SAME(mtrx[2], complex(ZERO_R1, ONE_R1 / (real1)M_SQRT1_2))) {
+    if (stabilizer && IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) &&
+        IS_SAME(mtrx[3], complex(ZERO_R1, -SQRT1_2_R1))) {
+        if (IS_SAME(mtrx[1], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[2], complex(ZERO_R1, SQRT1_2_R1))) {
             H(target);
             S(target);
             return;
         }
 
-        if (IS_SAME(mtrx[1], complex(ZERO_R1, ONE_R1 / (real1)M_SQRT1_2)) &&
-            IS_SAME(mtrx[2], complex(ONE_R1 / (real1)M_SQRT1_2, ZERO_R1))) {
+        if (IS_SAME(mtrx[1], complex(ZERO_R1, SQRT1_2_R1)) && IS_SAME(mtrx[2], complex(SQRT1_2_R1, ZERO_R1))) {
             S(target);
             H(target);
             return;
@@ -540,16 +538,16 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
             QStabilizerShardPtr nShard;
             // If in PauliX or PauliY basis, compose gate with conversion from/to PauliZ basis.
             if (shardsEigen[target] == PauliX) {
-                complex nMtrx[4] = { complex((real1)M_SQRT1_2, ZERO_R1), complex((real1)M_SQRT1_2, ZERO_R1),
-                    complex((real1)M_SQRT1_2, ZERO_R1), complex((real1)-M_SQRT1_2, ZERO_R1) };
+                complex nMtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+                    complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
                 nShard = std::make_shared<QStabilizerShard>(nMtrx);
                 nShard->Compose(shard->gate);
                 nShard->Compose(nMtrx);
             } else if (shardsEigen[target] == PauliY) {
-                complex nMtrx[4] = { complex((real1)M_SQRT1_2, ZERO_R1), complex(ZERO_R1, (real1)-M_SQRT1_2),
-                    complex((real1)M_SQRT1_2, ZERO_R1), complex(ZERO_R1, (real1)-M_SQRT1_2) };
-                complex aMtrx[4] = { complex((real1)M_SQRT1_2, ZERO_R1), complex((real1)M_SQRT1_2, ZERO_R1),
-                    complex(ZERO_R1, (real1)M_SQRT1_2), complex(ZERO_R1, (real1)-M_SQRT1_2) };
+                complex nMtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1),
+                    complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1) };
+                complex aMtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+                    complex(ZERO_R1, SQRT1_2_R1), complex(ZERO_R1, -SQRT1_2_R1) };
                 nShard = std::make_shared<QStabilizerShard>(nMtrx);
                 nShard->Compose(shard->gate);
                 nShard->Compose(aMtrx);
@@ -695,7 +693,7 @@ void QStabilizerHybrid::ApplyControlledSingleBit(
         return;
     }
 
-    if ((controls.size() == 1U) && IS_SAME(mtrx[0], complex((real1)M_SQRT1_2, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
+    if ((controls.size() == 1U) && IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
         IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[2], -mtrx[3])) {
         CH(controls[0], target);
         return;

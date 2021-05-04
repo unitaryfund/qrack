@@ -996,10 +996,10 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
         return prob;
     }
 
-    // if ((abs(prob - ONE_R1 / 2)) < (real1)M_SQRT1_2 / 2) {
-    //     // Projection on another basis could be higher, so don't separate.
-    //     return prob;
-    // }
+    if (abs(prob - ONE_R1 / 2) < SQRT1_2_R1 / 2) {
+        // Projection on another basis could be higher, so don't separate.
+        return prob;
+    }
 
     if (IS_NORM_0(shard.amp1)) {
         SeparateBit(false, qubit);
@@ -1083,8 +1083,8 @@ real1_f QUnit::ProbParity(const bitCapInt& mask)
     for (bitLenInt i = 0; i < qIndices.size(); i++) {
         QEngineShard& shard = shards[qIndices[i]];
         if (!(shard.unit)) {
-            nOddChance = (shard.isPauliX || shard.isPauliY) ? norm(((real1)M_SQRT1_2) * (shard.amp0 - shard.amp1))
-                                                            : shard.Prob();
+            nOddChance =
+                (shard.isPauliX || shard.isPauliY) ? norm(SQRT1_2_R1 * (shard.amp0 - shard.amp1)) : shard.Prob();
             oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
             continue;
         }
@@ -1685,8 +1685,8 @@ void QUnit::H(bitLenInt target)
         return;
     }
 
-    complex tempAmp1 = ((real1)M_SQRT1_2) * (shard.amp0 - shard.amp1);
-    shard.amp0 = ((real1)M_SQRT1_2) * (shard.amp0 + shard.amp1);
+    complex tempAmp1 = SQRT1_2_R1 * (shard.amp0 - shard.amp1);
+    shard.amp0 = SQRT1_2_R1 * (shard.amp0 + shard.amp1);
     shard.amp1 = tempAmp1;
     if (doNormalize) {
         shard.ClampAmps(amplitudeFloor);
@@ -2601,18 +2601,18 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
-    if (!shard.isPauliY && (randGlobalPhase || (mtrx[0] == complex((real1)M_SQRT1_2, ZERO_R1))) &&
-        (mtrx[0] == mtrx[1]) && (mtrx[0] == mtrx[2]) && (mtrx[2] == -mtrx[3])) {
+    if (!shard.isPauliY && (randGlobalPhase || (mtrx[0] == complex(SQRT1_2_R1, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
+        (mtrx[0] == mtrx[2]) && (mtrx[2] == -mtrx[3])) {
         H(target);
         return;
     }
-    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex((real1)M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
+    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(SQRT1_2_R1, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
         (mtrx[2] == -mtrx[3]) && (I_CMPLX * mtrx[0] == mtrx[2])) {
         H(target);
         S(target);
         return;
     }
-    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex((real1)M_SQRT1_2, ZERO_R1))) && (mtrx[0] == mtrx[2]) &&
+    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(SQRT1_2_R1, ZERO_R1))) && (mtrx[0] == mtrx[2]) &&
         (mtrx[1] == -mtrx[3]) && (I_CMPLX * mtrx[2] == mtrx[3])) {
         IS(target);
         H(target);
