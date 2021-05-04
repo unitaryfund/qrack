@@ -728,7 +728,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     // Otherwise, we're trying to separate a single bit.
     QEngineShard& shard = shards[qubit];
 
-    if (!shard.unit) {
+    if (shard.GetQubitCount() == 1U) {
         return true;
     }
 
@@ -1067,6 +1067,10 @@ real1_f QUnit::ProbParity(const bitCapInt& mask)
         return ZERO_R1;
     }
 
+    if (!(mask & (mask - ONE_BCI))) {
+        return Prob(log2(mask));
+    }
+
     bitCapInt nV = mask;
     std::vector<bitLenInt> qIndices;
     for (bitCapInt v = mask; v; v = nV) {
@@ -1120,6 +1124,10 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     // If no bits in mask:
     if (!mask) {
         return false;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        return ForceM(log2(mask), result, doForce);
     }
 
     bitCapInt nV = mask;

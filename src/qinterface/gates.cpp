@@ -16,8 +16,8 @@
 #define C_I_SQRT1_2 complex(ZERO_R1, SQRT1_2_R1)
 #define C_SQRT_I complex(SQRT1_2_R1, SQRT1_2_R1)
 #define C_SQRT_N_I complex(SQRT1_2_R1, -SQRT1_2_R1)
-#define ONE_PLUS_I_DIV_2 complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2))
-#define ONE_MINUS_I_DIV_2 complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2))
+#define ONE_PLUS_I_DIV_2 complex(ONE_R1 / 2, ONE_R1 / 2)
+#define ONE_MINUS_I_DIV_2 complex(ONE_R1 / 2, -ONE_R1 / 2)
 
 #define GATE_1_BIT(gate, mtrx00, mtrx01, mtrx10, mtrx11)                                                               \
     void QInterface::gate(bitLenInt qubit)                                                                             \
@@ -175,11 +175,9 @@ GATE_1_BIT(SH, C_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2, -C_I_SQRT1_2);
 GATE_1_BIT(HIS, C_SQRT1_2, -C_I_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2);
 
 /// Square root of Hadamard gate
-GATE_1_BIT(SqrtH,
-    complex((real1)((ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)), (real1)((-ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1))),
-    complex((real1)(SQRT1_2_R1 / 2), (real1)(-SQRT1_2_R1 / 2)),
-    complex((real1)(SQRT1_2_R1 / 2), (real1)(-SQRT1_2_R1 / 2)),
-    complex((real1)((-ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)), (real1)((ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1))));
+GATE_1_BIT(SqrtH, complex((ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1), (-ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)),
+    complex(SQRT1_2_R1 / 2, -SQRT1_2_R1 / 2), complex(SQRT1_2_R1 / 2, -SQRT1_2_R1 / 2),
+    complex((-ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1), (ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)));
 
 /// Square root of NOT gate
 GATE_1_BIT(SqrtX, ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2);

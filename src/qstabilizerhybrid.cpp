@@ -310,7 +310,6 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
         dest->stabilizer = dest->MakeStabilizer(0);
     }
 
-    stabilizer->gaussian();
     stabilizer->Decompose(start, dest->stabilizer);
     std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     shards.erase(shards.begin() + start, shards.begin() + start + length);
@@ -335,7 +334,6 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
     if (engine) {
         engine->Dispose(start, length);
     } else {
-        stabilizer->gaussian();
         stabilizer->Dispose(start, length);
     }
 
@@ -360,7 +358,6 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
     if (engine) {
         engine->Dispose(start, length, disposedPerm);
     } else {
-        stabilizer->gaussian();
         stabilizer->Dispose(start, length);
     }
 
