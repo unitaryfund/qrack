@@ -743,8 +743,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     // We check Z basis:
     real1_f probZ = ProbBase(qubit) - ONE_R1 / 2;
     bool didSeparate = !shard.unit;
-    bool canHyperSeparate = abs(probZ) < (SQRT1_2_R1 / 2);
-    bool willSeparate = canHyperSeparate && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1));
+    bool willSeparate = (abs(probZ) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(probZ)) <= separabilityThreshold);
 
     // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
     if (didSeparate || (!willSeparate && (abs(probZ) > separabilityThreshold))) {
@@ -758,8 +757,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     shard.MakeDirty();
     real1_f probX = ProbBase(qubit) - ONE_R1 / 2;
     didSeparate = !shard.unit;
-    canHyperSeparate = abs(probX) < (SQRT1_2_R1 / 2);
-    willSeparate |= canHyperSeparate && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1));
+    willSeparate |= (abs(probX) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(probX)) <= separabilityThreshold);
 
     if (didSeparate || (!willSeparate && (abs(probX) > separabilityThreshold))) {
         freezeTrySeparate = false;
@@ -775,8 +773,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     shard.MakeDirty();
     real1_f probY = ProbBase(qubit) - ONE_R1 / 2;
     didSeparate = !shard.unit;
-    canHyperSeparate = abs(probY) < (SQRT1_2_R1 / 2);
-    willSeparate |= canHyperSeparate && (IS_NORM_0(shard.amp0) || IS_NORM_0(shard.amp1));
+    willSeparate |= (abs(probX) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(probX)) <= separabilityThreshold);
 
     if (didSeparate || !willSeparate) {
         freezeTrySeparate = false;
