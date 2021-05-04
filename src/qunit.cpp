@@ -1162,9 +1162,9 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     }
 
     /* Update the mappings. */
-    for (auto&& shard : shards) {
-        if ((shard.unit == unit) && (shard.mapped > mapped)) {
-            shard.mapped--;
+    for (auto&& s : shards) {
+        if ((s.unit == unit) && (s.mapped > mapped)) {
+            s.mapped--;
         }
     }
 
