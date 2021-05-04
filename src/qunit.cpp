@@ -749,7 +749,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     bool didSeparate = !shard.unit;
 
     // If this is 0.5, it wasn't Z basis, but it's worth checking X basis.
-    if (didSeparate || (abs(prob - ONE_R1 / 2) > (separabilityThreshold) / 2)) {
+    if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
         freezeTrySeparate = false;
         return didSeparate;
     }
@@ -761,7 +761,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     prob = ProbBase(qubit);
     didSeparate = !shard.unit;
 
-    if (didSeparate || (abs(prob - ONE_R1 / 2) > (separabilityThreshold / 2))) {
+    if (didSeparate || (abs(prob - ONE_R1 / 2) > separabilityThreshold)) {
         freezeTrySeparate = false;
         return didSeparate;
     }
@@ -1154,7 +1154,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     }
 
     unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
-    if (abs(prob - ONE_R1 / 2) > (FP_NORM_EPSILON / 2)) {
+    if (abs(prob - ONE_R1 / 2) > FP_NORM_EPSILON) {
         unit->UpdateRunningNorm();
         if (!doNormalize) {
             unit->NormalizeState();
