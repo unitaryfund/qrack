@@ -789,13 +789,18 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         SeparateBit(probY >= ZERO_R1, qubit);
     } else if ((abs(probX) >= abs(probZ)) && (abs(probX) >= abs(probY))) {
         // X is best.
+        mtrx[0] = complex(ONE_R1, ONE_R1) / (real1)2.0f;
+        mtrx[1] = complex(ONE_R1, -ONE_R1) / (real1)2.0f;
+        mtrx[2] = complex(ONE_R1, -ONE_R1) / (real1)2.0f;
+        mtrx[3] = complex(ONE_R1, ONE_R1) / (real1)2.0f;
+        shard.unit->ApplySingleBit(mtrx, shard.mapped);
         shard.isPauliX = true;
         shard.isPauliY = false;
+        shard.MakeDirty();
         SeparateBit(probX >= ZERO_R1, qubit);
     } else {
         // Z is best.
-        shard.isPauliX = false;
-        shard.isPauliY = false;
+        RevertBasis1Qb(qubit);
         SeparateBit(probZ >= ZERO_R1, qubit);
     }
 
