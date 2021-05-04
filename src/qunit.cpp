@@ -786,7 +786,9 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     if ((abs(probY) >= abs(probZ)) && (abs(probY) >= abs(probX))) {
         // Y is best.
-        SeparateBit(probY >= ZERO_R1, qubit);
+        if (!shard.unit->isClifford() || shard.unit->TrySeparate(shard.mapped)) {
+            SeparateBit(probY >= ZERO_R1, qubit);
+        }
     } else if ((abs(probX) >= abs(probZ)) && (abs(probX) >= abs(probY))) {
         // X is best.
         mtrx[0] = complex(ONE_R1, ONE_R1) / (real1)2.0f;
@@ -797,11 +799,15 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         shard.isPauliX = true;
         shard.isPauliY = false;
         shard.MakeDirty();
-        SeparateBit(probX >= ZERO_R1, qubit);
+        if (!shard.unit->isClifford() || shard.unit->TrySeparate(shard.mapped)) {
+            SeparateBit(probX >= ZERO_R1, qubit);
+        }
     } else {
         // Z is best.
         RevertBasis1Qb(qubit);
-        SeparateBit(probZ >= ZERO_R1, qubit);
+        if (!shard.unit->isClifford() || shard.unit->TrySeparate(shard.mapped)) {
+            SeparateBit(probZ >= ZERO_R1, qubit);
+        }
     }
 
     freezeTrySeparate = false;
@@ -997,7 +1003,7 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
         return prob;
     }
 
-    if ((2 * abs(prob - ONE_R1 / 2)) < (real1)M_SQRT1_2) {
+    if ((abs(prob - ONE_R1 / 2)) < (real1)M_SQRT1_2 / 2) {
         // Projection on another basis could be higher, so don't separate.
         return prob;
     }
