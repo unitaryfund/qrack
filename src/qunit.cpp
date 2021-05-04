@@ -773,7 +773,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     shard.MakeDirty();
     real1_f probY = ProbBase(qubit) - ONE_R1 / 2;
     didSeparate = !shard.unit;
-    willSeparate |= (abs(probX) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(probX)) <= separabilityThreshold);
+    willSeparate |= (abs(probY) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(probY)) <= separabilityThreshold);
 
     if (didSeparate || !willSeparate) {
         freezeTrySeparate = false;
