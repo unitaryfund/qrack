@@ -54,6 +54,7 @@
 #define IS_SAME_UNIT(shard1, shard2) (shard1.unit && (shard1.unit == shard2.unit))
 #define ARE_CLIFFORD(shard1, shard2)                                                                                   \
     ((engine == QINTERFACE_STABILIZER_HYBRID) && (shard1.isClifford() || shard2.isClifford()))
+#define BLOCKED_SEPARATE(shard) (shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped))
 
 namespace Qrack {
 
@@ -730,7 +731,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return true;
     }
 
-    if (shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped)) {
+    if (BLOCKED_SEPARATE(shard)) {
         return false;
     }
 
@@ -963,7 +964,7 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     shard.amp1 = complex((real1)sqrt(prob), ZERO_R1);
     shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (unit->isClifford() && !unit->TrySeparate(shard.mapped)) {
+    if (BLOCKED_SEPARATE(shard)) {
         return prob;
     }
 
@@ -1223,7 +1224,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
                 shards[i].MakeDirty();
             }
         }
-        if (!shard.unit->isClifford() || shard.unit->TrySeparate(qubit)) {
+        if (!BLOCKED_SEPARATE(shard)) {
             SeparateBit(result, qubit);
         }
     }
