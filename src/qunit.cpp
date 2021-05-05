@@ -819,7 +819,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     // If either shard separates as a single bit, there's no point in checking for entanglement.
     bool isShard1Sep = TrySeparate(qubit1);
     bool isShard2Sep = TrySeparate(qubit2);
-    
+
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
@@ -842,9 +842,9 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     isShard1Sep = TrySeparate(qubit1);
     isShard2Sep = TrySeparate(qubit2);
     if (isShard1Sep || isShard2Sep) {
-       return isShard1Sep && isShard2Sep;
+        return isShard1Sep && isShard2Sep;
     }
-    
+
     // Try again, in second basis.
     RevertBasis1Qb(qubit1);
     if (!shard2.isPauliX && !shard2.isPauliY) {
@@ -852,7 +852,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     } else if (shard2.isPauliY) {
         RevertBasisY(qubit2);
     }
-    
+
     freezeTrySeparate = true;
     CZ(qubit1, qubit2);
     shard1.unit->CNOT(shard1.mapped, shard2.mapped);
@@ -860,27 +860,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 
     isShard1Sep = TrySeparate(qubit1);
     isShard2Sep = TrySeparate(qubit2);
-    /*if (isShard1Sep || isShard2Sep) {
-       return isShard1Sep && isShard2Sep;
-    }
-    
-    // Try again, in third basis.
-    RevertBasis1Qb(qubit1);
-    if (!shard2.isPauliX && !shard2.isPauliY) {
-        ConvertZToY(qubit2);
-    } else if (shard2.isPauliX) {
-        ConvertXToY(qubit2);
-    }
-    
-    freezeTrySeparate = true;
-    CZ(qubit1, qubit2);
-    bitLenInt c[1] = { shard1.mapped };
-    shard1.unit->ApplyControlledSingleInvert(c, 1U, shard2.mapped, I_CMPLX, -I_CMPLX);
-    freezeTrySeparate = false;
 
-    isShard1Sep = TrySeparate(qubit1);
-    isShard2Sep = TrySeparate(qubit2);*/
-    
     return isShard1Sep && isShard2Sep;
 }
 
@@ -2875,7 +2855,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shard.isProbDirty |= !isPhase || shard.isPauliX || shard.isPauliY;
         shard.isPhaseDirty = true;
     }
-    
+
     if (unit->isClifford()) {
         for (i = 0; i < allBits.size(); i++) {
             TrySeparate(allBits[i]);
