@@ -837,13 +837,14 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit2);
 
     // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
-    ConvertZToX(qubit1);
+    // From Z basis eigenstates, we apply H(q1), CNOT(q1,q2) to reach a completely entangled state.
+    // Run this in reverse, prefering to cache as CZ over CNOT, conscious of the permutation through Pauli bases coming
+    // after.
     ConvertZToX(qubit2);
     freezeTrySeparate = true;
     CZ(qubit1, qubit2);
-    shard1.unit->CZ(shard1.mapped, shard2.mapped);
+    shard1.unit->CNOT(shard1.mapped, shard2.mapped);
     freezeTrySeparate = false;
-    RevertBasisX(qubit2);
 
     // It's possible that either qubit is separable, but not both:
     isShard1Sep = TrySeparate(qubit1);
