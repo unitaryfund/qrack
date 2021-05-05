@@ -816,6 +816,9 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 {
+    // We want qubit2 displaced by Z-to-X basis transformation, when we try disentangling.
+    RevertBasis1Qb(qubit2);
+
     // If either shard separates as a single bit, there's no point in checking for entanglement.
     bool isShard1Sep = TrySeparate(qubit1);
     bool isShard2Sep = TrySeparate(qubit2);
@@ -832,13 +835,13 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return false;
     }
 
-    // Both shards are in the same unit. Try all remaining stabilizer states.
-    RevertBasis1Qb(qubit2);
+    // Both shards are in the same unit. Try a maximally disentangling operation, than continue.
 
     // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
     // From Z basis eigenstates, we apply H(q1), CNOT(q1,q2) to reach a completely entangled state.
     // Run this in reverse, prefering to cache as CZ over CNOT, conscious of the permutation through Pauli bases coming
     // after.
+    RevertBasis1Qb(qubit2);
     ConvertZToX(qubit2);
     freezeTrySeparate = true;
     CZ(qubit1, qubit2);
