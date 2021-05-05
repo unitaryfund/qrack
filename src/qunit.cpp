@@ -828,7 +828,12 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return isShard1Sep && isShard2Sep;
     }
 
-    // Both shards are in the same unit. Try a maximally disentangling operation, then continue.
+    // Both shards are in the same unit.
+    if (shard1.unit->isClifford() && !shard1.unit->TrySeparate(shard1.mapped, shard2.mapped)) {
+        return false;
+    }
+
+    // Try a maximally disentangling operation, in 3 bases.
     RevertBasis1Qb(qubit1);
     RevertBasis1Qb(qubit2);
 
@@ -2889,14 +2894,12 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shard.isPhaseDirty = true;
     }
 
-    if (unit->isClifford()) {
-        for (i = 0; i < allBits.size(); i++) {
-            TrySeparate(allBits[i]);
-        }
-        return;
-    }
-
     if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb || (!isPhase && !isInvert)) {
+        if (!freezeTrySeparate && unit->isClifford()) {
+            for (i = 0; i < allBits.size(); i++) {
+                TrySeparate(allBits[i]);
+            }
+        }
         return;
     }
 
