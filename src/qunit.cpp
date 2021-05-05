@@ -1983,7 +1983,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard) && !ARE_CLIFFORD(cShard, tShard)) {
+        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
             tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
             OptimizePairBuffers(control, target, false);
 
@@ -2043,7 +2043,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard) && !ARE_CLIFFORD(cShard, tShard)) {
+        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
             shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
             OptimizePairBuffers(control, target, true);
 
@@ -2187,7 +2187,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard) && !ARE_CLIFFORD(cShard, tShard)) {
+        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
             tShard.AddPhaseAngles(&cShard, ONE_CMPLX, -ONE_CMPLX);
             OptimizePairBuffers(control, target, false);
 
@@ -2529,7 +2529,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             {}, { control });
 
         // This is not a Clifford gate, so we buffer for stabilizer:
-        if (!IS_SAME_UNIT(cShard, tShard) || !ARE_CLIFFORD(cShard, tShard)) {
+        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
             delete[] controls;
             tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
             OptimizePairBuffers(control, target, false);
@@ -2628,7 +2628,8 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         // If this is not a Clifford gate, we buffer for stabilizer:
         if (!IS_SAME_UNIT(cShard, tShard) &&
-            (!ARE_CLIFFORD(cShard, tShard) || !IS_1_CMPLX(topLeft) || !IS_1_CMPLX(-bottomRight))) {
+            (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard) || !IS_1_CMPLX(topLeft) ||
+                !IS_1_CMPLX(-bottomRight))) {
             delete[] controls;
             tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
             OptimizePairBuffers(control, target, true);
