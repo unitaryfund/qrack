@@ -879,7 +879,11 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     freezeTrySeparate = false;
 
     // Try again, in third basis.
-    ConvertXToY(qubit2);
+    if (!shard2.isPauliX && !shard2.isPauliY) {
+        ConvertZToY(qubit2);
+    } else if (shard2.isPauliX) {
+        ConvertXToY(qubit2);
+    }
 
     bitLenInt c[1] = { qubit1 };
     freezeTrySeparate = true;
