@@ -845,6 +845,14 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return isShard1Sep && isShard2Sep;
     }
 
+    // Revert first basis.
+    RevertBasis1Qb(qubit1);
+    RevertBasis1Qb(qubit2);
+    freezeTrySeparate = true;
+    CZ(qubit1, qubit2);
+    shard1.unit->CZ(shard1.mapped, shard2.mapped);
+    freezeTrySeparate = false;
+
     // Try again, in second basis.
     RevertBasis1Qb(qubit1);
     if (!shard2.isPauliX && !shard2.isPauliY) {
