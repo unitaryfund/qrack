@@ -833,7 +833,6 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     }
 
     // Both shards are in the same unit. Try all remaining stabilizer states.
-    RevertBasis1Qb(qubit1);
     RevertBasis1Qb(qubit2);
 
     // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
