@@ -838,7 +838,6 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     shard1.unit->CZ(shard1.mapped, shard2.mapped);
     freezeTrySeparate = false;
 
-    // It's possible that either qubit is separable, but not both:
     isShard1Sep = TrySeparate(qubit1);
     isShard2Sep = TrySeparate(qubit2);
     if (isShard1Sep || isShard2Sep) {
@@ -857,8 +856,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     ConvertZToX(qubit2);
 
     freezeTrySeparate = true;
-    CZ(qubit1, qubit2);
-    shard1.unit->CNOT(shard1.mapped, shard2.mapped);
+    CNOT(qubit1, qubit2);
+    shard1.unit->CZ(shard1.mapped, shard2.mapped);
     freezeTrySeparate = false;
 
     isShard1Sep = TrySeparate(qubit1);
@@ -875,17 +874,17 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         RevertBasisY(qubit2);
     }
     freezeTrySeparate = true;
-    CZ(qubit1, qubit2);
-    shard1.unit->CNOT(shard1.mapped, shard2.mapped);
+    CNOT(qubit1, qubit2);
+    shard1.unit->CZ(shard1.mapped, shard2.mapped);
     freezeTrySeparate = false;
 
     // Try again, in third basis.
     ConvertXToY(qubit2);
 
-    bitLenInt c[1] = { shard1.mapped };
+    bitLenInt c[1] = { qubit1 };
     freezeTrySeparate = true;
-    CZ(qubit1, qubit2);
-    shard1.unit->ApplyControlledSingleInvert(c, 1U, shard2.mapped, -I_CMPLX, I_CMPLX);
+    ApplyControlledSingleInvert(c, 1U, qubit2, -I_CMPLX, I_CMPLX);
+    shard1.unit->CZ(shard1.mapped, shard2.mapped);
     freezeTrySeparate = false;
 
     isShard1Sep = TrySeparate(qubit1);

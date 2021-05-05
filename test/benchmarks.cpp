@@ -933,7 +933,7 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
                 }
 
                 // The TrySeparate() method works well with approximate simulation.
-                qReg->SetReactiveSeparate(d < 4);
+                qReg->SetReactiveSeparate(true);
             }
 
             qReg->MAll();
@@ -1081,7 +1081,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, sixthRoot);
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
 
-                    // qReg->TrySeparate(b1, b2);
+                    qReg->TrySeparate(b1, b2);
 
                     // std::cout<<"("<<b1<<", "<<b2<<")"<<std::endl;
                 }
