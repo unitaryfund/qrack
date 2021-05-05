@@ -837,10 +837,13 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit2);
 
     // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
+    ConvertZToX(qubit1);
+    ConvertZToX(qubit2);
     freezeTrySeparate = true;
     CZ(qubit1, qubit2);
-    freezeTrySeparate = false;
     shard1.unit->CZ(shard1.mapped, shard2.mapped);
+    freezeTrySeparate = false;
+    RevertBasisX(qubit2);
 
     // It's possible that either qubit is separable, but not both:
     isShard1Sep = TrySeparate(qubit1);
