@@ -816,49 +816,71 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 {
+    // If either shard separates as a single bit, there's no point in checking for entanglement.
+    bool isShard1Sep = TrySeparate(qubit1);
+    bool isShard2Sep = TrySeparate(qubit2);
+    
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    // We want to permute qubit1 with qubit2 in X basis, before trying CNOT
-    if (!shard2.isPauliX && !shard2.isPauliY) {
-        ConvertZToX(qubit2);
-    } else if (shard2.isPauliY) {
-        RevertBasisY(qubit2);
-    }
-
-    // If either shard separates as a single bit, there's no point in checking for entanglement.
-    bool isShard1Sep = TrySeparate(qubit1);
-    if (!isShard1Sep || (shard1.unit != shard2.unit)) {
-        RevertBasis1Qb(qubit1);
-    }
-    bool isShard2Sep = TrySeparate(qubit2);
-
-    if (isShard1Sep || isShard2Sep) {
+    if (isShard1Sep || isShard2Sep || shard1.unit != shard2.unit) {
+        // Both shards have non-null units, and we've tried everything, if they're not the same unit.
         return isShard1Sep && isShard2Sep;
     }
 
-    // Both shards have non-null units, and we've tried everything, if they're not the same unit.
-    if (shard1.unit != shard2.unit) {
-        return false;
-    }
-
-    // Both shards are in the same unit. Try a maximally disentangling operation, than continue.
+    // Both shards are in the same unit. Try a maximally disentangling operation, then continue.
+    RevertBasis1Qb(qubit1);
+    RevertBasis1Qb(qubit2);
 
     // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
-    // From Z basis eigenstates, we apply H(q1), CNOT(q1,q2) to reach a completely entangled state.
-    // Run this in reverse, prefering to cache as CZ over CNOT, conscious of the permutation through Pauli bases coming
-    // after.
-    RevertBasis1Qb(qubit2);
-    ConvertZToX(qubit2);
     freezeTrySeparate = true;
     CZ(qubit1, qubit2);
-    shard1.unit->CNOT(shard1.mapped, shard2.mapped);
+    shard1.unit->CZ(shard1.mapped, shard2.mapped);
     freezeTrySeparate = false;
 
     // It's possible that either qubit is separable, but not both:
     isShard1Sep = TrySeparate(qubit1);
     isShard2Sep = TrySeparate(qubit2);
+    if (isShard1Sep || isShard2Sep) {
+       return isShard1Sep && isShard2Sep;
+    }
+    
+    // Try again, in second basis.
+    RevertBasis1Qb(qubit1);
+    if (!shard2.isPauliX && !shard2.isPauliY) {
+        ConvertZToX(qubit2);
+    } else if (shard2.isPauliY) {
+        RevertBasisY(qubit2);
+    }
+    
+    freezeTrySeparate = true;
+    CZ(qubit1, qubit2);
+    shard1.unit->CNOT(shard1.mapped, shard2.mapped);
+    freezeTrySeparate = false;
 
+    isShard1Sep = TrySeparate(qubit1);
+    isShard2Sep = TrySeparate(qubit2);
+    /*if (isShard1Sep || isShard2Sep) {
+       return isShard1Sep && isShard2Sep;
+    }
+    
+    // Try again, in third basis.
+    RevertBasis1Qb(qubit1);
+    if (!shard2.isPauliX && !shard2.isPauliY) {
+        ConvertZToY(qubit2);
+    } else if (shard2.isPauliX) {
+        ConvertXToY(qubit2);
+    }
+    
+    freezeTrySeparate = true;
+    CZ(qubit1, qubit2);
+    bitLenInt c[1] = { shard1.mapped };
+    shard1.unit->ApplyControlledSingleInvert(c, 1U, shard2.mapped, I_CMPLX, -I_CMPLX);
+    freezeTrySeparate = false;
+
+    isShard1Sep = TrySeparate(qubit1);
+    isShard2Sep = TrySeparate(qubit2);*/
+    
     return isShard1Sep && isShard2Sep;
 }
 
@@ -2853,13 +2875,15 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         shard.isProbDirty |= !isPhase || shard.isPauliX || shard.isPauliY;
         shard.isPhaseDirty = true;
     }
+    
+    if (unit->isClifford()) {
+        for (i = 0; i < allBits.size(); i++) {
+            TrySeparate(allBits[i]);
+        }
+        return;
+    }
 
     if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb || (!isPhase && !isInvert)) {
-        if (!freezeTrySeparate && unit->isClifford()) {
-            for (i = 0; i < allBits.size(); i++) {
-                TrySeparate(allBits[i]);
-            }
-        }
         return;
     }
 
