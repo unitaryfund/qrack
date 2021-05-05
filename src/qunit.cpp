@@ -855,11 +855,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 
     // Try again, in second basis.
     RevertBasis1Qb(qubit1);
-    if (!shard2.isPauliX && !shard2.isPauliY) {
-        ConvertZToX(qubit2);
-    } else if (shard2.isPauliY) {
-        RevertBasisY(qubit2);
-    }
+    ConvertZToX(qubit2);
 
     freezeTrySeparate = true;
     CZ(qubit1, qubit2);
