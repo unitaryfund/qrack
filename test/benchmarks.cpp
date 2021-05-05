@@ -676,7 +676,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                     gateRand = GateCountMultiQb * qReg->Rand();
 
                     if (gateRand < ONE_R1) {
-                        gateRand = 4 * ONE_R1;
+                        gateRand = 4 * qReg->Rand();
                         if (gateRand < (3 * ONE_R1)) {
                             qReg->CNOT(b1, b2);
                         } else {
