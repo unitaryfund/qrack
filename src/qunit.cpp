@@ -2717,6 +2717,33 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
         }
     }
 
+    if (!freezeBasis2Qb && (controlLen == 1U)) {
+        bitLenInt control = controls[0];
+        QEngineShard& cShard = shards[control];
+        QEngineShard& tShard = shards[target];
+        if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
+            if (SHARD_STATE(cShard)) {
+                Flush1Eigenstate(control);
+                ApplySingleInvert(topRight, bottomLeft, target);
+            } else {
+                Flush0Eigenstate(control);
+            }
+
+            delete[] controls;
+            return;
+        }
+
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+
+        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
+            tShard.AddInversionAngles(&cShard, bottomLeft, topRight);
+            OptimizePairBuffers(control, target, false);
+
+            return;
+        }
+    }
+
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
         ApplySingleInvert(topRight, bottomLeft, target), false, true, topRight, bottomLeft);
 }
@@ -2820,6 +2847,33 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
     if (IS_1_R1(I_CMPLX * topRight) && IS_1_R1(-I_CMPLX * bottomLeft)) {
         if (controlLen == 1U) {
             AntiCY(controls[0], target);
+            return;
+        }
+    }
+
+    if (!freezeBasis2Qb && (controlLen == 1U)) {
+        bitLenInt control = controls[0];
+        QEngineShard& cShard = shards[control];
+        QEngineShard& tShard = shards[target];
+        if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
+            if (SHARD_STATE(cShard)) {
+                Flush1Eigenstate(control);
+            } else {
+                Flush0Eigenstate(control);
+                ApplySingleInvert(topRight, bottomLeft, target);
+            }
+
+            delete[] controls;
+            return;
+        }
+
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+
+        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
+            tShard.AddAntiInversionAngles(&cShard, bottomLeft, topRight);
+            OptimizePairBuffers(control, target, false);
+
             return;
         }
     }
