@@ -628,7 +628,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
 {
     std::cout << "(random circuit depth: " << benchmarkDepth << ")";
 
-    const int GateCount1Qb = 4;
+    const int GateCount1Qb = 5;
     const int GateCountMultiQb = 2;
 
     benchmarkLoop(
@@ -650,7 +650,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                         qReg->X(i);
                     } else if (gateRand < (3 * ONE_R1)) {
                         qReg->Y(i);
-                    } else {
+                    } else if (gateRand < (4 * ONE_R1)) {
                         gateRand = 3 * qReg->Rand();
                         if (gateRand < ONE_R1) {
                             qReg->Z(i);
@@ -660,6 +660,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                             qReg->T(i);
                         }
                     }
+                    // else - identity
                 }
 
                 std::set<bitLenInt> unusedBits;
@@ -685,6 +686,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                     } else {
                         qReg->CZ(b1, b2);
                     }
+                    // TODO: CY and "CI" as equal probability options
                 }
 
                 qReg->SetReactiveSeparate(true);
