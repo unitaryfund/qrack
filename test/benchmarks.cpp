@@ -699,7 +699,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_stabilizer_t_double", "[supreme]")
+TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 {
     std::cout << "(random circuit depth: " << benchmarkDepth << ")";
 

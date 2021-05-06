@@ -137,6 +137,9 @@ REG_GATE_C1_1(AntiCNOT);
 /// Apply CNOT gate for "length" starting from "control" and "target," respectively
 REG_GATE_C1_1(CNOT);
 
+/// Bit-wise apply doubly-controlled-z to two control registers and one target register
+REG_GATE_C2_1(CCY);
+
 /// Apply S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
 REG_GATE_1(S);
 

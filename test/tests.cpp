@@ -1363,6 +1363,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cy_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccy")
+{
+    qftReg->SetPermutation(0xCAC00);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
+    qftReg->CCY(16, 12, 8, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCA400));
+
+    bitLenInt controls[2] = { 0, 1 };
+
+    qftReg->SetPermutation(0x03);
+    qftReg->H(0, 3);
+    qftReg->CCY(0, 1, 2);
+    qftReg->ApplyControlledSinglePhase(controls, 2, 2, I_CMPLX, -I_CMPLX);
+    qftReg->H(2);
+    qftReg->ApplyControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x03));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz")
 {
     qftReg->SetReg(0, 8, 0x35);

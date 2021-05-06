@@ -1595,6 +1595,14 @@ public:
     virtual void CY(bitLenInt control, bitLenInt target, bitLenInt length);
 
     /**
+     * Bitwise doubly-controlled Y gate
+     *
+     * If both "control" bits are set to 1, then the Pauli "Y" operator is applied
+     * to "target."
+     */
+    virtual void CCY(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
+    /**
      * Bitwise controlled Z gate
      *
      * If the "control" bit is set to 1, then the Pauli "Z" operator is applied
