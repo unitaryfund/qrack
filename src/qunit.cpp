@@ -2187,7 +2187,7 @@ void QUnit::CY(bitLenInt control, bitLenInt target)
     bitLenInt controlLen = 1;
 
     CTRLED_PHASE_INVERT_WRAP(
-        CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false, true, ONE_CMPLX, ONE_CMPLX);
+        CY(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), Y(target), false, true, -I_CMPLX, I_CMPLX);
 }
 
 void QUnit::AntiCY(bitLenInt control, bitLenInt target)
@@ -2223,7 +2223,7 @@ void QUnit::AntiCY(bitLenInt control, bitLenInt target)
     bitLenInt controlLen = 1;
 
     CTRLED_PHASE_INVERT_WRAP(
-        AntiCY(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), Y(target), true, true, ONE_CMPLX, ONE_CMPLX);
+        AntiCY(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), Y(target), true, true, -I_CMPLX, I_CMPLX);
 }
 
 void QUnit::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
