@@ -638,7 +638,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
             real1_f gateRand;
             bitLenInt b1, b2;
 
-            qReg->SetReactiveSeparate(false);
+            qReg->SetReactiveSeparate(true);
 
             for (d = 0; d < benchmarkDepth; d++) {
 
@@ -653,6 +653,11 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                         } else if (gateRand < (2 * ONE_R1)) {
                             qReg->Y(i);
                         } else if (gateRand < (3 * ONE_R1)) {
+
+                            // Replace the body below with this for continuous Z axis root gates:
+                            // gateRand = 2 * PI_R1 * qReg->Rand();
+                            // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
                                 qReg->Z(i);
@@ -741,8 +746,6 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                     }
                     // else - identity
                 }
-
-                qReg->SetReactiveSeparate(true);
             }
 
             qReg->MAll();
@@ -764,7 +767,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
             real1_f gateRand;
             bitLenInt b1, b2, b3;
 
-            qReg->SetReactiveSeparate(false);
+            qReg->SetReactiveSeparate(true);
 
             for (d = 0; d < benchmarkDepth; d++) {
 
@@ -779,6 +782,11 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                         } else if (gateRand < (2 * ONE_R1)) {
                             qReg->Y(i);
                         } else if (gateRand < (3 * ONE_R1)) {
+
+                            // Replace the body below with this for continuous Z axis root gates:
+                            // gateRand = 2 * PI_R1 * qReg->Rand();
+                            // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
                                 qReg->Z(i);
@@ -902,8 +910,6 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                         // else - identity
                     }
                 }
-
-                qReg->SetReactiveSeparate(true);
             }
 
             qReg->MAll();
