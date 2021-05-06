@@ -689,14 +689,29 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                     if (gateRand < ONE_R1) {
                         gateRand = 4 * qReg->Rand();
                         if (gateRand < (3 * ONE_R1)) {
-                            qReg->CNOT(b1, b2);
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CNOT(b1, b2);
+                            } else {
+                                qReg->AntiCNOT(b1, b2);
+                            }
                         } else {
                             qReg->Swap(b1, b2);
                         }
                     } else if (gateRand < (2 * ONE_R1)) {
-                        qReg->CZ(b1, b2);
+                        gateRand = 2 * qReg->Rand();
+                        if (gateRand < ONE_R1) {
+                            qReg->CY(b1, b2);
+                        } else {
+                            qReg->AntiCY(b1, b2);
+                        }
                     } else if (gateRand < (3 * ONE_R1)) {
-                        qReg->CY(b1, b2);
+                        gateRand = 2 * qReg->Rand();
+                        if (gateRand < ONE_R1) {
+                            qReg->CZ(b1, b2);
+                        } else {
+                            qReg->AntiCZ(b1, b2);
+                        }
                     }
                     // else - identity
                 }
@@ -792,20 +807,19 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                         } else if (gateRand < (2 * ONE_R1)) {
                             gateRand = 2 * qReg->Rand();
                             if (gateRand < ONE_R1) {
-                                qReg->CZ(b1, b2);
-                            } else {
-                                qReg->AntiCZ(b1, b2);
-                            }
-                        } else if (gateRand < (3 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
                                 qReg->CY(b1, b2);
                             } else {
                                 qReg->AntiCY(b1, b2);
                             }
+                        } else if (gateRand < (3 * ONE_R1)) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CZ(b1, b2);
+                            } else {
+                                qReg->AntiCZ(b1, b2);
+                            }
                         }
                         // else - identity
-
                     } else {
                         b3 = pickRandomBit(qReg, &unusedBits);
 
@@ -821,16 +835,16 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                         } else if (gateRand < (2 * ONE_R1)) {
                             gateRand = 2 * qReg->Rand();
                             if (gateRand < ONE_R1) {
-                                qReg->CCZ(b1, b2, b3);
+                                qReg->CCY(b1, b2, b3);
                             } else {
-                                qReg->AntiCCZ(b1, b2, b3);
+                                qReg->AntiCCY(b1, b2, b3);
                             }
                         } else if (gateRand < (3 * ONE_R1)) {
                             gateRand = 2 * qReg->Rand();
                             if (gateRand < ONE_R1) {
-                                qReg->CCY(b1, b2, b3);
+                                qReg->CCZ(b1, b2, b3);
                             } else {
-                                qReg->AntiCCY(b1, b2, b3);
+                                qReg->AntiCCZ(b1, b2, b3);
                             }
                         }
                         // else - identity
