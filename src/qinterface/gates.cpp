@@ -235,6 +235,13 @@ void QInterface::CY(bitLenInt control, bitLenInt target)
     ApplyControlledSingleInvert(controls, 1, target, -I_CMPLX, I_CMPLX);
 }
 
+/// Apply doubly-controlled Pauli Z matrix to bit
+void QInterface::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyControlledSinglePhase(controls, 2, target, -I_CMPLX, I_CMPLX);
+}
+
 /// Apply controlled Pauli Z matrix to bit
 void QInterface::CZ(bitLenInt control, bitLenInt target)
 {

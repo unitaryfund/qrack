@@ -279,6 +279,37 @@ void QStabilizerHybrid::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt ta
     engine->CCZ(control1, control2, target);
 }
 
+void QStabilizerHybrid::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    if (shards[control1] || shards[control2] || shards[target]) {
+        FlushBuffers();
+    }
+
+    if (stabilizer) {
+        real1_f prob = Prob(control1);
+        if (prob == ZERO_R1) {
+            return;
+        }
+        if (prob == ONE_R1) {
+            stabilizer->CY(control2, target);
+            return;
+        }
+
+        prob = Prob(control2);
+        if (prob == ZERO_R1) {
+            return;
+        }
+        if (prob == ONE_R1) {
+            stabilizer->CY(control1, target);
+            return;
+        }
+
+        SwitchToEngine();
+    }
+
+    engine->CCY(control1, control2, target);
+}
+
 void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
 {
     bitLenInt length = dest->qubitCount;
