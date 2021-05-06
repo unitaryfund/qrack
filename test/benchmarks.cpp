@@ -624,6 +624,77 @@ TEST_CASE("test_stabilizer", "[supreme]")
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
 
+TEST_CASE("test_stabilizer_t", "[supreme]")
+{
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+
+    const int GateCount1Qb = 4;
+    const int GateCountMultiQb = 2;
+
+    benchmarkLoop(
+        [&](QInterfacePtr qReg, bitLenInt n) {
+            int d;
+            bitLenInt i;
+            real1_f gateRand;
+            bitLenInt b1, b2;
+
+            qReg->SetReactiveSeparate(false);
+
+            for (d = 0; d < benchmarkDepth; d++) {
+
+                for (i = 0; i < n; i++) {
+                    gateRand = GateCount1Qb * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        qReg->H(i);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        qReg->X(i);
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        qReg->Y(i);
+                    } else {
+                        gateRand = 3 * qReg->Rand();
+                        if (gateRand < ONE_R1) {
+                            qReg->Z(i);
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            qReg->S(i);
+                        } else {
+                            qReg->T(i);
+                        }
+                    }
+                }
+
+                std::set<bitLenInt> unusedBits;
+                for (i = 0; i < n; i++) {
+                    // In the past, "qReg->TrySeparate(i)" was also used, here, to attempt optimization. Be aware that
+                    // the method can give performance advantages, under opportune conditions, but it does not, here.
+                    unusedBits.insert(unusedBits.end(), i);
+                }
+
+                while (unusedBits.size() > 1) {
+                    b1 = pickRandomBit(qReg, &unusedBits);
+                    b2 = pickRandomBit(qReg, &unusedBits);
+
+                    gateRand = GateCountMultiQb * qReg->Rand();
+
+                    if (gateRand < ONE_R1) {
+                        gateRand = 4 * qReg->Rand();
+                        if (gateRand < (3 * ONE_R1)) {
+                            qReg->CNOT(b1, b2);
+                        } else {
+                            qReg->Swap(b1, b2);
+                        }
+                    } else {
+                        qReg->CZ(b1, b2);
+                    }
+                }
+
+                qReg->SetReactiveSeparate(true);
+            }
+
+            qReg->MAll();
+        },
+        false, false, testEngineType == QINTERFACE_QUNIT);
+}
+
 TEST_CASE("test_universal_circuit_continuous", "[supreme]")
 {
     std::cout << "(random circuit depth: " << benchmarkDepth << ")";
