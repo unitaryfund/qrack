@@ -385,6 +385,42 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticy")
+{
+    qftReg->SetPermutation(0x55F00);
+    REQUIRE_THAT(qftReg, HasProbability(0x55F00));
+    qftReg->AntiCY(12, 4, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0x555A0));
+    qftReg->SetPermutation(0x00001);
+    REQUIRE_THAT(qftReg, HasProbability(0x00001));
+    qftReg->AntiCY(18, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0x80001));
+
+    bitLenInt controls[1] = { 0 };
+
+    qftReg->SetPermutation(0x01);
+    qftReg->H(0, 2);
+    qftReg->AntiCY(0, 1);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 1, 1, I_CMPLX, -I_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x01));
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 2);
+    qftReg->Z(0);
+    qftReg->AntiCY(0, 1);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 1, 1, I_CMPLX, -I_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x01));
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 2);
+    qftReg->AntiCY(0, 1);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 1, 1, I_CMPLX, -I_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
 {
     qftReg->SetPermutation(0xCAC00);
@@ -424,6 +460,44 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
     qftReg->SetPermutation(0x00);
     qftReg->H(0, 3);
     qftReg->AntiCCNOT(0, 1, 2);
+    qftReg->H(2);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcy")
+{
+    qftReg->SetPermutation(0xCAC00);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
+    qftReg->AntiCCY(16, 12, 8, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAD00));
+
+    bitLenInt controls[2] = { 0, 1 };
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 3);
+    qftReg->AntiCCY(0, 1, 2);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, I_CMPLX, -I_CMPLX);
+    qftReg->H(2);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcz")
+{
+    qftReg->SetPermutation(0xCAC00);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
+    qftReg->AntiCCZ(16, 12, 8, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
+
+    bitLenInt controls[2] = { 0, 1 };
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 3);
+    qftReg->AntiCCZ(0, 1, 2);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, I_CMPLX, -I_CMPLX);
     qftReg->H(2);
     qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
     qftReg->H(0, 2);
@@ -1402,12 +1476,38 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz_reg")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticz")
 {
     qftReg->SetReg(0, 8, 0x35);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x35));
     qftReg->H(0, 4);
-    qftReg->CZ(4, 0, 4);
+    qftReg->X(4, 4);
+    qftReg->AntiCZ(4, 0);
+    qftReg->AntiCZ(5, 1);
+    qftReg->AntiCZ(6, 2);
+    qftReg->AntiCZ(7, 3);
+    qftReg->X(4, 4);
+    qftReg->H(0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
+
+    qftReg->SetPermutation(0x03);
+    qftReg->H(0);
+    qftReg->X(0);
+    qftReg->AntiCZ(0, 1);
+    qftReg->AntiCZ(0, 1);
+    qftReg->X(0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticz_reg")
+{
+    qftReg->SetReg(0, 8, 0x35);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x35));
+    qftReg->H(0, 4);
+    qftReg->X(4, 4);
+    qftReg->AntiCZ(4, 0, 4);
+    qftReg->X(4, 4);
     qftReg->H(0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
 }

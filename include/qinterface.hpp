@@ -619,6 +619,66 @@ public:
     virtual void AntiCNOT(bitLenInt control, bitLenInt target);
 
     /**
+     * Controlled Y gate
+     *
+     * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
+     * to "target."
+     */
+    virtual void CY(bitLenInt control, bitLenInt target);
+
+    /**
+     * Anti controlled Y gate
+     *
+     * If the control is set to 0, then the Pauli "Y" operator is applied to the target.
+     */
+    virtual void AntiCY(bitLenInt control, bitLenInt target);
+
+    /**
+     * Doubly-Controlled Y gate
+     *
+     * If both "control" bits are set to 1, then the Pauli "Y" operator is applied
+     * to "target."
+     */
+    virtual void CCY(bitLenInt control1, bitLenInt control2, bitLenInt target);
+
+    /**
+     * Anti doubly-controlled Y gate
+     *
+     * If both controls are set to 0, apply Pauli Y operation to target bit.
+     */
+    virtual void AntiCCY(bitLenInt control1, bitLenInt control2, bitLenInt target);
+
+    /**
+     * Controlled Z gate
+     *
+     * If the "control" bit is set to 1, then the Pauli "Z" operator is applied
+     * to "target."
+     */
+    virtual void CZ(bitLenInt control, bitLenInt target);
+
+    /**
+     * Anti controlled Z gate
+     *
+     * If the control is set to 0, then the Pauli "Z" operator is applied to the target.
+     */
+    virtual void AntiCZ(bitLenInt control, bitLenInt target);
+
+    /**
+     * Doubly-Controlled Z gate
+     *
+     * If both "control" bits are set to 1, then the Pauli "Z" operator is applied
+     * to "target."
+     */
+    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
+
+    /**
+     * Anti doubly-controlled Z gate
+     *
+     * If both controls are set to 0, apply Pauli Z operation to target bit.
+     */
+    virtual void AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
+
+    /**
      * General unitary gate
      *
      * Applies a gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible single bit
@@ -854,38 +914,6 @@ public:
      * effects.
      */
     virtual void ISqrtY(bitLenInt qubitIndex);
-
-    /**
-     * Controlled Y gate
-     *
-     * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
-     * to "target."
-     */
-    virtual void CY(bitLenInt control, bitLenInt target);
-
-    /**
-     * Doubly-Controlled Y gate
-     *
-     * If both "control" bits are set to 1, then the Pauli "Y" operator is applied
-     * to "target."
-     */
-    virtual void CCY(bitLenInt control1, bitLenInt control2, bitLenInt target);
-
-    /**
-     * Controlled Z gate
-     *
-     * If the "control" bit is set to 1, then the Pauli "Z" operator is applied
-     * to "target."
-     */
-    virtual void CZ(bitLenInt control, bitLenInt target);
-
-    /**
-     * Doubly-Controlled Z gate
-     *
-     * If both "control" bits are set to 1, then the Pauli "Z" operator is applied
-     * to "target."
-     */
-    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
     /**
      * Controlled H gate
@@ -1360,6 +1388,30 @@ public:
     /** Bitwise doubly "anti-"controlled-not */
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
 
+    /** Bitwise controlled-Y */
+    virtual void CY(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /** Bitwise "anti-"controlled-Y */
+    virtual void AntiCY(bitLenInt inputBits, bitLenInt targetBits, bitLenInt length);
+
+    /** Bitwise doubly controlled-Y */
+    virtual void CCY(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
+    /** Bitwise doubly "anti-"controlled-Y */
+    virtual void AntiCCY(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
+    /** Bitwise controlled-Z */
+    virtual void CZ(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /** Bitwise "anti-"controlled-Z */
+    virtual void AntiCZ(bitLenInt inputBits, bitLenInt targetBits, bitLenInt length);
+
+    /** Bitwise doubly controlled-Z */
+    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
+    /** Bitwise doubly "anti-"controlled-Z */
+    virtual void AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
     /**
      * Bitwise "AND"
      *
@@ -1585,38 +1637,6 @@ public:
      * operator
      */
     virtual void ExpZDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
-
-    /**
-     * Bitwise controlled Y gate
-     *
-     * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
-     * to "target."
-     */
-    virtual void CY(bitLenInt control, bitLenInt target, bitLenInt length);
-
-    /**
-     * Bitwise doubly-controlled Y gate
-     *
-     * If both "control" bits are set to 1, then the Pauli "Y" operator is applied
-     * to "target."
-     */
-    virtual void CCY(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
-
-    /**
-     * Bitwise controlled Z gate
-     *
-     * If the "control" bit is set to 1, then the Pauli "Z" operator is applied
-     * to "target."
-     */
-    virtual void CZ(bitLenInt control, bitLenInt target, bitLenInt length);
-
-    /**
-     * Bitwise doubly-controlled Z gate
-     *
-     * If both "control" bits are set to 1, then the Pauli "Z" operator is applied
-     * to "target."
-     */
-    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled H gate

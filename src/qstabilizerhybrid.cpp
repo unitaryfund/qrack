@@ -1013,6 +1013,13 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
         }
     }
 
+    if (IS_SAME(topRight, -I_CMPLX) && IS_SAME(bottomLeft, I_CMPLX)) {
+        stabilizer->X(controls[0]);
+        stabilizer->CY(controls[0], target);
+        stabilizer->X(controls[0]);
+        return;
+    }
+
     SwitchToEngine();
     engine->ApplyAntiControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
 }
