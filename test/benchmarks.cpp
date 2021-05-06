@@ -917,6 +917,137 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
 
+TEST_CASE("test_stabilizer_cc_gen1qb", "[supreme]")
+{
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+
+    const int DimCount1Qb = 4;
+    const int DimCountMultiQb = 4;
+
+    benchmarkLoop(
+        [&](QInterfacePtr qReg, bitLenInt n) {
+            int d;
+            bitLenInt i;
+            real1_f gateRand;
+            bitLenInt b1, b2, b3;
+
+            qReg->SetReactiveSeparate(true);
+
+            for (d = 0; d < benchmarkDepth; d++) {
+
+                for (i = 0; i < n; i++) {
+                    // Switch between Pauli X/Y/Z
+                    gateRand = DimCount1Qb * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        qReg->H(i);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        gateRand = 2 * qReg->Rand();
+                        if (gateRand < ONE_R1) {
+                            qReg->S(i);
+                        } else {
+                            qReg->IS(i);
+                        }
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        gateRand = 2 * qReg->Rand();
+                        if (gateRand < ONE_R1) {
+                            qReg->H(i);
+                            qReg->S(i);
+                        } else {
+                            qReg->IS(i);
+                            qReg->H(i);
+                        }
+                    }
+                    // else - identity
+
+                    // After Pauli basis switch, apply an arbitrary root of Z.
+                    gateRand = 2 * PI_R1 * qReg->Rand();
+                    qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+                }
+
+                std::set<bitLenInt> unusedBits;
+                for (i = 0; i < n; i++) {
+                    // In the past, "qReg->TrySeparate(i)" was also used, here, to attempt optimization. Be aware that
+                    // the method can give performance advantages, under opportune conditions, but it does not, here.
+                    unusedBits.insert(unusedBits.end(), i);
+                }
+
+                while (unusedBits.size() > 1) {
+                    b1 = pickRandomBit(qReg, &unusedBits);
+                    b2 = pickRandomBit(qReg, &unusedBits);
+
+                    gateRand = 2 * qReg->Rand();
+
+                    // TODO: Target "anti-" variants for optimization
+
+                    if ((gateRand < ONE_R1) || !unusedBits.size()) {
+
+                        gateRand = DimCountMultiQb * qReg->Rand();
+
+                        if (gateRand < ONE_R1) {
+                            gateRand = 4 * qReg->Rand();
+                            if (gateRand < (3 * ONE_R1)) {
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->CNOT(b1, b2);
+                                } else {
+                                    qReg->AntiCNOT(b1, b2);
+                                }
+                            } else {
+                                qReg->Swap(b1, b2);
+                            }
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CY(b1, b2);
+                            } else {
+                                qReg->AntiCY(b1, b2);
+                            }
+                        } else if (gateRand < (3 * ONE_R1)) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CZ(b1, b2);
+                            } else {
+                                qReg->AntiCZ(b1, b2);
+                            }
+                        }
+                        // else - identity
+                    } else {
+                        b3 = pickRandomBit(qReg, &unusedBits);
+
+                        gateRand = DimCountMultiQb * qReg->Rand();
+
+                        if (gateRand < ONE_R1) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CCNOT(b1, b2, b3);
+                            } else {
+                                qReg->AntiCCNOT(b1, b2, b3);
+                            }
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CCY(b1, b2, b3);
+                            } else {
+                                qReg->AntiCCY(b1, b2, b3);
+                            }
+                        } else if (gateRand < (3 * ONE_R1)) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CCZ(b1, b2, b3);
+                            } else {
+                                qReg->AntiCCZ(b1, b2, b3);
+                            }
+                        }
+                        // else - identity
+                    }
+                }
+            }
+
+            qReg->MAll();
+        },
+        false, false, testEngineType == QINTERFACE_QUNIT);
+}
+
 TEST_CASE("test_universal_circuit_continuous", "[supreme]")
 {
     std::cout << "(random circuit depth: " << benchmarkDepth << ")";
