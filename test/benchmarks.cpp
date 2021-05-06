@@ -628,7 +628,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
 {
     std::cout << "(random circuit depth: " << benchmarkDepth << ")";
 
-    const int GateCount1Qb = 5;
+    const int DimCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
     benchmarkLoop(
@@ -643,17 +643,41 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
             for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
-                    gateRand = GateCount1Qb * qReg->Rand();
+                    gateRand = 2 * qReg->Rand();
+                    // "Phase" transforms vs. "position" transforms
                     if (gateRand < ONE_R1) {
-                        qReg->H(i);
-                    } else if (gateRand < (2 * ONE_R1)) {
-                        qReg->X(i);
-                    } else if (gateRand < (3 * ONE_R1)) {
-                        qReg->Y(i);
-                    } else if (gateRand < (4 * ONE_R1)) {
-                        gateRand = 3 * qReg->Rand();
+                        // "Position" transforms:
+                        gateRand = DimCount1Qb * qReg->Rand();
                         if (gateRand < ONE_R1) {
-                            qReg->Z(i);
+                            qReg->X(i);
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            qReg->Y(i);
+                        } else if (gateRand < (3 * ONE_R1)) {
+                            gateRand = 3 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->Z(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->S(i);
+                                } else {
+                                    qReg->IS(i);
+                                }
+                            } else {
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->T(i);
+                                } else {
+                                    qReg->IT(i);
+                                }
+                            }
+                        }
+                        // else - identity
+                    } else {
+                        // "Phase" transforms:
+                        gateRand = DimCount1Qb * qReg->Rand();
+                        if (gateRand < ONE_R1) {
+                            qReg->H(i);
                         } else if (gateRand < (2 * ONE_R1)) {
                             gateRand = 2 * qReg->Rand();
                             if (gateRand < ONE_R1) {
@@ -661,16 +685,18 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                             } else {
                                 qReg->IS(i);
                             }
-                        } else {
+                        } else if (gateRand < (3 * ONE_R1)) {
                             gateRand = 2 * qReg->Rand();
                             if (gateRand < ONE_R1) {
-                                qReg->T(i);
+                                qReg->H(i);
+                                qReg->S(i);
                             } else {
-                                qReg->IT(i);
+                                qReg->IS(i);
+                                qReg->H(i);
                             }
                         }
+                        // else - identity
                     }
-                    // else - identity
                 }
 
                 std::set<bitLenInt> unusedBits;
@@ -728,8 +754,8 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 {
     std::cout << "(random circuit depth: " << benchmarkDepth << ")";
 
-    const int GateCount1Qb = 5;
-    const int GateCountMultiQb = 4;
+    const int DimCount1Qb = 4;
+    const int DimCountMultiQb = 4;
 
     benchmarkLoop(
         [&](QInterfacePtr qReg, bitLenInt n) {
@@ -743,17 +769,41 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
             for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
-                    gateRand = GateCount1Qb * qReg->Rand();
+                    gateRand = 2 * qReg->Rand();
+                    // "Phase" transforms vs. "position" transforms
                     if (gateRand < ONE_R1) {
-                        qReg->H(i);
-                    } else if (gateRand < (2 * ONE_R1)) {
-                        qReg->X(i);
-                    } else if (gateRand < (3 * ONE_R1)) {
-                        qReg->Y(i);
-                    } else if (gateRand < (4 * ONE_R1)) {
-                        gateRand = 3 * qReg->Rand();
+                        // "Position" transforms:
+                        gateRand = DimCount1Qb * qReg->Rand();
                         if (gateRand < ONE_R1) {
-                            qReg->Z(i);
+                            qReg->X(i);
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            qReg->Y(i);
+                        } else if (gateRand < (3 * ONE_R1)) {
+                            gateRand = 3 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->Z(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->S(i);
+                                } else {
+                                    qReg->IS(i);
+                                }
+                            } else {
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->T(i);
+                                } else {
+                                    qReg->IT(i);
+                                }
+                            }
+                        }
+                        // else - identity
+                    } else {
+                        // "Phase" transforms:
+                        gateRand = DimCount1Qb * qReg->Rand();
+                        if (gateRand < ONE_R1) {
+                            qReg->H(i);
                         } else if (gateRand < (2 * ONE_R1)) {
                             gateRand = 2 * qReg->Rand();
                             if (gateRand < ONE_R1) {
@@ -761,16 +811,18 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                             } else {
                                 qReg->IS(i);
                             }
-                        } else {
+                        } else if (gateRand < (3 * ONE_R1)) {
                             gateRand = 2 * qReg->Rand();
                             if (gateRand < ONE_R1) {
-                                qReg->T(i);
+                                qReg->H(i);
+                                qReg->S(i);
                             } else {
-                                qReg->IT(i);
+                                qReg->IS(i);
+                                qReg->H(i);
                             }
                         }
+                        // else - identity
                     }
-                    // else - identity
                 }
 
                 std::set<bitLenInt> unusedBits;
@@ -790,7 +842,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 
                     if ((gateRand < ONE_R1) || !unusedBits.size()) {
 
-                        gateRand = GateCountMultiQb * qReg->Rand();
+                        gateRand = DimCountMultiQb * qReg->Rand();
 
                         if (gateRand < ONE_R1) {
                             gateRand = 4 * qReg->Rand();
@@ -823,7 +875,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                     } else {
                         b3 = pickRandomBit(qReg, &unusedBits);
 
-                        gateRand = GateCountMultiQb * qReg->Rand();
+                        gateRand = DimCountMultiQb * qReg->Rand();
 
                         if (gateRand < ONE_R1) {
                             gateRand = 2 * qReg->Rand();
