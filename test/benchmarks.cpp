@@ -775,7 +775,13 @@ TEST_CASE("test_stabilizer_t_double", "[supreme]")
                         gateRand = GateCountMultiQb * qReg->Rand();
 
                         if (gateRand < ONE_R1) {
-                            qReg->CCNOT(b1, b2, b3);
+                            gateRand = 4 * qReg->Rand();
+                            if (gateRand < (3 * ONE_R1)) {
+                                qReg->CCNOT(b1, b2, b3);
+                            } else {
+                                bitLenInt c[1] = { b1 };
+                                qReg->CSwap(c, 1, b1, b2);
+                            }
                         } else if (gateRand < (2 * ONE_R1)) {
                             qReg->CCZ(b1, b2, b3);
                         } else if (gateRand < (3 * ONE_R1)) {
