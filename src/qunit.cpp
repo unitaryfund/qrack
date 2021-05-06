@@ -2036,9 +2036,6 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
         }
     }
 
-    bitLenInt controls[1] = { control };
-    bitLenInt controlLen = 1;
-
     if (!freezeBasis2Qb) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
@@ -2050,6 +2047,9 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
             return;
         }
     }
+
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
 
     CTRLED_PHASE_INVERT_WRAP(AntiCNOT(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), X(target), true, true,
         ONE_CMPLX, ONE_CMPLX);
@@ -2154,6 +2154,118 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         [&]() { X(target); }, false, true);
 }
 
+void QUnit::CY(bitLenInt control, bitLenInt target)
+{
+    QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[control];
+
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
+        if (IS_AMP_0(cShard.amp1)) {
+            Flush0Eigenstate(control);
+            return;
+        }
+        if (IS_AMP_0(cShard.amp0)) {
+            Flush1Eigenstate(control);
+            Y(target);
+            return;
+        }
+    }
+
+    if (!freezeBasis2Qb) {
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+
+        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
+            tShard.AddInversionAngles(&cShard, I_CMPLX, -I_CMPLX);
+            OptimizePairBuffers(control, target, false);
+
+            return;
+        }
+    }
+
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
+
+    CTRLED_PHASE_INVERT_WRAP(
+        CNOT(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), X(target), false, true, ONE_CMPLX, ONE_CMPLX);
+}
+
+void QUnit::AntiCY(bitLenInt control, bitLenInt target)
+{
+    QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[control];
+
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
+        if (IS_AMP_0(cShard.amp1)) {
+            Flush0Eigenstate(control);
+            Y(target);
+            return;
+        }
+        if (IS_AMP_0(cShard.amp0)) {
+            Flush1Eigenstate(control);
+            return;
+        }
+    }
+
+    if (!freezeBasis2Qb) {
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+
+        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
+            shards[target].AddAntiInversionAngles(&(shards[control]), I_CMPLX, -I_CMPLX);
+            OptimizePairBuffers(control, target, true);
+
+            return;
+        }
+    }
+
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
+
+    CTRLED_PHASE_INVERT_WRAP(
+        AntiCY(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), Y(target), true, true, ONE_CMPLX, ONE_CMPLX);
+}
+
+void QUnit::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    QEngineShard& c1Shard = shards[control1];
+    QEngineShard& c2Shard = shards[control2];
+
+    if (!c1Shard.IsInvertTarget()) {
+        if (UNSAFE_CACHED_ZERO_OR_ONE(c1Shard)) {
+            if (IS_AMP_0(c1Shard.amp1)) {
+                Flush0Eigenstate(control1);
+                return;
+            }
+            if (IS_AMP_0(c1Shard.amp0)) {
+                Flush1Eigenstate(control1);
+                CY(control2, target);
+                return;
+            }
+        }
+    }
+
+    if (!c2Shard.IsInvertTarget()) {
+        if (UNSAFE_CACHED_ZERO_OR_ONE(c2Shard)) {
+            if (IS_AMP_0(c2Shard.amp1)) {
+                Flush0Eigenstate(control2);
+                return;
+            }
+            if (IS_AMP_0(c2Shard.amp0)) {
+                Flush1Eigenstate(control2);
+                CY(control1, target);
+                return;
+            }
+        }
+    }
+
+    bitLenInt controls[2] = { control1, control2 };
+    bitLenInt controlLen = 2U;
+
+    CTRLED_PHASE_INVERT_WRAP(
+        CCY(CTRL_2_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), Y(target), false, true, -I_CMPLX, I_CMPLX);
+}
+
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
     if (shards[control].isPauliX && !shards[target].isPauliX && !shards[target].isPauliY) {
@@ -2200,6 +2312,42 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
     CTRLED_PHASE_INVERT_WRAP(
         CZ(CTRL_1_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), Z(target), false, false, ONE_CMPLX, -ONE_CMPLX);
+}
+
+void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
+{
+    QEngineShard& tShard = shards[target];
+    QEngineShard& cShard = shards[control];
+
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
+        if (IS_AMP_0(cShard.amp1)) {
+            Flush0Eigenstate(control);
+            Z(target);
+            return;
+        }
+        if (IS_AMP_0(cShard.amp0)) {
+            Flush1Eigenstate(control);
+            return;
+        }
+    }
+
+    if (!freezeBasis2Qb) {
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+
+        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
+            shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
+            OptimizePairBuffers(control, target, true);
+
+            return;
+        }
+    }
+
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
+
+    CTRLED_PHASE_INVERT_WRAP(
+        AntiCZ(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), Z(target), true, true, ONE_CMPLX, ONE_CMPLX);
 }
 
 void QUnit::CH(bitLenInt control, bitLenInt target)
@@ -2558,6 +2706,17 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
         }
     }
 
+    if (IS_1_R1(I_CMPLX * topRight) && IS_1_R1(-I_CMPLX * bottomLeft)) {
+        if (controlLen == 2U) {
+            CCY(controls[0], controls[1], target);
+            return;
+        }
+        if (controlLen == 1U) {
+            CY(controls[0], target);
+            return;
+        }
+    }
+
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
         ApplySingleInvert(topRight, bottomLeft, target), false, true, topRight, bottomLeft);
 }
@@ -2647,9 +2806,22 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topRight, const complex bottomLeft)
 {
-    if ((controlLen == 1U) && IS_1_R1(topRight) && IS_1_R1(bottomLeft)) {
-        AntiCNOT(controls[0], target);
-        return;
+    if (IS_1_R1(topRight) && IS_1_R1(bottomLeft)) {
+        if (controlLen == 2U) {
+            AntiCCNOT(controls[0], controls[1], target);
+            return;
+        }
+        if (controlLen == 1U) {
+            AntiCNOT(controls[0], target);
+            return;
+        }
+    }
+
+    if (IS_1_R1(I_CMPLX * topRight) && IS_1_R1(-I_CMPLX * bottomLeft)) {
+        if (controlLen == 1U) {
+            AntiCY(controls[0], target);
+            return;
+        }
     }
 
     CTRLED_PHASE_INVERT_WRAP(ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
