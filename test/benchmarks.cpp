@@ -780,7 +780,7 @@ TEST_CASE("test_stabilizer_t_double", "[supreme]")
                                 qReg->CCNOT(b1, b2, b3);
                             } else {
                                 bitLenInt c[1] = { b1 };
-                                qReg->CSwap(c, 1, b1, b2);
+                                qReg->CSwap(c, 1, b2, b3);
                             }
                         } else if (gateRand < (2 * ONE_R1)) {
                             qReg->CCZ(b1, b2, b3);
