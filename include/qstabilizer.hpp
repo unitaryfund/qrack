@@ -209,6 +209,13 @@ public:
         H(target);
     }
 
+    virtual void CY(const bitLenInt& control, const bitLenInt& target)
+    {
+        IS(target);
+        CNOT(control, target);
+        S(target);
+    }
+
     virtual void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
         if (qubit1 == qubit2) {
