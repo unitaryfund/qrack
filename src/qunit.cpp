@@ -2916,8 +2916,6 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    RevertBasis2Qb(target);
-
     complex trnsMtrx[4];
 
     if (shard.isPauliY) {
@@ -2927,6 +2925,28 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
     } else {
         std::copy(mtrx, mtrx + 4, trnsMtrx);
     }
+
+    if (IS_NORM_0(trnsMtrx[1]) && IS_NORM_0(trnsMtrx[2])) {
+        bool wasPauliX = shard.isPauliX;
+        bool wasPauliY = shard.isPauliY;
+        shard.isPauliX = false;
+        shard.isPauliY = false;
+        ApplySinglePhase(trnsMtrx[0], trnsMtrx[3], target);
+        shard.isPauliX = wasPauliX;
+        shard.isPauliY = wasPauliY;
+        return;
+    } else if (IS_NORM_0(trnsMtrx[0]) && IS_NORM_0(trnsMtrx[3])) {
+        bool wasPauliX = shard.isPauliX;
+        bool wasPauliY = shard.isPauliY;
+        shard.isPauliX = false;
+        shard.isPauliY = false;
+        ApplySingleInvert(trnsMtrx[1], trnsMtrx[2], target);
+        shard.isPauliX = wasPauliX;
+        shard.isPauliY = wasPauliY;
+        return;
+    }
+
+    RevertBasis2Qb(target);
 
     if (shard.unit) {
         shard.unit->ApplySingleBit(trnsMtrx, shard.mapped);
