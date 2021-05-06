@@ -370,6 +370,8 @@ public:
 
     virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
+    virtual void CCY(bitLenInt control1, bitLenInt control2, bitLenInt target);
+
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
     {
         if (qubit1 == qubit2) {

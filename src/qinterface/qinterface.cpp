@@ -122,8 +122,17 @@ void QInterface::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qu
     }
 }
 
+/// Bit-wise apply "anti-"controlled-z to two control registers and one target register
+REG_GATE_C2_1(AntiCCZ);
+
 /// Bit-wise apply doubly-controlled-z to two control registers and one target register
 REG_GATE_C2_1(CCZ);
+
+/// Apply "Anti-"CZ gate for "length" starting from "control" and "target," respectively
+REG_GATE_C1_1(AntiCZ);
+
+/// Apply controlled Pauli Z matrix to each bit
+REG_GATE_C1_1(CZ);
 
 /// Bit-wise apply "anti-"controlled-not to two control registers and one target register
 REG_GATE_C2_1(AntiCCNOT);
@@ -136,6 +145,18 @@ REG_GATE_C1_1(AntiCNOT);
 
 /// Apply CNOT gate for "length" starting from "control" and "target," respectively
 REG_GATE_C1_1(CNOT);
+
+/// Bit-wise apply "anti-"controlled-y to two control registers and one target register
+REG_GATE_C2_1(AntiCCY);
+
+/// Bit-wise apply doubly-controlled-y to two control registers and one target register
+REG_GATE_C2_1(CCY);
+
+// Apply "Anti-"CY gate for "length" starting from "control" and "target," respectively
+REG_GATE_C1_1(AntiCY);
+
+/// Apply controlled Pauli Y matrix to each bit
+REG_GATE_C1_1(CY);
 
 /// Apply S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
 REG_GATE_1(S);
@@ -187,12 +208,6 @@ REG_GATE_1(ISqrtY);
 
 /// Apply Pauli Z matrix to each bit
 REG_GATE_1(Z);
-
-/// Apply controlled Pauli Y matrix to each bit
-REG_GATE_C1_1(CY);
-
-/// Apply controlled Pauli Z matrix to each bit
-REG_GATE_C1_1(CZ);
 
 /// Apply controlled H gate to each bit
 REG_GATE_C1_1(CH);

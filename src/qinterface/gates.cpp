@@ -235,6 +235,27 @@ void QInterface::CY(bitLenInt control, bitLenInt target)
     ApplyControlledSingleInvert(controls, 1, target, -I_CMPLX, I_CMPLX);
 }
 
+/// Apply doubly-controlled Pauli Z matrix to bit
+void QInterface::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyControlledSingleInvert(controls, 2, target, -I_CMPLX, I_CMPLX);
+}
+
+/// "Anti-doubly-controlled Y" - Apply Pauli Y if control bits are both zero, do not apply if either control bit is one.
+void QInterface::AntiCCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyAntiControlledSingleInvert(controls, 2, target, -I_CMPLX, I_CMPLX);
+}
+
+/// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
+void QInterface::AntiCY(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyAntiControlledSingleInvert(controls, 1, target, -I_CMPLX, I_CMPLX);
+}
+
 /// Apply controlled Pauli Z matrix to bit
 void QInterface::CZ(bitLenInt control, bitLenInt target)
 {
@@ -247,6 +268,20 @@ void QInterface::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
     bitLenInt controls[2] = { control1, control2 };
     ApplyControlledSinglePhase(controls, 2, target, ONE_CMPLX, -ONE_CMPLX);
+}
+
+/// "Anti-doubly-controlled Z" - Apply Pauli Z if control bits are both zero, do not apply if either control bit is one.
+void QInterface::AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyAntiControlledSinglePhase(controls, 2, target, ONE_CMPLX, -ONE_CMPLX);
+}
+
+/// "Anti-controlled Z" - Apply Pauli Z if control bit is zero, do not apply if control bit is one.
+void QInterface::AntiCZ(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyAntiControlledSinglePhase(controls, 1, target, ONE_CMPLX, -ONE_CMPLX);
 }
 
 /// Apply controlled Pauli Z matrix to bit
