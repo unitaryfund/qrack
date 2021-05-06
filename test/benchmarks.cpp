@@ -655,9 +655,19 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                         if (gateRand < ONE_R1) {
                             qReg->Z(i);
                         } else if (gateRand < (2 * ONE_R1)) {
-                            qReg->S(i);
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->S(i);
+                            } else {
+                                qReg->IS(i);
+                            }
                         } else {
-                            qReg->T(i);
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->T(i);
+                            } else {
+                                qReg->IT(i);
+                            }
                         }
                     }
                     // else - identity
@@ -730,9 +740,19 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                         if (gateRand < ONE_R1) {
                             qReg->Z(i);
                         } else if (gateRand < (2 * ONE_R1)) {
-                            qReg->S(i);
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->S(i);
+                            } else {
+                                qReg->IS(i);
+                            }
                         } else {
-                            qReg->T(i);
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->T(i);
+                            } else {
+                                qReg->IT(i);
+                            }
                         }
                     }
                     // else - identity
