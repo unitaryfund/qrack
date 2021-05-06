@@ -835,8 +835,6 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 
                 std::set<bitLenInt> unusedBits;
                 for (i = 0; i < n; i++) {
-                    // In the past, "qReg->TrySeparate(i)" was also used, here, to attempt optimization. Be aware that
-                    // the method can give performance advantages, under opportune conditions, but it does not, here.
                     unusedBits.insert(unusedBits.end(), i);
                 }
 
@@ -919,6 +917,10 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 
 TEST_CASE("test_stabilizer_cc_gen1qb", "[supreme]")
 {
+    // Try with environment variable
+    // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
+    // for clamping of single bit states to Pauli basis axes.
+
     std::cout << "(random circuit depth: " << benchmarkDepth << ")";
 
     const int DimCount1Qb = 4;
@@ -966,8 +968,6 @@ TEST_CASE("test_stabilizer_cc_gen1qb", "[supreme]")
 
                 std::set<bitLenInt> unusedBits;
                 for (i = 0; i < n; i++) {
-                    // In the past, "qReg->TrySeparate(i)" was also used, here, to attempt optimization. Be aware that
-                    // the method can give performance advantages, under opportune conditions, but it does not, here.
                     unusedBits.insert(unusedBits.end(), i);
                 }
 
