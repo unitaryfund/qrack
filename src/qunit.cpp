@@ -1981,9 +1981,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
     }
 
-    RevertBasisY(target);
-
-    bool pmBasis = (cShard.isPauliX && tShard.isPauliX && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
+    bool pmBasis =
+        (cShard.isPauliX && (tShard.isPauliX || tShard.isPauliY) && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
 
     if (!freezeBasis2Qb && !pmBasis) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
@@ -2010,6 +2009,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
     // alone, by way of the last optional "true" argument in the call.
     if (pmBasis) {
+        RevertBasisY(target);
         std::swap(controls[0], target);
         ApplyEitherControlled(
             controls, controlLen, { target }, false,
