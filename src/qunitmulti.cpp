@@ -221,6 +221,7 @@ QInterfacePtr QUnitMulti::Clone()
     // TODO: Copy buffers instead of flushing?
     for (bitLenInt i = 0; i < qubitCount; i++) {
         RevertBasis2Qb(i);
+        EndEmulation(i);
     }
 
     QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(

@@ -97,10 +97,6 @@ public:
     {
     }
 
-    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol) { return false; }
-    virtual bool TrySeparate(bitLenInt qubit) { return false; }
-    virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return false; }
-
     virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = REAL1_EPSILON) { return false; }
 
     virtual QInterfacePtr Clone();
