@@ -1247,7 +1247,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     QEngineShard& shard = shards[qubit];
     QInterfacePtr unit = shard.unit;
     bitLenInt mapped = shard.mapped;
-    real1 prob = norm(shard.amp1);
+    real1 prob = shard.Prob();
 
     shard.unit = NULL;
     shard.mapped = 0;
