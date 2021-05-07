@@ -327,7 +327,6 @@ void QUnit::GetProbs(real1* outputProbs)
 complex QUnit::GetAmplitude(bitCapInt perm)
 {
     ToPermBasisAll();
-    EndAllEmulation();
 
     complex result(ONE_R1, ZERO_R1);
 
@@ -4175,7 +4174,6 @@ bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1_f param1, real1_f param2,
 
 void QUnit::UpdateRunningNorm(real1_f norm_thresh)
 {
-    EndAllEmulation();
     ParallelUnitApply(
         [](QInterfacePtr unit, real1_f norm_thresh, real1_f unused2, int32_t unused3) {
             unit->UpdateRunningNorm(norm_thresh);
@@ -4186,7 +4184,6 @@ void QUnit::UpdateRunningNorm(real1_f norm_thresh)
 
 void QUnit::NormalizeState(real1_f nrm, real1_f norm_thresh)
 {
-    EndAllEmulation();
     ParallelUnitApply(
         [](QInterfacePtr unit, real1_f nrm, real1_f norm_thresh, int32_t unused) {
             unit->NormalizeState(nrm, norm_thresh);
