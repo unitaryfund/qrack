@@ -4289,6 +4289,7 @@ QInterfacePtr QUnit::Clone()
     // TODO: Copy buffers instead of flushing?
     for (bitLenInt i = 0; i < qubitCount; i++) {
         RevertBasis2Qb(i);
+        EndEmulation(i);
     }
 
     QUnitPtr copyPtr = std::make_shared<QUnit>(
@@ -4304,11 +4305,6 @@ QInterfacePtr QUnit::CloneBody(QUnitPtr copyPtr)
     std::vector<QInterfacePtr>::iterator origEngine;
     bitLenInt engineIndex;
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (!shards[i].unit) {
-            copyPtr->shards[i] = QEngineShard(shards[i]);
-            continue;
-        }
-
         if (find(shardEngines.begin(), shardEngines.end(), shards[i].unit) == shardEngines.end()) {
             shardEngines.push_back(shards[i].unit);
             dupeEngines.push_back(shards[i].unit->Clone());
