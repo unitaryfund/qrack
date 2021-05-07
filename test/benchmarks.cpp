@@ -179,33 +179,51 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         std::cout << (int)numBits << ", "; /* # of Qubits */
         std::cout << formatTime(avgt, logNormal) << ","; /* Average Time (ms) */
         std::cout << formatTime(stdet, logNormal) << ","; /* Sample Std. Deviation (ms) */
-        std::cout << formatTime(trialClocks[0], logNormal) << ","; /* Fastest (ms) */
-        if (benchmarkSamples % 4 == 0) {
+
+        // Fastest (ms)
+        std::cout << formatTime(trialClocks[0], logNormal) << ",";
+
+        // 1st Quartile (ms)
+        if (benchmarkSamples < 8) {
+            std::cout << formatTime(trialClocks[0], logNormal) << ",";
+        } else if (benchmarkSamples % 4 == 0) {
             std::cout << formatTime(
                              (trialClocks[benchmarkSamples / 4 - 1] + trialClocks[benchmarkSamples / 4]) / 2, logNormal)
-                      << ","; /* 1st Quartile (ms) */
+                      << ",";
         } else {
-            std::cout << formatTime(trialClocks[benchmarkSamples / 4 - 1] / 2, logNormal)
-                      << ","; /* 1st Quartile (ms) */
+            std::cout << formatTime(trialClocks[benchmarkSamples / 4 - 1] / 2, logNormal) << ",";
         }
-        if (benchmarkSamples % 2 == 0) {
+
+        // Median (ms) (2nd quartile)
+        if (benchmarkSamples < 4) {
+            std::cout << formatTime(trialClocks[benchmarkSamples / 2], logNormal) << ",";
+        } else if (benchmarkSamples % 2 == 0) {
             std::cout << formatTime(
                              (trialClocks[benchmarkSamples / 2 - 1] + trialClocks[benchmarkSamples / 2]) / 2, logNormal)
-                      << ","; /* Median (ms) */
+                      << ",";
         } else {
             std::cout << formatTime(trialClocks[benchmarkSamples / 2 - 1] / 2, logNormal) << ","; /* Median (ms) */
         }
-        if (benchmarkSamples % 4 == 0) {
+
+        // 3rd Quartile (ms)
+        if (benchmarkSamples < 8) {
+            std::cout << formatTime(trialClocks[(3 * benchmarkSamples) / 4], logNormal) << ",";
+        } else if (benchmarkSamples % 4 == 0) {
             std::cout << formatTime(
                              (trialClocks[(3 * benchmarkSamples) / 4 - 1] + trialClocks[(3 * benchmarkSamples) / 4]) /
                                  2,
                              logNormal)
-                      << ","; /* 3rd Quartile (ms) */
+                      << ",";
         } else {
-            std::cout << formatTime(trialClocks[(3 * benchmarkSamples) / 4 - 1] / 2, logNormal)
-                      << ","; /* 3rd Quartile (ms) */
+            std::cout << formatTime(trialClocks[(3 * benchmarkSamples) / 4 - 1] / 2, logNormal) << ",";
         }
-        std::cout << formatTime(trialClocks[benchmarkSamples - 1], logNormal) << std::endl; /* Slowest (ms) */
+
+        // Slowest (ms)
+        if (benchmarkSamples <= 1) {
+            std::cout << formatTime(trialClocks[0], logNormal) << std::endl;
+        } else {
+            std::cout << formatTime(trialClocks[benchmarkSamples - 1], logNormal) << std::endl;
+        }
     }
 
     delete[] trialClocks;
