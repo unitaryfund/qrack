@@ -219,8 +219,9 @@ void QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
 QInterfacePtr QUnitMulti::Clone()
 {
     // TODO: Copy buffers instead of flushing?
-    ToPermBasisAll();
-    EndAllEmulation();
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        RevertBasis2Qb(i);
+    }
 
     QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(
         qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
@@ -231,8 +232,6 @@ QInterfacePtr QUnitMulti::Clone()
 void QUnitMulti::GetQuantumState(complex* outputState)
 {
     ToPermBasisAll();
-    EndAllEmulation();
-
     OrderContiguous(EntangleAll());
     shards[0].unit->GetQuantumState(outputState);
 }
@@ -240,8 +239,6 @@ void QUnitMulti::GetQuantumState(complex* outputState)
 void QUnitMulti::GetProbs(real1* outputProbs)
 {
     ToPermBasisAll();
-    EndAllEmulation();
-
     OrderContiguous(EntangleAll());
     shards[0].unit->GetProbs(outputProbs);
 }

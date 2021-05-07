@@ -675,27 +675,6 @@ protected:
         EndEmulation(shard);
     }
 
-    void EndEmulation(bitLenInt start, bitLenInt length)
-    {
-        for (bitLenInt i = 0; i < length; i++) {
-            EndEmulation(start + i);
-        }
-    }
-
-    void EndEmulation(bitLenInt* bitIndices, bitLenInt length)
-    {
-        for (bitLenInt i = 0; i < length; i++) {
-            EndEmulation(bitIndices[i]);
-        }
-    }
-
-    void EndAllEmulation()
-    {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            EndEmulation(i);
-        }
-    }
-
     bitLenInt FindShardIndex(QEngineShardPtr shard)
     {
         shard->found = true;
