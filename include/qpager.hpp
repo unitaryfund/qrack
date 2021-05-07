@@ -141,7 +141,7 @@ public:
 
     virtual void LockEngine(QEnginePtr eng)
     {
-        CombineEngines();
+        qPages.resize(1);
         qPages[0] = eng;
     }
 
