@@ -334,8 +334,15 @@ complex QUnit::GetAmplitude(bitCapInt perm)
     std::map<QInterfacePtr, bitCapInt> perms;
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (perms.find(shards[i].unit) == perms.end()) {
-            perms[shards[i].unit] = 0U;
+        QEngineShard& shard = shards[i];
+
+        if (!shard.unit) {
+            result *= ((perm >> (bitCapIntOcl)i) & ONE_BCI) ? shard.amp1 : shard.amp0;
+            continue;
+        }
+
+        if (perms.find(shard.unit) == perms.end()) {
+            perms[shard.unit] = 0U;
         }
         if ((perm >> (bitCapIntOcl)i) & ONE_BCI) {
             perms[shards[i].unit] |= pow2(shards[i].mapped);
