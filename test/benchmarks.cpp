@@ -87,6 +87,13 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         mnQbts = 4;
     }
 
+    bitLenInt qbTryThreshold = -1;
+    if (getenv("QRACK_MAX_PAGING_QB")) {
+        qbTryThreshold = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    }
+
+    int sampleFailureCount;
+
     QInterfacePtr qftReg = NULL;
 
     for (numBits = mnQbts; numBits <= mxQbts; numBits++) {
@@ -107,6 +114,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 devList);
         }
         avgt = 0.0;
+        sampleFailureCount = 0;
 
         for (i = 0; i < benchmarkSamples; i++) {
             if (!qUniverse) {
@@ -136,7 +144,16 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             auto iterClock = std::chrono::high_resolution_clock::now();
 
             // Run loop body
-            fn(qftReg, numBits);
+            if (numBits > qbTryThreshold) {
+                try {
+                    fn(qftReg, numBits);
+                } catch (const std::invalid_argument& e) {
+                    std::cout << "Trial failed. Ex.:" << e.what() << std::endl;
+                    sampleFailureCount++;
+                }
+            } else {
+                fn(qftReg, numBits);
+            }
 
             if (!async_time) {
                 qftReg->Finish();
@@ -166,6 +183,13 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 }
             }
         }
+
+        if (sampleFailureCount >= benchmarkSamples) {
+            std::cout << "All samples at width failed. Terminating..." << std::endl;
+            delete[] trialClocks;
+            return;
+        }
+
         avgt /= benchmarkSamples;
 
         stdet = 0.0;

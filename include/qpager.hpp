@@ -43,6 +43,8 @@ protected:
     bitCapInt basePageCount;
     bitCapIntOcl basePageMaxQPower;
 
+    bitLenInt maxQubits;
+
     QEnginePtr MakeEngine(bitLenInt length, bitCapInt perm, int deviceId);
 
     virtual void SetQubitCount(bitLenInt qb)
