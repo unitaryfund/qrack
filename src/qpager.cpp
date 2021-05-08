@@ -105,9 +105,17 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
     SetQubitCount(qubitCount);
 
-    if (baseQubitsPerPage > (sizeof(bitCapIntOcl) * bitsInByte)) {
+    maxQubits = sizeof(bitCapIntOcl) * bitsInByte;
+    if (baseQubitsPerPage > maxQubits) {
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
+    }
+    if (getenv("QRACK_MAX_PAGING_QB")) {
+        maxQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    }
+    if (qubitCount > maxQubits) {
+        throw std::invalid_argument(
+            "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
     }
 
     initState &= maxQPower - ONE_BCI;
@@ -428,6 +436,11 @@ void QPager::CombineAndOpControlled(
 
 bitLenInt QPager::Compose(QPagerPtr toCopy)
 {
+    if ((qubitCount + toCopy->qubitCount) > maxQubits) {
+        throw std::invalid_argument(
+            "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
+    }
+
     bitLenInt qpp = qubitsPerPage();
     bitLenInt tcqpp = toCopy->qubitsPerPage();
 
@@ -466,6 +479,11 @@ bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
 {
     if (start == qubitCount) {
         return Compose(toCopy);
+    }
+
+    if ((qubitCount + toCopy->qubitCount) > maxQubits) {
+        throw std::invalid_argument(
+            "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
     }
 
     toCopy->CombineEngines();
@@ -887,7 +905,7 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     }
 
     if (nrmlzr <= ZERO_R1) {
-        throw "ERROR: Forced a measurement result with 0 probability";
+        throw std::invalid_argument("ERROR: Forced a measurement result with 0 probability");
     }
 
     if (doApply && (nrmlzr != ONE_BCI)) {
