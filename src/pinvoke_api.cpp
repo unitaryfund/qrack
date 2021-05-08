@@ -1001,6 +1001,12 @@ MICROSOFT_QUANTUM_DECL bool TrySeparateTol(
     return simulators[sid]->TrySeparate(qb, (bitLenInt)n, (real1_f)tol);
 }
 
+MICROSOFT_QUANTUM_DECL void SetReactiveSeparate(_In_ unsigned sid, _In_ bool irs)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    simulators[sid]->SetReactiveSeparate(irs);
+}
+
 #if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
 /**
  * (External API) Simulate a Hamiltonian
