@@ -122,6 +122,7 @@ MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ unsigned sid, _In_ unsigned qi1)
 MICROSOFT_QUANTUM_DECL bool TrySeparate2Qb(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2);
 MICROSOFT_QUANTUM_DECL bool TrySeparateTol(
     _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ double tol);
+MICROSOFT_QUANTUM_DECL void SetReactiveSeparate(_In_ unsigned sid, _In_ bool irs);
 
 #if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
 MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ unsigned sid, _In_ double t, _In_ unsigned n,
