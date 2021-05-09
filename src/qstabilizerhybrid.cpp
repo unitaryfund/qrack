@@ -672,6 +672,11 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
         return;
     }
 
+    if (stabilizer->IsSeparableZ(target)) {
+        // This gate has no effect.
+        return;
+    }
+
     SwitchToEngine();
     engine->ApplySinglePhase(topLeft, bottomRight, target);
 }
