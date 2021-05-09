@@ -434,6 +434,19 @@ public:
 
     virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
+    virtual void CY(bitLenInt control, bitLenInt target)
+    {
+        if (shards[control] || shards[target]) {
+            FlushBuffers();
+        }
+
+        if (stabilizer) {
+            stabilizer->CY(control, target);
+        } else {
+            engine->CY(control, target);
+        }
+    }
+
     virtual void CCY(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)

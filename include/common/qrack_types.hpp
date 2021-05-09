@@ -161,14 +161,12 @@ typedef std::shared_ptr<StateVectorSparse> StateVectorSparsePtr;
 class StateVector {
 protected:
     bitCapInt capacity;
-    bitCapInt capacityMask;
 
 public:
     bool isReadLocked;
 
     StateVector(bitCapInt cap)
         : capacity(cap)
-        , capacityMask(cap - ONE_BCI)
         , isReadLocked(true)
     {
     }
