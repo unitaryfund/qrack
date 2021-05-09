@@ -965,7 +965,6 @@ TEST_CASE("test_stabilizer_cc_gen1qb", "[supreme]")
 
     std::cout << "(random circuit depth: " << benchmarkDepth << ")";
 
-    const int DimCount1Qb = 4;
     const int DimCountMultiQb = 4;
 
     benchmarkLoop(
@@ -980,32 +979,35 @@ TEST_CASE("test_stabilizer_cc_gen1qb", "[supreme]")
             for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
-                    // Switch between Pauli X/Y/Z
-                    gateRand = DimCount1Qb * qReg->Rand();
-                    if (gateRand < ONE_R1) {
-                        qReg->H(i);
-                    } else if (gateRand < (2 * ONE_R1)) {
-                        gateRand = 2 * qReg->Rand();
-                        if (gateRand < ONE_R1) {
-                            qReg->S(i);
-                        } else {
-                            qReg->IS(i);
-                        }
-                    } else if (gateRand < (3 * ONE_R1)) {
-                        gateRand = 2 * qReg->Rand();
-                        if (gateRand < ONE_R1) {
-                            qReg->H(i);
-                            qReg->S(i);
-                        } else {
-                            qReg->IS(i);
-                            qReg->H(i);
-                        }
-                    }
-                    // else - identity
+                    // The point, for single bit gates, is to randomly ApplySinglePhase() on all three Pauli basis axes,
+                    // oriented from original computation basis.
 
-                    // After Pauli basis switch, apply an arbitrary root of Z.
+                    // Apply an arbitrary root of Z.
                     gateRand = 2 * PI_R1 * qReg->Rand();
                     qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+                    // Switch between Pauli X/Y/Z
+                    if (d & 1U) {
+                        qReg->IS(i);
+                        // After Pauli basis switch, apply an arbitrary root of Z.
+                        gateRand = 2 * PI_R1 * qReg->Rand();
+                        qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+
+                        qReg->H(i);
+                        // After Pauli basis switch, apply an arbitrary root of Z.
+                        gateRand = 2 * PI_R1 * qReg->Rand();
+                        qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+                    } else {
+                        qReg->H(i);
+                        // After Pauli basis switch, apply an arbitrary root of Z.
+                        gateRand = 2 * PI_R1 * qReg->Rand();
+                        qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+
+                        qReg->S(i);
+                        // After Pauli basis switch, apply an arbitrary root of Z.
+                        gateRand = 2 * PI_R1 * qReg->Rand();
+                        qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+                    }
+                    // else - identity
                 }
 
                 std::set<bitLenInt> unusedBits;
