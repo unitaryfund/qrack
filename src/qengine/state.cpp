@@ -827,8 +827,14 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         return;
     }
 
+    bitLenInt nLength = qubitCount - length;
+
     if (!stateVec) {
-        SetQubitCount(qubitCount - length);
+        if (nLength == 0) {
+            SetQubitCount(1);
+        } else {
+            SetQubitCount(nLength);
+        }
         if (destination) {
             destination->ZeroAmplitudes();
         }
@@ -839,8 +845,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         // Reinitialize stateVec RAM
         destination->SetPermutation(0);
     }
-
-    bitLenInt nLength = qubitCount - length;
 
     bitCapIntOcl partPower = pow2Ocl(length);
     bitCapIntOcl remainderPower = pow2Ocl(nLength);
@@ -994,12 +998,17 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
         return;
     }
 
+    bitLenInt nLength = qubitCount - length;
+
     if (!stateVec) {
-        SetQubitCount(qubitCount - length);
+        if (nLength == 0) {
+            SetQubitCount(1);
+        } else {
+            SetQubitCount(nLength);
+        }
         return;
     }
 
-    bitLenInt nLength = qubitCount - length;
     bitCapInt remainderPower = pow2(nLength);
     bitCapInt skipMask = pow2(start) - ONE_BCI;
     bitCapInt disposedRes = disposedPerm << (bitCapIntOcl)start;

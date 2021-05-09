@@ -93,9 +93,9 @@ public:
 
     virtual ~StateVectorArray() { Free(); }
 
-    complex read(const bitCapInt& i) { return amplitudes[(bitCapIntOcl)i]; };
+    complex read(const bitCapInt& i) { return amplitudes[(bitCapIntOcl)(i & capacityMask)]; };
 
-    void write(const bitCapInt& i, const complex& c) { amplitudes[(bitCapIntOcl)i] = c; };
+    void write(const bitCapInt& i, const complex& c) { amplitudes[(bitCapIntOcl)(i & capacityMask)] = c; };
 
     void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
     {
