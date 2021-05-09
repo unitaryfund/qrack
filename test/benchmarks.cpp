@@ -1007,7 +1007,6 @@ TEST_CASE("test_stabilizer_cc_gen1qb", "[supreme]")
                         gateRand = 2 * PI_R1 * qReg->Rand();
                         qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
                     }
-                    // else - identity
                 }
 
                 std::set<bitLenInt> unusedBits;
