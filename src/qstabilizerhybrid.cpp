@@ -559,6 +559,22 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
             return;
         }
 
+        if (IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
+            IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
+            IS_SAME(mtrx[1], complex(-ONE_R1, ONE_R1) / (real1)2.0f) &&
+            IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f)) {
+            ISqrtY(target);
+            return;
+        }
+
+        if (IS_SAME(mtrx[0], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
+            IS_SAME(mtrx[1], complex(-ONE_R1, -ONE_R1) / (real1)2.0f) &&
+            IS_SAME(mtrx[1], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
+            IS_SAME(mtrx[1], complex(ONE_R1, ONE_R1) / (real1)2.0f)) {
+            SqrtY(target);
+            return;
+        }
+
         if (!wasCached) {
             if (stabilizer->IsSeparableZ(target)) {
                 shardsEigen[target] = PauliZ;
