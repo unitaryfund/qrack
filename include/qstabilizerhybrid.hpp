@@ -339,11 +339,12 @@ public:
             engine->X(target);
         }
     }
-    
+
     virtual void SqrtX(bitLenInt target)
     {
         if (shards[target]) {
-            complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+            complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
+                complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -354,11 +355,12 @@ public:
             engine->SqrtX(target);
         }
     }
-    
+
     virtual void ISqrtX(bitLenInt target)
     {
         if (shards[target]) {
-            complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+            complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
+                complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
             ApplySingleBit(mtrx, target);
             return;
         }

@@ -194,14 +194,14 @@ public:
         Z(target);
         H(target);
     }
-    
+
     virtual void SqrtX(const bitLenInt& target)
     {
         H(target);
         S(target);
         H(target);
     }
-    
+
     virtual void ISqrtX(const bitLenInt& target)
     {
         H(target);
