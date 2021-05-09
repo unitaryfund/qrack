@@ -77,7 +77,6 @@ public:
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
         dispatchQueue.dump();
-        dispatchQueue.finish();
 #endif
     }
 
