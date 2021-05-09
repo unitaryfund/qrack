@@ -548,18 +548,14 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         if (IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
             IS_SAME(mtrx[1], complex(ONE_R1, ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
             IS_SAME(mtrx[1], mtrx[2])) {
-            H(target);
-            IS(target);
-            H(target);
+            ISqrtX(target);
             return;
         }
 
         if (IS_SAME(mtrx[0], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
             IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
             IS_SAME(mtrx[1], mtrx[2])) {
-            H(target);
-            S(target);
-            H(target);
+            SqrtX(target);
             return;
         }
 
