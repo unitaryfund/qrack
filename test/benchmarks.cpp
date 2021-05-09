@@ -691,7 +691,16 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                         // "Position" transforms:
                         gateRand = DimCount1Qb * qReg->Rand();
                         if (gateRand < ONE_R1) {
+                            // Axis gross gate:
                             qReg->X(i);
+                            // Axis fine correction:
+                            gateRand = 3 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->SqrtX(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                qReg->ISqrtX(i);
+                            }
+                            // else - no SqrtX correction
                         } else if (gateRand < (2 * ONE_R1)) {
                             qReg->Y(i);
                         } else if (gateRand < (3 * ONE_R1)) {
@@ -821,9 +830,27 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                         // "Position" transforms:
                         gateRand = DimCount1Qb * qReg->Rand();
                         if (gateRand < ONE_R1) {
+                            // Axis gross gate:
                             qReg->X(i);
+                            // Axis fine correction:
+                            gateRand = 3 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->SqrtX(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                qReg->ISqrtX(i);
+                            }
+                            // else - no SqrtX correction
                         } else if (gateRand < (2 * ONE_R1)) {
+                            // Axis gross gate:
                             qReg->Y(i);
+                            // Axis fine correction:
+                            gateRand = 3 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->SqrtY(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                qReg->ISqrtY(i);
+                            }
+                            // else - no SqrtX correction
                         } else if (gateRand < (3 * ONE_R1)) {
                             // Replace the body below with this for continuous Z axis root gates:
                             // gateRand = 2 * PI_R1 * qReg->Rand();

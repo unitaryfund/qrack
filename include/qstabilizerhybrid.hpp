@@ -340,6 +340,38 @@ public:
         }
     }
 
+    virtual void SqrtX(bitLenInt target)
+    {
+        if (shards[target]) {
+            complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
+                complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
+        if (stabilizer) {
+            stabilizer->SqrtX(target);
+        } else {
+            engine->SqrtX(target);
+        }
+    }
+
+    virtual void ISqrtX(bitLenInt target)
+    {
+        if (shards[target]) {
+            complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
+                complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
+        if (stabilizer) {
+            stabilizer->ISqrtX(target);
+        } else {
+            engine->ISqrtX(target);
+        }
+    }
+
     virtual void Y(bitLenInt target)
     {
         if (shards[target]) {
@@ -352,6 +384,38 @@ public:
             stabilizer->Y(target);
         } else {
             engine->Y(target);
+        }
+    }
+
+    virtual void SqrtY(bitLenInt target)
+    {
+        if (shards[target]) {
+            complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(-ONE_R1 / 2, -ONE_R1 / 2),
+                complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
+        if (stabilizer) {
+            stabilizer->SqrtY(target);
+        } else {
+            engine->SqrtY(target);
+        }
+    }
+
+    virtual void ISqrtY(bitLenInt target)
+    {
+        if (shards[target]) {
+            complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
+                complex(-ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
+        if (stabilizer) {
+            stabilizer->ISqrtY(target);
+        } else {
+            engine->ISqrtY(target);
         }
     }
 
