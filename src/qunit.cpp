@@ -1262,7 +1262,9 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
     if ((ONE_R1 / 2 - abs(prob - ONE_R1 / 2)) > FP_NORM_EPSILON) {
         unit->UpdateRunningNorm();
-        if (!doNormalize) {
+        if (unit->GetRunningNorm() <= amplitudeFloor) {
+            unit->SetPermutation(0);
+        } else if (!doNormalize) {
             unit->NormalizeState();
         }
     }
