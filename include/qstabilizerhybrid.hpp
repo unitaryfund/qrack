@@ -339,6 +339,36 @@ public:
             engine->X(target);
         }
     }
+    
+    virtual void SqrtX(bitLenInt target)
+    {
+        if (shards[target]) {
+            complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
+        if (stabilizer) {
+            stabilizer->SqrtX(target);
+        } else {
+            engine->SqrtX(target);
+        }
+    }
+    
+    virtual void ISqrtX(bitLenInt target)
+    {
+        if (shards[target]) {
+            complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
+        if (stabilizer) {
+            stabilizer->ISqrtX(target);
+        } else {
+            engine->ISqrtX(target);
+        }
+    }
 
     virtual void Y(bitLenInt target)
     {
