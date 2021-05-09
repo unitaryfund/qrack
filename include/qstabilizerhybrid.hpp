@@ -387,6 +387,38 @@ public:
         }
     }
 
+    virtual void SqrtY(bitLenInt target)
+    {
+        if (shards[target]) {
+            complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(-ONE_R1 / 2, -ONE_R1 / 2),
+                complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
+        if (stabilizer) {
+            stabilizer->SqrtY(target);
+        } else {
+            engine->SqrtY(target);
+        }
+    }
+
+    virtual void ISqrtY(bitLenInt target)
+    {
+        if (shards[target]) {
+            complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
+                complex(-ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
+        if (stabilizer) {
+            stabilizer->ISqrtY(target);
+        } else {
+            engine->ISqrtY(target);
+        }
+    }
+
     virtual void CZ(bitLenInt control, bitLenInt target)
     {
         if (shards[control] || shards[target]) {

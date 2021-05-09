@@ -841,7 +841,16 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                             }
                             // else - no SqrtX correction
                         } else if (gateRand < (2 * ONE_R1)) {
+                            // Axis gross gate:
                             qReg->Y(i);
+                            // Axis fine correction:
+                            gateRand = 3 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->SqrtY(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                qReg->ISqrtY(i);
+                            }
+                            // else - no SqrtX correction
                         } else if (gateRand < (3 * ONE_R1)) {
                             // Replace the body below with this for continuous Z axis root gates:
                             // gateRand = 2 * PI_R1 * qReg->Rand();

@@ -216,6 +216,24 @@ public:
         S(target);
     }
 
+    virtual void SqrtY(const bitLenInt& target)
+    {
+        IS(target);
+        H(target);
+        S(target);
+        H(target);
+        S(target);
+    }
+
+    virtual void ISqrtY(const bitLenInt& target)
+    {
+        IS(target);
+        H(target);
+        IS(target);
+        H(target);
+        S(target);
+    }
+
     virtual void CZ(const bitLenInt& control, const bitLenInt& target)
     {
         H(target);
