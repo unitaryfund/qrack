@@ -2266,10 +2266,25 @@ void QUnit::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
     }
 
     bitLenInt controls[2] = { control1, control2 };
-    bitLenInt controlLen = 2U;
 
-    CTRLED_PHASE_INVERT_WRAP(
-        CCY(CTRL_2_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS), Y(target), false, true, -I_CMPLX, I_CMPLX);
+    ApplyEitherControlled(
+        controls, 2, { target }, false,
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
+            if (shards[target].isPauliY) {
+                unit->ApplyControlledSingleInvert(
+                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, -ONE_CMPLX, -ONE_CMPLX);
+            } else if (shards[target].isPauliX) {
+                unit->ApplyControlledSingleInvert(
+                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, I_CMPLX, -I_CMPLX);
+            } else {
+                if (mappedControls.size() == 2) {
+                    unit->CCY(CTRL_2_ARGS);
+                } else {
+                    unit->CY(CTRL_1_ARGS);
+                }
+            }
+        },
+        [&]() { Y(target); }, false, true);
 }
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
