@@ -82,14 +82,9 @@ public:
 
     virtual void ZeroAmplitudes()
     {
-        if (!stateVec) {
-            runningNorm = ZERO_R1;
-            return;
-        }
-
         Dump();
-        runningNorm = ZERO_R1;
         FreeStateVec();
+        runningNorm = ZERO_R1;
     }
 
     virtual void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }

@@ -188,12 +188,6 @@ void ParallelFor::par_for_skip(
 void ParallelFor::par_for_mask(
     const bitCapInt begin, const bitCapInt end, const bitCapInt* maskArray, const bitLenInt maskLen, ParallelFunc fn)
 {
-    for (bitLenInt i = 1; i < maskLen; i++) {
-        if (maskArray[i] < maskArray[i - 1]) {
-            throw std::invalid_argument("Masks must be ordered by size");
-        }
-    }
-
     /* Pre-calculate the masks to simplify the increment function later. */
     bitCapInt** masks = new bitCapInt*[maskLen];
     for (bitLenInt i = 0; i < maskLen; i++) {
