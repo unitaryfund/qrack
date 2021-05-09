@@ -695,29 +695,30 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                         } else if (gateRand < (2 * ONE_R1)) {
                             qReg->Y(i);
                         } else if (gateRand < (3 * ONE_R1)) {
-
                             // Replace the body below with this for continuous Z axis root gates:
                             // gateRand = 2 * PI_R1 * qReg->Rand();
                             // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
 
+                            // Axis gross gate:
+                            qReg->Z(i);
+
+                            // Axis fine correction:
+
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
-                                qReg->Z(i);
+                                qReg->S(i);
                             } else if (gateRand < (2 * ONE_R1)) {
-                                gateRand = 2 * qReg->Rand();
-                                if (gateRand < ONE_R1) {
-                                    qReg->S(i);
-                                } else {
-                                    qReg->IS(i);
-                                }
-                            } else {
-                                gateRand = 2 * qReg->Rand();
-                                if (gateRand < ONE_R1) {
-                                    qReg->T(i);
-                                } else {
-                                    qReg->IT(i);
-                                }
+                                qReg->IS(i);
                             }
+                            // else - no S correction
+
+                            gateRand = 3 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->T(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                qReg->IT(i);
+                            }
+                            // else - no T correction
                         }
                         // else - identity
                     } else {
@@ -824,29 +825,30 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                         } else if (gateRand < (2 * ONE_R1)) {
                             qReg->Y(i);
                         } else if (gateRand < (3 * ONE_R1)) {
-
                             // Replace the body below with this for continuous Z axis root gates:
                             // gateRand = 2 * PI_R1 * qReg->Rand();
                             // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
 
+                            // Axis gross gate:
+                            qReg->Z(i);
+
+                            // Axis fine correction:
+
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
-                                qReg->Z(i);
+                                qReg->S(i);
                             } else if (gateRand < (2 * ONE_R1)) {
-                                gateRand = 2 * qReg->Rand();
-                                if (gateRand < ONE_R1) {
-                                    qReg->S(i);
-                                } else {
-                                    qReg->IS(i);
-                                }
-                            } else {
-                                gateRand = 2 * qReg->Rand();
-                                if (gateRand < ONE_R1) {
-                                    qReg->T(i);
-                                } else {
-                                    qReg->IT(i);
-                                }
+                                qReg->IS(i);
                             }
+                            // else - no S correction
+
+                            gateRand = 3 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->T(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                qReg->IT(i);
+                            }
+                            // else - no T correction
                         }
                         // else - identity
                     } else {
