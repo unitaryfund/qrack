@@ -957,7 +957,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
         false, false, testEngineType == QINTERFACE_QUNIT);
 }
 
-TEST_CASE("test_stabilizer_cc_gen1qb", "[supreme]")
+TEST_CASE("test_c_gen1qb", "[supreme]")
 {
     // Try with environment variable
     // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
@@ -972,7 +972,7 @@ TEST_CASE("test_stabilizer_cc_gen1qb", "[supreme]")
             int d;
             bitLenInt i;
             real1_f gateRand;
-            bitLenInt b1, b2, b3;
+            bitLenInt b1, b2;
 
             qReg->SetReactiveSeparate(true);
 
@@ -1022,67 +1022,36 @@ TEST_CASE("test_stabilizer_cc_gen1qb", "[supreme]")
 
                     // TODO: Target "anti-" variants for optimization
 
-                    if ((gateRand < ONE_R1) || !unusedBits.size()) {
+                    gateRand = DimCountMultiQb * qReg->Rand();
 
-                        gateRand = DimCountMultiQb * qReg->Rand();
-
-                        if (gateRand < ONE_R1) {
-                            gateRand = 4 * qReg->Rand();
-                            if (gateRand < (3 * ONE_R1)) {
-                                gateRand = 2 * qReg->Rand();
-                                if (gateRand < ONE_R1) {
-                                    qReg->CNOT(b1, b2);
-                                } else {
-                                    qReg->AntiCNOT(b1, b2);
-                                }
-                            } else {
-                                qReg->Swap(b1, b2);
-                            }
-                        } else if (gateRand < (2 * ONE_R1)) {
+                    if (gateRand < ONE_R1) {
+                        gateRand = 4 * qReg->Rand();
+                        if (gateRand < (3 * ONE_R1)) {
                             gateRand = 2 * qReg->Rand();
                             if (gateRand < ONE_R1) {
-                                qReg->CY(b1, b2);
+                                qReg->CNOT(b1, b2);
                             } else {
-                                qReg->AntiCY(b1, b2);
+                                qReg->AntiCNOT(b1, b2);
                             }
-                        } else if (gateRand < (3 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->CZ(b1, b2);
-                            } else {
-                                qReg->AntiCZ(b1, b2);
-                            }
+                        } else {
+                            qReg->Swap(b1, b2);
                         }
-                        // else - identity
-                    } else {
-                        b3 = pickRandomBit(qReg, &unusedBits);
-
-                        gateRand = DimCountMultiQb * qReg->Rand();
-
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        gateRand = 2 * qReg->Rand();
                         if (gateRand < ONE_R1) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->CCNOT(b1, b2, b3);
-                            } else {
-                                qReg->AntiCCNOT(b1, b2, b3);
-                            }
-                        } else if (gateRand < (2 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->CCY(b1, b2, b3);
-                            } else {
-                                qReg->AntiCCY(b1, b2, b3);
-                            }
-                        } else if (gateRand < (3 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->CCZ(b1, b2, b3);
-                            } else {
-                                qReg->AntiCCZ(b1, b2, b3);
-                            }
+                            qReg->CY(b1, b2);
+                        } else {
+                            qReg->AntiCY(b1, b2);
                         }
-                        // else - identity
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        gateRand = 2 * qReg->Rand();
+                        if (gateRand < ONE_R1) {
+                            qReg->CZ(b1, b2);
+                        } else {
+                            qReg->AntiCZ(b1, b2);
+                        }
                     }
+                    // else - identity
                 }
             }
 
