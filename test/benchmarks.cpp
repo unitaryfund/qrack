@@ -668,6 +668,10 @@ TEST_CASE("test_stabilizer", "[supreme]")
 
 TEST_CASE("test_stabilizer_t", "[supreme]")
 {
+    // Try with environment variable
+    // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
+    // for clamping of single bit states to Pauli basis axes.
+
     std::cout << "(random circuit depth: " << benchmarkDepth << ")";
 
     const int DimCount1Qb = 4;
@@ -684,113 +688,62 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
 
             for (d = 0; d < benchmarkDepth; d++) {
                 for (i = 0; i < n; i++) {
-                    gateRand = 2 * qReg->Rand();
-                    // "Phase" transforms vs. "position" transforms
+                    // "Phase" transforms:
+                    gateRand = DimCount1Qb * qReg->Rand();
                     if (gateRand < ONE_R1) {
-                        // "Position" transforms:
-                        gateRand = DimCount1Qb * qReg->Rand();
+                        qReg->H(i);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        gateRand = 2 * qReg->Rand();
                         if (gateRand < ONE_R1) {
-                            // Axis gross gate:
-                            qReg->X(i);
-
-                            // Axis fine correction:
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->SqrtX(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->ISqrtX(i);
-                            }
-                            // else - no SqrtX correction
-
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->H(i);
-                                qReg->IT(i);
-                                qReg->H(i);
-                            }
-                            // else - no X^(1/4) correction
-                        } else if (gateRand < (2 * ONE_R1)) {
-                            // Axis gross gate:
-                            qReg->Y(i);
-
-                            // Axis fine correction:
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->SqrtY(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->ISqrtY(i);
-                            }
-                            // else - no SqrtY correction
-
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->IS(i);
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                                qReg->S(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->IS(i);
-                                qReg->H(i);
-                                qReg->IT(i);
-                                qReg->H(i);
-                                qReg->S(i);
-                            }
-                            // else - no Y^(1/4) correction
-                        } else if (gateRand < (3 * ONE_R1)) {
-                            // Replace the body below with this for continuous Z axis root gates:
-                            // gateRand = 2 * PI_R1 * qReg->Rand();
-                            // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
-
-                            // Axis gross gate:
-                            qReg->Z(i);
-
-                            // Axis fine correction:
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->S(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->IS(i);
-                            }
-                            // else - no S correction
-
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->T(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->IT(i);
-                            }
-                            // else - no T correction
+                            qReg->S(i);
+                        } else {
+                            qReg->IS(i);
                         }
-                        // else - identity
-                    } else {
-                        // "Phase" transforms:
-                        gateRand = DimCount1Qb * qReg->Rand();
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        gateRand = 2 * qReg->Rand();
                         if (gateRand < ONE_R1) {
                             qReg->H(i);
-                        } else if (gateRand < (2 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->S(i);
-                            } else {
-                                qReg->IS(i);
-                            }
-                        } else if (gateRand < (3 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->H(i);
-                                qReg->S(i);
-                            } else {
-                                qReg->IS(i);
-                                qReg->H(i);
-                            }
+                            qReg->S(i);
+                        } else {
+                            qReg->IS(i);
+                            qReg->H(i);
                         }
-                        // else - identity
                     }
+                    // else - identity
+
+                    // "Position transforms:
+
+                    // Continuous Z root gates option:
+                    // gateRand = 2 * PI_R1 * qReg->Rand();
+                    // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+
+                    // Discrete Z root gates option:
+                    gateRand = 8 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        // Z^(1/4)
+                        qReg->T(i);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        // Z^(1/2)
+                        qReg->S(i);
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        // Z^(3/4)
+                        qReg->Z(i);
+                        qReg->IT(i);
+                    } else if (gateRand < (4 * ONE_R1)) {
+                        // Z
+                        qReg->Z(i);
+                    } else if (gateRand < (5 * ONE_R1)) {
+                        // Z^(-3/4)
+                        qReg->Z(i);
+                        qReg->T(i);
+                    } else if (gateRand < (6 * ONE_R1)) {
+                        // Z^(-1/2)
+                        qReg->IS(i);
+                    } else if (gateRand < (7 * ONE_R1)) {
+                        // Z^(-1/4)
+                        qReg->IT(i);
+                    }
+                    // else - identity
                 }
 
                 std::set<bitLenInt> unusedBits;
@@ -844,6 +797,10 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
 
 TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 {
+    // Try with environment variable
+    // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
+    // for clamping of single bit states to Pauli basis axes.
+
     std::cout << "(random circuit depth: " << benchmarkDepth << ")";
 
     const int DimCount1Qb = 4;
@@ -860,113 +817,62 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 
             for (d = 0; d < benchmarkDepth; d++) {
                 for (i = 0; i < n; i++) {
-                    gateRand = 2 * qReg->Rand();
-                    // "Phase" transforms vs. "position" transforms
+                    // "Phase" transforms:
+                    gateRand = DimCount1Qb * qReg->Rand();
                     if (gateRand < ONE_R1) {
-                        // "Position" transforms:
-                        gateRand = DimCount1Qb * qReg->Rand();
+                        qReg->H(i);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        gateRand = 2 * qReg->Rand();
                         if (gateRand < ONE_R1) {
-                            // Axis gross gate:
-                            qReg->X(i);
-
-                            // Axis fine correction:
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->SqrtX(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->ISqrtX(i);
-                            }
-                            // else - no SqrtX correction
-
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->H(i);
-                                qReg->IT(i);
-                                qReg->H(i);
-                            }
-                            // else - no X^(1/4) correction
-                        } else if (gateRand < (2 * ONE_R1)) {
-                            // Axis gross gate:
-                            qReg->Y(i);
-
-                            // Axis fine correction:
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->SqrtY(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->ISqrtY(i);
-                            }
-                            // else - no SqrtY correction
-
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->IS(i);
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                                qReg->S(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->IS(i);
-                                qReg->H(i);
-                                qReg->IT(i);
-                                qReg->H(i);
-                                qReg->S(i);
-                            }
-                            // else - no Y^(1/4) correction
-                        } else if (gateRand < (3 * ONE_R1)) {
-                            // Replace the body below with this for continuous Z axis root gates:
-                            // gateRand = 2 * PI_R1 * qReg->Rand();
-                            // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
-
-                            // Axis gross gate:
-                            qReg->Z(i);
-
-                            // Axis fine correction:
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->S(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->IS(i);
-                            }
-                            // else - no S correction
-
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->T(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->IT(i);
-                            }
-                            // else - no T correction
+                            qReg->S(i);
+                        } else {
+                            qReg->IS(i);
                         }
-                        // else - identity
-                    } else {
-                        // "Phase" transforms:
-                        gateRand = DimCount1Qb * qReg->Rand();
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        gateRand = 2 * qReg->Rand();
                         if (gateRand < ONE_R1) {
                             qReg->H(i);
-                        } else if (gateRand < (2 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->S(i);
-                            } else {
-                                qReg->IS(i);
-                            }
-                        } else if (gateRand < (3 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->H(i);
-                                qReg->S(i);
-                            } else {
-                                qReg->IS(i);
-                                qReg->H(i);
-                            }
+                            qReg->S(i);
+                        } else {
+                            qReg->IS(i);
+                            qReg->H(i);
                         }
-                        // else - identity
                     }
+                    // else - identity
+
+                    // "Position transforms:
+
+                    // Continuous Z root gates option:
+                    // gateRand = 2 * PI_R1 * qReg->Rand();
+                    // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+
+                    // Discrete Z root gates option:
+                    gateRand = 8 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        // Z^(1/4)
+                        qReg->T(i);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        // Z^(1/2)
+                        qReg->S(i);
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        // Z^(3/4)
+                        qReg->Z(i);
+                        qReg->IT(i);
+                    } else if (gateRand < (4 * ONE_R1)) {
+                        // Z
+                        qReg->Z(i);
+                    } else if (gateRand < (5 * ONE_R1)) {
+                        // Z^(-3/4)
+                        qReg->Z(i);
+                        qReg->T(i);
+                    } else if (gateRand < (6 * ONE_R1)) {
+                        // Z^(-1/2)
+                        qReg->IS(i);
+                    } else if (gateRand < (7 * ONE_R1)) {
+                        // Z^(-1/4)
+                        qReg->IT(i);
+                    }
+                    // else - identity
                 }
 
                 std::set<bitLenInt> unusedBits;
@@ -1043,109 +949,6 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                         }
                         // else - identity
                     }
-                }
-            }
-
-            qReg->MAll();
-        },
-        false, false, testEngineType == QINTERFACE_QUNIT);
-}
-
-TEST_CASE("test_c_gen1qb", "[supreme]")
-{
-    // Try with environment variable
-    // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
-    // for clamping of single bit states to Pauli basis axes.
-
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
-
-    const int DimCountMultiQb = 4;
-
-    benchmarkLoop(
-        [&](QInterfacePtr qReg, bitLenInt n) {
-            int d;
-            bitLenInt i;
-            real1_f gateRand;
-            bitLenInt b1, b2;
-
-            qReg->SetReactiveSeparate(true);
-
-            for (d = 0; d < benchmarkDepth; d++) {
-
-                for (i = 0; i < n; i++) {
-                    // The point, for single bit gates, is to randomly ApplySinglePhase() on all three Pauli basis axes,
-                    // oriented from original computation basis.
-
-                    // Apply an arbitrary root of Z.
-                    gateRand = 2 * PI_R1 * qReg->Rand();
-                    qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
-                    // Switch between Pauli X/Y/Z
-                    if (d & 1U) {
-                        qReg->IS(i);
-                        // After Pauli basis switch, apply an arbitrary root of Z.
-                        gateRand = 2 * PI_R1 * qReg->Rand();
-                        qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
-
-                        qReg->H(i);
-                        // After Pauli basis switch, apply an arbitrary root of Z.
-                        gateRand = 2 * PI_R1 * qReg->Rand();
-                        qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
-                    } else {
-                        qReg->H(i);
-                        // After Pauli basis switch, apply an arbitrary root of Z.
-                        gateRand = 2 * PI_R1 * qReg->Rand();
-                        qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
-
-                        qReg->S(i);
-                        // After Pauli basis switch, apply an arbitrary root of Z.
-                        gateRand = 2 * PI_R1 * qReg->Rand();
-                        qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
-                    }
-                }
-
-                std::set<bitLenInt> unusedBits;
-                for (i = 0; i < n; i++) {
-                    unusedBits.insert(unusedBits.end(), i);
-                }
-
-                while (unusedBits.size() > 1) {
-                    b1 = pickRandomBit(qReg, &unusedBits);
-                    b2 = pickRandomBit(qReg, &unusedBits);
-
-                    gateRand = 2 * qReg->Rand();
-
-                    // TODO: Target "anti-" variants for optimization
-
-                    gateRand = DimCountMultiQb * qReg->Rand();
-
-                    if (gateRand < ONE_R1) {
-                        gateRand = 4 * qReg->Rand();
-                        if (gateRand < (3 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->CNOT(b1, b2);
-                            } else {
-                                qReg->AntiCNOT(b1, b2);
-                            }
-                        } else {
-                            qReg->Swap(b1, b2);
-                        }
-                    } else if (gateRand < (2 * ONE_R1)) {
-                        gateRand = 2 * qReg->Rand();
-                        if (gateRand < ONE_R1) {
-                            qReg->CY(b1, b2);
-                        } else {
-                            qReg->AntiCY(b1, b2);
-                        }
-                    } else if (gateRand < (3 * ONE_R1)) {
-                        gateRand = 2 * qReg->Rand();
-                        if (gateRand < ONE_R1) {
-                            qReg->CZ(b1, b2);
-                        } else {
-                            qReg->AntiCZ(b1, b2);
-                        }
-                    }
-                    // else - identity
                 }
             }
 
