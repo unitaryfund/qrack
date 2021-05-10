@@ -713,7 +713,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                     // gateRand = 2 * PI_R1 * qReg->Rand();
                     // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
 
-                    gateRand = 7 * qReg->Rand();
+                    gateRand = 8 * qReg->Rand();
                     if (gateRand < ONE_R1) {
                         // Z^(1/4)
                         qReg->T(i);
@@ -734,10 +734,11 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                     } else if (gateRand < (6 * ONE_R1)) {
                         // Z^(-1/2)
                         qReg->IS(i);
-                    } else {
+                    } else if (gateRand < (7 * ONE_R1)) {
                         // Z^(-1/4)
                         qReg->IT(i);
                     }
+                    // else - identity
                 }
 
                 std::set<bitLenInt> unusedBits;
@@ -836,7 +837,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                     // gateRand = 2 * PI_R1 * qReg->Rand();
                     // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
 
-                    gateRand = 7 * qReg->Rand();
+                    gateRand = 8 * qReg->Rand();
                     if (gateRand < ONE_R1) {
                         // Z^(1/4)
                         qReg->T(i);
@@ -857,10 +858,11 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                     } else if (gateRand < (6 * ONE_R1)) {
                         // Z^(-1/2)
                         qReg->IS(i);
-                    } else {
+                    } else if (gateRand < (7 * ONE_R1)) {
                         // Z^(-1/4)
                         qReg->IT(i);
                     }
+                    // else - identity
                 }
 
                 std::set<bitLenInt> unusedBits;
