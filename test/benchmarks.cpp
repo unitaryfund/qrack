@@ -692,7 +692,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                         if (gateRand < ONE_R1) {
                             // Axis gross gate:
                             qReg->X(i);
-                            
+
                             // Axis fine correction:
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
@@ -701,10 +701,22 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                                 qReg->ISqrtX(i);
                             }
                             // else - no SqrtX correction
+
+                            gateRand = 3 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->H(i);
+                                qReg->T(i);
+                                qReg->H(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                qReg->H(i);
+                                qReg->IT(i);
+                                qReg->H(i);
+                            }
+                            // else - no X^(1/4) correction
                         } else if (gateRand < (2 * ONE_R1)) {
                             // Axis gross gate:
                             qReg->Y(i);
-                            
+
                             // Axis fine correction:
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
@@ -712,7 +724,23 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                             } else if (gateRand < (2 * ONE_R1)) {
                                 qReg->ISqrtY(i);
                             }
-                            // else - no SqrtX correction
+                            // else - no SqrtY correction
+
+                            gateRand = 3 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->IS(i);
+                                qReg->H(i);
+                                qReg->T(i);
+                                qReg->H(i);
+                                qReg->S(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                qReg->IS(i);
+                                qReg->H(i);
+                                qReg->IT(i);
+                                qReg->H(i);
+                                qReg->S(i);
+                            }
+                            // else - no Y^(1/4) correction
                         } else if (gateRand < (3 * ONE_R1)) {
                             // Replace the body below with this for continuous Z axis root gates:
                             // gateRand = 2 * PI_R1 * qReg->Rand();
@@ -722,7 +750,6 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                             qReg->Z(i);
 
                             // Axis fine correction:
-
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
                                 qReg->S(i);
@@ -841,7 +868,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                         if (gateRand < ONE_R1) {
                             // Axis gross gate:
                             qReg->X(i);
-                            
+
                             // Axis fine correction:
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
@@ -850,10 +877,22 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                                 qReg->ISqrtX(i);
                             }
                             // else - no SqrtX correction
+
+                            gateRand = 3 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->H(i);
+                                qReg->T(i);
+                                qReg->H(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                qReg->H(i);
+                                qReg->IT(i);
+                                qReg->H(i);
+                            }
+                            // else - no X^(1/4) correction
                         } else if (gateRand < (2 * ONE_R1)) {
                             // Axis gross gate:
                             qReg->Y(i);
-                            
+
                             // Axis fine correction:
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
@@ -861,7 +900,23 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                             } else if (gateRand < (2 * ONE_R1)) {
                                 qReg->ISqrtY(i);
                             }
-                            // else - no SqrtX correction
+                            // else - no SqrtY correction
+
+                            gateRand = 3 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->IS(i);
+                                qReg->H(i);
+                                qReg->T(i);
+                                qReg->H(i);
+                                qReg->S(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                qReg->IS(i);
+                                qReg->H(i);
+                                qReg->IT(i);
+                                qReg->H(i);
+                                qReg->S(i);
+                            }
+                            // else - no Y^(1/4) correction
                         } else if (gateRand < (3 * ONE_R1)) {
                             // Replace the body below with this for continuous Z axis root gates:
                             // gateRand = 2 * PI_R1 * qReg->Rand();
@@ -871,7 +926,6 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                             qReg->Z(i);
 
                             // Axis fine correction:
-
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
                                 qReg->S(i);
