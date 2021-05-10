@@ -724,7 +724,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                             } else if (gateRand < (2 * ONE_R1)) {
                                 qReg->ISqrtY(i);
                             }
-                            // else - no SqrtX correction
+                            // else - no SqrtY correction
 
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
@@ -750,7 +750,6 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                             qReg->Z(i);
 
                             // Axis fine correction:
-
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
                                 qReg->S(i);
@@ -901,7 +900,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                             } else if (gateRand < (2 * ONE_R1)) {
                                 qReg->ISqrtY(i);
                             }
-                            // else - no SqrtX correction
+                            // else - no SqrtY correction
 
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
@@ -927,7 +926,6 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                             qReg->Z(i);
 
                             // Axis fine correction:
-
                             gateRand = 3 * qReg->Rand();
                             if (gateRand < ONE_R1) {
                                 qReg->S(i);
