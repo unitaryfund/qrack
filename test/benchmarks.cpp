@@ -684,142 +684,59 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
 
             for (d = 0; d < benchmarkDepth; d++) {
                 for (i = 0; i < n; i++) {
-                    gateRand = 2 * qReg->Rand();
-                    // "Phase" transforms vs. "position" transforms
+                    // "Phase" transforms:
+                    gateRand = DimCount1Qb * qReg->Rand();
                     if (gateRand < ONE_R1) {
-                        // "Position" transforms:
-                        gateRand = DimCount1Qb * qReg->Rand();
+                        qReg->H(i);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        gateRand = 2 * qReg->Rand();
                         if (gateRand < ONE_R1) {
-                            gateRand = 7 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                // X^(1/4)
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                // X^(1/2)
-                                qReg->SqrtX(i);
-                            } else if (gateRand < (3 * ONE_R1)) {
-                                // X^(3/4)
-                                qReg->X(i);
-                                qReg->H(i);
-                                qReg->IT(i);
-                                qReg->H(i);
-                            } else if (gateRand < (4 * ONE_R1)) {
-                                // X
-                                qReg->X(i);
-                            } else if (gateRand < (5 * ONE_R1)) {
-                                // X^(-3/4)
-                                qReg->X(i);
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                            } else if (gateRand < (6 * ONE_R1)) {
-                                // X^(-1/2)
-                                qReg->ISqrtX(i);
-                            } else {
-                                // X^(-1/4)
-                                qReg->H(i);
-                                qReg->IT(i);
-                                qReg->H(i);
-                            }
-                        } else if (gateRand < (2 * ONE_R1)) {
-                            gateRand = 7 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                // Y^(1/4)
-                                qReg->IS(i);
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                                qReg->S(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                // Y^(1/2)
-                                qReg->SqrtY(i);
-                            } else if (gateRand < (3 * ONE_R1)) {
-                                // Y^(3/4)
-                                qReg->X(i);
-                                qReg->IS(i);
-                                qReg->H(i);
-                                qReg->IT(i);
-                                qReg->H(i);
-                                qReg->S(i);
-                            } else if (gateRand < (4 * ONE_R1)) {
-                                // Y
-                                qReg->Y(i);
-                            } else if (gateRand < (5 * ONE_R1)) {
-                                // Y^(-3/4)
-                                qReg->X(i);
-                                qReg->IS(i);
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                                qReg->S(i);
-                            } else if (gateRand < (6 * ONE_R1)) {
-                                // Y^(-1/2)
-                                qReg->ISqrtY(i);
-                            } else {
-                                // Y^(-1/4)
-                                qReg->IS(i);
-                                qReg->H(i);
-                                qReg->IT(i);
-                                qReg->H(i);
-                                qReg->S(i);
-                            }
-                        } else if (gateRand < (3 * ONE_R1)) {
-                            // Replace the body below with this for continuous Z axis root gates:
-                            // gateRand = 2 * PI_R1 * qReg->Rand();
-                            // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
-
-                            gateRand = 7 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                // Z^(1/4)
-                                qReg->T(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                // Z^(1/2)
-                                qReg->S(i);
-                            } else if (gateRand < (3 * ONE_R1)) {
-                                // Z^(3/4)
-                                qReg->Z(i);
-                                qReg->IT(i);
-                            } else if (gateRand < (4 * ONE_R1)) {
-                                // Z
-                                qReg->Z(i);
-                            } else if (gateRand < (5 * ONE_R1)) {
-                                // Z^(-3/4)
-                                qReg->Z(i);
-                                qReg->T(i);
-                            } else if (gateRand < (6 * ONE_R1)) {
-                                // Z^(-1/2)
-                                qReg->IS(i);
-                            } else {
-                                // Z^(-1/4)
-                                qReg->IT(i);
-                            }
+                            qReg->S(i);
+                        } else {
+                            qReg->IS(i);
                         }
-                        // else - identity
-                    } else {
-                        // "Phase" transforms:
-                        gateRand = DimCount1Qb * qReg->Rand();
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        gateRand = 2 * qReg->Rand();
                         if (gateRand < ONE_R1) {
                             qReg->H(i);
-                        } else if (gateRand < (2 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->S(i);
-                            } else {
-                                qReg->IS(i);
-                            }
-                        } else if (gateRand < (3 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->H(i);
-                                qReg->S(i);
-                            } else {
-                                qReg->IS(i);
-                                qReg->H(i);
-                            }
+                            qReg->S(i);
+                        } else {
+                            qReg->IS(i);
+                            qReg->H(i);
                         }
-                        // else - identity
+                    }
+                    // else - identity
+
+                    // "Position transforms:
+
+                    // Replace the body below with this for continuous Z axis root gates:
+                    // gateRand = 2 * PI_R1 * qReg->Rand();
+                    // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+
+                    gateRand = 7 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        // Z^(1/4)
+                        qReg->T(i);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        // Z^(1/2)
+                        qReg->S(i);
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        // Z^(3/4)
+                        qReg->Z(i);
+                        qReg->IT(i);
+                    } else if (gateRand < (4 * ONE_R1)) {
+                        // Z
+                        qReg->Z(i);
+                    } else if (gateRand < (5 * ONE_R1)) {
+                        // Z^(-3/4)
+                        qReg->Z(i);
+                        qReg->T(i);
+                    } else if (gateRand < (6 * ONE_R1)) {
+                        // Z^(-1/2)
+                        qReg->IS(i);
+                    } else {
+                        // Z^(-1/4)
+                        qReg->IT(i);
                     }
                 }
 
@@ -890,142 +807,59 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 
             for (d = 0; d < benchmarkDepth; d++) {
                 for (i = 0; i < n; i++) {
-                    gateRand = 2 * qReg->Rand();
-                    // "Phase" transforms vs. "position" transforms
+                    // "Phase" transforms:
+                    gateRand = DimCount1Qb * qReg->Rand();
                     if (gateRand < ONE_R1) {
-                        // "Position" transforms:
-                        gateRand = DimCount1Qb * qReg->Rand();
+                        qReg->H(i);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        gateRand = 2 * qReg->Rand();
                         if (gateRand < ONE_R1) {
-                            gateRand = 7 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                // X^(1/4)
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                // X^(1/2)
-                                qReg->SqrtX(i);
-                            } else if (gateRand < (3 * ONE_R1)) {
-                                // X^(3/4)
-                                qReg->X(i);
-                                qReg->H(i);
-                                qReg->IT(i);
-                                qReg->H(i);
-                            } else if (gateRand < (4 * ONE_R1)) {
-                                // X
-                                qReg->X(i);
-                            } else if (gateRand < (5 * ONE_R1)) {
-                                // X^(-3/4)
-                                qReg->X(i);
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                            } else if (gateRand < (6 * ONE_R1)) {
-                                // X^(-1/2)
-                                qReg->ISqrtX(i);
-                            } else {
-                                // X^(-1/4)
-                                qReg->H(i);
-                                qReg->IT(i);
-                                qReg->H(i);
-                            }
-                        } else if (gateRand < (2 * ONE_R1)) {
-                            gateRand = 7 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                // Y^(1/4)
-                                qReg->IS(i);
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                                qReg->S(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                // Y^(1/2)
-                                qReg->SqrtY(i);
-                            } else if (gateRand < (3 * ONE_R1)) {
-                                // Y^(3/4)
-                                qReg->X(i);
-                                qReg->IS(i);
-                                qReg->H(i);
-                                qReg->IT(i);
-                                qReg->H(i);
-                                qReg->S(i);
-                            } else if (gateRand < (4 * ONE_R1)) {
-                                // Y
-                                qReg->Y(i);
-                            } else if (gateRand < (5 * ONE_R1)) {
-                                // Y^(-3/4)
-                                qReg->X(i);
-                                qReg->IS(i);
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                                qReg->S(i);
-                            } else if (gateRand < (6 * ONE_R1)) {
-                                // Y^(-1/2)
-                                qReg->ISqrtY(i);
-                            } else {
-                                // Y^(-1/4)
-                                qReg->IS(i);
-                                qReg->H(i);
-                                qReg->IT(i);
-                                qReg->H(i);
-                                qReg->S(i);
-                            }
-                        } else if (gateRand < (3 * ONE_R1)) {
-                            // Replace the body below with this for continuous Z axis root gates:
-                            // gateRand = 2 * PI_R1 * qReg->Rand();
-                            // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
-
-                            gateRand = 7 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                // Z^(1/4)
-                                qReg->T(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                // Z^(1/2)
-                                qReg->S(i);
-                            } else if (gateRand < (3 * ONE_R1)) {
-                                // Z^(3/4)
-                                qReg->Z(i);
-                                qReg->IT(i);
-                            } else if (gateRand < (4 * ONE_R1)) {
-                                // Z
-                                qReg->Z(i);
-                            } else if (gateRand < (5 * ONE_R1)) {
-                                // Z^(-3/4)
-                                qReg->Z(i);
-                                qReg->T(i);
-                            } else if (gateRand < (6 * ONE_R1)) {
-                                // Z^(-1/2)
-                                qReg->IS(i);
-                            } else {
-                                // Z^(-1/4)
-                                qReg->IT(i);
-                            }
+                            qReg->S(i);
+                        } else {
+                            qReg->IS(i);
                         }
-                        // else - identity
-                    } else {
-                        // "Phase" transforms:
-                        gateRand = DimCount1Qb * qReg->Rand();
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        gateRand = 2 * qReg->Rand();
                         if (gateRand < ONE_R1) {
                             qReg->H(i);
-                        } else if (gateRand < (2 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->S(i);
-                            } else {
-                                qReg->IS(i);
-                            }
-                        } else if (gateRand < (3 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->H(i);
-                                qReg->S(i);
-                            } else {
-                                qReg->IS(i);
-                                qReg->H(i);
-                            }
+                            qReg->S(i);
+                        } else {
+                            qReg->IS(i);
+                            qReg->H(i);
                         }
-                        // else - identity
+                    }
+                    // else - identity
+
+                    // "Position transforms:
+
+                    // Replace the body below with this for continuous Z axis root gates:
+                    // gateRand = 2 * PI_R1 * qReg->Rand();
+                    // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+
+                    gateRand = 7 * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        // Z^(1/4)
+                        qReg->T(i);
+                    } else if (gateRand < (2 * ONE_R1)) {
+                        // Z^(1/2)
+                        qReg->S(i);
+                    } else if (gateRand < (3 * ONE_R1)) {
+                        // Z^(3/4)
+                        qReg->Z(i);
+                        qReg->IT(i);
+                    } else if (gateRand < (4 * ONE_R1)) {
+                        // Z
+                        qReg->Z(i);
+                    } else if (gateRand < (5 * ONE_R1)) {
+                        // Z^(-3/4)
+                        qReg->Z(i);
+                        qReg->T(i);
+                    } else if (gateRand < (6 * ONE_R1)) {
+                        // Z^(-1/2)
+                        qReg->IS(i);
+                    } else {
+                        // Z^(-1/4)
+                        qReg->IT(i);
                     }
                 }
 
