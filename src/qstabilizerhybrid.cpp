@@ -153,17 +153,13 @@ void QStabilizerHybrid::SwitchToEngine()
 
 void QStabilizerHybrid::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    if (shards[control1] || shards[control2] || shards[target]) {
-        FlushBuffers();
-    }
-
     if (stabilizer) {
         real1_f prob = Prob(control1);
         if (prob == ZERO_R1) {
             return;
         }
         if (prob == ONE_R1) {
-            stabilizer->CNOT(control2, target);
+            CNOT(control2, target);
             return;
         }
 
@@ -172,7 +168,7 @@ void QStabilizerHybrid::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt 
             return;
         }
         if (prob == ONE_R1) {
-            stabilizer->CNOT(control1, target);
+            CNOT(control1, target);
             return;
         }
 
@@ -184,10 +180,6 @@ void QStabilizerHybrid::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt 
 
 void QStabilizerHybrid::CH(bitLenInt control, bitLenInt target)
 {
-    if (shards[control] || shards[target]) {
-        FlushBuffers();
-    }
-
     if (stabilizer) {
         real1_f prob = Prob(control);
         if (prob == ZERO_R1) {
@@ -206,10 +198,6 @@ void QStabilizerHybrid::CH(bitLenInt control, bitLenInt target)
 
 void QStabilizerHybrid::CS(bitLenInt control, bitLenInt target)
 {
-    if (shards[control] || shards[target]) {
-        FlushBuffers();
-    }
-
     if (stabilizer) {
         real1_f prob = Prob(control);
         if (prob == ZERO_R1) {
@@ -228,10 +216,6 @@ void QStabilizerHybrid::CS(bitLenInt control, bitLenInt target)
 
 void QStabilizerHybrid::CIS(bitLenInt control, bitLenInt target)
 {
-    if (shards[control] || shards[target]) {
-        FlushBuffers();
-    }
-
     if (stabilizer) {
         real1_f prob = Prob(control);
         if (prob == ZERO_R1) {
@@ -250,17 +234,13 @@ void QStabilizerHybrid::CIS(bitLenInt control, bitLenInt target)
 
 void QStabilizerHybrid::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    if (shards[control1] || shards[control2] || shards[target]) {
-        FlushBuffers();
-    }
-
     if (stabilizer) {
         real1_f prob = Prob(control1);
         if (prob == ZERO_R1) {
             return;
         }
         if (prob == ONE_R1) {
-            stabilizer->CZ(control2, target);
+            CZ(control2, target);
             return;
         }
 
@@ -269,7 +249,7 @@ void QStabilizerHybrid::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt ta
             return;
         }
         if (prob == ONE_R1) {
-            stabilizer->CZ(control1, target);
+            CZ(control1, target);
             return;
         }
 
@@ -281,17 +261,13 @@ void QStabilizerHybrid::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt ta
 
 void QStabilizerHybrid::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    if (shards[control1] || shards[control2] || shards[target]) {
-        FlushBuffers();
-    }
-
     if (stabilizer) {
         real1_f prob = Prob(control1);
         if (prob == ZERO_R1) {
             return;
         }
         if (prob == ONE_R1) {
-            stabilizer->CY(control2, target);
+            CY(control2, target);
             return;
         }
 
@@ -300,7 +276,7 @@ void QStabilizerHybrid::CCY(bitLenInt control1, bitLenInt control2, bitLenInt ta
             return;
         }
         if (prob == ONE_R1) {
-            stabilizer->CY(control1, target);
+            CY(control1, target);
             return;
         }
 
