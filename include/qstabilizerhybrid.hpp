@@ -352,8 +352,9 @@ public:
     virtual void SqrtX(bitLenInt target)
     {
         if (shards[target]) {
-            complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
-                complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+            complex mtrx[4] = { complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+                complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)), complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)),
+                complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)) };
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -368,8 +369,9 @@ public:
     virtual void ISqrtX(bitLenInt target)
     {
         if (shards[target]) {
-            complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
-                complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+            complex mtrx[4] = { complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)),
+                complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)), complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+                complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)) };
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -399,8 +401,9 @@ public:
     virtual void SqrtY(bitLenInt target)
     {
         if (shards[target]) {
-            complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(-ONE_R1 / 2, -ONE_R1 / 2),
-                complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+            complex mtrx[4] = { complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+                complex((real1)(-ONE_R1 / 2), (real1)(-ONE_R1 / 2)), complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+                complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)) };
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -415,8 +418,9 @@ public:
     virtual void ISqrtY(bitLenInt target)
     {
         if (shards[target]) {
-            complex mtrx[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
-                complex(-ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+            complex mtrx[4] = { complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)),
+                complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)), complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+                complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)) };
             ApplySingleBit(mtrx, target);
             return;
         }
