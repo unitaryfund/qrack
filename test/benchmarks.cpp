@@ -715,7 +715,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
 
                     // Continuous Z root gates option:
                     // gateRand = 2 * PI_R1 * qReg->Rand();
-                    // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+                    // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                     // Discrete Z root gates option:
                     gateRand = 8 * qReg->Rand();
@@ -844,7 +844,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 
                     // Continuous Z root gates option:
                     // gateRand = 2 * PI_R1 * qReg->Rand();
-                    // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
+                    // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                     // Discrete Z root gates option:
                     gateRand = 8 * qReg->Rand();
