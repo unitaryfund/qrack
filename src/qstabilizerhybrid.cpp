@@ -519,28 +519,28 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 
         if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[3], complex(ZERO_R1, -SQRT1_2_R1))) {
             if (IS_SAME(mtrx[1], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[2], complex(ZERO_R1, SQRT1_2_R1))) {
-                H(target);
-                S(target);
+                stabilizer->H(target);
+                stabilizer->S(target);
                 return;
             }
 
             if (IS_SAME(mtrx[1], complex(ZERO_R1, SQRT1_2_R1)) && IS_SAME(mtrx[2], complex(SQRT1_2_R1, ZERO_R1))) {
-                S(target);
-                H(target);
+                stabilizer->S(target);
+                stabilizer->H(target);
                 return;
             }
         }
 
         if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[3], complex(ZERO_R1, SQRT1_2_R1))) {
             if (IS_SAME(mtrx[1], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[2], complex(ZERO_R1, -SQRT1_2_R1))) {
-                H(target);
-                IS(target);
+                stabilizer->H(target);
+                stabilizer->IS(target);
                 return;
             }
 
             if (IS_SAME(mtrx[1], complex(ZERO_R1, -SQRT1_2_R1)) && IS_SAME(mtrx[2], complex(SQRT1_2_R1, ZERO_R1))) {
-                IS(target);
-                H(target);
+                stabilizer->IS(target);
+                stabilizer->H(target);
                 return;
             }
         }
@@ -548,18 +548,14 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         if (IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
             IS_SAME(mtrx[1], complex(ONE_R1, ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
             IS_SAME(mtrx[1], mtrx[2])) {
-            H(target);
-            IS(target);
-            H(target);
+            stabilizer->ISqrtX(target);
             return;
         }
 
         if (IS_SAME(mtrx[0], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
             IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
             IS_SAME(mtrx[1], mtrx[2])) {
-            H(target);
-            S(target);
-            H(target);
+            stabilizer->SqrtX(target);
             return;
         }
 
@@ -567,11 +563,7 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
             IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
             IS_SAME(mtrx[2], complex(-ONE_R1, ONE_R1) / (real1)2.0f) &&
             IS_SAME(mtrx[3], complex(ONE_R1, -ONE_R1) / (real1)2.0f)) {
-            IS(target);
-            H(target);
-            IS(target);
-            H(target);
-            S(target);
+            stabilizer->ISqrtY(target);
             return;
         }
 
@@ -579,11 +571,7 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
             IS_SAME(mtrx[1], complex(-ONE_R1, -ONE_R1) / (real1)2.0f) &&
             IS_SAME(mtrx[2], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
             IS_SAME(mtrx[3], complex(ONE_R1, ONE_R1) / (real1)2.0f)) {
-            IS(target);
-            H(target);
-            S(target);
-            H(target);
-            S(target);
+            stabilizer->SqrtY(target);
             return;
         }
 
@@ -626,17 +614,17 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
             }
             if ((norm(nShard->gate[0]) < REAL1_EPSILON) && (norm(nShard->gate[3]) < REAL1_EPSILON)) {
                 if (shardsEigen[target] == PauliZ) {
-                    X(target);
+                    stabilizer->X(target);
                 } else if (shardsEigen[target] == PauliX) {
-                    H(target);
-                    X(target);
-                    H(target);
+                    stabilizer->H(target);
+                    stabilizer->X(target);
+                    stabilizer->H(target);
                 } else {
-                    IS(target);
-                    H(target);
-                    X(target);
-                    H(target);
-                    S(target);
+                    stabilizer->IS(target);
+                    stabilizer->H(target);
+                    stabilizer->X(target);
+                    stabilizer->H(target);
+                    stabilizer->S(target);
                 }
                 return;
             }
