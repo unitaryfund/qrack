@@ -690,81 +690,111 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                         // "Position" transforms:
                         gateRand = DimCount1Qb * qReg->Rand();
                         if (gateRand < ONE_R1) {
-                            // Axis gross gate:
-                            qReg->X(i);
-
-                            // Axis fine correction:
-                            gateRand = 3 * qReg->Rand();
+                            gateRand = 7 * qReg->Rand();
                             if (gateRand < ONE_R1) {
+                                // X^(1/4)
+                                qReg->H(i);
+                                qReg->T(i);
+                                qReg->H(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                // X^(1/2)
                                 qReg->SqrtX(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
+                            } else if (gateRand < (3 * ONE_R1)) {
+                                // X^(3/4)
+                                qReg->X(i);
+                                qReg->H(i);
+                                qReg->IT(i);
+                                qReg->H(i);
+                            } else if (gateRand < (4 * ONE_R1)) {
+                                // X
+                                qReg->X(i);
+                            } else if (gateRand < (5 * ONE_R1)) {
+                                // X^(-3/4)
+                                qReg->X(i);
+                                qReg->H(i);
+                                qReg->T(i);
+                                qReg->H(i);
+                            } else if (gateRand < (6 * ONE_R1)) {
+                                // X^(-1/2)
                                 qReg->ISqrtX(i);
-                            }
-                            // else - no SqrtX correction
-
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
+                            } else {
+                                // X^(-1/4)
                                 qReg->H(i);
                                 qReg->IT(i);
                                 qReg->H(i);
                             }
-                            // else - no X^(1/4) correction
                         } else if (gateRand < (2 * ONE_R1)) {
-                            // Axis gross gate:
-                            qReg->Y(i);
-
-                            // Axis fine correction:
-                            gateRand = 3 * qReg->Rand();
+                            gateRand = 7 * qReg->Rand();
                             if (gateRand < ONE_R1) {
-                                qReg->SqrtY(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->ISqrtY(i);
-                            }
-                            // else - no SqrtY correction
-
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
+                                // Y^(1/4)
                                 qReg->IS(i);
                                 qReg->H(i);
                                 qReg->T(i);
                                 qReg->H(i);
                                 qReg->S(i);
                             } else if (gateRand < (2 * ONE_R1)) {
+                                // Y^(1/2)
+                                qReg->SqrtY(i);
+                            } else if (gateRand < (3 * ONE_R1)) {
+                                // Y^(3/4)
+                                qReg->X(i);
+                                qReg->IS(i);
+                                qReg->H(i);
+                                qReg->IT(i);
+                                qReg->H(i);
+                                qReg->S(i);
+                            } else if (gateRand < (4 * ONE_R1)) {
+                                // Y
+                                qReg->Y(i);
+                            } else if (gateRand < (5 * ONE_R1)) {
+                                // Y^(-3/4)
+                                qReg->X(i);
+                                qReg->IS(i);
+                                qReg->H(i);
+                                qReg->T(i);
+                                qReg->H(i);
+                                qReg->S(i);
+                            } else if (gateRand < (6 * ONE_R1)) {
+                                // Y^(-1/2)
+                                qReg->ISqrtY(i);
+                            } else {
+                                // Y^(-1/4)
                                 qReg->IS(i);
                                 qReg->H(i);
                                 qReg->IT(i);
                                 qReg->H(i);
                                 qReg->S(i);
                             }
-                            // else - no Y^(1/4) correction
                         } else if (gateRand < (3 * ONE_R1)) {
                             // Replace the body below with this for continuous Z axis root gates:
                             // gateRand = 2 * PI_R1 * qReg->Rand();
                             // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
 
-                            // Axis gross gate:
-                            qReg->Z(i);
-
-                            // Axis fine correction:
-                            gateRand = 3 * qReg->Rand();
+                            gateRand = 7 * qReg->Rand();
                             if (gateRand < ONE_R1) {
-                                qReg->S(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->IS(i);
-                            }
-                            // else - no S correction
-
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
+                                // Z^(1/4)
                                 qReg->T(i);
                             } else if (gateRand < (2 * ONE_R1)) {
+                                // Z^(1/2)
+                                qReg->S(i);
+                            } else if (gateRand < (3 * ONE_R1)) {
+                                // Z^(3/4)
+                                qReg->Z(i);
+                                qReg->IT(i);
+                            } else if (gateRand < (4 * ONE_R1)) {
+                                // Z
+                                qReg->Z(i);
+                            } else if (gateRand < (5 * ONE_R1)) {
+                                // Z^(-3/4)
+                                qReg->Z(i);
+                                qReg->T(i);
+                            } else if (gateRand < (6 * ONE_R1)) {
+                                // Z^(-1/2)
+                                qReg->IS(i);
+                            } else {
+                                // Z^(-1/4)
                                 qReg->IT(i);
                             }
-                            // else - no T correction
                         }
                         // else - identity
                     } else {
@@ -866,81 +896,111 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                         // "Position" transforms:
                         gateRand = DimCount1Qb * qReg->Rand();
                         if (gateRand < ONE_R1) {
-                            // Axis gross gate:
-                            qReg->X(i);
-
-                            // Axis fine correction:
-                            gateRand = 3 * qReg->Rand();
+                            gateRand = 7 * qReg->Rand();
                             if (gateRand < ONE_R1) {
+                                // X^(1/4)
+                                qReg->H(i);
+                                qReg->T(i);
+                                qReg->H(i);
+                            } else if (gateRand < (2 * ONE_R1)) {
+                                // X^(1/2)
                                 qReg->SqrtX(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
+                            } else if (gateRand < (3 * ONE_R1)) {
+                                // X^(3/4)
+                                qReg->X(i);
+                                qReg->H(i);
+                                qReg->IT(i);
+                                qReg->H(i);
+                            } else if (gateRand < (4 * ONE_R1)) {
+                                // X
+                                qReg->X(i);
+                            } else if (gateRand < (5 * ONE_R1)) {
+                                // X^(-3/4)
+                                qReg->X(i);
+                                qReg->H(i);
+                                qReg->T(i);
+                                qReg->H(i);
+                            } else if (gateRand < (6 * ONE_R1)) {
+                                // X^(-1/2)
                                 qReg->ISqrtX(i);
-                            }
-                            // else - no SqrtX correction
-
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->H(i);
-                                qReg->T(i);
-                                qReg->H(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
+                            } else {
+                                // X^(-1/4)
                                 qReg->H(i);
                                 qReg->IT(i);
                                 qReg->H(i);
                             }
-                            // else - no X^(1/4) correction
                         } else if (gateRand < (2 * ONE_R1)) {
-                            // Axis gross gate:
-                            qReg->Y(i);
-
-                            // Axis fine correction:
-                            gateRand = 3 * qReg->Rand();
+                            gateRand = 7 * qReg->Rand();
                             if (gateRand < ONE_R1) {
-                                qReg->SqrtY(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->ISqrtY(i);
-                            }
-                            // else - no SqrtY correction
-
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
+                                // Y^(1/4)
                                 qReg->IS(i);
                                 qReg->H(i);
                                 qReg->T(i);
                                 qReg->H(i);
                                 qReg->S(i);
                             } else if (gateRand < (2 * ONE_R1)) {
+                                // Y^(1/2)
+                                qReg->SqrtY(i);
+                            } else if (gateRand < (3 * ONE_R1)) {
+                                // Y^(3/4)
+                                qReg->X(i);
+                                qReg->IS(i);
+                                qReg->H(i);
+                                qReg->IT(i);
+                                qReg->H(i);
+                                qReg->S(i);
+                            } else if (gateRand < (4 * ONE_R1)) {
+                                // Y
+                                qReg->Y(i);
+                            } else if (gateRand < (5 * ONE_R1)) {
+                                // Y^(-3/4)
+                                qReg->X(i);
+                                qReg->IS(i);
+                                qReg->H(i);
+                                qReg->T(i);
+                                qReg->H(i);
+                                qReg->S(i);
+                            } else if (gateRand < (6 * ONE_R1)) {
+                                // Y^(-1/2)
+                                qReg->ISqrtY(i);
+                            } else {
+                                // Y^(-1/4)
                                 qReg->IS(i);
                                 qReg->H(i);
                                 qReg->IT(i);
                                 qReg->H(i);
                                 qReg->S(i);
                             }
-                            // else - no Y^(1/4) correction
                         } else if (gateRand < (3 * ONE_R1)) {
                             // Replace the body below with this for continuous Z axis root gates:
                             // gateRand = 2 * PI_R1 * qReg->Rand();
                             // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
 
-                            // Axis gross gate:
-                            qReg->Z(i);
-
-                            // Axis fine correction:
-                            gateRand = 3 * qReg->Rand();
+                            gateRand = 7 * qReg->Rand();
                             if (gateRand < ONE_R1) {
-                                qReg->S(i);
-                            } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->IS(i);
-                            }
-                            // else - no S correction
-
-                            gateRand = 3 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
+                                // Z^(1/4)
                                 qReg->T(i);
                             } else if (gateRand < (2 * ONE_R1)) {
+                                // Z^(1/2)
+                                qReg->S(i);
+                            } else if (gateRand < (3 * ONE_R1)) {
+                                // Z^(3/4)
+                                qReg->Z(i);
+                                qReg->IT(i);
+                            } else if (gateRand < (4 * ONE_R1)) {
+                                // Z
+                                qReg->Z(i);
+                            } else if (gateRand < (5 * ONE_R1)) {
+                                // Z^(-3/4)
+                                qReg->Z(i);
+                                qReg->T(i);
+                            } else if (gateRand < (6 * ONE_R1)) {
+                                // Z^(-1/2)
+                                qReg->IS(i);
+                            } else {
+                                // Z^(-1/4)
                                 qReg->IT(i);
                             }
-                            // else - no T correction
                         }
                         // else - identity
                     } else {
