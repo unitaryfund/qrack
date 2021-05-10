@@ -713,10 +713,11 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
 
                     // "Position transforms:
 
-                    // Replace the body below with this for continuous Z axis root gates:
+                    // Continuous Z root gates option:
                     // gateRand = 2 * PI_R1 * qReg->Rand();
                     // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
 
+                    // Discrete Z root gates option:
                     gateRand = 8 * qReg->Rand();
                     if (gateRand < ONE_R1) {
                         // Z^(1/4)
@@ -841,10 +842,11 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 
                     // "Position transforms:
 
-                    // Replace the body below with this for continuous Z axis root gates:
+                    // Continuous Z root gates option:
                     // gateRand = 2 * PI_R1 * qReg->Rand();
                     // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, gateRand), i);
 
+                    // Discrete Z root gates option:
                     gateRand = 8 * qReg->Rand();
                     if (gateRand < ONE_R1) {
                         // Z^(1/4)
