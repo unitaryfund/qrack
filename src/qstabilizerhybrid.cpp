@@ -501,21 +501,21 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
+    if (!wasCached && IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
     }
-    if (IS_NORM_ZERO(mtrx[0]) && IS_NORM_ZERO(mtrx[3])) {
+    if (!wasCached && IS_NORM_ZERO(mtrx[0]) && IS_NORM_ZERO(mtrx[3])) {
         ApplySingleInvert(mtrx[1], mtrx[2], target);
-        return;
-    }
-    if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) &&
-        IS_SAME(mtrx[2], -mtrx[3])) {
-        H(target);
         return;
     }
 
     if (stabilizer) {
+        if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) &&
+            IS_SAME(mtrx[2], -mtrx[3])) {
+            stabilizer->H(target);
+            return;
+        }
 
         if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[3], complex(ZERO_R1, -SQRT1_2_R1))) {
             if (IS_SAME(mtrx[1], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[2], complex(ZERO_R1, SQRT1_2_R1))) {
@@ -677,8 +677,12 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
         return;
     }
 
-    SwitchToEngine();
-    engine->ApplySinglePhase(topLeft, bottomRight, target);
+    complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+    if (shards[target]) {
+        shards[target]->Compose(mtrx);
+    } else {
+        shards[target] = std::make_shared<QStabilizerShard>(mtrx);
+    }
 }
 
 void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
@@ -719,8 +723,12 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
         return;
     }
 
-    SwitchToEngine();
-    engine->ApplySingleInvert(topRight, bottomLeft, target);
+    complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+    if (shards[target]) {
+        shards[target]->Compose(mtrx);
+    } else {
+        shards[target] = std::make_shared<QStabilizerShard>(mtrx);
+    }
 }
 
 void QStabilizerHybrid::ApplyControlledSingleBit(
