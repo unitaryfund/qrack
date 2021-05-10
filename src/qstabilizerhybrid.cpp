@@ -677,8 +677,12 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
         return;
     }
 
-    SwitchToEngine();
-    engine->ApplySinglePhase(topLeft, bottomRight, target);
+    complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+    if (!shards[target]) {
+        shards[target] = std::make_shared<QStabilizerShard>(mtrx);
+    } else {
+        shards[target]->Compose(mtrx);
+    }
 }
 
 void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
@@ -719,8 +723,12 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
         return;
     }
 
-    SwitchToEngine();
-    engine->ApplySingleInvert(topRight, bottomLeft, target);
+    complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+    if (!shards[target]) {
+        shards[target] = std::make_shared<QStabilizerShard>(mtrx);
+    } else {
+        shards[target]->Compose(mtrx);
+    }
 }
 
 void QStabilizerHybrid::ApplyControlledSingleBit(
