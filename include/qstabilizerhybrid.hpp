@@ -946,7 +946,7 @@ public:
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
         bool isCachedInvert = false;
-        if (stabilizer && shards[qubitIndex] && shardsEigenZ[qubitIndex]) {
+        if (stabilizer && shards[qubitIndex]) {
             if (shards[qubitIndex]->IsInvert()) {
                 isCachedInvert = true;
             } else if (!shards[qubitIndex]->IsPhase()) {
