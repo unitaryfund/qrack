@@ -185,12 +185,13 @@ public:
         }
 
         for (i = 0; i < qubitCount; i++) {
-            QStabilizerShardPtr shard = shards[i];
-            if (shard) {
+            if (shards[i]) {
                 shards[i] = NULL;
-                ApplySingleBit(shard->gate, i);
+                ApplySingleBit(shards[i]->gate, i);
             }
         }
+
+        std::fill(shardsEigenZ.begin(), shardsEigenZ.end(), false);
     }
 
     virtual void DumpBuffers()
@@ -945,7 +946,7 @@ public:
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
         bool isCachedInvert = false;
-        if (stabilizer && shards[qubitIndex]) {
+        if (stabilizer && shards[qubitIndex] && shardsEigenZ[qubitIndex]) {
             if (shards[qubitIndex]->IsInvert()) {
                 isCachedInvert = true;
             } else if (!shards[qubitIndex]->IsPhase()) {
