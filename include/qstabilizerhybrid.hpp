@@ -185,9 +185,10 @@ public:
         }
 
         for (i = 0; i < qubitCount; i++) {
-            if (shards[i]) {
+            QStabilizerShardPtr shard = shards[i];
+            if (shard) {
                 shards[i] = NULL;
-                ApplySingleBit(shards[i]->gate, i);
+                ApplySingleBit(shard->gate, i);
             }
         }
 
@@ -732,7 +733,7 @@ public:
             if (!shardsEigenZ[qubit]) {
                 FlushBuffers();
             } else if (shard->IsInvert()) {
-                X(qubit);
+                stabilizer->X(qubit);
                 shards[qubit] = NULL;
             } else if (shard->IsPhase()) {
                 shards[qubit] = NULL;
@@ -741,18 +742,16 @@ public:
             }
         }
 
+        // This check will first try to coax into decomposable form:
+        if (stabilizer && !stabilizer->CanDecomposeDispose(qubit, 1)) {
+            SwitchToEngine();
+        }
+
         if (engine) {
             return engine->ForceM(qubit, result, doForce, doApply);
         }
 
-        bool toRet = stabilizer->M(qubit, result, doForce, doApply);
-
-        // This check will first try to coax into decomposable form:
-        if (!stabilizer->CanDecomposeDispose(qubit, 1)) {
-            SwitchToEngine();
-        }
-
-        return toRet;
+        return stabilizer->M(qubit, result, doForce, doApply);
     }
 
     virtual bitCapInt MAll();

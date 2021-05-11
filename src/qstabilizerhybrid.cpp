@@ -571,11 +571,12 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 
 void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
-    if (shards[target]) {
+    QStabilizerShardPtr shard = shards[target];
+    if (shard) {
         complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-        shards[target]->Compose(mtrx);
+        shard->Compose(mtrx);
         shards[target] = NULL;
-        ApplySingleBit(shards[target]->gate, target);
+        ApplySingleBit(shard->gate, target);
         return;
     }
 
@@ -620,11 +621,12 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
 
 void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
 {
-    if (shards[target]) {
+    QStabilizerShardPtr shard = shards[target];
+    if (shard) {
         complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-        shards[target]->Compose(mtrx);
+        shard->Compose(mtrx);
         shards[target] = NULL;
-        ApplySingleBit(shards[target]->gate, target);
+        ApplySingleBit(shard->gate, target);
         return;
     }
 
