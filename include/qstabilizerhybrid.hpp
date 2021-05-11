@@ -729,7 +729,9 @@ public:
     {
         QStabilizerShardPtr shard = shards[qubit];
         if (stabilizer && shard) {
-            if (shard->IsInvert()) {
+            if (!shardsEigenZ[qubit]) {
+                FlushBuffers();
+            } else if (shard->IsInvert()) {
                 X(qubit);
                 shards[qubit] = NULL;
             } else if (shard->IsPhase()) {
@@ -739,16 +741,18 @@ public:
             }
         }
 
-        // TODO: QStabilizer appears not to be decomposable after measurement and in many cases where a bit is in an
-        // eigenstate.
-        if (stabilizer &&
-            (stabilizer->IsSeparableZ(qubit) ||
-                ((engineType == QINTERFACE_QUNIT) || (engineType == QINTERFACE_QUNIT_MULTI)))) {
-            return stabilizer->M(qubit, result, doForce, doApply);
+        if (engine) {
+            return engine->ForceM(qubit, result, doForce, doApply);
         }
 
-        SwitchToEngine();
-        return engine->ForceM(qubit, result, doForce, doApply);
+        bool toRet = stabilizer->M(qubit, result, doForce, doApply);
+
+        // This check will first try to coax into decomposable form:
+        if (!stabilizer->CanDecomposeDispose(qubit, 1)) {
+            SwitchToEngine();
+        }
+
+        return toRet;
     }
 
     virtual bitCapInt MAll();
