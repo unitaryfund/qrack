@@ -62,7 +62,7 @@ protected:
     QInterfacePtr engine;
     QStabilizerPtr stabilizer;
     std::vector<QStabilizerShardPtr> shards;
-    std::vector<Pauli> shardsEigen;
+    std::vector<bool> shardsEigenZ;
     int devID;
     complex phaseFactor;
     bool doNormalize;
@@ -183,6 +183,8 @@ public:
         if (stabilizer) {
             return;
         }
+
+        std::fill(shardsEigenZ.begin(), shardsEigenZ.end(), false);
 
         for (i = 0; i < qubitCount; i++) {
             QStabilizerShardPtr shard = shards[i];
@@ -539,7 +541,7 @@ public:
         }
 
         shards.insert(shards.end(), toCopy->shards.begin(), toCopy->shards.end());
-        shardsEigen.insert(shardsEigen.end(), toCopy->shardsEigen.begin(), toCopy->shardsEigen.end());
+        shardsEigenZ.insert(shardsEigenZ.end(), toCopy->shardsEigenZ.begin(), toCopy->shardsEigenZ.end());
 
         SetQubitCount(qubitCount + toCopy->qubitCount);
 
@@ -564,7 +566,7 @@ public:
         }
 
         shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
-        shardsEigen.insert(shardsEigen.begin() + start, toCopy->shardsEigen.begin(), toCopy->shardsEigen.end());
+        shardsEigenZ.insert(shardsEigenZ.begin() + start, toCopy->shardsEigenZ.begin(), toCopy->shardsEigenZ.end());
 
         SetQubitCount(qubitCount + toCopy->qubitCount);
 
@@ -728,8 +730,10 @@ public:
     {
         QStabilizerShardPtr shard = shards[qubit];
         if (stabilizer && shard) {
-            if (shard->IsInvert()) {
-                X(qubit);
+            if (!shardsEigenZ[qubit]) {
+                FlushBuffers();
+            } else if (shard->IsInvert()) {
+                stabilizer->X(qubit);
                 shards[qubit] = NULL;
             } else if (shard->IsPhase()) {
                 shards[qubit] = NULL;
@@ -738,16 +742,16 @@ public:
             }
         }
 
-        // TODO: QStabilizer appears not to be decomposable after measurement and in many cases where a bit is in an
-        // eigenstate.
-        if (stabilizer &&
-            (stabilizer->IsSeparableZ(qubit) ||
-                ((engineType == QINTERFACE_QUNIT) || (engineType == QINTERFACE_QUNIT_MULTI)))) {
-            return stabilizer->M(qubit, result, doForce, doApply);
+        // This check will first try to coax into decomposable form:
+        if (stabilizer && !stabilizer->CanDecomposeDispose(qubit, 1)) {
+            SwitchToEngine();
         }
 
-        SwitchToEngine();
-        return engine->ForceM(qubit, result, doForce, doApply);
+        if (engine) {
+            return engine->ForceM(qubit, result, doForce, doApply);
+        }
+
+        return stabilizer->M(qubit, result, doForce, doApply);
     }
 
     virtual bitCapInt MAll();

@@ -13,7 +13,7 @@
 #include "qfactory.hpp"
 #include "qstabilizerhybrid.hpp"
 
-#define IS_NORM_ZERO(c) (norm(c) <= amplitudeFloor)
+#define IS_NORM_0(c) (norm(c) <= amplitudeFloor)
 
 namespace Qrack {
 
@@ -26,7 +26,7 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
     , subEngineType(subEng)
     , engine(NULL)
     , shards(qubitCount)
-    , shardsEigen(qubitCount)
+    , shardsEigenZ(qubitCount)
     , devID(deviceId)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
@@ -94,7 +94,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
             if (shards[i]) {
                 c->shards[i] = std::make_shared<QStabilizerShard>(shards[i]->gate);
             }
-            c->shardsEigen[i] = shardsEigen[i];
+            c->shardsEigenZ[i] = shardsEigenZ[i];
         }
     } else {
         complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
@@ -297,7 +297,7 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
         engine = NULL;
 
         dest->shards = shards;
-        dest->shardsEigen = shardsEigen;
+        dest->shardsEigenZ = shardsEigenZ;
         DumpBuffers();
 
         SetQubitCount(1);
@@ -320,8 +320,8 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     stabilizer->Decompose(start, dest->stabilizer);
     std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     shards.erase(shards.begin() + start, shards.begin() + start + length);
-    std::copy(shardsEigen.begin() + start, shardsEigen.begin() + start + length, dest->shardsEigen.begin());
-    shardsEigen.erase(shardsEigen.begin() + start, shardsEigen.begin() + start + length);
+    std::copy(shardsEigenZ.begin() + start, shardsEigenZ.begin() + start + length, dest->shardsEigenZ.begin());
+    shardsEigenZ.erase(shardsEigenZ.begin() + start, shardsEigenZ.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -345,7 +345,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
     }
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
-    shardsEigen.erase(shardsEigen.begin() + start, shardsEigen.begin() + start + length);
+    shardsEigenZ.erase(shardsEigenZ.begin() + start, shardsEigenZ.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -369,7 +369,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
     }
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
-    shardsEigen.erase(shardsEigen.begin() + start, shardsEigen.begin() + start + length);
+    shardsEigenZ.erase(shardsEigenZ.begin() + start, shardsEigenZ.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -473,145 +473,126 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         wasCached = false;
     }
 
-    if (IsIdentity(mtrx, true)) {
+    if (IsIdentity(mtrx, false)) {
         return;
     }
 
-    if (!wasCached && IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
+    if (!wasCached && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
     }
-    if (!wasCached && IS_NORM_ZERO(mtrx[0]) && IS_NORM_ZERO(mtrx[3])) {
+    if (!wasCached && IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
 
-    if (stabilizer) {
-        if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) &&
-            IS_SAME(mtrx[2], -mtrx[3])) {
-            stabilizer->H(target);
-            return;
-        }
-
-        if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[3], complex(ZERO_R1, -SQRT1_2_R1))) {
-            if (IS_SAME(mtrx[1], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[2], complex(ZERO_R1, SQRT1_2_R1))) {
-                stabilizer->H(target);
-                stabilizer->S(target);
-                return;
-            }
-
-            if (IS_SAME(mtrx[1], complex(ZERO_R1, SQRT1_2_R1)) && IS_SAME(mtrx[2], complex(SQRT1_2_R1, ZERO_R1))) {
-                stabilizer->S(target);
-                stabilizer->H(target);
-                return;
-            }
-        }
-
-        if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[3], complex(ZERO_R1, SQRT1_2_R1))) {
-            if (IS_SAME(mtrx[1], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[2], complex(ZERO_R1, -SQRT1_2_R1))) {
-                stabilizer->H(target);
-                stabilizer->IS(target);
-                return;
-            }
-
-            if (IS_SAME(mtrx[1], complex(ZERO_R1, -SQRT1_2_R1)) && IS_SAME(mtrx[2], complex(SQRT1_2_R1, ZERO_R1))) {
-                stabilizer->IS(target);
-                stabilizer->H(target);
-                return;
-            }
-        }
-
-        if (IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
-            IS_SAME(mtrx[1], complex(ONE_R1, ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
-            IS_SAME(mtrx[1], mtrx[2])) {
-            stabilizer->ISqrtX(target);
-            return;
-        }
-
-        if (IS_SAME(mtrx[0], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
-            IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
-            IS_SAME(mtrx[1], mtrx[2])) {
-            stabilizer->SqrtX(target);
-            return;
-        }
-
-        if (IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
-            IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
-            IS_SAME(mtrx[2], complex(-ONE_R1, ONE_R1) / (real1)2.0f) &&
-            IS_SAME(mtrx[3], complex(ONE_R1, -ONE_R1) / (real1)2.0f)) {
-            stabilizer->ISqrtY(target);
-            return;
-        }
-
-        if (IS_SAME(mtrx[0], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
-            IS_SAME(mtrx[1], complex(-ONE_R1, -ONE_R1) / (real1)2.0f) &&
-            IS_SAME(mtrx[2], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
-            IS_SAME(mtrx[3], complex(ONE_R1, ONE_R1) / (real1)2.0f)) {
-            stabilizer->SqrtY(target);
-            return;
-        }
-
-        if (!wasCached) {
-            if (stabilizer->IsSeparableZ(target)) {
-                shardsEigen[target] = PauliZ;
-            } else if (stabilizer->IsSeparableX(target)) {
-                shardsEigen[target] = PauliX;
-            } else if (stabilizer->IsSeparableY(target)) {
-                shardsEigen[target] = PauliY;
-            } else {
-                shardsEigen[target] = PauliI;
-            }
-        }
-
-        QStabilizerShardPtr shard = std::make_shared<QStabilizerShard>(mtrx);
-        if (shardsEigen[target]) {
-            QStabilizerShardPtr nShard;
-            // If in PauliX or PauliY basis, compose gate with conversion from/to PauliZ basis.
-            if (shardsEigen[target] == PauliX) {
-                complex nMtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-                    complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
-                nShard = std::make_shared<QStabilizerShard>(nMtrx);
-                nShard->Compose(shard->gate);
-                nShard->Compose(nMtrx);
-            } else if (shardsEigen[target] == PauliY) {
-                complex nMtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1),
-                    complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1) };
-                complex aMtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-                    complex(ZERO_R1, SQRT1_2_R1), complex(ZERO_R1, -SQRT1_2_R1) };
-                nShard = std::make_shared<QStabilizerShard>(nMtrx);
-                nShard->Compose(shard->gate);
-                nShard->Compose(aMtrx);
-            } else {
-                nShard = std::make_shared<QStabilizerShard>(shard->gate);
-            }
-
-            if ((norm(nShard->gate[1]) < REAL1_EPSILON) && (norm(nShard->gate[2]) < REAL1_EPSILON)) {
-                return;
-            }
-            if ((norm(nShard->gate[0]) < REAL1_EPSILON) && (norm(nShard->gate[3]) < REAL1_EPSILON)) {
-                if (shardsEigen[target] == PauliZ) {
-                    stabilizer->X(target);
-                } else if (shardsEigen[target] == PauliX) {
-                    stabilizer->H(target);
-                    stabilizer->X(target);
-                    stabilizer->H(target);
-                } else {
-                    stabilizer->IS(target);
-                    stabilizer->H(target);
-                    stabilizer->X(target);
-                    stabilizer->H(target);
-                    stabilizer->S(target);
-                }
-                return;
-            }
-        }
-
-        shards[target] = shard;
+    if (engine) {
+        engine->ApplySingleBit(mtrx, target);
         return;
     }
 
-    SwitchToEngine();
-    engine->ApplySingleBit(mtrx, target);
+    if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) &&
+        IS_SAME(mtrx[2], -mtrx[3])) {
+        stabilizer->H(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[3], complex(ZERO_R1, -SQRT1_2_R1))) {
+        if (IS_SAME(mtrx[1], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[2], complex(ZERO_R1, SQRT1_2_R1))) {
+            stabilizer->H(target);
+            stabilizer->S(target);
+            return;
+        }
+
+        if (IS_SAME(mtrx[1], complex(ZERO_R1, SQRT1_2_R1)) && IS_SAME(mtrx[2], complex(SQRT1_2_R1, ZERO_R1))) {
+            stabilizer->S(target);
+            stabilizer->H(target);
+            return;
+        }
+    }
+
+    if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[3], complex(ZERO_R1, SQRT1_2_R1))) {
+        if (IS_SAME(mtrx[1], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[2], complex(ZERO_R1, -SQRT1_2_R1))) {
+            stabilizer->H(target);
+            stabilizer->IS(target);
+            return;
+        }
+
+        if (IS_SAME(mtrx[1], complex(ZERO_R1, -SQRT1_2_R1)) && IS_SAME(mtrx[2], complex(SQRT1_2_R1, ZERO_R1))) {
+            stabilizer->IS(target);
+            stabilizer->H(target);
+            return;
+        }
+    }
+
+    if (IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
+        IS_SAME(mtrx[1], complex(ONE_R1, ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
+        IS_SAME(mtrx[1], mtrx[2])) {
+        stabilizer->ISqrtX(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
+        IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
+        IS_SAME(mtrx[1], mtrx[2])) {
+        stabilizer->SqrtX(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
+        IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
+        IS_SAME(mtrx[2], complex(-ONE_R1, ONE_R1) / (real1)2.0f) &&
+        IS_SAME(mtrx[3], complex(ONE_R1, -ONE_R1) / (real1)2.0f)) {
+        stabilizer->ISqrtY(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
+        IS_SAME(mtrx[1], complex(-ONE_R1, -ONE_R1) / (real1)2.0f) &&
+        IS_SAME(mtrx[2], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
+        IS_SAME(mtrx[3], complex(ONE_R1, ONE_R1) / (real1)2.0f)) {
+        stabilizer->SqrtY(target);
+        return;
+    }
+
+    QStabilizerShardPtr shard = std::make_shared<QStabilizerShard>(mtrx);
+    if (!wasCached) {
+        // If in PauliX or PauliY basis, compose gate with conversion from/to PauliZ basis.
+        if (stabilizer->IsSeparableZ(target)) {
+            shardsEigenZ[target] = true;
+        } else if (stabilizer->IsSeparableX(target)) {
+            complex nMtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+                complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
+            QStabilizerShardPtr nShard = std::make_shared<QStabilizerShard>(nMtrx);
+            nShard->Compose(shard->gate);
+            shard = nShard;
+            stabilizer->H(target);
+            shardsEigenZ[target] = true;
+        } else if (stabilizer->IsSeparableY(target)) {
+            complex nMtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+                complex(ZERO_R1, SQRT1_2_R1), complex(ZERO_R1, -SQRT1_2_R1) };
+            QStabilizerShardPtr nShard = std::make_shared<QStabilizerShard>(nMtrx);
+            nShard->Compose(shard->gate);
+            shard = nShard;
+            stabilizer->IS(target);
+            stabilizer->H(target);
+            shardsEigenZ[target] = true;
+        } else {
+            shardsEigenZ[target] = false;
+        }
+    }
+
+    if (shardsEigenZ[target]) {
+        if (IS_NORM_0(shard->gate[1]) && IS_NORM_0(shard->gate[2])) {
+            return;
+        }
+        if (IS_NORM_0(shard->gate[0]) && IS_NORM_0(shard->gate[3])) {
+            stabilizer->X(target);
+            return;
+        }
+    }
+
+    shards[target] = shard;
 }
 
 void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
@@ -654,11 +635,7 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
     }
 
     complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-    if (shards[target]) {
-        shards[target]->Compose(mtrx);
-    } else {
-        shards[target] = std::make_shared<QStabilizerShard>(mtrx);
-    }
+    shards[target] = std::make_shared<QStabilizerShard>(mtrx);
 }
 
 void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
@@ -700,16 +677,22 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
     }
 
     complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    if (shards[target]) {
-        shards[target]->Compose(mtrx);
-    } else {
-        shards[target] = std::make_shared<QStabilizerShard>(mtrx);
-    }
+    shards[target] = std::make_shared<QStabilizerShard>(mtrx);
 }
 
 void QStabilizerHybrid::ApplyControlledSingleBit(
     const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& target, const complex* mtrx)
 {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        ApplyControlledSinglePhase(lControls, lControlLen, target, mtrx[0], mtrx[3]);
+        return;
+    }
+
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        ApplyControlledSingleInvert(lControls, lControlLen, target, mtrx[1], mtrx[2]);
+        return;
+    }
+
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls)) {
         return;
@@ -717,28 +700,6 @@ void QStabilizerHybrid::ApplyControlledSingleBit(
 
     if (!controls.size()) {
         ApplySingleBit(mtrx, target);
-        return;
-    }
-
-    if (controls.size() > 1U) {
-        SwitchToEngine();
-        engine->ApplyControlledSingleBit(lControls, lControlLen, target, mtrx);
-        return;
-    }
-
-    if (IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
-        ApplyControlledSinglePhase(&(controls[0]), 1U, target, mtrx[0], mtrx[3]);
-        return;
-    }
-
-    if (IS_NORM_ZERO(mtrx[0]) && IS_NORM_ZERO(mtrx[3])) {
-        ApplyControlledSingleInvert(&(controls[0]), 1U, target, mtrx[1], mtrx[2]);
-        return;
-    }
-
-    if ((controls.size() == 1U) && IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
-        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[2], -mtrx[3])) {
-        CH(controls[0], target);
         return;
     }
 
@@ -864,29 +825,23 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
 void QStabilizerHybrid::ApplyAntiControlledSingleBit(
     const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& target, const complex* mtrx)
 {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        ApplyAntiControlledSinglePhase(lControls, lControlLen, target, mtrx[0], mtrx[3]);
+        return;
+    }
+
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        ApplyAntiControlledSingleInvert(lControls, lControlLen, target, mtrx[1], mtrx[2]);
+        return;
+    }
+
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, controls, true)) {
+    if (TrimControls(lControls, lControlLen, controls)) {
         return;
     }
 
     if (!controls.size()) {
         ApplySingleBit(mtrx, target);
-        return;
-    }
-
-    if (controls.size() > 1U) {
-        SwitchToEngine();
-        engine->ApplyAntiControlledSingleBit(lControls, lControlLen, target, mtrx);
-        return;
-    }
-
-    if (IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
-        ApplyAntiControlledSinglePhase(&(controls[0]), 1U, target, mtrx[0], mtrx[3]);
-        return;
-    }
-
-    if (IS_NORM_ZERO(mtrx[0]) && IS_NORM_ZERO(mtrx[3])) {
-        ApplyAntiControlledSingleInvert(&(controls[0]), 1U, target, mtrx[1], mtrx[2]);
         return;
     }
 
