@@ -62,7 +62,7 @@ protected:
     QInterfacePtr engine;
     QStabilizerPtr stabilizer;
     std::vector<QStabilizerShardPtr> shards;
-    std::vector<Pauli> shardsEigen;
+    std::vector<bool> shardsEigenZ;
     int devID;
     complex phaseFactor;
     bool doNormalize;
@@ -539,7 +539,7 @@ public:
         }
 
         shards.insert(shards.end(), toCopy->shards.begin(), toCopy->shards.end());
-        shardsEigen.insert(shardsEigen.end(), toCopy->shardsEigen.begin(), toCopy->shardsEigen.end());
+        shardsEigenZ.insert(shardsEigenZ.end(), toCopy->shardsEigenZ.begin(), toCopy->shardsEigenZ.end());
 
         SetQubitCount(qubitCount + toCopy->qubitCount);
 
@@ -564,7 +564,7 @@ public:
         }
 
         shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
-        shardsEigen.insert(shardsEigen.begin() + start, toCopy->shardsEigen.begin(), toCopy->shardsEigen.end());
+        shardsEigenZ.insert(shardsEigenZ.begin() + start, toCopy->shardsEigenZ.begin(), toCopy->shardsEigenZ.end());
 
         SetQubitCount(qubitCount + toCopy->qubitCount);
 
