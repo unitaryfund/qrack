@@ -62,7 +62,7 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
 
     concurrency = std::thread::hardware_concurrency();
     stabilizer = MakeStabilizer(initState);
-    amplitudeFloor = REAL1_EPSILON;
+    amplitudeFloor = FP_NORM_EPSILON;
 }
 
 QStabilizerPtr QStabilizerHybrid::MakeStabilizer(const bitCapInt& perm)
