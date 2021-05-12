@@ -368,6 +368,15 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
 }
 
 /**
+ * (External API) Set the simulator to a computational basis permutation.
+ */
+MICROSOFT_QUANTUM_DECL void SetPermutation(_In_ unsigned sid, _In_ unsigned p)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    simulators[sid]->SetPermutation(p);
+}
+
+/**
  * (External API) Allocate 1 new qubit with the given qubit ID, under the simulator ID
  */
 MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)

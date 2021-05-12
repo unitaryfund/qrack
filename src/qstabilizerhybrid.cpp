@@ -338,6 +338,11 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
         return;
     }
 
+    if (stabilizer && !stabilizer->CanDecomposeDispose(start, length))
+    {
+        SwitchToEngine();
+    }
+
     if (engine) {
         engine->Dispose(start, length);
     } else {
@@ -360,6 +365,10 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
         SetQubitCount(1);
         stabilizer = MakeStabilizer(0);
         return;
+    }
+
+    if (stabilizer && !stabilizer->CanDecomposeDispose(start, length)) {
+        SwitchToEngine();
     }
 
     if (engine) {

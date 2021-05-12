@@ -48,6 +48,8 @@ MICROSOFT_QUANTUM_DECL size_t random_choice(_In_ unsigned sid, _In_ size_t n, _I
 MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
     _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_reads_(n) unsigned* q);
 
+MICROSOFT_QUANTUM_DECL void SetPermutation(_In_ unsigned sid, _In_ unsigned p);
+
 // allocate and release
 MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid);
 MICROSOFT_QUANTUM_DECL bool release(_In_ unsigned sid, _In_ unsigned q);
