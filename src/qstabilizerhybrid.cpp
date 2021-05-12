@@ -691,12 +691,6 @@ void QStabilizerHybrid::ApplyControlledSingleBit(
         return;
     }
 
-    if (controls.size() > 1U) {
-        SwitchToEngine();
-        engine->ApplyControlledSingleBit(&(controls[0]), controls.size(), target, mtrx);
-        return;
-    }
-
     SwitchToEngine();
     engine->ApplyControlledSingleBit(lControls, lControlLen, target, mtrx);
 }
