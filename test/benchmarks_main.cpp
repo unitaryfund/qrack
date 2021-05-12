@@ -38,7 +38,13 @@ std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput = false;
 int benchmarkSamples = 100;
+int benchmarkDepth = 20;
 std::vector<int> devList;
+
+#define SHOW_OCL_BANNER()                                                                                              \
+    if (OCLEngine::Instance()->GetDeviceCount()) {                                                                     \
+        CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();                                                       \
+    }
 
 int main(int argc, char* argv[])
 {
@@ -99,6 +105,9 @@ int main(int argc, char* argv[])
         Opt(sparse)["--sparse"](
             "(For QEngineCPU, under QUnit:) Use a state vector optimized for sparse representation and iteration.") |
         Opt(benchmarkSamples, "samples")["--benchmark-samples"]("number of samples to collect (default: 100)") |
+        Opt(benchmarkDepth, "depth")["--benchmark-depth"](
+            "depth of randomly constructed circuits, when applicable, with 1 round of single qubit and 1 round of "
+            "multi-qubit gates being 1 unit of depth (default: 20)") |
         Opt(devListStr, "devices")["--devices"](
             "list of devices, for QPager (default is solely default OpenCL device)");
 
@@ -158,7 +167,7 @@ int main(int argc, char* argv[])
         if (opencl || hybrid || stabilizer || stabilizer_qpager) {
 #if ENABLE_OPENCL
             // Make sure the context singleton is initialized.
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();
+            SHOW_OCL_BANNER();
 
             DeviceContextPtr device_context = OCLEngine::Instance()->GetDeviceContextPtr(device_id);
             size_t maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>() / sizeof(complex);
@@ -206,7 +215,7 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QEngine -> OpenCL ############" << std::endl;
             testEngineType = QINTERFACE_OPENCL;
             testSubEngineType = QINTERFACE_OPENCL;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 
@@ -214,7 +223,7 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QStabilizerHybrid -> QHybrid ############" << std::endl;
             testEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubEngineType = QINTERFACE_HYBRID;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 #else
@@ -239,14 +248,14 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && opencl) {
             session.config().stream() << "############ QPager -> QEngine -> OpenCL ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 
         if (num_failed == 0 && hybrid) {
             session.config().stream() << "############ QPager -> QEngine -> Hybrid ############" << std::endl;
             testSubEngineType = QINTERFACE_HYBRID;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 #endif
@@ -278,14 +287,14 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && opencl) {
             session.config().stream() << "############ QUnit -> QEngine -> OpenCL ############" << std::endl;
             testSubEngineType = QINTERFACE_OPENCL;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 
         if (num_failed == 0 && hybrid) {
             session.config().stream() << "############ QUnit -> QHybrid ############" << std::endl;
             testSubEngineType = QINTERFACE_HYBRID;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 
@@ -293,7 +302,7 @@ int main(int argc, char* argv[])
             session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QHybrid ############" << std::endl;
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_HYBRID;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 
@@ -302,7 +311,7 @@ int main(int argc, char* argv[])
                                       << std::endl;
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_QPAGER;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
     }
@@ -313,7 +322,7 @@ int main(int argc, char* argv[])
             testEngineType = QINTERFACE_QUNIT_MULTI;
             testSubEngineType = QINTERFACE_OPENCL;
             testSubSubEngineType = QINTERFACE_OPENCL;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 
@@ -322,7 +331,7 @@ int main(int argc, char* argv[])
             testEngineType = QINTERFACE_QUNIT_MULTI;
             testSubEngineType = QINTERFACE_HYBRID;
             testSubSubEngineType = QINTERFACE_HYBRID;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 
@@ -332,7 +341,7 @@ int main(int argc, char* argv[])
             testEngineType = QINTERFACE_QUNIT_MULTI;
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_HYBRID;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 #else
@@ -361,14 +370,14 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && opencl) {
             session.config().stream() << "############ QUnit -> QPager -> OpenCL ############" << std::endl;
             testSubSubEngineType = QINTERFACE_OPENCL;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 
         if (num_failed == 0 && hybrid) {
             session.config().stream() << "############ QUnit -> QPager -> QHybrid ############" << std::endl;
             testSubSubEngineType = QINTERFACE_HYBRID;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 
@@ -382,12 +391,20 @@ int main(int argc, char* argv[])
     }
 
     if (num_failed == 0 && qunit_multi) {
+        testEngineType = QINTERFACE_QUNIT_MULTI;
         if (num_failed == 0 && qpager) {
             session.config().stream() << "############ QUnitMulti -> QPager -> QHybrid ############" << std::endl;
-            testEngineType = QINTERFACE_QUNIT_MULTI;
             testSubEngineType = QINTERFACE_QPAGER;
             testSubSubEngineType = QINTERFACE_HYBRID;
-            CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset(); /* Get the OpenCL banner out of the way. */
+            SHOW_OCL_BANNER();
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && stabilizer_qpager) {
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_QPAGER;
+            session.config().stream() << "########### QUnitMulti -> QStabilizerHybrid -> QPager -> QHybrid ###########"
+                                      << std::endl;
             num_failed = session.run();
         }
 #endif

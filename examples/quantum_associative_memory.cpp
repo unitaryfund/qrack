@@ -25,11 +25,11 @@ int main()
     const bitLenInt OutputCount = 4;
     const bitCapInt InputPower = 1U << InputCount;
     // const bitCapInt OutputPower = 1U << OutputCount;
-    const real1 eta = 0.5;
+    const real1 eta = ONE_R1 / (real1)2.0f;
 
     // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
     // QEngineCPU.
-    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, InputCount + OutputCount, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, InputCount + OutputCount, 0);
 
     bitLenInt inputIndices[InputCount];
     for (bitLenInt i = 0; i < InputCount; i++) {

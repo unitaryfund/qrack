@@ -21,14 +21,14 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         NormalizeState();
     }
 
-    real1 oneChance = Prob(qubit);
+    real1_f oneChance = Prob(qubit);
     if (!doForce) {
         if (oneChance >= ONE_R1) {
             result = true;
         } else if (oneChance <= ZERO_R1) {
             result = false;
         } else {
-            real1 prob = Rand();
+            real1_f prob = Rand();
             result = (prob <= oneChance);
         }
     }
@@ -109,7 +109,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
         return result;
     }
 
-    real1 prob = Rand();
+    real1_f prob = Rand();
     real1* probArray = new real1[lengthPower]();
 
     ProbMaskAll(regMask, probArray);
@@ -267,8 +267,8 @@ void QEngine::CSqrtSwap(
         return;
     }
 
-    const complex sqrtX[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
-        complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+    const complex sqrtX[4] = { complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
+        complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
     bitCapInt skipMask = 0;
     bitCapInt* qPowersSorted = new bitCapInt[controlLen + 2];
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -289,8 +289,8 @@ void QEngine::AntiCSqrtSwap(
         return;
     }
 
-    const complex sqrtX[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
-        complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+    const complex sqrtX[4] = { complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
+        complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
     bitCapInt* qPowersSorted = new bitCapInt[controlLen + 2];
     for (bitLenInt i = 0; i < controlLen; i++) {
         qPowersSorted[i] = pow2(controls[i]);
@@ -309,8 +309,8 @@ void QEngine::CISqrtSwap(
         return;
     }
 
-    const complex iSqrtX[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
-        complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+    const complex iSqrtX[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
+        complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     bitCapInt skipMask = 0;
     bitCapInt* qPowersSorted = new bitCapInt[controlLen + 2];
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -331,8 +331,8 @@ void QEngine::AntiCISqrtSwap(
         return;
     }
 
-    const complex iSqrtX[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
-        complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+    const complex iSqrtX[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
+        complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     bitCapInt* qPowersSorted = new bitCapInt[controlLen + 2];
     for (bitLenInt i = 0; i < controlLen; i++) {
         qPowersSorted[i] = pow2(controls[i]);
@@ -416,8 +416,8 @@ void QEngine::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    const complex sqrtX[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2),
-        complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2) };
+    const complex sqrtX[4] = { complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
+        complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
     bitCapInt qPowersSorted[2];
     qPowersSorted[0] = pow2(qubit1);
     qPowersSorted[1] = pow2(qubit2);
@@ -432,8 +432,8 @@ void QEngine::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    const complex iSqrtX[4] = { complex(ONE_R1 / 2, -ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
-        complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+    const complex iSqrtX[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
+        complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     bitCapInt qPowersSorted[2];
     qPowersSorted[0] = pow2(qubit1);
     qPowersSorted[1] = pow2(qubit2);
@@ -444,8 +444,8 @@ void QEngine::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 /// "fSim" gate, (useful in the simulation of particles with fermionic statistics)
 void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
-    real1 cosTheta = cos(theta);
-    real1 sinTheta = sin(theta);
+    real1 cosTheta = (real1)cos(theta);
+    real1 sinTheta = (real1)sin(theta);
 
     if (cosTheta != ONE_R1) {
         const complex fSimSwap[4] = { complex(cosTheta, ZERO_R1), complex(ZERO_R1, sinTheta),
@@ -462,7 +462,7 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
     }
 
     bitLenInt controls[1] = { qubit1 };
-    ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, phi)));
+    ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)));
 }
 
 void QEngine::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray)
@@ -491,7 +491,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
 
     bitCapIntOcl lengthPower = pow2Ocl(length);
     bitCapInt regMask = (lengthPower - ONE_BCI) << (bitCapIntOcl)start;
-    real1 nrmlzr = ONE_BCI;
+    real1 nrmlzr = ONE_R1;
 
     if (doForce) {
         nrmlzr = ProbMask(regMask, result << (bitCapIntOcl)start);
@@ -500,9 +500,9 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         real1* probArray = new real1[lengthPower]();
         ProbRegAll(start, length, probArray);
 
-        real1 prob = Rand();
-        real1 lowerProb = ZERO_R1;
-        real1 largestProb = ZERO_R1;
+        real1_f prob = Rand();
+        real1_f lowerProb = ZERO_R1;
+        real1_f largestProb = ZERO_R1;
         result = lengthPower - ONE_BCI;
 
         /*

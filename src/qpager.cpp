@@ -8,21 +8,19 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#include <direct.h>
-#endif
-
 #include <future>
 #include <string>
 
 #include "qfactory.hpp"
 #include "qpager.hpp"
 
+#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
+
 namespace Qrack {
 
 QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
     bool ignored, bool ignored2, bool useHostMem, int deviceId, bool useHardwareRNG, bool useSparseStateVec,
-    real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold)
+    real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, false, useHardwareRNG, false, norm_thresh)
     , engine(eng)
     , devID(deviceId)
@@ -34,6 +32,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , deviceIDs(devList)
     , useHardwareThreshold(false)
     , thresholdQubitsPerPage(qubitThreshold)
+    , pStridePow(PSTRIDEPOW)
 {
 #if !ENABLE_OPENCL
     if (engine == QINTERFACE_HYBRID) {
@@ -52,6 +51,10 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     }
 
 #if ENABLE_OPENCL
+    if (!(OCLEngine::Instance()->GetDeviceCount())) {
+        engine = QINTERFACE_CPU;
+    }
+
     if ((thresholdQubitsPerPage == 0) && ((engine == QINTERFACE_OPENCL) || (engine == QINTERFACE_HYBRID))) {
         useHardwareThreshold = true;
 
@@ -73,7 +76,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
         // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
         // concurrency.
-        minPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+        minPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 2U;
 
         if (thresholdQubitsPerPage < minPageQubits) {
             thresholdQubitsPerPage = minPageQubits;
@@ -87,7 +90,11 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
         thresholdQubitsPerPage = qubitCount - qpd;
 
         maxPageQubits = -1;
-        minPageQubits = log2(std::thread::hardware_concurrency()) + PSTRIDEPOW;
+
+        pStridePow =
+            getenv("QRACK_PSTRIDEPOW") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW;
+
+        minPageQubits = log2(std::thread::hardware_concurrency()) + 1U + pStridePow;
 
         if (thresholdQubitsPerPage < minPageQubits) {
             thresholdQubitsPerPage = minPageQubits;
@@ -100,9 +107,17 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
     SetQubitCount(qubitCount);
 
-    if (baseQubitsPerPage > (sizeof(bitCapIntOcl) * bitsInByte)) {
+    maxQubits = sizeof(bitCapIntOcl) * bitsInByte;
+    if (baseQubitsPerPage > maxQubits) {
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
+    }
+    if (getenv("QRACK_MAX_PAGING_QB")) {
+        maxQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    }
+    if (qubitCount > maxQubits) {
+        throw std::invalid_argument(
+            "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
     }
 
     initState &= maxQPower - ONE_BCI;
@@ -125,7 +140,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapInt perm, int deviceId)
 {
     return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engine, length, perm, rand_generator, phaseFactor,
-        false, false, useHostRam, deviceId, useRDRAND, isSparse, amplitudeFloor));
+        false, false, useHostRam, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor));
 }
 
 void QPager::CombineEngines(bitLenInt bit)
@@ -213,7 +228,7 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl,
     target -= qpp;
     bitCapIntOcl targetPow = pow2Ocl(target);
     bitCapIntOcl targetMask = targetPow - ONE_BCI;
-    bitCapIntOcl maxLCV = qPages.size() >> ONE_BCI;
+    bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> ONE_BCI;
     std::vector<std::future<void>> futures(maxLCV);
     for (i = 0; i < maxLCV; i++) {
         futures[i] =
@@ -229,12 +244,15 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl,
                 if (!isSqiCtrl || isAnti) {
                     fn(engine1, sqi);
                 }
-                engine1->QueueSetDoNormalize(false);
 
                 if (!isSqiCtrl || !isAnti) {
                     fn(engine2, sqi);
                 }
-                engine2->QueueSetDoNormalize(false);
+
+                if (doNormalize) {
+                    engine1->QueueSetDoNormalize(false);
+                    engine2->QueueSetDoNormalize(false);
+                }
 
                 engine1->ShuffleBuffers(engine2);
             });
@@ -270,12 +288,12 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
 
     bool isSpecial, isInvert;
     complex top, bottom;
-    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         isSpecial = true;
         isInvert = false;
         top = mtrx[0];
         bottom = mtrx[3];
-    } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
+    } else if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         isSpecial = true;
         isInvert = true;
         top = mtrx[1];
@@ -287,7 +305,7 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
         bottom = ZERO_CMPLX;
     }
 
-    bitCapIntOcl maxLCV = qPages.size() >> sortedMasks.size();
+    bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> (bitCapIntOcl)sortedMasks.size();
     std::vector<std::future<void>> futures(maxLCV);
     bitCapIntOcl i;
     for (i = 0; i < maxLCV; i++) {
@@ -363,7 +381,7 @@ void QPager::SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitL
     }
     std::sort(sortedMasks.begin(), sortedMasks.end());
 
-    bitCapIntOcl maxLCV = qPages.size() >> sortedMasks.size();
+    bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> (bitCapIntOcl)sortedMasks.size();
     bitCapIntOcl i;
     for (i = 0; i < maxLCV; i++) {
         bitCapIntOcl j, k, jLo, jHi;
@@ -420,6 +438,11 @@ void QPager::CombineAndOpControlled(
 
 bitLenInt QPager::Compose(QPagerPtr toCopy)
 {
+    if ((qubitCount + toCopy->qubitCount) > maxQubits) {
+        throw std::invalid_argument(
+            "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
+    }
+
     bitLenInt qpp = qubitsPerPage();
     bitLenInt tcqpp = toCopy->qubitsPerPage();
 
@@ -433,7 +456,7 @@ bitLenInt QPager::Compose(QPagerPtr toCopy)
     }
 
     bitCapIntOcl i, j;
-    bitCapInt maxJ = (toCopy->qPages.size() - 1U);
+    bitCapInt maxJ = ((bitCapInt)toCopy->qPages.size() - 1U);
     std::vector<QEnginePtr> nQPages;
 
     for (i = 0; i < qPages.size(); i++) {
@@ -458,6 +481,11 @@ bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
 {
     if (start == qubitCount) {
         return Compose(toCopy);
+    }
+
+    if ((qubitCount + toCopy->qubitCount) > maxQubits) {
+        throw std::invalid_argument(
+            "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
     }
 
     toCopy->CombineEngines();
@@ -677,29 +705,22 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
     bitCapIntOcl targetPow = pow2Ocl(target);
     bitCapIntOcl qMask = targetPow - 1U;
 
-    bitCapIntOcl maxLCV = qPages.size() >> 1U;
-    std::vector<std::future<void>> futures(maxLCV);
+    bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> 1U;
     bitCapIntOcl i;
     for (i = 0; i < maxLCV; i++) {
-        futures[i] = std::async(std::launch::async, [this, i, &isInvert, &top, &bottom, &targetPow, &qMask]() {
-            bitCapIntOcl j = i & qMask;
-            j |= (i ^ j) << ONE_BCI;
+        bitCapIntOcl j = i & qMask;
+        j |= (i ^ j) << ONE_BCI;
 
-            if (isInvert) {
-                std::swap(qPages[j], qPages[j + targetPow]);
-            }
+        if (isInvert) {
+            std::swap(qPages[j], qPages[j + targetPow]);
+        }
 
-            if (top != ONE_CMPLX) {
-                qPages[j]->ApplySinglePhase(top, top, 0);
-            }
-            if (bottom != ONE_CMPLX) {
-                qPages[j + targetPow]->ApplySinglePhase(bottom, bottom, 0);
-            }
-        });
-    }
-
-    for (i = 0; i < maxLCV; i++) {
-        futures[i].get();
+        if (top != ONE_CMPLX) {
+            qPages[j]->ApplySinglePhase(top, top, 0);
+        }
+        if (bottom != ONE_CMPLX) {
+            qPages[j + targetPow]->ApplySinglePhase(bottom, bottom, 0);
+        }
     }
 }
 
@@ -866,14 +887,14 @@ void QPager::AntiCISqrtSwap(
 
 bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
-    real1 oneChance = Prob(qubit);
+    real1_f oneChance = Prob(qubit);
     if (!doForce) {
         if (oneChance >= ONE_R1) {
             result = true;
         } else if (oneChance <= ZERO_R1) {
             result = false;
         } else {
-            real1 prob = Rand();
+            real1_f prob = Rand();
             result = (prob <= oneChance);
         }
     }
@@ -886,7 +907,7 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     }
 
     if (nrmlzr <= ZERO_R1) {
-        throw "ERROR: Forced a measurement result with 0 probability";
+        throw std::invalid_argument("ERROR: Forced a measurement result with 0 probability");
     }
 
     if (doApply && (nrmlzr != ONE_BCI)) {
@@ -1141,30 +1162,23 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
     sortedMasks[1] = qubit2Pow - ONE_BCI;
     std::sort(sortedMasks.begin(), sortedMasks.end());
 
-    bitCapIntOcl maxLCV = qPages.size() >> sortedMasks.size();
-    std::vector<std::future<void>> futures(maxLCV);
+    bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> (bitCapIntOcl)sortedMasks.size();
     bitCapIntOcl i;
     for (i = 0; i < maxLCV; i++) {
-        futures[i] = std::async(std::launch::async, [this, i, &qubit1Pow, &qubit2Pow, &sortedMasks, &isIPhaseFac]() {
-            bitCapIntOcl j, jLo, jHi;
-            j = i & sortedMasks[0];
-            jHi = (i ^ j) << ONE_BCI;
-            jLo = jHi & sortedMasks[1];
-            j |= jLo | ((jHi ^ jLo) << ONE_BCI);
+        bitCapIntOcl j, jLo, jHi;
+        j = i & sortedMasks[0];
+        jHi = (i ^ j) << ONE_BCI;
+        jLo = jHi & sortedMasks[1];
+        j |= jLo | ((jHi ^ jLo) << ONE_BCI);
 
-            std::swap(qPages[j + qubit1Pow], qPages[j + qubit2Pow]);
+        std::swap(qPages[j + qubit1Pow], qPages[j + qubit2Pow]);
 
-            if (!isIPhaseFac) {
-                return;
-            }
+        if (!isIPhaseFac) {
+            continue;
+        }
 
-            qPages[j + qubit1Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
-            qPages[j + qubit2Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
-        });
-    }
-
-    for (i = 0; i < maxLCV; i++) {
-        futures[i].get();
+        qPages[j + qubit1Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+        qPages[j + qubit2Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
     }
 }
 
@@ -1181,7 +1195,7 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
     bitCapIntOcl qubit2Pow = pow2Ocl(qubit2);
     bitCapIntOcl qubit2Mask = qubit2Pow - ONE_BCI;
 
-    bitCapIntOcl maxLCV = qPages.size() >> ONE_BCI;
+    bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> ONE_BCI;
     std::vector<std::future<void>> futures(maxLCV);
     bitCapIntOcl i;
     for (i = 0; i < maxLCV; i++) {
@@ -1349,7 +1363,7 @@ real1_f QPager::Prob(bitLenInt qubit)
     } else {
         bitCapIntOcl qPower = pow2Ocl(qubit - qpp);
         bitCapIntOcl qMask = qPower - ONE_BCI;
-        bitCapIntOcl fSize = qPages.size() >> ONE_BCI;
+        bitCapIntOcl fSize = (bitCapIntOcl)qPages.size() >> ONE_BCI;
         bitCapIntOcl j;
         for (i = 0; i < fSize; i++) {
             j = i & qMask;
@@ -1381,7 +1395,7 @@ real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
 {
     CombineEngines(log2(mask));
 
-    real1 maskChance = 0;
+    real1_f maskChance = ZERO_R1;
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         maskChance += qPages[i]->ProbMask(mask, permutation);
     }
@@ -1408,9 +1422,9 @@ QInterfacePtr QPager::Clone()
 {
     SeparateEngines();
 
-    QPagerPtr clone = std::dynamic_pointer_cast<QPager>(
-        CreateQuantumInterface(QINTERFACE_QPAGER, engine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-            randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse));
+    QPagerPtr clone = std::dynamic_pointer_cast<QPager>(CreateQuantumInterface(QINTERFACE_QPAGER, engine, qubitCount, 0,
+        rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, 0,
+        (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
 
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         clone->qPages[i] = std::dynamic_pointer_cast<QEngine>(qPages[i]->Clone());

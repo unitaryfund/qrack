@@ -12,12 +12,12 @@
 
 #include "qinterface.hpp"
 
-#define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
-#define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
-#define C_SQRT_I complex(M_SQRT1_2, M_SQRT1_2)
-#define C_SQRT_N_I complex(M_SQRT1_2, -M_SQRT1_2)
-#define ONE_PLUS_I_DIV_2 complex(ONE_R1 / 2, ONE_R1 / 2)
-#define ONE_MINUS_I_DIV_2 complex(ONE_R1 / 2, -ONE_R1 / 2)
+#define C_SQRT1_2 complex(SQRT1_2_R1, ZERO_R1)
+#define C_I_SQRT1_2 complex(ZERO_R1, SQRT1_2_R1)
+#define C_SQRT_I complex(SQRT1_2_R1, SQRT1_2_R1)
+#define C_SQRT_N_I complex(SQRT1_2_R1, -SQRT1_2_R1)
+#define ONE_PLUS_I_DIV_2 complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2))
+#define ONE_MINUS_I_DIV_2 complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2))
 
 #define GATE_1_BIT(gate, mtrx00, mtrx01, mtrx10, mtrx11)                                                               \
     void QInterface::gate(bitLenInt qubit)                                                                             \
@@ -92,10 +92,11 @@ void QInterface::ApplyAntiControlledSingleInvert(const bitLenInt* controls, cons
 /// General unitary gate
 void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
-    real1 cos0 = cos(theta / 2);
-    real1 sin0 = sin(theta / 2);
-    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex(-cos(lambda), -sin(lambda)),
-        sin0 * complex(cos(phi), sin(phi)), cos0 * complex(cos(phi + lambda), sin(phi + lambda)) };
+    real1 cos0 = (real1)cos(theta / 2);
+    real1 sin0 = (real1)sin(theta / 2);
+    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+        sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+        cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
     ApplySingleBit(uGate, target);
 }
 
@@ -103,10 +104,11 @@ void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 void QInterface::CU(
     bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
-    real1 cos0 = cos(theta / 2);
-    real1 sin0 = sin(theta / 2);
-    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex(-cos(lambda), -sin(lambda)),
-        sin0 * complex(cos(phi), sin(phi)), cos0 * complex(cos(phi + lambda), sin(phi + lambda)) };
+    real1 cos0 = (real1)cos(theta / 2);
+    real1 sin0 = (real1)sin(theta / 2);
+    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+        sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+        cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
     ApplyControlledSingleBit(controls, controlLen, target, uGate);
 }
 
@@ -124,14 +126,12 @@ void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
         ApplySinglePhase(ONE_CMPLX, I_CMPLX, qubit);
         return;
     }
-#if FPPOW < 5
     if (n == 3) {
         ApplySinglePhase(ONE_CMPLX, C_SQRT_I, qubit);
         return;
     }
-#endif
 
-    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))), qubit);
+    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), qubit);
 }
 
 /// Apply inverse 1/(2^N) phase rotation
@@ -148,14 +148,12 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
         ApplySinglePhase(ONE_CMPLX, -I_CMPLX, qubit);
         return;
     }
-#if FPPOW < 5
     if (n == 3) {
         ApplySinglePhase(ONE_CMPLX, C_SQRT_N_I, qubit);
         return;
     }
-#endif
 
-    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))), qubit);
+    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), qubit);
 }
 
 /// NOT gate, which is also Pauli x matrix
@@ -177,9 +175,11 @@ GATE_1_BIT(SH, C_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2, -C_I_SQRT1_2);
 GATE_1_BIT(HIS, C_SQRT1_2, -C_I_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2);
 
 /// Square root of Hadamard gate
-GATE_1_BIT(SqrtH, complex((ONE_R1 + M_SQRT2) / (2 * M_SQRT2), (-ONE_R1 + M_SQRT2) / (2 * M_SQRT2)),
-    complex(M_SQRT1_2 / 2, -M_SQRT1_2 / 2), complex(M_SQRT1_2 / 2, -M_SQRT1_2 / 2),
-    complex((-ONE_R1 + M_SQRT2) / (2 * M_SQRT2), (ONE_R1 + M_SQRT2) / (2 * M_SQRT2)));
+GATE_1_BIT(SqrtH,
+    complex((real1)((ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)), (real1)((-ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1))),
+    complex((real1)(SQRT1_2_R1 / 2), (real1)(-SQRT1_2_R1 / 2)),
+    complex((real1)(SQRT1_2_R1 / 2), (real1)(-SQRT1_2_R1 / 2)),
+    complex((real1)((-ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1)), (real1)((ONE_R1 + SQRT2_R1) / (2 * SQRT2_R1))));
 
 /// Square root of NOT gate
 GATE_1_BIT(SqrtX, ONE_PLUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, ONE_PLUS_I_DIV_2);
@@ -237,6 +237,27 @@ void QInterface::CY(bitLenInt control, bitLenInt target)
     ApplyControlledSingleInvert(controls, 1, target, -I_CMPLX, I_CMPLX);
 }
 
+/// Apply doubly-controlled Pauli Z matrix to bit
+void QInterface::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyControlledSingleInvert(controls, 2, target, -I_CMPLX, I_CMPLX);
+}
+
+/// "Anti-doubly-controlled Y" - Apply Pauli Y if control bits are both zero, do not apply if either control bit is one.
+void QInterface::AntiCCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyAntiControlledSingleInvert(controls, 2, target, -I_CMPLX, I_CMPLX);
+}
+
+/// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
+void QInterface::AntiCY(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyAntiControlledSingleInvert(controls, 1, target, -I_CMPLX, I_CMPLX);
+}
+
 /// Apply controlled Pauli Z matrix to bit
 void QInterface::CZ(bitLenInt control, bitLenInt target)
 {
@@ -251,12 +272,26 @@ void QInterface::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
     ApplyControlledSinglePhase(controls, 2, target, ONE_CMPLX, -ONE_CMPLX);
 }
 
+/// "Anti-doubly-controlled Z" - Apply Pauli Z if control bits are both zero, do not apply if either control bit is one.
+void QInterface::AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
+{
+    bitLenInt controls[2] = { control1, control2 };
+    ApplyAntiControlledSinglePhase(controls, 2, target, ONE_CMPLX, -ONE_CMPLX);
+}
+
+/// "Anti-controlled Z" - Apply Pauli Z if control bit is zero, do not apply if control bit is one.
+void QInterface::AntiCZ(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    ApplyAntiControlledSinglePhase(controls, 1, target, ONE_CMPLX, -ONE_CMPLX);
+}
+
 /// Apply controlled Pauli Z matrix to bit
 void QInterface::CH(bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
-    const complex h[4] = { complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(ONE_R1 / sqrt((real1)2), ZERO_R1),
-        complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(-ONE_R1 / sqrt((real1)2), ZERO_R1) };
+    const complex h[4] = { complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(ONE_R1 / SQRT2_R1, ZERO_R1),
+        complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(-ONE_R1 / SQRT2_R1, ZERO_R1) };
     ApplyControlledSingleBit(controls, 1, target, h);
 }
 
@@ -298,14 +333,13 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, I_CMPLX);
         return;
     }
-#if FPPOW < 5
     if (n == 3) {
         ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_I);
         return;
     }
-#endif
 
-    ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))));
+    ApplyControlledSinglePhase(
+        controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))));
 }
 
 /// Apply controlled "IPhaseRootN" gate to bit
@@ -325,14 +359,13 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, -I_CMPLX);
         return;
     }
-#if FPPOW < 5
     if (n == 3) {
         ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_N_I);
         return;
     }
-#endif
 
-    ApplyControlledSinglePhase(controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, -ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))));
+    ApplyControlledSinglePhase(
+        controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))));
 }
 
 void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,

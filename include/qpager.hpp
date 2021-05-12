@@ -38,9 +38,12 @@ protected:
     bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
     bitLenInt thresholdQubitsPerPage;
+    bitLenInt pStridePow;
     bitLenInt baseQubitsPerPage;
     bitCapInt basePageCount;
     bitCapIntOcl basePageMaxQPower;
+
+    bitLenInt maxQubits;
 
     QEnginePtr MakeEngine(bitLenInt length, bitCapInt perm, int deviceId);
 
@@ -69,7 +72,7 @@ protected:
         } else if (useHardwareThreshold) {
             thresholdQubitsPerPage = qubitCount - qpd;
 
-            minPageQubits = log2(std::thread::hardware_concurrency()) + PSTRIDEPOW;
+            minPageQubits = log2(std::thread::hardware_concurrency()) + pStridePow;
             if (thresholdQubitsPerPage < minPageQubits) {
                 thresholdQubitsPerPage = minPageQubits;
             }
@@ -81,7 +84,7 @@ protected:
     }
 
     bitCapInt pageMaxQPower() { return maxQPower / qPages.size(); }
-    bitLenInt pagedQubitCount() { return log2(qPages.size()); }
+    bitLenInt pagedQubitCount() { return log2((bitCapInt)qPages.size()); }
     bitLenInt qubitsPerPage() { return log2(pageMaxQPower()); }
 
     void CombineEngines(bitLenInt thresholdBits);
@@ -112,14 +115,16 @@ public:
     QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored = false, bool useHostMem = false,
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0);
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
+        real1_f separation_thresh = FP_NORM_EPSILON);
 
     QPager(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored = false, bool useHostMem = false,
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
+        real1_f separation_thresh = FP_NORM_EPSILON)
         : QPager(QINTERFACE_OPTIMAL_SINGLE_PAGE, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem,
-              deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold)
+              deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
     {
     }
 
@@ -128,6 +133,18 @@ public:
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->SetConcurrency(threadsPerEngine);
         }
+    }
+
+    virtual QEnginePtr ReleaseEngine()
+    {
+        CombineEngines();
+        return qPages[0];
+    }
+
+    virtual void LockEngine(QEnginePtr eng)
+    {
+        qPages.resize(1);
+        qPages[0] = eng;
     }
 
     virtual void SetQuantumState(const complex* inputState);
@@ -300,8 +317,6 @@ public:
 
         return true;
     };
-
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON) { return false; }
 
     virtual QInterfacePtr Clone();
 

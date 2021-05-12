@@ -75,6 +75,20 @@ class QInterface;
 typedef std::shared_ptr<QInterface> QInterfacePtr;
 
 /**
+ * Enumerated list of Pauli bases
+ */
+enum Pauli {
+    /// Pauli Identity operator. Corresponds to Q# constant "PauliI."
+    PauliI = 0,
+    /// Pauli X operator. Corresponds to Q# constant "PauliX."
+    PauliX = 1,
+    /// Pauli Y operator. Corresponds to Q# constant "PauliY."
+    PauliY = 3,
+    /// Pauli Z operator. Corresponds to Q# constant "PauliZ."
+    PauliZ = 2
+};
+
+/**
  * Enumerated list of supported engines.
  *
  * Use QINTERFACE_OPTIMAL for the best supported engine.
@@ -211,8 +225,8 @@ protected:
     complex GetNonunitaryPhase()
     {
         if (randGlobalPhase) {
-            real1 angle = Rand() * 2 * M_PI;
-            return complex(cos(angle), sin(angle));
+            real1_f angle = Rand() * 2 * PI_R1;
+            return complex((real1)cos(angle), (real1)sin(angle));
         } else {
             return ONE_CMPLX;
         }
@@ -605,6 +619,66 @@ public:
     virtual void AntiCNOT(bitLenInt control, bitLenInt target);
 
     /**
+     * Controlled Y gate
+     *
+     * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
+     * to "target."
+     */
+    virtual void CY(bitLenInt control, bitLenInt target);
+
+    /**
+     * Anti controlled Y gate
+     *
+     * If the control is set to 0, then the Pauli "Y" operator is applied to the target.
+     */
+    virtual void AntiCY(bitLenInt control, bitLenInt target);
+
+    /**
+     * Doubly-Controlled Y gate
+     *
+     * If both "control" bits are set to 1, then the Pauli "Y" operator is applied
+     * to "target."
+     */
+    virtual void CCY(bitLenInt control1, bitLenInt control2, bitLenInt target);
+
+    /**
+     * Anti doubly-controlled Y gate
+     *
+     * If both controls are set to 0, apply Pauli Y operation to target bit.
+     */
+    virtual void AntiCCY(bitLenInt control1, bitLenInt control2, bitLenInt target);
+
+    /**
+     * Controlled Z gate
+     *
+     * If the "control" bit is set to 1, then the Pauli "Z" operator is applied
+     * to "target."
+     */
+    virtual void CZ(bitLenInt control, bitLenInt target);
+
+    /**
+     * Anti controlled Z gate
+     *
+     * If the control is set to 0, then the Pauli "Z" operator is applied to the target.
+     */
+    virtual void AntiCZ(bitLenInt control, bitLenInt target);
+
+    /**
+     * Doubly-Controlled Z gate
+     *
+     * If both "control" bits are set to 1, then the Pauli "Z" operator is applied
+     * to "target."
+     */
+    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
+
+    /**
+     * Anti doubly-controlled Z gate
+     *
+     * If both controls are set to 0, apply Pauli Z operation to target bit.
+     */
+    virtual void AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
+
+    /**
      * General unitary gate
      *
      * Applies a gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible single bit
@@ -840,30 +914,6 @@ public:
      * effects.
      */
     virtual void ISqrtY(bitLenInt qubitIndex);
-
-    /**
-     * Controlled Y gate
-     *
-     * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
-     * to "target."
-     */
-    virtual void CY(bitLenInt control, bitLenInt target);
-
-    /**
-     * Controlled Z gate
-     *
-     * If the "control" bit is set to 1, then the Pauli "Z" operator is applied
-     * to "target."
-     */
-    virtual void CZ(bitLenInt control, bitLenInt target);
-
-    /**
-     * Doubly-Controlled Z gate
-     *
-     * If both "control" bits are set to 1, then the Pauli "Z" operator is applied
-     * to "target."
-     */
-    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
 
     /**
      * Controlled H gate
@@ -1338,6 +1388,30 @@ public:
     /** Bitwise doubly "anti-"controlled-not */
     virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
 
+    /** Bitwise controlled-Y */
+    virtual void CY(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /** Bitwise "anti-"controlled-Y */
+    virtual void AntiCY(bitLenInt inputBits, bitLenInt targetBits, bitLenInt length);
+
+    /** Bitwise doubly controlled-Y */
+    virtual void CCY(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
+    /** Bitwise doubly "anti-"controlled-Y */
+    virtual void AntiCCY(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
+    /** Bitwise controlled-Z */
+    virtual void CZ(bitLenInt control, bitLenInt target, bitLenInt length);
+
+    /** Bitwise "anti-"controlled-Z */
+    virtual void AntiCZ(bitLenInt inputBits, bitLenInt targetBits, bitLenInt length);
+
+    /** Bitwise doubly controlled-Z */
+    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
+    /** Bitwise doubly "anti-"controlled-Z */
+    virtual void AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
     /**
      * Bitwise "AND"
      *
@@ -1563,30 +1637,6 @@ public:
      * operator
      */
     virtual void ExpZDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
-
-    /**
-     * Bitwise controlled Y gate
-     *
-     * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
-     * to "target."
-     */
-    virtual void CY(bitLenInt control, bitLenInt target, bitLenInt length);
-
-    /**
-     * Bitwise controlled Z gate
-     *
-     * If the "control" bit is set to 1, then the Pauli "Z" operator is applied
-     * to "target."
-     */
-    virtual void CZ(bitLenInt control, bitLenInt target, bitLenInt length);
-
-    /**
-     * Bitwise doubly-controlled Z gate
-     *
-     * If both "control" bits are set to 1, then the Pauli "Z" operator is applied
-     * to "target."
-     */
-    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
 
     /**
      * Bitwise controlled H gate
@@ -1838,6 +1888,14 @@ public:
      */
     virtual void QFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
 
+    /** Quantum Fourier Transform (random access) - Apply the quantum Fourier transform to the register.
+     *
+     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
+     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
+     * Otherwise, turning it on will probably take longer.
+     */
+    virtual void QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
+
     /** Inverse Quantum Fourier Transform - Apply the inverse quantum Fourier transform to the register.
      *
      * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
@@ -1845,6 +1903,14 @@ public:
      * Otherwise, turning it on will probably take longer.
      */
     virtual void IQFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
+
+    /** Inverse Quantum Fourier Transform (random access) - Apply the inverse quantum Fourier transform to the register.
+     *
+     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
+     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
+     * Otherwise, turning it on will probably take longer.
+     */
+    virtual void IQFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
 
     /** Reverse the phase of the state where the register equals zero. */
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
@@ -2180,6 +2246,12 @@ public:
     virtual bool isClifford() { return false; };
 
     /**
+     * Returns "true" if current qubit state is identifiably within the Clifford set, or "false" if it is not or cannot
+     * be determined.
+     */
+    virtual bool isClifford(const bitLenInt& qubit) { return false; };
+
+    /**
      *  Qrack::QUnit types maintain explicit separation of representations of qubits, which reduces memory usage and
      * increases gate speed. This method is used to manually attempt internal separation of a QUnit subsytem. We attempt
      * a Decompose() operation, on a state which might not be separable. If the state is not separable, we abort and
@@ -2192,7 +2264,23 @@ public:
      * for simulation optimization purposes. This is not a truly quantum computational operation, but it also does not
      * lead to nonphysical effects.
      */
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1, real1_f error_tol = REAL1_EPSILON) { return false; }
+    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol) { return false; }
+    /**
+     *  Single-qubit TrySeparate()
+     */
+    virtual bool TrySeparate(bitLenInt qubit) { return false; }
+    /**
+     *  Two-qubit TrySeparate()
+     */
+    virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return false; }
+    /**
+     *  Set Reactive separation
+     */
+    virtual void SetReactiveSeparate(const bool& isAggSep) {}
+    /**
+     *  Get Reactive separation
+     */
+    virtual bool GetReactiveSeparate() { return false; }
 
     /**
      *  Clone this QInterface

@@ -10,18 +10,11 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 
 #include "oclengine.hpp"
-
-#if FPPOW < 5
-#include "qheader_halfcl.hpp"
-#elif FPPOW < 6
-#include "qheader_floatcl.hpp"
-#else
-#include "qheader_doublecl.hpp"
-#endif
 
 #if UINTPOW < 5
 #include "qheader_uint16cl.hpp"
@@ -29,6 +22,14 @@
 #include "qheader_uint32cl.hpp"
 #else
 #include "qheader_uint64cl.hpp"
+#endif
+
+#if FPPOW < 5
+#include "qheader_halfcl.hpp"
+#elif FPPOW < 6
+#include "qheader_floatcl.hpp"
+#else
+#include "qheader_doublecl.hpp"
 #endif
 
 #include "qenginecl.hpp"
@@ -257,7 +258,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     if (all_platforms.size() == 0) {
         std::cout << " No platforms found. Check OpenCL installation!\n";
-        exit(1);
+        return;
     }
 
     // get all devices
@@ -279,7 +280,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
     }
     if (all_devices.size() == 0) {
         std::cout << " No devices found. Check OpenCL installation!\n";
-        exit(1);
+        return;
     }
 
     int deviceCount = all_devices.size();
@@ -299,20 +300,20 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
 
-#if FPPOW < 5
-    sources.push_back({ (const char*)qheader_half_cl, (long unsigned int)qheader_half_cl_len });
-#elif FPPOW < 6
-    sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
-#else
-    sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
-#endif
-
 #if UINTPOW < 5
     sources.push_back({ (const char*)qheader_uint16_cl, (long unsigned int)qheader_uint16_cl_len });
 #elif UINTPOW < 6
     sources.push_back({ (const char*)qheader_uint32_cl, (long unsigned int)qheader_uint32_cl_len });
 #else
     sources.push_back({ (const char*)qheader_uint64_cl, (long unsigned int)qheader_uint64_cl_len });
+#endif
+
+#if FPPOW < 5
+    sources.push_back({ (const char*)qheader_half_cl, (long unsigned int)qheader_half_cl_len });
+#elif FPPOW < 6
+    sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
+#else
+    sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
 #endif
 
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
@@ -323,6 +324,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     int plat_id = -1;
     std::vector<cl::Context> all_contexts;
+    std::vector<std::string> all_filenames;
     for (int i = 0; i < deviceCount; i++) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
@@ -333,7 +335,8 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
             devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], i, plat_id);
 
-        std::string fileName = binary_file_prefix + std::to_string(i) + binary_file_ext;
+        std::string fileName = binary_file_prefix + all_devices[i].getInfo<CL_DEVICE_NAME>() + binary_file_ext;
+        std::replace(fileName.begin(), fileName.end(), ' ', '_');
         std::string clBinName = home + fileName;
 
         std::cout << "Device #" << i << ", ";
@@ -365,7 +368,8 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
             all_dev_contexts[i]->mutexes.emplace(kernelHandles[j].oclapi, new std::mutex);
         }
 
-        if (saveBinaries) {
+        std::vector<std::string>::iterator fileNameIt = std::find(all_filenames.begin(), all_filenames.end(), fileName);
+        if (saveBinaries && (fileNameIt == all_filenames.end())) {
             std::cout << "OpenCL program #" << i << ", ";
             SaveBinary(program, home, fileName);
         }

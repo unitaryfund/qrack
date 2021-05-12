@@ -1,6 +1,8 @@
 # Qrack
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3369483.svg)](https://doi.org/10.5281/zenodo.3369483) [![Qrack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=main)](https://travis-ci.org/vm6502q/qrack/builds) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)
+
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3842287.svg)](https://doi.org/10.5281/zenodo.3842287) [![Qrack Build Status](https://api.travis-ci.org/vm6502q/qrack.svg?branch=main)](https://travis-ci.org/vm6502q/qrack/builds) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)
 
 [![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
 
@@ -75,15 +77,15 @@ Qrack supports building on Windows, but some special configuration is required. 
 
 Qrack requires the `xxd` command to convert its OpenCL kernel code into hexadecimal format for building. `xxd` is not natively available on Windows systems, but Windows executables for it are provided by sources including the [Vim editor Windows port](https://www.vim.org/download.php).
 
-CMake on Windows will set up a 32-bit Visual Studio project by default, (if using Visual Studio,) whereas 64-bit will probably be typically desired. Putting together all of the above considerations, after installing the CUDA Toolkit and Vim, a typical CMake command for Windows might look like this:
+CMake on Windows will set up a 32-bit Visual Studio project by default, (if using Visual Studio,) whereas 64-bit will probably be typically desired. `-DFPPOW=6` is used to set the systemic floating point accuracy to `double`, which is typically necessary for Q# accuracy tolerances. Putting together all of the above considerations, after installing the CUDA Toolkit and Vim, a typical CMake command for Windows might look like this:
 
 ```
     $ mkdir _build
     $ cd _build
-    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DFPPOW=6 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" ..
+    $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" -DFPPOW=6 ..
 ```
 
-After CMake, the project must be built in Visual Studio. (`-DFPPOW=6` disables single `float` accuracy in favor of `double`, which should usually be used for building the Q# runtime with `QrackSimulator`.)
+After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
 
 ## Performing code coverage
 
@@ -97,10 +99,20 @@ After CMake, the project must be built in Visual Studio. (`-DFPPOW=6` disables s
     $ python -m http.server
 ```
 
+## QUnit separability threshold
+QUnit caches and introspects information about single qubits, to proactively maintain a Schmidt decomposed representation of state. By default, QUnit tolerance for determining Z basis eigenstates is `FP_NORM_EPSILON` defined in `include/common/qrack_types.hpp`, and this can usually be considered an "exact" simulation. To override this separability threshold in an environment, define the `QRACK_QUNIT_SEPARABILITY_THRESHOLD` with a float value between 0 and 1. The lower the value, the more precise are Z basis eigenstate separability checks. Adjusting this threshold can trade off between precision/accuracy vs. RAM usage and execution time.
+
 ## QPager distributed simulation options
 QPager attempts to smartly allocate low qubit widths for maximum performance. For wider qubit simulations, based on `clinfo`, you can segment your maximum OpenCL accelerator state vector page allocation into global qubits with the environment variable `QRACK_SEGMENT_GLOBAL_QB=n`, where n is an integer >=0. The default n is 0, meaning that maximum allocation segment of your GPU RAM is a single page. (For 1 global qubit, one segment would have 2 pages, akin to 2 single amplitudes, therefore one "global qubit," or 4 pages for n=2, because 2^2=4, etc., by exponent.)
 
 `QRACK_DEVICE_GLOBAL_QB=n`, alternatively, lets the user also choose the performance "hint" for preferred global qubits per device. By default, n=2, for 2 global qubits or equivalently 4 pages per device. Despite the "hint," `QPager` will allocate fewer pages per OpenCL device for small-enough widths, to keep processing elements better occupied. Also, `QPager` will allocate more qubits than the hint, per device, if the maximum allocation segment is exceeded as specified by `QRACK_SEGMENT_GLOBAL_QB`.
+
+If using `QPager` under the `QUnit` layer, then the environment variable `QRACK_QUNIT_PAGING_THRESHOLD` is the number of qubits in overall width at which `QUnit` will use paging, 21 qubits by default. `QRACK_MAX_PAGING_QB` sets a maximum qubit allocation *only* for instances of `QPager`, allowing `QUnit` simulations to more gracefully attempt greater than "Schrödinger method" simulation maximum widths, while other OpenCL types have automatic memory guards.
+
+## Build and environment options for CPU engines
+QEngineCPU and QHybrid batch work items in groups of 2^`PSTRIDEPOW` before dispatching them to single CPU threads, potentially greatly reducing waiting on mutexes without signficantly hurting utilization and scheduling. The default for this option can be controlled at build time, by passing `-DPSTRIDEPOW=n` to CMake, with "n" being an integer greater than or equal to 0. (The default is n=9, which is approximately optimal on many typical PCs.) This can be overridden at run time by the enviroment variable `QRACK_PSTRIDEPOW=n`. If an environment variable is not defined for this option, the default from CMake build will be used.
+
+`-DENABLE_QUNIT_CPU_PARALLEL=OFF` disables asynchronous dispatch of QStabilizerHybrid and low width QEngineCPU/QHybrid gates with `std::future`. This option is on by default. Typically, QUnit stays safely under maximum thread count limits, but situations arise where async CPU simulation causes QUnit to dispatch too many CPU threads for the operating system. This build option can also reduce overall thread usage when Qrack user code operates in a multi-threaded or multi-shell environment. (Linux thread count limits might be smaller than Windows.)
 
 ## Vectorization optimization
 
@@ -108,13 +120,6 @@ QPager attempts to smartly allocate low qubit widths for maximum performance. Fo
 $ cmake -DENABLE_COMPLEX_X2=ON ..
 ```
 Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 for float. On by default, but can be turned off for double accuracy without the AVX requirement, or to completely remove vectorization with single float accuracy.
-
-## Increase accuracy from float to double
-
-```
-$ cmake -DENABLE_COMPLEX8=OFF ..
-```
-By default, Qrack builds for float accuracy. Turning the above option off increases to double accuracy for complex numbers. Requires twice as much RAM (basically reducing maximum by 1 available qubit, for QEngine types). Compatible with SSE 1.0 and single precision accelerator devices.
 
 ## On-Chip Hardware Random Number Generation 
 
@@ -142,7 +147,7 @@ Qrack uses an unsigned integer primitive for ubiquitous qubit masking operations
 ```
 $ cmake [-FPPOW=n] ..
 ```
-Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to n^2. By default n=5, for 5^2=32 bit floating point precision. "half" and "double" availability depend on the system, but n=6 for "double" is commonly supported on modern hardware, and n=4 is supported on ARM, which has a native "half" type.
+Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to n^2. By default n=5, for 5^2=32 bit floating point precision. "half" and "double" availability depend on the system, but n=6 for "double" is commonly supported on modern hardware. n=4 for half is supported by GCC on ARM, header-only on x86_64, and by device pragma if available for OpenCL kernels.
 
 ## Precompiled OpenCL kernels
 
@@ -168,6 +173,14 @@ The `home` argument default indicates that the default home directory path shoul
 $ cmake -DENABLE_VM6502Q_DEBUG=ON ..
 ```
 Qrack was originally written so that the disassembler of VM6502Q should show the classical expecation value of registers, following Ehrenfest's theorem. However, this incurs significant additional overhead for `QInterface::IndexedLDA()`, `QInterface::IndexedADC()`, and `QInterface::IndexedSBC()`. As such, this behavior in the VM6502Q disassembler is only supported when this CMake flag is specifically enabled. (It is off by default.) These three methods will return 0, if the flag is disabled.
+
+## Turn off BCD arithmetic logic unit operations
+
+```
+$ cmake -DENABLE_BCD=OFF ..
+```
+
+"BCD" arithmetic ("binary coded decimal") is necessary to support emulation based on the MOS-6502. However, this is an outmoded form of binary arithmetic for most or all conceivable purposes for which one would want a quantum computer. (It stores integers as base 10 digits, in binary.) On by default, turning this option off will slightly reduce binary size by excising BCD ALU operations from the API.
 
 ## Copyright, License, and Acknowledgements
 

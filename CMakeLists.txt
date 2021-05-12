@@ -45,7 +45,11 @@ else (MSVC)
         if (ANDROID)
             set(QRACK_LIBS qrack atomic)
         else (ANDROID)
-            set(QRACK_LIBS qrack pthread atomic)
+            if (EMSCRIPTEN)
+                set(QRACK_LIBS qrack pthread)
+            else (EMSCRIPTEN)
+                set(QRACK_LIBS qrack pthread atomic)
+            endif(EMSCRIPTEN)
         endif(ANDROID)
     endif (APPLE)
 endif (MSVC)
@@ -107,6 +111,7 @@ include ("cmake/CUDA.cmake")
 message ("Qubit capacity power is: ${QBCAPPOW}")
 message ("Floating-point capacity power is: ${FPPOW}")
 message ("UInt capacity power is: ${UINTPOW}")
+message ("CPU work item stride power is: ${PSTRIDEPOW}")
 message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
 message ("Complex_x2/AVX support is: ${ENABLE_COMPLEX_X2}")
 message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
@@ -129,8 +134,10 @@ if (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5)
 endif (ENABLE_COMPLEX_X2 AND FPPOW GREATER 5)
 
 if (FPPOW LESS 5)
-    set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mfp16-format=ieee)
-    set(TEST_COMPILE_OPTS ${TEST_COMPILE_OPTS} -mfp16-format=ieee)
+    if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^arm" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -mfp16-format=ieee)
+        set(TEST_COMPILE_OPTS ${TEST_COMPILE_OPTS} -mfp16-format=ieee)
+    endif ()
 endif (FPPOW LESS 5)
 
 include ("cmake/RDRand.cmake")
@@ -185,6 +192,7 @@ install (FILES
     include/common/rdrandwrapper.hpp
     include/common/cuda_kernels.cuh
     include/common/dispatchqueue.hpp
+    include/common/half.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack/common
     )
 

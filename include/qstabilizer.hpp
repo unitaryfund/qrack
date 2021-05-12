@@ -195,10 +195,42 @@ public:
         H(target);
     }
 
+    virtual void SqrtX(const bitLenInt& target)
+    {
+        H(target);
+        S(target);
+        H(target);
+    }
+
+    virtual void ISqrtX(const bitLenInt& target)
+    {
+        H(target);
+        IS(target);
+        H(target);
+    }
+
     virtual void Y(const bitLenInt& target)
     {
         IS(target);
         X(target);
+        S(target);
+    }
+
+    virtual void SqrtY(const bitLenInt& target)
+    {
+        IS(target);
+        H(target);
+        S(target);
+        H(target);
+        S(target);
+    }
+
+    virtual void ISqrtY(const bitLenInt& target)
+    {
+        IS(target);
+        H(target);
+        IS(target);
+        H(target);
         S(target);
     }
 
@@ -207,6 +239,13 @@ public:
         H(target);
         CNOT(control, target);
         H(target);
+    }
+
+    virtual void CY(const bitLenInt& control, const bitLenInt& target)
+    {
+        IS(target);
+        CNOT(control, target);
+        S(target);
     }
 
     virtual void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)

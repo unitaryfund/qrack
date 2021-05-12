@@ -42,6 +42,7 @@ protected:
 #if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
 #endif
+    bitLenInt pStridePow;
 
     StateVectorSparsePtr CastStateVecSparse() { return std::dynamic_pointer_cast<StateVectorSparse>(stateVec); }
 
@@ -49,7 +50,8 @@ public:
     QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored = false,
         int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored3 = {}, bitLenInt ignored4 = 0);
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored3 = {}, bitLenInt ignored4 = 0,
+        real1_f ignored5 = FP_NORM_EPSILON);
 
     virtual ~QEngineCPU() { Dump(); }
 
@@ -80,11 +82,12 @@ public:
 
     virtual void ZeroAmplitudes()
     {
-        runningNorm = ZERO_R1;
+        Dump();
         FreeStateVec();
+        runningNorm = ZERO_R1;
     }
 
-    virtual void FreeStateVec(complex* sv = NULL) { stateVec.reset(); }
+    virtual void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }
 
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
@@ -308,14 +311,13 @@ protected:
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     virtual StateVectorPtr AllocStateVec(bitCapInt elemCount);
-    virtual void ResetStateVec(StateVectorPtr sv);
+    virtual void ResetStateVec(StateVectorPtr sv) { stateVec = sv; }
 
     typedef std::function<void(void)> DispatchFn;
     virtual void Dispatch(DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
-        const bitCapInt Stride = pow2(PSTRIDEPOW);
-        if (maxQPower < Stride) {
+        if ((maxQPower / pStridePow) < (bitCapInt)GetConcurrencyLevel()) {
             dispatchQueue.dispatch(fn);
         } else {
             Finish();

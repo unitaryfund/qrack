@@ -74,29 +74,29 @@ public:
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
-        bitLenInt qubitThreshold = 0);
+        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
 
     QUnitMulti(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
+        real1_f separation_thresh = FP_NORM_EPSILON)
         : QUnitMulti(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceID,
-              useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold)
+              useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
     {
     }
 
     QUnitMulti(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0)
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
+        real1_f separation_thresh = FP_NORM_EPSILON)
         : QUnitMulti(QINTERFACE_OPTIMAL_G0_CHILD, QINTERFACE_OPTIMAL_G1_CHILD, qBitCount, initState, rgp, phaseFac,
               doNorm, randomGlobalPhase, useHostMem, deviceID, useHardwareRNG, useSparseStateVec, norm_thresh, devList,
-              qubitThreshold)
+              qubitThreshold, separation_thresh)
     {
     }
 
-    using QUnit::TrySeparate;
-    virtual bool TrySeparate(bitLenInt start, bitLenInt length = 1);
     virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = REAL1_EPSILON) { return false; }
 
     virtual QInterfacePtr Clone();
@@ -106,7 +106,7 @@ public:
 protected:
     virtual std::vector<QEngineInfo> GetQInfos();
 
-    virtual void SeparateBit(bool value, bitLenInt qubit, bool doDispose = true);
+    virtual void SeparateBit(bool value, bitLenInt qubit);
 
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     {

@@ -122,8 +122,17 @@ void QInterface::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qu
     }
 }
 
+/// Bit-wise apply "anti-"controlled-z to two control registers and one target register
+REG_GATE_C2_1(AntiCCZ);
+
 /// Bit-wise apply doubly-controlled-z to two control registers and one target register
 REG_GATE_C2_1(CCZ);
+
+/// Apply "Anti-"CZ gate for "length" starting from "control" and "target," respectively
+REG_GATE_C1_1(AntiCZ);
+
+/// Apply controlled Pauli Z matrix to each bit
+REG_GATE_C1_1(CZ);
 
 /// Bit-wise apply "anti-"controlled-not to two control registers and one target register
 REG_GATE_C2_1(AntiCCNOT);
@@ -136,6 +145,18 @@ REG_GATE_C1_1(AntiCNOT);
 
 /// Apply CNOT gate for "length" starting from "control" and "target," respectively
 REG_GATE_C1_1(CNOT);
+
+/// Bit-wise apply "anti-"controlled-y to two control registers and one target register
+REG_GATE_C2_1(AntiCCY);
+
+/// Bit-wise apply doubly-controlled-y to two control registers and one target register
+REG_GATE_C2_1(CCY);
+
+// Apply "Anti-"CY gate for "length" starting from "control" and "target," respectively
+REG_GATE_C1_1(AntiCY);
+
+/// Apply controlled Pauli Y matrix to each bit
+REG_GATE_C1_1(CY);
 
 /// Apply S gate (1/4 phase rotation) to each bit in "length," starting from bit index "start"
 REG_GATE_1(S);
@@ -187,12 +208,6 @@ REG_GATE_1(ISqrtY);
 
 /// Apply Pauli Z matrix to each bit
 REG_GATE_1(Z);
-
-/// Apply controlled Pauli Y matrix to each bit
-REG_GATE_C1_1(CY);
-
-/// Apply controlled Pauli Z matrix to each bit
-REG_GATE_C1_1(CZ);
 
 /// Apply controlled H gate to each bit
 REG_GATE_C1_1(CH);
@@ -516,14 +531,16 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
 
     bitLenInt end = start + (length - 1U);
     bitLenInt i, j;
+    bitLenInt c, t;
     for (i = 0; i < length; i++) {
         H(end - i);
         for (j = 0; j < ((length - 1U) - i); j++) {
-            CPhaseRootN(j + 2U, (end - i) - (j + 1U), end - i);
-        }
-
-        if (trySeparate) {
-            TrySeparate(end - i);
+            c = (end - i) - (j + 1U);
+            t = end - i;
+            CPhaseRootN(j + 2U, c, t);
+            if (trySeparate) {
+                TrySeparate(c, t);
+            }
         }
     }
 }
@@ -536,14 +553,57 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
     }
 
     bitLenInt i, j;
+    bitLenInt c, t;
     for (i = 0; i < length; i++) {
         for (j = 0; j < i; j++) {
-            CIPhaseRootN(j + 2U, (start + i) - (j + 1U), start + i);
+            c = (start + i) - (j + 1U);
+            t = start + i;
+            CIPhaseRootN(j + 2U, c, t);
+            if (trySeparate) {
+                TrySeparate(c, t);
+            }
         }
         H(start + i);
+    }
+}
+
+/// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
+void QInterface::QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate)
+{
+    if (length == 0) {
+        return;
+    }
+
+    bitLenInt end = (length - 1U);
+    bitLenInt i, j;
+    for (i = 0; i < length; i++) {
+        H(qubits[end - i]);
+        for (j = 0; j < ((length - 1U) - i); j++) {
+            CPhaseRootN(j + 2U, qubits[(end - i) - (j + 1U)], qubits[end - i]);
+        }
 
         if (trySeparate) {
-            TrySeparate(start + i);
+            TrySeparate(qubits[end - i]);
+        }
+    }
+}
+
+/// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
+void QInterface::IQFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate)
+{
+    if (length == 0) {
+        return;
+    }
+
+    bitLenInt i, j;
+    for (i = 0; i < length; i++) {
+        for (j = 0; j < i; j++) {
+            CIPhaseRootN(j + 2U, qubits[i - (j + 1U)], qubits[i]);
+        }
+        H(qubits[i]);
+
+        if (trySeparate) {
+            TrySeparate(qubits[i]);
         }
     }
 }
@@ -719,7 +779,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     real1* probsArray = new real1[subsetCap];
     ProbMaskAll(mask, probsArray);
 
-    real1 totProb = 0;
+    real1 totProb = ZERO_R1;
     for (j = 0; j < subsetCap; j++) {
         totProb += probsArray[j];
     }

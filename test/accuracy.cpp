@@ -52,7 +52,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, int)> fn, bitLenInt
     std::cout << "3rd Quartile, ";
     std::cout << "Worst" << std::endl;
 
-    std::complex<double> testAmp1, testAmp2;
+    complex testAmp1, testAmp2;
     double err;
     double trialErrors[ITERATIONS];
 

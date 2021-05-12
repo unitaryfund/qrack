@@ -27,8 +27,8 @@ using namespace Qrack;
 #define EPSILON 0.01f
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
-        real1 __tmp_a = A;                                                                                             \
-        real1 __tmp_b = B;                                                                                             \
+        real1_f __tmp_a = A;                                                                                           \
+        real1_f __tmp_b = B;                                                                                           \
         REQUIRE(__tmp_a < (__tmp_b + EPSILON));                                                                        \
         REQUIRE(__tmp_a > (__tmp_b - EPSILON));                                                                        \
     } while (0);
@@ -46,8 +46,8 @@ using namespace Qrack;
         (testSubEngineType == QINTERFACE_OPENCL) || (testSubSubEngineType == QINTERFACE_OPENCL) ||                     \
         (testEngineType == QINTERFACE_QPAGER) || (testSubEngineType == QINTERFACE_QPAGER))
 
-#define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
-#define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
+#define C_SQRT1_2 complex(SQRT1_2_R1, ZERO_R1)
+#define C_I_SQRT1_2 complex(ZERO_R1, SQRT1_2_R1)
 
 void print_bin(int bits, int d);
 void log(QInterfacePtr p);
@@ -72,18 +72,18 @@ QInterfacePtr MakeEngine(bitLenInt qubitCount)
 TEST_CASE("test_complex")
 {
     bool test;
-    complex cmplx1(1.0, -1.0);
-    complex cmplx2(-0.5, 0.5);
-    complex cmplx3(0.0, 0.0);
+    complex cmplx1(ONE_R1, -ONE_R1);
+    complex cmplx2((real1)(-0.5f), (real1)0.5f);
+    complex cmplx3(ZERO_R1, ZERO_R1);
 
     REQUIRE(cmplx1 != cmplx2);
 
-    REQUIRE(conj(cmplx1) == complex(1.0, 1.0));
+    REQUIRE(conj(cmplx1) == complex(ONE_R1, ONE_R1));
 
     test = ((real1)abs(cmplx1) > (real1)(sqrt(2.0) - EPSILON)) && ((real1)abs(cmplx1) < (real1)(sqrt(2.0) + EPSILON));
     REQUIRE(test);
 
-    cmplx3 = std::polar(1.0, M_PI / 2.0);
+    cmplx3 = complex(std::polar(ONE_R1, PI_R1 / (real1)2.0f));
     test = (real(cmplx3) > (real1)(0.0 - EPSILON)) && (real(cmplx3) < (real1)(0.0 + EPSILON));
     REQUIRE(test);
     test = (imag(cmplx3) > (real1)(1.0 - EPSILON)) && (imag(cmplx3) < (real1)(1.0 + EPSILON));
@@ -385,6 +385,42 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticy")
+{
+    qftReg->SetPermutation(0x55F00);
+    REQUIRE_THAT(qftReg, HasProbability(0x55F00));
+    qftReg->AntiCY(12, 4, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0x555A0));
+    qftReg->SetPermutation(0x00001);
+    REQUIRE_THAT(qftReg, HasProbability(0x00001));
+    qftReg->AntiCY(18, 19);
+    REQUIRE_THAT(qftReg, HasProbability(0x80001));
+
+    bitLenInt controls[1] = { 0 };
+
+    qftReg->SetPermutation(0x01);
+    qftReg->H(0, 2);
+    qftReg->AntiCY(0, 1);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 1, 1, I_CMPLX, -I_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x01));
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 2);
+    qftReg->Z(0);
+    qftReg->AntiCY(0, 1);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 1, 1, I_CMPLX, -I_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x01));
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 2);
+    qftReg->AntiCY(0, 1);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 1, 1, I_CMPLX, -I_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
 {
     qftReg->SetPermutation(0xCAC00);
@@ -424,6 +460,44 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
     qftReg->SetPermutation(0x00);
     qftReg->H(0, 3);
     qftReg->AntiCCNOT(0, 1, 2);
+    qftReg->H(2);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcy")
+{
+    qftReg->SetPermutation(0xCAC00);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
+    qftReg->AntiCCY(16, 12, 8, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAD00));
+
+    bitLenInt controls[2] = { 0, 1 };
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 3);
+    qftReg->AntiCCY(0, 1, 2);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, I_CMPLX, -I_CMPLX);
+    qftReg->H(2);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x00));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcz")
+{
+    qftReg->SetPermutation(0xCAC00);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
+    qftReg->AntiCCZ(16, 12, 8, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
+
+    bitLenInt controls[2] = { 0, 1 };
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0, 3);
+    qftReg->AntiCCZ(0, 1, 2);
+    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, I_CMPLX, -I_CMPLX);
     qftReg->H(2);
     qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
     qftReg->H(0, 2);
@@ -609,7 +683,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticisqrtswap")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_fsim")
 {
-    real1 theta = 3 * M_PI / 2;
+    real1_f theta = 3 * PI_R1 / 2;
 
     qftReg->SetPermutation(1);
     qftReg->FSim(theta, ZERO_R1, 0, 1);
@@ -629,7 +703,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fsim")
     qftReg->H(0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x0F));
 
-    real1 phi = M_PI;
+    real1_f phi = PI_R1;
 
     qftReg->SetReg(0, 8, 0x35);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x35));
@@ -651,7 +725,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fsim")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
 {
-    complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
+    complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->ApplySingleBit(pauliX, 19);
@@ -713,7 +787,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_controlled_single_invert")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_bit")
 {
-    complex pauliX[4] = { complex(0.0, 0.0), complex(1.0, 0.0), complex(1.0, 0.0), complex(0.0, 0.0) };
+    complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     bitLenInt controls[3] = { 0, 1, 3 };
     qftReg->SetPermutation(0x80000);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
@@ -1363,6 +1437,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cy_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccy")
+{
+    qftReg->SetPermutation(0xCAC00);
+    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
+    qftReg->CCY(16, 12, 8, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0xCA400));
+
+    bitLenInt controls[2] = { 0, 1 };
+
+    qftReg->SetPermutation(0x03);
+    qftReg->H(0, 3);
+    qftReg->CCY(0, 1, 2);
+    qftReg->ApplyControlledSinglePhase(controls, 2, 2, I_CMPLX, -I_CMPLX);
+    qftReg->H(2);
+    qftReg->ApplyControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0x03));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz")
 {
     qftReg->SetReg(0, 8, 0x35);
@@ -1383,12 +1476,38 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz_reg")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticz")
 {
     qftReg->SetReg(0, 8, 0x35);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x35));
     qftReg->H(0, 4);
-    qftReg->CZ(4, 0, 4);
+    qftReg->X(4, 4);
+    qftReg->AntiCZ(4, 0);
+    qftReg->AntiCZ(5, 1);
+    qftReg->AntiCZ(6, 2);
+    qftReg->AntiCZ(7, 3);
+    qftReg->X(4, 4);
+    qftReg->H(0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
+
+    qftReg->SetPermutation(0x03);
+    qftReg->H(0);
+    qftReg->X(0);
+    qftReg->AntiCZ(0, 1);
+    qftReg->AntiCZ(0, 1);
+    qftReg->X(0);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticz_reg")
+{
+    qftReg->SetReg(0, 8, 0x35);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x35));
+    qftReg->H(0, 4);
+    qftReg->X(4, 4);
+    qftReg->AntiCZ(4, 0, 4);
+    qftReg->X(4, 4);
     qftReg->H(0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
 }
@@ -1841,7 +1960,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_crydyad_reg")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_cry")
 {
     bitLenInt controls[2] = { 4, 5 };
-    real1 angles[4] = { M_PI, M_PI, 0, 0 };
+    real1 angles[4] = { PI_R1, PI_R1, ZERO_R1, ZERO_R1 };
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
@@ -1989,7 +2108,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_crzdyad_reg")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_crz")
 {
     bitLenInt controls[2] = { 4, 5 };
-    real1 angles[4] = { M_PI, M_PI, 0, 0 };
+    real1 angles[4] = { PI_R1, PI_R1, ZERO_R1, ZERO_R1 };
 
     qftReg->SetReg(0, 8, 0x01);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
@@ -2045,13 +2164,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_crz")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
 {
     bitLenInt controls[2] = { 4, 5 };
-    real1 angles[4] = { M_PI, M_PI, 0, 0 };
+    real1 angles[4] = { PI_R1, PI_R1, ZERO_R1, ZERO_R1 };
     complex pauliRYs[16];
 
     real1 cosine, sine;
     for (bitCapIntOcl i = 0; i < 4; i++) {
-        cosine = cos(angles[i] / 2);
-        sine = sin(angles[i] / 2);
+        cosine = (real1)cos(angles[i] / 2);
+        sine = (real1)sin(angles[i] / 2);
 
         pauliRYs[0 + 4 * i] = complex(cosine, ZERO_R1);
         pauliRYs[1 + 4 * i] = complex(-sine, ZERO_R1);
@@ -3307,6 +3426,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
 {
+    bitLenInt toSep[2];
+
     qftReg->SetPermutation(85);
 
     int i;
@@ -3317,6 +3438,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
 
     for (i = 0; i < 8; i++) {
         qftReg->TrySeparate(i);
+        toSep[0] = i;
+        qftReg->TrySeparate(toSep, 1, FP_NORM_EPSILON);
     }
 
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
@@ -3326,7 +3449,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
     qftReg->CNOT(0, 1);
     qftReg->CNOT(0, 2);
     qftReg->CNOT(0, 2);
-    qftReg->TrySeparate(0, 2);
+    qftReg->TrySeparate(0, 1);
+    toSep[0] = 0;
+    toSep[1] = 1;
+    qftReg->TrySeparate(toSep, 2, FP_NORM_EPSILON);
     qftReg->CNOT(0, 1);
     qftReg->Z(0);
     qftReg->H(0);
@@ -3677,6 +3803,39 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
 
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0x2));
     REQUIRE_THAT(qftReg2, HasProbability(0, 4, 0xb));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_qunit_paging")
+{
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 18, 1, rng, ONE_CMPLX);
+    QInterfacePtr qftReg2 =
+        CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 4, 2, rng, ONE_CMPLX);
+
+    qftReg->H(0, 3);
+    qftReg->CCZ(0, 1, 2);
+
+    qftReg2->H(0, 3);
+    qftReg2->CCZ(0, 1, 2);
+
+    qftReg->Compose(qftReg2);
+
+    qftReg->CCZ(0, 1, 2);
+    qftReg->H(0, 3);
+
+    qftReg->CCZ(18, 19, 20);
+    qftReg->H(18, 3);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 22, 1 | (2 << 18)));
+
+    qftReg->H(0, 3);
+    qftReg->CCZ(0, 1, 2);
+
+    qftReg->Decompose(18, qftReg2);
+
+    qftReg->CCZ(0, 1, 2);
+    qftReg->H(0, 3);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 18, 1));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_setbit")
@@ -4279,9 +4438,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_swap_shunts")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
 {
-    real1 aParam = (real1)1e-4;
-    real1 tDiff = 2.1f;
-    real1 e0 = sqrt(ONE_R1 - aParam * aParam);
+    real1 aParam = (real1)1e-4f;
+    real1 tDiff = (real1)2.1f;
+    real1 e0 = (real1)sqrt(ONE_R1 - aParam * aParam);
 
     BitOp o2neg1(new complex[4], std::default_delete<complex[]>());
     o2neg1.get()[0] = complex(e0, ZERO_R1);
@@ -4348,9 +4507,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve_uniform")
 {
-    real1 aParam = (real1)1e-4;
-    real1 tDiff = 2.1f;
-    real1 e0 = sqrt(ONE_R1 - aParam * aParam);
+    real1 aParam = (real1)1e-4f;
+    real1 tDiff = (real1)2.1f;
+    real1 e0 = (real1)sqrt(ONE_R1 - aParam * aParam);
 
     BitOp o2neg1(new complex[8], std::default_delete<complex[]>());
     o2neg1.get()[0] = complex(ONE_R1, ZERO_R1);
@@ -4384,7 +4543,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
     }
 
     bitLenInt controls[2] = { 1, 2 };
-    real1 angles[4] = { 3.0, 0.8, 1.2, 0.7 };
+    real1 angles[4] = { (real1)3.0f, (real1)0.8f, (real1)1.2f, (real1)0.7f };
 
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 3, 0, rng);
     qftReg->SetPermutation(2);
@@ -4408,7 +4567,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qneuron")
     const bitLenInt OutputCount = 4;
     const bitCapInt InputPower = 1U << InputCount;
     const bitCapInt OutputPower = 1U << OutputCount;
-    const real1 eta = 0.5;
+    const real1_f eta = 0.5f;
 
     qftReg->Dispose(0, qftReg->GetQubitCount() - (InputCount + OutputCount));
 
@@ -4606,7 +4765,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers", "[supreme]")
 
     int testBinResult, goldBinResult;
     std::map<bitCapInt, int>::iterator measurementBin;
-    real1 crossEntropy = ZERO_R1;
+    real1_f crossEntropy = ZERO_R1;
     for (int perm = 0; perm < 256; perm++) {
         measurementBin = goldStandardResult.find(perm);
         if (measurementBin == goldStandardResult.end()) {
@@ -4976,7 +5135,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
         int testBinResult, goldBinResult;
         std::map<bitCapInt, int>::iterator measurementBin;
-        real1 crossEntropy = ZERO_R1;
+        real1_f crossEntropy = ZERO_R1;
         for (perm = 0; perm < permCount; perm++) {
             measurementBin = goldStandardResult.find(perm);
             if (measurementBin == goldStandardResult.end()) {
@@ -5053,7 +5212,7 @@ TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
     std::cout << ">>> 'test_quantum_supremacy_cross_entropy':" << std::endl;
 
     // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
-    complex sixthRoot = std::pow(-ONE_CMPLX, (real1)(1.0 / 6.0));
+    complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f), ZERO_R1));
 
     const int GateCount1Qb = 3;
     const int Depth = 3;
@@ -5201,7 +5360,7 @@ TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
 
         int testBinResult, goldBinResult;
         std::map<bitCapInt, int>::iterator measurementBin;
-        real1 crossEntropy = ZERO_R1;
+        real1_f crossEntropy = ZERO_R1;
         for (perm = 0; perm < permCount; perm++) {
             measurementBin = goldStandardResult.find(perm);
             if (measurementBin == goldStandardResult.end()) {

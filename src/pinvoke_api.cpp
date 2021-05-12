@@ -27,17 +27,6 @@ std::mutex metaOperationMutex;
 
 using namespace Qrack;
 
-enum Pauli {
-    /// Pauli Identity operator. Corresponds to Q# constant "PauliI."
-    PauliI = 0,
-    /// Pauli X operator. Corresponds to Q# constant "PauliX."
-    PauliX = 1,
-    /// Pauli Y operator. Corresponds to Q# constant "PauliY."
-    PauliY = 3,
-    /// Pauli Z operator. Corresponds to Q# constant "PauliZ."
-    PauliZ = 2
-};
-
 qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>(time(0));
 std::vector<QInterfacePtr> simulators;
 std::vector<bool> simulatorReservations;
@@ -103,7 +92,7 @@ void RHelper(unsigned sid, unsigned b, double phi, unsigned q)
         // This is a global phase factor, with no measurable physical effect.
         // However, the underlying QInterface will not execute the gate
         // UNLESS it is specifically "keeping book" for non-measurable phase effects.
-        complex phaseFac = std::exp(complex(ZERO_R1, phi / 4));
+        complex phaseFac = exp(complex(ZERO_R1, (real1)(phi / 4)));
         simulator->ApplySinglePhase(phaseFac, phaseFac, shards[simulator][q]);
         break;
     }
@@ -130,13 +119,13 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
     }
 
     if (b == PauliI) {
-        complex phaseFac = std::exp(complex(ZERO_R1, phi / 4));
+        complex phaseFac = exp(complex(ZERO_R1, (real1)(phi / 4)));
         simulator->ApplyControlledSinglePhase(ctrlsArray, n, shards[simulator][q], phaseFac, phaseFac);
         return;
     }
 
-    real1 cosine = cos(phi / 2);
-    real1 sine = sin(phi / 2);
+    real1 cosine = (real1)cos(phi / 2);
+    real1 sine = (real1)sin(phi / 2);
     complex pauliR[4];
 
     switch (b) {
@@ -298,8 +287,12 @@ MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ IdCallback callback)
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    std::map<unsigned, bitLenInt>::iterator it;
 
+    if (!simulator) {
+        return;
+    }
+
+    std::map<unsigned, bitLenInt>::iterator it;
     for (it = shards[simulator].begin(); it != shards[simulator].end(); it++) {
         callback(it->first);
     }
@@ -376,6 +369,17 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
     RevertPauliBasis(simulator, n, b, q);
 
     return jointProb;
+}
+
+/**
+ * (External API) Set the simulator to a computational basis permutation.
+ */
+MICROSOFT_QUANTUM_DECL void ResetAll(_In_ unsigned sid)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    if (simulators[sid]) {
+        simulators[sid]->SetPermutation(0);
+    }
 }
 
 /**
@@ -601,8 +605,8 @@ MICROSOFT_QUANTUM_DECL void MCH(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
         ctrlsArray[i] = shards[simulator][c[i]];
     }
 
-    const complex hGate[4] = { complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1), complex(M_SQRT1_2, ZERO_R1),
-        complex(-M_SQRT1_2, ZERO_R1) };
+    const complex hGate[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+        complex(-SQRT1_2_R1, ZERO_R1) };
 
     simulator->ApplyControlledSingleBit(ctrlsArray, n, shards[simulator][q], hGate);
 
@@ -641,7 +645,7 @@ MICROSOFT_QUANTUM_DECL void MCT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
     }
 
     simulator->ApplyControlledSinglePhase(
-        ctrlsArray, n, shards[simulator][q], ONE_CMPLX, complex(M_SQRT1_2, M_SQRT1_2));
+        ctrlsArray, n, shards[simulator][q], ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1));
 
     delete[] ctrlsArray;
 }
@@ -678,7 +682,7 @@ MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads
     }
 
     simulator->ApplyControlledSinglePhase(
-        ctrlsArray, n, shards[simulator][q], ONE_CMPLX, complex(M_SQRT1_2, -M_SQRT1_2));
+        ctrlsArray, n, shards[simulator][q], ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1));
 
     delete[] ctrlsArray;
 }
@@ -752,7 +756,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
         TransformPauliBasis(simulator, n, b, q);
 
         std::size_t mask = make_mask(qVec);
-        simulator->UniformParityRZ(mask, -phi);
+        simulator->UniformParityRZ((bitCapInt)mask, -phi);
 
         RevertPauliBasis(simulator, n, b, q);
     }
@@ -788,7 +792,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         TransformPauliBasis(simulator, n, b, q);
 
         std::size_t mask = make_mask(qVec);
-        simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), mask, -phi);
+        simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), (bitCapInt)mask, -phi);
 
         RevertPauliBasis(simulator, n, b, q);
     }
@@ -958,6 +962,64 @@ MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
 
     QInterfacePtr simulator = simulators[sid];
     return simulator->Prob(shards[simulator][q]);
+}
+
+MICROSOFT_QUANTUM_DECL void QFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+#if (QBCAPPOW >= 16) && (QBCAPPOW < 32)
+    simulator->QFTR(c, n);
+#else
+    bitLenInt* q = new bitLenInt[n];
+    std::copy(c, c + n, q);
+    simulator->QFTR(q, n);
+    delete[] q;
+#endif
+}
+MICROSOFT_QUANTUM_DECL void IQFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+#if (QBCAPPOW >= 16) && (QBCAPPOW < 32)
+    simulator->IQFTR(c, n);
+#else
+    bitLenInt* q = new bitLenInt[n];
+    std::copy(c, c + n, q);
+    simulator->IQFTR(q, n);
+    delete[] q;
+#endif
+}
+
+MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ unsigned sid, _In_ unsigned qi1)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    return simulators[sid]->TrySeparate(qi1);
+}
+
+MICROSOFT_QUANTUM_DECL bool TrySeparate2Qb(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    return simulators[sid]->TrySeparate(qi1, qi2);
+}
+
+MICROSOFT_QUANTUM_DECL bool TrySeparateTol(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ double tol)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    bitLenInt* qb = new bitLenInt[n];
+    std::copy(q, q + n, qb);
+
+    return simulators[sid]->TrySeparate(qb, (bitLenInt)n, (real1_f)tol);
+}
+
+MICROSOFT_QUANTUM_DECL void SetReactiveSeparate(_In_ unsigned sid, _In_ bool irs)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    simulators[sid]->SetReactiveSeparate(irs);
 }
 
 #if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)

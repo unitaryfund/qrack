@@ -99,9 +99,12 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
     if (!isDiag) {
         complex trace = matrix2x2[0] + matrix2x2[3];
         complex determinant = (matrix2x2[0] * matrix2x2[3]) - (matrix2x2[1] * matrix2x2[2]);
-        complex quadraticRoot = sqrt(trace * trace - (real1)(4.0) * determinant);
-        complex eigenvalue1 = (trace + quadraticRoot) / (real1)2.0;
-        complex eigenvalue2 = (trace - quadraticRoot) / (real1)2.0;
+        complex quadraticRoot = trace * trace - ((real1)4.0f) * determinant;
+        std::complex<real1_f> qrtf(real(quadraticRoot), imag(quadraticRoot));
+        qrtf = sqrt(qrtf);
+        quadraticRoot = complex((real1)real(qrtf), (real1)imag(qrtf));
+        complex eigenvalue1 = (trace + quadraticRoot) / (real1)2.0f;
+        complex eigenvalue2 = (trace - quadraticRoot) / (real1)2.0f;
 
         jacobian[0] = matrix2x2[0] - eigenvalue1;
         jacobian[2] = matrix2x2[2];
@@ -114,11 +117,11 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
         expOfGate[2] = complex(ZERO_R1, ZERO_R1);
         expOfGate[3] = eigenvalue2;
 
-        real1 nrm = std::sqrt(norm(jacobian[0]) + norm(jacobian[2]));
+        real1 nrm = (real1)std::sqrt(norm(jacobian[0]) + norm(jacobian[2]));
         jacobian[0] /= nrm;
         jacobian[2] /= nrm;
 
-        nrm = std::sqrt(norm(jacobian[1]) + norm(jacobian[3]));
+        nrm = (real1)std::sqrt(norm(jacobian[1]) + norm(jacobian[3]));
         jacobian[1] /= nrm;
         jacobian[3] /= nrm;
 
@@ -143,10 +146,10 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
             complex((real1)cos(imag(expOfGate[3])), (real1)sin(imag(expOfGate[3])));
     } else {
         // In this branch, we calculate log(matrix2x2).
-        expOfGate[0] = complex(std::log(abs(expOfGate[0])), arg(expOfGate[0]));
+        expOfGate[0] = complex((real1)std::log(abs(expOfGate[0])), (real1)arg(expOfGate[0]));
         expOfGate[1] = complex(ZERO_R1, ZERO_R1);
         expOfGate[2] = complex(ZERO_R1, ZERO_R1);
-        expOfGate[3] = complex(std::log(abs(expOfGate[3])), arg(expOfGate[3]));
+        expOfGate[3] = complex((real1)std::log(abs(expOfGate[3])), (real1)arg(expOfGate[3]));
     }
 
     if (!isDiag) {
@@ -225,7 +228,8 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
 {
     // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
     // operator, then we can discard this buffer without applying it.
-    if ((mtrx[0] != mtrx[3]) || (mtrx[1] != ZERO_CMPLX) || (mtrx[2] != ZERO_CMPLX)) {
+    if ((norm(mtrx[0] - mtrx[3]) > FP_NORM_EPSILON) || (norm(mtrx[1]) > FP_NORM_EPSILON) ||
+        (norm(mtrx[2]) > FP_NORM_EPSILON)) {
         return false;
     }
 
@@ -235,7 +239,7 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
     // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
     // the global phase offset.
 
-    if ((isControlled || !randGlobalPhase) && (mtrx[0] != ONE_CMPLX)) {
+    if ((isControlled || !randGlobalPhase) && (norm(mtrx[0] - ONE_CMPLX) > FP_NORM_EPSILON)) {
         return false;
     }
 

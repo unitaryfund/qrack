@@ -32,7 +32,8 @@ int main()
     // At each step of the search, we select the quadrant with bounds that could contain our value. In an ideal
     // noiseless quantum computer, this search should be deterministic.
 
-    bitCapIntOcl i, j;
+    bitCapIntOcl i;
+    int64_t j;
     bitLenInt partStart;
     bitLenInt partLength;
 
