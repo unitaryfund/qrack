@@ -13,7 +13,7 @@
 #include "qfactory.hpp"
 #include "qstabilizerhybrid.hpp"
 
-#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
+#define IS_NORM_0(c) (norm(c) <= amplitudeFloor)
 
 namespace Qrack {
 
