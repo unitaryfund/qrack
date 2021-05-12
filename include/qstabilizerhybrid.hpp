@@ -175,12 +175,9 @@ public:
                 if (shards[i]) {
                     // This will call FlushBuffers() again after no longer stabilizer.
                     SwitchToEngine();
-                    return;
+                    break;
                 }
             }
-        }
-
-        if (stabilizer) {
             return;
         }
 
@@ -188,7 +185,7 @@ public:
             QStabilizerShardPtr shard = shards[i];
             if (shard) {
                 shards[i] = NULL;
-                ApplySingleBit(shard->gate, i);
+                engine->ApplySingleBit(shard->gate, i);
             }
         }
 
