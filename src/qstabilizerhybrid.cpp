@@ -13,7 +13,7 @@
 #include "qfactory.hpp"
 #include "qstabilizerhybrid.hpp"
 
-#define IS_NORM_ZERO(c) (norm(c) <= amplitudeFloor)
+#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 
 namespace Qrack {
 
@@ -450,11 +450,11 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
     }
-    if (IS_NORM_ZERO(mtrx[0]) && IS_NORM_ZERO(mtrx[3])) {
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
@@ -557,10 +557,10 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     if (shardsEigenZ[target]) {
-        if ((norm(shard->gate[1]) <= FP_NORM_EPSILON) && (norm(shard->gate[2]) <= FP_NORM_EPSILON)) {
+        if (IS_NORM_0(shard->gate[1]) && IS_NORM_0(shard->gate[2])) {
             return;
         }
-        if ((norm(shard->gate[0]) <= FP_NORM_EPSILON) && (norm(shard->gate[3]) <= FP_NORM_EPSILON)) {
+        if (IS_NORM_0(shard->gate[0]) && IS_NORM_0(shard->gate[3])) {
             stabilizer->X(target);
             return;
         }
@@ -671,12 +671,12 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
 void QStabilizerHybrid::ApplyControlledSingleBit(
     const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& target, const complex* mtrx)
 {
-    if (IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplyControlledSinglePhase(lControls, lControlLen, target, mtrx[0], mtrx[3]);
         return;
     }
 
-    if (IS_NORM_ZERO(mtrx[0]) && IS_NORM_ZERO(mtrx[3])) {
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplyControlledSingleInvert(lControls, lControlLen, target, mtrx[1], mtrx[2]);
         return;
     }
@@ -829,12 +829,12 @@ void QStabilizerHybrid::ApplyAntiControlledSingleBit(
         return;
     }
 
-    if (IS_NORM_ZERO(mtrx[1]) && IS_NORM_ZERO(mtrx[2])) {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplyAntiControlledSinglePhase(&(controls[0]), 1U, target, mtrx[0], mtrx[3]);
         return;
     }
 
-    if (IS_NORM_ZERO(mtrx[0]) && IS_NORM_ZERO(mtrx[3])) {
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplyAntiControlledSingleInvert(&(controls[0]), 1U, target, mtrx[1], mtrx[2]);
         return;
     }
