@@ -374,10 +374,12 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
 /**
  * (External API) Set the simulator to a computational basis permutation.
  */
-MICROSOFT_QUANTUM_DECL void SetPermutation(_In_ unsigned sid, _In_ unsigned p)
+MICROSOFT_QUANTUM_DECL void ResetAll(_In_ unsigned sid)
 {
     SIMULATOR_LOCK_GUARD(sid)
-    simulators[sid]->SetPermutation(p);
+    if (simulators[sid]) {
+        simulators[sid]->SetPermutation(0);
+    }
 }
 
 /**
