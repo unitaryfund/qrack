@@ -287,8 +287,12 @@ MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ IdCallback callback)
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    std::map<unsigned, bitLenInt>::iterator it;
 
+    if (!simulator) {
+        return;
+    }
+
+    std::map<unsigned, bitLenInt>::iterator it;
     for (it = shards[simulator].begin(); it != shards[simulator].end(); it++) {
         callback(it->first);
     }
