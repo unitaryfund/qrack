@@ -186,7 +186,7 @@ void QStabilizerHybrid::CH(bitLenInt control, bitLenInt target)
             return;
         }
         if (prob == ONE_R1) {
-            stabilizer->H(target);
+            H(target);
             return;
         }
 
@@ -204,7 +204,7 @@ void QStabilizerHybrid::CS(bitLenInt control, bitLenInt target)
             return;
         }
         if (prob == ONE_R1) {
-            stabilizer->S(target);
+            S(target);
             return;
         }
 
@@ -222,7 +222,7 @@ void QStabilizerHybrid::CIS(bitLenInt control, bitLenInt target)
             return;
         }
         if (prob == ONE_R1) {
-            stabilizer->IS(target);
+            IS(target);
             return;
         }
 
@@ -995,7 +995,7 @@ bitCapInt QStabilizerHybrid::MAll()
     if (stabilizer) {
         bitCapIntOcl toRet = 0;
         for (bitLenInt i = 0; i < qubitCount; i++) {
-            toRet |= ((stabilizer->M(i) ? 1 : 0) << i);
+            toRet |= ((stabilizer->M(i) ? ONE_BCI : 0) << i);
         }
         return (bitCapInt)toRet;
     }
