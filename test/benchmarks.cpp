@@ -772,11 +772,16 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
                             qReg->Swap(b1, b2);
                         }
                     } else if (gateRand < (2 * ONE_R1)) {
-                        gateRand = 2 * qReg->Rand();
-                        if (gateRand < ONE_R1) {
-                            qReg->CY(b1, b2);
+                        gateRand = 4 * qReg->Rand();
+                        if (gateRand < (3 * ONE_R1)) {
+                            gateRand = 2 * qReg->Rand();
+                            if (gateRand < ONE_R1) {
+                                qReg->CY(b1, b2);
+                            } else {
+                                qReg->AntiCY(b1, b2);
+                            }
                         } else {
-                            qReg->AntiCY(b1, b2);
+                            qReg->Swap(b1, b2);
                         }
                     } else if (gateRand < (3 * ONE_R1)) {
                         gateRand = 2 * qReg->Rand();
@@ -905,11 +910,16 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
                                 qReg->Swap(b1, b2);
                             }
                         } else if (gateRand < (2 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->CY(b1, b2);
+                            gateRand = 4 * qReg->Rand();
+                            if (gateRand < (3 * ONE_R1)) {
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->CY(b1, b2);
+                                } else {
+                                    qReg->AntiCY(b1, b2);
+                                }
                             } else {
-                                qReg->AntiCY(b1, b2);
+                                qReg->Swap(b1, b2);
                             }
                         } else if (gateRand < (3 * ONE_R1)) {
                             gateRand = 2 * qReg->Rand();
@@ -1099,11 +1109,16 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
                                 qReg->Swap(b1, b2);
                             }
                         } else if (gateRand < (2 * ONE_R1)) {
-                            gateRand = 2 * qReg->Rand();
-                            if (gateRand < ONE_R1) {
-                                qReg->CY(b1, b2);
+                            gateRand = 4 * qReg->Rand();
+                            if (gateRand < (3 * ONE_R1)) {
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->CY(b1, b2);
+                                } else {
+                                    qReg->AntiCY(b1, b2);
+                                }
                             } else {
-                                qReg->AntiCY(b1, b2);
+                                qReg->Swap(b1, b2);
                             }
                         } else if (gateRand < (3 * ONE_R1)) {
                             gateRand = 2 * qReg->Rand();
