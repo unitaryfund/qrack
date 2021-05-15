@@ -1063,7 +1063,8 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
         return prob;
     }
 
-    if (BLOCKED_SEPARATE(shard)) {
+    // TODO: It shouldn't be necessary to prevent separation of ALL Clifford shards.
+    if (shard.isClifford()) {
         return prob;
     }
 
