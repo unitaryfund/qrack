@@ -625,29 +625,44 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
     gaussian();
 
     bitLenInt i, j;
+    bitLenInt i2, j2;
     bitLenInt end = start + length;
 
     for (i = 0; i < start; i++) {
+        i2 = i + qubitCount;
         for (j = 0; j < start; j++) {
             if (x[i][j] || z[i][j]) {
+                return false;
+            }
+            if (x[i2][j] || z[i2][j]) {
                 return false;
             }
         }
         for (j = end; j < qubitCount; j++) {
             if (x[i][j] || z[i][j]) {
+                return false;
+            }
+            if (x[i2][j] || z[i2][j]) {
                 return false;
             }
         }
     }
 
     for (i = end; i < qubitCount; i++) {
+        i2 = i + qubitCount;
         for (j = 0; j < start; j++) {
             if (x[i][j] || z[i][j]) {
+                return false;
+            }
+            if (x[i2][j] || z[i2][j]) {
                 return false;
             }
         }
         for (j = end; j < qubitCount; j++) {
             if (x[i][j] || z[i][j]) {
+                return false;
+            }
+            if (x[i2][j] || z[i2][j]) {
                 return false;
             }
         }
