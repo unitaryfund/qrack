@@ -985,8 +985,8 @@ public:
             return ZERO_R1;
         }
 
-        if (qubitCount == 1U) {
-            return Prob(0);
+        if (!(mask & (mask - ONE_BCI))) {
+            return Prob(log2(mask));
         }
 
         SwitchToEngine();
