@@ -2905,7 +2905,7 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 
 void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
 {
-    if (IsIdentity(mtrx, true)) {
+    if (IsIdentity(mtrx, false)) {
         return;
     }
 
