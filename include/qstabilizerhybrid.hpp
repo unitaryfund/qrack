@@ -93,6 +93,14 @@ protected:
         }
     }
 
+    virtual void ComposeGate(bitLenInt target, complex* mtrx)
+    {
+        QStabilizerShardPtr shard = shards[target];
+        shard->Compose(mtrx);
+        std::copy(shard->gate, shard->gate + 4, mtrx);
+        shards[target] = NULL;
+    }
+
 public:
     QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -272,6 +280,7 @@ public:
         if (shards[target]) {
             complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
                 complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
+            ComposeGate(target, mtrx);
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -290,6 +299,7 @@ public:
     {
         if (shards[target]) {
             complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+            ComposeGate(target, mtrx);
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -308,6 +318,7 @@ public:
     {
         if (shards[target]) {
             complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+            ComposeGate(target, mtrx);
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -323,6 +334,7 @@ public:
     {
         if (shards[target]) {
             complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+            ComposeGate(target, mtrx);
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -340,6 +352,7 @@ public:
     {
         if (shards[target]) {
             complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+            ComposeGate(target, mtrx);
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -357,6 +370,7 @@ public:
             complex mtrx[4] = { complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
                 complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)), complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)),
                 complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)) };
+            ComposeGate(target, mtrx);
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -374,6 +388,7 @@ public:
             complex mtrx[4] = { complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)),
                 complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)), complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
                 complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)) };
+            ComposeGate(target, mtrx);
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -389,6 +404,7 @@ public:
     {
         if (shards[target]) {
             complex mtrx[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+            ComposeGate(target, mtrx);
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -406,6 +422,7 @@ public:
             complex mtrx[4] = { complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
                 complex((real1)(-ONE_R1 / 2), (real1)(-ONE_R1 / 2)), complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
                 complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)) };
+            ComposeGate(target, mtrx);
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -423,6 +440,7 @@ public:
             complex mtrx[4] = { complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)),
                 complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)), complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2)),
                 complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)) };
+            ComposeGate(target, mtrx);
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -949,7 +967,7 @@ public:
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
         bool isCachedInvert = false;
-        if (stabilizer && shards[qubitIndex]) {
+        if (shards[qubitIndex]) {
             if (shards[qubitIndex]->IsInvert()) {
                 isCachedInvert = true;
             } else if (!shards[qubitIndex]->IsPhase()) {
@@ -958,7 +976,8 @@ public:
         }
 
         if (engine) {
-            return engine->Prob(qubitIndex);
+            real1_f prob = engine->Prob(qubitIndex);
+            return isCachedInvert ? (ONE_R1 - prob) : prob;
         }
 
         if (stabilizer->IsSeparableZ(qubitIndex)) {
