@@ -625,7 +625,7 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
     gaussian();
 
     bitLenInt i, j;
-    bitLenInt i2, j2;
+    bitLenInt i2;
     bitLenInt end = start + length;
 
     for (i = 0; i < start; i++) {
