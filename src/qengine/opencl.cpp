@@ -1276,7 +1276,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs);
 
-    bitCapInt largerPower = partPower > remainderPower ? partPower : remainderPower;
+    bitCapIntOcl largerPower = partPower > remainderPower ? partPower : remainderPower;
 
     size_t ngc = FixWorkItemCount(largerPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -2288,8 +2288,8 @@ real1_f QEngineOCL::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
     real1 average = ZERO_R1;
     real1 prob;
     real1 totProb = ZERO_R1;
-    bitCapInt i, outputInt;
-    bitCapInt outputMask = bitRegMask(valueStart, valueLength);
+    bitCapIntOcl i, outputInt;
+    bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
     LockSync(CL_MAP_READ);
     for (i = 0; i < maxQPower; i++) {
         outputInt = (i & outputMask) >> valueStart;

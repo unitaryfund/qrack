@@ -456,7 +456,7 @@ bitLenInt QPager::Compose(QPagerPtr toCopy)
     }
 
     bitCapIntOcl i, j;
-    bitCapInt maxJ = ((bitCapInt)toCopy->qPages.size() - 1U);
+    bitCapIntOcl maxJ = ((bitCapIntOcl)toCopy->qPages.size() - 1U);
     std::vector<QEnginePtr> nQPages;
 
     for (i = 0; i < qPages.size(); i++) {

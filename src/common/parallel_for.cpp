@@ -170,7 +170,7 @@ void ParallelFor::par_for_skip(
         return;
     }
 
-    bitCapIntOcl lowMask = skipMask - ONE_BCI;
+    bitCapIntOcl lowMask = (bitCapIntOcl)skipMask - ONE_BCI;
     bitCapIntOcl highMask = ~lowMask;
 
     IncrementFunc incFn;
@@ -231,7 +231,7 @@ real1_f ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr st
     }
 
     const bitCapIntOcl Stride = pStride;
-    const bitCapIntOcl itemCount = maxQPower;
+    const bitCapIntOcl itemCount = (bitCapIntOcl)maxQPower;
 
     real1_f nrmSqr = ZERO_R1;
     if ((itemCount / Stride) < (bitCapIntOcl)numCores) {
@@ -283,7 +283,7 @@ real1_f ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr st
 real1_f ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray)
 {
     const bitCapIntOcl Stride = pStride;
-    const bitCapIntOcl itemCount = maxQPower;
+    const bitCapIntOcl itemCount = (bitCapIntOcl)maxQPower;
 
     real1_f nrmSqr = ZERO_R1;
     if ((itemCount / Stride) < (bitCapInt)numCores) {
