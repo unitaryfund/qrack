@@ -1175,7 +1175,7 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
             int d;
             bitLenInt i;
             real1_f gateRand;
-            bitLenInt b1, b2, b3=0;
+            bitLenInt b1, b2, b3 = 0;
             bool is3Qubit;
             int row, col;
             int tempRow, tempCol;
@@ -1295,23 +1295,21 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
                             continue;
                         }
 
-                        is3Qubit = ((qReg->Rand() * 2) >= ONE_R1);
+                        tempGate = tempGate ^ 3U;
 
-                        if (is3Qubit) {
-                            tempGate = tempGate ^ 3U;
+                        tempRow = row;
+                        tempCol = col;
 
-                            tempRow = row;
-                            tempCol = col;
+                        tempRow += ((tempGate & 2U) ? 1 : -1);
+                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
 
-                            tempRow += ((tempGate & 2U) ? 1 : -1);
-                            tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
+                        b3 = tempRow * colLen + tempCol;
 
-                            b3 = tempRow * colLen + tempCol;
-
-                            if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                                (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())) {
-                                is3Qubit = false;
-                            }
+                        if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                            (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())) {
+                            is3Qubit = false;
+                        } else {
+                            is3Qubit = (b3 < b1) || ((qReg->Rand() * 2) >= ONE_R1);
                         }
 
                         usedBits.push_back(b1);
