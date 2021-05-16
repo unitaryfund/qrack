@@ -52,6 +52,7 @@ int main(int argc, char* argv[])
     bool qunit = false;
     bool qunit_multi = false;
     bool qunit_qpager = false;
+    bool qunit_multi_qpager = false;
 
     // Engines
     bool cpu = false;
@@ -72,6 +73,7 @@ int main(int argc, char* argv[])
         Opt(qunit)["--layer-qunit"]("Enable QUnit implementation tests") |
         Opt(qunit_multi)["--layer-qunit-multi"]("Enable QUnitMulti implementation tests") |
         Opt(qunit_qpager)["--layer-qunit-qpager"]("Enable QUnit with QPager implementation tests") |
+        Opt(qunit_multi_qpager)["--layer-qunit-multi-qpager"]("Enable QUnitMulti with QPager implementation tests") |
         Opt(stabilizer_qpager)["--proc-stabilizer-qpager"](
             "Enable QStabilizerHybrid over QPager implementation tests") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
@@ -121,13 +123,13 @@ int main(int argc, char* argv[])
         session.config().stream() << " (Overridden by hardware generation!)" << std::endl;
     }
 
-    if (!qengine && !qpager && !qunit && !qunit_multi && !qunit_qpager) {
+    if (!qengine && !qpager && !qunit && !qunit_multi && !qunit_qpager && !qunit_multi_qpager) {
         qunit = true;
         qunit_multi = true;
         qengine = true;
-        // Unstable:
         // qpager = true;
         // qunit_qpager = true;
+        // qunit_multi_qpager = true;
     }
 
     if (!cpu && !opencl && !hybrid && !stabilizer && !stabilizer_qpager) {
@@ -135,7 +137,6 @@ int main(int argc, char* argv[])
         opencl = true;
         hybrid = true;
         stabilizer = true;
-        // Unstable:
         // stabilizer_qpager = true;
     }
 
@@ -339,23 +340,22 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (num_failed == 0 && qunit_multi) {
+    if (num_failed == 0 && qunit_multi_qpager && hybrid) {
+        session.config().stream() << "############ QUnitMulti -> QPager -> QHybrid ############" << std::endl;
         testEngineType = QINTERFACE_QUNIT_MULTI;
-        if (num_failed == 0 && qpager) {
-            session.config().stream() << "############ QUnitMulti -> QPager -> QHybrid ############" << std::endl;
-            testSubEngineType = QINTERFACE_QPAGER;
-            testSubSubEngineType = QINTERFACE_HYBRID;
-            SHOW_OCL_BANNER();
-            num_failed = session.run();
-        }
+        testSubEngineType = QINTERFACE_QPAGER;
+        testSubSubEngineType = QINTERFACE_HYBRID;
+        SHOW_OCL_BANNER();
+        num_failed = session.run();
+    }
 
-        if (num_failed == 0 && stabilizer_qpager) {
-            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
-            testSubSubEngineType = QINTERFACE_QPAGER;
-            session.config().stream() << "########### QUnitMulti -> QStabilizerHybrid -> QPager -> QHybrid ###########"
-                                      << std::endl;
-            num_failed = session.run();
-        }
+    if (num_failed == 0 && qunit_multi && stabilizer_qpager) {
+        testEngineType = QINTERFACE_QUNIT_MULTI;
+        testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+        testSubSubEngineType = QINTERFACE_QPAGER;
+        session.config().stream() << "########### QUnitMulti -> QStabilizerHybrid -> QPager -> QHybrid ###########"
+                                  << std::endl;
+        num_failed = session.run();
 #endif
     }
 
