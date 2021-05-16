@@ -1063,7 +1063,8 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
         return prob;
     }
 
-    if (BLOCKED_SEPARATE(shard)) {
+    if (shard.unit->isClifford() &&
+        (!shard.unit->TrySeparate(shard.mapped) || ((shard.amp0 != ZERO_CMPLX) && (shard.amp1 != ZERO_CMPLX)))) {
         return prob;
     }
 
