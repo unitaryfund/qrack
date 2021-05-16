@@ -993,7 +993,7 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
             bitLenInt b1, b2;
             int row, col;
             int tempRow, tempCol;
-            bitLenInt gate;
+            bitLenInt gate, tempGate;
 
             // The test runs 2 bit gates according to a tiling sequence.
             // The 1 bit indicates +/- column offset.
@@ -1077,7 +1077,9 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
                 gateSequence.pop_front();
                 gateSequence.push_back(gate);
 
-                for (row = 1; row < rowLen; row += 2) {
+                std::vector<bitLenInt> usedBits;
+
+                for (row = 0; row < rowLen; row++) {
                     for (col = 0; col < colLen; col++) {
                         // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
                         // In this test, the boundaries of the rectangle have no couplers.
@@ -1086,18 +1088,28 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
                         // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
                         // awkwardly.)
 
-                        tempRow = row;
-                        tempCol = col;
-
-                        tempRow += ((gate & 2U) ? 1 : -1);
-                        tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
-
-                        if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen)) {
+                        b1 = row * colLen + col;
+                        if (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end()) {
                             continue;
                         }
 
-                        b1 = row * colLen + col;
+                        tempGate = (row & 1U) ? gate : (gate ^ 3U);
+
+                        tempRow = row;
+                        tempCol = col;
+
+                        tempRow += ((tempGate & 2U) ? 1 : -1);
+                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
+
                         b2 = tempRow * colLen + tempCol;
+
+                        if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                            (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())) {
+                            continue;
+                        }
+
+                        usedBits.push_back(b1);
+                        usedBits.push_back(b2);
 
                         if ((qReg->Rand() * 2) >= ONE_R1) {
                             std::swap(b1, b2);
@@ -1253,7 +1265,7 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
 
                 std::vector<bitLenInt> usedBits;
 
-                for (row = 1; row < rowLen; row++) {
+                for (row = 0; row < rowLen; row++) {
                     for (col = 0; col < colLen; col++) {
                         // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
                         // In this test, the boundaries of the rectangle have no couplers.
