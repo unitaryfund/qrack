@@ -72,9 +72,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     std::cout << "1st Quartile (ms), ";
     std::cout << "Median (ms), ";
     std::cout << "3rd Quartile (ms), ";
-    std::cout << "Slowest (ms)" << std::endl;
+    std::cout << "Slowest (ms), ";
+    std::cout << "Failure count" << std::endl;
 
-    real1_f* trialClocks = new real1_f[benchmarkSamples];
+    std::vector<real1_f> trialClocks;
+    bool isTrialSuccessful = true;
 
     bitLenInt i, j, numBits;
 
@@ -116,6 +118,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         avgt = 0.0;
         sampleFailureCount = 0;
 
+        trialClocks.clear();
+
         for (i = 0; i < benchmarkSamples; i++) {
             if (!qUniverse) {
                 if (resetRandomPerm) {
@@ -147,9 +151,10 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             if (numBits > qbTryThreshold) {
                 try {
                     fn(qftReg, numBits);
+                    isTrialSuccessful = true;
                 } catch (const std::invalid_argument& e) {
-                    std::cout << "Trial failed. Ex.:" << e.what() << std::endl;
                     sampleFailureCount++;
+                    isTrialSuccessful = false;
                 }
             } else {
                 fn(qftReg, numBits);
@@ -160,14 +165,16 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             }
 
             // Collect interval data
-            auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::high_resolution_clock::now() - iterClock);
-            if (logNormal) {
-                trialClocks[i] = log2(tClock.count() * clockFactor);
-            } else {
-                trialClocks[i] = tClock.count() * clockFactor;
+            if (isTrialSuccessful) {
+                auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+                    std::chrono::high_resolution_clock::now() - iterClock);
+                if (logNormal) {
+                    trialClocks.push_back(log2(tClock.count() * clockFactor));
+                } else {
+                    trialClocks.push_back(tClock.count() * clockFactor);
+                }
+                avgt += trialClocks[i];
             }
-            avgt += trialClocks[i];
 
             if (async_time) {
                 qftReg->Finish();
@@ -186,19 +193,18 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
         if (sampleFailureCount >= benchmarkSamples) {
             std::cout << "All samples at width failed. Terminating..." << std::endl;
-            delete[] trialClocks;
             return;
         }
 
-        avgt /= benchmarkSamples;
+        avgt /= trialClocks.size();
 
         stdet = 0.0;
-        for (i = 0; i < benchmarkSamples; i++) {
+        for (i = 0; i < trialClocks.size(); i++) {
             stdet += (trialClocks[i] - avgt) * (trialClocks[i] - avgt);
         }
-        stdet = sqrt(stdet / benchmarkSamples);
+        stdet = sqrt(stdet / trialClocks.size());
 
-        std::sort(trialClocks, trialClocks + benchmarkSamples);
+        std::sort(trialClocks.begin(), trialClocks.end());
 
         std::cout << (int)numBits << ", "; /* # of Qubits */
         std::cout << formatTime(avgt, logNormal) << ","; /* Average Time (ms) */
@@ -208,49 +214,50 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         std::cout << formatTime(trialClocks[0], logNormal) << ",";
 
         // 1st Quartile (ms)
-        if (benchmarkSamples < 8) {
+        if (trialClocks.size() < 8) {
             std::cout << formatTime(trialClocks[0], logNormal) << ",";
-        } else if (benchmarkSamples % 4 == 0) {
-            std::cout << formatTime(
-                             (trialClocks[benchmarkSamples / 4 - 1] + trialClocks[benchmarkSamples / 4]) / 2, logNormal)
+        } else if (trialClocks.size() % 4 == 0) {
+            std::cout << formatTime((trialClocks[trialClocks.size() / 4 - 1] + trialClocks[trialClocks.size() / 4]) / 2,
+                             logNormal)
                       << ",";
         } else {
-            std::cout << formatTime(trialClocks[benchmarkSamples / 4 - 1] / 2, logNormal) << ",";
+            std::cout << formatTime(trialClocks[trialClocks.size() / 4 - 1] / 2, logNormal) << ",";
         }
 
         // Median (ms) (2nd quartile)
-        if (benchmarkSamples < 4) {
-            std::cout << formatTime(trialClocks[benchmarkSamples / 2], logNormal) << ",";
-        } else if (benchmarkSamples % 2 == 0) {
-            std::cout << formatTime(
-                             (trialClocks[benchmarkSamples / 2 - 1] + trialClocks[benchmarkSamples / 2]) / 2, logNormal)
+        if (trialClocks.size() < 4) {
+            std::cout << formatTime(trialClocks[trialClocks.size() / 2], logNormal) << ",";
+        } else if (trialClocks.size() % 2 == 0) {
+            std::cout << formatTime((trialClocks[trialClocks.size() / 2 - 1] + trialClocks[trialClocks.size() / 2]) / 2,
+                             logNormal)
                       << ",";
         } else {
-            std::cout << formatTime(trialClocks[benchmarkSamples / 2 - 1] / 2, logNormal) << ","; /* Median (ms) */
+            std::cout << formatTime(trialClocks[trialClocks.size() / 2 - 1] / 2, logNormal) << ","; /* Median (ms) */
         }
 
         // 3rd Quartile (ms)
-        if (benchmarkSamples < 8) {
-            std::cout << formatTime(trialClocks[(3 * benchmarkSamples) / 4], logNormal) << ",";
-        } else if (benchmarkSamples % 4 == 0) {
-            std::cout << formatTime(
-                             (trialClocks[(3 * benchmarkSamples) / 4 - 1] + trialClocks[(3 * benchmarkSamples) / 4]) /
+        if (trialClocks.size() < 8) {
+            std::cout << formatTime(trialClocks[(3 * trialClocks.size()) / 4], logNormal) << ",";
+        } else if (trialClocks.size() % 4 == 0) {
+            std::cout << formatTime((trialClocks[(3 * trialClocks.size()) / 4 - 1] +
+                                        trialClocks[(3 * trialClocks.size()) / 4]) /
                                  2,
                              logNormal)
                       << ",";
         } else {
-            std::cout << formatTime(trialClocks[(3 * benchmarkSamples) / 4 - 1] / 2, logNormal) << ",";
+            std::cout << formatTime(trialClocks[(3 * trialClocks.size()) / 4 - 1] / 2, logNormal) << ",";
         }
 
         // Slowest (ms)
-        if (benchmarkSamples <= 1) {
-            std::cout << formatTime(trialClocks[0], logNormal) << std::endl;
+        if (trialClocks.size() <= 1) {
+            std::cout << formatTime(trialClocks[0], logNormal) << ",";
         } else {
-            std::cout << formatTime(trialClocks[benchmarkSamples - 1], logNormal) << std::endl;
+            std::cout << formatTime(trialClocks[trialClocks.size() - 1], logNormal) << ",";
         }
-    }
 
-    delete[] trialClocks;
+        // Failure count
+        std::cout << sampleFailureCount << std::endl;
+    }
 }
 
 void benchmarkLoop(std::function<void(QInterfacePtr, bitLenInt)> fn, bool resetRandomPerm = true,
@@ -1032,10 +1039,11 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
                     // "Position transforms:
 
                     // Continuous Z root gates option:
-                    // gateRand = 2 * PI_R1 * qReg->Rand();
-                    // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                    gateRand = 2 * PI_R1 * qReg->Rand();
+                    qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                     // Discrete Z root gates option:
+                    /*
                     gateRand = 8 * qReg->Rand();
                     if (gateRand < ONE_R1) {
                         // Z^(1/4)
@@ -1062,6 +1070,7 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
                         qReg->IT(i);
                     }
                     // else - identity
+                    */
                 }
 
                 gate = gateSequence.front();
