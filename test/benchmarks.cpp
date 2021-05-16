@@ -1175,7 +1175,7 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
             int d;
             bitLenInt i;
             real1_f gateRand;
-            bitLenInt b1, b2, b3;
+            bitLenInt b1, b2, b3=0;
             bool is3Qubit;
             int row, col;
             int tempRow, tempCol;
