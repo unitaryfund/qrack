@@ -630,19 +630,8 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
 
     for (i = 0; i < start; i++) {
         i2 = i + qubitCount;
-        for (j = 0; j < start; j++) {
-            if (x[i][j] || z[i][j]) {
-                return false;
-            }
-            if (x[i2][j] || z[i2][j]) {
-                return false;
-            }
-        }
-        for (j = end; j < qubitCount; j++) {
-            if (x[i][j] || z[i][j]) {
-                return false;
-            }
-            if (x[i2][j] || z[i2][j]) {
+        for (j = 0; j < qubitCount; j++) {
+            if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
             }
         }
@@ -650,19 +639,22 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
 
     for (i = end; i < qubitCount; i++) {
         i2 = i + qubitCount;
-        for (j = 0; j < start; j++) {
-            if (x[i][j] || z[i][j]) {
+        for (j = 0; j < qubitCount; j++) {
+            if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
             }
-            if (x[i2][j] || z[i2][j]) {
+        }
+    }
+
+    for (i = start; i < end; i++) {
+        i2 = i + qubitCount;
+        for (j = 0; j < start; j++) {
+            if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
             }
         }
         for (j = end; j < qubitCount; j++) {
-            if (x[i][j] || z[i][j]) {
-                return false;
-            }
-            if (x[i2][j] || z[i2][j]) {
+            if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
             }
         }
@@ -699,8 +691,8 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
             std::copy(z[j].begin() + start, z[j].begin() + end, dest->z[i].begin());
 
             j = qubitCount + start + i;
-            std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[i + length].begin());
-            std::copy(z[j].begin() + start, z[j].begin() + end, dest->z[i + length].begin());
+            std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[(i + length)].begin());
+            std::copy(z[j].begin() + start, z[j].begin() + end, dest->z[(i + length)].begin());
         }
         j = start;
         std::copy(r.begin() + j, r.begin() + j + length, dest->r.begin());
