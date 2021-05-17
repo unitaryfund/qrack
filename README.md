@@ -19,13 +19,13 @@ A number of useful "pseudo-quantum" operations, which could not be carried out b
 Qrack compiles like a library. To include in your project:
 
 1. In your source code:
-```
+```cpp
 #include "qrack/qfactory.hpp"
 ```
 
 2. On the command line, in the project directory
 
-```
+```sh
 $ mkdir _build && cd _build && cmake .. && make all install
 ```
 
@@ -49,7 +49,7 @@ For help getting started with contributing, see our [CONTRIBUTING.md](https://gi
 
 The included `test/tests.cpp` contains unit tests and usage examples. The unittests themselves can be executed:
 
-```
+```sh
     $ _build/unittest
 ```
 
@@ -79,7 +79,7 @@ Qrack requires the `xxd` command to convert its OpenCL kernel code into hexadeci
 
 CMake on Windows will set up a 32-bit Visual Studio project by default, (if using Visual Studio,) whereas 64-bit will probably be typically desired. `-DFPPOW=6` is used to set the systemic floating point accuracy to `double`, which is typically necessary for Q# accuracy tolerances. Putting together all of the above considerations, after installing the CUDA Toolkit and Vim, a typical CMake command for Windows might look like this:
 
-```
+```sh
     $ mkdir _build
     $ cd _build
     $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" -DFPPOW=6 ..
@@ -89,7 +89,7 @@ After CMake, the project must be built in Visual Studio. Once installed, the `qr
 
 ## Performing code coverage
 
-```
+```sh
     $ cd _build
     $ cmake -DENABLE_CODECOVERAGE=ON ..
     $ make -j 8 unittest
@@ -119,67 +119,67 @@ QEngineCPU and QHybrid batch work items in groups of 2^`PSTRIDEPOW` before dispa
 
 ## Vectorization optimization
 
-```
+```sh
 $ cmake -DENABLE_COMPLEX_X2=ON ..
 ```
 Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 for float. On by default, but can be turned off for double accuracy without the AVX requirement, or to completely remove vectorization with single float accuracy.
 
-## On-Chip Hardware Random Number Generation 
+## On-Chip Hardware Random Number Generation
 
-```
+```sh
 $ cmake -DENABLE_RDRAND=OFF ..
 ```
 Turn off the option to attempt using on-chip hardware random number generation, which is on by default. If the option is on, Qrack might still compile to attempt using hardware random number generation, but fall back to software generation if the RDRAND opcode is not actually available. Some systems' compilers, such as that of the Raspberry Pi 3, do not recognize the compilation flag for enabling RDRAND, in which case this option needs to be turned off.
 
 ## Pure 32 bit OpenCL kernels (including OpenCL on Raspberry Pi 3)
 
-```
+```sh
 $ cmake -DENABLE_PURE32=ON ..
 ```
 This option is needed for certain older or simpler hardware. This removes all use of 64 bit types from the OpenCL kernels, as well as completely removing the use of SIMD intrinsics. Note that this build option theoretically supports only up to 32 qubits, whereas `-DENABLE_PURE32=OFF` could support up to 64 qubits, (if the memory requirements were realistically attainable for either 32-bit or 64-bit hardware, or in limited cases available for QUnit Schmidt decomposition). `-DENABLE_PURE32=ON` is necessary to support the VC4CL OpenCL compiler for the VideoCore GPU of the Raspberry Pi 3. (Additionally, for that platform, the RDRAND instruction is not available, and you should `-DENABLE_RDRAND=OFF`. VC4CL for the VideoCore GPU is currently fully supported.)
 
 ## Reduced or increased coherent qubit addressing
 
-```
+```sh
 $ cmake [-DUINTPOW=n] [-DQBCAPPOW=n] ..
 ```
 Qrack uses an unsigned integer primitive for ubiquitous qubit masking operations, for "local" qubits (`QEngine`) and "global" qubits (`QUnit` and `QPager`). This limits the maximum qubit capacity of any coherent QInterface to the total number of bits in the global (or local) masking type. By default, a 64-bit unsigned integer is used, corresponding to a maximum of 64 qubits in any coherent `QInterface` (if attainable, such as in limited cases with `QUnit`). `-DUINTPOW=n` reduces the "local" masking type to 2^n bits, (ex.: for max OpenCL sub-unit or page qubit width,) which might also be important with accelerators that might not support 64-bit types. `-DQBCAPPOW=n` sets the maximum power of "global" qubits in "paged" or `QUnit` types as potentially larger than single "pages" or "sub-units," for "n" >= 5, with n=5 being 2^5=32 qubits. Large "n" is possible with the Boost big integer header. (Setting "n" the same for both build options can avoid casting between "subunit" and "global qubit" masking types, if larger "paging" or `QUnit` widths than `QEngine` types are not needed.)
 
 ## Variable floating point precision
 
-```
+```sh
 $ cmake [-FPPOW=n] ..
 ```
 Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to n^2. By default n=5, for 5^2=32 bit floating point precision. "half" and "double" availability depend on the system, but n=6 for "double" is commonly supported on modern hardware. n=4 for half is supported by GCC on ARM, header-only on x86_64, and by device pragma if available for OpenCL kernels.
 
 ## Precompiled OpenCL kernels
 
-```
+```sh
 $ qrack_cl_compile [path]
 ```
 Precompile the OpenCL programs for all available devices, and save them to the optional "path" parameter location. By default, programs will be saved to a folder in the "home" directory, such as `~/.qrack/` on most Linux systems. (The default path can also be specified as an environment variable, `QRACK_OCL_PATH`.) Also by default, Qrack will attempt to load precompiled binaries from the same path, but the library will fall back to JIT compilation if program binaries are not available or are corrupt. To turn off default loading of binaries, one can simply delete the programs from this folder.
 
 The option to load and save precompiled binaries, and where to load them from, can be controlled with the initializing method of `Qrack::OCLEngine`:
-```
+```cpp
 Qrack::OCLEngine::InitOCL(true, true, Qrack::OCLEngine::GetDefaultBinaryPath());
 ```
 Calling the `OCLEngine::InitOCL()` method directly also ensures that the singleton instance has been created, with the results of the initialization call. The initialization method prototype is as follows:
-```
+```cpp
 /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded from the folder path "home".
 static void InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
 ```
-The `home` argument default indicates that the default home directory path should be used. 
+The `home` argument default indicates that the default home directory path should be used.
 
 ## VM6502Q
 
-```
+```sh
 $ cmake -DENABLE_VM6502Q_DEBUG=ON ..
 ```
 Qrack was originally written so that the disassembler of VM6502Q should show the classical expecation value of registers, following Ehrenfest's theorem. However, this incurs significant additional overhead for `QInterface::IndexedLDA()`, `QInterface::IndexedADC()`, and `QInterface::IndexedSBC()`. As such, this behavior in the VM6502Q disassembler is only supported when this CMake flag is specifically enabled. (It is off by default.) These three methods will return 0, if the flag is disabled.
 
 ## Turn off BCD arithmetic logic unit operations
 
-```
+```sh
 $ cmake -DENABLE_BCD=OFF ..
 ```
 
@@ -195,4 +195,4 @@ We thank the Unitary Fund for its generous support, in a project to help standar
 
 Licensed under the GNU Lesser General Public License V3.
 
-See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
+See [LICENSE.md](https://github.com/vm6502q/qrack/blob/main/LICENSE.md) in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html for details.
