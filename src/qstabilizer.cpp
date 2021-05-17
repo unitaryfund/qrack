@@ -630,7 +630,7 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
 
     for (i = 0; i < start; i++) {
         i2 = i + qubitCount;
-        for (j = 0; j < qubitCount; j++) {
+        for (j = start; j < end; j++) {
             if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
             }
@@ -639,7 +639,7 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
 
     for (i = end; i < qubitCount; i++) {
         i2 = i + qubitCount;
-        for (j = 0; j < qubitCount; j++) {
+        for (j = start; j < end; j++) {
             if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
             }
