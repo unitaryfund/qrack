@@ -840,6 +840,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     }
 
     bool is2Qubit = shard1.unit->GetQubitCount() == 2U;
+    bool wasReactiveSeparate = isReactiveSeparate;
+    isReactiveSeparate = true;
 
     // Try a maximally disentangling operation, in 3 bases.
     RevertBasis1Qb(qubit1);
@@ -856,6 +858,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         isShard2Sep = TrySeparate(qubit2);
     }
     if (isShard1Sep || isShard2Sep) {
+        isReactiveSeparate = wasReactiveSeparate;
         return isShard1Sep && isShard2Sep;
     }
 
@@ -866,8 +869,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit2);
     freezeTrySeparate = true;
     CNOT(qubit1, qubit2);
-    CY(qubit1, qubit2);
     shard1.unit->ApplyControlledSingleInvert(control, 1U, shard2.mapped, I_CMPLX, -I_CMPLX);
+    CY(qubit1, qubit2);
     freezeTrySeparate = false;
 
     isShard1Sep = TrySeparate(qubit1);
@@ -875,6 +878,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         isShard2Sep = TrySeparate(qubit2);
     }
     if (isShard1Sep || isShard2Sep) {
+        isReactiveSeparate = wasReactiveSeparate;
         return isShard1Sep && isShard2Sep;
     }
 
@@ -883,8 +887,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit2);
     freezeTrySeparate = true;
     CY(qubit1, qubit2);
-    CZ(qubit1, qubit2);
     shard1.unit->ApplyControlledSingleInvert(control, 1U, shard2.mapped, -I_CMPLX, -I_CMPLX);
+    CZ(qubit1, qubit2);
     freezeTrySeparate = false;
 
     isShard1Sep = TrySeparate(qubit1);
@@ -892,6 +896,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         isShard2Sep = TrySeparate(qubit2);
     }
 
+    isReactiveSeparate = wasReactiveSeparate;
     return isShard1Sep && isShard2Sep;
 }
 
