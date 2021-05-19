@@ -748,7 +748,8 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     real1 probX = ZERO_R1;
     real1 probY = ZERO_R1;
     real1 probZ = ZERO_R1;
-    bool didSeparate, willSeparate;
+    bool didSeparate;
+    bool willSeparate = false;
 
     for (bitLenInt i = 0; i < 3; i++) {
         prob = ProbBase(qubit) - ONE_R1 / 2;
@@ -761,7 +762,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
 
         didSeparate = !shard.unit;
-        willSeparate = (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
+        willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
 
         if (i >= 2) {
             continue;
@@ -874,7 +875,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit2);
     freezeTrySeparate = true;
     CNOT(qubit1, qubit2);
-    shard1.unit->ApplyControlledSingleInvert(control, 1U, shard2.mapped, I_CMPLX, -I_CMPLX);
+    shard1.unit->ApplyControlledSinglePhase(control, 1U, shard2.mapped, -I_CMPLX, I_CMPLX);
     CY(qubit1, qubit2);
     freezeTrySeparate = false;
 
