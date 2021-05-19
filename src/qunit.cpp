@@ -826,17 +826,17 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     bool isShard1Sep = TrySeparate(qubit1);
     bool isShard2Sep = TrySeparate(qubit2);
 
-    if (separabilityThreshold >= ((ONE_R1 - SQRT1_2_R1) / 2)) {
-        // Single qubit clamping threshold would break Bell basis clamping
-        return false;
-    }
-
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
     if (isShard1Sep || isShard2Sep || shard1.unit != shard2.unit) {
         // Both shards have non-null units, and we've tried everything, if they're not the same unit.
         return isShard1Sep && isShard2Sep;
+    }
+
+    if (separabilityThreshold >= ((ONE_R1 - SQRT1_2_R1) / 2)) {
+        // Single qubit clamping threshold would break Bell basis clamping
+        return false;
     }
 
     // Both shards are in the same unit.
