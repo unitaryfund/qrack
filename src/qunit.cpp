@@ -875,7 +875,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit2);
     freezeTrySeparate = true;
     CNOT(qubit1, qubit2);
-    shard1.unit->ApplyControlledSingleInvert(control, 1U, shard2.mapped, I_CMPLX, -I_CMPLX);
+    shard1.unit->ApplyControlledSinglePhase(control, 1U, shard2.mapped, -I_CMPLX, I_CMPLX);
     CY(qubit1, qubit2);
     freezeTrySeparate = false;
 
