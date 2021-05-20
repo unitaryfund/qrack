@@ -879,6 +879,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     prob2 = ProbBase(qubit2) - ONE_R1 / 2;
     if ((abs(prob1) > separabilityThreshold) || (abs(prob2) > separabilityThreshold)) {
         // Not worth attempting further.
+        isReactiveSeparate = wasReactiveSeparate;
         return false;
     }
 
@@ -906,6 +907,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     prob2 = ProbBase(qubit2) - ONE_R1 / 2;
     if ((abs(prob1) > separabilityThreshold) || (abs(prob2) > separabilityThreshold)) {
         // Not worth attempting further.
+        isReactiveSeparate = wasReactiveSeparate;
         return false;
     }
 
