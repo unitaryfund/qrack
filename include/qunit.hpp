@@ -440,6 +440,26 @@ protected:
         RevertBasisX(i);
     }
 
+    void RevertBasisToX1Qb(const bitLenInt& i)
+    {
+        QEngineShard& shard = shards[i];
+        if (!shard.isPauliX && !shard.isPauliY) {
+            ConvertZToX(i);
+        } else if (shard.isPauliY) {
+            RevertBasisY(i);
+        }
+    }
+
+    void RevertBasisToY1Qb(const bitLenInt& i)
+    {
+        QEngineShard& shard = shards[i];
+        if (!shard.isPauliX && !shard.isPauliY) {
+            ConvertZToY(i);
+        } else if (shard.isPauliX) {
+            ConvertXToY(i);
+        }
+    }
+
     virtual void ConvertZToX(const bitLenInt& target)
     {
         QEngineShard& shard = shards[target];
