@@ -3169,6 +3169,12 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         return;
     }
 
+    if ((controlVec.size() == 1U) && (targets.size() == 1U)) {
+        TrySeparate(controlVec[0]);
+        TrySeparate(targets[0]);
+        return;
+    }
+
     bitLenInt j;
 
     for (i = 0; i < (allBits.size() - 1U); i++) {
