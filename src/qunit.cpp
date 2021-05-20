@@ -845,6 +845,13 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return false;
     }
 
+    real1_f prob1 = ProbBase(qubit1) - ONE_R1 / 2;
+    real1_f prob2 = ProbBase(qubit2) - ONE_R1 / 2;
+    if ((abs(prob1) > separabilityThreshold) || (abs(prob2) > separabilityThreshold)) {
+        // Not worth attempting further.
+        return false;
+    }
+
     bool is2Qubit = shard1.unit->GetQubitCount() == 2U;
     bool wasReactiveSeparate = isReactiveSeparate;
     isReactiveSeparate = true;
@@ -868,6 +875,13 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return isShard1Sep && isShard2Sep;
     }
 
+    prob1 = ProbBase(qubit1) - ONE_R1 / 2;
+    prob2 = ProbBase(qubit2) - ONE_R1 / 2;
+    if ((abs(prob1) > separabilityThreshold) || (abs(prob2) > separabilityThreshold)) {
+        // Not worth attempting further.
+        return false;
+    }
+
     bitLenInt control[1] = { shard1.mapped };
 
     // Revert first basis and try again, in second basis.
@@ -886,6 +900,13 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     if (isShard1Sep || isShard2Sep) {
         isReactiveSeparate = wasReactiveSeparate;
         return isShard1Sep && isShard2Sep;
+    }
+
+    prob1 = ProbBase(qubit1) - ONE_R1 / 2;
+    prob2 = ProbBase(qubit2) - ONE_R1 / 2;
+    if ((abs(prob1) > separabilityThreshold) || (abs(prob2) > separabilityThreshold)) {
+        // Not worth attempting further.
+        return false;
     }
 
     // Revert second basis and try again, in third basis.
