@@ -62,6 +62,12 @@ protected:
         }
     }
 
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        QInterface::SetQubitCount(qb);
+        ConvertPaging(qb >= pagingThresholdQubits);
+    }
+
 public:
     QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,

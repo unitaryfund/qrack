@@ -385,8 +385,6 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
 
     SetQubitCount(qubitCount + toCopy->GetQubitCount());
 
-    ConvertPaging(qubitCount >= pagingThresholdQubits);
-
     return start;
 }
 
@@ -507,7 +505,6 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     shards.erase(start, start + length);
     SetQubitCount(qubitCount - length);
 
-    ConvertPaging(qubitCount >= pagingThresholdQubits);
     if (dest) {
         dest->ConvertPaging(dest->qubitCount >= dest->pagingThresholdQubits);
     }
@@ -714,11 +711,14 @@ bool QUnit::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
         Swap(i, q[i]);
     }
 
-    QInterfacePtr dest = std::make_shared<QUnit>(
-        engine, subEngine, length, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
+    QUnitPtr dest = std::dynamic_pointer_cast<QUnit>(std::make_shared<QUnit>(
+        engine, subEngine, length, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam));
 
     bool toRet = TryDecompose(0, dest, error_tol);
     if (toRet) {
+        if (length == 1U) {
+            dest->CacheSingleQubitShard(0);
+        }
         Compose(dest, 0);
     }
 
