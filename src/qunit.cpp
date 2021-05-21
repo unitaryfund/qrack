@@ -783,13 +783,28 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
     }
 
+    probZ = abs(probZ);
+    probX = abs(probX);
+    probY = abs(probY);
+
     if (didSeparate || !willSeparate) {
+        if (isReactiveSeparate) {
+            // Convert back to the basis with the highest projection:
+            if ((probZ >= probY) && (probZ >= probX)) {
+                RevertBasis1Qb(qubit);
+            } else if ((probX >= probY) && (probX >= probZ)) {
+                RevertBasisToX1Qb(qubit);
+            } else {
+                RevertBasisToY1Qb(qubit);
+            }
+        }
+
         freezeTrySeparate = false;
         return didSeparate;
     }
 
     // If we made it here, we're hyper-separating single bits, and we need to pick the best fit of the 3.
-    if ((abs(probY) >= abs(probZ)) && (abs(probY) >= abs(probX))) {
+    if ((probY >= probZ) && (probY >= probX)) {
         // Y is best.
         if (!shard.isPauliX && !shard.isPauliY) {
             ConvertZToY(qubit);
@@ -799,7 +814,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         if (!BLOCKED_SEPARATE(shard)) {
             SeparateBit(probY >= ZERO_R1, qubit);
         }
-    } else if ((abs(probX) >= abs(probZ)) && (abs(probX) >= abs(probY))) {
+    } else if ((probX >= probZ) && (probX >= probY)) {
         // X is best.
         if (!shard.isPauliX && !shard.isPauliY) {
             ConvertZToX(qubit);
@@ -851,6 +866,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         // Not worth attempting further.
         return false;
     }
+    real1_f probL2I = (prob1 * prob1) + (prob2 * prob2);
 
     bool is2Qubit = shard1.unit->GetQubitCount() == 2U;
     bool wasReactiveSeparate = isReactiveSeparate;
@@ -867,7 +883,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     freezeTrySeparate = false;
 
     isShard1Sep = TrySeparate(qubit1);
-    if (!is2Qubit) {
+    if (!is2Qubit && !wasReactiveSeparate) {
         isShard2Sep = TrySeparate(qubit2);
     }
     if (isShard1Sep || isShard2Sep) {
@@ -882,6 +898,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         isReactiveSeparate = wasReactiveSeparate;
         return false;
     }
+    real1_f probL2X = (prob1 * prob1) + (prob2 * prob2);
 
     bitLenInt control[1] = { shard1.mapped };
 
@@ -895,7 +912,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     freezeTrySeparate = false;
 
     isShard1Sep = TrySeparate(qubit1);
-    if (!is2Qubit) {
+    if (!is2Qubit && !wasReactiveSeparate) {
         isShard2Sep = TrySeparate(qubit2);
     }
     if (isShard1Sep || isShard2Sep) {
@@ -910,6 +927,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         isReactiveSeparate = wasReactiveSeparate;
         return false;
     }
+    real1_f probL2Y = (prob1 * prob1) + (prob2 * prob2);
 
     // Revert second basis and try again, in third basis.
     RevertBasis1Qb(qubit1);
@@ -921,11 +939,45 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     freezeTrySeparate = false;
 
     isShard1Sep = TrySeparate(qubit1);
-    if (!is2Qubit) {
+    if (!is2Qubit && !wasReactiveSeparate) {
+        isShard2Sep = TrySeparate(qubit2);
+        return isShard1Sep && isShard2Sep;
+    }
+    real1_f probL2Z = (prob1 * prob1) + (prob2 * prob2);
+
+    isReactiveSeparate = wasReactiveSeparate;
+
+    // If reactively searching for separability, leave in the state closest to any Bloch sphere poles among Bell basis
+    // states.
+    if (isReactiveSeparate) {
+        // Ordered per Pauli enum definition
+        std::vector<real1_f> probL2 = { probL2I, probL2X, probL2Z, probL2Y };
+        Pauli bestBasis = (Pauli)std::distance(probL2.begin(), std::max_element(probL2.begin(), probL2.end()));
+
+        if (bestBasis == PauliZ) {
+            return false;
+        }
+
+        RevertBasis1Qb(qubit1);
+        RevertBasis1Qb(qubit2);
+        freezeTrySeparate = true;
+        CZ(qubit1, qubit2);
+
+        if (bestBasis == PauliX) {
+            shard1.unit->ApplyControlledSingleInvert(control, 1U, shard2.mapped, -ONE_CMPLX, ONE_CMPLX);
+            CNOT(qubit1, qubit2);
+        } else if (bestBasis == PauliY) {
+            shard1.unit->ApplyControlledSingleInvert(control, 1U, shard2.mapped, I_CMPLX, I_CMPLX);
+            CY(qubit1, qubit2);
+        }
+        // else - Identity
+
+        freezeTrySeparate = false;
+
+        isShard1Sep = TrySeparate(qubit1);
         isShard2Sep = TrySeparate(qubit2);
     }
 
-    isReactiveSeparate = wasReactiveSeparate;
     return isShard1Sep && isShard2Sep;
 }
 
