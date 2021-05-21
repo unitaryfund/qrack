@@ -1402,15 +1402,6 @@ real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     return maskChance;
 }
 
-bool QPager::ApproxCompare(QInterfacePtr toCompare, real1_f error_tol)
-{
-    QPagerPtr toComparePager = std::dynamic_pointer_cast<QPager>(toCompare);
-    CombineEngines();
-    toComparePager->CombineEngines();
-    bool toRet = qPages[0]->ApproxCompare(toComparePager->qPages[0], error_tol);
-    return toRet;
-}
-
 void QPager::UpdateRunningNorm(real1_f norm_thresh)
 {
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
@@ -1431,6 +1422,38 @@ QInterfacePtr QPager::Clone()
     }
 
     return clone;
+}
+
+real1_f QPager::SumSqrDiff(QPagerPtr toCompare)
+{
+    if (this == toCompare.get()) {
+        return ZERO_R1;
+    }
+
+    // If the qubit counts are unequal, these can't be approximately equal objects.
+    if (qubitCount != toCompare->qubitCount) {
+        // Max square difference:
+        return 4.0f;
+    }
+
+    bitCapIntOcl i;
+
+    SeparateEngines(toCompare->qubitCount);
+    toCompare->SeparateEngines(qubitCount);
+
+    std::vector<std::future<real1_f>> futures(qPages.size());
+    for (i = 0; i < qPages.size(); i++) {
+        QEnginePtr lEngine = qPages[i];
+        QEnginePtr rEngine = toCompare->qPages[i];
+        futures[i] = (std::async(std::launch::async, [lEngine, rEngine]() { return lEngine->SumSqrDiff(rEngine); }));
+    }
+
+    real1_f toRet = 0;
+    for (i = 0; i < futures.size(); i++) {
+        toRet += futures[i].get();
+    }
+
+    return toRet;
 }
 
 } // namespace Qrack

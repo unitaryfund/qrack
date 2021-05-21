@@ -295,7 +295,6 @@ public:
         return qPages[0]->ForceMParity(mask, result, doForce);
     }
 
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = REAL1_EPSILON);
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) {
     } // TODO: skip implementation for now
@@ -339,11 +338,6 @@ public:
         return SumSqrDiff(std::dynamic_pointer_cast<QPager>(toCompare));
     }
 
-    virtual real1_f SumSqrDiff(QPagerPtr toCompare)
-    {
-        CombineEngines();
-        toCompare->CombineEngines();
-        return qPages[0]->SumSqrDiff(toCompare->qPages[0]);
-    }
+    virtual real1_f SumSqrDiff(QPagerPtr toCompare);
 };
 } // namespace Qrack
