@@ -868,7 +868,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     }
     real1_f probL2I = (prob1 * prob1) + (prob2 * prob2);
 
-    bool is2Qubit = shard1.unit->GetQubitCount() == 2U;
+    bool isApproxSep = (separabilityThreshold > FP_NORM_EPSILON);
+    bool is2Qubit = (shard1.unit->GetQubitCount() == 2U) && !isApproxSep;
     bool wasReactiveSeparate = isReactiveSeparate;
     isReactiveSeparate = true;
 
@@ -883,7 +884,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     freezeTrySeparate = false;
 
     isShard1Sep = TrySeparate(qubit1);
-    if (!is2Qubit && !wasReactiveSeparate) {
+    if (!is2Qubit) {
         isShard2Sep = TrySeparate(qubit2);
     }
     if (isShard1Sep || isShard2Sep) {
@@ -912,7 +913,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     freezeTrySeparate = false;
 
     isShard1Sep = TrySeparate(qubit1);
-    if (!is2Qubit && !wasReactiveSeparate) {
+    if (!is2Qubit) {
         isShard2Sep = TrySeparate(qubit2);
     }
     if (isShard1Sep || isShard2Sep) {
@@ -939,7 +940,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     freezeTrySeparate = false;
 
     isShard1Sep = TrySeparate(qubit1);
-    if (!is2Qubit && !wasReactiveSeparate) {
+    if (!is2Qubit) {
         isShard2Sep = TrySeparate(qubit2);
         return isShard1Sep && isShard2Sep;
     }
@@ -949,20 +950,20 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 
     // If reactively searching for separability, leave in the state closest to any Bloch sphere poles among Bell basis
     // states.
-    if (isReactiveSeparate) {
-        // Ordered per Pauli enum definition
-        std::vector<real1_f> probL2 = { probL2I, probL2X, probL2Z, probL2Y };
-        Pauli bestBasis = (Pauli)std::distance(probL2.begin(), std::max_element(probL2.begin(), probL2.end()));
+    // Ordered per Pauli enum definition
+    std::vector<real1_f> probL2 = { probL2I, probL2X, probL2Z, probL2Y };
+    Pauli bestBasis = (Pauli)std::distance(probL2.begin(), std::max_element(probL2.begin(), probL2.end()));
 
-        if (bestBasis == PauliZ) {
-            return false;
-        }
+    if (bestBasis == PauliZ) {
+        return false;
+    }
 
-        RevertBasis1Qb(qubit1);
-        RevertBasis1Qb(qubit2);
-        freezeTrySeparate = true;
-        CZ(qubit1, qubit2);
+    RevertBasis1Qb(qubit1);
+    RevertBasis1Qb(qubit2);
+    freezeTrySeparate = true;
+    CZ(qubit1, qubit2);
 
+    if (isApproxSep) {
         if (bestBasis == PauliX) {
             shard1.unit->ApplyControlledSingleInvert(control, 1U, shard2.mapped, -ONE_CMPLX, ONE_CMPLX);
             CNOT(qubit1, qubit2);
@@ -971,9 +972,11 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
             CY(qubit1, qubit2);
         }
         // else - Identity
+    }
 
-        freezeTrySeparate = false;
+    freezeTrySeparate = false;
 
+    if (isApproxSep) {
         isShard1Sep = TrySeparate(qubit1);
         isShard2Sep = TrySeparate(qubit2);
     }
