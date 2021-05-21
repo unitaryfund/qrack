@@ -788,7 +788,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     probY = abs(probY);
 
     if (didSeparate || !willSeparate) {
-        if (isReactiveSeparate) {
+        if (isReactiveSeparate && (separabilityThreshold > FP_NORM_EPSILON)) {
             // Convert back to the basis with the highest projection:
             if ((probZ >= probY) && (probZ >= probX)) {
                 RevertBasis1Qb(qubit);
