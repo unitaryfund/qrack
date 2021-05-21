@@ -2534,6 +2534,20 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
         toCompare->NormalizeState();
     }
 
+    if (!stateBuffer && !toCompare->stateBuffer) {
+        return ZERO_R1;
+    }
+
+    if (!stateBuffer) {
+        toCompare->UpdateRunningNorm();
+        return toCompare->runningNorm * toCompare->runningNorm;
+    }
+
+    if (!toCompare->stateBuffer) {
+        UpdateRunningNorm();
+        return runningNorm * runningNorm;
+    }
+
     toCompare->Finish();
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
