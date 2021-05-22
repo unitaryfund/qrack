@@ -21,6 +21,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <iostream>
+
 #include <ctime>
 #include <initializer_list>
 #include <map>
@@ -762,7 +764,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
             // If the qubit is separable, call the current basis "Pauli Z".
             // If QUnit basis transformation is opportune, then shard Pauli Z basis is an RY(phi, qubit) gate from
             // eigenstate in the current basis. We can predict a rotation around Pauli Y that will bring us to 0/1.
-            real1_f phi = acos(4 * prob);
+            real1_f phi = acos(2 * prob);
             real1 cosine = (real1)cos(-phi / 2);
             real1 sine = (real1)sin(-phi / 2);
             shard.unit->RY(phi, shard.mapped);
@@ -772,8 +774,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
             prob = ProbBase(qubit) - (ONE_R1 / 2);
 
             if (!shard.unit) {
-                // "We got the right answer by the wrong means."
-                // This case is opportune, unlikely, and not yet able to be bypassed.
+                // The test succeeded, and we know the basis.
                 complex tempAmp1 = sine * shard.amp0 + cosine * shard.amp1;
                 shard.amp0 = cosine * shard.amp0 - sine * shard.amp1;
                 shard.amp1 = tempAmp1;
@@ -788,21 +789,19 @@ bool QUnit::TrySeparate(bitLenInt qubit)
             if (abs(prob) > separabilityThreshold) {
                 // The test failed. We reverse the rotation after the test.
                 shard.unit->RY(-phi, shard.mapped);
+                shard.MakeDirty();
 
                 freezeTrySeparate = false;
                 return false;
             }
 
             // Otherwise, the test succeeded, and we know the basis.
-
-            shard.unit->H(shard.mapped);
+            shard.unit->S(shard.mapped);
             shard.MakeDirty();
             ProbBase(qubit);
 
             if (!shard.unit) {
-                freezeBasisH = true;
-                H(qubit);
-                freezeBasisH = false;
+                shard.amp1 = -I_CMPLX * shard.amp1;
 
                 complex tempAmp1 = sine * shard.amp0 + cosine * shard.amp1;
                 shard.amp0 = cosine * shard.amp0 - sine * shard.amp1;
@@ -817,7 +816,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
             // We revert if rounding went wrong.
 
-            shard.unit->H(shard.mapped);
+            shard.unit->S(shard.mapped);
             shard.unit->RY(-phi, shard.mapped);
             shard.MakeDirty();
 
