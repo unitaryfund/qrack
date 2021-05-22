@@ -756,8 +756,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
         willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
 
-        if ((i == 0) && shard.unit && !willSeparate && (abs(prob) > separabilityThreshold) &&
-            !shard.unit->isClifford()) {
+        if (shard.unit && !willSeparate && (abs(prob) > separabilityThreshold) && !shard.unit->isClifford()) {
             // Let's assume bit is separable, but not at 0 or 1 probability in the current basis.
             // If the qubit is separable, call the current basis "Pauli Z".
             // If QUnit basis transformation is opportune, then shard Pauli Z basis is an RY(phi, qubit) gate from
