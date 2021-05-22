@@ -809,14 +809,12 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
         real1_f yaw = acos(probZ);
         if (isnan(yaw) || isinf(yaw)) {
-            freezeTrySeparate = false;
-            return false;
+            yaw = ZERO_R1;
         }
 
         real1_f pitch = atan2(probY, probX);
         if (isnan(pitch) || isinf(pitch)) {
-            freezeTrySeparate = false;
-            return false;
+            pitch = ZERO_R1;
         }
 
         shard.unit->IYPR(yaw, pitch, 0, shard.mapped);
