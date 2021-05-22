@@ -808,12 +808,12 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
 
         real1_f yaw = acos(probZ);
-        if (isnan(yaw) || isinf(yaw)) {
+        if (std::isnan(yaw) || std::isinf(yaw)) {
             yaw = ZERO_R1;
         }
 
         real1_f pitch = atan2(probY, probX);
-        if (isnan(pitch) || isinf(pitch)) {
+        if (std::isnan(pitch) || std::isinf(pitch)) {
             pitch = ZERO_R1;
         }
 
