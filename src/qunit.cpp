@@ -738,7 +738,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return true;
     }
 
-    if (freezeTrySeparate) {
+    if (freezeTrySeparate || BLOCKED_SEPARATE(shard)) {
         return false;
     }
 
@@ -817,6 +817,11 @@ bool QUnit::TrySeparate(bitLenInt qubit)
             pitch = ZERO_R1;
         }
 
+        if ((abs(yaw) <= REAL1_EPSILON) && (abs(pitch) <= REAL1_EPSILON)) {
+            freezeTrySeparate = false;
+            return false;
+        }
+
         shard.unit->IYPR(yaw, pitch, 0, shard.mapped);
 
         prob = 2 * (shard.unit->Prob(shard.mapped) - (ONE_R1 / 2));
@@ -846,11 +851,6 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
         freezeTrySeparate = false;
         return true;
-    }
-
-    if (BLOCKED_SEPARATE(shard)) {
-        freezeTrySeparate = false;
-        return false;
     }
 
     bool didSeparate;
