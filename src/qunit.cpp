@@ -749,7 +749,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     real1_f probY = ZERO_R1;
     real1_f probZ = ZERO_R1;
 
-    if (!shard.isClifford()) {
+    if (!shard.isClifford() && (separabilityThreshold < ((ONE_R1 - SQRT1_2_R1) / 2))) {
         // Let's assume bit is separable, but not at 0 or 1 probability in the current basis.
 
         probZ = 2 * (shard.unit->Prob(shard.mapped) - (ONE_R1 / 2));
@@ -859,8 +859,6 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     for (bitLenInt i = 0; i < 3; i++) {
         prob = ProbBase(qubit) - ONE_R1 / 2;
 
-        willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
-
         if (!shard.isPauliX && !shard.isPauliY) {
             probZ = prob;
         } else if (shard.isPauliX) {
@@ -870,6 +868,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
 
         didSeparate = !shard.unit;
+        willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
 
         if (i >= 2) {
             continue;
