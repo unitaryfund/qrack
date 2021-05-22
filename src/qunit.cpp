@@ -742,50 +742,9 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
-    real1_f prob;
-    if (!shard.unit->isClifford()) {
-        // Let's assume this bit is separable, but not at 0 or 1 probability in the current basis.
-
-        // What is the probability difference from a basis eigenstate?
-        prob = ProbBase(qubit) - (ONE_R1 / 2);
-
-        // (Maybe we just separated in ProbBase() for being 0 or 1.)
-        if (!shard.unit) {
-            return true;
-        }
-
-        // If the qubit is separable, call the current basis "Pauli Z".
-        // We can predict a rotation around Pauli Y that will bring us to 0/1.
-        real1_f phi = asin(2 * prob);
-        shard.unit->RY(phi, shard.mapped);
-
-        shard.isProbDirty = true;
-        shard.isPhaseDirty = true;
-
-        // Test if it worked.
-        ProbBase(qubit);
-
-        // Either way, we reverse the rotation after the test.
-        if (shard.unit) {
-            // It failed.
-            shard.unit->RY(-phi, shard.mapped);
-        } else {
-            // It worked.
-            real1 cosine = (real1)cos(-phi / 2);
-            real1 sine = (real1)sin(-phi / 2);
-            complex tempAmp1 = sine * shard.amp0 + cosine * shard.amp1;
-            shard.amp0 = cosine * shard.amp0 - sine * shard.amp1;
-            shard.amp1 = tempAmp1;
-            if (doNormalize) {
-                shard.ClampAmps(amplitudeFloor);
-            }
-        }
-
-        return !shard.unit;
-    }
-
     freezeTrySeparate = true;
 
+    real1_f prob;
     real1_f probX = ZERO_R1;
     real1_f probY = ZERO_R1;
     real1_f probZ = ZERO_R1;
@@ -794,6 +753,78 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     for (bitLenInt i = 0; i < 3; i++) {
         prob = ProbBase(qubit) - ONE_R1 / 2;
+
+        willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
+
+        if ((i == 0) && shard.unit && !willSeparate && (abs(prob) > separabilityThreshold) &&
+            !shard.unit->isClifford()) {
+            // Let's assume bit is separable, but not at 0 or 1 probability in the current basis.
+            // If the qubit is separable, call the current basis "Pauli Z".
+            // If QUnit basis transformation is opportune, then shard Pauli Z basis is an RY(phi, qubit) gate from
+            // eigenstate in the current basis. We can predict a rotation around Pauli Y that will bring us to 0/1.
+            real1_f phi = acos(4 * prob);
+            real1 cosine = (real1)cos(-phi / 2);
+            real1 sine = (real1)sin(-phi / 2);
+            shard.unit->RY(phi, shard.mapped);
+            shard.MakeDirty();
+
+            // Test whether we're right.
+            prob = ProbBase(qubit) - (ONE_R1 / 2);
+
+            if (!shard.unit) {
+                // "We got the right answer by the wrong means."
+                // This case is opportune, unlikely, and not yet able to be bypassed.
+                complex tempAmp1 = sine * shard.amp0 + cosine * shard.amp1;
+                shard.amp0 = cosine * shard.amp0 - sine * shard.amp1;
+                shard.amp1 = tempAmp1;
+                if (doNormalize) {
+                    shard.ClampAmps(amplitudeFloor);
+                }
+
+                freezeTrySeparate = false;
+                return true;
+            }
+
+            if (abs(prob) > separabilityThreshold) {
+                // The test failed. We reverse the rotation after the test.
+                shard.unit->RY(-phi, shard.mapped);
+
+                freezeTrySeparate = false;
+                return false;
+            }
+
+            // Otherwise, the test succeeded, and we know the basis.
+
+            shard.unit->H(shard.mapped);
+            shard.MakeDirty();
+            ProbBase(qubit);
+
+            if (!shard.unit) {
+                freezeBasisH = true;
+                H(qubit);
+                freezeBasisH = false;
+
+                complex tempAmp1 = sine * shard.amp0 + cosine * shard.amp1;
+                shard.amp0 = cosine * shard.amp0 - sine * shard.amp1;
+                shard.amp1 = tempAmp1;
+                if (doNormalize) {
+                    shard.ClampAmps(amplitudeFloor);
+                }
+
+                freezeTrySeparate = false;
+                return true;
+            }
+
+            // We revert if rounding went wrong.
+
+            shard.unit->H(shard.mapped);
+            shard.unit->RY(-phi, shard.mapped);
+            shard.MakeDirty();
+
+            freezeTrySeparate = false;
+            return false;
+        }
+
         if (!shard.isPauliX && !shard.isPauliY) {
             probZ = prob;
         } else if (shard.isPauliX) {
@@ -803,7 +834,6 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
 
         didSeparate = !shard.unit;
-        willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
 
         if (i >= 2) {
             continue;
