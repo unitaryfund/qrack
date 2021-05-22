@@ -21,8 +21,6 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <iostream>
-
 #include <ctime>
 #include <initializer_list>
 #include <map>
@@ -786,37 +784,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
                 return true;
             }
 
-            if (abs(prob) > separabilityThreshold) {
-                // The test failed. We reverse the rotation after the test.
-                shard.unit->RY(-phi, shard.mapped);
-                shard.MakeDirty();
-
-                freezeTrySeparate = false;
-                return false;
-            }
-
-            // Otherwise, the test succeeded, and we know the basis.
-            shard.unit->S(shard.mapped);
-            shard.MakeDirty();
-            ProbBase(qubit);
-
-            if (!shard.unit) {
-                shard.amp1 = -I_CMPLX * shard.amp1;
-
-                complex tempAmp1 = sine * shard.amp0 + cosine * shard.amp1;
-                shard.amp0 = cosine * shard.amp0 - sine * shard.amp1;
-                shard.amp1 = tempAmp1;
-                if (doNormalize) {
-                    shard.ClampAmps(amplitudeFloor);
-                }
-
-                freezeTrySeparate = false;
-                return true;
-            }
-
-            // We revert if rounding went wrong.
-
-            shard.unit->S(shard.mapped);
+            // The test failed. We reverse the rotation after the test.
             shard.unit->RY(-phi, shard.mapped);
             shard.MakeDirty();
 
