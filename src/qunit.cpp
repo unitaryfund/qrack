@@ -758,12 +758,34 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
         if (shard.unit && !willSeparate && (abs(prob) > separabilityThreshold) && !shard.unit->isClifford()) {
             // Let's assume bit is separable, but not at 0 or 1 probability in the current basis.
-            // If the qubit is separable, call the current basis "Pauli Z".
-            // If QUnit basis transformation is opportune, then shard Pauli Z basis is an RY(phi, qubit) gate from
-            // eigenstate in the current basis. We can predict a rotation around Pauli Y that will bring us to 0/1.
             real1_f phi = acos(2 * prob);
             real1 cosine = (real1)cos(-phi / 2);
             real1 sine = (real1)sin(-phi / 2);
+
+            // Try rotating around Pauli X
+            shard.unit->RX(phi, shard.mapped);
+            shard.MakeDirty();
+
+            // Test whether we're right.
+            prob = ProbBase(qubit) - (ONE_R1 / 2);
+
+            if (!shard.unit) {
+                // The test succeeded, and we know the basis.
+                complex tempAmp1 = complex(ZERO_R1, -sine) * shard.amp0 + cosine * shard.amp1;
+                shard.amp0 = cosine * shard.amp0 + complex(ZERO_R1, -sine) * shard.amp1;
+                shard.amp1 = tempAmp1;
+                if (doNormalize) {
+                    shard.ClampAmps(amplitudeFloor);
+                }
+
+                freezeTrySeparate = false;
+                return true;
+            }
+
+            // The test failed. We reverse the rotation after the test.
+            shard.unit->RX(-phi, shard.mapped);
+
+            // Try rotating around Pauli Y
             shard.unit->RY(phi, shard.mapped);
             shard.MakeDirty();
 
