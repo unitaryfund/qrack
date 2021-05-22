@@ -1307,6 +1307,20 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
     }
     toCompare->Finish();
 
+    if (!stateVec && !toCompare->stateVec) {
+        return ZERO_R1;
+    }
+
+    if (!stateVec) {
+        toCompare->UpdateRunningNorm();
+        return toCompare->runningNorm * toCompare->runningNorm;
+    }
+
+    if (!toCompare->stateVec) {
+        UpdateRunningNorm();
+        return runningNorm * runningNorm;
+    }
+
     stateVec->isReadLocked = false;
     toCompare->stateVec->isReadLocked = false;
 
