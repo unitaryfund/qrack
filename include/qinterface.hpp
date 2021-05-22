@@ -1205,7 +1205,7 @@ public:
     virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target);
 
     /**
-     * "Yaw, pitch, roll", y-x-z
+     * "Yaw, pitch, roll", x-y-z
      *
      * This is nonstandard helper gate for state preparation.
      */

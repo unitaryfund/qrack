@@ -768,17 +768,16 @@ bool QUnit::TrySeparate(bitLenInt qubit)
             return false;
         }
 
-        real1_f yaw = acos(2 * probZ);
-        real1_f pitch = acos(2 * probX);
-        real1_f roll = acos(2 * probY);
+        real1_f yaw = asin(2 * probY);
+        real1_f pitch = asin(2 * probX);
 
-        shard.unit->IYPR(yaw, pitch, roll, shard.mapped);
+        shard.unit->IYPR(yaw, pitch, 0, shard.mapped);
         shard.MakeDirty();
 
         ProbBase(qubit);
 
         if (shard.unit) {
-            shard.unit->YPR(yaw, pitch, roll, shard.mapped);
+            shard.unit->YPR(yaw, pitch, 0, shard.mapped);
             shard.MakeDirty();
             freezeTrySeparate = false;
             return false;
@@ -786,28 +785,21 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
         real1 cosine = (real1)cos(yaw / 2);
         real1 sine = (real1)sin(yaw / 2);
-        complex pauliRY[4] = { cosine, -sine, sine, cosine };
-
-        cosine = (real1)cos(pitch / 2);
-        sine = (real1)sin(pitch / 2);
         complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
             complex(cosine, ZERO_R1) };
 
-        cosine = (real1)cos(roll / 2);
-        sine = (real1)sin(roll / 2);
-        complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+        cosine = (real1)cos(pitch / 2);
+        sine = (real1)sin(pitch / 2);
+        complex pauliRY[4] = { cosine, -sine, sine, cosine };
 
-        complex mtrx2[4];
+        mul2x2(pauliRY, pauliRX, mtrx);
 
-        mul2x2(pauliRX, pauliRZ, mtrx);
-        mul2x2(pauliRY, mtrx, mtrx2);
-
-        complex tempAmp1 = mtrx2[2] * shard.amp0 + mtrx[3] * shard.amp1;
-        shard.amp0 = mtrx2[0] * shard.amp0 + mtrx[1] * shard.amp1;
+        complex tempAmp1 = mtrx[2] * shard.amp0 + mtrx[3] * shard.amp1;
+        shard.amp0 = mtrx[0] * shard.amp0 + mtrx[1] * shard.amp1;
         shard.amp1 = tempAmp1;
 
         freezeTrySeparate = false;
-        return !shard.unit;
+        return true;
     }
 
     if (BLOCKED_SEPARATE(shard)) {
