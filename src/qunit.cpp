@@ -742,12 +742,53 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
+    real1_f prob;
+    if (!shard.unit->isClifford()) {
+        // Let's assume this bit is separable, but not at 0 or 1 probability in the current basis.
+
+        // What is the probability difference from a basis eigenstate?
+        prob = ProbBase(qubit) - (ONE_R1 / 2);
+
+        // (Maybe we just separated in ProbBase() for being 0 or 1.)
+        if (!shard.unit) {
+            return true;
+        }
+
+        // If the qubit is separable, call the current basis "Pauli Z".
+        // We can predict a rotation around Pauli Y that will bring us to 0/1.
+        real1_f phi = asin(2 * prob);
+        shard.unit->RY(phi, shard.mapped);
+
+        shard.isProbDirty = true;
+        shard.isPhaseDirty = true;
+
+        // Test if it worked.
+        ProbBase(qubit);
+
+        // Either way, we reverse the rotation after the test.
+        if (shard.unit) {
+            // It failed.
+            shard.unit->RY(-phi, shard.mapped);
+        } else {
+            // It worked.
+            real1 cosine = (real1)cos(-phi / 2);
+            real1 sine = (real1)sin(-phi / 2);
+            complex tempAmp1 = sine * shard.amp0 + cosine * shard.amp1;
+            shard.amp0 = cosine * shard.amp0 - sine * shard.amp1;
+            shard.amp1 = tempAmp1;
+            if (doNormalize) {
+                shard.ClampAmps(amplitudeFloor);
+            }
+        }
+
+        return !shard.unit;
+    }
+
     freezeTrySeparate = true;
 
-    real1 prob;
-    real1 probX = ZERO_R1;
-    real1 probY = ZERO_R1;
-    real1 probZ = ZERO_R1;
+    real1_f probX = ZERO_R1;
+    real1_f probY = ZERO_R1;
+    real1_f probZ = ZERO_R1;
     bool didSeparate;
     bool willSeparate = false;
 
@@ -1156,6 +1197,11 @@ void QUnit::CacheSingleQubitShard(bitLenInt target)
 {
     RevertBasis1Qb(target);
     QEngineShard& shard = shards[target];
+
+    if (!shard.unit) {
+        return;
+    }
+
     complex amps[2];
     shard.unit->GetQuantumState(amps);
     if (IS_AMP_0(amps[0] - amps[1])) {
