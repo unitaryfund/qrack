@@ -700,6 +700,118 @@ QInterfacePtr QUnit::EntangleRange(
     return toRet;
 }
 
+bool QUnit::TrySeparatePure(bitLenInt qubit)
+{
+    QEngineShard& shard = shards[qubit];
+
+    // Let's assume bit is separable, but not necessarily at 0 or 1 probability in the current basis.
+    freezeTrySeparate = true;
+
+    real1_f probZ = ProbBase(qubit) - (ONE_R1 / 2);
+
+    if (!shard.unit) {
+        // Z eigenstate
+        freezeTrySeparate = false;
+        return true;
+    }
+
+    shard.unit->RY(PI_R1 / 2, shard.mapped);
+    shard.MakeDirty();
+    real1_f probX = ProbBase(qubit) - (ONE_R1 / 2);
+
+    if (!shard.unit) {
+        // X eigenstate
+        real1 cosine = (real1)cos(PI_R1 / 4);
+        real1 sine = (real1)sin(PI_R1 / 4);
+        complex pauliRY[4] = { cosine, -sine, sine, cosine };
+        complex tempAmp1 = pauliRY[2] * shard.amp0 + pauliRY[3] * shard.amp1;
+        shard.amp0 = pauliRY[0] * shard.amp0 + pauliRY[1] * shard.amp1;
+        shard.amp1 = tempAmp1;
+
+        freezeTrySeparate = false;
+        return true;
+    }
+
+    shard.unit->RZ(PI_R1 / 2, shard.mapped);
+    shard.MakeDirty();
+    real1_f probY = ProbBase(qubit) - (ONE_R1 / 2);
+
+    // Equivalent to this:
+    // shard.unit->RZ(-PI_R1 / 2, shard.mapped);
+    // shard.unit->RY(-PI_R1 / 2, shard.mapped);
+
+    complex mtrx[4] = { complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+        complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)), complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+        complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)) };
+
+    if (!shard.unit) {
+        // Y eigenstate
+        complex tempAmp1 = mtrx[2] * shard.amp0 + mtrx[3] * shard.amp1;
+        shard.amp0 = mtrx[0] * shard.amp0 + mtrx[1] * shard.amp1;
+        shard.amp1 = tempAmp1;
+
+        freezeTrySeparate = false;
+        return true;
+    }
+
+    shard.unit->ApplySingleBit(mtrx, shard.mapped);
+
+    // If length of vector is 0.5, this is a pure state.
+    if (abs((ONE_R1 / 2) - sqrt((probX * probX) + (probY * probY) + (probZ * probZ))) > separabilityThreshold) {
+        // Not a pure state.
+        freezeTrySeparate = false;
+        return false;
+    }
+
+    real1_f yaw = acos(2 * probZ);
+    if (std::isnan(yaw) || std::isinf(yaw)) {
+        yaw = ZERO_R1;
+    }
+
+    real1_f pitch = atan2(2 * probY, 2 * probX);
+    if (std::isnan(pitch) || std::isinf(pitch)) {
+        pitch = ZERO_R1;
+    }
+
+    if ((abs(yaw) <= REAL1_EPSILON) && (abs(pitch) <= REAL1_EPSILON)) {
+        freezeTrySeparate = false;
+        return false;
+    }
+
+    // YPR with these yaw and pitch should prepare the state from |0>.
+    // Therefore, inverse YPR with the same parameters should deconstruct this state to |0>.
+
+    shard.unit->IYPR(yaw, pitch, 0, shard.mapped);
+    shard.MakeDirty();
+    probY = ProbBase(qubit) - (ONE_R1 / 2);
+
+    if (shard.unit) {
+        // Didn't work.
+        shard.unit->YPR(yaw, pitch, 0, shard.mapped);
+
+        freezeTrySeparate = false;
+        return false;
+    }
+
+    // We separated, but we need to manually update the shard.
+    real1 cosine = (real1)cos(yaw / 2);
+    real1 sine = (real1)sin(yaw / 2);
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+
+    cosine = (real1)cos(pitch / 2);
+    sine = (real1)sin(pitch / 2);
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+
+    mul2x2(pauliRZ, pauliRY, mtrx);
+
+    complex tempAmp1 = mtrx[2] * shard.amp0 + mtrx[3] * shard.amp1;
+    shard.amp0 = mtrx[0] * shard.amp0 + mtrx[1] * shard.amp1;
+    shard.amp1 = tempAmp1;
+
+    freezeTrySeparate = false;
+    return true;
+}
+
 bool QUnit::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
 {
     std::vector<bitLenInt> q(length);
@@ -731,7 +843,6 @@ bool QUnit::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
 
 bool QUnit::TrySeparate(bitLenInt qubit)
 {
-    // Otherwise, we're trying to separate a single bit.
     QEngineShard& shard = shards[qubit];
 
     if (shard.GetQubitCount() == 1U) {
@@ -742,113 +853,19 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
+    if (!shard.isClifford() && (separabilityThreshold < ((ONE_R1 - SQRT1_2_R1) / 2))) {
+        return TrySeparatePure(qubit);
+    }
+
     freezeTrySeparate = true;
+
+    bool didSeparate;
+    bool willSeparate = false;
 
     real1_f prob;
     real1_f probX = ZERO_R1;
     real1_f probY = ZERO_R1;
     real1_f probZ = ZERO_R1;
-
-    if (!shard.isClifford() && (separabilityThreshold < ((ONE_R1 - SQRT1_2_R1) / 2))) {
-        // Let's assume bit is separable, but not at 0 or 1 probability in the current basis.
-
-        probZ = ProbBase(qubit) - (ONE_R1 / 2);
-
-        if (!shard.unit) {
-            freezeTrySeparate = false;
-            return true;
-        }
-
-        shard.unit->RY(PI_R1 / 2, shard.mapped);
-        shard.MakeDirty();
-        probX = ProbBase(qubit) - (ONE_R1 / 2);
-
-        if (!shard.unit) {
-            real1 cosine = (real1)cos(PI_R1 / 4);
-            real1 sine = (real1)sin(PI_R1 / 4);
-            complex pauliRY[4] = { cosine, -sine, sine, cosine };
-            complex tempAmp1 = pauliRY[2] * shard.amp0 + pauliRY[3] * shard.amp1;
-            shard.amp0 = pauliRY[0] * shard.amp0 + pauliRY[1] * shard.amp1;
-            shard.amp1 = tempAmp1;
-
-            freezeTrySeparate = false;
-            return true;
-        }
-
-        shard.unit->RZ(PI_R1 / 2, shard.mapped);
-        shard.MakeDirty();
-        probY = ProbBase(qubit) - (ONE_R1 / 2);
-
-        // Equivalent to this:
-        // shard.unit->RZ(-PI_R1 / 2, shard.mapped);
-        // shard.unit->RY(-PI_R1 / 2, shard.mapped);
-
-        complex mtrx[4] = { complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
-            complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)), complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2)),
-            complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)) };
-
-        if (!shard.unit) {
-            complex tempAmp1 = mtrx[2] * shard.amp0 + mtrx[3] * shard.amp1;
-            shard.amp0 = mtrx[0] * shard.amp0 + mtrx[1] * shard.amp1;
-            shard.amp1 = tempAmp1;
-
-            freezeTrySeparate = false;
-            return true;
-        }
-
-        shard.unit->ApplySingleBit(mtrx, shard.mapped);
-
-        if (abs(ONE_R1 - sqrt((probX * probX) + (probY * probY) + (probZ * probZ))) > separabilityThreshold) {
-            freezeTrySeparate = false;
-            return false;
-        }
-
-        real1_f yaw = acos(2 * probZ);
-        if (std::isnan(yaw) || std::isinf(yaw)) {
-            yaw = ZERO_R1;
-        }
-
-        real1_f pitch = atan2(2 * probY, 2 * probX);
-        if (std::isnan(pitch) || std::isinf(pitch)) {
-            pitch = ZERO_R1;
-        }
-
-        if ((abs(yaw) <= REAL1_EPSILON) && (abs(pitch) <= REAL1_EPSILON)) {
-            freezeTrySeparate = false;
-            return false;
-        }
-
-        shard.unit->IYPR(yaw, pitch, 0, shard.mapped);
-        shard.MakeDirty();
-        probY = ProbBase(qubit) - (ONE_R1 / 2);
-
-        if (shard.unit) {
-            shard.unit->YPR(yaw, pitch, 0, shard.mapped);
-
-            freezeTrySeparate = false;
-            return false;
-        }
-
-        real1 cosine = (real1)cos(yaw / 2);
-        real1 sine = (real1)sin(yaw / 2);
-        complex pauliRY[4] = { cosine, -sine, sine, cosine };
-
-        cosine = (real1)cos(pitch / 2);
-        sine = (real1)sin(pitch / 2);
-        complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
-
-        mul2x2(pauliRZ, pauliRY, mtrx);
-
-        complex tempAmp1 = mtrx[2] * shard.amp0 + mtrx[3] * shard.amp1;
-        shard.amp0 = mtrx[0] * shard.amp0 + mtrx[1] * shard.amp1;
-        shard.amp1 = tempAmp1;
-
-        freezeTrySeparate = false;
-        return true;
-    }
-
-    bool didSeparate;
-    bool willSeparate = false;
 
     for (bitLenInt i = 0; i < 3; i++) {
         prob = ProbBase(qubit) - ONE_R1 / 2;
