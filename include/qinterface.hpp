@@ -1205,6 +1205,20 @@ public:
     virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target);
 
     /**
+     * "Yaw, pitch, roll", y-x-z
+     *
+     * This is nonstandard helper gate for state preparation.
+     */
+    virtual void YPR(real1_f theta, real1_f phi, real1_f lambda, bitLenInt qubit);
+
+    /**
+     * Inverse "Yaw, pitch, roll"
+     *
+     * This is nonstandard helper gate for state preparation.
+     */
+    virtual void IYPR(real1_f theta, real1_f phi, real1_f lambda, bitLenInt qubit);
+
+    /**
      * Controlled dyadic fraction y axis rotation gate
      *
      * If "control" is set to 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Y

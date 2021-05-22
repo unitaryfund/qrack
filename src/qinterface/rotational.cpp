@@ -37,8 +37,7 @@ void QInterface::RY(real1_f radians, bitLenInt qubit)
 {
     real1 cosine = (real1)cos(radians / 2);
     real1 sine = (real1)sin(radians / 2);
-    complex pauliRY[4] = { complex(cosine, ZERO_R1), complex(-sine, ZERO_R1), complex(sine, ZERO_R1),
-        complex(cosine, ZERO_R1) };
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
     ApplySingleBit(pauliRY, qubit);
 }
 
@@ -48,6 +47,56 @@ void QInterface::RZ(real1_f radians, bitLenInt qubit)
     real1 cosine = (real1)cos(radians / 2);
     real1 sine = (real1)sin(radians / 2);
     ApplySinglePhase(complex(cosine, -sine), complex(cosine, sine), qubit);
+}
+
+/// "Yaw, pitch, roll", y-x-z
+void QInterface::YPR(real1_f theta, real1_f phi, real1_f lambda, bitLenInt qubit)
+{
+    real1 cosine = (real1)cos(theta / 2);
+    real1 sine = (real1)sin(theta / 2);
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+
+    cosine = (real1)cos(phi / 2);
+    sine = (real1)sin(phi / 2);
+    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
+        complex(cosine, ZERO_R1) };
+
+    cosine = (real1)cos(lambda / 2);
+    sine = (real1)sin(lambda / 2);
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+
+    complex mtrx[4];
+    complex mtrx2[4];
+
+    mul2x2(pauliRX, pauliRZ, mtrx);
+    mul2x2(pauliRY, mtrx, mtrx2);
+
+    ApplySingleBit(mtrx2, qubit);
+}
+
+/// Inverse "Yaw, pitch, roll"
+void QInterface::IYPR(real1_f theta, real1_f phi, real1_f lambda, bitLenInt qubit)
+{
+    real1 cosine = (real1)cos(-theta / 2);
+    real1 sine = (real1)sin(-theta / 2);
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+
+    cosine = (real1)cos(-phi / 2);
+    sine = (real1)sin(-phi / 2);
+    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
+        complex(cosine, ZERO_R1) };
+
+    cosine = (real1)cos(-lambda / 2);
+    sine = (real1)sin(-lambda / 2);
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+
+    complex mtrx[4];
+    complex mtrx2[4];
+
+    mul2x2(pauliRX, pauliRY, mtrx);
+    mul2x2(pauliRZ, mtrx, mtrx2);
+
+    ApplySingleBit(mtrx2, qubit);
 }
 
 /// Uniformly controlled y axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli y axis for each permutation
