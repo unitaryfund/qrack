@@ -785,8 +785,9 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         // shard.unit->RZ(-PI_R1 / 2, shard.mapped);
         // shard.unit->RY(-PI_R1 / 2, shard.mapped);
 
-        complex mtrx[4] = { complex(ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, ONE_R1 / 2),
-            complex(-ONE_R1 / 2, ONE_R1 / 2), complex(ONE_R1 / 2, -ONE_R1 / 2) };
+        complex mtrx[4] = { complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+            complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)), complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2)),
+            complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)) };
 
         if ((ONE_R1 - abs(probY)) <= separabilityThreshold) {
             SeparateBit(probY > ZERO_R1, qubit);
@@ -807,14 +808,12 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
 
         real1_f yaw = acos(probZ);
-
         if (isnan(yaw) || isinf(yaw)) {
             freezeTrySeparate = false;
             return false;
         }
 
         real1_f pitch = atan2(probY, probX);
-
         if (isnan(pitch) || isinf(pitch)) {
             freezeTrySeparate = false;
             return false;
