@@ -744,15 +744,53 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     freezeTrySeparate = true;
 
-    real1 prob;
-    real1 probX = ZERO_R1;
-    real1 probY = ZERO_R1;
-    real1 probZ = ZERO_R1;
+    real1_f prob;
+    real1_f probX = ZERO_R1;
+    real1_f probY = ZERO_R1;
+    real1_f probZ = ZERO_R1;
     bool didSeparate;
     bool willSeparate = false;
 
     for (bitLenInt i = 0; i < 3; i++) {
         prob = ProbBase(qubit) - ONE_R1 / 2;
+
+        willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
+
+        if (shard.unit && !willSeparate && (abs(prob) > separabilityThreshold) && !shard.unit->isClifford()) {
+            // Let's assume bit is separable, but not at 0 or 1 probability in the current basis.
+            // If the qubit is separable, call the current basis "Pauli Z".
+            // If QUnit basis transformation is opportune, then shard Pauli Z basis is an RY(phi, qubit) gate from
+            // eigenstate in the current basis. We can predict a rotation around Pauli Y that will bring us to 0/1.
+            real1_f phi = acos(2 * prob);
+            real1 cosine = (real1)cos(-phi / 2);
+            real1 sine = (real1)sin(-phi / 2);
+            shard.unit->RY(phi, shard.mapped);
+            shard.MakeDirty();
+
+            // Test whether we're right.
+            prob = ProbBase(qubit) - (ONE_R1 / 2);
+
+            if (!shard.unit) {
+                // The test succeeded, and we know the basis.
+                complex tempAmp1 = sine * shard.amp0 + cosine * shard.amp1;
+                shard.amp0 = cosine * shard.amp0 - sine * shard.amp1;
+                shard.amp1 = tempAmp1;
+                if (doNormalize) {
+                    shard.ClampAmps(amplitudeFloor);
+                }
+
+                freezeTrySeparate = false;
+                return true;
+            }
+
+            // The test failed. We reverse the rotation after the test.
+            shard.unit->RY(-phi, shard.mapped);
+            shard.MakeDirty();
+
+            freezeTrySeparate = false;
+            return false;
+        }
+
         if (!shard.isPauliX && !shard.isPauliY) {
             probZ = prob;
         } else if (shard.isPauliX) {
@@ -762,7 +800,6 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
 
         didSeparate = !shard.unit;
-        willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
 
         if (i >= 2) {
             continue;
@@ -1156,6 +1193,11 @@ void QUnit::CacheSingleQubitShard(bitLenInt target)
 {
     RevertBasis1Qb(target);
     QEngineShard& shard = shards[target];
+
+    if (!shard.unit) {
+        return;
+    }
+
     complex amps[2];
     shard.unit->GetQuantumState(amps);
     if (IS_AMP_0(amps[0] - amps[1])) {
