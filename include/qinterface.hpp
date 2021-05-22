@@ -1205,16 +1205,16 @@ public:
     virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target);
 
     /**
-     * "Yaw, pitch, roll", x-y-z
+     * "Yaw, pitch, roll", (y-z-x)
      *
-     * This is nonstandard helper gate for state preparation.
+     * Rotates Z into X according to theta, then X into Y according to phi, then Y into Z according to lambda.
      */
     virtual void YPR(real1_f theta, real1_f phi, real1_f lambda, bitLenInt qubit);
 
     /**
      * Inverse "Yaw, pitch, roll"
      *
-     * This is nonstandard helper gate for state preparation.
+     * Inverts YPR for exact same arguments.
      */
     virtual void IYPR(real1_f theta, real1_f phi, real1_f lambda, bitLenInt qubit);
 

@@ -49,27 +49,27 @@ void QInterface::RZ(real1_f radians, bitLenInt qubit)
     ApplySinglePhase(complex(cosine, -sine), complex(cosine, sine), qubit);
 }
 
-/// "Yaw, pitch, roll", x-y-z
+/// "Yaw, pitch, roll", (y-z-x)
 void QInterface::YPR(real1_f theta, real1_f phi, real1_f lambda, bitLenInt qubit)
 {
     real1 cosine = (real1)cos(theta / 2);
     real1 sine = (real1)sin(theta / 2);
-    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
-        complex(cosine, ZERO_R1) };
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
 
     cosine = (real1)cos(phi / 2);
     sine = (real1)sin(phi / 2);
-    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
 
     cosine = (real1)cos(lambda / 2);
     sine = (real1)sin(lambda / 2);
-    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
+        complex(cosine, ZERO_R1) };
 
     complex mtrx[4];
     complex mtrx2[4];
 
-    mul2x2(pauliRY, pauliRX, mtrx);
-    mul2x2(pauliRZ, mtrx, mtrx2);
+    mul2x2(pauliRZ, pauliRY, mtrx);
+    mul2x2(pauliRX, mtrx, mtrx2);
 
     ApplySingleBit(mtrx2, qubit);
 }
@@ -79,22 +79,22 @@ void QInterface::IYPR(real1_f theta, real1_f phi, real1_f lambda, bitLenInt qubi
 {
     real1 cosine = (real1)cos(-theta / 2);
     real1 sine = (real1)sin(-theta / 2);
-    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
-        complex(cosine, ZERO_R1) };
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
 
     cosine = (real1)cos(-phi / 2);
     sine = (real1)sin(-phi / 2);
-    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
 
     cosine = (real1)cos(-lambda / 2);
     sine = (real1)sin(-lambda / 2);
-    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
+        complex(cosine, ZERO_R1) };
 
     complex mtrx[4];
     complex mtrx2[4];
 
-    mul2x2(pauliRY, pauliRZ, mtrx);
-    mul2x2(pauliRX, mtrx, mtrx2);
+    mul2x2(pauliRZ, pauliRX, mtrx);
+    mul2x2(pauliRY, mtrx, mtrx2);
 
     ApplySingleBit(mtrx2, qubit);
 }

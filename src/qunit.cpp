@@ -768,8 +768,8 @@ bool QUnit::TrySeparate(bitLenInt qubit)
             return false;
         }
 
-        real1_f yaw = asin(2 * probY);
-        real1_f pitch = asin(2 * probX);
+        real1_f yaw = asin(2 * probZ);
+        real1_f pitch = !probX ? (PI_R1 / 2) : acos(probY / probX);
 
         shard.unit->IYPR(yaw, pitch, 0, shard.mapped);
         shard.MakeDirty();
@@ -785,14 +785,13 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
         real1 cosine = (real1)cos(yaw / 2);
         real1 sine = (real1)sin(yaw / 2);
-        complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
-            complex(cosine, ZERO_R1) };
+        complex pauliRY[4] = { cosine, -sine, sine, cosine };
 
         cosine = (real1)cos(pitch / 2);
         sine = (real1)sin(pitch / 2);
-        complex pauliRY[4] = { cosine, -sine, sine, cosine };
+        complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
 
-        mul2x2(pauliRY, pauliRX, mtrx);
+        mul2x2(pauliRZ, pauliRY, mtrx);
 
         complex tempAmp1 = mtrx[2] * shard.amp0 + mtrx[3] * shard.amp1;
         shard.amp0 = mtrx[0] * shard.amp0 + mtrx[1] * shard.amp1;
