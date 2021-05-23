@@ -88,6 +88,40 @@ void QInterface::U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lamb
     }
 }
 
+/// "Azimuth, Inclination"
+void QInterface::AI(bitLenInt target, real1_f azimuth, real1_f inclination)
+{
+    real1 cosine = (real1)cos(azimuth / 2);
+    real1 sine = (real1)sin(azimuth / 2);
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+
+    cosine = (real1)cos(inclination / 2);
+    sine = (real1)sin(inclination / 2);
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+
+    complex mtrx[4];
+    mul2x2(pauliRZ, pauliRY, mtrx);
+
+    ApplySingleBit(mtrx, target);
+}
+
+/// Inverse "Azimuth, Inclination"
+void QInterface::IAI(bitLenInt target, real1_f azimuth, real1_f inclination)
+{
+    real1 cosine = (real1)cos(-inclination / 2);
+    real1 sine = (real1)sin(-inclination / 2);
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+
+    cosine = (real1)cos(azimuth / 2);
+    sine = (real1)sin(azimuth / 2);
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+
+    complex mtrx[4];
+    mul2x2(pauliRY, pauliRZ, mtrx);
+
+    ApplySingleBit(mtrx, target);
+}
+
 /// Uniformly controlled y axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli y axis for each permutation
 /// "k" of the control bits.
 void QInterface::UniformlyControlledRY(
