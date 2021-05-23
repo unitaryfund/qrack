@@ -775,7 +775,11 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
 
     shard.unit->IAI(shard.mapped, azimuth, inclination);
     shard.MakeDirty();
-    ProbBase(qubit);
+    real1_f prob = (ONE_R1 / 2) - ProbBase(qubit);
+
+    if (shard.unit && (((ONE_R1 / 2) - abs(prob)) <= separabilityThreshold)) {
+        SeparateBit(prob < ZERO_R1, qubit);
+    }
 
     if (shard.unit) {
         // Didn't work.
@@ -853,7 +857,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
-    if (!shard.isClifford() && (separabilityThreshold < ((ONE_R1 - SQRT1_2_R1) / 2))) {
+    if (!shard.isClifford()) {
         return TrySeparatePure(qubit);
     }
 
