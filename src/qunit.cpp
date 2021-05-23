@@ -757,6 +757,7 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
     }
 
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
+    shard.MakeDirty();
 
     // If length of vector is 0.5, this is a pure state.
     if (abs((ONE_R1 / 2) - sqrt((probX * probX) + (probY * probY) + (probZ * probZ))) > separabilityThreshold) {
@@ -765,18 +766,14 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
         return false;
     }
 
-    if (abs(probZ) > (ONE_R1 / 2)) {
-        probZ = (probZ < ZERO_R1) ? -(ONE_R1 / 2) : (ONE_R1 / 2);
-    }
-    if (abs(probX) > (ONE_R1 / 2)) {
-        probX = (probX < ZERO_R1) ? -(ONE_R1 / 2) : (ONE_R1 / 2);
-    }
-    if (abs(probY) > (ONE_R1 / 2)) {
-        probY = (probZ < ZERO_R1) ? -(ONE_R1 / 2) : (ONE_R1 / 2);
-    }
-
     real1_f azimuth = acos(2 * probZ);
+    if (std::isnan(azimuth) || std::isinf(azimuth)) {
+        azimuth = ZERO_R1;
+    }
     real1_f inclination = atan2(2 * probY, 2 * probX);
+    if (std::isnan(inclination) || std::isinf(inclination)) {
+        inclination = ZERO_R1;
+    }
 
     // YP with these yaw and pitch should prepare the state from |0>.
     // Therefore, inverse YP with the same parameters should deconstruct this state to |0>.
