@@ -707,24 +707,21 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
     // Let's assume bit is separable, but not necessarily at 0 or 1 probability in the current basis.
     freezeTrySeparate = true;
 
-    real1_f probZ = (ONE_R1 / 2) - shard.unit->Prob(shard.mapped);
+    real1_f probZ = (ONE_R1 / 2) - ProbBase(qubit);
 
-    if (((ONE_R1 / 2) - abs(probZ)) <= separabilityThreshold) {
+    if (!shard.unit) {
         // Z eigenstate
-        SeparateBit(probZ < ZERO_R1, qubit);
-
         freezeTrySeparate = false;
         return true;
     }
 
     // Takes Z_0 to X_0
     shard.unit->H(shard.mapped);
-    real1_f probX = (ONE_R1 / 2) - shard.unit->Prob(shard.mapped);
+    shard.MakeDirty();
+    real1_f probX = (ONE_R1 / 2) - ProbBase(qubit);
 
-    if (((ONE_R1 / 2) - abs(probX)) <= separabilityThreshold) {
+    if (!shard.unit) {
         // X eigenstate
-        SeparateBit(probX < ZERO_R1, qubit);
-
         freezeBasisH = true;
         H(qubit);
         freezeBasisH = false;
@@ -735,6 +732,7 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
 
     // Takes X_0 to Y_0
     shard.unit->S(shard.mapped);
+    shard.MakeDirty();
     real1_f probY = (ONE_R1 / 2) - ProbBase(qubit);
 
     // Equivalent to this:
@@ -743,10 +741,8 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
 
     complex mtrx[4] = { SQRT1_2_R1, -SQRT1_2_R1 * I_CMPLX, SQRT1_2_R1, SQRT1_2_R1 * I_CMPLX };
 
-    if (((ONE_R1 / 2) - abs(probY)) <= separabilityThreshold) {
+    if (!shard.unit) {
         // Y eigenstate
-        SeparateBit(probY < ZERO_R1, qubit);
-
         complex tempAmp1 = mtrx[2] * shard.amp0 + mtrx[3] * shard.amp1;
         shard.amp0 = mtrx[0] * shard.amp0 + mtrx[1] * shard.amp1;
         shard.amp1 = tempAmp1;
@@ -756,6 +752,7 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
     }
 
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
+    shard.MakeDirty();
 
     // If length of vector is 0.5, this is a pure state.
     if (abs((ONE_R1 / 2) - sqrt((probX * probX) + (probY * probY) + (probZ * probZ))) > separabilityThreshold) {
