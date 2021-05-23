@@ -80,6 +80,54 @@ void QInterface::CU(
     ApplyControlledSingleBit(controls, controlLen, target, uGate);
 }
 
+/// "Azimuth, Inclination"
+void QInterface::AI(bitLenInt target, real1_f azimuth, real1_f inclination)
+{
+    real1 cosine = (real1)cos(azimuth / 2);
+    real1 sine = (real1)sin(azimuth / 2);
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+
+    cosine = SQRT1_2_R1;
+    sine = SQRT1_2_R1;
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+
+    cosine = (real1)cos(inclination / 2);
+    sine = (real1)sin(inclination / 2);
+    complex pauliRY2[4] = { cosine, -sine, sine, cosine };
+
+    complex mtrx[4];
+    complex tMtrx[4];
+
+    mul2x2(pauliRZ, pauliRY, tMtrx);
+    mul2x2(pauliRY2, tMtrx, mtrx);
+
+    ApplySingleBit(mtrx, target);
+}
+
+/// Inverse "Azimuth, Inclination"
+void QInterface::IAI(bitLenInt target, real1_f azimuth, real1_f inclination)
+{
+    real1 cosine = (real1)cos(-inclination / 2);
+    real1 sine = (real1)sin(-inclination / 2);
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+
+    cosine = SQRT1_2_R1;
+    sine = -SQRT1_2_R1;
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+
+    cosine = (real1)cos(-azimuth / 2);
+    sine = (real1)sin(-azimuth / 2);
+    complex pauliRY2[4] = { cosine, -sine, sine, cosine };
+
+    complex mtrx[4];
+    complex tMtrx[4];
+
+    mul2x2(pauliRZ, pauliRY, tMtrx);
+    mul2x2(pauliRY2, tMtrx, mtrx);
+
+    ApplySingleBit(mtrx, target);
+}
+
 /// Apply 2-parameter unitary gate to each bit in "length," starting from bit index "start"
 void QInterface::U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lambda)
 {
