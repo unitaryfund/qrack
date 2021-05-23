@@ -704,14 +704,14 @@ public:
     }
 
     /**
-     * "Azimuth, Inclination" (RY-RZ-RY)
+     * "Azimuth, Inclination" (RX-RY-RX)
      *
      * Sets the azimuth and inclination from Z-X-Y basis probability measurements.
      */
     virtual void AI(bitLenInt target, real1_f azimuth, real1_f inclination);
 
     /**
-     * Invert "Azimuth, Inclination" (RY-RZ-RY)
+     * Invert "Azimuth, Inclination" (RX-RY-RX)
      *
      * (Inverse of) sets the azimuth and inclination from Z-X-Y basis probability measurements.
      */

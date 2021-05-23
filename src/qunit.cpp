@@ -868,20 +868,23 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
     // We separated, but we need to manually update the shard.
     real1 cosine = (real1)cos(azimuth / 2);
     real1 sine = (real1)sin(azimuth / 2);
-    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
+        complex(cosine, ZERO_R1) };
 
     cosine = SQRT1_2_R1;
     sine = SQRT1_2_R1;
-    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+    ApplySingleBit(pauliRY, qubit);
 
     cosine = (real1)cos(inclination / 2);
     sine = (real1)sin(inclination / 2);
-    complex pauliRY2[4] = { cosine, -sine, sine, cosine };
+    complex pauliRX2[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
+        complex(cosine, ZERO_R1) };
 
     complex tMtrx[4];
 
-    mul2x2(pauliRZ, pauliRY, tMtrx);
-    mul2x2(pauliRY2, tMtrx, mtrx);
+    mul2x2(pauliRY, pauliRX, tMtrx);
+    mul2x2(pauliRX2, tMtrx, mtrx);
 
     complex tempAmp1 = mtrx[2] * shard.amp0 + mtrx[3] * shard.amp1;
     shard.amp0 = mtrx[0] * shard.amp0 + mtrx[1] * shard.amp1;
