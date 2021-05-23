@@ -716,25 +716,22 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
     }
 
     // Takes Z_0 to X_0
-    shard.unit->RY(PI_R1 / 2, shard.mapped);
+    shard.unit->H(shard.mapped);
     shard.MakeDirty();
     real1_f probX = (ONE_R1 / 2) - ProbBase(qubit);
 
     if (!shard.unit) {
         // X eigenstate
-        real1 cosine = (real1)cos(PI_R1 / 4);
-        real1 sine = (real1)sin(PI_R1 / 4);
-        complex pauliRY[4] = { cosine, -sine, sine, cosine };
-        complex tempAmp1 = pauliRY[2] * shard.amp0 + pauliRY[3] * shard.amp1;
-        shard.amp0 = pauliRY[0] * shard.amp0 + pauliRY[1] * shard.amp1;
-        shard.amp1 = tempAmp1;
+        freezeBasisH = true;
+        H(qubit);
+        freezeBasisH = false;
 
         freezeTrySeparate = false;
         return true;
     }
 
     // Takes X_0 to Y_0
-    shard.unit->RZ(PI_R1 / 2, shard.mapped);
+    shard.unit->S(shard.mapped);
     shard.MakeDirty();
     real1_f probY = (ONE_R1 / 2) - ProbBase(qubit);
 
@@ -742,9 +739,7 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
     // shard.unit->RZ(-PI_R1 / 2, shard.mapped);
     // shard.unit->RY(-PI_R1 / 2, shard.mapped);
 
-    complex mtrx[4] = { complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)),
-        complex((real1)(ONE_R1 / 2), (real1)(ONE_R1 / 2)), complex((real1)(-ONE_R1 / 2), (real1)(ONE_R1 / 2)),
-        complex((real1)(ONE_R1 / 2), (real1)(-ONE_R1 / 2)) };
+    complex mtrx[4] = { SQRT1_2_R1, -SQRT1_2_R1 * I_CMPLX, SQRT1_2_R1, SQRT1_2_R1 * I_CMPLX };
 
     if (!shard.unit) {
         // Y eigenstate
@@ -775,8 +770,8 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
         inclination = ZERO_R1;
     }
 
-    // YP with these yaw and pitch should prepare the state from |0>.
-    // Therefore, inverse YP with the same parameters should deconstruct this state to |0>.
+    // AI with these azimuth and inclination should prepare the state from |0>.
+    // Therefore, inverse AI with the same parameters should deconstruct this state to |0>.
 
     shard.unit->IAI(shard.mapped, azimuth, inclination);
     shard.MakeDirty();
@@ -858,7 +853,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
-    if (!shard.isClifford() && (separabilityThreshold < ((ONE_R1 - SQRT1_2_R1) / 2))) {
+    if (!shard.unit->isClifford() && (separabilityThreshold < ((ONE_R1 - SQRT1_2_R1) / 2))) {
         return TrySeparatePure(qubit);
     }
 
