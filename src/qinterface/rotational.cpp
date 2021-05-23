@@ -37,8 +37,7 @@ void QInterface::RY(real1_f radians, bitLenInt qubit)
 {
     real1 cosine = (real1)cos(radians / 2);
     real1 sine = (real1)sin(radians / 2);
-    complex pauliRY[4] = { complex(cosine, ZERO_R1), complex(-sine, ZERO_R1), complex(sine, ZERO_R1),
-        complex(cosine, ZERO_R1) };
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
     ApplySingleBit(pauliRY, qubit);
 }
 
@@ -48,6 +47,93 @@ void QInterface::RZ(real1_f radians, bitLenInt qubit)
     real1 cosine = (real1)cos(radians / 2);
     real1 sine = (real1)sin(radians / 2);
     ApplySinglePhase(complex(cosine, -sine), complex(cosine, sine), qubit);
+}
+
+/// General unitary gate
+void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
+{
+    real1 cos0 = (real1)cos(theta / 2);
+    real1 sin0 = (real1)sin(theta / 2);
+    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+        sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+        cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
+    ApplySingleBit(uGate, target);
+}
+
+/// Apply general unitary gate to each bit in "length," starting from bit index "start"
+void QInterface::U(bitLenInt start, bitLenInt length, real1_f theta, real1_f phi, real1_f lambda)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        U(start + bit, theta, phi, lambda);
+    }
+}
+
+/// Controlled general unitary gate
+void QInterface::CU(
+    bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
+{
+    real1 cos0 = (real1)cos(theta / 2);
+    real1 sin0 = (real1)sin(theta / 2);
+    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+        sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+        cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
+    ApplyControlledSingleBit(controls, controlLen, target, uGate);
+}
+
+/// "Azimuth, Inclination"
+void QInterface::AI(bitLenInt target, real1_f azimuth, real1_f inclination)
+{
+    real1 cosine = (real1)cos(azimuth / 2);
+    real1 sine = (real1)sin(azimuth / 2);
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+
+    cosine = SQRT1_2_R1;
+    sine = SQRT1_2_R1;
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+
+    cosine = (real1)cos(inclination / 2);
+    sine = (real1)sin(inclination / 2);
+    complex pauliRY2[4] = { cosine, -sine, sine, cosine };
+
+    complex mtrx[4];
+    complex tMtrx[4];
+
+    mul2x2(pauliRZ, pauliRY, tMtrx);
+    mul2x2(pauliRY2, tMtrx, mtrx);
+
+    ApplySingleBit(mtrx, target);
+}
+
+/// Inverse "Azimuth, Inclination"
+void QInterface::IAI(bitLenInt target, real1_f azimuth, real1_f inclination)
+{
+    real1 cosine = (real1)cos(-inclination / 2);
+    real1 sine = (real1)sin(-inclination / 2);
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+
+    cosine = SQRT1_2_R1;
+    sine = -SQRT1_2_R1;
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+
+    cosine = (real1)cos(-azimuth / 2);
+    sine = (real1)sin(-azimuth / 2);
+    complex pauliRY2[4] = { cosine, -sine, sine, cosine };
+
+    complex mtrx[4];
+    complex tMtrx[4];
+
+    mul2x2(pauliRZ, pauliRY, tMtrx);
+    mul2x2(pauliRY2, tMtrx, mtrx);
+
+    ApplySingleBit(mtrx, target);
+}
+
+/// Apply 2-parameter unitary gate to each bit in "length," starting from bit index "start"
+void QInterface::U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lambda)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        U2(start + bit, phi, lambda);
+    }
 }
 
 /// Uniformly controlled y axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli y axis for each permutation
