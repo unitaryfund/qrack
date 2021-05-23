@@ -707,6 +707,7 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
     freezeTrySeparate = true;
 
     bool didSeparate;
+    bool willSeparate = false;
 
     real1_f prob;
     real1_f probX = ZERO_R1;
@@ -725,6 +726,7 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
         }
 
         didSeparate = !shard.unit;
+        willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
 
         if (i >= 2) {
             continue;
@@ -749,146 +751,53 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
     probX = abs(probX);
     probY = abs(probY);
 
-    if (isReactiveSeparate && (separabilityThreshold > FP_NORM_EPSILON)) {
-        // Convert back to the basis with the highest projection:
-        if ((probZ >= probY) && (probZ >= probX)) {
-            RevertBasis1Qb(qubit);
-        } else if ((probX >= probY) && (probX >= probZ)) {
-            RevertBasisToX1Qb(qubit);
-        } else {
-            RevertBasisToY1Qb(qubit);
+    if (didSeparate || !willSeparate) {
+        if (isReactiveSeparate && (separabilityThreshold > FP_NORM_EPSILON)) {
+            // Convert back to the basis with the highest projection:
+            if ((probZ >= probY) && (probZ >= probX)) {
+                RevertBasis1Qb(qubit);
+            } else if ((probX >= probY) && (probX >= probZ)) {
+                RevertBasisToX1Qb(qubit);
+            } else {
+                RevertBasisToY1Qb(qubit);
+            }
+        }
+
+        freezeTrySeparate = false;
+        return didSeparate;
+    }
+
+    // If we made it here, we're hyper-separating single bits, and we need to pick the best fit of the 3.
+    if ((probY >= probZ) && (probY >= probX)) {
+        // Y is best.
+        if (!shard.isPauliX && !shard.isPauliY) {
+            ConvertZToY(qubit);
+        } else if (shard.isPauliX) {
+            ConvertXToY(qubit);
+        }
+        if (!BLOCKED_SEPARATE(shard)) {
+            SeparateBit(probY >= ZERO_R1, qubit);
+        }
+    } else if ((probX >= probZ) && (probX >= probY)) {
+        // X is best.
+        if (!shard.isPauliX && !shard.isPauliY) {
+            ConvertZToX(qubit);
+        } else if (shard.isPauliY) {
+            RevertBasisY(qubit);
+        }
+        if (!BLOCKED_SEPARATE(shard)) {
+            SeparateBit(probX >= ZERO_R1, qubit);
+        }
+    } else {
+        // Z is best.
+        RevertBasis1Qb(qubit);
+        if (!BLOCKED_SEPARATE(shard)) {
+            SeparateBit(probZ >= ZERO_R1, qubit);
         }
     }
 
     freezeTrySeparate = false;
     return didSeparate;
-}
-
-bool QUnit::TrySeparatePure(bitLenInt qubit)
-{
-    QEngineShard& shard = shards[qubit];
-
-    // Let's assume bit is separable, but not necessarily at 0 or 1 probability in the current basis.
-    freezeTrySeparate = true;
-
-    real1_f probZ = (ONE_R1 / 2) - ProbBase(qubit);
-
-    if (!shard.unit) {
-        // Z eigenstate
-        freezeTrySeparate = false;
-        return true;
-    }
-
-    // Takes Z_0 to X_0
-    shard.unit->H(shard.mapped);
-    shard.MakeDirty();
-    real1_f probX = (ONE_R1 / 2) - ProbBase(qubit);
-
-    if (!shard.unit) {
-        // X eigenstate
-        freezeBasisH = true;
-        H(qubit);
-        freezeBasisH = false;
-
-        freezeTrySeparate = false;
-        return true;
-    }
-
-    // Takes X_0 to Y_0
-    shard.unit->S(shard.mapped);
-    shard.MakeDirty();
-    real1_f probY = (ONE_R1 / 2) - ProbBase(qubit);
-
-    // Equivalent to this:
-    // shard.unit->RZ(-PI_R1 / 2, shard.mapped);
-    // shard.unit->RY(-PI_R1 / 2, shard.mapped);
-
-    complex mtrx[4] = { SQRT1_2_R1, -SQRT1_2_R1 * I_CMPLX, SQRT1_2_R1, SQRT1_2_R1 * I_CMPLX };
-
-    if (!shard.unit) {
-        // Y eigenstate
-        complex tempAmp1 = mtrx[2] * shard.amp0 + mtrx[3] * shard.amp1;
-        shard.amp0 = mtrx[0] * shard.amp0 + mtrx[1] * shard.amp1;
-        shard.amp1 = tempAmp1;
-
-        freezeTrySeparate = false;
-        return true;
-    }
-
-    shard.unit->ApplySingleBit(mtrx, shard.mapped);
-    shard.MakeDirty();
-
-    real1_f prob = (ONE_R1 / 2) - ProbBase(shard.mapped);
-    if (!shard.unit) {
-        freezeTrySeparate = false;
-        return true;
-    }
-
-    // If length of vector is 0.5, this is a pure state.
-    if (abs((ONE_R1 / 2) - sqrt((probX * probX) + (probY * probY) + (probZ * probZ))) > separabilityThreshold) {
-        // Not a pure state.
-        freezeTrySeparate = false;
-        return false;
-    }
-
-    real1_f azimuth = acos(2 * probZ);
-    if (std::isnan(azimuth) || std::isinf(azimuth)) {
-        azimuth = ZERO_R1;
-    }
-    real1_f inclination = atan2(2 * probY, 2 * probX);
-    if (std::isnan(inclination) || std::isinf(inclination)) {
-        inclination = ZERO_R1;
-    }
-
-    if (!azimuth && !inclination) {
-        freezeTrySeparate = false;
-        return false;
-    }
-
-    // AI with these azimuth and inclination should prepare the state from |0>.
-    // Therefore, inverse AI with the same parameters should deconstruct this state to |0>.
-
-    shard.unit->IAI(shard.mapped, azimuth, inclination);
-    shard.MakeDirty();
-    prob = (ONE_R1 / 2) - ProbBase(qubit);
-
-    if (shard.unit && (((ONE_R1 / 2) - abs(prob)) <= separabilityThreshold)) {
-        SeparateBit(prob < ZERO_R1, qubit);
-    }
-
-    if (shard.unit) {
-        // Didn't work.
-        shard.unit->AI(shard.mapped, azimuth, inclination);
-        shard.MakeDirty();
-
-        freezeTrySeparate = false;
-        return false;
-    }
-
-    // We separated, but we need to manually update the shard.
-    real1 cosine = (real1)cos(azimuth / 2);
-    real1 sine = (real1)sin(azimuth / 2);
-    complex pauliRY[4] = { cosine, -sine, sine, cosine };
-
-    cosine = SQRT1_2_R1;
-    sine = SQRT1_2_R1;
-    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
-
-    cosine = (real1)cos(inclination / 2);
-    sine = (real1)sin(inclination / 2);
-    complex pauliRY2[4] = { cosine, -sine, sine, cosine };
-
-    complex tMtrx[4];
-
-    mul2x2(pauliRZ, pauliRY, tMtrx);
-    mul2x2(pauliRY2, tMtrx, mtrx);
-
-    complex tempAmp1 = mtrx[2] * shard.amp0 + mtrx[3] * shard.amp1;
-    shard.amp0 = mtrx[0] * shard.amp0 + mtrx[1] * shard.amp1;
-    shard.amp1 = tempAmp1;
-
-    freezeTrySeparate = false;
-    return true;
 }
 
 bool QUnit::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
@@ -932,11 +841,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
-    if (shard.isClifford()) {
-        return TrySeparateClifford(qubit);
-    }
-
-    return TrySeparatePure(qubit);
+    return TrySeparateClifford(qubit);
 }
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
@@ -1226,6 +1131,12 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     QEngineShard& shard = shards[qubit];
 
     if (!shard.isProbDirty) {
+        if (IS_AMP_0(shard.amp1)) {
+            SeparateBit(false, qubit);
+        } else if (IS_AMP_0(shard.amp0)) {
+            SeparateBit(true, qubit);
+        }
+
         return norm(shard.amp1);
     }
 
@@ -1429,6 +1340,11 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
     QInterfacePtr unit = shard.unit;
+
+    if (!unit) {
+        return;
+    }
+
     bitLenInt mapped = shard.mapped;
     real1_f prob = shard.Prob();
 
