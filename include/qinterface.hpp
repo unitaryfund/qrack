@@ -1209,14 +1209,14 @@ public:
      *
      * Rotates Z_0 into X_0 according to theta, then X_0 into Y_0 according to phi.
      */
-    virtual void YP(real1_f theta, real1_f phi, bitLenInt qubit);
+    virtual void YP(real1_f azimuth, real1_f inclination, bitLenInt qubit);
 
     /**
      * Inverse "Yaw, pitch"
      *
      * Inverts YP for exact same arguments.
      */
-    virtual void IYP(real1_f theta, real1_f phi, bitLenInt qubit);
+    virtual void IYP(real1_f azimuth, real1_f inclination, bitLenInt qubit);
 
     /**
      * Controlled dyadic fraction y axis rotation gate

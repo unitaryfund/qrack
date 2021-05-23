@@ -50,14 +50,14 @@ void QInterface::RZ(real1_f radians, bitLenInt qubit)
 }
 
 /// "Yaw, pitch", (RY-RZ)
-void QInterface::YP(real1_f theta, real1_f phi, bitLenInt qubit)
+void QInterface::YP(real1_f azimuth, real1_f inclination, bitLenInt qubit)
 {
-    real1 cosine = (real1)cos(theta / 2);
-    real1 sine = (real1)sin(theta / 2);
+    real1 cosine = (real1)cos(azimuth / 2);
+    real1 sine = (real1)sin(azimuth / 2);
     complex pauliRY[4] = { cosine, -sine, sine, cosine };
 
-    cosine = (real1)cos(phi / 2);
-    sine = (real1)sin(phi / 2);
+    cosine = (real1)cos(inclination / 2);
+    sine = (real1)sin(inclination / 2);
     complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
 
     complex mtrx[4];
@@ -67,14 +67,14 @@ void QInterface::YP(real1_f theta, real1_f phi, bitLenInt qubit)
 }
 
 /// Inverse "Yaw, pitch"
-void QInterface::IYP(real1_f theta, real1_f phi, bitLenInt qubit)
+void QInterface::IYP(real1_f azimuth, real1_f inclination, bitLenInt qubit)
 {
-    real1 cosine = (real1)cos(-theta / 2);
-    real1 sine = (real1)sin(-theta / 2);
+    real1 cosine = (real1)cos(-azimuth / 2);
+    real1 sine = (real1)sin(-azimuth / 2);
     complex pauliRY[4] = { cosine, -sine, sine, cosine };
 
-    cosine = (real1)cos(-phi / 2);
-    sine = (real1)sin(-phi / 2);
+    cosine = (real1)cos(-inclination / 2);
+    sine = (real1)sin(-inclination / 2);
     complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
 
     complex mtrx[4];

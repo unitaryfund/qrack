@@ -771,7 +771,7 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
         probZ = (probZ < ZERO_R1) ? -(ONE_R1 / 2) : (ONE_R1 / 2);
         yaw = ZERO_R1;
     } else {
-        yaw = acos(-2 * probZ);
+        yaw = acos(probZ);
     }
 
     if (abs(probX) > (ONE_R1 / 2)) {
@@ -784,7 +784,7 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
     if (!probX && !probY) {
         pitch = ZERO_R1;
     } else {
-        pitch = atan2(-2 * probY, -2 * probX);
+        pitch = atan2(probY, probX);
     }
 
     // YP with these yaw and pitch should prepare the state from |0>.
