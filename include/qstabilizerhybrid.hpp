@@ -977,7 +977,7 @@ public:
 
         if (engine) {
             real1_f prob = engine->Prob(qubitIndex);
-            return isCachedInvert ? (ONE_R1 - prob) : prob;
+            return clampProb(isCachedInvert ? (ONE_R1 - prob) : prob);
         }
 
         if (stabilizer->IsSeparableZ(qubitIndex)) {
