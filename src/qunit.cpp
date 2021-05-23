@@ -707,7 +707,7 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
     // Let's assume bit is separable, but not necessarily at 0 or 1 probability in the current basis.
     freezeTrySeparate = true;
 
-    real1_f probZ = ProbBase(qubit) - (ONE_R1 / 2);
+    real1_f probZ = (ONE_R1 / 2) - ProbBase(qubit);
 
     if (!shard.unit) {
         // Z eigenstate
@@ -715,10 +715,10 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
         return true;
     }
 
-    // Takes |0> to |+>
+    // Takes Z_0 to X_0
     shard.unit->RY(PI_R1 / 2, shard.mapped);
     shard.MakeDirty();
-    real1_f probX = ProbBase(qubit) - (ONE_R1 / 2);
+    real1_f probX = (ONE_R1 / 2) - ProbBase(qubit);
 
     if (!shard.unit) {
         // X eigenstate
@@ -733,10 +733,10 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
         return true;
     }
 
-    // Takes |+> to Y+
+    // Takes X_0 to Y_0
     shard.unit->RZ(PI_R1 / 2, shard.mapped);
     shard.MakeDirty();
-    real1_f probY = ProbBase(qubit) - (ONE_R1 / 2);
+    real1_f probY = (ONE_R1 / 2) - ProbBase(qubit);
 
     // Equivalent to this:
     // shard.unit->RZ(-PI_R1 / 2, shard.mapped);
@@ -765,15 +765,9 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
         return false;
     }
 
-    real1_f yaw, pitch;
-
     if (abs(probZ) > (ONE_R1 / 2)) {
         probZ = (probZ < ZERO_R1) ? -(ONE_R1 / 2) : (ONE_R1 / 2);
-        yaw = ZERO_R1;
-    } else {
-        yaw = acos(probZ);
     }
-
     if (abs(probX) > (ONE_R1 / 2)) {
         probX = (probX < ZERO_R1) ? -(ONE_R1 / 2) : (ONE_R1 / 2);
     }
@@ -781,11 +775,8 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
         probY = (probZ < ZERO_R1) ? -(ONE_R1 / 2) : (ONE_R1 / 2);
     }
 
-    if (!probX && !probY) {
-        pitch = ZERO_R1;
-    } else {
-        pitch = atan2(probY, probX);
-    }
+    real1_f yaw = acos(2 * probZ);
+    real1_f pitch = atan2(2 * probY, 2 * probX);
 
     // YP with these yaw and pitch should prepare the state from |0>.
     // Therefore, inverse YP with the same parameters should deconstruct this state to |0>.
