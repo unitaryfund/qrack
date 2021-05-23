@@ -715,6 +715,7 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
         return true;
     }
 
+    // Takes |0> to |+>
     shard.unit->RY(PI_R1 / 2, shard.mapped);
     shard.MakeDirty();
     real1_f probX = ProbBase(qubit) - (ONE_R1 / 2);
@@ -732,6 +733,7 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
         return true;
     }
 
+    // Takes |+> to Y+
     shard.unit->RZ(PI_R1 / 2, shard.mapped);
     shard.MakeDirty();
     real1_f probY = ProbBase(qubit) - (ONE_R1 / 2);
@@ -763,31 +765,38 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
         return false;
     }
 
-    real1_f yaw = acos(2 * probZ);
-    if (std::isnan(yaw) || std::isinf(yaw)) {
+    real1_f yaw, pitch;
+
+    if (abs(probZ) > (ONE_R1 / 2)) {
+        probZ = (probZ < ZERO_R1) ? -(ONE_R1 / 2) : (ONE_R1 / 2);
         yaw = ZERO_R1;
+    } else {
+        yaw = acos(-2 * probZ);
     }
 
-    real1_f pitch = atan2(2 * probY, 2 * probX);
-    if (std::isnan(pitch) || std::isinf(pitch)) {
+    if (abs(probX) > (ONE_R1 / 2)) {
+        probX = (probX < ZERO_R1) ? -(ONE_R1 / 2) : (ONE_R1 / 2);
+    }
+    if (abs(probY) > (ONE_R1 / 2)) {
+        probY = (probZ < ZERO_R1) ? -(ONE_R1 / 2) : (ONE_R1 / 2);
+    }
+
+    if (!probX && !probY) {
         pitch = ZERO_R1;
+    } else {
+        pitch = atan2(-2 * probY, -2 * probX);
     }
 
-    if ((abs(yaw) <= REAL1_EPSILON) && (abs(pitch) <= REAL1_EPSILON)) {
-        freezeTrySeparate = false;
-        return false;
-    }
+    // YP with these yaw and pitch should prepare the state from |0>.
+    // Therefore, inverse YP with the same parameters should deconstruct this state to |0>.
 
-    // YPR with these yaw and pitch should prepare the state from |0>.
-    // Therefore, inverse YPR with the same parameters should deconstruct this state to |0>.
-
-    shard.unit->IYPR(yaw, pitch, 0, shard.mapped);
+    shard.unit->IYP(yaw, pitch, shard.mapped);
     shard.MakeDirty();
-    probY = ProbBase(qubit) - (ONE_R1 / 2);
+    ProbBase(qubit);
 
     if (shard.unit) {
         // Didn't work.
-        shard.unit->YPR(yaw, pitch, 0, shard.mapped);
+        shard.unit->YP(yaw, pitch, shard.mapped);
 
         freezeTrySeparate = false;
         return false;

@@ -1205,18 +1205,18 @@ public:
     virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target);
 
     /**
-     * "Yaw, pitch, roll", (y-z-x)
+     * "Yaw, pitch", (RY-RZ)
      *
-     * Rotates Z into X according to theta, then X into Y according to phi, then Y into Z according to lambda.
+     * Rotates Z_0 into X_0 according to theta, then X_0 into Y_0 according to phi.
      */
-    virtual void YPR(real1_f theta, real1_f phi, real1_f lambda, bitLenInt qubit);
+    virtual void YP(real1_f theta, real1_f phi, bitLenInt qubit);
 
     /**
-     * Inverse "Yaw, pitch, roll"
+     * Inverse "Yaw, pitch"
      *
-     * Inverts YPR for exact same arguments.
+     * Inverts YP for exact same arguments.
      */
-    virtual void IYPR(real1_f theta, real1_f phi, real1_f lambda, bitLenInt qubit);
+    virtual void IYP(real1_f theta, real1_f phi, bitLenInt qubit);
 
     /**
      * Controlled dyadic fraction y axis rotation gate
