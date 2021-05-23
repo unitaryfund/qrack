@@ -818,6 +818,12 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
     shard.unit->ApplySingleBit(mtrx, shard.mapped);
     shard.MakeDirty();
 
+    real1_f prob = (ONE_R1 / 2) - ProbBase(shard.mapped);
+    if (!shard.unit) {
+        freezeTrySeparate = false;
+        return true;
+    }
+
     // If length of vector is 0.5, this is a pure state.
     if (abs((ONE_R1 / 2) - sqrt((probX * probX) + (probY * probY) + (probZ * probZ))) > separabilityThreshold) {
         // Not a pure state.
@@ -834,12 +840,17 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
         inclination = ZERO_R1;
     }
 
+    if (!azimuth && !inclination) {
+        freezeTrySeparate = false;
+        return false;
+    }
+
     // AI with these azimuth and inclination should prepare the state from |0>.
     // Therefore, inverse AI with the same parameters should deconstruct this state to |0>.
 
     shard.unit->IAI(shard.mapped, azimuth, inclination);
     shard.MakeDirty();
-    real1_f prob = (ONE_R1 / 2) - ProbBase(qubit);
+    prob = (ONE_R1 / 2) - ProbBase(qubit);
 
     if (shard.unit && (((ONE_R1 / 2) - abs(prob)) <= separabilityThreshold)) {
         SeparateBit(prob < ZERO_R1, qubit);
