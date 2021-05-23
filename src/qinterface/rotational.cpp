@@ -85,23 +85,21 @@ void QInterface::AI(bitLenInt target, real1_f azimuth, real1_f inclination)
 {
     real1 cosine = (real1)cos(azimuth / 2);
     real1 sine = (real1)sin(azimuth / 2);
-    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
-        complex(cosine, ZERO_R1) };
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
 
     cosine = SQRT1_2_R1;
     sine = SQRT1_2_R1;
-    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
 
     cosine = (real1)cos(inclination / 2);
     sine = (real1)sin(inclination / 2);
-    complex pauliRX2[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
-        complex(cosine, ZERO_R1) };
+    complex pauliRY2[4] = { cosine, -sine, sine, cosine };
 
     complex mtrx[4];
     complex tMtrx[4];
 
-    mul2x2(pauliRY, pauliRX, tMtrx);
-    mul2x2(pauliRX2, tMtrx, mtrx);
+    mul2x2(pauliRZ, pauliRY, tMtrx);
+    mul2x2(pauliRY2, tMtrx, mtrx);
 
     ApplySingleBit(mtrx, target);
 }
@@ -111,23 +109,21 @@ void QInterface::IAI(bitLenInt target, real1_f azimuth, real1_f inclination)
 {
     real1 cosine = (real1)cos(-inclination / 2);
     real1 sine = (real1)sin(-inclination / 2);
-    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
-        complex(cosine, ZERO_R1) };
-
-    cosine = SQRT1_2_R1;
-    sine = SQRT1_2_R1;
     complex pauliRY[4] = { cosine, -sine, sine, cosine };
 
-    cosine = (real1)cos(azimuth / 2);
-    sine = (real1)sin(azimuth / 2);
-    complex pauliRX2[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
-        complex(cosine, ZERO_R1) };
+    cosine = SQRT1_2_R1;
+    sine = -SQRT1_2_R1;
+    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
+
+    cosine = (real1)cos(-azimuth / 2);
+    sine = (real1)sin(-azimuth / 2);
+    complex pauliRY2[4] = { cosine, -sine, sine, cosine };
 
     complex mtrx[4];
     complex tMtrx[4];
 
-    mul2x2(pauliRY, pauliRX, tMtrx);
-    mul2x2(pauliRX2, tMtrx, mtrx);
+    mul2x2(pauliRZ, pauliRY, tMtrx);
+    mul2x2(pauliRY2, tMtrx, mtrx);
 
     ApplySingleBit(mtrx, target);
 }
