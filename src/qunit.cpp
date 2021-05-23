@@ -714,7 +714,7 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
     real1_f probZ = ZERO_R1;
 
     for (bitLenInt i = 0; i < 3; i++) {
-        prob = ProbBase(qubit) - ONE_R1 / 2;
+        prob = (ONE_R1 / 2) - ProbBase(qubit);
 
         if (!shard.isPauliX && !shard.isPauliY) {
             probZ = prob;

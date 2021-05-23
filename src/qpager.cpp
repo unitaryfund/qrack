@@ -1381,7 +1381,7 @@ real1_f QPager::Prob(bitLenInt qubit)
         oneChance += futures[i].get();
     }
 
-    return oneChance;
+    return clampProb(oneChance);
 }
 
 real1_f QPager::ProbAll(bitCapInt fullRegister)
@@ -1399,7 +1399,7 @@ real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         maskChance += qPages[i]->ProbMask(mask, permutation);
     }
-    return maskChance;
+    return clampProb(maskChance);
 }
 
 void QPager::UpdateRunningNorm(real1_f norm_thresh)
