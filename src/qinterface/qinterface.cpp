@@ -404,22 +404,6 @@ void QInterface::CRZDyad(int numerator, int denomPower, bitLenInt control, bitLe
 /// e^(i*(M_PI * numerator) / denominator) around Pauli z axis
 REG_GATE_C1_1D(CRZDyad);
 
-/// Apply general unitary gate to each bit in "length," starting from bit index "start"
-void QInterface::U(bitLenInt start, bitLenInt length, real1_f theta, real1_f phi, real1_f lambda)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        U(start + bit, theta, phi, lambda);
-    }
-}
-
-/// Apply 2-parameter unitary gate to each bit in "length," starting from bit index "start"
-void QInterface::U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lambda)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        U2(start + bit, phi, lambda);
-    }
-}
-
 /// Apply "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
 void QInterface::PhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
 {

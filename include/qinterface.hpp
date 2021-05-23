@@ -694,6 +694,16 @@ public:
     virtual void U2(bitLenInt target, real1_f phi, real1_f lambda) { U(target, M_PI / 2, phi, lambda); }
 
     /**
+     * Inverse 2-parameter unitary gate
+     *
+     * Applies the inverse of U2
+     */
+    virtual void IU2(bitLenInt target, real1_f phi, real1_f lambda)
+    {
+        U(target, M_PI / 2, -lambda - PI_R1, -phi + PI_R1);
+    }
+
+    /**
      * Controlled general unitary gate
      *
      * Applies a controlled gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible
@@ -1203,20 +1213,6 @@ public:
      * Pauli Y axis.
      */
     virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target);
-
-    /**
-     * "Yaw, pitch", (RY-RZ)
-     *
-     * Rotates Z_0 into X_0 according to theta, then X_0 into Y_0 according to phi.
-     */
-    virtual void YP(real1_f azimuth, real1_f inclination, bitLenInt qubit);
-
-    /**
-     * Inverse "Yaw, pitch"
-     *
-     * Inverts YP for exact same arguments.
-     */
-    virtual void IYP(real1_f azimuth, real1_f inclination, bitLenInt qubit);
 
     /**
      * Controlled dyadic fraction y axis rotation gate

@@ -775,37 +775,31 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
         probY = (probZ < ZERO_R1) ? -(ONE_R1 / 2) : (ONE_R1 / 2);
     }
 
-    real1_f yaw = acos(2 * probZ);
-    real1_f pitch = atan2(2 * probY, 2 * probX);
+    real1_f azimuth = acos(2 * probZ);
+    real1_f inclination = atan2(2 * probY, 2 * probX);
 
     // YP with these yaw and pitch should prepare the state from |0>.
     // Therefore, inverse YP with the same parameters should deconstruct this state to |0>.
 
-    shard.unit->IYP(yaw, pitch, shard.mapped);
+    shard.unit->IU2(shard.mapped, azimuth, inclination);
     shard.MakeDirty();
     ProbBase(qubit);
 
     if (shard.unit) {
         // Didn't work.
-        shard.unit->YP(yaw, pitch, shard.mapped);
+        shard.unit->U2(shard.mapped, azimuth, inclination);
 
         freezeTrySeparate = false;
         return false;
     }
 
     // We separated, but we need to manually update the shard.
-    real1 cosine = (real1)cos(yaw / 2);
-    real1 sine = (real1)sin(yaw / 2);
-    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+    complex expPhi = exp(I_CMPLX * azimuth);
+    complex expLam = exp(I_CMPLX * inclination);
+    complex mtrx2[4] = { SQRT1_2_R1, -SQRT1_2_R1 * expLam, SQRT1_2_R1 * expPhi, SQRT1_2_R1 * expPhi * expLam };
 
-    cosine = (real1)cos(pitch / 2);
-    sine = (real1)sin(pitch / 2);
-    complex pauliRZ[4] = { complex(cosine, -sine), ZERO_CMPLX, ZERO_CMPLX, complex(cosine, sine) };
-
-    mul2x2(pauliRZ, pauliRY, mtrx);
-
-    complex tempAmp1 = mtrx[2] * shard.amp0 + mtrx[3] * shard.amp1;
-    shard.amp0 = mtrx[0] * shard.amp0 + mtrx[1] * shard.amp1;
+    complex tempAmp1 = mtrx2[2] * shard.amp0 + mtrx2[3] * shard.amp1;
+    shard.amp0 = mtrx2[0] * shard.amp0 + mtrx2[1] * shard.amp1;
     shard.amp1 = tempAmp1;
 
     freezeTrySeparate = false;
