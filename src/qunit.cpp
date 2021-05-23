@@ -700,6 +700,70 @@ QInterfacePtr QUnit::EntangleRange(
     return toRet;
 }
 
+bool QUnit::TrySeparateClifford(bitLenInt qubit)
+{
+    QEngineShard& shard = shards[qubit];
+
+    freezeTrySeparate = true;
+
+    bool didSeparate;
+
+    real1_f prob;
+    real1_f probX = ZERO_R1;
+    real1_f probY = ZERO_R1;
+    real1_f probZ = ZERO_R1;
+
+    for (bitLenInt i = 0; i < 3; i++) {
+        prob = ProbBase(qubit) - ONE_R1 / 2;
+
+        if (!shard.isPauliX && !shard.isPauliY) {
+            probZ = prob;
+        } else if (shard.isPauliX) {
+            probX = prob;
+        } else {
+            probY = prob;
+        }
+
+        didSeparate = !shard.unit;
+
+        if (i >= 2) {
+            continue;
+        }
+
+        // If this is 0.5, it wasn't this basis, but it's worth checking the next basis.
+        if (didSeparate || (abs(prob) > separabilityThreshold)) {
+            freezeTrySeparate = false;
+            return didSeparate;
+        }
+
+        if (!shard.isPauliX && !shard.isPauliY) {
+            ConvertZToX(qubit);
+        } else if (shard.isPauliX) {
+            ConvertXToY(qubit);
+        } else {
+            ConvertYToZ(qubit);
+        }
+    }
+
+    probZ = abs(probZ);
+    probX = abs(probX);
+    probY = abs(probY);
+
+    if (isReactiveSeparate && (separabilityThreshold > FP_NORM_EPSILON)) {
+        // Convert back to the basis with the highest projection:
+        if ((probZ >= probY) && (probZ >= probX)) {
+            RevertBasis1Qb(qubit);
+        } else if ((probX >= probY) && (probX >= probZ)) {
+            RevertBasisToX1Qb(qubit);
+        } else {
+            RevertBasisToY1Qb(qubit);
+        }
+    }
+
+    freezeTrySeparate = false;
+    return didSeparate;
+}
+
 bool QUnit::TrySeparatePure(bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
@@ -775,7 +839,11 @@ bool QUnit::TrySeparatePure(bitLenInt qubit)
 
     shard.unit->IAI(shard.mapped, azimuth, inclination);
     shard.MakeDirty();
-    ProbBase(qubit);
+    real1_f prob = (ONE_R1 / 2) - ProbBase(qubit);
+
+    if (shard.unit && (((ONE_R1 / 2) - abs(prob)) <= separabilityThreshold)) {
+        SeparateBit(prob < ZERO_R1, qubit);
+    }
 
     if (shard.unit) {
         // Didn't work.
@@ -853,104 +921,11 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
-    if (!shard.isClifford() && (separabilityThreshold < ((ONE_R1 - SQRT1_2_R1) / 2))) {
-        return TrySeparatePure(qubit);
+    if (shard.isClifford()) {
+        return TrySeparateClifford(qubit);
     }
 
-    freezeTrySeparate = true;
-
-    bool didSeparate;
-    bool willSeparate = false;
-
-    real1_f prob;
-    real1_f probX = ZERO_R1;
-    real1_f probY = ZERO_R1;
-    real1_f probZ = ZERO_R1;
-
-    for (bitLenInt i = 0; i < 3; i++) {
-        prob = ProbBase(qubit) - ONE_R1 / 2;
-
-        if (!shard.isPauliX && !shard.isPauliY) {
-            probZ = prob;
-        } else if (shard.isPauliX) {
-            probX = prob;
-        } else {
-            probY = prob;
-        }
-
-        didSeparate = !shard.unit;
-        willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
-
-        if (i >= 2) {
-            continue;
-        }
-
-        // If this is 0.5, it wasn't this basis, but it's worth checking the next basis.
-        if (didSeparate || (!willSeparate && (abs(prob) > separabilityThreshold))) {
-            freezeTrySeparate = false;
-            return didSeparate;
-        }
-
-        if (!shard.isPauliX && !shard.isPauliY) {
-            ConvertZToX(qubit);
-        } else if (shard.isPauliX) {
-            ConvertXToY(qubit);
-        } else {
-            ConvertYToZ(qubit);
-        }
-    }
-
-    probZ = abs(probZ);
-    probX = abs(probX);
-    probY = abs(probY);
-
-    if (didSeparate || !willSeparate) {
-        if (isReactiveSeparate && (separabilityThreshold > FP_NORM_EPSILON)) {
-            // Convert back to the basis with the highest projection:
-            if ((probZ >= probY) && (probZ >= probX)) {
-                RevertBasis1Qb(qubit);
-            } else if ((probX >= probY) && (probX >= probZ)) {
-                RevertBasisToX1Qb(qubit);
-            } else {
-                RevertBasisToY1Qb(qubit);
-            }
-        }
-
-        freezeTrySeparate = false;
-        return didSeparate;
-    }
-
-    // If we made it here, we're hyper-separating single bits, and we need to pick the best fit of the 3.
-    if ((probY >= probZ) && (probY >= probX)) {
-        // Y is best.
-        if (!shard.isPauliX && !shard.isPauliY) {
-            ConvertZToY(qubit);
-        } else if (shard.isPauliX) {
-            ConvertXToY(qubit);
-        }
-        if (!BLOCKED_SEPARATE(shard)) {
-            SeparateBit(probY >= ZERO_R1, qubit);
-        }
-    } else if ((probX >= probZ) && (probX >= probY)) {
-        // X is best.
-        if (!shard.isPauliX && !shard.isPauliY) {
-            ConvertZToX(qubit);
-        } else if (shard.isPauliY) {
-            RevertBasisY(qubit);
-        }
-        if (!BLOCKED_SEPARATE(shard)) {
-            SeparateBit(probX >= ZERO_R1, qubit);
-        }
-    } else {
-        // Z is best.
-        RevertBasis1Qb(qubit);
-        if (!BLOCKED_SEPARATE(shard)) {
-            SeparateBit(probZ >= ZERO_R1, qubit);
-        }
-    }
-
-    freezeTrySeparate = false;
-    return didSeparate;
+    return TrySeparatePure(qubit);
 }
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)

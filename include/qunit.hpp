@@ -312,6 +312,7 @@ protected:
     virtual void ZBase(const bitLenInt& target);
     virtual real1_f ProbBase(const bitLenInt& qubit);
 
+    virtual bool TrySeparateClifford(bitLenInt qubit);
     virtual bool TrySeparatePure(bitLenInt qubit);
 
     typedef void (QInterface::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
