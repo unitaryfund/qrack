@@ -1131,10 +1131,12 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     QEngineShard& shard = shards[qubit];
 
     if (!shard.isProbDirty) {
-        if (IS_AMP_0(shard.amp1)) {
-            SeparateBit(false, qubit);
-        } else if (IS_AMP_0(shard.amp0)) {
-            SeparateBit(true, qubit);
+        if (shard.unit) {
+            if (IS_AMP_0(shard.amp1)) {
+                SeparateBit(false, qubit);
+            } else if (IS_AMP_0(shard.amp0)) {
+                SeparateBit(true, qubit);
+            }
         }
 
         return norm(shard.amp1);
@@ -1341,10 +1343,6 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     QEngineShard& shard = shards[qubit];
     QInterfacePtr unit = shard.unit;
 
-    if (!unit) {
-        return;
-    }
-
     bitLenInt mapped = shard.mapped;
     real1_f prob = shard.Prob();
 
@@ -1359,11 +1357,22 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
         return;
     }
 
+    if (prob <= FP_NORM_EPSILON) {
+        value = false;
+    } else if ((ONE_R1 - prob) <= FP_NORM_EPSILON) {
+        value = true;
+    }
+
     unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
-    if ((ONE_R1 / 2 - abs(prob - ONE_R1 / 2)) > FP_NORM_EPSILON) {
+    if (((ONE_R1 / 2) - abs((ONE_R1 / 2) - prob)) > REAL1_EPSILON) {
         unit->UpdateRunningNorm();
         if (!doNormalize) {
             unit->NormalizeState();
+        }
+        for (auto&& s : shards) {
+            if (s.unit == unit) {
+                s.MakeDirty();
+            }
         }
     }
 
