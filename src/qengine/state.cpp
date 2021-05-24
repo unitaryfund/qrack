@@ -1474,9 +1474,10 @@ void QEngineCPU::UpdateRunningNorm(real1_f norm_thresh)
     }
     runningNorm = par_norm(maxQPower, stateVec, norm_thresh);
 
-    if (runningNorm <= amplitudeFloor) {
-        ZeroAmplitudes();
-    }
+    // TODO: Why doesn't this work, with QPager?
+    // if (runningNorm <= amplitudeFloor) {
+    //     ZeroAmplitudes();
+    // }
 }
 
 StateVectorPtr QEngineCPU::AllocStateVec(bitCapInt elemCount)

@@ -1369,6 +1369,11 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
         if (!doNormalize) {
             unit->NormalizeState();
         }
+        for (auto&& s : shards) {
+            if (s.unit == unit) {
+                s.MakeDirty();
+            }
+        }
     }
 
     /* Update the mappings. */
