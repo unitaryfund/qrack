@@ -28,11 +28,12 @@ DispatchQueue::DispatchQueue()
 
 DispatchQueue::~DispatchQueue()
 {
-    if (!isStarted_) {
+    std::unique_lock<std::mutex> lock(lock_);
+
+    if (quit_ || !isStarted_) {
         return;
     }
 
-    std::unique_lock<std::mutex> lock(lock_);
     quit_ = true;
     lock.unlock();
     cv_.notify_all();
@@ -46,21 +47,23 @@ DispatchQueue::~DispatchQueue()
 
 void DispatchQueue::finish()
 {
-    if (!isStarted_) {
+    std::unique_lock<std::mutex> lock(lock_);
+
+    if (quit_ || !isStarted_) {
         return;
     }
 
-    std::unique_lock<std::mutex> lock(lock_);
     cvFinished_.wait(lock, [this] { return isFinished_; });
 }
 
 void DispatchQueue::dump()
 {
-    if (!isStarted_) {
+    std::unique_lock<std::mutex> lock(lock_);
+
+    if (quit_ || !isStarted_) {
         return;
     }
 
-    std::unique_lock<std::mutex> lock(lock_);
     std::queue<fp_t> empty;
     std::swap(q_, empty);
     isFinished_ = true;
@@ -71,6 +74,11 @@ void DispatchQueue::dump()
 void DispatchQueue::dispatch(const fp_t& op)
 {
     std::unique_lock<std::mutex> lock(lock_);
+
+    if (quit_) {
+        return;
+    }
+
     q_.push(op);
     isFinished_ = false;
     if (!isStarted_) {
@@ -87,6 +95,11 @@ void DispatchQueue::dispatch(const fp_t& op)
 void DispatchQueue::dispatch(fp_t&& op)
 {
     std::unique_lock<std::mutex> lock(lock_);
+
+    if (quit_) {
+        return;
+    }
+
     q_.push(std::move(op));
     isFinished_ = false;
     if (!isStarted_) {
