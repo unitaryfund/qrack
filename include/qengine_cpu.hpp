@@ -178,6 +178,11 @@ public:
             return;
         }
 
+        if (!stateVec) {
+            ResetStateVec(AllocStateVec(maxQPower));
+            stateVec->clear();
+        }
+
         complex* sv;
         if (isSparse) {
             sv = new complex[(bitCapIntOcl)maxQPower];

@@ -2666,10 +2666,9 @@ void QEngineOCL::UpdateRunningNorm(real1_f norm_thresh)
 
     WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
 
-    // TODO: Why doesn't this work, with QPager?
-    // if (runningNorm <= amplitudeFloor) {
-    //     ZeroAmplitudes();
-    // }
+    if (runningNorm <= amplitudeFloor) {
+        ZeroAmplitudes();
+    }
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
