@@ -241,6 +241,10 @@ public:
             return;
         }
 
+        if (!stateBuffer) {
+            ReinitBuffer();
+        }
+
         LockSync(CL_MAP_WRITE);
         src->GetQuantumState(stateVec);
         UnlockSync();
