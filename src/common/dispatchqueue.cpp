@@ -66,8 +66,9 @@ void DispatchQueue::dump()
 
     std::queue<fp_t> empty;
     std::swap(q_, empty);
+    isFinished_ = true;
     lock.unlock();
-    finish();
+    cvFinished_.notify_all();
 }
 
 void DispatchQueue::dispatch(const fp_t& op)
