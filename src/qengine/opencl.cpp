@@ -1653,9 +1653,8 @@ real1_f QEngineOCL::ProbParity(const bitCapInt& mask)
 
 bool QEngineOCL::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 {
-    // If no bits in mask:
-    if (!mask) {
-        return ZERO_R1;
+    if (!stateBuffer || !mask) {
+        return false;
     }
 
     // If only one bit in mask:
@@ -2470,6 +2469,10 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         NormalizeState();
     }
 
+    if (!stateVec && !norm(amp)) {
+        return;
+    }
+
     runningNorm -= norm(GetAmplitude(perm));
     runningNorm += norm(amp);
     if (runningNorm <= amplitudeFloor) {
@@ -2589,6 +2592,8 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh)
 {
     // We might have async execution of gates still happening.
     clFinish();
+
+    CHECK_ZERO_SKIP();
 
     if (nrm < ZERO_R1) {
         nrm = runningNorm;
