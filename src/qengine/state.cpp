@@ -673,6 +673,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 
     if (!stateVec || !toCopy->stateVec) {
         // Compose will have a wider but 0 stateVec
+        ZeroAmplitudes();
         SetQubitCount(nQubitCount);
         return result;
     }
@@ -722,6 +723,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 
     if (!stateVec || !toCopy->stateVec) {
         // Compose will have a wider but 0 stateVec
+        ZeroAmplitudes();
         SetQubitCount(nQubitCount);
         return start;
     }
