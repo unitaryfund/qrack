@@ -84,17 +84,21 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     }
     Finish();
 
-    runningNorm -= norm(stateVec->read(perm));
-    runningNorm += norm(amp);
-
-    if (runningNorm <= amplitudeFloor) {
-        ZeroAmplitudes();
+    if (!stateVec && !norm(amp)) {
         return;
     }
 
     if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPower));
         stateVec->clear();
+    }
+
+    runningNorm -= norm(stateVec->read(perm));
+    runningNorm += norm(amp);
+
+    if (runningNorm <= amplitudeFloor) {
+        ZeroAmplitudes();
+        return;
     }
 
     stateVec->write(perm, amp);
@@ -716,7 +720,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 {
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
 
-    if (!stateVec) {
+    if (!stateVec || !toCopy->stateVec) {
         // Compose will have a wider but 0 stateVec
         SetQubitCount(nQubitCount);
         return start;
@@ -764,6 +768,7 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr> toCopy)
 {
     std::map<QInterfacePtr, bitLenInt> ret;
+    bitLenInt nQubitCount = qubitCount;
 
     bitLenInt i;
     bitLenInt toComposeCount = toCopy.size();
@@ -772,7 +777,6 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     std::vector<bitCapInt> mask(toComposeCount);
 
     bitCapInt startMask = maxQPower - ONE_BCI;
-    bitLenInt nQubitCount = qubitCount;
     bitCapInt nMaxQPower;
 
     if (doNormalize) {
@@ -806,8 +810,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
         }
     });
 
-    qubitCount = nQubitCount;
-    maxQPower = nMaxQPower;
+    SetQubitCount(nQubitCount);
 
     ResetStateVec(nStateVec);
 
@@ -1234,7 +1237,7 @@ real1_f QEngineCPU::ProbParity(const bitCapInt& mask)
 bool QEngineCPU::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 {
     if (!stateVec || !mask) {
-        return ZERO_R1;
+        return false;
     }
 
     if (!doForce) {
