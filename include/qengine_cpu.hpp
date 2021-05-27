@@ -180,7 +180,6 @@ public:
 
         if (!stateVec) {
             ResetStateVec(AllocStateVec(maxQPower));
-            stateVec->clear();
         }
 
         complex* sv;
