@@ -1440,6 +1440,8 @@ real1_f QPager::SumSqrDiff(QPagerPtr toCompare)
 
     SeparateEngines(toCompare->qubitCount);
     toCompare->SeparateEngines(qubitCount);
+    CombineEngines(toCompare->qubitCount);
+    toCompare->CombineEngines(qubitCount);
 
     std::vector<std::future<real1_f>> futures(qPages.size());
     for (i = 0; i < qPages.size(); i++) {
