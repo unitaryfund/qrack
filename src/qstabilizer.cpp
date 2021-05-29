@@ -383,16 +383,12 @@ void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
 
             if (z[i][t]) {
                 z[i][c] = !z[i][c];
-                if (x[i][t]) {
+                if (x[i][t] && (!x[i][c] || !z[i][c])) {
                     r[i] = (r[i] + 2) & 0x3;
                 }
-                if (x[i][c]) {
-                    x[i][t] = !x[i][t];
-                    if (x[i][t] == z[i][c]) {
-                        r[i] = (r[i] + 2) & 0x3;
-                    }
-                }
-            } else if (x[i][c]) {
+            }
+
+            if (x[i][c]) {
                 x[i][t] = !x[i][t];
             }
 
