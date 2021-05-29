@@ -78,6 +78,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , isReactiveSeparate(false)
     , thresholdQubits(qubitThreshold)
     , pagingThresholdQubits(21)
+    , maxShardQubits(-1)
     , separabilityThreshold(sep_thresh)
     , deviceIDs(devList)
 {
@@ -87,6 +88,10 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 
     if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
         separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
+    }
+
+    if (getenv("QRACK_MAX_PAGING_QB")) {
+        maxShardQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
     }
 
     if ((engine == QINTERFACE_QUNIT) || (engine == QINTERFACE_QUNIT_MULTI)) {
@@ -841,7 +846,40 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
-    return TrySeparateClifford(qubit);
+    if (shard.unit->isClifford(shard.mapped) || (shard.unit->GetQubitCount() >= maxShardQubits)) {
+        return TrySeparateClifford(qubit);
+    }
+
+    bitLenInt mapped = shard.mapped;
+    QInterfacePtr oUnit = shard.unit;
+    QInterfacePtr nUnit = MakeEngine(1, 0);
+    if (oUnit->TryDecompose(mapped, nUnit, separabilityThreshold)) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            if ((shards[i].unit == oUnit) && (shards[i].mapped > mapped)) {
+                shards[i].mapped--;
+            }
+        }
+
+        shard.unit = nUnit;
+        shard.mapped = 0;
+        shard.MakeDirty();
+        CacheSingleQubitShard(qubit);
+
+        if (oUnit->GetQubitCount() == 1U) {
+            return true;
+        }
+
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            if (shard.unit == oUnit) {
+                CacheSingleQubitShard(i);
+                break;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
