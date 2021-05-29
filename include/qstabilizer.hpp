@@ -172,62 +172,28 @@ public:
     void CNOT(const bitLenInt& control, const bitLenInt& target);
     /// Apply a CZ gate with control and target
     void CZ(const bitLenInt& control, const bitLenInt& target);
+    /// Apply a CY gate with control and target
+    void CY(const bitLenInt& control, const bitLenInt& target);
     /// Apply a Hadamard gate to target
     void H(const bitLenInt& target);
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
     void S(const bitLenInt& target);
     /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
-    virtual void Z(const bitLenInt& target);
+    void Z(const bitLenInt& target);
     /// Apply an X (or NOT) gate to target
-    virtual void X(const bitLenInt& target);
+    void X(const bitLenInt& target);
+    /// Apply a Pauli Y gate to target
+    void Y(const bitLenInt& target);
     /// Apply an inverse phase gate (|0>->|0>, |1>->-i|1>, or "S adjoint") to qubit b
-    virtual void IS(const bitLenInt& target);
-
-    virtual void SqrtX(const bitLenInt& target)
-    {
-        H(target);
-        S(target);
-        H(target);
-    }
-
-    virtual void ISqrtX(const bitLenInt& target)
-    {
-        H(target);
-        IS(target);
-        H(target);
-    }
-
-    virtual void Y(const bitLenInt& target)
-    {
-        IS(target);
-        X(target);
-        S(target);
-    }
-
-    virtual void SqrtY(const bitLenInt& target)
-    {
-        IS(target);
-        H(target);
-        S(target);
-        H(target);
-        S(target);
-    }
-
-    virtual void ISqrtY(const bitLenInt& target)
-    {
-        IS(target);
-        H(target);
-        IS(target);
-        H(target);
-        S(target);
-    }
-
-    virtual void CY(const bitLenInt& control, const bitLenInt& target)
-    {
-        IS(target);
-        CNOT(control, target);
-        S(target);
-    }
+    void IS(const bitLenInt& target);
+    /// Apply square root of X gate
+    void SqrtX(const bitLenInt& target);
+    /// Apply inverse square root of X gate
+    void ISqrtX(const bitLenInt& target);
+    /// Apply square root of Y gate
+    void SqrtY(const bitLenInt& target);
+    /// Apply inverse square root of Y gate
+    void ISqrtY(const bitLenInt& target);
 
     virtual void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
