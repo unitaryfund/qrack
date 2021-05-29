@@ -100,10 +100,8 @@ void QStabilizer::rowcopy(const bitLenInt& i, const bitLenInt& k)
         return;
     }
 
-    for (bitLenInt j = 0; j < qubitCount; j++) {
-        x[i][j] = x[k][j];
-        z[i][j] = z[k][j];
-    }
+    std::copy(x[k].begin(), x[k].end(), x[i].begin());
+    std::copy(z[k].begin(), z[k].end(), z[i].begin());
     r[i] = r[k];
 }
 
@@ -114,9 +112,9 @@ void QStabilizer::rowswap(const bitLenInt& i, const bitLenInt& k)
         return;
     }
 
-    rowcopy(qubitCount << 1U, k);
-    rowcopy(k, i);
-    rowcopy(i, qubitCount << 1U);
+    std::swap(x[k], x[i]);
+    std::swap(z[k], z[i]);
+    std::swap(r[k], r[i]);
 }
 
 /// Sets row i equal to the bth observable (X_1,...X_n,Z_1,...,Z_n)
@@ -370,6 +368,45 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
     });
 }
 
+/// Apply a CZ gate with control and target
+void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
+{
+    Dispatch([this, c, t] {
+        bool tmp;
+
+        bitLenInt maxLcv = qubitCount << 1U;
+
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            tmp = x[i][t];
+            x[i][t] = tmp ^ (tmp ^ z[i][t]);
+            z[i][t] = z[i][t] ^ (z[i][t] ^ tmp);
+
+            if (z[i][t]) {
+                z[i][c] = !z[i][c];
+                if (x[i][t]) {
+                    r[i] = (r[i] + 2) & 0x3;
+                }
+                if (x[i][c]) {
+                    x[i][t] = !x[i][t];
+                    if (x[i][t] == z[i][c]) {
+                        r[i] = (r[i] + 2) & 0x3;
+                    }
+                }
+            } else if (x[i][c]) {
+                x[i][t] = !x[i][t];
+            }
+
+            tmp = x[i][t];
+            x[i][t] = tmp ^ (tmp ^ z[i][t]);
+            z[i][t] = z[i][t] ^ (z[i][t] ^ tmp);
+
+            if (x[i][t] && z[i][t]) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
+        }
+    });
+}
+
 /// Apply a Hadamard gate to target
 void QStabilizer::H(const bitLenInt& t)
 {
@@ -380,7 +417,7 @@ void QStabilizer::H(const bitLenInt& t)
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             tmp = x[i][t];
-            x[i][t] = x[i][t] ^ (x[i][t] ^ z[i][t]);
+            x[i][t] = tmp ^ (tmp ^ z[i][t]);
             z[i][t] = z[i][t] ^ (z[i][t] ^ tmp);
             if (x[i][t] && z[i][t]) {
                 r[i] = (r[i] + 2) & 0x3;
@@ -550,8 +587,6 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
     }
 
     if (m >= n) {
-        // TODO: Repeating deterministic measurement to the exhaustion of this check might fix Decompose()/Dispose()
-        // separability issues.
         return r[elemCount];
     }
 
