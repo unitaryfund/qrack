@@ -372,30 +372,14 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
 {
     Dispatch([this, c, t] {
-        bool tmp;
-
         bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
-            std::swap(x[i][t], z[i][t]);
-
-            if (z[i][t]) {
+            if (x[i][t]) {
                 z[i][c] = !z[i][c];
-                if (x[i][t] && (!x[i][c] || !z[i][c])) {
-                    r[i] = (r[i] + 2) & 0x3;
-                }
             }
-
             if (x[i][c]) {
-                x[i][t] = !x[i][t];
-            }
-
-            tmp = x[i][t];
-            x[i][t] = tmp ^ (tmp ^ z[i][t]);
-            z[i][t] = tmp;
-
-            if (x[i][t] && z[i][t]) {
-                r[i] = (r[i] + 2) & 0x3;
+                z[i][t] = !z[i][t];
             }
         }
     });
