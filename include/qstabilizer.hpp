@@ -184,20 +184,10 @@ public:
     virtual void Y(const bitLenInt& target);
     /// Apply an inverse phase gate (|0>->|0>, |1>->-i|1>, or "S adjoint") to qubit b
     virtual void IS(const bitLenInt& target);
-
-    virtual void SqrtX(const bitLenInt& target)
-    {
-        H(target);
-        S(target);
-        H(target);
-    }
-
-    virtual void ISqrtX(const bitLenInt& target)
-    {
-        H(target);
-        IS(target);
-        H(target);
-    }
+    /// Apply square root of X gate
+    virtual void SqrtX(const bitLenInt& target);
+    /// Apply inverse square root of X gate
+    virtual void ISqrtX(const bitLenInt& target);
 
     virtual void SqrtY(const bitLenInt& target)
     {
