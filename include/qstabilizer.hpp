@@ -170,11 +170,8 @@ protected:
 public:
     /// Apply a CNOT gate with control and target
     void CNOT(const bitLenInt& control, const bitLenInt& target);
-<<<<<<< Updated upstream
-=======
     /// Apply a CZ gate with control and target
     void CZ(const bitLenInt& control, const bitLenInt& target);
->>>>>>> Stashed changes
     /// Apply a Hadamard gate to target
     void H(const bitLenInt& target);
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
@@ -239,16 +236,6 @@ public:
         S(target);
     }
 
-<<<<<<< Updated upstream
-    virtual void CZ(const bitLenInt& control, const bitLenInt& target)
-    {
-        H(target);
-        CNOT(control, target);
-        H(target);
-    }
-
-=======
->>>>>>> Stashed changes
     virtual void CY(const bitLenInt& control, const bitLenInt& target)
     {
         IS(target);
