@@ -392,19 +392,20 @@ void QStabilizer::CY(const bitLenInt& c, const bitLenInt& t)
         bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
-            if (z[i][t] ^ x[i][t]) {
+            z[i][t] = z[i][t] ^ x[i][t];
+
+            if (z[i][t]) {
                 z[i][c] = !z[i][c];
             }
 
             if (x[i][c]) {
-                if (x[i][t] && (z[i][t] ^ x[i][t]) && !z[i][c]) {
+                if (x[i][t] && z[i][t] && !z[i][c]) {
                     r[i] = (r[i] + 2) & 0x3;
                 }
 
                 x[i][t] = !x[i][t];
             }
 
-            z[i][t] = z[i][t] ^ !x[i][t];
             z[i][t] = z[i][t] ^ x[i][t];
         }
     });
