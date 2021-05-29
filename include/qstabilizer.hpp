@@ -178,18 +178,13 @@ public:
     void S(const bitLenInt& target);
     /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
     virtual void Z(const bitLenInt& target);
+    /// Apply an X (or NOT) gate to target
+    virtual void X(const bitLenInt& target);
 
     virtual void IS(const bitLenInt& target)
     {
         Z(target);
         S(target);
-    }
-
-    virtual void X(const bitLenInt& target)
-    {
-        H(target);
-        Z(target);
-        H(target);
     }
 
     virtual void SqrtX(const bitLenInt& target)
