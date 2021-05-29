@@ -455,26 +455,10 @@ void QStabilizer::Z(const bitLenInt& t)
 void QStabilizer::X(const bitLenInt& t)
 {
     Dispatch([this, t] {
-        bool tmp;
-
         bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
-            if (x[i][t]) {
-                tmp = true;
-                x[i][t] = tmp ^ (tmp ^ z[i][t]);
-                z[i][t] = z[i][t] ^ (z[i][t] ^ tmp);
-                if (x[i][t] && !z[i][t]) {
-                    r[i] = (r[i] + 2) & 0x3;
-                }
-
-                tmp = x[i][t];
-                x[i][t] = tmp ^ (tmp ^ z[i][t]);
-                z[i][t] = z[i][t] ^ (z[i][t] ^ tmp);
-                if (x[i][t] && z[i][t]) {
-                    r[i] = (r[i] + 2) & 0x3;
-                }
-            } else if (z[i][t]) {
+            if (z[i][t]) {
                 r[i] = (r[i] + 2) & 0x3;
             }
         }
