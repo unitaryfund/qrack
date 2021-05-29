@@ -441,6 +441,20 @@ void QStabilizer::S(const bitLenInt& t)
     });
 }
 
+/// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
+void QStabilizer::Z(const bitLenInt& t)
+{
+    Dispatch([this, t] {
+        bitLenInt maxLcv = qubitCount << 1U;
+
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            if (x[i][t]) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
+        }
+    });
+}
+
 /**
  * Returns "true" if target qubit is a Z basis eigenstate
  */

@@ -176,13 +176,8 @@ public:
     void H(const bitLenInt& target);
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
     void S(const bitLenInt& target);
-
-    // TODO: Custom implementations for decompositions:
-    virtual void Z(const bitLenInt& target)
-    {
-        S(target);
-        S(target);
-    }
+    /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
+    virtual void Z(const bitLenInt& target);
 
     virtual void IS(const bitLenInt& target)
     {
