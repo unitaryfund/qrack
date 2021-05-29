@@ -180,6 +180,8 @@ public:
     virtual void Z(const bitLenInt& target);
     /// Apply an X (or NOT) gate to target
     virtual void X(const bitLenInt& target);
+    /// Apply a Pauli Y gate to target
+    virtual void Y(const bitLenInt& target);
     /// Apply an inverse phase gate (|0>->|0>, |1>->-i|1>, or "S adjoint") to qubit b
     virtual void IS(const bitLenInt& target);
 
@@ -195,13 +197,6 @@ public:
         H(target);
         IS(target);
         H(target);
-    }
-
-    virtual void Y(const bitLenInt& target)
-    {
-        IS(target);
-        X(target);
-        S(target);
     }
 
     virtual void SqrtY(const bitLenInt& target)

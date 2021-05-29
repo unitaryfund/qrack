@@ -458,6 +458,20 @@ void QStabilizer::X(const bitLenInt& t)
     });
 }
 
+/// Apply a Pauli Y gate to target
+void QStabilizer::Y(const bitLenInt& t)
+{
+    Dispatch([this, t] {
+        bitLenInt maxLcv = qubitCount << 1U;
+
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            if (x[i][t] != z[i][t]) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
+        }
+    });
+}
+
 /**
  * Returns "true" if target qubit is a Z basis eigenstate
  */
