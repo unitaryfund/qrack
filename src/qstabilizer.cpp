@@ -438,6 +438,21 @@ void QStabilizer::S(const bitLenInt& t)
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
+void QStabilizer::IS(const bitLenInt& t)
+{
+    Dispatch([this, t] {
+        bitLenInt maxLcv = qubitCount << 1U;
+
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            z[i][t] = z[i][t] ^ x[i][t];
+            if (x[i][t] && z[i][t]) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
+        }
+    });
+}
+
+/// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
 void QStabilizer::Z(const bitLenInt& t)
 {
     Dispatch([this, t] {
