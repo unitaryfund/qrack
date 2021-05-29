@@ -192,18 +192,14 @@ public:
     virtual void SqrtY(const bitLenInt& target)
     {
         IS(target);
-        H(target);
-        S(target);
-        H(target);
+        SqrtX(target);
         S(target);
     }
 
     virtual void ISqrtY(const bitLenInt& target)
     {
         IS(target);
-        H(target);
-        IS(target);
-        H(target);
+        ISqrtX(target);
         S(target);
     }
 
