@@ -389,14 +389,10 @@ void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
 void QStabilizer::H(const bitLenInt& t)
 {
     Dispatch([this, t] {
-        bool tmp;
-
         bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
-            tmp = x[i][t];
-            x[i][t] = tmp ^ (tmp ^ z[i][t]);
-            z[i][t] = z[i][t] ^ (z[i][t] ^ tmp);
+            std::swap(x[i][t], z[i][t]);
             if (x[i][t] && z[i][t]) {
                 r[i] = (r[i] + 2) & 0x3;
             }
