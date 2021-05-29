@@ -377,9 +377,7 @@ void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
         bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
-            tmp = x[i][t];
-            x[i][t] = tmp ^ (tmp ^ z[i][t]);
-            z[i][t] = z[i][t] ^ (z[i][t] ^ tmp);
+            std::swap(x[i][t], z[i][t]);
 
             if (z[i][t]) {
                 z[i][c] = !z[i][c];
@@ -394,7 +392,7 @@ void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
 
             tmp = x[i][t];
             x[i][t] = tmp ^ (tmp ^ z[i][t]);
-            z[i][t] = z[i][t] ^ (z[i][t] ^ tmp);
+            z[i][t] = tmp;
 
             if (x[i][t] && z[i][t]) {
                 r[i] = (r[i] + 2) & 0x3;
