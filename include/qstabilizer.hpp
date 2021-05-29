@@ -188,20 +188,10 @@ public:
     virtual void SqrtX(const bitLenInt& target);
     /// Apply inverse square root of X gate
     virtual void ISqrtX(const bitLenInt& target);
-
-    virtual void SqrtY(const bitLenInt& target)
-    {
-        IS(target);
-        SqrtX(target);
-        S(target);
-    }
-
-    virtual void ISqrtY(const bitLenInt& target)
-    {
-        IS(target);
-        ISqrtX(target);
-        S(target);
-    }
+    /// Apply square root of Y gate
+    virtual void SqrtY(const bitLenInt& target);
+    /// Apply inverse square root of Y gate
+    virtual void ISqrtY(const bitLenInt& target);
 
     virtual void CY(const bitLenInt& control, const bitLenInt& target)
     {
