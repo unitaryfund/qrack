@@ -198,9 +198,9 @@ public:
 
     virtual void ISqrtY(const bitLenInt& target)
     {
-        IS(target);
-        ISqrtX(target);
         S(target);
+        ISqrtX(target);
+        IS(target);
     }
 
     virtual void CY(const bitLenInt& control, const bitLenInt& target)
