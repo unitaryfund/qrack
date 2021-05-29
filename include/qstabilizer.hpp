@@ -170,30 +170,18 @@ protected:
 public:
     /// Apply a CNOT gate with control and target
     void CNOT(const bitLenInt& control, const bitLenInt& target);
+    /// Apply a CZ gate with control and target
+    void CZ(const bitLenInt& control, const bitLenInt& target);
     /// Apply a Hadamard gate to target
     void H(const bitLenInt& target);
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
     void S(const bitLenInt& target);
-
-    // TODO: Custom implementations for decompositions:
-    virtual void Z(const bitLenInt& target)
-    {
-        S(target);
-        S(target);
-    }
-
-    virtual void IS(const bitLenInt& target)
-    {
-        Z(target);
-        S(target);
-    }
-
-    virtual void X(const bitLenInt& target)
-    {
-        H(target);
-        Z(target);
-        H(target);
-    }
+    /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
+    virtual void Z(const bitLenInt& target);
+    /// Apply an X (or NOT) gate to target
+    virtual void X(const bitLenInt& target);
+    /// Apply an inverse phase gate (|0>->|0>, |1>->-i|1>, or "S adjoint") to qubit b
+    virtual void IS(const bitLenInt& target);
 
     virtual void SqrtX(const bitLenInt& target)
     {
@@ -232,13 +220,6 @@ public:
         IS(target);
         H(target);
         S(target);
-    }
-
-    virtual void CZ(const bitLenInt& control, const bitLenInt& target)
-    {
-        H(target);
-        CNOT(control, target);
-        H(target);
     }
 
     virtual void CY(const bitLenInt& control, const bitLenInt& target)
