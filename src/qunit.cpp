@@ -807,7 +807,7 @@ bool QUnit::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
         bitLenInt mapped = shard.mapped;
         QInterfacePtr oUnit = shard.unit;
         QInterfacePtr nUnit = MakeEngine(1U, 0U);
-        if (oUnit->TryDecompose(mapped, nUnit, separabilityThreshold)) {
+        if (oUnit->TryDecompose(mapped, nUnit, error_tol)) {
             for (bitLenInt i = 0; i < qubitCount; i++) {
                 if ((shards[i].unit == oUnit) && (shards[i].mapped > mapped)) {
                     shards[i].mapped--;
