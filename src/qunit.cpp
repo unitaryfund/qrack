@@ -804,6 +804,16 @@ bool QUnit::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
 {
     if (length == 1U) {
         bitLenInt qubit = qubits[0];
+        QEngineShard& shard = shards[qubit];
+
+        if (shard.GetQubitCount() == 1U) {
+            return true;
+        }
+
+        if (BLOCKED_SEPARATE(shard)) {
+            return false;
+        }
+
         bitLenInt mapped = shard.mapped;
         QInterfacePtr oUnit = shard.unit;
         QInterfacePtr nUnit = MakeEngine(1U, 0U);
