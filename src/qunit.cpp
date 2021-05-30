@@ -709,6 +709,11 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
 
+    if (shard.unit->isClifford(shard.mapped) && !shard.unit->TrySeparate(shard.mapped) &&
+        (separabilityThreshold < (ONE_R1 / 2))) {
+        return false;
+    }
+
     freezeTrySeparate = true;
 
     bool didSeparate;
