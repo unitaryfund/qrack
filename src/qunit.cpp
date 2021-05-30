@@ -736,16 +736,16 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
         }
 
         didSeparate = !shard.unit;
+
+        if (didSeparate) {
+            freezeTrySeparate = false;
+            return true;
+        }
+
         willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
 
         if (i >= 2) {
             continue;
-        }
-
-        // If this is 0.5, it wasn't this basis, but it's worth checking the next basis.
-        if (didSeparate || (abs(prob) > separabilityThreshold)) {
-            freezeTrySeparate = false;
-            return didSeparate;
         }
 
         if (!shard.isPauliX && !shard.isPauliY) {
@@ -757,11 +757,27 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
         }
     }
 
+    probZ = 2 * probZ;
+    probX = 2 * probX;
+    probY = 2 * probY;
+
+    prob = sqrt(probZ * probZ + probX * probX + probY * probY);
+
+    // Without calculating the reduced density matrix, experimental test suggests that, under arbitrary rotation of a
+    // separable pure state, this value will never be lower than 1/2.
+    if ((shard.unit->GetQubitCount() < maxShardQubits) && (prob >= ((ONE_R1 / 2) - separabilityThreshold))) {
+        bitLenInt q[1] = { qubit };
+        if (TrySeparate(q, 1U, separabilityThreshold)) {
+            freezeTrySeparate = false;
+            return true;
+        }
+    }
+
     probZ = abs(probZ);
     probX = abs(probX);
     probY = abs(probY);
 
-    if (didSeparate || !willSeparate) {
+    if (!willSeparate) {
         if (isReactiveSeparate && (separabilityThreshold > FP_NORM_EPSILON)) {
             // Convert back to the basis with the highest projection:
             if ((probZ >= probY) && (probZ >= probX)) {
@@ -895,41 +911,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
-    if (shard.unit->isClifford(shard.mapped) || (maxShardQubits < 2U) ||
-        (shard.unit->GetQubitCount() > (maxShardQubits - 2U))) {
-        return TrySeparateClifford(qubit);
-    }
-
-    bitLenInt mapped = shard.mapped;
-    QInterfacePtr oUnit = shard.unit;
-    QInterfacePtr nUnit = MakeEngine(1U, 0U);
-    if (oUnit->TryDecompose(mapped, nUnit, separabilityThreshold)) {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            if ((shards[i].unit == oUnit) && (shards[i].mapped > mapped)) {
-                shards[i].mapped--;
-            }
-        }
-
-        shard.unit = nUnit;
-        shard.mapped = 0;
-        shard.MakeDirty();
-        CacheSingleQubitShard(qubit);
-
-        if (oUnit->GetQubitCount() == 1U) {
-            return true;
-        }
-
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            if (shard.unit == oUnit) {
-                CacheSingleQubitShard(i);
-                break;
-            }
-        }
-
-        return true;
-    }
-
-    return false;
+    return TrySeparateClifford(qubit);
 }
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
