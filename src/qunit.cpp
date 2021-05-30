@@ -807,6 +807,50 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
 
 bool QUnit::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
 {
+    if (length == 1U) {
+        bitLenInt qubit = qubits[0];
+        QEngineShard& shard = shards[qubit];
+
+        if (shard.GetQubitCount() == 1U) {
+            return true;
+        }
+
+        if (BLOCKED_SEPARATE(shard)) {
+            return false;
+        }
+
+        bitLenInt mapped = shard.mapped;
+        QInterfacePtr oUnit = shard.unit;
+        QInterfacePtr nUnit = MakeEngine(1U, 0U);
+        if (oUnit->TryDecompose(mapped, nUnit, error_tol)) {
+            for (bitLenInt i = 0; i < qubitCount; i++) {
+                if ((shards[i].unit == oUnit) && (shards[i].mapped > mapped)) {
+                    shards[i].mapped--;
+                }
+            }
+
+            shard.unit = nUnit;
+            shard.mapped = 0;
+            shard.MakeDirty();
+            CacheSingleQubitShard(qubit);
+
+            if (oUnit->GetQubitCount() == 1U) {
+                return true;
+            }
+
+            for (bitLenInt i = 0; i < qubitCount; i++) {
+                if (shard.unit == oUnit) {
+                    CacheSingleQubitShard(i);
+                    break;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
     std::vector<bitLenInt> q(length);
     std::copy(qubits, qubits + length, q.begin());
     std::sort(q.begin(), q.end());
