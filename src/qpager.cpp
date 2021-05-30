@@ -1438,10 +1438,10 @@ real1_f QPager::SumSqrDiff(QPagerPtr toCompare)
 
     bitCapIntOcl i;
 
-    SeparateEngines(toCompare->qubitCount);
-    toCompare->SeparateEngines(qubitCount);
-    CombineEngines(toCompare->qubitCount);
-    toCompare->CombineEngines(qubitCount);
+    SeparateEngines(toCompare->qubitsPerPage());
+    toCompare->SeparateEngines(qubitsPerPage());
+    CombineEngines(toCompare->qubitsPerPage());
+    toCompare->CombineEngines(qubitsPerPage());
 
     std::vector<std::future<real1_f>> futures(qPages.size());
     for (i = 0; i < qPages.size(); i++) {
