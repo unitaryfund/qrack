@@ -846,13 +846,14 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
-    if (shard.unit->isClifford(shard.mapped) || (shard.unit->GetQubitCount() >= maxShardQubits)) {
+    if (shard.unit->isClifford(shard.mapped) || (maxShardQubits < 2U) ||
+        (shard.unit->GetQubitCount() > (maxShardQubits - 2U))) {
         return TrySeparateClifford(qubit);
     }
 
     bitLenInt mapped = shard.mapped;
     QInterfacePtr oUnit = shard.unit;
-    QInterfacePtr nUnit = MakeEngine(1, 0);
+    QInterfacePtr nUnit = MakeEngine(1U, 0U);
     if (oUnit->TryDecompose(mapped, nUnit, separabilityThreshold)) {
         for (bitLenInt i = 0; i < qubitCount; i++) {
             if ((shards[i].unit == oUnit) && (shards[i].mapped > mapped)) {
