@@ -806,11 +806,24 @@ bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error
     unitCopy->Decompose(start, dest);
     unitCopy->Compose(dest, start);
 
-    bool didSeparate = ApproxCompare(unitCopy, error_tol);
+    real1_f diff = SumSqrDiff(unitCopy);
+    bool didSeparate = diff <= error_tol;
 
     if (didSeparate) {
         // The subsystem is separable.
         Dispose(start, dest->GetQubitCount());
+
+        if (diff > REAL1_EPSILON) {
+            UpdateRunningNorm();
+            if (!doNormalize) {
+                NormalizeState();
+            }
+
+            dest->UpdateRunningNorm();
+            if (!dest->doNormalize) {
+                dest->NormalizeState();
+            }
+        }
     }
 
     return didSeparate;
