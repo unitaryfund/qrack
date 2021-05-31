@@ -2562,13 +2562,26 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs);
 
+    int partInnerSize = nrmGroupCount / nrmGroupSize;
+
+    BufferPtr locCmplxBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * partInnerSize);
+
     QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
-        { stateBuffer, toCompare->stateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * nrmGroupSize);
+        { stateBuffer, toCompare->stateBuffer, poolItem->ulongBuffer, locCmplxBuffer }, sizeof(complex) * nrmGroupSize);
 
-    real1 sumSqrErr = ZERO_R1;
-    WAIT_REAL1_SUM(*nrmBuffer, nrmGroupCount / nrmGroupSize, nrmArray, &sumSqrErr);
+    complex* partInner = new complex[partInnerSize];
 
-    return sumSqrErr;
+    clFinish();
+    queue.enqueueReadBuffer(*locCmplxBuffer, CL_TRUE, 0, sizeof(complex) * partInnerSize, partInner, NULL, NULL);
+
+    complex totInner = ZERO_CMPLX;
+    for (int i = 0; i < partInnerSize; i++) {
+        totInner += partInner[i];
+    }
+
+    delete[] partInner;
+
+    return ONE_R1 - norm(totInner);
 }
 
 QInterfacePtr QEngineOCL::Clone()

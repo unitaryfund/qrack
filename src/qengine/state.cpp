@@ -1337,45 +1337,23 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
     toCompare->stateVec->isReadLocked = false;
 
     int numCores = GetConcurrencyLevel();
-    real1* partError = new real1[numCores]();
-
-    complex basePhaseFac1;
-    real1 nrm = ZERO_R1;
-    bitCapInt basePerm;
-    for (basePerm = 0; basePerm < maxQPower; basePerm++) {
-        nrm = norm(stateVec->read(basePerm));
-        if (nrm > amplitudeFloor) {
-            basePhaseFac1 = (real1)(ONE_R1 / (real1)sqrt(nrm)) * (complex)stateVec->read(basePerm);
-            break;
-        }
-    }
-
-    if (basePerm == maxQPower) {
-        // Max square difference:
-        return 4.0f;
-    }
-
-    nrm = norm(toCompare->stateVec->read(basePerm));
-
-    complex basePhaseFac2 = (real1)(ONE_R1 / (real1)sqrt(nrm)) * (complex)toCompare->stateVec->read(basePerm);
+    complex* partInner = new complex[numCores]();
 
     par_for(0, maxQPower, [&](const bitCapInt lcv, const int cpu) {
-        real1 elemError = norm(
-            basePhaseFac2 * (complex)stateVec->read(lcv) - basePhaseFac1 * (complex)toCompare->stateVec->read(lcv));
-        partError[cpu] += elemError;
+        partInner[cpu] += conj(stateVec->read(lcv)) * toCompare->stateVec->read(lcv);
     });
 
     stateVec->isReadLocked = true;
     toCompare->stateVec->isReadLocked = true;
 
-    real1 totError = ZERO_R1;
+    complex totInner = ZERO_CMPLX;
     for (int i = 0; i < numCores; i++) {
-        totError += partError[i];
+        totInner += partInner[i];
     }
 
-    delete[] partError;
+    delete[] partInner;
 
-    return totError;
+    return ONE_R1 - norm(totInner);
 }
 
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
