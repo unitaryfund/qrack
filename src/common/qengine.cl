@@ -593,17 +593,13 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
 
     bitCapIntOcl j, k, l;
     cmplx amp;
-    real1 partProb, nrm, firstAngle, currentAngle;
-
-    const real1 angleThresh = -8 * PI_R1;
-    const real1 initAngle = -16 * PI_R1;
+    real1 partProb, nrm;
 
     for (lcv = ID; lcv < remainderPower; lcv += Nthreads) {
         j = lcv & startMask;
         j |= (lcv ^ j) << len;
 
         partProb = ZERO_R1;
-        firstAngle = initAngle;
 
         for (k = 0U; k < partPower; k++) {
             l = j | (k << start);
@@ -613,11 +609,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
             partProb += nrm;
 
             if (nrm >= REAL1_EPSILON) {
-                currentAngle = arg(amp);
-                if (firstAngle < angleThresh) {
-                    firstAngle = currentAngle;
-                }
-                partStateAngle[k] = currentAngle - firstAngle;
+                partStateAngle[k] = arg(amp);
             }
         }
 
@@ -628,7 +620,6 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
         j = lcv << start;
 
         partProb = ZERO_R1;
-        firstAngle = initAngle;
 
         for (k = 0U; k < remainderPower; k++) {
             l = k & startMask;
@@ -640,11 +631,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
             partProb += nrm;
 
             if (nrm >= REAL1_EPSILON) {
-                currentAngle = arg(amp);
-                if (firstAngle < angleThresh) {
-                    firstAngle = currentAngle;
-                }
-                remainderStateAngle[k] = currentAngle - firstAngle;
+                remainderStateAngle[k] = arg(amp);
             }
         }
 
