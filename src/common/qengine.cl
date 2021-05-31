@@ -635,7 +635,7 @@ void kernel decomposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapI
             partProb += nrm;
 
             if (nrm >= REAL1_EPSILON) {
-                currentAngle = arg(stateVec[l]);
+                currentAngle = arg(amp);
                 if (firstAngle < angleThresh) {
                     firstAngle = currentAngle;
                 }
@@ -714,7 +714,7 @@ void kernel disposeprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
             nrm = dot(amp, amp);
 
             if (nrm >= REAL1_EPSILON) {
-                currentAngle = arg(stateVec[l]);
+                currentAngle = arg(amp);
                 if (firstAngle < angleThresh) {
                     firstAngle = currentAngle;
                 }

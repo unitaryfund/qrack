@@ -878,15 +878,17 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             real1_f firstAngle = -16 * PI_R1;
             real1_f currentAngle;
             real1 nrm;
+            complex amp;
 
             for (k = 0; k < partPower; k++) {
                 l = j | (k << start);
 
-                nrm = norm(stateVec->read(l));
+                amp = stateVec->read(l);
+                nrm = norm(amp);
                 remainderStateProb[(bitCapIntOcl)lcv] += nrm;
 
                 if (nrm > amplitudeFloor) {
-                    currentAngle = arg(stateVec->read(l));
+                    currentAngle = arg(amp);
                     if (firstAngle < (-8 * PI_R1)) {
                         firstAngle = currentAngle;
                     }
@@ -903,17 +905,19 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             real1_f firstAngle = -16 * PI_R1;
             real1_f currentAngle;
             real1 nrm;
+            complex amp;
 
             for (k = 0; k < remainderPower; k++) {
                 l = k & pow2Mask(start);
                 l |= (k ^ l) << length;
                 l = j | l;
 
-                nrm = norm(stateVec->read(l));
+                amp = stateVec->read(l);
+                nrm = norm(amp);
                 partStateProb[(bitCapIntOcl)lcv] += nrm;
 
                 if (nrm > amplitudeFloor) {
-                    currentAngle = arg(stateVec->read(l));
+                    currentAngle = arg(amp);
                     if (firstAngle < (-8 * PI_R1)) {
                         firstAngle = currentAngle;
                     }
@@ -942,14 +946,17 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
             real1_f firstAngle = -16 * PI_R1;
             real1_f currentAngle;
+            complex amp;
 
             for (k = 0; k < remainderPower; k++) {
                 l = k & pow2Mask(start);
                 l |= (k ^ l) << length;
                 l = j | l;
 
-                if (norm(stateVec->read(l)) > amplitudeFloor) {
-                    currentAngle = arg(stateVec->read(l));
+                amp = stateVec->read(l);
+
+                if (norm(amp) > amplitudeFloor) {
+                    currentAngle = arg(amp);
                     if (firstAngle < (-8 * PI_R1)) {
                         firstAngle = currentAngle;
                     }
