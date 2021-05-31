@@ -1223,7 +1223,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     }
 
     if (destination && !destination->stateBuffer) {
-        // Reinitialize stateVec RAM
+        // Reinitialize stateVec RAM, on this device.
+        destination->SetDevice(deviceID);
         destination->SetPermutation(0);
     }
 
