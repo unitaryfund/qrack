@@ -42,7 +42,6 @@ protected:
     bool canSuppressPaging;
     bitLenInt thresholdQubits;
     bitLenInt pagingThresholdQubits;
-    bitLenInt maxShardQubits;
     real1_f separabilityThreshold;
     std::vector<int> deviceIDs;
 
