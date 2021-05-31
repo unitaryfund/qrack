@@ -1335,7 +1335,7 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
 
     delete[] partInner;
 
-    return ONE_R1 - clamProb(norm(totInner));
+    return ONE_R1 - clampProb(norm(totInner));
 }
 
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
