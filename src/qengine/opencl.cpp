@@ -2581,7 +2581,7 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 
     delete[] partInner;
 
-    return ONE_R1 - norm(totInner);
+    return ONE_R1 - clampProb(norm(totInner));
 }
 
 QInterfacePtr QEngineOCL::Clone()
