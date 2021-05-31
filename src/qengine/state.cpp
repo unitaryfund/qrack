@@ -875,8 +875,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             j = lcv & pow2Mask(start);
             j |= (lcv ^ j) << length;
 
-            real1_f firstAngle = -16 * PI_R1;
-            real1_f currentAngle;
             real1 nrm;
             complex amp;
 
@@ -888,11 +886,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
                 remainderStateProb[(bitCapIntOcl)lcv] += nrm;
 
                 if (nrm > amplitudeFloor) {
-                    currentAngle = arg(amp);
-                    if (firstAngle < (-8 * PI_R1)) {
-                        firstAngle = currentAngle;
-                    }
-                    partStateAngle[k] = currentAngle - firstAngle;
+                    partStateAngle[k] = arg(amp);
                 }
             }
         });
@@ -902,8 +896,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             bitCapIntOcl k;
             j = lcv << start;
 
-            real1_f firstAngle = -16 * PI_R1;
-            real1_f currentAngle;
             real1 nrm;
             complex amp;
 
@@ -917,11 +909,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
                 partStateProb[(bitCapIntOcl)lcv] += nrm;
 
                 if (nrm > amplitudeFloor) {
-                    currentAngle = arg(amp);
-                    if (firstAngle < (-8 * PI_R1)) {
-                        firstAngle = currentAngle;
-                    }
-                    remainderStateAngle[k] = currentAngle - firstAngle;
+                    remainderStateAngle[k] = arg(amp);
                 }
             }
         });
@@ -944,8 +932,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             bitCapIntOcl k;
             j = lcv << start;
 
-            real1_f firstAngle = -16 * PI_R1;
-            real1_f currentAngle;
             complex amp;
 
             for (k = 0; k < remainderPower; k++) {
@@ -956,11 +942,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
                 amp = stateVec->read(l);
 
                 if (norm(amp) > amplitudeFloor) {
-                    currentAngle = arg(amp);
-                    if (firstAngle < (-8 * PI_R1)) {
-                        firstAngle = currentAngle;
-                    }
-                    remainderStateAngle[k] = currentAngle - firstAngle;
+                    remainderStateAngle[k] = arg(amp);
                 }
             }
         });
@@ -1353,7 +1335,7 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
 
     delete[] partInner;
 
-    return ONE_R1 - norm(totInner);
+    return ONE_R1 - clampProb(norm(totInner));
 }
 
 /// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
