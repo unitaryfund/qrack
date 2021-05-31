@@ -1037,7 +1037,7 @@ public:
         // If the qubit counts are unequal, these can't be approximately equal objects.
         if (qubitCount != toCompare->qubitCount) {
             // Max square difference:
-            return 4.0f;
+            return ONE_R1;
         }
 
         SwitchToEngine();

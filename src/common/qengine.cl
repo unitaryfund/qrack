@@ -31,6 +31,11 @@ inline real1 arg(const cmplx cmp)
     return (real1)atan2((real1_f)cmp.y, (real1_f)cmp.x);
 }
 
+inline cmplx conj(const cmplx cmp)
+{
+    return (cmplx)(cmp.x, -cmp.y);
+}
+
 #define OFFSET2_ARG bitCapIntOclPtr[0]
 #define OFFSET1_ARG bitCapIntOclPtr[1]
 #define MAXI_ARG bitCapIntOclPtr[2]
@@ -2018,57 +2023,32 @@ void kernel updatenorm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
 }
 
 void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, constant bitCapIntOcl* bitCapIntOclPtr,
-    global real1* norm_ptr, local real1* lProbBuffer)
+    global cmplx* part_inner_ptr, local cmplx* lInnerBuffer)
 {
     bitCapIntOcl Nthreads, lcv, locID, locNthreads;
 
     Nthreads = get_global_size(0);
     bitCapIntOcl maxI = bitCapIntOclPtr[0];
     cmplx amp;
-    real1 partNrm = ZERO_R1;
+    cmplx partInner = (cmplx)(ZERO_R1, ZERO_R1);
 
-    // Hopefully, since this is identical redundant work by all elements, the break hits for all at the same time.
-    cmplx basePhaseFac1;
-    real1 nrm;
-    bitCapIntOcl basePerm = 0;
-    do {
-        amp = stateVec1[basePerm];
-        nrm = dot(amp, amp);
-        basePerm++;
-    } while (nrm < REAL1_EPSILON);
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        partInner += zmul(conj(stateVec1[lcv]), stateVec2[lcv]);
+    }
 
-    basePerm--;
-    amp = stateVec1[basePerm];
-    nrm = dot(amp, amp);
+    locID = get_local_id(0);
+    locNthreads = get_local_size(0);
+    lInnerBuffer[locID] = partInner;
 
-    // If the amplitude we sample for global phase offset correction doesn't match, we're done.
-    if (nrm >= REAL1_EPSILON) {
-        basePhaseFac1 = (ONE_R1 / sqrt(nrm)) * amp;
-
-        amp = stateVec2[basePerm];
-        cmplx basePhaseFac2 = (ONE_R1 / sqrt(dot(amp, amp))) * amp;
-
-        for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-            amp = zmul(basePhaseFac2, stateVec1[lcv]) - zmul(basePhaseFac1, stateVec2[lcv]);
-            partNrm += dot(amp, amp);
+    for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (locID < lcv) {
+            lInnerBuffer[locID] += lInnerBuffer[locID + lcv];
         }
+    }
 
-        locID = get_local_id(0);
-        locNthreads = get_local_size(0);
-        lProbBuffer[locID] = partNrm;
-
-        for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if (locID < lcv) {
-                lProbBuffer[locID] += lProbBuffer[locID + lcv];
-            }
-        }
-
-        if (locID == 0U) {
-            norm_ptr[get_group_id(0)] = lProbBuffer[0];
-        }
-    } else {
-        norm_ptr[get_group_id(0)] = 10;
+    if (locID == 0U) {
+        part_inner_ptr[get_group_id(0)] = lInnerBuffer[0];
     }
 }
 
