@@ -2545,12 +2545,12 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 
     if (!stateBuffer) {
         toCompare->UpdateRunningNorm();
-        return toCompare->runningNorm * toCompare->runningNorm;
+        return toCompare->runningNorm;
     }
 
     if (!toCompare->stateBuffer) {
         UpdateRunningNorm();
-        return runningNorm * runningNorm;
+        return runningNorm;
     }
 
     toCompare->Finish();
