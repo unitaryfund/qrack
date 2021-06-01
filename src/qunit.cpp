@@ -1449,7 +1449,12 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 {
-    ToPermBasisMeasure(qubit);
+    if (doApply) {
+        RevertBasis1Qb(qubit);
+        RevertBasis2Qb(qubit, ONLY_INVERT, ONLY_TARGETS);
+    } else {
+        ToPermBasisMeasure(qubit);
+    }
 
     QEngineShard& shard = shards[qubit];
 
@@ -1481,6 +1486,11 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     if (shard.GetQubitCount() == 1U) {
         shard.unit = NULL;
         shard.mapped = 0;
+        if (result) {
+            Flush1Eigenstate(qubit);
+        } else {
+            Flush0Eigenstate(qubit);
+        }
         return result;
     }
 
@@ -1496,6 +1506,12 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
         }
     }
 
+    if (result) {
+        Flush1Eigenstate(qubit);
+    } else {
+        Flush0Eigenstate(qubit);
+    }
+
     return result;
 }
 
@@ -1507,7 +1523,9 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
 
     // This will discard all buffered gates that don't affect Z basis probability,
     // so it's safe to call ToPermBasis() without performance penalty, afterward.
-    ToPermBasisMeasure(start, length);
+    if (!doApply) {
+        ToPermBasisMeasure(start, length);
+    }
 
     return QInterface::ForceMReg(start, length, result, doForce, doApply);
 }
@@ -1518,13 +1536,27 @@ bitCapInt QUnit::MAll()
         return MReg(0, qubitCount);
     }
 
-    ToPermBasisAllMeasure();
+    bitLenInt i;
+    for (i = 0; i < qubitCount; i++) {
+        RevertBasis1Qb(i);
+    }
+    for (i = 0; i < qubitCount; i++) {
+        QEngineShard& shard = shards[i];
+        shard.ClearInvertPhase();
+        shard.DumpPhaseBuffers();
+    }
+    for (i = 0; i < qubitCount; i++) {
+        if (shards[i].IsInvertControl()) {
+            // Measurement commutes with control
+            M(i);
+        }
+    }
 
     std::vector<bitCapInt> partResults;
     bitCapInt toRet = 0;
 
     std::vector<QInterfacePtr> units;
-    for (bitLenInt i = 0; i < qubitCount; i++) {
+    for (i = 0; i < qubitCount; i++) {
         QInterfacePtr toFind = shards[i].unit;
         if (!toFind) {
             if (Rand() <= norm(shards[i].amp1)) {
@@ -1545,7 +1577,7 @@ bitCapInt QUnit::MAll()
         }
     }
 
-    for (bitLenInt i = 0; i < qubitCount; i++) {
+    for (i = 0; i < qubitCount; i++) {
         if (!shards[i].unit) {
             continue;
         }
