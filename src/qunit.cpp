@@ -1568,7 +1568,7 @@ bitCapInt QUnit::MAll()
                 shards[i].amp1 = ZERO_CMPLX;
             }
         } else if (!(toFind->isClifford())) {
-            if (toFind->M(shards[i].mapped)) {
+            if (M(i)) {
                 toRet |= pow2(i);
             }
         } else if (find(units.begin(), units.end(), toFind) == units.end()) {
