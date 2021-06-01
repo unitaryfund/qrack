@@ -1544,8 +1544,11 @@ bitCapInt QUnit::MAll()
         QEngineShard& shard = shards[i];
         shard.ClearInvertPhase();
         shard.DumpPhaseBuffers();
-        if (shard.unit && shard.unit->isClifford()) {
-            RevertBasis2Qb(i, ONLY_INVERT, ONLY_CONTROLS);
+    }
+    for (i = 0; i < qubitCount; i++) {
+        if (shards[i].IsInvertControl()) {
+            // Measurement commutes with control
+            M(i);
         }
     }
 
@@ -1553,26 +1556,20 @@ bitCapInt QUnit::MAll()
     bitCapInt toRet = 0;
 
     std::vector<QInterfacePtr> units;
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        RevertBasis2Qb(i, ONLY_INVERT, ONLY_TARGETS);
+    for (i = 0; i < qubitCount; i++) {
         QInterfacePtr toFind = shards[i].unit;
         if (!toFind) {
             if (Rand() <= norm(shards[i].amp1)) {
                 shards[i].amp0 = ZERO_CMPLX;
                 shards[i].amp1 = GetNonunitaryPhase();
                 toRet |= pow2(i);
-                Flush1Eigenstate(i);
             } else {
                 shards[i].amp0 = GetNonunitaryPhase();
                 shards[i].amp1 = ZERO_CMPLX;
-                Flush0Eigenstate(i);
             }
         } else if (!(toFind->isClifford())) {
             if (toFind->M(shards[i].mapped)) {
                 toRet |= pow2(i);
-                Flush1Eigenstate(i);
-            } else {
-                Flush0Eigenstate(i);
             }
         } else if (find(units.begin(), units.end(), toFind) == units.end()) {
             units.push_back(toFind);
@@ -1580,7 +1577,7 @@ bitCapInt QUnit::MAll()
         }
     }
 
-    for (bitLenInt i = 0; i < qubitCount; i++) {
+    for (i = 0; i < qubitCount; i++) {
         if (!shards[i].unit) {
             continue;
         }
