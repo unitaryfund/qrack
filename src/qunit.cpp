@@ -1545,7 +1545,7 @@ bitCapInt QUnit::MAll()
         shard.ClearInvertPhase();
         shard.DumpPhaseBuffers();
         if (shard.unit && shard.unit->isClifford()) {
-            RevertBasis2Qb(i, ONLY_INVERT);
+            RevertBasis2Qb(i, ONLY_INVERT, ONLY_CONTROLS);
         }
     }
 
