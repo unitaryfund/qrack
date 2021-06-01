@@ -546,6 +546,7 @@ protected:
     {
         PhaseShardPtr buffer;
         ShardToPhaseMap::iterator phaseShard = localMap.begin();
+        bitLenInt i = 0;
 
         while (phaseShard != localMap.end()) {
             buffer = phaseShard->second;
@@ -554,8 +555,30 @@ protected:
                 ((*phaseShard->first).*remoteMapGet)().erase(this);
                 localMap.erase(phaseShard);
             } else {
-                phaseShard++;
+                i++;
             }
+
+            phaseShard = localMap.begin();
+            std::advance(phaseShard, i);
+        }
+    }
+
+    void RemovePhaseBuffers(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet)
+    {
+        ShardToPhaseMap::iterator phaseShard = localMap.begin();
+        bitLenInt i = 0;
+
+        while (phaseShard != localMap.end()) {
+            if (!phaseShard->second->isInvert) {
+                // The buffer is equal to the identity operator, and it can be removed.
+                ((*phaseShard->first).*remoteMapGet)().erase(this);
+                localMap.erase(phaseShard);
+            } else {
+                i++;
+            }
+
+            phaseShard = localMap.begin();
+            std::advance(phaseShard, i);
         }
     }
 
@@ -604,6 +627,14 @@ public:
         }
 
         RemoveIdentityBuffers(antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
+    }
+
+    void DumpPhaseBuffers()
+    {
+        RemovePhaseBuffers(targetOfShards, &QEngineShard::GetControlsShards);
+        RemovePhaseBuffers(antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
+        RemovePhaseBuffers(controlsShards, &QEngineShard::GetTargetOfShards);
+        RemovePhaseBuffers(antiControlsShards, &QEngineShard::GetAntiTargetOfShards);
     }
 
     bool IsInvertControlOf(QEngineShardPtr target) { return (controlsShards.find(target) != controlsShards.end()); }
