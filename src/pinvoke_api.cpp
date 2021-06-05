@@ -31,6 +31,16 @@ qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>(time(0));
 std::vector<QInterfacePtr> simulators;
 std::vector<bool> simulatorReservations;
 std::map<QInterfacePtr, std::map<unsigned, bitLenInt>> shards;
+bitLenInt _maxShardQubits = 0;
+bitLenInt MaxShardQubits()
+{
+    if (_maxShardQubits == 0) {
+        _maxShardQubits =
+            getenv("QRACK_MAX_PAGING_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB"))) : -1;
+    }
+
+    return _maxShardQubits;
+}
 
 void TransformPauliBasis(QInterfacePtr simulator, unsigned len, int* bases, unsigned* qubitIds)
 {
@@ -187,7 +197,12 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
         }
     }
 
-    QInterfacePtr simulator = q ? CreateQuantumInterface(QINTERFACE_OPTIMAL, q, 0, rng) : NULL;
+    QInterfacePtr simulator = q ? CreateQuantumInterface(QINTERFACE_OPTIMAL_MULTI, q, 0, rng) : NULL;
+
+    if (q > MaxShardQubits()) {
+        simulator->SetReactiveSeparate(true);
+    }
+
     if (sid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
@@ -389,14 +404,18 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
-    QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_OPTIMAL, 1, 0, rng);
+    QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_OPTIMAL_MULTI, 1, 0, rng);
     if (simulators[sid] == NULL) {
         simulators[sid] = nQubit;
         shards[simulators[sid]] = {};
     } else {
         simulators[sid]->Compose(nQubit);
     }
-    shards[simulators[sid]][qid] = (simulators[sid]->GetQubitCount() - 1U);
+    bitLenInt qubitCount = simulators[sid]->GetQubitCount();
+    if (qubitCount > MaxShardQubits()) {
+        simulators[sid]->SetReactiveSeparate(true);
+    }
+    shards[simulators[sid]][qid] = (qubitCount - 1U);
 }
 
 /**
@@ -416,6 +435,9 @@ MICROSOFT_QUANTUM_DECL bool release(_In_ unsigned sid, _In_ unsigned q)
         SIMULATOR_LOCK_GUARD(sid)
         bitLenInt oIndex = shards[simulator][q];
         simulator->Dispose(oIndex, 1U);
+        if (simulator->GetQubitCount() <= MaxShardQubits()) {
+            simulator->SetReactiveSeparate(false);
+        }
         for (unsigned i = 0; i < shards[simulator].size(); i++) {
             if (shards[simulator][i] > oIndex) {
                 shards[simulator][i]--;
