@@ -1743,14 +1743,6 @@ void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         return;
     }
 
-    if ((engine == QINTERFACE_QPAGER) || (subEngine == QINTERFACE_QPAGER)) {
-        // TODO: Case below this should work for QPager, but doesn't
-        EntangleRange(start, length);
-        shards[start].unit->ZeroPhaseFlip(shards[start].mapped, length);
-        DirtyShardRange(start, length);
-        return;
-    }
-
     QInterface::ZeroPhaseFlip(start, length);
 }
 
