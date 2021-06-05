@@ -115,13 +115,15 @@ void QStabilizerHybrid::SwitchToEngine()
 
     complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
     stabilizer->GetQuantumState(stateVec);
+    if (engineType != QINTERFACE_QUNIT) {
+        stabilizer.reset();
+    }
 
     engine = MakeEngine();
     engine->SetQuantumState(stateVec);
     delete[] stateVec;
 
     if (engineType != QINTERFACE_QUNIT) {
-        stabilizer.reset();
         FlushBuffers();
         return;
     }
