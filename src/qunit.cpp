@@ -3305,7 +3305,11 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 
     for (i = 0; i < targets.size(); i++) {
-        RevertBasis2Qb(targets[i]);
+        if (isPhase) {
+            RevertBasis2Qb(targets[i], ONLY_INVERT, ONLY_TARGETS);
+        } else {
+            RevertBasis2Qb(targets[i]);
+        }
     }
 
     // TODO: If controls that survive the "first order" check above start out entangled,
