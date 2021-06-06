@@ -2488,8 +2488,6 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         ClearBuffer(stateBuffer, 0, maxQPowerOcl);
     }
 
-    // "permutationAmp" might be in use, so we clFinish(), first, to guarantee it is not.
-    clFinish();
     permutationAmp = amp;
 
     EventVecPtr waitVec = ResetWaitEvents();
