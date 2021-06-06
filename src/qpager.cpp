@@ -624,7 +624,9 @@ void QPager::SetQuantumState(const complex* inputState)
     bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         qPages[i]->SetQuantumState(inputState + pagePerm);
-        qPages[i]->UpdateRunningNorm();
+        if (!doNormalize) {
+            qPages[i]->UpdateRunningNorm();
+        }
         pagePerm += pagePower;
     }
 }
