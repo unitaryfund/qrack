@@ -923,10 +923,9 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
         // values into a single normalization constant.
         WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
-        // TODO: Fix ZeroAmplitudes() calls in general.
-        // if (runningNorm <= amplitudeFloor) {
-        //     ZeroAmplitudes();
-        // }
+        if (runningNorm == ZERO_R1) {
+            ZeroAmplitudes();
+        }
     } else if ((runningNorm == ZERO_R1) || ((bitCount == 1) && !isXGate && !isZGate && !isInvertGate && !isPhaseGate)) {
         runningNorm = ONE_R1;
     }
@@ -2481,7 +2480,7 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
     // if (runningNorm != REAL1_DEFAULT_ARG) {
     //     runningNorm -= norm(GetAmplitude(perm));
     //     runningNorm += norm(amp);
-    //     if (runningNorm <= amplitudeFloor) {
+    //     if (runningNorm == ZERO_R1) {
     //         ZeroAmplitudes();
     //         return;
     //     }
@@ -2693,10 +2692,9 @@ void QEngineOCL::UpdateRunningNorm(real1_f norm_thresh)
 
     WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
 
-    // TODO: Why doesn't this work, with QPager?
-    // if (runningNorm <= amplitudeFloor) {
-    //     ZeroAmplitudes();
-    // }
+    if (runningNorm == ZERO_R1) {
+        ZeroAmplitudes();
+    }
 }
 
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
