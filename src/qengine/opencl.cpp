@@ -923,7 +923,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
         // values into a single normalization constant.
         WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
-        if (runningNorm == ZERO_R1) {
+        if (runningNorm <= amplitudeFloor) {
             ZeroAmplitudes();
         }
     } else if ((runningNorm == ZERO_R1) || ((bitCount == 1) && !isXGate && !isZGate && !isInvertGate && !isPhaseGate)) {
