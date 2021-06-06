@@ -383,7 +383,7 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
         }
         setBasisState(ONE_R1, NULL, eng);
     }
-    
+
     eng->UpdateRunningNorm();
     eng->NormalizeState();
 }

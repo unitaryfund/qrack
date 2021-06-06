@@ -956,7 +956,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 5, bciArgs);
 
     BufferPtr nrmInBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1));
-    real1 nrm = (real1)(ONE_R1 / sqrt(runningNorm));
+    real1 nrm = (runningNorm != REAL1_DEFAULT_ARG) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
     DISPATCH_WRITE(waitVec, *nrmInBuffer, sizeof(real1), &nrm);
 
     BufferPtr uniformBuffer = std::make_shared<cl::Buffer>(
@@ -2477,11 +2477,13 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
     }
 
     // TODO: Why doesn't this work?
-    // runningNorm -= norm(GetAmplitude(perm));
-    // runningNorm += norm(amp);
-    // if (runningNorm <= amplitudeFloor) {
-    //     ZeroAmplitudes();
-    //     return;
+    // if (runningNorm != REAL1_DEFAULT_ARG) {
+    //     runningNorm -= norm(GetAmplitude(perm));
+    //     runningNorm += norm(amp);
+    //     if (runningNorm <= amplitudeFloor) {
+    //         ZeroAmplitudes();
+    //         return;
+    //     }
     // }
 
     if (!stateBuffer) {
@@ -2498,7 +2500,7 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
     device_context->UnlockWaitEvents();
     queue.flush();
-    
+
     runningNorm = REAL1_DEFAULT_ARG;
 }
 

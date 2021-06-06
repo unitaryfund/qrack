@@ -65,14 +65,14 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 
 complex QEngineCPU::GetAmplitude(bitCapInt perm)
 {
-    if (!stateVec) {
-        return ZERO_CMPLX;
-    }
-
     if (doNormalize) {
         NormalizeState();
     }
     Finish();
+
+    if (!stateVec) {
+        return ZERO_CMPLX;
+    }
 
     return stateVec->read(perm);
 }
@@ -89,11 +89,13 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     }
 
     // TODO: Why doesn't this work?
-    // runningNorm -= norm(GetAmplitude(perm));
-    // runningNorm += norm(amp);
-    // if (runningNorm <= amplitudeFloor) {
-    //     ZeroAmplitudes();
-    //     return;
+    // if (runningNorm != REAL1_DEFAULT_ARG) {
+    //     runningNorm -= norm(GetAmplitude(perm));
+    //     runningNorm += norm(amp);
+    //     if (runningNorm <= amplitudeFloor) {
+    //         ZeroAmplitudes();
+    //         return;
+    //     }
     // }
 
     if (!stateVec) {
@@ -102,8 +104,6 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     }
 
     stateVec->write(perm, amp);
-    
-    runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
@@ -143,9 +143,7 @@ void QEngineCPU::SetQuantumState(const complex* inputState)
     }
 
     stateVec->copy_in(inputState);
-    runningNorm = ONE_R1;
-
-    UpdateRunningNorm();
+    runningNorm = REAL1_DEFAULT_ARG;
 }
 
 /// Get pure quantum state, in unsigned int permutation basis
@@ -356,7 +354,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             runningNorm = rNrm;
             delete[] rngNrm;
 
-            if (runningNorm == ZERO_R1) {
+            if (runningNorm <= amplitudeFloor) {
                 ZeroAmplitudes();
             }
         }
@@ -512,6 +510,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             }
             runningNorm = rNrm;
             delete[] rngNrm;
+
+            if (runningNorm <= amplitudeFloor) {
+                ZeroAmplitudes();
+            }
         }
     });
 }
@@ -531,7 +533,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 
     bitCapInt targetPower = pow2(qubitIndex);
 
-    real1 nrm = ONE_R1 / (real1)sqrt(runningNorm);
+    real1 nrm = (runningNorm != REAL1_DEFAULT_ARG) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
 
     bitCapInt* qPowers = new bitCapInt[controlLen];
     for (bitLenInt i = 0; i < controlLen; i++) {
