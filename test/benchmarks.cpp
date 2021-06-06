@@ -684,10 +684,10 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
     const int DimCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
-    bitLenInt maxShardQubits = -1;
-    if (getenv("QRACK_MAX_PAGING_QB")) {
-        maxShardQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
-    }
+    // bitLenInt maxShardQubits = -1;
+    // if (getenv("QRACK_MAX_PAGING_QB")) {
+    //     maxShardQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    // }
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         int d;
@@ -695,7 +695,8 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
         real1_f gateRand;
         bitLenInt b1, b2;
 
-        qReg->SetReactiveSeparate(n > maxShardQubits);
+        // qReg->SetReactiveSeparate(n > maxShardQubits);
+        qReg->SetReactiveSeparate(true);
 
         for (d = 0; d < benchmarkDepth; d++) {
             for (i = 0; i < n; i++) {
@@ -821,10 +822,10 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
     const int DimCount1Qb = 4;
     const int DimCountMultiQb = 4;
 
-    bitLenInt maxShardQubits = -1;
-    if (getenv("QRACK_MAX_PAGING_QB")) {
-        maxShardQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
-    }
+    // bitLenInt maxShardQubits = -1;
+    // if (getenv("QRACK_MAX_PAGING_QB")) {
+    //     maxShardQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    // }
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         int d;
@@ -832,7 +833,8 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
         real1_f gateRand;
         bitLenInt b1, b2, b3;
 
-        qReg->SetReactiveSeparate(n > maxShardQubits);
+        // qReg->SetReactiveSeparate(n > maxShardQubits);
+        qReg->SetReactiveSeparate(true);
 
         for (d = 0; d < benchmarkDepth; d++) {
             for (i = 0; i < n; i++) {
@@ -991,10 +993,10 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
     const int DimCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
-    bitLenInt maxShardQubits = -1;
-    if (getenv("QRACK_MAX_PAGING_QB")) {
-        maxShardQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
-    }
+    // bitLenInt maxShardQubits = -1;
+    // if (getenv("QRACK_MAX_PAGING_QB")) {
+    //     maxShardQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    // }
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         int d;
@@ -1019,7 +1021,8 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
         }
         int rowLen = n / colLen;
 
-        qReg->SetReactiveSeparate(n > maxShardQubits);
+        // qReg->SetReactiveSeparate(n > maxShardQubits);
+        qReg->SetReactiveSeparate(true);
 
         for (d = 0; d < benchmarkDepth; d++) {
             for (i = 0; i < n; i++) {
@@ -1179,10 +1182,10 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
     const int DimCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
-    bitLenInt maxShardQubits = -1;
-    if (getenv("QRACK_MAX_PAGING_QB")) {
-        maxShardQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
-    }
+    // bitLenInt maxShardQubits = -1;
+    // if (getenv("QRACK_MAX_PAGING_QB")) {
+    //     maxShardQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
+    // }
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         int d;
@@ -1208,7 +1211,8 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
         }
         int rowLen = n / colLen;
 
-        qReg->SetReactiveSeparate(n > maxShardQubits);
+        // qReg->SetReactiveSeparate(n > maxShardQubits);
+        qReg->SetReactiveSeparate(true);
 
         for (d = 0; d < benchmarkDepth; d++) {
             for (i = 0; i < n; i++) {
