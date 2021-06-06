@@ -2476,12 +2476,13 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         return;
     }
 
-    runningNorm -= norm(GetAmplitude(perm));
-    runningNorm += norm(amp);
-    if (runningNorm <= amplitudeFloor) {
-        ZeroAmplitudes();
-        return;
-    }
+    // TODO: Why doesn't this work?
+    // runningNorm -= norm(GetAmplitude(perm));
+    // runningNorm += norm(amp);
+    // if (runningNorm <= amplitudeFloor) {
+    //     ZeroAmplitudes();
+    //     return;
+    // }
 
     if (!stateBuffer) {
         ReinitBuffer();
@@ -2497,6 +2498,8 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
     device_context->UnlockWaitEvents();
     queue.flush();
+    
+    runningNorm = REAL1_DEFAULT_ARG;
 }
 
 /// Get pure quantum state, in unsigned int permutation basis

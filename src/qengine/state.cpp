@@ -88,13 +88,13 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
         return;
     }
 
-    runningNorm -= norm(GetAmplitude(perm));
-    runningNorm += norm(amp);
-
-    if (runningNorm <= amplitudeFloor) {
-        ZeroAmplitudes();
-        return;
-    }
+    // TODO: Why doesn't this work?
+    // runningNorm -= norm(GetAmplitude(perm));
+    // runningNorm += norm(amp);
+    // if (runningNorm <= amplitudeFloor) {
+    //     ZeroAmplitudes();
+    //     return;
+    // }
 
     if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPower));
@@ -102,6 +102,8 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     }
 
     stateVec->write(perm, amp);
+    
+    runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
