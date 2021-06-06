@@ -291,6 +291,9 @@ public:
     /** Get the maximum number of basis states, namely \f$ n^2 \f$ for \f$ n \f$ qubits*/
     bitCapInt GetMaxQPower() { return maxQPower; }
 
+    /** Get active alloc size of state vector*/
+    virtual size_t GetActiveAllocSize() { return 0U; }
+
     /** Generate a random real number between 0 and 1 */
     real1_f Rand()
     {

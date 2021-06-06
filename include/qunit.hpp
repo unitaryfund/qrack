@@ -43,6 +43,7 @@ protected:
     bitLenInt thresholdQubits;
     bitLenInt pagingThresholdQubits;
     real1_f separabilityThreshold;
+    size_t maxAlloc;
     std::vector<int> deviceIDs;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
@@ -66,6 +67,21 @@ protected:
     {
         QInterface::SetQubitCount(qb);
         ConvertPaging(qb >= pagingThresholdQubits);
+    }
+
+    virtual size_t GetActiveAllocSize()
+    {
+        size_t toRet = 0;
+        std::vector<QInterfacePtr> units;
+        for (bitLenInt i = 0; i < shards.size(); i++) {
+            QInterfacePtr toFind = shards[i].unit;
+            if (toFind && (find(units.begin(), units.end(), toFind) == units.end())) {
+                units.push_back(toFind);
+                toRet += toFind->GetActiveAllocSize();
+            }
+        }
+
+        return toRet;
     }
 
 public:

@@ -79,6 +79,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , thresholdQubits(qubitThreshold)
     , pagingThresholdQubits(21)
     , separabilityThreshold(sep_thresh)
+    , maxAlloc(0)
     , deviceIDs(devList)
 {
     if (getenv("QRACK_QUNIT_PAGING_THRESHOLD")) {
@@ -87,6 +88,10 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 
     if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
         separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
+    }
+
+    if (getenv("QRACK_QUNIT_MAX_ALLOC_MB")) {
+        maxAlloc = 1024 * 1024 * (size_t)std::stoi(std::string(getenv("QRACK_QUNIT_MAX_ALLOC_MB")));
     }
 
     if ((engine == QINTERFACE_QUNIT) || (engine == QINTERFACE_QUNIT_MULTI)) {
@@ -520,6 +525,12 @@ void QUnit::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) {
 QInterfacePtr QUnit::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
+    // We don't always catch this, but try before and after entangling.
+    if ((maxAlloc > 0) && (maxAlloc < GetActiveAllocSize())) {
+        // "Single QUnit has exceeded QRACK_QUNIT_ALLOC limit."
+        throw std::bad_alloc();
+    }
+
     for (auto bit = first; bit < last; bit++) {
         EndEmulation(shards[**bit]);
     }
@@ -581,6 +592,12 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
     /* Change the source parameters to the correct newly mapped bit indexes. */
     for (auto bit = first; bit < last; bit++) {
         **bit = shards[**bit].mapped;
+    }
+
+    // We don't always catch this, but try before and after entangling.
+    if ((maxAlloc > 0) && (maxAlloc < GetActiveAllocSize())) {
+        // "Single QUnit has exceeded QRACK_QUNIT_ALLOC limit."
+        throw std::bad_alloc();
     }
 
     return unit1;

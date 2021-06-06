@@ -106,6 +106,9 @@ QPager attempts to smartly allocate low qubit widths for maximum performance. Fo
 
 If using `QPager` under the `QUnit` layer, then the environment variable `QRACK_QUNIT_PAGING_THRESHOLD` is the number of qubits in overall width at which `QUnit` will use paging, 21 qubits by default. `QRACK_MAX_PAGING_QB` sets a maximum qubit allocation *only* for instances of `QPager`, allowing `QUnit` simulations to more gracefully attempt greater than "Schrödinger method" simulation maximum widths, while other OpenCL types have automatic memory guards.
 
+## QUnit maximum allocation
+Set the maximum allowed allocation (in MB) in total by `QUnit` with `QRACK_QUNIT_MAX_ALLOC_MB`. At this stage of development, this variable will not be 100% successful at avoiding attempts to allocate over this amount in total. (Currently, this might be useful with some significant swap space for heap spikes that will be ditched as unsuccessful attempts.) 
+
 ## Build and environment options for CPU engines
 QEngineCPU and QHybrid batch work items in groups of 2^`PSTRIDEPOW` before dispatching them to single CPU threads, potentially greatly reducing waiting on mutexes without signficantly hurting utilization and scheduling. The default for this option can be controlled at build time, by passing `-DPSTRIDEPOW=n` to CMake, with "n" being an integer greater than or equal to 0. (The default is n=9, which is approximately optimal on many typical PCs.) This can be overridden at run time by the enviroment variable `QRACK_PSTRIDEPOW=n`. If an environment variable is not defined for this option, the default from CMake build will be used.
 

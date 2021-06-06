@@ -152,7 +152,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 try {
                     fn(qftReg, numBits);
                     isTrialSuccessful = true;
-                } catch (const std::invalid_argument& e) {
+                } catch (const std::exception& e) {
                     sampleFailureCount++;
                     isTrialSuccessful = false;
                 }

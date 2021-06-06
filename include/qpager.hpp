@@ -83,6 +83,18 @@ protected:
         basePageMaxQPower = pow2Ocl(baseQubitsPerPage);
     }
 
+    virtual size_t GetActiveAllocSize()
+    {
+        size_t toRet = 0U;
+        bitCapInt pqmp = pageMaxQPower();
+        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+            if (!qPages[i]->IsZeroAmplitude()) {
+                toRet += pqmp;
+            }
+        }
+        return sizeof(complex) * toRet;
+    }
+
     bitCapInt pageMaxQPower() { return maxQPower / qPages.size(); }
     bitLenInt pagedQubitCount() { return log2((bitCapInt)qPages.size()); }
     bitLenInt qubitsPerPage() { return log2(pageMaxQPower()); }
