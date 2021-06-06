@@ -88,17 +88,17 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
         return;
     }
 
-    if (!stateVec) {
-        ResetStateVec(AllocStateVec(maxQPower));
-        stateVec->clear();
-    }
-
-    runningNorm -= norm(stateVec->read(perm));
+    runningNorm -= norm(GetAmplitude(perm));
     runningNorm += norm(amp);
 
     if (runningNorm <= amplitudeFloor) {
         ZeroAmplitudes();
         return;
+    }
+
+    if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPower));
+        stateVec->clear();
     }
 
     stateVec->write(perm, amp);

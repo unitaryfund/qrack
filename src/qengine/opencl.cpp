@@ -2470,6 +2470,7 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
     if (doNormalize) {
         NormalizeState();
     }
+    Finish();
 
     if (!stateBuffer && !norm(amp)) {
         return;
