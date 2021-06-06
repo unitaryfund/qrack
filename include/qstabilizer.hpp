@@ -33,6 +33,8 @@
 #include "common/dispatchqueue.hpp"
 #endif
 
+#include "qinterface.hpp"
+
 namespace Qrack {
 
 class QStabilizer;
@@ -163,7 +165,7 @@ protected:
     void seed(const bitLenInt& g);
 
     /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
-    void setBasisState(const real1_f& nrm, complex* stateVec);
+    void setBasisState(const real1_f& nrm, complex* stateVec, QInterfacePtr eng);
 
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
@@ -227,6 +229,9 @@ public:
 
     /// Convert the state to ket notation
     void GetQuantumState(complex* stateVec);
+
+    /// Convert the state to ket notation, directly into another QInterface
+    void GetQuantumState(QInterfacePtr eng);
 
     /**
      * Returns "true" if target qubit is a Z basis eigenstate
