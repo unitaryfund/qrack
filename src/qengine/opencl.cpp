@@ -2457,12 +2457,12 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
         NormalizeState();
     }
 
-    complex amp;
+    complex amp[1];
     EventVecPtr waitVec = ResetWaitEvents();
     queue.enqueueReadBuffer(
-        *stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)fullRegister, sizeof(complex), &amp, waitVec.get());
+        *stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)fullRegister, sizeof(complex), amp, waitVec.get());
     wait_refs.clear();
-    return amp;
+    return amp[0];
 }
 
 void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
@@ -2471,7 +2471,7 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         NormalizeState();
     }
 
-    if (!stateBuffer && !norm(amp)) {
+    if (!stateVec && !norm(amp)) {
         return;
     }
 
@@ -2480,9 +2480,7 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
     if (runningNorm <= amplitudeFloor) {
         ZeroAmplitudes();
         return;
-    }
-
-    if (!stateBuffer) {
+    } else if (!stateBuffer) {
         ReinitBuffer();
         ClearBuffer(stateBuffer, 0, maxQPowerOcl);
     }

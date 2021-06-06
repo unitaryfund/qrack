@@ -279,7 +279,7 @@ void QStabilizer::seed(const bitLenInt& g)
 }
 
 /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
-void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec, QInterfacePtr eng)
+void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
 {
     bitLenInt elemCount = qubitCount << 1U;
     bitLenInt j;
@@ -307,13 +307,7 @@ void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec, QInterfac
         }
     }
 
-    if (stateVec) {
-        stateVec[perm] = amp;
-    }
-
-    if (eng) {
-        eng->SetAmplitude(perm, amp);
-    }
+    stateVec[perm] = amp;
 }
 
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
@@ -340,7 +334,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     // init stateVec as all 0 values
     std::fill(stateVec, stateVec + pow2Ocl(qubitCount), ZERO_CMPLX);
 
-    setBasisState(nrm, stateVec, NULL);
+    setBasisState(nrm, stateVec);
     for (t = 0; t < permCountMin1; t++) {
         t2 = t ^ (t + 1);
         for (i = 0; i < g; i++) {
@@ -348,41 +342,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
                 rowmult(elemCount, qubitCount + i);
             }
         }
-        setBasisState(nrm, stateVec, NULL);
-    }
-}
-
-/// Convert the state to ket notation (warning: could be huge!)
-void QStabilizer::GetQuantumState(QInterfacePtr eng)
-{
-    Finish();
-
-    bitCapIntOcl t;
-    bitCapIntOcl t2;
-    bitLenInt i;
-
-    // log_2 of number of nonzero basis states
-    bitLenInt g = gaussian();
-    bitCapIntOcl permCount = pow2Ocl(g);
-    bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
-    bitLenInt elemCount = qubitCount << 1U;
-    real1_f nrm = sqrt(ONE_R1 / permCount);
-
-    seed(g);
-
-    // init stateVec as all 0 values
-    eng->SetPermutation(0);
-    eng->SetAmplitude(0, ZERO_CMPLX);
-
-    setBasisState(nrm, NULL, eng);
-    for (t = 0; t < permCountMin1; t++) {
-        t2 = t ^ (t + 1);
-        for (i = 0; i < g; i++) {
-            if (t2 & pow2Ocl(i)) {
-                rowmult(elemCount, qubitCount + i);
-            }
-        }
-        setBasisState(nrm, NULL, eng);
+        setBasisState(nrm, stateVec);
     }
 }
 
