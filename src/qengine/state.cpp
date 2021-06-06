@@ -354,9 +354,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             runningNorm = rNrm;
             delete[] rngNrm;
 
-            if (runningNorm <= amplitudeFloor) {
-                ZeroAmplitudes();
-            }
+            // TODO: Fix ZeroAmplitudes() calls in general.
+            // if (runningNorm <= amplitudeFloor) {
+            //     ZeroAmplitudes();
+            // }
         }
     });
 }
@@ -511,9 +512,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             runningNorm = rNrm;
             delete[] rngNrm;
 
-            if (runningNorm <= amplitudeFloor) {
-                ZeroAmplitudes();
-            }
+            // TODO: Fix ZeroAmplitudes() calls in general.
+            // if (runningNorm <= amplitudeFloor) {
+            //     ZeroAmplitudes();
+            // }
         }
     });
 }
