@@ -92,7 +92,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     // if (runningNorm != REAL1_DEFAULT_ARG) {
     //     runningNorm -= norm(GetAmplitude(perm));
     //     runningNorm += norm(amp);
-    //     if (runningNorm <= amplitudeFloor) {
+    //     if (runningNorm == ZERO_R1) {
     //         ZeroAmplitudes();
     //         return;
     //     }
@@ -104,6 +104,8 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     }
 
     stateVec->write(perm, amp);
+
+    runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
@@ -354,10 +356,9 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             runningNorm = rNrm;
             delete[] rngNrm;
 
-            // TODO: Fix ZeroAmplitudes() calls in general.
-            // if (runningNorm <= amplitudeFloor) {
-            //     ZeroAmplitudes();
-            // }
+            if (runningNorm == ZERO_R1) {
+                ZeroAmplitudes();
+            }
         }
     });
 }
@@ -512,10 +513,9 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             runningNorm = rNrm;
             delete[] rngNrm;
 
-            // TODO: Fix ZeroAmplitudes() calls in general.
-            // if (runningNorm <= amplitudeFloor) {
-            //     ZeroAmplitudes();
-            // }
+            if (runningNorm == ZERO_R1) {
+                ZeroAmplitudes();
+            }
         }
     });
 }
@@ -1452,10 +1452,9 @@ void QEngineCPU::UpdateRunningNorm(real1_f norm_thresh)
     }
     runningNorm = par_norm(maxQPower, stateVec, norm_thresh);
 
-    // TODO: Why doesn't this work, with QPager?
-    // if (runningNorm <= amplitudeFloor) {
-    //     ZeroAmplitudes();
-    // }
+    if (runningNorm == ZERO_R1) {
+        ZeroAmplitudes();
+    }
 }
 
 StateVectorPtr QEngineCPU::AllocStateVec(bitCapInt elemCount)
