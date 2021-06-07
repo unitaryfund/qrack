@@ -1051,6 +1051,8 @@ void QEngineOCL::CUniformParityRZ(
     BufferPtr controlBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * controlLen, controlPowers);
 
+    delete[] controlPowers;
+
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> controlLen, (bitCapIntOcl)mask, controlMask, controlLen, 0, 0,
         0, 0, 0, 0 };
     real1 cosine = (real1)cos(angle);
@@ -1260,7 +1262,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             stateVec = NULL;
         }
         // This will be cleared by the destructor:
-        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(complex) * pow2Ocl(qubitCount) - 2U);
+        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(complex) * (pow2Ocl(qubitCount) - 2U));
         ResetStateVec(AllocStateVec(2));
         stateBuffer = MakeStateVecBuffer(stateVec);
         SetQubitCount(1);
@@ -1402,7 +1404,7 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
         // This will be cleared by the destructor:
         ResetStateVec(AllocStateVec(2));
         stateBuffer = MakeStateVecBuffer(stateVec);
-        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(complex) * pow2Ocl(qubitCount) - 2U);
+        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(complex) * (pow2Ocl(qubitCount) - 2U));
         SetQubitCount(1);
         return;
     }
@@ -1416,7 +1418,8 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 
     bitLenInt nLength = qubitCount - length;
     bitCapIntOcl remainderPower = pow2Ocl(nLength);
-    size_t sizeDiff = sizeof(complex) * (maxQPower - remainderPower);
+    OCLEngine::Instance()->AddToActiveAllocSize(sizeof(complex) * remainderPower);
+    size_t sizeDiff = sizeof(complex) * maxQPower;
     bitCapIntOcl skipMask = pow2Ocl(start) - ONE_BCI;
     bitCapIntOcl disposedRes = (bitCapIntOcl)disposedPerm << (bitCapIntOcl)start;
 
@@ -1573,6 +1576,8 @@ real1_f QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation
     BufferPtr qPowersBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * length, skipPowers);
 
+    delete[] skipPowers;
+
     bitCapIntOcl maxI = bciArgs[0];
     size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -1582,8 +1587,6 @@ real1_f QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation
 
     real1 oneChance;
     WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &oneChance);
-
-    delete[] skipPowers;
 
     return clampProb(oneChance);
 }
@@ -1646,11 +1649,15 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     BufferPtr qPowersBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * length, powers);
 
+    delete[] powers;
+
     bitCapIntOcl* skipPowers = new bitCapIntOcl[skipLength];
     std::copy(skipPowersVec.begin(), skipPowersVec.end(), skipPowers);
 
     BufferPtr qSkipPowersBuffer = std::make_shared<cl::Buffer>(
         context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * skipLength, skipPowers);
+
+    delete[] skipPowers;
 
     size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -1664,9 +1671,6 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     wait_refs.clear();
 
     OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(real1) * lengthPower);
-
-    delete[] powers;
-    delete[] skipPowers;
 }
 
 real1_f QEngineOCL::ProbParity(const bitCapInt& mask)
@@ -2279,9 +2283,10 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOu
     BufferPtr controlBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY,
         sizeof(bitCapIntOcl) * ((controlLen * 2) + length), skipPowers);
 
+    delete[] skipPowers;
+
     xMULx(api_call, bciArgs, controlBuffer);
 
-    delete[] skipPowers;
     delete[] controlPowers;
 }
 
@@ -2311,9 +2316,10 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
     BufferPtr controlBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY,
         sizeof(bitCapIntOcl) * ((controlLen * 2) + length), skipPowers);
 
+    delete[] skipPowers;
+
     xMULx(api_call, bciArgs, controlBuffer);
 
-    delete[] skipPowers;
     delete[] controlPowers;
 }
 

@@ -226,6 +226,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
         ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
+        delete[] mtrx;
+
         real1* rngNrm = NULL;
         ParallelFunc fn;
         if (doCalcNorm) {
@@ -345,7 +347,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
         }
 
-        delete[] mtrx;
         delete[] qPowersSorted;
 
         if (doCalcNorm) {
@@ -543,8 +544,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     }
 
     int numCores = GetConcurrencyLevel();
-    real1* rngNrm = new real1[numCores];
-    std::fill(rngNrm, rngNrm + numCores, ZERO_R1);
+    real1* rngNrm = new real1[numCores]();
 
     Finish();
 
