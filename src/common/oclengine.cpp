@@ -395,8 +395,12 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 }
 
 OCLEngine::OCLEngine()
+    : activeAllocSize(0)
+    , maxActiveAllocSize(0)
 {
-    // Intentionally left blank;
+    if (getenv("QRACK_MAX_ALLOC_MB")) {
+        maxActiveAllocSize = 1024 * 1024 * (size_t)std::stoi(std::string(getenv("QRACK_MAX_ALLOC_MB")));
+    }
 }
 OCLEngine* OCLEngine::m_pInstance = NULL;
 OCLEngine* OCLEngine::Instance()

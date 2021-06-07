@@ -285,11 +285,40 @@ public:
         return std::string(getenv("HOME") ? getenv("HOME") : "") + "/.qrack/";
 #endif
     }
+    size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
+    size_t GetActiveAllocSize() { return activeAllocSize; }
+    void AddToActiveAllocSize(size_t size)
+    {
+        std::lock_guard<std::mutex> lock(allocMutex);
+        activeAllocSize += size;
+
+        if ((maxActiveAllocSize > 0) && (maxActiveAllocSize < activeAllocSize)) {
+            throw std::bad_alloc();
+        }
+    }
+    void SubtractFromActiveAllocSize(size_t size)
+    {
+        std::lock_guard<std::mutex> lock(allocMutex);
+        if (size < activeAllocSize) {
+            activeAllocSize -= size;
+        } else {
+            activeAllocSize = 0;
+        }
+    }
+    void ResetActiveAllocSize()
+    {
+        std::lock_guard<std::mutex> lock(allocMutex);
+        // User code should catch std::bad_alloc and reset:
+        activeAllocSize = 0;
+    }
 
 private:
     static const std::vector<OCLKernelHandle> kernelHandles;
     static const std::string binary_file_prefix;
     static const std::string binary_file_ext;
+    size_t activeAllocSize;
+    size_t maxActiveAllocSize;
+    std::mutex allocMutex;
     std::vector<DeviceContextPtr> all_device_contexts;
     DeviceContextPtr default_device_context;
 
