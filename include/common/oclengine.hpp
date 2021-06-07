@@ -299,7 +299,11 @@ public:
     void SubtractFromActiveAllocSize(size_t size)
     {
         std::lock_guard<std::mutex> lock(allocMutex);
-        activeAllocSize -= size;
+        if (size < activeAllocSize) {
+            activeAllocSize -= size;
+        } else {
+            activeAllocSize = 0;
+        }
     }
     void ResetActiveAllocSize()
     {
@@ -312,8 +316,8 @@ private:
     static const std::vector<OCLKernelHandle> kernelHandles;
     static const std::string binary_file_prefix;
     static const std::string binary_file_ext;
-    int64_t activeAllocSize;
-    int64_t maxActiveAllocSize;
+    size_t activeAllocSize;
+    size_t maxActiveAllocSize;
     std::mutex allocMutex;
     std::vector<DeviceContextPtr> all_device_contexts;
     DeviceContextPtr default_device_context;
