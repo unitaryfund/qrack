@@ -117,12 +117,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         }
 
         if (!qUniverse) {
-            if (qftReg != NULL) {
-                qftReg.reset();
-            }
-            qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits, 0, rng,
-                ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON,
-                devList);
         }
         avgt = 0.0;
         sampleFailureCount = 0;
@@ -130,7 +124,14 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         trialClocks.clear();
 
         for (i = 0; i < benchmarkSamples; i++) {
+            if (qftReg != NULL) {
+                qftReg.reset();
+            }
+
             if (!qUniverse) {
+                qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits, 0,
+                    rng, ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse,
+                    REAL1_EPSILON, devList);
                 if (resetRandomPerm) {
                     qftReg->SetPermutation((bitCapIntOcl)(qftReg->Rand() * (bitCapIntOcl)qftReg->GetMaxQPower()));
                 } else {
@@ -144,9 +145,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     }
                 }
             } else {
-                if (qftReg != NULL) {
-                    qftReg.reset();
-                }
                 qftReg = MakeRandQubit();
                 for (bitLenInt i = 1; i < numBits; i++) {
                     qftReg->Compose(MakeRandQubit());
@@ -162,6 +160,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     fn(qftReg, numBits);
                     isTrialSuccessful = true;
                 } catch (const std::exception& e) {
+                    qftReg = NULL;
                     OCLEngine::Instance()->ResetActiveAllocSize();
                     sampleFailureCount++;
                     isTrialSuccessful = false;
@@ -170,7 +169,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 fn(qftReg, numBits);
             }
 
-            if (!async_time) {
+            if (!async_time && qftReg) {
                 qftReg->Finish();
             }
 
@@ -186,7 +185,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 avgt += trialClocks[i];
             }
 
-            if (async_time) {
+            if (async_time && qftReg) {
                 qftReg->Finish();
             }
 
