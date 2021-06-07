@@ -1250,7 +1250,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             stateVec = NULL;
         }
         // This will be cleared by the destructor:
-        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(complex) * pow2Ocl(length) - 2U);
+        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(complex) * pow2Ocl(qubitCount) - 2U);
         ResetStateVec(AllocStateVec(2));
         stateBuffer = MakeStateVecBuffer(stateVec);
         SetQubitCount(1);
@@ -1386,6 +1386,7 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
         // This will be cleared by the destructor:
         ResetStateVec(AllocStateVec(2));
         stateBuffer = MakeStateVecBuffer(stateVec);
+        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(complex) * pow2Ocl(qubitCount) - 2U);
         SetQubitCount(1);
         return;
     }
@@ -1399,6 +1400,7 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 
     bitLenInt nLength = qubitCount - length;
     bitCapIntOcl remainderPower = pow2Ocl(nLength);
+    size_t sizeDiff = sizeof(complex) * (maxQPower - remainderPower);
     bitCapIntOcl skipMask = pow2Ocl(start) - ONE_BCI;
     bitCapIntOcl disposedRes = (bitCapIntOcl)disposedPerm << (bitCapIntOcl)start;
 
@@ -1418,6 +1420,8 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
+
+    OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeDiff);
 }
 
 real1_f QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
