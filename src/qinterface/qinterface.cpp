@@ -789,6 +789,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         }
     }
 
+    delete[] qPowersSorted;
     delete[] probsArray;
 
     return results;
