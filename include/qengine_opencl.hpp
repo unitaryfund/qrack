@@ -200,6 +200,8 @@ public:
         runningNorm = ZERO_R1;
         ResetStateBuffer(NULL);
         FreeStateVec();
+
+        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(complex) * maxQPower);
     }
 
     virtual void SetQubitCount(bitLenInt qb)

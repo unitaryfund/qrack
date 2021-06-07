@@ -93,6 +93,13 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     if (getenv("QRACK_MAX_PAGING_QB")) {
         qbTryThreshold = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
     }
+    size_t maxAllocSize = OCLEngine::Instance()->GetMaxActiveAllocSize();
+    if (maxAllocSize > 0) {
+        bitLenInt maxQubits = log2(maxAllocSize);
+        if (maxQubits < qbTryThreshold) {
+            qbTryThreshold = maxQubits;
+        }
+    }
 
     int sampleFailureCount;
 
@@ -152,7 +159,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 try {
                     fn(qftReg, numBits);
                     isTrialSuccessful = true;
-                } catch (const std::invalid_argument& e) {
+                } catch (const std::exception& e) {
+                    OCLEngine::Instance()->ResetActiveAllocSize();
                     sampleFailureCount++;
                     isTrialSuccessful = false;
                 }

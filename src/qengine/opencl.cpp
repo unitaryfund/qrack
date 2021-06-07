@@ -450,6 +450,8 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
             // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
             LockSync();
         }
+    } else {
+        OCLEngine::Instance()->AddToActiveAllocSize(sizeof(complex) * maxQPower);
     }
 
     deviceID = dID;
@@ -1144,6 +1146,8 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
         throw "Error: State vector exceeds device maximum OpenCL allocation";
     }
 
+    OCLEngine::Instance()->AddToActiveAllocSize(sizeof(complex) * (nMaxQPower - maxQPower));
+
     SetQubitCount(nQubitCount);
 
     size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
@@ -1246,6 +1250,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             stateVec = NULL;
         }
         // This will be cleared by the destructor:
+        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(complex) * pow2Ocl(length) - 2U);
         ResetStateVec(AllocStateVec(2));
         stateBuffer = MakeStateVecBuffer(stateVec);
         SetQubitCount(1);
@@ -1256,6 +1261,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     bitCapIntOcl partPower = pow2Ocl(length);
     bitCapIntOcl remainderPower = pow2Ocl(nLength);
+    size_t sizeDiff = sizeof(complex) * (maxQPower - remainderPower);
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0, 0, 0, 0, 0, 0 };
 
     // The "remainder" bits will always be maintained.
@@ -1354,6 +1360,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     ResetStateBuffer(nStateBuffer);
 
     QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer });
+
+    OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeDiff);
 }
 
 void QEngineOCL::Decompose(bitLenInt start, QInterfacePtr destination)
@@ -2733,6 +2741,7 @@ BufferPtr QEngineOCL::MakeStateVecBuffer(complex* nStateVec)
 
 void QEngineOCL::ReinitBuffer()
 {
+    OCLEngine::Instance()->AddToActiveAllocSize(sizeof(complex) * maxQPower);
     ResetStateVec(AllocStateVec(maxQPower, usingHostRam));
     ResetStateBuffer(MakeStateVecBuffer(stateVec));
 }
