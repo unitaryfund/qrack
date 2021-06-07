@@ -96,7 +96,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 #if ENABLE_OPENCL
     size_t maxAllocSize = OCLEngine::Instance()->GetMaxActiveAllocSize();
     if (maxAllocSize > 0) {
-        bitLenInt maxQubits = log2(maxAllocSize / sizeof(complex)) - 1U;
+        bitLenInt maxQubits = log2(maxAllocSize / sizeof(complex));
+        maxQubits = (maxQubits < 4) ? 1U : (maxQubits - 3U);
         if (maxQubits < qbTryThreshold) {
             qbTryThreshold = maxQubits;
         }

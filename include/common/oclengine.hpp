@@ -293,6 +293,7 @@ public:
         activeAllocSize += size;
 
         if ((maxActiveAllocSize > 0) && (maxActiveAllocSize < activeAllocSize)) {
+            activeAllocSize -= size;
             throw std::bad_alloc();
         }
     }

@@ -187,7 +187,17 @@ public:
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored2 = {}, bitLenInt ignored4 = 0,
         real1_f ignored3 = FP_NORM_EPSILON);
 
-    virtual ~QEngineOCL() { ZeroAmplitudes(); }
+    virtual ~QEngineOCL()
+    {
+        ZeroAmplitudes();
+
+        size_t sizeDiff = sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW);
+        sizeDiff += ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
+            ? QRACK_ALIGN_SIZE
+            : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
+
+        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeDiff);
+    }
 
     virtual void ZeroAmplitudes()
     {
