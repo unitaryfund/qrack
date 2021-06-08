@@ -1702,7 +1702,7 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     qPowersBuffer.reset();
     qSkipPowersBuffer.reset();
 
-    OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(real1) * lengthPower + sizeof(bitCapIntOcl) * skipLength);
+    OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeDiff);
 }
 
 real1_f QEngineOCL::ProbParity(const bitCapInt& mask)
