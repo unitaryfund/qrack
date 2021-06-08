@@ -427,6 +427,7 @@ real1_f QEngineOCL::ProbAll(bitCapInt fullRegister)
 void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 {
     if (!(OCLEngine::Instance()->GetDeviceCount())) {
+        FreeAll();
         throw std::runtime_error("Tried to initialize QEngineOCL, but no available OpenCL devices.");
     }
 
@@ -491,6 +492,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     size_t stateVecSize = maxQPowerOcl * sizeof(complex);
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > maxAlloc) {
+        FreeAll();
         throw "Error: State vector exceeds device maximum OpenCL allocation";
     } else if (useHostRam || ((OclMemDenom * stateVecSize) > maxMem)) {
         usingHostRam = true;
@@ -892,6 +894,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         api_call = OCL_API_APPLY2X2_DOUBLE_WIDE;
         break;
     default:
+        FreeAll();
         throw("Invalid APPLY2X2 kernel selected!");
     }
 
@@ -1159,6 +1162,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     size_t nStateVecSize = nMaxQPower * sizeof(complex);
     maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
     if (nStateVecSize > maxAlloc) {
+        FreeAll();
         throw "Error: State vector exceeds device maximum OpenCL allocation";
     }
 
@@ -1959,6 +1963,7 @@ void QEngineOCL::INTBCD(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt sta
 
     bitCapIntOcl nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
+        FreeAll();
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
 
@@ -1992,6 +1997,7 @@ void QEngineOCL::INTBCDC(
 
     bitCapIntOcl nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
+        FreeAll();
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
 
@@ -2040,7 +2046,8 @@ void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
 void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     if (toDiv == 0) {
-        throw "DIV by zero";
+        FreeAll();
+        throw std::runtime_error("DIV by zero");
     }
 
     MULx(OCL_API_DIV, (bitCapIntOcl)toDiv, inOutStart, carryStart, length);
@@ -2144,7 +2151,8 @@ void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
     }
 
     if (toDiv == 0) {
-        throw "DIV by zero";
+        FreeAll();
+        throw std::runtime_error("DIV by zero");
     }
 
     if (toDiv == 1) {

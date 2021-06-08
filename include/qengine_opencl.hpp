@@ -198,7 +198,9 @@ public:
         ZeroAmplitudes();
 
         powersBuffer = NULL;
-        nrmArray.reset();
+        if (nrmArray) {
+            nrmArray.reset();
+        }
         SubtractAlloc(sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW) + sizeof(real1) * nrmGroupCount / nrmGroupSize);
     }
 
