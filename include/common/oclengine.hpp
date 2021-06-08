@@ -289,6 +289,10 @@ public:
     size_t GetActiveAllocSize() { return activeAllocSize; }
     void AddToActiveAllocSize(size_t size)
     {
+        if (size == 0) {
+            return;
+        }
+
         std::lock_guard<std::mutex> lock(allocMutex);
         activeAllocSize += size;
 
@@ -299,6 +303,10 @@ public:
     }
     void SubtractFromActiveAllocSize(size_t size)
     {
+        if (size == 0) {
+            return;
+        }
+
         std::lock_guard<std::mutex> lock(allocMutex);
         if (size < activeAllocSize) {
             activeAllocSize -= size;

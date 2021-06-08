@@ -42,6 +42,7 @@ struct QueueItem {
     OCLAPI api_call;
     size_t workItemCount;
     size_t localGroupSize;
+    size_t deallocSize;
     std::vector<BufferPtr> buffers;
     size_t localBuffSize;
     bool isSetDoNorm;
@@ -49,10 +50,11 @@ struct QueueItem {
     bool doNorm;
     real1 runningNorm;
 
-    QueueItem(OCLAPI ac, size_t wic, size_t lgs, std::vector<BufferPtr> b, size_t lbs)
+    QueueItem(OCLAPI ac, size_t wic, size_t lgs, size_t ds, std::vector<BufferPtr> b, size_t lbs)
         : api_call(ac)
         , workItemCount(wic)
         , localGroupSize(lgs)
+        , deallocSize(ds)
         , buffers(b)
         , localBuffSize(lbs)
         , isSetDoNorm(false)
@@ -66,6 +68,7 @@ struct QueueItem {
         : api_call()
         , workItemCount(0)
         , localGroupSize(0)
+        , deallocSize(0)
         , buffers()
         , localBuffSize(0)
         , isSetDoNorm(true)
@@ -79,6 +82,7 @@ struct QueueItem {
         : api_call()
         , workItemCount(0)
         , localGroupSize(0)
+        , deallocSize(0)
         , buffers()
         , localBuffSize(0)
         , isSetDoNorm(false)
@@ -284,9 +288,9 @@ public:
         }
     }
     virtual void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
-        size_t localBuffSize = 0)
+        size_t localBuffSize = 0, size_t deallocSize = 0)
     {
-        AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, args, localBuffSize));
+        AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize, args, localBuffSize));
     }
 
     bitCapIntOcl GetMaxSize() { return maxAlloc / sizeof(complex); };
