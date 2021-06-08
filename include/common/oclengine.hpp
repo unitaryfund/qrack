@@ -287,24 +287,21 @@ public:
     }
     size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
     size_t GetActiveAllocSize() { return activeAllocSize; }
-    void AddToActiveAllocSize(size_t size)
+    size_t AddToActiveAllocSize(size_t size)
     {
         if (size == 0) {
-            return;
+            return activeAllocSize;
         }
 
         std::lock_guard<std::mutex> lock(allocMutex);
         activeAllocSize += size;
 
-        if ((maxActiveAllocSize > 0) && (maxActiveAllocSize < activeAllocSize)) {
-            activeAllocSize -= size;
-            throw std::bad_alloc();
-        }
+        return activeAllocSize;
     }
-    void SubtractFromActiveAllocSize(size_t size)
+    size_t SubtractFromActiveAllocSize(size_t size)
     {
         if (size == 0) {
-            return;
+            return activeAllocSize;
         }
 
         std::lock_guard<std::mutex> lock(allocMutex);
@@ -313,6 +310,7 @@ public:
         } else {
             activeAllocSize = 0;
         }
+        return activeAllocSize;
     }
     void ResetActiveAllocSize()
     {
