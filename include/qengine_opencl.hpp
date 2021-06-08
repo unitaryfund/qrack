@@ -150,7 +150,7 @@ protected:
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
     std::vector<PoolItemPtr> poolItems;
-    real1* nrmArray;
+    std::unique_ptr<real1[]> nrmArray;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
     size_t maxWorkItems;
