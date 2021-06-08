@@ -1398,7 +1398,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
 
-    OCLEngine::Instance()->SubtractFromActiveAllocSize(oMaxQPower);
+    OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(complex) * oMaxQPower);
 
     // Tell QueueCall to track deallocation:
     QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer }, 0,
