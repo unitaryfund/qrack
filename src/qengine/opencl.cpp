@@ -621,7 +621,7 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
 {
     CHECK_ZERO_SKIP();
 
-    size_t sizeDiff = sizeof(complex) * maxQPower;
+    size_t sizeDiff = sizeof(complex) * maxQPowerOcl;
     if (controlLen) {
         sizeDiff += sizeof(bitCapIntOcl) * controlLen;
     }
@@ -1445,8 +1445,7 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 
     bitLenInt nLength = qubitCount - length;
     bitCapIntOcl remainderPower = pow2Ocl(nLength);
-    AddAlloc(sizeof(complex) * remainderPower);
-    size_t sizeDiff = sizeof(complex) * maxQPower;
+    size_t sizeDiff = sizeof(complex) * maxQPowerOcl;
     bitCapIntOcl skipMask = pow2Ocl(start) - ONE_BCI;
     bitCapIntOcl disposedRes = (bitCapIntOcl)disposedPerm << (bitCapIntOcl)start;
 
