@@ -205,11 +205,15 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 {
     CHECK_ZERO_SKIP();
 
-    complex* mtrx = new complex[4];
-    std::copy(matrix, matrix + 4, mtrx);
+    // This unique-to-shared pattern is a C++11 hack-around.
 
-    bitCapInt* qPowersSorted = new bitCapInt[bitCount];
-    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
+    std::unique_ptr<complex[]> mtrxU(new complex[4]);
+    std::copy(matrix, matrix + 4, mtrxU.get());
+    std::shared_ptr<complex[]> mtrx = std::shared_ptr<complex[]>(std::move(mtrxU));
+
+    std::unique_ptr<bitCapInt[]> qPowersSortedU(new bitCapInt[bitCount]);
+    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedU.get());
+    std::shared_ptr<bitCapInt[]> qPowersSorted = std::shared_ptr<bitCapInt[]>(std::move(qPowersSortedU));
 
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
@@ -225,8 +229,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
         ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
         ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
-
-        delete[] mtrx;
 
         real1* rngNrm = NULL;
         ParallelFunc fn;
@@ -344,10 +346,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             bitCapInt filterValues = filterMask & offset1 & offset2;
             par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
         } else {
-            par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
+            par_for_mask(0, maxQPower, qPowersSorted.get(), bitCount, fn);
         }
-
-        delete[] qPowersSorted;
 
         if (doCalcNorm) {
             real1 rNrm = ZERO_R1;
@@ -369,11 +369,15 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 {
     CHECK_ZERO_SKIP();
 
-    complex* mtrx = new complex[4];
-    std::copy(matrix, matrix + 4, mtrx);
+    // This unique-to-shared pattern is a C++11 hack-around.
 
-    bitCapInt* qPowersSorted = new bitCapInt[bitCount];
-    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
+    std::unique_ptr<complex[]> mtrxU(new complex[4]);
+    std::copy(matrix, matrix + 4, mtrxU.get());
+    std::shared_ptr<complex[]> mtrx = std::shared_ptr<complex[]>(std::move(mtrxU));
+
+    std::unique_ptr<bitCapInt[]> qPowersSortedU(new bitCapInt[bitCount]);
+    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedU.get());
+    std::shared_ptr<bitCapInt[]> qPowersSorted = std::shared_ptr<bitCapInt[]>(std::move(qPowersSortedU));
 
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
@@ -500,11 +504,8 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             bitCapInt filterValues = filterMask & offset1 & offset2;
             par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
         } else {
-            par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
+            par_for_mask(0, maxQPower, qPowersSorted.get(), bitCount, fn);
         }
-
-        delete[] mtrx;
-        delete[] qPowersSorted;
 
         if (doCalcNorm) {
             real1 rNrm = ZERO_R1;
@@ -954,7 +955,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         });
     }
 
-    if (destination != nullptr) {
+    if (destination) {
         destination->Dump();
 
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
@@ -962,6 +963,9 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
                 (real1)(std::sqrt(partStateProb[(bitCapIntOcl)lcv])) *
                     complex(cos(partStateAngle[(bitCapIntOcl)lcv]), sin(partStateAngle[(bitCapIntOcl)lcv])));
         });
+
+        delete[] partStateProb;
+        delete[] partStateAngle;
     }
 
     if (nLength == 0) {
@@ -979,10 +983,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
-    if (destination) {
-        delete[] partStateProb;
-        delete[] partStateAngle;
-    }
 }
 
 void QEngineCPU::Decompose(bitLenInt start, QInterfacePtr destination)
