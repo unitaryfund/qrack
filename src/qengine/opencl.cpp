@@ -512,7 +512,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         nrmBuffer = NULL;
         FreeAligned(nrmArray);
         nrmArray = NULL;
-        OCLEngine::Instance()->SubtractFromActiveAllocSize(oldNrmVecAlignSize);
+        SubtractAlloc(oldNrmVecAlignSize);
     }
 
     if (!didInit || doResize) {
