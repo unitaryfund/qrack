@@ -387,12 +387,11 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     }
 
     bitLenInt min1 = length - 1U;
-    bitLenInt* controls = new bitLenInt[min1];
+    std::unique_ptr<bitLenInt[]> controls(new bitLenInt[min1]);
     for (bitLenInt i = 0; i < min1; i++) {
         controls[i] = start + i;
     }
-    ApplyAntiControlledSinglePhase(controls, min1, start + min1, -ONE_CMPLX, ONE_CMPLX);
-    delete[] controls;
+    ApplyAntiControlledSinglePhase(controls.get(), min1, start + min1, -ONE_CMPLX, ONE_CMPLX);
 }
 
 void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
@@ -405,16 +404,15 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
     for (bitLenInt i = 0; i < h.size(); i++) {
         HamiltonianOpPtr op = h[i];
         complex* opMtrx = op->matrix.get();
-        complex* mtrx;
 
         bitCapIntOcl maxJ = 4;
         if (op->uniform) {
             maxJ *= pow2Ocl(op->controlLen);
         }
-        mtrx = new complex[maxJ];
+        std::unique_ptr<complex[]> mtrx(new complex[maxJ]);
 
         for (bitCapIntOcl j = 0; j < maxJ; j++) {
-            mtrx[j] = opMtrx[j] * (-timeDiff);
+            mtrx.get()[j] = opMtrx[j] * (-timeDiff);
         }
 
         if (op->toggles) {
@@ -426,14 +424,13 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
         }
 
         if (op->uniform) {
-            complex* expMtrx = new complex[maxJ];
+            std::unique_ptr<complex[]> expMtrx(new complex[maxJ]);
             for (bitCapIntOcl j = 0; j < pow2(op->controlLen); j++) {
-                exp2x2(mtrx + (j * 4U), expMtrx + (j * 4U));
+                exp2x2(mtrx.get() + (j * 4U), expMtrx.get() + (j * 4U));
             }
-            UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx);
-            delete[] expMtrx;
+            UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx.get());
         } else {
-            Exp(op->controls, op->controlLen, op->targetBit, mtrx, op->anti);
+            Exp(op->controls, op->controlLen, op->targetBit, mtrx.get(), op->anti);
         }
 
         if (op->toggles) {
@@ -443,8 +440,6 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
                 }
             }
         }
-
-        delete[] mtrx;
     }
 }
 

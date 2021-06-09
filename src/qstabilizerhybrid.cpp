@@ -97,11 +97,10 @@ QInterfacePtr QStabilizerHybrid::Clone()
             c->shardsEigenZ[i] = shardsEigenZ[i];
         }
     } else {
-        complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
-        engine->GetQuantumState(stateVec);
+        std::unique_ptr<complex[]> stateVec(new complex[(bitCapIntOcl)maxQPower]);
+        engine->GetQuantumState(stateVec.get());
         c->SwitchToEngine();
-        c->engine->SetQuantumState(stateVec);
-        delete[] stateVec;
+        c->engine->SetQuantumState(stateVec.get());
     }
 
     return c;
@@ -450,12 +449,11 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
     FlushBuffers();
 
     if (stabilizer) {
-        complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
-        stabilizer->GetQuantumState(stateVec);
+        std::unique_ptr<complex[]> stateVec(new complex[(bitCapIntOcl)maxQPower]);
+        stabilizer->GetQuantumState(stateVec.get());
         for (bitCapIntOcl i = 0; i < maxQPower; i++) {
-            outputProbs[i] = norm(stateVec[i]);
+            outputProbs[i] = norm(stateVec.get()[i]);
         }
-        delete[] stateVec;
     } else {
         engine->GetProbs(outputProbs);
     }

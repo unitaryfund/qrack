@@ -741,31 +741,33 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     bitLenInt i;
     bitCapIntOcl j;
 
-    bitCapInt* qPowersSorted = new bitCapInt[qPowerCount];
+    std::unique_ptr<bitCapInt[]> qPowersSorted(new bitCapInt[qPowerCount]);
     bitCapInt mask = 0U;
     for (i = 0; i < qPowerCount; i++) {
         mask |= qPowers[i];
-        qPowersSorted[i] = qPowers[i];
+        qPowersSorted.get()[i] = qPowers[i];
     }
 
-    std::sort(qPowersSorted, qPowersSorted + qPowerCount);
+    std::sort(qPowersSorted.get(), qPowersSorted.get() + qPowerCount);
     std::map<bitLenInt, bitCapInt> maskMap;
     for (bitLenInt k = 0; k < qPowerCount; k++) {
         for (i = 0; i < qPowerCount; i++) {
-            if (qPowersSorted[k] == qPowers[i]) {
+            if (qPowersSorted.get()[k] == qPowers[i]) {
                 maskMap[k] = pow2(i);
                 break;
             }
         }
     }
 
+    qPowersSorted.reset();
+
     bitCapIntOcl subsetCap = pow2Ocl(qPowerCount);
-    real1* probsArray = new real1[subsetCap];
-    ProbMaskAll(mask, probsArray);
+    std::unique_ptr<real1[]> probsArray(new real1[subsetCap]);
+    ProbMaskAll(mask, probsArray.get());
 
     real1 totProb = ZERO_R1;
     for (j = 0; j < subsetCap; j++) {
-        totProb += probsArray[j];
+        totProb += probsArray.get()[j];
     }
 
     std::map<bitCapInt, int> results;
@@ -775,7 +777,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         maskProb = Rand();
         cumProb = ZERO_R1;
         for (j = 0; j < subsetCap; j++) {
-            cumProb += probsArray[j];
+            cumProb += probsArray.get()[j];
             if ((maskProb < cumProb) || (cumProb >= totProb)) {
                 key = 0;
                 for (i = 0; i < qPowerCount; i++) {
@@ -788,9 +790,6 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
             }
         }
     }
-
-    delete[] qPowersSorted;
-    delete[] probsArray;
 
     return results;
 }

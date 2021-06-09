@@ -150,7 +150,7 @@ protected:
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
     std::vector<PoolItemPtr> poolItems;
-    std::unique_ptr<real1[]> nrmArray;
+    real1* nrmArray;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
     size_t maxWorkItems;
@@ -191,16 +191,23 @@ public:
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored2 = {}, bitLenInt ignored4 = 0,
         real1_f ignored3 = FP_NORM_EPSILON);
 
-    virtual ~QEngineOCL()
+    virtual ~QEngineOCL() { FreeAll(); }
+
+    virtual void FreeAll()
     {
         ZeroAmplitudes();
+
+        powersBuffer = NULL;
+        if (nrmArray) {
+            FreeAligned(nrmArray);
+            nrmArray = NULL;
+        }
 
         size_t sizeDiff = sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW);
         sizeDiff += ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
             ? QRACK_ALIGN_SIZE
             : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
-
-        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeDiff);
+        SubtractAlloc(sizeDiff);
     }
 
     virtual void ZeroAmplitudes()
@@ -215,7 +222,7 @@ public:
         ResetStateBuffer(NULL);
         FreeStateVec();
 
-        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(complex) * maxQPower);
+        SubtractAlloc(sizeof(complex) * maxQPower);
     }
 
     virtual void SetQubitCount(bitLenInt qb)
@@ -399,6 +406,17 @@ public:
     void DispatchQueue(cl_event event, cl_int type);
 
 protected:
+    virtual void AddAlloc(size_t size)
+    {
+        size_t currentAlloc = OCLEngine::Instance()->AddToActiveAllocSize(size);
+        if (currentAlloc > OCLEngine::Instance()->GetMaxActiveAllocSize()) {
+            OCLEngine::Instance()->SubtractFromActiveAllocSize(size);
+            FreeAll();
+            throw std::bad_alloc();
+        }
+    }
+    virtual void SubtractAlloc(size_t size) { OCLEngine::Instance()->SubtractFromActiveAllocSize(size); }
+
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
