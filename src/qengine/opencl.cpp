@@ -516,6 +516,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 
     if (!didInit || doResize) {
+        AddAlloc(nrmVecAlignSize);
 #if defined(__APPLE__)
         posix_memalign((void**)&nrmArray, QRACK_ALIGN_SIZE, nrmVecAlignSize);
 #elif defined(_WIN32) && !defined(__CYGWIN__)
@@ -524,7 +525,6 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
         nrmArray = (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmVecAlignSize);
 #endif
         nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize);
-        AddAlloc(nrmVecAlignSize);
     }
 
     // create buffers on device (allocate space on GPU)
