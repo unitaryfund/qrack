@@ -205,11 +205,11 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 {
     CHECK_ZERO_SKIP();
 
-    complex* mtrx = new complex[4];
-    std::copy(matrix, matrix + 4, mtrx);
+    std::shared_ptr<complex> mtrxS(new complex[4], std::default_delete<complex[]>());
+    std::copy(matrix, matrix + 4, mtrxS.get());
 
-    bitCapInt* qPowersSorted = new bitCapInt[bitCount];
-    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
+    std::shared_ptr<bitCapInt> qPowersSortedS(new bitCapInt[bitCount], std::default_delete<bitCapInt[]>());
+    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedS.get());
 
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
@@ -219,14 +219,15 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         runningNorm = ONE_R1;
     }
 
-    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, nrm, nrm_thresh] {
+    Dispatch([this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, nrm, nrm_thresh] {
+        complex* mtrx = mtrxS.get();
+        bitCapInt* qPowersSorted = qPowersSortedS.get();
+
         real1_f norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
         int numCores = GetConcurrencyLevel();
 
         ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
         ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
-
-        delete[] mtrx;
 
         real1* rngNrm = NULL;
         ParallelFunc fn;
@@ -347,8 +348,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
         }
 
-        delete[] qPowersSorted;
-
         if (doCalcNorm) {
             real1 rNrm = ZERO_R1;
             for (int i = 0; i < numCores; i++) {
@@ -369,11 +368,11 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 {
     CHECK_ZERO_SKIP();
 
-    complex* mtrx = new complex[4];
-    std::copy(matrix, matrix + 4, mtrx);
+    std::shared_ptr<complex> mtrxS(new complex[4], std::default_delete<complex[]>());
+    std::copy(matrix, matrix + 4, mtrxS.get());
 
-    bitCapInt* qPowersSorted = new bitCapInt[bitCount];
-    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSorted);
+    std::shared_ptr<bitCapInt> qPowersSortedS(new bitCapInt[bitCount], std::default_delete<bitCapInt[]>());
+    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedS.get());
 
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
@@ -383,7 +382,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         runningNorm = ONE_R1;
     }
 
-    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, nrm, nrm_thresh] {
+    Dispatch([this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, nrm, nrm_thresh] {
+        complex* mtrx = mtrxS.get();
+        bitCapInt* qPowersSorted = qPowersSortedS.get();
+
         real1_f norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
         int numCores = GetConcurrencyLevel();
 
@@ -502,9 +504,6 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         } else {
             par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
         }
-
-        delete[] mtrx;
-        delete[] qPowersSorted;
 
         if (doCalcNorm) {
             real1 rNrm = ZERO_R1;
@@ -954,7 +953,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         });
     }
 
-    if (destination != nullptr) {
+    if (destination) {
         destination->Dump();
 
         par_for(0, partPower, [&](const bitCapInt lcv, const int cpu) {
@@ -962,6 +961,9 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
                 (real1)(std::sqrt(partStateProb[(bitCapIntOcl)lcv])) *
                     complex(cos(partStateAngle[(bitCapIntOcl)lcv]), sin(partStateAngle[(bitCapIntOcl)lcv])));
         });
+
+        delete[] partStateProb;
+        delete[] partStateAngle;
     }
 
     if (nLength == 0) {
@@ -979,10 +981,6 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     delete[] remainderStateProb;
     delete[] remainderStateAngle;
-    if (destination) {
-        delete[] partStateProb;
-        delete[] partStateAngle;
-    }
 }
 
 void QEngineCPU::Decompose(bitLenInt start, QInterfacePtr destination)
