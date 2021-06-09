@@ -150,7 +150,7 @@ protected:
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
     std::vector<PoolItemPtr> poolItems;
-    std::unique_ptr<real1[]> nrmArray;
+    real1* nrmArray;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
     size_t maxWorkItems;
@@ -199,9 +199,15 @@ public:
 
         powersBuffer = NULL;
         if (nrmArray) {
-            nrmArray.reset();
+            FreeAligned(nrmArray);
+            nrmArray = NULL;
         }
-        SubtractAlloc(sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW) + sizeof(real1) * nrmGroupCount / nrmGroupSize);
+
+        size_t sizeDiff = sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW);
+        sizeDiff += ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
+            ? QRACK_ALIGN_SIZE
+            : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
+        SubtractAlloc(sizeDiff);
     }
 
     virtual void ZeroAmplitudes()
