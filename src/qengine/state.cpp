@@ -205,15 +205,11 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 {
     CHECK_ZERO_SKIP();
 
-    // This unique-to-shared pattern is a C++11 hack-around.
+    std::shared_ptr<complex> mtrxS(new complex[4], std::default_delete<complex[]>());
+    std::copy(matrix, matrix + 4, mtrxS.get());
 
-    std::unique_ptr<complex[]> mtrxU(new complex[4]);
-    std::copy(matrix, matrix + 4, mtrxU.get());
-    std::shared_ptr<complex[]> mtrx = std::shared_ptr<complex[]>(std::move(mtrxU));
-
-    std::unique_ptr<bitCapInt[]> qPowersSortedU(new bitCapInt[bitCount]);
-    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedU.get());
-    std::shared_ptr<bitCapInt[]> qPowersSorted = std::shared_ptr<bitCapInt[]>(std::move(qPowersSortedU));
+    std::shared_ptr<bitCapInt> qPowersSortedS(new bitCapInt[bitCount], std::default_delete<bitCapInt[]>());
+    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedS.get());
 
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
@@ -223,7 +219,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         runningNorm = ONE_R1;
     }
 
-    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, nrm, nrm_thresh] {
+    Dispatch([this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, nrm, nrm_thresh] {
+        complex* mtrx = mtrxS.get();
+        bitCapInt* qPowersSorted = qPowersSortedS.get();
+
         real1_f norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
         int numCores = GetConcurrencyLevel();
 
@@ -346,7 +345,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             bitCapInt filterValues = filterMask & offset1 & offset2;
             par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
         } else {
-            par_for_mask(0, maxQPower, qPowersSorted.get(), bitCount, fn);
+            par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
         }
 
         if (doCalcNorm) {
@@ -369,15 +368,11 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 {
     CHECK_ZERO_SKIP();
 
-    // This unique-to-shared pattern is a C++11 hack-around.
+    std::shared_ptr<complex> mtrxS(new complex[4], std::default_delete<complex[]>());
+    std::copy(matrix, matrix + 4, mtrxS.get());
 
-    std::unique_ptr<complex[]> mtrxU(new complex[4]);
-    std::copy(matrix, matrix + 4, mtrxU.get());
-    std::shared_ptr<complex[]> mtrx = std::shared_ptr<complex[]>(std::move(mtrxU));
-
-    std::unique_ptr<bitCapInt[]> qPowersSortedU(new bitCapInt[bitCount]);
-    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedU.get());
-    std::shared_ptr<bitCapInt[]> qPowersSorted = std::shared_ptr<bitCapInt[]>(std::move(qPowersSortedU));
+    std::shared_ptr<bitCapInt> qPowersSortedS(new bitCapInt[bitCount], std::default_delete<bitCapInt[]>());
+    std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedS.get());
 
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
@@ -387,7 +382,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         runningNorm = ONE_R1;
     }
 
-    Dispatch([this, mtrx, qPowersSorted, offset1, offset2, bitCount, doCalcNorm, nrm, nrm_thresh] {
+    Dispatch([this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, nrm, nrm_thresh] {
+        complex* mtrx = mtrxS.get();
+        bitCapInt* qPowersSorted = qPowersSortedS.get();
+
         real1_f norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
         int numCores = GetConcurrencyLevel();
 
@@ -504,7 +502,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             bitCapInt filterValues = filterMask & offset1 & offset2;
             par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
         } else {
-            par_for_mask(0, maxQPower, qPowersSorted.get(), bitCount, fn);
+            par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
         }
 
         if (doCalcNorm) {
