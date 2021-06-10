@@ -449,11 +449,7 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
     FlushBuffers();
 
     if (stabilizer) {
-        std::unique_ptr<complex[]> stateVec(new complex[(bitCapIntOcl)maxQPower]);
-        stabilizer->GetQuantumState(stateVec.get());
-        for (bitCapIntOcl i = 0; i < maxQPower; i++) {
-            outputProbs[i] = norm(stateVec.get()[i]);
-        }
+        stabilizer->GetProbs(outputProbs);
     } else {
         engine->GetProbs(outputProbs);
     }
