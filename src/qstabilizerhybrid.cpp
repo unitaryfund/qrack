@@ -246,6 +246,15 @@ void QStabilizerHybrid::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt ta
             CZ(control1, target);
             return;
         }
+        
+        prob = Prob(target);
+        if (prob == ZERO_R1) {
+            return;
+        }
+        if (prob == ONE_R1) {
+            CZ(control1, control2);
+            return;
+        }
 
         SwitchToEngine();
     }
