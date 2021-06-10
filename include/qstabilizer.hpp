@@ -35,6 +35,17 @@
 
 namespace Qrack {
 
+struct AmplitudeEntry {
+    bitCapIntOcl permutation;
+    complex amplitude;
+
+    AmplitudeEntry(const bitCapInt& p, const complex& a)
+        : permutation(p)
+        , amplitude(a)
+    {
+    }
+};
+
 class QStabilizer;
 typedef std::shared_ptr<QStabilizer> QStabilizerPtr;
 
@@ -162,8 +173,14 @@ protected:
      */
     void seed(const bitLenInt& g);
 
+    /// Helper for setBasisState() and setBasisProb()
+    AmplitudeEntry getBasisAmp(const real1_f& nrm);
+
     /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
     void setBasisState(const real1_f& nrm, complex* stateVec);
+
+    /// Returns the probability from applying the Pauli operator in the "scratch space" of q to |0...0>
+    void setBasisProb(const real1_f& nrm, real1* outputProbs);
 
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
@@ -227,6 +244,9 @@ public:
 
     /// Convert the state to ket notation
     void GetQuantumState(complex* stateVec);
+
+    /// Get all probabilities corresponding to ket notation
+    void GetProbs(real1* outputProbs);
 
     /**
      * Returns "true" if target qubit is a Z basis eigenstate

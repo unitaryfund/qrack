@@ -278,8 +278,8 @@ void QStabilizer::seed(const bitLenInt& g)
     }
 }
 
-/// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
-void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
+/// Helper for setBasisState() and setBasisProb()
+AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
 {
     bitLenInt elemCount = qubitCount << 1U;
     bitLenInt j;
@@ -307,7 +307,21 @@ void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
         }
     }
 
-    stateVec[perm] = amp;
+    return AmplitudeEntry(perm, amp);
+}
+
+/// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
+void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
+{
+    AmplitudeEntry entry = getBasisAmp(nrm);
+    stateVec[entry.permutation] = entry.amplitude;
+}
+
+/// Returns the probability from applying the Pauli operator in the "scratch space" of q to |0...0>
+void QStabilizer::setBasisProb(const real1_f& nrm, real1* outputProbs)
+{
+    AmplitudeEntry entry = getBasisAmp(nrm);
+    outputProbs[entry.permutation] = norm(entry.amplitude);
 }
 
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
@@ -343,6 +357,39 @@ void QStabilizer::GetQuantumState(complex* stateVec)
             }
         }
         setBasisState(nrm, stateVec);
+    }
+}
+
+/// Get all probabilities corresponding to ket notation
+void QStabilizer::GetProbs(real1* outputProbs)
+{
+    Finish();
+
+    bitCapIntOcl t;
+    bitCapIntOcl t2;
+    bitLenInt i;
+
+    // log_2 of number of nonzero basis states
+    bitLenInt g = gaussian();
+    bitCapIntOcl permCount = pow2Ocl(g);
+    bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    bitLenInt elemCount = qubitCount << 1U;
+    real1_f nrm = sqrt(ONE_R1 / permCount);
+
+    seed(g);
+
+    // init stateVec as all 0 values
+    std::fill(outputProbs, outputProbs + pow2Ocl(qubitCount), ZERO_R1);
+
+    setBasisProb(nrm, outputProbs);
+    for (t = 0; t < permCountMin1; t++) {
+        t2 = t ^ (t + 1);
+        for (i = 0; i < g; i++) {
+            if (t2 & pow2Ocl(i)) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        setBasisProb(nrm, outputProbs);
     }
 }
 
