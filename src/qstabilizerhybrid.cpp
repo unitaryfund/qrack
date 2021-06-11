@@ -72,8 +72,8 @@ QStabilizerPtr QStabilizerHybrid::MakeStabilizer(const bitCapInt& perm)
 
 QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
 {
-    QInterfacePtr toRet = CreateQuantumInterface(engineType, subEngineType, qubitCount, 0, rand_generator, phaseFactor,
-        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+    QInterfacePtr toRet = CreateQuantumInterface(engineType, subEngineType, qubitCount, perm, rand_generator,
+        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
         std::vector<int>{}, thresholdQubits, separabilityThreshold);
     toRet->SetConcurrency(concurrency);
     return toRet;
@@ -112,16 +112,8 @@ void QStabilizerHybrid::SwitchToEngine()
         return;
     }
 
-    complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
-    stabilizer->GetQuantumState(stateVec);
-    if (engineType != QINTERFACE_QUNIT) {
-        stabilizer.reset();
-    }
-
     engine = MakeEngine();
-    engine->SetQuantumState(stateVec);
-    delete[] stateVec;
-
+    stabilizer->GetQuantumState(engine);
     if (engineType != QINTERFACE_QUNIT) {
         stabilizer.reset();
         FlushBuffers();
@@ -252,6 +244,15 @@ void QStabilizerHybrid::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt ta
         }
         if (prob == ONE_R1) {
             CZ(control1, target);
+            return;
+        }
+
+        prob = Prob(target);
+        if (prob == ZERO_R1) {
+            return;
+        }
+        if (prob == ONE_R1) {
+            CZ(control1, control2);
             return;
         }
 

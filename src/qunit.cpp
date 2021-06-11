@@ -913,7 +913,70 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     }
 
     // Both shards are in the same unit.
-    if (shard1.unit->isClifford() && !shard1.unit->TrySeparate(shard1.mapped, shard2.mapped)) {
+    if (shard1.unit->isClifford()) {
+        shard1.unit->CZ(shard1.mapped, shard2.mapped);
+        isShard1Sep = shard1.unit->TrySeparate(shard1.mapped);
+        isShard2Sep = shard2.unit->TrySeparate(shard2.mapped);
+
+        if (isShard1Sep || isShard2Sep) {
+            freezeTrySeparate = true;
+            CZ(qubit1, qubit2);
+            freezeTrySeparate = false;
+
+            if (isShard1Sep) {
+                TrySeparate(qubit1);
+            }
+
+            if (isShard2Sep) {
+                TrySeparate(qubit2);
+            }
+
+            return true;
+        }
+        shard1.unit->CZ(shard1.mapped, shard2.mapped);
+
+        shard1.unit->CNOT(shard1.mapped, shard2.mapped);
+        isShard1Sep = shard1.unit->TrySeparate(shard1.mapped);
+        isShard2Sep = shard2.unit->TrySeparate(shard2.mapped);
+
+        if (isShard1Sep || isShard2Sep) {
+            freezeTrySeparate = true;
+            CNOT(qubit1, qubit2);
+            freezeTrySeparate = false;
+
+            if (isShard1Sep) {
+                TrySeparate(qubit1);
+            }
+
+            if (isShard2Sep) {
+                TrySeparate(qubit2);
+            }
+
+            return true;
+        }
+        shard1.unit->CNOT(shard1.mapped, shard2.mapped);
+
+        shard1.unit->CY(shard1.mapped, shard2.mapped);
+        isShard1Sep = shard1.unit->TrySeparate(shard1.mapped);
+        isShard2Sep = shard2.unit->TrySeparate(shard2.mapped);
+
+        if (isShard1Sep || isShard2Sep) {
+            freezeTrySeparate = true;
+            CY(qubit1, qubit2);
+            freezeTrySeparate = false;
+
+            if (isShard1Sep) {
+                TrySeparate(qubit1);
+            }
+
+            if (isShard2Sep) {
+                TrySeparate(qubit2);
+            }
+
+            return true;
+        }
+        shard1.unit->CY(shard1.mapped, shard2.mapped);
+
         return false;
     }
 
