@@ -88,15 +88,16 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
         return;
     }
 
-    // TODO: Why doesn't this work?
-    // if (runningNorm != REAL1_DEFAULT_ARG) {
-    //     runningNorm -= norm(GetAmplitude(perm));
-    //     runningNorm += norm(amp);
-    //     if (runningNorm == ZERO_R1) {
-    //         ZeroAmplitudes();
-    //         return;
-    //     }
-    // }
+    if (runningNorm > ZERO_R1) {
+        runningNorm -= norm(GetAmplitude(perm));
+        runningNorm += norm(amp);
+        if (runningNorm <= REAL1_EPSILON) {
+            ZeroAmplitudes();
+            return;
+        }
+    } else {
+        runningNorm = REAL1_DEFAULT_ARG;
+    }
 
     if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPower));
@@ -104,8 +105,6 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     }
 
     stateVec->write(perm, amp);
-
-    runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
@@ -213,7 +212,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
-    real1 nrm = (doNormalize && (runningNorm != REAL1_DEFAULT_ARG)) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
+    real1 nrm = (doNormalize && (runningNorm > ZERO_R1)) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
 
     if (doCalcNorm) {
         runningNorm = ONE_R1;
@@ -376,7 +375,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
 
-    real1 nrm = (doNormalize && (runningNorm != REAL1_DEFAULT_ARG)) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
+    real1 nrm = (doNormalize && (runningNorm > ZERO_R1)) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
 
     if (doCalcNorm) {
         runningNorm = ONE_R1;
@@ -535,7 +534,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 
     bitCapInt targetPower = pow2(qubitIndex);
 
-    real1 nrm = (runningNorm != REAL1_DEFAULT_ARG) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
+    real1 nrm = (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
 
     bitCapInt* qPowers = new bitCapInt[controlLen];
     for (bitLenInt i = 0; i < controlLen; i++) {
