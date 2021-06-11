@@ -76,6 +76,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     , wait_refs()
     , nrmArray(NULL)
     , nrmGroupSize(0)
+    , nrmArrayAllocSize(0)
     , unlockHostMem(false)
 {
     maxQPowerOcl = pow2Ocl(qubitCount);
@@ -502,7 +503,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 #endif
 
-    size_t nrmVecAlignSize = ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
+    nrmArrayAllocSize = (!nrmGroupSize || ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE))
         ? QRACK_ALIGN_SIZE
         : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
 
@@ -516,15 +517,15 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 
     if (!didInit || doResize) {
-        AddAlloc(nrmVecAlignSize);
+        AddAlloc(nrmArrayAllocSize);
 #if defined(__APPLE__)
-        posix_memalign((void**)&nrmArray, QRACK_ALIGN_SIZE, nrmVecAlignSize);
+        posix_memalign((void**)&nrmArray, QRACK_ALIGN_SIZE, nrmArrayAllocSize);
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-        nrmArray = (real1*)_aligned_malloc(nrmVecAlignSize, QRACK_ALIGN_SIZE);
+        nrmArray = (real1*)_aligned_malloc(nrmArrayAllocSize, QRACK_ALIGN_SIZE);
 #else
-        nrmArray = (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmVecAlignSize);
+        nrmArray = (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmArrayAllocSize);
 #endif
-        nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmVecAlignSize);
+        nrmBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_WRITE, nrmArrayAllocSize);
     }
 
     // create buffers on device (allocate space on GPU)

@@ -156,6 +156,7 @@ protected:
     size_t maxWorkItems;
     size_t maxMem;
     size_t maxAlloc;
+    size_t nrmArrayAllocSize;
     unsigned int procElemCount;
     bool unlockHostMem;
     cl_int lockSyncFlags;
@@ -203,11 +204,9 @@ public:
             nrmArray = NULL;
         }
 
-        size_t sizeDiff = sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW);
-        sizeDiff += ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
-            ? QRACK_ALIGN_SIZE
-            : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
+        size_t sizeDiff = sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW) + nrmArrayAllocSize;
         SubtractAlloc(sizeDiff);
+        nrmArrayAllocSize = 0;
     }
 
     virtual void ZeroAmplitudes()
