@@ -1116,7 +1116,7 @@ public:
                 Swap(q[0] + i, q[i]);
             }
 
-            bool toRet = stabilizer->CanDecomposeDispose(0, length);
+            bool toRet = stabilizer->CanDecomposeDispose(q[0], length);
 
             for (bitLenInt i = 1; i < length; i++) {
                 Swap(q[0] + i, q[i]);

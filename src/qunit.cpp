@@ -913,7 +913,9 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     }
 
     // Both shards are in the same unit.
-    if (shard1.unit->isClifford() && !shard1.unit->TrySeparate(shard1.mapped, shard2.mapped)) {
+    // TODO: Why doesn't this work?
+    //if (shard1.unit->isClifford() && !shard1.unit->TrySeparate(shard1.mapped, shard2.mapped)) {
+    if (shard1.unit->isClifford()) {
         return false;
     }
 
