@@ -981,7 +981,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 5, bciArgs);
 
     BufferPtr nrmInBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1));
-    real1 nrm = (runningNorm != REAL1_DEFAULT_ARG) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
+    real1 nrm = (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
     DISPATCH_WRITE(waitVec, *nrmInBuffer, sizeof(real1), &nrm);
 
     size_t sizeDiff = sizeof(complex) * 4U * pow2Ocl(controlLen + mtrxSkipLen);
@@ -2547,15 +2547,16 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         return;
     }
 
-    // TODO: Why doesn't this work?
-    // if (runningNorm != REAL1_DEFAULT_ARG) {
-    //     runningNorm -= norm(GetAmplitude(perm));
-    //     runningNorm += norm(amp);
-    //     if (runningNorm == ZERO_R1) {
-    //         ZeroAmplitudes();
-    //         return;
-    //     }
-    // }
+    if (runningNorm > ZERO_R1) {
+        runningNorm -= norm(GetAmplitude(perm));
+        runningNorm += norm(amp);
+        if (runningNorm <= REAL1_EPSILON) {
+            ZeroAmplitudes();
+            return;
+        }
+    } else {
+        runningNorm = REAL1_DEFAULT_ARG;
+    }
 
     if (!stateBuffer) {
         ReinitBuffer();
@@ -2571,8 +2572,6 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
     device_context->UnlockWaitEvents();
     queue.flush();
-
-    runningNorm = REAL1_DEFAULT_ARG;
 }
 
 /// Get pure quantum state, in unsigned int permutation basis
