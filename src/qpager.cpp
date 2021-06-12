@@ -512,49 +512,11 @@ bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
 
 void QPager::Decompose(bitLenInt start, QPagerPtr dest)
 {
+    // TODO: Avoid CombineEngines().
+    CombineEngines();
     dest->CombineEngines();
-
-    bitLenInt inPage = qubitCount - (start + dest->qubitCount);
-    bool didDecompose = false;
-
-    if (start <= inPage) {
-        if (start == 0) {
-            CombineEngines(start + dest->qubitCount + 1U);
-        } else {
-            CombineEngines(start + dest->qubitCount);
-        }
-        // To be clear, under the assumption of perfect decomposibility, all further pages should produce the exact same
-        // "dest" as the line above, hence we can take just the first nonzero one and "Dispose" the rest. (This might
-        // pose a problem or limitation for "approximate separability.")
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            if (!didDecompose && !qPages[i]->IsZeroAmplitude()) {
-                qPages[i]->Decompose(start, dest->qPages[0]);
-                didDecompose = true;
-            } else {
-                qPages[i]->Dispose(start, dest->qubitCount);
-            }
-        }
-    } else {
-        if ((qPages[0]->GetQubitCount() - (inPage + dest->qubitCount)) == 0) {
-            CombineEngines(inPage + dest->qubitCount + 1U);
-        } else {
-            CombineEngines(inPage + dest->qubitCount);
-        }
-        // (Same as above)
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qubitCount);
-            if (!didDecompose && !qPages[i]->IsZeroAmplitude()) {
-                qPages[i]->Decompose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qPages[0]);
-                didDecompose = true;
-            } else {
-                qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qubitCount);
-            }
-        }
-    }
-
+    qPages[0]->Decompose(start, dest->qPages[0]);
     SetQubitCount(qubitCount - dest->qubitCount);
-
-    CombineEngines(baseQubitsPerPage);
 }
 
 void QPager::Dispose(bitLenInt start, bitLenInt length)
