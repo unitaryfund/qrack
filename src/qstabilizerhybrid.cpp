@@ -97,10 +97,9 @@ QInterfacePtr QStabilizerHybrid::Clone()
             c->shardsEigenZ[i] = shardsEigenZ[i];
         }
     } else {
-        std::unique_ptr<complex[]> stateVec(new complex[(bitCapIntOcl)maxQPower]);
-        engine->GetQuantumState(stateVec.get());
-        c->SwitchToEngine();
-        c->engine->SetQuantumState(stateVec.get());
+        // Clone and set engine directly.
+        c->engine = engine->Clone();
+        c->stabilizer =  NULL;
     }
 
     return c;
