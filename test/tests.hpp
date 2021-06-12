@@ -91,8 +91,8 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr
             maxProbIdx = i;
         }
         // if (prob != ZERO_R1) {
-        //    std::cout<<"(Perm "<<(int)i<<" "<<prob<<std::endl;
-        //}
+        //     std::cout<<"(Perm "<<(int)i<<" "<<prob<<std::endl;
+        // }
     }
 
     os << qftReg->GetQubitCount() << "/";
