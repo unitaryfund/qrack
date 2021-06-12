@@ -99,7 +99,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     } else {
         // Clone and set engine directly.
         c->engine = engine->Clone();
-        c->stabilizer =  NULL;
+        c->stabilizer = NULL;
     }
 
     return c;
