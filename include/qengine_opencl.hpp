@@ -156,7 +156,7 @@ protected:
     size_t maxWorkItems;
     size_t maxMem;
     size_t maxAlloc;
-    size_t nrmArrayAllocSize;
+    size_t totalOclAllocSize;
     unsigned int procElemCount;
     bool unlockHostMem;
     cl_int lockSyncFlags;
@@ -204,9 +204,7 @@ public:
             nrmArray = NULL;
         }
 
-        size_t sizeDiff = sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW) + nrmArrayAllocSize;
-        SubtractAlloc(sizeDiff);
-        nrmArrayAllocSize = 0;
+        SubtractAlloc(totalOclAllocSize);
     }
 
     virtual void ZeroAmplitudes()
@@ -413,8 +411,13 @@ protected:
             FreeAll();
             throw std::bad_alloc();
         }
+        totalOclAllocSize += size;
     }
-    virtual void SubtractAlloc(size_t size) { OCLEngine::Instance()->SubtractFromActiveAllocSize(size); }
+    virtual void SubtractAlloc(size_t size)
+    {
+        OCLEngine::Instance()->SubtractFromActiveAllocSize(size);
+        totalOclAllocSize -= size;
+    }
 
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 

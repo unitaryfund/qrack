@@ -76,7 +76,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     , wait_refs()
     , nrmArray(NULL)
     , nrmGroupSize(0)
-    , nrmArrayAllocSize(0)
+    , totalOclAllocSize(0)
     , unlockHostMem(false)
 {
     maxQPowerOcl = pow2Ocl(qubitCount);
@@ -503,7 +503,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     }
 #endif
 
-    nrmArrayAllocSize = (!nrmGroupSize || ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE))
+    size_t nrmArrayAllocSize = (!nrmGroupSize || ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE))
         ? QRACK_ALIGN_SIZE
         : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
 

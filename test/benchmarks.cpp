@@ -162,9 +162,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     isTrialSuccessful = true;
                 } catch (const std::exception& e) {
                     qftReg = NULL;
-#if ENABLE_OPENCL
-                    OCLEngine::Instance()->ResetActiveAllocSize();
-#endif
                     sampleFailureCount++;
                     isTrialSuccessful = false;
                 }
