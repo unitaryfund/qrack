@@ -914,6 +914,9 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 
     // Both shards are in the same unit.
     if (shard1.unit->isClifford()) {
+        RevertBasis1Qb(qubit1);
+        RevertBasis1Qb(qubit2);
+
         shard1.unit->CZ(shard1.mapped, shard2.mapped);
         isShard1Sep = shard1.unit->TrySeparate(shard1.mapped);
         isShard2Sep = shard2.unit->TrySeparate(shard2.mapped);
