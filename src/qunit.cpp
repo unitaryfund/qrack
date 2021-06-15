@@ -912,10 +912,26 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return false;
     }
 
+    real1_f prob1 = ProbBase(qubit1) - ONE_R1 / 2;
+    real1_f prob2 = ProbBase(qubit2) - ONE_R1 / 2;
+    if ((abs(prob1) > separabilityThreshold) || (abs(prob2) > separabilityThreshold)) {
+        // Not worth attempting further.
+        return false;
+    }
+    real1_f probL2I = (prob1 * prob1) + (prob2 * prob2);
+
+    bool isApproxSep = (separabilityThreshold > FP_NORM_EPSILON);
+    bool is2Qubit = (shard1.unit->GetQubitCount() == 2U) && !isApproxSep;
+    bool wasReactiveSeparate = isReactiveSeparate;
+    isReactiveSeparate = true;
+
+    // Try a maximally disentangling operation, in 3 bases.
+    RevertBasis1Qb(qubit1);
+    RevertBasis1Qb(qubit2);
+
     // Both shards are in the same unit.
     if (shard1.unit->isClifford()) {
-        RevertBasis1Qb(qubit1);
-        RevertBasis1Qb(qubit2);
+        isReactiveSeparate = wasReactiveSeparate;
 
         shard1.unit->CZ(shard1.mapped, shard2.mapped);
         isShard1Sep = shard1.unit->TrySeparate(shard1.mapped);
@@ -982,23 +998,6 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 
         return false;
     }
-
-    real1_f prob1 = ProbBase(qubit1) - ONE_R1 / 2;
-    real1_f prob2 = ProbBase(qubit2) - ONE_R1 / 2;
-    if ((abs(prob1) > separabilityThreshold) || (abs(prob2) > separabilityThreshold)) {
-        // Not worth attempting further.
-        return false;
-    }
-    real1_f probL2I = (prob1 * prob1) + (prob2 * prob2);
-
-    bool isApproxSep = (separabilityThreshold > FP_NORM_EPSILON);
-    bool is2Qubit = (shard1.unit->GetQubitCount() == 2U) && !isApproxSep;
-    bool wasReactiveSeparate = isReactiveSeparate;
-    isReactiveSeparate = true;
-
-    // Try a maximally disentangling operation, in 3 bases.
-    RevertBasis1Qb(qubit1);
-    RevertBasis1Qb(qubit2);
 
     // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
     freezeTrySeparate = true;
