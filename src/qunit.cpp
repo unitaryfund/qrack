@@ -1526,15 +1526,6 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     bool result;
     if (!shard.isProbDirty && !shard.unit) {
         result = doForce ? res : (Rand() <= norm(shard.amp1));
-    } else if (shard.unit->isClifford()) {
-        real1_f prob = shard.Prob();
-        if (prob == ZERO_R1) {
-            result = false;
-        } else if (prob == ONE_R1) {
-            result = true;
-        } else {
-            result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
-        }
     } else {
         result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
     }
@@ -3340,7 +3331,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         QEngineShard& shard = shards[controls[i]];
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         bool isEigenstate = false;
-        if (shard.unit && shard.unit->isClifford()) {
+        if (shard.unit && shard.unit->isClifford(shard.mapped)) {
             ProbBase(controls[i]);
         }
         if (!shard.isProbDirty) {
