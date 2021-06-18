@@ -704,8 +704,7 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
 
-    if (shard.unit->isClifford(shard.mapped) && !shard.unit->TrySeparate(shard.mapped) &&
-        (separabilityThreshold < (ONE_R1 / 2))) {
+    if (BLOCKED_SEPARATE(shard) && (separabilityThreshold < (ONE_R1 / 2))) {
         return false;
     }
 
@@ -2931,7 +2930,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             {}, { control });
 
         // This is not a Clifford gate, so we buffer for stabilizer:
-        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
             OptimizePairBuffers(control, target, false);
 
@@ -4874,7 +4873,8 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
             return;
         }
 
-        if (!cShard.isClifford() && !tShard.isClifford()) {
+        if ((!cShard.unit || !cShard.unit->isClifford(cShard.mapped)) &&
+            (!tShard.unit || !tShard.unit->isClifford(tShard.mapped))) {
             tShard.RemoveControl(&cShard);
             ApplyBuffer(buffer, control, target, anti);
             return;
