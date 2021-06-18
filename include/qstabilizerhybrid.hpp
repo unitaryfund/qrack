@@ -252,7 +252,7 @@ public:
     /// Apply a CNOT gate with control and target
     virtual void CNOT(bitLenInt control, bitLenInt target)
     {
-        if (shards[control] || shards[target]) {
+        if (shards[control] && !shards[target]) {
             real1_f prob = Prob(control);
             if (prob == ZERO_R1) {
                 return;
@@ -262,6 +262,10 @@ public:
                 return;
             }
 
+            FlushBuffers();
+        }
+
+        if (shards[target]) {
             FlushBuffers();
         }
 
@@ -454,7 +458,11 @@ public:
 
     virtual void CZ(bitLenInt control, bitLenInt target)
     {
-        if (shards[control] || shards[target]) {
+        if (shards[control] && shards[target]) {
+            FlushBuffers();
+        }
+
+        if (shards[control]) {
             real1_f prob = Prob(control);
             if (prob == ZERO_R1) {
                 return;
@@ -464,7 +472,11 @@ public:
                 return;
             }
 
-            prob = Prob(target);
+            FlushBuffers();
+        }
+
+        if (shards[target]) {
+            real1_f prob = Prob(target);
             if (prob == ZERO_R1) {
                 return;
             }
@@ -487,7 +499,7 @@ public:
 
     virtual void CY(bitLenInt control, bitLenInt target)
     {
-        if (shards[control] || shards[target]) {
+        if (shards[control] && !shards[target]) {
             real1_f prob = Prob(control);
             if (prob == ZERO_R1) {
                 return;
@@ -497,6 +509,10 @@ public:
                 return;
             }
 
+            FlushBuffers();
+        }
+
+        if (shards[target]) {
             FlushBuffers();
         }
 

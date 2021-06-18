@@ -4977,16 +4977,33 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers", "[supreme]")
     REQUIRE(crossEntropy > 0.97);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_1")
+{
+    qftReg->SetPermutation(7);
+
+    qftReg->H(0);
+    qftReg->T(0);
+    qftReg->T(0);
+    qftReg->CNOT(1, 0);
+    qftReg->CNOT(1, 0);
+    qftReg->IT(0);
+    qftReg->IT(0);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 7);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
-    bitLenInt bitRand = unusedBitsPtr->size() * qReg->Rand();
+    bitLenInt bitRand = qReg->Rand() * unusedBitsPtr->size();
     if (bitRand >= unusedBitsPtr->size()) {
-        bitRand = unusedBitsPtr->size() - 1;
+        bitRand = unusedBitsPtr->size() - 1U;
     }
     std::advance(bitIterator, bitRand);
+    bitLenInt bit = *bitIterator;
     unusedBitsPtr->erase(bitIterator);
-    return *bitIterator;
+    return bit;
 }
 
 struct MultiQubitGate {
