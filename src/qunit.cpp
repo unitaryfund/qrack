@@ -2076,11 +2076,13 @@ void QUnit::Z(bitLenInt target)
     if (shard.IsInvertTarget()) {
         RevertBasis1Qb(target);
         shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
-    } else {
-        if (UNSAFE_CACHED_ZERO(shard)) {
+    } else if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
+        if (SHARD_STATE(shard)) {
+            Flush1Eigenstate(target);
+        } else {
             Flush0Eigenstate(target);
-            return;
         }
+        return;
     }
 
     if (shard.isPauliX || shard.isPauliY) {
