@@ -717,7 +717,7 @@ public:
 
         return unit->Prob(mapped);
     }
-    bool isClifford() { return unit ? unit->isClifford(mapped) : true; };
+    bool isClifford() { return unit ? unit->isClifford(mapped) : false; };
 };
 
 class QEngineShardMap {
