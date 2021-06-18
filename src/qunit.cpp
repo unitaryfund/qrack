@@ -1063,6 +1063,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     isShard1Sep = TrySeparate(qubit1);
     if (!is2Qubit) {
         isShard2Sep = TrySeparate(qubit2);
+    }
+    if (!isApproxSep) {
         return isShard1Sep && isShard2Sep;
     }
     real1_f probL2Z = (prob1 * prob1) + (prob2 * prob2);
