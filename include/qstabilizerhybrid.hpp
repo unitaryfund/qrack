@@ -156,7 +156,7 @@ public:
         engineType = QINTERFACE_QPAGER;
 
         if (engine) {
-            QPagerPtr nEngine = std::dynamic_pointer_cast<QPager>(MakeEngine(0));
+            QPagerPtr nEngine = std::dynamic_pointer_cast<QPager>(MakeEngine());
             nEngine->LockEngine(std::dynamic_pointer_cast<QEngine>(engine));
             engine = nEngine;
         }
@@ -253,15 +253,6 @@ public:
     virtual void CNOT(bitLenInt control, bitLenInt target)
     {
         if (shards[control] || shards[target]) {
-            real1_f prob = Prob(control);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                X(target);
-                return;
-            }
-
             FlushBuffers();
         }
 
@@ -455,24 +446,6 @@ public:
     virtual void CZ(bitLenInt control, bitLenInt target)
     {
         if (shards[control] || shards[target]) {
-            real1_f prob = Prob(control);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                Z(target);
-                return;
-            }
-
-            prob = Prob(target);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                Z(control);
-                return;
-            }
-
             FlushBuffers();
         }
 
@@ -488,15 +461,6 @@ public:
     virtual void CY(bitLenInt control, bitLenInt target)
     {
         if (shards[control] || shards[target]) {
-            real1_f prob = Prob(control);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                Y(target);
-                return;
-            }
-
             FlushBuffers();
         }
 
