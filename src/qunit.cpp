@@ -55,7 +55,7 @@
 #define IS_SAME_UNIT(shard1, shard2) (shard1.unit && (shard1.unit == shard2.unit))
 #define ARE_CLIFFORD(shard1, shard2)                                                                                   \
     ((engine == QINTERFACE_STABILIZER_HYBRID) && (shard1.isClifford() || shard2.isClifford()))
-#define BLOCKED_SEPARATE(shard) (shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped))
+#define BLOCKED_SEPARATE(shard) (shard.isClifford() && !shard.unit->TrySeparate(shard.mapped))
 
 namespace Qrack {
 
@@ -3332,7 +3332,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         QEngineShard& shard = shards[controls[i]];
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         bool isEigenstate = false;
-        if (shard.unit && shard.unit->isClifford(shard.mapped)) {
+        if (shard.isClifford()) {
             ProbBase(controls[i]);
         }
         if (!shard.isProbDirty) {
@@ -3420,7 +3420,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb || (!isPhase && !isInvert)) {
         if (!freezeTrySeparate && unit->isClifford()) {
             for (i = 0; i < allBits.size(); i++) {
-                TrySeparate(allBits[i]);
+                if (shards[allBits[i]].isClifford()) {
+                    TrySeparate(allBits[i]);
+                }
             }
         }
         return;
@@ -4873,8 +4875,7 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
             return;
         }
 
-        if ((!cShard.unit || !cShard.unit->isClifford(cShard.mapped)) &&
-            (!tShard.unit || !tShard.unit->isClifford(tShard.mapped))) {
+        if (IS_SAME_UNIT(cShard, tShard) || (!isReactiveSeparate && ARE_CLIFFORD(cShard, tShard))) {
             tShard.RemoveControl(&cShard);
             ApplyBuffer(buffer, control, target, anti);
             return;
