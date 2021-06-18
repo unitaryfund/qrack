@@ -1247,7 +1247,7 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     QEngineShard& shard = shards[qubit];
 
     if (!shard.isProbDirty) {
-        if (shard.unit) {
+        if (shard.unit && !BLOCKED_SEPARATE(shard)) {
             if (IS_AMP_0(shard.amp1)) {
                 SeparateBit(false, qubit);
             } else if (IS_AMP_0(shard.amp0)) {
