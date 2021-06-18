@@ -455,11 +455,11 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (!wasCached && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
     }
-    if (!wasCached && IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
