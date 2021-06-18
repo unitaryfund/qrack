@@ -2526,7 +2526,8 @@ void QUnit::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::CZ(bitLenInt control, bitLenInt target)
 {
-    if (shards[control].isPauliX && !shards[target].isPauliX && !shards[target].isPauliY) {
+    if ((shards[control].isPauliX || shards[control].isPauliY) && !shards[target].isPauliX &&
+        !shards[target].isPauliY) {
         std::swap(control, target);
     }
 
@@ -2621,11 +2622,13 @@ void QUnit::CH(bitLenInt control, bitLenInt target)
 
 void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    if (shards[control1].isPauliX && !shards[target].isPauliX && !shards[target].isPauliY) {
+    if ((shards[control1].isPauliX || shards[control1].isPauliY) && !shards[target].isPauliX &&
+        !shards[target].isPauliY) {
         std::swap(control1, target);
     }
 
-    if (shards[control2].isPauliX && !shards[target].isPauliX && !shards[target].isPauliY) {
+    if ((shards[control2].isPauliX || shards[control2].isPauliY) && !shards[target].isPauliX &&
+        !shards[target].isPauliY) {
         std::swap(control2, target);
     }
 
