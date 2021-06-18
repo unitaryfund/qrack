@@ -113,33 +113,6 @@ void QStabilizerHybrid::SwitchToEngine()
 
     engine = MakeEngine();
     stabilizer->GetQuantumState(engine);
-    if (engineType != QINTERFACE_QUNIT) {
-        stabilizer.reset();
-        FlushBuffers();
-        return;
-    }
-
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (stabilizer->IsSeparableZ(i)) {
-            engine->SetBit(i, stabilizer->M(i));
-            continue;
-        }
-
-        stabilizer->H(i);
-        if (stabilizer->IsSeparableZ(i)) {
-            engine->SetBit(i, stabilizer->M(i));
-            engine->H(i);
-            continue;
-        }
-
-        stabilizer->S(i);
-        if (stabilizer->IsSeparableZ(i)) {
-            engine->SetBit(i, stabilizer->M(i));
-            engine->H(i);
-            engine->S(i);
-        }
-    }
-
     stabilizer.reset();
     FlushBuffers();
 }
@@ -987,7 +960,25 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
 
 bitCapInt QStabilizerHybrid::MAll()
 {
-    FlushBuffers();
+    if (stabilizer) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            QStabilizerShardPtr shard = shards[i];
+            if (shard) {
+                if (!shardsEigenZ[i]) {
+                    FlushBuffers();
+                    break;
+                } else if (shard->IsInvert()) {
+                    stabilizer->X(i);
+                    shards[i] = NULL;
+                } else if (shard->IsPhase()) {
+                    shards[i] = NULL;
+                } else {
+                    FlushBuffers();
+                    break;
+                }
+            }
+        }
+    }
 
     if (stabilizer) {
         bitCapIntOcl toRet = 0;

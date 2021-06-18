@@ -969,18 +969,21 @@ bool QStabilizer::ApproxCompare(QStabilizerPtr o)
     Finish();
     o->Finish();
 
-    if (r != o->r) {
-        return false;
-    }
+    bitLenInt rowCount = (qubitCount << 1U);
+    bitLenInt i, j;
 
-    bitLenInt rowCount = (qubitCount << 1U) + 1U;
-
-    for (bitLenInt i = 0; i < rowCount; i++) {
-        if (x[i] != o->x[i]) {
+    for (i = 0; i < rowCount; i++) {
+        if (r[i] != o->r[i]) {
             return false;
         }
-        if (z[i] != o->z[i]) {
-            return false;
+
+        for (j = 0; j < qubitCount; j++) {
+            if (x[i][j] != o->x[i][j]) {
+                return false;
+            }
+            if (z[i][j] != o->z[i][j]) {
+                return false;
+            }
         }
     }
 
