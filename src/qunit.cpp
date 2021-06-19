@@ -4744,6 +4744,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 {
     QEngineShard& shard = shards[bitIndex];
 
+    RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_TARGETS);
+
     if (!QUEUED_PHASE(shard)) {
         return;
     }
@@ -4752,7 +4754,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     ShardToPhaseMap::iterator phaseShard;
     QEngineShardPtr partner;
     PhaseShardPtr buffer;
-    bitLenInt control;
 
     ShardToPhaseMap controlsShards = shard.controlsShards;
 
@@ -4800,10 +4801,12 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
     RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, {}, {}, false, true);
 
+#if 0
     if (!QUEUED_PHASE(shard)) {
         return;
     }
 
+    bitLenInt control;
     bool isSame, isOpposite;
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
@@ -4855,6 +4858,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
     }
 
     shard.CommuteH();
+#endif
 }
 
 void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& target, const bool& anti)
