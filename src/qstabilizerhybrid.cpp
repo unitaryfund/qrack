@@ -405,20 +405,6 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
             }
             return;
         }
-
-        if (stabilizer) {
-            stabilizer->SetPermutation(0);
-        } else {
-            stabilizer = MakeStabilizer(0);
-        }
-
-        real1 sqrtProb = sqrt(norm(inputState[1]));
-        real1 sqrt1MinProb = sqrt(norm(inputState[0]));
-        complex probMatrix[4] = { sqrt1MinProb, sqrtProb, sqrtProb, -sqrt1MinProb };
-        ApplySingleBit(probMatrix, 0);
-        ApplySinglePhase(arg(inputState[0]), arg(inputState[1]), 0);
-
-        return;
     }
 
     SwitchToEngine();
