@@ -2225,7 +2225,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         (cShard.isPauliX && (tShard.isPauliX || tShard.isPauliY) && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
 
     if (!freezeBasis2Qb && !pmBasis) {
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(control, ONLY_INVERT);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -2283,7 +2283,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis2Qb) {
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(control, ONLY_INVERT);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -2418,7 +2418,7 @@ void QUnit::CY(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis2Qb) {
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(control, ONLY_INVERT);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -2454,7 +2454,7 @@ void QUnit::AntiCY(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis2Qb) {
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(control, ONLY_INVERT);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -2558,7 +2558,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis2Qb) {
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(control, ONLY_INVERT);
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -2594,7 +2594,7 @@ void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
     }
 
     if (!freezeBasis2Qb) {
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(control, ONLY_INVERT);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -2927,7 +2927,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
             return;
         }
 
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(control, ONLY_INVERT);
         RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI,
             {}, { control });
 
@@ -2999,7 +2999,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
             return;
         }
 
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(control, ONLY_INVERT);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -3071,7 +3071,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
             return;
         }
 
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(control, ONLY_INVERT);
         RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(bottomRight) ? ONLY_TARGETS : CONTROLS_AND_TARGETS,
             CTRL_AND_ANTI, {}, { control });
 
@@ -3141,7 +3141,7 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
             return;
         }
 
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(control, ONLY_INVERT);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
