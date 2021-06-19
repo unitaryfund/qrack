@@ -5496,7 +5496,6 @@ TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
     }
 }
 
-#if 0
 TEST_CASE("test_mirror_circuit", "[supreme]")
 {
     std::cout << ">>> 'test_mirror_circuit':" << std::endl;
@@ -5729,4 +5728,3 @@ TEST_CASE("test_mirror_circuit", "[supreme]")
         REQUIRE(result == randPerm);
     }
 }
-#endif
