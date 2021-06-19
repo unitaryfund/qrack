@@ -4977,7 +4977,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers", "[supreme]")
     REQUIRE(crossEntropy > 0.97);
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_1")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_1", "[mirror]")
 {
     qftReg->SetPermutation(7);
 
@@ -4993,7 +4993,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_1")
     REQUIRE(qftReg->MAll() == 7);
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_2")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_2", "[mirror]")
 {
     qftReg->SetPermutation(3);
 
@@ -5010,7 +5010,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_2")
 }
 
 // Broken on Travis
-// TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_3")
+// TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_3", "[mirror]")
 // {
 //     qftReg->SetReactiveSeparate(true);
 //     qftReg->SetPermutation(1);
@@ -5029,7 +5029,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_2")
 //     REQUIRE(qftReg->MAll() == 1);
 // }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_4")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_4", "[mirror]")
 {
     qftReg->SetReactiveSeparate(true);
     qftReg->SetPermutation(15);
@@ -5047,7 +5047,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_4")
 }
 
 // Broken with QUnit over QStabilizerHybrid
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_5")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_5", "[mirror]")
 {
     qftReg->SetPermutation(1);
 
@@ -5067,7 +5067,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_5")
     REQUIRE(qftReg->MAll() == 1);
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_6")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_6", "[mirror]")
 {
     qftReg->SetPermutation(4);
 
@@ -5496,7 +5496,7 @@ TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
     }
 }
 
-TEST_CASE("test_mirror_circuit", "[supreme]")
+TEST_CASE("test_mirror_circuit", "[mirror]")
 {
     std::cout << ">>> 'test_mirror_circuit':" << std::endl;
 
@@ -5505,7 +5505,7 @@ TEST_CASE("test_mirror_circuit", "[supreme]")
     const int Depth = 3;
 
     const int TRIALS = 100;
-    const int n = 6;
+    const int n = 8;
 
     int d;
     int i;
@@ -5515,7 +5515,7 @@ TEST_CASE("test_mirror_circuit", "[supreme]")
 
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, n, 0);
-        testCase->SetReactiveSeparate(true);
+        // testCase->SetReactiveSeparate(true);
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);

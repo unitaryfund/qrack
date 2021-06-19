@@ -3431,9 +3431,14 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 
     // TODO: Generalize this multi-qubit trimming sequence.
-    if (allBits.size() == 2U) {
-        TrySeparate(allBits[0]);
-        TrySeparate(allBits[1]);
+    if ((controlVec.size() == 1U) && (targets.size() == 1U)) {
+        TrySeparate(controlVec[0]);
+        TrySeparate(targets[0]);
+        return;
+    }
+    if ((controlVec.size() == 2U) && (targets.size() == 1U)) {
+        TrySeparate(controlVec[0], targets[0]);
+        TrySeparate(controlVec[1], targets[0]);
         return;
     }
 
