@@ -591,16 +591,16 @@ public:
         // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
-            if (norm(buffer->cmplxDiff - buffer->cmplxSame) < ONE_R1) {
+            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
                 if (buffer->isInvert) {
-                    buffer->cmplxSame = -buffer->cmplxDiff;
                     buffer->isInvert = false;
+                    buffer->cmplxSame *= -ONE_CMPLX;
                 }
-            } else {
+            } else if (IS_OPPOSITE(buffer->cmplxDiff, buffer->cmplxSame)) {
                 if (buffer->isInvert) {
                     std::swap(buffer->cmplxDiff, buffer->cmplxSame);
                 } else {
-                    buffer->cmplxSame = buffer->cmplxDiff;
+                    buffer->cmplxSame *= -ONE_CMPLX;
                     buffer->isInvert = true;
                 }
             }
@@ -610,17 +610,16 @@ public:
 
         for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
-            if (norm(buffer->cmplxDiff - buffer->cmplxSame) < ONE_R1) {
+            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
                 if (buffer->isInvert) {
-                    buffer->cmplxDiff = -buffer->cmplxSame;
                     buffer->isInvert = false;
-                } else {
+                    buffer->cmplxDiff *= -ONE_CMPLX;
                 }
-            } else {
+            } else if (IS_OPPOSITE(buffer->cmplxDiff, buffer->cmplxSame)) {
                 if (buffer->isInvert) {
                     std::swap(buffer->cmplxDiff, buffer->cmplxSame);
                 } else {
-                    buffer->cmplxDiff = buffer->cmplxSame;
+                    buffer->cmplxDiff *= -ONE_CMPLX;
                     buffer->isInvert = true;
                 }
             }
