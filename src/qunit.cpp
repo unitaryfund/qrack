@@ -712,6 +712,7 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
 
     bool didSeparate;
     bool willSeparate = false;
+    bool canHyperSeparate = (separabilityThreshold > FP_NORM_EPSILON);
 
     real1_f prob;
     real1_f probX = ZERO_R1;
@@ -730,7 +731,9 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
         }
 
         didSeparate = !shard.unit;
-        willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
+        if (canHyperSeparate) {
+            willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
+        }
 
         if (i >= 2) {
             continue;
@@ -756,7 +759,7 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
     probY = abs(probY);
 
     if (didSeparate || !willSeparate) {
-        if (isReactiveSeparate && (separabilityThreshold > FP_NORM_EPSILON)) {
+        if (isReactiveSeparate && canHyperSeparate) {
             // Convert back to the basis with the highest projection:
             if ((probZ >= probY) && (probZ >= probX)) {
                 RevertBasis1Qb(qubit);
@@ -2075,10 +2078,9 @@ void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    // TODO: Fix and restore CommutePhase().
-    RevertBasis2Qb(target, ONLY_INVERT);
-
-    if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
+    if (shard.IsInvertTarget()) {
+        shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
+    } else if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
         if (SHARD_STATE(shard)) {
             Flush1Eigenstate(target);
         } else {
@@ -2422,7 +2424,7 @@ void QUnit::CY(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
-            tShard.AddInversionAngles(&cShard, I_CMPLX, -I_CMPLX);
+            tShard.AddInversionAngles(&cShard, -I_CMPLX, I_CMPLX);
             OptimizePairBuffers(control, target, false);
 
             return;
@@ -2598,7 +2600,7 @@ void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
-            shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, -ONE_CMPLX);
+            shards[target].AddAntiInversionAngles(&(shards[control]), -ONE_CMPLX, ONE_CMPLX);
             OptimizePairBuffers(control, target, true);
 
             return;
@@ -2718,15 +2720,12 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     QEngineShard& shard = shards[target];
 
-    // TODO: Fix and restore CommutePhase().
-    RevertBasis2Qb(target, ONLY_INVERT);
-
-    if (IS_1_R1(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
+    if (shard.IsInvertTarget()) {
+        shard.CommutePhase(topLeft, bottomRight);
+    } else if (IS_1_R1(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
         Flush0Eigenstate(target);
         return;
-    }
-
-    if (IS_1_R1(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
+    } else if (IS_1_R1(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
         Flush1Eigenstate(target);
         return;
     }
@@ -2806,9 +2805,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 
     QEngineShard& shard = shards[target];
 
-    // TODO: Fix and restore CommutePhase().
-    RevertBasis2Qb(target, ONLY_INVERT);
-
+    shard.CommutePhase(bottomLeft, topRight);
     shard.FlipPhaseAnti();
 
     if (shard.isPauliX || shard.isPauliY) {
@@ -3003,7 +3000,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
-            tShard.AddInversionAngles(&cShard, bottomLeft, topRight);
+            tShard.AddInversionAngles(&cShard, topRight, bottomLeft);
             OptimizePairBuffers(control, target, false);
 
             return;

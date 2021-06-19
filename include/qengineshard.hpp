@@ -303,29 +303,29 @@ protected:
     }
 
 public:
-    void AddPhaseAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    void AddPhaseAngles(QEngineShardPtr control, const complex& topLeft, const complex& bottomRight)
     {
-        AddAngles(control, cmplxDiff, cmplxSame, &QEngineShard::MakePhaseControlledBy, targetOfShards,
+        AddAngles(control, topLeft, bottomRight, &QEngineShard::MakePhaseControlledBy, targetOfShards,
             &QEngineShard::RemoveControl);
     }
-    void AddAntiPhaseAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    void AddAntiPhaseAngles(QEngineShardPtr control, const complex& bottomRight, const complex& topLeft)
     {
-        AddAngles(control, cmplxDiff, cmplxSame, &QEngineShard::MakePhaseAntiControlledBy, antiTargetOfShards,
+        AddAngles(control, bottomRight, topLeft, &QEngineShard::MakePhaseAntiControlledBy, antiTargetOfShards,
             &QEngineShard::RemoveAntiControl);
     }
-    void AddInversionAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    void AddInversionAngles(QEngineShardPtr control, const complex& topRight, const complex& bottomLeft)
     {
         MakePhaseControlledBy(control);
         targetOfShards[control]->isInvert = !targetOfShards[control]->isInvert;
         std::swap(targetOfShards[control]->cmplxDiff, targetOfShards[control]->cmplxSame);
-        AddPhaseAngles(control, cmplxDiff, cmplxSame);
+        AddPhaseAngles(control, topRight, bottomLeft);
     }
-    void AddAntiInversionAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    void AddAntiInversionAngles(QEngineShardPtr control, const complex& bottomLeft, const complex& topRight)
     {
         MakePhaseAntiControlledBy(control);
         antiTargetOfShards[control]->isInvert = !antiTargetOfShards[control]->isInvert;
         std::swap(antiTargetOfShards[control]->cmplxDiff, antiTargetOfShards[control]->cmplxSame);
-        AddAntiPhaseAngles(control, cmplxDiff, cmplxSame);
+        AddAntiPhaseAngles(control, bottomLeft, topRight);
     }
 
 protected:
