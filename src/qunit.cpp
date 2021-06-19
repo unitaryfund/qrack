@@ -2075,6 +2075,11 @@ void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
+    // TODO: Suspicious:
+    if (engine == QINTERFACE_STABILIZER_HYBRID) {
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
+    }
+
     if (shard.IsInvertTarget()) {
         RevertBasis1Qb(target);
         shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
@@ -2718,6 +2723,11 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     QEngineShard& shard = shards[target];
 
+    // TODO: Suspicious:
+    if (engine == QINTERFACE_STABILIZER_HYBRID) {
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
+    }
+
     if (shard.IsInvertTarget()) {
         RevertBasis1Qb(target);
         shard.CommutePhase(topLeft, bottomRight);
@@ -2807,6 +2817,11 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
     }
 
     QEngineShard& shard = shards[target];
+
+    // TODO: Suspicious:
+    if (engine == QINTERFACE_STABILIZER_HYBRID) {
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
+    }
 
     if (shard.IsInvertTarget()) {
         RevertBasis1Qb(target);
