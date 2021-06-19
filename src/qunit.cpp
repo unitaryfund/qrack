@@ -2992,7 +2992,6 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
                 Flush0Eigenstate(control);
             }
 
-            delete[] controls;
             return;
         }
 
@@ -3134,7 +3133,6 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
                 ApplySingleInvert(topRight, bottomLeft, target);
             }
 
-            delete[] controls;
             return;
         }
 
