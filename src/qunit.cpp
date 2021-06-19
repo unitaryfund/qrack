@@ -1989,7 +1989,11 @@ void QUnit::H(bitLenInt target)
 
     if (!freezeBasisH) {
         RevertBasisY(target);
-        CommuteH(target);
+
+        RevertBasis2Qb(target);
+        // TODO: Fix CommuteH, and remove the line above.
+        // CommuteH(target);
+
         shard.isPauliX = !shard.isPauliX;
         return;
     }
