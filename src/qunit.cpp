@@ -2078,9 +2078,9 @@ void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    if (shard.IsInvertTarget()) {
-        shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
-    } else if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
+    shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
+
+    if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
         if (SHARD_STATE(shard)) {
             Flush1Eigenstate(target);
         } else {
@@ -2720,9 +2720,9 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     QEngineShard& shard = shards[target];
 
-    if (shard.IsInvertTarget()) {
-        shard.CommutePhase(topLeft, bottomRight);
-    } else if (IS_1_R1(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
+    shard.CommutePhase(topLeft, bottomRight);
+
+    if (IS_1_R1(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
         Flush0Eigenstate(target);
         return;
     } else if (IS_1_R1(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
