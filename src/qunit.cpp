@@ -2075,15 +2075,10 @@ void QUnit::Z(bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
-    // TODO: Suspicious:
-    if (engine == QINTERFACE_STABILIZER_HYBRID) {
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
-    }
+    // TODO: Fix and restore CommutePhase().
+    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
 
-    if (shard.IsInvertTarget()) {
-        RevertBasis1Qb(target);
-        shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
-    } else if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
+    if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
         if (SHARD_STATE(shard)) {
             Flush1Eigenstate(target);
         } else {
@@ -2723,24 +2718,17 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     QEngineShard& shard = shards[target];
 
-    // TODO: Suspicious:
-    if (engine == QINTERFACE_STABILIZER_HYBRID) {
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
+    // TODO: Fix and restore CommutePhase().
+    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
+
+    if (IS_1_R1(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
+        Flush0Eigenstate(target);
+        return;
     }
 
-    if (shard.IsInvertTarget()) {
-        RevertBasis1Qb(target);
-        shard.CommutePhase(topLeft, bottomRight);
-    } else {
-        if (IS_1_R1(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
-            Flush0Eigenstate(target);
-            return;
-        }
-
-        if (IS_1_R1(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
-            Flush1Eigenstate(target);
-            return;
-        }
+    if (IS_1_R1(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
+        Flush1Eigenstate(target);
+        return;
     }
 
     if (!shard.isPauliX && !shard.isPauliY) {
@@ -2818,15 +2806,8 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
 
     QEngineShard& shard = shards[target];
 
-    // TODO: Suspicious:
-    if (engine == QINTERFACE_STABILIZER_HYBRID) {
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
-    }
-
-    if (shard.IsInvertTarget()) {
-        RevertBasis1Qb(target);
-        shard.CommutePhase(bottomLeft, topRight);
-    }
+    // TODO: Fix and restore CommutePhase().
+    RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS);
 
     shard.FlipPhaseAnti();
 
