@@ -515,6 +515,32 @@ public:
         }
     }
 
+    void CommutePhase(const complex& topLeft, const complex& bottomRight)
+    {
+        ShardToPhaseMap::iterator phaseShard;
+        PhaseShardPtr buffer;
+
+        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            if (!buffer->isInvert) {
+                return;
+            }
+
+            buffer->cmplxDiff *= topLeft / bottomRight;
+            buffer->cmplxSame *= bottomRight / topLeft;
+        }
+
+        for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
+            buffer = phaseShard->second;
+            if (!buffer->isInvert) {
+                return;
+            }
+
+            buffer->cmplxDiff *= bottomRight / topLeft;
+            buffer->cmplxSame *= topLeft / bottomRight;
+        }
+    }
+
 protected:
     void RemoveIdentityBuffers(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet)
     {
