@@ -5009,27 +5009,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_2", "[mirror]")
     REQUIRE(qftReg->MAll() == 3);
 }
 
-// Broken on Travis
-// TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_3", "[mirror]")
-// {
-//     qftReg->SetReactiveSeparate(true);
-//     qftReg->SetPermutation(1);
-//
-//     qftReg->H(1);
-//     qftReg->CNOT(1, 0);
-//     qftReg->H(0);
-//     qftReg->H(2);
-//     qftReg->CCNOT(2, 0, 1);
-//     qftReg->CCNOT(2, 0, 1);
-//     qftReg->H(2);
-//     qftReg->H(0);
-//     qftReg->CNOT(1, 0);
-//     qftReg->H(1);
-//
-//     REQUIRE(qftReg->MAll() == 1);
-// }
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_4", "[mirror]")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_3", "[mirror]")
 {
     qftReg->SetReactiveSeparate(true);
     qftReg->SetPermutation(15);
@@ -5047,7 +5027,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_4", "[mirror]")
 }
 
 // Broken with QUnit over QStabilizerHybrid
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_5", "[mirror]")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_4", "[mirror]")
 {
     qftReg->SetPermutation(1);
 
@@ -5067,7 +5047,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_5", "[mirror]")
     REQUIRE(qftReg->MAll() == 1);
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_6", "[mirror]")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_5", "[mirror]")
 {
     qftReg->SetPermutation(4);
 
@@ -5496,7 +5476,6 @@ TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
     }
 }
 
-#if 0
 TEST_CASE("test_mirror_circuit", "[mirror]")
 {
     std::cout << ">>> 'test_mirror_circuit':" << std::endl;
@@ -5729,4 +5708,3 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
         REQUIRE(result == randPerm);
     }
 }
-#endif
