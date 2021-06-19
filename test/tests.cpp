@@ -5505,7 +5505,7 @@ TEST_CASE("test_mirror_circuit", "[supreme]")
     const int Depth = 3;
 
     const int TRIALS = 100;
-    const int n = 10;
+    const int n = 6;
 
     int d;
     int i;
