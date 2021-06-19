@@ -405,6 +405,21 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
             }
             return;
         }
+
+        if (stabilizer) {
+            stabilizer->SetPermutation(0);
+        } else {
+            stabilizer = MakeStabilizer(0);
+        }
+
+        real1 sqrtProb = abs(inputState[1]);
+        real1 sqrt1MinProb = abs(inputState[0]);
+        complex probMatrix[4] = { sqrt1MinProb, sqrtProb, sqrtProb, -sqrt1MinProb };
+        complex phaseMatrix[4] = { inputState[0] / sqrt1MinProb, ZERO_CMPLX, ZERO_CMPLX, inputState[1] / sqrtProb };
+        shards[0] = std::make_shared<QStabilizerShard>(probMatrix);
+        shards[0]->Compose(phaseMatrix);
+
+        return;
     }
 
     SwitchToEngine();
