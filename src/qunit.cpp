@@ -1587,8 +1587,11 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 
 bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
-    if (!doForce && doApply && (length == qubitCount) && (engine == QINTERFACE_STABILIZER_HYBRID)) {
-        return MAll();
+    if (!doForce && doApply && (length == qubitCount)) {
+        bitCapInt toRet = QInterface::ForceMReg(start, length, result, doForce, doApply);
+        SetPermutation(toRet);
+
+        return toRet;
     }
 
     // This will discard all buffered gates that don't affect Z basis probability,
@@ -1598,69 +1601,6 @@ bitCapInt QUnit::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, 
     }
 
     return QInterface::ForceMReg(start, length, result, doForce, doApply);
-}
-
-bitCapInt QUnit::MAll()
-{
-    if (engine != QINTERFACE_STABILIZER_HYBRID) {
-        return MReg(0, qubitCount);
-    }
-
-    bitLenInt i;
-    for (i = 0; i < qubitCount; i++) {
-        RevertBasis1Qb(i);
-    }
-    for (i = 0; i < qubitCount; i++) {
-        QEngineShard& shard = shards[i];
-        shard.ClearInvertPhase();
-        shard.DumpPhaseBuffers();
-    }
-    for (i = 0; i < qubitCount; i++) {
-        if (shards[i].IsInvertControl()) {
-            // Measurement commutes with control
-            M(i);
-        }
-    }
-
-    std::vector<bitCapInt> partResults;
-    bitCapInt toRet = 0;
-
-    std::vector<QInterfacePtr> units;
-    for (i = 0; i < qubitCount; i++) {
-        QInterfacePtr toFind = shards[i].unit;
-        if (!toFind) {
-            real1_f prob = norm(shards[i].amp1);
-            if ((prob >= ONE_R1) || ((prob > ZERO_R1) && (Rand() <= prob))) {
-                shards[i].amp0 = ZERO_CMPLX;
-                shards[i].amp1 = GetNonunitaryPhase();
-                toRet |= pow2(i);
-            } else {
-                shards[i].amp0 = GetNonunitaryPhase();
-                shards[i].amp1 = ZERO_CMPLX;
-            }
-        } else if (!(toFind->isClifford())) {
-            if (M(i)) {
-                toRet |= pow2(i);
-            }
-        } else if (find(units.begin(), units.end(), toFind) == units.end()) {
-            units.push_back(toFind);
-            partResults.push_back(toFind->MAll());
-        }
-    }
-
-    for (i = 0; i < qubitCount; i++) {
-        if (!shards[i].unit) {
-            continue;
-        }
-        bitLenInt offset = find(units.begin(), units.end(), shards[i].unit) - units.begin();
-        if (offset < partResults.size()) {
-            toRet |= ((partResults[offset] >> shards[i].mapped) & 1U) << i;
-        }
-    }
-
-    SetPermutation(toRet);
-
-    return toRet;
 }
 
 /// Set register bits to given permutation
