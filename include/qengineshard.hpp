@@ -303,29 +303,29 @@ protected:
     }
 
 public:
-    void AddPhaseAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    void AddPhaseAngles(QEngineShardPtr control, const complex& topLeft, const complex& bottomRight)
     {
-        AddAngles(control, cmplxDiff, cmplxSame, &QEngineShard::MakePhaseControlledBy, targetOfShards,
+        AddAngles(control, topLeft, bottomRight, &QEngineShard::MakePhaseControlledBy, targetOfShards,
             &QEngineShard::RemoveControl);
     }
-    void AddAntiPhaseAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    void AddAntiPhaseAngles(QEngineShardPtr control, const complex& bottomRight, const complex& topLeft)
     {
-        AddAngles(control, cmplxDiff, cmplxSame, &QEngineShard::MakePhaseAntiControlledBy, antiTargetOfShards,
+        AddAngles(control, bottomRight, topLeft, &QEngineShard::MakePhaseAntiControlledBy, antiTargetOfShards,
             &QEngineShard::RemoveAntiControl);
     }
-    void AddInversionAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    void AddInversionAngles(QEngineShardPtr control, const complex& topRight, const complex& bottomLeft)
     {
         MakePhaseControlledBy(control);
         targetOfShards[control]->isInvert = !targetOfShards[control]->isInvert;
         std::swap(targetOfShards[control]->cmplxDiff, targetOfShards[control]->cmplxSame);
-        AddPhaseAngles(control, cmplxDiff, cmplxSame);
+        AddPhaseAngles(control, topRight, bottomLeft);
     }
-    void AddAntiInversionAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    void AddAntiInversionAngles(QEngineShardPtr control, const complex& bottomLeft, const complex& topRight)
     {
         MakePhaseAntiControlledBy(control);
         antiTargetOfShards[control]->isInvert = !antiTargetOfShards[control]->isInvert;
         std::swap(antiTargetOfShards[control]->cmplxDiff, antiTargetOfShards[control]->cmplxSame);
-        AddAntiPhaseAngles(control, cmplxDiff, cmplxSame);
+        AddAntiPhaseAngles(control, bottomLeft, topRight);
     }
 
 protected:
@@ -591,16 +591,16 @@ public:
         // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
-            if (norm(buffer->cmplxDiff - buffer->cmplxSame) < ONE_R1) {
+            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
                 if (buffer->isInvert) {
-                    buffer->cmplxSame = -buffer->cmplxDiff;
                     buffer->isInvert = false;
+                    buffer->cmplxSame *= -ONE_CMPLX;
                 }
-            } else {
+            } else if (IS_OPPOSITE(buffer->cmplxDiff, buffer->cmplxSame)) {
                 if (buffer->isInvert) {
                     std::swap(buffer->cmplxDiff, buffer->cmplxSame);
                 } else {
-                    buffer->cmplxSame = buffer->cmplxDiff;
+                    buffer->cmplxSame *= -ONE_CMPLX;
                     buffer->isInvert = true;
                 }
             }
@@ -610,17 +610,16 @@ public:
 
         for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
-            if (norm(buffer->cmplxDiff - buffer->cmplxSame) < ONE_R1) {
+            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
                 if (buffer->isInvert) {
-                    buffer->cmplxDiff = -buffer->cmplxSame;
                     buffer->isInvert = false;
-                } else {
+                    buffer->cmplxDiff *= -ONE_CMPLX;
                 }
-            } else {
+            } else if (IS_OPPOSITE(buffer->cmplxDiff, buffer->cmplxSame)) {
                 if (buffer->isInvert) {
                     std::swap(buffer->cmplxDiff, buffer->cmplxSame);
                 } else {
-                    buffer->cmplxDiff = buffer->cmplxSame;
+                    buffer->cmplxDiff *= -ONE_CMPLX;
                     buffer->isInvert = true;
                 }
             }
@@ -717,7 +716,7 @@ public:
 
         return unit->Prob(mapped);
     }
-    bool isClifford() { return unit ? unit->isClifford(mapped) : true; };
+    bool isClifford() { return unit && unit->isClifford(mapped); };
 };
 
 class QEngineShardMap {

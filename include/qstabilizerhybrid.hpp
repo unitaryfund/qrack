@@ -156,7 +156,7 @@ public:
         engineType = QINTERFACE_QPAGER;
 
         if (engine) {
-            QPagerPtr nEngine = std::dynamic_pointer_cast<QPager>(MakeEngine(0));
+            QPagerPtr nEngine = std::dynamic_pointer_cast<QPager>(MakeEngine());
             nEngine->LockEngine(std::dynamic_pointer_cast<QEngine>(engine));
             engine = nEngine;
         }
@@ -454,7 +454,11 @@ public:
 
     virtual void CZ(bitLenInt control, bitLenInt target)
     {
-        if (shards[control] || shards[target]) {
+        if (shards[control] && shards[target]) {
+            FlushBuffers();
+        }
+
+        if (shards[control]) {
             real1_f prob = Prob(control);
             if (prob == ZERO_R1) {
                 return;
@@ -464,7 +468,11 @@ public:
                 return;
             }
 
-            prob = Prob(target);
+            FlushBuffers();
+        }
+
+        if (shards[target]) {
+            real1_f prob = Prob(target);
             if (prob == ZERO_R1) {
                 return;
             }
@@ -515,9 +523,7 @@ public:
             return;
         }
 
-        if (shards[qubit1] || shards[qubit2]) {
-            FlushBuffers();
-        }
+        std::swap(shards[qubit1], shards[qubit2]);
 
         if (stabilizer) {
             stabilizer->Swap(qubit1, qubit2);
@@ -1116,7 +1122,7 @@ public:
                 Swap(q[0] + i, q[i]);
             }
 
-            bool toRet = stabilizer->CanDecomposeDispose(0, length);
+            bool toRet = stabilizer->CanDecomposeDispose(q[0], length);
 
             for (bitLenInt i = 1; i < length; i++) {
                 Swap(q[0] + i, q[i]);

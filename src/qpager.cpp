@@ -447,13 +447,16 @@ bitLenInt QPager::Compose(QPagerPtr toCopy)
     bitLenInt tcqpp = toCopy->qubitsPerPage();
 
     if ((qpp + tcqpp) > maxPageQubits) {
-        tcqpp = (tcqpp < (maxPageQubits - qpp)) ? maxPageQubits - qpp : 1U;
+        tcqpp = (maxPageQubits <= qpp) ? 1U : (maxPageQubits - qpp);
         toCopy->SeparateEngines(tcqpp, true);
     }
 
     if ((qpp + tcqpp) > maxPageQubits) {
-        SeparateEngines((tcqpp < qpp) ? (qpp - tcqpp) : 1U, true);
+        qpp = (maxPageQubits <= tcqpp) ? 1U : (maxPageQubits - tcqpp);
+        SeparateEngines(qpp, true);
     }
+
+    bitLenInt pqc = pagedQubitCount();
 
     bitCapIntOcl i, j;
     bitCapIntOcl maxJ = ((bitCapIntOcl)toCopy->qPages.size() - 1U);
@@ -474,6 +477,8 @@ bitLenInt QPager::Compose(QPagerPtr toCopy)
     bitLenInt toRet = qubitCount;
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
+    ROL(pqc, qpp, qubitCount - qpp);
+
     return toRet;
 }
 
@@ -488,26 +493,31 @@ bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
             "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
     }
 
-    toCopy->CombineEngines();
-
     bitLenInt qpp = qubitsPerPage();
-    if ((qpp + toCopy->qubitCount) > maxPageQubits) {
-        SeparateEngines((toCopy->qubitCount < qpp) ? (qpp - toCopy->qubitCount) : 1U, true);
+    bitLenInt tcqpp = toCopy->qubitsPerPage();
+
+    if ((qpp + tcqpp) > maxPageQubits) {
+        tcqpp = (maxPageQubits <= qpp) ? 1U : (maxPageQubits - qpp);
+        toCopy->SeparateEngines(tcqpp, true);
     }
 
-    bitLenInt inPage = qubitCount - start;
+    // TODO: Avoid CombineEngines();
+    CombineEngines();
 
-    if (start <= inPage) {
-        CombineEngines(start);
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->Compose(toCopy->qPages[0], start);
-        }
-    } else {
-        CombineEngines(inPage);
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->Compose(toCopy->qPages[0], qPages[i]->GetQubitCount() - inPage);
-        }
+    bitCapIntOcl i;
+    bitCapIntOcl maxI = ((bitCapIntOcl)toCopy->qPages.size() - 1U);
+    std::vector<QEnginePtr> nQPages;
+
+    QEnginePtr engine = qPages[0];
+    for (i = 0; i < maxI; i++) {
+        nQPages.push_back(std::dynamic_pointer_cast<QEngine>(engine->Clone()));
+        nQPages.back()->Compose(toCopy->qPages[i]);
     }
+    nQPages.push_back(engine);
+    nQPages.back()->Compose(toCopy->qPages[maxI]);
+
+    qPages = nQPages;
+
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
     return start;
@@ -515,49 +525,11 @@ bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
 
 void QPager::Decompose(bitLenInt start, QPagerPtr dest)
 {
+    // TODO: Avoid CombineEngines().
+    CombineEngines();
     dest->CombineEngines();
-
-    bitLenInt inPage = qubitCount - (start + dest->qubitCount);
-    bool didDecompose = false;
-
-    if (start <= inPage) {
-        if (start == 0) {
-            CombineEngines(start + dest->qubitCount + 1U);
-        } else {
-            CombineEngines(start + dest->qubitCount);
-        }
-        // To be clear, under the assumption of perfect decomposibility, all further pages should produce the exact same
-        // "dest" as the line above, hence we can take just the first nonzero one and "Dispose" the rest. (This might
-        // pose a problem or limitation for "approximate separability.")
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            if (!didDecompose && !qPages[i]->IsZeroAmplitude()) {
-                qPages[i]->Decompose(start, dest->qPages[0]);
-                didDecompose = true;
-            } else {
-                qPages[i]->Dispose(start, dest->qubitCount);
-            }
-        }
-    } else {
-        if ((qPages[0]->GetQubitCount() - (inPage + dest->qubitCount)) == 0) {
-            CombineEngines(inPage + dest->qubitCount + 1U);
-        } else {
-            CombineEngines(inPage + dest->qubitCount);
-        }
-        // (Same as above)
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qubitCount);
-            if (!didDecompose && !qPages[i]->IsZeroAmplitude()) {
-                qPages[i]->Decompose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qPages[0]);
-                didDecompose = true;
-            } else {
-                qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + dest->qubitCount), dest->qubitCount);
-            }
-        }
-    }
-
+    qPages[0]->Decompose(start, dest->qPages[0]);
     SetQubitCount(qubitCount - dest->qubitCount);
-
-    CombineEngines(baseQubitsPerPage);
 }
 
 void QPager::Dispose(bitLenInt start, bitLenInt length)
@@ -1367,7 +1339,7 @@ real1_f QPager::Prob(bitLenInt qubit)
         bitCapIntOcl j;
         for (i = 0; i < fSize; i++) {
             j = i & qMask;
-            j |= qPower | ((i ^ j) << ONE_BCI);
+            j |= ((i ^ j) << ONE_BCI) | qPower;
 
             QEnginePtr engine = qPages[j];
             futures.push_back(std::async(std::launch::async, [engine]() {

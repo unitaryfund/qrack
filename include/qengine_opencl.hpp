@@ -42,6 +42,7 @@ struct QueueItem {
     OCLAPI api_call;
     size_t workItemCount;
     size_t localGroupSize;
+    size_t deallocSize;
     std::vector<BufferPtr> buffers;
     size_t localBuffSize;
     bool isSetDoNorm;
@@ -49,10 +50,11 @@ struct QueueItem {
     bool doNorm;
     real1 runningNorm;
 
-    QueueItem(OCLAPI ac, size_t wic, size_t lgs, std::vector<BufferPtr> b, size_t lbs)
+    QueueItem(OCLAPI ac, size_t wic, size_t lgs, size_t ds, std::vector<BufferPtr> b, size_t lbs)
         : api_call(ac)
         , workItemCount(wic)
         , localGroupSize(lgs)
+        , deallocSize(ds)
         , buffers(b)
         , localBuffSize(lbs)
         , isSetDoNorm(false)
@@ -66,6 +68,7 @@ struct QueueItem {
         : api_call()
         , workItemCount(0)
         , localGroupSize(0)
+        , deallocSize(0)
         , buffers()
         , localBuffSize(0)
         , isSetDoNorm(true)
@@ -79,6 +82,7 @@ struct QueueItem {
         : api_call()
         , workItemCount(0)
         , localGroupSize(0)
+        , deallocSize(0)
         , buffers()
         , localBuffSize(0)
         , isSetDoNorm(false)
@@ -152,6 +156,7 @@ protected:
     size_t maxWorkItems;
     size_t maxMem;
     size_t maxAlloc;
+    size_t totalOclAllocSize;
     unsigned int procElemCount;
     bool unlockHostMem;
     cl_int lockSyncFlags;
@@ -187,16 +192,19 @@ public:
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored2 = {}, bitLenInt ignored4 = 0,
         real1_f ignored3 = FP_NORM_EPSILON);
 
-    virtual ~QEngineOCL()
+    virtual ~QEngineOCL() { FreeAll(); }
+
+    virtual void FreeAll()
     {
         ZeroAmplitudes();
 
-        size_t sizeDiff = sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW);
-        sizeDiff += ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE)
-            ? QRACK_ALIGN_SIZE
-            : (sizeof(real1) * nrmGroupCount / nrmGroupSize);
+        powersBuffer = NULL;
+        if (nrmArray) {
+            FreeAligned(nrmArray);
+            nrmArray = NULL;
+        }
 
-        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeDiff);
+        SubtractAlloc(totalOclAllocSize);
     }
 
     virtual void ZeroAmplitudes()
@@ -211,7 +219,7 @@ public:
         ResetStateBuffer(NULL);
         FreeStateVec();
 
-        OCLEngine::Instance()->SubtractFromActiveAllocSize(sizeof(complex) * maxQPower);
+        SubtractAlloc(sizeof(complex) * maxQPower);
     }
 
     virtual void SetQubitCount(bitLenInt qb)
@@ -284,9 +292,9 @@ public:
         }
     }
     virtual void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
-        size_t localBuffSize = 0)
+        size_t localBuffSize = 0, size_t deallocSize = 0)
     {
-        AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, args, localBuffSize));
+        AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize, args, localBuffSize));
     }
 
     bitCapIntOcl GetMaxSize() { return maxAlloc / sizeof(complex); };
@@ -395,6 +403,22 @@ public:
     void DispatchQueue(cl_event event, cl_int type);
 
 protected:
+    virtual void AddAlloc(size_t size)
+    {
+        size_t currentAlloc = OCLEngine::Instance()->AddToActiveAllocSize(size);
+        if (currentAlloc > OCLEngine::Instance()->GetMaxActiveAllocSize()) {
+            OCLEngine::Instance()->SubtractFromActiveAllocSize(size);
+            FreeAll();
+            throw std::bad_alloc();
+        }
+        totalOclAllocSize += size;
+    }
+    virtual void SubtractAlloc(size_t size)
+    {
+        OCLEngine::Instance()->SubtractFromActiveAllocSize(size);
+        totalOclAllocSize -= size;
+    }
+
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
