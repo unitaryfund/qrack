@@ -982,37 +982,13 @@ public:
             if (shard->IsInvert()) {
                 isCachedInvert = true;
             } else if (!shard->IsPhase()) {
-                if (stabilizer->IsSeparableZ(qubitIndex)) {
+                // Bit was already rotated to Z basis.
+                if (shardsEigenZ[qubitIndex]) {
                     if (stabilizer->M(qubitIndex)) {
                         return norm(shard->gate[2]);
                     }
                     return norm(shard->gate[3]);
                 }
-
-                stabilizer->H(qubitIndex);
-                if (stabilizer->IsSeparableZ(qubitIndex)) {
-                    if (stabilizer->M(qubitIndex)) {
-                        stabilizer->H(qubitIndex);
-                        return norm(SQRT1_2_R1 * (shard->gate[2] - shard->gate[3]));
-                    }
-                    stabilizer->H(qubitIndex);
-                    return norm(SQRT1_2_R1 * (shard->gate[0] + shard->gate[1]));
-                }
-
-                stabilizer->S(qubitIndex);
-                if (stabilizer->IsSeparableZ(qubitIndex)) {
-                    if (stabilizer->M(qubitIndex)) {
-                        stabilizer->IS(qubitIndex);
-                        stabilizer->H(qubitIndex);
-                        return norm(SQRT1_2_R1 * (shard->gate[2] - I_CMPLX * shard->gate[3]));
-                    }
-                    stabilizer->IS(qubitIndex);
-                    stabilizer->H(qubitIndex);
-                    return norm(SQRT1_2_R1 * (shard->gate[0] + I_CMPLX * shard->gate[1]));
-                }
-
-                stabilizer->IS(qubitIndex);
-                stabilizer->H(qubitIndex);
 
                 // Otherwise, state is entangled and locally appears maximally mixed.
                 return ONE_R1 / 2;
