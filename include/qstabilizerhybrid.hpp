@@ -973,10 +973,43 @@ public:
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
         bool isCachedInvert = false;
-        if (shards[qubitIndex]) {
-            if (shards[qubitIndex]->IsInvert()) {
+        QStabilizerShardPtr shard = shards[qubitIndex];
+        if (shard) {
+            if (shard->IsInvert()) {
                 isCachedInvert = true;
-            } else if (!shards[qubitIndex]->IsPhase()) {
+            } else if (!shard->IsPhase()) {
+                if (stabilizer->IsSeparableZ(qubitIndex)) {
+                    if (stabilizer->M(qubitIndex)) {
+                        return norm(shard->gate[2]);
+                    }
+                    return norm(shard->gate[3]);
+                }
+
+                stabilizer->H(qubitIndex);
+                if (stabilizer->IsSeparableZ(qubitIndex)) {
+                    if (stabilizer->M(qubitIndex)) {
+                        stabilizer->H(qubitIndex);
+                        return norm(SQRT1_2_R1 * (shard->gate[2] - shard->gate[3]));
+                    }
+                    stabilizer->H(qubitIndex);
+                    return norm(SQRT1_2_R1 * (shard->gate[2] + shard->gate[3]));
+                }
+
+                stabilizer->S(qubitIndex);
+                if (stabilizer->IsSeparableZ(qubitIndex)) {
+                    if (stabilizer->M(qubitIndex)) {
+                        stabilizer->IS(qubitIndex);
+                        stabilizer->H(qubitIndex);
+                        return norm(SQRT1_2_R1 * (shard->gate[2] - I_CMPLX * shard->gate[3]));
+                    }
+                    stabilizer->IS(qubitIndex);
+                    stabilizer->H(qubitIndex);
+                    return norm(SQRT1_2_R1 * (shard->gate[2] + I_CMPLX * shard->gate[3]));
+                }
+
+                stabilizer->IS(qubitIndex);
+                stabilizer->H(qubitIndex);
+
                 FlushBuffers();
             }
         }
@@ -988,9 +1021,9 @@ public:
 
         if (stabilizer->IsSeparableZ(qubitIndex)) {
             return (isCachedInvert != stabilizer->M(qubitIndex)) ? ONE_R1 : ZERO_R1;
-        } else {
-            return ONE_R1 / 2;
         }
+
+        return ONE_R1 / 2;
     }
 
     virtual real1_f ProbAll(bitCapInt fullRegister)
