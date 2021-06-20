@@ -972,6 +972,10 @@ public:
 
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
+        if (engine) {
+            return clampProb(engine->Prob(qubitIndex));
+        }
+
         bool isCachedInvert = false;
         QStabilizerShardPtr shard = shards[qubitIndex];
         if (shard) {
@@ -992,7 +996,7 @@ public:
                         return norm(SQRT1_2_R1 * (shard->gate[2] - shard->gate[3]));
                     }
                     stabilizer->H(qubitIndex);
-                    return norm(SQRT1_2_R1 * (shard->gate[2] + shard->gate[3]));
+                    return norm(SQRT1_2_R1 * (shard->gate[0] + shard->gate[1]));
                 }
 
                 stabilizer->S(qubitIndex);
@@ -1004,19 +1008,15 @@ public:
                     }
                     stabilizer->IS(qubitIndex);
                     stabilizer->H(qubitIndex);
-                    return norm(SQRT1_2_R1 * (shard->gate[2] + I_CMPLX * shard->gate[3]));
+                    return norm(SQRT1_2_R1 * (shard->gate[0] + I_CMPLX * shard->gate[1]));
                 }
 
                 stabilizer->IS(qubitIndex);
                 stabilizer->H(qubitIndex);
 
-                FlushBuffers();
+                // Otherwise, state is entangled and locally appears maximally mixed.
+                return ONE_R1 / 2;
             }
-        }
-
-        if (engine) {
-            real1_f prob = engine->Prob(qubitIndex);
-            return clampProb(isCachedInvert ? (ONE_R1 - prob) : prob);
         }
 
         if (stabilizer->IsSeparableZ(qubitIndex)) {
