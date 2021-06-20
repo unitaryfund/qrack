@@ -1538,7 +1538,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
         } else if (prob <= ZERO_R1) {
             result = false;
         } else {
-            result = (Rand() <= norm(shard.amp1));
+            result = (Rand() <= prob);
         }
     } else {
         result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
@@ -1630,7 +1630,7 @@ bitCapInt QUnit::MAll()
         QInterfacePtr toFind = shards[i].unit;
         if (!toFind) {
             real1_f prob = norm(shards[i].amp1);
-            if ((prob >= ONE_R1) || ((prob > ZERO_R1) && (Rand() <= norm(shards[i].amp1)))) {
+            if ((prob >= ONE_R1) || ((prob > ZERO_R1) && (Rand() <= prob))) {
                 shards[i].amp0 = ZERO_CMPLX;
                 shards[i].amp1 = GetNonunitaryPhase();
                 toRet |= pow2(i);
