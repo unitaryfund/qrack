@@ -1529,8 +1529,17 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     QEngineShard& shard = shards[qubit];
 
     bool result;
-    if (!shard.isProbDirty && !shard.unit) {
-        result = doForce ? res : (Rand() <= norm(shard.amp1));
+    if (!shard.isProbDirty) {
+        real1_f prob = norm(shard.amp1);
+        if (doForce) {
+            result = res;
+        } else if (prob >= ONE_R1) {
+            result = true;
+        } else if (prob <= ZERO_R1) {
+            result = false;
+        } else {
+            result = (Rand() <= norm(shard.amp1));
+        }
     } else {
         result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
     }
