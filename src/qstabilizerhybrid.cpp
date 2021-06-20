@@ -966,10 +966,7 @@ bitCapInt QStabilizerHybrid::MAll()
         for (bitLenInt i = 0; i < qubitCount; i++) {
             QStabilizerShardPtr shard = shards[i];
             if (shard) {
-                if (!shardsEigenZ[i]) {
-                    FlushBuffers();
-                    break;
-                } else if (shard->IsInvert()) {
+                if (shard->IsInvert()) {
                     stabilizer->X(i);
                     shards[i] = NULL;
                 } else if (shard->IsPhase()) {
@@ -982,15 +979,19 @@ bitCapInt QStabilizerHybrid::MAll()
         }
     }
 
+    bitCapIntOcl toRet = 0;
     if (stabilizer) {
-        bitCapIntOcl toRet = 0;
         for (bitLenInt i = 0; i < qubitCount; i++) {
-            toRet |= ((stabilizer->M(i) ? ONE_BCI : 0) << i);
+            if (stabilizer->M(i)) {
+                toRet |= pow2(i);
+            }
         }
-        return (bitCapInt)toRet;
+    } else {
+        toRet = engine->MAll();
     }
 
-    SwitchToEngine();
-    return engine->MAll();
+    SetPermutation(toRet);
+
+    return toRet;
 }
 } // namespace Qrack

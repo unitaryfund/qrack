@@ -634,10 +634,12 @@ public:
     {
         DumpBuffers();
 
+        engine = NULL;
+
         if (stabilizer) {
             stabilizer->SetPermutation(perm);
         } else {
-            engine->SetPermutation(perm, phaseFac);
+            stabilizer = MakeStabilizer(perm);
         }
     }
 
