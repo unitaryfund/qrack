@@ -762,6 +762,33 @@ public:
             } else if (shard->IsPhase()) {
                 shards[qubit] = NULL;
             } else {
+                // Bit was already rotated to Z basis.
+                if (shardsEigenZ[qubit]) {
+                    shards[qubit] = NULL;
+                    real1_f prob;
+                    if (stabilizer->M(qubit)) {
+                        prob = norm(shard->gate[2]);
+                    } else {
+                        prob = norm(shard->gate[3]);
+                    }
+
+                    bool result;
+                    if (prob <= ZERO_R1) {
+                        result = false;
+                    } else if (prob >= ONE_R1) {
+                        result = true;
+                    } else {
+                        result = (Rand() <= prob);
+                    }
+                    
+                    if (result != stabilizer->M(qubit)) {
+                        stabilizer->X(qubit);
+                    }
+
+                    return result;
+                }
+
+                // Otherwise, state is entangled and locally appears maximally mixed.
                 FlushBuffers();
             }
         }
