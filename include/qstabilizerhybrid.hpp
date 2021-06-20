@@ -756,9 +756,7 @@ public:
     {
         QStabilizerShardPtr shard = shards[qubit];
         if (stabilizer && shard) {
-            if (!shardsEigenZ[qubit]) {
-                FlushBuffers();
-            } else if (shard->IsInvert()) {
+            if (shard->IsInvert()) {
                 stabilizer->X(qubit);
                 shards[qubit] = NULL;
             } else if (shard->IsPhase()) {
