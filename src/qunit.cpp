@@ -1629,7 +1629,8 @@ bitCapInt QUnit::MAll()
     for (i = 0; i < qubitCount; i++) {
         QInterfacePtr toFind = shards[i].unit;
         if (!toFind) {
-            if (Rand() <= norm(shards[i].amp1)) {
+            real1_f prob = norm(shards[i].amp1);
+            if ((prob >= ONE_R1) || ((prob > ZERO_R1) && (Rand() <= norm(shards[i].amp1)))) {
                 shards[i].amp0 = ZERO_CMPLX;
                 shards[i].amp1 = GetNonunitaryPhase();
                 toRet |= pow2(i);
