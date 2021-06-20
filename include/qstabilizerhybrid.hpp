@@ -767,9 +767,9 @@ public:
                     shards[qubit] = NULL;
                     real1_f prob;
                     if (stabilizer->M(qubit)) {
-                        prob = norm(shard->gate[2]);
-                    } else {
                         prob = norm(shard->gate[3]);
+                    } else {
+                        prob = norm(shard->gate[2]);
                     }
 
                     bool result;
@@ -780,7 +780,7 @@ public:
                     } else {
                         result = (Rand() <= prob);
                     }
-                    
+
                     if (result != stabilizer->M(qubit)) {
                         stabilizer->X(qubit);
                     }
