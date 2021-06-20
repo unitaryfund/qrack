@@ -363,49 +363,6 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
     if (qubitCount == 1U) {
         engine = NULL;
 
-        bool isClifford = false;
-        bool isSet;
-        bool isX = false;
-        bool isY = false;
-        if (norm(inputState[1]) <= REAL1_EPSILON) {
-            isClifford = true;
-            isSet = false;
-        } else if (norm(inputState[0]) <= REAL1_EPSILON) {
-            isClifford = true;
-            isSet = true;
-        } else if (norm(inputState[0] - inputState[1]) <= REAL1_EPSILON) {
-            isClifford = true;
-            isSet = false;
-            isX = true;
-        } else if (norm(inputState[0] + inputState[1]) <= REAL1_EPSILON) {
-            isClifford = true;
-            isSet = true;
-            isX = true;
-        } else if (norm((I_CMPLX * inputState[0]) - inputState[1]) <= REAL1_EPSILON) {
-            isClifford = true;
-            isSet = false;
-            isY = true;
-        } else if (norm((I_CMPLX * inputState[0]) + inputState[1]) <= REAL1_EPSILON) {
-            isClifford = true;
-            isSet = true;
-            isY = true;
-        }
-
-        if (isClifford) {
-            if (stabilizer) {
-                stabilizer->SetPermutation(isSet ? 1 : 0);
-            } else {
-                stabilizer = MakeStabilizer(isSet ? 1 : 0);
-            }
-            if (isX || isY) {
-                stabilizer->H(0);
-            }
-            if (isY) {
-                stabilizer->S(0);
-            }
-            return;
-        }
-
         if (stabilizer) {
             stabilizer->SetPermutation(0);
         } else {
@@ -418,7 +375,7 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
         complex phase0 = std::polar(ONE_R1, arg(inputState[0]));
         complex phase1 = std::polar(ONE_R1, arg(inputState[1]));
         complex mtrx[4] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
-        shards[0] = std::make_shared<QStabilizerShard>(mtrx);
+        ApplySingleBit(mtrx, 0);
 
         return;
     }

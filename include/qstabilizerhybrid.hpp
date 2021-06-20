@@ -236,10 +236,9 @@ public:
     virtual void DumpBuffers()
     {
         for (bitLenInt i = 0; i < qubitCount; i++) {
-            if (shards[i]) {
-                shards[i] = NULL;
-            }
+            shards[i] = NULL;
         }
+        std::fill(shardsEigenZ.begin(), shardsEigenZ.end(), false);
     }
 
     virtual bool TrimControls(const bitLenInt* lControls, const bitLenInt& lControlLen, std::vector<bitLenInt>& output,

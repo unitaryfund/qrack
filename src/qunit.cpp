@@ -3436,9 +3436,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 
     // Skip 2-qubit-at-once check for 2 total qubits.
-    if ((controlVec.size() == 1U) && (targets.size() == 1U)) {
-        TrySeparate(controlVec[0]);
-        TrySeparate(targets[0]);
+    if (allBits.size() == 2U) {
+        TrySeparate(allBits[0]);
+        TrySeparate(allBits[1]);
         return;
     }
 
