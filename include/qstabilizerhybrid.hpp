@@ -101,6 +101,36 @@ protected:
         shards[target] = NULL;
     }
 
+    virtual bool CollapseSeparableShard(bitLenInt qubit)
+    {
+        QStabilizerShardPtr shard = shards[qubit];
+        shards[qubit] = NULL;
+        real1_f prob;
+
+        bool isZ1 = stabilizer->M(qubit);
+
+        if (isZ1) {
+            prob = norm(shard->gate[3]);
+        } else {
+            prob = norm(shard->gate[2]);
+        }
+
+        bool result;
+        if (prob <= ZERO_R1) {
+            result = false;
+        } else if (prob >= ONE_R1) {
+            result = true;
+        } else {
+            result = (Rand() <= prob);
+        }
+
+        if (result != isZ1) {
+            stabilizer->X(qubit);
+        }
+
+        return result;
+    }
+
 public:
     QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -764,31 +794,7 @@ public:
             } else {
                 // Bit was already rotated to Z basis.
                 if (shardsEigenZ[qubit]) {
-                    shards[qubit] = NULL;
-                    real1_f prob;
-
-                    bool isZ1 = stabilizer->M(qubit);
-
-                    if (isZ1) {
-                        prob = norm(shard->gate[3]);
-                    } else {
-                        prob = norm(shard->gate[2]);
-                    }
-
-                    bool result;
-                    if (prob <= ZERO_R1) {
-                        result = false;
-                    } else if (prob >= ONE_R1) {
-                        result = true;
-                    } else {
-                        result = (Rand() <= prob);
-                    }
-
-                    if (result != isZ1) {
-                        stabilizer->X(qubit);
-                    }
-
-                    return result;
+                    return CollapseSeparableShard(qubit);
                 }
 
                 // Otherwise, state is entangled and locally appears maximally mixed.

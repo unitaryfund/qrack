@@ -972,8 +972,12 @@ bitCapInt QStabilizerHybrid::MAll()
                 } else if (shard->IsPhase()) {
                     shards[i] = NULL;
                 } else {
-                    FlushBuffers();
-                    break;
+                    if (shardsEigenZ[i]) {
+                        CollapseSeparableShard(i);
+                    } else {
+                        FlushBuffers();
+                        break;
+                    }
                 }
             }
         }
