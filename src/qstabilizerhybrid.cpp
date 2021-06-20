@@ -428,38 +428,40 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) &&
-        IS_SAME(mtrx[2], -mtrx[3])) {
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(-mtrx[0], mtrx[3])) {
         stabilizer->H(target);
         return;
     }
 
-    if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[3], complex(ZERO_R1, -SQRT1_2_R1))) {
-        if (IS_SAME(mtrx[1], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[2], complex(ZERO_R1, SQRT1_2_R1))) {
-            stabilizer->H(target);
-            stabilizer->S(target);
-            return;
-        }
-
-        if (IS_SAME(mtrx[1], complex(ZERO_R1, SQRT1_2_R1)) && IS_SAME(mtrx[2], complex(SQRT1_2_R1, ZERO_R1))) {
-            stabilizer->S(target);
-            stabilizer->H(target);
-            return;
-        }
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(-mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        stabilizer->X(target);
+        stabilizer->H(target);
+        return;
     }
 
-    if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[3], complex(ZERO_R1, SQRT1_2_R1))) {
-        if (IS_SAME(mtrx[1], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[2], complex(ZERO_R1, -SQRT1_2_R1))) {
-            stabilizer->H(target);
-            stabilizer->IS(target);
-            return;
-        }
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(I_CMPLX * mtrx[0], mtrx[2]) && IS_SAME(-I_CMPLX * mtrx[0], mtrx[3])) {
+        stabilizer->H(target);
+        stabilizer->S(target);
+        return;
+    }
 
-        if (IS_SAME(mtrx[1], complex(ZERO_R1, -SQRT1_2_R1)) && IS_SAME(mtrx[2], complex(SQRT1_2_R1, ZERO_R1))) {
-            stabilizer->IS(target);
-            stabilizer->H(target);
-            return;
-        }
+    if (IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(I_CMPLX * mtrx[0], mtrx[1]) && IS_SAME(-I_CMPLX * mtrx[0], mtrx[3])) {
+        stabilizer->S(target);
+        stabilizer->H(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[2], mtrx[3])) {
+        stabilizer->Y(target);
+        stabilizer->H(target);
+        stabilizer->S(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(-I_CMPLX * mtrx[0], mtrx[1]) && IS_SAME(I_CMPLX * mtrx[0], mtrx[3])) {
+        stabilizer->IS(target);
+        stabilizer->H(target);
+        return;
     }
 
     if (IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
