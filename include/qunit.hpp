@@ -691,9 +691,9 @@ protected:
     void EndEmulation(QEngineShard& shard)
     {
         if (!shard.unit) {
-            if (norm(shard.amp1) <= separabilityThreshold) {
+            if (norm(shard.amp1) <= REAL1_EPSILON) {
                 shard.unit = MakeEngine(1, 0);
-            } else if (norm(shard.amp0) <= separabilityThreshold) {
+            } else if (norm(shard.amp0) <= REAL1_EPSILON) {
                 shard.unit = MakeEngine(1, 1);
             } else {
                 complex bitState[2] = { shard.amp0, shard.amp1 };
