@@ -412,13 +412,13 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
             stabilizer = MakeStabilizer(0);
         }
 
-        real1 sqrtProb = abs(inputState[1]);
-        real1 sqrt1MinProb = abs(inputState[0]);
-        complex probMatrix[4] = { sqrt1MinProb, sqrtProb, sqrtProb, -sqrt1MinProb };
-        complex phaseMatrix[4] = { (sqrt1MinProb <= REAL1_EPSILON) ? ONE_CMPLX : (inputState[0] / sqrt1MinProb),
-            ZERO_CMPLX, ZERO_CMPLX, (sqrtProb <= REAL1_EPSILON) ? ONE_CMPLX : (inputState[1] / sqrtProb) };
-        shards[0] = std::make_shared<QStabilizerShard>(probMatrix);
-        shards[0]->Compose(phaseMatrix);
+        real1 prob = norm(inputState[1]);
+        real1 sqrtProb = sqrt(prob);
+        real1 sqrt1MinProb = sqrt(ONE_R1 - prob);
+        complex phase0 = std::polar(ONE_R1, arg(inputState[0]));
+        complex phase1 = std::polar(ONE_R1, arg(inputState[1]));
+        complex mtrx[4] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
+        shards[0] = std::make_shared<QStabilizerShard>(mtrx);
 
         return;
     }
