@@ -909,7 +909,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return isShard1Sep && isShard2Sep;
     }
 
-    if (separabilityThreshold >= ((ONE_R1 - SQRT1_2_R1) / 2)) {
+    if (freezeTrySeparate || freezeBasis2Qb || (separabilityThreshold >= ((ONE_R1 - SQRT1_2_R1) / 2))) {
         // Single qubit clamping threshold would break Bell basis clamping
         return false;
     }
@@ -952,7 +952,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
                 TrySeparate(qubit2);
             }
 
-            return true;
+            return isShard1Sep && isShard2Sep;
         }
         shard1.unit->CZ(shard1.mapped, shard2.mapped);
 
@@ -973,7 +973,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
                 TrySeparate(qubit2);
             }
 
-            return true;
+            return isShard1Sep && isShard2Sep;
         }
         shard1.unit->CNOT(shard1.mapped, shard2.mapped);
 
@@ -994,7 +994,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
                 TrySeparate(qubit2);
             }
 
-            return true;
+            return isShard1Sep && isShard2Sep;
         }
         shard1.unit->CY(shard1.mapped, shard2.mapped);
 
