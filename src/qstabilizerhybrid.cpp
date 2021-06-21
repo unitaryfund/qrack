@@ -410,10 +410,6 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         wasCached = false;
     }
 
-    if (IsIdentity(mtrx, false)) {
-        return;
-    }
-
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
@@ -522,6 +518,11 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 
 void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
+    complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+    if (IsIdentity(mtrx, false)) {
+        return;
+    }
+
     if (shards[target]) {
         complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         ApplySingleBit(mtrx, target);
@@ -559,7 +560,6 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
         return;
     }
 
-    complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     shards[target] = std::make_shared<QStabilizerShard>(mtrx);
 }
 
