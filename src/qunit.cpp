@@ -3081,7 +3081,9 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
             CTRL_AND_ANTI, {}, { control });
 
         // If this is not a Clifford gate, we buffer for stabilizer:
-        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
+        if (!IS_SAME_UNIT(cShard, tShard) &&
+            (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard) || !IS_1_CMPLX(topLeft) ||
+                !IS_1_CMPLX(-bottomRight))) {
             tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
             OptimizePairBuffers(control, target, true);
 
