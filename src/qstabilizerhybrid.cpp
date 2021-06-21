@@ -456,13 +456,6 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[2], mtrx[3])) {
-        stabilizer->Y(target);
-        stabilizer->H(target);
-        stabilizer->S(target);
-        return;
-    }
-
     if (IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(-I_CMPLX * mtrx[0], mtrx[1]) && IS_SAME(I_CMPLX * mtrx[0], mtrx[3])) {
         stabilizer->IS(target);
         stabilizer->H(target);
@@ -476,6 +469,13 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 
     if (IS_SAME(-I_CMPLX * mtrx[0], mtrx[1]) && IS_SAME(-I_CMPLX * mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         stabilizer->SqrtX(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[2], mtrx[3])) {
+        stabilizer->Y(target);
+        stabilizer->H(target);
+        stabilizer->S(target);
         return;
     }
 
