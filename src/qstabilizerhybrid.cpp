@@ -434,8 +434,13 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(-mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
-        stabilizer->X(target);
-        stabilizer->H(target);
+        // Equivalent to X before H
+        stabilizer->ISqrtY(target);
+        return;
+    }
+
+    if (IS_SAME(-mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        stabilizer->SqrtY(target);
         return;
     }
 
@@ -464,33 +469,13 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[1], complex(ONE_R1, ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
-        IS_SAME(mtrx[1], mtrx[2])) {
+    if (IS_SAME(I_CMPLX * mtrx[0], mtrx[1]) && IS_SAME(I_CMPLX * mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         stabilizer->ISqrtX(target);
         return;
     }
 
-    if (IS_SAME(mtrx[0], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
-        IS_SAME(mtrx[1], mtrx[2])) {
+    if (IS_SAME(-I_CMPLX * mtrx[0], mtrx[1]) && IS_SAME(-I_CMPLX * mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         stabilizer->SqrtX(target);
-        return;
-    }
-
-    if (IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[2], complex(-ONE_R1, ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[3], complex(ONE_R1, -ONE_R1) / (real1)2.0f)) {
-        stabilizer->ISqrtY(target);
-        return;
-    }
-
-    if (IS_SAME(mtrx[0], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[1], complex(-ONE_R1, -ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[2], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[3], complex(ONE_R1, ONE_R1) / (real1)2.0f)) {
-        stabilizer->SqrtY(target);
         return;
     }
 
