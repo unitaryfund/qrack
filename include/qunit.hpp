@@ -468,38 +468,32 @@ protected:
         }
     }
 
-    virtual void ConvertZToX(const bitLenInt& target)
+    virtual void ConvertZToX(const bitLenInt& i)
     {
-        QEngineShard& shard = shards[target];
-        shard.isPauliX = true;
-        freezeBasisH = true;
-        H(target);
-        freezeBasisH = false;
-    }
-    virtual void ConvertXToY(const bitLenInt& target)
-    {
-        QEngineShard& shard = shards[target];
-
-        complex mtrx[4] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
-            complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
-        if (shard.unit) {
-            shard.unit->ApplySingleBit(mtrx, shard.mapped);
-        }
-
-        shard.isPauliX = false;
-        shard.isPauliY = true;
-
-        if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.MakeDirty();
+        if (freezeBasisH || shards[i].isPauliX) {
+            // Recursive call that should be blocked,
+            // or already in target basis.
             return;
         }
 
-        complex tempAmp1 = mtrx[2] * shard.amp0 + mtrx[3] * shard.amp1;
-        shard.amp0 = mtrx[0] * shard.amp0 + mtrx[1] * shard.amp1;
-        shard.amp1 = tempAmp1;
-        if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
+        freezeBasisH = true;
+        H(i);
+        shards[i].isPauliX = true;
+        freezeBasisH = false;
+    }
+    virtual void ConvertXToY(const bitLenInt& i)
+    {
+        if (freezeBasisH || shards[i].isPauliX) {
+            // Recursive call that should be blocked,
+            // or already in target basis.
+            return;
         }
+
+        shards[i].isPauliY = true;
+        shards[i].isPauliX = false;
+        freezeBasisH = true;
+        IS(i);
+        freezeBasisH = false;
     }
     virtual void ConvertYToZ(const bitLenInt& target)
     {
