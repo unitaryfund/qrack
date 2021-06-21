@@ -483,7 +483,7 @@ protected:
     }
     virtual void ConvertXToY(const bitLenInt& i)
     {
-        if (freezeBasisH || shards[i].isPauliX) {
+        if (freezeBasisH || shards[i].isPauliY) {
             // Recursive call that should be blocked,
             // or already in target basis.
             return;
