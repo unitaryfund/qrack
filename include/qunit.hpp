@@ -34,7 +34,6 @@ protected:
     bool useHostRam;
     bool useRDRAND;
     bool isSparse;
-    bool freezeBasisH;
     bool freezeBasis2Qb;
     bool freezeTrySeparate;
     bool isReactiveSeparate;
@@ -144,6 +143,10 @@ public:
     virtual void X(bitLenInt target);
     using QInterface::Z;
     virtual void Z(bitLenInt target);
+    using QInterface::S;
+    virtual void S(bitLenInt target);
+    using QInterface::IS;
+    virtual void IS(bitLenInt target);
     using QInterface::CNOT;
     virtual void CNOT(bitLenInt control, bitLenInt target);
     using QInterface::AntiCNOT;
@@ -404,39 +407,51 @@ protected:
 
     void RevertBasisX(const bitLenInt& i)
     {
-        if (freezeBasisH || !shards[i].isPauliX) {
+        QEngineShard& shard = shards[i];
+        if (!shard.isPauliX) {
             // Recursive call that should be blocked,
             // or already in target basis.
             return;
         }
 
-        freezeBasisH = true;
-        H(i);
-        shards[i].isPauliX = false;
-        freezeBasisH = false;
+        ConvertZToX(i);
     }
 
     void RevertBasisY(const bitLenInt& i)
     {
-        if (freezeBasisH || !shards[i].isPauliY) {
+        QEngineShard& shard = shards[i];
+
+        if (!shard.isPauliY) {
             // Recursive call that should be blocked,
             // or already in target basis.
             return;
         }
 
-        shards[i].isPauliY = false;
-        shards[i].isPauliX = true;
-        freezeBasisH = true;
-        S(i);
-        freezeBasisH = false;
+        shard.isPauliX = true;
+        shard.isPauliY = false;
+
+        complex mtrx[4] = { (ONE_R1 / 2) * (ONE_CMPLX + I_CMPLX), (ONE_R1 / 2) * (ONE_CMPLX - I_CMPLX),
+            (ONE_R1 / 2) * (ONE_CMPLX - I_CMPLX), (ONE_R1 / 2) * (ONE_CMPLX + I_CMPLX) };
+
+        if (shard.unit) {
+            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+        }
+        if (shard.isPhaseDirty || shard.isProbDirty) {
+            shard.MakeDirty();
+            return;
+        }
+
+        complex Y0 = shard.amp0;
+
+        shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
+        shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
+        if (doNormalize) {
+            shard.ClampAmps(amplitudeFloor);
+        }
     }
 
     void RevertBasis1Qb(const bitLenInt& i)
     {
-        if (freezeBasisH) {
-            return;
-        }
-
         QEngineShard& shard = shards[i];
 
         if (shard.unit && shard.isPauliY) {
@@ -468,72 +483,99 @@ protected:
         }
     }
 
-    virtual void ConvertZToX(const bitLenInt& target)
+    virtual void ConvertZToX(const bitLenInt& i)
     {
-        QEngineShard& shard = shards[target];
-        shard.isPauliX = true;
-        freezeBasisH = true;
-        H(target);
-        freezeBasisH = false;
-    }
-    virtual void ConvertXToY(const bitLenInt& i)
-    {
-        shards[i].isPauliY = true;
-        shards[i].isPauliX = false;
-        freezeBasisH = true;
-        IS(i);
-        freezeBasisH = false;
-    }
-    virtual void ConvertYToZ(const bitLenInt& target)
-    {
-        QEngineShard& shard = shards[target];
+        QEngineShard& shard = shards[i];
 
-        if (!shard.unit) {
-            RevertBasisY(target);
-            RevertBasisX(target);
-            return;
+        shard.isPauliX = !shard.isPauliX;
+
+        if (shard.unit) {
+            shard.unit->H(shard.mapped);
         }
-
-        complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1),
-            complex(ZERO_R1, -SQRT1_2_R1) };
-        shard.unit->ApplySingleBit(mtrx, shard.mapped);
-
-        shard.isPauliY = false;
-        shard.isPauliX = false;
-
         if (shard.isPhaseDirty || shard.isProbDirty) {
             shard.MakeDirty();
             return;
         }
 
-        complex tempAmp1 = complex(ZERO_R1, SQRT1_2_R1) * (shard.amp0 - shard.amp1);
+        complex tempAmp1 = SQRT1_2_R1 * (shard.amp0 - shard.amp1);
         shard.amp0 = SQRT1_2_R1 * (shard.amp0 + shard.amp1);
         shard.amp1 = tempAmp1;
         if (doNormalize) {
             shard.ClampAmps(amplitudeFloor);
         }
     }
-    virtual void ConvertZToY(const bitLenInt& target)
+    virtual void ConvertXToY(const bitLenInt& i)
     {
-        QEngineShard& shard = shards[target];
+        QEngineShard& shard = shards[i];
 
-        complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1), complex(SQRT1_2_R1, ZERO_R1),
-            complex(ZERO_R1, SQRT1_2_R1) };
+        shard.isPauliX = false;
+        shard.isPauliY = true;
+
+        complex mtrx[4] = { (ONE_R1 / 2) * (ONE_CMPLX - I_CMPLX), (ONE_R1 / 2) * (ONE_CMPLX + I_CMPLX),
+            (ONE_R1 / 2) * (ONE_CMPLX + I_CMPLX), (ONE_R1 / 2) * (ONE_CMPLX - I_CMPLX) };
+
         if (shard.unit) {
             shard.unit->ApplySingleBit(mtrx, shard.mapped);
         }
+        if (shard.isPhaseDirty || shard.isProbDirty) {
+            shard.MakeDirty();
+            return;
+        }
+
+        complex Y0 = shard.amp0;
+        shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
+        shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
+        if (doNormalize) {
+            shard.ClampAmps(amplitudeFloor);
+        }
+    }
+    virtual void ConvertYToZ(const bitLenInt& i)
+    {
+        QEngineShard& shard = shards[i];
 
         shard.isPauliY = true;
         shard.isPauliX = false;
+
+        complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1),
+            complex(ZERO_R1, -SQRT1_2_R1) };
+
+        if (shard.unit) {
+            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+        }
+        if (shard.isPhaseDirty || shard.isProbDirty) {
+            shard.MakeDirty();
+            return;
+        }
+
+        complex Y0 = shard.amp0;
+        shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
+        shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
+        if (doNormalize) {
+            shard.ClampAmps(amplitudeFloor);
+        }
+    }
+    virtual void ConvertZToY(const bitLenInt& i)
+    {
+        QEngineShard& shard = shards[i];
+
+        shard.isPauliY = true;
+        shard.isPauliX = false;
+
+        complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1), complex(SQRT1_2_R1, ZERO_R1),
+            complex(ZERO_R1, SQRT1_2_R1) };
+
+        if (shard.unit) {
+            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+        }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
             shard.MakeDirty();
             return;
         }
 
-        complex tempAmp1 = complex(ZERO_R1, SQRT1_2_R1) * (shard.amp0 - shard.amp1);
-        shard.amp0 = SQRT1_2_R1 * (shard.amp0 + shard.amp1);
-        shard.amp1 = tempAmp1;
+        complex Y0 = shard.amp0;
+        shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
+        shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
         if (doNormalize) {
             shard.ClampAmps(amplitudeFloor);
         }
