@@ -5009,22 +5009,22 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_2", "[mirror]")
     REQUIRE(qftReg->MAll() == 3);
 }
 
-// TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_3", "[mirror]")
-// {
-//     qftReg->SetReactiveSeparate(true);
-//     qftReg->SetPermutation(15);
-//
-//     qftReg->H(1);
-//     qftReg->CNOT(1, 2);
-//     qftReg->X(1);
-//     qftReg->CCNOT(1, 2, 0);
-//     qftReg->CCNOT(1, 2, 0);
-//     qftReg->X(1);
-//     qftReg->CNOT(1, 2);
-//     qftReg->H(1);
-//
-//     REQUIRE(qftReg->MAll() == 15);
-// }
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_3", "[mirror]")
+{
+    qftReg->SetReactiveSeparate(true);
+    qftReg->SetPermutation(15);
+
+    qftReg->H(1);
+    qftReg->CNOT(1, 2);
+    qftReg->X(1);
+    qftReg->CCNOT(1, 2, 0);
+    qftReg->CCNOT(1, 2, 0);
+    qftReg->X(1);
+    qftReg->CNOT(1, 2);
+    qftReg->H(1);
+
+    REQUIRE(qftReg->MAll() == 15);
+}
 
 // Broken with QUnit over QStabilizerHybrid
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_4", "[mirror]")
