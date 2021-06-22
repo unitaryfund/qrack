@@ -72,7 +72,6 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
-    , freezeBasisH(false)
     , freezeBasis2Qb(false)
     , freezeTrySeparate(false)
     , isReactiveSeparate(false)
@@ -735,14 +734,14 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
             willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
         }
 
-        if (i >= 2) {
-            continue;
-        }
-
         // If this is 0.5, it wasn't this basis, but it's worth checking the next basis.
         if (didSeparate || (abs(prob) > separabilityThreshold)) {
             freezeTrySeparate = false;
             return didSeparate;
+        }
+
+        if (i >= 2) {
+            continue;
         }
 
         if (!shard.isPauliX && !shard.isPauliY) {
@@ -758,8 +757,8 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
     probX = abs(probX);
     probY = abs(probY);
 
-    if (didSeparate || !willSeparate) {
-        if (isReactiveSeparate && canHyperSeparate) {
+    if (!willSeparate) {
+        if (canHyperSeparate) {
             // Convert back to the basis with the highest projection:
             if ((probZ >= probY) && (probZ >= probX)) {
                 RevertBasis1Qb(qubit);
@@ -771,27 +770,19 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
         }
 
         freezeTrySeparate = false;
-        return didSeparate;
+        return false;
     }
 
     // If we made it here, we're hyper-separating single bits, and we need to pick the best fit of the 3.
     if ((probY >= probZ) && (probY >= probX)) {
         // Y is best.
-        if (!shard.isPauliX && !shard.isPauliY) {
-            ConvertZToY(qubit);
-        } else if (shard.isPauliX) {
-            ConvertXToY(qubit);
-        }
+        RevertBasisToY1Qb(qubit);
         if (!BLOCKED_SEPARATE(shard)) {
             SeparateBit(probY >= ZERO_R1, qubit);
         }
     } else if ((probX >= probZ) && (probX >= probY)) {
         // X is best.
-        if (!shard.isPauliX && !shard.isPauliY) {
-            ConvertZToX(qubit);
-        } else if (shard.isPauliY) {
-            RevertBasisY(qubit);
-        }
+        RevertBasisToX1Qb(qubit);
         if (!BLOCKED_SEPARATE(shard)) {
             SeparateBit(probX >= ZERO_R1, qubit);
         }
@@ -1692,9 +1683,9 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     }
 
     bitLenInt control[1] = { qubit1 };
-    ApplyAntiControlledSinglePhase(control, 1U, qubit2, ONE_CMPLX, I_CMPLX);
+    ApplyControlledSinglePhase(control, 1U, qubit2, I_CMPLX, ONE_CMPLX);
     control[0] = qubit2;
-    ApplyAntiControlledSinglePhase(control, 1U, qubit1, ONE_CMPLX, I_CMPLX);
+    ApplyControlledSinglePhase(control, 1U, qubit1, I_CMPLX, ONE_CMPLX);
 
     // Simply swap the bit mapping.
     shards.swap(qubit1, qubit2);
@@ -1768,8 +1759,6 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    RevertBasis1Qb(qubit1);
-    RevertBasis1Qb(qubit2);
     RevertBasis2Qb(qubit1, ONLY_INVERT);
     RevertBasis2Qb(qubit2, ONLY_INVERT);
 
@@ -1985,29 +1974,87 @@ void QUnit::CUniformParityRZ(
 
 void QUnit::H(bitLenInt target)
 {
+    RevertBasisY(target);
+    CommuteH(target);
+
+    QEngineShard& shard = shards[target];
+    shard.isPauliX = !shard.isPauliX;
+}
+
+void QUnit::S(bitLenInt target)
+{
     QEngineShard& shard = shards[target];
 
-    if (!freezeBasisH) {
-        RevertBasisY(target);
-        CommuteH(target);
-        shard.isPauliX = !shard.isPauliX;
+    shard.CommutePhase(ONE_CMPLX, I_CMPLX);
+
+    if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
+        if (SHARD_STATE(shard)) {
+            Flush1Eigenstate(target);
+        } else {
+            Flush0Eigenstate(target);
+        }
+        return;
+    }
+
+    if (shard.isPauliY) {
+        shard.isPauliX = true;
+        shard.isPauliY = false;
+        XBase(target);
+        return;
+    } else if (shard.isPauliX) {
+        shard.isPauliX = false;
+        shard.isPauliY = true;
         return;
     }
 
     if (shard.unit) {
-        shard.unit->H(shard.mapped);
+        shard.unit->S(shard.mapped);
     }
+
     if (DIRTY(shard)) {
         shard.MakeDirty();
         return;
     }
 
-    complex tempAmp1 = SQRT1_2_R1 * (shard.amp0 - shard.amp1);
-    shard.amp0 = SQRT1_2_R1 * (shard.amp0 + shard.amp1);
-    shard.amp1 = tempAmp1;
-    if (doNormalize) {
-        shard.ClampAmps(amplitudeFloor);
+    shard.amp1 = I_CMPLX * shard.amp1;
+}
+
+void QUnit::IS(bitLenInt target)
+{
+    QEngineShard& shard = shards[target];
+
+    shard.CommutePhase(ONE_CMPLX, -I_CMPLX);
+
+    if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
+        if (SHARD_STATE(shard)) {
+            Flush1Eigenstate(target);
+        } else {
+            Flush0Eigenstate(target);
+        }
+        return;
     }
+
+    if (shard.isPauliY) {
+        shard.isPauliX = true;
+        shard.isPauliY = false;
+        return;
+    } else if (shard.isPauliX) {
+        shard.isPauliX = false;
+        shard.isPauliY = true;
+        XBase(target);
+        return;
+    }
+
+    if (shard.unit) {
+        shard.unit->IS(shard.mapped);
+    }
+
+    if (DIRTY(shard)) {
+        shard.MakeDirty();
+        return;
+    }
+
+    shard.amp1 = -I_CMPLX * shard.amp1;
 }
 
 void QUnit::XBase(const bitLenInt& target)
@@ -2722,6 +2769,16 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
             Z(target);
             return;
         }
+
+        if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
+            S(target);
+            return;
+        }
+
+        if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
+            IS(target);
+            return;
+        }
     }
 
     QEngineShard& shard = shards[target];
@@ -2752,34 +2809,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         }
 
         return;
-    }
-
-    if (!freezeBasisH) {
-        if (IS_NORM_0((I_CMPLX * topLeft) - bottomRight)) {
-            if (shard.isPauliY) {
-                shard.isPauliX = true;
-                shard.isPauliY = false;
-                XBase(target);
-                return;
-            } else if (shard.isPauliX) {
-                shard.isPauliX = false;
-                shard.isPauliY = true;
-                return;
-            }
-        }
-
-        if (IS_NORM_0((I_CMPLX * topLeft) + bottomRight)) {
-            if (shard.isPauliY) {
-                shard.isPauliX = true;
-                shard.isPauliY = false;
-                return;
-            } else if (shard.isPauliX) {
-                shard.isPauliX = false;
-                shard.isPauliY = true;
-                XBase(target);
-                return;
-            }
-        }
     }
 
     complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
@@ -3182,13 +3211,13 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         H(target);
         return;
     }
-    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(SQRT1_2_R1, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
+    if ((randGlobalPhase || (mtrx[0] == complex(SQRT1_2_R1, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
         (mtrx[2] == -mtrx[3]) && (I_CMPLX * mtrx[0] == mtrx[2])) {
         H(target);
         S(target);
         return;
     }
-    if (!freezeBasisH && (randGlobalPhase || (mtrx[0] == complex(SQRT1_2_R1, ZERO_R1))) && (mtrx[0] == mtrx[2]) &&
+    if ((randGlobalPhase || (mtrx[0] == complex(SQRT1_2_R1, ZERO_R1))) && (mtrx[0] == mtrx[2]) &&
         (mtrx[1] == -mtrx[3]) && (I_CMPLX * mtrx[2] == mtrx[3])) {
         IS(target);
         H(target);
@@ -3425,13 +3454,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 
     if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb) {
-        if (!freezeTrySeparate && unit->isClifford()) {
-            for (i = 0; i < allBits.size(); i++) {
-                if (shards[allBits[i]].isClifford()) {
-                    TrySeparate(allBits[i]);
-                }
-            }
-        }
         return;
     }
 
