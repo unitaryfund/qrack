@@ -131,6 +131,8 @@ protected:
         return result;
     }
 
+    virtual QStabilizerShardPtr CacheEigenState(const bitLenInt& target, const bool& skipZ = false);
+
 public:
     QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
