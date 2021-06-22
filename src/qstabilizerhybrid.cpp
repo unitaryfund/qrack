@@ -655,28 +655,30 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
         return;
     }
 
+    bitLenInt control = controls[0];
+
     if (IS_SAME(topLeft, ONE_CMPLX)) {
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
             return;
         }
 
         if (IS_SAME(bottomRight, -ONE_CMPLX)) {
-            stabilizer->CZ(controls[0], target);
+            stabilizer->CZ(control, target);
             return;
         }
     } else if (IS_SAME(topLeft, -ONE_CMPLX)) {
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
+            stabilizer->X(target);
+            stabilizer->CZ(control, target);
+            stabilizer->X(target);
             return;
         }
 
         if (IS_SAME(bottomRight, -ONE_CMPLX)) {
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
+            stabilizer->CZ(control, target);
+            stabilizer->X(target);
+            stabilizer->CZ(control, target);
+            stabilizer->X(target);
             return;
         }
     }

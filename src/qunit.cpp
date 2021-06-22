@@ -3454,13 +3454,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 
     if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb) {
-        if (!freezeTrySeparate && unit->isClifford()) {
-            for (i = 0; i < allBits.size(); i++) {
-                if (shards[allBits[i]].isClifford()) {
-                    TrySeparate(allBits[i]);
-                }
-            }
-        }
         return;
     }
 
