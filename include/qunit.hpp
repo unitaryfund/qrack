@@ -533,7 +533,7 @@ protected:
     {
         QEngineShard& shard = shards[i];
 
-        shard.isPauliY = true;
+        shard.isPauliY = false;
         shard.isPauliX = false;
 
         complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1),
