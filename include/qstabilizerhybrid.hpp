@@ -1020,9 +1020,9 @@ public:
                 // Bit was already rotated to Z basis.
                 if (shardsEigenZ[qubitIndex]) {
                     if (stabilizer->M(qubitIndex)) {
-                        return norm(shard->gate[2]);
+                        return norm(shard->gate[3]);
                     }
-                    return norm(shard->gate[3]);
+                    return norm(shard->gate[2]);
                 }
 
                 // Otherwise, state is entangled and locally appears maximally mixed.
