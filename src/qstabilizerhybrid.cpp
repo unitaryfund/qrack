@@ -503,16 +503,6 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         }
     }
 
-    if (shardsEigenZ[target]) {
-        if (IS_NORM_0(shard->gate[1]) && IS_NORM_0(shard->gate[2])) {
-            return;
-        }
-        if (IS_NORM_0(shard->gate[0]) && IS_NORM_0(shard->gate[3])) {
-            stabilizer->X(target);
-            return;
-        }
-    }
-
     shards[target] = shard;
 }
 
@@ -597,6 +587,12 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
     if (IS_SAME(sTest, -I_CMPLX)) {
         stabilizer->X(target);
         stabilizer->IS(target);
+        return;
+    }
+
+    if (stabilizer->IsSeparableZ(target)) {
+        // This gate has no meaningful effect on phase.
+        stabilizer->X(target);
         return;
     }
 

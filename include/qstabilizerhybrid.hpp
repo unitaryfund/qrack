@@ -483,11 +483,7 @@ public:
 
     virtual void CZ(bitLenInt control, bitLenInt target)
     {
-        if (shards[control] && shards[target]) {
-            FlushBuffers();
-        }
-
-        if (shards[control]) {
+        if (shards[control] || shards[target]) {
             real1_f prob = Prob(control);
             if (prob == ZERO_R1) {
                 return;
@@ -497,11 +493,7 @@ public:
                 return;
             }
 
-            FlushBuffers();
-        }
-
-        if (shards[target]) {
-            real1_f prob = Prob(target);
+            prob = Prob(target);
             if (prob == ZERO_R1) {
                 return;
             }
