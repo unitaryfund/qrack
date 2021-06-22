@@ -2011,11 +2011,6 @@ void QUnit::S(bitLenInt target)
         shard.unit->S(shard.mapped);
     }
 
-    if (DIRTY(shard)) {
-        shard.MakeDirty();
-        return;
-    }
-
     shard.amp1 = I_CMPLX * shard.amp1;
 }
 
@@ -2049,11 +2044,6 @@ void QUnit::IS(bitLenInt target)
         shard.unit->IS(shard.mapped);
     }
 
-    if (DIRTY(shard)) {
-        shard.MakeDirty();
-        return;
-    }
-
     shard.amp1 = -I_CMPLX * shard.amp1;
 }
 
@@ -2063,11 +2053,6 @@ void QUnit::XBase(const bitLenInt& target)
 
     if (shard.unit) {
         shard.unit->X(shard.mapped);
-    }
-    if (DIRTY(shard)) {
-        shard.isPhaseDirty = true;
-        std::swap(shard.amp0, shard.amp1);
-        return;
     }
 
     std::swap(shard.amp0, shard.amp1);
@@ -2079,11 +2064,6 @@ void QUnit::YBase(const bitLenInt& target)
 
     if (shard.unit) {
         shard.unit->Y(shard.mapped);
-    }
-    if (DIRTY(shard)) {
-        shard.isPhaseDirty = true;
-        std::swap(shard.amp0, shard.amp1);
-        return;
     }
 
     complex Y0 = shard.amp0;
@@ -2097,10 +2077,6 @@ void QUnit::ZBase(const bitLenInt& target)
 
     if (shard.unit) {
         shard.unit->Z(shard.mapped);
-    }
-    if (DIRTY(shard)) {
-        shard.isPhaseDirty = true;
-        return;
     }
 
     shard.amp1 = -shard.amp1;
