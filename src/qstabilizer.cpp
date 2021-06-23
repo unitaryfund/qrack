@@ -518,6 +518,20 @@ void QStabilizer::Z(const bitLenInt& t)
     });
 }
 
+/// Apply an X (or NOT) gate to target
+void QStabilizer::X(const bitLenInt& t)
+{
+    Dispatch([this, t] {
+        bitLenInt maxLcv = qubitCount << 1U;
+
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            if (z[i][t]) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
+        }
+    });
+}
+
 /**
  * Returns "true" if target qubit is a Z basis eigenstate
  */

@@ -197,6 +197,8 @@ public:
     void IS(const bitLenInt& target);
     /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
     void Z(const bitLenInt& target);
+    /// Apply an X (or NOT) gate to target
+    void X(const bitLenInt& target);
     /// Apply a CZ gate with control and target
     void CZ(const bitLenInt& control, const bitLenInt& target)
     {
@@ -210,13 +212,6 @@ public:
         IS(target);
         CNOT(control, target);
         S(target);
-    }
-    /// Apply an X (or NOT) gate to target
-    void X(const bitLenInt& target)
-    {
-        H(target);
-        Z(target);
-        H(target);
     }
 
     void SqrtX(const bitLenInt& target)
