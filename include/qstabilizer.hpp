@@ -198,13 +198,15 @@ public:
     /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
     void Z(const bitLenInt& target);
     /// Apply a CZ gate with control and target
-    void CZ(const bitLenInt& control, const bitLenInt& target) {
+    void CZ(const bitLenInt& control, const bitLenInt& target)
+    {
         H(target);
         CNOT(control, target);
         H(target);
     }
     /// Apply a CY gate with control and target
-    void CY(const bitLenInt& control, const bitLenInt& target) {
+    void CY(const bitLenInt& control, const bitLenInt& target)
+    {
         IS(target);
         CNOT(control, target);
         S(target);
@@ -274,7 +276,6 @@ public:
         CNOT(qubit2, qubit1);
         H(qubit2);
     }
-
 
     /**
      * Measure qubit b
