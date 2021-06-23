@@ -240,20 +240,14 @@ public:
 
     void SqrtY(const bitLenInt& target)
     {
-        IS(target);
         H(target);
-        S(target);
-        H(target);
-        S(target);
+        X(target);
     }
 
     void ISqrtY(const bitLenInt& target)
     {
-        IS(target);
+        X(target);
         H(target);
-        IS(target);
-        H(target);
-        S(target);
     }
 
     void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)
