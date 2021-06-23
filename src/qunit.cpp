@@ -4756,7 +4756,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         buffer = phaseShard->second;
         partner = phaseShard->first;
 
-        if (partner->isPauliX || partner->isPauliY || buffer->isInvert) {
+        if (buffer->isInvert) {
             continue;
         }
 
@@ -4778,7 +4778,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         buffer = phaseShard->second;
         partner = phaseShard->first;
 
-        if (partner->isPauliX || partner->isPauliY || buffer->isInvert) {
+        if (buffer->isInvert) {
             continue;
         }
 
