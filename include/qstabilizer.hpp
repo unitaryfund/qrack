@@ -199,6 +199,16 @@ public:
     void Z(const bitLenInt& target);
     /// Apply an X (or NOT) gate to target
     void X(const bitLenInt& target);
+    /// Apply a Pauli Y gate to target
+    void Y(const bitLenInt& target);
+    /// Apply square root of X gate
+    void SqrtX(const bitLenInt& target);
+    /// Apply inverse square root of X gate
+    void ISqrtX(const bitLenInt& target);
+    /// Apply square root of Y gate
+    void SqrtY(const bitLenInt& target);
+    /// Apply inverse square root of Y gate
+    void ISqrtY(const bitLenInt& target);
     /// Apply a CZ gate with control and target
     void CZ(const bitLenInt& control, const bitLenInt& target)
     {
@@ -212,39 +222,6 @@ public:
         IS(target);
         CNOT(control, target);
         S(target);
-    }
-
-    void SqrtX(const bitLenInt& target)
-    {
-        H(target);
-        S(target);
-        H(target);
-    }
-
-    void ISqrtX(const bitLenInt& target)
-    {
-        H(target);
-        IS(target);
-        H(target);
-    }
-
-    void Y(const bitLenInt& target)
-    {
-        IS(target);
-        X(target);
-        S(target);
-    }
-
-    void SqrtY(const bitLenInt& target)
-    {
-        H(target);
-        X(target);
-    }
-
-    void ISqrtY(const bitLenInt& target)
-    {
-        X(target);
-        H(target);
     }
 
     void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)

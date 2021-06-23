@@ -532,6 +532,80 @@ void QStabilizer::X(const bitLenInt& t)
     });
 }
 
+/// Apply a Pauli Y gate to target
+void QStabilizer::Y(const bitLenInt& t)
+{
+    Dispatch([this, t] {
+        bitLenInt maxLcv = qubitCount << 1U;
+
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            if (z[i][t] ^ x[i][t]) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
+        }
+    });
+}
+
+/// Apply square root of X gate
+void QStabilizer::SqrtX(const bitLenInt& t)
+{
+    Dispatch([this, t] {
+        bitLenInt maxLcv = qubitCount << 1U;
+
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            x[i][t] = x[i][t] ^ z[i][t];
+            if (x[i][t] && z[i][t]) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
+        }
+    });
+}
+
+/// Apply inverse square root of X gate
+void QStabilizer::ISqrtX(const bitLenInt& t)
+{
+    Dispatch([this, t] {
+        bitLenInt maxLcv = qubitCount << 1U;
+
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            if (x[i][t] && z[i][t]) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
+            x[i][t] = x[i][t] ^ z[i][t];
+        }
+    });
+}
+
+/// Apply square root of Y gate
+void QStabilizer::SqrtY(const bitLenInt& t)
+{
+    Dispatch([this, t] {
+        bitLenInt maxLcv = qubitCount << 1U;
+
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            std::swap(x[i][t], z[i][t]);
+            if (!x[i][t] && z[i][t]) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
+        }
+    });
+}
+
+/// Apply inverse square root of Y gate
+void QStabilizer::ISqrtY(const bitLenInt& t)
+{
+    Dispatch([this, t] {
+        bitLenInt maxLcv = qubitCount << 1U;
+
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            if (!x[i][t] && z[i][t]) {
+                r[i] = (r[i] + 2) & 0x3;
+            }
+            std::swap(x[i][t], z[i][t]);
+        }
+    });
+}
+
 /**
  * Returns "true" if target qubit is a Z basis eigenstate
  */
