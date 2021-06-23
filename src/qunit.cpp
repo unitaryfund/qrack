@@ -924,8 +924,6 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 
     // Both shards are in the same unit.
     if (shard1.unit->isClifford()) {
-        isReactiveSeparate = wasReactiveSeparate;
-
         shard1.unit->CZ(shard1.mapped, shard2.mapped);
         isShard1Sep = shard1.unit->TrySeparate(shard1.mapped);
         isShard2Sep = shard2.unit->TrySeparate(shard2.mapped);
@@ -934,6 +932,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
             freezeTrySeparate = true;
             CZ(qubit1, qubit2);
             freezeTrySeparate = false;
+
+            isReactiveSeparate = wasReactiveSeparate;
 
             if (isShard1Sep) {
                 TrySeparate(qubit1);
@@ -956,6 +956,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
             CNOT(qubit1, qubit2);
             freezeTrySeparate = false;
 
+            isReactiveSeparate = wasReactiveSeparate;
+
             if (isShard1Sep) {
                 TrySeparate(qubit1);
             }
@@ -977,6 +979,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
             CY(qubit1, qubit2);
             freezeTrySeparate = false;
 
+            isReactiveSeparate = wasReactiveSeparate;
+
             if (isShard1Sep) {
                 TrySeparate(qubit1);
             }
@@ -988,6 +992,8 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
             return isShard1Sep && isShard2Sep;
         }
         shard1.unit->CY(shard1.mapped, shard2.mapped);
+
+        isReactiveSeparate = wasReactiveSeparate;
 
         return false;
     }
@@ -3344,7 +3350,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         QEngineShard& shard = shards[controls[i]];
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         bool isEigenstate = false;
-        if (shard.isClifford()) {
+        if (shard.unit && shard.unit->isClifford()) {
             ProbBase(controls[i]);
         }
         if (!shard.isProbDirty) {
