@@ -190,11 +190,7 @@ public:
     /// Apply a CNOT gate with control and target
     void CNOT(const bitLenInt& control, const bitLenInt& target);
     /// Apply a CZ gate with control and target
-    void CZ(const bitLenInt& control, const bitLenInt& target) {
-        H(target);
-        CNOT(control, target);
-        H(target);
-    }
+    void CZ(const bitLenInt& control, const bitLenInt& target);
     /// Apply a CY gate with control and target
     void CY(const bitLenInt& control, const bitLenInt& target);
     /// Apply a Hadamard gate to target
