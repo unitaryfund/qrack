@@ -5067,6 +5067,26 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_5", "[mirror]")
     REQUIRE(qftReg->MAll() == 4);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_6", "[mirror]")
+{
+    qftReg->SetPermutation(0);
+
+    qftReg->H(0);
+    qftReg->T(0);
+    qftReg->CNOT(0, 1);
+    qftReg->T(0);
+    qftReg->Z(1);
+    qftReg->CZ(0, 1);
+    qftReg->CZ(0, 1);
+    qftReg->Z(1);
+    qftReg->IT(0);
+    qftReg->CNOT(0, 1);
+    qftReg->IT(0);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 0);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
@@ -5482,10 +5502,10 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
     const int GateCount1Qb = 5;
     const int GateCountMultiQb = 4;
-    const int Depth = 3;
+    const int Depth = 4;
 
     const int TRIALS = 100;
-    const int n = 8;
+    const int n = 4;
 
     int d;
     int i;

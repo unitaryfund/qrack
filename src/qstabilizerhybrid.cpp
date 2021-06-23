@@ -747,9 +747,7 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
             stabilizer->CZ(controls[0], target);
             return;
         }
-    }
-
-    if (IS_SAME(topRight, -ONE_CMPLX)) {
+    } else if (IS_SAME(topRight, -ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
             stabilizer->CZ(controls[0], target);
             stabilizer->CNOT(controls[0], target);
@@ -758,13 +756,13 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
 
         if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
             stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
+            stabilizer->X(target);
             stabilizer->CZ(controls[0], target);
+            stabilizer->X(target);
+            stabilizer->CNOT(controls[0], target);
             return;
         }
-    }
-
-    if (IS_SAME(topRight, -I_CMPLX) && IS_SAME(bottomLeft, I_CMPLX)) {
+    } else if (IS_SAME(topRight, -I_CMPLX) && IS_SAME(bottomLeft, I_CMPLX)) {
         stabilizer->CY(controls[0], target);
         return;
     }
