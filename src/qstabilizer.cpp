@@ -886,8 +886,6 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     bitLenInt secondEnd = nQubitCount + end;
 
     if (dest) {
-        dest->Finish();
-
         for (i = 0; i < length; i++) {
             j = start + i;
             std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[i].begin());
