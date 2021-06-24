@@ -14,6 +14,11 @@
 #include "qstabilizerhybrid.hpp"
 
 #define IS_NORM_0(c) (norm(c) <= amplitudeFloor)
+#define IS_REAL_NORM_1(r) (abs(r - ONE_R1) <= FP_NORM_EPSILON)
+#define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \
+    ((IS_REAL_NORM_1(std::real(top)) || IS_REAL_NORM_1(std::imag(top))) &&                                             \
+        (IS_SAME(top, bottom) || IS_SAME(top, -bottom) || IS_SAME(top, I_CMPLX * bottom) ||                            \
+            IS_SAME(top, -I_CMPLX * bottom)))
 
 namespace Qrack {
 
@@ -850,9 +855,7 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControl
         return;
     }
 
-    if ((controls.size() > 1U) ||
-        (!((abs(std::real(topLeft)) == ONE_R1) || (abs(std::imag(topLeft)) == ONE_R1)) && (topLeft != bottomRight) &&
-            (topLeft != -bottomRight) && (topLeft != I_CMPLX * bottomRight) && (topLeft != -I_CMPLX * bottomRight))) {
+    if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topLeft, bottomRight)) {
         SwitchToEngine();
     } else {
         FlushIfBlocked(controls, target);
@@ -883,9 +886,7 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
 
     FlushIfBlocked(controls, target);
 
-    if ((controls.size() > 1U) ||
-        (!((abs(std::real(topRight)) == ONE_R1) || (abs(std::imag(topRight)) == ONE_R1)) && (topRight != bottomLeft) &&
-            (topRight != -bottomLeft) && (topRight != I_CMPLX * bottomLeft) && (topRight != -I_CMPLX * bottomLeft))) {
+    if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
         SwitchToEngine();
     }
 
