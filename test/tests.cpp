@@ -5108,7 +5108,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_7", "[mirror]")
     REQUIRE(qftReg->MAll() == 10);
 }
 
-// QUnit -> QStabilizerHybrid bug - to be fixed tonight
+// QUnit -> QStabilizerHybrid CZ/CY decomposition bug
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_8", "[mirror]")
 {
     qftReg->SetPermutation(11);
