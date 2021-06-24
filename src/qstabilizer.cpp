@@ -869,6 +869,9 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
         return;
     }
 
+    if (dest) {
+        dest->Dump();
+    }
     Finish();
 
     // We assume that the bits to "decompose" the representation of already have 0 cross-terms in their generators
