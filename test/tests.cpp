@@ -5108,60 +5108,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_7", "[mirror]")
     REQUIRE(qftReg->MAll() == 10);
 }
 
-// Intermittent failure with stabilizer
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_8", "[mirror]")
-{
-    qftReg->SetPermutation(15);
-    qftReg->SetReactiveSeparate(true);
-
-    qftReg->H(0);
-    qftReg->Y(1);
-    qftReg->T(2);
-    qftReg->X(3);
-    qftReg->CNOT(0, 1);
-    qftReg->Swap(3, 2);
-    qftReg->X(0);
-    qftReg->H(1);
-    qftReg->X(3);
-    qftReg->Swap(2, 3);
-    qftReg->CZ(0, 1);
-    qftReg->H(0);
-    qftReg->T(1);
-    qftReg->X(2);
-    qftReg->Y(3);
-    qftReg->CNOT(3, 2);
-    qftReg->CZ(1, 0);
-    qftReg->T(0);
-    qftReg->X(1);
-    qftReg->X(3);
-    qftReg->CNOT(3, 0);
-    qftReg->CZ(2, 1);
-    qftReg->CZ(2, 1);
-    qftReg->CNOT(3, 0);
-    qftReg->X(3);
-    qftReg->X(1);
-    qftReg->IT(0);
-    qftReg->CZ(1, 0);
-    qftReg->CNOT(3, 2);
-    qftReg->Y(3);
-    qftReg->X(2);
-    qftReg->IT(1);
-    qftReg->H(0);
-    qftReg->CZ(0, 1);
-    qftReg->Swap(2, 3);
-    qftReg->X(3);
-    qftReg->H(1);
-    qftReg->X(0);
-    qftReg->Swap(3, 2);
-    qftReg->CNOT(0, 1);
-    qftReg->X(3);
-    qftReg->IT(2);
-    qftReg->Y(1);
-    qftReg->H(0);
-
-    REQUIRE(qftReg->MAll() == 15);
-}
-
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
@@ -5590,7 +5536,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, n, 0);
-        // testCase->SetReactiveSeparate(true);
+        testCase->SetReactiveSeparate(true);
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
