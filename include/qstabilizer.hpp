@@ -67,25 +67,25 @@ protected:
     std::uniform_real_distribution<real1_f> rand_distribution;
     std::shared_ptr<RdRandom> hardware_rand_generator;
 
-#if ENABLE_QUNIT_CPU_PARALLEL
-    DispatchQueue dispatchQueue;
-#endif
+    // #if ENABLE_QUNIT_CPU_PARALLEL
+    //     DispatchQueue dispatchQueue;
+    // #endif
 
     typedef std::function<void(void)> DispatchFn;
     void Dispatch(DispatchFn fn)
     {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.dispatch(fn);
-#else
+        // #if ENABLE_QUNIT_CPU_PARALLEL
+        //         dispatchQueue.dispatch(fn);
+        // #else
         fn();
-#endif
+        // #endif
     }
 
     void Dump()
     {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.dump();
-#endif
+        // #if ENABLE_QUNIT_CPU_PARALLEL
+        //         dispatchQueue.dump();
+        // #endif
     }
 
     bitCapIntOcl pow2Ocl(const bitLenInt& qubit) { return ONE_BCI << (bitCapIntOcl)qubit; }
@@ -112,18 +112,18 @@ public:
 
     void Finish()
     {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.finish();
-#endif
+        // #if ENABLE_QUNIT_CPU_PARALLEL
+        //         dispatchQueue.finish();
+        // #endif
     }
 
     bool isFinished()
     {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        return dispatchQueue.isFinished();
-#else
+        // #if ENABLE_QUNIT_CPU_PARALLEL
+        //         return dispatchQueue.isFinished();
+        // #else
         return true;
-#endif
+        // #endif
     }
 
     bitLenInt GetQubitCount() { return qubitCount; }
