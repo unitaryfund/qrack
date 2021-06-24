@@ -851,8 +851,8 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControl
     }
 
     if ((controls.size() > 1U) ||
-        ((topLeft != bottomRight) && (topLeft != -bottomRight) && (topLeft != I_CMPLX * bottomRight) &&
-            (topLeft != -I_CMPLX * bottomRight))) {
+        (!((abs(std::real(topLeft)) == ONE_R1) || (abs(std::imag(topLeft)) == ONE_R1)) && (topLeft != bottomRight) &&
+            (topLeft != -bottomRight) && (topLeft != I_CMPLX * bottomRight) && (topLeft != -I_CMPLX * bottomRight))) {
         SwitchToEngine();
     } else {
         FlushIfBlocked(controls, target);
@@ -884,8 +884,8 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
     FlushIfBlocked(controls, target);
 
     if ((controls.size() > 1U) ||
-        ((topRight != bottomLeft) && (topRight != -bottomLeft) && (topRight != I_CMPLX * bottomLeft) &&
-            (topRight != -I_CMPLX * bottomLeft))) {
+        (!((abs(std::real(topRight)) == ONE_R1) || (abs(std::imag(topRight)) == ONE_R1)) && (topRight != bottomLeft) &&
+            (topRight != -bottomLeft) && (topRight != I_CMPLX * bottomLeft) && (topRight != -I_CMPLX * bottomLeft))) {
         SwitchToEngine();
     }
 
