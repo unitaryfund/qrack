@@ -591,12 +591,12 @@ public:
         // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
-            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
+            if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
                 if (buffer->isInvert) {
                     buffer->isInvert = false;
                     buffer->cmplxSame *= -ONE_CMPLX;
                 }
-            } else if (IS_OPPOSITE(buffer->cmplxDiff, buffer->cmplxSame)) {
+            } else {
                 if (buffer->isInvert) {
                     std::swap(buffer->cmplxDiff, buffer->cmplxSame);
                 } else {
@@ -610,12 +610,12 @@ public:
 
         for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
-            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
+            if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
                 if (buffer->isInvert) {
                     buffer->isInvert = false;
                     buffer->cmplxDiff *= -ONE_CMPLX;
                 }
-            } else if (IS_OPPOSITE(buffer->cmplxDiff, buffer->cmplxSame)) {
+            } else {
                 if (buffer->isInvert) {
                     std::swap(buffer->cmplxDiff, buffer->cmplxSame);
                 } else {
