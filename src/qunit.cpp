@@ -905,11 +905,6 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return false;
     }
 
-    if (shard1.unit->isClifford() && !shard1.unit->TrySeparate(shard1.mapped, shard2.mapped)) {
-        // Both shards are in a stabilizer unit, and we can't separate them, together.
-        return false;
-    }
-
     real1_f prob1 = ProbBase(qubit1) - ONE_R1 / 2;
     real1_f prob2 = ProbBase(qubit2) - ONE_R1 / 2;
     if ((abs(prob1) > separabilityThreshold) || (abs(prob2) > separabilityThreshold)) {
@@ -926,6 +921,87 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     // Try a maximally disentangling operation, in 3 bases.
     RevertBasis1Qb(qubit1);
     RevertBasis1Qb(qubit2);
+
+    // Both shards are in the same unit.
+    if (shard1.unit->isClifford()) {
+        if (!shard1.unit->TrySeparate(shard1.mapped, shard2.mapped)) {
+            isReactiveSeparate = wasReactiveSeparate;
+            return false;
+        }
+
+        shard1.unit->CZ(shard1.mapped, shard2.mapped);
+        isShard1Sep = shard1.unit->TrySeparate(shard1.mapped);
+        isShard2Sep = shard2.unit->TrySeparate(shard2.mapped);
+
+        if (isShard1Sep || isShard2Sep) {
+            freezeTrySeparate = true;
+            CZ(qubit1, qubit2);
+            freezeTrySeparate = false;
+
+            isReactiveSeparate = wasReactiveSeparate;
+
+            if (isShard1Sep) {
+                TrySeparate(qubit1);
+            }
+
+            if (isShard2Sep) {
+                TrySeparate(qubit2);
+            }
+
+            return isShard1Sep && isShard2Sep;
+        }
+        shard1.unit->CZ(shard1.mapped, shard2.mapped);
+
+        shard1.unit->CNOT(shard1.mapped, shard2.mapped);
+        isShard1Sep = shard1.unit->TrySeparate(shard1.mapped);
+        isShard2Sep = shard2.unit->TrySeparate(shard2.mapped);
+
+        if (isShard1Sep || isShard2Sep) {
+            freezeTrySeparate = true;
+            CNOT(qubit1, qubit2);
+            freezeTrySeparate = false;
+
+            isReactiveSeparate = wasReactiveSeparate;
+
+            if (isShard1Sep) {
+                TrySeparate(qubit1);
+            }
+
+            if (isShard2Sep) {
+                TrySeparate(qubit2);
+            }
+
+            return isShard1Sep && isShard2Sep;
+        }
+        shard1.unit->CNOT(shard1.mapped, shard2.mapped);
+
+        shard1.unit->CY(shard1.mapped, shard2.mapped);
+        isShard1Sep = shard1.unit->TrySeparate(shard1.mapped);
+        isShard2Sep = shard2.unit->TrySeparate(shard2.mapped);
+
+        if (isShard1Sep || isShard2Sep) {
+            freezeTrySeparate = true;
+            CY(qubit1, qubit2);
+            freezeTrySeparate = false;
+
+            isReactiveSeparate = wasReactiveSeparate;
+
+            if (isShard1Sep) {
+                TrySeparate(qubit1);
+            }
+
+            if (isShard2Sep) {
+                TrySeparate(qubit2);
+            }
+
+            return isShard1Sep && isShard2Sep;
+        }
+        shard1.unit->CY(shard1.mapped, shard2.mapped);
+
+        isReactiveSeparate = wasReactiveSeparate;
+
+        return false;
+    }
 
     // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
     freezeTrySeparate = true;
