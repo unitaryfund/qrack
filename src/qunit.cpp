@@ -2181,10 +2181,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
     }
 
-    bool pmBasis =
-        (cShard.isPauliX && (tShard.isPauliX || tShard.isPauliY) && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
-
-    if (!freezeBasis2Qb && !pmBasis) {
+    if (!freezeBasis2Qb) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
@@ -2209,6 +2206,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
     // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
     // alone, by way of the last optional "true" argument in the call.
+    bool pmBasis =
+        (cShard.isPauliX && (tShard.isPauliX || tShard.isPauliY) && !QUEUED_PHASE(cShard) && !QUEUED_PHASE(tShard));
     if (pmBasis) {
         RevertBasisY(target);
         std::swap(controls[0], target);
@@ -3279,7 +3278,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         QEngineShard& shard = shards[controls[i]];
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         bool isEigenstate = false;
-        if (shard.unit && shard.unit->isClifford()) {
+        if (!inCurrentBasis && shard.unit && shard.unit->isClifford()) {
             ProbBase(controls[i]);
         }
         if (!shard.isProbDirty) {

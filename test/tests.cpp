@@ -5087,25 +5087,26 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_6", "[mirror]")
     REQUIRE(qftReg->MAll() == 0);
 }
 
-// TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_7", "[mirror]")
-// {
-//     qftReg->SetPermutation(10);
-//     qftReg->SetReactiveSeparate(true);
-//
-//     qftReg->H(2);
-//     qftReg->CNOT(2, 3);
-//     qftReg->H(0);
-//     qftReg->CNOT(0, 3);
-//     qftReg->CNOT(0, 3);
-//     qftReg->H(0);
-//     qftReg->H(3);
-//     qftReg->CZ(2, 3);
-//     qftReg->H(2);
-//     qftReg->CNOT(2, 3);
-//     qftReg->H(3);
-//
-//     REQUIRE(qftReg->MAll() == 10);
-// }
+// QUnit -> QStabilizerHybrid bug with QUnit::CNOT "pmBasis," ApplyEitherControlled "inCurrentBasis"
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_7", "[mirror]")
+{
+    qftReg->SetPermutation(10);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(0);
+    qftReg->H(2);
+    qftReg->CNOT(2, 3);
+    qftReg->CNOT(0, 3);
+    qftReg->CNOT(0, 3);
+    qftReg->CNOT(2, 3);
+    qftReg->H(2);
+    qftReg->H(3);
+    qftReg->CNOT(2, 3);
+    qftReg->H(3);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 10);
+}
 
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
