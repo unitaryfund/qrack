@@ -5158,7 +5158,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_9", "[mirror]")
     REQUIRE(qftReg->MAll() == 0);
 }
 
-// QUnit -> QStabilizerHybrid CZ/CY decomposition bug (another)
+// QUnit -> QStabilizerHybrid separability bug
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_10", "[mirror]")
 {
     qftReg->SetPermutation(9);
@@ -5605,10 +5605,10 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
     const int GateCount1Qb = 5;
     const int GateCountMultiQb = 4;
-    const int Depth = 5;
+    const int Depth = 4;
 
     const int TRIALS = 100;
-    const int n = 5;
+    const int n = 4;
 
     int d;
     int i;
