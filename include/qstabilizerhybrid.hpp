@@ -81,7 +81,7 @@ protected:
         bool isBlocked = (bool)shards[target];
         if (!isBlocked) {
             for (bitLenInt i = 0; i < controls.size(); i++) {
-                if (shards[controls[i]]) {
+                if (shards[controls[i]] && !shards[controls[i]]->IsPhase()) {
                     isBlocked = true;
                     break;
                 }

@@ -14,11 +14,9 @@
 #include "qstabilizerhybrid.hpp"
 
 #define IS_NORM_0(c) (norm(c) <= amplitudeFloor)
-#define IS_REAL_NORM_1(r) (abs(r - ONE_R1) <= FP_NORM_EPSILON)
+#define IS_REAL_0(r) (abs(r) <= FP_NORM_EPSILON)
 #define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \
-    ((IS_REAL_NORM_1(std::real(top)) || IS_REAL_NORM_1(std::imag(top))) &&                                             \
-        (IS_SAME(top, bottom) || IS_SAME(top, -bottom) || IS_SAME(top, I_CMPLX * bottom) ||                            \
-            IS_SAME(top, -I_CMPLX * bottom)))
+    ((IS_REAL_0(std::real(top)) || IS_REAL_0(std::imag(top))) && (IS_SAME(top, bottom) || IS_SAME(top, -bottom)))
 
 namespace Qrack {
 
@@ -462,6 +460,7 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
     }
+
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
@@ -538,10 +537,6 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
     complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-    if (IsIdentity(mtrx, false)) {
-        return;
-    }
-
     if (shards[target]) {
         ApplySingleBit(mtrx, target);
         return;

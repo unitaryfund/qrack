@@ -5158,6 +5158,38 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_9", "[mirror]")
     REQUIRE(qftReg->MAll() == 0);
 }
 
+// QUnit -> QStabilizerHybrid separability bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_10", "[mirror]")
+{
+    qftReg->SetPermutation(9);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->CCNOT(1, 3, 0);
+    qftReg->Y(0);
+    qftReg->Y(1);
+    qftReg->H(3);
+    qftReg->CNOT(0, 3);
+    qftReg->X(3);
+    qftReg->CZ(1, 3);
+    qftReg->Y(0);
+    qftReg->H(1);
+    qftReg->H(1);
+    qftReg->Y(0);
+    qftReg->CZ(1, 3);
+    qftReg->X(3);
+    qftReg->CNOT(0, 3);
+    qftReg->H(3);
+    qftReg->Y(1);
+    qftReg->Y(0);
+    qftReg->CCNOT(1, 3, 0);
+    qftReg->H(1);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 9);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
