@@ -5161,65 +5161,33 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_9", "[mirror]")
 // QUnit -> QStabilizerHybrid CZ/CY decomposition bug (another)
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_10", "[mirror]")
 {
-    qftReg->SetPermutation(8);
+    qftReg->SetPermutation(9);
     qftReg->SetReactiveSeparate(true);
 
     qftReg->H(0);
-    qftReg->Swap(2, 4);
+    qftReg->H(1);
+    qftReg->CCNOT(1, 3, 0);
+    qftReg->Y(0);
+    qftReg->Y(1);
+    qftReg->H(3);
+    qftReg->CNOT(0, 3);
+    qftReg->X(3);
     qftReg->CZ(1, 3);
     qftReg->Y(0);
     qftReg->H(1);
-    qftReg->T(2);
-    qftReg->T(3);
-    qftReg->CCNOT(1, 3, 0);
-    qftReg->Swap(2, 4);
-    qftReg->Y(0);
-    qftReg->Y(1);
-    qftReg->X(2);
-    qftReg->H(3);
-    qftReg->T(4);
-    qftReg->CNOT(0, 3);
-    qftReg->Swap(1, 4);
-    qftReg->X(1);
-    qftReg->X(3);
-    qftReg->CZ(4, 3);
-    qftReg->CCNOT(0, 1, 2);
-    qftReg->Y(0);
-    qftReg->Y(1);
-    qftReg->T(2);
-    qftReg->X(3);
-    qftReg->H(4);
-    qftReg->CNOT(2, 0);
-    qftReg->CCNOT(3, 1, 4);
-    qftReg->CCNOT(3, 1, 4);
-    qftReg->CNOT(2, 0);
-    qftReg->H(4);
-    qftReg->X(3);
-    qftReg->IT(2);
-    qftReg->Y(1);
-    qftReg->Y(0);
-    qftReg->CCNOT(0, 1, 2);
-    qftReg->CZ(4, 3);
-    qftReg->X(3);
-    qftReg->X(1);
-    qftReg->Swap(1, 4);
-    qftReg->CNOT(0, 3);
-    qftReg->IT(4);
-    qftReg->H(3);
-    qftReg->X(2);
-    qftReg->Y(1);
-    qftReg->Y(0);
-    qftReg->Swap(2, 4);
-    qftReg->CCNOT(1, 3, 0);
-    qftReg->IT(3);
-    qftReg->IT(2);
     qftReg->H(1);
     qftReg->Y(0);
     qftReg->CZ(1, 3);
-    qftReg->Swap(2, 4);
+    qftReg->X(3);
+    qftReg->CNOT(0, 3);
+    qftReg->H(3);
+    qftReg->Y(1);
+    qftReg->Y(0);
+    qftReg->CCNOT(1, 3, 0);
+    qftReg->H(1);
     qftReg->H(0);
 
-    REQUIRE(qftReg->MAll() == 8);
+    REQUIRE(qftReg->MAll() == 9);
 }
 
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
