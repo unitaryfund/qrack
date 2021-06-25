@@ -14,11 +14,9 @@
 #include "qstabilizerhybrid.hpp"
 
 #define IS_NORM_0(c) (norm(c) <= amplitudeFloor)
-#define IS_REAL_NORM_1(r) (abs(r - ONE_R1) <= FP_NORM_EPSILON)
+#define IS_REAL_0(r) (abs(r) <= FP_NORM_EPSILON)
 #define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \
-    ((IS_REAL_NORM_1(std::real(top)) || IS_REAL_NORM_1(std::imag(top))) &&                                             \
-        (IS_SAME(top, bottom) || IS_SAME(top, -bottom) || IS_SAME(top, I_CMPLX * bottom) ||                            \
-            IS_SAME(top, -I_CMPLX * bottom)))
+    ((IS_REAL_0(std::real(top)) || IS_REAL_0(std::imag(top))) && (IS_SAME(top, bottom) || IS_SAME(top, -bottom)))
 
 namespace Qrack {
 
