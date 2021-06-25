@@ -5132,6 +5132,32 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_8", "[mirror]")
     REQUIRE(qftReg->MAll() == 11);
 }
 
+// QUnit -> QStabilizerHybrid CZ/CY decomposition bug (another)
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_9", "[mirror]")
+{
+    qftReg->SetPermutation(0);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->S(1);
+    qftReg->T(0);
+    qftReg->X(0);
+    qftReg->T(0);
+    qftReg->X(1);
+    qftReg->CZ(0, 1);
+    qftReg->CZ(0, 1);
+    qftReg->X(1);
+    qftReg->IT(0);
+    qftReg->X(0);
+    qftReg->IT(0);
+    qftReg->IS(1);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 0);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();

@@ -794,6 +794,7 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
         }
 
         if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            stabilizer->CZ(control, target);
             stabilizer->CY(control, target);
             stabilizer->CZ(control, target);
             return;
@@ -884,10 +885,10 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
         return;
     }
 
-    FlushIfBlocked(controls, target);
-
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
         SwitchToEngine();
+    } else {
+        FlushIfBlocked(controls, target);
     }
 
     if (engine) {
