@@ -537,10 +537,6 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
     complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-    if (IsIdentity(mtrx, false)) {
-        return;
-    }
-
     if (shards[target]) {
         ApplySingleBit(mtrx, target);
         return;
