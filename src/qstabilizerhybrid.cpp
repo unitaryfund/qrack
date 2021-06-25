@@ -111,6 +111,7 @@ QStabilizerShardPtr QStabilizerHybrid::CacheEigenState(const bitLenInt& target, 
         // Not a single qubit eigenstate
         complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
         toRet = std::make_shared<QStabilizerShard>(mtrx);
+        toRet->isEigenZ = false;
     }
 
     return toRet;
@@ -130,6 +131,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
         for (bitLenInt i = 0; i < shards.size(); i++) {
             if (shards[i]) {
                 c->shards[i] = std::make_shared<QStabilizerShard>(shards[i]->gate);
+                c->shards[i]->isEigenZ = shards[i]->isEigenZ;
             }
         }
     } else {
@@ -285,9 +287,11 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
 void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
     bool wasCached;
+    bool wasEigenZ = false;
     complex mtrx[4];
     if (shards[target]) {
         QStabilizerShardPtr shard = shards[target];
+        wasEigenZ = shard->isEigenZ;
         shard->Compose(lMtrx);
         std::copy(shard->gate, shard->gate + 4, mtrx);
         shards[target] = NULL;
@@ -366,6 +370,7 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     QStabilizerShardPtr shard = std::make_shared<QStabilizerShard>(mtrx);
+    shard->isEigenZ = wasEigenZ;
     if (!wasCached) {
         QStabilizerShardPtr nShard = CacheEigenState(target);
         nShard->Compose(shard->gate);
@@ -413,6 +418,9 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
     }
 
     QStabilizerShardPtr shard = CacheEigenState(target, true);
+    if (stabilizer->IsSeparableZ(target)) {
+        shard->isEigenZ = true;
+    }
     shard->Compose(std::make_shared<QStabilizerShard>(mtrx)->gate);
     shards[target] = shard;
 }
@@ -459,6 +467,9 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
     }
 
     QStabilizerShardPtr shard = CacheEigenState(target, true);
+    if (stabilizer->IsSeparableZ(target)) {
+        shard->isEigenZ = true;
+    }
     shard->Compose(std::make_shared<QStabilizerShard>(mtrx)->gate);
     shards[target] = shard;
 }
