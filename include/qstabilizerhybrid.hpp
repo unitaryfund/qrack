@@ -90,7 +90,7 @@ protected:
         }
 
         if (isBlocked) {
-            FlushBuffers();
+            SwitchToEngine();
         }
     }
 
