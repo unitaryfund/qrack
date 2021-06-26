@@ -469,7 +469,12 @@ public:
 
     virtual void CZ(bitLenInt control, bitLenInt target)
     {
-        if ((shards[control] && !shards[control]->IsPhase()) || (shards[target] && !shards[target]->IsPhase())) {
+        bool isControlBlocked = (shards[control] && !shards[control]->IsPhase());
+        bool isTargetBlocked = (shards[target] && !shards[target]->IsPhase());
+
+        if (isControlBlocked && isTargetBlocked) {
+            FlushBuffers();
+        } else if (isTargetBlocked) {
             real1_f prob = Prob(control);
             if (prob == ZERO_R1) {
                 return;
@@ -479,7 +484,9 @@ public:
                 return;
             }
 
-            prob = Prob(target);
+            FlushBuffers();
+        } else if (isControlBlocked) {
+            real1_f prob = Prob(target);
             if (prob == ZERO_R1) {
                 return;
             }
@@ -500,7 +507,12 @@ public:
 
     virtual void CS(bitLenInt control, bitLenInt target)
     {
-        if ((shards[control] && !shards[control]->IsPhase()) || (shards[target] && !shards[target]->IsPhase())) {
+        bool isControlBlocked = (shards[control] && !shards[control]->IsPhase());
+        bool isTargetBlocked = (shards[target] && !shards[target]->IsPhase());
+
+        if (isControlBlocked && isTargetBlocked) {
+            FlushBuffers();
+        } else if (isTargetBlocked) {
             real1_f prob = Prob(control);
             if (prob == ZERO_R1) {
                 return;
@@ -510,7 +522,9 @@ public:
                 return;
             }
 
-            prob = Prob(target);
+            FlushBuffers();
+        } else if (isControlBlocked) {
+            real1_f prob = Prob(target);
             if (prob == ZERO_R1) {
                 return;
             }
@@ -518,6 +532,8 @@ public:
                 S(control);
                 return;
             }
+
+            FlushBuffers();
         }
 
         SwitchToEngine();
