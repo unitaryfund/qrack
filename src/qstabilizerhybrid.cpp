@@ -418,9 +418,7 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
     }
 
     QStabilizerShardPtr shard = CacheEigenState(target, true);
-    if (stabilizer->IsSeparableZ(target)) {
-        shard->isEigenZ = true;
-    }
+    // shard->isEigenZ is set by CacheEigenState().
     shard->Compose(std::make_shared<QStabilizerShard>(mtrx)->gate);
     shards[target] = shard;
 }
@@ -467,9 +465,7 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
     }
 
     QStabilizerShardPtr shard = CacheEigenState(target, true);
-    if (stabilizer->IsSeparableZ(target)) {
-        shard->isEigenZ = true;
-    }
+    // shard->isEigenZ is set by CacheEigenState().
     shard->Compose(std::make_shared<QStabilizerShard>(mtrx)->gate);
     shards[target] = shard;
 }
