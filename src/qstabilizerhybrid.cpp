@@ -118,7 +118,10 @@ QStabilizerShardPtr QStabilizerHybrid::CacheEigenState(const bitLenInt& target, 
     if (toRet->isEigenZ && (stabilizer->M(target))) {
         stabilizer->X(target);
         complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-        toRet->Compose(pauliX);
+        QStabilizerShardPtr xBuffer = std::make_shared<QStabilizerShard>(pauliX);
+        xBuffer->isEigenZ = true;
+        xBuffer->Compose(toRet->gate);
+        toRet = xBuffer;
     }
 
     return toRet;
