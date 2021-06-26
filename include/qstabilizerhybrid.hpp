@@ -228,23 +228,36 @@ public:
     virtual bool TrimControls(const bitLenInt* lControls, const bitLenInt& lControlLen, std::vector<bitLenInt>& output,
         const bool& anti = false)
     {
+        bool isBlocked = false;
+        std::vector<bool> isFlipped(lControlLen);
+        for (bitLenInt i = 0; i < lControlLen; i++) {
+            if (shards[lControls[i]]) {
+                if (shards[lControls[i]]->IsInvert()) {
+                    isFlipped[i] = true;
+                } else if (!shards[lControls[i]]->IsPhase()) {
+                    isBlocked = true;
+                    break;
+                }
+            }
+        }
+
+        if (isBlocked) {
+            SwitchToEngine();
+        }
+
         if (engine) {
             output.insert(output.begin(), lControls, lControls + lControlLen);
             return false;
         }
 
-        real1_f prob;
         for (bitLenInt i = 0; i < lControlLen; i++) {
-            prob = Prob(lControls[i]);
-            if (anti) {
-                prob = ONE_R1 - prob;
+            if (!stabilizer->IsSeparableZ(lControls[i])) {
+                output.push_back(lControls[i]);
+                continue;
             }
 
-            if (prob == ZERO_R1) {
+            if ((anti ^ isFlipped[i]) == stabilizer->M(lControls[i])) {
                 return true;
-            }
-            if (prob != ONE_R1) {
-                output.push_back(lControls[i]);
             }
         }
 
@@ -446,81 +459,6 @@ public:
         } else {
             engine->ISwap(qubit1, qubit2);
         }
-    }
-
-    virtual void CZ(bitLenInt control, bitLenInt target)
-    {
-        // TODO: Generalize to all controlled phase gates.
-        bool isControlBlocked = (shards[control] && !shards[control]->IsPhase());
-        bool isTargetBlocked = (shards[target] && !shards[target]->IsPhase());
-
-        if (isControlBlocked && isTargetBlocked) {
-            FlushBuffers();
-        } else if (isTargetBlocked) {
-            real1_f prob = Prob(control);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                Z(target);
-                return;
-            }
-
-            FlushBuffers();
-        } else if (isControlBlocked) {
-            real1_f prob = Prob(target);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                Z(control);
-                return;
-            }
-
-            FlushBuffers();
-        }
-
-        if (stabilizer) {
-            stabilizer->CZ(control, target);
-        } else {
-            engine->CZ(control, target);
-        }
-    }
-
-    virtual void CS(bitLenInt control, bitLenInt target)
-    {
-        // TODO: Generalize to all controlled phase gates.
-        bool isControlBlocked = (shards[control] && !shards[control]->IsPhase());
-        bool isTargetBlocked = (shards[target] && !shards[target]->IsPhase());
-
-        if (isControlBlocked && isTargetBlocked) {
-            FlushBuffers();
-        } else if (isTargetBlocked) {
-            real1_f prob = Prob(control);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                S(target);
-                return;
-            }
-
-            FlushBuffers();
-        } else if (isControlBlocked) {
-            real1_f prob = Prob(target);
-            if (prob == ZERO_R1) {
-                return;
-            }
-            if (prob == ONE_R1) {
-                S(control);
-                return;
-            }
-
-            FlushBuffers();
-        }
-
-        SwitchToEngine();
-        engine->CS(control, target);
     }
 
     virtual bitCapInt MAll();
