@@ -241,11 +241,7 @@ public:
             }
         }
 
-        if (isBlocked) {
-            SwitchToEngine();
-        }
-
-        if (engine) {
+        if (isBlocked || engine) {
             output.insert(output.begin(), lControls, lControls + lControlLen);
             return false;
         }
