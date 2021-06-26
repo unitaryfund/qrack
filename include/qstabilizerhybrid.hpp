@@ -77,9 +77,9 @@ protected:
     QStabilizerPtr MakeStabilizer(const bitCapInt& perm = 0);
     QInterfacePtr MakeEngine(const bitCapInt& perm = 0);
 
-    void FlushIfBlocked(std::vector<bitLenInt> controls, bitLenInt target)
+    void FlushIfBlocked(std::vector<bitLenInt> controls, bitLenInt target, bool isPhase = false)
     {
-        bool isBlocked = (bool)shards[target];
+        bool isBlocked = (shards[target] && (!isPhase || !shards[target]->IsPhase()));
         if (!isBlocked) {
             for (bitLenInt i = 0; i < controls.size(); i++) {
                 if (shards[controls[i]] && !shards[controls[i]]->IsPhase()) {
@@ -469,6 +469,7 @@ public:
 
     virtual void CZ(bitLenInt control, bitLenInt target)
     {
+        // TODO: Generalize to all controlled phase gates.
         bool isControlBlocked = (shards[control] && !shards[control]->IsPhase());
         bool isTargetBlocked = (shards[target] && !shards[target]->IsPhase());
 
@@ -507,6 +508,7 @@ public:
 
     virtual void CS(bitLenInt control, bitLenInt target)
     {
+        // TODO: Generalize to all controlled phase gates.
         bool isControlBlocked = (shards[control] && !shards[control]->IsPhase());
         bool isTargetBlocked = (shards[target] && !shards[target]->IsPhase());
 

@@ -517,7 +517,7 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
     if (controls.size() > 1U) {
         SwitchToEngine();
     } else {
-        FlushIfBlocked(controls, target);
+        FlushIfBlocked(controls, target, true);
     }
 
     if (engine) {
@@ -706,7 +706,7 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControl
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topLeft, bottomRight)) {
         SwitchToEngine();
     } else {
-        FlushIfBlocked(controls, target);
+        FlushIfBlocked(controls, target, true);
     }
 
     if (engine) {

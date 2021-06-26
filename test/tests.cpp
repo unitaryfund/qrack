@@ -5190,6 +5190,76 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_10", "[mirror]")
     REQUIRE(qftReg->MAll() == 9);
 }
 
+// QUnit -> QStabilizerHybrid bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_11", "[mirror]")
+{
+    qftReg->SetPermutation(3);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->X(1);
+    qftReg->X(2);
+    qftReg->Y(3);
+    qftReg->CNOT(3, 0);
+    qftReg->CZ(2, 1);
+    qftReg->X(0);
+    qftReg->T(1);
+    qftReg->T(2);
+    qftReg->T(3);
+    qftReg->H(4);
+    qftReg->CNOT(0, 2);
+    qftReg->CCNOT(4, 1, 3);
+    qftReg->Y(0);
+    qftReg->H(1);
+    qftReg->H(2);
+    qftReg->X(3);
+    qftReg->CNOT(0, 2);
+    qftReg->Swap(1, 3);
+    qftReg->T(0);
+    qftReg->H(1);
+    qftReg->Y(3);
+    qftReg->Y(4);
+    qftReg->CCNOT(3, 2, 1);
+    qftReg->CNOT(4, 0);
+    qftReg->T(1);
+    qftReg->X(2);
+    qftReg->T(3);
+    qftReg->Y(4);
+    qftReg->CCNOT(2, 0, 3);
+    qftReg->CZ(1, 4);
+    qftReg->CZ(1, 4);
+    qftReg->CCNOT(2, 0, 3);
+    qftReg->Y(4);
+    qftReg->IT(3);
+    qftReg->X(2);
+    qftReg->IT(1);
+    qftReg->CNOT(4, 0);
+    qftReg->CCNOT(3, 2, 1);
+    qftReg->Y(4);
+    qftReg->Y(3);
+    qftReg->H(1);
+    qftReg->IT(0);
+    qftReg->Swap(1, 3);
+    qftReg->CNOT(0, 2);
+    qftReg->X(3);
+    qftReg->H(2);
+    qftReg->H(1);
+    qftReg->Y(0);
+    qftReg->CCNOT(4, 1, 3);
+    qftReg->CNOT(0, 2);
+    qftReg->H(4);
+    qftReg->IT(3);
+    qftReg->IT(2);
+    qftReg->IT(1);
+    qftReg->X(0);
+    qftReg->CZ(2, 1);
+    qftReg->CNOT(3, 0);
+    qftReg->Y(3);
+    qftReg->X(2);
+    qftReg->X(1);
+
+    REQUIRE(qftReg->MAll() == 3);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
@@ -5605,10 +5675,10 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
     const int GateCount1Qb = 5;
     const int GateCountMultiQb = 4;
-    const int Depth = 4;
+    const int Depth = 5;
 
     const int TRIALS = 100;
-    const int n = 4;
+    const int n = 5;
 
     int d;
     int i;
