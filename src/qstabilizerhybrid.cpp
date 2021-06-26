@@ -681,7 +681,7 @@ void QStabilizerHybrid::ApplyAntiControlledSingleBit(
     }
 
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, controls)) {
+    if (TrimControls(lControls, lControlLen, controls, true)) {
         return;
     }
 

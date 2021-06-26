@@ -116,6 +116,77 @@ protected:
         return result;
     }
 
+    virtual void FlushBuffers()
+    {
+        bitLenInt i;
+
+        if (stabilizer) {
+            for (i = 0; i < qubitCount; i++) {
+                if (shards[i]) {
+                    // This will call FlushBuffers() again after no longer stabilizer.
+                    SwitchToEngine();
+                    return;
+                }
+            }
+        }
+
+        if (stabilizer) {
+            return;
+        }
+
+        for (i = 0; i < qubitCount; i++) {
+            QStabilizerShardPtr shard = shards[i];
+            if (shard) {
+                shards[i] = NULL;
+                ApplySingleBit(shard->gate, i);
+            }
+        }
+    }
+
+    virtual void DumpBuffers()
+    {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            shards[i] = NULL;
+        }
+    }
+
+    virtual bool TrimControls(const bitLenInt* lControls, const bitLenInt& lControlLen, std::vector<bitLenInt>& output,
+        const bool& anti = false)
+    {
+        if (engine) {
+            output.insert(output.begin(), lControls, lControls + lControlLen);
+            return false;
+        }
+
+        for (bitLenInt i = 0; i < lControlLen; i++) {
+            if (shards[lControls[i]]) {
+                if (!shards[lControls[i]]->isEigenZ) {
+                    output.push_back(lControls[i]);
+                    continue;
+                }
+                if (shards[lControls[i]]->IsPhase()) {
+                    if (anti) {
+                        return true;
+                    }
+                } else if (shards[lControls[i]]->IsInvert()) {
+                    if (!anti) {
+                        return true;
+                    }
+                } else {
+                    output.push_back(lControls[i]);
+                }
+            } else {
+                if (!stabilizer->IsSeparableZ(lControls[i])) {
+                    output.push_back(lControls[i]);
+                } else if (anti == stabilizer->M(lControls[i])) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     virtual QStabilizerShardPtr CacheEigenState(const bitLenInt& target, const bool& skipZ = false);
 
 public:
@@ -189,75 +260,6 @@ public:
         if (engine) {
             engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
         }
-    }
-
-    virtual void FlushBuffers()
-    {
-        bitLenInt i;
-
-        if (stabilizer) {
-            for (i = 0; i < qubitCount; i++) {
-                if (shards[i]) {
-                    // This will call FlushBuffers() again after no longer stabilizer.
-                    SwitchToEngine();
-                    return;
-                }
-            }
-        }
-
-        if (stabilizer) {
-            return;
-        }
-
-        for (i = 0; i < qubitCount; i++) {
-            QStabilizerShardPtr shard = shards[i];
-            if (shard) {
-                shards[i] = NULL;
-                ApplySingleBit(shard->gate, i);
-            }
-        }
-    }
-
-    virtual void DumpBuffers()
-    {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            shards[i] = NULL;
-        }
-    }
-
-    virtual bool TrimControls(const bitLenInt* lControls, const bitLenInt& lControlLen, std::vector<bitLenInt>& output,
-        const bool& anti = false)
-    {
-        bool isBlocked = false;
-        std::vector<bool> isFlipped(lControlLen);
-        for (bitLenInt i = 0; i < lControlLen; i++) {
-            if (shards[lControls[i]]) {
-                if (shards[lControls[i]]->IsInvert()) {
-                    isFlipped[i] = true;
-                } else if (!shards[lControls[i]]->IsPhase()) {
-                    isBlocked = true;
-                    break;
-                }
-            }
-        }
-
-        if (isBlocked || engine) {
-            output.insert(output.begin(), lControls, lControls + lControlLen);
-            return false;
-        }
-
-        for (bitLenInt i = 0; i < lControlLen; i++) {
-            if (!stabilizer->IsSeparableZ(lControls[i])) {
-                output.push_back(lControls[i]);
-                continue;
-            }
-
-            if ((anti ^ isFlipped[i]) == stabilizer->M(lControls[i])) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -412,8 +414,8 @@ public:
                     return norm(shard->gate[2]);
                 }
 
-                SwitchToEngine();
-                return engine->Prob(qubitIndex);
+                // Otherwise, state appears locally maximally mixed.
+                return ONE_R1 / 2;
             }
         }
 
@@ -421,8 +423,8 @@ public:
             return (isCachedInvert != stabilizer->M(qubitIndex)) ? ONE_R1 : ZERO_R1;
         }
 
-        SwitchToEngine();
-        return engine->Prob(qubitIndex);
+        // Otherwise, state appears locally maximally mixed.
+        return ONE_R1 / 2;
     }
 
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
