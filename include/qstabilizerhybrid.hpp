@@ -467,6 +467,63 @@ public:
         }
     }
 
+    virtual void CZ(bitLenInt control, bitLenInt target)
+    {
+        if ((shards[control] && !shards[control]->IsPhase()) || (shards[target] && !shards[target]->IsPhase())) {
+            real1_f prob = Prob(control);
+            if (prob == ZERO_R1) {
+                return;
+            }
+            if (prob == ONE_R1) {
+                Z(target);
+                return;
+            }
+
+            prob = Prob(target);
+            if (prob == ZERO_R1) {
+                return;
+            }
+            if (prob == ONE_R1) {
+                Z(control);
+                return;
+            }
+
+            FlushBuffers();
+        }
+
+        if (stabilizer) {
+            stabilizer->CZ(control, target);
+        } else {
+            engine->CZ(control, target);
+        }
+    }
+
+    virtual void CS(bitLenInt control, bitLenInt target)
+    {
+        if ((shards[control] && !shards[control]->IsPhase()) || (shards[target] && !shards[target]->IsPhase())) {
+            real1_f prob = Prob(control);
+            if (prob == ZERO_R1) {
+                return;
+            }
+            if (prob == ONE_R1) {
+                S(target);
+                return;
+            }
+
+            prob = Prob(target);
+            if (prob == ZERO_R1) {
+                return;
+            }
+            if (prob == ONE_R1) {
+                S(control);
+                return;
+            }
+        }
+
+        SwitchToEngine();
+        engine->CS(control, target);
+    }
+
     virtual bitCapInt MAll();
 
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
