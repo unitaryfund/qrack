@@ -422,8 +422,8 @@ public:
                     return norm(shard->gate[2]);
                 }
 
-                // Otherwise, state is entangled and locally appears maximally mixed.
-                return ONE_R1 / 2;
+                SwitchToEngine();
+                return engine->Prob(qubitIndex);
             }
         }
 
@@ -431,7 +431,8 @@ public:
             return (isCachedInvert != stabilizer->M(qubitIndex)) ? ONE_R1 : ZERO_R1;
         }
 
-        return ONE_R1 / 2;
+        SwitchToEngine();
+        return engine->Prob(qubitIndex);
     }
 
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
