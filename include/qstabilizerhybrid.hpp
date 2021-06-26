@@ -94,14 +94,6 @@ protected:
         }
     }
 
-    virtual void ComposeGate(bitLenInt target, complex* mtrx)
-    {
-        QStabilizerShardPtr shard = shards[target];
-        shard->Compose(mtrx);
-        std::copy(shard->gate, shard->gate + 4, mtrx);
-        shards[target] = NULL;
-    }
-
     virtual bool CollapseSeparableShard(bitLenInt qubit)
     {
         QStabilizerShardPtr shard = shards[qubit];
