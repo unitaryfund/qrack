@@ -98,15 +98,7 @@ protected:
     {
         QStabilizerShardPtr shard = shards[qubit];
         shards[qubit] = NULL;
-        real1_f prob;
-
-        bool isZ1 = stabilizer->M(qubit);
-
-        if (isZ1) {
-            prob = norm(shard->gate[3]);
-        } else {
-            prob = norm(shard->gate[2]);
-        }
+        real1_f prob = norm(shard->gate[2]);
 
         bool result;
         if (prob <= ZERO_R1) {
@@ -117,7 +109,7 @@ protected:
             result = (Rand() <= prob);
         }
 
-        if (result != isZ1) {
+        if (result) {
             stabilizer->X(qubit);
         }
 
@@ -406,11 +398,8 @@ public:
             if (shard->IsInvert()) {
                 isCachedInvert = true;
             } else if (!shard->IsPhase()) {
-                // Bit was already rotated to Z basis.
+                // Bit was already rotated to |0> in Z basis.
                 if (shards[qubitIndex]->isEigenZ) {
-                    if (stabilizer->M(qubitIndex)) {
-                        return norm(shard->gate[3]);
-                    }
                     return norm(shard->gate[2]);
                 }
 

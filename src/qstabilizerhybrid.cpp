@@ -114,6 +114,13 @@ QStabilizerShardPtr QStabilizerHybrid::CacheEigenState(const bitLenInt& target, 
         toRet->isEigenZ = false;
     }
 
+    // Leave in |0> state.
+    if (toRet->isEigenZ && (stabilizer->M(target))) {
+        stabilizer->X(target);
+        complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        toRet->Compose(pauliX);
+    }
+
     return toRet;
 }
 
@@ -418,7 +425,6 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
     }
 
     QStabilizerShardPtr shard = CacheEigenState(target, true);
-    // shard->isEigenZ is set by CacheEigenState().
     shard->Compose(std::make_shared<QStabilizerShard>(mtrx)->gate);
     shards[target] = shard;
 }
@@ -465,7 +471,6 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
     }
 
     QStabilizerShardPtr shard = CacheEigenState(target, true);
-    // shard->isEigenZ is set by CacheEigenState().
     shard->Compose(std::make_shared<QStabilizerShard>(mtrx)->gate);
     shards[target] = shard;
 }
