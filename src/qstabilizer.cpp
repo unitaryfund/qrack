@@ -401,7 +401,6 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
     }
 
     eng->UpdateRunningNorm();
-    eng->NormalizeState();
 }
 
 /// Get all probabilities corresponding to ket notation
