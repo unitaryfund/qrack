@@ -477,7 +477,7 @@ public:
      * Apply an arbitrary single bit unitary transformation, with arbitrary (anti-)control bits.
      */
     virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     /**
      * Apply a single bit transformation that only effects phase.
