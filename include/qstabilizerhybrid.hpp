@@ -377,7 +377,7 @@ public:
                     return CollapseSeparableShard(qubit);
                 }
 
-                // Otherwise, state is entangled and locally appears maximally mixed.
+                // Otherwise, state is entangled.
                 FlushBuffers();
             }
         }

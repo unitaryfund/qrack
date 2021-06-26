@@ -750,18 +750,16 @@ bitCapInt QStabilizerHybrid::MAll()
         for (bitLenInt i = 0; i < qubitCount; i++) {
             QStabilizerShardPtr shard = shards[i];
             if (shard) {
-                if (shard->IsInvert()) {
+                if (shard->IsPhase()) {
+                    shards[i] = NULL;
+                } else if (shard->IsInvert()) {
+                    shards[i] = NULL;
                     stabilizer->X(i);
-                    shards[i] = NULL;
-                } else if (shard->IsPhase()) {
-                    shards[i] = NULL;
+                } else if (shards[i]->isEigenZ) {
+                    CollapseSeparableShard(i);
                 } else {
-                    if (shards[i]->isEigenZ) {
-                        CollapseSeparableShard(i);
-                    } else {
-                        FlushBuffers();
-                        break;
-                    }
+                    FlushBuffers();
+                    break;
                 }
             }
         }
