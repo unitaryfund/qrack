@@ -389,7 +389,7 @@ public:
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
         if (engine) {
-            return clampProb(engine->Prob(qubitIndex));
+            return engine->Prob(qubitIndex);
         }
 
         bool isCachedInvert = false;
