@@ -5190,82 +5190,26 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_10", "[mirror]")
     REQUIRE(qftReg->MAll() == 9);
 }
 
-// QUnit -> QStabilizerHybrid intermittent failure
+// QUnit -> QStabilizerHybrid bug
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_11", "[mirror]")
 {
-    qftReg->SetPermutation(16);
+    qftReg->SetPermutation(5);
     qftReg->SetReactiveSeparate(true);
 
-    qftReg->X(0);
-    qftReg->H(1);
-    qftReg->T(2);
-    qftReg->Y(3);
-    qftReg->H(4);
-    qftReg->CNOT(3, 2);
-    qftReg->CNOT(4, 0);
     qftReg->H(0);
-    qftReg->H(1);
-    qftReg->Y(2);
-    qftReg->X(3);
-    qftReg->X(4);
-    qftReg->CZ(2, 4);
     qftReg->CNOT(0, 1);
     qftReg->X(0);
-    qftReg->X(1);
-    qftReg->X(2);
-    qftReg->H(3);
-    qftReg->T(4);
-    qftReg->CCNOT(0, 2, 1);
-    qftReg->Swap(3, 4);
-    qftReg->X(0);
+    qftReg->CNOT(0, 1);
     qftReg->H(1);
-    qftReg->Y(2);
-    qftReg->T(3);
-    qftReg->H(4);
-    qftReg->CCNOT(3, 0, 1);
-    qftReg->Swap(2, 4);
-    qftReg->Y(0);
     qftReg->T(1);
-    qftReg->T(2);
-    qftReg->T(3);
-    qftReg->CZ(3, 4);
-    qftReg->CZ(0, 1);
-    qftReg->CZ(0, 1);
-    qftReg->CZ(3, 4);
-    qftReg->IT(3);
-    qftReg->IT(2);
     qftReg->IT(1);
-    qftReg->Y(0);
-    qftReg->Swap(2, 4);
-    qftReg->CCNOT(3, 0, 1);
-    qftReg->H(4);
-    qftReg->IT(3);
-    qftReg->Y(2);
     qftReg->H(1);
-    qftReg->X(0);
-    qftReg->Swap(3, 4);
-    qftReg->CCNOT(0, 2, 1);
-    qftReg->IT(4);
-    qftReg->H(3);
-    qftReg->X(2);
-    qftReg->X(1);
+    qftReg->CNOT(0, 1);
     qftReg->X(0);
     qftReg->CNOT(0, 1);
-    qftReg->CZ(2, 4);
-    qftReg->X(4);
-    qftReg->X(3);
-    qftReg->Y(2);
-    qftReg->H(1);
     qftReg->H(0);
-    qftReg->CNOT(4, 0);
-    qftReg->CNOT(3, 2);
-    qftReg->H(4);
-    qftReg->Y(3);
-    qftReg->IT(2);
-    qftReg->H(1);
-    qftReg->X(0);
 
-    REQUIRE(qftReg->MAll() == 16);
+    REQUIRE(qftReg->MAll() == 5);
 }
 
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
