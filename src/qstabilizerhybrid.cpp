@@ -575,7 +575,7 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
         return;
     }
 
-    if (controls.size() != 1U) {
+    if (controls.size() > 1U) {
         SwitchToEngine();
     } else {
         FlushIfBlocked(controls, target);
