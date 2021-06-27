@@ -5241,22 +5241,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_12", "[mirror]")
 // QUnit -> QStabilizerHybrid bug
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_13", "[mirror]")
 {
-    qftReg->SetPermutation(13);
+    qftReg->SetPermutation(12);
     qftReg->SetReactiveSeparate(true);
 
-    qftReg->H(0);
-    qftReg->H(4);
-    qftReg->CNOT(0, 2);
-    qftReg->CNOT(2, 0);
-    qftReg->Y(0);
-    qftReg->CCNOT(2, 4, 0);
+    qftReg->H(2);
+    qftReg->H(1);
+    qftReg->CCNOT(2, 1, 0);
     qftReg->T(2);
     qftReg->IT(2);
-    qftReg->CCNOT(2, 4, 0);
+    qftReg->CCNOT(2, 1, 0);
+    qftReg->H(1);
     qftReg->Y(0);
     qftReg->CNOT(2, 0);
     qftReg->CNOT(0, 2);
-    qftReg->H(4);
     qftReg->H(0);
 
     REQUIRE(qftReg->MAll() == 13);
