@@ -795,7 +795,11 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         SwitchToEngine();
     }
 
-    if (stabilizer && shards[qubit]) {
+    if (engine) {
+        return engine->ForceM(qubit, result, doForce, doApply);
+    }
+
+    if (shards[qubit]) {
         if (shards[qubit]->IsInvert()) {
             stabilizer->X(qubit);
         } else if (!shards[qubit]->IsPhase() && stabilizer->IsSeparableZ(qubit)) {
@@ -805,10 +809,6 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
 
         // Otherwise, buffer will not change the fact that state appears maximally mixed.
         shards[qubit] = NULL;
-    }
-
-    if (engine) {
-        return engine->ForceM(qubit, result, doForce, doApply);
     }
 
     return stabilizer->M(qubit, result, doForce, doApply);
