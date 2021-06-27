@@ -210,10 +210,13 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     return toRet;
 }
 
-void QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
+bool QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
 {
-    QUnit::SeparateBit(value, qubit);
-    RedistributeQEngines();
+    bool toRet = QUnit::SeparateBit(value, qubit);
+    if (toRet) {
+        RedistributeQEngines();
+    }
+    return toRet;
 }
 
 QInterfacePtr QUnitMulti::Clone()
