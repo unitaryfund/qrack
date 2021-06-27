@@ -94,8 +94,6 @@ protected:
 
     virtual bool CollapseSeparableShard(bitLenInt qubit)
     {
-        CacheEigenState(qubit);
-
         QStabilizerShardPtr shard = shards[qubit];
         shards[qubit] = NULL;
         real1_f prob;
@@ -375,6 +373,7 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
+        CacheEigenState(qubit);
         QStabilizerShardPtr shard = shards[qubit];
         if (stabilizer && shard) {
             if (shard->IsInvert()) {
