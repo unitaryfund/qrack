@@ -193,7 +193,7 @@ protected:
         return false;
     }
 
-    virtual void CacheEigenState(const bitLenInt& target);
+    virtual void CacheEigenstate(const bitLenInt& target);
 
 public:
     QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -409,7 +409,7 @@ public:
             return engine->Prob(qubitIndex);
         }
 
-        CacheEigenState(qubitIndex);
+        CacheEigenstate(qubitIndex);
         QStabilizerShardPtr shard = shards[qubitIndex];
 
         if (!shard || shard->IsPhase() || shard->IsInvert()) {

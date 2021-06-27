@@ -81,7 +81,7 @@ QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
     return toRet;
 }
 
-void QStabilizerHybrid::CacheEigenState(const bitLenInt& target)
+void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
 {
     if (engine) {
         return;
@@ -364,7 +364,7 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     shards[target] = std::make_shared<QStabilizerShard>(mtrx);
-    CacheEigenState(target);
+    CacheEigenstate(target);
 }
 
 void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
@@ -405,7 +405,7 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
     }
 
     shards[target] = std::make_shared<QStabilizerShard>(mtrx);
-    CacheEigenState(target);
+    CacheEigenstate(target);
 }
 
 void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
@@ -450,7 +450,7 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
     }
 
     shards[target] = std::make_shared<QStabilizerShard>(mtrx);
-    CacheEigenState(target);
+    CacheEigenstate(target);
 }
 
 void QStabilizerHybrid::ApplyControlledSingleBit(
@@ -731,7 +731,7 @@ bitCapInt QStabilizerHybrid::MAll()
 {
     if (stabilizer) {
         for (bitLenInt i = 0; i < qubitCount; i++) {
-            CacheEigenState(i);
+            CacheEigenstate(i);
             QStabilizerShardPtr shard = shards[i];
             if (shard) {
                 if (shard->IsPhase()) {
