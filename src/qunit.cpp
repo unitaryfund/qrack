@@ -1377,13 +1377,13 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
     QInterfacePtr unit = shard.unit;
+    bitLenInt mapped = shard.mapped;
 
-    if (unit->isClifford() && !unit->TrySeparate(shard.mapped)) {
+    if (unit->isClifford() && !unit->TrySeparate(mapped)) {
         // This conditional coaxes the unit into separable form, so this should never actually happen.
         return false;
     }
 
-    bitLenInt mapped = shard.mapped;
     real1_f prob = shard.Prob();
 
     shard.unit = NULL;
