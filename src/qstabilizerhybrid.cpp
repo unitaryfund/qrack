@@ -363,13 +363,8 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         return;
     }
 
+    shards[target] = std::make_shared<QStabilizerShard>(mtrx);
     CacheEigenState(target);
-    QStabilizerShardPtr nShard = std::make_shared<QStabilizerShard>(mtrx);
-    if (shards[target]) {
-        shards[target]->Compose(nShard->gate);
-    } else {
-        shards[target] = nShard;
-    }
 }
 
 void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
@@ -409,13 +404,8 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
         return;
     }
 
+    shards[target] = std::make_shared<QStabilizerShard>(mtrx);
     CacheEigenState(target);
-    QStabilizerShardPtr nShard = std::make_shared<QStabilizerShard>(mtrx);
-    if (shards[target]) {
-        shards[target]->Compose(nShard->gate);
-    } else {
-        shards[target] = nShard;
-    }
 }
 
 void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
@@ -459,13 +449,8 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
         return;
     }
 
+    shards[target] = std::make_shared<QStabilizerShard>(mtrx);
     CacheEigenState(target);
-    QStabilizerShardPtr nShard = std::make_shared<QStabilizerShard>(mtrx);
-    if (shards[target]) {
-        shards[target]->Compose(nShard->gate);
-    } else {
-        shards[target] = nShard;
-    }
 }
 
 void QStabilizerHybrid::ApplyControlledSingleBit(
@@ -754,7 +739,7 @@ bitCapInt QStabilizerHybrid::MAll()
                 } else if (shard->IsInvert()) {
                     shards[i] = NULL;
                     stabilizer->X(i);
-                } else if (stabilizer->IsSeparable(i)) {
+                } else if (stabilizer->IsSeparableZ(i)) {
                     CollapseSeparableShard(i);
                 } else {
                     FlushBuffers();

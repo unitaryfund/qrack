@@ -383,7 +383,7 @@ public:
                 shards[qubit] = NULL;
             } else {
                 // Bit was already rotated to Z basis.
-                if (stabilizer->IsSeparable(qubit)) {
+                if (stabilizer->IsSeparableZ(qubit)) {
                     return CollapseSeparableShard(qubit);
                 }
 
