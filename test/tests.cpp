@@ -5249,14 +5249,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_13", "[mirror]")
     qftReg->CNOT(0, 2);
     qftReg->CNOT(2, 0);
     qftReg->Y(0);
-    qftReg->Swap(1, 4);
-    qftReg->Swap(0, 3);
-    qftReg->CCNOT(2, 1, 3);
+    qftReg->CCNOT(2, 4, 0);
     qftReg->T(2);
     qftReg->IT(2);
-    qftReg->CCNOT(2, 1, 3);
-    qftReg->Swap(0, 3);
-    qftReg->Swap(1, 4);
+    qftReg->CCNOT(2, 4, 0);
     qftReg->Y(0);
     qftReg->CNOT(2, 0);
     qftReg->CNOT(0, 2);

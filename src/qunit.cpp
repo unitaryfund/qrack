@@ -3253,7 +3253,7 @@ void QUnit::AntiCISqrtSwap(
 
 template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& isPhase, const bool& isInvert,
+    std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& isPhase, const bool& isInvert,
     const bool& inCurrentBasis)
 {
     bitLenInt i;
@@ -3322,36 +3322,35 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     // being conditionally all 0 or all 1, in any unit, due to entanglement.
 
     // If we've made it this far, we have to form the entangled representation and apply the gate.
+    std::sort(controlVec.begin(), controlVec.end());
+    std::sort(targets.begin(), targets.end());
+
     std::vector<bitLenInt> allBits(controlVec.size() + targets.size());
     std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
     std::copy(targets.begin(), targets.end(), allBits.begin() + controlVec.size());
-    // (Incidentally, we sort for the efficiency of QUnit's limited "mapper," a 1 dimensional array of qubits
-    // without nearest neighbor restriction.)
-    std::sort(allBits.begin(), allBits.end());
 
     std::vector<bitLenInt*> ebits(allBits.size());
-    for (i = 0; i < allBits.size(); i++) {
-        ebits[i] = &allBits[i];
-    }
-
-    QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
-
-    std::vector<bitLenInt> controlsMapped(controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
-        QEngineShard& cShard = shards[controlVec[i]];
-        controlsMapped[i] = cShard.mapped;
-        cShard.isPhaseDirty = true;
+        ebits[i] = &controlVec[i];
+    }
+    for (i = 0; i < targets.size(); i++) {
+        ebits[controlVec.size() + i] = &targets[i];
     }
 
-    // This is the original method with the maximum number of non-entangled controls excised, (potentially leaving a
-    // target bit in X or Y basis and acting as if Z basis by commutation).
-    cfn(unit, controlsMapped);
-
+    for (i = 0; i < controlVec.size(); i++) {
+        shards[controlVec[i]].isPhaseDirty = true;
+    }
     for (i = 0; i < targets.size(); i++) {
         QEngineShard& shard = shards[targets[i]];
         shard.isProbDirty |= !isPhase || shard.isPauliX || shard.isPauliY;
         shard.isPhaseDirty = true;
     }
+
+    QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
+
+    // This is the original method with the maximum number of non-entangled controls excised, (potentially leaving a
+    // target bit in X or Y basis and acting as if Z basis by commutation).
+    cfn(unit, controlVec);
 
     if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb) {
         return;
