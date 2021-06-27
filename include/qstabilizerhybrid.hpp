@@ -175,18 +175,17 @@ protected:
 
             if (shards[bit]) {
                 if (shards[bit]->IsInvert()) {
-                    const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-                    shards[bit]->Compose(pauliX);
-                    if ((norm(shards[bit]->gate[0] - ONE_CMPLX) <= FP_NORM_EPSILON) &&
-                        (norm(shards[bit]->gate[3] - ONE_CMPLX) <= FP_NORM_EPSILON)) {
-                        shards[bit] = NULL;
-                        if (anti == stabilizer->M(bit)) {
-                            return true;
-                        }
-                    }
+                    complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                    QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
+                    pauliShard->Compose(shards[bit]->gate);
+                    shards[bit] = pauliShard;
                 }
 
                 if (shards[bit]->IsPhase()) {
+                    if ((norm(shards[bit]->gate[0] - ONE_CMPLX) <= FP_NORM_EPSILON) &&
+                        (norm(shards[bit]->gate[3] - ONE_CMPLX) <= FP_NORM_EPSILON)) {
+                        shards[bit] = NULL;
+                    }
                     if (anti == stabilizer->M(bit)) {
                         return true;
                     }
