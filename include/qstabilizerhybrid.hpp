@@ -94,6 +94,8 @@ protected:
 
     virtual bool CollapseSeparableShard(bitLenInt qubit)
     {
+        CacheEigenState(qubit);
+
         QStabilizerShardPtr shard = shards[qubit];
         shards[qubit] = NULL;
         real1_f prob;
@@ -167,11 +169,13 @@ protected:
         bitLenInt bit;
         for (bitLenInt i = 0; i < lControlLen; i++) {
             bit = lControls[i];
+
+            if (!stabilizer->IsSeparableZ(bit)) {
+                output.push_back(bit);
+                continue;
+            }
+
             if (shards[bit]) {
-                if (!stabilizer->IsSeparableZ(bit)) {
-                    output.push_back(bit);
-                    continue;
-                }
                 if (shards[bit]->IsPhase()) {
                     if (anti == stabilizer->M(bit)) {
                         return true;
@@ -183,19 +187,15 @@ protected:
                 } else {
                     output.push_back(bit);
                 }
-            } else {
-                if (!stabilizer->IsSeparableZ(bit)) {
-                    output.push_back(bit);
-                } else if (anti == stabilizer->M(bit)) {
-                    return true;
-                }
+            } else if (anti == stabilizer->M(bit)) {
+                return true;
             }
         }
 
         return false;
     }
 
-    virtual QStabilizerShardPtr CacheEigenState(const bitLenInt& target, const bool& skipZ = false);
+    virtual void CacheEigenState(const bitLenInt& target);
 
 public:
     QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -384,7 +384,7 @@ public:
                 shards[qubit] = NULL;
             } else {
                 // Bit was already rotated to Z basis.
-                if (!stabilizer->IsSeparableZ(qubit)) {
+                if (stabilizer->IsSeparable(qubit)) {
                     return CollapseSeparableShard(qubit);
                 }
 
@@ -410,6 +410,8 @@ public:
         if (engine) {
             return engine->Prob(qubitIndex);
         }
+
+        CacheEigenState(qubitIndex);
 
         bool isCachedInvert = false;
         QStabilizerShardPtr shard = shards[qubitIndex];
