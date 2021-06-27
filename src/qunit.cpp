@@ -3322,31 +3322,28 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     // being conditionally all 0 or all 1, in any unit, due to entanglement.
 
     // If we've made it this far, we have to form the entangled representation and apply the gate.
-    std::sort(controlVec.begin(), controlVec.end());
-    std::sort(targets.begin(), targets.end());
-
     std::vector<bitLenInt> allBits(controlVec.size() + targets.size());
     std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
     std::copy(targets.begin(), targets.end(), allBits.begin() + controlVec.size());
+    std::sort(allBits.begin(), allBits.end());
+    std::vector<bitLenInt> allBitsMapped(allBits);
 
-    std::vector<bitLenInt*> ebits(allBits.size());
-    for (i = 0; i < controlVec.size(); i++) {
-        ebits[i] = &controlVec[i];
+    std::vector<bitLenInt*> ebits(allBitsMapped.size());
+    for (i = 0; i < allBitsMapped.size(); i++) {
+        ebits[i] = &allBitsMapped[i];
     }
-    for (i = 0; i < targets.size(); i++) {
-        ebits[controlVec.size() + i] = &targets[i];
-    }
+
+    QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
 
     for (i = 0; i < controlVec.size(); i++) {
         shards[controlVec[i]].isPhaseDirty = true;
+        controlVec[i] = shards[controlVec[i]].mapped;
     }
     for (i = 0; i < targets.size(); i++) {
         QEngineShard& shard = shards[targets[i]];
         shard.isProbDirty |= !isPhase || shard.isPauliX || shard.isPauliY;
         shard.isPhaseDirty = true;
     }
-
-    QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
 
     // This is the original method with the maximum number of non-entangled controls excised, (potentially leaving a
     // target bit in X or Y basis and acting as if Z basis by commutation).
