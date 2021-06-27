@@ -381,13 +381,13 @@ public:
             } else if (shard->IsPhase()) {
                 shards[qubit] = NULL;
             } else {
-                // Bit was already rotated to Z basis.
+                // Bit was already rotated to Z basis, if separable.
                 if (stabilizer->IsSeparableZ(qubit)) {
                     return CollapseSeparableShard(qubit);
                 }
 
                 // Otherwise, state is entangled.
-                FlushBuffers();
+                SwitchToEngine();
             }
         }
 
@@ -403,30 +403,33 @@ public:
         return stabilizer->M(qubit, result, doForce, doApply);
     }
 
-    virtual real1_f Prob(bitLenInt qubitIndex)
+    virtual real1_f Prob(bitLenInt qubit)
     {
         if (engine) {
-            return engine->Prob(qubitIndex);
+            return engine->Prob(qubit);
         }
 
-        CacheEigenstate(qubitIndex);
-        QStabilizerShardPtr shard = shards[qubitIndex];
+        QStabilizerShardPtr shard = shards[qubit];
+        bool isInvert = false;
+        if (shard) {
+            if (shard->IsInvert()) {
+                isInvert = true;
+            } else if (!shard->IsPhase()) {
+                // Bit was already rotated to Z basis, if separable.
+                if (stabilizer->IsSeparableZ(qubit)) {
+                    if (stabilizer->M(qubit)) {
+                        return norm(shard->gate[3]);
+                    }
+                    return norm(shard->gate[2]);
+                }
 
-        if (!shard || shard->IsPhase() || shard->IsInvert()) {
-            if (stabilizer->IsSeparableZ(qubitIndex)) {
-                return ((shard && shard->IsInvert()) ^ stabilizer->M(qubitIndex)) ? ONE_R1 : ZERO_R1;
+                // Otherwise, state appears locally maximally mixed.
+                return ONE_R1 / 2;
             }
-
-            // Otherwise, state appears locally maximally mixed.
-            return ONE_R1 / 2;
         }
 
-        // Otherwise, there's a non- phase/invert shard.
-        if (stabilizer->IsSeparableZ(qubitIndex)) {
-            if (stabilizer->M(qubitIndex)) {
-                return norm(shard->gate[3]);
-            }
-            return norm(shard->gate[2]);
+        if (stabilizer->IsSeparableZ(qubit)) {
+            return (isInvert ^ stabilizer->M(qubit)) ? ONE_R1 : ZERO_R1;
         }
 
         // Otherwise, state appears locally maximally mixed.

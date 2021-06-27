@@ -505,57 +505,60 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
     }
 
     bitLenInt control = controls[0];
+    bool didDivert = false;
 
     if (IS_SAME(topLeft, ONE_CMPLX)) {
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
-            return;
-        }
-
-        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            didDivert = true;
+        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
             stabilizer->CZ(control, target);
-            return;
+            didDivert = true;
         }
     } else if (IS_SAME(topLeft, -ONE_CMPLX)) {
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
             stabilizer->CNOT(control, target);
             stabilizer->CZ(control, target);
             stabilizer->CNOT(control, target);
-            return;
-        }
-
-        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            didDivert = true;
+        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
             stabilizer->CZ(control, target);
             stabilizer->CNOT(control, target);
             stabilizer->CZ(control, target);
             stabilizer->CNOT(control, target);
-            return;
+            didDivert = true;
         }
     } else if (IS_SAME(topLeft, I_CMPLX)) {
         if (IS_SAME(bottomRight, I_CMPLX)) {
             stabilizer->CZ(control, target);
             stabilizer->CY(control, target);
             stabilizer->CNOT(control, target);
-            return;
-        }
-
-        if (IS_SAME(bottomRight, -I_CMPLX)) {
+            didDivert = true;
+        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
             stabilizer->CY(control, target);
             stabilizer->CNOT(control, target);
-            return;
+            didDivert = true;
         }
     } else if (IS_SAME(topLeft, -I_CMPLX)) {
         if (IS_SAME(bottomRight, I_CMPLX)) {
             stabilizer->CNOT(control, target);
             stabilizer->CY(control, target);
-            return;
-        }
-
-        if (IS_SAME(bottomRight, -I_CMPLX)) {
+            didDivert = true;
+        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
             stabilizer->CY(control, target);
             stabilizer->CZ(control, target);
             stabilizer->CNOT(control, target);
-            return;
+            didDivert = true;
         }
+    }
+
+    if (didDivert) {
+        if (shards[control]) {
+            CacheEigenstate(control);
+        }
+        if (shards[target]) {
+            CacheEigenstate(target);
+        }
+        return;
     }
 
     SwitchToEngine();
@@ -587,55 +590,58 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
     }
 
     bitLenInt control = controls[0];
+    bool didDivert = false;
 
     if (IS_SAME(topRight, ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
             stabilizer->CNOT(control, target);
-            return;
-        }
-
-        if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            didDivert = true;
+        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
             stabilizer->CNOT(control, target);
             stabilizer->CZ(control, target);
-            return;
+            didDivert = true;
         }
     } else if (IS_SAME(topRight, -ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
             stabilizer->CZ(control, target);
             stabilizer->CNOT(control, target);
-            return;
-        }
-
-        if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            didDivert = true;
+        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
             stabilizer->CZ(control, target);
             stabilizer->CNOT(control, target);
             stabilizer->CZ(control, target);
-            return;
+            didDivert = true;
         }
     } else if (IS_SAME(topRight, I_CMPLX)) {
         if (IS_SAME(bottomLeft, I_CMPLX)) {
             stabilizer->CZ(control, target);
             stabilizer->CY(control, target);
-            return;
-        }
-
-        if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            didDivert = true;
+        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
             stabilizer->CZ(control, target);
             stabilizer->CY(control, target);
             stabilizer->CZ(control, target);
-            return;
+            didDivert = true;
         }
     } else if (IS_SAME(topRight, -I_CMPLX)) {
         if (IS_SAME(bottomLeft, I_CMPLX)) {
             stabilizer->CY(control, target);
-            return;
-        }
-
-        if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            didDivert = true;
+        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
             stabilizer->CY(control, target);
             stabilizer->CZ(control, target);
-            return;
+            didDivert = true;
         }
+    }
+
+    if (didDivert) {
+        if (shards[control]) {
+            CacheEigenstate(control);
+        }
+        if (shards[target]) {
+            CacheEigenstate(target);
+        }
+        return;
     }
 
     SwitchToEngine();
@@ -731,7 +737,6 @@ bitCapInt QStabilizerHybrid::MAll()
 {
     if (stabilizer) {
         for (bitLenInt i = 0; i < qubitCount; i++) {
-            CacheEigenstate(i);
             QStabilizerShardPtr shard = shards[i];
             if (shard) {
                 if (shard->IsPhase()) {
@@ -740,6 +745,7 @@ bitCapInt QStabilizerHybrid::MAll()
                     shards[i] = NULL;
                     stabilizer->X(i);
                 } else if (stabilizer->IsSeparableZ(i)) {
+                    // Bit was already rotated to Z basis, if separable.
                     CollapseSeparableShard(i);
                 } else {
                     FlushBuffers();
