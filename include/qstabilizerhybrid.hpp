@@ -415,7 +415,7 @@ public:
 
         if (!shard || shard->IsPhase() || shard->IsInvert()) {
             if (stabilizer->IsSeparableZ(qubitIndex)) {
-                return ((shard && shard->IsInvert()) ^ stabilizer->M(qubitIndex));
+                return ((shard && shard->IsInvert()) ^ stabilizer->M(qubitIndex)) ? ONE_R1 : ZERO_R1;
             }
 
             // Otherwise, state appears locally maximally mixed.
