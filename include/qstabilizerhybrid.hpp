@@ -179,6 +179,7 @@ protected:
                     QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
                     pauliShard->Compose(shards[bit]->gate);
                     shards[bit] = pauliShard;
+                    stabilizer->X(bit);
                 }
 
                 if (shards[bit]->IsPhase()) {
@@ -378,71 +379,6 @@ public:
         }
     }
 
-    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
-    {
-        QStabilizerShardPtr shard = shards[qubit];
-        if (stabilizer && shard) {
-            if (shard->IsInvert()) {
-                stabilizer->X(qubit);
-                shards[qubit] = NULL;
-            } else if (shard->IsPhase()) {
-                shards[qubit] = NULL;
-            } else {
-                // Bit was already rotated to Z basis, if separable.
-                if (stabilizer->IsSeparableZ(qubit)) {
-                    return CollapseSeparableShard(qubit);
-                }
-
-                // Otherwise, state is entangled.
-                SwitchToEngine();
-            }
-        }
-
-        // This check will first try to coax into decomposable form:
-        if (stabilizer && !stabilizer->CanDecomposeDispose(qubit, 1)) {
-            SwitchToEngine();
-        }
-
-        if (engine) {
-            return engine->ForceM(qubit, result, doForce, doApply);
-        }
-
-        return stabilizer->M(qubit, result, doForce, doApply);
-    }
-
-    virtual real1_f Prob(bitLenInt qubit)
-    {
-        if (engine) {
-            return engine->Prob(qubit);
-        }
-
-        QStabilizerShardPtr shard = shards[qubit];
-        bool isInvert = false;
-        if (shard) {
-            if (shard->IsInvert()) {
-                isInvert = true;
-            } else if (!shard->IsPhase()) {
-                // Bit was already rotated to Z basis, if separable.
-                if (stabilizer->IsSeparableZ(qubit)) {
-                    if (stabilizer->M(qubit)) {
-                        return norm(shard->gate[3]);
-                    }
-                    return norm(shard->gate[2]);
-                }
-
-                // Otherwise, state appears locally maximally mixed.
-                return ONE_R1 / 2;
-            }
-        }
-
-        if (stabilizer->IsSeparableZ(qubit)) {
-            return (isInvert ^ stabilizer->M(qubit)) ? ONE_R1 : ZERO_R1;
-        }
-
-        // Otherwise, state appears locally maximally mixed.
-        return ONE_R1 / 2;
-    }
-
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
     {
         if (qubit1 == qubit2) {
@@ -474,6 +410,10 @@ public:
             engine->ISwap(qubit1, qubit2);
         }
     }
+
+    virtual real1_f Prob(bitLenInt qubit);
+
+    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
     virtual bitCapInt MAll();
 
