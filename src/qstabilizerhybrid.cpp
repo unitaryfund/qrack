@@ -185,6 +185,10 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
         return;
     }
 
+    if (stabilizer && !stabilizer->CanDecomposeDispose(start, length)) {
+        SwitchToEngine();
+    }
+
     if (engine) {
         dest->SwitchToEngine();
         engine->Decompose(start, dest->engine);
