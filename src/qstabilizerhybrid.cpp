@@ -304,9 +304,8 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
     complex mtrx[4];
     if (shards[target]) {
-        QStabilizerShardPtr shard = shards[target];
-        shard->Compose(lMtrx);
-        std::copy(shard->gate, shard->gate + 4, mtrx);
+        shards[target]->Compose(lMtrx);
+        std::copy(shards[target]->gate, shards[target]->gate + 4, mtrx);
         shards[target] = NULL;
     } else {
         std::copy(lMtrx, lMtrx + 4, mtrx);
