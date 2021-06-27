@@ -411,28 +411,23 @@ public:
         }
 
         CacheEigenState(qubitIndex);
-
-        bool isCachedInvert = false;
         QStabilizerShardPtr shard = shards[qubitIndex];
-        if (shard) {
-            if (shard->IsInvert()) {
-                isCachedInvert = true;
-            } else if (!shard->IsPhase()) {
-                // Cached gate can only affect Z eigenstate probability.
-                if (stabilizer->IsSeparableZ(qubitIndex)) {
-                    if (stabilizer->M(qubitIndex)) {
-                        return norm(shard->gate[3]);
-                    }
-                    return norm(shard->gate[2]);
-                }
 
-                // Otherwise, state appears locally maximally mixed.
-                return ONE_R1 / 2;
+        if (!shard || shard->IsPhase() || shard->IsInvert()) {
+            if (stabilizer->IsSeparableZ(qubitIndex)) {
+                return ((shard && shard->IsInvert()) ^ stabilizer->M(qubitIndex));
             }
+
+            // Otherwise, state appears locally maximally mixed.
+            return ONE_R1 / 2;
         }
 
+        // Otherwise, there's a non- phase/invert shard.
         if (stabilizer->IsSeparableZ(qubitIndex)) {
-            return (isCachedInvert != stabilizer->M(qubitIndex)) ? ONE_R1 : ZERO_R1;
+            if (stabilizer->M(qubitIndex)) {
+                return norm(shard->gate[3]);
+            }
+            return norm(shard->gate[2]);
         }
 
         // Otherwise, state appears locally maximally mixed.
