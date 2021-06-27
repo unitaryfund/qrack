@@ -17,6 +17,13 @@
 #define IS_REAL_0(r) (abs(r) <= FP_NORM_EPSILON)
 #define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \
     ((IS_REAL_0(std::real(top)) || IS_REAL_0(std::imag(top))) && (IS_SAME(top, bottom) || IS_SAME(top, -bottom)))
+#define IS_CLIFFORD(mtrx)                                                                                              \
+    (IS_SAME(mtrx[0], mtrx[1]) || IS_SAME(mtrx[0], -mtrx[1]) || IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) ||                 \
+        IS_SAME(mtrx[0], -I_CMPLX * mtrx[1])) &&                                                                       \
+        (IS_SAME(mtrx[0], mtrx[2]) || IS_SAME(mtrx[0], -mtrx[2]) || IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) ||             \
+            IS_SAME(mtrx[0], -I_CMPLX * mtrx[2])) &&                                                                   \
+        (IS_SAME(mtrx[0], mtrx[3]) || IS_SAME(mtrx[0], -mtrx[3]) || IS_SAME(mtrx[0], I_CMPLX * mtrx[3]) ||             \
+            IS_SAME(mtrx[0], -I_CMPLX * mtrx[3]))
 
 namespace Qrack {
 
@@ -115,6 +122,12 @@ void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
     }
 
     shards[target] = toRet;
+
+    if (IS_CLIFFORD(shards[target]->gate)) {
+        QStabilizerShardPtr shard = shards[target];
+        shards[target] = NULL;
+        ApplySingleBit(shard->gate, target);
+    }
 }
 
 QInterfacePtr QStabilizerHybrid::Clone()
