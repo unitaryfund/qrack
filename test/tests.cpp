@@ -5259,6 +5259,69 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_13", "[mirror]")
     REQUIRE(qftReg->MAll() == 13);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_14", "[mirror]")
+{
+    qftReg->SetPermutation(26);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(1);
+    qftReg->T(2);
+    qftReg->X(3);
+    qftReg->X(4);
+    qftReg->CCNOT(3, 1, 2);
+    qftReg->CNOT(0, 4);
+    qftReg->H(3);
+    qftReg->CZ(1, 0);
+    qftReg->CNOT(3, 2);
+    qftReg->T(0);
+    qftReg->Y(2);
+    qftReg->Y(3);
+    qftReg->CNOT(0, 1);
+    qftReg->CNOT(2, 3);
+    qftReg->H(0);
+    qftReg->Y(1);
+    qftReg->Y(2);
+    qftReg->Y(3);
+    qftReg->T(4);
+    qftReg->CZ(4, 1);
+    qftReg->CCNOT(0, 2, 3);
+    qftReg->T(0);
+    qftReg->X(1);
+    qftReg->H(2);
+    qftReg->T(4);
+    qftReg->Swap(4, 1);
+    qftReg->Swap(0, 2);
+    qftReg->Swap(0, 2);
+    qftReg->Swap(4, 1);
+    qftReg->IT(4);
+    qftReg->H(2);
+    qftReg->X(1);
+    qftReg->IT(0);
+    qftReg->CCNOT(0, 2, 3);
+    qftReg->CZ(4, 1);
+    qftReg->IT(4);
+    qftReg->Y(3);
+    qftReg->Y(2);
+    qftReg->Y(1);
+    qftReg->H(0);
+    qftReg->CNOT(2, 3);
+    qftReg->CNOT(0, 1);
+    qftReg->Y(3);
+    qftReg->Y(2);
+    qftReg->IT(0);
+    qftReg->CNOT(3, 2);
+    qftReg->CZ(1, 0);
+    qftReg->H(3);
+    qftReg->CNOT(0, 4);
+    qftReg->CCNOT(3, 1, 2);
+    qftReg->X(4);
+    qftReg->X(3);
+    qftReg->IT(2);
+    qftReg->H(1);
+
+    REQUIRE(qftReg->MAll() == 26);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
