@@ -14,10 +14,6 @@
 #include "qengine.hpp"
 #include "qstabilizer.hpp"
 
-#if ENABLE_QUNIT_CPU_PARALLEL
-#include "common/dispatchqueue.hpp"
-#endif
-
 namespace Qrack {
 
 struct QStabilizerShard;
