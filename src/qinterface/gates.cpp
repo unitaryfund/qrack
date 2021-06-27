@@ -89,6 +89,18 @@ void QInterface::ApplyAntiControlledSingleInvert(const bitLenInt* controls, cons
     ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
 }
 
+void QInterface::ApplyAntiControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+{
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        X(controls[i]);
+    }
+    ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        X(controls[i]);
+    }
+}
+
 /// Apply 1/(2^N) phase rotation
 void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
 {

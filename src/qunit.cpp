@@ -55,7 +55,7 @@
 #define IS_SAME_UNIT(shard1, shard2) (shard1.unit && (shard1.unit == shard2.unit))
 #define ARE_CLIFFORD(shard1, shard2)                                                                                   \
     ((engine == QINTERFACE_STABILIZER_HYBRID) && (shard1.isClifford() || shard2.isClifford()))
-#define BLOCKED_SEPARATE(shard) (shard.isClifford() && !shard.unit->TrySeparate(shard.mapped))
+#define BLOCKED_SEPARATE(shard) (shard.unit && shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped))
 
 namespace Qrack {
 
@@ -703,7 +703,7 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
 
-    if (BLOCKED_SEPARATE(shard) && (separabilityThreshold < (ONE_R1 / 2))) {
+    if (BLOCKED_SEPARATE(shard)) {
         return false;
     }
 
@@ -777,21 +777,15 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
     if ((probY >= probZ) && (probY >= probX)) {
         // Y is best.
         RevertBasisToY1Qb(qubit);
-        if (!BLOCKED_SEPARATE(shard)) {
-            SeparateBit(probY >= ZERO_R1, qubit);
-        }
+        SeparateBit(probY >= ZERO_R1, qubit);
     } else if ((probX >= probZ) && (probX >= probY)) {
         // X is best.
         RevertBasisToX1Qb(qubit);
-        if (!BLOCKED_SEPARATE(shard)) {
-            SeparateBit(probX >= ZERO_R1, qubit);
-        }
+        SeparateBit(probX >= ZERO_R1, qubit);
     } else {
         // Z is best.
         RevertBasis1Qb(qubit);
-        if (!BLOCKED_SEPARATE(shard)) {
-            SeparateBit(probZ >= ZERO_R1, qubit);
-        }
+        SeparateBit(probZ >= ZERO_R1, qubit);
     }
 
     freezeTrySeparate = false;
@@ -1176,7 +1170,7 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     QEngineShard& shard = shards[qubit];
 
     if (!shard.isProbDirty) {
-        if (shard.unit && !BLOCKED_SEPARATE(shard)) {
+        if (shard.unit) {
             if (IS_AMP_0(shard.amp1)) {
                 SeparateBit(false, qubit);
             } else if (IS_AMP_0(shard.amp0)) {
@@ -1197,10 +1191,6 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
 
     if (abs(prob - ONE_R1 / 2) < (SQRT1_2_R1 / 2)) {
         // Projection on another basis could be higher, so don't separate.
-        return prob;
-    }
-
-    if (BLOCKED_SEPARATE(shard)) {
         return prob;
     }
 
@@ -1383,12 +1373,17 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     return flipResult ^ (unit->ForceMParity(mappedMask, result ^ flipResult, doForce));
 }
 
-void QUnit::SeparateBit(bool value, bitLenInt qubit)
+bool QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
     QInterfacePtr unit = shard.unit;
-
     bitLenInt mapped = shard.mapped;
+
+    if (unit->isClifford() && !unit->TrySeparate(mapped)) {
+        // This conditional coaxes the unit into separable form, so this should never actually happen.
+        return false;
+    }
+
     real1_f prob = shard.Prob();
 
     shard.unit = NULL;
@@ -1399,7 +1394,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     shard.amp1 = value ? GetNonunitaryPhase() : ZERO_CMPLX;
 
     if (!unit || (unit->GetQubitCount() == 1U)) {
-        return;
+        return true;
     }
 
     if (prob <= FP_NORM_EPSILON) {
@@ -1429,7 +1424,7 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     }
 
     if (unit->GetQubitCount() != 1) {
-        return;
+        return true;
     }
 
     bitLenInt partnerIndex;
@@ -1441,6 +1436,8 @@ void QUnit::SeparateBit(bool value, bitLenInt qubit)
     }
 
     CacheSingleQubitShard(partnerIndex);
+
+    return true;
 }
 
 bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
@@ -1497,9 +1494,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
                 shards[i].MakeDirty();
             }
         }
-        if (!BLOCKED_SEPARATE(shard)) {
-            SeparateBit(result, qubit);
-        }
+        SeparateBit(result, qubit);
     }
 
     if (result) {
@@ -3020,9 +3015,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
             CTRL_AND_ANTI, {}, { control });
 
         // If this is not a Clifford gate, we buffer for stabilizer:
-        if (!IS_SAME_UNIT(cShard, tShard) &&
-            (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard) || !IS_1_CMPLX(topLeft) ||
-                !IS_1_CMPLX(-bottomRight))) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
             OptimizePairBuffers(control, target, true);
 
@@ -3260,7 +3253,7 @@ void QUnit::AntiCISqrtSwap(
 
 template <typename CF, typename F>
 void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen,
-    const std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& isPhase, const bool& isInvert,
+    std::vector<bitLenInt> targets, const bool& anti, CF cfn, F fn, const bool& isPhase, const bool& isInvert,
     const bool& inCurrentBasis)
 {
     bitLenInt i;
@@ -3332,33 +3325,29 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::vector<bitLenInt> allBits(controlVec.size() + targets.size());
     std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
     std::copy(targets.begin(), targets.end(), allBits.begin() + controlVec.size());
-    // (Incidentally, we sort for the efficiency of QUnit's limited "mapper," a 1 dimensional array of qubits
-    // without nearest neighbor restriction.)
     std::sort(allBits.begin(), allBits.end());
+    std::vector<bitLenInt> allBitsMapped(allBits);
 
-    std::vector<bitLenInt*> ebits(allBits.size());
-    for (i = 0; i < allBits.size(); i++) {
-        ebits[i] = &allBits[i];
+    std::vector<bitLenInt*> ebits(allBitsMapped.size());
+    for (i = 0; i < allBitsMapped.size(); i++) {
+        ebits[i] = &allBitsMapped[i];
     }
 
     QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
 
-    std::vector<bitLenInt> controlsMapped(controlVec.size());
     for (i = 0; i < controlVec.size(); i++) {
-        QEngineShard& cShard = shards[controlVec[i]];
-        controlsMapped[i] = cShard.mapped;
-        cShard.isPhaseDirty = true;
+        shards[controlVec[i]].isPhaseDirty = true;
+        controlVec[i] = shards[controlVec[i]].mapped;
     }
-
-    // This is the original method with the maximum number of non-entangled controls excised, (potentially leaving a
-    // target bit in X or Y basis and acting as if Z basis by commutation).
-    cfn(unit, controlsMapped);
-
     for (i = 0; i < targets.size(); i++) {
         QEngineShard& shard = shards[targets[i]];
         shard.isProbDirty |= !isPhase || shard.isPauliX || shard.isPauliY;
         shard.isPhaseDirty = true;
     }
+
+    // This is the original method with the maximum number of non-entangled controls excised, (potentially leaving a
+    // target bit in X or Y basis and acting as if Z basis by commutation).
+    cfn(unit, controlVec);
 
     if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb) {
         return;

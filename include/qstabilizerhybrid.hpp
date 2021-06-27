@@ -14,10 +14,6 @@
 #include "qengine.hpp"
 #include "qstabilizer.hpp"
 
-#if ENABLE_QUNIT_CPU_PARALLEL
-#include "common/dispatchqueue.hpp"
-#endif
-
 namespace Qrack {
 
 struct QStabilizerShard;
@@ -28,10 +24,8 @@ typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
 
 struct QStabilizerShard {
     complex gate[4];
-    bool isEigenZ;
 
     QStabilizerShard()
-        : isEigenZ(false)
     {
         gate[0] = ONE_CMPLX;
         gate[1] = ZERO_CMPLX;
@@ -77,9 +71,9 @@ protected:
     QStabilizerPtr MakeStabilizer(const bitCapInt& perm = 0);
     QInterfacePtr MakeEngine(const bitCapInt& perm = 0);
 
-    void FlushIfBlocked(std::vector<bitLenInt> controls, bitLenInt target)
+    void FlushIfBlocked(std::vector<bitLenInt> controls, bitLenInt target, bool isPhase = false)
     {
-        bool isBlocked = (bool)shards[target];
+        bool isBlocked = (shards[target] && (!isPhase || !shards[target]->IsPhase()));
         if (!isBlocked) {
             for (bitLenInt i = 0; i < controls.size(); i++) {
                 if (shards[controls[i]] && !shards[controls[i]]->IsPhase()) {
@@ -90,16 +84,8 @@ protected:
         }
 
         if (isBlocked) {
-            FlushBuffers();
+            SwitchToEngine();
         }
-    }
-
-    virtual void ComposeGate(bitLenInt target, complex* mtrx)
-    {
-        QStabilizerShardPtr shard = shards[target];
-        shard->Compose(mtrx);
-        std::copy(shard->gate, shard->gate + 4, mtrx);
-        shards[target] = NULL;
     }
 
     virtual bool CollapseSeparableShard(bitLenInt qubit)
@@ -132,7 +118,86 @@ protected:
         return result;
     }
 
-    virtual QStabilizerShardPtr CacheEigenState(const bitLenInt& target, const bool& skipZ = false);
+    virtual void FlushBuffers()
+    {
+        bitLenInt i;
+
+        if (stabilizer) {
+            for (i = 0; i < qubitCount; i++) {
+                if (shards[i]) {
+                    // This will call FlushBuffers() again after no longer stabilizer.
+                    SwitchToEngine();
+                    return;
+                }
+            }
+        }
+
+        if (stabilizer) {
+            return;
+        }
+
+        for (i = 0; i < qubitCount; i++) {
+            QStabilizerShardPtr shard = shards[i];
+            if (shard) {
+                shards[i] = NULL;
+                ApplySingleBit(shard->gate, i);
+            }
+        }
+    }
+
+    virtual void DumpBuffers()
+    {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            shards[i] = NULL;
+        }
+    }
+
+    virtual bool TrimControls(const bitLenInt* lControls, const bitLenInt& lControlLen, std::vector<bitLenInt>& output,
+        const bool& anti = false)
+    {
+        if (engine) {
+            output.insert(output.begin(), lControls, lControls + lControlLen);
+            return false;
+        }
+
+        bitLenInt bit;
+        for (bitLenInt i = 0; i < lControlLen; i++) {
+            bit = lControls[i];
+
+            if (!stabilizer->IsSeparableZ(bit)) {
+                output.push_back(bit);
+                continue;
+            }
+
+            if (shards[bit]) {
+                if (shards[bit]->IsInvert()) {
+                    complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+                    QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
+                    pauliShard->Compose(shards[bit]->gate);
+                    shards[bit] = pauliShard;
+                    stabilizer->X(bit);
+                }
+
+                if (shards[bit]->IsPhase()) {
+                    if ((norm(shards[bit]->gate[0] - ONE_CMPLX) <= FP_NORM_EPSILON) &&
+                        (norm(shards[bit]->gate[3] - ONE_CMPLX) <= FP_NORM_EPSILON)) {
+                        shards[bit] = NULL;
+                    }
+                    if (anti == stabilizer->M(bit)) {
+                        return true;
+                    }
+                } else {
+                    output.push_back(bit);
+                }
+            } else if (anti == stabilizer->M(bit)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    virtual void CacheEigenstate(const bitLenInt& target);
 
 public:
     QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -205,66 +270,6 @@ public:
         if (engine) {
             engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
         }
-    }
-
-    virtual void FlushBuffers()
-    {
-        bitLenInt i;
-
-        if (stabilizer) {
-            for (i = 0; i < qubitCount; i++) {
-                if (shards[i]) {
-                    // This will call FlushBuffers() again after no longer stabilizer.
-                    SwitchToEngine();
-                    return;
-                }
-            }
-        }
-
-        if (stabilizer) {
-            return;
-        }
-
-        for (i = 0; i < qubitCount; i++) {
-            QStabilizerShardPtr shard = shards[i];
-            if (shard) {
-                shards[i] = NULL;
-                ApplySingleBit(shard->gate, i);
-            }
-        }
-    }
-
-    virtual void DumpBuffers()
-    {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            shards[i] = NULL;
-        }
-    }
-
-    virtual bool TrimControls(const bitLenInt* lControls, const bitLenInt& lControlLen, std::vector<bitLenInt>& output,
-        const bool& anti = false)
-    {
-        if (engine) {
-            output.insert(output.begin(), lControls, lControls + lControlLen);
-            return false;
-        }
-
-        real1_f prob;
-        for (bitLenInt i = 0; i < lControlLen; i++) {
-            prob = Prob(lControls[i]);
-            if (anti) {
-                prob = ONE_R1 - prob;
-            }
-
-            if (prob == ZERO_R1) {
-                return true;
-            }
-            if (prob != ONE_R1) {
-                output.push_back(lControls[i]);
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -370,71 +375,6 @@ public:
         }
     }
 
-    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
-    {
-        QStabilizerShardPtr shard = shards[qubit];
-        if (stabilizer && shard) {
-            if (shard->IsInvert()) {
-                stabilizer->X(qubit);
-                shards[qubit] = NULL;
-            } else if (shard->IsPhase()) {
-                shards[qubit] = NULL;
-            } else {
-                // Bit was already rotated to Z basis.
-                if (shards[qubit]->isEigenZ) {
-                    return CollapseSeparableShard(qubit);
-                }
-
-                // Otherwise, state is entangled and locally appears maximally mixed.
-                FlushBuffers();
-            }
-        }
-
-        // This check will first try to coax into decomposable form:
-        if (stabilizer && !stabilizer->CanDecomposeDispose(qubit, 1)) {
-            SwitchToEngine();
-        }
-
-        if (engine) {
-            return engine->ForceM(qubit, result, doForce, doApply);
-        }
-
-        return stabilizer->M(qubit, result, doForce, doApply);
-    }
-
-    virtual real1_f Prob(bitLenInt qubitIndex)
-    {
-        if (engine) {
-            return clampProb(engine->Prob(qubitIndex));
-        }
-
-        bool isCachedInvert = false;
-        QStabilizerShardPtr shard = shards[qubitIndex];
-        if (shard) {
-            if (shard->IsInvert()) {
-                isCachedInvert = true;
-            } else if (!shard->IsPhase()) {
-                // Bit was already rotated to Z basis.
-                if (shards[qubitIndex]->isEigenZ) {
-                    if (stabilizer->M(qubitIndex)) {
-                        return norm(shard->gate[3]);
-                    }
-                    return norm(shard->gate[2]);
-                }
-
-                SwitchToEngine();
-                return engine->Prob(qubitIndex);
-            }
-        }
-
-        if (stabilizer->IsSeparableZ(qubitIndex)) {
-            return (isCachedInvert != stabilizer->M(qubitIndex)) ? ONE_R1 : ZERO_R1;
-        }
-
-        SwitchToEngine();
-        return engine->Prob(qubitIndex);
-    }
-
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
     {
         if (qubit1 == qubit2) {
@@ -466,6 +406,10 @@ public:
             engine->ISwap(qubit1, qubit2);
         }
     }
+
+    virtual real1_f Prob(bitLenInt qubit);
+
+    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
     virtual bitCapInt MAll();
 

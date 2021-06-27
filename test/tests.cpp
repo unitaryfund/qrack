@@ -5190,6 +5190,75 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_10", "[mirror]")
     REQUIRE(qftReg->MAll() == 9);
 }
 
+// QUnit -> QStabilizerHybrid TrimControls() bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_11", "[mirror]")
+{
+    qftReg->SetPermutation(1);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->X(0);
+    qftReg->CNOT(0, 1);
+    qftReg->H(1);
+    qftReg->T(1);
+    qftReg->IT(1);
+    qftReg->H(1);
+    qftReg->CNOT(0, 1);
+    qftReg->X(0);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 1);
+}
+
+// QUnit -> QStabilizerHybrid bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_12", "[mirror]")
+{
+    qftReg->SetPermutation(0);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+    qftReg->CNOT(1, 2);
+    qftReg->H(1);
+    qftReg->CZ(2, 1);
+    qftReg->CNOT(0, 1);
+    qftReg->T(1);
+    qftReg->IT(1);
+    qftReg->CNOT(0, 1);
+    qftReg->CZ(2, 1);
+    qftReg->H(1);
+    qftReg->CNOT(1, 2);
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 0);
+}
+
+// QUnit -> QStabilizerHybrid bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_13", "[mirror]")
+{
+    qftReg->SetPermutation(12);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(2);
+    qftReg->H(1);
+    qftReg->CCNOT(2, 1, 0);
+    qftReg->T(2);
+    qftReg->IT(2);
+    qftReg->CCNOT(2, 1, 0);
+    qftReg->H(1);
+    qftReg->Y(0);
+    qftReg->CNOT(2, 0);
+    qftReg->CNOT(0, 2);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 13);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
@@ -5605,10 +5674,10 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
     const int GateCount1Qb = 5;
     const int GateCountMultiQb = 4;
-    const int Depth = 4;
+    const int Depth = 5;
 
     const int TRIALS = 100;
-    const int n = 4;
+    const int n = 5;
 
     int d;
     int i;

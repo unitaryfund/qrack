@@ -210,10 +210,14 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     return toRet;
 }
 
-void QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
+bool QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
 {
-    QUnit::SeparateBit(value, qubit);
-    RedistributeQEngines();
+    bool isClifford = shards[qubit].unit->isClifford();
+    bool toRet = QUnit::SeparateBit(value, qubit);
+    if (!isClifford && toRet) {
+        RedistributeQEngines();
+    }
+    return toRet;
 }
 
 QInterfacePtr QUnitMulti::Clone()
