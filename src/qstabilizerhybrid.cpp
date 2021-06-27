@@ -83,6 +83,10 @@ QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
 
 void QStabilizerHybrid::CacheEigenState(const bitLenInt& target)
 {
+    if (engine) {
+        return;
+    }
+
     QStabilizerShardPtr toRet = NULL;
     // If in PauliX or PauliY basis, compose gate with conversion from/to PauliZ basis.
     if (stabilizer->IsSeparableX(target)) {
