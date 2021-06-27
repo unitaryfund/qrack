@@ -89,7 +89,6 @@ QStabilizerShardPtr QStabilizerHybrid::CacheEigenState(const bitLenInt& target, 
         // Z eigenstate
         complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
         toRet = std::make_shared<QStabilizerShard>(mtrx);
-        toRet->isEigenZ = true;
     } else if (stabilizer->IsSeparableX(target)) {
         // X eigenstate
         stabilizer->H(target);
@@ -97,7 +96,6 @@ QStabilizerShardPtr QStabilizerHybrid::CacheEigenState(const bitLenInt& target, 
         complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
             complex(-SQRT1_2_R1, ZERO_R1) };
         toRet = std::make_shared<QStabilizerShard>(mtrx);
-        toRet->isEigenZ = true;
     } else if (stabilizer->IsSeparableY(target)) {
         // Y eigenstate
         stabilizer->IS(target);
@@ -106,22 +104,10 @@ QStabilizerShardPtr QStabilizerHybrid::CacheEigenState(const bitLenInt& target, 
         complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1),
             complex(ZERO_R1, -SQRT1_2_R1) };
         toRet = std::make_shared<QStabilizerShard>(mtrx);
-        toRet->isEigenZ = true;
     } else {
         // Not a single qubit eigenstate
         complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
         toRet = std::make_shared<QStabilizerShard>(mtrx);
-        toRet->isEigenZ = false;
-    }
-
-    // Leave in |0> state.
-    if (toRet->isEigenZ && (stabilizer->M(target))) {
-        stabilizer->X(target);
-        complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-        QStabilizerShardPtr xBuffer = std::make_shared<QStabilizerShard>(pauliX);
-        xBuffer->isEigenZ = true;
-        xBuffer->Compose(toRet->gate);
-        toRet = xBuffer;
     }
 
     return toRet;
@@ -141,7 +127,6 @@ QInterfacePtr QStabilizerHybrid::Clone()
         for (bitLenInt i = 0; i < shards.size(); i++) {
             if (shards[i]) {
                 c->shards[i] = std::make_shared<QStabilizerShard>(shards[i]->gate);
-                c->shards[i]->isEigenZ = shards[i]->isEigenZ;
             }
         }
     } else {
@@ -297,11 +282,9 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
 void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
     bool wasCached;
-    bool wasEigenZ = false;
     complex mtrx[4];
     if (shards[target]) {
         QStabilizerShardPtr shard = shards[target];
-        wasEigenZ = shard->isEigenZ;
         shard->Compose(lMtrx);
         std::copy(shard->gate, shard->gate + 4, mtrx);
         shards[target] = NULL;
@@ -380,7 +363,6 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     QStabilizerShardPtr shard = std::make_shared<QStabilizerShard>(mtrx);
-    shard->isEigenZ = wasEigenZ;
     if (!wasCached) {
         QStabilizerShardPtr nShard = CacheEigenState(target);
         nShard->Compose(shard->gate);
@@ -600,7 +582,7 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
         return;
     }
 
-    if (controls.size() > 1U) {
+    if (controls.size() != 1U) {
         SwitchToEngine();
     } else {
         FlushIfBlocked(controls, target);
@@ -763,7 +745,7 @@ bitCapInt QStabilizerHybrid::MAll()
                 } else if (shard->IsInvert()) {
                     shards[i] = NULL;
                     stabilizer->X(i);
-                } else if (shards[i]->isEigenZ) {
+                } else if (stabilizer->IsSeparableZ(i)) {
                     CollapseSeparableShard(i);
                 } else {
                     FlushBuffers();

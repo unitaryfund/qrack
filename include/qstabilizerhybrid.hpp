@@ -28,10 +28,8 @@ typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
 
 struct QStabilizerShard {
     complex gate[4];
-    bool isEigenZ;
 
     QStabilizerShard()
-        : isEigenZ(false)
     {
         gate[0] = ONE_CMPLX;
         gate[1] = ZERO_CMPLX;
@@ -98,7 +96,15 @@ protected:
     {
         QStabilizerShardPtr shard = shards[qubit];
         shards[qubit] = NULL;
-        real1_f prob = norm(shard->gate[2]);
+        real1_f prob;
+
+        bool isZ1 = stabilizer->M(qubit);
+
+        if (isZ1) {
+            prob = norm(shard->gate[3]);
+        } else {
+            prob = norm(shard->gate[2]);
+        }
 
         bool result;
         if (prob <= ZERO_R1) {
@@ -109,7 +115,7 @@ protected:
             result = (Rand() <= prob);
         }
 
-        if (result) {
+        if (result != isZ1) {
             stabilizer->X(qubit);
         }
 
@@ -158,27 +164,29 @@ protected:
             return false;
         }
 
+        bitLenInt bit;
         for (bitLenInt i = 0; i < lControlLen; i++) {
-            if (shards[lControls[i]]) {
-                if (!shards[lControls[i]]->isEigenZ) {
-                    output.push_back(lControls[i]);
+            bit = lControls[i];
+            if (shards[bit]) {
+                if (!stabilizer->IsSeparableZ(bit)) {
+                    output.push_back(bit);
                     continue;
                 }
-                if (shards[lControls[i]]->IsPhase()) {
-                    if (anti) {
+                if (shards[bit]->IsPhase()) {
+                    if (anti == stabilizer->M(bit)) {
                         return true;
                     }
-                } else if (shards[lControls[i]]->IsInvert()) {
-                    if (!anti) {
+                } else if (shards[bit]->IsInvert()) {
+                    if (anti != stabilizer->M(bit)) {
                         return true;
                     }
                 } else {
-                    output.push_back(lControls[i]);
+                    output.push_back(bit);
                 }
             } else {
-                if (!stabilizer->IsSeparableZ(lControls[i])) {
-                    output.push_back(lControls[i]);
-                } else if (anti == stabilizer->M(lControls[i])) {
+                if (!stabilizer->IsSeparableZ(bit)) {
+                    output.push_back(bit);
+                } else if (anti == stabilizer->M(bit)) {
                     return true;
                 }
             }
@@ -376,7 +384,7 @@ public:
                 shards[qubit] = NULL;
             } else {
                 // Bit was already rotated to Z basis.
-                if (shards[qubit]->isEigenZ) {
+                if (!stabilizer->IsSeparableZ(qubit)) {
                     return CollapseSeparableShard(qubit);
                 }
 
@@ -409,8 +417,11 @@ public:
             if (shard->IsInvert()) {
                 isCachedInvert = true;
             } else if (!shard->IsPhase()) {
-                // Bit was already rotated to |0> in Z basis.
-                if (shards[qubitIndex]->isEigenZ) {
+                // Cached gate can only affect Z eigenstate probability.
+                if (stabilizer->IsSeparableZ(qubitIndex)) {
+                    if (stabilizer->M(qubitIndex)) {
+                        return norm(shard->gate[3]);
+                    }
                     return norm(shard->gate[2]);
                 }
 
