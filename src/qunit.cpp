@@ -2320,10 +2320,7 @@ void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     ApplyEitherControlled(
         controls, 2, { target }, false,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPauliY) {
-                unit->ApplyControlledSingleInvert(
-                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, -I_CMPLX, I_CMPLX);
-            } else if (shards[target].isPauliX) {
+            if (shards[target].isPauliX || shards[target].isPauliY) {
                 if (mappedControls.size() == 2) {
                     unit->CCZ(CTRL_2_ARGS);
                 } else {
