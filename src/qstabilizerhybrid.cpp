@@ -519,7 +519,7 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
     if (controls.size() > 1U) {
         SwitchToEngine();
     } else {
-        FlushIfBlocked(controls, target, true);
+        FlushIfBlocked(controls[0], target, true);
     }
 
     if (engine) {
@@ -604,7 +604,7 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
     if (controls.size() > 1U) {
         SwitchToEngine();
     } else {
-        FlushIfBlocked(controls, target);
+        FlushIfBlocked(controls[0], target);
     }
 
     if (engine) {
@@ -714,7 +714,7 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControl
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topLeft, bottomRight)) {
         SwitchToEngine();
     } else {
-        FlushIfBlocked(controls, target, true);
+        FlushIfBlocked(controls[0], target, true);
     }
 
     if (engine) {
@@ -743,7 +743,7 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
         SwitchToEngine();
     } else {
-        FlushIfBlocked(controls, target);
+        FlushIfBlocked(controls[0], target);
     }
 
     if (engine) {
