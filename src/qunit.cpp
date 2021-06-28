@@ -847,7 +847,6 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
         // If this is 0.5, it wasn't this basis, but it's worth checking the next basis.
         if (didSeparate || (abs(prob) > separabilityThreshold)) {
-            freezeTrySeparate = false;
             return didSeparate;
         }
 
