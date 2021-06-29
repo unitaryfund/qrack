@@ -274,9 +274,9 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
             stabilizer = MakeStabilizer(0);
         }
 
-        real1 prob = norm(inputState[1]);
+        real1 prob = clampProb(norm(inputState[1]));
         real1 sqrtProb = sqrt(prob);
-        real1 sqrt1MinProb = sqrt(ONE_R1 - prob);
+        real1 sqrt1MinProb = sqrt(clampProb(ONE_R1 - prob));
         complex phase0 = std::polar(ONE_R1, arg(inputState[0]));
         complex phase1 = std::polar(ONE_R1, arg(inputState[1]));
         complex mtrx[4] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
