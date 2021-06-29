@@ -101,6 +101,7 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
 {
     if (!stateBuffer) {
         ReinitBuffer();
+        ClearBuffer(stateBuffer, 0, maxQPowerOcl);
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
