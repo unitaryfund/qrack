@@ -703,36 +703,25 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
 
-    if (BLOCKED_SEPARATE(shard)) {
+    if (!shard.unit || !shard.unit->isClifford() || !shard.unit->TrySeparate(shard.mapped)) {
         return false;
     }
 
-    RevertBasis1Qb(qubit);
+    // If TrySeparate() == true, this bit can be decomposed.
+    QInterfacePtr sepUnit = MakeEngine(1, 0);
+    shard.unit->Decompose(shard.mapped, sepUnit);
 
-    ProbBase(qubit);
-    if (!shard.unit) {
-        return true;
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if ((shard.unit == shards[i].unit) && (shard.mapped < shards[i].mapped)) {
+            shards[i].mapped--;
+        }
     }
+    shard.mapped = 0;
+    shard.unit = sepUnit;
 
-    shard.unit->H(shard.mapped);
-    ProbBase(qubit);
-    if (!shard.unit) {
-        shard.isPauliX = true;
-        return true;
-    }
-    shard.unit->H(shard.mapped);
+    CacheSingleQubitShard(qubit);
 
-    shard.unit->IS(shard.mapped);
-    shard.unit->H(shard.mapped);
-    ProbBase(qubit);
-    if (!shard.unit) {
-        shard.isPauliY = true;
-        return true;
-    }
-    shard.unit->H(shard.mapped);
-    shard.unit->S(shard.mapped);
-
-    return false;
+    return true;
 }
 
 bool QUnit::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)

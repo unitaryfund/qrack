@@ -71,17 +71,30 @@ protected:
     QStabilizerPtr MakeStabilizer(const bitCapInt& perm = 0);
     QInterfacePtr MakeEngine(const bitCapInt& perm = 0);
 
-    void FlushIfBlocked(std::vector<bitLenInt> controls, bitLenInt target, bool isPhase = false)
+    void FlushIfBlocked(bitLenInt control, bitLenInt target, bool isPhase = false)
     {
-        bool isBlocked = (shards[target] && (!isPhase || !shards[target]->IsPhase()));
-        if (!isBlocked) {
-            for (bitLenInt i = 0; i < controls.size(); i++) {
-                if (shards[controls[i]] && !shards[controls[i]]->IsPhase()) {
-                    isBlocked = true;
-                    break;
-                }
-            }
+        if (engine) {
+            return;
         }
+
+        complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+
+        if (shards[target] && shards[target]->IsInvert()) {
+            QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
+            pauliShard->Compose(shards[target]->gate);
+            shards[target] = pauliShard;
+            stabilizer->X(target);
+        }
+
+        if (shards[control] && shards[control]->IsInvert()) {
+            QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
+            pauliShard->Compose(shards[control]->gate);
+            shards[control] = pauliShard;
+            stabilizer->X(control);
+        }
+
+        bool isBlocked = (shards[target] && (!isPhase || !shards[target]->IsPhase()));
+        isBlocked |= (shards[control] && !shards[control]->IsPhase());
 
         if (isBlocked) {
             SwitchToEngine();

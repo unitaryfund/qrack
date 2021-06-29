@@ -643,11 +643,11 @@ bool QStabilizer::IsSeparableX(const bitLenInt& t)
  */
 bool QStabilizer::IsSeparableY(const bitLenInt& t)
 {
-    H(t);
-    S(t);
-    bool isSeparable = IsSeparableZ(t);
     IS(t);
     H(t);
+    bool isSeparable = IsSeparableZ(t);
+    H(t);
+    S(t);
 
     return isSeparable;
 }
