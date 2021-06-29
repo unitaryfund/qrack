@@ -101,7 +101,9 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
 {
     if (!stateBuffer) {
         ReinitBuffer();
-        ClearBuffer(stateBuffer, 0, maxQPowerOcl);
+        if (length != maxQPowerOcl) {
+            ClearBuffer(stateBuffer, 0, maxQPowerOcl);
+        }
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -953,7 +955,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         if (runningNorm == ZERO_R1) {
             ZeroAmplitudes();
         }
-    } else if ((runningNorm == ZERO_R1) || ((bitCount == 1) && !isXGate && !isZGate && !isInvertGate && !isPhaseGate)) {
+    } else if ((runningNorm <= ZERO_R1) || ((bitCount == 1) && !isXGate && !isZGate && !isInvertGate && !isPhaseGate)) {
         runningNorm = ONE_R1;
     }
 }
@@ -1030,7 +1032,8 @@ void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, 0, 0, 0, 0, 0, 0, 0, 0 };
     real1 cosine = (real1)cos(angle);
     real1 sine = (real1)sin(angle);
-    complex phaseFacs[3] = { complex(cosine, sine), complex(cosine, -sine), (ONE_R1 / (real1)sqrt(runningNorm)) };
+    complex phaseFacs[3] = { complex(cosine, sine), complex(cosine, -sine),
+        (runningNorm <= ZERO_R1) ? ONE_R1 : (ONE_R1 / (real1)sqrt(runningNorm)) };
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
