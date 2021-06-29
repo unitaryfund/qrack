@@ -45,6 +45,8 @@ struct QStabilizerShard {
     bool IsPhase() { return (norm(gate[1]) <= FP_NORM_EPSILON) && (norm(gate[2]) <= FP_NORM_EPSILON); }
 
     bool IsInvert() { return (norm(gate[0]) <= FP_NORM_EPSILON) && (norm(gate[3]) <= FP_NORM_EPSILON); }
+
+    bool IsIdentity() { return IsPhase() && (norm(gate[0] - gate[3]) <= FP_NORM_EPSILON); }
 };
 
 /**
@@ -83,6 +85,9 @@ protected:
             QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
             pauliShard->Compose(shards[target]->gate);
             shards[target] = pauliShard;
+            if (shards[target]->IsIdentity()) {
+                shards[target] = NULL;
+            }
             stabilizer->X(target);
         }
 
@@ -90,6 +95,9 @@ protected:
             QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
             pauliShard->Compose(shards[control]->gate);
             shards[control] = pauliShard;
+            if (shards[control]->IsIdentity()) {
+                shards[control] = NULL;
+            }
             stabilizer->X(control);
         }
 
@@ -188,12 +196,12 @@ protected:
                     QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
                     pauliShard->Compose(shards[bit]->gate);
                     shards[bit] = pauliShard;
+                    // Skip identity removal for IsPhase()
                     stabilizer->X(bit);
                 }
 
                 if (shards[bit]->IsPhase()) {
-                    if ((norm(shards[bit]->gate[0] - ONE_CMPLX) <= FP_NORM_EPSILON) &&
-                        (norm(shards[bit]->gate[3] - ONE_CMPLX) <= FP_NORM_EPSILON)) {
+                    if (shards[bit]->IsIdentity()) {
                         shards[bit] = NULL;
                     }
                     if (anti == stabilizer->M(bit)) {
