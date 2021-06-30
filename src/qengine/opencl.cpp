@@ -95,7 +95,7 @@ void QEngineOCL::GetAmplitudePage(complex* pagePtr, const bitCapInt offset, cons
     EventVecPtr waitVec = ResetWaitEvents();
     queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
         sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
-    queue.finish();
+    wait_refs.clear();
 }
 
 void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
@@ -110,7 +110,7 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
     EventVecPtr waitVec = ResetWaitEvents();
     queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
         sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
-    queue.finish();
+    wait_refs.clear();
 
     runningNorm = REAL1_DEFAULT_ARG;
 }
@@ -216,7 +216,6 @@ void QEngineOCL::UnlockSync()
         cl::Event unmapEvent;
         queue.enqueueUnmapMemObject(*stateBuffer, stateVec, NULL, &unmapEvent);
         unmapEvent.wait();
-        wait_refs.clear();
     } else {
         if (lockSyncFlags & CL_MAP_WRITE) {
             queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
@@ -1565,7 +1564,6 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
     QueueCall(OCL_API_PROBREGALL, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, probsBuffer });
 
     EventVecPtr waitVec2 = ResetWaitEvents();
-
     queue.enqueueReadBuffer(*probsBuffer, CL_TRUE, 0, sizeof(real1) * lengthPower, probsArray, waitVec2.get());
     wait_refs.clear();
 
@@ -1695,7 +1693,6 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         { stateBuffer, poolItem->ulongBuffer, probsBuffer, qPowersBuffer, qSkipPowersBuffer });
 
     EventVecPtr waitVec2 = ResetWaitEvents();
-
     queue.enqueueReadBuffer(*probsBuffer, CL_TRUE, 0, sizeof(real1) * lengthPower, probsArray, waitVec2.get());
     wait_refs.clear();
 
@@ -2519,6 +2516,7 @@ void QEngineOCL::SetQuantumState(const complex* inputState)
 
     EventVecPtr waitVec = ResetWaitEvents();
     queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, inputState, waitVec.get());
+    wait_refs.clear();
 
     UpdateRunningNorm();
 }
@@ -2538,6 +2536,7 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
     queue.enqueueReadBuffer(
         *stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)fullRegister, sizeof(complex), &amp, waitVec.get());
     wait_refs.clear();
+
     return amp;
 }
 
@@ -2593,7 +2592,8 @@ void QEngineOCL::GetQuantumState(complex* outputState)
 
     EventVecPtr waitVec = ResetWaitEvents();
     queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, outputState, waitVec.get());
-    queue.flush();
+    wait_refs.clear();
+
     clFinish();
 }
 
