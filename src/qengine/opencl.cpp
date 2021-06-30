@@ -95,12 +95,16 @@ void QEngineOCL::GetAmplitudePage(complex* pagePtr, const bitCapInt offset, cons
     EventVecPtr waitVec = ResetWaitEvents();
     queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
         sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
+    queue.finish();
 }
 
 void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
 {
     if (!stateBuffer) {
         ReinitBuffer();
+        if (length != maxQPowerOcl) {
+            ClearBuffer(stateBuffer, 0, maxQPowerOcl);
+        }
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -746,8 +750,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
     // every single permutation amplitude.
-    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && !isXGate && !isZGate && !isInvertGate &&
-        !isPhaseGate && (bitCount == 1);
+    doCalcNorm = doCalcNorm && doNormalize && !isXGate && !isZGate && !isInvertGate && !isPhaseGate && (bitCount == 1);
 
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
     EventVecPtr waitVec;
@@ -800,8 +803,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
-    cmplx[4] = complex(
-        (isUnitLength || (runningNorm == REAL1_DEFAULT_ARG)) ? ONE_R1 : (ONE_R1 / (real1)sqrt(runningNorm)), ZERO_R1);
+    cmplx[4] =
+        complex((isUnitLength || (runningNorm <= ZERO_R1)) ? ONE_R1 : (ONE_R1 / (real1)sqrt(runningNorm)), ZERO_R1);
     cmplx[5] = (real1)norm_thresh;
 
     BufferPtr locCmplxBuffer;
@@ -945,15 +948,15 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         }
     }
 
-    if (doCalcNorm) {
-        // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
-        // values into a single normalization constant.
-        WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
-        if (runningNorm == ZERO_R1) {
-            ZeroAmplitudes();
-        }
-    } else if ((runningNorm == ZERO_R1) || ((bitCount == 1) && !isXGate && !isZGate && !isInvertGate && !isPhaseGate)) {
-        runningNorm = ONE_R1;
+    if (!doCalcNorm) {
+        return;
+    }
+
+    // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
+    // values into a single normalization constant.
+    WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+    if (runningNorm == ZERO_R1) {
+        ZeroAmplitudes();
     }
 }
 
@@ -1029,7 +1032,8 @@ void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, (bitCapIntOcl)mask, 0, 0, 0, 0, 0, 0, 0, 0 };
     real1 cosine = (real1)cos(angle);
     real1 sine = (real1)sin(angle);
-    complex phaseFacs[3] = { complex(cosine, sine), complex(cosine, -sine), (ONE_R1 / (real1)sqrt(runningNorm)) };
+    complex phaseFacs[3] = { complex(cosine, sine), complex(cosine, -sine),
+        (runningNorm <= ZERO_R1) ? ONE_R1 : (ONE_R1 / (real1)sqrt(runningNorm)) };
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();

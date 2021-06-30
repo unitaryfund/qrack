@@ -210,7 +210,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     std::shared_ptr<bitCapInt> qPowersSortedS(new bitCapInt[bitCount], std::default_delete<bitCapInt[]>());
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedS.get());
 
-    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+    doCalcNorm = doCalcNorm && doNormalize && (bitCount == 1);
 
     real1 nrm = (doNormalize && (runningNorm > ZERO_R1)) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
 
@@ -347,17 +347,19 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
         }
 
-        if (doCalcNorm) {
-            real1 rNrm = ZERO_R1;
-            for (int i = 0; i < numCores; i++) {
-                rNrm += rngNrm[i];
-            }
-            runningNorm = rNrm;
-            rngNrm.reset();
+        if (!doCalcNorm) {
+            return;
+        }
 
-            if (runningNorm == ZERO_R1) {
-                ZeroAmplitudes();
-            }
+        real1 rNrm = ZERO_R1;
+        for (int i = 0; i < numCores; i++) {
+            rNrm += rngNrm[i];
+        }
+        runningNorm = rNrm;
+        rngNrm.reset();
+
+        if (runningNorm == ZERO_R1) {
+            ZeroAmplitudes();
         }
     });
 }
@@ -373,7 +375,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     std::shared_ptr<bitCapInt> qPowersSortedS(new bitCapInt[bitCount], std::default_delete<bitCapInt[]>());
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedS.get());
 
-    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+    doCalcNorm = doCalcNorm && doNormalize && (bitCount == 1);
 
     real1 nrm = (doNormalize && (runningNorm > ZERO_R1)) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
 
@@ -504,17 +506,19 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
         }
 
-        if (doCalcNorm) {
-            real1 rNrm = ZERO_R1;
-            for (int i = 0; i < numCores; i++) {
-                rNrm += rngNrm.get()[i];
-            }
-            runningNorm = rNrm;
-            rngNrm.reset();
+        if (!doCalcNorm) {
+            return;
+        }
 
-            if (runningNorm == ZERO_R1) {
-                ZeroAmplitudes();
-            }
+        real1 rNrm = ZERO_R1;
+        for (int i = 0; i < numCores; i++) {
+            rNrm += rngNrm.get()[i];
+        }
+        runningNorm = rNrm;
+        rngNrm.reset();
+
+        if (runningNorm == ZERO_R1) {
+            ZeroAmplitudes();
         }
     });
 }

@@ -209,13 +209,13 @@ public:
 
     virtual void ZeroAmplitudes()
     {
+        clDump();
+        runningNorm = ZERO_R1;
+
         if (!stateBuffer) {
-            runningNorm = ZERO_R1;
             return;
         }
 
-        clDump();
-        runningNorm = ZERO_R1;
         ResetStateBuffer(NULL);
         FreeStateVec();
 

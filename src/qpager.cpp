@@ -525,35 +525,37 @@ bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
 
 void QPager::Decompose(bitLenInt start, QPagerPtr dest)
 {
-    // TODO: Avoid CombineEngines().
-    CombineEngines();
+    bitLenInt length = dest->qubitCount;
+    if (start == 0) {
+        CombineEngines(length + 1U);
+    } else {
+        CombineEngines(start + length);
+    }
     dest->CombineEngines();
-    qPages[0]->Decompose(start, dest->qPages[0]);
-    SetQubitCount(qubitCount - dest->qubitCount);
+    bool didDecompose = false;
+    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+        if (qPages[i]->GetRunningNorm() < ZERO_R1) {
+            qPages[i]->UpdateRunningNorm();
+        }
+
+        if (didDecompose || (qPages[i]->GetRunningNorm() <= ZERO_R1)) {
+            qPages[i]->Dispose(start, length);
+        } else {
+            qPages[i]->Decompose(start, dest->qPages[0]);
+            didDecompose = true;
+        }
+    }
 }
 
 void QPager::Dispose(bitLenInt start, bitLenInt length)
 {
-    bitLenInt inPage = qubitCount - (start + length);
-
-    if (start <= inPage) {
-        if (start == 0) {
-            CombineEngines(start + length + 1U);
-        } else {
-            CombineEngines(start + length);
-        }
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->Dispose(start, length);
-        }
+    if (start == 0) {
+        CombineEngines(length + 1U);
     } else {
-        if ((qPages[0]->GetQubitCount() - (inPage + length)) == 0) {
-            CombineEngines(inPage + length + 1U);
-        } else {
-            CombineEngines(inPage + length);
-        }
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + length), length);
-        }
+        CombineEngines(start + length);
+    }
+    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+        qPages[i]->Dispose(start, length);
     }
 
     SetQubitCount(qubitCount - length);
@@ -563,26 +565,13 @@ void QPager::Dispose(bitLenInt start, bitLenInt length)
 
 void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
-    bitLenInt inPage = qubitCount - (start + length);
-
-    if (start <= inPage) {
-        if (start == 0) {
-            CombineEngines(start + length + 1U);
-        } else {
-            CombineEngines(start + length);
-        }
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->Dispose(start, length, disposedPerm);
-        }
+    if (start == 0) {
+        CombineEngines(length + 1U);
     } else {
-        if ((qPages[0]->GetQubitCount() - (inPage + length)) == 0) {
-            CombineEngines(inPage + length + 1U);
-        } else {
-            CombineEngines(inPage + length);
-        }
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->Dispose(qPages[i]->GetQubitCount() - (inPage + length), length, disposedPerm);
-        }
+        CombineEngines(start + length);
+    }
+    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+        qPages[i]->Dispose(start, length, disposedPerm);
     }
 
     SetQubitCount(qubitCount - length);
