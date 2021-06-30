@@ -121,9 +121,6 @@ void QEngineOCL::SetAmplitudePage(
     QEngineOCLPtr pageEngineOclPtr = std::dynamic_pointer_cast<QEngineOCL>(pageEnginePtr);
     BufferPtr oStateBuffer = pageEngineOclPtr->stateBuffer;
 
-    clFinish();
-    pageEngineOclPtr->clFinish();
-
     if (!stateBuffer && !oStateBuffer) {
         return;
     }
@@ -144,6 +141,8 @@ void QEngineOCL::SetAmplitudePage(
         ReinitBuffer();
         ClearBuffer(stateBuffer, 0, maxQPowerOcl);
     }
+
+    pageEngineOclPtr->clFinish();
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)srcOffset, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length, 0, 0,
         0, 0, 0, 0, 0 };
@@ -177,7 +176,6 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     }
 
     engineOcl->clFinish();
-    clFinish();
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl >> ONE_BCI, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 

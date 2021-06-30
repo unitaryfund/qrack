@@ -253,9 +253,6 @@ public:
 
     virtual void CopyStateVec(QEnginePtr src)
     {
-        Finish();
-        src->Finish();
-
         if (src->IsZeroAmplitude()) {
             ZeroAmplitudes();
             return;
