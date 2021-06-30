@@ -1192,7 +1192,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     complex* nStateVec = AllocStateVec(maxQPowerOcl, forceAlloc);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
 
-    toCopy->Finish();
+    toCopy->clFinish();
 
     WaitCall(apiCall, ngc, ngs, { stateBuffer, toCopy->stateBuffer, poolItem->ulongBuffer, nStateBuffer });
 
@@ -2545,7 +2545,7 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
     if (doNormalize) {
         NormalizeState();
     }
-    Finish();
+    clFinish();
 
     if (!stateBuffer && !norm(amp)) {
         return;
@@ -2634,7 +2634,7 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
         return runningNorm;
     }
 
-    toCompare->Finish();
+    toCompare->clFinish();
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -2673,7 +2673,7 @@ QInterfacePtr QEngineOCL::Clone()
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
 
-    copyPtr->Finish();
+    copyPtr->clFinish();
     copyPtr->runningNorm = runningNorm;
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -2682,7 +2682,7 @@ QInterfacePtr QEngineOCL::Clone()
     } else {
         copyPtr->ZeroAmplitudes();
     }
-    Finish();
+    clFinish();
 
     return copyPtr;
 }
