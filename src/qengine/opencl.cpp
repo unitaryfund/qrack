@@ -1033,7 +1033,7 @@ void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
     real1 cosine = (real1)cos(angle);
     real1 sine = (real1)sin(angle);
     complex phaseFacs[3] = { complex(cosine, sine), complex(cosine, -sine),
-        (runningNorm <= ZERO_R1) ? ONE_R1 : (ONE_R1 / (real1)sqrt(runningNorm)) };
+        (runningNorm > ZERO_R1) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1 };
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -2552,7 +2552,7 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         return;
     }
 
-    if (runningNorm > ZERO_R1) {
+    if (runningNorm >= ZERO_R1) {
         runningNorm -= norm(GetAmplitude(perm));
         runningNorm += norm(amp);
         if (runningNorm <= REAL1_EPSILON) {
@@ -2751,8 +2751,6 @@ void QEngineOCL::UpdateRunningNorm(real1_f norm_thresh)
     real1 r1_args[1] = { (real1)norm_thresh };
     cl::Event writeRealArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1), r1_args, writeRealArgsEvent);
-
-    runningNorm = ONE_R1;
 
     cl::Event writeBCIArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl), &maxQPowerOcl, writeBCIArgsEvent);
