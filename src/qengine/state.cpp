@@ -88,7 +88,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
         return;
     }
 
-    if (runningNorm > ZERO_R1) {
+    if (runningNorm >= ZERO_R1) {
         runningNorm -= norm(GetAmplitude(perm));
         runningNorm += norm(amp);
         if (runningNorm <= REAL1_EPSILON) {
