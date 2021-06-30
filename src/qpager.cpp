@@ -511,10 +511,10 @@ bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
     QEnginePtr engine = qPages[0];
     for (i = 0; i < maxI; i++) {
         nQPages.push_back(std::dynamic_pointer_cast<QEngine>(engine->Clone()));
-        nQPages.back()->Compose(toCopy->qPages[i]);
+        nQPages.back()->Compose(toCopy->qPages[i], start);
     }
     nQPages.push_back(engine);
-    nQPages.back()->Compose(toCopy->qPages[maxI]);
+    nQPages.back()->Compose(toCopy->qPages[maxI], start);
 
     qPages = nQPages;
 
