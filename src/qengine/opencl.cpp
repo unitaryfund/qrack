@@ -95,6 +95,7 @@ void QEngineOCL::GetAmplitudePage(complex* pagePtr, const bitCapInt offset, cons
     EventVecPtr waitVec = ResetWaitEvents();
     queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
         sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
+    queue.finish();
 }
 
 void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
