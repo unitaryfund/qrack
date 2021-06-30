@@ -750,13 +750,12 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
     // every single permutation amplitude.
-    doCalcNorm = doCalcNorm && doNormalize && !isXGate && !isZGate && !isInvertGate && !isPhaseGate && (bitCount == 1);
+    bool doApplyNorm = doNormalize && (bitCount == 1) && (runningNorm > ZERO_R1) && !isXGate && !isZGate &&
+        !isInvertGate && !isPhaseGate;
+    doCalcNorm = doCalcNorm && (doApplyNorm || (runningNorm <= ZERO_R1));
 
     // We grab the wait event queue. We will replace it with three new asynchronous events, to wait for.
-    EventVecPtr waitVec;
-    if (doCalcNorm) {
-        waitVec = ResetWaitEvents();
-    }
+    EventVecPtr waitVec = ResetWaitEvents();
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -802,9 +801,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     std::copy(mtrx, mtrx + 4, cmplx);
 
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
-    bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
     cmplx[4] =
-        complex((isUnitLength || (runningNorm <= ZERO_R1)) ? ONE_R1 : (ONE_R1 / (real1)sqrt(runningNorm)), ZERO_R1);
+        complex((doNormalize && (runningNorm > ZERO_R1)) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1, ZERO_R1);
     cmplx[5] = (real1)norm_thresh;
 
     BufferPtr locCmplxBuffer;

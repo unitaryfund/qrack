@@ -210,9 +210,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     std::shared_ptr<bitCapInt> qPowersSortedS(new bitCapInt[bitCount], std::default_delete<bitCapInt[]>());
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedS.get());
 
-    doCalcNorm = doCalcNorm && doNormalize && (bitCount == 1);
+    bool doApplyNorm = doNormalize && (bitCount == 1) && (runningNorm > ZERO_R1);
+    doCalcNorm = doCalcNorm && (doApplyNorm || (runningNorm <= ZERO_R1));
 
-    real1 nrm = (doNormalize && (runningNorm > ZERO_R1)) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
+    real1 nrm = doApplyNorm ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
 
     if (doCalcNorm) {
         runningNorm = ONE_R1;
