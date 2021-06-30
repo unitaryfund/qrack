@@ -804,8 +804,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Is the vector already normalized, or is this method not appropriate for on-the-fly normalization?
     bool isUnitLength = (runningNorm == ONE_R1) || !(doNormalize && (bitCount == 1));
-    cmplx[4] = complex(
-        (isUnitLength || (runningNorm == REAL1_DEFAULT_ARG)) ? ONE_R1 : (ONE_R1 / (real1)sqrt(runningNorm)), ZERO_R1);
+    cmplx[4] =
+        complex((isUnitLength || (runningNorm <= ZERO_R1)) ? ONE_R1 : (ONE_R1 / (real1)sqrt(runningNorm)), ZERO_R1);
     cmplx[5] = (real1)norm_thresh;
 
     BufferPtr locCmplxBuffer;
@@ -949,15 +949,15 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         }
     }
 
-    if (doCalcNorm) {
-        // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
-        // values into a single normalization constant.
-        WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
-        if (runningNorm == ZERO_R1) {
-            ZeroAmplitudes();
-        }
-    } else if ((runningNorm <= ZERO_R1) || ((bitCount == 1) && !isXGate && !isZGate && !isInvertGate && !isPhaseGate)) {
-        runningNorm = ONE_R1;
+    if (!doCalcNorm) {
+        return;
+    }
+
+    // If we have calculated the norm of the state vector in this call, we need to sum the buffer of partial norm
+    // values into a single normalization constant.
+    WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &runningNorm);
+    if (runningNorm == ZERO_R1) {
+        ZeroAmplitudes();
     }
 }
 
