@@ -219,7 +219,7 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         runningNorm = ONE_R1;
     }
 
-    Dispatch([this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, nrm, nrm_thresh] {
+    Dispatch([this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, doApplyNorm, nrm, nrm_thresh] {
         complex* mtrx = mtrxS.get();
         bitCapInt* qPowersSorted = qPowersSortedS.get();
 
@@ -348,6 +348,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
         }
 
+        if (doApplyNorm) {
+            runningNorm = ONE_R1;
+        }
+
         if (!doCalcNorm) {
             return;
         }
@@ -376,15 +380,16 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     std::shared_ptr<bitCapInt> qPowersSortedS(new bitCapInt[bitCount], std::default_delete<bitCapInt[]>());
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedS.get());
 
-    doCalcNorm = doCalcNorm && doNormalize && (bitCount == 1);
+    bool doApplyNorm = doNormalize && (bitCount == 1) && (runningNorm > ZERO_R1);
+    doCalcNorm = doCalcNorm && (doApplyNorm || (runningNorm <= ZERO_R1));
 
-    real1 nrm = (doNormalize && (runningNorm > ZERO_R1)) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
+    real1 nrm = doApplyNorm ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
 
     if (doCalcNorm) {
         runningNorm = ONE_R1;
     }
 
-    Dispatch([this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, nrm, nrm_thresh] {
+    Dispatch([this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, doApplyNorm, nrm, nrm_thresh] {
         complex* mtrx = mtrxS.get();
         bitCapInt* qPowersSorted = qPowersSortedS.get();
 
@@ -505,6 +510,10 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             par_for_set(CastStateVecSparse()->iterable(setMask, filterMask, filterValues), fn);
         } else {
             par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
+        }
+
+        if (doApplyNorm) {
+            runningNorm = ONE_R1;
         }
 
         if (!doCalcNorm) {
