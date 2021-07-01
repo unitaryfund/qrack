@@ -424,7 +424,7 @@ real1_f QEngineOCL::ProbAll(bitCapInt fullRegister)
     queue.enqueueReadBuffer(
         *stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)fullRegister, sizeof(complex), &amp, waitVec.get());
     wait_refs.clear();
-    return norm(amp);
+    return clampProb(norm(amp));
 }
 
 void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
@@ -1495,9 +1495,6 @@ real1_f QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
 
     real1 oneChance;
     WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &oneChance);
-
-    if (oneChance > ONE_R1)
-        oneChance = ONE_R1;
 
     return clampProb(oneChance);
 }
@@ -2609,7 +2606,7 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
-        return 4.0f;
+        return ONE_R1;
     }
 
     // Make sure both engines are normalized
