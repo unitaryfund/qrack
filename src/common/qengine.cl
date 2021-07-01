@@ -372,7 +372,7 @@ void kernel invertsinglewide(global cmplx* stateVec, constant cmplx* cmplxPtr, c
 
 
 void kernel uniformlycontrolled(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
-    constant bitCapIntOcl* qPowers, constant cmplx4* mtrxs, constant real1* nrmIn, global real1* nrmParts,
+    constant bitCapIntOcl* qPowers, global cmplx4* mtrxs, constant real1* nrmIn, global real1* nrmParts,
     local real1* lProbBuffer)
 {
     bitCapIntOcl Nthreads, lcv, locID, locNthreads;
@@ -1774,7 +1774,7 @@ void kernel cpowmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 }
 
 void kernel indexedLda(
-    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant uchar* values)
+    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, global uchar* values)
 {
     bitCapIntOcl Nthreads, lcv;
 
@@ -1799,7 +1799,7 @@ void kernel indexedLda(
         if (valueBytes == 1) {
             outputInt = values[inputInt];
         } else if (valueBytes == 2) {
-            outputInt = ((constant ushort*)values)[inputInt];
+            outputInt = ((global ushort*)values)[inputInt];
         } else {
             for (j = 0U; j < valueBytes; j++) {
                 outputInt |= values[inputInt * valueBytes + j] << (8U * j);
@@ -1811,7 +1811,7 @@ void kernel indexedLda(
 }
 
 void kernel indexedAdc(
-    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant uchar* values)
+    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, global uchar* values)
 {
     bitCapIntOcl Nthreads, lcv;
 
@@ -1841,7 +1841,7 @@ void kernel indexedAdc(
         if (valueBytes == 1) {
             outputInt = values[inputInt];
         } else if (valueBytes == 2) {
-            outputInt = ((constant ushort*)values)[inputInt];
+            outputInt = ((global ushort*)values)[inputInt];
         } else {
             for (j = 0U; j < valueBytes; j++) {
                 outputInt |= values[inputInt * valueBytes + j] << (8U * j);
@@ -1861,7 +1861,7 @@ void kernel indexedAdc(
 }
 
 void kernel indexedSbc(
-    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant uchar* values)
+    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, global uchar* values)
 {
     bitCapIntOcl Nthreads, lcv;
 
@@ -1891,7 +1891,7 @@ void kernel indexedSbc(
         if (valueBytes == 1) {
             outputInt = values[inputInt];
         } else if (valueBytes == 2) {
-            outputInt = ((constant ushort*)values)[inputInt];
+            outputInt = ((global ushort*)values)[inputInt];
         } else {
             for (j = 0U; j < valueBytes; j++) {
                 outputInt |= values[inputInt * valueBytes + j] << (8U * j);
@@ -1911,7 +1911,7 @@ void kernel indexedSbc(
 }
 
 void kernel hash(
-    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, constant uchar* values)
+    global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec, global uchar* values)
 {
     bitCapIntOcl Nthreads, lcv;
 
@@ -1929,7 +1929,7 @@ void kernel hash(
         if (bytes == 1) {
             outputInt = values[inputInt];
         } else if (bytes == 2) {
-            outputInt = ((constant ushort*)values)[inputInt];
+            outputInt = ((global ushort*)values)[inputInt];
         } else {
             for (j = 0U; j < bytes; j++) {
                 outputInt |= values[inputInt * bytes + j] << (8U * j);
