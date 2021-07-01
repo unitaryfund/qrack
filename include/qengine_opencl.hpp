@@ -422,7 +422,11 @@ protected:
         BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
         if (error != CL_SUCCESS) {
             FreeAll();
-            throw std::bad_alloc();
+            if ((error == CL_MEM_OBJECT_ALLOCATION_FAILURE) || (error == CL_OUT_OF_HOST_MEMORY) ||
+                (error == CL_INVALID_BUFFER_SIZE)) {
+                throw std::bad_alloc();
+            }
+            throw std::runtime_error("OpenCL error code on buffer allocation attempt: " + std::to_string(error));
         }
 
         return toRet;
