@@ -102,6 +102,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             qbTryThreshold = maxQubits;
         }
     }
+    size_t maxAlloc = OCLEngine::Instance()->GetDeviceContextPtr(-1)->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+    bitCapInt maxQb = log2(maxAlloc / sizeof(complex)) - 1U;
+    if (maxQb < qbTryThreshold) {
+        qbTryThreshold = maxQb;
+    }
 #endif
 
     int sampleFailureCount;

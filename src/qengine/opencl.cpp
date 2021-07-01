@@ -496,7 +496,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > maxAlloc) {
         FreeAll();
-        throw "Error: State vector exceeds device maximum OpenCL allocation";
+        throw std::bad_alloc();
     } else if (useHostRam || ((OclMemDenom * stateVecSize) > maxMem)) {
         usingHostRam = true;
     } else {
@@ -1176,7 +1176,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
     if (nStateVecSize > maxAlloc) {
         FreeAll();
-        throw "Error: State vector exceeds device maximum OpenCL allocation";
+        throw std::bad_alloc();
     }
 
     AddAlloc(sizeof(complex) * nMaxQPower);
