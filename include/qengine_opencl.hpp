@@ -416,6 +416,18 @@ protected:
         totalOclAllocSize -= size;
     }
 
+    virtual BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
+    {
+        cl_int error;
+        BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
+        if (error != CL_SUCCESS) {
+            FreeAll();
+            throw std::bad_alloc();
+        }
+
+        return toRet;
+    }
+
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
