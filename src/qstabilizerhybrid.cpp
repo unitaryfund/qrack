@@ -799,26 +799,25 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         return engine->Prob(qubit);
     }
 
-    bool isInvert = false;
-    if (shards[qubit]) {
-        if (shards[qubit]->IsInvert()) {
-            isInvert = true;
-        } else if (!shards[qubit]->IsPhase()) {
-            // Bit was already rotated to Z basis, if separable.
-            if (stabilizer->IsSeparableZ(qubit)) {
-                if (stabilizer->M(qubit)) {
-                    return norm(shards[qubit]->gate[3]);
-                }
-                return norm(shards[qubit]->gate[2]);
-            }
+    if (shards[qubit] && shards[qubit]->IsInvert()) {
+        InvertBuffer(qubit);
+    }
 
-            // Otherwise, buffer will not change the fact that state appears maximally mixed.
-            return ONE_R1 / 2;
+    if (shards[qubit] && !shards[qubit]->IsPhase()) {
+        // Bit was already rotated to Z basis, if separable.
+        if (stabilizer->IsSeparableZ(qubit)) {
+            if (stabilizer->M(qubit)) {
+                return norm(shards[qubit]->gate[3]);
+            }
+            return norm(shards[qubit]->gate[2]);
         }
+
+        // Otherwise, buffer will not change the fact that state appears maximally mixed.
+        return ONE_R1 / 2;
     }
 
     if (stabilizer->IsSeparableZ(qubit)) {
-        return (isInvert ^ stabilizer->M(qubit)) ? ONE_R1 : ZERO_R1;
+        return stabilizer->M(qubit) ? ONE_R1 : ZERO_R1;
     }
 
     // Otherwise, state appears locally maximally mixed.
@@ -836,10 +835,12 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
+    if (shards[qubit] && shards[qubit]->IsInvert()) {
+        InvertBuffer(qubit);
+    }
+
     if (shards[qubit]) {
-        if (shards[qubit]->IsInvert()) {
-            stabilizer->X(qubit);
-        } else if (!shards[qubit]->IsPhase() && stabilizer->IsSeparableZ(qubit)) {
+        if (!shards[qubit]->IsPhase() && stabilizer->IsSeparableZ(qubit)) {
             // Bit was already rotated to Z basis, if separable.
             return CollapseSeparableShard(qubit);
         }
@@ -855,10 +856,11 @@ bitCapInt QStabilizerHybrid::MAll()
 {
     if (stabilizer) {
         for (bitLenInt i = 0; i < qubitCount; i++) {
+            if (shards[i] && shards[i]->IsInvert()) {
+                InvertBuffer(i);
+            }
             if (shards[i]) {
-                if (shards[i]->IsInvert()) {
-                    stabilizer->X(i);
-                } else if (!shards[i]->IsPhase() && stabilizer->IsSeparableZ(i)) {
+                if (!shards[i]->IsPhase() && stabilizer->IsSeparableZ(i)) {
                     // Bit was already rotated to Z basis, if separable.
                     CollapseSeparableShard(i);
                 }

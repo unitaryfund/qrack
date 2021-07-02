@@ -73,32 +73,30 @@ protected:
     QStabilizerPtr MakeStabilizer(const bitCapInt& perm = 0);
     QInterfacePtr MakeEngine(const bitCapInt& perm = 0);
 
+    void InvertBuffer(bitLenInt qubit)
+    {
+        complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
+        pauliShard->Compose(shards[qubit]->gate);
+        shards[qubit] = pauliShard;
+        if (shards[qubit]->IsIdentity()) {
+            shards[qubit] = NULL;
+        }
+        stabilizer->X(qubit);
+    }
+
     void FlushIfBlocked(bitLenInt control, bitLenInt target, bool isPhase = false)
     {
         if (engine) {
             return;
         }
 
-        complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-
         if (shards[target] && shards[target]->IsInvert()) {
-            QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
-            pauliShard->Compose(shards[target]->gate);
-            shards[target] = pauliShard;
-            if (shards[target]->IsIdentity()) {
-                shards[target] = NULL;
-            }
-            stabilizer->X(target);
+            InvertBuffer(target);
         }
 
         if (shards[control] && shards[control]->IsInvert()) {
-            QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
-            pauliShard->Compose(shards[control]->gate);
-            shards[control] = pauliShard;
-            if (shards[control]->IsIdentity()) {
-                shards[control] = NULL;
-            }
-            stabilizer->X(control);
+            InvertBuffer(control);
         }
 
         bool isBlocked = (shards[target] && (!isPhase || !shards[target]->IsPhase()));
@@ -192,24 +190,24 @@ protected:
 
             if (shards[bit]) {
                 if (shards[bit]->IsInvert()) {
-                    complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-                    QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
-                    pauliShard->Compose(shards[bit]->gate);
-                    shards[bit] = pauliShard;
-                    // Skip identity removal for IsPhase()
-                    stabilizer->X(bit);
+                    InvertBuffer(bit);
+
+                    if (!shards[bit]) {
+                        if (anti == stabilizer->M(bit)) {
+                            return true;
+                        }
+                        continue;
+                    }
                 }
 
                 if (shards[bit]->IsPhase()) {
-                    if (shards[bit]->IsIdentity()) {
-                        shards[bit] = NULL;
-                    }
                     if (anti == stabilizer->M(bit)) {
                         return true;
                     }
-                } else {
-                    output.push_back(bit);
+                    continue;
                 }
+
+                output.push_back(bit);
             } else if (anti == stabilizer->M(bit)) {
                 return true;
             }
