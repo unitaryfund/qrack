@@ -102,14 +102,29 @@ struct PoolItem {
     std::shared_ptr<real1> angleArray;
     complex* otherStateVec;
 
+    virtual BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
+    {
+        cl_int error;
+        BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
+        if (error != CL_SUCCESS) {
+            if ((error == CL_MEM_OBJECT_ALLOCATION_FAILURE) || (error == CL_OUT_OF_HOST_MEMORY) ||
+                (error == CL_INVALID_BUFFER_SIZE)) {
+                throw std::bad_alloc();
+            }
+            throw std::runtime_error("OpenCL error code on buffer allocation attempt: " + std::to_string(error));
+        }
+
+        return toRet;
+    }
+
     PoolItem(cl::Context& context)
         : probArray(NULL)
         , angleArray(NULL)
         , otherStateVec(NULL)
     {
-        cmplxBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
-        realBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
-        ulongBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * BCI_ARG_LEN);
+        cmplxBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
+        realBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
+        ulongBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * BCI_ARG_LEN);
     }
 };
 
