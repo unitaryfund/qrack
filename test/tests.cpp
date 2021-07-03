@@ -4680,7 +4680,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
 }
 
-#if 0
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_teleport")
 {
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 3, 0);
@@ -4707,7 +4706,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_teleport")
         REQUIRE(!suffix->M(2));
     }
 }
-#endif
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_h_cnot_rand")
 {

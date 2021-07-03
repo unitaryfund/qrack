@@ -137,6 +137,9 @@ QInterfacePtr QStabilizerHybrid::Clone()
             subEngineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
             useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
 
+    // TODO: Remove.
+    SwitchToEngine();
+
     Finish();
     c->Finish();
 
