@@ -4680,31 +4680,34 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
 }
 
+#if 0
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_teleport")
 {
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 3, 0);
 
+    qftReg->SetPermutation(0);
+
+    qftReg->H(1);
+    qftReg->CNOT(1, 2);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+
     for (int i = 0; i < 10; i++) {
-        qftReg->SetPermutation(0);
-
-        qftReg->H(1);
-        qftReg->CNOT(1, 2);
-        qftReg->CNOT(0, 1);
-        qftReg->H(0);
-
-        bool c0 = qftReg->M(0);
-        bool c1 = qftReg->M(1);
+        QInterfacePtr suffix = qftReg->Clone();
+        bool c0 = suffix->M(0);
+        bool c1 = suffix->M(1);
 
         if (c0) {
-            qftReg->Z(2);
+            suffix->Z(2);
         }
         if (c1) {
-            qftReg->X(2);
+            suffix->X(2);
         }
 
-        REQUIRE(!qftReg->M(2));
+        REQUIRE(!suffix->M(2));
     }
 }
+#endif
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_h_cnot_rand")
 {

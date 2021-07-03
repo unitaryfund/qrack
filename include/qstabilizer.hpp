@@ -94,18 +94,19 @@ public:
     QStabilizer(
         const bitLenInt& n, const bitCapInt& perm = 0, bool useHardwareRNG = true, qrack_rand_gen_ptr rgp = nullptr);
 
-    QStabilizer(QStabilizer& s)
+    QStabilizerPtr Clone()
     {
-        s.Finish();
+        Finish();
 
-        qubitCount = s.qubitCount;
-        x = s.x;
-        z = s.z;
-        r = s.r;
-        randomSeed = s.randomSeed;
-        rand_generator = s.rand_generator;
-        rand_distribution = s.rand_distribution;
-        hardware_rand_generator = s.hardware_rand_generator;
+        QStabilizerPtr clone =
+            std::make_shared<QStabilizer>(qubitCount, 0, hardware_rand_generator != NULL, rand_generator);
+
+        clone->x = x;
+        clone->z = z;
+        clone->r = r;
+        clone->SetRandomSeed(randomSeed);
+
+        return clone;
     }
 
     virtual ~QStabilizer() { Dump(); }
