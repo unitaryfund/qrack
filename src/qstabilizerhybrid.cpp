@@ -137,9 +137,11 @@ QInterfacePtr QStabilizerHybrid::Clone()
             subEngineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
             useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
 
+    Finish();
     c->Finish();
 
     if (stabilizer) {
+        c->engine = NULL;
         c->stabilizer = stabilizer->Clone();
         for (bitLenInt i = 0; i < qubitCount; i++) {
             if (shards[i]) {

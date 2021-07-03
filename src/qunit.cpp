@@ -4515,19 +4515,21 @@ QInterfacePtr QUnit::Clone()
 
 QInterfacePtr QUnit::CloneBody(QUnitPtr copyPtr)
 {
+    QInterfacePtr unit;
     std::map<QInterfacePtr, QInterfacePtr> dupeEngines;
     for (bitLenInt i = 0; i < qubitCount; i++) {
         copyPtr->shards[i] = QEngineShard(shards[i]);
 
-        if (!shards[i].unit) {
+        unit = shards[i].unit;
+        if (!unit) {
             continue;
         }
 
-        if (dupeEngines.find(shards[i].unit) == dupeEngines.end()) {
-            dupeEngines[shards[i].unit] = shards[i].unit->Clone();
+        if (dupeEngines.find(unit) == dupeEngines.end()) {
+            dupeEngines[unit] = unit->Clone();
         }
 
-        copyPtr->shards[i].unit = dupeEngines[shards[i].unit];
+        copyPtr->shards[i].unit = dupeEngines[unit];
     }
 
     return copyPtr;
