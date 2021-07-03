@@ -4501,32 +4501,35 @@ QInterfacePtr QUnit::Clone()
     // TODO: Copy buffers instead of flushing?
     for (bitLenInt i = 0; i < qubitCount; i++) {
         RevertBasis2Qb(i);
-        EndEmulation(i);
     }
 
-    QUnitPtr copyPtr = std::make_shared<QUnit>(
-        engine, subEngine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
+    QUnitPtr copyPtr = std::make_shared<QUnit>(engine, subEngine, qubitCount, 0, rand_generator, phaseFactor,
+        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+        thresholdQubits, separabilityThreshold);
+
+    Finish();
+    copyPtr->Finish();
 
     return CloneBody(copyPtr);
 }
 
 QInterfacePtr QUnit::CloneBody(QUnitPtr copyPtr)
 {
-    std::vector<QInterfacePtr> shardEngines;
-    std::vector<QInterfacePtr> dupeEngines;
-    std::vector<QInterfacePtr>::iterator origEngine;
-    bitLenInt engineIndex;
+    QInterfacePtr unit;
+    std::map<QInterfacePtr, QInterfacePtr> dupeEngines;
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (find(shardEngines.begin(), shardEngines.end(), shards[i].unit) == shardEngines.end()) {
-            shardEngines.push_back(shards[i].unit);
-            dupeEngines.push_back(shards[i].unit->Clone());
+        copyPtr->shards[i] = QEngineShard(shards[i]);
+
+        unit = shards[i].unit;
+        if (!unit) {
+            continue;
         }
 
-        origEngine = find(shardEngines.begin(), shardEngines.end(), shards[i].unit);
-        engineIndex = origEngine - shardEngines.begin();
+        if (dupeEngines.find(unit) == dupeEngines.end()) {
+            dupeEngines[unit] = unit->Clone();
+        }
 
-        copyPtr->shards[i] = QEngineShard(shards[i]);
-        copyPtr->shards[i].unit = dupeEngines[engineIndex];
+        copyPtr->shards[i].unit = dupeEngines[unit];
     }
 
     return copyPtr;

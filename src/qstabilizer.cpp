@@ -100,8 +100,8 @@ void QStabilizer::rowcopy(const bitLenInt& i, const bitLenInt& k)
         return;
     }
 
-    std::copy(x[k].begin(), x[k].end(), x[i].begin());
-    std::copy(z[k].begin(), z[k].end(), z[i].begin());
+    x[i] = x[k];
+    z[i] = z[k];
     r[i] = r[k];
 }
 

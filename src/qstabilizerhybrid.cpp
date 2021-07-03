@@ -132,16 +132,21 @@ void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
 
 QInterfacePtr QStabilizerHybrid::Clone()
 {
-    Finish();
-
     QStabilizerHybridPtr c =
         std::dynamic_pointer_cast<QStabilizerHybrid>(CreateQuantumInterface(QINTERFACE_STABILIZER_HYBRID, engineType,
             subEngineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
             useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
 
+    // TODO: Remove.
+    SwitchToEngine();
+
+    Finish();
+    c->Finish();
+
     if (stabilizer) {
-        c->stabilizer = std::make_shared<QStabilizer>(*stabilizer);
-        for (bitLenInt i = 0; i < shards.size(); i++) {
+        c->engine = NULL;
+        c->stabilizer = stabilizer->Clone();
+        for (bitLenInt i = 0; i < qubitCount; i++) {
             if (shards[i]) {
                 c->shards[i] = std::make_shared<QStabilizerShard>(shards[i]->gate);
             }
