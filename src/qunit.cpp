@@ -4503,8 +4503,12 @@ QInterfacePtr QUnit::Clone()
         RevertBasis2Qb(i);
     }
 
-    QUnitPtr copyPtr = std::make_shared<QUnit>(
-        engine, subEngine, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam);
+    QUnitPtr copyPtr = std::make_shared<QUnit>(engine, subEngine, qubitCount, 0, rand_generator, phaseFactor,
+        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+        thresholdQubits, separabilityThreshold);
+
+    Finish();
+    copyPtr->Finish();
 
     return CloneBody(copyPtr);
 }
