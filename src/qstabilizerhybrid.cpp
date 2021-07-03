@@ -841,6 +841,16 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
 
     if (shards[qubit]) {
         if (!shards[qubit]->IsPhase() && stabilizer->IsSeparableZ(qubit)) {
+            if (doForce) {
+                if (doApply) {
+                    if (result != stabilizer->M(qubit)) {
+                        stabilizer->X(qubit);
+                    }
+                    shards[qubit] = NULL;
+                }
+
+                return result;
+            }
             // Bit was already rotated to Z basis, if separable.
             return CollapseSeparableShard(qubit);
         }
