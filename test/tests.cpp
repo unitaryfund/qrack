@@ -4680,6 +4680,30 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_h_cnot_rand")
+{
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 2, 0);
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+
+    complex state[4];
+    qftReg->GetQuantumState(state);
+    REQUIRE_FLOAT(norm(state[0]), ONE_R1 / 2);
+    REQUIRE_FLOAT(norm(state[1]), ZERO_R1);
+    REQUIRE_FLOAT(norm(state[2]), ZERO_R1);
+    REQUIRE_FLOAT(norm(state[3]), ONE_R1 / 2);
+
+    bitCapInt qPowers[2] = { 1, 2 };
+    std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 2U, 1000);
+
+    REQUIRE(results.find(1) == results.end());
+    REQUIRE(results.find(2) == results.end());
+    REQUIRE(results[0] > 450);
+    REQUIRE(results[0] < 550);
+    REQUIRE(results[3] > 450);
+    REQUIRE(results[3] < 550);
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_1", "[mirror]")
 {
     qftReg->SetPermutation(7);

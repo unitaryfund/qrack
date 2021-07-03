@@ -741,51 +741,43 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     bitLenInt i;
     bitCapIntOcl j;
 
-    std::unique_ptr<bitCapInt[]> qPowersSorted(new bitCapInt[qPowerCount]);
-    bitCapInt mask = 0U;
+    std::vector<bitCapInt> maskMap(qPowerCount);
     for (i = 0; i < qPowerCount; i++) {
-        mask |= qPowers[i];
-        qPowersSorted.get()[i] = qPowers[i];
+        maskMap[i] = qPowers[i];
     }
 
-    std::sort(qPowersSorted.get(), qPowersSorted.get() + qPowerCount);
-    std::map<bitLenInt, bitCapInt> maskMap;
-    for (bitLenInt k = 0; k < qPowerCount; k++) {
+    std::unique_ptr<real1[]> allProbsArray(new real1[maxQPower]);
+    GetProbs(allProbsArray.get());
+
+    bitCapInt maskMaxQPower = pow2(qPowerCount);
+    bitCapInt maskPerm;
+    std::unique_ptr<real1[]> maskProbsArray(new real1[maskMaxQPower]());
+    for (j = 0; j < maxQPower; j++) {
+        maskPerm = 0;
         for (i = 0; i < qPowerCount; i++) {
-            if (qPowersSorted.get()[k] == qPowers[i]) {
-                maskMap[k] = pow2(i);
-                break;
+            if (j & maskMap[i]) {
+                maskPerm |= pow2(i);
             }
         }
+        maskProbsArray.get()[maskPerm] += allProbsArray.get()[j];
     }
 
-    qPowersSorted.reset();
+    allProbsArray.reset();
 
-    bitCapIntOcl subsetCap = pow2Ocl(qPowerCount);
-    std::unique_ptr<real1[]> probsArray(new real1[subsetCap]);
-    ProbMaskAll(mask, probsArray.get());
-
-    real1 totProb = ZERO_R1;
-    for (j = 0; j < subsetCap; j++) {
-        totProb += probsArray.get()[j];
-    }
-
+    bitCapInt lastPerm = maskMaxQPower - 1U;
+    real1 maskProb, cumulativeProb;
     std::map<bitCapInt, int> results;
-    real1 maskProb, cumProb;
-    bitCapInt key;
     for (unsigned int shot = 0; shot < shots; shot++) {
         maskProb = Rand();
-        cumProb = ZERO_R1;
-        for (j = 0; j < subsetCap; j++) {
-            cumProb += probsArray.get()[j];
-            if ((maskProb < cumProb) || (cumProb >= totProb)) {
-                key = 0;
-                for (i = 0; i < qPowerCount; i++) {
-                    if (j & pow2(i)) {
-                        key |= maskMap[i];
-                    }
+        cumulativeProb = ZERO_R1;
+        for (j = 0; j < maskMaxQPower; j++) {
+            cumulativeProb += maskProbsArray.get()[j];
+            if ((maskProb <= cumulativeProb) || (j == lastPerm)) {
+                if (results.find(j) == results.end()) {
+                    results[j] = 1;
+                } else {
+                    results[j]++;
                 }
-                results[key]++;
                 break;
             }
         }
