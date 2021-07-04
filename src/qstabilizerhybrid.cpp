@@ -13,7 +13,6 @@
 #include "qfactory.hpp"
 #include "qstabilizerhybrid.hpp"
 
-#define IS_NORM_0(c) (norm(c) <= amplitudeFloor)
 #define IS_REAL_0(r) (abs(r) <= FP_NORM_EPSILON)
 #define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \
     ((IS_REAL_0(std::real(top)) || IS_REAL_0(std::imag(top))) && (IS_SAME(top, bottom) || IS_SAME(top, -bottom)))

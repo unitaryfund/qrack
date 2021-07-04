@@ -14,8 +14,6 @@
 #include "qfactory.hpp"
 #include "qpager.hpp"
 
-#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
-
 namespace Qrack {
 
 QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
