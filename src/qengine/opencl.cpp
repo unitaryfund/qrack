@@ -1085,7 +1085,6 @@ void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
 
     QueueCall((runningNorm == ONE_R1) ? OCL_API_UNIFORMPARITYRZ : OCL_API_UNIFORMPARITYRZ_NORM, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
-
     QueueSetRunningNorm(ONE_R1);
 }
 

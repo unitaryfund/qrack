@@ -2906,7 +2906,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
                 unit->ApplyControlledSinglePhase(CTRL_P_ARGS);
             }
         },
-        [&]() { ApplySinglePhase(topLeft, bottomRight, target); }, true, false);
+        [&]() { ApplySinglePhase(topLeft, bottomRight, target); }, true);
 }
 
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
@@ -3051,7 +3051,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
                 unit->ApplyAntiControlledSinglePhase(CTRL_P_ARGS);
             }
         },
-        [&]() { ApplySinglePhase(topLeft, bottomRight, target); }, true, false);
+        [&]() { ApplySinglePhase(topLeft, bottomRight, target); }, true);
 }
 
 void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -3108,37 +3108,35 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 
 void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
 {
-    if (IsIdentity(mtrx, false)) {
-        return;
-    }
-
     QEngineShard& shard = shards[target];
 
-    if (!norm(mtrx[1]) && !norm(mtrx[2])) {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
     }
-    if (!norm(mtrx[0]) && !norm(mtrx[3])) {
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
-    if (!shard.isPauliY && (randGlobalPhase || (mtrx[0] == complex(SQRT1_2_R1, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
-        (mtrx[0] == mtrx[2]) && (mtrx[2] == -mtrx[3])) {
+    if ((randGlobalPhase || IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1))) && IS_SAME(mtrx[0], mtrx[1]) &&
+        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
         H(target);
         return;
     }
-    if ((randGlobalPhase || (mtrx[0] == complex(SQRT1_2_R1, ZERO_R1))) && (mtrx[0] == mtrx[1]) &&
-        (mtrx[2] == -mtrx[3]) && (I_CMPLX * mtrx[0] == mtrx[2])) {
+    if ((randGlobalPhase || IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1))) && IS_SAME(mtrx[0], mtrx[1]) &&
+        IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
         H(target);
         S(target);
         return;
     }
-    if ((randGlobalPhase || (mtrx[0] == complex(SQRT1_2_R1, ZERO_R1))) && (mtrx[0] == mtrx[2]) &&
-        (mtrx[1] == -mtrx[3]) && (I_CMPLX * mtrx[2] == mtrx[3])) {
+    if ((randGlobalPhase || IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1))) && IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) &&
+        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
         IS(target);
         H(target);
         return;
     }
+
+    RevertBasis2Qb(target);
 
     complex trnsMtrx[4];
 
@@ -3159,7 +3157,9 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         shard.isPauliX = wasPauliX;
         shard.isPauliY = wasPauliY;
         return;
-    } else if (IS_NORM_0(trnsMtrx[0]) && IS_NORM_0(trnsMtrx[3])) {
+    }
+
+    if (IS_NORM_0(trnsMtrx[0]) && IS_NORM_0(trnsMtrx[3])) {
         bool wasPauliX = shard.isPauliX;
         bool wasPauliY = shard.isPauliY;
         shard.isPauliX = false;
@@ -3169,8 +3169,6 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
         shard.isPauliY = wasPauliY;
         return;
     }
-
-    RevertBasis2Qb(target);
 
     if (shard.unit) {
         shard.unit->ApplySingleBit(trnsMtrx, shard.mapped);
@@ -3195,12 +3193,12 @@ void QUnit::ApplyControlledSingleBit(
         return;
     }
 
-    if (!norm(mtrx[1]) && !norm(mtrx[2])) {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
         return;
     }
 
-    if (!norm(mtrx[0]) && !norm(mtrx[3])) {
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
         return;
     }
@@ -3215,12 +3213,12 @@ void QUnit::ApplyAntiControlledSingleBit(
         return;
     }
 
-    if (!norm(mtrx[1]) && !norm(mtrx[2])) {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
         return;
     }
 
-    if (!norm(mtrx[0]) && !norm(mtrx[3])) {
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
         return;
     }
@@ -4185,10 +4183,6 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
             if (shard.unit) {
                 shard.unit->PhaseFlip();
             }
-            if (DIRTY(shard)) {
-                shard.MakeDirty();
-                return;
-            }
 
             shard.amp0 = -shard.amp0;
             shard.amp1 = -shard.amp1;
@@ -4408,14 +4402,6 @@ void QUnit::Finish()
 {
     ParallelUnitApply([](QInterfacePtr unit, real1_f unused1, real1_f unused2, int32_t unused3) {
         unit->Finish();
-        return true;
-    });
-}
-
-void QUnit::Dump()
-{
-    ParallelUnitApply([](QInterfacePtr unit, real1_f unused1, real1_f unused2, int32_t unused3) {
-        unit.reset();
         return true;
     });
 }

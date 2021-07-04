@@ -298,7 +298,12 @@ public:
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_threshold = REAL1_DEFAULT_ARG);
     virtual void Finish();
     virtual bool isFinished();
-    virtual void Dump();
+    virtual void Dump()
+    {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            shards[i].unit = NULL;
+        }
+    }
     virtual bool isClifford(const bitLenInt& qubit) { return shards[qubit].isClifford(); };
 
     virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol);
