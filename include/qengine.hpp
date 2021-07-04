@@ -31,6 +31,10 @@ protected:
     /// summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
     real1 runningNorm;
 
+    bool IsPhase(const complex* mtrx) { return (mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX); }
+
+    bool IsInvert(const complex* mtrx) { return (mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX); }
+
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, bool useHardwareRNG = true, real1_f norm_thresh = REAL1_EPSILON)
