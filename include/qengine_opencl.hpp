@@ -505,6 +505,18 @@ protected:
     virtual void clFinish(bool doHard = false);
 
     /**
+     * Flushes the OpenCL event queue, and checks for errors.
+     */
+    virtual void clFlush()
+    {
+        cl_int error = queue.flush();
+        if (error != CL_SUCCESS) {
+            FreeAll();
+            throw std::runtime_error("Failed to flush queue, error code: " + std::to_string(error));
+        }
+    }
+
+    /**
      * Dumps the remaining asynchronous wait event list or queue of OpenCL events, for the current queue.
      */
     virtual void clDump();
