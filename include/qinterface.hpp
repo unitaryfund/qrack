@@ -2211,7 +2211,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = 2 * FP_NORM_EPSILON)
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = 8 * FP_NORM_EPSILON)
     {
         return SumSqrDiff(toCompare) <= error_tol;
     }
