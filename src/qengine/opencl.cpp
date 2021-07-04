@@ -633,7 +633,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
     device_context->UnlockWaitEvents();
     clFlush();
 
-    runningNorm = ONE_R1;
+    QueueSetRunningNorm(ONE_R1);
 }
 
 void QEngineOCL::ArithmeticCall(
@@ -974,7 +974,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
 
     if (doApplyNorm) {
-        runningNorm = ONE_R1;
+        QueueSetRunningNorm(ONE_R1);
     }
 
     if (!doCalcNorm) {
@@ -1086,7 +1086,7 @@ void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
     QueueCall((runningNorm == ONE_R1) ? OCL_API_UNIFORMPARITYRZ : OCL_API_UNIFORMPARITYRZ_NORM, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
 
-    runningNorm = ONE_R1;
+    QueueSetRunningNorm(ONE_R1);
 }
 
 void QEngineOCL::CUniformParityRZ(
@@ -1134,8 +1134,7 @@ void QEngineOCL::CUniformParityRZ(
 
     QueueCall(OCL_API_CUNIFORMPARITYRZ, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer, controlBuffer });
-
-    runningNorm = ONE_R1;
+    QueueSetRunningNorm(ONE_R1);
 }
 
 void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapIntOcl* bciArgs, complex nrm)
@@ -1161,8 +1160,7 @@ void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapIntOcl* bciArgs, complex nrm)
     writeNormEvent.wait();
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
-
-    runningNorm = ONE_R1;
+    QueueSetRunningNorm(ONE_R1);
 }
 
 void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
@@ -2729,6 +2727,7 @@ QInterfacePtr QEngineOCL::Clone()
         randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
 
     copyPtr->clFinish();
+    clFinish();
     copyPtr->runningNorm = runningNorm;
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -2789,8 +2788,7 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh)
     }
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->realBuffer });
-
-    runningNorm = ONE_R1;
+    QueueSetRunningNorm(ONE_R1);
 }
 
 void QEngineOCL::UpdateRunningNorm(real1_f norm_thresh)
