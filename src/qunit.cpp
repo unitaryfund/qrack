@@ -4801,7 +4801,8 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
         return;
     }
 
-    if (buffer->isInvert) {
+    bool didInvert = buffer->isInvert;
+    if (didInvert) {
         if (tShard.isPauliY) {
             YBase(target);
         } else if (tShard.isPauliX) {
@@ -4820,6 +4821,13 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
             ApplySinglePhase(buffer->cmplxSame, buffer->cmplxDiff, target);
         } else {
             ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
+        }
+    } else if (didInvert) {
+        if (IS_ARG_0(buffer->cmplxDiff) && IS_ARG_0(buffer->cmplxSame)) {
+            tShard.RemoveControl(&cShard);
+        }
+        if (IS_ARG_0(aBuffer->cmplxDiff) && IS_ARG_0(aBuffer->cmplxSame)) {
+            tShard.RemoveAntiControl(&cShard);
         }
     }
 }
