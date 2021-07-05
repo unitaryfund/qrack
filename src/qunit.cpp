@@ -2151,19 +2151,11 @@ void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, c
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
-
-    if (CACHED_X(tShard)) {
-        if (IS_AMP_0(tShard.amp1)) {
-            return;
-        }
-        if (IS_AMP_0(tShard.amp0)) {
-            Z(control);
-            return;
-        }
+    if (CACHED_PLUS(tShard)) {
+        return;
     }
 
     QEngineShard& cShard = shards[control];
-
     if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
         if (IS_AMP_0(cShard.amp1)) {
             Flush0Eigenstate(control);
@@ -2178,7 +2170,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis2Qb) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
+        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -2239,7 +2231,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis2Qb) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
+        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -2378,7 +2370,7 @@ void QUnit::CY(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis2Qb) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
+        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -2415,7 +2407,7 @@ void QUnit::AntiCY(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis2Qb) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
+        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -2940,7 +2932,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
         }
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
+        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -3078,7 +3070,7 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
         }
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
+        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
@@ -4761,8 +4753,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
 void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& target, const bool& anti)
 {
-    // TODO: Can we combine inverts?
-
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
@@ -4776,18 +4766,22 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
 
     PhaseShardPtr buffer = phaseShard->second;
 
-    if (buffer->isInvert) {
-        return;
-    }
-
-    if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
+    if (!buffer->isInvert && IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
         if (IS_1_CMPLX(buffer->cmplxDiff)) {
-            tShard.RemoveControl(&cShard);
+            if (anti) {
+                tShard.RemoveAntiControl(&cShard);
+            } else {
+                tShard.RemoveControl(&cShard);
+            }
             return;
         }
 
         if (IS_SAME_UNIT(cShard, tShard) || (!isReactiveSeparate && ARE_CLIFFORD(cShard, tShard))) {
-            tShard.RemoveControl(&cShard);
+            if (anti) {
+                tShard.RemoveAntiControl(&cShard);
+            } else {
+                tShard.RemoveControl(&cShard);
+            }
             ApplyBuffer(buffer, control, target, anti);
             return;
         }
@@ -4803,8 +4797,22 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
 
     PhaseShardPtr aBuffer = antiShard->second;
 
-    if (aBuffer->isInvert) {
+    if (buffer->isInvert != aBuffer->isInvert) {
         return;
+    }
+
+    bool isInvert = buffer->isInvert;
+    if (isInvert) {
+        if (tShard.isPauliY) {
+            YBase(target);
+        } else if (tShard.isPauliX) {
+            ZBase(target);
+        } else {
+            XBase(target);
+        }
+
+        buffer->isInvert = false;
+        aBuffer->isInvert = false;
     }
 
     if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxSame) && IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxDiff)) {
@@ -4814,6 +4822,21 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
             ApplySinglePhase(buffer->cmplxSame, buffer->cmplxDiff, target);
         } else {
             ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
+        }
+    } else if (isInvert) {
+        if (IS_1_CMPLX(buffer->cmplxDiff) && IS_1_CMPLX(buffer->cmplxSame)) {
+            if (anti) {
+                tShard.RemoveAntiControl(&cShard);
+            } else {
+                tShard.RemoveControl(&cShard);
+            }
+        }
+        if (IS_1_CMPLX(aBuffer->cmplxDiff) && IS_1_CMPLX(aBuffer->cmplxSame)) {
+            if (anti) {
+                tShard.RemoveControl(&cShard);
+            } else {
+                tShard.RemoveAntiControl(&cShard);
+            }
         }
     }
 }
