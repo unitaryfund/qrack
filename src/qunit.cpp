@@ -812,7 +812,6 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return TrySeparateClifford(qubit);
     }
 
-    bool didSeparate;
     bool willSeparate = false;
     bool canHyperSeparate = (separabilityThreshold > FP_NORM_EPSILON);
 
@@ -824,6 +823,15 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     for (bitLenInt i = 0; i < 3; i++) {
         prob = (ONE_R1 / 2) - ProbBase(qubit);
 
+        if (!shard.unit) {
+            return true;
+        }
+
+        // If this is 0.5, it wasn't this basis, but it's worth checking the next basis.
+        if (abs(prob) > separabilityThreshold) {
+            return false;
+        }
+
         if (!shard.isPauliX && !shard.isPauliY) {
             probZ = prob;
         } else if (shard.isPauliX) {
@@ -832,14 +840,8 @@ bool QUnit::TrySeparate(bitLenInt qubit)
             probY = prob;
         }
 
-        didSeparate = !shard.unit;
         if (canHyperSeparate) {
             willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
-        }
-
-        // If this is 0.5, it wasn't this basis, but it's worth checking the next basis.
-        if (didSeparate || (abs(prob) > separabilityThreshold)) {
-            return didSeparate;
         }
 
         if (i >= 2) {
@@ -889,7 +891,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         SeparateBit(probZ >= ZERO_R1, qubit);
     }
 
-    return didSeparate;
+    return false;
 }
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
@@ -1416,7 +1418,7 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
     }
 
     unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
-    if (((ONE_R1 / 2) - abs((ONE_R1 / 2) - prob)) > REAL1_EPSILON) {
+    if (((ONE_R1 / 2) - abs((ONE_R1 / 2) - prob)) > FP_NORM_EPSILON) {
         unit->UpdateRunningNorm();
         if (!doNormalize) {
             unit->NormalizeState();
@@ -1722,20 +1724,6 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 
     shard1.MakeDirty();
     shard2.MakeDirty();
-}
-
-void QUnit::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
-{
-    if (!length) {
-        return;
-    }
-
-    if (length == 1U) {
-        ApplySinglePhase(-ONE_CMPLX, ONE_CMPLX, start);
-        return;
-    }
-
-    QInterface::ZeroPhaseFlip(start, length);
 }
 
 void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
@@ -2056,7 +2044,7 @@ void QUnit::Z(bitLenInt target)
 
     if (shard.isPauliX || shard.isPauliY) {
         XBase(target);
-    } else if (!shard.isPauliY) {
+    } else {
         ZBase(target);
     }
 }
@@ -2431,7 +2419,7 @@ void QUnit::AntiCY(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
-            shards[target].AddAntiInversionAngles(&(shards[control]), I_CMPLX, -I_CMPLX);
+            shards[target].AddAntiInversionAngles(&cShard, I_CMPLX, -I_CMPLX);
             OptimizePairBuffers(control, target, true);
 
             return;
@@ -2859,7 +2847,8 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         if (!shards[target].isPauliX && !shards[target].isPauliY) {
             for (bitLenInt i = 0; i < controlLen; i++) {
-                if (shards[controls.get()[i]].isPauliX) {
+                QEngineShard& cShard = shards[controls.get()[i]];
+                if (cShard.isPauliX || cShard.isPauliY) {
                     std::swap(controls.get()[i], target);
                     break;
                 }
@@ -3001,7 +2990,8 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         if (!shards[target].isPauliX && !shards[target].isPauliY) {
             for (bitLenInt i = 0; i < controlLen; i++) {
-                if (shards[controls.get()[i]].isPauliX) {
+                QEngineShard& cShard = shards[controls.get()[i]];
+                if (cShard.isPauliX || cShard.isPauliY) {
                     std::swap(controls.get()[i], target);
                     break;
                 }
@@ -3093,7 +3083,7 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
             tShard.AddAntiInversionAngles(&cShard, bottomLeft, topRight);
-            OptimizePairBuffers(control, target, false);
+            OptimizePairBuffers(control, target, true);
 
             return;
         }
