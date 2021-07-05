@@ -4797,7 +4797,8 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
 
     PhaseShardPtr aBuffer = antiShard->second;
 
-    if (buffer->isInvert != aBuffer->isInvert) {
+    // TODO: !=, and fix below
+    if (buffer->isInvert || aBuffer->isInvert) {
         return;
     }
 
@@ -4812,6 +4813,8 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
         }
         buffer->isInvert = false;
         aBuffer->isInvert = false;
+        std::swap(buffer->cmplxDiff, buffer->cmplxSame);
+        std::swap(aBuffer->cmplxDiff, aBuffer->cmplxSame);
     }
 
     if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxSame) && IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxDiff)) {

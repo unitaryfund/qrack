@@ -4658,6 +4658,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_repeat_h_cnot")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 10));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_invert_anti_pair")
+{
+    qftReg->SetPermutation(3);
+
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->CNOT(0, 1);
+    qftReg->AntiCNOT(0, 1);
+    qftReg->H(1);
+    qftReg->H(0);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
 {
     // Using any gate in this test, with any phase arguments, should form a universal algebra.
