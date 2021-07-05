@@ -2243,7 +2243,7 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
-            shards[target].AddAntiInversionAngles(&(shards[control]), ONE_CMPLX, ONE_CMPLX);
+            tShard.AddAntiInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
             OptimizePairBuffers(control, target, true);
 
             return;
@@ -2419,7 +2419,7 @@ void QUnit::AntiCY(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
-            shards[target].AddAntiInversionAngles(&cShard, I_CMPLX, -I_CMPLX);
+            tShard.AddAntiInversionAngles(&cShard, I_CMPLX, -I_CMPLX);
             OptimizePairBuffers(control, target, true);
 
             return;
@@ -2564,7 +2564,7 @@ void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
-            shards[target].AddAntiInversionAngles(&(shards[control]), -ONE_CMPLX, ONE_CMPLX);
+            tShard.AddAntiInversionAngles(&cShard, -ONE_CMPLX, ONE_CMPLX);
             OptimizePairBuffers(control, target, true);
 
             return;
