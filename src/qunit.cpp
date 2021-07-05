@@ -2080,9 +2080,9 @@ void QUnit::TransformXInvert(const complex& topRight, const complex& bottomLeft,
 void QUnit::TransformY2x2(const complex* mtrxIn, complex* mtrxOut)
 {
     mtrxOut[0] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] + I_CMPLX * (mtrxIn[1] - mtrxIn[2]) + mtrxIn[3]);
-    mtrxOut[1] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] + I_CMPLX * (-mtrxIn[1] - mtrxIn[2]) - mtrxIn[3]);
+    mtrxOut[1] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] - I_CMPLX * (mtrxIn[1] + mtrxIn[2]) - mtrxIn[3]);
     mtrxOut[2] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] + I_CMPLX * (mtrxIn[1] + mtrxIn[2]) - mtrxIn[3]);
-    mtrxOut[3] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] + I_CMPLX * (-mtrxIn[1] + mtrxIn[2]) + mtrxIn[3]);
+    mtrxOut[3] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] - I_CMPLX * (mtrxIn[1] - mtrxIn[2]) + mtrxIn[3]);
 }
 
 void QUnit::TransformYInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut)
@@ -2354,12 +2354,12 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
     ApplyEitherControlled(
         controls, 2, { target }, true,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPauliY) {
-                unit->ApplyAntiControlledSingleInvert(
-                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, -I_CMPLX, I_CMPLX);
-            } else if (shards[target].isPauliX) {
+            if (shards[target].isPauliX) {
                 unit->ApplyAntiControlledSinglePhase(
                     &(mappedControls[0]), mappedControls.size(), shards[target].mapped, ONE_CMPLX, -ONE_CMPLX);
+            } else if (shards[target].isPauliY) {
+                unit->ApplyAntiControlledSingleInvert(
+                    &(mappedControls[0]), mappedControls.size(), shards[target].mapped, -I_CMPLX, I_CMPLX);
             } else {
                 if (mappedControls.size() == 2) {
                     unit->AntiCCNOT(CTRL_2_ARGS);
@@ -2899,11 +2899,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     ApplyEitherControlled(
         controls.get(), controlLen, { target }, false,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPauliX) {
-                complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
-                TransformPhase(topLeft, bottomRight, trnsMtrx);
-                unit->ApplyControlledSingleBit(CTRL_GEN_ARGS);
-            } else if (shards[target].isPauliY) {
+            if (shards[target].isPauliX || shards[target].isPauliY) {
                 complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
                 TransformPhase(topLeft, bottomRight, trnsMtrx);
                 unit->ApplyControlledSingleBit(CTRL_GEN_ARGS);
@@ -3044,11 +3040,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     ApplyEitherControlled(
         controls.get(), controlLen, { target }, true,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPauliX) {
-                complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
-                TransformPhase(topLeft, bottomRight, trnsMtrx);
-                unit->ApplyAntiControlledSingleBit(CTRL_GEN_ARGS);
-            } else if (shards[target].isPauliY) {
+            if (shards[target].isPauliX || shards[target].isPauliY) {
                 complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
                 TransformPhase(topLeft, bottomRight, trnsMtrx);
                 unit->ApplyAntiControlledSingleBit(CTRL_GEN_ARGS);
