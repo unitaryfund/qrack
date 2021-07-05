@@ -616,18 +616,14 @@ protected:
     }
     void ToPermBasis(const bitLenInt& i)
     {
-        RevertBasisY(i);
-        RevertBasisX(i);
+        RevertBasis1Qb(i);
         RevertBasis2Qb(i);
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
     {
         bitLenInt i;
         for (i = 0; i < length; i++) {
-            RevertBasisY(start + i);
-        }
-        for (i = 0; i < length; i++) {
-            RevertBasisX(start + i);
+            RevertBasis1Qb(start + i);
         }
         for (i = 0; i < length; i++) {
             RevertBasis2Qb(start + i);
@@ -651,11 +647,6 @@ protected:
     }
     void ToPermBasisMeasure(const bitLenInt& qubit)
     {
-        if (qubitCount == 1U) {
-            ToPermBasisAllMeasure();
-            return;
-        }
-
         RevertBasis1Qb(qubit);
         RevertBasis2Qb(qubit, ONLY_INVERT);
         RevertBasis2Qb(qubit, ONLY_PHASE, ONLY_CONTROLS);
