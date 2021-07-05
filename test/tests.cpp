@@ -4664,8 +4664,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_invert_anti_pair")
 
     qftReg->H(0);
     qftReg->H(1);
-    qftReg->CNOT(0, 1);
-    qftReg->AntiCNOT(0, 1);
+    qftReg->CNOT(1, 0);
+    qftReg->AntiCNOT(1, 0);
     qftReg->H(1);
     qftReg->H(0);
 

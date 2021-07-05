@@ -4761,6 +4761,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
 void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& target, const bool& anti)
 {
+    // TODO: Can we combine inverts?
+
     QEngineShard& cShard = shards[control];
     QEngineShard& tShard = shards[target];
 
@@ -4774,7 +4776,11 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
 
     PhaseShardPtr buffer = phaseShard->second;
 
-    if (!buffer->isInvert && IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
+    if (buffer->isInvert) {
+        return;
+    }
+
+    if (IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
         if (IS_1_CMPLX(buffer->cmplxDiff)) {
             tShard.RemoveControl(&cShard);
             return;
@@ -4797,24 +4803,8 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
 
     PhaseShardPtr aBuffer = antiShard->second;
 
-    // TODO: !=, and fix below
-    if (buffer->isInvert || aBuffer->isInvert) {
+    if (aBuffer->isInvert) {
         return;
-    }
-
-    bool didInvert = buffer->isInvert;
-    if (didInvert) {
-        if (tShard.isPauliY) {
-            YBase(target);
-        } else if (tShard.isPauliX) {
-            ZBase(target);
-        } else {
-            XBase(target);
-        }
-        buffer->isInvert = false;
-        aBuffer->isInvert = false;
-        std::swap(buffer->cmplxDiff, buffer->cmplxSame);
-        std::swap(aBuffer->cmplxDiff, aBuffer->cmplxSame);
     }
 
     if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxSame) && IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxDiff)) {
@@ -4824,13 +4814,6 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
             ApplySinglePhase(buffer->cmplxSame, buffer->cmplxDiff, target);
         } else {
             ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
-        }
-    } else if (didInvert) {
-        if (IS_ARG_0(buffer->cmplxDiff) && IS_ARG_0(buffer->cmplxSame)) {
-            tShard.RemoveControl(&cShard);
-        }
-        if (IS_ARG_0(aBuffer->cmplxDiff) && IS_ARG_0(aBuffer->cmplxSame)) {
-            tShard.RemoveAntiControl(&cShard);
         }
     }
 }
