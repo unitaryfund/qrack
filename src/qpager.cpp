@@ -229,34 +229,34 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl,
     bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> ONE_BCI;
     std::vector<std::future<void>> futures(maxLCV);
     bitCapIntOcl j;
+    QEnginePtr engine1, engine2;
     for (i = 0; i < maxLCV; i++) {
         j = i & targetMask;
         j |= (i ^ j) << ONE_BCI;
 
-        QEnginePtr engine1 = qPages[j];
-        QEnginePtr engine2 = qPages[j + targetPow];
+        engine1 = qPages[j];
+        engine2 = qPages[j + targetPow];
 
         bool doNorm = doNormalize;
 
-        futures[i] = std::async(
-            std::launch::async, [engine1, engine2, fn, doNorm, &targetPow, &targetMask, &sqi, &isSqiCtrl, &isAnti]() {
-                engine1->ShuffleBuffers(engine2);
+        futures[i] = std::async(std::launch::async, [engine1, engine2, fn, doNorm, sqi, isSqiCtrl, isAnti]() {
+            engine1->ShuffleBuffers(engine2);
 
-                if (!isSqiCtrl || isAnti) {
-                    fn(engine1, sqi);
-                }
+            if (!isSqiCtrl || isAnti) {
+                fn(engine1, sqi);
+            }
 
-                if (!isSqiCtrl || !isAnti) {
-                    fn(engine2, sqi);
-                }
+            if (!isSqiCtrl || !isAnti) {
+                fn(engine2, sqi);
+            }
 
-                if (doNorm) {
-                    engine1->QueueSetDoNormalize(false);
-                    engine2->QueueSetDoNormalize(false);
-                }
+            if (doNorm) {
+                engine1->QueueSetDoNormalize(false);
+                engine2->QueueSetDoNormalize(false);
+            }
 
-                engine1->ShuffleBuffers(engine2);
-            });
+            engine1->ShuffleBuffers(engine2);
+        });
     }
     for (i = 0; i < maxLCV; i++) {
         futures[i].get();
@@ -309,6 +309,8 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
     bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> (bitCapIntOcl)sortedMasks.size();
     std::vector<std::future<void>> futures;
     bitCapIntOcl i, j, k, jLo, jHi;
+    QEnginePtr engine1, engine2;
+    bool doTop, doBottom;
     for (i = 0; i < maxLCV; i++) {
         jHi = i;
         j = 0;
@@ -323,12 +325,12 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
             std::swap(qPages[j], qPages[j + targetPow]);
         }
 
-        QEnginePtr engine1 = qPages[j];
-        QEnginePtr engine2 = qPages[j + targetPow];
+        engine1 = qPages[j];
+        engine2 = qPages[j + targetPow];
 
         if (isSpecial) {
-            bool doTop = (top != ONE_CMPLX) && (!isSqiCtrl || anti);
-            bool doBottom = (bottom != ONE_CMPLX) && (!isSqiCtrl || !anti);
+            doTop = (top != ONE_CMPLX) && (!isSqiCtrl || anti);
+            doBottom = (bottom != ONE_CMPLX) && (!isSqiCtrl || !anti);
 
             if (doTop) {
                 engine1->ApplySinglePhase(top, top, 0);
@@ -340,8 +342,9 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
             continue;
         }
 
-        bool doTop = !isSqiCtrl || anti;
-        bool doBottom = !isSqiCtrl || !anti;
+        doTop = !isSqiCtrl || anti;
+        doBottom = !isSqiCtrl || !anti;
+
         futures.push_back(std::async(std::launch::async, [engine1, engine2, fn, sqi, doTop, doBottom]() {
             engine1->ShuffleBuffers(engine2);
             if (doTop) {
@@ -1109,35 +1112,35 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
     bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> ONE_BCI;
     std::vector<std::future<void>> futures(maxLCV);
     bitCapIntOcl i, j;
+    QEnginePtr engine1, engine2;
     for (i = 0; i < maxLCV; i++) {
         j = i & qubit2Mask;
         j |= (i ^ j) << ONE_BCI;
 
-        QEnginePtr engine1 = qPages[j];
-        QEnginePtr engine2 = qPages[j + qubit2Pow];
+        engine1 = qPages[j];
+        engine2 = qPages[j + qubit2Pow];
 
-        futures[i] =
-            std::async(std::launch::async, [engine1, engine2, qubit1, qubit2Pow, qubit2Mask, isIPhaseFac, sqi]() {
-                engine1->ShuffleBuffers(engine2);
+        futures[i] = std::async(std::launch::async, [engine1, engine2, qubit1, isIPhaseFac, sqi]() {
+            engine1->ShuffleBuffers(engine2);
 
-                if (qubit1 == sqi) {
-                    if (isIPhaseFac) {
-                        engine1->ApplySinglePhase(ZERO_CMPLX, I_CMPLX, sqi);
-                        engine2->ApplySinglePhase(I_CMPLX, ZERO_CMPLX, sqi);
-                    }
-                    return;
-                }
-
+            if (qubit1 == sqi) {
                 if (isIPhaseFac) {
-                    engine1->ISwap(qubit1, sqi);
-                    engine2->ISwap(qubit1, sqi);
-                } else {
-                    engine1->Swap(qubit1, sqi);
-                    engine2->Swap(qubit1, sqi);
+                    engine1->ApplySinglePhase(ZERO_CMPLX, I_CMPLX, sqi);
+                    engine2->ApplySinglePhase(I_CMPLX, ZERO_CMPLX, sqi);
                 }
+                return;
+            }
 
-                engine1->ShuffleBuffers(engine2);
-            });
+            if (isIPhaseFac) {
+                engine1->ISwap(qubit1, sqi);
+                engine2->ISwap(qubit1, sqi);
+            } else {
+                engine1->Swap(qubit1, sqi);
+                engine2->Swap(qubit1, sqi);
+            }
+
+            engine1->ShuffleBuffers(engine2);
+        });
     }
 
     for (i = 0; i < maxLCV; i++) {
