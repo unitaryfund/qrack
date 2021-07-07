@@ -1184,13 +1184,7 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     QEngineShard& shard = shards[qubit];
 
     if (!shard.isProbDirty) {
-        real1_f prob = clampProb(norm(shard.amp1));
         if (shard.unit) {
-            if (abs(prob - ONE_R1 / 2) >= (SQRT1_2_R1 / 2)) {
-                // Projection on another basis could be higher, so don't separate.
-                return norm(shard.amp1);
-            }
-
             if (IS_AMP_0(shard.amp1)) {
                 SeparateBit(false, qubit);
             } else if (IS_AMP_0(shard.amp0)) {
@@ -1198,7 +1192,7 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
             }
         }
 
-        return prob;
+        return norm(shard.amp1);
     }
 
     shard.isProbDirty = false;
