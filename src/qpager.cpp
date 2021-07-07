@@ -289,12 +289,12 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
 
     bool isSpecial, isInvert;
     complex top, bottom;
-    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+    if (!isSqiCtrl && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         isSpecial = true;
         isInvert = false;
         top = mtrx[0];
         bottom = mtrx[3];
-    } else if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+    } else if (!isSqiCtrl && IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         isSpecial = true;
         isInvert = true;
         top = mtrx[1];
@@ -329,8 +329,8 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
         engine2 = qPages[j + targetPow];
 
         if (isSpecial) {
-            doTop = (top != ONE_CMPLX) && (!isSqiCtrl || anti);
-            doBottom = (bottom != ONE_CMPLX) && (!isSqiCtrl || !anti);
+            doTop = (top != ONE_CMPLX);
+            doBottom = (bottom != ONE_CMPLX);
 
             if (doTop) {
                 engine1->ApplySinglePhase(top, top, 0);
