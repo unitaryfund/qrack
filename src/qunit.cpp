@@ -908,8 +908,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return isShard1Sep && isShard2Sep;
     }
 
-    if (freezeTrySeparate || freezeBasis2Qb || (separabilityThreshold >= ((ONE_R1 - SQRT1_2_R1) / 2))) {
-        // Single qubit clamping threshold would break Bell basis clamping
+    if (freezeTrySeparate || freezeBasis2Qb) {
         return false;
     }
 
@@ -1184,7 +1183,13 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     QEngineShard& shard = shards[qubit];
 
     if (!shard.isProbDirty) {
+        real1_f prob = clampProb(norm(shard.amp1));
         if (shard.unit) {
+            if (abs(prob - ONE_R1 / 2) < (SQRT1_2_R1 / 2)) {
+                // Projection on another basis could be higher, so don't separate.
+                return norm(shard.amp1);
+            }
+
             if (IS_AMP_0(shard.amp1)) {
                 SeparateBit(false, qubit);
             } else if (IS_AMP_0(shard.amp0)) {
@@ -1192,7 +1197,7 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
             }
         }
 
-        return norm(shard.amp1);
+        return prob;
     }
 
     shard.isProbDirty = false;
@@ -2151,8 +2156,14 @@ void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, c
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
-    if (CACHED_PLUS(tShard)) {
-        return;
+    if (CACHED_X(tShard)) {
+        if (IS_AMP_0(tShard.amp1)) {
+            return;
+        }
+        if (IS_AMP_0(tShard.amp0)) {
+            Z(control);
+            return;
+        }
     }
 
     QEngineShard& cShard = shards[control];
@@ -2212,8 +2223,14 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
-    if (CACHED_PLUS(tShard)) {
-        return;
+    if (CACHED_X(tShard)) {
+        if (IS_AMP_0(tShard.amp1)) {
+            return;
+        }
+        if (IS_AMP_0(tShard.amp0)) {
+            ApplySinglePhase(-ONE_CMPLX, ONE_CMPLX, control);
+            return;
+        }
     }
 
     QEngineShard& cShard = shards[control];
