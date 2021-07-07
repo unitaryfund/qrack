@@ -759,12 +759,12 @@ void QPager::CUniformParityRZ(
 void QPager::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {
-    if (qubit1 == qubit2) {
+    if (controlLen == 0) {
+        Swap(qubit1, qubit2);
         return;
     }
 
-    if (controlLen == 0) {
-        Swap(qubit1, qubit2);
+    if (qubit1 == qubit2) {
         return;
     }
 
@@ -849,6 +849,10 @@ void QPager::AntiCISqrtSwap(
 
 bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
+    if (qPages.size() == 1U) {
+        return qPages[0]->ForceM(qubit, result, doForce, doApply);
+    }
+
     real1_f oneChance = Prob(qubit);
     if (!doForce) {
         if (oneChance >= ONE_R1) {
