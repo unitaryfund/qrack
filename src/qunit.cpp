@@ -908,8 +908,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return isShard1Sep && isShard2Sep;
     }
 
-    if (freezeTrySeparate || freezeBasis2Qb || (separabilityThreshold >= ((ONE_R1 - SQRT1_2_R1) / 2))) {
-        // Single qubit clamping threshold would break Bell basis clamping
+    if (freezeTrySeparate || freezeBasis2Qb) {
         return false;
     }
 
