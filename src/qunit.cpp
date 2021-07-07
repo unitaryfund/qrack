@@ -1185,7 +1185,7 @@ real1_f QUnit::ProbBase(const bitLenInt& qubit)
     if (!shard.isProbDirty) {
         real1_f prob = clampProb(norm(shard.amp1));
         if (shard.unit) {
-            if (abs(prob - ONE_R1 / 2) >= (SQRT1_2_R1 / 2)) {
+            if (abs(prob - ONE_R1 / 2) < (SQRT1_2_R1 / 2)) {
                 // Projection on another basis could be higher, so don't separate.
                 return norm(shard.amp1);
             }
