@@ -307,7 +307,7 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
     }
 
     bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> (bitCapIntOcl)sortedMasks.size();
-    std::vector<std::future<void>> futures(maxLCV);
+    std::vector<std::future<void>> futures;
     bitCapIntOcl i, j, k, jLo, jHi;
     for (i = 0; i < maxLCV; i++) {
         jHi = i;
@@ -326,38 +326,35 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
         QEnginePtr engine1 = qPages[j];
         QEnginePtr engine2 = qPages[j + targetPow];
 
-        futures[i] = std::async(std::launch::async,
-            [engine1, engine2, fn, &sqi, &controlMask, &targetPow, &sortedMasks, &isSpecial, &isInvert, &top, &bottom,
-                &isSqiCtrl, &anti]() {
-                if (isSpecial) {
-                    bool doTop = (top != ONE_CMPLX) && (!isSqiCtrl || anti);
-                    bool doBottom = (bottom != ONE_CMPLX) && (!isSqiCtrl || !anti);
+        if (isSpecial) {
+            bool doTop = (top != ONE_CMPLX) && (!isSqiCtrl || anti);
+            bool doBottom = (bottom != ONE_CMPLX) && (!isSqiCtrl || !anti);
 
-                    if (doTop) {
-                        engine1->ApplySinglePhase(top, top, 0);
-                    }
-                    if (doBottom) {
-                        engine2->ApplySinglePhase(bottom, bottom, 0);
-                    }
-                } else {
-                    engine1->ShuffleBuffers(engine2);
+            if (doTop) {
+                engine1->ApplySinglePhase(top, top, 0);
+            }
+            if (doBottom) {
+                engine2->ApplySinglePhase(bottom, bottom, 0);
+            }
 
-                    bool doTop = !isSqiCtrl || anti;
-                    bool doBottom = !isSqiCtrl || !anti;
+            continue;
+        }
 
-                    if (doTop) {
-                        fn(engine1, sqi);
-                    }
-                    if (doBottom) {
-                        fn(engine2, sqi);
-                    }
-
-                    engine1->ShuffleBuffers(engine2);
-                }
-            });
+        bool doTop = !isSqiCtrl || anti;
+        bool doBottom = !isSqiCtrl || !anti;
+        futures.push_back(std::async(std::launch::async, [engine1, engine2, fn, sqi, doTop, doBottom]() {
+            engine1->ShuffleBuffers(engine2);
+            if (doTop) {
+                fn(engine1, sqi);
+            }
+            if (doBottom) {
+                fn(engine2, sqi);
+            }
+            engine1->ShuffleBuffers(engine2);
+        }));
     }
 
-    for (i = 0; i < maxLCV; i++) {
+    for (i = 0; i < futures.size(); i++) {
         futures[i].get();
     }
 }
@@ -1120,7 +1117,7 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
         QEnginePtr engine2 = qPages[j + qubit2Pow];
 
         futures[i] =
-            std::async(std::launch::async, [engine1, engine2, &qubit1, &qubit2Pow, &qubit2Mask, &isIPhaseFac, &sqi]() {
+            std::async(std::launch::async, [engine1, engine2, qubit1, qubit2Pow, qubit2Mask, isIPhaseFac, sqi]() {
                 engine1->ShuffleBuffers(engine2);
 
                 if (qubit1 == sqi) {
