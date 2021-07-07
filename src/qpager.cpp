@@ -305,25 +305,24 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
 
     bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> (bitCapIntOcl)sortedMasks.size();
     std::vector<std::future<void>> futures(maxLCV);
-    bitCapIntOcl i;
+    bitCapIntOcl i, j, k, jLo, jHi;
     for (i = 0; i < maxLCV; i++) {
+        jHi = i;
+        j = 0;
+        for (k = 0; k < (sortedMasks.size()); k++) {
+            jLo = jHi & sortedMasks[k];
+            jHi = (jHi ^ jLo) << ONE_BCI;
+            j |= jLo;
+        }
+        j |= jHi | controlMask;
+
+        if (isSpecial && isInvert) {
+            std::swap(qPages[j], qPages[j + targetPow]);
+        }
+
         futures[i] = std::async(std::launch::async,
-            [this, i, fn, &sqi, &controlMask, &targetPow, &sortedMasks, &isSpecial, &isInvert, &top, &bottom,
+            [this, j, fn, &sqi, &controlMask, &targetPow, &sortedMasks, &isSpecial, &isInvert, &top, &bottom,
                 &isSqiCtrl, &anti]() {
-                bitCapIntOcl j, k, jLo, jHi;
-                jHi = i;
-                j = 0;
-                for (k = 0; k < (sortedMasks.size()); k++) {
-                    jLo = jHi & sortedMasks[k];
-                    jHi = (jHi ^ jLo) << ONE_BCI;
-                    j |= jLo;
-                }
-                j |= jHi | controlMask;
-
-                if (isSpecial && isInvert) {
-                    std::swap(qPages[j], qPages[j + targetPow]);
-                }
-
                 QEnginePtr engine1 = qPages[j];
                 QEnginePtr engine2 = qPages[j + targetPow];
 
