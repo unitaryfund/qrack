@@ -5053,7 +5053,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_14", "[mirror]")
     REQUIRE(qftReg->MAll() == 2);
 }
 
-// If QPager minQubits paging threshold is 1, this used to fail.
+// If QUnit->QPager minPageQubits paging threshold is 1, this used to fail.
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_15", "[mirror]")
 {
     qftReg->SetPermutation(5);

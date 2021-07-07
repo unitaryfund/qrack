@@ -29,6 +29,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , runningNorm(ONE_R1)
     , deviceIDs(devList)
     , useHardwareThreshold(false)
+    , minPageQubits(0)
     , thresholdQubitsPerPage(qubitThreshold)
     , pStridePow(PSTRIDEPOW)
 {

@@ -72,7 +72,6 @@ protected:
         } else if (useHardwareThreshold) {
             thresholdQubitsPerPage = qubitCount - qpd;
 
-            minPageQubits = log2(std::thread::hardware_concurrency()) + pStridePow;
             if (thresholdQubitsPerPage < minPageQubits) {
                 thresholdQubitsPerPage = minPageQubits;
             }
