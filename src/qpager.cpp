@@ -30,6 +30,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , deviceIDs(devList)
     , useHardwareThreshold(false)
     , minPageQubits(0)
+    , deviceGlobalQubits(2)
     , thresholdQubitsPerPage(qubitThreshold)
     , pStridePow(PSTRIDEPOW)
 {
@@ -44,9 +45,8 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
             "QPager sub-engine type must be QINTERFACE_CPU, QINTERFACE_OPENCL or QINTERFACE_HYBRID.");
     }
 
-    bitLenInt qpd = 2U;
     if (getenv("QRACK_DEVICE_GLOBAL_QB")) {
-        qpd = (bitLenInt)std::stoi(std::string(getenv("QRACK_DEVICE_GLOBAL_QB")));
+        deviceGlobalQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_DEVICE_GLOBAL_QB")));
     }
 
 #if ENABLE_OPENCL
@@ -69,8 +69,9 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
 
         thresholdQubitsPerPage = maxPageQubits;
 
-        if ((qubitCount - qpd) < thresholdQubitsPerPage) {
-            thresholdQubitsPerPage = qubitCount - qpd;
+        bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
+        if (threshTest < thresholdQubitsPerPage) {
+            thresholdQubitsPerPage = threshTest;
         }
 
         // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
@@ -86,7 +87,7 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     if (thresholdQubitsPerPage == 0) {
         useHardwareThreshold = true;
 
-        thresholdQubitsPerPage = qubitCount - qpd;
+        thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
 
         maxPageQubits = -1;
 

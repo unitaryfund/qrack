@@ -37,6 +37,7 @@ protected:
     bool useHardwareThreshold;
     bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
+    bitLenInt deviceGlobalQubits;
     bitLenInt thresholdQubitsPerPage;
     bitLenInt pStridePow;
     bitLenInt baseQubitsPerPage;
@@ -51,26 +52,22 @@ protected:
     {
         QInterface::SetQubitCount(qb);
 
-        bitLenInt qpd = 2U;
-        if (getenv("QRACK_DEVICE_GLOBAL_QB")) {
-            qpd = (bitLenInt)std::stoi(std::string(getenv("QRACK_DEVICE_GLOBAL_QB")));
-        }
-
         if (useHardwareThreshold && ((engine == QINTERFACE_OPENCL) || (engine == QINTERFACE_HYBRID))) {
             // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
             // environment variable.
 
             thresholdQubitsPerPage = maxPageQubits;
 
-            if ((qubitCount - qpd) < thresholdQubitsPerPage) {
-                thresholdQubitsPerPage = qubitCount - qpd;
+            bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
+            if (threshTest < thresholdQubitsPerPage) {
+                thresholdQubitsPerPage = threshTest;
             }
 
             if (thresholdQubitsPerPage < minPageQubits) {
                 thresholdQubitsPerPage = minPageQubits;
             }
         } else if (useHardwareThreshold) {
-            thresholdQubitsPerPage = qubitCount - qpd;
+            thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
 
             if (thresholdQubitsPerPage < minPageQubits) {
                 thresholdQubitsPerPage = minPageQubits;
