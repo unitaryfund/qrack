@@ -5079,6 +5079,39 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_15", "[mirror]")
     REQUIRE(qftReg->MAll() == 5);
 }
 
+// If QUnit->QPager minPageQubits paging threshold is 1, this used to fail.
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_16", "[mirror]")
+{
+    qftReg->SetPermutation(2);
+
+    qftReg->H(3);
+    qftReg->CNOT(3, 0);
+    qftReg->CCNOT(1, 0, 2);
+    qftReg->H(0);
+    qftReg->X(2);
+    qftReg->T(3);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+    qftReg->H(3);
+    qftReg->H(2);
+    qftReg->CZ(1, 3);
+    qftReg->CNOT(0, 2);
+    qftReg->CNOT(0, 2);
+    qftReg->CZ(1, 3);
+    qftReg->H(2);
+    qftReg->H(3);
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->IT(3);
+    qftReg->X(2);
+    qftReg->H(0);
+    qftReg->CCNOT(1, 0, 2);
+    qftReg->CNOT(3, 0);
+    qftReg->H(3);
+
+    REQUIRE(qftReg->MAll() == 2);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
