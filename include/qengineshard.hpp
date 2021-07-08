@@ -481,7 +481,7 @@ public:
         } else {
             std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
             std::swap(antiPhaseShard->second->cmplxDiff, antiPhaseShard->second->cmplxSame);
-            std::swap(targetOfShards[control], antiTargetOfShards[control]);
+            targetOfShards[control].swap(antiTargetOfShards[control]);
         }
     }
 

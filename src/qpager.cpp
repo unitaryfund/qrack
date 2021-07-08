@@ -325,7 +325,7 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
         j |= jHi | controlMask;
 
         if (isInvert) {
-            std::swap(qPages[j], qPages[j + targetPow]);
+            qPages[j].swap(qPages[j + targetPow]);
         }
 
         engine1 = qPages[j];
@@ -677,7 +677,7 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
         j |= (i ^ j) << ONE_BCI;
 
         if (isInvert) {
-            std::swap(qPages[j], qPages[j + targetPow]);
+            qPages[j].swap(qPages[j + targetPow]);
         }
 
         if (top != ONE_CMPLX) {
@@ -1140,7 +1140,7 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
         jLo = jHi & sortedMasks[1];
         j |= jLo | ((jHi ^ jLo) << ONE_BCI);
 
-        std::swap(qPages[j + qubit1Pow], qPages[j + qubit2Pow]);
+        qPages[j + qubit1Pow].swap(qPages[j + qubit2Pow]);
 
         if (!isIPhaseFac) {
             continue;
