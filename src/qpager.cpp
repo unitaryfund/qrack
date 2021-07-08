@@ -290,14 +290,21 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
 
     // TODO: Handle inversion gates.
     // (i.e., Why is the obvious meta-page implementation broken?)
-    bool isSpecial;
+    bool isSpecial, isInvert;
     complex top, bottom;
     if (!isSqiCtrl && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         isSpecial = true;
+        isInvert = false;
         top = mtrx[0];
         bottom = mtrx[3];
+    } else if (!isSqiCtrl && IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        isSpecial = true;
+        isInvert = true;
+        top = mtrx[1];
+        bottom = mtrx[2];
     } else {
         isSpecial = false;
+        isInvert = false;
         top = ZERO_CMPLX;
         bottom = ZERO_CMPLX;
     }
@@ -317,8 +324,18 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
         }
         j |= jHi | controlMask;
 
+        if (isInvert) {
+            std::swap(qPages[j], qPages[j + targetPow]);
+        }
+
         engine1 = qPages[j];
         engine2 = qPages[j + targetPow];
+
+        if (isSpecial) {
+            // TODO: This shouldn't be necessary.
+            engine1->Finish();
+            engine2->Finish();
+        }
 
         if (isSpecial) {
             doTop = (top != ONE_CMPLX);
