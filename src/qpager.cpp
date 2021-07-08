@@ -269,7 +269,7 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl,
 // instead of amplitude indices.
 template <typename Qubit1Fn>
 void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn,
-    const complex* mtrx, const bool& isSqiCtrl)
+    const complex* mtrx, const bool& isSqiCtrl, const bool& isIntraCtrled)
 {
     bitLenInt qpp = qubitsPerPage();
     target -= qpp;
@@ -289,16 +289,14 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
     }
     std::sort(sortedMasks.begin(), sortedMasks.end());
 
-    // TODO: Handle inversion gates.
-    // (i.e., Why is the obvious meta-page implementation broken?)
     bool isSpecial, isInvert;
     complex top, bottom;
-    if (!isSqiCtrl && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+    if (!isIntraCtrled && !isSqiCtrl && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         isSpecial = true;
         isInvert = false;
         top = mtrx[0];
         bottom = mtrx[3];
-    } else if (!isSqiCtrl && IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+    } else if (!isIntraCtrled && !isSqiCtrl && IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         isSpecial = true;
         isInvert = true;
         top = mtrx[1];
@@ -333,8 +331,8 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
         engine2 = qPages[j + targetPow];
 
         if (isSpecial) {
-            doTop = (top != ONE_CMPLX);
-            doBottom = (bottom != ONE_CMPLX);
+            doTop = !IS_NORM_0(top);
+            doBottom = !IS_NORM_0(bottom);
 
             if (doTop) {
                 engine1->ApplySinglePhase(top, top, 0);
@@ -732,7 +730,7 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
     } else if (target < qpp) {
         SemiMetaControlled(anti, metaControls, target, sg);
     } else {
-        MetaControlled(anti, metaControls, target, sg, mtrx, isSqiCtrl);
+        MetaControlled(anti, metaControls, target, sg, mtrx, isSqiCtrl, intraControls.size() > 0);
     }
 }
 
