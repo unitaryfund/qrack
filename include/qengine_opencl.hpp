@@ -154,7 +154,7 @@ protected:
     complex* stateVec;
     int deviceID;
     DeviceContextPtr device_context;
-    std::vector<EventVecPtr> wait_refs;
+    EventVecPtr wait_refs;
     std::list<QueueItem> wait_queue_items;
     std::mutex queue_mutex;
     cl::CommandQueue queue;
