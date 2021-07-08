@@ -332,12 +332,6 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
         engine2 = qPages[j + targetPow];
 
         if (isSpecial) {
-            // TODO: This shouldn't be necessary.
-            engine1->Finish();
-            engine2->Finish();
-        }
-
-        if (isSpecial) {
             doTop = (top != ONE_CMPLX);
             doBottom = (bottom != ONE_CMPLX);
 
