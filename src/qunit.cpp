@@ -4783,24 +4783,27 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
 
     PhaseShardPtr buffer = phaseShard->second;
 
-    if (!buffer->isInvert && IS_NORM_0(buffer->cmplxDiff - buffer->cmplxSame)) {
-        if (IS_1_CMPLX(buffer->cmplxDiff)) {
-            if (anti) {
+    if (!buffer->isInvert) {
+        if (anti) {
+            if (IS_1_CMPLX(buffer->cmplxDiff) && IS_1_CMPLX(buffer->cmplxSame)) {
                 tShard.RemoveAntiControl(&cShard);
-            } else {
-                tShard.RemoveControl(&cShard);
+                return;
             }
-            return;
-        }
-
-        if (IS_SAME_UNIT(cShard, tShard) || (!isReactiveSeparate && ARE_CLIFFORD(cShard, tShard))) {
-            if (anti) {
+            if (IS_SAME_UNIT(cShard, tShard) || (!isReactiveSeparate && ARE_CLIFFORD(cShard, tShard))) {
                 tShard.RemoveAntiControl(&cShard);
-            } else {
-                tShard.RemoveControl(&cShard);
+                ApplyBuffer(buffer, control, target, true);
+                return;
             }
-            ApplyBuffer(buffer, control, target, anti);
-            return;
+        } else {
+            if (IS_1_CMPLX(buffer->cmplxDiff) && IS_1_CMPLX(buffer->cmplxSame)) {
+                tShard.RemoveControl(&cShard);
+                return;
+            }
+            if (IS_SAME_UNIT(cShard, tShard) || (!isReactiveSeparate && ARE_CLIFFORD(cShard, tShard))) {
+                tShard.RemoveControl(&cShard);
+                ApplyBuffer(buffer, control, target, false);
+                return;
+            }
         }
     }
 
