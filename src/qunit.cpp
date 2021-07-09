@@ -4818,6 +4818,10 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
         return;
     }
 
+    if (anti) {
+        std::swap(buffer, aBuffer);
+    }
+
     bool isInvert = buffer->isInvert;
     if (isInvert) {
         if (tShard.isPauliY) {
@@ -4835,25 +4839,13 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxSame) && IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxDiff)) {
         tShard.RemoveControl(&cShard);
         tShard.RemoveAntiControl(&cShard);
-        if (anti) {
-            ApplySinglePhase(buffer->cmplxSame, buffer->cmplxDiff, target);
-        } else {
-            ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
-        }
+        ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
     } else if (isInvert) {
         if (IS_1_CMPLX(buffer->cmplxDiff) && IS_1_CMPLX(buffer->cmplxSame)) {
-            if (anti) {
-                tShard.RemoveAntiControl(&cShard);
-            } else {
-                tShard.RemoveControl(&cShard);
-            }
+            tShard.RemoveControl(&cShard);
         }
         if (IS_1_CMPLX(aBuffer->cmplxDiff) && IS_1_CMPLX(aBuffer->cmplxSame)) {
-            if (anti) {
-                tShard.RemoveControl(&cShard);
-            } else {
-                tShard.RemoveAntiControl(&cShard);
-            }
+            tShard.RemoveAntiControl(&cShard);
         }
     }
 }
