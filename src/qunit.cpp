@@ -4730,8 +4730,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
         partner = phaseShard->first;
 
-        isSame = IS_SAME(polarDiff, polarSame);
-        isOpposite = IS_OPPOSITE(polarDiff, polarSame);
+        isSame = buffer->isInvert && IS_SAME(polarDiff, polarSame);
+        isOpposite = IS_OPPOSITE(polarDiff, polarSame) && !partner->IsAntiControlOf(&shard);
 
         if (isSame || isOpposite) {
             continue;
@@ -4753,8 +4753,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
         partner = phaseShard->first;
 
-        isSame = IS_SAME(polarDiff, polarSame);
-        isOpposite = IS_OPPOSITE(polarDiff, polarSame);
+        isSame = buffer->isInvert && IS_SAME(polarDiff, polarSame);
+        isOpposite = IS_OPPOSITE(polarDiff, polarSame) && !partner->IsControlOf(&shard);
 
         if (isSame || isOpposite) {
             continue;
@@ -4776,7 +4776,6 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     ShardToPhaseMap& targets = anti ? tShard.antiTargetOfShards : tShard.targetOfShards;
 
     ShardToPhaseMap::iterator phaseShard = targets.find(&cShard);
-
     if (phaseShard == targets.end()) {
         return;
     }
@@ -4810,7 +4809,6 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     ShardToPhaseMap& antiTargets = anti ? tShard.targetOfShards : tShard.antiTargetOfShards;
 
     ShardToPhaseMap::iterator antiShard = tShard.antiTargetOfShards.find(&cShard);
-
     if (antiShard == antiTargets.end()) {
         return;
     }
