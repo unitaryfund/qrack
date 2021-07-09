@@ -4753,7 +4753,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
         partner = phaseShard->first;
 
-        isSame = buffer->isInvert && IS_SAME(polarDiff, polarSame);
+        isSame = buffer->isInvert && IS_SAME(polarDiff, polarSame) && !partner->IsInvertControlOf(&shard);
         isOpposite = IS_OPPOSITE(polarDiff, polarSame) && !partner->IsControlOf(&shard);
 
         if (isSame || isOpposite) {
