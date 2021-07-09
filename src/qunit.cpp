@@ -4781,10 +4781,6 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     }
 
     PhaseShardPtr buffer = phaseShard->second;
-    if (buffer->isInvert) {
-        // TODO: Handle invert.
-        return;
-    }
 
     if (!buffer->isInvert) {
         if (anti) {
@@ -4818,8 +4814,8 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     }
 
     PhaseShardPtr aBuffer = antiShard->second;
-    if (aBuffer->isInvert) {
-        // TODO: Handle invert.
+
+    if (buffer->isInvert != aBuffer->isInvert) {
         return;
     }
 
