@@ -12,10 +12,6 @@
 
 #pragma once
 
-#include <cfloat>
-#include <random>
-#include <unordered_set>
-
 #include "qengineshard.hpp"
 
 namespace Qrack {

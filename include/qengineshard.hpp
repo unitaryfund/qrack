@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <unordered_set>
+
 #include "qinterface.hpp"
 
 #define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)

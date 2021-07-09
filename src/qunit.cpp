@@ -2573,7 +2573,7 @@ void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
         RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
-            tShard.AddAntiInversionAngles(&cShard, -ONE_CMPLX, ONE_CMPLX);
+            tShard.AddAntiPhaseAngles(&cShard, -ONE_CMPLX, ONE_CMPLX);
             OptimizePairBuffers(control, target, true);
 
             return;
@@ -4744,7 +4744,6 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         ApplyBuffer(buffer, control, bitIndex, false);
     }
 
-    // If hasOpposite is same control as anti-, the two could commute.
     targetOfShards = shard.antiTargetOfShards;
 
     for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
@@ -4776,7 +4775,6 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     QEngineShard& tShard = shards[target];
 
     ShardToPhaseMap& targets = anti ? tShard.antiTargetOfShards : tShard.targetOfShards;
-
     ShardToPhaseMap::iterator phaseShard = targets.find(&cShard);
     if (phaseShard == targets.end()) {
         return;
@@ -4809,8 +4807,7 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     }
 
     ShardToPhaseMap& antiTargets = anti ? tShard.targetOfShards : tShard.antiTargetOfShards;
-
-    ShardToPhaseMap::iterator antiShard = tShard.antiTargetOfShards.find(&cShard);
+    ShardToPhaseMap::iterator antiShard = antiTargets.find(&cShard);
     if (antiShard == antiTargets.end()) {
         return;
     }
