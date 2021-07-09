@@ -634,9 +634,8 @@ public:
         RemovePhaseBuffers(antiControlsShards, &QEngineShard::GetAntiTargetOfShards);
     }
 
-    bool IsInvertControlOf(QEngineShardPtr target) { return (controlsShards.find(target) != controlsShards.end()); }
-
-    bool IsInvertAntiControlOf(QEngineShardPtr target)
+    bool IsControlOf(QEngineShardPtr target) { return (controlsShards.find(target) != controlsShards.end()); }
+    bool IsAntiControlOf(QEngineShardPtr target)
     {
         return (antiControlsShards.find(target) != antiControlsShards.end());
     }
