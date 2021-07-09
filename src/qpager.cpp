@@ -637,6 +637,14 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
 
 void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
 {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        ApplySinglePhase(mtrx[0], mtrx[3], target);
+        return;
+    } else if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        ApplySingleInvert(mtrx[1], mtrx[2], target);
+        return;
+    }
+
     SeparateEngines();
     SingleBitGate(target, [mtrx](QEnginePtr engine, bitLenInt lTarget) { engine->ApplySingleBit(mtrx, lTarget); });
 }
