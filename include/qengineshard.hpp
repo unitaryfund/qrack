@@ -635,13 +635,6 @@ public:
     }
 
     bool IsControlOf(QEngineShardPtr target) { return (controlsShards.find(target) != controlsShards.end()); }
-    bool IsInvertControlOf(QEngineShardPtr target)
-    {
-        if (controlsShards.find(target) != controlsShards.end()) {
-            return controlsShards[target]->isInvert;
-        }
-        return false;
-    }
 
     bool IsInvertControl()
     {
