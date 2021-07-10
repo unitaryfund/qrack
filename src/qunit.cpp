@@ -2719,7 +2719,6 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
         }
         if (DIRTY(shard)) {
             shard.isPhaseDirty = true;
-            return;
         }
 
         shard.amp0 *= topLeft;
@@ -2792,8 +2791,6 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         }
         if (DIRTY(shard)) {
             shard.isPhaseDirty = true;
-            std::swap(shard.amp0, shard.amp1);
-            return;
         }
 
         complex tempAmp1 = shard.amp0 * bottomLeft;
