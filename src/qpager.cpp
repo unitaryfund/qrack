@@ -1177,6 +1177,7 @@ void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
     if (isQubit1Meta || isQubit2Meta) {
+        SeparateEngines();
         SemiMetaSwap(qubit1, qubit2, false);
         return;
     }
@@ -1198,6 +1199,7 @@ void QPager::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
     if (isQubit1Meta || isQubit2Meta) {
+        SeparateEngines();
         SemiMetaSwap(qubit1, qubit2, true);
         return;
     }
