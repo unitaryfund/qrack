@@ -3318,7 +3318,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
     for (i = 0; i < targets.size(); i++) {
         if (isPhase) {
-            RevertBasis2Qb(targets[i], ONLY_INVERT, ONLY_TARGETS);
+            RevertBasis2Qb(targets[i], ONLY_INVERT, CONTROLS_AND_TARGETS);
         } else {
             RevertBasis2Qb(targets[i]);
         }
