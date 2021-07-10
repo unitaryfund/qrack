@@ -2156,14 +2156,8 @@ void QUnit::TransformPhase(const complex& topLeft, const complex& bottomRight, c
 void QUnit::CNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
-    if (CACHED_X(tShard)) {
-        if (IS_AMP_0(tShard.amp1)) {
-            return;
-        }
-        if (IS_AMP_0(tShard.amp0)) {
-            Z(control);
-            return;
-        }
+    if (CACHED_PLUS(tShard)) {
+        return;
     }
 
     QEngineShard& cShard = shards[control];
@@ -2223,14 +2217,8 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
-    if (CACHED_X(tShard)) {
-        if (IS_AMP_0(tShard.amp1)) {
-            return;
-        }
-        if (IS_AMP_0(tShard.amp0)) {
-            ApplySinglePhase(-ONE_CMPLX, ONE_CMPLX, control);
-            return;
-        }
+    if (CACHED_PLUS(tShard)) {
+        return;
     }
 
     QEngineShard& cShard = shards[control];

@@ -5338,6 +5338,45 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_18", "[mirror]")
     REQUIRE(qftReg->MAll() == 18);
 }
 
+// Probabilistic QUnit bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_19", "[mirror]")
+{
+    qftReg->SetPermutation(11);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(2);
+    qftReg->T(2);
+    qftReg->H(2);
+    qftReg->H(0);
+    qftReg->CNOT(2, 0);
+    qftReg->H(3);
+    qftReg->T(0);
+    qftReg->CNOT(0, 1);
+    qftReg->T(3);
+    qftReg->T(1);
+    qftReg->T(0);
+    qftReg->CNOT(0, 3);
+    qftReg->H(3);
+    qftReg->CNOT(3, 1);
+    qftReg->CNOT(3, 1);
+    qftReg->H(3);
+    qftReg->CNOT(0, 3);
+    qftReg->IT(0);
+    qftReg->IT(1);
+    qftReg->IT(3);
+    qftReg->CNOT(0, 1);
+    qftReg->IT(0);
+    qftReg->H(3);
+    qftReg->CNOT(2, 0);
+    qftReg->H(0);
+    qftReg->H(2);
+    qftReg->IT(2);
+    qftReg->CNOT(0, 2);
+    qftReg->H(2);
+
+    REQUIRE(qftReg->MAll() == 11);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
