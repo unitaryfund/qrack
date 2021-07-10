@@ -519,7 +519,7 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
     for (auto bit = first; bit < last; bit++) {
-        EndEmulation(shards[**bit]);
+        EndEmulation(**bit);
     }
 
     std::vector<QInterfacePtr> units;
@@ -4713,8 +4713,8 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         return;
     }
 
+    std::map<QEngineShardPtr, bool> isPhaseMap;
     std::map<QEngineShardPtr, bool> isInvertMap;
-    std::map<QEngineShardPtr, bool> isBufferedMap;
     bitLenInt control;
     bool isSame, isOpposite;
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
@@ -4729,13 +4729,12 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
         isSame = buffer->isInvert && IS_SAME(polarDiff, polarSame);
         if (isSame) {
-            isBufferedMap[partner] = true;
+            isPhaseMap[partner] = true;
             continue;
         }
 
         isOpposite = IS_OPPOSITE(polarDiff, polarSame);
         if (isOpposite) {
-            isBufferedMap[partner] = true;
             isInvertMap[partner] = true;
             continue;
         }
@@ -4761,7 +4760,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
                 continue;
             }
 
-            isOpposite = IS_OPPOSITE(polarDiff, polarSame) && !isBufferedMap[partner];
+            isOpposite = IS_OPPOSITE(polarDiff, polarSame) && !isPhaseMap[partner];
             if (isOpposite) {
                 continue;
             }

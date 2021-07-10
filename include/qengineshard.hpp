@@ -636,8 +636,6 @@ public:
         RemovePhaseBuffers(antiControlsShards, &QEngineShard::GetAntiTargetOfShards);
     }
 
-    bool IsControlOf(QEngineShardPtr target) { return (controlsShards.find(target) != controlsShards.end()); }
-
     bool IsInvertControl()
     {
         ShardToPhaseMap::iterator phaseShard;
@@ -675,8 +673,6 @@ public:
 
         return false;
     }
-
-    bool IsInvert() { return IsInvertTarget() || IsInvertControl(); }
 
 protected:
     void ClearMapInvertPhase(ShardToPhaseMap& shards)
