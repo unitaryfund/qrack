@@ -447,16 +447,16 @@ bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
             "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
     }
 
-    bitLenInt qpp = qubitsPerPage();
+    // TODO: Avoid CombineEngines();
+    CombineEngines();
+
+    bitLenInt qpp = qubitCount;
     bitLenInt tcqpp = toCopy->qubitsPerPage();
 
     if ((qpp + tcqpp) > maxPageQubits) {
         tcqpp = (maxPageQubits <= qpp) ? 1U : (maxPageQubits - qpp);
         toCopy->SeparateEngines(tcqpp, true);
     }
-
-    // TODO: Avoid CombineEngines();
-    CombineEngines();
 
     bitCapIntOcl i;
     bitCapIntOcl maxI = ((bitCapIntOcl)toCopy->qPages.size() - 1U);
