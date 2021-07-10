@@ -2881,9 +2881,8 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         }
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, ONLY_ANTI);
-        RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(topLeft) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, CTRL_AND_ANTI,
-            {}, { control });
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         // This is not a Clifford gate, so we buffer for stabilizer:
         if (!IS_SAME_UNIT(cShard, tShard)) {
@@ -3023,9 +3022,8 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
         }
 
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(bottomRight) ? ONLY_TARGETS : CONTROLS_AND_TARGETS, ONLY_CTRL);
-        RevertBasis2Qb(target, ONLY_INVERT, IS_1_CMPLX(bottomRight) ? ONLY_TARGETS : CONTROLS_AND_TARGETS,
-            CTRL_AND_ANTI, {}, { control });
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL);
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         // If this is not a Clifford gate, we buffer for stabilizer:
         if (!IS_SAME_UNIT(cShard, tShard)) {
@@ -3318,7 +3316,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 
     for (i = 0; i < targets.size(); i++) {
         if (isPhase) {
-            RevertBasis2Qb(targets[i], ONLY_INVERT, CONTROLS_AND_TARGETS);
+            RevertBasis2Qb(targets[i], ONLY_INVERT, ONLY_TARGETS);
         } else {
             RevertBasis2Qb(targets[i]);
         }
