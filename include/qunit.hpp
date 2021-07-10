@@ -704,8 +704,9 @@ protected:
         }
     }
 
-    void EndEmulation(QEngineShard& shard)
+    void EndEmulation(const bitLenInt& target)
     {
+        QEngineShard& shard = shards[target];
         if (shard.unit) {
             return;
         }
@@ -719,12 +720,6 @@ protected:
             shard.unit = MakeEngine(1, 0);
             shard.unit->SetQuantumState(bitState);
         }
-    }
-
-    void EndEmulation(const bitLenInt& target)
-    {
-        QEngineShard& shard = shards[target];
-        EndEmulation(shard);
     }
 
     bitLenInt FindShardIndex(QEngineShardPtr shard)
