@@ -165,7 +165,7 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
     for (auto bit = first; bit < last; bit++) {
-        EndEmulation(shards[**bit]);
+        EndEmulation(**bit);
     }
 
     QInterfacePtr unit1 = shards[**first].unit;
