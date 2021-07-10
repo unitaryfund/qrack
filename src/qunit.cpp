@@ -4716,6 +4716,7 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         return;
     }
 
+    std::map<QEngineShardPtr, bool> isInvertMap;
     bitLenInt control;
     bool isSame, isOpposite;
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
@@ -4729,9 +4730,13 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
         partner = phaseShard->first;
 
         isSame = buffer->isInvert && IS_SAME(polarDiff, polarSame);
-        isOpposite = IS_OPPOSITE(polarDiff, polarSame);
+        if (isSame) {
+            continue;
+        }
 
-        if (isSame || isOpposite) {
+        isOpposite = IS_OPPOSITE(polarDiff, polarSame);
+        if (isOpposite) {
+            isInvertMap[partner] = true;
             continue;
         }
 
@@ -4750,11 +4755,16 @@ void QUnit::CommuteH(const bitLenInt& bitIndex)
 
         partner = phaseShard->first;
 
-        isSame = buffer->isInvert && IS_SAME(polarDiff, polarSame);
-        isOpposite = IS_OPPOSITE(polarDiff, polarSame);
+        if (!isInvertMap[partner]) {
+            isSame = buffer->isInvert && IS_SAME(polarDiff, polarSame);
+            if (isSame) {
+                continue;
+            }
 
-        if (isSame || isOpposite) {
-            continue;
+            isOpposite = IS_OPPOSITE(polarDiff, polarSame);
+            if (isOpposite) {
+                continue;
+            }
         }
 
         control = FindShardIndex(partner);
