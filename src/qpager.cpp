@@ -438,19 +438,14 @@ void QPager::CombineAndOpControlled(
     CombineAndOp(fn, bits);
 }
 
-bitLenInt QPager::Compose(QPagerPtr toCopy) { return Compose(toCopy, qubitCount); }
-
-bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
+bitLenInt QPager::Compose(QPagerPtr toCopy)
 {
     if ((qubitCount + toCopy->qubitCount) > maxQubits) {
         throw std::invalid_argument(
             "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
     }
 
-    // TODO: Avoid CombineEngines();
-    CombineEngines();
-
-    bitLenInt qpp = qubitCount;
+    bitLenInt qpp = qubitsPerPage();
     bitLenInt tcqpp = toCopy->qubitsPerPage();
 
     if ((qpp + tcqpp) > maxPageQubits) {
@@ -458,19 +453,53 @@ bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
         toCopy->SeparateEngines(tcqpp, true);
     }
 
-    bitCapIntOcl i;
-    bitCapIntOcl maxI = ((bitCapIntOcl)toCopy->qPages.size() - 1U);
+    if ((qpp + tcqpp) > maxPageQubits) {
+        qpp = (maxPageQubits <= tcqpp) ? 1U : (maxPageQubits - tcqpp);
+        SeparateEngines(qpp, true);
+    }
+
+    bitLenInt pqc = pagedQubitCount();
+
+    bitCapIntOcl i, j;
+    bitCapIntOcl maxJ = ((bitCapIntOcl)toCopy->qPages.size() - 1U);
     std::vector<QEnginePtr> nQPages;
 
-    QEnginePtr engine = qPages[0];
-    for (i = 0; i < maxI; i++) {
-        nQPages.push_back(std::dynamic_pointer_cast<QEngine>(engine->Clone()));
-        nQPages.back()->Compose(toCopy->qPages[i], start);
+    for (i = 0; i < qPages.size(); i++) {
+        QEnginePtr engine = qPages[i];
+        for (j = 0; j < maxJ; j++) {
+            nQPages.push_back(std::dynamic_pointer_cast<QEngine>(engine->Clone()));
+            nQPages.back()->Compose(toCopy->qPages[j]);
+        }
+        nQPages.push_back(engine);
+        nQPages.back()->Compose(toCopy->qPages[maxJ]);
     }
-    nQPages.push_back(engine);
-    nQPages.back()->Compose(toCopy->qPages[maxI], start);
 
     qPages = nQPages;
+
+    bitLenInt toRet = qubitCount;
+    SetQubitCount(qubitCount + toCopy->qubitCount);
+
+    ROL(pqc, qpp, pqc + toCopy->qubitCount);
+
+    return toRet;
+}
+
+bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
+{
+    if (start == qubitCount) {
+        return Compose(toCopy);
+    }
+
+    if ((qubitCount + toCopy->qubitCount) > maxQubits) {
+        throw std::invalid_argument(
+            "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
+    }
+
+    // TODO: Avoid CombineEngines();
+    CombineEngines();
+    toCopy->CombineEngines();
+
+    qPages[0]->Compose(toCopy->qPages[0]);
 
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
