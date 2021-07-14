@@ -73,7 +73,7 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     , isSparse(useSparseStateVec)
     , freezeBasis2Qb(false)
     , freezeTrySeparate(false)
-    , isReactiveSeparate(false)
+    , isReactiveSeparate(true)
     , thresholdQubits(qubitThreshold)
     , pagingThresholdQubits(21)
     , separabilityThreshold(sep_thresh)

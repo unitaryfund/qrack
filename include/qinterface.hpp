@@ -2288,7 +2288,7 @@ public:
      */
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return false; }
     /**
-     *  Set Reactive separation
+     *  Set Reactive separation (on by default if available)
      */
     virtual void SetReactiveSeparate(const bool& isAggSep) {}
     /**
