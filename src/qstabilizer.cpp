@@ -100,8 +100,8 @@ void QStabilizer::rowcopy(const bitLenInt& i, const bitLenInt& k)
         return;
     }
 
-    std::copy(x[k].begin(), x[k].end(), x[i].begin());
-    std::copy(z[k].begin(), z[k].end(), z[i].begin());
+    x[i] = x[k];
+    z[i] = z[k];
     r[i] = r[k];
 }
 
@@ -401,7 +401,6 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
     }
 
     eng->UpdateRunningNorm();
-    eng->NormalizeState();
 }
 
 /// Get all probabilities corresponding to ket notation
@@ -455,49 +454,6 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
             if (x[i][c] && z[i][t] && (x[i][t] == z[i][c])) {
                 r[i] = (r[i] + 2) & 0x3;
             }
-        }
-    });
-}
-
-/// Apply a CZ gate with control and target
-void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
-{
-    Dispatch([this, c, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
-
-        for (bitLenInt i = 0; i < maxLcv; i++) {
-            if (x[i][t]) {
-                z[i][c] = !z[i][c];
-            }
-            if (x[i][c]) {
-                z[i][t] = !z[i][t];
-            }
-        }
-    });
-}
-
-/// Apply a CNOT gate with control and target
-void QStabilizer::CY(const bitLenInt& c, const bitLenInt& t)
-{
-    Dispatch([this, c, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
-
-        for (bitLenInt i = 0; i < maxLcv; i++) {
-            z[i][t] = z[i][t] ^ x[i][t];
-
-            if (z[i][t]) {
-                z[i][c] = !z[i][c];
-            }
-
-            if (x[i][c]) {
-                if (x[i][t] && z[i][t] && !z[i][c]) {
-                    r[i] = (r[i] + 2) & 0x3;
-                }
-
-                x[i][t] = !x[i][t];
-            }
-
-            z[i][t] = z[i][t] ^ x[i][t];
         }
     });
 }
@@ -582,7 +538,7 @@ void QStabilizer::Y(const bitLenInt& t)
         bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
-            if (x[i][t] != z[i][t]) {
+            if (z[i][t] ^ x[i][t]) {
                 r[i] = (r[i] + 2) & 0x3;
             }
         }
@@ -912,6 +868,9 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
         return;
     }
 
+    if (dest) {
+        dest->Dump();
+    }
     Finish();
 
     // We assume that the bits to "decompose" the representation of already have 0 cross-terms in their generators
@@ -926,8 +885,6 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     bitLenInt secondEnd = nQubitCount + end;
 
     if (dest) {
-        dest->Finish();
-
         for (i = 0; i < length; i++) {
             j = start + i;
             std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[i].begin());

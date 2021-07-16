@@ -37,6 +37,7 @@ protected:
     bool useHardwareThreshold;
     bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
+    bitLenInt deviceGlobalQubits;
     bitLenInt thresholdQubitsPerPage;
     bitLenInt pStridePow;
     bitLenInt baseQubitsPerPage;
@@ -51,28 +52,23 @@ protected:
     {
         QInterface::SetQubitCount(qb);
 
-        bitLenInt qpd = 2U;
-        if (getenv("QRACK_DEVICE_GLOBAL_QB")) {
-            qpd = (bitLenInt)std::stoi(std::string(getenv("QRACK_DEVICE_GLOBAL_QB")));
-        }
-
         if (useHardwareThreshold && ((engine == QINTERFACE_OPENCL) || (engine == QINTERFACE_HYBRID))) {
             // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
             // environment variable.
 
             thresholdQubitsPerPage = maxPageQubits;
 
-            if ((qubitCount - qpd) < thresholdQubitsPerPage) {
-                thresholdQubitsPerPage = qubitCount - qpd;
+            bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
+            if (threshTest < thresholdQubitsPerPage) {
+                thresholdQubitsPerPage = threshTest;
             }
 
             if (thresholdQubitsPerPage < minPageQubits) {
                 thresholdQubitsPerPage = minPageQubits;
             }
         } else if (useHardwareThreshold) {
-            thresholdQubitsPerPage = qubitCount - qpd;
+            thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
 
-            minPageQubits = log2(std::thread::hardware_concurrency()) + pStridePow;
             if (thresholdQubitsPerPage < minPageQubits) {
                 thresholdQubitsPerPage = minPageQubits;
             }
@@ -96,7 +92,7 @@ protected:
     void SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl = false, const bool& isAnti = false);
     template <typename Qubit1Fn>
     void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, const complex* mtrx,
-        const bool& isSqiCtrl = false);
+        const bool& isSqiCtrl = false, const bool& isIntraCtrled = false);
     template <typename Qubit1Fn>
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
     void MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac);
@@ -269,8 +265,6 @@ public:
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
-
-    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
 
     virtual real1_f Prob(bitLenInt qubitIndex);
     virtual real1_f ProbAll(bitCapInt fullRegister);

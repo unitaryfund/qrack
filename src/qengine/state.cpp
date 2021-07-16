@@ -88,7 +88,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
         return;
     }
 
-    if (runningNorm > ZERO_R1) {
+    if (runningNorm >= ZERO_R1) {
         runningNorm -= norm(GetAmplitude(perm));
         runningNorm += norm(amp);
         if (runningNorm <= REAL1_EPSILON) {
@@ -210,15 +210,16 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     std::shared_ptr<bitCapInt> qPowersSortedS(new bitCapInt[bitCount], std::default_delete<bitCapInt[]>());
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedS.get());
 
-    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+    bool doApplyNorm = doNormalize && (bitCount == 1) && (runningNorm > ZERO_R1);
+    doCalcNorm = doCalcNorm && (doApplyNorm || (runningNorm <= ZERO_R1));
 
-    real1 nrm = (doNormalize && (runningNorm > ZERO_R1)) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
+    real1 nrm = doApplyNorm ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
 
     if (doCalcNorm) {
         runningNorm = ONE_R1;
     }
 
-    Dispatch([this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, nrm, nrm_thresh] {
+    Dispatch([this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, doApplyNorm, nrm, nrm_thresh] {
         complex* mtrx = mtrxS.get();
         bitCapInt* qPowersSorted = qPowersSortedS.get();
 
@@ -347,17 +348,23 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
         }
 
-        if (doCalcNorm) {
-            real1 rNrm = ZERO_R1;
-            for (int i = 0; i < numCores; i++) {
-                rNrm += rngNrm[i];
-            }
-            runningNorm = rNrm;
-            rngNrm.reset();
+        if (doApplyNorm) {
+            runningNorm = ONE_R1;
+        }
 
-            if (runningNorm == ZERO_R1) {
-                ZeroAmplitudes();
-            }
+        if (!doCalcNorm) {
+            return;
+        }
+
+        real1 rNrm = ZERO_R1;
+        for (int i = 0; i < numCores; i++) {
+            rNrm += rngNrm[i];
+        }
+        runningNorm = rNrm;
+        rngNrm.reset();
+
+        if (runningNorm == ZERO_R1) {
+            ZeroAmplitudes();
         }
     });
 }
@@ -373,15 +380,16 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     std::shared_ptr<bitCapInt> qPowersSortedS(new bitCapInt[bitCount], std::default_delete<bitCapInt[]>());
     std::copy(qPowsSorted, qPowsSorted + bitCount, qPowersSortedS.get());
 
-    doCalcNorm = (doCalcNorm || (runningNorm != ONE_R1)) && doNormalize && (bitCount == 1);
+    bool doApplyNorm = doNormalize && (bitCount == 1) && (runningNorm > ZERO_R1);
+    doCalcNorm = doCalcNorm && (doApplyNorm || (runningNorm <= ZERO_R1));
 
-    real1 nrm = (doNormalize && (runningNorm > ZERO_R1)) ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
+    real1 nrm = doApplyNorm ? (ONE_R1 / (real1)sqrt(runningNorm)) : ONE_R1;
 
     if (doCalcNorm) {
         runningNorm = ONE_R1;
     }
 
-    Dispatch([this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, nrm, nrm_thresh] {
+    Dispatch([this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, doApplyNorm, nrm, nrm_thresh] {
         complex* mtrx = mtrxS.get();
         bitCapInt* qPowersSorted = qPowersSortedS.get();
 
@@ -504,17 +512,23 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             par_for_mask(0, maxQPower, qPowersSorted, bitCount, fn);
         }
 
-        if (doCalcNorm) {
-            real1 rNrm = ZERO_R1;
-            for (int i = 0; i < numCores; i++) {
-                rNrm += rngNrm.get()[i];
-            }
-            runningNorm = rNrm;
-            rngNrm.reset();
+        if (doApplyNorm) {
+            runningNorm = ONE_R1;
+        }
 
-            if (runningNorm == ZERO_R1) {
-                ZeroAmplitudes();
-            }
+        if (!doCalcNorm) {
+            return;
+        }
+
+        real1 rNrm = ZERO_R1;
+        for (int i = 0; i < numCores; i++) {
+            rNrm += rngNrm.get()[i];
+        }
+        runningNorm = rNrm;
+        rngNrm.reset();
+
+        if (runningNorm == ZERO_R1) {
+            ZeroAmplitudes();
         }
     });
 }

@@ -165,7 +165,7 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
     for (auto bit = first; bit < last; bit++) {
-        EndEmulation(shards[**bit]);
+        EndEmulation(**bit);
     }
 
     QInterfacePtr unit1 = shards[**first].unit;
@@ -210,10 +210,14 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     return toRet;
 }
 
-void QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
+bool QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
 {
-    QUnit::SeparateBit(value, qubit);
-    RedistributeQEngines();
+    bool isClifford = shards[qubit].unit->isClifford();
+    bool toRet = QUnit::SeparateBit(value, qubit);
+    if (!isClifford && toRet) {
+        RedistributeQEngines();
+    }
+    return toRet;
 }
 
 QInterfacePtr QUnitMulti::Clone()
@@ -221,11 +225,14 @@ QInterfacePtr QUnitMulti::Clone()
     // TODO: Copy buffers instead of flushing?
     for (bitLenInt i = 0; i < qubitCount; i++) {
         RevertBasis2Qb(i);
-        EndEmulation(i);
     }
 
-    QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(
-        qubitCount, 0, rand_generator, complex(ONE_R1, ZERO_R1), doNormalize, randGlobalPhase, useHostRam);
+    QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engine, subEngine, qubitCount, 0, rand_generator, phaseFactor,
+        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+        thresholdQubits, separabilityThreshold);
+
+    Finish();
+    copyPtr->Finish();
 
     return CloneBody(copyPtr);
 }

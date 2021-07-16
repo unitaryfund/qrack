@@ -28,6 +28,10 @@
 #include "common/rdrandwrapper.hpp"
 #include "hamiltonian.hpp"
 
+#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
+#define IS_SAME(c1, c2) (IS_NORM_0((c1) - (c2)))
+#define IS_OPPOSITE(c1, c2) (IS_NORM_0((c1) + (c2)))
+
 namespace Qrack {
 
 // These are utility functions defined in qinterface/protected.cpp:
@@ -477,7 +481,7 @@ public:
      * Apply an arbitrary single bit unitary transformation, with arbitrary (anti-)control bits.
      */
     virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     /**
      * Apply a single bit transformation that only effects phase.
@@ -2211,14 +2215,14 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = 2 * FP_NORM_EPSILON)
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = 8 * FP_NORM_EPSILON)
     {
         return SumSqrDiff(toCompare) <= error_tol;
     }
 
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare) = 0;
 
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = 2 * FP_NORM_EPSILON);
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = 8 * FP_NORM_EPSILON);
 
     /**
      * Force a calculation of the norm of the state vector, in order to make it unit length before the next probability
@@ -2284,7 +2288,7 @@ public:
      */
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return false; }
     /**
-     *  Set Reactive separation
+     *  Set Reactive separation (on by default if available)
      */
     virtual void SetReactiveSeparate(const bool& isAggSep) {}
     /**

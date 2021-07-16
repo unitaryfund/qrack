@@ -28,8 +28,7 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         } else if (oneChance <= ZERO_R1) {
             result = false;
         } else {
-            real1_f prob = Rand();
-            result = (prob <= oneChance);
+            result = (Rand() <= oneChance);
         }
     }
 
@@ -59,13 +58,13 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
     if (length == 1U) {
         if (values == NULL) {
             if (M(bits[0])) {
-                return (pow2(bits[0]));
+                return pow2(bits[0]);
             } else {
                 return 0U;
             }
         } else {
-            if (ForceM(bits[0], values[0])) {
-                return (pow2(bits[0]));
+            if (ForceM(bits[0], values[0], true, doApply)) {
+                return pow2(bits[0]);
             } else {
                 return 0U;
             }
@@ -168,8 +167,7 @@ void QEngine::ApplySingleBit(const complex* mtrx, bitLenInt qubit)
         return;
     }
 
-    bool doCalcNorm = doNormalize &&
-        !(((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) || ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)));
+    bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
 
     bitCapInt qPowers[1];
     qPowers[0] = pow2(qubit);
@@ -179,17 +177,16 @@ void QEngine::ApplySingleBit(const complex* mtrx, bitLenInt qubit)
 void QEngine::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    if (IsIdentity(mtrx, true)) {
-        return;
-    }
-
     if (controlLen == 0) {
         ApplySingleBit(mtrx, target);
         return;
     }
 
-    bool doCalcNorm = doNormalize &&
-        !(((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) || ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)));
+    if (IsIdentity(mtrx, true)) {
+        return;
+    }
+
+    bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
 
     ApplyControlled2x2(controls, controlLen, target, mtrx);
     if (doCalcNorm) {
@@ -200,17 +197,16 @@ void QEngine::ApplyControlledSingleBit(
 void QEngine::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    if (IsIdentity(mtrx, true)) {
-        return;
-    }
-
     if (controlLen == 0) {
         ApplySingleBit(mtrx, target);
         return;
     }
 
-    bool doCalcNorm = doNormalize &&
-        !(((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) || ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)));
+    if (IsIdentity(mtrx, true)) {
+        return;
+    }
+
+    bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
 
     ApplyAntiControlled2x2(controls, controlLen, target, mtrx);
     if (doCalcNorm) {
@@ -470,7 +466,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
 {
     // Single bit operations are better optimized for this special case:
     if (length == 1U) {
-        if (ForceM(start, ((bitCapIntOcl)result) & ONE_BCI, doForce)) {
+        if (ForceM(start, ((bitCapIntOcl)result) & ONE_BCI, doForce, doApply)) {
             return ONE_BCI;
         } else {
             return 0;
@@ -494,7 +490,6 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
 
         real1_f prob = Rand();
         real1_f lowerProb = ZERO_R1;
-        real1_f largestProb = ZERO_R1;
         result = lengthPower - ONE_BCI;
 
         /*
@@ -504,17 +499,11 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
          */
         while ((lowerProb < prob) && (lcv < lengthPower)) {
             lowerProb += probArray.get()[lcv];
-            if (largestProb <= probArray.get()[lcv]) {
-                largestProb = probArray.get()[lcv];
-                nrmlzr = largestProb;
+            if (probArray.get()[lcv] > ZERO_R1) {
+                nrmlzr = probArray.get()[lcv];
                 result = lcv;
             }
             lcv++;
-        }
-        if (lcv < lengthPower) {
-            lcv--;
-            result = lcv;
-            nrmlzr = probArray.get()[lcv];
         }
 
         probArray.reset();

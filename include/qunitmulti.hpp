@@ -106,7 +106,7 @@ public:
 protected:
     virtual std::vector<QEngineInfo> GetQInfos();
 
-    virtual void SeparateBit(bool value, bitLenInt qubit);
+    virtual bool SeparateBit(bool value, bitLenInt qubit);
 
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     {

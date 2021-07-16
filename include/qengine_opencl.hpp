@@ -102,14 +102,29 @@ struct PoolItem {
     std::shared_ptr<real1> angleArray;
     complex* otherStateVec;
 
+    virtual BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
+    {
+        cl_int error;
+        BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
+        if (error != CL_SUCCESS) {
+            if ((error == CL_MEM_OBJECT_ALLOCATION_FAILURE) || (error == CL_OUT_OF_HOST_MEMORY) ||
+                (error == CL_INVALID_BUFFER_SIZE)) {
+                throw std::bad_alloc();
+            }
+            throw std::runtime_error("OpenCL error code on buffer allocation attempt: " + std::to_string(error));
+        }
+
+        return toRet;
+    }
+
     PoolItem(cl::Context& context)
         : probArray(NULL)
         , angleArray(NULL)
         , otherStateVec(NULL)
     {
-        cmplxBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
-        realBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
-        ulongBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * BCI_ARG_LEN);
+        cmplxBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
+        realBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
+        ulongBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * BCI_ARG_LEN);
     }
 };
 
@@ -209,13 +224,13 @@ public:
 
     virtual void ZeroAmplitudes()
     {
+        clDump();
+        runningNorm = ZERO_R1;
+
         if (!stateBuffer) {
-            runningNorm = ZERO_R1;
             return;
         }
 
-        clDump();
-        runningNorm = ZERO_R1;
         ResetStateBuffer(NULL);
         FreeStateVec();
 
@@ -253,9 +268,6 @@ public:
 
     virtual void CopyStateVec(QEnginePtr src)
     {
-        Finish();
-        src->Finish();
-
         if (src->IsZeroAmplitude()) {
             ZeroAmplitudes();
             return;
@@ -419,6 +431,22 @@ protected:
         totalOclAllocSize -= size;
     }
 
+    virtual BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
+    {
+        cl_int error;
+        BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
+        if (error != CL_SUCCESS) {
+            FreeAll();
+            if ((error == CL_MEM_OBJECT_ALLOCATION_FAILURE) || (error == CL_OUT_OF_HOST_MEMORY) ||
+                (error == CL_INVALID_BUFFER_SIZE)) {
+                throw std::bad_alloc();
+            }
+            throw std::runtime_error("OpenCL error code on buffer allocation attempt: " + std::to_string(error));
+        }
+
+        return toRet;
+    }
+
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
@@ -475,6 +503,18 @@ protected:
      * device queue is finished, (which might be shared by other QEngineOCL instances).
      */
     virtual void clFinish(bool doHard = false);
+
+    /**
+     * Flushes the OpenCL event queue, and checks for errors.
+     */
+    virtual void clFlush()
+    {
+        cl_int error = queue.flush();
+        if (error != CL_SUCCESS) {
+            FreeAll();
+            throw std::runtime_error("Failed to flush queue, error code: " + std::to_string(error));
+        }
+    }
 
     /**
      * Dumps the remaining asynchronous wait event list or queue of OpenCL events, for the current queue.

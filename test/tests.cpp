@@ -3884,15 +3884,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmaskall")
     qftReg->ProbMaskAll(1U, probs1);
     REQUIRE(probs1[0] > 0.99);
     REQUIRE(probs1[1] < 0.01);
-
-    // Similarly, we're trying to hit another hardware-specific case with the maximum.
-    if (testEngineType == QINTERFACE_OPENCL) {
-        qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, max_qubits, 0, rng);
-        real1* probsN = new real1[pow2Ocl(max_qubits)];
-        qftReg->ProbMaskAll(pow2(max_qubits) - ONE_BCI, probsN);
-        REQUIRE(qftReg->ProbMask(1, 0) > 0.99);
-        delete[] probsN;
-    }
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
@@ -4667,6 +4658,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_repeat_h_cnot")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 10));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_invert_anti_pair")
+{
+    qftReg->SetPermutation(3);
+
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->CNOT(1, 0);
+    qftReg->AntiCNOT(1, 0);
+    qftReg->H(1);
+    qftReg->H(0);
+
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
 {
     // Using any gate in this test, with any phase arguments, should form a universal algebra.
@@ -4689,292 +4694,55 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_inversion_buffers", "[supreme]")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_teleport")
 {
-    qftReg->SetPermutation(2);
-    qftReg->H(0);
-
-    // This should be equivalent to CZ:
-    qftReg->CNOT(1, 0);
-    qftReg->IS(0);
-    qftReg->CNOT(1, 0);
-    qftReg->S(0);
-    qftReg->S(1);
-
-    qftReg->H(0);
-
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 3));
-
-    qftReg->SetPermutation(0xCAC00);
-    REQUIRE_THAT(qftReg, HasProbability(0xCAC00));
-
-    // This should be equivalent to a register-spanning CCNOT:
-    const bitLenInt control1 = 16;
-    const bitLenInt control2 = 12;
-    const bitLenInt target = 8;
-    for (bitLenInt i = 0; i < 4; i++) {
-        qftReg->H(target + i);
-        qftReg->CNOT(control2 + i, target + i);
-        qftReg->IT(target + i);
-        qftReg->CNOT(control1 + i, target + i);
-        qftReg->T(target + i);
-        qftReg->CNOT(control2 + i, target + i);
-        qftReg->IT(target + i);
-        qftReg->CNOT(control1 + i, target + i);
-        qftReg->T(target + i);
-        qftReg->T(control2 + i);
-        qftReg->H(target + i);
-        qftReg->CNOT(control1 + i, control2 + i);
-        qftReg->IT(control2 + i);
-        qftReg->T(control1 + i);
-        qftReg->CNOT(control1 + i, control2 + i);
-    }
-    REQUIRE_THAT(qftReg, HasProbability(0xCA400));
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 3, 0);
 
     qftReg->SetPermutation(0);
-    qftReg->H(0);
-    qftReg->T(1);
-    qftReg->CNOT(0, 1);
-    qftReg->CZ(0, 1);
-    qftReg->T(0);
+
     qftReg->H(1);
-    qftReg->CNOT(1, 0);
-    qftReg->H(1);
-
-    bitCapInt qPowers[8];
-    for (bitLenInt i = 0; i < 8; i++) {
-        qPowers[i] = pow2(i);
-    }
-
-    std::map<bitCapInt, int> testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
-
-    QInterfacePtr goldStandard = CreateQuantumInterface(testSubEngineType, testSubSubEngineType, 8, 0, rng, ONE_CMPLX,
-        false, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
-
-    goldStandard->SetPermutation(0);
-    goldStandard->H(0);
-    goldStandard->T(1);
-    goldStandard->CNOT(0, 1);
-    goldStandard->CZ(0, 1);
-    goldStandard->T(0);
-    goldStandard->H(1);
-    goldStandard->CNOT(1, 0);
-    goldStandard->H(1);
-
-    std::map<bitCapInt, int> goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
-
-    int testBinResult, goldBinResult;
-    std::map<bitCapInt, int>::iterator measurementBin;
-    real1_f crossEntropy = ZERO_R1;
-    for (int perm = 0; perm < 256; perm++) {
-        measurementBin = goldStandardResult.find(perm);
-        if (measurementBin == goldStandardResult.end()) {
-            goldBinResult = 0;
-        } else {
-            goldBinResult = measurementBin->second;
-        }
-
-        measurementBin = testCaseResult.find(perm);
-        if (measurementBin == testCaseResult.end()) {
-            testBinResult = 0;
-        } else {
-            testBinResult = measurementBin->second;
-        }
-        crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
-    }
-    if (crossEntropy < ZERO_R1) {
-        crossEntropy = ZERO_R1;
-    }
-    crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
-    REQUIRE(crossEntropy > 0.97);
-
-    qftReg->SetPermutation(0);
-    qftReg->H(0);
-    qftReg->H(1);
-    qftReg->H(2);
-    qftReg->CZ(2, 0);
-    qftReg->X(2);
-    qftReg->CNOT(0, 3);
-    qftReg->Y(0);
-    qftReg->Y(1);
     qftReg->CNOT(1, 2);
-    qftReg->H(1);
-    testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
-
-    goldStandard->SetPermutation(0);
-    goldStandard->H(0);
-    goldStandard->H(1);
-    goldStandard->H(2);
-    goldStandard->CZ(2, 0);
-    goldStandard->X(2);
-    goldStandard->CNOT(0, 3);
-    goldStandard->Y(0);
-    goldStandard->Y(1);
-    goldStandard->CNOT(1, 2);
-    goldStandard->H(1);
-    goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
-
-    crossEntropy = ZERO_R1;
-    for (int perm = 0; perm < 256; perm++) {
-        measurementBin = goldStandardResult.find(perm);
-        if (measurementBin == goldStandardResult.end()) {
-            goldBinResult = 0;
-        } else {
-            goldBinResult = measurementBin->second;
-        }
-
-        measurementBin = testCaseResult.find(perm);
-        if (measurementBin == testCaseResult.end()) {
-            testBinResult = 0;
-        } else {
-            testBinResult = measurementBin->second;
-        }
-        crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
-    }
-    if (crossEntropy < ZERO_R1) {
-        crossEntropy = ZERO_R1;
-    }
-    crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
-    REQUIRE(crossEntropy > 0.97);
-
-    qftReg->SetPermutation(0);
-    qftReg->H(0, 5);
-    qftReg->CZ(1, 2);
-    qftReg->CZ(0, 4);
-    qftReg->X(1);
-    qftReg->H(2);
-    qftReg->CZ(3, 4);
-    qftReg->CZ(0, 2);
+    qftReg->CNOT(0, 1);
     qftReg->H(0);
-    qftReg->H(3);
-    testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
 
-    goldStandard->SetPermutation(0);
-    goldStandard->H(0, 5);
-    goldStandard->CZ(1, 2);
-    goldStandard->CZ(0, 4);
-    goldStandard->X(1);
-    goldStandard->H(2);
-    goldStandard->CZ(3, 4);
-    goldStandard->CZ(0, 2);
-    goldStandard->H(0);
-    goldStandard->H(3);
-    goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
+    for (int i = 0; i < 10; i++) {
+        QInterfacePtr suffix = qftReg->Clone();
+        bool c0 = suffix->M(0);
+        bool c1 = suffix->M(1);
 
-    crossEntropy = ZERO_R1;
-    for (int perm = 0; perm < 256; perm++) {
-        measurementBin = goldStandardResult.find(perm);
-        if (measurementBin == goldStandardResult.end()) {
-            goldBinResult = 0;
-        } else {
-            goldBinResult = measurementBin->second;
+        if (c0) {
+            suffix->Z(2);
+        }
+        if (c1) {
+            suffix->X(2);
         }
 
-        measurementBin = testCaseResult.find(perm);
-        if (measurementBin == testCaseResult.end()) {
-            testBinResult = 0;
-        } else {
-            testBinResult = measurementBin->second;
-        }
-        crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
+        REQUIRE(!suffix->M(2));
     }
-    if (crossEntropy < ZERO_R1) {
-        crossEntropy = ZERO_R1;
-    }
-    crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
-    REQUIRE(crossEntropy > 0.97);
+}
 
-    qftReg->SetPermutation(0);
-    qftReg->H(0, 4);
-    qftReg->CZ(0, 3);
-    qftReg->CZ(1, 2);
-    qftReg->H(2);
-    qftReg->CZ(1, 0);
-    qftReg->CZ(2, 3);
-    qftReg->H(1);
-    qftReg->CZ(0, 1);
-    qftReg->H(0, 4);
-    testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
-
-    goldStandard->SetPermutation(0);
-    goldStandard->H(0, 4);
-    goldStandard->CZ(0, 3);
-    goldStandard->CZ(1, 2);
-    goldStandard->H(2);
-    goldStandard->CZ(1, 0);
-    goldStandard->CZ(2, 3);
-    goldStandard->H(1);
-    goldStandard->CZ(0, 1);
-    goldStandard->H(0, 4);
-    goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
-
-    crossEntropy = ZERO_R1;
-    for (int perm = 0; perm < 256; perm++) {
-        measurementBin = goldStandardResult.find(perm);
-        if (measurementBin == goldStandardResult.end()) {
-            goldBinResult = 0;
-        } else {
-            goldBinResult = measurementBin->second;
-        }
-
-        measurementBin = testCaseResult.find(perm);
-        if (measurementBin == testCaseResult.end()) {
-            testBinResult = 0;
-        } else {
-            testBinResult = measurementBin->second;
-        }
-        crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
-    }
-    if (crossEntropy < ZERO_R1) {
-        crossEntropy = ZERO_R1;
-    }
-    crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
-    REQUIRE(crossEntropy > 0.97);
-
-    qftReg->SetPermutation(0);
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_h_cnot_rand")
+{
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 2, 0);
     qftReg->H(0);
-    qftReg->H(1);
-    qftReg->H(2);
-    qftReg->CCZ(0, 1, 2);
-    qftReg->CZ(0, 1);
-    qftReg->H(1);
-    qftReg->CZ(0, 1);
-    qftReg->H(0);
-    testCaseResult = qftReg->MultiShotMeasureMask(qPowers, 8, 10000);
+    qftReg->CNOT(0, 1);
 
-    goldStandard->SetPermutation(0);
-    goldStandard->H(0);
-    goldStandard->H(1);
-    goldStandard->H(2);
-    goldStandard->CCZ(0, 1, 2);
-    goldStandard->CZ(0, 1);
-    goldStandard->H(1);
-    goldStandard->CZ(0, 1);
-    goldStandard->H(0);
-    goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, 8, 10000);
+    complex state[4];
+    qftReg->GetQuantumState(state);
+    REQUIRE_FLOAT(norm(state[0]), ONE_R1 / 2);
+    REQUIRE_FLOAT(norm(state[1]), ZERO_R1);
+    REQUIRE_FLOAT(norm(state[2]), ZERO_R1);
+    REQUIRE_FLOAT(norm(state[3]), ONE_R1 / 2);
 
-    crossEntropy = ZERO_R1;
-    for (int perm = 0; perm < 256; perm++) {
-        measurementBin = goldStandardResult.find(perm);
-        if (measurementBin == goldStandardResult.end()) {
-            goldBinResult = 0;
-        } else {
-            goldBinResult = measurementBin->second;
-        }
+    bitCapInt qPowers[2] = { 1, 2 };
+    std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 2U, 1000);
 
-        measurementBin = testCaseResult.find(perm);
-        if (measurementBin == testCaseResult.end()) {
-            testBinResult = 0;
-        } else {
-            testBinResult = measurementBin->second;
-        }
-        crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
-    }
-    if (crossEntropy < ZERO_R1) {
-        crossEntropy = ZERO_R1;
-    }
-    crossEntropy = ONE_R1 - sqrt(crossEntropy) / 10000;
-    REQUIRE(crossEntropy > 0.97);
+    REQUIRE(results.find(1) == results.end());
+    REQUIRE(results.find(2) == results.end());
+    REQUIRE(results[0] > 450);
+    REQUIRE(results[0] < 550);
+    REQUIRE(results[3] > 450);
+    REQUIRE(results[3] < 550);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_1", "[mirror]")
@@ -5067,6 +4835,548 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_5", "[mirror]")
     REQUIRE(qftReg->MAll() == 4);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_6", "[mirror]")
+{
+    qftReg->SetPermutation(0);
+
+    qftReg->H(0);
+    qftReg->T(0);
+    qftReg->CNOT(0, 1);
+    qftReg->T(0);
+    qftReg->Z(1);
+    qftReg->CZ(0, 1);
+    qftReg->CZ(0, 1);
+    qftReg->Z(1);
+    qftReg->IT(0);
+    qftReg->CNOT(0, 1);
+    qftReg->IT(0);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 0);
+}
+
+// QUnit -> QStabilizerHybrid bug with QUnit::CNOT "pmBasis," ApplyEitherControlled "inCurrentBasis"
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_7", "[mirror]")
+{
+    qftReg->SetPermutation(10);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(0);
+    qftReg->H(2);
+    qftReg->CNOT(2, 3);
+    qftReg->CNOT(0, 3);
+    qftReg->CNOT(0, 3);
+    qftReg->CNOT(2, 3);
+    qftReg->H(2);
+    qftReg->H(3);
+    qftReg->CNOT(2, 3);
+    qftReg->H(3);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 10);
+}
+
+// QUnit -> QStabilizerHybrid CZ/CY decomposition bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_8", "[mirror]")
+{
+    qftReg->SetPermutation(11);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(3);
+    qftReg->CCNOT(0, 3, 2);
+    qftReg->T(2);
+    qftReg->CZ(1, 3);
+    qftReg->CZ(2, 0);
+    qftReg->T(2);
+    qftReg->H(3);
+    qftReg->H(3);
+    qftReg->IT(2);
+    qftReg->CZ(2, 0);
+    qftReg->CZ(1, 3);
+    qftReg->IT(2);
+    qftReg->CCNOT(0, 3, 2);
+    qftReg->H(3);
+
+    REQUIRE(qftReg->MAll() == 11);
+}
+
+// QUnit -> QStabilizerHybrid CZ/CY decomposition bug (another)
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_9", "[mirror]")
+{
+    qftReg->SetPermutation(0);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->S(1);
+    qftReg->T(0);
+    qftReg->X(0);
+    qftReg->T(0);
+    qftReg->X(1);
+    qftReg->CZ(0, 1);
+    qftReg->CZ(0, 1);
+    qftReg->X(1);
+    qftReg->IT(0);
+    qftReg->X(0);
+    qftReg->IT(0);
+    qftReg->IS(1);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 0);
+}
+
+// QUnit -> QStabilizerHybrid separability bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_10", "[mirror]")
+{
+    qftReg->SetPermutation(9);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->CCNOT(1, 3, 0);
+    qftReg->Y(0);
+    qftReg->Y(1);
+    qftReg->H(3);
+    qftReg->CNOT(0, 3);
+    qftReg->X(3);
+    qftReg->CZ(1, 3);
+    qftReg->Y(0);
+    qftReg->H(1);
+    qftReg->H(1);
+    qftReg->Y(0);
+    qftReg->CZ(1, 3);
+    qftReg->X(3);
+    qftReg->CNOT(0, 3);
+    qftReg->H(3);
+    qftReg->Y(1);
+    qftReg->Y(0);
+    qftReg->CCNOT(1, 3, 0);
+    qftReg->H(1);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 9);
+}
+
+// QUnit -> QStabilizerHybrid TrimControls() bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_11", "[mirror]")
+{
+    qftReg->SetPermutation(1);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->X(0);
+    qftReg->CNOT(0, 1);
+    qftReg->H(1);
+    qftReg->T(1);
+    qftReg->IT(1);
+    qftReg->H(1);
+    qftReg->CNOT(0, 1);
+    qftReg->X(0);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 1);
+}
+
+// QUnit -> QStabilizerHybrid bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_12", "[mirror]")
+{
+    qftReg->SetPermutation(0);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+    qftReg->CNOT(1, 2);
+    qftReg->H(1);
+    qftReg->CZ(2, 1);
+    qftReg->CNOT(0, 1);
+    qftReg->T(1);
+    qftReg->IT(1);
+    qftReg->CNOT(0, 1);
+    qftReg->CZ(2, 1);
+    qftReg->H(1);
+    qftReg->CNOT(1, 2);
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 0);
+}
+
+// QUnit -> QStabilizerHybrid bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_13", "[mirror]")
+{
+    qftReg->SetPermutation(12);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(2);
+    qftReg->H(1);
+    qftReg->CCNOT(2, 1, 0);
+    qftReg->T(2);
+    qftReg->IT(2);
+    qftReg->CCNOT(2, 1, 0);
+    qftReg->H(1);
+    qftReg->Y(0);
+    qftReg->CNOT(2, 0);
+    qftReg->CNOT(0, 2);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 13);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_14", "[mirror]")
+{
+    qftReg->SetPermutation(2);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(1);
+    qftReg->H(3);
+    qftReg->CNOT(3, 2);
+    qftReg->Y(2);
+    qftReg->CNOT(2, 3);
+    qftReg->H(0);
+    qftReg->CCNOT(0, 2, 3);
+    qftReg->T(0);
+    qftReg->IT(0);
+    qftReg->CCNOT(0, 2, 3);
+    qftReg->H(0);
+    qftReg->CNOT(2, 3);
+    qftReg->Y(2);
+    qftReg->CNOT(3, 2);
+    qftReg->H(3);
+    qftReg->CCNOT(3, 1, 2);
+    qftReg->H(1);
+
+    REQUIRE(qftReg->MAll() == 2);
+}
+
+// If QUnit->QPager minPageQubits paging threshold is 1, this used to fail.
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_15", "[mirror]")
+{
+    qftReg->SetPermutation(5);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(3);
+    qftReg->CNOT(3, 2);
+    qftReg->CNOT(2, 3);
+    qftReg->H(3);
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->H(1);
+    qftReg->CCNOT(3, 1, 0);
+    qftReg->CCNOT(3, 1, 0);
+    qftReg->H(1);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+    qftReg->H(3);
+    qftReg->CNOT(2, 3);
+    qftReg->CNOT(3, 2);
+    qftReg->H(3);
+
+    REQUIRE(qftReg->MAll() == 5);
+}
+
+// If QUnit->QPager minPageQubits paging threshold is 1, this used to fail.
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_16", "[mirror]")
+{
+    qftReg->SetPermutation(2);
+
+    qftReg->H(3);
+    qftReg->CNOT(3, 0);
+    qftReg->CCNOT(1, 0, 2);
+    qftReg->H(0);
+    qftReg->X(2);
+    qftReg->T(3);
+    qftReg->CNOT(0, 1);
+    qftReg->H(0);
+    qftReg->H(3);
+    qftReg->H(2);
+    qftReg->CZ(1, 3);
+    qftReg->CNOT(0, 2);
+    qftReg->CNOT(0, 2);
+    qftReg->CZ(1, 3);
+    qftReg->H(2);
+    qftReg->H(3);
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->IT(3);
+    qftReg->X(2);
+    qftReg->H(0);
+    qftReg->CCNOT(1, 0, 2);
+    qftReg->CNOT(3, 0);
+    qftReg->H(3);
+
+    REQUIRE(qftReg->MAll() == 2);
+}
+
+// Deterministic QUnit bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_17", "[mirror]")
+{
+    qftReg->SetPermutation(7);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->T(0);
+    qftReg->Y(1);
+    qftReg->H(2);
+    qftReg->H(3);
+    qftReg->Y(4);
+    qftReg->H(5);
+    qftReg->T(6);
+    qftReg->H(7);
+    qftReg->Swap(6, 0);
+    qftReg->Swap(5, 4);
+    qftReg->CZ(7, 1);
+    qftReg->CZ(2, 3);
+    qftReg->Y(0);
+    qftReg->T(1);
+    qftReg->Y(2);
+    qftReg->X(3);
+    qftReg->X(4);
+    qftReg->T(5);
+    qftReg->T(6);
+    qftReg->X(7);
+    qftReg->CNOT(7, 6);
+    qftReg->CZ(1, 2);
+    qftReg->Swap(5, 3);
+    qftReg->CZ(4, 0);
+    qftReg->Y(0);
+    qftReg->Y(1);
+    qftReg->Y(4);
+    qftReg->H(5);
+    qftReg->Y(7);
+    qftReg->CZ(6, 0);
+    qftReg->CCNOT(4, 3, 7);
+    qftReg->CNOT(2, 5);
+    qftReg->H(0);
+    qftReg->T(1);
+    qftReg->T(2);
+    qftReg->Y(3);
+    qftReg->H(5);
+    qftReg->Y(6);
+    qftReg->X(7);
+    qftReg->CCNOT(2, 0, 3);
+    qftReg->Swap(4, 7);
+    qftReg->CZ(5, 6);
+    qftReg->T(0);
+    qftReg->X(1);
+    qftReg->X(2);
+    qftReg->T(3);
+    qftReg->H(4);
+    qftReg->H(5);
+    qftReg->X(6);
+    qftReg->Swap(6, 0);
+    qftReg->Swap(5, 1);
+    qftReg->CNOT(4, 7);
+    qftReg->CNOT(2, 3);
+    qftReg->T(0);
+    qftReg->Y(1);
+    qftReg->X(5);
+    qftReg->H(6);
+    qftReg->CNOT(5, 6);
+    qftReg->CNOT(1, 2);
+    qftReg->CZ(4, 3);
+    qftReg->Swap(0, 7);
+    qftReg->Swap(0, 7);
+    qftReg->CZ(4, 3);
+    qftReg->CNOT(1, 2);
+    qftReg->CNOT(5, 6);
+    qftReg->H(6);
+    qftReg->X(5);
+    qftReg->Y(1);
+    qftReg->IT(0);
+    qftReg->CNOT(2, 3);
+    qftReg->CNOT(4, 7);
+    qftReg->Swap(5, 1);
+    qftReg->Swap(6, 0);
+    qftReg->X(6);
+    qftReg->H(5);
+    qftReg->H(4);
+    qftReg->IT(3);
+    qftReg->X(2);
+    qftReg->X(1);
+    qftReg->IT(0);
+    qftReg->CZ(5, 6);
+    qftReg->Swap(4, 7);
+    qftReg->CCNOT(2, 0, 3);
+    qftReg->X(7);
+    qftReg->Y(6);
+    qftReg->H(5);
+    qftReg->Y(3);
+    qftReg->IT(2);
+    qftReg->IT(1);
+    qftReg->H(0);
+    qftReg->CNOT(2, 5);
+    qftReg->CCNOT(4, 3, 7);
+    qftReg->CZ(6, 0);
+    qftReg->Y(7);
+    qftReg->H(5);
+    qftReg->Y(4);
+    qftReg->Y(1);
+    qftReg->Y(0);
+    qftReg->CZ(4, 0);
+    qftReg->Swap(5, 3);
+    qftReg->CZ(1, 2);
+    qftReg->CNOT(7, 6);
+    qftReg->X(7);
+    qftReg->IT(6);
+    qftReg->IT(5);
+    qftReg->X(4);
+    qftReg->X(3);
+    qftReg->Y(2);
+    qftReg->IT(1);
+    qftReg->Y(0);
+    qftReg->CZ(2, 3);
+    qftReg->CZ(7, 1);
+    qftReg->Swap(5, 4);
+    qftReg->Swap(6, 0);
+    qftReg->H(7);
+    qftReg->IT(6);
+    qftReg->H(5);
+    qftReg->Y(4);
+    qftReg->H(3);
+    qftReg->H(2);
+    qftReg->Y(1);
+    qftReg->IT(0);
+
+    REQUIRE(qftReg->MAll() == 7);
+}
+
+// Deterministic QUnit->QPager bug, when thresholds are low enough
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_18", "[mirror]")
+{
+    qftReg->SetPermutation(18);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->T(1);
+    qftReg->X(2);
+    qftReg->T(3);
+    qftReg->H(5);
+    qftReg->CCNOT(2, 0, 1);
+    qftReg->CZ(5, 4);
+    qftReg->Y(1);
+    qftReg->H(2);
+    qftReg->X(3);
+    qftReg->T(4);
+    qftReg->X(5);
+    qftReg->Swap(5, 4);
+    qftReg->CNOT(1, 0);
+    qftReg->Swap(2, 3);
+    qftReg->X(0);
+    qftReg->H(1);
+    qftReg->H(3);
+    qftReg->X(4);
+    qftReg->H(5);
+    qftReg->CNOT(0, 5);
+    qftReg->CNOT(4, 3);
+    qftReg->CNOT(1, 2);
+    qftReg->H(1);
+    qftReg->X(4);
+    qftReg->X(5);
+    qftReg->Swap(1, 3);
+    qftReg->CNOT(2, 0);
+    qftReg->CNOT(5, 4);
+    qftReg->X(1);
+    qftReg->H(2);
+    qftReg->X(3);
+    qftReg->H(4);
+    qftReg->H(5);
+    qftReg->CCNOT(3, 4, 5);
+    qftReg->CCNOT(0, 1, 2);
+    qftReg->Y(1);
+    qftReg->X(2);
+    qftReg->T(3);
+    qftReg->Y(4);
+    qftReg->Swap(3, 5);
+    qftReg->CNOT(2, 4);
+    qftReg->Swap(0, 1);
+    qftReg->Swap(0, 1);
+    qftReg->CNOT(2, 4);
+    qftReg->Swap(3, 5);
+    qftReg->Y(4);
+    qftReg->IT(3);
+    qftReg->X(2);
+    qftReg->Y(1);
+    qftReg->CCNOT(0, 1, 2);
+    qftReg->CCNOT(3, 4, 5);
+    qftReg->H(5);
+    qftReg->H(4);
+    qftReg->X(3);
+    qftReg->H(2);
+    qftReg->X(1);
+    qftReg->CNOT(5, 4);
+    qftReg->CNOT(2, 0);
+    qftReg->Swap(1, 3);
+    qftReg->X(5);
+    qftReg->X(4);
+    qftReg->H(1);
+    qftReg->CNOT(1, 2);
+    qftReg->CNOT(4, 3);
+    qftReg->CNOT(0, 5);
+    qftReg->H(5);
+    qftReg->X(4);
+    qftReg->H(3);
+    qftReg->H(1);
+    qftReg->X(0);
+    qftReg->Swap(2, 3);
+    qftReg->CNOT(1, 0);
+    qftReg->Swap(5, 4);
+    qftReg->X(5);
+    qftReg->IT(4);
+    qftReg->X(3);
+    qftReg->H(2);
+    qftReg->Y(1);
+    qftReg->CZ(5, 4);
+    qftReg->CCNOT(2, 0, 1);
+    qftReg->H(5);
+    qftReg->IT(3);
+    qftReg->X(2);
+    qftReg->IT(1);
+
+    REQUIRE(qftReg->MAll() == 18);
+}
+
+// Probabilistic QUnit bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_19", "[mirror]")
+{
+    qftReg->SetPermutation(11);
+    qftReg->SetReactiveSeparate(true);
+
+    qftReg->H(2);
+    qftReg->T(2);
+    qftReg->H(2);
+    qftReg->H(0);
+    qftReg->CNOT(2, 0);
+    qftReg->H(3);
+    qftReg->T(0);
+    qftReg->CNOT(0, 1);
+    qftReg->T(3);
+    qftReg->T(1);
+    qftReg->T(0);
+    qftReg->CNOT(0, 3);
+    qftReg->H(3);
+    qftReg->CNOT(3, 1);
+    qftReg->CNOT(3, 1);
+    qftReg->H(3);
+    qftReg->CNOT(0, 3);
+    qftReg->IT(0);
+    qftReg->IT(1);
+    qftReg->IT(3);
+    qftReg->CNOT(0, 1);
+    qftReg->IT(0);
+    qftReg->H(3);
+    qftReg->CNOT(2, 0);
+    qftReg->H(0);
+    qftReg->H(2);
+    qftReg->IT(2);
+    qftReg->CNOT(0, 2);
+    qftReg->H(2);
+
+    REQUIRE(qftReg->MAll() == 11);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
@@ -5087,405 +5397,16 @@ struct MultiQubitGate {
     bitLenInt b3;
 };
 
-TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
-{
-    std::cout << ">>> 'test_universal_circuit_digital_cross_entropy':" << std::endl;
-
-    const int GateCount1Qb = 5;
-    const int GateCountMultiQb = 4;
-    const int Depth = 3;
-
-    const int TRIALS = 200;
-    const int ITERATIONS = 60000;
-    const int n = 8;
-    bitCapInt permCount = pow2(n);
-    bitCapInt perm;
-
-    int d;
-    bitLenInt i;
-    int maxGates;
-
-    QInterfacePtr goldStandard = CreateQuantumInterface(testSubEngineType, testSubSubEngineType, n, 0, rng, ONE_CMPLX,
-        false, true, false, device_id, !disable_hardware_rng);
-
-    QInterfacePtr testCase = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, n, 0, rng,
-        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
-
-    for (int trial = 0; trial < TRIALS; trial++) {
-        std::vector<std::vector<int>> gate1QbRands(Depth);
-        std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
-
-        for (d = 0; d < Depth; d++) {
-            std::vector<int>& layer1QbRands = gate1QbRands[d];
-            for (i = 0; i < n; i++) {
-                layer1QbRands.push_back((int)(goldStandard->Rand() * GateCount1Qb));
-            }
-
-            std::set<bitLenInt> unusedBits;
-            for (i = 0; i < n; i++) {
-                // In the past, "goldStandard->TrySeparate(i)" was also used, here, to attempt optimization. Be aware
-                // that the method can give performance advantages, under opportune conditions, but it does not, here.
-                unusedBits.insert(unusedBits.end(), i);
-            }
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            while (unusedBits.size() > 1) {
-                MultiQubitGate multiGate;
-                multiGate.b1 = pickRandomBit(goldStandard, &unusedBits);
-                multiGate.b2 = pickRandomBit(goldStandard, &unusedBits);
-
-                if (unusedBits.size() > 0) {
-                    maxGates = GateCountMultiQb;
-                } else {
-                    maxGates = GateCountMultiQb - 1U;
-                }
-
-                multiGate.gate = maxGates * goldStandard->Rand();
-
-                if (multiGate.gate > 2) {
-                    multiGate.b3 = pickRandomBit(goldStandard, &unusedBits);
-                }
-
-                layerMultiQbRands.push_back(multiGate);
-            }
-        }
-
-        goldStandard->SetPermutation(0);
-        for (d = 0; d < Depth; d++) {
-            std::vector<int>& layer1QbRands = gate1QbRands[d];
-            for (i = 0; i < layer1QbRands.size(); i++) {
-                int gate1Qb = layer1QbRands[i];
-                if (gate1Qb == 0) {
-                    goldStandard->H(i);
-                } else if (gate1Qb == 1) {
-                    goldStandard->X(i);
-                } else if (gate1Qb == 2) {
-                    goldStandard->Y(i);
-                } else if (gate1Qb == 3) {
-                    goldStandard->T(i);
-                } else {
-                    // Identity test
-                }
-            }
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = 0; i < layerMultiQbRands.size(); i++) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                if (multiGate.gate == 0) {
-                    goldStandard->Swap(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 1) {
-                    goldStandard->CZ(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 2) {
-                    goldStandard->CNOT(multiGate.b1, multiGate.b2);
-                } else {
-                    goldStandard->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                }
-            }
-        }
-
-        bitCapInt qPowers[n];
-        for (i = 0; i < n; i++) {
-            qPowers[i] = pow2(i);
-        }
-
-        std::map<bitCapInt, int> goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, n, ITERATIONS);
-
-        testCase->SetPermutation(0);
-        for (d = 0; d < Depth; d++) {
-            std::vector<int>& layer1QbRands = gate1QbRands[d];
-            for (i = 0; i < layer1QbRands.size(); i++) {
-                int gate1Qb = layer1QbRands[i];
-                if (gate1Qb == 0) {
-                    testCase->H(i);
-                } else if (gate1Qb == 1) {
-                    testCase->X(i);
-                } else if (gate1Qb == 2) {
-                    testCase->Y(i);
-                } else if (gate1Qb == 3) {
-                    testCase->T(i);
-                } else {
-                    // Identity test
-                }
-            }
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = 0; i < layerMultiQbRands.size(); i++) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                if (multiGate.gate == 0) {
-                    testCase->Swap(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 1) {
-                    testCase->CZ(multiGate.b1, multiGate.b2);
-                } else if (multiGate.gate == 2) {
-                    testCase->CNOT(multiGate.b1, multiGate.b2);
-                } else {
-                    testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                }
-            }
-        }
-        std::map<bitCapInt, int> testCaseResult = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
-
-        int testBinResult, goldBinResult;
-        std::map<bitCapInt, int>::iterator measurementBin;
-        real1_f crossEntropy = ZERO_R1;
-        for (perm = 0; perm < permCount; perm++) {
-            measurementBin = goldStandardResult.find(perm);
-            if (measurementBin == goldStandardResult.end()) {
-                goldBinResult = 0;
-            } else {
-                goldBinResult = measurementBin->second;
-            }
-
-            measurementBin = testCaseResult.find(perm);
-            if (measurementBin == testCaseResult.end()) {
-                testBinResult = 0;
-            } else {
-                testBinResult = measurementBin->second;
-            }
-            crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
-        }
-        if (crossEntropy < ZERO_R1) {
-            crossEntropy = ZERO_R1;
-        }
-        crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
-
-        if (crossEntropy <= 0.97) {
-            for (d = 0; d < Depth; d++) {
-                std::vector<int>& layer1QbRands = gate1QbRands[d];
-                for (i = 0; i < layer1QbRands.size(); i++) {
-                    int gate1Qb = layer1QbRands[i];
-                    if (gate1Qb == 0) {
-                        std::cout << "qftReg->H(" << (int)i << ");" << std::endl;
-                        // testCase->H(i);
-                    } else if (gate1Qb == 1) {
-                        std::cout << "qftReg->X(" << (int)i << ");" << std::endl;
-                        // testCase->X(i);
-                    } else if (gate1Qb == 2) {
-                        std::cout << "qftReg->Y(" << (int)i << ");" << std::endl;
-                        // testCase->Y(i);
-                    } else if (gate1Qb == 3) {
-                        std::cout << "qftReg->T(" << (int)i << ");" << std::endl;
-                        // testCase->T(i);
-                    } else {
-                        // Identity test
-                    }
-                }
-
-                std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-                for (i = 0; i < layerMultiQbRands.size(); i++) {
-                    MultiQubitGate multiGate = layerMultiQbRands[i];
-                    if (multiGate.gate == 0) {
-                        std::cout << "qftReg->Swap(" << (int)multiGate.b1 << "," << (int)multiGate.b2 << ");"
-                                  << std::endl;
-                        // testCase->Swap(multiGate.b1, multiGate.b2);
-                    } else if (multiGate.gate == 1) {
-                        std::cout << "qftReg->CZ(" << (int)multiGate.b1 << "," << (int)multiGate.b2 << ");"
-                                  << std::endl;
-                        // testCase->CZ(multiGate.b1, multiGate.b2);
-                    } else if (multiGate.gate == 2) {
-                        std::cout << "qftReg->CNOT(" << (int)multiGate.b1 << "," << (int)multiGate.b2 << ");"
-                                  << std::endl;
-                        // testCase->CNOT(multiGate.b1, multiGate.b2);
-                    } else {
-                        std::cout << "qftReg->CCNOT(" << (int)multiGate.b1 << "," << (int)multiGate.b2 << ","
-                                  << (int)multiGate.b3 << ");" << std::endl;
-                        // testCase->CCNOT(multiGate.b1, multiGate.b2, multiGate.b3);
-                    }
-                }
-            }
-        }
-
-        REQUIRE(crossEntropy > 0.97);
-    }
-}
-
-TEST_CASE("test_quantum_supremacy_cross_entropy", "[supreme]")
-{
-    std::cout << ">>> 'test_quantum_supremacy_cross_entropy':" << std::endl;
-
-    // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
-    complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f), ZERO_R1));
-
-    const int GateCount1Qb = 3;
-    const int Depth = 3;
-
-    const int TRIALS = 200;
-    const int ITERATIONS = 60000;
-    const int n = 9;
-    bitCapInt permCount = pow2(n);
-    bitCapInt perm;
-
-    int d;
-    bitLenInt i;
-
-    int row, col;
-    int tempRow, tempCol;
-    bitLenInt b1, b2;
-    bitLenInt gate;
-
-    bitLenInt controls[1];
-
-    // We factor the qubit count into two integers, as close to a perfect square as we can.
-    int colLen = std::sqrt(n);
-    while (((n / colLen) * colLen) != n) {
-        colLen--;
-    }
-    int rowLen = n / colLen;
-
-    QInterfacePtr goldStandard = CreateQuantumInterface(testSubEngineType, testSubSubEngineType, n, 0, rng, ONE_CMPLX,
-        false, true, false, device_id, !disable_hardware_rng);
-
-    QInterfacePtr testCase = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, n, 0, rng,
-        ONE_CMPLX, enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
-
-    for (int trial = 0; trial < TRIALS; trial++) {
-        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
-
-        std::vector<std::vector<int>> gate1QbRands(Depth);
-        std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
-
-        for (d = 0; d < Depth; d++) {
-            std::vector<int>& layer1QbRands = gate1QbRands[d];
-            if (d == 0) {
-                for (i = 0; i < n; i++) {
-                    layer1QbRands.push_back((int)(goldStandard->Rand() * GateCount1Qb));
-                }
-            } else {
-                std::vector<int>& prevLayer1QbRands = gate1QbRands[d - 1U];
-                for (i = 0; i < n; i++) {
-                    int tempGate = (int)(goldStandard->Rand() * (GateCount1Qb - 1U));
-                    if (tempGate >= prevLayer1QbRands[i]) {
-                        tempGate++;
-                    }
-                    layer1QbRands.push_back(tempGate);
-                }
-            }
-
-            gate = gateSequence.front();
-            gateSequence.pop_front();
-            gateSequence.push_back(gate);
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (row = 1; row < rowLen; row += 2) {
-                for (col = 0; col < colLen; col++) {
-                    // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
-                    // In this test, the boundaries of the rectangle have no couplers.
-                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
-                    // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
-                    // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
-                    // awkwardly.)
-
-                    tempRow = row;
-                    tempCol = col;
-
-                    tempRow += ((gate & 2U) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
-
-                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen)) {
-                        continue;
-                    }
-
-                    b1 = row * colLen + col;
-                    b2 = tempRow * colLen + tempCol;
-
-                    MultiQubitGate multiGate;
-                    multiGate.b1 = b1;
-                    multiGate.b2 = b2;
-                    layerMultiQbRands.push_back(multiGate);
-                }
-            }
-        }
-
-        goldStandard->SetPermutation(0);
-        for (d = 0; d < Depth; d++) {
-            std::vector<int>& layer1QbRands = gate1QbRands[d];
-            for (i = 0; i < layer1QbRands.size(); i++) {
-                int gate1Qb = layer1QbRands[i];
-                if (gate1Qb == 0) {
-                    goldStandard->SqrtX(i);
-                } else if (gate1Qb == 1) {
-                    goldStandard->SqrtY(i);
-                } else {
-                    goldStandard->SqrtXConjT(i);
-                }
-            }
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = 0; i < layerMultiQbRands.size(); i++) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                goldStandard->ISwap(multiGate.b1, multiGate.b2);
-                controls[0] = multiGate.b1;
-                goldStandard->ApplyControlledSinglePhase(controls, 1U, multiGate.b2, ONE_CMPLX, sixthRoot);
-            }
-        }
-
-        bitCapInt qPowers[n];
-        for (i = 0; i < n; i++) {
-            qPowers[i] = pow2(i);
-        }
-
-        std::map<bitCapInt, int> goldStandardResult = goldStandard->MultiShotMeasureMask(qPowers, n, ITERATIONS);
-
-        testCase->SetPermutation(0);
-        for (d = 0; d < Depth; d++) {
-            std::vector<int>& layer1QbRands = gate1QbRands[d];
-            for (i = 0; i < layer1QbRands.size(); i++) {
-                int gate1Qb = layer1QbRands[i];
-                if (gate1Qb == 0) {
-                    testCase->SqrtX(i);
-                } else if (gate1Qb == 1) {
-                    testCase->SqrtY(i);
-                } else {
-                    testCase->SqrtXConjT(i);
-                }
-            }
-
-            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
-            for (i = 0; i < layerMultiQbRands.size(); i++) {
-                MultiQubitGate multiGate = layerMultiQbRands[i];
-                testCase->ISwap(multiGate.b1, multiGate.b2);
-                controls[0] = multiGate.b1;
-                testCase->ApplyControlledSinglePhase(controls, 1U, multiGate.b2, ONE_CMPLX, sixthRoot);
-            }
-        }
-        std::map<bitCapInt, int> testCaseResult = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
-
-        int testBinResult, goldBinResult;
-        std::map<bitCapInt, int>::iterator measurementBin;
-        real1_f crossEntropy = ZERO_R1;
-        for (perm = 0; perm < permCount; perm++) {
-            measurementBin = goldStandardResult.find(perm);
-            if (measurementBin == goldStandardResult.end()) {
-                goldBinResult = 0;
-            } else {
-                goldBinResult = measurementBin->second;
-            }
-
-            measurementBin = testCaseResult.find(perm);
-            if (measurementBin == testCaseResult.end()) {
-                testBinResult = 0;
-            } else {
-                testBinResult = measurementBin->second;
-            }
-            crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
-        }
-        if (crossEntropy < ZERO_R1) {
-            crossEntropy = ZERO_R1;
-        }
-        crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
-        REQUIRE(crossEntropy > 0.97);
-    }
-}
-
 TEST_CASE("test_mirror_circuit", "[mirror]")
 {
     std::cout << ">>> 'test_mirror_circuit':" << std::endl;
 
     const int GateCount1Qb = 5;
     const int GateCountMultiQb = 4;
-    const int Depth = 3;
+    const int Depth = 6;
 
     const int TRIALS = 100;
-    const int n = 8;
+    const int n = 6;
 
     int d;
     int i;
@@ -5495,7 +5416,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, n, 0);
-        // testCase->SetReactiveSeparate(true);
+        testCase->SetReactiveSeparate(true);
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
@@ -5520,6 +5441,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
                 MultiQubitGate multiGate;
                 multiGate.b1 = pickRandomBit(testCase, &unusedBits);
                 multiGate.b2 = pickRandomBit(testCase, &unusedBits);
+                multiGate.b3 = 0;
 
                 if (unusedBits.size() > 0) {
                     maxGates = GateCountMultiQb;

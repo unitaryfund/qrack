@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <unordered_set>
+
 #include "qinterface.hpp"
 
-#define IS_SAME(c1, c2) (norm((c1) - (c2)) <= FP_NORM_EPSILON)
-#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= FP_NORM_EPSILON)
 #define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)
 #define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX)
 
@@ -483,7 +483,7 @@ public:
         } else {
             std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
             std::swap(antiPhaseShard->second->cmplxDiff, antiPhaseShard->second->cmplxSame);
-            std::swap(targetOfShards[control], antiTargetOfShards[control]);
+            targetOfShards[control].swap(antiTargetOfShards[control]);
         }
     }
 
@@ -591,12 +591,12 @@ public:
         // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
-            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
+            if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
                 if (buffer->isInvert) {
                     buffer->isInvert = false;
                     buffer->cmplxSame *= -ONE_CMPLX;
                 }
-            } else if (IS_OPPOSITE(buffer->cmplxDiff, buffer->cmplxSame)) {
+            } else {
                 if (buffer->isInvert) {
                     std::swap(buffer->cmplxDiff, buffer->cmplxSame);
                 } else {
@@ -610,12 +610,12 @@ public:
 
         for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
-            if (IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
+            if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
                 if (buffer->isInvert) {
                     buffer->isInvert = false;
                     buffer->cmplxDiff *= -ONE_CMPLX;
                 }
-            } else if (IS_OPPOSITE(buffer->cmplxDiff, buffer->cmplxSame)) {
+            } else {
                 if (buffer->isInvert) {
                     std::swap(buffer->cmplxDiff, buffer->cmplxSame);
                 } else {
@@ -634,13 +634,6 @@ public:
         RemovePhaseBuffers(antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
         RemovePhaseBuffers(controlsShards, &QEngineShard::GetTargetOfShards);
         RemovePhaseBuffers(antiControlsShards, &QEngineShard::GetAntiTargetOfShards);
-    }
-
-    bool IsInvertControlOf(QEngineShardPtr target) { return (controlsShards.find(target) != controlsShards.end()); }
-
-    bool IsInvertAntiControlOf(QEngineShardPtr target)
-    {
-        return (antiControlsShards.find(target) != antiControlsShards.end());
     }
 
     bool IsInvertControl()
@@ -680,8 +673,6 @@ public:
 
         return false;
     }
-
-    bool IsInvert() { return IsInvertTarget() || IsInvertControl(); }
 
 protected:
     void ClearMapInvertPhase(ShardToPhaseMap& shards)
