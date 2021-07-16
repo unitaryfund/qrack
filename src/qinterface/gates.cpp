@@ -413,7 +413,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
     // Exponentiation of an arbitrary serial string of gates, each HamiltonianOp component times timeDiff, e^(-i * H *
     // t) as e^(-i * H_(N - 1) * t) * e^(-i * H_(N - 2) * t) * ... e^(-i * H_0 * t)
 
-    for (bitLenInt i = 0; i < h.size(); i++) {
+    for (unsigned int i = 0; i < h.size(); i++) {
         HamiltonianOpPtr op = h[i];
         complex* opMtrx = op->matrix.get();
 

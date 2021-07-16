@@ -27,7 +27,7 @@ std::mutex metaOperationMutex;
 
 using namespace Qrack;
 
-qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>(time(0));
+qrack_rand_gen_ptr randNumGen = std::make_shared<qrack_rand_gen>(time(0));
 std::vector<QInterfacePtr> simulators;
 std::vector<bool> simulatorReservations;
 std::map<QInterfacePtr, std::map<unsigned, bitLenInt>> shards;
@@ -197,7 +197,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
         }
     }
 
-    QInterfacePtr simulator = q ? CreateQuantumInterface(QINTERFACE_OPTIMAL_MULTI, q, 0, rng) : NULL;
+    QInterfacePtr simulator = q ? CreateQuantumInterface(QINTERFACE_OPTIMAL_MULTI, q, 0, randNumGen) : NULL;
 
     if (q > MaxShardQubits()) {
         simulator->SetReactiveSeparate(true);
@@ -338,7 +338,7 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
 MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::size_t n, _In_reads_(n) double* p)
 {
     std::discrete_distribution<std::size_t> dist(p, p + n);
-    return dist(*rng.get());
+    return dist(*randNumGen.get());
 }
 
 double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int* b, unsigned* q, bool doMeasure)
@@ -359,7 +359,7 @@ double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int*
     }
 
     bitCapInt mask = 0;
-    for (bitLenInt i = 0; i < n; i++) {
+    for (bitLenInt i = 0; i < (bitLenInt)n; i++) {
         bitCapInt bit = pow2(shards[simulator][qVec[i]]);
         mask |= bit;
     }
@@ -404,7 +404,7 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
-    QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_OPTIMAL_MULTI, 1, 0, rng);
+    QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_OPTIMAL_MULTI, 1, 0, randNumGen);
     if (simulators[sid] == NULL) {
         simulators[sid] = nQubit;
         shards[simulators[sid]] = {};

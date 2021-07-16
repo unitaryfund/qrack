@@ -164,7 +164,7 @@ uint8_t QStabilizer::clifford(const bitLenInt& i, const bitLenInt& k)
 
     e = (e + r[i] + r[k]) & 0x3;
 
-    return (uint8_t)((e < 0) ? (e + 4U) : e);
+    return e;
 }
 
 /// Left-multiply row i by row k

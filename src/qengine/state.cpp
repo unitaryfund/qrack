@@ -648,7 +648,7 @@ void QEngineCPU::CUniformParityRZ(
     Dispatch([this, controls, mask, angle] {
         bitCapInt controlMask = 0;
         std::unique_ptr<bitCapInt[]> controlPowers(new bitCapInt[controls.size()]);
-        for (bitLenInt i = 0; i < controls.size(); i++) {
+        for (bitLenInt i = 0; i < (bitLenInt)controls.size(); i++) {
             controlPowers.get()[i] = pow2(controls[i]);
             controlMask |= controlPowers.get()[i];
         }

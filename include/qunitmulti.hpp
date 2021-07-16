@@ -97,7 +97,10 @@ public:
     {
     }
 
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = REAL1_EPSILON) { return false; }
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = FP_NORM_EPSILON)
+    {
+        return false;
+    }
 
     virtual QInterfacePtr Clone();
     virtual void GetQuantumState(complex* outputState);

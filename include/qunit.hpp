@@ -699,7 +699,7 @@ protected:
 
     void DirtyShardIndexVector(std::vector<bitLenInt> bitIndices)
     {
-        for (bitLenInt i = 0; i < bitIndices.size(); i++) {
+        for (bitLenInt i = 0; i < (bitLenInt)bitIndices.size(); i++) {
             shards[bitIndices[i]].MakeDirty();
         }
     }

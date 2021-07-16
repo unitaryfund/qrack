@@ -95,7 +95,7 @@ struct UniformHamiltonianOp : HamiltonianOp {
         uniform = true;
     }
 
-    UniformHamiltonianOp(_QrackTimeEvolveOpHeader teoh, double* mtrx)
+    UniformHamiltonianOp(const _QrackTimeEvolveOpHeader& teoh, double* mtrx)
         : HamiltonianOp()
     {
         targetBit = (bitLenInt)(teoh.target);

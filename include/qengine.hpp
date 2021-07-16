@@ -53,8 +53,6 @@ public:
         // Intentionally left blank
     }
 
-    virtual ~QEngine() { Finish(); }
-
     virtual real1_f GetRunningNorm()
     {
         Finish();
