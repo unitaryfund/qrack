@@ -245,7 +245,8 @@ public:
         , randGlobalPhase(randomGlobalPhase)
         , amplitudeFloor(norm_thresh)
     {
-        SetQubitCount(n);
+        qubitCount = n;
+        maxQPower = pow2(qubitCount);
 
 #if !ENABLE_RDRAND
         useHardwareRNG = false;
@@ -2215,14 +2216,14 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = 8 * FP_NORM_EPSILON)
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         return SumSqrDiff(toCompare) <= error_tol;
     }
 
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare) = 0;
 
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = 8 * FP_NORM_EPSILON);
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON);
 
     /**
      * Force a calculation of the norm of the state vector, in order to make it unit length before the next probability

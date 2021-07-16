@@ -766,7 +766,7 @@ public:
             offset = swapMap[index];
             shards.erase(shards.begin() + offset);
 
-            for (lcv = 0; lcv < swapMap.size(); lcv++) {
+            for (lcv = 0; lcv < (bitLenInt)swapMap.size(); lcv++) {
                 if (swapMap[lcv] >= offset) {
                     swapMap[lcv]--;
                 }

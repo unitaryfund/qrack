@@ -64,6 +64,27 @@ public:
         std::copy(toCopy.angles, toCopy.angles + toCopy.inputPower, angles);
     }
 
+    QNeuron& operator=(const QNeuron& toCopy)
+    {
+        qReg = toCopy.qReg;
+        if (toCopy.inputCount > 0) {
+            if (inputIndices) {
+                delete[] inputIndices;
+            }
+            inputIndices = new bitLenInt[inputCount];
+            std::copy(toCopy.inputIndices, toCopy.inputIndices + inputCount, inputIndices);
+        }
+        if (angles) {
+            delete[] angles;
+        }
+        angles = new real1[inputPower]();
+        std::copy(toCopy.angles, toCopy.angles + toCopy.inputPower, angles);
+        outputIndex = toCopy.outputIndex;
+        tolerance = toCopy.tolerance;
+
+        return *this;
+    }
+
     ~QNeuron()
     {
         if (inputCount > 0) {

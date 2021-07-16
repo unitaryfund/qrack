@@ -144,7 +144,7 @@ public:
     {
         Decompose(start, std::dynamic_pointer_cast<QHybrid>(dest));
     }
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = REAL1_EPSILON)
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         return TryDecompose(start, std::dynamic_pointer_cast<QHybrid>(dest), error_tol);
     }
@@ -171,7 +171,7 @@ public:
         return engine->Dispose(start, length, disposedPerm);
     }
 
-    virtual bool TryDecompose(bitLenInt start, QHybridPtr dest, real1_f error_tol = REAL1_EPSILON)
+    virtual bool TryDecompose(bitLenInt start, QHybridPtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
         SwitchModes(nQubitCount >= thresholdQubits);

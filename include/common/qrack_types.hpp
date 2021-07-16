@@ -141,6 +141,7 @@ typedef double real1_f;
 #define ZERO_CMPLX complex(ZERO_R1, ZERO_R1)
 #define I_CMPLX complex(ZERO_R1, ONE_R1)
 #define CMPLX_DEFAULT_ARG complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG)
+#define TRYDECOMPOSE_EPSILON (8 * FP_NORM_EPSILON)
 
 namespace Qrack {
 typedef std::shared_ptr<complex> BitOp;

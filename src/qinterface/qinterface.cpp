@@ -518,7 +518,7 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
     bitLenInt c, t;
     for (i = 0; i < length; i++) {
         H(end - i);
-        for (j = 0; j < ((length - 1U) - i); j++) {
+        for (j = 0; j < (bitLenInt)((length - 1U) - i); j++) {
             c = (end - i) - (j + 1U);
             t = end - i;
             CPhaseRootN(j + 2U, c, t);
@@ -562,7 +562,7 @@ void QInterface::QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate)
     bitLenInt i, j;
     for (i = 0; i < length; i++) {
         H(qubits[end - i]);
-        for (j = 0; j < ((length - 1U) - i); j++) {
+        for (j = 0; j < (bitLenInt)((length - 1U) - i); j++) {
             CPhaseRootN(j + 2U, qubits[(end - i) - (j + 1U)], qubits[end - i]);
         }
 
@@ -722,7 +722,7 @@ void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     for (lcv = 0; lcv < lengthPower; lcv++) {
         iHigh = lcv;
         i = 0;
-        for (p = 0; p < (skipPowersVec.size()); p++) {
+        for (p = 0; p < (bitLenInt)skipPowersVec.size(); p++) {
             iLow = iHigh & (skipPowersVec[p] - ONE_BCI);
             i |= iLow;
             iHigh = (iHigh ^ iLow) << ONE_BCI;

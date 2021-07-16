@@ -789,12 +789,12 @@ public:
 
         return engine->SumSqrDiff(toCompare->engine);
     }
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = REAL1_EPSILON)
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         return ApproxCompare(std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare), error_tol);
     }
 
-    virtual bool ApproxCompare(QStabilizerHybridPtr toCompare, real1_f error_tol = REAL1_EPSILON)
+    virtual bool ApproxCompare(QStabilizerHybridPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         FlushBuffers();
         toCompare->FlushBuffers();
