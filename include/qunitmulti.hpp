@@ -97,7 +97,7 @@ public:
     {
     }
 
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = FP_NORM_EPSILON)
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         return false;
     }
