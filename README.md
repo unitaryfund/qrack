@@ -2,7 +2,7 @@
 
 
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3842287.svg)](https://doi.org/10.5281/zenodo.3842287) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)[![Total alerts](https://img.shields.io/lgtm/alerts/g/vm6502q/qrack.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/vm6502q/qrack/alerts/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3842287.svg)](https://doi.org/10.5281/zenodo.3842287) [![Mentioned in Awesome awesome-quantum-computing](https://awesome.re/mentioned-badge.svg)](https://github.com/desireevl/awesome-quantum-computing)[! [Total alerts](https://img.shields.io/lgtm/alerts/g/vm6502q/qrack.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/vm6502q/qrack/alerts/) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/vm6502q/qrack.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/vm6502q/qrack/context:cpp)
 
 [![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
 
