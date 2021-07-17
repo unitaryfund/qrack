@@ -40,7 +40,7 @@ QUnitMulti::QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt 
     if (devList.size() == 0) {
         defaultDeviceID = (deviceID == -1) ? OCLEngine::Instance()->GetDefaultDeviceID() : deviceID;
 
-        for (unsigned int i = 0; i < deviceContext.size(); i++) {
+        for (size_t i = 0; i < deviceContext.size(); i++) {
             DeviceInfo deviceInfo;
             deviceInfo.id = i;
             deviceList.push_back(deviceInfo);
@@ -50,14 +50,14 @@ QUnitMulti::QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt 
     } else {
         defaultDeviceID = devList[0];
 
-        for (unsigned int i = 0; i < devList.size(); i++) {
+        for (size_t i = 0; i < devList.size(); i++) {
             DeviceInfo deviceInfo;
             deviceInfo.id = devList[i];
             deviceList.push_back(deviceInfo);
         }
     }
 
-    for (unsigned int i = 0; i < deviceList.size(); i++) {
+    for (size_t i = 0; i < deviceList.size(); i++) {
         deviceList[i].maxSize = deviceContext[deviceList[i].id]->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
     }
 
@@ -111,7 +111,7 @@ void QUnitMulti::RedistributeQEngines()
     std::fill(devSizes.begin(), devSizes.end(), 0U);
     bitCapInt sz;
     bitLenInt devID, devIndex;
-    unsigned int i, j;
+    size_t i, j;
 
     for (i = 0; i < qinfos.size(); i++) {
         // If the engine adds negligible load, we can let any given unit keep its
