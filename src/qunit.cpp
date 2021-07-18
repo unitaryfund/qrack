@@ -315,7 +315,7 @@ void QUnit::GetProbs(real1* outputProbs)
         thisCopy = this;
     } else {
         thisCopyShared = std::dynamic_pointer_cast<QUnit>(Clone());
-        thisCopyShared->EntangleAll();
+        thisCopyShared->EntangleAll(true);
         thisCopy = thisCopyShared.get();
     }
 
@@ -604,9 +604,13 @@ QInterfacePtr QUnit::Entangle(std::vector<bitLenInt*> bits)
     return EntangleInCurrentBasis(bits.begin(), bits.end());
 }
 
-QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length)
+QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length, bool isForProb)
 {
-    ToPermBasis(start, length);
+    if (isForProb) {
+        ToPermBasisProb(start, length);
+    } else {
+        ToPermBasis(start, length);
+    }
 
     if (length == 1) {
         EndEmulation(start);

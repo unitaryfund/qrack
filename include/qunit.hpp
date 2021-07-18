@@ -350,13 +350,13 @@ protected:
 
     virtual QInterfacePtr Entangle(std::vector<bitLenInt> bits);
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);
-    virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length);
+    virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bool isForProb = false);
     virtual QInterfacePtr EntangleRange(bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2);
     virtual QInterfacePtr EntangleRange(
         bitLenInt start, bitLenInt length, bitLenInt start2, bitLenInt length2, bitLenInt start3, bitLenInt length3);
-    virtual QInterfacePtr EntangleAll()
+    virtual QInterfacePtr EntangleAll(bool isForProb = false)
     {
-        QInterfacePtr toRet = EntangleRange(0, qubitCount);
+        QInterfacePtr toRet = EntangleRange(0, qubitCount, isForProb);
         OrderContiguous(toRet);
         return toRet;
     }
