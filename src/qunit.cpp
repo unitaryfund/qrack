@@ -310,7 +310,7 @@ void QUnit::GetProbs(real1* outputProbs)
     QUnit* thisCopy;
 
     if (shards[0].GetQubitCount() == qubitCount) {
-        ToPermBasisAll();
+        ToPermBasisProb(0, qubitCount);
         OrderContiguous(shards[0].unit);
         thisCopy = this;
     } else {
