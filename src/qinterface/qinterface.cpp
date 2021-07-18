@@ -628,8 +628,16 @@ bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, con
 {
     bitCapInt result = 0;
     if (values == NULL) {
-        for (bitLenInt bit = 0; bit < length; bit++) {
-            result |= M(bits[bit]) ? pow2(bits[bit]) : 0;
+        if (doApply) {
+            for (bitLenInt bit = 0; bit < length; bit++) {
+                result |= M(bits[bit]) ? pow2(bits[bit]) : 0;
+            }
+        } else {
+            std::vector<bitCapInt> qPowers(length);
+            for (bitLenInt bit = 0; bit < length; bit++) {
+                qPowers[bit] = pow2(bits[bit]);
+            }
+            result = MultiShotMeasureMask(&(qPowers[0]), qPowers.size(), 1).begin()->first;
         }
     } else {
         for (bitLenInt bit = 0; bit < length; bit++) {
