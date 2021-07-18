@@ -78,7 +78,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     std::vector<real1_f> trialClocks;
     bool isTrialSuccessful = true;
 
-    bitLenInt i, j, numBits;
+    bitLenInt j, numBits;
+    int sample;
 
     double avgt, stdet;
 
@@ -129,7 +130,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
         trialClocks.clear();
 
-        for (i = 0; i < benchmarkSamples; i++) {
+        for (sample = 0; sample < benchmarkSamples; sample++) {
             if (qftReg != NULL) {
                 qftReg.reset();
             }
@@ -187,7 +188,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 } else {
                     trialClocks.push_back(tClock.count() * clockFactor);
                 }
-                avgt += trialClocks[i];
+                avgt += trialClocks[sample];
             }
 
             if (async_time && qftReg) {
@@ -213,8 +214,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         avgt /= trialClocks.size();
 
         stdet = 0.0;
-        for (i = 0; i < trialClocks.size(); i++) {
-            stdet += (trialClocks[i] - avgt) * (trialClocks[i] - avgt);
+        for (sample = 0; sample < (int)trialClocks.size(); sample++) {
+            stdet += (trialClocks[sample] - avgt) * (trialClocks[sample] - avgt);
         }
         stdet = sqrt(stdet / trialClocks.size());
 
