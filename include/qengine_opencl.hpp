@@ -126,6 +126,8 @@ struct PoolItem {
         realBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
         ulongBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * BCI_ARG_LEN);
     }
+
+    virtual ~PoolItem() {}
 };
 
 typedef std::shared_ptr<PoolItem> PoolItemPtr;
