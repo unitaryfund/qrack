@@ -2592,10 +2592,9 @@ void QUnit::CH(bitLenInt control, bitLenInt target)
     RevertBasisY(target);
     RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
     CommuteH(target);
-    Entangle({ control, target });
 
-    QEngineShard& shard = shards[target];
-    shard.unit->CH(shards[control].mapped, shards[target].mapped);
+    QInterfacePtr unit = Entangle({ control, target });
+    unit->CH(shards[control].mapped, shards[target].mapped);
 }
 
 void QUnit::AntiCH(bitLenInt control, bitLenInt target)
@@ -2611,10 +2610,9 @@ void QUnit::AntiCH(bitLenInt control, bitLenInt target)
     RevertBasisY(target);
     RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
     CommuteH(target);
-    Entangle({ control, target });
 
-    QEngineShard& shard = shards[target];
-    shard.unit->AntiCH(shards[control].mapped, shards[target].mapped);
+    QInterfacePtr unit = Entangle({ control, target });
+    unit->AntiCH(shards[control].mapped, shards[target].mapped);
 }
 
 void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
