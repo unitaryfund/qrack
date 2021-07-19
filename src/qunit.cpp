@@ -2596,8 +2596,15 @@ void QUnit::CH(bitLenInt control, bitLenInt target)
     // Should only commute gate with same control and target, if anything:
     CommuteH(target);
 
+    bool doTrySeparate = isReactiveSeparate && !freezeTrySeparate && !freezeBasis2Qb && shards[control].unit &&
+        (shards[control].unit == shards[target].unit);
     QInterfacePtr unit = Entangle({ control, target });
     unit->CH(shards[control].mapped, shards[target].mapped);
+
+    if (doTrySeparate) {
+        TrySeparate(control);
+        TrySeparate(target);
+    }
 }
 
 void QUnit::AntiCH(bitLenInt control, bitLenInt target)
@@ -2617,8 +2624,15 @@ void QUnit::AntiCH(bitLenInt control, bitLenInt target)
     // Should only commute gate with same control and target, if anything:
     CommuteH(target);
 
+    bool doTrySeparate = isReactiveSeparate && !freezeTrySeparate && !freezeBasis2Qb && shards[control].unit &&
+        (shards[control].unit == shards[target].unit);
     QInterfacePtr unit = Entangle({ control, target });
     unit->AntiCH(shards[control].mapped, shards[target].mapped);
+
+    if (doTrySeparate) {
+        TrySeparate(control);
+        TrySeparate(target);
+    }
 }
 
 void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
