@@ -2581,13 +2581,40 @@ void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
 
 void QUnit::CH(bitLenInt control, bitLenInt target)
 {
-    const complex mtrx[4] = { complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(ONE_R1 / sqrt((real1)2), ZERO_R1),
-        complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(-ONE_R1 / sqrt((real1)2), ZERO_R1) };
+    QEngineShard& cShard = shards[control];
+    if (CACHED_Z(cShard)) {
+        if (SHARD_STATE(cShard)) {
+            H(target);
+        }
+        return;
+    }
 
-    bitLenInt controls[1] = { control };
-    bitLenInt controlLen = 1;
+    RevertBasisY(target);
+    RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+    CommuteH(target);
+    Entangle({ control, target });
 
-    CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), H(target), false);
+    QEngineShard& shard = shards[target];
+    shard.unit->CH(shards[control].mapped, shards[target].mapped);
+}
+
+void QUnit::AntiCH(bitLenInt control, bitLenInt target)
+{
+    QEngineShard& cShard = shards[control];
+    if (CACHED_Z(cShard)) {
+        if (!SHARD_STATE(cShard)) {
+            H(target);
+        }
+        return;
+    }
+
+    RevertBasisY(target);
+    RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+    CommuteH(target);
+    Entangle({ control, target });
+
+    QEngineShard& shard = shards[target];
+    shard.unit->AntiCH(shards[control].mapped, shards[target].mapped);
 }
 
 void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -3186,6 +3213,11 @@ void QUnit::ApplyControlledSingleBit(
         return;
     }
 
+    if ((controlLen == 1U) && (randGlobalPhase || IS_SAME(mtrx[0], (complex)SQRT1_2_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
+        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        CH(controls[0], target);
+    }
+
     CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, target), false);
 }
 
@@ -3204,6 +3236,11 @@ void QUnit::ApplyAntiControlledSingleBit(
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
         return;
+    }
+
+    if ((controlLen == 1U) && (randGlobalPhase || IS_SAME(mtrx[0], (complex)SQRT1_2_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
+        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        AntiCH(controls[0], target);
     }
 
     CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, target), true);
