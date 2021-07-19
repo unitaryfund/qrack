@@ -3211,11 +3211,6 @@ void QUnit::ApplyControlledSingleBit(
         return;
     }
 
-    if ((controlLen == 1U) && (randGlobalPhase || IS_SAME(mtrx[0], (complex)SQRT1_2_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
-        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
-        CH(controls[0], target);
-    }
-
     CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, target), false);
 }
 
@@ -3234,11 +3229,6 @@ void QUnit::ApplyAntiControlledSingleBit(
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
         return;
-    }
-
-    if ((controlLen == 1U) && (randGlobalPhase || IS_SAME(mtrx[0], (complex)SQRT1_2_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
-        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
-        AntiCH(controls[0], target);
     }
 
     CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, target), true);
