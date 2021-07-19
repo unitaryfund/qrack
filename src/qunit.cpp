@@ -2596,12 +2596,10 @@ void QUnit::CH(bitLenInt control, bitLenInt target)
     // Should only commute gate with same control and target, if anything:
     CommuteH(target);
 
-    bool doTrySeparate = isReactiveSeparate && !freezeTrySeparate && !freezeBasis2Qb && shards[control].unit &&
-        (shards[control].unit == shards[target].unit);
     QInterfacePtr unit = Entangle({ control, target });
     unit->CH(shards[control].mapped, shards[target].mapped);
 
-    if (doTrySeparate) {
+    if (isReactiveSeparate && !freezeTrySeparate && !freezeBasis2Qb) {
         TrySeparate(control);
         TrySeparate(target);
     }
@@ -2624,12 +2622,10 @@ void QUnit::AntiCH(bitLenInt control, bitLenInt target)
     // Should only commute gate with same control and target, if anything:
     CommuteH(target);
 
-    bool doTrySeparate = isReactiveSeparate && !freezeTrySeparate && !freezeBasis2Qb && shards[control].unit &&
-        (shards[control].unit == shards[target].unit);
     QInterfacePtr unit = Entangle({ control, target });
     unit->AntiCH(shards[control].mapped, shards[target].mapped);
 
-    if (doTrySeparate) {
+    if (isReactiveSeparate && !freezeTrySeparate && !freezeBasis2Qb) {
         TrySeparate(control);
         TrySeparate(target);
     }
@@ -3384,9 +3380,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         ebits[i] = &allBitsMapped[i];
     }
 
-    bool doTrySeparate =
-        (allBits.size() > 2U) || (shards[allBits[0]].unit && (shards[allBits[0]].unit == shards[allBits[1]].unit));
-
     QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
 
     for (i = 0; i < (bitLenInt)controlVec.size(); i++) {
@@ -3403,7 +3396,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     // target bit in X or Y basis and acting as if Z basis by commutation).
     cfn(unit, controlVec);
 
-    if (!doTrySeparate || !isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb) {
+    if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb) {
         return;
     }
 
