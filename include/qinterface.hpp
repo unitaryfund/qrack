@@ -939,6 +939,14 @@ public:
     virtual void CH(bitLenInt control, bitLenInt target);
 
     /**
+     * (Anti-)controlled H gate
+     *
+     * If the "control" bit is set to 1, then the "H" Walsh-Hadamard transform operator is applied
+     * to "target."
+     */
+    virtual void AntiCH(bitLenInt control, bitLenInt target);
+
+    /**
      * Controlled S gate
      *
      * If the "control" bit is set to 1, then the S gate is applied
@@ -947,12 +955,28 @@ public:
     virtual void CS(bitLenInt control, bitLenInt target);
 
     /**
+     * (Anti-)controlled S gate
+     *
+     * If the "control" bit is set to 1, then the S gate is applied
+     * to "target."
+     */
+    virtual void AntiCS(bitLenInt control, bitLenInt target);
+
+    /**
      * Controlled inverse S gate
      *
      * If the "control" bit is set to 1, then the inverse S gate is applied
      * to "target."
      */
     virtual void CIS(bitLenInt control, bitLenInt target);
+
+    /**
+     * (Anti-)controlled inverse S gate
+     *
+     * If the "control" bit is set to 1, then the inverse S gate is applied
+     * to "target."
+     */
+    virtual void AntiCIS(bitLenInt control, bitLenInt target);
 
     /**
      * Controlled T gate
@@ -979,12 +1003,28 @@ public:
     virtual void CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
 
     /**
+     * (Anti-)controlled "PhaseRootN" gate
+     *
+     * If the "control" bit is set to 0, then the "PhaseRootN" gate is applied
+     * to "target."
+     */
+    virtual void AntiCPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+
+    /**
      * Controlled inverse "PhaseRootN" gate
      *
      * If the "control" bit is set to 1, then the inverse "PhaseRootN" gate is applied
      * to "target."
      */
     virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+
+    /**
+     * (Anti-)controlled inverse "PhaseRootN" gate
+     *
+     * If the "control" bit is set to 0, then the inverse "PhaseRootN" gate is applied
+     * to "target."
+     */
+    virtual void AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
 
     /** @} */
 
