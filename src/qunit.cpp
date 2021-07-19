@@ -3384,6 +3384,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
         ebits[i] = &allBitsMapped[i];
     }
 
+    bool doTrySeparate =
+        (allBits.size() > 2U) || (shards[allBits[0]].unit && (shards[allBits[0]].unit == shards[allBits[1]].unit));
+
     QInterfacePtr unit = EntangleInCurrentBasis(ebits.begin(), ebits.end());
 
     for (i = 0; i < (bitLenInt)controlVec.size(); i++) {
@@ -3400,7 +3403,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     // target bit in X or Y basis and acting as if Z basis by commutation).
     cfn(unit, controlVec);
 
-    if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb) {
+    if (!doTrySeparate || !isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb) {
         return;
     }
 
