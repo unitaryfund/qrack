@@ -2581,24 +2581,58 @@ void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
 
 void QUnit::CH(bitLenInt control, bitLenInt target)
 {
-    const complex mtrx[4] = { complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(ONE_R1 / sqrt((real1)2), ZERO_R1),
-        complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(-ONE_R1 / sqrt((real1)2), ZERO_R1) };
+    RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
 
-    bitLenInt controls[1] = { control };
-    bitLenInt controlLen = 1;
+    QEngineShard& cShard = shards[control];
+    if (UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
+        if (SHARD_STATE(cShard)) {
+            H(target);
+        }
+        return;
+    }
 
-    CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), H(target), false);
+    RevertBasisY(target);
+    RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+    // Should only commute gate with same control and target, if anything:
+    CommuteH(target);
+
+    bool doTrySeparate = isReactiveSeparate && !freezeTrySeparate && !freezeBasis2Qb && shards[control].unit &&
+        (shards[control].unit == shards[target].unit);
+    QInterfacePtr unit = Entangle({ control, target });
+    unit->CH(shards[control].mapped, shards[target].mapped);
+
+    if (doTrySeparate) {
+        TrySeparate(control);
+        TrySeparate(target);
+    }
 }
 
 void QUnit::AntiCH(bitLenInt control, bitLenInt target)
 {
-    const complex mtrx[4] = { complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(ONE_R1 / sqrt((real1)2), ZERO_R1),
-        complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(-ONE_R1 / sqrt((real1)2), ZERO_R1) };
+    RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
 
-    bitLenInt controls[1] = { control };
-    bitLenInt controlLen = 1;
+    QEngineShard& cShard = shards[control];
+    if (UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
+        if (!SHARD_STATE(cShard)) {
+            H(target);
+        }
+        return;
+    }
 
-    CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), H(target), true);
+    RevertBasisY(target);
+    RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+    // Should only commute gate with same control and target, if anything:
+    CommuteH(target);
+
+    bool doTrySeparate = isReactiveSeparate && !freezeTrySeparate && !freezeBasis2Qb && shards[control].unit &&
+        (shards[control].unit == shards[target].unit);
+    QInterfacePtr unit = Entangle({ control, target });
+    unit->AntiCH(shards[control].mapped, shards[target].mapped);
+
+    if (doTrySeparate) {
+        TrySeparate(control);
+        TrySeparate(target);
+    }
 }
 
 void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
