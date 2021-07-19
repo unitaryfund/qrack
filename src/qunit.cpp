@@ -2581,38 +2581,24 @@ void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
 
 void QUnit::CH(bitLenInt control, bitLenInt target)
 {
-    QEngineShard& cShard = shards[control];
-    if (CACHED_Z(cShard)) {
-        if (SHARD_STATE(cShard)) {
-            H(target);
-        }
-        return;
-    }
+    const complex mtrx[4] = { complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(ONE_R1 / sqrt((real1)2), ZERO_R1),
+        complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(-ONE_R1 / sqrt((real1)2), ZERO_R1) };
 
-    RevertBasisY(target);
-    RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-    CommuteH(target);
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
 
-    QInterfacePtr unit = Entangle({ control, target });
-    unit->CH(shards[control].mapped, shards[target].mapped);
+    CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), H(target), false);
 }
 
 void QUnit::AntiCH(bitLenInt control, bitLenInt target)
 {
-    QEngineShard& cShard = shards[control];
-    if (CACHED_Z(cShard)) {
-        if (!SHARD_STATE(cShard)) {
-            H(target);
-        }
-        return;
-    }
+    const complex mtrx[4] = { complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(ONE_R1 / sqrt((real1)2), ZERO_R1),
+        complex(ONE_R1 / sqrt((real1)2), ZERO_R1), complex(-ONE_R1 / sqrt((real1)2), ZERO_R1) };
 
-    RevertBasisY(target);
-    RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-    CommuteH(target);
+    bitLenInt controls[1] = { control };
+    bitLenInt controlLen = 1;
 
-    QInterfacePtr unit = Entangle({ control, target });
-    unit->AntiCH(shards[control].mapped, shards[target].mapped);
+    CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), H(target), true);
 }
 
 void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
