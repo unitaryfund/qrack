@@ -2222,6 +2222,16 @@ TEST_CASE("test_qft_cosmology", "[cosmos]")
     benchmarkLoop([&](QInterfacePtr qUniverse, bitLenInt n) { qUniverse->QFT(0, n); }, false, false, false, true);
 }
 
+TEST_CASE("test_iqft_cosmology", "[cosmos]")
+{
+    // This is "scratch work" inspired by https://arxiv.org/abs/1702.06959
+    //
+    // Per the notes of the previous test, reconsidered in July 2021, the inverse QFT, per "layer," spreads locally, one
+    // qubit at a time, perhaps like a light cone. This might actually be the more appropriate test/simulation.
+
+    benchmarkLoop([&](QInterfacePtr qUniverse, bitLenInt n) { qUniverse->IQFT(0, n); }, false, false, false, true);
+}
+
 TEST_CASE("test_qft_cosmology_inverse", "[cosmos]")
 {
     // This is "scratch work" inspired by https://arxiv.org/abs/1702.06959
