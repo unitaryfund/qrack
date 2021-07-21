@@ -518,18 +518,15 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
     bitLenInt c, t;
     for (i = 0; i < length; i++) {
         hBit = end - i;
-        H(hBit);
-        if (i == (length - 1U)) {
-            break;
-        }
-        for (j = 0; j < (i + 1U); j++) {
-            c = hBit - 1U;
-            t = hBit + j;
+        for (j = 0; j < i; j++) {
+            c = hBit;
+            t = hBit + 1U + j;
             CPhaseRootN(j + 2U, c, t);
             if (trySeparate) {
                 TrySeparate(c, t);
             }
         }
+        H(hBit);
     }
 }
 
