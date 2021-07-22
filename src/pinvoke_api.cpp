@@ -986,6 +986,24 @@ MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
     return simulator->Prob(shards[simulator][q]);
 }
 
+/**
+ * (External API) Get the permutation expectation value, based upon the order of input qubits.
+ */
+MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    bitLenInt* q = new bitLenInt[n];
+    std::copy(c, c + n, q);
+
+    QInterfacePtr simulator = simulators[sid];
+    double result = simulator->ExpectationBitsAll(q, n);
+
+    delete[] q;
+
+    return result;
+}
+
 MICROSOFT_QUANTUM_DECL void QFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c)
 {
     SIMULATOR_LOCK_GUARD(sid)
