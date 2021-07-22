@@ -744,6 +744,44 @@ void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     }
 }
 
+void QInterface::ProbBitsAll(const bitCapInt* bits, const bitLenInt& length, real1* probsArray)
+{
+    bitCapInt bitPower;
+    bitCapInt mask = 0;
+    std::map<bitCapInt, bitCapInt> bitMap;
+    for (bitLenInt i = 0; i < length; i++) {
+        bitPower = pow2(bits[i]);
+        mask |= bitPower;
+        bitMap[bitPower] = pow2(i);
+    }
+
+    bitCapInt lengthPower = pow2(length);
+    bitCapIntOcl lcv, retIndex;
+    bitLenInt p;
+    bitCapInt i, iHigh, iLow;
+    std::map<bitCapInt, bitCapInt>::iterator bitMapIterator;
+    for (lcv = 0; lcv < lengthPower; lcv++) {
+        retIndex = 0;
+        iHigh = lcv;
+        i = 0;
+        bitMapIterator = bitMap.begin();
+        for (p = 0; p < length; p++) {
+            if (pow2(p) & lcv) {
+                retIndex |= bitMapIterator->second;
+            }
+
+            iLow = iHigh & (bitMapIterator->first - ONE_BCI);
+            i |= iLow;
+            iHigh = (iHigh ^ iLow) << ONE_BCI;
+
+            bitMapIterator++;
+        }
+        i |= iHigh;
+
+        probsArray[retIndex] = ProbMask(mask, i);
+    }
+}
+
 std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
 {

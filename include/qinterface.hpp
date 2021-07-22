@@ -2219,6 +2219,16 @@ public:
      */
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
+    /**
+     * Direct measure of listed permutation probability
+     *
+     * The probabilities of all included permutations of bits, with bits valued from low to high as the order of the
+     * "bits" array parameter argument, are returned in the "probsArray" parameter.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual void ProbBitsAll(const bitCapInt* bits, const bitLenInt& length, real1* probsArray);
+
     /** Overall probability of any odd permutation of the masked set of bits */
     virtual real1_f ProbParity(const bitCapInt& mask) = 0;
 
