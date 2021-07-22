@@ -744,41 +744,25 @@ void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     }
 }
 
-void QInterface::ProbBitsAll(const bitCapInt* bits, const bitLenInt& length, real1* probsArray)
+void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, real1* probsArray)
 {
-    bitCapInt bitPower;
-    bitCapInt mask = 0;
-    std::map<bitCapInt, bitCapInt> bitMap;
-    for (bitLenInt i = 0; i < length; i++) {
-        bitPower = pow2(bits[i]);
-        mask |= bitPower;
-        bitMap[bitPower] = pow2(i);
+    bitLenInt p;
+    std::vector<bitCapInt> bitPowers(length);
+    std::map<bitLenInt, bitCapInt> bitMap;
+    for (p = 0; p < length; p++) {
+        bitPowers[p] = pow2(bits[p]);
+        bitMap[bits[p]] = pow2(p);
     }
 
-    bitCapInt lengthPower = pow2(length);
-    bitCapIntOcl lcv, retIndex;
-    bitLenInt p;
-    bitCapInt i, iHigh, iLow;
-    std::map<bitCapInt, bitCapInt>::iterator bitMapIterator;
-    for (lcv = 0; lcv < lengthPower; lcv++) {
+    bitCapInt retIndex;
+    for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
         retIndex = 0;
-        iHigh = lcv;
-        i = 0;
-        bitMapIterator = bitMap.begin();
         for (p = 0; p < length; p++) {
-            if (pow2(p) & lcv) {
-                retIndex |= bitMapIterator->second;
+            if (lcv & bitPowers[p]) {
+                retIndex |= bitMap[bits[p]];
             }
-
-            iLow = iHigh & (bitMapIterator->first - ONE_BCI);
-            i |= iLow;
-            iHigh = (iHigh ^ iLow) << ONE_BCI;
-
-            bitMapIterator++;
         }
-        i |= iHigh;
-
-        probsArray[retIndex] = ProbMask(mask, i);
+        probsArray[retIndex] += ProbAll(lcv);
     }
 }
 

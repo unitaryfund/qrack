@@ -2227,7 +2227,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void ProbBitsAll(const bitCapInt* bits, const bitLenInt& length, real1* probsArray);
+    virtual void ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, real1* probsArray);
 
     /** Overall probability of any odd permutation of the masked set of bits */
     virtual real1_f ProbParity(const bitCapInt& mask) = 0;
