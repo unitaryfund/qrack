@@ -2229,6 +2229,16 @@ public:
      */
     virtual void ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, real1* probsArray);
 
+    /**
+     * Get permutation expectation value of bits
+     *
+     * The permutation expectation value of all included bits is returned, with bits valued from low to high as the
+     * order of the "bits" array parameter argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length);
+
     /** Overall probability of any odd permutation of the masked set of bits */
     virtual real1_f ProbParity(const bitCapInt& mask) = 0;
 
