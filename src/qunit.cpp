@@ -310,7 +310,7 @@ void QUnit::GetProbs(real1* outputProbs)
     QUnit* thisCopy;
 
     if (shards[0].GetQubitCount() == qubitCount) {
-        ToPermBasisProb(0, qubitCount);
+        ToPermBasisProb();
         OrderContiguous(shards[0].unit);
         thisCopy = this;
     } else {
@@ -322,9 +322,15 @@ void QUnit::GetProbs(real1* outputProbs)
     thisCopy->shards[0].unit->GetProbs(outputProbs);
 }
 
-complex QUnit::GetAmplitude(bitCapInt perm)
+complex QUnit::GetAmplitude(bitCapInt perm) { return GetAmplitudeOrProb(perm, false); }
+
+complex QUnit::GetAmplitudeOrProb(const bitCapInt& perm, const bool& isProb)
 {
-    ToPermBasisAll();
+    if (isProb) {
+        ToPermBasisProb();
+    } else {
+        ToPermBasisAll();
+    }
 
     complex result(ONE_R1, ZERO_R1);
 
@@ -1275,7 +1281,7 @@ real1_f QUnit::Prob(bitLenInt qubit)
     return ProbBase(qubit);
 }
 
-real1_f QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitude(perm))); }
+real1_f QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitudeOrProb(perm, true))); }
 
 real1_f QUnit::ProbParity(const bitCapInt& mask)
 {
