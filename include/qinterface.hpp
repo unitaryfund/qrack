@@ -177,7 +177,7 @@ enum QInterfaceEngine {
  *
  * See README.md for an overview of the algorithms Qrack employs.
  */
-class QInterface {
+class QInterface : public ParallelFor {
 protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;

@@ -759,9 +759,15 @@ real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& l
     std::unique_ptr<real1[]> bitProbsArray(new real1[lengthPower]);
     ProbBitsAll(bits, length, bitProbsArray.get());
 
+    int numCores = GetConcurrencyLevel();
+    std::unique_ptr<real1[]> expBuff(new real1[numCores]());
+
+    par_for(0, lengthPower,
+        [&](const bitCapInt lcv, const int cpu) { expBuff.get()[cpu] += lcv * bitProbsArray.get()[lcv]; });
+
     real1_f expectation = ZERO_R1;
-    for (bitCapInt i = 1; i < lengthPower; i++) {
-        expectation += i * bitProbsArray.get()[i];
+    for (int i = 0; i < numCores; i++) {
+        expectation += expBuff.get()[i];
     }
 
     return expectation;
