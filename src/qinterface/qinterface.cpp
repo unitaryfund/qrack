@@ -774,7 +774,7 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, rea
     for (bitCapInt lcv = 0; lcv < lengthPower; lcv++) {
         iHigh = lcv;
         i = 0;
-        for (p = 0; p < length; p++) {
+        for (p = 0; p < (bitLenInt)skipPowersVec.size(); p++) {
             iLow = iHigh & (skipPowersVec[p] - ONE_BCI);
             i |= iLow;
             iHigh = (iHigh ^ iLow) << ONE_BCI;
