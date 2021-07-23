@@ -312,6 +312,8 @@ public:
     /** @} */
 
 protected:
+    virtual complex GetAmplitudeOrProb(const bitCapInt& perm, const bool& isProb);
+
     virtual void XBase(const bitLenInt& target);
     virtual void YBase(const bitLenInt& target);
     virtual void ZBase(const bitLenInt& target);
@@ -642,6 +644,7 @@ protected:
             RevertBasis2Qb(start + i, ONLY_INVERT, ONLY_TARGETS);
         }
     }
+    void ToPermBasisProb() { ToPermBasisProb(0, qubitCount); }
     void ToPermBasisMeasure(const bitLenInt& qubit)
     {
         RevertBasis1Qb(qubit);
