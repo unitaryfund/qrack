@@ -35,7 +35,7 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 /**
  * General purpose QEngineCPU implementation
  */
-class QEngineCPU : virtual public QEngine {
+class QEngineCPU : virtual public QEngine, public ParallelFor {
 protected:
     StateVectorPtr stateVec;
     bool isSparse;

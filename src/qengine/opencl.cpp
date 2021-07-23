@@ -586,22 +586,11 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
 
 real1_f QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
 {
+    // This interface is potentially parallelizable, but, for now, better performance is probably given by implementing
+    // it as a serial loop.
     real1_f totSum = ZERO_R1;
-
-    int numCores = GetConcurrencyLevel();
-    int stride = GetStride();
-    if (maxI < (bitCapIntOcl)(stride * numCores)) {
-        for (bitCapIntOcl i = 0; i < maxI; i++) {
-            totSum += toSum[i];
-        }
-
-        return totSum;
-    }
-
-    std::unique_ptr<real1[]> sumBuff(new real1[numCores]());
-    par_for(0, maxI, [&](const bitCapInt i, const int cpu) { sumBuff.get()[cpu] += toSum[i]; });
-    for (int i = 0; i < numCores; i++) {
-        totSum += sumBuff.get()[i];
+    for (bitCapIntOcl i = 0; i < maxI; i++) {
+        totSum += toSum[i];
     }
 
     return totSum;

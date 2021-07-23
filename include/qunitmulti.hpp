@@ -61,7 +61,7 @@ struct DeviceInfo {
 class QUnitMulti;
 typedef std::shared_ptr<QUnitMulti> QUnitMultiPtr;
 
-class QUnitMulti : public QUnit {
+class QUnitMulti : public QUnit, public ParallelFor {
 
 protected:
     int defaultDeviceID;

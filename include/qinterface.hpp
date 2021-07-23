@@ -23,7 +23,6 @@
 #include <ostream>
 #endif
 
-#include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
 #include "common/rdrandwrapper.hpp"
 #include "hamiltonian.hpp"
@@ -177,7 +176,7 @@ enum QInterfaceEngine {
  *
  * See README.md for an overview of the algorithms Qrack employs.
  */
-class QInterface : public ParallelFor {
+class QInterface {
 protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;

@@ -754,27 +754,24 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, rea
 
 real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length)
 {
-    bitCapIntOcl lengthPower = pow2Ocl(length);
-    std::unique_ptr<real1[]> bitProbsArray(new real1[lengthPower]);
-    ProbBitsAll(bits, length, bitProbsArray.get());
-
-    real1_f expectation = ZERO_R1;
-
-    int numCores = GetConcurrencyLevel();
-    int stride = GetStride();
-    if (lengthPower < (bitCapIntOcl)(stride * numCores)) {
-        for (bitCapInt i = 0; i < lengthPower; i++) {
-            expectation += i * bitProbsArray.get()[i];
-        }
-
-        return expectation;
+    bitLenInt p;
+    std::vector<bitCapInt> bitPowers(length);
+    std::map<bitLenInt, bitCapInt> bitMap;
+    for (p = 0; p < length; p++) {
+        bitPowers[p] = pow2(bits[p]);
+        bitMap[bits[p]] = pow2(p);
     }
 
-    std::unique_ptr<real1[]> expBuff(new real1[numCores]());
-    par_for(
-        0, lengthPower, [&](const bitCapInt i, const int cpu) { expBuff.get()[cpu] += i * bitProbsArray.get()[i]; });
-    for (int i = 0; i < numCores; i++) {
-        expectation += expBuff.get()[i];
+    real1_f expectation = 0;
+    bitCapInt retIndex;
+    for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
+        retIndex = 0;
+        for (p = 0; p < length; p++) {
+            if (lcv & bitPowers[p]) {
+                retIndex |= bitMap[bits[p]];
+            }
+        }
+        expectation += retIndex * ProbAll(lcv);
     }
 
     return expectation;
