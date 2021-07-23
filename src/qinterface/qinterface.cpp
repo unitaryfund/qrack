@@ -754,18 +754,25 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, rea
 
 real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length)
 {
-    bitCapInt lengthPower = pow2(length);
-
+    bitCapIntOcl lengthPower = pow2Ocl(length);
     std::unique_ptr<real1[]> bitProbsArray(new real1[lengthPower]);
     ProbBitsAll(bits, length, bitProbsArray.get());
 
-    int numCores = GetConcurrencyLevel();
-    std::unique_ptr<real1[]> expBuff(new real1[numCores]());
-
-    par_for(0, lengthPower,
-        [&](const bitCapInt lcv, const int cpu) { expBuff.get()[cpu] += lcv * bitProbsArray.get()[lcv]; });
-
     real1_f expectation = ZERO_R1;
+
+    int numCores = GetConcurrencyLevel();
+    int stride = GetStride();
+    if (lengthPower < (bitCapIntOcl)(stride * numCores)) {
+        for (bitCapInt i = 0; i < lengthPower; i++) {
+            expectation += i * bitProbsArray.get()[i];
+        }
+
+        return expectation;
+    }
+
+    std::unique_ptr<real1[]> expBuff(new real1[numCores]());
+    par_for(
+        0, lengthPower, [&](const bitCapInt i, const int cpu) { expBuff.get()[cpu] += i * bitProbsArray.get()[i]; });
     for (int i = 0; i < numCores; i++) {
         expectation += expBuff.get()[i];
     }
