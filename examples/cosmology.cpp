@@ -52,8 +52,8 @@ int main()
         std::vector<bitLenInt> expBits(bits);
         std::reverse(expBits.begin(), expBits.end());
 
-        std::cout << "Manifold size=" << qReg->ExpectationBitsAll(&(expBits[0]), expBits.size())
-                  << " at folds=" << (real1)(i + 1U) << " from t=0.5" << std::endl;
+        std::cout << "Folds=" << (real1)(i + 1U)
+                  << ", Manifold size=" << qReg->ExpectationBitsAll(&(expBits[0]), expBits.size()) << std::endl;
 
         if (i < (maxLength - 1U)) {
             AddBit(qReg);
