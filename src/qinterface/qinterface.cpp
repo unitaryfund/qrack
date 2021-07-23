@@ -751,20 +751,48 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, rea
     bitLenInt p;
     std::vector<bitCapInt> bitPowers(length);
     std::map<bitLenInt, bitCapInt> bitMap;
+    bitCapInt mask = 0;
     for (p = 0; p < length; p++) {
         bitPowers[p] = pow2(bits[p]);
+        mask |= bitPowers[p];
         bitMap[bits[p]] = pow2(p);
     }
 
+    bitCapInt v = (~mask) & (maxQPower - ONE_BCI); // count the number of bits set in v
+    bitCapInt oldV;
+    bitCapInt power;
+    bitLenInt len; // c accumulates the total bits set in v
+    std::vector<bitCapInt> skipPowersVec;
+    for (len = 0; v; len++) {
+        oldV = v;
+        v &= v - ONE_BCI; // clear the least significant bit set
+        power = (v ^ oldV) & oldV;
+        skipPowersVec.push_back(power);
+    }
+
+    bitCapInt lengthPower = pow2(length);
+    bitCapInt i, iHigh, iLow;
     bitCapInt retIndex;
-    for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
+    for (bitCapInt lcv = 0; lcv < lengthPower; lcv++) {
+        iHigh = lcv;
+        i = 0;
+        for (p = 0; p < length; p++) {
+            iLow = iHigh & (skipPowersVec[p] - ONE_BCI);
+            i |= iLow;
+            iHigh = (iHigh ^ iLow) << ONE_BCI;
+            if (iHigh == 0) {
+                break;
+            }
+        }
+        i |= iHigh;
+
         retIndex = 0;
         for (p = 0; p < length; p++) {
-            if (lcv & bitPowers[p]) {
+            if (i & bitPowers[p]) {
                 retIndex |= bitMap[bits[p]];
             }
         }
-        probsArray[retIndex] += ProbAll(lcv);
+        probsArray[retIndex] += ProbMask(mask, i);
     }
 }
 
