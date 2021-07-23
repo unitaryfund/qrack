@@ -746,8 +746,6 @@ void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 
 void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, real1* probsArray)
 {
-    std::fill(probsArray, probsArray + pow2(length), ZERO_R1);
-
     bitLenInt p;
     std::vector<bitCapInt> bitPowers(length);
     std::map<bitLenInt, bitCapInt> bitMap;
@@ -792,7 +790,7 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, rea
                 retIndex |= bitMap[bits[p]];
             }
         }
-        probsArray[retIndex] += ProbMask(mask, i);
+        probsArray[retIndex] = ProbMask(mask, i);
     }
 }
 
