@@ -199,10 +199,6 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 
     QInterfacePtr simulator = q ? CreateQuantumInterface(QINTERFACE_OPTIMAL_MULTI, q, 0, randNumGen) : NULL;
 
-    if (q > MaxShardQubits()) {
-        simulator->SetReactiveSeparate(true);
-    }
-
     if (sid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
@@ -412,9 +408,6 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
         simulators[sid]->Compose(nQubit);
     }
     bitLenInt qubitCount = simulators[sid]->GetQubitCount();
-    if (qubitCount > MaxShardQubits()) {
-        simulators[sid]->SetReactiveSeparate(true);
-    }
     shards[simulators[sid]][qid] = (qubitCount - 1U);
 }
 
@@ -435,9 +428,6 @@ MICROSOFT_QUANTUM_DECL bool release(_In_ unsigned sid, _In_ unsigned q)
         SIMULATOR_LOCK_GUARD(sid)
         bitLenInt oIndex = shards[simulator][q];
         simulator->Dispose(oIndex, 1U);
-        if (simulator->GetQubitCount() <= MaxShardQubits()) {
-            simulator->SetReactiveSeparate(false);
-        }
         for (unsigned i = 0; i < shards[simulator].size(); i++) {
             if (shards[simulator][i] > oIndex) {
                 shards[simulator][i]--;
@@ -984,6 +974,24 @@ MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
 
     QInterfacePtr simulator = simulators[sid];
     return simulator->Prob(shards[simulator][q]);
+}
+
+/**
+ * (External API) Get the permutation expectation value, based upon the order of input qubits.
+ */
+MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    bitLenInt* q = new bitLenInt[n];
+    std::copy(c, c + n, q);
+
+    QInterfacePtr simulator = simulators[sid];
+    double result = simulator->ExpectationBitsAll(q, n);
+
+    delete[] q;
+
+    return result;
 }
 
 MICROSOFT_QUANTUM_DECL void QFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c)

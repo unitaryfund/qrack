@@ -3877,13 +3877,39 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmask")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probmaskall")
 {
-    // We're trying to hit a hardware-specific case of the method, by allocating 1 qubit, but it might not work if the
-    // maximum work item count is extremely small.
     qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1, 0, rng);
     real1 probs1[2];
     qftReg->ProbMaskAll(1U, probs1);
     REQUIRE(probs1[0] > 0.99);
     REQUIRE(probs1[1] < 0.01);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_probbitsall")
+{
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 3, 5, rng);
+    bitLenInt bits[2] = { 2, 1 };
+    real1 probs1[4];
+    qftReg->ProbBitsAll(bits, 2U, probs1);
+    REQUIRE(probs1[0] < 0.01);
+    REQUIRE(probs1[1] > 0.99);
+    REQUIRE(probs1[2] < 0.01);
+    REQUIRE(probs1[3] < 0.01);
+
+    qftReg->H(2);
+
+    qftReg->ProbBitsAll(bits, 2U, probs1);
+    REQUIRE_FLOAT(probs1[0], 0.5);
+    REQUIRE_FLOAT(probs1[1], 0.5);
+    REQUIRE(probs1[2] < 0.01);
+    REQUIRE(probs1[3] < 0.01);
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_expectationbitsall")
+{
+    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 8, 0, rng);
+    bitLenInt bits[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+    qftReg->H(0, 8);
+    REQUIRE_FLOAT(qftReg->ExpectationBitsAll(bits, 8U), 127 + (ONE_R1 / 2))
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
