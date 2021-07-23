@@ -23,7 +23,6 @@
 #include <ostream>
 #endif
 
-#include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
 #include "common/rdrandwrapper.hpp"
 #include "hamiltonian.hpp"
