@@ -158,6 +158,9 @@ typedef std::shared_ptr<StateVector> StateVectorPtr;
 typedef std::shared_ptr<StateVectorArray> StateVectorArrayPtr;
 typedef std::shared_ptr<StateVectorSparse> StateVectorSparsePtr;
 
+class QEngine;
+typedef std::shared_ptr<QEngine> QEnginePtr;
+
 // This is a buffer struct that's capable of representing controlled single bit gates and arithmetic, when subclassed.
 class StateVector {
 protected:

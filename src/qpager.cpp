@@ -34,9 +34,53 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , thresholdQubitsPerPage(qubitThreshold)
     , pStridePow(PSTRIDEPOW)
 {
+    Init();
+
+    initState &= maxQPower - ONE_BCI;
+    bool isPermInPage;
+    bitCapIntOcl pagePerm = 0;
+    for (bitCapIntOcl i = 0; i < basePageCount; i++) {
+        isPermInPage = (initState >= pagePerm);
+        pagePerm += basePageMaxQPower;
+        isPermInPage &= (initState < pagePerm);
+        if (isPermInPage) {
+            qPages.push_back(MakeEngine(
+                baseQubitsPerPage, initState - (pagePerm - basePageMaxQPower), deviceIDs[i % deviceIDs.size()]));
+        } else {
+            qPages.push_back(MakeEngine(baseQubitsPerPage, 0, deviceIDs[i % deviceIDs.size()]));
+            qPages.back()->SetAmplitude(0, ZERO_CMPLX);
+        }
+    }
+}
+
+QPager::QPager(QEnginePtr enginePtr, QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
+    qrack_rand_gen_ptr rgp, complex phaseFac, bool ignored, bool ignored2, bool useHostMem, int deviceId,
+    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
+    bitLenInt qubitThreshold, real1_f sep_thresh)
+    : QInterface(qBitCount, rgp, false, useHardwareRNG, false, norm_thresh)
+    , engine(eng)
+    , devID(deviceId)
+    , phaseFactor(phaseFac)
+    , useHostRam(useHostMem)
+    , useRDRAND(useHardwareRNG)
+    , isSparse(useSparseStateVec)
+    , runningNorm(ONE_R1)
+    , deviceIDs(devList)
+    , useHardwareThreshold(false)
+    , minPageQubits(0)
+    , deviceGlobalQubits(2)
+    , thresholdQubitsPerPage(qubitThreshold)
+    , pStridePow(PSTRIDEPOW)
+{
+    Init();
+    LockEngine(enginePtr);
+}
+
+void QPager::Init()
+{
 #if !ENABLE_OPENCL
     if (engine == QINTERFACE_HYBRID) {
-        eng = QINTERFACE_CPU;
+        engine = QINTERFACE_CPU;
     }
 #endif
 
@@ -118,22 +162,6 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     if (qubitCount > maxQubits) {
         throw std::invalid_argument(
             "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
-    }
-
-    initState &= maxQPower - ONE_BCI;
-    bool isPermInPage;
-    bitCapIntOcl pagePerm = 0;
-    for (bitCapIntOcl i = 0; i < basePageCount; i++) {
-        isPermInPage = (initState >= pagePerm);
-        pagePerm += basePageMaxQPower;
-        isPermInPage &= (initState < pagePerm);
-        if (isPermInPage) {
-            qPages.push_back(MakeEngine(
-                baseQubitsPerPage, initState - (pagePerm - basePageMaxQPower), deviceIDs[i % deviceIDs.size()]));
-        } else {
-            qPages.push_back(MakeEngine(baseQubitsPerPage, 0, deviceIDs[i % deviceIDs.size()]));
-            qPages.back()->SetAmplitude(0, ZERO_CMPLX);
-        }
     }
 }
 

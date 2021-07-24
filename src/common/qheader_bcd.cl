@@ -29,7 +29,7 @@ void kernel incbcd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPt
         test2 = partToAdd % 10;
         partToAdd /= 10;
         nibbles[0] = test1 + test2;
-        if ((test1 > 9) || (test2 > 9)) {
+        if (test1 > 9) {
             isValid = false;
         }
 
@@ -39,7 +39,7 @@ void kernel incbcd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPt
             test2 = partToAdd % 10;
             partToAdd /= 10;
             nibbles[j] = test1 + test2;
-            if ((test1 > 9) || (test2 > 9)) {
+            if (test1 > 9) {
                 isValid = false;
             }
         }
