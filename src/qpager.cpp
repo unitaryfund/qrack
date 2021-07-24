@@ -80,7 +80,7 @@ void QPager::Init()
 {
 #if !ENABLE_OPENCL
     if (engine == QINTERFACE_HYBRID) {
-        eng = QINTERFACE_CPU;
+        engine = QINTERFACE_CPU;
     }
 #endif
 
