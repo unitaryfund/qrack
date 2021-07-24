@@ -148,8 +148,9 @@ void QUnit::TurnOnPaging()
         for (i = 0; i < qubitCount; i++) {
             QEnginePtr unit = std::dynamic_pointer_cast<QEngine>(shards[i].unit);
             if (unit && (nEngines.find(unit) == nEngines.end())) {
-                nEngines[unit] = std::dynamic_pointer_cast<QPager>(MakeEngine(unit->GetQubitCount(), 0));
-                nEngines[unit]->LockEngine(unit);
+                nEngines[unit] = std::make_shared<QPager>(unit, subEngine, unit->GetQubitCount(), 0, rand_generator,
+                    phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
+                    (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
             }
         }
 
