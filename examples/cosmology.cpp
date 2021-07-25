@@ -50,7 +50,8 @@ int main()
         qReg->H(i);
 
         std::vector<bitLenInt> expBits(bits);
-        std::reverse(expBits.begin(), expBits.end());
+        // QFT already reverses order:
+        //std::reverse(expBits.begin(), expBits.end());
 
         std::cout << "Folds=" << (real1)(i + 1U)
                   << ", Manifold size=" << qReg->ExpectationBitsAll(&(expBits[0]), expBits.size()) << std::endl;
