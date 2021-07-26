@@ -1284,7 +1284,7 @@ real1_f QUnit::Prob(bitLenInt qubit)
 
 real1_f QUnit::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length)
 {
-    if (shards[0].GetQubitCount() != qubitCount) {
+    if ((length == 1U) || shards[0].GetQubitCount() != qubitCount) {
         return QInterface::ExpectationBitsAll(bits, length);
     }
 
