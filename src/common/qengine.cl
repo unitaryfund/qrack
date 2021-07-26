@@ -1033,6 +1033,47 @@ void kernel forcemparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIn
     }
 }
 
+void kernel expperm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant bitCapIntOcl* bitPowers, global real1* expBuffer,
+    local real1* lExpBuffer)
+{
+    bitCapIntOcl Nthreads, lcv, locID, locNthreads;
+
+    Nthreads = get_global_size(0);
+
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl len = bitCapIntOclPtr[1];
+
+    real1 expectation = 0;
+    bitCapIntOcl retIndex;
+    bitLenInt p;
+    cmplx amp;
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        amp = stateVec[lcv];
+        retIndex = 0;
+        for (p = 0; p < len; p++) {
+            if (lcv & bitPowers[p]) {
+                retIndex |= (ONE_BCI << p);
+            }
+        }
+        expectation += retIndex * dot(amp, amp);
+    }
+
+    locID = get_local_id(0);
+    locNthreads = get_local_size(0);
+    lExpBuffer[locID] = expectation;
+
+    for (lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (locID < lcv) {
+            lExpBuffer[locID] += lExpBuffer[locID + lcv];
+        }
+    }
+
+    if (locID == 0U) {
+        expBuffer[get_group_id(0)] = lExpBuffer[0];
+    }
+}
+
 void kernel rol(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global cmplx* nStateVec)
 {
     bitCapIntOcl Nthreads, lcv;

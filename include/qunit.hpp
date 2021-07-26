@@ -290,6 +290,8 @@ public:
     {
         return SumSqrDiff(std::dynamic_pointer_cast<QUnit>(toCompare));
     }
+    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length);
+
     virtual real1_f SumSqrDiff(QUnitPtr toCompare);
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_threshold = REAL1_DEFAULT_ARG);

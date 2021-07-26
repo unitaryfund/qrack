@@ -734,10 +734,8 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, rea
 
     bitLenInt p;
     std::vector<bitCapInt> bitPowers(length);
-    std::map<bitLenInt, bitCapInt> bitMap;
     for (p = 0; p < length; p++) {
         bitPowers[p] = pow2(bits[p]);
-        bitMap[bits[p]] = pow2(p);
     }
 
     bitCapInt retIndex;
@@ -745,7 +743,7 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, rea
         retIndex = 0;
         for (p = 0; p < length; p++) {
             if (lcv & bitPowers[p]) {
-                retIndex |= bitMap[bits[p]];
+                retIndex |= pow2(p);
             }
         }
         probsArray[retIndex] += ProbAll(lcv);
@@ -754,12 +752,14 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, rea
 
 real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length)
 {
+    if (length == 1U) {
+        return Prob(bits[0]);
+    }
+
     bitLenInt p;
     std::vector<bitCapInt> bitPowers(length);
-    std::map<bitLenInt, bitCapInt> bitMap;
     for (p = 0; p < length; p++) {
         bitPowers[p] = pow2(bits[p]);
-        bitMap[bits[p]] = pow2(p);
     }
 
     real1_f expectation = 0;
@@ -768,7 +768,7 @@ real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& l
         retIndex = 0;
         for (p = 0; p < length; p++) {
             if (lcv & bitPowers[p]) {
-                retIndex |= bitMap[bits[p]];
+                retIndex |= pow2(p);
             }
         }
         expectation += retIndex * ProbAll(lcv);

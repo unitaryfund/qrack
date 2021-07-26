@@ -1282,6 +1282,18 @@ real1_f QUnit::Prob(bitLenInt qubit)
     return ProbBase(qubit);
 }
 
+real1_f QUnit::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length)
+{
+    if (shards[0].GetQubitCount() != qubitCount) {
+        return QInterface::ExpectationBitsAll(bits, length);
+    }
+
+    ToPermBasisProb();
+    OrderContiguous(shards[0].unit);
+
+    return shards[0].unit->ExpectationBitsAll(bits, length);
+}
+
 real1_f QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitudeOrProb(perm, true))); }
 
 real1_f QUnit::ProbParity(const bitCapInt& mask)
