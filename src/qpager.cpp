@@ -593,34 +593,57 @@ void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 
 void QPager::SetQuantumState(const complex* inputState)
 {
+    bitCapIntOcl i;
     bitCapIntOcl pagePerm = 0;
     bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
-    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-        qPages[i]->SetQuantumState(inputState + pagePerm);
-        if (!doNormalize) {
-            qPages[i]->UpdateRunningNorm();
-        }
+    std::vector<std::future<void>> futures(qPages.size());
+    for (i = 0; i < qPages.size(); i++) {
+        QEnginePtr engine = qPages[i];
+        bool doNorm = doNormalize;
+        futures[i] = std::async(std::launch::async, [engine, inputState, pagePerm, doNorm]() {
+            engine->SetQuantumState(inputState + pagePerm);
+            if (doNorm) {
+                engine->UpdateRunningNorm();
+            }
+        });
         pagePerm += pagePower;
+    }
+    for (i = 0; i < qPages.size(); i++) {
+        futures[i].get();
     }
 }
 
 void QPager::GetQuantumState(complex* outputState)
 {
+    bitCapIntOcl i;
     bitCapIntOcl pagePerm = 0;
     bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
-    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-        qPages[i]->GetQuantumState(outputState + pagePerm);
+    std::vector<std::future<void>> futures(qPages.size());
+    for (i = 0; i < qPages.size(); i++) {
+        QEnginePtr engine = qPages[i];
+        futures[i] = std::async(
+            std::launch::async, [engine, outputState, pagePerm]() { engine->GetQuantumState(outputState + pagePerm); });
         pagePerm += pagePower;
+    }
+    for (i = 0; i < qPages.size(); i++) {
+        futures[i].get();
     }
 }
 
 void QPager::GetProbs(real1* outputProbs)
 {
+    bitCapIntOcl i;
     bitCapIntOcl pagePerm = 0;
     bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
-    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-        qPages[i]->GetProbs(outputProbs + pagePerm);
+    std::vector<std::future<void>> futures(qPages.size());
+    for (i = 0; i < qPages.size(); i++) {
+        QEnginePtr engine = qPages[i];
+        futures[i] = std::async(
+            std::launch::async, [engine, outputProbs, pagePerm]() { engine->GetProbs(outputProbs + pagePerm); });
         pagePerm += pagePower;
+    }
+    for (i = 0; i < qPages.size(); i++) {
+        futures[i].get();
     }
 }
 
@@ -1344,6 +1367,36 @@ real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
         maskChance += qPages[i]->ProbMask(mask, permutation);
     }
     return clampProb(maskChance);
+}
+
+real1_f QPager::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length)
+{
+    if (length != qubitCount) {
+        return QInterface::ExpectationBitsAll(bits, length);
+    }
+
+    bitLenInt i;
+
+    for (i = 0; i < length; i++) {
+        if (bits[i] != i) {
+            return QInterface::ExpectationBitsAll(bits, length);
+        }
+    }
+
+    bitLenInt qpp = qubitsPerPage();
+    std::vector<std::future<real1_f>> futures(qPages.size());
+    for (i = 0; i < qPages.size(); i++) {
+        QEnginePtr engine = qPages[i];
+        futures[i] =
+            std::async(std::launch::async, [engine, bits, qpp]() { return engine->ExpectationBitsAll(bits, qpp); });
+    }
+
+    real1_f expectation = ZERO_R1;
+    for (i = 0; i < qPages.size(); i++) {
+        expectation += pow2Ocl(i) * futures[i].get();
+    }
+
+    return expectation;
 }
 
 void QPager::UpdateRunningNorm(real1_f norm_thresh)
