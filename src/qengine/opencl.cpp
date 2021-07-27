@@ -1791,6 +1791,47 @@ bool QEngineOCL::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     return result;
 }
 
+real1_f QEngineOCL::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length)
+{
+    if (length == 1U) {
+        return Prob(bits[0]);
+    }
+
+    if (!stateBuffer || length == 0) {
+        return ZERO_R1;
+    }
+
+    if (doNormalize) {
+        NormalizeState();
+    }
+
+    std::unique_ptr<bitCapIntOcl[]> bitPowers(new bitCapIntOcl[length]);
+    for (bitLenInt p = 0; p < length; p++) {
+        bitPowers.get()[p] = pow2(bits[p]);
+    }
+
+    cl_int error;
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    BufferPtr bitMapBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * length);
+    DISPATCH_WRITE(waitVec, *bitMapBuffer, sizeof(bitCapIntOcl) * length, bitPowers.get(), error);
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, length, 0, 0, 0, 0, 0, 0, 0, 0 };
+    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 2, bciArgs, error);
+
+    size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    QueueCall(OCL_API_EXPPERM, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, bitMapBuffer, nrmBuffer },
+        sizeof(real1) * ngs);
+
+    real1_f expectation;
+    WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &expectation, error);
+
+    return expectation;
+}
+
 void QEngineOCL::ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length)
 {
     if (length == 0) {
