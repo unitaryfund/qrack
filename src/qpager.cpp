@@ -1375,7 +1375,7 @@ real1_f QPager::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& lengt
         return QInterface::ExpectationBitsAll(bits, length);
     }
 
-    bitLenInt i;
+    bitCapIntOcl i;
 
     for (i = 0; i < length; i++) {
         if (bits[i] != i) {
