@@ -1393,7 +1393,7 @@ real1_f QPager::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& lengt
 
     real1_f expectation = ZERO_R1;
     for (i = 0; i < qPages.size(); i++) {
-        expectation += (ONE_BCI + i) * futures[i].get();
+        expectation += pow2Ocl(i) * futures[i].get();
     }
 
     return expectation;
