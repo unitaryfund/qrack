@@ -1369,6 +1369,40 @@ real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     return clampProb(maskChance);
 }
 
+real1_f QPager::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset)
+{
+    if (length != qubitCount) {
+        return QInterface::ExpectationBitsAll(bits, length, offset);
+    }
+
+    bitCapIntOcl i;
+
+    for (i = 0; i < length; i++) {
+        if (bits[i] != i) {
+            return QInterface::ExpectationBitsAll(bits, length, offset);
+        }
+    }
+
+    bitLenInt qpp = qubitsPerPage();
+    bitCapIntOcl pagePerm = 0;
+    bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
+    std::vector<std::future<real1_f>> futures(qPages.size());
+    for (i = 0; i < qPages.size(); i++) {
+        QEnginePtr engine = qPages[i];
+        futures[i] = std::async(std::launch::async, [engine, bits, qpp, pagePerm, offset]() {
+            return engine->ExpectationBitsAll(bits, qpp, pagePerm + offset);
+        });
+        pagePerm += pagePower;
+    }
+
+    real1_f expectation = ZERO_R1;
+    for (i = 0; i < qPages.size(); i++) {
+        expectation += futures[i].get();
+    }
+
+    return expectation;
+}
+
 void QPager::UpdateRunningNorm(real1_f norm_thresh)
 {
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {

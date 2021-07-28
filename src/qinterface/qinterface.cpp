@@ -750,7 +750,7 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, rea
     }
 }
 
-real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length)
+real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset)
 {
     if (length == 1U) {
         return Prob(bits[0]);
@@ -771,7 +771,7 @@ real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& l
                 retIndex |= pow2(p);
             }
         }
-        expectation += retIndex * ProbAll(lcv);
+        expectation += (offset + retIndex) * ProbAll(lcv);
     }
 
     return expectation;

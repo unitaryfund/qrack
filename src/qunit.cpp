@@ -1282,16 +1282,16 @@ real1_f QUnit::Prob(bitLenInt qubit)
     return ProbBase(qubit);
 }
 
-real1_f QUnit::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length)
+real1_f QUnit::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset)
 {
     if ((length == 1U) || (shards[0].GetQubitCount() != qubitCount)) {
-        return QInterface::ExpectationBitsAll(bits, length);
+        return QInterface::ExpectationBitsAll(bits, length, offset);
     }
 
     ToPermBasisProb();
     OrderContiguous(shards[0].unit);
 
-    return shards[0].unit->ExpectationBitsAll(bits, length);
+    return shards[0].unit->ExpectationBitsAll(bits, length, offset);
 }
 
 real1_f QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitudeOrProb(perm, true))); }

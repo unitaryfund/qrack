@@ -2236,7 +2236,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length);
+    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0);
 
     /** Overall probability of any odd permutation of the masked set of bits */
     virtual real1_f ProbParity(const bitCapInt& mask) = 0;

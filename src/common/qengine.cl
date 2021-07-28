@@ -1042,6 +1042,7 @@ void kernel expperm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
 
     bitCapIntOcl maxI = bitCapIntOclPtr[0];
     bitCapIntOcl len = bitCapIntOclPtr[1];
+    bitCapIntOcl offset = bitCapIntOclPtr[2];
 
     real1 expectation = 0;
     bitCapIntOcl retIndex;
@@ -1055,7 +1056,7 @@ void kernel expperm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
                 retIndex |= (ONE_BCI << p);
             }
         }
-        expectation += retIndex * dot(amp, amp);
+        expectation += (offset + retIndex) * dot(amp, amp);
     }
 
     locID = get_local_id(0);
