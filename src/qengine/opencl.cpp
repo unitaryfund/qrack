@@ -628,7 +628,6 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
     queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex),
         &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
     device_context->UnlockWaitEvents();
-    clFlush();
 
     QueueSetRunningNorm(ONE_R1);
 }
@@ -2660,7 +2659,6 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
     queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex),
         &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
     device_context->UnlockWaitEvents();
-    clFlush();
 }
 
 /// Get pure quantum state, in unsigned int permutation basis
