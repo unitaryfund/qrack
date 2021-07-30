@@ -33,16 +33,14 @@ namespace Qrack {
     if (error != CL_SUCCESS) {                                                                                         \
         FreeAll();                                                                                                     \
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));              \
-    }                                                                                                                  \
-    clFlush();
+    }
 
 #define DISPATCH_LOC_WRITE(buff, size, array, clEvent, error)                                                          \
     error = queue.enqueueWriteBuffer(buff, CL_FALSE, 0, size, array, NULL, &clEvent);                                  \
     if (error != CL_SUCCESS) {                                                                                         \
         FreeAll();                                                                                                     \
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));              \
-    }                                                                                                                  \
-    clFlush();
+    }
 
 #define DISPATCH_WRITE(waitVec, buff, size, array, error)                                                              \
     device_context->LockWaitEvents();                                                                                  \
@@ -53,8 +51,7 @@ namespace Qrack {
     if (error != CL_SUCCESS) {                                                                                         \
         FreeAll();                                                                                                     \
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));              \
-    }                                                                                                                  \
-    clFlush();
+    }
 
 #define DISPATCH_COPY(waitVec, buff1, buff2, size, error)                                                              \
     device_context->LockWaitEvents();                                                                                  \
@@ -64,8 +61,7 @@ namespace Qrack {
     if (error != CL_SUCCESS) {                                                                                         \
         FreeAll();                                                                                                     \
         throw std::runtime_error("Failed to enqueue buffer read, error code: " + std::to_string(error));               \
-    }                                                                                                                  \
-    clFlush();
+    }
 
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr, error)                                                               \
     clFinish();                                                                                                        \
@@ -678,7 +674,6 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
         queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl, waitVec.get(),
             &(device_context->wait_events->back()));
         device_context->UnlockWaitEvents();
-        clFlush();
     } else {
         ClearBuffer(nStateBuffer, 0, maxQPowerOcl);
     }
