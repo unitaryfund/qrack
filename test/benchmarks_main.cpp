@@ -28,6 +28,7 @@ enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
 qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
+bool use_host_dma = false;
 bool disable_hardware_rng = false;
 bool async_time = false;
 bool sparse = false;
@@ -90,6 +91,10 @@ int main(int argc, char* argv[])
         Opt(enable_normalization)["--enable-normalization"](
             "Enable state vector normalization. (Usually not "
             "necessary, though might benefit accuracy at very high circuit depth.)") |
+        Opt(use_host_dma)["--use-host-dma"](
+            "Allocate state vectors as OpenCL host pointers, in an attempt to use Direct Memory Access. This will "
+            "probably be slower, and incompatible with OpenCL virtualization, but it can allow greater state vector "
+            "buffer RAM width, potentially including swap disk, depending on OpenCL device DMA capabilities.") |
         Opt(disable_hardware_rng)["--disable-hardware-rng"]("Modern Intel chips provide an instruction for hardware "
                                                             "random number generation, which this option turns off. "
                                                             "(Hardware generation is on by default, if available.)") |
