@@ -423,6 +423,11 @@ public:
         engine->NormalizeState(nrm, norm_thresh);
     }
 
+    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0)
+    {
+        return engine->ExpectationBitsAll(bits, length, offset);
+    }
+
     virtual void Finish() { engine->Finish(); }
 
     virtual bool isFinished() { return engine->isFinished(); }

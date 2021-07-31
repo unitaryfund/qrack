@@ -789,6 +789,7 @@ public:
 
         return engine->SumSqrDiff(toCompare->engine);
     }
+
     virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         return ApproxCompare(std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare), error_tol);
@@ -810,17 +811,28 @@ public:
 
         return engine->ApproxCompare(toCompare->engine, error_tol);
     }
+
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         if (engine) {
             engine->UpdateRunningNorm(norm_thresh);
         }
     }
+
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         if (engine) {
             engine->NormalizeState(nrm, norm_thresh);
         }
+    }
+
+    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0)
+    {
+        if (stabilizer) {
+            return QInterface::ExpectationBitsAll(bits, length, offset);
+        }
+
+        return engine->ExpectationBitsAll(bits, length, offset);
     }
 
     virtual bool TrySeparate(bitLenInt qubit)
