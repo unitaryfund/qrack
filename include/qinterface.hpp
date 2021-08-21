@@ -718,6 +718,14 @@ public:
         bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
 
     /**
+     * (Anti-)Controlled general unitary gate
+     *
+     * Applies an (anti-)controlled gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible single bit unitary gates, (up to a global phase factor which has no effect on Hermitian operator expectation values).
+     */
+    virtual void AntiCU(
+        bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
+
+    /**
      * Hadamard gate
      *
      * Applies a Hadamard gate on qubit at "qubitIndex."
