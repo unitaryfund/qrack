@@ -557,8 +557,8 @@ MICROSOFT_QUANTUM_DECL void Mtrx(_In_ unsigned sid, _In_reads_(8) double* m, _In
 {
     SIMULATOR_LOCK_GUARD(sid)
 
-    Qrack::complex mtrx[4] = { Qrack::complex(m[0], m[1]), Qrack::complex(m[2], m[3]), Qrack::complex(m[4], m[5]),
-        Qrack::complex(m[6], m[7]) };
+    complex mtrx[4] = { complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
+        complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
 
     QInterfacePtr simulator = simulators[sid];
     simulator->ApplySingleBit(mtrx, shards[simulator][q]);
@@ -740,8 +740,8 @@ MICROSOFT_QUANTUM_DECL void MCMtrx(
 {
     SIMULATOR_LOCK_GUARD(sid)
 
-    Qrack::complex mtrx[4] = { Qrack::complex(m[0], m[1]), Qrack::complex(m[2], m[3]), Qrack::complex(m[4], m[5]),
-        Qrack::complex(m[6], m[7]) };
+    complex mtrx[4] = { complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
+        complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
 
     QInterfacePtr simulator = simulators[sid];
     bitLenInt* ctrlsArray = new bitLenInt[n];
