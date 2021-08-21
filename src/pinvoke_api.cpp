@@ -733,7 +733,7 @@ MICROSOFT_QUANTUM_DECL void MCU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 }
 
 /**
- * (External API) 2x2 complex matrix unitary gate
+ * (External API) Controlled 2x2 complex matrix unitary gate
  */
 MICROSOFT_QUANTUM_DECL void MCMtrx(
     _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_reads_(8) double* m, _In_ unsigned q)
