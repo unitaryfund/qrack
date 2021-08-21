@@ -80,6 +80,18 @@ void QInterface::CU(
     ApplyControlledSingleBit(controls, controlLen, target, uGate);
 }
 
+/// (Anti-)Controlled general unitary gate
+void QInterface::AntiCU(
+    bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
+{
+    real1 cos0 = (real1)cos(theta / 2);
+    real1 sin0 = (real1)sin(theta / 2);
+    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+        sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+        cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
+    ApplyAntiControlledSingleBit(controls, controlLen, target, uGate);
+}
+
 /// Apply 2-parameter unitary gate to each bit in "length," starting from bit index "start"
 void QInterface::U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lambda)
 {
