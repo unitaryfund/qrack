@@ -551,6 +551,20 @@ MICROSOFT_QUANTUM_DECL void U(
 }
 
 /**
+ * (External API) 2x2 complex matrix unitary gate
+ */
+MICROSOFT_QUANTUM_DECL void Mtrx(_In_ unsigned sid, _In_reads_(8) double* m, _In_ unsigned q)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    complex mtrx[4] = { complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
+        complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->ApplySingleBit(mtrx, shards[simulator][q]);
+}
+
+/**
  * (External API) Controlled "X" Gate
  */
 MICROSOFT_QUANTUM_DECL void MCX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
@@ -716,6 +730,26 @@ MICROSOFT_QUANTUM_DECL void MCU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
     simulator->CU(ctrlsArray, n, shards[simulator][q], theta, phi, lambda);
 
     delete[] ctrlsArray;
+}
+
+/**
+ * (External API) Controlled 2x2 complex matrix unitary gate
+ */
+MICROSOFT_QUANTUM_DECL void MCMtrx(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_reads_(8) double* m, _In_ unsigned q)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    complex mtrx[4] = { complex((real1)m[0], (real1)m[1]), complex((real1)m[2], (real1)m[3]),
+        complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
+
+    QInterfacePtr simulator = simulators[sid];
+    bitLenInt* ctrlsArray = new bitLenInt[n];
+    for (unsigned i = 0; i < n; i++) {
+        ctrlsArray[i] = shards[simulator][c[i]];
+    }
+
+    simulator->ApplyControlledSingleBit(ctrlsArray, n, shards[simulator][q], mtrx);
 }
 
 /**
