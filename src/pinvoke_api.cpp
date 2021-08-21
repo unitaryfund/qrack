@@ -565,14 +565,9 @@ MICROSOFT_QUANTUM_DECL void Mtrx(_In_ unsigned sid, _In_reads_(8) double* m, _In
     SIMULATOR_LOCK_GUARD(sid)                                                                                          \
     QInterfacePtr simulator = simulators[sid];                                                                         \
     std::unique_ptr<bitLenInt[]> ctrlsArray(new bitLenInt[n]);                                                         \
-    MapControls(shards[simulator], c, n, ctrlsArray.get());
-
-void MapControls(std::map<unsigned int, bitLenInt> m, unsigned* c, unsigned n, bitLenInt* ctrlsArray)
-{
-    for (unsigned i = 0; i < n; i++) {
-        ctrlsArray[i] = m[c[i]];
+    for (unsigned i = 0; i < n; i++) {                                                                                 \
+        ctrlsArray.get()[i] = shards[simulator][c[i]];                                                                 \
     }
-}
 
 /**
  * (External API) Controlled "X" Gate
