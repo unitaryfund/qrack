@@ -483,6 +483,22 @@ void QInterface::XMask(bitCapInt mask)
     }
 }
 
+void QInterface::YMask(bitCapInt mask)
+{
+    bitLenInt bit = log2(mask);
+    if (pow2(bit) == mask) {
+        Y(bit);
+        return;
+    }
+
+    ZMask(mask);
+    XMask(mask);
+
+    if (!randGlobalPhase) {
+        ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+    }
+}
+
 void QInterface::ZMask(bitCapInt mask)
 {
     bitCapIntOcl v = mask;

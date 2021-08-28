@@ -556,6 +556,21 @@ public:
         }
     }
 
+    virtual void YMask(bitCapInt mask)
+    {
+        if (!stabilizer) {
+            engine->YMask(mask);
+            return;
+        }
+
+        bitCapIntOcl v = mask;
+        while (mask) {
+            v = v & (v - ONE_BCI);
+            Y(log2(mask ^ v));
+            mask = v;
+        }
+    }
+
     virtual void ZMask(bitCapInt mask)
     {
         if (!stabilizer) {

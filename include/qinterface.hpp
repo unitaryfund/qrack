@@ -886,10 +886,18 @@ public:
      * Y gate
      *
      * Applies the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
-     * "Y" operator is similar to a logical "NOT" with permutation phase
+     * "Y" operator is similar to a logical "NOT" with permutation phase.
      * effects.
      */
     virtual void Y(bitLenInt qubitIndex);
+
+    /**
+     * Masked Y gate
+     *
+     * Applies the Pauli "Y" operator to all qubits in the mask. A qubit index "n" is in the mask if (((1 << n) & mask)
+     * > 0). The Pauli "Y" operator is similar to a logical "NOT" with permutation phase.
+     */
+    virtual void YMask(bitCapInt mask);
 
     /**
      * Z gate
