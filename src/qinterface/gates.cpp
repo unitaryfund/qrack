@@ -494,8 +494,23 @@ void QInterface::YMask(bitCapInt mask)
     ZMask(mask);
     XMask(mask);
 
-    if (!randGlobalPhase) {
+    if (randGlobalPhase) {
+        return;
+    }
+
+    int parity = 0;
+    bitCapIntOcl v = mask;
+    while (v) {
+        v = v & (v - ONE_BCI);
+        parity = (parity + 1) & 3;
+    }
+
+    if (parity == 1) {
         ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+    } else if (parity == 2) {
+        PhaseFlip();
+    } else if (parity == 3) {
+        ApplySinglePhase(-I_CMPLX, -I_CMPLX, 0);
     }
 }
 
