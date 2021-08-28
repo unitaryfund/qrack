@@ -13,6 +13,7 @@
 #pragma once
 
 #include "qengine_cpu.hpp"
+#include "qmaskfusion.hpp"
 #include "qpager.hpp"
 #include "qstabilizerhybrid.hpp"
 
@@ -38,6 +39,8 @@ QInterfacePtr CreateQuantumInterface(
         return std::make_shared<QPager>(subengine1, args...);
     case QINTERFACE_STABILIZER_HYBRID:
         return std::make_shared<QStabilizerHybrid>(subengine1, subengine2, args...);
+    case QINTERFACE_MASK_FUSION:
+        return std::make_shared<QMaskFusion>(subengine1, subengine2, args...);
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine1, subengine2, args...);
 #if ENABLE_OPENCL
@@ -63,6 +66,8 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine, QInterfaceEngine s
         return std::make_shared<QPager>(subengine, args...);
     case QINTERFACE_STABILIZER_HYBRID:
         return std::make_shared<QStabilizerHybrid>(subengine, args...);
+    case QINTERFACE_MASK_FUSION:
+        return std::make_shared<QMaskFusion>(subengine, args...);
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(subengine, args...);
 #if ENABLE_OPENCL
@@ -87,6 +92,8 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
         return std::make_shared<QPager>(args...);
     case QINTERFACE_STABILIZER_HYBRID:
         return std::make_shared<QStabilizerHybrid>(args...);
+    case QINTERFACE_MASK_FUSION:
+        return std::make_shared<QMaskFusion>(args...);
     case QINTERFACE_QUNIT:
         return std::make_shared<QUnit>(args...);
 #if ENABLE_OPENCL

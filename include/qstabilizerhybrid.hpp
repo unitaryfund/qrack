@@ -11,43 +11,14 @@
 // for details.
 #pragma once
 
+#include "mpsshard.hpp"
 #include "qengine.hpp"
 #include "qstabilizer.hpp"
 
 namespace Qrack {
 
-struct QStabilizerShard;
-typedef std::shared_ptr<QStabilizerShard> QStabilizerShardPtr;
-
 class QStabilizerHybrid;
 typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
-
-struct QStabilizerShard {
-    complex gate[4];
-
-    QStabilizerShard()
-    {
-        gate[0] = ONE_CMPLX;
-        gate[1] = ZERO_CMPLX;
-        gate[2] = ZERO_CMPLX;
-        gate[3] = ONE_CMPLX;
-    }
-
-    QStabilizerShard(complex* g) { std::copy(g, g + 4, gate); }
-
-    void Compose(const complex* g)
-    {
-        complex o[4];
-        std::copy(gate, gate + 4, o);
-        mul2x2((complex*)g, o, gate);
-    }
-
-    bool IsPhase() { return (norm(gate[1]) <= FP_NORM_EPSILON) && (norm(gate[2]) <= FP_NORM_EPSILON); }
-
-    bool IsInvert() { return (norm(gate[0]) <= FP_NORM_EPSILON) && (norm(gate[3]) <= FP_NORM_EPSILON); }
-
-    bool IsIdentity() { return IsPhase() && (norm(gate[0] - gate[3]) <= FP_NORM_EPSILON); }
-};
 
 /**
  * A "Qrack::QStabilizerHybrid" internally switched between Qrack::QEngineCPU and Qrack::QEngineOCL to maximize
@@ -59,7 +30,7 @@ protected:
     QInterfaceEngine subEngineType;
     QInterfacePtr engine;
     QStabilizerPtr stabilizer;
-    std::vector<QStabilizerShardPtr> shards;
+    std::vector<MpsShardPtr> shards;
     int devID;
     complex phaseFactor;
     bool doNormalize;
@@ -76,7 +47,7 @@ protected:
     void InvertBuffer(bitLenInt qubit)
     {
         complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-        QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
+        MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
         pauliShard->Compose(shards[qubit]->gate);
         shards[qubit] = pauliShard;
         if (shards[qubit]->IsIdentity()) {
@@ -109,7 +80,7 @@ protected:
 
     virtual bool CollapseSeparableShard(bitLenInt qubit)
     {
-        QStabilizerShardPtr shard = shards[qubit];
+        MpsShardPtr shard = shards[qubit];
         shards[qubit] = NULL;
         real1_f prob;
 
@@ -156,7 +127,7 @@ protected:
         }
 
         for (i = 0; i < qubitCount; i++) {
-            QStabilizerShardPtr shard = shards[i];
+            MpsShardPtr shard = shards[i];
             if (shard) {
                 shards[i] = NULL;
                 ApplySingleBit(shard->gate, i);

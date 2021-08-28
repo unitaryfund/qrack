@@ -114,6 +114,11 @@ enum QInterfaceEngine {
     QINTERFACE_HYBRID,
 
     /**
+     * Create a QMaskFusion, coalescing Pauli gates.
+     */
+    QINTERFACE_MASK_FUSION,
+
+    /**
      * Create a QStabilizerHybrid, switching between a QStabilizer and a QHybrid as efficient.
      */
     QINTERFACE_STABILIZER_HYBRID,
