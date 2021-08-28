@@ -1222,6 +1222,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_x_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x1d));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_xmask")
+{
+    qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->XMask(pow2Ocl(18) | pow2Ocl(19));
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x40001));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtx")
 {
     qftReg->SetPermutation(0x80001);

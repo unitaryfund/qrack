@@ -473,6 +473,16 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     ApplyAntiControlledSinglePhase(controls.get(), min1, start + min1, -ONE_CMPLX, ONE_CMPLX);
 }
 
+void QInterface::XMask(bitCapInt mask)
+{
+    bitCapIntOcl v = mask;
+    while (mask) {
+        v = v & (v - ONE_BCI);
+        X(log2(mask ^ v));
+        mask = v;
+    }
+}
+
 void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
 {
     real1 timeDiff = (real1)timeDiff_f;

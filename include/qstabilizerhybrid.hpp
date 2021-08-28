@@ -541,6 +541,21 @@ public:
         engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
     }
 
+    virtual void XMask(bitCapInt mask)
+    {
+        if (!stabilizer) {
+            engine->XMask(mask);
+            return;
+        }
+
+        bitCapIntOcl v = mask;
+        while (mask) {
+            v = v & (v - ONE_BCI);
+            X(log2(mask ^ v));
+            mask = v;
+        }
+    }
+
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
     {

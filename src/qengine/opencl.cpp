@@ -982,6 +982,36 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
 }
 
+void QEngineOCL::XMask(bitCapInt mask)
+{
+    CHECK_ZERO_SKIP();
+
+    if (!mask) {
+        return;
+    }
+
+    bitCapIntOcl otherMask = (maxQPower - ONE_BCI) ^ mask;
+
+    cl_int error;
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPower, mask, otherMask, 0, 0, 0, 0, 0, 0, 0 };
+
+    cl::Event writeArgsEvent;
+    DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs, writeArgsEvent, error);
+
+    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    // Wait for buffer write from limited lifetime objects
+    writeArgsEvent.wait();
+    wait_refs.clear();
+
+    QueueCall(OCL_API_X_MASK, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
+}
+
 void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
     bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)

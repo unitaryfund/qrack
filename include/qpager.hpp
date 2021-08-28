@@ -222,6 +222,8 @@ public:
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
 
+    virtual void XMask(bitCapInt mask);
+
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);

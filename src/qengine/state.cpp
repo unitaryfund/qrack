@@ -534,6 +534,39 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 }
 #endif
 
+void QEngineCPU::XMask(bitCapInt mask)
+{
+    CHECK_ZERO_SKIP();
+
+    if (!mask) {
+        return;
+    }
+
+    if (stateVec->is_sparse()) {
+        QInterface::XMask(mask);
+        return;
+    }
+
+    Dispatch([this, mask] {
+        bitCapInt otherMask = (maxQPower - ONE_BCI) ^ mask;
+        ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt otherRes = lcv & otherMask;
+            bitCapInt setInt = lcv & mask;
+            bitCapInt resetInt = setInt ^ mask;
+
+            if (setInt < resetInt) {
+                return;
+            }
+
+            complex Y0 = stateVec->read(setInt | otherRes);
+            stateVec->write(setInt | otherRes, stateVec->read(resetInt | otherRes));
+            stateVec->write(resetInt | otherRes, Y0);
+        };
+
+        par_for(0, maxQPower, fn);
+    });
+}
+
 void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
     bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)

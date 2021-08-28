@@ -875,6 +875,14 @@ public:
     virtual void X(bitLenInt qubitIndex);
 
     /**
+     * Masked X gate
+     *
+     * Applies the Pauli "X" operator to all qubits in the mask. A qubit index "n" is in the mask if (((1 << n) & mask)
+     * > 0). The Pauli "X" operator is equivalent to a logical "NOT."
+     */
+    virtual void XMask(bitCapInt mask);
+
+    /**
      * Y gate
      *
      * Applies the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli

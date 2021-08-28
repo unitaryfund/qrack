@@ -889,6 +889,32 @@ void QPager::AntiCISqrtSwap(
         { qubit1, qubit2 }, controls, controlLen);
 }
 
+void QPager::XMask(bitCapInt mask)
+{
+    bitCapIntOcl i;
+
+    bitCapIntOcl pageMask = pageMaxQPower() - ONE_BCI;
+    bitCapIntOcl intraMask = mask & pageMask;
+    bitCapIntOcl interMask = mask ^ intraMask;
+
+    bitCapIntOcl v = interMask;
+    while (interMask) {
+        v = v & (v - ONE_BCI);
+        X(log2(interMask ^ v));
+        interMask = v;
+    }
+
+    std::vector<std::future<void>> futures(qPages.size());
+    for (i = 0; i < qPages.size(); i++) {
+        QEnginePtr engine = qPages[i];
+        futures[i] = std::async(std::launch::async, [engine, intraMask]() { return engine->XMask(intraMask); });
+    }
+
+    for (i = 0; i < qPages.size(); i++) {
+        futures[i].get();
+    }
+}
+
 bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
     if (qPages.size() == 1U) {

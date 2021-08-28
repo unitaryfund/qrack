@@ -333,6 +333,8 @@ public:
     using QEngine::ApplySinglePhase;
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
 
+    virtual void XMask(bitCapInt mask);
+
     using QEngine::Compose;
     virtual bitLenInt Compose(QEngineOCLPtr toCopy);
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }

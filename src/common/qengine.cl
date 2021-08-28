@@ -289,6 +289,32 @@ void kernel xsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     APPLY_X();
 }
 
+void kernel xmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+{
+    bitCapIntOcl lcv, otherRes, setInt, resetInt;                                                                                               \
+    cmplx Y0;
+
+    bitCapIntOcl Nthreads = get_global_size(0);
+
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl mask = bitCapIntOclPtr[1];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        otherRes = lcv & otherMask;
+        setInt = lcv & mask;
+        resetInt = setInt ^ mask;
+
+        if (setInt < resetInt) {
+            continue;
+        }
+
+        Y0 = stateVec[setInt | otherRes];
+        stateVec[setInt | otherRes] = stateVec[resetInt | otherRes];
+        stateVec[resetInt | otherRes] = Y0;
+    }
+}
+
 void kernel zsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl lcv, i;

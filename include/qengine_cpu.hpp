@@ -230,6 +230,8 @@ public:
 
     /** @} */
 
+    virtual void XMask(bitCapInt mask);
+
     /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.
      *
