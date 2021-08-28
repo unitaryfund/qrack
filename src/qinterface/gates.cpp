@@ -483,6 +483,16 @@ void QInterface::XMask(bitCapInt mask)
     }
 }
 
+void QInterface::ZMask(bitCapInt mask)
+{
+    bitCapIntOcl v = mask;
+    while (mask) {
+        v = v & (v - ONE_BCI);
+        Z(log2(mask ^ v));
+        mask = v;
+    }
+}
+
 void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
 {
     real1 timeDiff = (real1)timeDiff_f;

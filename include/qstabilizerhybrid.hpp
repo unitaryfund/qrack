@@ -556,6 +556,21 @@ public:
         }
     }
 
+    virtual void ZMask(bitCapInt mask)
+    {
+        if (!stabilizer) {
+            engine->ZMask(mask);
+            return;
+        }
+
+        bitCapIntOcl v = mask;
+        while (mask) {
+            v = v & (v - ONE_BCI);
+            Z(log2(mask ^ v));
+            mask = v;
+        }
+    }
+
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
     {

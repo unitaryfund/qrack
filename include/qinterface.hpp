@@ -900,6 +900,14 @@ public:
     virtual void Z(bitLenInt qubitIndex);
 
     /**
+     * Masked Z gate
+     *
+     * Applies the Pauli "Z" operator to all qubits in the mask. A qubit index "n" is in the mask if (((1 << n) & mask)
+     * > 0). The Pauli "Z" operator reverses the phase of |1> and leaves |0> unchanged.
+     */
+    virtual void ZMask(bitCapInt mask);
+
+    /**
      * Square root of X gate
      *
      * Applies the square root of the Pauli "X" operator to the qubit at "qubitIndex." The Pauli

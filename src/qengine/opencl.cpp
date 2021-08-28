@@ -982,7 +982,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
 }
 
-void QEngineOCL::XMask(bitCapInt mask)
+void QEngineOCL::BitMask(bitCapInt mask, OCLAPI api_call)
 {
     CHECK_ZERO_SKIP();
 
@@ -1009,7 +1009,7 @@ void QEngineOCL::XMask(bitCapInt mask)
     writeArgsEvent.wait();
     wait_refs.clear();
 
-    QueueCall(OCL_API_X_MASK, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
+    QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
 }
 
 void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
