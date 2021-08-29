@@ -70,7 +70,7 @@ protected:
         complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
         MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
         pauliShard->Compose(mpsShards[qubit]->gate);
-        mpsShards[qubit] = pauliShard->IsIdentity() ? NULL : pauliShard;
+        mpsShards[qubit] = (pauliShard->IsIdentity() ? NULL : pauliShard);
         zxShards[qubit].isX = !zxShards[qubit].isX;
     }
 
@@ -105,22 +105,6 @@ protected:
             isBlocked |= zxShards[control].isX || (mpsShards[control] && !mpsShards[control]->IsPhase());
         }
 
-        if (isBlocked) {
-            FlushBuffers();
-        }
-    }
-
-    void FlushIfBlocked(
-        bitLenInt target, const bitLenInt* controls = NULL, bitLenInt controlLen = 0U, bool isPhase = false)
-    {
-        FlushIfBlocked(controls, controlLen);
-
-        if (mpsShards[target] && mpsShards[target]->IsInvert()) {
-            InvertBuffer(target);
-        }
-
-        bool isBlocked = zxShards[target].isX || (!isPhase && zxShards[target].isZ) ||
-            (mpsShards[target] && (!isPhase || !mpsShards[target]->IsPhase()));
         if (isBlocked) {
             FlushBuffers();
         }
@@ -264,8 +248,8 @@ public:
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
     {
+        complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         if (mpsShards[target]) {
-            complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -279,12 +263,12 @@ public:
             return;
         }
 
-        engine->ApplySinglePhase(topLeft, bottomRight, target);
+        mpsShards[target] = std::make_shared<MpsShard>(mtrx);
     }
     virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
     {
+        complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         if (mpsShards[target]) {
-            complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
             ApplySingleBit(mtrx, target);
             return;
         }
@@ -299,22 +283,12 @@ public:
             return;
         }
 
-        engine->ApplySingleInvert(topRight, bottomLeft, target);
+        mpsShards[target] = std::make_shared<MpsShard>(mtrx);
     }
 
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
     {
-        if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-            ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
-            return;
-        }
-
-        if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-            ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
-            return;
-        }
-
         FlushIfBuffered(target);
         FlushIfBlocked(controls, controlLen);
 
@@ -323,44 +297,10 @@ public:
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
     {
-        if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-            ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
-            return;
-        }
-
-        if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-            ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
-            return;
-        }
-
         FlushIfBuffered(target);
         FlushIfBlocked(controls, controlLen);
 
         engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
-    }
-    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight)
-    {
-        FlushIfBlocked(target, controls, controlLen, true);
-        engine->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
-    }
-    virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft)
-    {
-        FlushIfBlocked(target, controls, controlLen, false);
-        engine->ApplyControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
-    }
-    virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight)
-    {
-        FlushIfBlocked(target, controls, controlLen, true);
-        engine->ApplyAntiControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
-    }
-    virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft)
-    {
-        FlushIfBlocked(target, controls, controlLen, false);
-        engine->ApplyAntiControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
     }
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -441,8 +381,7 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
-        FlushIfBlocked(qubit);
-        DumpBuffer(qubit);
+        FlushIfBuffered(qubit);
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
@@ -668,7 +607,7 @@ public:
 
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
-        FlushIfBlocked(qubitIndex);
+        FlushIfBuffered(qubitIndex);
         return engine->Prob(qubitIndex);
     }
     virtual real1_f ProbAll(bitCapInt fullRegister)
@@ -711,7 +650,7 @@ public:
 
     virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0)
     {
-        FlushIfBlocked(bits, length);
+        FlushBuffers();
         return engine->ExpectationBitsAll(bits, length, offset);
     }
 
