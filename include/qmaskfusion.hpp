@@ -19,6 +19,7 @@ namespace Qrack {
 struct QMaskFusionShard {
     bool isX;
     bool isZ;
+    bool isBuffered() { return isX || isZ; }
 };
 
 class QMaskFusion;
@@ -53,9 +54,7 @@ protected:
     {
         bitLenInt maxLcv = start + length;
         for (bitLenInt i = start; i < maxLcv; i++) {
-            zxShards[i].isX = false;
-            zxShards[i].isZ = false;
-            mpsShards[i] = NULL;
+            DumpBuffer(i);
         }
     }
 
@@ -75,18 +74,18 @@ protected:
         zxShards[qubit].isX = !zxShards[qubit].isX;
     }
 
+    void FlushIfBuffered(bitLenInt target)
+    {
+        if (mpsShards[target] || zxShards[target].isBuffered()) {
+            FlushBuffers();
+        }
+    }
+
     void FlushIfBuffered(const bitLenInt start, const bitLenInt length)
     {
-        bitLenInt control, i;
-
-        bool isBlocked = false;
-        for (i = 0U; i < length; i++) {
-            control = start + i;
-            isBlocked |= mpsShards[control] || zxShards[control].isX || zxShards[control].isZ;
-        }
-
-        if (isBlocked) {
-            FlushBuffers();
+        bitLenInt maxLcv = start + length;
+        for (bitLenInt i = start; i < maxLcv; i++) {
+            FlushIfBuffered(i);
         }
     }
 
@@ -111,6 +110,26 @@ protected:
         }
     }
 
+    void FlushIfBlocked(const bitLenInt start, const bitLenInt length)
+    {
+        bitLenInt i;
+        bitLenInt maxLcv = start + length;
+        for (i = start; i < maxLcv; i++) {
+            if (mpsShards[i] && mpsShards[i]->IsInvert()) {
+                InvertBuffer(i);
+            }
+        }
+
+        bool isBlocked = false;
+        for (i = start; i < maxLcv; i++) {
+            isBlocked |= zxShards[i].isX || (mpsShards[i] && !mpsShards[i]->IsPhase());
+        }
+
+        if (isBlocked) {
+            FlushBuffers();
+        }
+    }
+
     void FlushIfBlocked(
         bitLenInt target, const bitLenInt* controls = NULL, bitLenInt controlLen = 0U, bool isPhase = false)
     {
@@ -122,13 +141,6 @@ protected:
 
         bool isBlocked = zxShards[target].isX || (mpsShards[target] && (!isPhase || !mpsShards[target]->IsPhase()));
         if (isBlocked) {
-            FlushBuffers();
-        }
-    }
-
-    void FlushIfBuffered(bitLenInt target)
-    {
-        if (mpsShards[target] || zxShards[target].isX || zxShards[target].isZ) {
             FlushBuffers();
         }
     }
@@ -161,6 +173,7 @@ public:
 
     virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
     {
+        FlushIfBlocked(start, length);
         return engine->ProbReg(start, length, permutation);
     }
 
@@ -367,7 +380,8 @@ public:
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask)
     {
-        FlushIfBlocked(qubitIndex, controls, controlLen, false);
+        FlushIfBuffered(qubitIndex);
+        FlushIfBlocked(controls, controlLen);
         engine->UniformlyControlledSingleBit(
             controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
     }
@@ -380,10 +394,6 @@ public:
     virtual void Z(bitLenInt target);
     using QInterface::H;
     virtual void H(bitLenInt target);
-
-    virtual void XMask(bitCapInt mask) { engine->XMask(mask); }
-    virtual void YMask(bitCapInt mask) { engine->YMask(mask); }
-    virtual void ZMask(bitCapInt mask) { engine->ZMask(mask); }
 
     virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle) { engine->UniformParityRZ(mask, angle); }
     virtual void CUniformParityRZ(
@@ -640,8 +650,8 @@ public:
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
-        FlushIfBuffered(qubitIndex1);
-        FlushIfBuffered(qubitIndex2);
+        std::swap(mpsShards[qubitIndex1], mpsShards[qubitIndex2]);
+        std::swap(zxShards[qubitIndex1], zxShards[qubitIndex2]);
         engine->Swap(qubitIndex1, qubitIndex2);
     }
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)

@@ -61,10 +61,11 @@ QInterfacePtr QMaskFusion::Clone()
 
 void QMaskFusion::FlushBuffers()
 {
+    bitLenInt i;
     bitCapInt bitPow;
     bitCapInt zMask = 0U;
     bitCapInt xMask = 0U;
-    for (bitLenInt i = 0U; i < qubitCount; i++) {
+    for (i = 0U; i < qubitCount; i++) {
         QMaskFusionShard& shard = zxShards[i];
         bitPow = pow2(i);
         if (shard.isZ) {
@@ -78,10 +79,9 @@ void QMaskFusion::FlushBuffers()
     ZMask(zMask);
     XMask(xMask);
 
-    for (bitLenInt i = 0; i < qubitCount; i++) {
+    for (i = 0U; i < qubitCount; i++) {
         MpsShardPtr shard = mpsShards[i];
         if (shard) {
-            mpsShards[i] = NULL;
             engine->ApplySingleBit(shard->gate, i);
         }
     }
@@ -136,17 +136,9 @@ void QMaskFusion::H(bitLenInt target)
     }
 
     QMaskFusionShard& shard = zxShards[target];
-
-    if (shard.isZ) {
-        if (!shard.isX) {
-            shard.isZ = false;
-            shard.isX = true;
-        }
-    } else if (shard.isX) {
-        if (!shard.isZ) {
-            shard.isZ = true;
-            shard.isX = false;
-        }
+    if (shard.isZ != shard.isX) {
+        shard.isZ = !shard.isZ;
+        shard.isX = !shard.isX;
     }
 
     engine->H(target);
@@ -196,7 +188,7 @@ void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    engine->ApplySingleBit(mtrx, target);
+    mpsShards[target] = std::make_shared<MpsShard>(mtrx);
 }
 
 } // namespace Qrack
