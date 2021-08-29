@@ -625,6 +625,7 @@ public:
     {
         FlushIfBuffered(indexStart, indexLength);
         FlushIfBuffered(valueStart, valueLength);
+        FlushIfBuffered(carryIndex);
         return engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -632,6 +633,7 @@ public:
     {
         FlushIfBuffered(indexStart, indexLength);
         FlushIfBuffered(valueStart, valueLength);
+        FlushIfBuffered(carryIndex);
         return engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }
     virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values)
