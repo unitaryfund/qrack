@@ -110,26 +110,6 @@ protected:
         }
     }
 
-    void FlushIfBlocked(const bitLenInt start, const bitLenInt length)
-    {
-        bitLenInt i;
-        bitLenInt maxLcv = start + length;
-        for (i = start; i < maxLcv; i++) {
-            if (mpsShards[i] && mpsShards[i]->IsInvert()) {
-                InvertBuffer(i);
-            }
-        }
-
-        bool isBlocked = false;
-        for (i = start; i < maxLcv; i++) {
-            isBlocked |= zxShards[i].isX || (mpsShards[i] && !mpsShards[i]->IsPhase());
-        }
-
-        if (isBlocked) {
-            FlushBuffers();
-        }
-    }
-
     void FlushIfBlocked(
         bitLenInt target, const bitLenInt* controls = NULL, bitLenInt controlLen = 0U, bool isPhase = false)
     {
@@ -139,7 +119,8 @@ protected:
             InvertBuffer(target);
         }
 
-        bool isBlocked = zxShards[target].isX || (mpsShards[target] && (!isPhase || !mpsShards[target]->IsPhase()));
+        bool isBlocked = zxShards[target].isX || (!isPhase && zxShards[target].isZ) ||
+            (mpsShards[target] && (!isPhase || !mpsShards[target]->IsPhase()));
         if (isBlocked) {
             FlushBuffers();
         }
@@ -173,7 +154,7 @@ public:
 
     virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
     {
-        FlushIfBlocked(start, length);
+        FlushIfBuffered(start, length);
         return engine->ProbReg(start, length, permutation);
     }
 
@@ -334,6 +315,9 @@ public:
             return;
         }
 
+        FlushIfBuffered(target);
+        FlushIfBlocked(controls, controlLen);
+
         engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
     }
     virtual void ApplyAntiControlledSingleBit(
@@ -348,6 +332,9 @@ public:
             ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
             return;
         }
+
+        FlushIfBuffered(target);
+        FlushIfBlocked(controls, controlLen);
 
         engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
     }

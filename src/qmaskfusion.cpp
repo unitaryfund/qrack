@@ -76,8 +76,8 @@ void QMaskFusion::FlushBuffers()
         }
     }
 
-    ZMask(zMask);
-    XMask(xMask);
+    engine->ZMask(zMask);
+    engine->XMask(xMask);
 
     for (i = 0U; i < qubitCount; i++) {
         MpsShardPtr shard = mpsShards[i];
