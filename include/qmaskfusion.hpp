@@ -48,6 +48,42 @@ protected:
     void FlushBuffers();
     void DumpBuffers();
 
+    void InvertBuffer(bitLenInt qubit)
+    {
+        complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
+        pauliShard->Compose(mpsShards[qubit]->gate);
+        mpsShards[qubit] = pauliShard;
+        if (mpsShards[qubit]->IsIdentity()) {
+            mpsShards[qubit] = NULL;
+        }
+        X(qubit);
+    }
+
+    void FlushIfBlocked(const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isPhase = false)
+    {
+        bitLenInt control, i;
+        for (i = 0U; i < controlLen; i++) {
+            control = controls[i];
+            if (mpsShards[control] && mpsShards[control]->IsInvert()) {
+                InvertBuffer(control);
+            }
+        }
+        if (mpsShards[target] && mpsShards[target]->IsInvert()) {
+            InvertBuffer(target);
+        }
+
+        bool isBlocked = (mpsShards[target] && (!isPhase || zxShards[target].isX || !mpsShards[target]->IsPhase()));
+        for (i = 0U; i < controlLen; i++) {
+            control = controls[i];
+            isBlocked |= (mpsShards[control] && (zxShards[control].isX || !mpsShards[control]->IsPhase()));
+        }
+
+        if (isBlocked) {
+            FlushBuffers();
+        }
+    }
+
 public:
     QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -200,16 +236,62 @@ public:
 
         engine->ApplySingleInvert(topRight, bottomLeft, target);
     }
+
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
     {
+        if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+            ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+            return;
+        }
+
+        if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+            ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
+            return;
+        }
+
         engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
     }
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
     {
+        if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+            ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+            return;
+        }
+
+        if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+            ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
+            return;
+        }
+
         engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
     }
+    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topLeft, const complex bottomRight)
+    {
+        FlushIfBlocked(controls, controlLen, target, true);
+        engine->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
+    }
+    virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topRight, const complex bottomLeft)
+    {
+        FlushIfBlocked(controls, controlLen, target, false);
+        engine->ApplyControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
+    }
+    virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topLeft, const complex bottomRight)
+    {
+        FlushIfBlocked(controls, controlLen, target, true);
+        engine->ApplyAntiControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
+    }
+    virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topRight, const complex bottomLeft)
+    {
+        FlushIfBlocked(controls, controlLen, target, false);
+        engine->ApplyControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
+    }
+
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask)
