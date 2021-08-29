@@ -10,7 +10,9 @@
 
 #include <thread>
 
+#if ENABLE_OPENCL
 #include "common/oclengine.hpp"
+#endif
 
 #include "qfactory.hpp"
 #include "qmaskfusion.hpp"
