@@ -51,6 +51,7 @@ QInterfacePtr QMaskFusion::MakeEngine(bitCapInt initState)
 
 QInterfacePtr QMaskFusion::Clone()
 {
+    FlushBuffers();
     QMaskFusionPtr c = std::dynamic_pointer_cast<QMaskFusion>(CreateQuantumInterface(QINTERFACE_MASK_FUSION, engType,
         subEngType, qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
         useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
