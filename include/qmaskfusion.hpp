@@ -85,13 +85,9 @@ protected:
             return true;
         }
 
-        if (zxShards[target].isBuffered()) {
+        if (mpsShards[target] || zxShards[target].isBuffered()) {
             FlushBuffers();
             return true;
-        }
-        if (mpsShards[target]) {
-            engine->ApplySingleBit(mpsShards[target]->gate, target);
-            mpsShards[target] = NULL;
         }
 
         return false;
@@ -105,13 +101,9 @@ protected:
 
         bitLenInt maxLcv = start + length;
         for (bitLenInt i = start; i < maxLcv; i++) {
-            if (zxShards[i].isBuffered()) {
+            if (mpsShards[i] || zxShards[i].isBuffered()) {
                 FlushBuffers();
                 return true;
-            }
-            if (mpsShards[i]) {
-                engine->ApplySingleBit(mpsShards[i]->gate, i);
-                mpsShards[i] = NULL;
             }
         }
 
