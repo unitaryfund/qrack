@@ -89,22 +89,53 @@ protected:
         }
     }
 
-    void FlushIfBlocked(const bitLenInt* controls, bitLenInt controlLen)
+    void FlushIfBlocked(const bitLenInt* controls, const bitLenInt controlLen)
     {
         bitLenInt control, i;
-        for (i = 0U; i < controlLen; i++) {
-            control = controls[i];
-            if (mpsShards[control] && mpsShards[control]->IsInvert()) {
-                InvertBuffer(control);
-            }
-        }
-
         bool isBlocked = false;
         for (i = 0U; i < controlLen; i++) {
             control = controls[i];
+
+            if (mpsShards[control] && mpsShards[control]->IsInvert()) {
+                InvertBuffer(control);
+            }
             isBlocked |= zxShards[control].isX || (mpsShards[control] && !mpsShards[control]->IsPhase());
+
+            if (isBlocked) {
+                break;
+            }
         }
 
+        if (isBlocked) {
+            FlushBuffers();
+        }
+    }
+
+    void FlushIfPhaseBlocked(const bitLenInt target)
+    {
+        if (mpsShards[target] && mpsShards[target]->IsInvert()) {
+            InvertBuffer(target);
+        }
+        bool isBlocked = zxShards[target].isX || (mpsShards[target] && !mpsShards[target]->IsPhase());
+        if (isBlocked) {
+            FlushBuffers();
+        }
+    }
+
+    void FlushIfPhaseBlocked(const bitLenInt start, const bitLenInt length)
+    {
+        bool isBlocked = false;
+        bitLenInt maxLcv = start + length;
+        for (bitLenInt i = start; i < maxLcv; i++) {
+            if (mpsShards[i] && mpsShards[i]->IsInvert()) {
+                InvertBuffer(i);
+            }
+            isBlocked |= zxShards[i].isX || (mpsShards[i] && !mpsShards[i]->IsPhase());
+
+            if (isBlocked) {
+                break;
+            }
+        }
         if (isBlocked) {
             FlushBuffers();
         }
@@ -138,7 +169,7 @@ public:
 
     virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
     {
-        FlushIfBuffered(start, length);
+        FlushIfPhaseBlocked(start, length);
         return engine->ProbReg(start, length, permutation);
     }
 
@@ -226,7 +257,7 @@ public:
     }
     virtual void GetProbs(real1* outputProbs)
     {
-        FlushBuffers();
+        FlushIfPhaseBlocked(0, qubitCount);
         engine->GetProbs(outputProbs);
     }
     virtual complex GetAmplitude(bitCapInt perm)
@@ -289,18 +320,64 @@ public:
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
     {
+        if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+            ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+            return;
+        }
+
+        if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+            ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
+            return;
+        }
+
         FlushIfBuffered(target);
         FlushIfBlocked(controls, controlLen);
-
         engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
     }
     virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
     {
+        if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+            ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+            return;
+        }
+
+        if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+            ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
+            return;
+        }
+
         FlushIfBuffered(target);
         FlushIfBlocked(controls, controlLen);
-
         engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+    }
+    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topLeft, const complex bottomRight)
+    {
+        FlushIfPhaseBlocked(target);
+        FlushIfBlocked(controls, controlLen);
+        engine->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
+    }
+    virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topRight, const complex bottomLeft)
+    {
+        FlushIfBuffered(target);
+        FlushIfBlocked(controls, controlLen);
+        engine->ApplyControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
+    }
+    virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topLeft, const complex bottomRight)
+    {
+        FlushIfPhaseBlocked(target);
+        FlushIfBlocked(controls, controlLen);
+        engine->ApplyAntiControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
+    }
+    virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topRight, const complex bottomLeft)
+    {
+        FlushIfBuffered(target);
+        FlushIfBlocked(controls, controlLen);
+        engine->ApplyAntiControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
     }
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -381,7 +458,8 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
-        FlushIfBuffered(qubit);
+        FlushIfPhaseBlocked(qubit);
+        DumpBuffer(qubit);
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
@@ -607,12 +685,12 @@ public:
 
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
-        FlushIfBuffered(qubitIndex);
+        FlushIfPhaseBlocked(qubitIndex);
         return engine->Prob(qubitIndex);
     }
     virtual real1_f ProbAll(bitCapInt fullRegister)
     {
-        FlushBuffers();
+        FlushIfPhaseBlocked(0, qubitCount);
         return engine->ProbAll(fullRegister);
     }
     virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
@@ -650,7 +728,7 @@ public:
 
     virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0)
     {
-        FlushBuffers();
+        FlushIfBlocked(bits, length);
         return engine->ExpectationBitsAll(bits, length, offset);
     }
 
