@@ -40,6 +40,7 @@ protected:
     bool useRDRAND;
     bool isSparse;
     bool useHostRam;
+    bool isCacheEmpty;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
     std::vector<QMaskFusionShard> zxShards;
@@ -48,7 +49,11 @@ protected:
     QInterfacePtr MakeEngine(bitCapInt initState = 0);
 
     void FlushBuffers();
-    void DumpBuffers() { DumpBuffers(0, qubitCount); }
+    void DumpBuffers()
+    {
+        isCacheEmpty = true;
+        DumpBuffers(0, qubitCount);
+    }
 
     void DumpBuffers(const bitLenInt start, const bitLenInt length)
     {
@@ -76,6 +81,10 @@ protected:
 
     bool FlushIfBuffered(bitLenInt target)
     {
+        if (isCacheEmpty) {
+            return true;
+        }
+
         if (mpsShards[target] || zxShards[target].isBuffered()) {
             FlushBuffers();
             return true;
@@ -86,9 +95,14 @@ protected:
 
     bool FlushIfBuffered(const bitLenInt start, const bitLenInt length)
     {
+        if (isCacheEmpty) {
+            return true;
+        }
+
         bitLenInt maxLcv = start + length;
         for (bitLenInt i = start; i < maxLcv; i++) {
-            if (FlushIfBuffered(i)) {
+            if (mpsShards[i] || zxShards[i].isBuffered()) {
+                FlushBuffers();
                 return true;
             }
         }
@@ -98,6 +112,10 @@ protected:
 
     bool FlushIfBlocked(const bitLenInt* controls, const bitLenInt controlLen)
     {
+        if (isCacheEmpty) {
+            return true;
+        }
+
         bitLenInt control, i;
         bool isBlocked = false;
         for (i = 0U; i < controlLen; i++) {
@@ -122,6 +140,10 @@ protected:
 
     bool FlushIfPhaseBlocked(const bitLenInt target)
     {
+        if (isCacheEmpty) {
+            return true;
+        }
+
         if (mpsShards[target] && mpsShards[target]->IsInvert()) {
             InvertBuffer(target);
         }
@@ -135,6 +157,10 @@ protected:
 
     bool FlushIfPhaseBlocked(const bitLenInt start, const bitLenInt length)
     {
+        if (isCacheEmpty) {
+            return true;
+        }
+
         bool isBlocked = false;
         bitLenInt maxLcv = start + length;
         for (bitLenInt i = start; i < maxLcv; i++) {

@@ -30,6 +30,7 @@ QMaskFusion::QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenIn
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , useHostRam(useHostMem)
+    , isCacheEmpty(true)
     , separabilityThreshold(sep_thresh)
     , zxShards(qBitCount)
     , mpsShards(qBitCount)
@@ -111,6 +112,7 @@ void QMaskFusion::X(bitLenInt target)
 
     QMaskFusionShard& shard = zxShards[target];
     shard.isX = !shard.isX;
+    isCacheEmpty = false;
 }
 
 void QMaskFusion::Y(bitLenInt target)
@@ -124,6 +126,7 @@ void QMaskFusion::Y(bitLenInt target)
     QMaskFusionShard& shard = zxShards[target];
     shard.isZ = !shard.isZ;
     shard.isX = !shard.isX;
+    isCacheEmpty = false;
 }
 
 void QMaskFusion::Z(bitLenInt target)
@@ -136,6 +139,7 @@ void QMaskFusion::Z(bitLenInt target)
 
     QMaskFusionShard& shard = zxShards[target];
     shard.isZ = !shard.isZ;
+    isCacheEmpty = false;
 }
 
 void QMaskFusion::H(bitLenInt target)
@@ -201,6 +205,7 @@ void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     mpsShards[target] = std::make_shared<MpsShard>(mtrx);
+    isCacheEmpty = false;
 }
 
 } // namespace Qrack
