@@ -212,13 +212,34 @@ public:
         return engine->Dispose(start, length, disposedPerm);
     }
 
-    virtual void SetQuantumState(const complex* inputState) { engine->SetQuantumState(inputState); }
-    virtual void GetQuantumState(complex* outputState) { engine->GetQuantumState(outputState); }
-    virtual void GetProbs(real1* outputProbs) { engine->GetProbs(outputProbs); }
-    virtual complex GetAmplitude(bitCapInt perm) { return engine->GetAmplitude(perm); }
-    virtual void SetAmplitude(bitCapInt perm, complex amp) { engine->SetAmplitude(perm, amp); }
+    virtual void SetQuantumState(const complex* inputState)
+    {
+        DumpBuffers();
+        engine->SetQuantumState(inputState);
+    }
+    virtual void GetQuantumState(complex* outputState)
+    {
+        FlushBuffers();
+        engine->GetQuantumState(outputState);
+    }
+    virtual void GetProbs(real1* outputProbs)
+    {
+        FlushBuffers();
+        engine->GetProbs(outputProbs);
+    }
+    virtual complex GetAmplitude(bitCapInt perm)
+    {
+        FlushBuffers();
+        return engine->GetAmplitude(perm);
+    }
+    virtual void SetAmplitude(bitCapInt perm, complex amp)
+    {
+        FlushBuffers();
+        engine->SetAmplitude(perm, amp);
+    }
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG)
     {
+        DumpBuffers();
         engine->SetPermutation(perm, phaseFac);
     }
 
@@ -231,6 +252,15 @@ public:
             return;
         }
 
+        if (IS_SAME(topLeft, bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {
+            return;
+        }
+
+        if (IS_SAME(topLeft, -bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {
+            Z(target);
+            return;
+        }
+
         engine->ApplySinglePhase(topLeft, bottomRight, target);
     }
     virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
@@ -239,6 +269,24 @@ public:
             complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
             ApplySingleBit(mtrx, target);
             return;
+        }
+
+        if (IS_SAME(topRight, bottomLeft) && (randGlobalPhase || IS_SAME(topRight, ONE_CMPLX))) {
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(topRight, -bottomLeft)) {
+            if (randGlobalPhase || IS_SAME(topRight, ONE_CMPLX)) {
+                X(target);
+                Z(target);
+                return;
+            }
+            if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+                Z(target);
+                X(target);
+                return;
+            }
         }
 
         engine->ApplySingleInvert(topRight, bottomLeft, target);
@@ -296,7 +344,7 @@ public:
         const bitLenInt& target, const complex topRight, const complex bottomLeft)
     {
         FlushIfBlocked(target, controls, controlLen, false);
-        engine->ApplyControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
+        engine->ApplyAntiControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
     }
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,

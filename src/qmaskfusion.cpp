@@ -32,6 +32,7 @@ QMaskFusion::QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenIn
     , useHostRam(useHostMem)
     , separabilityThreshold(sep_thresh)
     , zxShards(qBitCount)
+    , mpsShards(qBitCount)
 {
     if ((engType == QINTERFACE_OPTIMAL_SCHROEDINGER) && (engType == subEngType)) {
         subEngType = QINTERFACE_OPTIMAL_SINGLE_PAGE;
@@ -78,9 +79,9 @@ void QMaskFusion::FlushBuffers()
         }
         if (shard.isZ) {
             if (shard.isXZ) {
-                lZMask = bitPow;
+                lZMask |= bitPow;
             } else {
-                rZMask = bitPow;
+                rZMask |= bitPow;
             }
         }
         phase = (phase + shard.phase) & 3U;
@@ -104,7 +105,7 @@ void QMaskFusion::FlushBuffers()
         MpsShardPtr shard = mpsShards[i];
         if (shard) {
             mpsShards[i] = NULL;
-            ApplySingleBit(shard->gate, i);
+            engine->ApplySingleBit(shard->gate, i);
         }
     }
 }
@@ -210,24 +211,13 @@ void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        if (IS_SAME(mtrx[0], mtrx[3])) {
-            return;
-        }
-        if (IS_SAME(mtrx[0], -mtrx[3])) {
-            Z(target);
-            return;
-        }
+        ApplySinglePhase(mtrx[0], mtrx[3], target);
+        return;
     }
 
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        if (IS_SAME(mtrx[1], mtrx[2])) {
-            X(target);
-            return;
-        }
-        if (IS_SAME(mtrx[1], -mtrx[1])) {
-            Y(target);
-            return;
-        }
+        ApplySingleInvert(mtrx[1], mtrx[2], target);
+        return;
     }
 
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
