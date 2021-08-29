@@ -21,7 +21,7 @@ QMaskFusion::QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenIn
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceId,
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
-    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , engType(eng)
     , subEngType(subEng)
     , devID(deviceId)
@@ -29,6 +29,7 @@ QMaskFusion::QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenIn
     , phaseFactor(phaseFac)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
+    , useHostRam(useHostMem)
     , separabilityThreshold(sep_thresh)
     , zxShards(qBitCount)
 {
@@ -39,11 +40,11 @@ QMaskFusion::QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenIn
     engine = MakeEngine(initState);
 }
 
-QEnginePtr QMaskFusion::MakeEngine(bitCapInt initState)
+QInterfacePtr QMaskFusion::MakeEngine(bitCapInt initState)
 {
-    QEnginePtr toRet = std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engType, subEngType, qubitCount,
-        initState, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-        (real1_f)amplitudeFloor, devices, thresholdQubits, separabilityThreshold));
+    QInterfacePtr toRet = CreateQuantumInterface(engType, subEngType, qubitCount, initState, rand_generator,
+        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+        devices, thresholdQubits, separabilityThreshold);
     return toRet;
 }
 
@@ -52,7 +53,7 @@ QInterfacePtr QMaskFusion::Clone()
     QMaskFusionPtr c = std::dynamic_pointer_cast<QMaskFusion>(CreateQuantumInterface(QINTERFACE_MASK_FUSION, engType,
         subEngType, qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
         useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
-    c->engine->CopyStateVec(engine);
+    c->engine = engine->Clone();
     return c;
 }
 
