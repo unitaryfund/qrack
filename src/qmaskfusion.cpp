@@ -34,8 +34,20 @@ QMaskFusion::QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenIn
     , zxShards(qBitCount)
     , mpsShards(qBitCount)
 {
-    if ((engType == QINTERFACE_QPAGER) && (engType == subEngType)) {
-        subEngType = QINTERFACE_OPTIMAL_SINGLE_PAGE;
+    if (engType == subEngType) {
+        if (engType == QINTERFACE_MASK_FUSION) {
+            engType = QINTERFACE_OPTIMAL_G2_CHILD;
+            subEngType = QINTERFACE_OPTIMAL_G2_CHILD;
+        }
+#if ENABLE_OPENCL
+        if (engType == QINTERFACE_OPTIMAL_G2_CHILD) {
+            subEngType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
+        }
+#else
+        if (engType == QINTERFACE_OPTIMAL_G2_CHILD) {
+            subEngType = QINTERFACE_OPTIMAL_G3_CHILD;
+        }
+#endif
     }
 
     engine = MakeEngine(initState);

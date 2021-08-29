@@ -44,28 +44,26 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
     , separabilityThreshold(sep_thresh)
     , thresholdQubits(qubitThreshold)
 {
-    if (subEngineType == QINTERFACE_STABILIZER_HYBRID) {
+    if (engineType == subEngineType) {
+        switch (engineType) {
+        case QINTERFACE_OPTIMAL_G0_CHILD:
+            subEngineType = QINTERFACE_OPTIMAL_G1_CHILD;
+            break;
+        case QINTERFACE_OPTIMAL_G1_CHILD:
+            subEngineType = QINTERFACE_OPTIMAL_G2_CHILD;
+            break;
 #if ENABLE_OPENCL
-        subEngineType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
+        case QINTERFACE_OPTIMAL_G2_CHILD:
+            subEngineType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
+            break;
 #else
-        subEngineType = QINTERFACE_CPU;
+        case QINTERFACE_OPTIMAL_G2_CHILD:
+            subEngineType = QINTERFACE_OPTIMAL_G3_CHILD;
+            break;
 #endif
-    }
-
-    if (engineType == QINTERFACE_STABILIZER_HYBRID) {
-#if ENABLE_OPENCL
-        engineType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
-#else
-        engineType = QINTERFACE_CPU;
-#endif
-    }
-
-    if ((engineType == QINTERFACE_QPAGER) && (subEngineType == QINTERFACE_QPAGER)) {
-#if ENABLE_OPENCL
-        subEngineType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
-#else
-        subEngineType = QINTERFACE_CPU;
-#endif
+        default:
+            break;
+        }
     }
 
     concurrency = std::thread::hardware_concurrency();
