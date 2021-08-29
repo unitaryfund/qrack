@@ -903,20 +903,19 @@ void QPager::BitMask(bitCapInt mask, bool isX)
 
     bitCapIntOcl pageMask = pageMaxQPower() - ONE_BCI;
     bitCapIntOcl intraMask = mask & pageMask;
-    bitCapIntOcl interMask = mask ^ intraMask;
-
-    bitCapIntOcl v = interMask;
+    bitCapInt interMask = mask ^ (bitCapInt)intraMask;
+    bitCapInt v;
     bitLenInt bit;
     while (interMask) {
-        v = v & (v - ONE_BCI);
+        v = interMask & (interMask - ONE_BCI);
         bit = log2(interMask ^ v);
+        interMask = v;
+
         if (isX) {
             X(bit);
         } else {
             Z(bit);
         }
-
-        interMask = v;
     }
 
     std::vector<std::future<void>> futures(qPages.size());
