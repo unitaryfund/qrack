@@ -58,12 +58,6 @@ QInterfacePtr QMaskFusion::Clone()
     return c;
 }
 
-void QMaskFusion::DumpBuffers()
-{
-    zxShards = std::vector<QMaskFusionShard>(qubitCount);
-    mpsShards = std::vector<MpsShardPtr>(qubitCount);
-}
-
 void QMaskFusion::FlushBuffers()
 {
     bitCapInt bitPow;
@@ -108,6 +102,8 @@ void QMaskFusion::FlushBuffers()
             engine->ApplySingleBit(shard->gate, i);
         }
     }
+
+    DumpBuffers();
 }
 
 void QMaskFusion::X(bitLenInt target)

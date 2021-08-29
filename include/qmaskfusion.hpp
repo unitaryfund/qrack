@@ -49,18 +49,30 @@ protected:
     QInterfacePtr MakeEngine(bitCapInt initState = 0);
 
     void FlushBuffers();
-    void DumpBuffers();
+    void DumpBuffers()
+    {
+        zxShards = std::vector<QMaskFusionShard>(qubitCount);
+        mpsShards = std::vector<MpsShardPtr>(qubitCount);
+    }
+
+    void DumpBuffers(const bitLenInt start, const bitLenInt length)
+    {
+        for (bitLenInt i = 0U; i < length; i++) {
+            zxShards[start + i] = QMaskFusionShard();
+            mpsShards[start + i] = NULL;
+        }
+    }
 
     void InvertBuffer(bitLenInt qubit)
     {
         complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
         MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
         pauliShard->Compose(mpsShards[qubit]->gate);
-        mpsShards[qubit] = pauliShard;
-        if (mpsShards[qubit]->IsIdentity()) {
-            mpsShards[qubit] = NULL;
-        }
+        mpsShards[qubit] = NULL;
         X(qubit);
+        if (!pauliShard->IsIdentity()) {
+            mpsShards[qubit] = pauliShard;
+        }
     }
 
     void FlushIfBuffered(const bitLenInt start, const bitLenInt length)
@@ -116,9 +128,7 @@ protected:
 
     void FlushIfBuffered(bitLenInt target)
     {
-        if (mpsShards[target]) {
-            FlushBuffers();
-        } else if (zxShards[target].isX || zxShards[target].isZ) {
+        if (mpsShards[target] || zxShards[target].isX || zxShards[target].isZ) {
             FlushBuffers();
         }
     }
