@@ -346,9 +346,14 @@ public:
             controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
     }
 
-    virtual void X(bitLenInt mask);
-    virtual void Y(bitLenInt mask);
-    virtual void Z(bitLenInt mask);
+    using QInterface::X;
+    virtual void X(bitLenInt target);
+    using QInterface::Y;
+    virtual void Y(bitLenInt target);
+    using QInterface::Z;
+    virtual void Z(bitLenInt target);
+    using QInterface::H;
+    virtual void H(bitLenInt target);
 
     virtual void XMask(bitCapInt mask) { engine->XMask(mask); }
     virtual void YMask(bitCapInt mask) { engine->YMask(mask); }
