@@ -19,8 +19,6 @@ namespace Qrack {
 struct QMaskFusionShard {
     bool isX;
     bool isZ;
-    bool isXZ;
-    uint8_t phase;
 };
 
 class QMaskFusion;
@@ -276,11 +274,11 @@ public:
             return;
         }
 
-        if (IS_SAME(topLeft, bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {
+        if (IS_SAME(topLeft, bottomRight)) {
             return;
         }
 
-        if (IS_SAME(topLeft, -bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {
+        if (IS_SAME(topLeft, -bottomRight)) {
             Z(target);
             return;
         }
@@ -295,22 +293,14 @@ public:
             return;
         }
 
-        if (IS_SAME(topRight, bottomLeft) && (randGlobalPhase || IS_SAME(topRight, ONE_CMPLX))) {
+        if (IS_SAME(topRight, bottomLeft)) {
             X(target);
             return;
         }
 
         if (IS_SAME(topRight, -bottomLeft)) {
-            if (randGlobalPhase || IS_SAME(topRight, ONE_CMPLX)) {
-                X(target);
-                Z(target);
-                return;
-            }
-            if (IS_SAME(bottomLeft, ONE_CMPLX)) {
-                Z(target);
-                X(target);
-                return;
-            }
+            Y(target);
+            return;
         }
 
         engine->ApplySingleInvert(topRight, bottomLeft, target);
@@ -644,8 +634,8 @@ public:
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
-        std::swap(zxShards[qubitIndex1], zxShards[qubitIndex2]);
-        std::swap(mpsShards[qubitIndex1], mpsShards[qubitIndex2]);
+        FlushIfBuffered(qubitIndex1);
+        FlushIfBuffered(qubitIndex2);
         engine->Swap(qubitIndex1, qubitIndex2);
     }
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)

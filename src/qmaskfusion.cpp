@@ -62,39 +62,21 @@ QInterfacePtr QMaskFusion::Clone()
 void QMaskFusion::FlushBuffers()
 {
     bitCapInt bitPow;
-    bitCapInt rZMask = 0U;
+    bitCapInt zMask = 0U;
     bitCapInt xMask = 0U;
-    bitCapInt lZMask = 0U;
-    uint8_t phase = 0U;
     for (bitLenInt i = 0U; i < qubitCount; i++) {
         QMaskFusionShard& shard = zxShards[i];
         bitPow = pow2(i);
+        if (shard.isZ) {
+            zMask |= bitPow;
+        }
         if (shard.isX) {
             xMask |= bitPow;
         }
-        if (shard.isZ) {
-            if (shard.isXZ) {
-                lZMask |= bitPow;
-            } else {
-                rZMask |= bitPow;
-            }
-        }
-        phase = (phase + shard.phase) & 3U;
     }
 
-    ZMask(rZMask);
+    ZMask(zMask);
     XMask(xMask);
-    ZMask(lZMask);
-
-    if (!randGlobalPhase) {
-        if (phase == 1U) {
-            ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
-        } else if (phase == 2U) {
-            PhaseFlip();
-        } else if (phase == 3U) {
-            ApplySinglePhase(-I_CMPLX, -I_CMPLX, 0);
-        }
-    }
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
         MpsShardPtr shard = mpsShards[i];
@@ -116,10 +98,6 @@ void QMaskFusion::X(bitLenInt target)
     }
 
     QMaskFusionShard& shard = zxShards[target];
-
-    if (shard.isZ && shard.isXZ) {
-        shard.isXZ = false;
-    }
     shard.isX = !shard.isX;
 }
 
@@ -132,22 +110,8 @@ void QMaskFusion::Y(bitLenInt target)
     }
 
     QMaskFusionShard& shard = zxShards[target];
-
-    if (shard.isZ) {
-        if (shard.isX && !shard.isXZ) {
-            shard.phase = (shard.phase + 2U) & 3U;
-        }
-    } else if (shard.isX) {
-        shard.isXZ = true;
-    }
     shard.isZ = !shard.isZ;
-
-    if (shard.isZ && shard.isXZ) {
-        shard.isXZ = false;
-    }
     shard.isX = !shard.isX;
-
-    shard.phase += 1U;
 }
 
 void QMaskFusion::Z(bitLenInt target)
@@ -159,14 +123,6 @@ void QMaskFusion::Z(bitLenInt target)
     }
 
     QMaskFusionShard& shard = zxShards[target];
-
-    if (shard.isZ) {
-        if (shard.isX && !shard.isXZ) {
-            shard.phase = (shard.phase + 2U) & 3U;
-        }
-    } else if (shard.isX) {
-        shard.isXZ = true;
-    }
     shard.isZ = !shard.isZ;
 }
 
@@ -182,15 +138,15 @@ void QMaskFusion::H(bitLenInt target)
     QMaskFusionShard& shard = zxShards[target];
 
     if (shard.isZ) {
-        if (shard.isX) {
-            shard.isXZ = !shard.isXZ;
-        } else {
-            shard.isX = true;
+        if (!shard.isX) {
             shard.isZ = false;
+            shard.isX = true;
         }
     } else if (shard.isX) {
-        shard.isX = false;
-        shard.isZ = true;
+        if (!shard.isZ) {
+            shard.isZ = true;
+            shard.isX = false;
+        }
     }
 
     engine->H(target);
