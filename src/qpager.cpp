@@ -34,6 +34,14 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , thresholdQubitsPerPage(qubitThreshold)
     , pStridePow(PSTRIDEPOW)
 {
+    if (engine == QINTERFACE_QPAGER) {
+#if ENABLE_OPENCL
+        engine = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
+#else
+        engine = QINTERFACE_CPU;
+#endif
+    }
+
     Init();
 
     initState &= maxQPower - ONE_BCI;

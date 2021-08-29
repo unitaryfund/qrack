@@ -221,6 +221,20 @@ public:
         SetQubitCount(nQubitCount);
         return engine->Dispose(start, length, disposedPerm);
     }
+    virtual bool TryDecompose(bitLenInt start, QMaskFusionPtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        bitLenInt length = dest->GetQubitCount();
+        bitLenInt nQubitCount = qubitCount - length;
+        bool result = engine->TryDecompose(start, dest->engine, error_tol);
+        if (result) {
+            std::copy(mpsShards.begin() + start, mpsShards.begin() + start + length, dest->mpsShards.begin());
+            mpsShards.erase(mpsShards.begin() + start, mpsShards.begin() + start + length);
+            std::copy(zxShards.begin() + start, zxShards.begin() + start + length, dest->zxShards.begin());
+            zxShards.erase(zxShards.begin() + start, zxShards.begin() + start + length);
+            SetQubitCount(nQubitCount);
+        }
+        return result;
+    }
 
     virtual void SetQuantumState(const complex* inputState)
     {

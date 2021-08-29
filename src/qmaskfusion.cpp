@@ -34,7 +34,7 @@ QMaskFusion::QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenIn
     , zxShards(qBitCount)
     , mpsShards(qBitCount)
 {
-    if ((engType == QINTERFACE_OPTIMAL_SCHROEDINGER) && (engType == subEngType)) {
+    if ((engType == QINTERFACE_QPAGER) && (engType == subEngType)) {
         subEngType = QINTERFACE_OPTIMAL_SINGLE_PAGE;
     }
 
