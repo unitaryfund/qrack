@@ -49,10 +49,7 @@ protected:
         complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
         MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
         pauliShard->Compose(shards[qubit]->gate);
-        shards[qubit] = pauliShard;
-        if (shards[qubit]->IsIdentity()) {
-            shards[qubit] = NULL;
-        }
+        shards[qubit] = pauliShard->IsIdentity() ? NULL : pauliShard;
         stabilizer->X(qubit);
     }
 

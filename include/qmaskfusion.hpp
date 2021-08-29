@@ -47,18 +47,23 @@ protected:
     QInterfacePtr MakeEngine(bitCapInt initState = 0);
 
     void FlushBuffers();
-    void DumpBuffers()
-    {
-        zxShards = std::vector<QMaskFusionShard>(qubitCount);
-        mpsShards = std::vector<MpsShardPtr>(qubitCount);
-    }
+    void DumpBuffers() { DumpBuffers(0, qubitCount); }
 
     void DumpBuffers(const bitLenInt start, const bitLenInt length)
     {
-        for (bitLenInt i = 0U; i < length; i++) {
-            zxShards[start + i] = QMaskFusionShard();
-            mpsShards[start + i] = NULL;
+        bitLenInt maxLcv = start + length;
+        for (bitLenInt i = start; i < maxLcv; i++) {
+            zxShards[i].isX = false;
+            zxShards[i].isZ = false;
+            mpsShards[i] = NULL;
         }
+    }
+
+    void DumpBuffer(const bitLenInt target)
+    {
+        zxShards[target].isX = false;
+        zxShards[target].isZ = false;
+        mpsShards[target] = NULL;
     }
 
     void InvertBuffer(bitLenInt qubit)
@@ -66,11 +71,8 @@ protected:
         complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
         MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
         pauliShard->Compose(mpsShards[qubit]->gate);
-        mpsShards[qubit] = NULL;
-        X(qubit);
-        if (!pauliShard->IsIdentity()) {
-            mpsShards[qubit] = pauliShard;
-        }
+        mpsShards[qubit] = pauliShard->IsIdentity() ? NULL : pauliShard;
+        zxShards[qubit].isX = !zxShards[qubit].isX;
     }
 
     void FlushIfBuffered(const bitLenInt start, const bitLenInt length)
@@ -387,7 +389,7 @@ public:
     virtual void CUniformParityRZ(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
     {
-        FlushIfBlocked(controls, controlLen);
+        FlushBuffers();
         engine->CUniformParityRZ(controls, controlLen, mask, angle);
     }
 
@@ -443,6 +445,7 @@ public:
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
     {
         FlushIfBlocked(qubit);
+        DumpBuffer(qubit);
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
@@ -473,6 +476,9 @@ public:
     virtual void INCSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
+        FlushIfBuffered(start, length);
+        FlushIfBuffered(overflowIndex);
+        FlushIfBuffered(carryIndex);
         engine->INCSC(toAdd, start, length, overflowIndex, carryIndex);
     }
     virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
