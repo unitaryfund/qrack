@@ -542,6 +542,11 @@ void QEngineCPU::XMask(bitCapInt mask)
         return;
     }
 
+    if (!(mask & (mask - ONE_BCI))) {
+        X(log2(mask));
+        return;
+    }
+
     if (stateVec->is_sparse()) {
         QInterface::XMask(mask);
         return;
@@ -572,6 +577,11 @@ void QEngineCPU::ZMask(bitCapInt mask)
     CHECK_ZERO_SKIP();
 
     if (!mask) {
+        return;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        Z(log2(mask));
         return;
     }
 

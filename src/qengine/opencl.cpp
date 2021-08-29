@@ -986,10 +986,6 @@ void QEngineOCL::BitMask(bitCapInt mask, OCLAPI api_call)
 {
     CHECK_ZERO_SKIP();
 
-    if (!mask) {
-        return;
-    }
-
     bitCapIntOcl otherMask = (maxQPower - ONE_BCI) ^ mask;
 
     cl_int error;

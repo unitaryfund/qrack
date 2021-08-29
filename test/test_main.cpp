@@ -328,7 +328,8 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && hybrid) {
             session.config().stream() << "############ QUnit -> QMaskFusion -> QPager -> QHybrid ############"
                                       << std::endl;
-            testSubSubEngineType = QINTERFACE_MASK_FUSION;
+            testSubEngineType = QINTERFACE_MASK_FUSION;
+            testSubSubEngineType = QINTERFACE_QPAGER;
             SHOW_OCL_BANNER();
             num_failed = session.run();
         }

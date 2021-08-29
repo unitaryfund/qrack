@@ -333,8 +333,32 @@ public:
     using QEngine::ApplySinglePhase;
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
 
-    virtual void XMask(bitCapInt mask) { BitMask(mask, OCL_API_X_MASK); }
-    virtual void ZMask(bitCapInt mask) { BitMask(mask, OCL_API_Z_MASK); }
+    virtual void XMask(bitCapInt mask)
+    {
+        if (!mask) {
+            return;
+        }
+
+        if (!(mask & (mask - ONE_BCI))) {
+            X(log2(mask));
+            return;
+        }
+
+        BitMask(mask, OCL_API_X_MASK);
+    }
+    virtual void ZMask(bitCapInt mask)
+    {
+        if (!mask) {
+            return;
+        }
+
+        if (!(mask & (mask - ONE_BCI))) {
+            Z(log2(mask));
+            return;
+        }
+
+        BitMask(mask, OCL_API_Z_MASK);
+    }
 
     using QEngine::Compose;
     virtual bitLenInt Compose(QEngineOCLPtr toCopy);
