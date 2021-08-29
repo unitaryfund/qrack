@@ -74,22 +74,29 @@ protected:
         zxShards[qubit].isX = !zxShards[qubit].isX;
     }
 
-    void FlushIfBuffered(bitLenInt target)
+    bool FlushIfBuffered(bitLenInt target)
     {
         if (mpsShards[target] || zxShards[target].isBuffered()) {
             FlushBuffers();
+            return true;
         }
+
+        return false;
     }
 
-    void FlushIfBuffered(const bitLenInt start, const bitLenInt length)
+    bool FlushIfBuffered(const bitLenInt start, const bitLenInt length)
     {
         bitLenInt maxLcv = start + length;
         for (bitLenInt i = start; i < maxLcv; i++) {
-            FlushIfBuffered(i);
+            if (FlushIfBuffered(i)) {
+                return true;
+            }
         }
+
+        return false;
     }
 
-    void FlushIfBlocked(const bitLenInt* controls, const bitLenInt controlLen)
+    bool FlushIfBlocked(const bitLenInt* controls, const bitLenInt controlLen)
     {
         bitLenInt control, i;
         bool isBlocked = false;
@@ -109,9 +116,11 @@ protected:
         if (isBlocked) {
             FlushBuffers();
         }
+
+        return isBlocked;
     }
 
-    void FlushIfPhaseBlocked(const bitLenInt target)
+    bool FlushIfPhaseBlocked(const bitLenInt target)
     {
         if (mpsShards[target] && mpsShards[target]->IsInvert()) {
             InvertBuffer(target);
@@ -120,9 +129,11 @@ protected:
         if (isBlocked) {
             FlushBuffers();
         }
+
+        return isBlocked;
     }
 
-    void FlushIfPhaseBlocked(const bitLenInt start, const bitLenInt length)
+    bool FlushIfPhaseBlocked(const bitLenInt start, const bitLenInt length)
     {
         bool isBlocked = false;
         bitLenInt maxLcv = start + length;
@@ -139,6 +150,8 @@ protected:
         if (isBlocked) {
             FlushBuffers();
         }
+
+        return isBlocked;
     }
 
 public:
@@ -330,8 +343,7 @@ public:
             return;
         }
 
-        FlushIfBuffered(target);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(target) || FlushIfBlocked(controls, controlLen);
         engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
     }
     virtual void ApplyAntiControlledSingleBit(
@@ -347,36 +359,31 @@ public:
             return;
         }
 
-        FlushIfBuffered(target);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(target) || FlushIfBlocked(controls, controlLen);
         engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
     }
     virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topLeft, const complex bottomRight)
     {
-        FlushIfPhaseBlocked(target);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfPhaseBlocked(target) || FlushIfBlocked(controls, controlLen);
         engine->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
     }
     virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft)
     {
-        FlushIfBuffered(target);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(target) || FlushIfBlocked(controls, controlLen);
         engine->ApplyControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
     }
     virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topLeft, const complex bottomRight)
     {
-        FlushIfPhaseBlocked(target);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfPhaseBlocked(target) || FlushIfBlocked(controls, controlLen);
         engine->ApplyAntiControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
     }
     virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft)
     {
-        FlushIfBuffered(target);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(target) || FlushIfBlocked(controls, controlLen);
         engine->ApplyAntiControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
     }
 
@@ -384,8 +391,7 @@ public:
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask)
     {
-        FlushIfBuffered(qubitIndex);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(qubitIndex) || FlushIfBlocked(controls, controlLen);
         engine->UniformlyControlledSingleBit(
             controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
     }
@@ -410,49 +416,37 @@ public:
     virtual void CSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        FlushIfBuffered(qubit1);
-        FlushIfBuffered(qubit2);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(qubit1) || FlushIfBuffered(qubit2) || FlushIfBlocked(controls, controlLen);
         engine->CSwap(controls, controlLen, qubit1, qubit2);
     }
     virtual void AntiCSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        FlushIfBuffered(qubit1);
-        FlushIfBuffered(qubit2);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(qubit1) || FlushIfBuffered(qubit2) || FlushIfBlocked(controls, controlLen);
         engine->AntiCSwap(controls, controlLen, qubit1, qubit2);
     }
     virtual void CSqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        FlushIfBuffered(qubit1);
-        FlushIfBuffered(qubit2);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(qubit1) || FlushIfBuffered(qubit2) || FlushIfBlocked(controls, controlLen);
         engine->CSqrtSwap(controls, controlLen, qubit1, qubit2);
     }
     virtual void AntiCSqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        FlushIfBuffered(qubit1);
-        FlushIfBuffered(qubit2);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(qubit1) || FlushIfBuffered(qubit2) || FlushIfBlocked(controls, controlLen);
         engine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2);
     }
     virtual void CISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        FlushIfBuffered(qubit1);
-        FlushIfBuffered(qubit2);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(qubit1) || FlushIfBuffered(qubit2) || FlushIfBlocked(controls, controlLen);
         engine->CISqrtSwap(controls, controlLen, qubit1, qubit2);
     }
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        FlushIfBuffered(qubit1);
-        FlushIfBuffered(qubit2);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(qubit1) || FlushIfBuffered(qubit2) || FlushIfBlocked(controls, controlLen);
         engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
     }
 
@@ -471,54 +465,44 @@ public:
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
     {
-        FlushIfBuffered(inOutStart, length);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(inOutStart, length) || FlushIfBlocked(controls, controlLen);
         engine->CINC(toAdd, inOutStart, length, controls, controlLen);
     }
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        FlushIfBuffered(start, length);
-        FlushIfBuffered(carryIndex);
+        FlushIfBuffered(start, length) || FlushIfBuffered(carryIndex);
         engine->INCC(toAdd, start, length, carryIndex);
     }
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
-        FlushIfBuffered(start, length);
-        FlushIfBuffered(overflowIndex);
+        FlushIfBuffered(start, length) || FlushIfBuffered(overflowIndex);
         engine->INCS(toAdd, start, length, overflowIndex);
     }
     virtual void INCSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
-        FlushIfBuffered(start, length);
-        FlushIfBuffered(overflowIndex);
-        FlushIfBuffered(carryIndex);
+        FlushIfBuffered(start, length) || FlushIfBuffered(overflowIndex) || FlushIfBuffered(carryIndex);
         engine->INCSC(toAdd, start, length, overflowIndex, carryIndex);
     }
     virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        FlushIfBuffered(start, length);
-        FlushIfBuffered(carryIndex);
+        FlushIfBuffered(start, length) || FlushIfBuffered(carryIndex);
         engine->INCSC(toAdd, start, length, carryIndex);
     }
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        FlushIfBuffered(start, length);
-        FlushIfBuffered(carryIndex);
+        FlushIfBuffered(start, length) || FlushIfBuffered(carryIndex);
         engine->DECC(toSub, start, length, carryIndex);
     }
     virtual void DECSC(
         bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
-        FlushIfBuffered(start, length);
-        FlushIfBuffered(overflowIndex);
-        FlushIfBuffered(carryIndex);
+        FlushIfBuffered(start, length) || FlushIfBuffered(overflowIndex) || FlushIfBuffered(carryIndex);
         engine->DECSC(toSub, start, length, overflowIndex, carryIndex);
     }
     virtual void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        FlushIfBuffered(start, length);
-        FlushIfBuffered(carryIndex);
+        FlushIfBuffered(start, length) || FlushIfBuffered(carryIndex);
         engine->DECSC(toSub, start, length, carryIndex);
     }
 #if ENABLE_BCD
@@ -529,92 +513,76 @@ public:
     }
     virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        FlushIfBuffered(start, length);
-        FlushIfBuffered(carryIndex);
+        FlushIfBuffered(start, length) || FlushIfBuffered(carryIndex);
         engine->INCBCDC(toAdd, start, length, carryIndex);
     }
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        FlushIfBuffered(start, length);
-        FlushIfBuffered(carryIndex);
+        FlushIfBuffered(start, length) || FlushIfBuffered(carryIndex);
         engine->DECBCDC(toSub, start, length, carryIndex);
     }
 #endif
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
-        FlushIfBuffered(inOutStart, length);
-        FlushIfBuffered(carryStart, length);
+        FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryStart, length);
         engine->MUL(toMul, inOutStart, carryStart, length);
     }
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
-        FlushIfBuffered(inOutStart, length);
-        FlushIfBuffered(carryStart, length);
+        FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryStart, length);
         engine->DIV(toDiv, inOutStart, carryStart, length);
     }
     virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
-        FlushIfBuffered(inStart, length);
-        FlushIfBuffered(outStart, length);
+        FlushIfBuffered(inStart, length) || FlushIfBuffered(outStart, length);
         engine->MULModNOut(toMul, modN, inStart, outStart, length);
     }
     virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
-        FlushIfBuffered(inStart, length);
-        FlushIfBuffered(outStart, length);
+        FlushIfBuffered(inStart, length) || FlushIfBuffered(outStart, length);
         engine->IMULModNOut(toMul, modN, inStart, outStart, length);
     }
     virtual void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
-        FlushIfBuffered(inStart, length);
-        FlushIfBuffered(outStart, length);
+        FlushIfBuffered(inStart, length) || FlushIfBuffered(outStart, length);
         engine->POWModNOut(base, modN, inStart, outStart, length);
     }
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen)
     {
-        FlushIfBuffered(inOutStart, length);
-        FlushIfBuffered(carryStart, length);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryStart, length) ||
+            FlushIfBlocked(controls, controlLen);
         engine->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
     }
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen)
     {
-        FlushIfBuffered(inOutStart, length);
-        FlushIfBuffered(carryStart, length);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryStart, length) ||
+            FlushIfBlocked(controls, controlLen);
         engine->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
     }
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen)
     {
-        FlushIfBuffered(inStart, length);
-        FlushIfBuffered(outStart, length);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(inStart, length) || FlushIfBuffered(outStart, length) || FlushIfBlocked(controls, controlLen);
         engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen)
     {
-        FlushIfBuffered(inStart, length);
-        FlushIfBuffered(outStart, length);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(inStart, length) || FlushIfBuffered(outStart, length) || FlushIfBlocked(controls, controlLen);
         engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen)
     {
-        FlushIfBuffered(inStart, length);
-        FlushIfBuffered(outStart, length);
-        FlushIfBlocked(controls, controlLen);
+        FlushIfBuffered(inStart, length) || FlushIfBuffered(outStart, length) || FlushIfBlocked(controls, controlLen);
         engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
     }
 
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
-        FlushIfBuffered(start, length);
-        FlushIfBuffered(flagIndex);
+        FlushIfBuffered(start, length) || FlushIfBuffered(flagIndex);
         engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
     }
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
@@ -626,24 +594,21 @@ public:
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true)
     {
-        FlushIfBuffered(indexStart, indexLength);
-        FlushIfBuffered(valueStart, valueLength);
+        FlushIfBuffered(indexStart, indexLength) || FlushIfBuffered(valueStart, valueLength);
         return engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
     }
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
     {
-        FlushIfBuffered(indexStart, indexLength);
-        FlushIfBuffered(valueStart, valueLength);
-        FlushIfBuffered(carryIndex);
+        FlushIfBuffered(indexStart, indexLength) || FlushIfBuffered(valueStart, valueLength) ||
+            FlushIfBuffered(carryIndex);
         return engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
     {
-        FlushIfBuffered(indexStart, indexLength);
-        FlushIfBuffered(valueStart, valueLength);
-        FlushIfBuffered(carryIndex);
+        FlushIfBuffered(indexStart, indexLength) || FlushIfBuffered(valueStart, valueLength) ||
+            FlushIfBuffered(carryIndex);
         return engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }
     virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values)
@@ -660,26 +625,22 @@ public:
     }
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
-        FlushIfBuffered(qubitIndex1);
-        FlushIfBuffered(qubitIndex2);
+        FlushIfBuffered(qubitIndex1) || FlushIfBuffered(qubitIndex2);
         engine->ISwap(qubitIndex1, qubitIndex2);
     }
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
-        FlushIfBuffered(qubitIndex1);
-        FlushIfBuffered(qubitIndex2);
+        FlushIfBuffered(qubitIndex1) || FlushIfBuffered(qubitIndex2);
         engine->SqrtSwap(qubitIndex1, qubitIndex2);
     }
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
-        FlushIfBuffered(qubitIndex1);
-        FlushIfBuffered(qubitIndex2);
+        FlushIfBuffered(qubitIndex1) || FlushIfBuffered(qubitIndex2);
         engine->ISqrtSwap(qubitIndex1, qubitIndex2);
     }
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
-        FlushIfBuffered(qubitIndex1);
-        FlushIfBuffered(qubitIndex2);
+        FlushIfBuffered(qubitIndex1) || FlushIfBuffered(qubitIndex2);
         engine->FSim(theta, phi, qubitIndex1, qubitIndex2);
     }
 
