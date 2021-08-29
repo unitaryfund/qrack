@@ -30,7 +30,7 @@ QMaskFusion::QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenIn
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , separabilityThreshold(sep_thresh)
-    , shards(qBitCount)
+    , zxShards(qBitCount)
 {
     if ((engType == QINTERFACE_OPTIMAL_SCHROEDINGER) && (engType == subEngType)) {
         subEngType = QINTERFACE_OPTIMAL_SINGLE_PAGE;
@@ -56,6 +56,12 @@ QInterfacePtr QMaskFusion::Clone()
     return c;
 }
 
+void QMaskFusion::DumpBuffers()
+{
+    zxShards = std::vector<QMaskFusionShard>(qubitCount);
+    mpsShards = std::vector<MpsShardPtr>(qubitCount);
+}
+
 void QMaskFusion::FlushBuffers()
 {
     bitCapInt bitPow;
@@ -64,7 +70,7 @@ void QMaskFusion::FlushBuffers()
     bitCapInt lZMask = 0U;
     uint8_t phase = 0U;
     for (bitLenInt i = 0U; i < qubitCount; i++) {
-        QMaskFusionShard& shard = shards[i];
+        QMaskFusionShard& shard = zxShards[i];
         bitPow = pow2(i);
         if (shard.isX) {
             xMask |= bitPow;
@@ -83,22 +89,34 @@ void QMaskFusion::FlushBuffers()
     XMask(xMask);
     ZMask(lZMask);
 
-    if (randGlobalPhase) {
-        return;
+    if (!randGlobalPhase) {
+        if (phase == 1U) {
+            ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+        } else if (phase == 2U) {
+            PhaseFlip();
+        } else if (phase == 3U) {
+            ApplySinglePhase(-I_CMPLX, -I_CMPLX, 0);
+        }
     }
 
-    if (phase == 1U) {
-        ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
-    } else if (phase == 2U) {
-        PhaseFlip();
-    } else if (phase == 3U) {
-        ApplySinglePhase(-I_CMPLX, -I_CMPLX, 0);
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        MpsShardPtr shard = mpsShards[i];
+        if (shard) {
+            mpsShards[i] = NULL;
+            ApplySingleBit(shard->gate, i);
+        }
     }
 }
 
 void QMaskFusion::X(bitLenInt target)
 {
-    QMaskFusionShard& shard = shards[target];
+    if (mpsShards[target]) {
+        const complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        ApplySingleBit(mtrx, target);
+        return;
+    }
+
+    QMaskFusionShard& shard = zxShards[target];
 
     if (shard.isZ && shard.isXZ) {
         shard.isXZ = false;
@@ -108,7 +126,13 @@ void QMaskFusion::X(bitLenInt target)
 
 void QMaskFusion::Y(bitLenInt target)
 {
-    QMaskFusionShard& shard = shards[target];
+    if (mpsShards[target]) {
+        const complex mtrx[4] = { ZERO_CMPLX, -I_CMPLX, I_CMPLX, ZERO_CMPLX };
+        ApplySingleBit(mtrx, target);
+        return;
+    }
+
+    QMaskFusionShard& shard = zxShards[target];
 
     if (shard.isZ) {
         if (shard.isX && !shard.isXZ) {
@@ -129,7 +153,13 @@ void QMaskFusion::Y(bitLenInt target)
 
 void QMaskFusion::Z(bitLenInt target)
 {
-    QMaskFusionShard& shard = shards[target];
+    if (mpsShards[target]) {
+        const complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+        ApplySingleBit(mtrx, target);
+        return;
+    }
+
+    QMaskFusionShard& shard = zxShards[target];
 
     if (shard.isZ) {
         if (shard.isX && !shard.isXZ) {
@@ -139,6 +169,41 @@ void QMaskFusion::Z(bitLenInt target)
         shard.isXZ = true;
     }
     shard.isZ = !shard.isZ;
+}
+
+void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
+{
+    complex mtrx[4];
+    if (mpsShards[target]) {
+        mpsShards[target]->Compose(lMtrx);
+        std::copy(mpsShards[target]->gate, mpsShards[target]->gate + 4, mtrx);
+        mpsShards[target] = NULL;
+    } else {
+        std::copy(lMtrx, lMtrx + 4, mtrx);
+    }
+
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        if (IS_SAME(mtrx[0], mtrx[3])) {
+            return;
+        }
+        if (IS_SAME(mtrx[0], -mtrx[3])) {
+            Z(target);
+            return;
+        }
+    }
+
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        if (IS_SAME(mtrx[1], mtrx[2])) {
+            X(target);
+            return;
+        }
+        if (IS_SAME(mtrx[1], -mtrx[1])) {
+            Y(target);
+            return;
+        }
+    }
+
+    engine->ApplySingleBit(mtrx, target);
 }
 
 } // namespace Qrack

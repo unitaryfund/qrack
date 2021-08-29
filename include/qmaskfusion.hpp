@@ -42,9 +42,11 @@ protected:
     bool isSparse;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
-    std::vector<QMaskFusionShard> shards;
+    std::vector<QMaskFusionShard> zxShards;
+    std::vector<MpsShardPtr> mpsShards;
 
     void FlushBuffers();
+    void DumpBuffers();
 
 public:
     QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -177,14 +179,26 @@ public:
         engine->SetPermutation(perm, phaseFac);
     }
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex) { engine->ApplySingleBit(mtrx, qubitIndex); }
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
+    virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
+    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
     {
-        engine->ApplySinglePhase(topLeft, bottomRight, qubitIndex);
+        if (mpsShards[target]) {
+            complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
+        engine->ApplySinglePhase(topLeft, bottomRight, target);
     }
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
+    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
     {
-        engine->ApplySingleInvert(topRight, bottomLeft, qubitIndex);
+        if (mpsShards[target]) {
+            complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+            ApplySingleBit(mtrx, target);
+            return;
+        }
+
+        engine->ApplySingleInvert(topRight, bottomLeft, target);
     }
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
