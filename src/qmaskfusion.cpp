@@ -125,7 +125,7 @@ void QMaskFusion::X(bitLenInt target)
 void QMaskFusion::Y(bitLenInt target)
 {
     Z(target);
-    Y(target);
+    X(target);
     QMaskFusionShard& shard = zxShards[target];
     shard.phase = (shard.phase + 1U) & 3U;
 }
