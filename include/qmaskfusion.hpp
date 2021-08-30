@@ -201,6 +201,7 @@ public:
     using QInterface::Compose;
     virtual bitLenInt Compose(QMaskFusionPtr toCopy)
     {
+        isCacheEmpty = false;
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
         zxShards.insert(zxShards.end(), toCopy->zxShards.begin(), toCopy->zxShards.end());
         SetQubitCount(nQubitCount);
@@ -209,6 +210,7 @@ public:
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QMaskFusion>(toCopy)); }
     virtual bitLenInt Compose(QMaskFusionPtr toCopy, bitLenInt start)
     {
+        isCacheEmpty = false;
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
         zxShards.insert(zxShards.begin() + start, toCopy->zxShards.begin(), toCopy->zxShards.end());
         SetQubitCount(nQubitCount);
