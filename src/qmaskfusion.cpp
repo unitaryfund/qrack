@@ -79,6 +79,7 @@ void QMaskFusion::FlushBuffers()
     bitCapInt bitPow;
     bitCapInt zMask = 0U;
     bitCapInt xMask = 0U;
+    uint8_t phase = 0U;
     for (i = 0U; i < qubitCount; i++) {
         QMaskFusionShard& shard = zxShards[i];
         bitPow = pow2(i);
@@ -88,10 +89,26 @@ void QMaskFusion::FlushBuffers()
         if (shard.isX) {
             xMask |= bitPow;
         }
+        phase = (phase + shard.phase) & 3U;
     }
 
     engine->ZMask(zMask);
     engine->XMask(xMask);
+
+    switch (phase) {
+    case 1U:
+        engine->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+        break;
+    case 2U:
+        engine->ApplySinglePhase(-ONE_CMPLX, -ONE_CMPLX, 0);
+        break;
+    case 3U:
+        engine->ApplySinglePhase(-I_CMPLX, -I_CMPLX, 0);
+        break;
+    default:
+        // Identity
+        break;
+    }
 
     DumpBuffers();
 }
@@ -105,15 +122,18 @@ void QMaskFusion::X(bitLenInt target)
 
 void QMaskFusion::Y(bitLenInt target)
 {
+    Z(target);
+    Y(target);
     QMaskFusionShard& shard = zxShards[target];
-    shard.isZ = !shard.isZ;
-    shard.isX = !shard.isX;
-    isCacheEmpty = false;
+    shard.phase = (shard.phase + 1U) & 3U;
 }
 
 void QMaskFusion::Z(bitLenInt target)
 {
     QMaskFusionShard& shard = zxShards[target];
+    if (shard.isX) {
+        shard.phase = (shard.phase + 2U) & 3U;
+    }
     shard.isZ = !shard.isZ;
     isCacheEmpty = false;
 }

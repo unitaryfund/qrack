@@ -18,6 +18,7 @@ namespace Qrack {
 struct QMaskFusionShard {
     bool isX;
     bool isZ;
+    uint64_t phase;
     bool isBuffered() { return isX || isZ; }
 };
 
