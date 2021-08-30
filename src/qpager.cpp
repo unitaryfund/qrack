@@ -40,7 +40,7 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
             engines[0] = QINTERFACE_CPU;
         }
 #else
-        engine = QINTERFACE_CPU;
+        engines[0] = QINTERFACE_CPU;
 #endif
     }
 

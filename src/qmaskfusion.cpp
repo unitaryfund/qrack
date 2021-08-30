@@ -34,6 +34,16 @@ QMaskFusion::QMaskFusion(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
     , separabilityThreshold(sep_thresh)
     , zxShards(qBitCount)
 {
+    if ((engTypes[0] == QINTERFACE_HYBRID) || (engTypes[0] == QINTERFACE_OPENCL)) {
+#if ENABLE_OPENCL
+        if (!OCLEngine::Instance()->GetDeviceCount()) {
+            engTypes[0] = QINTERFACE_CPU;
+        }
+#else
+        engTypes[0] = QINTERFACE_CPU;
+#endif
+    }
+
     engine = MakeEngine(initState);
 }
 
