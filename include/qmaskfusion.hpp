@@ -20,6 +20,13 @@ struct QMaskFusionShard {
     bool isZ;
     uint64_t phase;
     bool isBuffered() { return isX || isZ; }
+
+    QMaskFusionShard()
+        : isX(false)
+        , isZ(false)
+        , phase(0)
+    {
+    }
 };
 
 class QMaskFusion;

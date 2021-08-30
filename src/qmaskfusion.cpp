@@ -95,19 +95,21 @@ void QMaskFusion::FlushBuffers()
     engine->ZMask(zMask);
     engine->XMask(xMask);
 
-    switch (phase) {
-    case 1U:
-        engine->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
-        break;
-    case 2U:
-        engine->ApplySinglePhase(-ONE_CMPLX, -ONE_CMPLX, 0);
-        break;
-    case 3U:
-        engine->ApplySinglePhase(-I_CMPLX, -I_CMPLX, 0);
-        break;
-    default:
-        // Identity
-        break;
+    if (!randGlobalPhase) {
+        switch (phase) {
+        case 1U:
+            engine->ApplySinglePhase(I_CMPLX, I_CMPLX, 0U);
+            break;
+        case 2U:
+            engine->ApplySinglePhase(-ONE_CMPLX, -ONE_CMPLX, 0U);
+            break;
+        case 3U:
+            engine->ApplySinglePhase(-I_CMPLX, -I_CMPLX, 0U);
+            break;
+        default:
+            // Identity
+            break;
+        }
     }
 
     DumpBuffers();
