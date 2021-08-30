@@ -706,6 +706,13 @@ public:
         return engine->ExpectationBitsAll(bits, length, offset);
     }
 
+    virtual bool TrySeparate(bitLenInt qubit) { return engine->TrySeparate(qubit); }
+    virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return engine->TrySeparate(qubit1, qubit2); }
+    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
+    {
+        return engine->TrySeparate(qubits, length, error_tol);
+    }
+
     virtual void Finish() { engine->Finish(); }
 
     virtual bool isFinished() { return engine->isFinished(); }
