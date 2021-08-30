@@ -92,11 +92,29 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
     }
 
     if ((subEngine == QINTERFACE_QUNIT) || (subEngine == QINTERFACE_QUNIT_MULTI)) {
+        subEngine = engine;
+    }
+
+    if (engine == subEngine) {
+        switch (engine) {
+        case QINTERFACE_OPTIMAL_G0_CHILD:
+            subEngine = QINTERFACE_OPTIMAL_G1_CHILD;
+            break;
+        case QINTERFACE_OPTIMAL_G1_CHILD:
+            subEngine = QINTERFACE_OPTIMAL_G2_CHILD;
+            break;
 #if ENABLE_OPENCL
-        subEngine = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_OPTIMAL_G1_CHILD : QINTERFACE_CPU;
+        case QINTERFACE_OPTIMAL_G2_CHILD:
+            subEngine = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
+            break;
 #else
-        subEngine = QINTERFACE_OPTIMAL_G1_CHILD;
+        case QINTERFACE_OPTIMAL_G2_CHILD:
+            subEngine = QINTERFACE_OPTIMAL_G3_CHILD;
+            break;
 #endif
+        default:
+            break;
+        }
     }
 
     canSuppressPaging = ((engine == QINTERFACE_QPAGER) ||
