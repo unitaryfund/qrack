@@ -22,7 +22,7 @@
 
 #define SHOW_OCL_BANNER()                                                                                              \
     if (OCLEngine::Instance()->GetDeviceCount()) {                                                                     \
-        CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();                                                       \
+        CreateQuantumInterface({ QINTERFACE_OPENCL }, 1, 0).reset();                                                   \
     }
 
 using namespace Qrack;
@@ -150,6 +150,6 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, 1, 0, rng, complex(ONE_R1, ZERO_R1),
+    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType }, 1, 0, rng, complex(ONE_R1, ZERO_R1),
         enable_normalization, false, true, -1, !disable_hardware_rng);
 }

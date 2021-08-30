@@ -53,18 +53,17 @@
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_AMP_0(shard.amp1))
 #define IS_SAME_UNIT(shard1, shard2) (shard1.unit && (shard1.unit == shard2.unit))
 #define ARE_CLIFFORD(shard1, shard2)                                                                                   \
-    ((engine == QINTERFACE_STABILIZER_HYBRID) && (shard1.isClifford() || shard2.isClifford()))
+    ((engines[0] == QINTERFACE_STABILIZER_HYBRID) && (shard1.isClifford() || shard2.isClifford()))
 #define BLOCKED_SEPARATE(shard) (shard.unit && shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped))
 
 namespace Qrack {
 
-QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
-    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
-    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
-    bitLenInt qubitThreshold, real1_f sep_thresh)
+QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
+    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG,
+    bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
-    , engine(eng)
-    , subEngine(subEng)
+    , engines(eng)
+    , unpagedEngines()
     , devID(deviceID)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
@@ -87,20 +86,13 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
         separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
     }
 
-    if ((engine == QINTERFACE_QUNIT) || (engine == QINTERFACE_QUNIT_MULTI)) {
-        engine = QINTERFACE_OPTIMAL_G0_CHILD;
+    canSuppressPaging = (engines[0] == QINTERFACE_QPAGER) ||
+        ((engines[0] == QINTERFACE_STABILIZER_HYBRID) && ((engines.size() == 1U) || (engines[1] == QINTERFACE_QPAGER)));
+    for (unsigned int i = 0; i < engines.size(); i++) {
+        if ((i > 1U) || engines[i] != QINTERFACE_QPAGER) {
+            unpagedEngines.push_back(engines[i]);
+        }
     }
-
-    if ((subEngine == QINTERFACE_QUNIT) || (subEngine == QINTERFACE_QUNIT_MULTI)) {
-#if ENABLE_OPENCL
-        subEngine = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_OPTIMAL_G1_CHILD : QINTERFACE_CPU;
-#else
-        subEngine = QINTERFACE_OPTIMAL_G1_CHILD;
-#endif
-    }
-
-    canSuppressPaging = ((engine == QINTERFACE_QPAGER) ||
-        ((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER)));
 
     isPagingSuppressed = canSuppressPaging && (qubitCount < pagingThresholdQubits);
 
@@ -117,21 +109,13 @@ QUnit::QUnit(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
 {
     if (canSuppressPaging && isPagingSuppressed) {
-        if (engine == QINTERFACE_QPAGER) {
-            return CreateQuantumInterface(subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
-                randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
-                thresholdQubits, separabilityThreshold);
-        }
-
-        if ((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER)) {
-            return CreateQuantumInterface(QINTERFACE_STABILIZER_HYBRID, QINTERFACE_HYBRID, length, perm, rand_generator,
-                phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-                (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
-        }
+        return CreateQuantumInterface(unpagedEngines, length, perm, rand_generator, phaseFactor, doNormalize,
+            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+            thresholdQubits, separabilityThreshold);
     }
 
-    return CreateQuantumInterface(engine, subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+    return CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
+        useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
 }
 
@@ -143,12 +127,15 @@ void QUnit::TurnOnPaging()
     isPagingSuppressed = false;
 
     bitLenInt i;
-    if (engine == QINTERFACE_QPAGER) {
+    if (engines[0] == QINTERFACE_QPAGER) {
+        std::vector<QInterfaceEngine> tEngines = engines;
+        tEngines.erase(tEngines.begin());
+
         std::map<QInterfacePtr, QPagerPtr> nEngines;
         for (i = 0; i < qubitCount; i++) {
             QEnginePtr unit = std::dynamic_pointer_cast<QEngine>(shards[i].unit);
             if (unit && (nEngines.find(unit) == nEngines.end())) {
-                nEngines[unit] = std::make_shared<QPager>(unit, subEngine, unit->GetQubitCount(), 0, rand_generator,
+                nEngines[unit] = std::make_shared<QPager>(unit, tEngines, unit->GetQubitCount(), 0, rand_generator,
                     phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
                     (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
             }
@@ -162,7 +149,7 @@ void QUnit::TurnOnPaging()
         }
     }
 
-    if ((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER)) {
+    if (engines[0] == QINTERFACE_STABILIZER_HYBRID) {
         for (i = 0; i < qubitCount; i++) {
             QStabilizerHybridPtr unit = std::dynamic_pointer_cast<QStabilizerHybrid>(shards[i].unit);
             if (unit) {
@@ -180,7 +167,7 @@ void QUnit::TurnOffPaging()
     isPagingSuppressed = true;
 
     bitLenInt i;
-    if (engine == QINTERFACE_QPAGER) {
+    if (engines[0] == QINTERFACE_QPAGER) {
         std::map<QPagerPtr, QInterfacePtr> nEngines;
         for (i = 0; i < qubitCount; i++) {
             QPagerPtr unit = std::dynamic_pointer_cast<QPager>(shards[i].unit);
@@ -197,7 +184,7 @@ void QUnit::TurnOffPaging()
         }
     }
 
-    if ((engine == QINTERFACE_STABILIZER_HYBRID) && (subEngine == QINTERFACE_QPAGER)) {
+    if (engines[0] == QINTERFACE_STABILIZER_HYBRID) {
         for (i = 0; i < qubitCount; i++) {
             QStabilizerHybridPtr unit = std::dynamic_pointer_cast<QStabilizerHybrid>(shards[i].unit);
             if (unit) {
@@ -790,7 +777,7 @@ bool QUnit::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
     }
 
     QUnitPtr dest = std::dynamic_pointer_cast<QUnit>(std::make_shared<QUnit>(
-        engine, subEngine, length, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam));
+        engines, length, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam));
 
     bool toRet = TryDecompose(0, dest, error_tol);
     if (toRet) {
@@ -4544,9 +4531,9 @@ QInterfacePtr QUnit::Clone()
         RevertBasis2Qb(i);
     }
 
-    QUnitPtr copyPtr = std::make_shared<QUnit>(engine, subEngine, qubitCount, 0, rand_generator, phaseFactor,
-        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
-        thresholdQubits, separabilityThreshold);
+    QUnitPtr copyPtr = std::make_shared<QUnit>(engines, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+        separabilityThreshold);
 
     Finish();
     copyPtr->Finish();
