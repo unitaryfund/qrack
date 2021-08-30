@@ -36,22 +36,21 @@ typedef std::shared_ptr<QMaskFusion> QMaskFusionPtr;
  * A "Qrack::QMaskFusion" internally switched between Qrack::QEngineCPU and Qrack::QEngineOCL to maximize
  * qubit-count-dependent performance.
  */
-class QMaskFusion : public QInterface {
+class QMaskFusion : public QEngine {
 protected:
-    QInterfacePtr engine;
+    QEnginePtr engine;
     std::vector<QInterfaceEngine> engTypes;
     int devID;
     std::vector<int> devices;
     complex phaseFactor;
     bool useRDRAND;
     bool isSparse;
-    bool useHostRam;
     bool isCacheEmpty;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
     std::vector<QMaskFusionShard> zxShards;
 
-    QInterfacePtr MakeEngine(bitCapInt initState = 0);
+    QEnginePtr MakeEngine(bitCapInt initState = 0);
 
     void FlushBuffers();
     void DumpBuffers()
@@ -176,11 +175,55 @@ public:
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
-        : QMaskFusion({ QINTERFACE_OPTIMAL_SCHROEDINGER }, qBitCount, initState, rgp, phaseFac, doNorm,
-              randomGlobalPhase, useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList,
-              qubitThreshold, separation_thresh)
+        : QMaskFusion({ QINTERFACE_OPTIMAL_G3_CHILD }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
+              useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold,
+              separation_thresh)
     {
     }
+
+    virtual void ZeroAmplitudes()
+    {
+        DumpBuffers();
+        engine->ZeroAmplitudes();
+    }
+    virtual bool IsZeroAmplitude() { return engine->IsZeroAmplitude(); }
+    virtual void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QMaskFusion>(src)); }
+    virtual void CopyStateVec(QMaskFusionPtr src)
+    {
+        FlushBuffers();
+        engine->CopyStateVec(src->engine);
+    }
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        FlushBuffers();
+        engine->GetAmplitudePage(pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    {
+        FlushBuffers();
+        engine->SetAmplitudePage(pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(
+        QMaskFusionPtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        FlushBuffers();
+        engine->SetAmplitudePage(pageEnginePtr->engine, srcOffset, dstOffset, length);
+    }
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        FlushBuffers();
+        SetAmplitudePage(std::dynamic_pointer_cast<QMaskFusion>(pageEnginePtr), srcOffset, dstOffset, length);
+    }
+    virtual void ShuffleBuffers(QEnginePtr oEngine) { ShuffleBuffers(std::dynamic_pointer_cast<QMaskFusion>(oEngine)); }
+    virtual void ShuffleBuffers(QMaskFusionPtr oEngine)
+    {
+        FlushBuffers();
+        engine->ShuffleBuffers(oEngine->engine);
+    }
+    virtual void QueueSetDoNormalize(const bool& doNorm) { engine->QueueSetDoNormalize(doNorm); }
+    virtual void QueueSetRunningNorm(const real1_f& runningNrm) { engine->QueueSetRunningNorm(runningNrm); }
+    virtual real1_f GetRunningNorm() { return engine->GetRunningNorm(); }
 
     virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
     {
@@ -443,6 +486,7 @@ public:
         DumpBuffer(qubit);
         return engine->ForceM(qubit, result, doForce, doApply);
     }
+    virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) { engine->ApplyM(regMask, result, nrm); }
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
@@ -455,58 +499,16 @@ public:
         FlushIfBuffered(inOutStart, length) || FlushIfPhaseBlocked(controls, controlLen);
         engine->CINC(toAdd, inOutStart, length, controls, controlLen);
     }
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        FlushIfBuffered(start, length) || FlushIfBuffered(carryIndex);
-        engine->INCC(toAdd, start, length, carryIndex);
-    }
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         FlushIfBuffered(start, length) || FlushIfBuffered(overflowIndex);
         engine->INCS(toAdd, start, length, overflowIndex);
-    }
-    virtual void INCSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
-    {
-        FlushIfBuffered(start, length) || FlushIfBuffered(overflowIndex) || FlushIfBuffered(carryIndex);
-        engine->INCSC(toAdd, start, length, overflowIndex, carryIndex);
-    }
-    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        FlushIfBuffered(start, length) || FlushIfBuffered(carryIndex);
-        engine->INCSC(toAdd, start, length, carryIndex);
-    }
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        FlushIfBuffered(start, length) || FlushIfBuffered(carryIndex);
-        engine->DECC(toSub, start, length, carryIndex);
-    }
-    virtual void DECSC(
-        bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
-    {
-        FlushIfBuffered(start, length) || FlushIfBuffered(overflowIndex) || FlushIfBuffered(carryIndex);
-        engine->DECSC(toSub, start, length, overflowIndex, carryIndex);
-    }
-    virtual void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        FlushIfBuffered(start, length) || FlushIfBuffered(carryIndex);
-        engine->DECSC(toSub, start, length, carryIndex);
     }
 #if ENABLE_BCD
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
         FlushIfBuffered(start, length);
         engine->INCBCD(toAdd, start, length);
-    }
-    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        FlushIfBuffered(start, length) || FlushIfBuffered(carryIndex);
-        engine->INCBCDC(toAdd, start, length, carryIndex);
-    }
-    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        FlushIfBuffered(start, length) || FlushIfBuffered(carryIndex);
-        engine->DECBCDC(toSub, start, length, carryIndex);
     }
 #endif
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
@@ -707,5 +709,57 @@ public:
     virtual int GetDeviceID() { return devID; }
 
     bitCapIntOcl GetMaxSize() { return engine->GetMaxSize(); };
+
+protected:
+    virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+    {
+        FlushBuffers();
+        return engine->GetExpectation(valueStart, valueLength);
+    }
+
+    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapInt* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        engine->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
+    }
+    virtual void ApplyControlled2x2(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    {
+        engine->ApplyControlled2x2(controls, controlLen, target, mtrx);
+    }
+    virtual void ApplyAntiControlled2x2(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    {
+        engine->ApplyAntiControlled2x2(controls, controlLen, target, mtrx);
+    }
+
+    virtual void FreeStateVec(complex* sv = NULL) { engine->FreeStateVec(sv); }
+
+    virtual void INCDECC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+    {
+        FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryIndex);
+        engine->INCDECC(toMod, inOutStart, length, carryIndex);
+    }
+    virtual void INCDECSC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+    {
+        FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryIndex);
+        engine->INCDECSC(toMod, inOutStart, length, carryIndex);
+    }
+    virtual void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
+        const bitLenInt& overflowIndex, const bitLenInt& carryIndex)
+    {
+        FlushIfBuffered(inOutStart, length) || FlushIfBuffered(overflowIndex) || FlushIfBuffered(carryIndex);
+        engine->INCDECSC(toMod, inOutStart, length, overflowIndex, carryIndex);
+    }
+#if ENABLE_BCD
+    virtual void INCDECBCDC(
+        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+    {
+        FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryIndex);
+        engine->INCDECBCDC(toMod, inOutStart, length, carryIndex);
+    }
+#endif
 };
 } // namespace Qrack

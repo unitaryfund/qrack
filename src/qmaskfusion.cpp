@@ -23,14 +23,13 @@ QMaskFusion::QMaskFusion(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceId,
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
-    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
+    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , engTypes(eng)
     , devID(deviceId)
     , devices(devList)
     , phaseFactor(phaseFac)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
-    , useHostRam(useHostMem)
     , isCacheEmpty(true)
     , separabilityThreshold(sep_thresh)
     , zxShards(qBitCount)
@@ -38,12 +37,11 @@ QMaskFusion::QMaskFusion(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
     engine = MakeEngine(initState);
 }
 
-QInterfacePtr QMaskFusion::MakeEngine(bitCapInt initState)
+QEnginePtr QMaskFusion::MakeEngine(bitCapInt initState)
 {
-    QInterfacePtr toRet = CreateQuantumInterface(engTypes, qubitCount, initState, rand_generator, phaseFactor,
-        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, devices,
-        thresholdQubits, separabilityThreshold);
-    return toRet;
+    return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engTypes, qubitCount, initState, rand_generator,
+        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+        devices, thresholdQubits, separabilityThreshold));
 }
 
 QInterfacePtr QMaskFusion::Clone()
@@ -56,7 +54,7 @@ QInterfacePtr QMaskFusion::Clone()
     QMaskFusionPtr c = std::dynamic_pointer_cast<QMaskFusion>(CreateQuantumInterface(tEngines, qubitCount, 0,
         rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
         (real1_f)amplitudeFloor, devices, thresholdQubits, separabilityThreshold));
-    c->engine = engine->Clone();
+    c->engine = std::dynamic_pointer_cast<QEngine>(engine->Clone());
     return c;
 }
 

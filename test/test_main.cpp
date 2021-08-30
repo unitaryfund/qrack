@@ -326,30 +326,30 @@ int main(int argc, char* argv[])
         }
 
         if (num_failed == 0 && hybrid) {
-            session.config().stream() << "############ QUnit -> QMaskFusion -> QPager -> QHybrid ############"
+            session.config().stream() << "############ QUnit -> QPager -> QMaskFusion -> QHybrid ############"
                                       << std::endl;
-            testSubEngineType = QINTERFACE_MASK_FUSION;
-            testSubSubEngineType = QINTERFACE_QPAGER;
+            testSubEngineType = QINTERFACE_QPAGER;
+            testSubSubEngineType = QINTERFACE_MASK_FUSION;
             SHOW_OCL_BANNER();
             num_failed = session.run();
         }
 
         if (num_failed == 0 && stabilizer_qpager) {
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
-            testSubSubEngineType = QINTERFACE_MASK_FUSION;
+            testSubSubEngineType = QINTERFACE_QPAGER;
             session.config().stream()
-                << "########### QUnit -> QStabilizerHybrid -> QMaskFusion -> QPager -> QHybrid ###########"
+                << "########### QUnit -> QStabilizerHybrid -> QPager -> QMaskFusion -> QHybrid ###########"
                 << std::endl;
             num_failed = session.run();
         }
     }
 
     if (num_failed == 0 && qunit_multi_qpager && hybrid) {
-        session.config().stream() << "############ QUnitMulti -> QMaskFusion -> QPager -> QHybrid ############"
+        session.config().stream() << "############ QUnitMulti -> QPager -> QMaskFusion -> QHybrid ############"
                                   << std::endl;
         testEngineType = QINTERFACE_QUNIT_MULTI;
-        testSubEngineType = QINTERFACE_MASK_FUSION;
-        testSubSubEngineType = QINTERFACE_QPAGER;
+        testSubEngineType = QINTERFACE_QPAGER;
+        testSubSubEngineType = QINTERFACE_MASK_FUSION;
         SHOW_OCL_BANNER();
         num_failed = session.run();
     }
@@ -357,9 +357,9 @@ int main(int argc, char* argv[])
     if (num_failed == 0 && qunit_multi && stabilizer_qpager) {
         testEngineType = QINTERFACE_QUNIT_MULTI;
         testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
-        testSubSubEngineType = QINTERFACE_MASK_FUSION;
+        testSubSubEngineType = QINTERFACE_QPAGER;
         session.config().stream()
-            << "########### QUnitMulti -> QStabilizerHybrid -> QMaskFusion -> QPager -> QHybrid ###########"
+            << "########### QUnitMulti -> QStabilizerHybrid -> QPager -> QMaskFusion -> QHybrid ###########"
             << std::endl;
         num_failed = session.run();
 #endif
