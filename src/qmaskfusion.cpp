@@ -129,8 +129,21 @@ void QMaskFusion::H(bitLenInt target)
     engine->H(target);
 }
 
-void QMaskFusion::ApplySingleBit(const complex* mtrx, bitLenInt target)
+void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
+    complex mtrx[4] = { lMtrx[0], lMtrx[1], lMtrx[2], lMtrx[3] };
+    if (zxShards[target].isZ) {
+        zxShards[target].isZ = false;
+        mtrx[1] = -mtrx[1];
+        mtrx[3] = -mtrx[3];
+    }
+
+    if (zxShards[target].isX) {
+        zxShards[target].isX = false;
+        std::swap(mtrx[0], mtrx[1]);
+        std::swap(mtrx[2], mtrx[3]);
+    }
+
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
@@ -164,20 +177,7 @@ void QMaskFusion::ApplySingleBit(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    complex aMtrx[4] = { mtrx[0], mtrx[1], mtrx[2], mtrx[3] };
-    if (zxShards[target].isZ) {
-        zxShards[target].isZ = false;
-        aMtrx[1] = -aMtrx[1];
-        aMtrx[3] = -aMtrx[3];
-    }
-
-    if (zxShards[target].isX) {
-        zxShards[target].isX = false;
-        std::swap(aMtrx[0], aMtrx[1]);
-        std::swap(aMtrx[2], aMtrx[3]);
-    }
-
-    engine->ApplySingleBit(aMtrx, target);
+    engine->ApplySingleBit(mtrx, target);
 }
 
 } // namespace Qrack
