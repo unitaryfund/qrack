@@ -16,11 +16,11 @@
 
 namespace Qrack {
 
-QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac,
-    bool ignored, bool ignored2, bool useHostMem, int deviceId, bool useHardwareRNG, bool useSparseStateVec,
-    real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
+QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
+    complex phaseFac, bool ignored, bool ignored2, bool useHostMem, int deviceId, bool useHardwareRNG,
+    bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, false, useHardwareRNG, false, norm_thresh)
-    , engine(eng)
+    , engines(eng)
     , devID(deviceId)
     , phaseFactor(phaseFac)
     , useHostRam(useHostMem)
@@ -34,9 +34,11 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     , thresholdQubitsPerPage(qubitThreshold)
     , pStridePow(PSTRIDEPOW)
 {
-    if (engine == QINTERFACE_QPAGER) {
+    if ((engines[0] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
 #if ENABLE_OPENCL
-        engine = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
+        if (!OCLEngine::Instance()->GetDeviceCount()) {
+            engines[0] = QINTERFACE_CPU;
+        }
 #else
         engine = QINTERFACE_CPU;
 #endif
@@ -61,12 +63,12 @@ QPager::QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState, q
     }
 }
 
-QPager::QPager(QEnginePtr enginePtr, QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState,
+QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool ignored, bool ignored2, bool useHostMem, int deviceId,
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, false, useHardwareRNG, false, norm_thresh)
-    , engine(eng)
+    , engines(eng)
     , devID(deviceId)
     , phaseFactor(phaseFac)
     , useHostRam(useHostMem)
@@ -87,12 +89,12 @@ QPager::QPager(QEnginePtr enginePtr, QInterfaceEngine eng, bitLenInt qBitCount, 
 void QPager::Init()
 {
 #if !ENABLE_OPENCL
-    if (engine == QINTERFACE_HYBRID) {
-        engine = QINTERFACE_CPU;
+    if (engines[0] == QINTERFACE_HYBRID) {
+        engines[0] = QINTERFACE_CPU;
     }
 #endif
 
-    if ((engine != QINTERFACE_CPU) && (engine != QINTERFACE_OPENCL) && (engine != QINTERFACE_HYBRID)) {
+    if ((engines[0] != QINTERFACE_CPU) && (engines[0] != QINTERFACE_OPENCL) && (engines[0] != QINTERFACE_HYBRID)) {
         throw std::invalid_argument(
             "QPager sub-engine type must be QINTERFACE_CPU, QINTERFACE_OPENCL or QINTERFACE_HYBRID.");
     }
@@ -103,10 +105,10 @@ void QPager::Init()
 
 #if ENABLE_OPENCL
     if (!(OCLEngine::Instance()->GetDeviceCount())) {
-        engine = QINTERFACE_CPU;
+        engines[0] = QINTERFACE_CPU;
     }
 
-    if ((thresholdQubitsPerPage == 0) && ((engine == QINTERFACE_OPENCL) || (engine == QINTERFACE_HYBRID))) {
+    if ((thresholdQubitsPerPage == 0) && ((engines[0] == QINTERFACE_OPENCL) || (engines[0] == QINTERFACE_HYBRID))) {
         useHardwareThreshold = true;
 
         // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
@@ -175,7 +177,7 @@ void QPager::Init()
 
 QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapInt perm, int deviceId)
 {
-    return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engine, length, perm, rand_generator, phaseFactor,
+    return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor,
         false, false, useHostRam, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor));
 }
 
@@ -1458,9 +1460,12 @@ QInterfacePtr QPager::Clone()
 {
     SeparateEngines();
 
-    QPagerPtr clone = std::dynamic_pointer_cast<QPager>(CreateQuantumInterface(QINTERFACE_QPAGER, engine, qubitCount, 0,
-        rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, 0,
-        (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
+    std::vector<QInterfaceEngine> tEngines = engines;
+    tEngines.insert(tEngines.begin(), QINTERFACE_QPAGER);
+
+    QPagerPtr clone = std::dynamic_pointer_cast<QPager>(
+        CreateQuantumInterface(tEngines, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
+            0, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
 
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         clone->qPages[i] = std::dynamic_pointer_cast<QEngine>(qPages[i]->Clone());

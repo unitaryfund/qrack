@@ -24,7 +24,7 @@ typedef std::shared_ptr<QPager> QPagerPtr;
  */
 class QPager : public QInterface {
 protected:
-    QInterfaceEngine engine;
+    std::vector<QInterfaceEngine> engines;
     int devID;
     complex phaseFactor;
     bool useHostRam;
@@ -52,7 +52,7 @@ protected:
     {
         QInterface::SetQubitCount(qb);
 
-        if (useHardwareThreshold && ((engine == QINTERFACE_OPENCL) || (engine == QINTERFACE_HYBRID))) {
+        if (useHardwareThreshold && ((engines[0] == QINTERFACE_OPENCL) || (engines[0] == QINTERFACE_HYBRID))) {
             // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
             // environment variable.
 
@@ -112,23 +112,23 @@ protected:
     void Init();
 
 public:
-    QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored = false, bool useHostMem = false,
-        int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
-        real1_f separation_thresh = FP_NORM_EPSILON);
+    QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
+        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
+        bool ignored = false, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
+        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
+        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
 
     QPager(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored = false, bool useHostMem = false,
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
-        : QPager(QINTERFACE_OPTIMAL_SINGLE_PAGE, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem,
+        : QPager({ QINTERFACE_OPTIMAL_SINGLE_PAGE }, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem,
               deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
     {
     }
 
-    QPager(QEnginePtr enginePtr, QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt ignored = 0,
+    QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ignored = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool ignored2 = false, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},

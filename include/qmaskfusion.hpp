@@ -39,8 +39,7 @@ typedef std::shared_ptr<QMaskFusion> QMaskFusionPtr;
 class QMaskFusion : public QInterface {
 protected:
     QInterfacePtr engine;
-    QInterfaceEngine engType;
-    QInterfaceEngine subEngType;
+    std::vector<QInterfaceEngine> engTypes;
     int devID;
     std::vector<int> devices;
     complex phaseFactor;
@@ -167,28 +166,19 @@ protected:
     }
 
 public:
-    QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState = 0,
+    QMaskFusion(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
         bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
-    QMaskFusion(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
-        real1_f separation_thresh = FP_NORM_EPSILON)
-        : QMaskFusion(eng, eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId,
-              useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
-    {
-    }
     QMaskFusion(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
-        : QMaskFusion(QINTERFACE_OPTIMAL_SCHROEDINGER, QINTERFACE_OPTIMAL_SINGLE_PAGE, qBitCount, initState, rgp,
-              phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh,
-              devList, qubitThreshold, separation_thresh)
+        : QMaskFusion({ QINTERFACE_OPTIMAL_SCHROEDINGER }, qBitCount, initState, rgp, phaseFac, doNorm,
+              randomGlobalPhase, useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList,
+              qubitThreshold, separation_thresh)
     {
     }
 
@@ -201,8 +191,8 @@ public:
     using QInterface::Compose;
     virtual bitLenInt Compose(QMaskFusionPtr toCopy)
     {
-        isCacheEmpty = false;
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
+        isCacheEmpty = false;
         zxShards.insert(zxShards.end(), toCopy->zxShards.begin(), toCopy->zxShards.end());
         SetQubitCount(nQubitCount);
         return engine->Compose(toCopy->engine);
@@ -210,8 +200,8 @@ public:
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QMaskFusion>(toCopy)); }
     virtual bitLenInt Compose(QMaskFusionPtr toCopy, bitLenInt start)
     {
-        isCacheEmpty = false;
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
+        isCacheEmpty = false;
         zxShards.insert(zxShards.begin() + start, toCopy->zxShards.begin(), toCopy->zxShards.end());
         SetQubitCount(nQubitCount);
         return engine->Compose(toCopy->engine, start);
@@ -246,6 +236,7 @@ public:
     }
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
+        FlushBuffers();
         bitLenInt nQubitCount = qubitCount - length;
         zxShards.erase(zxShards.begin() + start, zxShards.begin() + start + length);
         SetQubitCount(nQubitCount);

@@ -26,13 +26,12 @@
 
 namespace Qrack {
 
-QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
-    bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem,
-    int deviceId, bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> ignored,
+QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
+    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceId,
+    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> ignored,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1)
-    , engineType(eng)
-    , subEngineType(subEng)
+    , engineTypes(eng)
     , engine(NULL)
     , shards(qubitCount)
     , devID(deviceId)
@@ -44,28 +43,6 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
     , separabilityThreshold(sep_thresh)
     , thresholdQubits(qubitThreshold)
 {
-    if (engineType == subEngineType) {
-        switch (engineType) {
-        case QINTERFACE_OPTIMAL_G0_CHILD:
-            subEngineType = QINTERFACE_OPTIMAL_G1_CHILD;
-            break;
-        case QINTERFACE_OPTIMAL_G1_CHILD:
-            subEngineType = QINTERFACE_OPTIMAL_G2_CHILD;
-            break;
-#if ENABLE_OPENCL
-        case QINTERFACE_OPTIMAL_G2_CHILD:
-            subEngineType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
-            break;
-#else
-        case QINTERFACE_OPTIMAL_G2_CHILD:
-            subEngineType = QINTERFACE_OPTIMAL_G3_CHILD;
-            break;
-#endif
-        default:
-            break;
-        }
-    }
-
     concurrency = std::thread::hardware_concurrency();
     stabilizer = MakeStabilizer(initState);
     amplitudeFloor = REAL1_EPSILON;
@@ -78,8 +55,8 @@ QStabilizerPtr QStabilizerHybrid::MakeStabilizer(const bitCapInt& perm)
 
 QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
 {
-    QInterfacePtr toRet = CreateQuantumInterface(engineType, subEngineType, qubitCount, perm, rand_generator,
-        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+    QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qubitCount, perm, rand_generator, phaseFactor,
+        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
         std::vector<int>{}, thresholdQubits, separabilityThreshold);
     toRet->SetConcurrency(concurrency);
     return toRet;
@@ -129,10 +106,12 @@ void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
 
 QInterfacePtr QStabilizerHybrid::Clone()
 {
-    QStabilizerHybridPtr c =
-        std::dynamic_pointer_cast<QStabilizerHybrid>(CreateQuantumInterface(QINTERFACE_STABILIZER_HYBRID, engineType,
-            subEngineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
-            useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
+    std::vector<QInterfaceEngine> tEngines = engineTypes;
+    tEngines.insert(tEngines.begin(), QINTERFACE_STABILIZER_HYBRID);
+
+    QStabilizerHybridPtr c = std::dynamic_pointer_cast<QStabilizerHybrid>(CreateQuantumInterface(tEngines, qubitCount,
+        0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
+        (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
 
     // TODO: Remove.
     SwitchToEngine();

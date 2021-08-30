@@ -19,13 +19,12 @@
 
 namespace Qrack {
 
-QMaskFusion::QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
+QMaskFusion::QMaskFusion(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceId,
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
-    , engType(eng)
-    , subEngType(subEng)
+    , engTypes(eng)
     , devID(deviceId)
     , devices(devList)
     , phaseFactor(phaseFac)
@@ -36,39 +35,27 @@ QMaskFusion::QMaskFusion(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenIn
     , separabilityThreshold(sep_thresh)
     , zxShards(qBitCount)
 {
-    if (engType == subEngType) {
-        if (engType == QINTERFACE_MASK_FUSION) {
-            engType = QINTERFACE_OPTIMAL_G2_CHILD;
-            subEngType = QINTERFACE_OPTIMAL_G2_CHILD;
-        }
-#if ENABLE_OPENCL
-        if (engType == QINTERFACE_OPTIMAL_G2_CHILD) {
-            subEngType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
-        }
-#else
-        if (engType == QINTERFACE_OPTIMAL_G2_CHILD) {
-            subEngType = QINTERFACE_OPTIMAL_G3_CHILD;
-        }
-#endif
-    }
-
     engine = MakeEngine(initState);
 }
 
 QInterfacePtr QMaskFusion::MakeEngine(bitCapInt initState)
 {
-    QInterfacePtr toRet = CreateQuantumInterface(engType, subEngType, qubitCount, initState, rand_generator,
-        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        devices, thresholdQubits, separabilityThreshold);
+    QInterfacePtr toRet = CreateQuantumInterface(engTypes, qubitCount, initState, rand_generator, phaseFactor,
+        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, devices,
+        thresholdQubits, separabilityThreshold);
     return toRet;
 }
 
 QInterfacePtr QMaskFusion::Clone()
 {
     FlushBuffers();
-    QMaskFusionPtr c = std::dynamic_pointer_cast<QMaskFusion>(CreateQuantumInterface(QINTERFACE_MASK_FUSION, engType,
-        subEngType, qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
-        useRDRAND, isSparse, (real1_f)amplitudeFloor, devices, thresholdQubits, separabilityThreshold));
+
+    std::vector<QInterfaceEngine> tEngines = engTypes;
+    tEngines.insert(tEngines.begin(), QINTERFACE_MASK_FUSION);
+
+    QMaskFusionPtr c = std::dynamic_pointer_cast<QMaskFusion>(CreateQuantumInterface(tEngines, qubitCount, 0,
+        rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
+        (real1_f)amplitudeFloor, devices, thresholdQubits, separabilityThreshold));
     c->engine = engine->Clone();
     return c;
 }
