@@ -118,17 +118,6 @@ void QMaskFusion::Z(bitLenInt target)
     isCacheEmpty = false;
 }
 
-void QMaskFusion::H(bitLenInt target)
-{
-    QMaskFusionShard& shard = zxShards[target];
-    if (shard.isZ != shard.isX) {
-        shard.isZ = !shard.isZ;
-        shard.isX = !shard.isX;
-    }
-
-    engine->H(target);
-}
-
 void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
     complex mtrx[4] = { lMtrx[0], lMtrx[1], lMtrx[2], lMtrx[3] };
@@ -151,29 +140,6 @@ void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplySingleInvert(mtrx[1], mtrx[2], target);
-        return;
-    }
-
-    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
-        H(target);
-        return;
-    }
-
-    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
-        H(target);
-        X(target);
-        return;
-    }
-
-    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
-        X(target);
-        H(target);
-        return;
-    }
-
-    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
-        Y(target);
-        H(target);
         return;
     }
 

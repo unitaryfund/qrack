@@ -412,8 +412,6 @@ public:
     virtual void Y(bitLenInt target);
     using QInterface::Z;
     virtual void Z(bitLenInt target);
-    using QInterface::H;
-    virtual void H(bitLenInt target);
 
     virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle) { engine->UniformParityRZ(mask, angle); }
     virtual void CUniformParityRZ(
