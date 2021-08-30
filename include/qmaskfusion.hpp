@@ -355,11 +355,6 @@ public:
             return;
         }
 
-        if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-            ApplyControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
-            return;
-        }
-
         FlushIfBuffered(target) || FlushIfPhaseBlocked(controls, controlLen);
         engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
     }
@@ -368,11 +363,6 @@ public:
     {
         if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
             ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
-            return;
-        }
-
-        if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-            ApplyAntiControlledSingleInvert(controls, controlLen, target, mtrx[1], mtrx[2]);
             return;
         }
 
@@ -385,23 +375,11 @@ public:
         FlushIfPhaseBlocked(target) || FlushIfPhaseBlocked(controls, controlLen);
         engine->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
     }
-    virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft)
-    {
-        FlushIfBuffered(target) || FlushIfPhaseBlocked(controls, controlLen);
-        engine->ApplyControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
-    }
     virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topLeft, const complex bottomRight)
     {
         FlushIfPhaseBlocked(target) || FlushIfPhaseBlocked(controls, controlLen);
         engine->ApplyAntiControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
-    }
-    virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft)
-    {
-        FlushIfBuffered(target) || FlushIfPhaseBlocked(controls, controlLen);
-        engine->ApplyAntiControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
     }
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
