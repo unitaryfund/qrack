@@ -309,9 +309,12 @@ void kernel xmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
             continue;
         }
 
-        Y0 = stateVec[setInt | otherRes];
-        stateVec[setInt | otherRes] = stateVec[resetInt | otherRes];
-        stateVec[resetInt | otherRes] = Y0;
+        setInt |= otherRes;
+        resetInt |= otherRes;
+
+        Y0 = stateVec[resetInt];
+        stateVec[resetInt] = stateVec[setInt];
+        stateVec[setInt] = Y0;
     }
 }
 
@@ -337,8 +340,10 @@ void kernel zmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
             isParityOdd = !isParityOdd;
         }
 
+        setInt |= otherRes;
+
         if (isParityOdd) {
-            stateVec[setInt | otherRes] = -stateVec[setInt | otherRes];
+            stateVec[setInt] = -stateVec[setInt];
         }
     }
 }

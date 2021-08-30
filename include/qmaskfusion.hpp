@@ -285,6 +285,13 @@ public:
         engine->SetPermutation(perm, phaseFac);
     }
 
+    using QInterface::X;
+    virtual void X(bitLenInt target);
+    using QInterface::Y;
+    virtual void Y(bitLenInt target);
+    using QInterface::Z;
+    virtual void Z(bitLenInt target);
+
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
     {
@@ -405,13 +412,6 @@ public:
         engine->UniformlyControlledSingleBit(
             controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
     }
-
-    using QInterface::X;
-    virtual void X(bitLenInt target);
-    using QInterface::Y;
-    virtual void Y(bitLenInt target);
-    using QInterface::Z;
-    virtual void Z(bitLenInt target);
 
     virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle) { engine->UniformParityRZ(mask, angle); }
     virtual void CUniformParityRZ(

@@ -563,9 +563,12 @@ void QEngineCPU::XMask(bitCapInt mask)
                 return;
             }
 
-            complex Y0 = stateVec->read(setInt | otherRes);
-            stateVec->write(setInt | otherRes, stateVec->read(resetInt | otherRes));
-            stateVec->write(resetInt | otherRes, Y0);
+            setInt |= otherRes;
+            resetInt |= otherRes;
+
+            complex Y0 = stateVec->read(resetInt);
+            stateVec->write(resetInt, stateVec->read(setInt));
+            stateVec->write(setInt, Y0);
         };
 
         par_for(0, maxQPower, fn);
@@ -603,8 +606,10 @@ void QEngineCPU::ZMask(bitCapInt mask)
                 isParityOdd = !isParityOdd;
             }
 
+            setInt |= otherRes;
+
             if (isParityOdd) {
-                stateVec->write(setInt | otherRes, -stateVec->read(setInt | otherRes));
+                stateVec->write(setInt, -stateVec->read(setInt));
             }
         };
 
