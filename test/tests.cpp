@@ -3810,7 +3810,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
 {
-    if (testEngineType == QINTERFACE_QUNIT_MULTI || testEngineType == QINTERFACE_QPAGER) {
+    if (testEngineType == QINTERFACE_QUNIT_MULTI || testEngineType == QINTERFACE_QPAGER ||
+        testEngineType == QINTERFACE_STABILIZER_HYBRID) {
         // Not yet supported.
         return;
     }
