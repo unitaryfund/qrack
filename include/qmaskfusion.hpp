@@ -307,7 +307,7 @@ public:
 
         if (zxShards[target].isX) {
             zxShards[target].isX = false;
-            engine->ApplySingleInvert(br, tl, target);
+            engine->ApplySingleInvert(tl, br, target);
         } else {
             engine->ApplySinglePhase(tl, br, target);
         }
@@ -656,7 +656,10 @@ public:
 
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
-        FlushIfPhaseBlocked(qubitIndex);
+        if (zxShards[qubitIndex].isX) {
+            return clampProb(ONE_R1 - engine->Prob(qubitIndex));
+        }
+
         return engine->Prob(qubitIndex);
     }
     virtual real1_f ProbAll(bitCapInt fullRegister)
