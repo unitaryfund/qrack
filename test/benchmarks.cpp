@@ -48,7 +48,7 @@ double formatTime(double t, bool logNormal)
 QInterfacePtr MakeRandQubit()
 {
     QInterfacePtr qubit =
-        CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, 1U, 0, rng, ONE_CMPLX,
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 1U, 0, rng, ONE_CMPLX,
             enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
     real1_f theta = 2 * M_PI * qubit->Rand();
@@ -137,7 +137,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             }
 
             if (!qUniverse) {
-                qftReg = CreateQuantumInterface(testEngineType, testSubEngineType, testSubSubEngineType, numBits, 0,
+                qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, numBits, 0,
                     rng, ONE_CMPLX, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse,
                     REAL1_EPSILON, devList);
                 if (resetRandomPerm) {
@@ -2308,8 +2308,8 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
     int maxGates;
 
-    QInterfacePtr goldStandard = CreateQuantumInterface(testSubEngineType, testSubSubEngineType, n, 0, rng, ONE_CMPLX,
-        enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng);
+    QInterfacePtr goldStandard = CreateQuantumInterface({ testSubEngineType, testSubSubEngineType }, n, 0, rng,
+        ONE_CMPLX, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng);
 
     for (d = 0; d < Depth; d++) {
         std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -2429,7 +2429,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Gold standard vs. gold standard cross entropy (out of 1.0): " << crossEntropy << std::endl;
 
-    QInterfacePtr testCase = CreateQuantumInterface(testEngineType, testSubEngineType, n, 0, rng, ONE_CMPLX,
+    QInterfacePtr testCase = CreateQuantumInterface({ testEngineType, testSubEngineType }, n, 0, rng, ONE_CMPLX,
         enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse);
 
     std::map<bitCapInt, int> testCaseResult;

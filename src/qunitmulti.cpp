@@ -17,24 +17,13 @@
 
 namespace Qrack {
 
-QUnitMulti::QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount, bitCapInt initState,
+QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID,
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
-    : QUnit(eng, subEng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG,
+    : QUnit(eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG,
           useSparseStateVec, norm_thresh, devList, qubitThreshold, sep_thresh)
 {
-    // The "shard" engine type must be QINTERFACE_OPENCL or QINTERFACE_HYBRID, with or without an intermediate QPager
-    // layer.
-
-    if ((engine == QINTERFACE_QUNIT) || (engine == QINTERFACE_QUNIT_MULTI)) {
-        engine = QINTERFACE_OPTIMAL_G0_CHILD;
-    }
-
-    if ((subEngine == QINTERFACE_QUNIT) || (subEngine == QINTERFACE_QUNIT_MULTI)) {
-        subEngine = QINTERFACE_OPTIMAL_G1_CHILD;
-    }
-
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance()->GetDeviceContextPtrVector();
 
     if (devList.size() == 0) {
@@ -69,9 +58,9 @@ QUnitMulti::QUnitMulti(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt 
 QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 {
     // Suppress passing device list, since QUnitMulti occupies all devices in the list
-    return CreateQuantumInterface(engine, subEngine, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{},
-        thresholdQubits, separabilityThreshold);
+    return CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
+        useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits,
+        separabilityThreshold);
 }
 
 std::vector<QEngineInfo> QUnitMulti::GetQInfos()
@@ -119,7 +108,7 @@ void QUnitMulti::RedistributeQEngines()
         // In fact, single qubit units will be handled entirely by the CPU, anyway.
         // So will QHybrid "shards" that are below the GPU transition threshold.
         if (!(qinfos[i].unit) || (qinfos[i].unit->GetMaxQPower() <= 2U) ||
-            ((subEngine == QINTERFACE_HYBRID) && (qinfos[i].unit->GetQubitCount() < thresholdQubits))) {
+            (qinfos[i].unit->GetQubitCount() < thresholdQubits)) {
             continue;
         }
 
@@ -227,7 +216,7 @@ QInterfacePtr QUnitMulti::Clone()
         RevertBasis2Qb(i);
     }
 
-    QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engine, subEngine, qubitCount, 0, rand_generator, phaseFactor,
+    QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engines, qubitCount, 0, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
         thresholdQubits, separabilityThreshold);
 
