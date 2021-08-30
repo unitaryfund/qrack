@@ -11,7 +11,6 @@
 // for details.
 #pragma once
 
-#include "mpsshard.hpp"
 #include "qengine.hpp"
 
 namespace Qrack {
@@ -44,7 +43,6 @@ protected:
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
     std::vector<QMaskFusionShard> zxShards;
-    std::vector<MpsShardPtr> mpsShards;
 
     QInterfacePtr MakeEngine(bitCapInt initState = 0);
 
@@ -67,16 +65,6 @@ protected:
     {
         zxShards[target].isX = false;
         zxShards[target].isZ = false;
-        mpsShards[target] = NULL;
-    }
-
-    void InvertBuffer(bitLenInt qubit)
-    {
-        complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-        MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
-        pauliShard->Compose(mpsShards[qubit]->gate);
-        mpsShards[qubit] = (pauliShard->IsIdentity() ? NULL : pauliShard);
-        zxShards[qubit].isX = !zxShards[qubit].isX;
     }
 
     bool FlushIfBuffered(bitLenInt target)
@@ -85,7 +73,7 @@ protected:
             return true;
         }
 
-        if (mpsShards[target] || zxShards[target].isBuffered()) {
+        if (zxShards[target].isBuffered()) {
             FlushBuffers();
             return true;
         }
@@ -101,7 +89,7 @@ protected:
 
         bitLenInt maxLcv = start + length;
         for (bitLenInt i = start; i < maxLcv; i++) {
-            if (mpsShards[i] || zxShards[i].isBuffered()) {
+            if (zxShards[i].isBuffered()) {
                 FlushBuffers();
                 return true;
             }
@@ -122,12 +110,7 @@ protected:
         bool isBlocked = false;
         for (i = 0U; i < controlLen; i++) {
             control = controls[i];
-
-            if (mpsShards[control] && mpsShards[control]->IsInvert()) {
-                InvertBuffer(control);
-            }
-            isBlocked |= zxShards[control].isX || (mpsShards[control] && !mpsShards[control]->IsPhase());
-
+            isBlocked = zxShards[control].isX;
             if (isBlocked) {
                 break;
             }
@@ -146,10 +129,7 @@ protected:
             return true;
         }
 
-        if (mpsShards[target] && mpsShards[target]->IsInvert()) {
-            InvertBuffer(target);
-        }
-        bool isBlocked = zxShards[target].isX || (mpsShards[target] && !mpsShards[target]->IsPhase());
+        bool isBlocked = zxShards[target].isX;
         if (isBlocked) {
             FlushBuffers();
         }
@@ -166,11 +146,7 @@ protected:
         bool isBlocked = false;
         bitLenInt maxLcv = start + length;
         for (bitLenInt i = start; i < maxLcv; i++) {
-            if (mpsShards[i] && mpsShards[i]->IsInvert()) {
-                InvertBuffer(i);
-            }
-            isBlocked |= zxShards[i].isX || (mpsShards[i] && !mpsShards[i]->IsPhase());
-
+            isBlocked = zxShards[i].isX;
             if (isBlocked) {
                 break;
             }
@@ -218,7 +194,6 @@ public:
     virtual bitLenInt Compose(QMaskFusionPtr toCopy)
     {
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
-        mpsShards.insert(mpsShards.end(), toCopy->mpsShards.begin(), toCopy->mpsShards.end());
         zxShards.insert(zxShards.end(), toCopy->zxShards.begin(), toCopy->zxShards.end());
         SetQubitCount(nQubitCount);
         return engine->Compose(toCopy->engine);
@@ -227,7 +202,6 @@ public:
     virtual bitLenInt Compose(QMaskFusionPtr toCopy, bitLenInt start)
     {
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
-        mpsShards.insert(mpsShards.begin() + start, toCopy->mpsShards.begin(), toCopy->mpsShards.end());
         zxShards.insert(zxShards.begin() + start, toCopy->zxShards.begin(), toCopy->zxShards.end());
         SetQubitCount(nQubitCount);
         return engine->Compose(toCopy->engine, start);
@@ -248,8 +222,6 @@ public:
     {
         bitLenInt length = dest->GetQubitCount();
         bitLenInt nQubitCount = qubitCount - length;
-        std::copy(mpsShards.begin() + start, mpsShards.begin() + start + length, dest->mpsShards.begin());
-        mpsShards.erase(mpsShards.begin() + start, mpsShards.begin() + start + length);
         std::copy(zxShards.begin() + start, zxShards.begin() + start + length, dest->zxShards.begin());
         zxShards.erase(zxShards.begin() + start, zxShards.begin() + start + length);
         SetQubitCount(nQubitCount);
@@ -258,7 +230,6 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length)
     {
         bitLenInt nQubitCount = qubitCount - length;
-        mpsShards.erase(mpsShards.begin() + start, mpsShards.begin() + start + length);
         zxShards.erase(zxShards.begin() + start, zxShards.begin() + start + length);
         SetQubitCount(nQubitCount);
         return engine->Dispose(start, length);
@@ -266,7 +237,6 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
         bitLenInt nQubitCount = qubitCount - length;
-        mpsShards.erase(mpsShards.begin() + start, mpsShards.begin() + start + length);
         zxShards.erase(zxShards.begin() + start, zxShards.begin() + start + length);
         SetQubitCount(nQubitCount);
         return engine->Dispose(start, length, disposedPerm);
@@ -277,8 +247,6 @@ public:
         bitLenInt nQubitCount = qubitCount - length;
         bool result = engine->TryDecompose(start, dest->engine, error_tol);
         if (result) {
-            std::copy(mpsShards.begin() + start, mpsShards.begin() + start + length, dest->mpsShards.begin());
-            mpsShards.erase(mpsShards.begin() + start, mpsShards.begin() + start + length);
             std::copy(zxShards.begin() + start, zxShards.begin() + start + length, dest->zxShards.begin());
             zxShards.erase(zxShards.begin() + start, zxShards.begin() + start + length);
             SetQubitCount(nQubitCount);
@@ -320,12 +288,6 @@ public:
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
     {
-        complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-        if (mpsShards[target]) {
-            ApplySingleBit(mtrx, target);
-            return;
-        }
-
         if (IS_SAME(topLeft, bottomRight)) {
             return;
         }
@@ -335,16 +297,23 @@ public:
             return;
         }
 
-        mpsShards[target] = std::make_shared<MpsShard>(mtrx);
+        complex tl = topLeft;
+        complex br = bottomRight;
+
+        if (zxShards[target].isZ) {
+            zxShards[target].isZ = false;
+            br = -br;
+        }
+
+        if (zxShards[target].isX) {
+            zxShards[target].isX = false;
+            engine->ApplySingleInvert(br, tl, target);
+        } else {
+            engine->ApplySinglePhase(tl, br, target);
+        }
     }
     virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
     {
-        complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-        if (mpsShards[target]) {
-            ApplySingleBit(mtrx, target);
-            return;
-        }
-
         if (IS_SAME(topRight, bottomLeft)) {
             X(target);
             return;
@@ -355,7 +324,20 @@ public:
             return;
         }
 
-        mpsShards[target] = std::make_shared<MpsShard>(mtrx);
+        complex tr = topRight;
+        complex bl = bottomLeft;
+
+        if (zxShards[target].isZ) {
+            zxShards[target].isZ = false;
+            tr = -tr;
+        }
+
+        if (zxShards[target].isX) {
+            zxShards[target].isX = false;
+            engine->ApplySinglePhase(tr, bl, target);
+        } else {
+            engine->ApplySingleInvert(tr, bl, target);
+        }
     }
 
     virtual void ApplyControlledSingleBit(
@@ -650,7 +632,6 @@ public:
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
-        std::swap(mpsShards[qubitIndex1], mpsShards[qubitIndex2]);
         std::swap(zxShards[qubitIndex1], zxShards[qubitIndex2]);
         engine->Swap(qubitIndex1, qubitIndex2);
     }
