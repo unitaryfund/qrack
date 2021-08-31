@@ -340,11 +340,11 @@ public:
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
     {
-        if (IS_SAME(topLeft, bottomRight)) {
+        if (IS_SAME(topLeft, bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {
             return;
         }
 
-        if (IS_SAME(topLeft, -bottomRight)) {
+        if (IS_SAME(topLeft, -bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {
             Z(target);
             return;
         }
@@ -366,12 +366,12 @@ public:
     }
     virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
     {
-        if (IS_SAME(topRight, bottomLeft)) {
+        if (IS_SAME(topRight, bottomLeft) && (randGlobalPhase || IS_SAME(topRight, ONE_CMPLX))) {
             X(target);
             return;
         }
 
-        if (IS_SAME(topRight, -bottomLeft)) {
+        if (IS_SAME(topRight, -bottomLeft) && (randGlobalPhase || IS_SAME(topRight, -I_CMPLX))) {
             Y(target);
             return;
         }
