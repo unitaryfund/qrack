@@ -94,7 +94,8 @@ void QPager::Init()
     }
 #endif
 
-    if ((engines[0] != QINTERFACE_CPU) && (engines[0] != QINTERFACE_OPENCL) && (engines[0] != QINTERFACE_HYBRID)) {
+    if ((engines[0] != QINTERFACE_CPU) && (engines[0] != QINTERFACE_OPENCL) && (engines[0] != QINTERFACE_HYBRID) &&
+        (engines[0] != QINTERFACE_MASK_FUSION)) {
         throw std::invalid_argument(
             "QPager sub-engine type must be QINTERFACE_CPU, QINTERFACE_OPENCL or QINTERFACE_HYBRID.");
     }
