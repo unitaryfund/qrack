@@ -35,6 +35,7 @@ protected:
     std::vector<int> deviceIDs;
 
     bool useHardwareThreshold;
+    bool useGpuThreshold;
     bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
     bitLenInt deviceGlobalQubits;
@@ -52,25 +53,27 @@ protected:
     {
         QInterface::SetQubitCount(qb);
 
-        if (useHardwareThreshold && ((engines[0] == QINTERFACE_OPENCL) || (engines[0] == QINTERFACE_HYBRID))) {
-            // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
-            // environment variable.
+        if (useHardwareThreshold) {
+            if (useGpuThreshold) {
+                // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
+                // environment variable.
 
-            thresholdQubitsPerPage = maxPageQubits;
+                thresholdQubitsPerPage = maxPageQubits;
 
-            bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
-            if (threshTest < thresholdQubitsPerPage) {
-                thresholdQubitsPerPage = threshTest;
-            }
+                bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
+                if (threshTest < thresholdQubitsPerPage) {
+                    thresholdQubitsPerPage = threshTest;
+                }
 
-            if (thresholdQubitsPerPage < minPageQubits) {
-                thresholdQubitsPerPage = minPageQubits;
-            }
-        } else if (useHardwareThreshold) {
-            thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
+                if (thresholdQubitsPerPage < minPageQubits) {
+                    thresholdQubitsPerPage = minPageQubits;
+                }
+            } else {
+                thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
 
-            if (thresholdQubitsPerPage < minPageQubits) {
-                thresholdQubitsPerPage = minPageQubits;
+                if (thresholdQubitsPerPage < minPageQubits) {
+                    thresholdQubitsPerPage = minPageQubits;
+                }
             }
         }
 
