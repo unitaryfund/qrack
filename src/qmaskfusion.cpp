@@ -140,16 +140,17 @@ void QMaskFusion::Z(bitLenInt target)
 void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
     complex mtrx[4] = { lMtrx[0], lMtrx[1], lMtrx[2], lMtrx[3] };
-    if (zxShards[target].isZ) {
-        zxShards[target].isZ = false;
-        mtrx[1] = -mtrx[1];
-        mtrx[3] = -mtrx[3];
-    }
 
     if (zxShards[target].isX) {
         zxShards[target].isX = false;
         std::swap(mtrx[0], mtrx[1]);
         std::swap(mtrx[2], mtrx[3]);
+    }
+
+    if (zxShards[target].isZ) {
+        zxShards[target].isZ = false;
+        mtrx[1] = -mtrx[1];
+        mtrx[3] = -mtrx[3];
     }
 
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
