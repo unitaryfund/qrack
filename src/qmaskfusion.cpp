@@ -122,13 +122,15 @@ void QMaskFusion::Y(bitLenInt target)
     Z(target);
     X(target);
     QMaskFusionShard& shard = zxShards[target];
-    shard.phase = (shard.phase + 1U) & 3U;
+    if (!randGlobalPhase) {
+        shard.phase = (shard.phase + 1U) & 3U;
+    }
 }
 
 void QMaskFusion::Z(bitLenInt target)
 {
     QMaskFusionShard& shard = zxShards[target];
-    if (shard.isX) {
+    if (!randGlobalPhase && shard.isX) {
         shard.phase = (shard.phase + 2U) & 3U;
     }
     shard.isZ = !shard.isZ;
