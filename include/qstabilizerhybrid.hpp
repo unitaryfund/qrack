@@ -242,6 +242,9 @@ public:
             return;
         }
         engineTypes.erase(engineTypes.begin());
+        if (!engineTypes.size()) {
+            engineTypes.push_back(QINTERFACE_OPTIMAL_SINGLE_PAGE);
+        }
 
         if (engine) {
             engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();

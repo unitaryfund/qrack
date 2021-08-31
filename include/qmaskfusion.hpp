@@ -204,21 +204,22 @@ public:
         engine->SetAmplitudePage(pagePtr, offset, length);
     }
     virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    {
+        SetAmplitudePage(std::dynamic_pointer_cast<QMaskFusion>(pageEnginePtr), srcOffset, dstOffset, length);
+    }
+    virtual void SetAmplitudePage(
         QMaskFusionPtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
     {
         FlushBuffers();
+        pageEnginePtr->FlushBuffers();
         engine->SetAmplitudePage(pageEnginePtr->engine, srcOffset, dstOffset, length);
-    }
-    virtual void SetAmplitudePage(
-        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
-    {
-        FlushBuffers();
-        SetAmplitudePage(std::dynamic_pointer_cast<QMaskFusion>(pageEnginePtr), srcOffset, dstOffset, length);
     }
     virtual void ShuffleBuffers(QEnginePtr oEngine) { ShuffleBuffers(std::dynamic_pointer_cast<QMaskFusion>(oEngine)); }
     virtual void ShuffleBuffers(QMaskFusionPtr oEngine)
     {
         FlushBuffers();
+        oEngine->FlushBuffers();
         engine->ShuffleBuffers(oEngine->engine);
     }
     virtual void QueueSetDoNormalize(const bool& doNorm) { engine->QueueSetDoNormalize(doNorm); }
