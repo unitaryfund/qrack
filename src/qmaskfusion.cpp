@@ -153,6 +153,31 @@ void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         mtrx[3] = -mtrx[3];
     }
 
+    switch (zxShards[target].phase) {
+    case 1U:
+        mtrx[0] *= I_CMPLX;
+        mtrx[1] *= I_CMPLX;
+        mtrx[2] *= I_CMPLX;
+        mtrx[3] *= I_CMPLX;
+        break;
+    case 2U:
+        mtrx[0] *= -ONE_CMPLX;
+        mtrx[1] *= -ONE_CMPLX;
+        mtrx[2] *= -ONE_CMPLX;
+        mtrx[3] *= -ONE_CMPLX;
+        break;
+    case 3U:
+        mtrx[0] *= -I_CMPLX;
+        mtrx[1] *= -I_CMPLX;
+        mtrx[2] *= -I_CMPLX;
+        mtrx[3] *= -I_CMPLX;
+        break;
+    default:
+        // Identity
+        break;
+    }
+    zxShards[target].phase = 0U;
+
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
