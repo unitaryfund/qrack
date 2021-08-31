@@ -108,7 +108,11 @@ public:
         SetAmplitudePage(std::dynamic_pointer_cast<QHybrid>(pageEnginePtr), srcOffset, dstOffset, length);
     }
     virtual void ShuffleBuffers(QEnginePtr oEngine) { ShuffleBuffers(std::dynamic_pointer_cast<QHybrid>(oEngine)); }
-    virtual void ShuffleBuffers(QHybridPtr oEngine) { engine->ShuffleBuffers(oEngine->engine); }
+    virtual void ShuffleBuffers(QHybridPtr oEngine)
+    {
+        oEngine->SwitchModes(isGpu);
+        engine->ShuffleBuffers(oEngine->engine);
+    }
     virtual void QueueSetDoNormalize(const bool& doNorm) { engine->QueueSetDoNormalize(doNorm); }
     virtual void QueueSetRunningNorm(const real1_f& runningNrm) { engine->QueueSetRunningNorm(runningNrm); }
 
