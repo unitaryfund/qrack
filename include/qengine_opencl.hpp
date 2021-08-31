@@ -333,6 +333,33 @@ public:
     using QEngine::ApplySinglePhase;
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
 
+    virtual void XMask(bitCapInt mask)
+    {
+        if (!mask) {
+            return;
+        }
+
+        if (!(mask & (mask - ONE_BCI))) {
+            X(log2(mask));
+            return;
+        }
+
+        BitMask(mask, OCL_API_X_MASK);
+    }
+    virtual void ZMask(bitCapInt mask)
+    {
+        if (!mask) {
+            return;
+        }
+
+        if (!(mask & (mask - ONE_BCI))) {
+            Z(log2(mask));
+            return;
+        }
+
+        BitMask(mask, OCL_API_Z_MASK);
+    }
+
     using QEngine::Compose;
     virtual bitLenInt Compose(QEngineOCLPtr toCopy);
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QEngineOCL>(toCopy)); }
@@ -541,6 +568,8 @@ protected:
     }
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh = REAL1_DEFAULT_ARG);
+
+    virtual void BitMask(bitCapIntOcl mask, OCLAPI api_call);
 
     virtual void ApplyM(bitCapInt mask, bool result, complex nrm);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);

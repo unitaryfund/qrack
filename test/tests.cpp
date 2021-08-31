@@ -1222,6 +1222,32 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_x_reg")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x1d));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_xmask")
+{
+    qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->XMask(pow2Ocl(18) | pow2Ocl(19));
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x40001));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_ymask")
+{
+    qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->YMask(pow2Ocl(18) | pow2Ocl(19));
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x40001));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_zmask")
+{
+    qftReg->SetPermutation(0x80001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->H(18, 2);
+    qftReg->ZMask(pow2Ocl(18) | pow2Ocl(19));
+    qftReg->H(18, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x40001));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtx")
 {
     qftReg->SetPermutation(0x80001);
@@ -3784,7 +3810,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
 {
-    if (testEngineType == QINTERFACE_QUNIT_MULTI || testEngineType == QINTERFACE_QPAGER) {
+    if (testEngineType == QINTERFACE_QUNIT_MULTI || testEngineType == QINTERFACE_QPAGER ||
+        testEngineType == QINTERFACE_STABILIZER_HYBRID) {
         // Not yet supported.
         return;
     }

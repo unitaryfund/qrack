@@ -114,6 +114,11 @@ enum QInterfaceEngine {
     QINTERFACE_HYBRID,
 
     /**
+     * Create a QMaskFusion, coalescing Pauli gates.
+     */
+    QINTERFACE_MASK_FUSION,
+
+    /**
      * Create a QStabilizerHybrid, switching between a QStabilizer and a QHybrid as efficient.
      */
     QINTERFACE_STABILIZER_HYBRID,
@@ -138,28 +143,34 @@ enum QInterfaceEngine {
      */
     QINTERFACE_QUNIT_MULTI,
 
-    QINTERFACE_FIRST = QINTERFACE_CPU,
-
 #if ENABLE_OPENCL
     QINTERFACE_OPTIMAL_SCHROEDINGER = QINTERFACE_QPAGER,
 
-    QINTERFACE_OPTIMAL_SINGLE_PAGE = QINTERFACE_HYBRID,
+    QINTERFACE_OPTIMAL_SINGLE_PAGE = QINTERFACE_MASK_FUSION,
+
+    QINTERFACE_OPTIMAL_BASE = QINTERFACE_HYBRID,
 
     QINTERFACE_OPTIMAL_G0_CHILD = QINTERFACE_STABILIZER_HYBRID,
 
     QINTERFACE_OPTIMAL_G1_CHILD = QINTERFACE_QPAGER,
 
-    QINTERFACE_OPTIMAL_G2_CHILD = QINTERFACE_HYBRID,
+    QINTERFACE_OPTIMAL_G2_CHILD = QINTERFACE_MASK_FUSION,
+
+    QINTERFACE_OPTIMAL_G3_CHILD = QINTERFACE_HYBRID,
 #else
     QINTERFACE_OPTIMAL_SCHROEDINGER = QINTERFACE_CPU,
 
-    QINTERFACE_OPTIMAL_SINGLE_PAGE = QINTERFACE_CPU,
+    QINTERFACE_OPTIMAL_SINGLE_PAGE = QINTERFACE_MASK_FUSION,
+
+    QINTERFACE_OPTIMAL_BASE = QINTERFACE_CPU,
 
     QINTERFACE_OPTIMAL_G0_CHILD = QINTERFACE_STABILIZER_HYBRID,
 
-    QINTERFACE_OPTIMAL_G1_CHILD = QINTERFACE_CPU,
+    QINTERFACE_OPTIMAL_G1_CHILD = QINTERFACE_MASK_FUSION,
 
     QINTERFACE_OPTIMAL_G2_CHILD = QINTERFACE_CPU,
+
+    QINTERFACE_OPTIMAL_G3_CHILD = QINTERFACE_CPU,
 #endif
 
     QINTERFACE_OPTIMAL = QINTERFACE_QUNIT,
@@ -875,13 +886,29 @@ public:
     virtual void X(bitLenInt qubitIndex);
 
     /**
+     * Masked X gate
+     *
+     * Applies the Pauli "X" operator to all qubits in the mask. A qubit index "n" is in the mask if (((1 << n) & mask)
+     * > 0). The Pauli "X" operator is equivalent to a logical "NOT."
+     */
+    virtual void XMask(bitCapInt mask);
+
+    /**
      * Y gate
      *
      * Applies the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
-     * "Y" operator is similar to a logical "NOT" with permutation phase
+     * "Y" operator is similar to a logical "NOT" with permutation phase.
      * effects.
      */
     virtual void Y(bitLenInt qubitIndex);
+
+    /**
+     * Masked Y gate
+     *
+     * Applies the Pauli "Y" operator to all qubits in the mask. A qubit index "n" is in the mask if (((1 << n) & mask)
+     * > 0). The Pauli "Y" operator is similar to a logical "NOT" with permutation phase.
+     */
+    virtual void YMask(bitCapInt mask);
 
     /**
      * Z gate
@@ -890,6 +917,14 @@ public:
      * "Z" operator reverses the phase of |1> and leaves |0> unchanged.
      */
     virtual void Z(bitLenInt qubitIndex);
+
+    /**
+     * Masked Z gate
+     *
+     * Applies the Pauli "Z" operator to all qubits in the mask. A qubit index "n" is in the mask if (((1 << n) & mask)
+     * > 0). The Pauli "Z" operator reverses the phase of |1> and leaves |0> unchanged.
+     */
+    virtual void ZMask(bitCapInt mask);
 
     /**
      * Square root of X gate

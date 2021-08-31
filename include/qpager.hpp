@@ -35,6 +35,7 @@ protected:
     std::vector<int> deviceIDs;
 
     bool useHardwareThreshold;
+    bool useGpuThreshold;
     bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
     bitLenInt deviceGlobalQubits;
@@ -52,25 +53,27 @@ protected:
     {
         QInterface::SetQubitCount(qb);
 
-        if (useHardwareThreshold && ((engines[0] == QINTERFACE_OPENCL) || (engines[0] == QINTERFACE_HYBRID))) {
-            // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
-            // environment variable.
+        if (useHardwareThreshold) {
+            if (useGpuThreshold) {
+                // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
+                // environment variable.
 
-            thresholdQubitsPerPage = maxPageQubits;
+                thresholdQubitsPerPage = maxPageQubits;
 
-            bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
-            if (threshTest < thresholdQubitsPerPage) {
-                thresholdQubitsPerPage = threshTest;
-            }
+                bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
+                if (threshTest < thresholdQubitsPerPage) {
+                    thresholdQubitsPerPage = threshTest;
+                }
 
-            if (thresholdQubitsPerPage < minPageQubits) {
-                thresholdQubitsPerPage = minPageQubits;
-            }
-        } else if (useHardwareThreshold) {
-            thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
+                if (thresholdQubitsPerPage < minPageQubits) {
+                    thresholdQubitsPerPage = minPageQubits;
+                }
+            } else {
+                thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
 
-            if (thresholdQubitsPerPage < minPageQubits) {
-                thresholdQubitsPerPage = minPageQubits;
+                if (thresholdQubitsPerPage < minPageQubits) {
+                    thresholdQubitsPerPage = minPageQubits;
+                }
             }
         }
 
@@ -106,6 +109,8 @@ protected:
     void ApplySingleEither(const bool& isInvert, complex top, complex bottom, bitLenInt target);
     void ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex* mtrx);
+
+    void BitMask(bitCapInt mask, bool isX);
 
     void Init();
 
@@ -221,6 +226,9 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+
+    virtual void XMask(bitCapInt mask) { BitMask(mask, true); }
+    virtual void ZMask(bitCapInt mask) { BitMask(mask, false); }
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 

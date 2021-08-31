@@ -11,43 +11,14 @@
 // for details.
 #pragma once
 
+#include "mpsshard.hpp"
 #include "qengine.hpp"
 #include "qstabilizer.hpp"
 
 namespace Qrack {
 
-struct QStabilizerShard;
-typedef std::shared_ptr<QStabilizerShard> QStabilizerShardPtr;
-
 class QStabilizerHybrid;
 typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
-
-struct QStabilizerShard {
-    complex gate[4];
-
-    QStabilizerShard()
-    {
-        gate[0] = ONE_CMPLX;
-        gate[1] = ZERO_CMPLX;
-        gate[2] = ZERO_CMPLX;
-        gate[3] = ONE_CMPLX;
-    }
-
-    QStabilizerShard(complex* g) { std::copy(g, g + 4, gate); }
-
-    void Compose(const complex* g)
-    {
-        complex o[4];
-        std::copy(gate, gate + 4, o);
-        mul2x2((complex*)g, o, gate);
-    }
-
-    bool IsPhase() { return (norm(gate[1]) <= FP_NORM_EPSILON) && (norm(gate[2]) <= FP_NORM_EPSILON); }
-
-    bool IsInvert() { return (norm(gate[0]) <= FP_NORM_EPSILON) && (norm(gate[3]) <= FP_NORM_EPSILON); }
-
-    bool IsIdentity() { return IsPhase() && (norm(gate[0] - gate[3]) <= FP_NORM_EPSILON); }
-};
 
 /**
  * A "Qrack::QStabilizerHybrid" internally switched between Qrack::QEngineCPU and Qrack::QEngineOCL to maximize
@@ -58,7 +29,7 @@ protected:
     std::vector<QInterfaceEngine> engineTypes;
     QInterfacePtr engine;
     QStabilizerPtr stabilizer;
-    std::vector<QStabilizerShardPtr> shards;
+    std::vector<MpsShardPtr> shards;
     int devID;
     complex phaseFactor;
     bool doNormalize;
@@ -75,12 +46,9 @@ protected:
     void InvertBuffer(bitLenInt qubit)
     {
         complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-        QStabilizerShardPtr pauliShard = std::make_shared<QStabilizerShard>(pauliX);
+        MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
         pauliShard->Compose(shards[qubit]->gate);
-        shards[qubit] = pauliShard;
-        if (shards[qubit]->IsIdentity()) {
-            shards[qubit] = NULL;
-        }
+        shards[qubit] = pauliShard->IsIdentity() ? NULL : pauliShard;
         stabilizer->X(qubit);
     }
 
@@ -108,7 +76,7 @@ protected:
 
     virtual bool CollapseSeparableShard(bitLenInt qubit)
     {
-        QStabilizerShardPtr shard = shards[qubit];
+        MpsShardPtr shard = shards[qubit];
         shards[qubit] = NULL;
         real1_f prob;
 
@@ -155,7 +123,7 @@ protected:
         }
 
         for (i = 0; i < qubitCount; i++) {
-            QStabilizerShardPtr shard = shards[i];
+            MpsShardPtr shard = shards[i];
             if (shard) {
                 shards[i] = NULL;
                 ApplySingleBit(shard->gate, i);
@@ -229,7 +197,7 @@ public:
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
-        : QStabilizerHybrid({ QINTERFACE_OPTIMAL_SCHROEDINGER }, qBitCount, initState, rgp, phaseFac, doNorm,
+        : QStabilizerHybrid({ QINTERFACE_OPTIMAL_G1_CHILD }, qBitCount, initState, rgp, phaseFac, doNorm,
               randomGlobalPhase, useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, ignored,
               qubitThreshold, separation_thresh)
     {
@@ -274,6 +242,9 @@ public:
             return;
         }
         engineTypes.erase(engineTypes.begin());
+        if (!engineTypes.size()) {
+            engineTypes.push_back(QINTERFACE_OPTIMAL_SINGLE_PAGE);
+        }
 
         if (engine) {
             engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
@@ -528,6 +499,51 @@ public:
     {
         SwitchToEngine();
         engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
+    }
+
+    virtual void XMask(bitCapInt mask)
+    {
+        if (!stabilizer) {
+            engine->XMask(mask);
+            return;
+        }
+
+        bitCapIntOcl v = mask;
+        while (mask) {
+            v = v & (v - ONE_BCI);
+            X(log2(mask ^ v));
+            mask = v;
+        }
+    }
+
+    virtual void YMask(bitCapInt mask)
+    {
+        if (!stabilizer) {
+            engine->YMask(mask);
+            return;
+        }
+
+        bitCapIntOcl v = mask;
+        while (mask) {
+            v = v & (v - ONE_BCI);
+            Y(log2(mask ^ v));
+            mask = v;
+        }
+    }
+
+    virtual void ZMask(bitCapInt mask)
+    {
+        if (!stabilizer) {
+            engine->ZMask(mask);
+            return;
+        }
+
+        bitCapIntOcl v = mask;
+        while (mask) {
+            v = v & (v - ONE_BCI);
+            Z(log2(mask ^ v));
+            mask = v;
+        }
     }
 
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(

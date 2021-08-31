@@ -534,6 +534,89 @@ void QEngineCPU::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 }
 #endif
 
+void QEngineCPU::XMask(bitCapInt mask)
+{
+    CHECK_ZERO_SKIP();
+
+    if (!mask) {
+        return;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        X(log2(mask));
+        return;
+    }
+
+    if (stateVec->is_sparse()) {
+        QInterface::XMask(mask);
+        return;
+    }
+
+    Dispatch([this, mask] {
+        bitCapInt otherMask = (maxQPower - ONE_BCI) ^ mask;
+        ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt otherRes = lcv & otherMask;
+            bitCapInt setInt = lcv & mask;
+            bitCapInt resetInt = setInt ^ mask;
+
+            if (setInt < resetInt) {
+                return;
+            }
+
+            setInt |= otherRes;
+            resetInt |= otherRes;
+
+            complex Y0 = stateVec->read(resetInt);
+            stateVec->write(resetInt, stateVec->read(setInt));
+            stateVec->write(setInt, Y0);
+        };
+
+        par_for(0, maxQPower, fn);
+    });
+}
+
+void QEngineCPU::ZMask(bitCapInt mask)
+{
+    CHECK_ZERO_SKIP();
+
+    if (!mask) {
+        return;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        Z(log2(mask));
+        return;
+    }
+
+    if (stateVec->is_sparse()) {
+        QInterface::ZMask(mask);
+        return;
+    }
+
+    Dispatch([this, mask] {
+        bitCapInt otherMask = (maxQPower - ONE_BCI) ^ mask;
+        ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt otherRes = lcv & otherMask;
+            bitCapInt setInt = lcv & mask;
+
+            bool isParityOdd = false;
+            bitCapIntOcl v = setInt;
+            while (v) {
+                v = v & (v - ONE_BCI);
+                isParityOdd = !isParityOdd;
+            }
+
+            setInt |= otherRes;
+
+            if (isParityOdd) {
+                stateVec->write(setInt, -stateVec->read(setInt));
+            }
+        };
+
+        par_for(0, maxQPower, fn);
+    });
+}
+
 void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
     bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)

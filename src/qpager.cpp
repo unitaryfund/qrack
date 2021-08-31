@@ -34,6 +34,16 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
     , thresholdQubitsPerPage(qubitThreshold)
     , pStridePow(PSTRIDEPOW)
 {
+    if ((engines[0] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
+#if ENABLE_OPENCL
+        if (!OCLEngine::Instance()->GetDeviceCount()) {
+            engines[0] = QINTERFACE_CPU;
+        }
+#else
+        engines[0] = QINTERFACE_CPU;
+#endif
+    }
+
     Init();
 
     initState &= maxQPower - ONE_BCI;
@@ -78,15 +88,14 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
 
 void QPager::Init()
 {
-#if !ENABLE_OPENCL
-    if (engines[0] == QINTERFACE_HYBRID) {
+    if ((engines[0] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
+#if ENABLE_OPENCL
+        if (!OCLEngine::Instance()->GetDeviceCount()) {
+            engines[0] = QINTERFACE_CPU;
+        }
+#else
         engines[0] = QINTERFACE_CPU;
-    }
 #endif
-
-    if ((engines[0] != QINTERFACE_CPU) && (engines[0] != QINTERFACE_OPENCL) && (engines[0] != QINTERFACE_HYBRID)) {
-        throw std::invalid_argument(
-            "QPager sub-engine type must be QINTERFACE_CPU, QINTERFACE_OPENCL or QINTERFACE_HYBRID.");
     }
 
     if (getenv("QRACK_DEVICE_GLOBAL_QB")) {
@@ -94,12 +103,9 @@ void QPager::Init()
     }
 
 #if ENABLE_OPENCL
-    if (!(OCLEngine::Instance()->GetDeviceCount())) {
-        engines[0] = QINTERFACE_CPU;
-    }
-
-    if ((thresholdQubitsPerPage == 0) && ((engines[0] == QINTERFACE_OPENCL) || (engines[0] == QINTERFACE_HYBRID))) {
+    if ((thresholdQubitsPerPage == 0) && (engines[0] != QINTERFACE_CPU) && !OCLEngine::Instance()->GetDeviceCount()) {
         useHardwareThreshold = true;
+        useGpuThreshold = true;
 
         // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
         // environment variable.
@@ -130,6 +136,7 @@ void QPager::Init()
 
     if (thresholdQubitsPerPage == 0) {
         useHardwareThreshold = true;
+        useGpuThreshold = false;
 
         thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
 
@@ -887,6 +894,42 @@ void QPager::AntiCISqrtSwap(
 
     CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2); },
         { qubit1, qubit2 }, controls, controlLen);
+}
+
+void QPager::BitMask(bitCapInt mask, bool isX)
+{
+    bitCapIntOcl i;
+
+    bitCapIntOcl pageMask = pageMaxQPower() - ONE_BCI;
+    bitCapIntOcl intraMask = mask & pageMask;
+    bitCapInt interMask = mask ^ (bitCapInt)intraMask;
+    bitCapInt v;
+    bitLenInt bit;
+    while (interMask) {
+        v = interMask & (interMask - ONE_BCI);
+        bit = log2(interMask ^ v);
+        interMask = v;
+
+        if (isX) {
+            X(bit);
+        } else {
+            Z(bit);
+        }
+    }
+
+    std::vector<std::future<void>> futures(qPages.size());
+    for (i = 0; i < qPages.size(); i++) {
+        QEnginePtr engine = qPages[i];
+        if (isX) {
+            futures[i] = std::async(std::launch::async, [engine, intraMask]() { return engine->XMask(intraMask); });
+        } else {
+            futures[i] = std::async(std::launch::async, [engine, intraMask]() { return engine->ZMask(intraMask); });
+        }
+    }
+
+    for (i = 0; i < qPages.size(); i++) {
+        futures[i].get();
+    }
 }
 
 bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)

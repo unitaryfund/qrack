@@ -289,6 +289,65 @@ void kernel xsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     APPLY_X();
 }
 
+void kernel xmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+{
+    bitCapIntOcl lcv, otherRes, setInt, resetInt;                                                                                               \
+    cmplx Y0;
+
+    bitCapIntOcl Nthreads = get_global_size(0);
+
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl mask = bitCapIntOclPtr[1];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        otherRes = lcv & otherMask;
+        setInt = lcv & mask;
+        resetInt = setInt ^ mask;
+
+        if (setInt < resetInt) {
+            continue;
+        }
+
+        setInt |= otherRes;
+        resetInt |= otherRes;
+
+        Y0 = stateVec[resetInt];
+        stateVec[resetInt] = stateVec[setInt];
+        stateVec[setInt] = Y0;
+    }
+}
+
+void kernel zmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
+{
+    bitCapIntOcl lcv, otherRes, setInt, v;                                                                                               \
+    bool isParityOdd;
+
+    bitCapIntOcl Nthreads = get_global_size(0);
+
+    bitCapIntOcl maxI = bitCapIntOclPtr[0];
+    bitCapIntOcl mask = bitCapIntOclPtr[1];
+    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
+
+    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
+        otherRes = lcv & otherMask;
+        setInt = lcv & mask;
+            
+        isParityOdd = false;
+        v = setInt;
+        while (v) {
+            v = v & (v - ONE_BCI);
+            isParityOdd = !isParityOdd;
+        }
+
+        setInt |= otherRes;
+
+        if (isParityOdd) {
+            stateVec[setInt] = -stateVec[setInt];
+        }
+    }
+}
+
 void kernel zsingle(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl lcv, i;

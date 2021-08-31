@@ -68,7 +68,7 @@ void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
         return;
     }
 
-    QStabilizerShardPtr toRet = NULL;
+    MpsShardPtr toRet = NULL;
     // If in PauliX or PauliY basis, compose gate with conversion from/to PauliZ basis.
     if (stabilizer->IsSeparableX(target)) {
         // X eigenstate
@@ -76,7 +76,7 @@ void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
 
         complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
             complex(-SQRT1_2_R1, ZERO_R1) };
-        toRet = std::make_shared<QStabilizerShard>(mtrx);
+        toRet = std::make_shared<MpsShard>(mtrx);
     } else if (stabilizer->IsSeparableY(target)) {
         // Y eigenstate
         stabilizer->H(target);
@@ -84,7 +84,7 @@ void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
 
         complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1), complex(SQRT1_2_R1, ZERO_R1),
             complex(ZERO_R1, SQRT1_2_R1) };
-        toRet = std::make_shared<QStabilizerShard>(mtrx);
+        toRet = std::make_shared<MpsShard>(mtrx);
     }
 
     if (!toRet) {
@@ -98,7 +98,7 @@ void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
     shards[target] = toRet;
 
     if (IS_CLIFFORD(shards[target]->gate)) {
-        QStabilizerShardPtr shard = shards[target];
+        MpsShardPtr shard = shards[target];
         shards[target] = NULL;
         ApplySingleBit(shard->gate, target);
     }
@@ -124,7 +124,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
         c->stabilizer = stabilizer->Clone();
         for (bitLenInt i = 0; i < qubitCount; i++) {
             if (shards[i]) {
-                c->shards[i] = std::make_shared<QStabilizerShard>(shards[i]->gate);
+                c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
             }
         }
     } else {
@@ -404,7 +404,7 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    shards[target] = std::make_shared<QStabilizerShard>(mtrx);
+    shards[target] = std::make_shared<MpsShard>(mtrx);
     CacheEigenstate(target);
 }
 
@@ -445,7 +445,7 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
         return;
     }
 
-    shards[target] = std::make_shared<QStabilizerShard>(mtrx);
+    shards[target] = std::make_shared<MpsShard>(mtrx);
     CacheEigenstate(target);
 }
 
@@ -490,7 +490,7 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
         return;
     }
 
-    shards[target] = std::make_shared<QStabilizerShard>(mtrx);
+    shards[target] = std::make_shared<MpsShard>(mtrx);
     CacheEigenstate(target);
 }
 

@@ -108,7 +108,11 @@ public:
         SetAmplitudePage(std::dynamic_pointer_cast<QHybrid>(pageEnginePtr), srcOffset, dstOffset, length);
     }
     virtual void ShuffleBuffers(QEnginePtr oEngine) { ShuffleBuffers(std::dynamic_pointer_cast<QHybrid>(oEngine)); }
-    virtual void ShuffleBuffers(QHybridPtr oEngine) { engine->ShuffleBuffers(oEngine->engine); }
+    virtual void ShuffleBuffers(QHybridPtr oEngine)
+    {
+        oEngine->SwitchModes(isGpu);
+        engine->ShuffleBuffers(oEngine->engine);
+    }
     virtual void QueueSetDoNormalize(const bool& doNorm) { engine->QueueSetDoNormalize(doNorm); }
     virtual void QueueSetRunningNorm(const real1_f& runningNrm) { engine->QueueSetRunningNorm(runningNrm); }
 
@@ -221,6 +225,11 @@ public:
         engine->UniformlyControlledSingleBit(
             controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
     }
+
+    virtual void XMask(bitCapInt mask) { engine->XMask(mask); }
+    virtual void YMask(bitCapInt mask) { engine->YMask(mask); }
+    virtual void ZMask(bitCapInt mask) { engine->ZMask(mask); }
+
     virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle) { engine->UniformParityRZ(mask, angle); }
     virtual void CUniformParityRZ(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
