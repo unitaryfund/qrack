@@ -57,9 +57,9 @@ int main()
 
     // Both CPU and GPU types share the QInterface API.
 #if ENABLE_OPENCL
-    QInterfacePtr qReg = CreateQuantumInterface({ QINTERFACE_OPENCL }, 20, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPENCL, 20, 0);
 #else
-    QInterfacePtr qReg = CreateQuantumInterface({ QINTERFACE_CPU }, 20, 0);
+    QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_CPU, 20, 0);
 #endif
 
     // This array should actually be allocated aligned for best performance, but this will work. We'll talk about

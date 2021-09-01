@@ -195,7 +195,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
         }
     }
 
-    QInterfacePtr simulator = q ? CreateQuantumInterface({ QINTERFACE_OPTIMAL_MULTI }, q, 0, randNumGen) : NULL;
+    QInterfacePtr simulator = q ? CreateQuantumInterface(QINTERFACE_OPTIMAL_MULTI, q, 0, randNumGen) : NULL;
 
     if (sid == simulators.size()) {
         simulatorReservations.push_back(true);
@@ -397,7 +397,7 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
-    QInterfacePtr nQubit = CreateQuantumInterface({ QINTERFACE_OPTIMAL_MULTI }, 1, 0, randNumGen);
+    QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_OPTIMAL_MULTI, 1, 0, randNumGen);
     if (simulators[sid] == NULL) {
         simulators[sid] = nQubit;
         shards[simulators[sid]] = {};
