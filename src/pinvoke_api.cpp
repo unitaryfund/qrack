@@ -896,6 +896,33 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
     return toRet;
 }
 
+MICROSOFT_QUANTUM_DECL void MeasureShots(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_ unsigned s, _In_reads_(s) unsigned* m)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[n]);
+    for (unsigned i = 0; i < n; i++) {
+        qPowers.get()[i] = Qrack::pow2(shards[simulator][q[i]]);
+    }
+
+    std::map<bitCapInt, int> result = simulator->MultiShotMeasureMask(qPowers.get(), n, s);
+
+    qPowers.reset();
+
+    size_t j = 0;
+    std::map<bitCapInt, int>::iterator it = result.begin();
+    while (it != result.end() && (j < s)) {
+        for (int i = 0; i < it->second; i++) {
+            m[j] = it->first;
+            j++;
+        }
+
+        it++;
+    }
+}
+
 MICROSOFT_QUANTUM_DECL void SWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2)
 {
     SIMULATOR_LOCK_GUARD(sid)
