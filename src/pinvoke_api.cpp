@@ -915,7 +915,7 @@ MICROSOFT_QUANTUM_DECL void MeasureShots(
     std::map<bitCapInt, int>::iterator it = result.begin();
     while (it != result.end() && (j < s)) {
         for (int i = 0; i < it->second; i++) {
-            m[j] = it->first;
+            m[j] = (unsigned)it->first;
             j++;
         }
 
