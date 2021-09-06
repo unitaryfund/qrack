@@ -962,7 +962,7 @@ MICROSOFT_QUANTUM_DECL unsigned Decompose(_In_ unsigned sid, _In_ unsigned n, _I
     QInterfacePtr simulator = simulators[sid];
     bitLenInt nQubitIndex = simulator->GetQubitCount() - n;
 
-    for (bitLenInt i = 0; i < n; i++) {
+    for (unsigned i = 0; i < n; i++) {
         simulator->Swap(shards[simulator][q[i]], i + nQubitIndex);
     }
 
@@ -989,12 +989,7 @@ MICROSOFT_QUANTUM_DECL void Dispose(_In_ unsigned sid, _In_ unsigned n, _In_read
     QInterfacePtr simulator = simulators[sid];
     bitLenInt nQubitIndex = simulator->GetQubitCount() - n;
 
-    std::unique_ptr<bitLenInt[]> bitsArray(new bitLenInt[n]);
     for (unsigned i = 0; i < n; i++) {
-        bitsArray.get()[i] = shards[simulator][q[i]];
-    }
-
-    for (bitLenInt i = 0; i < n; i++) {
         simulator->Swap(shards[simulator][q[i]], i + nQubitIndex);
     }
 
