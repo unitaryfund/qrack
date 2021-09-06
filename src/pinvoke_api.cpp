@@ -968,6 +968,17 @@ MICROSOFT_QUANTUM_DECL unsigned Decompose(_In_ unsigned sid, _In_ unsigned n, _I
 
     simulator->Decompose(nQubitIndex, simulators[nSid]);
 
+    bitLenInt oIndex;
+    for (unsigned j = 0; j < n; j++) {
+        oIndex = shards[simulator][q[j]];
+        for (unsigned i = 0; i < shards[simulator].size(); i++) {
+            if (shards[simulator][i] > oIndex) {
+                shards[simulator][i]--;
+            }
+        }
+        shards[simulator].erase(q[j]);
+    }
+
     return nSid;
 }
 
@@ -988,6 +999,17 @@ MICROSOFT_QUANTUM_DECL void Dispose(_In_ unsigned sid, _In_ unsigned n, _In_read
     }
 
     simulator->Dispose(nQubitIndex, n);
+
+    bitLenInt oIndex;
+    for (unsigned j = 0; j < n; j++) {
+        oIndex = shards[simulator][q[j]];
+        for (unsigned i = 0; i < shards[simulator].size(); i++) {
+            if (shards[simulator][i] > oIndex) {
+                shards[simulator][i]--;
+            }
+        }
+        shards[simulator].erase(q[j]);
+    }
 }
 
 MICROSOFT_QUANTUM_DECL void AND(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
