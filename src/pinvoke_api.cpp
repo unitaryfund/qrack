@@ -1157,6 +1157,25 @@ MICROSOFT_QUANTUM_DECL void IQFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
 #endif
 }
 
+std::map<unsigned, bitLenInt>::iterator FindShardValue(bitLenInt v, std::map<unsigned, bitLenInt>& simMap)
+{
+    for (auto it = simMap.begin(); it != simMap.end(); it++) {
+        if (it->second == v) {
+            // We have the matching it1, if we break.
+            return it;
+        }
+    }
+
+    return simMap.end();
+}
+
+void SwapShardValues(bitLenInt v1, bitLenInt v2, std::map<unsigned, bitLenInt>& simMap)
+{
+    auto it1 = FindShardValue(v1, simMap);
+    auto it2 = FindShardValue(v2, simMap);
+    std::swap(it1->second, it2->second);
+}
+
 unsigned MapArithmetic(QInterfacePtr simulator, unsigned n, unsigned* q)
 {
     unsigned start = shards[simulator][q[0]];
@@ -1169,6 +1188,7 @@ unsigned MapArithmetic(QInterfacePtr simulator, unsigned n, unsigned* q)
     }
     for (unsigned i = 1U; i < n; i++) {
         simulator->Swap(i, bitArray.get()[i]);
+        SwapShardValues(i, bitArray.get()[i], shards[simulator]);
     }
 
     return start;
@@ -1212,15 +1232,18 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, unsigned n, unsigne
 
     for (unsigned i = 1U; i < n; i++) {
         simulator->Swap(i, bitArray1.get()[i]);
+        SwapShardValues(i, bitArray1.get()[i], shards[simulator]);
     }
 
     if ((start1 + n) > start2) {
         start2 = start1 + n;
-        simulator->Swap(n, bitArray1.get()[0U]);
+        simulator->Swap(n, bitArray2.get()[0U]);
+        SwapShardValues(n, bitArray2.get()[0U], shards[simulator]);
     }
 
     for (unsigned i = 1U; i < n; i++) {
         simulator->Swap(n + i, bitArray2.get()[i]);
+        SwapShardValues(n + i, bitArray2.get()[i], shards[simulator]);
     }
 
     if (isReversed) {
@@ -1260,15 +1283,18 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsign
 
     for (unsigned i = 1U; i < n1; i++) {
         simulator->Swap(i, bitArray1.get()[i]);
+        SwapShardValues(i, bitArray1.get()[i], shards[simulator]);
     }
 
     if ((start1 + n1) > start2) {
         start2 = start1 + n1;
-        simulator->Swap(n1, bitArray1.get()[0U]);
+        simulator->Swap(n1, bitArray2.get()[0U]);
+        SwapShardValues(n1, bitArray2.get()[0U], shards[simulator]);
     }
 
     for (unsigned i = 1U; i < n2; i++) {
         simulator->Swap(n1 + i, bitArray2.get()[i]);
+        SwapShardValues(n1 + i, bitArray2.get()[i], shards[simulator]);
     }
 
     if (isReversed) {
