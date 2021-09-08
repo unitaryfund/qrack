@@ -1429,7 +1429,7 @@ MICROSOFT_QUANTUM_DECL void ADC(_In_ unsigned sid, unsigned s, _In_ unsigned ni,
     QInterfacePtr simulator = simulators[sid];
 
     MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
-    simulator->IndexedADC(starts.start1, ni, starts.start2, nv, s, t);
+    simulator->IndexedADC(starts.start1, ni, starts.start2, nv, shards[simulator][s], t);
 }
 MICROSOFT_QUANTUM_DECL void SBC(_In_ unsigned sid, unsigned s, _In_ unsigned ni, _In_reads_(ni) unsigned* qi,
     _In_ unsigned nv, _In_reads_(nv) unsigned* qv, unsigned char* t)
@@ -1438,7 +1438,7 @@ MICROSOFT_QUANTUM_DECL void SBC(_In_ unsigned sid, unsigned s, _In_ unsigned ni,
     QInterfacePtr simulator = simulators[sid];
 
     MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
-    simulator->IndexedSBC(starts.start1, ni, starts.start2, nv, s, t);
+    simulator->IndexedSBC(starts.start1, ni, starts.start2, nv, shards[simulator][s], t);
 }
 
 MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ unsigned sid, _In_ unsigned qi1)
