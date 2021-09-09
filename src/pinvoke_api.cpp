@@ -1186,9 +1186,9 @@ unsigned MapArithmetic(QInterfacePtr simulator, unsigned n, unsigned* q)
             start = bitArray.get()[i];
         }
     }
-    for (unsigned i = 1U; i < n; i++) {
-        simulator->Swap(i, bitArray.get()[i]);
-        SwapShardValues(i, bitArray.get()[i], shards[simulator]);
+    for (unsigned i = 0U; i < n; i++) {
+        simulator->Swap(start + i, bitArray.get()[i]);
+        SwapShardValues(start + i, bitArray.get()[i], shards[simulator]);
     }
 
     return start;
@@ -1230,18 +1230,16 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, unsigned n, unsigne
         bitArray1.swap(bitArray2);
     }
 
-    for (unsigned i = 1U; i < n; i++) {
-        simulator->Swap(i, bitArray1.get()[i]);
-        SwapShardValues(i, bitArray1.get()[i], shards[simulator]);
+    for (unsigned i = 0U; i < n; i++) {
+        simulator->Swap(start1 + i, bitArray1.get()[i]);
+        SwapShardValues(start1 + i, bitArray1.get()[i], shards[simulator]);
     }
 
     if ((start1 + n) > start2) {
         start2 = start1 + n;
-        simulator->Swap(start2, bitArray2.get()[0U]);
-        SwapShardValues(start2, bitArray2.get()[0U], shards[simulator]);
     }
 
-    for (unsigned i = 1U; i < n; i++) {
+    for (unsigned i = 0U; i < n; i++) {
         simulator->Swap(start2 + i, bitArray2.get()[i]);
         SwapShardValues(start2 + i, bitArray2.get()[i], shards[simulator]);
     }
@@ -1281,18 +1279,16 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsign
         bitArray1.swap(bitArray2);
     }
 
-    for (unsigned i = 1U; i < n1; i++) {
-        simulator->Swap(i, bitArray1.get()[i]);
-        SwapShardValues(i, bitArray1.get()[i], shards[simulator]);
+    for (unsigned i = 0U; i < n1; i++) {
+        simulator->Swap(start1 + i, bitArray1.get()[i]);
+        SwapShardValues(start1 + i, bitArray1.get()[i], shards[simulator]);
     }
 
     if ((start1 + n1) > start2) {
         start2 = start1 + n1;
-        simulator->Swap(start2, bitArray2.get()[0U]);
-        SwapShardValues(start2, bitArray2.get()[0U], shards[simulator]);
     }
 
-    for (unsigned i = 1U; i < n2; i++) {
+    for (unsigned i = 0U; i < n2; i++) {
         simulator->Swap(start2 + i, bitArray2.get()[i]);
         SwapShardValues(start2 + i, bitArray2.get()[i], shards[simulator]);
     }
