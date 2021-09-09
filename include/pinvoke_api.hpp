@@ -142,6 +142,43 @@ MICROSOFT_QUANTUM_DECL void CLXNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigne
 MICROSOFT_QUANTUM_DECL void QFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c);
 MICROSOFT_QUANTUM_DECL void IQFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c);
 
+MICROSOFT_QUANTUM_DECL void ADD(_In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q);
+MICROSOFT_QUANTUM_DECL void SUB(_In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q);
+MICROSOFT_QUANTUM_DECL void ADDS(_In_ unsigned sid, unsigned a, unsigned s, _In_ unsigned n, _In_reads_(n) unsigned* q);
+MICROSOFT_QUANTUM_DECL void SUBS(_In_ unsigned sid, unsigned a, unsigned s, _In_ unsigned n, _In_reads_(n) unsigned* q);
+MICROSOFT_QUANTUM_DECL void MUL(
+    _In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
+MICROSOFT_QUANTUM_DECL void DIV(
+    _In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
+MICROSOFT_QUANTUM_DECL void MULN(
+    _In_ unsigned sid, unsigned a, unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
+MICROSOFT_QUANTUM_DECL void DIVN(
+    _In_ unsigned sid, unsigned a, unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
+MICROSOFT_QUANTUM_DECL void POWN(
+    _In_ unsigned sid, unsigned a, unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
+
+MICROSOFT_QUANTUM_DECL void MCADD(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
+    _In_ unsigned nq, _In_reads_(nq) unsigned* q);
+MICROSOFT_QUANTUM_DECL void MCSUB(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
+    _In_ unsigned nq, _In_reads_(nq) unsigned* q);
+MICROSOFT_QUANTUM_DECL void MCMUL(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
+    _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
+MICROSOFT_QUANTUM_DECL void MCDIV(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
+    _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
+MICROSOFT_QUANTUM_DECL void MCMULN(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
+    unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
+MICROSOFT_QUANTUM_DECL void MCDIVN(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
+    unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
+MICROSOFT_QUANTUM_DECL void MCPOWN(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
+    unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
+
+MICROSOFT_QUANTUM_DECL void LDA(_In_ unsigned sid, _In_ unsigned ni, _In_reads_(ni) unsigned* qi, _In_ unsigned nv,
+    _In_reads_(nv) unsigned* qv, unsigned char* t);
+MICROSOFT_QUANTUM_DECL void ADC(_In_ unsigned sid, unsigned s, _In_ unsigned ni, _In_reads_(ni) unsigned* qi,
+    _In_ unsigned nv, _In_reads_(nv) unsigned* qv, unsigned char* t);
+MICROSOFT_QUANTUM_DECL void SBC(_In_ unsigned sid, unsigned s, _In_ unsigned ni, _In_reads_(ni) unsigned* qi,
+    _In_ unsigned nv, _In_reads_(nv) unsigned* qv, unsigned char* t);
+
 MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ unsigned sid, _In_ unsigned qi1);
 MICROSOFT_QUANTUM_DECL bool TrySeparate2Qb(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2);
 MICROSOFT_QUANTUM_DECL bool TrySeparateTol(
