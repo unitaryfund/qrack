@@ -171,6 +171,149 @@ inline std::size_t make_mask(std::vector<bitLenInt> const& qs)
     return mask;
 }
 
+std::map<unsigned, bitLenInt>::iterator FindShardValue(bitLenInt v, std::map<unsigned, bitLenInt>& simMap)
+{
+    for (auto it = simMap.begin(); it != simMap.end(); it++) {
+        if (it->second == v) {
+            // We have the matching it1, if we break.
+            return it;
+        }
+    }
+
+    return simMap.end();
+}
+
+void SwapShardValues(bitLenInt v1, bitLenInt v2, std::map<unsigned, bitLenInt>& simMap)
+{
+    auto it1 = FindShardValue(v1, simMap);
+    auto it2 = FindShardValue(v2, simMap);
+    std::swap(it1->second, it2->second);
+}
+
+unsigned MapArithmetic(QInterfacePtr simulator, unsigned n, unsigned* q)
+{
+    unsigned start = shards[simulator][q[0]];
+    std::unique_ptr<bitLenInt[]> bitArray(new bitLenInt[n]);
+    for (unsigned i = 0U; i < n; i++) {
+        bitArray.get()[i] = shards[simulator][q[i]];
+        if (start > bitArray.get()[i]) {
+            start = bitArray.get()[i];
+        }
+    }
+    for (unsigned i = 0U; i < n; i++) {
+        simulator->Swap(start + i, bitArray.get()[i]);
+        SwapShardValues(start + i, bitArray.get()[i], shards[simulator]);
+    }
+
+    return start;
+}
+
+struct MapArithmeticResult2 {
+    unsigned start1;
+    unsigned start2;
+
+    MapArithmeticResult2(unsigned s1, unsigned s2)
+        : start1(s1)
+        , start2(s2)
+    {
+    }
+};
+
+MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, unsigned n, unsigned* q1, unsigned* q2)
+{
+    unsigned start1 = shards[simulator][q1[0]];
+    unsigned start2 = shards[simulator][q2[0]];
+    std::unique_ptr<bitLenInt[]> bitArray1(new bitLenInt[n]);
+    std::unique_ptr<bitLenInt[]> bitArray2(new bitLenInt[n]);
+    for (unsigned i = 0; i < n; i++) {
+        bitArray1.get()[i] = shards[simulator][q1[i]];
+        if (start1 > bitArray1.get()[i]) {
+            start1 = bitArray1.get()[i];
+        }
+
+        bitArray2.get()[i] = shards[simulator][q2[i]];
+        if (start2 > bitArray2.get()[i]) {
+            start2 = bitArray2.get()[i];
+        }
+    }
+
+    bool isReversed = (start2 < start1);
+
+    if (isReversed) {
+        std::swap(start1, start2);
+        bitArray1.swap(bitArray2);
+    }
+
+    for (unsigned i = 0U; i < n; i++) {
+        simulator->Swap(start1 + i, bitArray1.get()[i]);
+        SwapShardValues(start1 + i, bitArray1.get()[i], shards[simulator]);
+    }
+
+    if ((start1 + n) > start2) {
+        start2 = start1 + n;
+    }
+
+    for (unsigned i = 0U; i < n; i++) {
+        simulator->Swap(start2 + i, bitArray2.get()[i]);
+        SwapShardValues(start2 + i, bitArray2.get()[i], shards[simulator]);
+    }
+
+    if (isReversed) {
+        std::swap(start1, start2);
+    }
+
+    return MapArithmeticResult2(start1, start2);
+}
+
+MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsigned* q1, unsigned n2, unsigned* q2)
+{
+    unsigned start1 = shards[simulator][q1[0]];
+    unsigned start2 = shards[simulator][q2[0]];
+    std::unique_ptr<bitLenInt[]> bitArray1(new bitLenInt[n1]);
+    std::unique_ptr<bitLenInt[]> bitArray2(new bitLenInt[n2]);
+    for (unsigned i = 0; i < n1; i++) {
+        bitArray1.get()[i] = shards[simulator][q1[i]];
+        if (start1 > bitArray1.get()[i]) {
+            start1 = bitArray1.get()[i];
+        }
+    }
+
+    for (unsigned i = 0; i < n2; i++) {
+        bitArray2.get()[i] = shards[simulator][q2[i]];
+        if (start2 > bitArray2.get()[i]) {
+            start2 = bitArray2.get()[i];
+        }
+    }
+
+    bool isReversed = (start2 < start1);
+
+    if (isReversed) {
+        std::swap(start1, start2);
+        std::swap(n1, n2);
+        bitArray1.swap(bitArray2);
+    }
+
+    for (unsigned i = 0U; i < n1; i++) {
+        simulator->Swap(start1 + i, bitArray1.get()[i]);
+        SwapShardValues(start1 + i, bitArray1.get()[i], shards[simulator]);
+    }
+
+    if ((start1 + n1) > start2) {
+        start2 = start1 + n1;
+    }
+
+    for (unsigned i = 0U; i < n2; i++) {
+        simulator->Swap(start2 + i, bitArray2.get()[i]);
+        SwapShardValues(start2 + i, bitArray2.get()[i], shards[simulator]);
+    }
+
+    if (isReversed) {
+        std::swap(start1, start2);
+    }
+
+    return MapArithmeticResult2(start1, start2);
+}
+
 extern "C" {
 
 /**
@@ -1155,149 +1298,6 @@ MICROSOFT_QUANTUM_DECL void IQFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
     std::copy(c, c + n, q.get());
     simulator->IQFTR(q.get(), n);
 #endif
-}
-
-std::map<unsigned, bitLenInt>::iterator FindShardValue(bitLenInt v, std::map<unsigned, bitLenInt>& simMap)
-{
-    for (auto it = simMap.begin(); it != simMap.end(); it++) {
-        if (it->second == v) {
-            // We have the matching it1, if we break.
-            return it;
-        }
-    }
-
-    return simMap.end();
-}
-
-void SwapShardValues(bitLenInt v1, bitLenInt v2, std::map<unsigned, bitLenInt>& simMap)
-{
-    auto it1 = FindShardValue(v1, simMap);
-    auto it2 = FindShardValue(v2, simMap);
-    std::swap(it1->second, it2->second);
-}
-
-unsigned MapArithmetic(QInterfacePtr simulator, unsigned n, unsigned* q)
-{
-    unsigned start = shards[simulator][q[0]];
-    std::unique_ptr<bitLenInt[]> bitArray(new bitLenInt[n]);
-    for (unsigned i = 0U; i < n; i++) {
-        bitArray.get()[i] = shards[simulator][q[i]];
-        if (start > bitArray.get()[i]) {
-            start = bitArray.get()[i];
-        }
-    }
-    for (unsigned i = 0U; i < n; i++) {
-        simulator->Swap(start + i, bitArray.get()[i]);
-        SwapShardValues(start + i, bitArray.get()[i], shards[simulator]);
-    }
-
-    return start;
-}
-
-struct MapArithmeticResult2 {
-    unsigned start1;
-    unsigned start2;
-
-    MapArithmeticResult2(unsigned s1, unsigned s2)
-        : start1(s1)
-        , start2(s2)
-    {
-    }
-};
-
-MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, unsigned n, unsigned* q1, unsigned* q2)
-{
-    unsigned start1 = shards[simulator][q1[0]];
-    unsigned start2 = shards[simulator][q2[0]];
-    std::unique_ptr<bitLenInt[]> bitArray1(new bitLenInt[n]);
-    std::unique_ptr<bitLenInt[]> bitArray2(new bitLenInt[n]);
-    for (unsigned i = 0; i < n; i++) {
-        bitArray1.get()[i] = shards[simulator][q1[i]];
-        if (start1 > bitArray1.get()[i]) {
-            start1 = bitArray1.get()[i];
-        }
-
-        bitArray2.get()[i] = shards[simulator][q2[i]];
-        if (start2 > bitArray2.get()[i]) {
-            start2 = bitArray2.get()[i];
-        }
-    }
-
-    bool isReversed = (start2 < start1);
-
-    if (isReversed) {
-        std::swap(start1, start2);
-        bitArray1.swap(bitArray2);
-    }
-
-    for (unsigned i = 0U; i < n; i++) {
-        simulator->Swap(start1 + i, bitArray1.get()[i]);
-        SwapShardValues(start1 + i, bitArray1.get()[i], shards[simulator]);
-    }
-
-    if ((start1 + n) > start2) {
-        start2 = start1 + n;
-    }
-
-    for (unsigned i = 0U; i < n; i++) {
-        simulator->Swap(start2 + i, bitArray2.get()[i]);
-        SwapShardValues(start2 + i, bitArray2.get()[i], shards[simulator]);
-    }
-
-    if (isReversed) {
-        std::swap(start1, start2);
-    }
-
-    return MapArithmeticResult2(start1, start2);
-}
-
-MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsigned* q1, unsigned n2, unsigned* q2)
-{
-    unsigned start1 = shards[simulator][q1[0]];
-    unsigned start2 = shards[simulator][q2[0]];
-    std::unique_ptr<bitLenInt[]> bitArray1(new bitLenInt[n1]);
-    std::unique_ptr<bitLenInt[]> bitArray2(new bitLenInt[n2]);
-    for (unsigned i = 0; i < n1; i++) {
-        bitArray1.get()[i] = shards[simulator][q1[i]];
-        if (start1 > bitArray1.get()[i]) {
-            start1 = bitArray1.get()[i];
-        }
-    }
-
-    for (unsigned i = 0; i < n2; i++) {
-        bitArray2.get()[i] = shards[simulator][q2[i]];
-        if (start2 > bitArray2.get()[i]) {
-            start2 = bitArray2.get()[i];
-        }
-    }
-
-    bool isReversed = (start2 < start1);
-
-    if (isReversed) {
-        std::swap(start1, start2);
-        std::swap(n1, n2);
-        bitArray1.swap(bitArray2);
-    }
-
-    for (unsigned i = 0U; i < n1; i++) {
-        simulator->Swap(start1 + i, bitArray1.get()[i]);
-        SwapShardValues(start1 + i, bitArray1.get()[i], shards[simulator]);
-    }
-
-    if ((start1 + n1) > start2) {
-        start2 = start1 + n1;
-    }
-
-    for (unsigned i = 0U; i < n2; i++) {
-        simulator->Swap(start2 + i, bitArray2.get()[i]);
-        SwapShardValues(start2 + i, bitArray2.get()[i], shards[simulator]);
-    }
-
-    if (isReversed) {
-        std::swap(start1, start2);
-    }
-
-    return MapArithmeticResult2(start1, start2);
 }
 
 MICROSOFT_QUANTUM_DECL void ADD(_In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q)
