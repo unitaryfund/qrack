@@ -1237,8 +1237,8 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, unsigned n, unsigne
 
     if ((start1 + n) > start2) {
         start2 = start1 + n;
-        simulator->Swap(n, bitArray2.get()[0U]);
-        SwapShardValues(n, bitArray2.get()[0U], shards[simulator]);
+        simulator->Swap(start2, bitArray2.get()[0U]);
+        SwapShardValues(start2, bitArray2.get()[0U], shards[simulator]);
     }
 
     for (unsigned i = 1U; i < n; i++) {
@@ -1288,8 +1288,8 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsign
 
     if ((start1 + n1) > start2) {
         start2 = start1 + n1;
-        simulator->Swap(n1, bitArray2.get()[0U]);
-        SwapShardValues(n1, bitArray2.get()[0U], shards[simulator]);
+        simulator->Swap(start2, bitArray2.get()[0U]);
+        SwapShardValues(start2, bitArray2.get()[0U], shards[simulator]);
     }
 
     for (unsigned i = 1U; i < n2; i++) {
