@@ -321,7 +321,8 @@ void kernel xmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
 void kernel zmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl lcv, otherRes, setInt, v;                                                                                               \
-    bool isParityOdd = false;
+    bitCapIntOcl parityStartSize = 4U * sizeof(bitCapIntOcl);
+    bitCapIntOcl paritySize;
 
     bitCapIntOcl Nthreads = get_global_size(0);
 
@@ -333,16 +334,15 @@ void kernel zmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
         otherRes = lcv & otherMask;
         setInt = lcv & mask;
             
-        isParityOdd = false;
         v = setInt;
-        while (v) {
-            v = v & (v - ONE_BCI);
-            isParityOdd = !isParityOdd;
+        for (paritySize = parityStartSize; paritySize > 0U; paritySize >>= 1U) {
+            v ^= v >> paritySize;
         }
+        v &= 1U;
 
         setInt |= otherRes;
 
-        if (isParityOdd) {
+        if (v) {
             stateVec[setInt] = -stateVec[setInt];
         }
     }
