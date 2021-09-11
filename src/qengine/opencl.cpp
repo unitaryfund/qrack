@@ -425,8 +425,6 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
         FreeAll();
         throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
     }
-
-    clFlush();
 }
 
 real1_f QEngineOCL::ProbAll(bitCapInt fullRegister)
