@@ -53,14 +53,19 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     if (devList.size() == 0) {
         std::sort(deviceList.begin() + 1, deviceList.end(), std::greater<DeviceInfo>());
     }
+
+    devID = 0;
 }
 
 QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 {
     // Suppress passing device list, since QUnitMulti occupies all devices in the list
-    return CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
-        useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits,
-        separabilityThreshold);
+    QInterfacePtr toRet = CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, deviceList[devID].id, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+        std::vector<int>{}, thresholdQubits, separabilityThreshold);
+    devID = (devID + 1) % deviceList.size();
+
+    return toRet;
 }
 
 std::vector<QEngineInfo> QUnitMulti::GetQInfos()
@@ -99,7 +104,7 @@ void QUnitMulti::RedistributeQEngines()
     std::vector<bitCapInt> devSizes(deviceList.size());
     std::fill(devSizes.begin(), devSizes.end(), 0U);
     bitCapInt sz;
-    bitLenInt devID, devIndex;
+    bitLenInt deviceID, devIndex;
     size_t i, j;
 
     for (i = 0; i < qinfos.size(); i++) {
@@ -113,7 +118,7 @@ void QUnitMulti::RedistributeQEngines()
         }
 
         // If the original OpenCL device has equal load to the least, we prefer the original.
-        devID = qinfos[i].unit->GetDeviceID();
+        deviceID = qinfos[i].unit->GetDeviceID();
         devIndex = qinfos[i].deviceIndex;
         sz = devSizes[devIndex];
 
@@ -121,7 +126,7 @@ void QUnitMulti::RedistributeQEngines()
         if (sz > 0) {
             // If the default OpenCL device has equal load to the least, we prefer the default.
             if (devSizes[0] < sz) {
-                devID = deviceList[0].id;
+                deviceID = deviceList[0].id;
                 devIndex = 0;
                 sz = devSizes[0];
             }
@@ -129,14 +134,14 @@ void QUnitMulti::RedistributeQEngines()
             // Find the device with the lowest load.
             for (j = 0; j < deviceList.size(); j++) {
                 if ((devSizes[j] < sz) && ((devSizes[j] + qinfos[i].unit->GetMaxQPower()) <= deviceList[j].maxSize)) {
-                    devID = deviceList[j].id;
+                    deviceID = deviceList[j].id;
                     devIndex = j;
                     sz = devSizes[j];
                 }
             }
 
             // Add this unit to the device with the lowest load.
-            qinfos[i].unit->SetDevice(devID);
+            qinfos[i].unit->SetDevice(deviceID);
         }
 
         // Update the size of buffers handles by this device.
@@ -217,8 +222,8 @@ QInterfacePtr QUnitMulti::Clone()
     }
 
     QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engines, qubitCount, 0, rand_generator, phaseFactor,
-        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
-        thresholdQubits, separabilityThreshold);
+        doNormalize, randGlobalPhase, useHostRam, defaultDeviceID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+        deviceIDs, thresholdQubits, separabilityThreshold);
 
     Finish();
     copyPtr->Finish();
