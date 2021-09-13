@@ -251,18 +251,4 @@ QInterfacePtr QUnitMulti::Clone()
     return CloneBody(copyPtr);
 }
 
-void QUnitMulti::GetQuantumState(complex* outputState)
-{
-    ToPermBasisAll();
-    OrderContiguous(EntangleAll());
-    shards[0].unit->GetQuantumState(outputState);
-}
-
-void QUnitMulti::GetProbs(real1* outputProbs)
-{
-    ToPermBasisAll();
-    OrderContiguous(EntangleAll());
-    shards[0].unit->GetProbs(outputProbs);
-}
-
 } // namespace Qrack
