@@ -60,17 +60,14 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
 QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 {
     bitLenInt deviceId = defaultDeviceID;
-    size_t devAlloc = OCLEngine::Instance()->GetActiveAllocSize(deviceId);
-    // Devices tend to have 4 pages, but we're comparing to the size of a single page.
-    // So, "cap" might go negative, but this still works, if all devices have the same segment count.
-    int64_t cap = deviceList[deviceId].maxSize - devAlloc;
-    int64_t tCap;
+    uint64_t sz = OCLEngine::Instance()->GetActiveAllocSize(deviceId);
+    ;
+    uint64_t tSz;
 
     for (size_t i = 0U; i < deviceList.size(); i++) {
-        devAlloc = OCLEngine::Instance()->GetActiveAllocSize(deviceList[i].id);
-        tCap = deviceList[i].maxSize - devAlloc;
-        if (cap < tCap) {
-            cap = tCap;
+        tSz = OCLEngine::Instance()->GetActiveAllocSize(deviceList[i].id);
+        if (sz > tSz) {
+            sz = tSz;
             deviceId = deviceList[i].id;
         }
     }
