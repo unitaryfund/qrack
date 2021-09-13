@@ -61,7 +61,6 @@ QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 {
     bitLenInt deviceId = defaultDeviceID;
     uint64_t sz = OCLEngine::Instance()->GetActiveAllocSize(deviceId);
-    ;
     uint64_t tSz;
 
     for (size_t i = 0U; i < deviceList.size(); i++) {
