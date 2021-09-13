@@ -59,23 +59,19 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
 
 QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 {
-    size_t i = 0U;
-    bitCapInt sz = -1;
     bitLenInt deviceId = defaultDeviceID;
-    do {
-        while ((i < qubitCount) && !shards[i].unit) {
-            i++;
-        }
+    bitCapInt devAlloc = OCLEngine::Instance()->GetActiveAllocSize(deviceId);
+    bitCapInt cap = (deviceList[deviceId].maxSize > devAlloc) ? (deviceList[deviceId].maxSize - devAlloc) : 0U;
+    bitCapInt tCap;
 
-        if (i >= qubitCount) {
-            continue;
+    for (size_t i = 0U; i < deviceList.size(); i++) {
+        devAlloc = OCLEngine::Instance()->GetActiveAllocSize(deviceList[i].id);
+        tCap = (deviceList[i].maxSize > devAlloc) ? (deviceList[i].maxSize - devAlloc) : 0U;
+        if (cap < tCap) {
+            cap = tCap;
+            deviceId = deviceList[i].id;
         }
-
-        if (sz > shards[i].unit->GetMaxQPower()) {
-            sz = shards[i].unit->GetMaxQPower();
-            deviceId = shards[i].unit->GetDeviceID();
-        }
-    } while (i < qubitCount);
+    }
 
     // Suppress passing device list, since QUnitMulti occupies all devices in the list
     QInterfacePtr toRet = CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize,
