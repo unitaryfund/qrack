@@ -62,7 +62,7 @@ QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
     bitLenInt deviceId = defaultDeviceID;
     bitCapInt devAlloc = OCLEngine::Instance()->GetActiveAllocSize(deviceId);
     // Devices tend to have 4 pages, but we're comparing to the size of a single page.
-    // So, "cap" might go negative, but this still works.
+    // So, "cap" might go negative, but this still works, if all devices have the same segment count.
     int64_t cap = deviceList[deviceId].maxSize - devAlloc;
     int64_t tCap;
 
