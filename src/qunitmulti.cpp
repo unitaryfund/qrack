@@ -61,12 +61,14 @@ QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 {
     bitLenInt deviceId = defaultDeviceID;
     bitCapInt devAlloc = OCLEngine::Instance()->GetActiveAllocSize(deviceId);
-    bitCapInt cap = (deviceList[deviceId].maxSize > devAlloc) ? (deviceList[deviceId].maxSize - devAlloc) : 0U;
-    bitCapInt tCap;
+    // Devices tend to have 4 pages, but we're comparing to the size of a single page.
+    // So, "cap" might go negative, but this still works.
+    int64_t cap = deviceList[deviceId].maxSize - devAlloc;
+    int64_t tCap;
 
     for (size_t i = 0U; i < deviceList.size(); i++) {
         devAlloc = OCLEngine::Instance()->GetActiveAllocSize(deviceList[i].id);
-        tCap = (deviceList[i].maxSize > devAlloc) ? (deviceList[i].maxSize - devAlloc) : 0U;
+        tCap = deviceList[i].maxSize - devAlloc;
         if (cap < tCap) {
             cap = tCap;
             deviceId = deviceList[i].id;
