@@ -104,14 +104,13 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
 
 void QUnitMulti::RedistributeQEngines()
 {
-    // No need to redistribute, if there is only 1 device
-    if (deviceList.size() == 1) {
+    // Only redistribute if the env var flag is set and NOT a null string.
+    if (!getenv("QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE") || strcmp(getenv("QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE"), "")) {
         return;
     }
 
-    // If the env var flag is NOT a null string, never redistribute.
-    if (getenv("QRACK_DISABLE_QUNITMULTI_REDISTRIBUTE") &&
-        (strcmp(getenv("QRACK_DISABLE_QUNITMULTI_REDISTRIBUTE"), "") == 0)) {
+    // No need to redistribute, if there is only 1 device
+    if (deviceList.size() == 1) {
         return;
     }
 
