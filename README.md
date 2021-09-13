@@ -103,6 +103,9 @@ After CMake, the project must be built in Visual Studio. Once installed, the `qr
 ## Changing default OpenCL device
 OpenCL device(s) can be specified by index in `Qrack::QInterface` subclass constructors. The global default device can also be overridden with the environment variable `QRACK_OCL_DEFAULT_DEVICE=n`, where `n` is the index of the OpenCL device you want to use, as reported by the OpenCL initialization header.
 
+## Disable OpenCL device redistribution
+For `Qrack::QUnitMulti`, the default behavior is to proactively redistribute simulation workloads between multiple OpenCL devices, (if multiple devices are available). Setting the environment variable `QRACK_DISABLE_QUNITMULTI_REDISTRIBUTE` to any value except a null string disables all redistribution behavior, leaving QUnitMulti to only try to balance load in the process of creating new separable `QEngineShard` instances.
+
 ## QPager distributed simulation options
 `QPager` attempts to smartly allocate low qubit widths for maximum performance. For wider qubit simulations, based on `clinfo`, you can segment your maximum OpenCL accelerator state vector page allocation into global qubits with the environment variable `QRACK_SEGMENT_GLOBAL_QB=n`, where n is an integer >=0. The default n is 0, meaning that maximum allocation segment of your GPU RAM is a single page. (For 1 global qubit, one segment would have 2 pages, akin to 2 single amplitudes, therefore one "global qubit," or 4 pages for n=2, because 2^2=4, etc., by exponent.)
 

@@ -59,11 +59,22 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
 
 QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 {
+
+    // Get shard sizes and devices
+    std::vector<QEngineInfo> qinfos = GetQInfos();
+
+    size_t sz = qinfos[0].unit->GetMaxQPower();
+    bitLenInt deviceId = qinfos[0].unit->GetDeviceID();
+    for (size_t i = 0; i < qinfos.size(); i++) {
+        if (sz > qinfos[i].unit->GetMaxQPower()) {
+            deviceId = qinfos[i].unit->GetDeviceID();
+        }
+    }
+
     // Suppress passing device list, since QUnitMulti occupies all devices in the list
     QInterfacePtr toRet = CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, deviceList[devID].id, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        std::vector<int>{}, thresholdQubits, separabilityThreshold);
-    devID = (devID + 1) % deviceList.size();
+        randGlobalPhase, useHostRam, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{},
+        thresholdQubits, separabilityThreshold);
 
     return toRet;
 }
@@ -95,6 +106,12 @@ void QUnitMulti::RedistributeQEngines()
 {
     // No need to redistribute, if there is only 1 device
     if (deviceList.size() == 1) {
+        return;
+    }
+
+    // If the env var flag is NOT a null string, never redistribute.
+    if (getenv("QRACK_DISABLE_QUNITMULTI_REDISTRIBUTE") &&
+        (strcmp(getenv("QRACK_DISABLE_QUNITMULTI_REDISTRIBUTE"), "") == 0)) {
         return;
     }
 
