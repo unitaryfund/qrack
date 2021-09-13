@@ -59,11 +59,22 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
 
 QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 {
+    bitLenInt deviceId = defaultDeviceID;
+    uint64_t sz = OCLEngine::Instance()->GetActiveAllocSize(deviceId);
+    uint64_t tSz;
+
+    for (size_t i = 0U; i < deviceList.size(); i++) {
+        tSz = OCLEngine::Instance()->GetActiveAllocSize(deviceList[i].id);
+        if (sz > tSz) {
+            sz = tSz;
+            deviceId = deviceList[i].id;
+        }
+    }
+
     // Suppress passing device list, since QUnitMulti occupies all devices in the list
     QInterfacePtr toRet = CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, deviceList[devID].id, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        std::vector<int>{}, thresholdQubits, separabilityThreshold);
-    devID = (devID + 1) % deviceList.size();
+        randGlobalPhase, useHostRam, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{},
+        thresholdQubits, separabilityThreshold);
 
     return toRet;
 }
@@ -93,6 +104,11 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
 
 void QUnitMulti::RedistributeQEngines()
 {
+    // Only redistribute if the env var flag is set and NOT a null string.
+    if (!getenv("QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE") || strcmp(getenv("QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE"), "")) {
+        return;
+    }
+
     // No need to redistribute, if there is only 1 device
     if (deviceList.size() == 1) {
         return;
@@ -229,20 +245,6 @@ QInterfacePtr QUnitMulti::Clone()
     copyPtr->Finish();
 
     return CloneBody(copyPtr);
-}
-
-void QUnitMulti::GetQuantumState(complex* outputState)
-{
-    ToPermBasisAll();
-    OrderContiguous(EntangleAll());
-    shards[0].unit->GetQuantumState(outputState);
-}
-
-void QUnitMulti::GetProbs(real1* outputProbs)
-{
-    ToPermBasisAll();
-    OrderContiguous(EntangleAll());
-    shards[0].unit->GetProbs(outputProbs);
 }
 
 } // namespace Qrack

@@ -289,44 +289,44 @@ public:
 #endif
     }
     size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
-    size_t GetActiveAllocSize() { return activeAllocSize; }
-    size_t AddToActiveAllocSize(size_t size)
+    size_t GetActiveAllocSize(const int& dev) { return activeAllocSizes[dev]; }
+    size_t AddToActiveAllocSize(const int& dev, size_t size)
     {
         if (size == 0) {
-            return activeAllocSize;
+            return activeAllocSizes[dev];
         }
 
         std::lock_guard<std::mutex> lock(allocMutex);
-        activeAllocSize += size;
+        activeAllocSizes[dev] += size;
 
-        return activeAllocSize;
+        return activeAllocSizes[dev];
     }
-    size_t SubtractFromActiveAllocSize(size_t size)
+    size_t SubtractFromActiveAllocSize(const int& dev, size_t size)
     {
         if (size == 0) {
-            return activeAllocSize;
+            return activeAllocSizes[dev];
         }
 
         std::lock_guard<std::mutex> lock(allocMutex);
-        if (size < activeAllocSize) {
-            activeAllocSize -= size;
+        if (size < activeAllocSizes[dev]) {
+            activeAllocSizes[dev] -= size;
         } else {
-            activeAllocSize = 0;
+            activeAllocSizes[dev] = 0;
         }
-        return activeAllocSize;
+        return activeAllocSizes[dev];
     }
-    void ResetActiveAllocSize()
+    void ResetActiveAllocSize(const int& dev)
     {
         std::lock_guard<std::mutex> lock(allocMutex);
         // User code should catch std::bad_alloc and reset:
-        activeAllocSize = 0;
+        activeAllocSizes[dev] = 0;
     }
 
 private:
     static const std::vector<OCLKernelHandle> kernelHandles;
     static const std::string binary_file_prefix;
     static const std::string binary_file_ext;
-    size_t activeAllocSize;
+    std::vector<size_t> activeAllocSizes;
     size_t maxActiveAllocSize;
     std::mutex allocMutex;
     std::vector<DeviceContextPtr> all_device_contexts;

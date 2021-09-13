@@ -447,9 +447,9 @@ public:
 protected:
     virtual void AddAlloc(size_t size)
     {
-        size_t currentAlloc = OCLEngine::Instance()->AddToActiveAllocSize(size);
+        size_t currentAlloc = OCLEngine::Instance()->AddToActiveAllocSize(deviceID, size);
         if (currentAlloc > OCLEngine::Instance()->GetMaxActiveAllocSize()) {
-            OCLEngine::Instance()->SubtractFromActiveAllocSize(size);
+            OCLEngine::Instance()->SubtractFromActiveAllocSize(deviceID, size);
             FreeAll();
             throw std::bad_alloc();
         }
@@ -457,7 +457,7 @@ protected:
     }
     virtual void SubtractAlloc(size_t size)
     {
-        OCLEngine::Instance()->SubtractFromActiveAllocSize(size);
+        OCLEngine::Instance()->SubtractFromActiveAllocSize(deviceID, size);
         totalOclAllocSize -= size;
     }
 

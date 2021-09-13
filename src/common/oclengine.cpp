@@ -389,6 +389,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         m_pInstance = new OCLEngine();
     }
     m_pInstance->SetDeviceContextPtrVector(all_dev_contexts, default_dev_context);
+    m_pInstance->activeAllocSizes = std::vector<size_t>(all_dev_contexts.size());
 
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
     std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
@@ -399,8 +400,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 }
 
 OCLEngine::OCLEngine()
-    : activeAllocSize(0)
-    , maxActiveAllocSize(-1)
+    : maxActiveAllocSize(-1)
 {
     if (getenv("QRACK_MAX_ALLOC_MB")) {
         maxActiveAllocSize = 1024 * 1024 * (size_t)std::stoi(std::string(getenv("QRACK_MAX_ALLOC_MB")));

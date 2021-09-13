@@ -93,8 +93,6 @@ public:
     }
 
     virtual QInterfacePtr Clone();
-    virtual void GetQuantumState(complex* outputState);
-    virtual void GetProbs(real1* outputProbs);
 
 protected:
     virtual std::vector<QEngineInfo> GetQInfos();

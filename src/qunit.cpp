@@ -96,14 +96,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
 
     isPagingSuppressed = canSuppressPaging && (qubitCount < pagingThresholdQubits);
 
-    shards = QEngineShardMap();
-
-    bool bitState;
-
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        bitState = ((initState >> (bitCapIntOcl)i) & ONE_BCI) != 0;
-        shards.push_back(QEngineShard(bitState, GetNonunitaryPhase()));
-    }
+    SetPermutation(initState);
 }
 
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)

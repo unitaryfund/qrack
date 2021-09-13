@@ -289,7 +289,7 @@ public:
     virtual bool isFinished();
     virtual void Dump()
     {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
+        for (size_t i = 0; i < shards.size(); i++) {
             shards[i].unit = NULL;
         }
     }
