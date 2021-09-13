@@ -59,23 +59,17 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
 
 QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 {
-    size_t i = 0U;
-    bitCapInt sz = -1;
-    bitLenInt deviceId = defaultDeviceID;
-    do {
-        while ((i < qubitCount) && !shards[i].unit) {
-            i++;
-        }
 
-        if (i >= qubitCount) {
-            continue;
-        }
+    // Get shard sizes and devices
+    std::vector<QEngineInfo> qinfos = GetQInfos();
 
-        if (sz > shards[i].unit->GetMaxQPower()) {
-            sz = shards[i].unit->GetMaxQPower();
-            deviceId = shards[i].unit->GetDeviceID();
+    size_t sz = qinfos[0].unit->GetMaxQPower();
+    bitLenInt deviceId = qinfos[0].unit->GetDeviceID();
+    for (size_t i = 0; i < qinfos.size(); i++) {
+        if (sz > qinfos[i].unit->GetMaxQPower()) {
+            deviceId = qinfos[i].unit->GetDeviceID();
         }
-    } while (i < qubitCount);
+    }
 
     // Suppress passing device list, since QUnitMulti occupies all devices in the list
     QInterfacePtr toRet = CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize,
