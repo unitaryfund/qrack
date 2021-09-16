@@ -1106,7 +1106,7 @@ MICROSOFT_QUANTUM_DECL void FSim(
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->FSim(theta, phi, shards[simulator][qi1], shards[simulator][qi2]);
+    simulator->FSim((real1_f)theta, (real1_f)phi, shards[simulator][qi1], shards[simulator][qi2]);
 }
 
 MICROSOFT_QUANTUM_DECL void CSWAP(
