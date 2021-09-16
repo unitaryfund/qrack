@@ -97,6 +97,9 @@ MICROSOFT_QUANTUM_DECL void MACU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
 MICROSOFT_QUANTUM_DECL void MACMtrx(
     _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_reads_(8) double* m, _In_ unsigned q);
 
+MICROSOFT_QUANTUM_DECL void multiplex1_mtrx(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q, double* m);
+
 // rotations
 MICROSOFT_QUANTUM_DECL void R(_In_ unsigned sid, _In_ unsigned b, _In_ double phi, _In_ unsigned q);
 

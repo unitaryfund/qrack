@@ -314,6 +314,13 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsign
     return MapArithmeticResult2(start1, start2);
 }
 
+void _darray_to_creal1_array(double* params, bitCapInt componentCount, complex* amps)
+{
+    for (bitCapInt j = 0; j < componentCount; j++) {
+        amps[j] = complex(real1(params[2 * j]), real1(params[2 * j + 1]));
+    }
+}
+
 extern "C" {
 
 /**
@@ -910,6 +917,17 @@ MICROSOFT_QUANTUM_DECL void MACMtrx(
 
     MAP_CONTROLS_AND_LOCK(sid, n)
     simulator->ApplyAntiControlledSingleBit(ctrlsArray.get(), n, shards[simulator][q], mtrx);
+}
+
+MICROSOFT_QUANTUM_DECL void multiplex1_mtrx(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q, double* m)
+{
+    bitCapInt componentCount = 4U * pow2(n);
+    std::unique_ptr<complex[]> mtrxs(new complex[componentCount]);
+    _darray_to_creal1_array(m, componentCount, mtrxs.get());
+
+    MAP_CONTROLS_AND_LOCK(sid, n)
+    simulator->UniformlyControlledSingleBit(ctrlsArray.get(), n, shards[simulator][q], mtrxs.get());
 }
 
 /**
