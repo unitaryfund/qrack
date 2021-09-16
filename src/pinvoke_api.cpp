@@ -919,7 +919,7 @@ MICROSOFT_QUANTUM_DECL void MACMtrx(
     simulator->ApplyAntiControlledSingleBit(ctrlsArray.get(), n, shards[simulator][q], mtrx);
 }
 
-MICROSOFT_QUANTUM_DECL void multiplex1_mtrx(
+MICROSOFT_QUANTUM_DECL void Multiplex1Mtrx(
     _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q, double* m)
 {
     bitCapInt componentCount = 4U * pow2(n);
