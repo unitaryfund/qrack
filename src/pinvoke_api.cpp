@@ -1477,6 +1477,14 @@ MICROSOFT_QUANTUM_DECL void SBC(_In_ unsigned sid, unsigned s, _In_ unsigned ni,
     MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
     simulator->IndexedSBC(starts.start1, ni, starts.start2, nv, shards[simulator][s], t);
 }
+MICROSOFT_QUANTUM_DECL void Hash(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, unsigned char* t)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
+
+    unsigned start = MapArithmetic(simulator, n, q);
+    simulator->Hash(start, n, t);
+}
 
 MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ unsigned sid, _In_ unsigned qi1)
 {
