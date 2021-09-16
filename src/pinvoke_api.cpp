@@ -314,6 +314,13 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsign
     return MapArithmeticResult2(start1, start2);
 }
 
+void _darray_to_creal1_array(double* params, bitCapInt componentCount, complex* amps)
+{
+    for (bitCapInt j = 0; j < componentCount; j++) {
+        amps[j] = complex(real1(params[2 * j]), real1(params[2 * j + 1]));
+    }
+}
+
 extern "C" {
 
 /**
@@ -912,6 +919,17 @@ MICROSOFT_QUANTUM_DECL void MACMtrx(
     simulator->ApplyAntiControlledSingleBit(ctrlsArray.get(), n, shards[simulator][q], mtrx);
 }
 
+MICROSOFT_QUANTUM_DECL void Multiplex1Mtrx(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q, double* m)
+{
+    bitCapInt componentCount = 4U * pow2(n);
+    std::unique_ptr<complex[]> mtrxs(new complex[componentCount]);
+    _darray_to_creal1_array(m, componentCount, mtrxs.get());
+
+    MAP_CONTROLS_AND_LOCK(sid, n)
+    simulator->UniformlyControlledSingleBit(ctrlsArray.get(), n, shards[simulator][q], mtrxs.get());
+}
+
 /**
  * (External API) Rotation around Pauli axes
  */
@@ -1074,11 +1092,35 @@ MICROSOFT_QUANTUM_DECL void SWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsi
     simulator->Swap(shards[simulator][qi1], shards[simulator][qi2]);
 }
 
+MICROSOFT_QUANTUM_DECL void ISWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->ISwap(shards[simulator][qi1], shards[simulator][qi2]);
+}
+
+MICROSOFT_QUANTUM_DECL void FSim(
+    _In_ unsigned sid, _In_ double theta, _In_ double phi, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->FSim((real1_f)theta, (real1_f)phi, shards[simulator][qi1], shards[simulator][qi2]);
+}
+
 MICROSOFT_QUANTUM_DECL void CSWAP(
     _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned qi1, _In_ unsigned qi2)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
     simulator->CSwap(ctrlsArray.get(), n, shards[simulator][qi1], shards[simulator][qi2]);
+}
+
+MICROSOFT_QUANTUM_DECL void ACSWAP(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    MAP_CONTROLS_AND_LOCK(sid, n)
+    simulator->AntiCSwap(ctrlsArray.get(), n, shards[simulator][qi1], shards[simulator][qi2]);
 }
 
 MICROSOFT_QUANTUM_DECL void Compose(_In_ unsigned sid1, _In_ unsigned sid2, unsigned* q)
@@ -1461,6 +1503,14 @@ MICROSOFT_QUANTUM_DECL void SBC(_In_ unsigned sid, unsigned s, _In_ unsigned ni,
 
     MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
     simulator->IndexedSBC(starts.start1, ni, starts.start2, nv, shards[simulator][s], t);
+}
+MICROSOFT_QUANTUM_DECL void Hash(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, unsigned char* t)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
+
+    unsigned start = MapArithmetic(simulator, n, q);
+    simulator->Hash(start, n, t);
 }
 
 MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ unsigned sid, _In_ unsigned qi1)
