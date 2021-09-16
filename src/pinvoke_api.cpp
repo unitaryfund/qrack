@@ -1074,11 +1074,26 @@ MICROSOFT_QUANTUM_DECL void SWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsi
     simulator->Swap(shards[simulator][qi1], shards[simulator][qi2]);
 }
 
+MICROSOFT_QUANTUM_DECL void ISWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->ISwap(shards[simulator][qi1], shards[simulator][qi2]);
+}
+
 MICROSOFT_QUANTUM_DECL void CSWAP(
     _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned qi1, _In_ unsigned qi2)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
     simulator->CSwap(ctrlsArray.get(), n, shards[simulator][qi1], shards[simulator][qi2]);
+}
+
+MICROSOFT_QUANTUM_DECL void ACSWAP(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    MAP_CONTROLS_AND_LOCK(sid, n)
+    simulator->AntiCSwap(ctrlsArray.get(), n, shards[simulator][qi1], shards[simulator][qi2]);
 }
 
 MICROSOFT_QUANTUM_DECL void Compose(_In_ unsigned sid1, _In_ unsigned sid2, unsigned* q)
