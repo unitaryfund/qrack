@@ -1100,6 +1100,15 @@ MICROSOFT_QUANTUM_DECL void ISWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ uns
     simulator->ISwap(shards[simulator][qi1], shards[simulator][qi2]);
 }
 
+MICROSOFT_QUANTUM_DECL void FSim(
+    _In_ unsigned sid, _In_ double theta, _In_ double phi, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->FSim(theta, phi, shards[simulator][qi1], shards[simulator][qi2]);
+}
+
 MICROSOFT_QUANTUM_DECL void CSWAP(
     _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned qi1, _In_ unsigned qi2)
 {

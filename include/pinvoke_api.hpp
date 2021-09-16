@@ -122,6 +122,8 @@ MICROSOFT_QUANTUM_DECL void MeasureShots(
 
 MICROSOFT_QUANTUM_DECL void SWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2);
 MICROSOFT_QUANTUM_DECL void ISWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2);
+MICROSOFT_QUANTUM_DECL void FSim(
+    _In_ unsigned sid, _In_ double theta, _In_ double phi, _In_ unsigned qi1, _In_ unsigned qi2);
 MICROSOFT_QUANTUM_DECL void CSWAP(
     _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned qi1, _In_ unsigned qi2);
 MICROSOFT_QUANTUM_DECL void ACSWAP(
