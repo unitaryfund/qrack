@@ -45,19 +45,13 @@ double formatTime(double t, bool logNormal)
     }
 }
 
-QInterfacePtr MakeRandQubit()
+void RandomInitQubit(QInterfacePtr sim, bitLenInt i)
 {
-    QInterfacePtr qubit =
-        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 1U, 0, rng, ONE_CMPLX,
-            enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+    real1_f theta = 2 * M_PI * sim->Rand();
+    real1_f phi = 2 * M_PI * sim->Rand();
+    real1_f lambda = 2 * M_PI * sim->Rand();
 
-    real1_f theta = 2 * M_PI * qubit->Rand();
-    real1_f phi = 2 * M_PI * qubit->Rand();
-    real1_f lambda = 2 * M_PI * qubit->Rand();
-
-    qubit->U(0, theta, phi, lambda);
-
-    return qubit;
+    sim->U(i, theta, phi, lambda);
 }
 
 void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bitLenInt mxQbts,
@@ -124,11 +118,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             mOutputFile << sizeof(bitCapInt) << " bytes in bitCapInt" << std::endl;
         }
 
-        if (!qUniverse) {
-            qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, numBits, 0,
-                rng, ONE_CMPLX, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse,
-                REAL1_EPSILON, devList);
-        }
+        qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, numBits, 0, rng,
+            ONE_CMPLX, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse,
+            REAL1_EPSILON, devList);
         avgt = 0.0;
         sampleFailureCount = 0;
 
@@ -149,9 +141,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     }
                 }
             } else {
-                qftReg = MakeRandQubit();
-                for (bitLenInt i = 1; i < numBits; i++) {
-                    qftReg->Compose(MakeRandQubit());
+                qftReg->SetPermutation(0);
+                for (bitLenInt i = 0; i < numBits; i++) {
+                    RandomInitQubit(qftReg, i);
                 }
             }
             qftReg->Finish();
