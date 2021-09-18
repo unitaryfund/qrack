@@ -85,26 +85,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         mnQbts = 4;
     }
 
-    bitLenInt qbTryThreshold = -1;
-    if (getenv("QRACK_MAX_PAGING_QB")) {
-        qbTryThreshold = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
-    }
-#if ENABLE_OPENCL
-    size_t maxAllocSize = OCLEngine::Instance()->GetMaxActiveAllocSize();
-    if (maxAllocSize > 0) {
-        bitLenInt maxQubits = log2(maxAllocSize / sizeof(complex));
-        maxQubits = (maxQubits < 4) ? 1U : (maxQubits - 3U);
-        if (maxQubits < qbTryThreshold) {
-            qbTryThreshold = maxQubits;
-        }
-    }
-    size_t maxAlloc = OCLEngine::Instance()->GetDeviceContextPtr(-1)->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
-    bitCapInt maxQb = log2(maxAlloc / sizeof(complex)) - 1U;
-    if (maxQb < qbTryThreshold) {
-        qbTryThreshold = maxQb;
-    }
-#endif
-
     int sampleFailureCount;
 
     QInterfacePtr qftReg = NULL;
@@ -151,17 +131,13 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             auto iterClock = std::chrono::high_resolution_clock::now();
 
             // Run loop body
-            if (numBits > qbTryThreshold) {
-                try {
-                    fn(qftReg, numBits);
-                    isTrialSuccessful = true;
-                } catch (const std::exception& e) {
-                    qftReg = NULL;
-                    sampleFailureCount++;
-                    isTrialSuccessful = false;
-                }
-            } else {
+            try {
                 fn(qftReg, numBits);
+                isTrialSuccessful = true;
+            } catch (const std::exception& e) {
+                qftReg = NULL;
+                sampleFailureCount++;
+                isTrialSuccessful = false;
             }
 
             if (!async_time && qftReg) {
