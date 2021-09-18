@@ -1496,7 +1496,6 @@ void kernel powmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
     bitCapIntOcl maxI = bitCapIntOclPtr[0];
     bitCapIntOcl base = bitCapIntOclPtr[1];
     bitCapIntOcl inMask = bitCapIntOclPtr[2];
-    bitCapIntOcl outMask = bitCapIntOclPtr[3];
     bitCapIntOcl otherMask = bitCapIntOclPtr[4];
     bitCapIntOcl len = bitCapIntOclPtr[5];
     bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
@@ -2117,7 +2116,6 @@ void kernel approxcompare(global cmplx* stateVec1, global cmplx* stateVec2, cons
 
     Nthreads = get_global_size(0);
     bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    cmplx amp;
     cmplx partInner = (cmplx)(ZERO_R1, ZERO_R1);
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
