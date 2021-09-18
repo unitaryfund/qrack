@@ -1498,7 +1498,6 @@ void kernel powmodnout(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntO
     bitCapIntOcl inMask = bitCapIntOclPtr[2];
     bitCapIntOcl otherMask = bitCapIntOclPtr[4];
     bitCapIntOcl len = bitCapIntOclPtr[5];
-    bitCapIntOcl lowMask = (ONE_BCI << len) - ONE_BCI;
     bitCapIntOcl inStart = bitCapIntOclPtr[6];
     bitCapIntOcl outStart = bitCapIntOclPtr[7];
     bitCapIntOcl skipMask = bitCapIntOclPtr[8];
