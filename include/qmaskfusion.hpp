@@ -13,6 +13,10 @@
 
 #include "qengine.hpp"
 
+#if ENABLE_OPENCL
+#include "common/oclengine.hpp"
+#endif
+
 namespace Qrack {
 
 struct QMaskFusionShard {
@@ -175,9 +179,15 @@ public:
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
+#if ENABLE_OPENCL
+        : QMaskFusion({ OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_OPTIMAL_BASE : QINTERFACE_CPU }, qBitCount,
+              initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId, useHardwareRNG,
+              useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
+#else
         : QMaskFusion({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
               useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold,
               separation_thresh)
+#endif
     {
     }
 

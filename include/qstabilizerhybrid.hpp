@@ -15,6 +15,10 @@
 #include "qengine.hpp"
 #include "qstabilizer.hpp"
 
+#if ENABLE_OPENCL
+#include "common/oclengine.hpp"
+#endif
+
 namespace Qrack {
 
 class QStabilizerHybrid;
@@ -197,9 +201,16 @@ public:
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
+#if ENABLE_OPENCL
+        : QStabilizerHybrid(
+              { OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_QPAGER : QINTERFACE_OPTIMAL_G2_CHILD }, qBitCount,
+              initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId, useHardwareRNG,
+              useSparseStateVec, norm_thresh, ignored, qubitThreshold, separation_thresh)
+#else
         : QStabilizerHybrid({ QINTERFACE_OPTIMAL_G1_CHILD }, qBitCount, initState, rgp, phaseFac, doNorm,
               randomGlobalPhase, useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, ignored,
               qubitThreshold, separation_thresh)
+#endif
     {
     }
 
