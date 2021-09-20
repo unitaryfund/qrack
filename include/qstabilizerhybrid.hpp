@@ -519,7 +519,7 @@ public:
             return;
         }
 
-        bitCapIntOcl v = mask;
+        bitCapInt v = mask;
         while (mask) {
             v = v & (v - ONE_BCI);
             X(log2(mask ^ v));
@@ -534,7 +534,7 @@ public:
             return;
         }
 
-        bitCapIntOcl v = mask;
+        bitCapInt v = mask;
         while (mask) {
             v = v & (v - ONE_BCI);
             Y(log2(mask ^ v));
@@ -549,7 +549,7 @@ public:
             return;
         }
 
-        bitCapIntOcl v = mask;
+        bitCapInt v = mask;
         while (mask) {
             v = v & (v - ONE_BCI);
             Z(log2(mask ^ v));

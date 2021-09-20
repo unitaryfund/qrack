@@ -236,7 +236,7 @@ public:
         ResetStateBuffer(NULL);
         FreeStateVec();
 
-        SubtractAlloc(sizeof(complex) * maxQPower);
+        SubtractAlloc(sizeof(complex) * maxQPowerOcl);
     }
 
     virtual void SetQubitCount(bitLenInt qb)
@@ -344,7 +344,7 @@ public:
             return;
         }
 
-        BitMask(mask, OCL_API_X_MASK);
+        BitMask((bitCapIntOcl)mask, OCL_API_X_MASK);
     }
     virtual void ZMask(bitCapInt mask)
     {
@@ -357,7 +357,7 @@ public:
             return;
         }
 
-        BitMask(mask, OCL_API_Z_MASK);
+        BitMask((bitCapIntOcl)mask, OCL_API_Z_MASK);
     }
 
     using QEngine::Compose;

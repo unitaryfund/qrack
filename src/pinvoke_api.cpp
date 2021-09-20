@@ -314,9 +314,9 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsign
     return MapArithmeticResult2(start1, start2);
 }
 
-void _darray_to_creal1_array(double* params, bitCapInt componentCount, complex* amps)
+void _darray_to_creal1_array(double* params, bitCapIntOcl componentCount, complex* amps)
 {
-    for (bitCapInt j = 0; j < componentCount; j++) {
+    for (bitCapIntOcl j = 0; j < componentCount; j++) {
         amps[j] = complex(real1(params[2 * j]), real1(params[2 * j + 1]));
     }
 }
@@ -936,7 +936,7 @@ MICROSOFT_QUANTUM_DECL void MACMtrx(
 MICROSOFT_QUANTUM_DECL void Multiplex1Mtrx(
     _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q, double* m)
 {
-    bitCapInt componentCount = 4U * pow2(n);
+    bitCapIntOcl componentCount = 4U * pow2Ocl(n);
     std::unique_ptr<complex[]> mtrxs(new complex[componentCount]);
     _darray_to_creal1_array(m, componentCount, mtrxs.get());
 

@@ -475,7 +475,7 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
 void QInterface::XMask(bitCapInt mask)
 {
-    bitCapIntOcl v = mask;
+    bitCapInt v = mask;
     while (mask) {
         v = v & (v - ONE_BCI);
         X(log2(mask ^ v));
@@ -499,7 +499,7 @@ void QInterface::YMask(bitCapInt mask)
     }
 
     int parity = 0;
-    bitCapIntOcl v = mask;
+    bitCapInt v = mask;
     while (v) {
         v = v & (v - ONE_BCI);
         parity = (parity + 1) & 3;
@@ -516,7 +516,7 @@ void QInterface::YMask(bitCapInt mask)
 
 void QInterface::ZMask(bitCapInt mask)
 {
-    bitCapIntOcl v = mask;
+    bitCapInt v = mask;
     while (mask) {
         v = v & (v - ONE_BCI);
         Z(log2(mask ^ v));

@@ -5519,9 +5519,9 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
             }
         }
 
-        bitCapInt randPerm = testCase->Rand() * testCase->GetMaxQPower();
+        bitCapIntOcl randPerm = testCase->Rand() * (bitCapIntOcl)testCase->GetMaxQPower();
         if (randPerm >= testCase->GetMaxQPower()) {
-            randPerm = testCase->GetMaxQPower() - 1U;
+            randPerm = (bitCapIntOcl)testCase->GetMaxQPower() - 1U;
         }
         testCase->SetPermutation(randPerm);
 

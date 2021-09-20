@@ -862,7 +862,7 @@ bitCapInt QStabilizerHybrid::MAll()
         }
     }
 
-    bitCapIntOcl toRet = 0;
+    bitCapInt toRet = 0;
     if (stabilizer) {
         for (bitLenInt i = 0; i < qubitCount; i++) {
             if (stabilizer->M(i)) {

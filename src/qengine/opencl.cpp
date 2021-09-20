@@ -479,7 +479,7 @@ void QEngineOCL::SetDevice(const int& dID, const bool& forceReInit)
             LockSync();
         }
     } else {
-        AddAlloc(sizeof(complex) * maxQPower);
+        AddAlloc(sizeof(complex) * maxQPowerOcl);
     }
 
     deviceID = dID;
@@ -989,18 +989,18 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
 }
 
-void QEngineOCL::BitMask(bitCapInt mask, OCLAPI api_call)
+void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call)
 {
     CHECK_ZERO_SKIP();
 
-    bitCapIntOcl otherMask = (maxQPower - ONE_BCI) ^ mask;
+    bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ mask;
 
     cl_int error;
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPower, mask, otherMask, 0, 0, 0, 0, 0, 0, 0 };
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, mask, otherMask, 0, 0, 0, 0, 0, 0, 0 };
 
     cl::Event writeArgsEvent;
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs, writeArgsEvent, error);
@@ -1362,7 +1362,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     bitCapIntOcl partPower = pow2Ocl(length);
     bitCapIntOcl remainderPower = pow2Ocl(nLength);
-    bitCapIntOcl oMaxQPower = maxQPower;
+    bitCapIntOcl oMaxQPower = maxQPowerOcl;
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0, 0, 0, 0, 0, 0 };
 
     size_t remainderDiff = 2 * sizeof(real1) * remainderPower;
@@ -1838,7 +1838,7 @@ real1_f QEngineOCL::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& l
 
     std::unique_ptr<bitCapIntOcl[]> bitPowers(new bitCapIntOcl[length]);
     for (bitLenInt p = 0; p < length; p++) {
-        bitPowers.get()[p] = pow2(bits[p]);
+        bitPowers.get()[p] = pow2Ocl(bits[p]);
     }
 
     cl_int error;
@@ -2935,8 +2935,8 @@ BufferPtr QEngineOCL::MakeStateVecBuffer(complex* nStateVec)
 
 void QEngineOCL::ReinitBuffer()
 {
-    AddAlloc(sizeof(complex) * maxQPower);
-    ResetStateVec(AllocStateVec(maxQPower, usingHostRam));
+    AddAlloc(sizeof(complex) * maxQPowerOcl);
+    ResetStateVec(AllocStateVec(maxQPowerOcl, usingHostRam));
     ResetStateBuffer(MakeStateVecBuffer(stateVec));
 }
 

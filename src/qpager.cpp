@@ -900,8 +900,8 @@ void QPager::BitMask(bitCapInt mask, bool isX)
 {
     bitCapIntOcl i;
 
-    bitCapIntOcl pageMask = pageMaxQPower() - ONE_BCI;
-    bitCapIntOcl intraMask = mask & pageMask;
+    bitCapInt pageMask = pageMaxQPower() - ONE_BCI;
+    bitCapIntOcl intraMask = (bitCapIntOcl)(mask & pageMask);
     bitCapInt interMask = mask ^ (bitCapInt)intraMask;
     bitCapInt v;
     bitLenInt bit;

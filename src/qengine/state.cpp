@@ -600,7 +600,7 @@ void QEngineCPU::ZMask(bitCapInt mask)
             bitCapInt setInt = lcv & mask;
 
             bool isParityOdd = false;
-            bitCapIntOcl v = setInt;
+            bitCapInt v = setInt;
             while (v) {
                 v = v & (v - ONE_BCI);
                 isParityOdd = !isParityOdd;

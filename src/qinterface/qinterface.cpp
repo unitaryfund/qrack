@@ -713,15 +713,15 @@ void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         bitPowers.push_back((v ^ oldV) & oldV);
     }
 
-    std::fill(probsArray, probsArray + pow2(length), ZERO_R1);
+    std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
 
-    bitCapInt retIndex;
+    bitCapIntOcl retIndex;
     bitLenInt p;
     for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
         retIndex = 0;
         for (p = 0; p < length; p++) {
             if (lcv & bitPowers[p]) {
-                retIndex |= pow2(p);
+                retIndex |= pow2Ocl(p);
             }
         }
         probsArray[retIndex] += ProbAll(lcv);
@@ -730,7 +730,7 @@ void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 
 void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, real1* probsArray)
 {
-    std::fill(probsArray, probsArray + pow2(length), ZERO_R1);
+    std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
 
     bitLenInt p;
     std::vector<bitCapInt> bitPowers(length);
@@ -738,12 +738,12 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, rea
         bitPowers[p] = pow2(bits[p]);
     }
 
-    bitCapInt retIndex;
+    bitCapIntOcl retIndex;
     for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
         retIndex = 0;
         for (p = 0; p < length; p++) {
             if (lcv & bitPowers[p]) {
-                retIndex |= pow2(p);
+                retIndex |= pow2Ocl(p);
             }
         }
         probsArray[retIndex] += ProbAll(lcv);
@@ -771,7 +771,7 @@ real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& l
                 retIndex |= pow2(p);
             }
         }
-        expectation += (offset + retIndex) * ProbAll(lcv);
+        expectation += (bitCapIntOcl)(offset + retIndex) * ProbAll(lcv);
     }
 
     return expectation;
@@ -788,17 +788,17 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         maskMap[i] = qPowers[i];
     }
 
-    std::unique_ptr<real1[]> allProbsArray(new real1[maxQPower]);
+    std::unique_ptr<real1[]> allProbsArray(new real1[(bitCapIntOcl)maxQPower]);
     GetProbs(allProbsArray.get());
 
     bitCapInt maskMaxQPower = pow2(qPowerCount);
-    bitCapInt maskPerm;
-    std::unique_ptr<real1[]> maskProbsArray(new real1[maskMaxQPower]());
+    bitCapIntOcl maskPerm;
+    std::unique_ptr<real1[]> maskProbsArray(new real1[(bitCapIntOcl)maskMaxQPower]());
     for (j = 0; j < maxQPower; j++) {
         maskPerm = 0;
         for (i = 0; i < qPowerCount; i++) {
             if (j & maskMap[i]) {
-                maskPerm |= pow2(i);
+                maskPerm |= pow2Ocl(i);
             }
         }
         maskProbsArray.get()[maskPerm] += allProbsArray.get()[j];
