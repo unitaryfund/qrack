@@ -348,7 +348,8 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 #if ENABLE_OPENCL
     QInterfacePtr simulator = q
         ? CreateQuantumInterface(
-              OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL, q, 0, randNumGen)
+              (OCLEngine::Instance()->GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL, q, 0,
+              randNumGen)
         : NULL;
 #else
     QInterfacePtr simulator = q ? CreateQuantumInterface(QINTERFACE_OPTIMAL, q, 0, randNumGen) : NULL;
@@ -556,7 +557,8 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 
 #if ENABLE_OPENCL
     QInterfacePtr nQubit = CreateQuantumInterface(
-        OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL, 1, 0, randNumGen);
+        (OCLEngine::Instance()->GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL, 1, 0,
+        randNumGen);
 #else
     QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_OPTIMAL, 1, 0, randNumGen);
 #endif
