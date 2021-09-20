@@ -118,9 +118,13 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
-    queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
+    cl_int error = queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
         sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
     wait_refs.clear();
+    if (error != CL_SUCCESS) {
+        FreeAll();
+        throw std::runtime_error("Failed to write buffer, error code: " + std::to_string(error));
+    }
 
     runningNorm = REAL1_DEFAULT_ARG;
 }
@@ -156,15 +160,16 @@ void QEngineOCL::SetAmplitudePage(
 
     pageEngineOclPtr->clFinish();
 
-    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)srcOffset, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length, 0, 0,
-        0, 0, 0, 0, 0 };
-
     EventVecPtr waitVec = ResetWaitEvents();
-    PoolItemPtr poolItem = GetFreePoolItem();
 
-    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs, error);
-
-    WaitCall(OCL_API_COPYPAGE, nrmGroupCount, nrmGroupSize, { oStateBuffer, stateBuffer, poolItem->ulongBuffer });
+    cl::Event copyEvent;
+    error = queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, sizeof(complex) * (bitCapIntOcl)srcOffset,
+        sizeof(complex) * (bitCapIntOcl)dstOffset, sizeof(complex) * (bitCapIntOcl)length, waitVec.get(), &copyEvent);
+    if (error != CL_SUCCESS) {
+        FreeAll();
+        throw std::runtime_error("Failed to enqueue buffer copy, error code: " + std::to_string(error));
+    }
+    copyEvent.wait();
 
     runningNorm = REAL1_DEFAULT_ARG;
 }
@@ -668,8 +673,12 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
     if (controlLen) {
         device_context->LockWaitEvents();
         device_context->wait_events->emplace_back();
-        queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl, waitVec.get(),
-            &(device_context->wait_events->back()));
+        error = queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl,
+            waitVec.get(), &(device_context->wait_events->back()));
+        if (error != CL_SUCCESS) {
+            FreeAll();
+            throw std::runtime_error("Failed to enqueue buffer copy, error code: " + std::to_string(error));
+        }
         device_context->UnlockWaitEvents();
     } else {
         ClearBuffer(nStateBuffer, 0, maxQPowerOcl);
@@ -1427,8 +1436,12 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
 
             cl::Event copyEvent;
-            destination->queue.enqueueCopyBuffer(
+            error = destination->queue.enqueueCopyBuffer(
                 *(destination->stateBuffer), *nSB, 0, 0, sizeof(complex) * destination->maxQPowerOcl, NULL, &copyEvent);
+            if (error != CL_SUCCESS) {
+                FreeAll();
+                throw std::runtime_error("Failed to enqueue buffer copy, error code: " + std::to_string(error));
+            }
             copyEvent.wait();
 
             destination->stateBuffer = nSB;
