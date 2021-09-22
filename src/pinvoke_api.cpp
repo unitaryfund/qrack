@@ -577,6 +577,8 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
  */
 MICROSOFT_QUANTUM_DECL bool release(_In_ unsigned sid, _In_ unsigned q)
 {
+    SIMULATOR_LOCK_GUARD(sid)
+
     QInterfacePtr simulator = simulators[sid];
 
     // Check that the qubit is in the |0> state, to within a small tolerance.
@@ -586,7 +588,6 @@ MICROSOFT_QUANTUM_DECL bool release(_In_ unsigned sid, _In_ unsigned q)
         shards.erase(simulator);
         simulators[sid] = NULL;
     } else {
-        SIMULATOR_LOCK_GUARD(sid)
         bitLenInt oIndex = shards[simulator][q];
         simulator->Dispose(oIndex, 1U);
         for (unsigned i = 0; i < shards[simulator].size(); i++) {
@@ -1139,7 +1140,7 @@ MICROSOFT_QUANTUM_DECL void ACSWAP(
 
 MICROSOFT_QUANTUM_DECL void Compose(_In_ unsigned sid1, _In_ unsigned sid2, unsigned* q)
 {
-    const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
+    META_LOCK_GUARD()
 
     QInterfacePtr simulator1 = simulators[sid1];
     bitLenInt oQubitCount = simulator1->GetQubitCount();
@@ -1156,7 +1157,7 @@ MICROSOFT_QUANTUM_DECL unsigned Decompose(_In_ unsigned sid, _In_ unsigned n, _I
 {
     unsigned nSid = init_count(n);
 
-    SIMULATOR_LOCK_GUARD(sid)
+    META_LOCK_GUARD()
 
     QInterfacePtr simulator = simulators[sid];
     bitLenInt nQubitIndex = simulator->GetQubitCount() - n;
