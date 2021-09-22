@@ -23,12 +23,14 @@ std::mutex metaOperationMutex;
 #define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 // TODO: By design, Qrack should be able to support per-simulator lock guards, in a multithreaded OCL environment. This
 // feature might not yet be fully realized.
-#define SIMULATOR_LOCK_GUARD(sid) const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
+#define SIMULATOR_LOCK_GUARD(sid)                                                                                      \
+    const std::lock_guard<std::mutex> simulatorLock(*(simulatorMutexes[simulators[sid]].get()));
 
 using namespace Qrack;
 
 qrack_rand_gen_ptr randNumGen = std::make_shared<qrack_rand_gen>(time(0));
 std::vector<QInterfacePtr> simulators;
+std::map<QInterfacePtr, std::unique_ptr<std::mutex>> simulatorMutexes;
 std::vector<bool> simulatorReservations;
 std::map<QInterfacePtr, std::map<unsigned, bitLenInt>> shards;
 bitLenInt _maxShardQubits = 0;
@@ -358,6 +360,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
     if (sid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
+        simulatorMutexes[simulator] = std::unique_ptr<std::mutex>(new std::mutex());
     } else {
         simulatorReservations[sid] = true;
         simulators[sid] = simulator;
@@ -396,6 +399,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
     if (nsid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
+        simulatorMutexes[simulator] = std::unique_ptr<std::mutex>(new std::mutex());
     } else {
         simulatorReservations[nsid] = true;
         simulators[nsid] = simulator;
