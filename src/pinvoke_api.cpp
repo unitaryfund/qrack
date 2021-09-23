@@ -27,31 +27,31 @@ std::mutex metaOperationMutex;
     if (simulators[sid] == NULL) {                                                                                     \
         return;                                                                                                        \
     }                                                                                                                  \
-    const std::lock_guard<std::mutex> simulatorLock(*(simulatorMutexes[simulators[sid]].get()));
+    const std::lock_guard<std::mutex> simulatorLock(simulatorMutexes[simulators[sid]]);
 
 #define SIMULATOR_LOCK_GUARD_DOUBLE(sid)                                                                               \
     if (simulators[sid] == NULL) {                                                                                     \
         return 0.0;                                                                                                    \
     }                                                                                                                  \
-    const std::lock_guard<std::mutex> simulatorLock(*(simulatorMutexes[simulators[sid]].get()));
+    const std::lock_guard<std::mutex> simulatorLock(simulatorMutexes[simulators[sid]]);
 
 #define SIMULATOR_LOCK_GUARD_BOOL(sid)                                                                                 \
     if (simulators[sid] == NULL) {                                                                                     \
         return false;                                                                                                  \
     }                                                                                                                  \
-    const std::lock_guard<std::mutex> simulatorLock(*(simulatorMutexes[simulators[sid]].get()));
+    const std::lock_guard<std::mutex> simulatorLock(simulatorMutexes[simulators[sid]]);
 
 #define SIMULATOR_LOCK_GUARD_INT(sid)                                                                                  \
     if (simulators[sid] == NULL) {                                                                                     \
         return 0U;                                                                                                     \
     }                                                                                                                  \
-    const std::lock_guard<std::mutex> simulatorLock(*(simulatorMutexes[simulators[sid]].get()));
+    const std::lock_guard<std::mutex> simulatorLock(simulatorMutexes[simulators[sid]]);
 
 using namespace Qrack;
 
 qrack_rand_gen_ptr randNumGen = std::make_shared<qrack_rand_gen>(time(0));
 std::vector<QInterfacePtr> simulators;
-std::map<QInterfacePtr, std::unique_ptr<std::mutex>> simulatorMutexes;
+std::map<QInterfacePtr, std::mutex> simulatorMutexes;
 std::vector<bool> simulatorReservations;
 std::map<QInterfacePtr, std::map<unsigned, bitLenInt>> shards;
 bitLenInt _maxShardQubits = 0;
@@ -381,7 +381,6 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
     if (sid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
-        simulatorMutexes[simulator] = std::unique_ptr<std::mutex>(new std::mutex());
     } else {
         simulatorReservations[sid] = true;
         simulators[sid] = simulator;
@@ -405,7 +404,6 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
 {
     SIMULATOR_LOCK_GUARD_INT(sid)
-    META_LOCK_GUARD()
 
     unsigned nsid = (unsigned)simulators.size();
 
@@ -419,9 +417,9 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
 
     QInterfacePtr simulator = simulators[sid]->Clone();
     if (nsid == simulators.size()) {
+        META_LOCK_GUARD()
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
-        simulatorMutexes[simulator] = std::unique_ptr<std::mutex>(new std::mutex());
     } else {
         simulatorReservations[nsid] = true;
         simulators[nsid] = simulator;
@@ -578,7 +576,6 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
     if (simulators[sid] == NULL) {
         simulators[sid] = nQubit;
         shards[nQubit] = {};
-        simulatorMutexes[nQubit] = std::unique_ptr<std::mutex>(new std::mutex());
         shards[nQubit][qid] = 0;
 
         return;
@@ -1158,8 +1155,8 @@ MICROSOFT_QUANTUM_DECL void Compose(_In_ unsigned sid1, _In_ unsigned sid2, unsi
     if (!simulators[sid1] || !simulators[sid2]) {
         return;
     }
-    const std::lock_guard<std::mutex> simulatorLock1(*(simulatorMutexes[simulators[sid1]].get()));
-    const std::lock_guard<std::mutex> simulatorLock2(*(simulatorMutexes[simulators[sid2]].get()));
+    const std::lock_guard<std::mutex> simulatorLock1(simulatorMutexes[simulators[sid1]]);
+    const std::lock_guard<std::mutex> simulatorLock2(simulatorMutexes[simulators[sid2]]);
 
     QInterfacePtr simulator1 = simulators[sid1];
     bitLenInt oQubitCount = simulator1->GetQubitCount();
