@@ -596,9 +596,11 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 #endif
 
     if (simulators[sid] == NULL) {
+        META_LOCK()
         simulators[sid] = nQubit;
         shards[nQubit] = {};
         shards[nQubit][qid] = 0;
+        META_UNLOCK()
 
         return;
     }
@@ -623,8 +625,10 @@ MICROSOFT_QUANTUM_DECL bool release(_In_ unsigned sid, _In_ unsigned q)
     bool toRet = simulator->Prob(shards[simulator][q]) < (ONE_R1 / 100);
 
     if (simulator->GetQubitCount() == 1U) {
+        META_LOCK()
         shards[simulator] = {};
         simulators[sid] = NULL;
+        META_UNLOCK()
     } else {
         bitLenInt oIndex = shards[simulator][q];
         simulator->Dispose(oIndex, 1U);
