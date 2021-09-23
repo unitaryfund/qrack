@@ -18,8 +18,6 @@
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"
 
-std::mutex metaOperationMutex;
-
 #define META_LOCK()                                                                                                    \
     const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                    \
     std::map<QInterfacePtr, std::mutex>::iterator mutexLockIt;                                                         \
@@ -32,35 +30,36 @@ std::mutex metaOperationMutex;
     for (mutexUnlockIt = simulatorMutexes.begin(); mutexUnlockIt != simulatorMutexes.end(); mutexUnlockIt++) {         \
         mutexUnlockIt->second.unlock();                                                                                \
     }
-// TODO: By design, Qrack should be able to support per-simulator lock guards, in a multithreaded OCL environment. This
-// feature might not yet be fully realized.
+
+// SIMULATOR_LOCK_GUARD variants will lock simulatorMutexes[NULL], if the requested simulator doesn't exist.
+// This is CORRECT behavior. This will effectively emplace a mutex for NULL key.
 #define SIMULATOR_LOCK_GUARD(sid)                                                                                      \
-    if (simulators[sid] == NULL) {                                                                                     \
-        return;                                                                                                        \
-    }                                                                                                                  \
-    const std::lock_guard<std::mutex> simulatorLock(simulatorMutexes[simulators[sid]]);
+    metaOperationMutex.lock();                                                                                         \
+    const std::lock_guard<std::mutex> simulatorLock(simulatorMutexes[simulators[sid]]);                                \
+    metaOperationMutex.unlock();
 
 #define SIMULATOR_LOCK_GUARD_DOUBLE(sid)                                                                               \
-    if (simulators[sid] == NULL) {                                                                                     \
+    SIMULATOR_LOCK_GUARD(sid)                                                                                          \
+    if (!simulators[sid]) {                                                                                            \
         return 0.0;                                                                                                    \
-    }                                                                                                                  \
-    const std::lock_guard<std::mutex> simulatorLock(simulatorMutexes[simulators[sid]]);
+    }
 
 #define SIMULATOR_LOCK_GUARD_BOOL(sid)                                                                                 \
-    if (simulators[sid] == NULL) {                                                                                     \
+    SIMULATOR_LOCK_GUARD(sid)                                                                                          \
+    if (!simulators[sid]) {                                                                                            \
         return false;                                                                                                  \
-    }                                                                                                                  \
-    const std::lock_guard<std::mutex> simulatorLock(simulatorMutexes[simulators[sid]]);
+    }
 
 #define SIMULATOR_LOCK_GUARD_INT(sid)                                                                                  \
-    if (simulators[sid] == NULL) {                                                                                     \
+    SIMULATOR_LOCK_GUARD(sid)                                                                                          \
+    if (!simulators[sid]) {                                                                                            \
         return 0U;                                                                                                     \
-    }                                                                                                                  \
-    const std::lock_guard<std::mutex> simulatorLock(simulatorMutexes[simulators[sid]]);
+    }
 
 using namespace Qrack;
 
 qrack_rand_gen_ptr randNumGen = std::make_shared<qrack_rand_gen>(time(0));
+std::mutex metaOperationMutex;
 std::vector<QInterfacePtr> simulators;
 std::map<QInterfacePtr, std::mutex> simulatorMutexes;
 std::vector<bool> simulatorReservations;
