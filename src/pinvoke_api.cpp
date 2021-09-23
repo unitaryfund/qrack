@@ -438,7 +438,10 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
  */
 MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid)
 {
+    META_LOCK_GUARD()
+
     shards[simulators[sid]] = {};
+    simulatorMutexes.erase(simulators[sid]);
     simulators[sid] = NULL;
     simulatorReservations[sid] = false;
 }
