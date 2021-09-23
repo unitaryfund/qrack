@@ -20,7 +20,18 @@
 
 std::mutex metaOperationMutex;
 
-#define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
+#define META_LOCK()                                                                                                    \
+    const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                    \
+    std::map<QInterfacePtr, std::mutex>::iterator mutexLockIt;                                                         \
+    for (mutexLockIt = simulatorMutexes.begin(); mutexLockIt != simulatorMutexes.end(); mutexLockIt++) {               \
+        mutexLockIt->second.lock();                                                                                    \
+    }
+
+#define META_UNLOCK()                                                                                                  \
+    std::map<QInterfacePtr, std::mutex>::iterator mutexUnlockIt;                                                       \
+    for (mutexUnlockIt = simulatorMutexes.begin(); mutexUnlockIt != simulatorMutexes.end(); mutexUnlockIt++) {         \
+        mutexUnlockIt->second.unlock();                                                                                \
+    }
 // TODO: By design, Qrack should be able to support per-simulator lock guards, in a multithreaded OCL environment. This
 // feature might not yet be fully realized.
 #define SIMULATOR_LOCK_GUARD(sid)                                                                                      \
@@ -356,7 +367,7 @@ MICROSOFT_QUANTUM_DECL unsigned init() { return init_count(0); }
  */
 MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 {
-    META_LOCK_GUARD()
+    META_LOCK()
 
     unsigned sid = (unsigned)simulators.size();
 
@@ -387,6 +398,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
     }
 
     if (!q) {
+        META_UNLOCK()
         return sid;
     }
 
@@ -394,6 +406,8 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
     for (unsigned i = 0; i < q; i++) {
         shards[simulator][i] = (bitLenInt)i;
     }
+
+    META_UNLOCK()
 
     return sid;
 }
@@ -417,9 +431,11 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
 
     QInterfacePtr simulator = simulators[sid]->Clone();
     if (nsid == simulators.size()) {
-        META_LOCK_GUARD()
+        META_LOCK()
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
+        shards[simulator] = {};
+        META_UNLOCK()
     } else {
         simulatorReservations[nsid] = true;
         simulators[nsid] = simulator;
@@ -438,12 +454,14 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
  */
 MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid)
 {
-    META_LOCK_GUARD()
+    META_LOCK()
 
     shards.erase(simulators[sid]);
     simulatorMutexes.erase(simulators[sid]);
     simulators[sid] = NULL;
     simulatorReservations[sid] = false;
+
+    META_UNLOCK()
 }
 
 /**
