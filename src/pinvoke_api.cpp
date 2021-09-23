@@ -23,12 +23,14 @@ std::mutex metaOperationMutex;
 #define META_LOCK_GUARD() const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
 // TODO: By design, Qrack should be able to support per-simulator lock guards, in a multithreaded OCL environment. This
 // feature might not yet be fully realized.
-#define SIMULATOR_LOCK_GUARD(sid) const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
+#define SIMULATOR_LOCK_GUARD(sid)                                                                                      \
+    const std::lock_guard<std::mutex> simulatorLock(*(simulatorMutexes[simulators[sid]].get()));
 
 using namespace Qrack;
 
 qrack_rand_gen_ptr randNumGen = std::make_shared<qrack_rand_gen>(time(0));
 std::vector<QInterfacePtr> simulators;
+std::map<QInterfacePtr, std::unique_ptr<std::mutex>> simulatorMutexes;
 std::vector<bool> simulatorReservations;
 std::map<QInterfacePtr, std::map<unsigned, bitLenInt>> shards;
 bitLenInt _maxShardQubits = 0;
@@ -358,6 +360,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
     if (sid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
+        simulatorMutexes[simulator] = std::unique_ptr<std::mutex>(new std::mutex());
     } else {
         simulatorReservations[sid] = true;
         simulators[sid] = simulator;
@@ -396,6 +399,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
     if (nsid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
+        simulatorMutexes[simulator] = std::unique_ptr<std::mutex>(new std::mutex());
     } else {
         simulatorReservations[nsid] = true;
         simulators[nsid] = simulator;
@@ -577,6 +581,8 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
  */
 MICROSOFT_QUANTUM_DECL bool release(_In_ unsigned sid, _In_ unsigned q)
 {
+    SIMULATOR_LOCK_GUARD(sid)
+
     QInterfacePtr simulator = simulators[sid];
 
     // Check that the qubit is in the |0> state, to within a small tolerance.
@@ -586,7 +592,6 @@ MICROSOFT_QUANTUM_DECL bool release(_In_ unsigned sid, _In_ unsigned q)
         shards.erase(simulator);
         simulators[sid] = NULL;
     } else {
-        SIMULATOR_LOCK_GUARD(sid)
         bitLenInt oIndex = shards[simulator][q];
         simulator->Dispose(oIndex, 1U);
         for (unsigned i = 0; i < shards[simulator].size(); i++) {
@@ -1139,7 +1144,7 @@ MICROSOFT_QUANTUM_DECL void ACSWAP(
 
 MICROSOFT_QUANTUM_DECL void Compose(_In_ unsigned sid1, _In_ unsigned sid2, unsigned* q)
 {
-    const std::lock_guard<std::mutex> metaLock(metaOperationMutex);
+    META_LOCK_GUARD()
 
     QInterfacePtr simulator1 = simulators[sid1];
     bitLenInt oQubitCount = simulator1->GetQubitCount();
@@ -1156,7 +1161,7 @@ MICROSOFT_QUANTUM_DECL unsigned Decompose(_In_ unsigned sid, _In_ unsigned n, _I
 {
     unsigned nSid = init_count(n);
 
-    SIMULATOR_LOCK_GUARD(sid)
+    META_LOCK_GUARD()
 
     QInterfacePtr simulator = simulators[sid];
     bitLenInt nQubitIndex = simulator->GetQubitCount() - n;
