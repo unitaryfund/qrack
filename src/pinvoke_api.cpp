@@ -429,13 +429,13 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
         }
     }
 
+    META_LOCK()
+
     QInterfacePtr simulator = simulators[sid]->Clone();
     if (nsid == simulators.size()) {
-        META_LOCK()
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
         shards[simulator] = {};
-        META_UNLOCK()
     } else {
         simulatorReservations[nsid] = true;
         simulators[nsid] = simulator;
@@ -445,6 +445,8 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
     for (unsigned i = 0; i < simulator->GetQubitCount(); i++) {
         shards[simulator][i] = shards[simulators[sid]][i];
     }
+
+    META_UNLOCK()
 
     return nsid;
 }
