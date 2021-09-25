@@ -158,6 +158,9 @@ public:
     using QInterface::AntiCH;
     virtual void AntiCH(bitLenInt control, bitLenInt target);
 
+    virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
+    virtual void PhaseParity(real1 radians, bitCapInt mask);
+
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
     virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
     virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,

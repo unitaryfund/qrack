@@ -1395,6 +1395,77 @@ bool QUnit::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
     return flipResult ^ (unit->ForceMParity(mappedMask, result ^ flipResult, doForce));
 }
 
+void QUnit::PhaseParity(real1 radians, bitCapInt mask)
+{
+    // If no bits in mask:
+    if (!mask) {
+        return;
+    }
+
+    complex phaseFac = complex(cos(radians), sin(radians));
+
+    if (!(mask & (mask - ONE_BCI))) {
+        ApplySinglePhase(ONE_R1, phaseFac, log2(mask));
+        return;
+    }
+
+    bitCapInt nV = mask;
+    std::vector<bitLenInt> qIndices;
+    for (bitCapInt v = mask; v; v = nV) {
+        nV &= (v - ONE_BCI); // clear the least significant bit set
+        qIndices.push_back(log2((v ^ nV) & v));
+        ToPermBasisProb(qIndices.back());
+    }
+
+    bool flipResult = false;
+    std::vector<bitLenInt> eIndices;
+    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
+        QEngineShard& shard = shards[qIndices[i]];
+
+        if (UNSAFE_CACHED_ZERO(shard)) {
+            continue;
+        }
+
+        if (UNSAFE_CACHED_ONE(shard)) {
+            flipResult = !flipResult;
+            continue;
+        }
+
+        eIndices.push_back(qIndices[i]);
+    }
+
+    if (eIndices.size() == 0) {
+        if (flipResult) {
+            ApplySinglePhase(phaseFac, phaseFac, 0);
+        }
+        return;
+    }
+
+    if (eIndices.size() == 1U) {
+        if (flipResult) {
+            ApplySinglePhase(phaseFac, ONE_R1, eIndices[0]);
+        } else {
+            ApplySinglePhase(ONE_R1, phaseFac, eIndices[0]);
+        }
+        return;
+    }
+
+    QInterfacePtr unit = Entangle(eIndices);
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (shards[i].unit == unit) {
+            shards[i].MakeDirty();
+        }
+    }
+
+    bitCapInt mappedMask = 0;
+    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
+        mappedMask |= pow2(shards[eIndices[i]].mapped);
+    }
+
+    unit->PhaseParity(flipResult ? -radians : radians, mappedMask);
+}
+
 bool QUnit::SeparateBit(bool value, bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];

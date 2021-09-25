@@ -1008,7 +1008,6 @@ void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1 phase)
     size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    BufferPtr phaseInBuffer;
     bool isPhaseParity = (api_call == OCL_API_PHASE_PARITY);
     if (isPhaseParity) {
         complex phaseFac = complex(cos(phase), sin(phase));
@@ -1022,7 +1021,7 @@ void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1 phase)
     wait_refs.clear();
 
     if (isPhaseParity) {
-        QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, phaseInBuffer });
+        QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
     } else {
         QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
     }
