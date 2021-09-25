@@ -1009,6 +1009,9 @@ void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1 phase)
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     BufferPtr phaseInBuffer;
+    if ((api_call == OCL_API_PHASE_PARITY) && (phase == PI_R1)) {
+        api_call = OCL_API_Z_MASK;
+    }
     bool isPhaseParity = (api_call == OCL_API_PHASE_PARITY);
     if (isPhaseParity) {
         cl::Event writePhaseEvent;
