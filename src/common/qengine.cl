@@ -360,8 +360,8 @@ void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     bitCapIntOcl mask = bitCapIntOclPtr[1];
     bitCapIntOcl otherMask = bitCapIntOclPtr[2];
 
-    real1 phase = *phaseIn
-    complex phaseFac = complex((real1)cos(phase), (real1)sin(phase));
+    real1 phase = *phaseIn;
+    cmplx phaseFac = sin((cmplx)(phase + SineShift, phase));
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         otherRes = lcv & otherMask;
