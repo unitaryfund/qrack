@@ -231,7 +231,7 @@ public:
     /** @} */
 
     virtual void XMask(bitCapInt mask);
-    virtual void ZMask(bitCapInt mask);
+    virtual void PhaseParity(real1 radians, bitCapInt mask);
 
     /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.

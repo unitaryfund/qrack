@@ -76,6 +76,8 @@ public:
     virtual void QueueSetDoNormalize(const bool& doNorm) = 0;
     virtual void QueueSetRunningNorm(const real1_f& runningNrm) = 0;
 
+    virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
+
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
     virtual bitCapInt ForceMReg(

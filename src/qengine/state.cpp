@@ -575,7 +575,7 @@ void QEngineCPU::XMask(bitCapInt mask)
     });
 }
 
-void QEngineCPU::ZMask(bitCapInt mask)
+void QEngineCPU::PhaseParity(real1 radians, bitCapInt mask)
 {
     CHECK_ZERO_SKIP();
 
@@ -584,16 +584,17 @@ void QEngineCPU::ZMask(bitCapInt mask)
     }
 
     if (!(mask & (mask - ONE_BCI))) {
-        Z(log2(mask));
+        ApplySinglePhase(ONE_R1, complex(cos(radians), sin(radians)), log2(mask));
         return;
     }
 
     if (stateVec->is_sparse()) {
-        QInterface::ZMask(mask);
+        QInterface::PhaseParity(radians, mask);
         return;
     }
 
-    Dispatch([this, mask] {
+    Dispatch([this, mask, radians] {
+        complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
         bitCapInt otherMask = (maxQPower - ONE_BCI) ^ mask;
         ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = lcv & otherMask;
@@ -609,7 +610,7 @@ void QEngineCPU::ZMask(bitCapInt mask)
             setInt |= otherRes;
 
             if (isParityOdd) {
-                stateVec->write(setInt, -stateVec->read(setInt));
+                stateVec->write(setInt, phaseFac * stateVec->read(setInt));
             }
         };
 
