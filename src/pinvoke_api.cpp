@@ -572,6 +572,19 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
     return jointProb;
 }
 
+MICROSOFT_QUANTUM_DECL void PhaseParity(
+    _In_ unsigned sid, _In_ double lambda, _In_ unsigned n, _In_reads_(n) unsigned* q)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
+    bitCapInt mask = 0;
+    for (unsigned i = 0; i < n; i++) {
+        mask |= pow2(shards[simulator][q[i]]);
+    }
+
+    simulator->PhaseParity(lambda, mask);
+}
+
 /**
  * (External API) Set the simulator to a computational basis permutation.
  */
