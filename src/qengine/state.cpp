@@ -584,7 +584,7 @@ void QEngineCPU::PhaseParity(real1 radians, bitCapInt mask)
     }
 
     if (!(mask & (mask - ONE_BCI))) {
-        RZ(radians, log2(mask));
+        ApplySinglePhase(ONE_R1, complex(cos(radians), sin(radians)), log2(mask));
         return;
     }
 
