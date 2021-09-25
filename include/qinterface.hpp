@@ -927,6 +927,13 @@ public:
     virtual void ZMask(bitCapInt mask);
 
     /**
+     * Parity phase gate
+     *
+     * Applies e^(i*angle) phase factor to all combinations of bits with odd parity, based upon permutations of qubits.
+     */
+    virtual void PhaseParity(real1 radians, bitCapInt mask);
+
+    /**
      * Square root of X gate
      *
      * Applies the square root of the Pauli "X" operator to the qubit at "qubitIndex." The Pauli

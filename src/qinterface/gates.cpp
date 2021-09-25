@@ -524,6 +524,27 @@ void QInterface::ZMask(bitCapInt mask)
     }
 }
 
+void QInterface::PhaseParity(real1 radians, bitCapInt mask)
+{
+    std::vector<bitCapInt> qubits;
+    bitCapInt v = mask;
+    while (mask) {
+        v = v & (v - ONE_BCI);
+        qubits.push_back(log2(mask ^ v));
+        mask = v;
+    }
+
+    int i;
+    int end = qubits.size() - 1;
+    for (i = 0; i < end; i++) {
+        CNOT(qubits[i], qubits[i + 1U]);
+    }
+    RZ(radians, qubits[end]);
+    for (i = (end - 1U); i >= 0; i--) {
+        CNOT(qubits[i], qubits[i + 1U]);
+    }
+}
+
 void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
 {
     real1 timeDiff = (real1)timeDiff_f;

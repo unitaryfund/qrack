@@ -989,7 +989,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
 }
 
-void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call)
+void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1 phase)
 {
     CHECK_ZERO_SKIP();
 
@@ -1008,11 +1008,24 @@ void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call)
     size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
+    BufferPtr phaseInBuffer;
+    bool isPhaseParity = (api_call == OCL_API_PHASE_PARITY);
+    if (isPhaseParity) {
+        cl::Event writePhaseEvent;
+        phaseInBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(real1));
+        DISPATCH_TEMP_WRITE(waitVec, *phaseInBuffer, sizeof(real1), &phase, writePhaseEvent, error);
+        writePhaseEvent.wait();
+    }
+
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
     wait_refs.clear();
 
-    QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
+    if (isPhaseParity) {
+        QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, phaseInBuffer });
+    } else {
+        QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
+    }
 }
 
 void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
