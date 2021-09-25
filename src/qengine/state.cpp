@@ -575,48 +575,6 @@ void QEngineCPU::XMask(bitCapInt mask)
     });
 }
 
-void QEngineCPU::ZMask(bitCapInt mask)
-{
-    CHECK_ZERO_SKIP();
-
-    if (!mask) {
-        return;
-    }
-
-    if (!(mask & (mask - ONE_BCI))) {
-        Z(log2(mask));
-        return;
-    }
-
-    if (stateVec->is_sparse()) {
-        QInterface::ZMask(mask);
-        return;
-    }
-
-    Dispatch([this, mask] {
-        bitCapInt otherMask = (maxQPower - ONE_BCI) ^ mask;
-        ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
-            bitCapInt otherRes = lcv & otherMask;
-            bitCapInt setInt = lcv & mask;
-
-            bool isParityOdd = false;
-            bitCapInt v = setInt;
-            while (v) {
-                v = v & (v - ONE_BCI);
-                isParityOdd = !isParityOdd;
-            }
-
-            setInt |= otherRes;
-
-            if (isParityOdd) {
-                stateVec->write(setInt, -stateVec->read(setInt));
-            }
-        };
-
-        par_for(0, maxQPower, fn);
-    });
-}
-
 void QEngineCPU::PhaseParity(real1 radians, bitCapInt mask)
 {
     CHECK_ZERO_SKIP();

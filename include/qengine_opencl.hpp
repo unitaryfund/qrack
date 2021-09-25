@@ -346,19 +346,6 @@ public:
 
         BitMask((bitCapIntOcl)mask, OCL_API_X_MASK);
     }
-    virtual void ZMask(bitCapInt mask)
-    {
-        if (!mask) {
-            return;
-        }
-
-        if (!(mask & (mask - ONE_BCI))) {
-            Z(log2(mask));
-            return;
-        }
-
-        BitMask((bitCapIntOcl)mask, OCL_API_Z_MASK);
-    }
     virtual void PhaseParity(real1 radians, bitCapInt mask)
     {
         if (!mask) {

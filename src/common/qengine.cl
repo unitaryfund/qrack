@@ -318,36 +318,6 @@ void kernel xmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
     }
 }
 
-void kernel zmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
-{
-    bitCapIntOcl lcv, otherRes, setInt, v;
-    bitCapIntOcl parityStartSize = 4U * sizeof(bitCapIntOcl);
-    bitCapIntOcl paritySize;
-
-    bitCapIntOcl Nthreads = get_global_size(0);
-
-    bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    bitCapIntOcl mask = bitCapIntOclPtr[1];
-    bitCapIntOcl otherMask = bitCapIntOclPtr[2];
-
-    for (lcv = ID; lcv < maxI; lcv += Nthreads) {
-        otherRes = lcv & otherMask;
-        setInt = lcv & mask;
-
-        v = setInt;
-        for (paritySize = parityStartSize; paritySize > 0U; paritySize >>= 1U) {
-            v ^= v >> paritySize;
-        }
-        v &= 1U;
-
-        setInt |= otherRes;
-
-        if (v) {
-            stateVec[setInt] = -stateVec[setInt];
-        }
-    }
-}
-
 void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant real1* phaseIn)
 {
     bitCapIntOcl lcv, otherRes, setInt, v;

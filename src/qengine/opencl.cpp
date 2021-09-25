@@ -1009,14 +1009,11 @@ void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1 phase)
     size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     BufferPtr phaseInBuffer;
-    if ((api_call == OCL_API_PHASE_PARITY) && (phase == PI_R1)) {
-        api_call = OCL_API_Z_MASK;
-    }
     bool isPhaseParity = (api_call == OCL_API_PHASE_PARITY);
     if (isPhaseParity) {
+        complex phaseFac = complex(cos(phase), sin(phase));
         cl::Event writePhaseEvent;
-        phaseInBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(real1));
-        DISPATCH_TEMP_WRITE(waitVec, *phaseInBuffer, sizeof(real1), &phase, writePhaseEvent, error);
+        DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex), &phaseFac, writePhaseEvent, error);
         writePhaseEvent.wait();
     }
 
