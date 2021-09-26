@@ -1246,6 +1246,26 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_zmask")
     qftReg->ZMask(pow2Ocl(18) | pow2Ocl(19));
     qftReg->H(18, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x40001));
+    qftReg->H(18, 2);
+    qftReg->ZMask(pow2Ocl(0) | pow2Ocl(18) | pow2Ocl(19));
+    qftReg->H(18, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+}
+
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_phaseparity")
+{
+    qftReg->SetPermutation(0x40001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x40001));
+    qftReg->H(18, 2);
+    qftReg->PhaseParity(PI_R1 / 2, pow2Ocl(0) | pow2Ocl(18) | pow2Ocl(19));
+    qftReg->PhaseParity(PI_R1 / 2, pow2Ocl(0) | pow2Ocl(18) | pow2Ocl(19));
+    qftReg->H(18, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->H(18, 2);
+    qftReg->PhaseParity(PI_R1 / 2, pow2Ocl(0) | pow2Ocl(18) | pow2Ocl(19));
+    qftReg->PhaseParity(PI_R1 / 2, pow2Ocl(18) | pow2Ocl(19));
+    qftReg->H(18, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_sqrtx")
