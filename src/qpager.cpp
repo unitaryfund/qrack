@@ -931,6 +931,7 @@ void QPager::PhaseParity(real1 radians, bitCapInt mask)
     bitCapInt pageMask = pageMaxQPower() - ONE_BCI;
     bitCapIntOcl intraMask = (bitCapIntOcl)(mask & pageMask);
     bitCapInt interMask = (mask ^ (bitCapInt)intraMask) >> qubitsPerPage();
+    complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
     bitCapInt v;
     bool isFlipped;
     std::vector<std::future<void>> futures(qPages.size());
@@ -942,6 +943,14 @@ void QPager::PhaseParity(real1 radians, bitCapInt mask)
         while (v) {
             v = v & (v - ONE_BCI);
             isFlipped = !isFlipped;
+        }
+
+        if (!intraMask) {
+            if (isFlipped) {
+                futures[i] = std::async(std::launch::async,
+                    [engine, intraMask, phaseFac]() { return engine->ApplySinglePhase(phaseFac, phaseFac, 0U); });
+            }
+            continue;
         }
 
         if (isFlipped) {
