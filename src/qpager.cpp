@@ -939,11 +939,10 @@ void QPager::PhaseParity(real1 radians, bitCapInt mask)
 
         if (intraMask) {
             engine->PhaseParity(isFlipped ? -radians : radians, intraMask);
-        } else {
-            if (isFlipped) {
-                engine->ApplySinglePhase(phaseFac, phaseFac, 0U);
-            }
+        } else if (isFlipped) {
+            engine->ApplySinglePhase(phaseFac, phaseFac, 0U);
         }
+        // else - !intraMask and !isFlipped, so skip
     }
 }
 
