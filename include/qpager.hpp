@@ -110,8 +110,6 @@ protected:
     void ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex* mtrx);
 
-    void BitMask(bitCapInt mask, bool isX);
-
     void Init();
 
 public:
@@ -227,8 +225,9 @@ public:
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
 
-    virtual void XMask(bitCapInt mask) { BitMask(mask, true); }
-    virtual void ZMask(bitCapInt mask) { BitMask(mask, false); }
+    virtual void XMask(bitCapInt mask);
+    virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
+    virtual void PhaseParity(real1 radians, bitCapInt mask);
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
