@@ -896,14 +896,13 @@ void QPager::AntiCISqrtSwap(
         { qubit1, qubit2 }, controls, controlLen);
 }
 
-void QPager::BitMask(bitCapInt mask, bool isX, real1 radians)
+void QPager::BitMask(bitCapInt mask, bool isX)
 {
     bitCapIntOcl i;
 
     bitCapInt pageMask = pageMaxQPower() - ONE_BCI;
     bitCapIntOcl intraMask = (bitCapIntOcl)(mask & pageMask);
     bitCapInt interMask = mask ^ (bitCapInt)intraMask;
-    complex phaseFac = complex(cos(radians), sin(radians));
     bitCapInt v;
     bitLenInt bit;
     while (interMask) {
@@ -914,11 +913,7 @@ void QPager::BitMask(bitCapInt mask, bool isX, real1 radians)
         if (isX) {
             X(bit);
         } else {
-            if (radians == PI_R1) {
-                Z(bit);
-            } else {
-                ApplySinglePhase(ONE_R1, phaseFac, bit);
-            }
+            Z(bit);
         }
     }
 
@@ -928,12 +923,7 @@ void QPager::BitMask(bitCapInt mask, bool isX, real1 radians)
         if (isX) {
             futures[i] = std::async(std::launch::async, [engine, intraMask]() { return engine->XMask(intraMask); });
         } else {
-            if (radians == PI_R1) {
-                futures[i] = std::async(std::launch::async, [engine, intraMask]() { return engine->ZMask(intraMask); });
-            } else {
-                futures[i] = std::async(std::launch::async,
-                    [engine, intraMask, radians]() { return engine->PhaseParity(radians, intraMask); });
-            }
+            futures[i] = std::async(std::launch::async, [engine, intraMask]() { return engine->ZMask(intraMask); });
         }
     }
 
