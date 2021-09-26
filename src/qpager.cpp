@@ -909,18 +909,11 @@ void QPager::XMask(bitCapInt mask)
         v = interMask & (interMask - ONE_BCI);
         bit = log2(interMask ^ v);
         interMask = v;
-
         X(bit);
     }
 
-    std::vector<std::future<void>> futures(qPages.size());
     for (i = 0; i < qPages.size(); i++) {
-        QEnginePtr engine = qPages[i];
-        futures[i] = std::async(std::launch::async, [engine, intraMask]() { return engine->XMask(intraMask); });
-    }
-
-    for (i = 0; i < qPages.size(); i++) {
-        futures[i].get();
+        qPages[i]->XMask(intraMask);
     }
 }
 
@@ -934,7 +927,6 @@ void QPager::PhaseParity(real1 radians, bitCapInt mask)
     complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
     bitCapInt v;
     bool isFlipped;
-    std::vector<std::future<void>> futures;
     for (i = 0; i < qPages.size(); i++) {
         QEnginePtr engine = qPages[i];
 
@@ -945,25 +937,13 @@ void QPager::PhaseParity(real1 radians, bitCapInt mask)
             isFlipped = !isFlipped;
         }
 
-        if (!intraMask) {
-            if (isFlipped) {
-                futures.push_back(std::async(std::launch::async,
-                    [engine, phaseFac]() { return engine->ApplySinglePhase(phaseFac, phaseFac, 0U); }));
-            }
-            continue;
-        }
-
-        if (isFlipped) {
-            futures.push_back(std::async(std::launch::async,
-                [engine, intraMask, radians]() { return engine->PhaseParity(-radians, intraMask); }));
+        if (intraMask) {
+            engine->PhaseParity(isFlipped ? -radians : radians, intraMask);
         } else {
-            futures.push_back(std::async(std::launch::async,
-                [engine, intraMask, radians]() { return engine->PhaseParity(radians, intraMask); }));
+            if (isFlipped) {
+                engine->ApplySinglePhase(phaseFac, phaseFac, 0U);
+            }
         }
-    }
-
-    for (i = 0; i < futures.size(); i++) {
-        futures[i].get();
     }
 }
 
