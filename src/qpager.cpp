@@ -934,7 +934,7 @@ void QPager::PhaseParity(real1 radians, bitCapInt mask)
     complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
     bitCapInt v;
     bool isFlipped;
-    std::vector<std::future<void>> futures(qPages.size());
+    std::vector<std::future<void>> futures;
     for (i = 0; i < qPages.size(); i++) {
         QEnginePtr engine = qPages[i];
 
@@ -947,22 +947,22 @@ void QPager::PhaseParity(real1 radians, bitCapInt mask)
 
         if (!intraMask) {
             if (isFlipped) {
-                futures[i] = std::async(std::launch::async,
-                    [engine, phaseFac]() { return engine->ApplySinglePhase(phaseFac, phaseFac, 0U); });
+                futures.push_back(std::async(std::launch::async,
+                    [engine, phaseFac]() { return engine->ApplySinglePhase(phaseFac, phaseFac, 0U); }));
             }
             continue;
         }
 
         if (isFlipped) {
-            futures[i] = std::async(std::launch::async,
-                [engine, intraMask, radians]() { return engine->PhaseParity(-radians, intraMask); });
+            futures.push_back(std::async(std::launch::async,
+                [engine, intraMask, radians]() { return engine->PhaseParity(-radians, intraMask); }));
         } else {
-            futures[i] = std::async(
-                std::launch::async, [engine, intraMask, radians]() { return engine->PhaseParity(radians, intraMask); });
+            futures.push_back(std::async(std::launch::async,
+                [engine, intraMask, radians]() { return engine->PhaseParity(radians, intraMask); }));
         }
     }
 
-    for (i = 0; i < qPages.size(); i++) {
+    for (i = 0; i < futures.size(); i++) {
         futures[i].get();
     }
 }
