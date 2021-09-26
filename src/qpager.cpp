@@ -948,7 +948,7 @@ void QPager::PhaseParity(real1 radians, bitCapInt mask)
         if (!intraMask) {
             if (isFlipped) {
                 futures[i] = std::async(std::launch::async,
-                    [engine, intraMask, phaseFac]() { return engine->ApplySinglePhase(phaseFac, phaseFac, 0U); });
+                    [engine, phaseFac]() { return engine->ApplySinglePhase(phaseFac, phaseFac, 0U); });
             }
             continue;
         }
