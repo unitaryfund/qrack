@@ -61,6 +61,7 @@ using namespace Qrack;
 qrack_rand_gen_ptr randNumGen = std::make_shared<qrack_rand_gen>(time(0));
 std::mutex metaOperationMutex;
 std::vector<QInterfacePtr> simulators;
+std::vector<QInterfaceEngine> simulatorTypes;
 std::map<QInterfacePtr, std::mutex> simulatorMutexes;
 std::vector<bool> simulatorReservations;
 std::map<QInterfacePtr, std::map<unsigned, bitLenInt>> shards;
@@ -357,14 +358,9 @@ void _darray_to_creal1_array(double* params, bitCapIntOcl componentCount, comple
 extern "C" {
 
 /**
- * (External API) Initialize a simulator ID with 0 qubits
+ * (External API) Initialize a simulator ID with "q" qubits and "Schmidt decomposition" ("sd") on/off
  */
-MICROSOFT_QUANTUM_DECL unsigned init() { return init_count(0); }
-
-/**
- * (External API) Initialize a simulator ID with "q" qubits
- */
-MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
+MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool sd)
 {
     META_LOCK()
 
@@ -378,22 +374,27 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
         }
     }
 
+    QInterfaceEngine simulatorType;
+    if (sd) {
 #if ENABLE_OPENCL
-    QInterfacePtr simulator = q
-        ? CreateQuantumInterface(
-              (OCLEngine::Instance()->GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL, q, 0,
-              randNumGen)
-        : NULL;
+        simulatorType = (OCLEngine::Instance()->GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL;
 #else
-    QInterfacePtr simulator = q ? CreateQuantumInterface(QINTERFACE_OPTIMAL, q, 0, randNumGen) : NULL;
+        simulatorType = QINTERFACE_OPTIMAL;
 #endif
+    } else {
+        simulatorType = QINTERFACE_STABILIZER_HYBRID;
+    }
+
+    QInterfacePtr simulator = q ? CreateQuantumInterface(simulatorType, q, 0, randNumGen) : NULL;
 
     if (sid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
+        simulatorTypes.push_back(simulatorType);
     } else {
         simulatorReservations[sid] = true;
         simulators[sid] = simulator;
+        simulatorTypes[sid] = simulatorType;
     }
 
     if (!q) {
@@ -434,10 +435,12 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
     if (nsid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
+        simulatorTypes.push_back(simulatorTypes[sid]);
         shards[simulator] = {};
     } else {
         simulatorReservations[nsid] = true;
         simulators[nsid] = simulator;
+        simulatorTypes[nsid] = simulatorTypes[sid];
     }
 
     shards[simulator] = {};
@@ -600,16 +603,11 @@ MICROSOFT_QUANTUM_DECL void ResetAll(_In_ unsigned sid)
  */
 MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 {
-#if ENABLE_OPENCL
-    QInterfacePtr nQubit = CreateQuantumInterface(
-        (OCLEngine::Instance()->GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL, 1, 0,
-        randNumGen);
-#else
-    QInterfacePtr nQubit = CreateQuantumInterface(QINTERFACE_OPTIMAL, 1, 0, randNumGen);
-#endif
+    META_LOCK()
+
+    QInterfacePtr nQubit = CreateQuantumInterface(simulatorTypes[sid], 1, 0, randNumGen);
 
     if (simulators[sid] == NULL) {
-        META_LOCK()
         simulators[sid] = nQubit;
         shards[nQubit] = {};
         shards[nQubit][qid] = 0;
@@ -617,6 +615,8 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 
         return;
     }
+
+    META_UNLOCK()
 
     SIMULATOR_LOCK_GUARD(sid)
 
