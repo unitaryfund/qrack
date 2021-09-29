@@ -57,7 +57,7 @@ using namespace Qrack;
 qrack_rand_gen_ptr randNumGen = std::make_shared<qrack_rand_gen>(time(0));
 std::mutex metaOperationMutex;
 std::vector<QInterfacePtr> simulators;
-std::vector<QInterfaceEngine> simulatorTypes;
+std::vector<std::vector<QInterfaceEngine>> simulatorTypes;
 std::map<QInterfacePtr, std::mutex> simulatorMutexes;
 std::vector<bool> simulatorReservations;
 std::map<QInterfacePtr, std::map<unsigned, bitLenInt>> shards;
@@ -356,7 +356,7 @@ extern "C" {
 /**
  * (External API) Initialize a simulator ID with "q" qubits and "Schmidt decomposition" ("sd") on/off
  */
-MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool sd)
+MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool sd, _In_ bool zxf)
 {
     META_LOCK_GUARD()
 
@@ -370,15 +370,24 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool sd)
         }
     }
 
-    QInterfaceEngine simulatorType;
+    std::vector<QInterfaceEngine> simulatorType;
     if (sd) {
 #if ENABLE_OPENCL
-        simulatorType = (OCLEngine::Instance()->GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL;
+        simulatorType.push_back(
+            (OCLEngine::Instance()->GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
 #else
-        simulatorType = QINTERFACE_OPTIMAL;
+        simulatorType.push_back(QINTERFACE_OPTIMAL);
 #endif
+        if (!zxf) {
+            simulatorType.push_back(QINTERFACE_OPTIMAL_G0_CHILD);
+        }
     } else {
-        simulatorType = QINTERFACE_STABILIZER_HYBRID;
+        simulatorType.push_back(QINTERFACE_STABILIZER_HYBRID);
+    }
+
+    if (!zxf) {
+        simulatorType.push_back(QINTERFACE_OPTIMAL_G1_CHILD);
+        simulatorType.push_back(QINTERFACE_OPTIMAL_G3_CHILD);
     }
 
     QInterfacePtr simulator = q ? CreateQuantumInterface(simulatorType, q, 0, randNumGen) : NULL;
@@ -1177,8 +1186,14 @@ MICROSOFT_QUANTUM_DECL void Compose(_In_ unsigned sid1, _In_ unsigned sid2, unsi
     const std::lock_guard<std::mutex> simulatorLock1(simulatorMutexes[simulators[sid1]]);
     const std::lock_guard<std::mutex> simulatorLock2(simulatorMutexes[simulators[sid2]]);
 
-    if (simulatorTypes[sid1] != simulatorTypes[sid2]) {
+    if (simulatorTypes[sid1].size() != simulatorTypes[sid2].size()) {
         throw std::runtime_error("Cannot 'Compose()' simulators of different layer stack types.");
+    }
+
+    for (size_t i = 0; i < simulatorTypes[sid1].size(); i++) {
+        if (simulatorTypes[sid1][i] != simulatorTypes[sid2][i]) {
+            throw std::runtime_error("Cannot 'Compose()' simulators of different layer stack types.");
+        }
     }
 
     QInterfacePtr simulator1 = simulators[sid1];

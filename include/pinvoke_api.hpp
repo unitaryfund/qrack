@@ -28,8 +28,8 @@ struct _QrackTimeEvolveOpHeader;
 
 extern "C" {
 // non-quantum
-MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool sd);
-MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q) { return init_count_type(q, true); }
+MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool sd, _In_ bool zxf);
+MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q) { return init_count_type(q, true, true); }
 MICROSOFT_QUANTUM_DECL unsigned init() { return init_count(0); }
 MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid);
