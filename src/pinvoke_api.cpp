@@ -356,7 +356,8 @@ extern "C" {
 /**
  * (External API) Initialize a simulator ID with "q" qubits and "Schmidt decomposition" ("sd") on/off
  */
-MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool sd, _In_ bool sh, _In_ bool zxf)
+MICROSOFT_QUANTUM_DECL unsigned init_count_type(
+    _In_ unsigned q, _In_ bool sd, _In_ bool sh, _In_ bool zxf, _In_ bool hy)
 {
     META_LOCK_GUARD()
 
@@ -396,8 +397,12 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool sd, _
         simulatorType.push_back(QINTERFACE_MASK_FUSION);
     }
 
+    if (isOcl && hy) {
+        simulatorType.push_back(QINTERFACE_HYBRID);
+    }
+
     if (!simulatorType.size()) {
-        simulatorType.push_back(isOcl ? QINTERFACE_HYBRID : QINTERFACE_CPU);
+        simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
     }
 
     QInterfacePtr simulator = q ? CreateQuantumInterface(simulatorType, q, 0, randNumGen) : NULL;
