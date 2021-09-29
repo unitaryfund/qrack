@@ -356,7 +356,7 @@ extern "C" {
 /**
  * (External API) Initialize a simulator ID with "q" qubits and "Schmidt decomposition" ("sd") on/off
  */
-MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool sd, _In_ bool zxf)
+MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool sd, _In_ bool sh, _In_ bool zxf)
 {
     META_LOCK_GUARD()
 
@@ -370,24 +370,34 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool sd, _
         }
     }
 
-    std::vector<QInterfaceEngine> simulatorType;
-    if (sd) {
 #if ENABLE_OPENCL
-        simulatorType.push_back(
-            (OCLEngine::Instance()->GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+    bool isOcl = (OCLEngine::Instance()->GetDeviceCount() > 0);
+    bool isOclMulti = (OCLEngine::Instance()->GetDeviceCount() > 1);
 #else
-        simulatorType.push_back(QINTERFACE_OPTIMAL);
+    bool isOcl = false;
+    bool isOclMultu = false;
 #endif
-        if (!zxf) {
-            simulatorType.push_back(QINTERFACE_OPTIMAL_G0_CHILD);
-        }
-    } else {
+
+    std::vector<QInterfaceEngine> simulatorType;
+
+    if (sd) {
+        simulatorType.push_back(isOclMulti ? QINTERFACE_QUNIT_MULTI : QINTERFACE_QUNIT);
+    }
+
+    if (sh) {
         simulatorType.push_back(QINTERFACE_STABILIZER_HYBRID);
     }
 
-    if (!zxf) {
-        simulatorType.push_back(QINTERFACE_OPTIMAL_G1_CHILD);
-        simulatorType.push_back(QINTERFACE_OPTIMAL_G3_CHILD);
+    if (isOcl) {
+        simulatorType.push_back(QINTERFACE_QPAGER);
+    }
+
+    if (zxf) {
+        simulatorType.push_back(QINTERFACE_MASK_FUSION);
+    }
+
+    if (!simulatorType.size()) {
+        simulatorType.push_back(isOcl ? QINTERFACE_HYBRID : QINTERFACE_CPU);
     }
 
     QInterfacePtr simulator = q ? CreateQuantumInterface(simulatorType, q, 0, randNumGen) : NULL;
