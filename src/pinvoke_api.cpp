@@ -30,9 +30,12 @@
 // SIMULATOR_LOCK_GUARD variants will lock simulatorMutexes[NULL], if the requested simulator doesn't exist.
 // This is CORRECT behavior. This will effectively emplace a mutex for NULL key.
 #define SIMULATOR_LOCK_GUARD(sid)                                                                                      \
-    metaOperationMutex.lock();                                                                                         \
-    const std::lock_guard<std::mutex> simulatorLock(simulatorMutexes[simulators[sid]]);                                \
-    metaOperationMutex.unlock();
+    std::unique_ptr<const std::lock_guard<std::mutex>> simulatorLock;                                                  \
+    if (true) {                                                                                                        \
+        const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                \
+        simulatorLock = std::unique_ptr<const std::lock_guard<std::mutex>>(                                            \
+            new const std::lock_guard<std::mutex>(simulatorMutexes[simulators[sid]]));                                 \
+    }
 
 #define SIMULATOR_LOCK_GUARD_DOUBLE(sid)                                                                               \
     SIMULATOR_LOCK_GUARD(sid)                                                                                          \
@@ -357,7 +360,7 @@ extern "C" {
  * (External API) Initialize a simulator ID with "q" qubits and "Schmidt decomposition" ("sd") on/off
  */
 MICROSOFT_QUANTUM_DECL unsigned init_count_type(
-    _In_ unsigned q, _In_ bool sd, _In_ bool sh, _In_ bool zxf, _In_ bool hy)
+    _In_ unsigned q, _In_ bool md, _In_ bool sd, _In_ bool sh, _In_ bool zxf, _In_ bool hy)
 {
     META_LOCK_GUARD()
 
@@ -373,7 +376,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(
 
 #if ENABLE_OPENCL
     bool isOcl = (OCLEngine::Instance()->GetDeviceCount() > 0);
-    bool isOclMulti = (OCLEngine::Instance()->GetDeviceCount() > 1);
+    bool isOclMulti = md && (OCLEngine::Instance()->GetDeviceCount() > 1);
 #else
     bool isOcl = false;
     bool isOclMultu = false;
