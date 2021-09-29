@@ -379,7 +379,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(
     bool isOclMulti = md && (OCLEngine::Instance()->GetDeviceCount() > 1);
 #else
     bool isOcl = false;
-    bool isOclMultu = false;
+    bool isOclMulti = false;
 #endif
 
     std::vector<QInterfaceEngine> simulatorType;
