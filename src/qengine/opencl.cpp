@@ -271,8 +271,11 @@ void QEngineOCL::clDump()
         return;
     }
 
+    if (wait_queue_items.size()) {
+        device_context->WaitOnAllEvents();
+    }
+
     wait_queue_items.clear();
-    device_context->WaitOnAllEvents();
     wait_refs.clear();
 }
 
