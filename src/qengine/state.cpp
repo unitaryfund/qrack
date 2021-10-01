@@ -594,15 +594,15 @@ void QEngineCPU::PhaseParity(real1 radians, bitCapInt mask)
     }
 
     Dispatch([this, mask, radians] {
-        size_t parityStartSize = 4U * sizeof(bitCapIntOcl);
+        bitCapInt parityStartSize = 4U * sizeof(bitCapIntOcl);
         complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
         bitCapInt otherMask = (maxQPower - ONE_BCI) ^ mask;
         ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = lcv & otherMask;
             bitCapInt setInt = lcv & mask;
 
-            size_t v = setInt;
-            for (size_t paritySize = parityStartSize; paritySize > 0U; paritySize >>= 1U) {
+            bitCapInt v = setInt;
+            for (bitCapInt paritySize = parityStartSize; paritySize > 0U; paritySize >>= 1U) {
                 v ^= v >> paritySize;
             }
             v &= 1U;
