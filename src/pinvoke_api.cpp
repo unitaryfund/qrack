@@ -1251,6 +1251,8 @@ MICROSOFT_QUANTUM_DECL unsigned Decompose(_In_ unsigned sid, _In_ unsigned n, _I
         shards[simulator.get()].erase(q[j]);
     }
 
+    simulatorTypes[nSid] = simulatorTypes[sid];
+
     return nSid;
 }
 
