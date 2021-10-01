@@ -584,7 +584,7 @@ void QEngineCPU::PhaseParity(real1 radians, bitCapInt mask)
     }
 
     if (!(mask & (mask - ONE_BCI))) {
-        ApplySinglePhase(ONE_R1, complex(cos(radians), sin(radians)), log2(mask));
+        ApplySinglePhase(ONE_R1, complex((real1)cos(radians), (real1)sin(radians)), log2(mask));
         return;
     }
 
@@ -594,22 +594,22 @@ void QEngineCPU::PhaseParity(real1 radians, bitCapInt mask)
     }
 
     Dispatch([this, mask, radians] {
+        size_t parityStartSize = 4U * sizeof(bitCapIntOcl);
         complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
         bitCapInt otherMask = (maxQPower - ONE_BCI) ^ mask;
         ParallelFunc fn = [&](const bitCapInt lcv, const int cpu) {
             bitCapInt otherRes = lcv & otherMask;
             bitCapInt setInt = lcv & mask;
 
-            bool isParityOdd = false;
-            bitCapInt v = setInt;
-            while (v) {
-                v = v & (v - ONE_BCI);
-                isParityOdd = !isParityOdd;
+            size_t v = setInt;
+            for (size_t paritySize = parityStartSize; paritySize > 0U; paritySize >>= 1U) {
+                v ^= v >> paritySize;
             }
+            v &= 1U;
 
             setInt |= otherRes;
 
-            if (isParityOdd) {
+            if (v) {
                 stateVec->write(setInt, phaseFac * stateVec->read(setInt));
             }
         };

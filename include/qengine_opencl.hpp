@@ -353,7 +353,7 @@ public:
         }
 
         if (!(mask & (mask - ONE_BCI))) {
-            ApplySinglePhase(ONE_R1, complex(cos(radians), sin(radians)), log2(mask));
+            ApplySinglePhase(ONE_R1, complex((real1)cos(radians), (real1)sin(radians)), log2(mask));
             return;
         }
 
