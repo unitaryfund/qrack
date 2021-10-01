@@ -1284,7 +1284,7 @@ MICROSOFT_QUANTUM_DECL void AND(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsig
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->AND(qi1, qi2, qo);
+    simulator->AND(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
 }
 
 MICROSOFT_QUANTUM_DECL void OR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
@@ -1292,7 +1292,7 @@ MICROSOFT_QUANTUM_DECL void OR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsign
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->OR(qi1, qi2, qo);
+    simulator->OR(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
 }
 
 MICROSOFT_QUANTUM_DECL void XOR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
@@ -1300,7 +1300,7 @@ MICROSOFT_QUANTUM_DECL void XOR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsig
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->XOR(qi1, qi2, qo);
+    simulator->XOR(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
 }
 
 MICROSOFT_QUANTUM_DECL void NAND(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
@@ -1308,7 +1308,7 @@ MICROSOFT_QUANTUM_DECL void NAND(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsi
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->NAND(qi1, qi2, qo);
+    simulator->NAND(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
 }
 
 MICROSOFT_QUANTUM_DECL void NOR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
@@ -1316,7 +1316,7 @@ MICROSOFT_QUANTUM_DECL void NOR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsig
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->NOR(qi1, qi2, qo);
+    simulator->NOR(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
 }
 
 MICROSOFT_QUANTUM_DECL void XNOR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2, _In_ unsigned qo)
@@ -1324,7 +1324,7 @@ MICROSOFT_QUANTUM_DECL void XNOR(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsi
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->XNOR(qi1, qi2, qo);
+    simulator->XNOR(shards[simulator.get()][qi1], shards[simulator.get()][qi2], shards[simulator.get()][qo]);
 }
 
 MICROSOFT_QUANTUM_DECL void CLAND(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
@@ -1332,7 +1332,7 @@ MICROSOFT_QUANTUM_DECL void CLAND(_In_ unsigned sid, _In_ bool ci, _In_ unsigned
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->CLAND(ci, qi, qo);
+    simulator->CLAND(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
 MICROSOFT_QUANTUM_DECL void CLOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
@@ -1340,7 +1340,7 @@ MICROSOFT_QUANTUM_DECL void CLOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned 
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->CLOR(ci, qi, qo);
+    simulator->CLOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
 MICROSOFT_QUANTUM_DECL void CLXOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
@@ -1348,7 +1348,7 @@ MICROSOFT_QUANTUM_DECL void CLXOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->CLXOR(ci, qi, qo);
+    simulator->CLXOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
 MICROSOFT_QUANTUM_DECL void CLNAND(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
@@ -1356,7 +1356,7 @@ MICROSOFT_QUANTUM_DECL void CLNAND(_In_ unsigned sid, _In_ bool ci, _In_ unsigne
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->CLNAND(ci, qi, qo);
+    simulator->CLNAND(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
 MICROSOFT_QUANTUM_DECL void CLNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
@@ -1364,7 +1364,7 @@ MICROSOFT_QUANTUM_DECL void CLNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->CLNOR(ci, qi, qo);
+    simulator->CLNOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
 MICROSOFT_QUANTUM_DECL void CLXNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigned qi, _In_ unsigned qo)
@@ -1372,7 +1372,7 @@ MICROSOFT_QUANTUM_DECL void CLXNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigne
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->CLXNOR(ci, qi, qo);
+    simulator->CLXNOR(ci, shards[simulator.get()][qi], shards[simulator.get()][qo]);
 }
 
 /**
@@ -1603,15 +1603,17 @@ MICROSOFT_QUANTUM_DECL void Hash(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
 MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ unsigned sid, _In_ unsigned qi1)
 {
     SIMULATOR_LOCK_GUARD_BOOL(sid)
+    QInterfacePtr simulator = simulators[sid];
 
-    return simulators[sid]->TrySeparate(qi1);
+    return simulators[sid]->TrySeparate(shards[simulator.get()][qi1]);
 }
 
 MICROSOFT_QUANTUM_DECL bool TrySeparate2Qb(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2)
 {
     SIMULATOR_LOCK_GUARD_BOOL(sid)
+    QInterfacePtr simulator = simulators[sid];
 
-    return simulators[sid]->TrySeparate(qi1, qi2);
+    return simulators[sid]->TrySeparate(shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
 }
 
 MICROSOFT_QUANTUM_DECL bool TrySeparateTol(
@@ -1619,10 +1621,13 @@ MICROSOFT_QUANTUM_DECL bool TrySeparateTol(
 {
     SIMULATOR_LOCK_GUARD_BOOL(sid)
 
-    bitLenInt* qb = new bitLenInt[n];
-    std::copy(q, q + n, qb);
+    QInterfacePtr simulator = simulators[sid];
+    std::unique_ptr<bitLenInt[]> bitArray(new bitLenInt[n]);
+    for (unsigned i = 0; i < n; i++) {
+        bitArray.get()[i] = shards[simulator.get()][q[i]];
+    }
 
-    return simulators[sid]->TrySeparate(qb, (bitLenInt)n, (real1_f)tol);
+    return simulator->TrySeparate(bitArray.get(), (bitLenInt)n, (real1_f)tol);
 }
 
 MICROSOFT_QUANTUM_DECL void SetReactiveSeparate(_In_ unsigned sid, _In_ bool irs)

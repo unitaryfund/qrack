@@ -2777,12 +2777,15 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
-    int partInnerSize = nrmGroupCount / nrmGroupSize;
+    size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
+    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+
+    int partInnerSize = ngc / ngs;
 
     AddAlloc(sizeof(complex) * partInnerSize);
     BufferPtr locCmplxBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(complex) * partInnerSize);
 
-    QueueCall(OCL_API_APPROXCOMPARE, nrmGroupCount, nrmGroupSize,
+    QueueCall(OCL_API_APPROXCOMPARE, ngc, ngs,
         { stateBuffer, toCompare->stateBuffer, poolItem->ulongBuffer, locCmplxBuffer }, sizeof(complex) * nrmGroupSize);
 
     std::unique_ptr<complex[]> partInner(new complex[partInnerSize]);
