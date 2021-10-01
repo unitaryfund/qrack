@@ -226,7 +226,7 @@ public:
 
     virtual void ZeroAmplitudes()
     {
-        clFinish();
+        clDump();
         runningNorm = ZERO_R1;
 
         if (!stateBuffer) {
