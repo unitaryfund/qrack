@@ -526,6 +526,10 @@ void QInterface::ZMask(bitCapInt mask)
 
 void QInterface::PhaseParity(real1 radians, bitCapInt mask)
 {
+    if (!mask) {
+        return;
+    }
+
     std::vector<bitCapInt> qubits;
     bitCapInt v = mask;
     while (mask) {
@@ -535,7 +539,7 @@ void QInterface::PhaseParity(real1 radians, bitCapInt mask)
     }
 
     int i;
-    int end = qubits.size() - 1;
+    int end = (int)(qubits.size() - 1);
     for (i = 0; i < end; i++) {
         CNOT(qubits[i], qubits[i + 1U]);
     }
