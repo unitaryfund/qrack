@@ -330,7 +330,8 @@ void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
     bitCapIntOcl mask = bitCapIntOclPtr[1];
     bitCapIntOcl otherMask = bitCapIntOclPtr[2];
 
-    cmplx phaseFac = *cmplxPtr;
+    cmplx phaseFac = cmplxPtr[0];
+    cmplx iPhaseFac = cmplxPtr[1];
 
     for (lcv = ID; lcv < maxI; lcv += Nthreads) {
         otherRes = lcv & otherMask;
@@ -344,9 +345,7 @@ void kernel phaseparity(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 
         setInt |= otherRes;
 
-        if (v) {
-            stateVec[setInt] = zmul(phaseFac, stateVec[setInt]);
-        }
+        stateVec[setInt] = zmul(v ? phaseFac : iPhaseFac, stateVec[setInt]);
     }
 }
 

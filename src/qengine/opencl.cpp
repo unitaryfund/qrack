@@ -1013,9 +1013,12 @@ void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1 phase)
 
     bool isPhaseParity = (api_call == OCL_API_PHASE_PARITY);
     if (isPhaseParity) {
-        complex phaseFac = complex(cos(phase), sin(phase));
+        complex phaseFac = std::polar(ONE_R1, phase / 2);
+        ;
+        complex cmplxArray[2] = { phaseFac, ONE_CMPLX / phaseFac };
         cl::Event writePhaseEvent;
-        DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex), &phaseFac, writePhaseEvent, error);
+        DISPATCH_TEMP_WRITE(
+            waitVec, *(poolItem->cmplxBuffer), 2U * sizeof(complex), cmplxArray, writePhaseEvent, error);
         writePhaseEvent.wait();
     }
 

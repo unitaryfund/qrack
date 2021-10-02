@@ -921,28 +921,29 @@ void QPager::PhaseParity(real1 radians, bitCapInt mask)
 {
     bitCapIntOcl i;
 
+    bitCapInt parityStartSize = 4U * sizeof(bitCapIntOcl);
     bitCapInt pageMask = pageMaxQPower() - ONE_BCI;
     bitCapIntOcl intraMask = (bitCapIntOcl)(mask & pageMask);
     bitCapInt interMask = (mask ^ (bitCapInt)intraMask) >> qubitsPerPage();
-    complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
+    complex phaseFac = std::polar(ONE_R1, radians / 2);
+    complex iPhaseFac = ONE_CMPLX / phaseFac;
     bitCapInt v;
-    bool isFlipped;
     for (i = 0; i < qPages.size(); i++) {
         QEnginePtr engine = qPages[i];
 
         v = interMask & i;
-        isFlipped = false;
-        while (v) {
-            v = v & (v - ONE_BCI);
-            isFlipped = !isFlipped;
+        for (bitCapInt paritySize = parityStartSize; paritySize > 0U; paritySize >>= 1U) {
+            v ^= v >> paritySize;
         }
+        v &= 1U;
 
         if (intraMask) {
-            engine->PhaseParity((isFlipped ? -radians : radians) / 2, intraMask);
-        } else if (isFlipped) {
+            engine->PhaseParity(v ? -radians : radians, intraMask);
+        } else if (v) {
             engine->ApplySinglePhase(phaseFac, phaseFac, 0U);
+        } else {
+            engine->ApplySinglePhase(iPhaseFac, iPhaseFac, 0U);
         }
-        // else - !intraMask and !isFlipped, so skip
     }
 }
 

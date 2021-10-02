@@ -353,7 +353,8 @@ public:
         }
 
         if (!(mask & (mask - ONE_BCI))) {
-            ApplySinglePhase(ONE_R1, complex((real1)cos(radians), (real1)sin(radians)), log2(mask));
+            complex phaseFac = std::polar(ONE_R1, radians / 2);
+            ApplySinglePhase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
             return;
         }
 
