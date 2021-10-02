@@ -1402,10 +1402,10 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
         return;
     }
 
-    complex phaseFac = complex(cos(radians), sin(radians));
+    complex phaseFac = complex(cos(radians / 2), sin(radians / 2));
 
     if (!(mask & (mask - ONE_BCI))) {
-        ApplySinglePhase(ONE_R1, phaseFac, log2(mask));
+        ApplySinglePhase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
         return;
     }
 
@@ -1436,16 +1436,18 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 
     if (eIndices.size() == 0) {
         if (flipResult) {
-            ApplySinglePhase(phaseFac, phaseFac, 0);
+            ApplySinglePhase(phaseFac, phaseFac, 0U);
+        } else {
+            ApplySinglePhase(ONE_CMPLX / phaseFac, ONE_CMPLX / phaseFac, 0U);
         }
         return;
     }
 
     if (eIndices.size() == 1U) {
         if (flipResult) {
-            ApplySinglePhase(phaseFac, ONE_R1, eIndices[0]);
+            ApplySinglePhase(phaseFac, ONE_CMPLX / phaseFac, log2(mask));
         } else {
-            ApplySinglePhase(ONE_R1, phaseFac, eIndices[0]);
+            ApplySinglePhase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
         }
         return;
     }
