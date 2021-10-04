@@ -37,8 +37,7 @@ void QInterface::RY(real1_f radians, bitLenInt qubit)
 {
     real1 cosine = (real1)cos(radians / 2);
     real1 sine = (real1)sin(radians / 2);
-    complex pauliRY[4] = { complex(cosine, ZERO_R1), complex(-sine, ZERO_R1), complex(sine, ZERO_R1),
-        complex(cosine, ZERO_R1) };
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
     ApplySingleBit(pauliRY, qubit);
 }
 
@@ -50,13 +49,64 @@ void QInterface::RZ(real1_f radians, bitLenInt qubit)
     ApplySinglePhase(complex(cosine, -sine), complex(cosine, sine), qubit);
 }
 
+/// General unitary gate
+void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
+{
+    real1 cos0 = (real1)cos(theta / 2);
+    real1 sin0 = (real1)sin(theta / 2);
+    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+        sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+        cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
+    ApplySingleBit(uGate, target);
+}
+
+/// Apply general unitary gate to each bit in "length," starting from bit index "start"
+void QInterface::U(bitLenInt start, bitLenInt length, real1_f theta, real1_f phi, real1_f lambda)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        U(start + bit, theta, phi, lambda);
+    }
+}
+
+/// Controlled general unitary gate
+void QInterface::CU(
+    bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
+{
+    real1 cos0 = (real1)cos(theta / 2);
+    real1 sin0 = (real1)sin(theta / 2);
+    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+        sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+        cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
+    ApplyControlledSingleBit(controls, controlLen, target, uGate);
+}
+
+/// (Anti-)Controlled general unitary gate
+void QInterface::AntiCU(
+    bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
+{
+    real1 cos0 = (real1)cos(theta / 2);
+    real1 sin0 = (real1)sin(theta / 2);
+    const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
+        sin0 * complex((real1)cos(phi), (real1)sin(phi)),
+        cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
+    ApplyAntiControlledSingleBit(controls, controlLen, target, uGate);
+}
+
+/// Apply 2-parameter unitary gate to each bit in "length," starting from bit index "start"
+void QInterface::U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lambda)
+{
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        U2(start + bit, phi, lambda);
+    }
+}
+
 /// Uniformly controlled y axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli y axis for each permutation
 /// "k" of the control bits.
 void QInterface::UniformlyControlledRY(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles)
 {
     bitCapIntOcl permCount = pow2Ocl(controlLen);
-    complex* pauliRYs = new complex[4U * (bitCapIntOcl)permCount];
+    std::unique_ptr<complex[]> pauliRYs(new complex[4U * (bitCapIntOcl)permCount]);
 
     real1 cosine, sine;
     for (bitCapIntOcl i = 0; i < permCount; i++) {
@@ -69,9 +119,7 @@ void QInterface::UniformlyControlledRY(
         pauliRYs[3U + 4U * i] = complex(cosine, ZERO_R1);
     }
 
-    UniformlyControlledSingleBit(controls, controlLen, qubitIndex, pauliRYs);
-
-    delete[] pauliRYs;
+    UniformlyControlledSingleBit(controls, controlLen, qubitIndex, pauliRYs.get());
 }
 
 /// Uniformly controlled z axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli z axis for each permutation
@@ -80,7 +128,7 @@ void QInterface::UniformlyControlledRZ(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles)
 {
     bitCapIntOcl permCount = pow2Ocl(controlLen);
-    complex* pauliRZs = new complex[4U * (bitCapIntOcl)permCount];
+    std::unique_ptr<complex[]> pauliRZs(new complex[4U * (bitCapIntOcl)permCount]);
 
     real1 cosine, sine;
     for (bitCapIntOcl i = 0; i < permCount; i++) {
@@ -93,9 +141,7 @@ void QInterface::UniformlyControlledRZ(
         pauliRZs[3U + 4U * i] = complex(cosine, sine);
     }
 
-    UniformlyControlledSingleBit(controls, controlLen, qubitIndex, pauliRZs);
-
-    delete[] pauliRZs;
+    UniformlyControlledSingleBit(controls, controlLen, qubitIndex, pauliRZs.get());
 }
 
 /// Exponentiate identity operator

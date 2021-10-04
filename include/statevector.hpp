@@ -49,26 +49,21 @@ protected:
 
     complex* Alloc(bitCapInt elemCount)
     {
+        size_t allocSize = sizeof(complex) * (bitCapIntOcl)elemCount;
+        if (allocSize < QRACK_ALIGN_SIZE) {
+            allocSize = QRACK_ALIGN_SIZE;
+        }
 // elemCount is always a power of two, but might be smaller than QRACK_ALIGN_SIZE
 #if defined(__APPLE__)
         void* toRet;
-        posix_memalign(&toRet, QRACK_ALIGN_SIZE,
-            ((sizeof(complex) * (bitCapIntOcl)elemCount) < QRACK_ALIGN_SIZE)
-                ? QRACK_ALIGN_SIZE
-                : sizeof(complex) * (bitCapIntOcl)elemCount);
+        posix_memalign(&toRet, QRACK_ALIGN_SIZE, allocSize);
         return (complex*)toRet;
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-        return (complex*)_aligned_malloc(((sizeof(complex) * (bitCapIntOcl)elemCount) < QRACK_ALIGN_SIZE)
-                ? QRACK_ALIGN_SIZE
-                : sizeof(complex) * (bitCapIntOcl)elemCount,
-            QRACK_ALIGN_SIZE);
+        return (complex*)_aligned_malloc(allocSize, QRACK_ALIGN_SIZE);
 #elif defined(__ANDROID__)
-        return (complex*)malloc(sizeof(complex) * (bitCapIntOcl)elemCount);
+        return (complex*)malloc(allocSize);
 #else
-        return (complex*)aligned_alloc(QRACK_ALIGN_SIZE,
-            ((sizeof(complex) * (bitCapIntOcl)elemCount) < QRACK_ALIGN_SIZE)
-                ? QRACK_ALIGN_SIZE
-                : sizeof(complex) * (bitCapIntOcl)elemCount);
+        return (complex*)aligned_alloc(QRACK_ALIGN_SIZE, allocSize);
 #endif
     }
 

@@ -170,6 +170,7 @@ typedef double real1_f;
 #define ZERO_CMPLX complex(ZERO_R1, ZERO_R1)
 #define I_CMPLX complex(ZERO_R1, ONE_R1)
 #define CMPLX_DEFAULT_ARG complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG)
+#define TRYDECOMPOSE_EPSILON (8 * FP_NORM_EPSILON)
 
 namespace Qrack {
 typedef std::shared_ptr<complex> BitOp;
@@ -185,6 +186,9 @@ class StateVectorSparse;
 typedef std::shared_ptr<StateVector> StateVectorPtr;
 typedef std::shared_ptr<StateVectorArray> StateVectorArrayPtr;
 typedef std::shared_ptr<StateVectorSparse> StateVectorSparsePtr;
+
+class QEngine;
+typedef std::shared_ptr<QEngine> QEnginePtr;
 
 // This is a buffer struct that's capable of representing controlled single bit gates and arithmetic, when subclassed.
 class StateVector {

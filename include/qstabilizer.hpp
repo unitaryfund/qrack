@@ -33,7 +33,20 @@
 #include "common/dispatchqueue.hpp"
 #endif
 
+#include "qinterface.hpp"
+
 namespace Qrack {
+
+struct AmplitudeEntry {
+    bitCapIntOcl permutation;
+    complex amplitude;
+
+    AmplitudeEntry(const bitCapInt& p, const complex& a)
+        : permutation(p)
+        , amplitude(a)
+    {
+    }
+};
 
 class QStabilizer;
 typedef std::shared_ptr<QStabilizer> QStabilizerPtr;
@@ -81,18 +94,21 @@ public:
     QStabilizer(
         const bitLenInt& n, const bitCapInt& perm = 0, bool useHardwareRNG = true, qrack_rand_gen_ptr rgp = nullptr);
 
-    QStabilizer(QStabilizer& s)
+    QStabilizerPtr Clone()
     {
-        s.Finish();
+        QStabilizerPtr clone =
+            std::make_shared<QStabilizer>(qubitCount, 0, hardware_rand_generator != NULL, rand_generator);
 
-        qubitCount = s.qubitCount;
-        x = s.x;
-        z = s.z;
-        r = s.r;
-        randomSeed = s.randomSeed;
-        rand_generator = s.rand_generator;
-        rand_distribution = s.rand_distribution;
-        hardware_rand_generator = s.hardware_rand_generator;
+        clone->Finish();
+        Finish();
+
+        clone->SetRandomSeed(randomSeed);
+
+        clone->x = x;
+        clone->z = z;
+        clone->r = r;
+
+        return clone;
     }
 
     virtual ~QStabilizer() { Dump(); }
@@ -162,8 +178,14 @@ protected:
      */
     void seed(const bitLenInt& g);
 
+    /// Helper for setBasisState() and setBasisProb()
+    AmplitudeEntry getBasisAmp(const real1_f& nrm);
+
     /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
-    void setBasisState(const real1_f& nrm, complex* stateVec);
+    void setBasisState(const real1_f& nrm, complex* stateVec, QInterfacePtr eng);
+
+    /// Returns the probability from applying the Pauli operator in the "scratch space" of q to |0...0>
+    void setBasisProb(const real1_f& nrm, real1* outputProbs);
 
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
@@ -174,81 +196,38 @@ public:
     void H(const bitLenInt& target);
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
     void S(const bitLenInt& target);
-
-    // TODO: Custom implementations for decompositions:
-    virtual void Z(const bitLenInt& target)
-    {
-        S(target);
-        S(target);
-    }
-
-    virtual void IS(const bitLenInt& target)
-    {
-        Z(target);
-        S(target);
-    }
-
-    virtual void X(const bitLenInt& target)
-    {
-        H(target);
-        Z(target);
-        H(target);
-    }
-
-    virtual void SqrtX(const bitLenInt& target)
-    {
-        H(target);
-        S(target);
-        H(target);
-    }
-
-    virtual void ISqrtX(const bitLenInt& target)
-    {
-        H(target);
-        IS(target);
-        H(target);
-    }
-
-    virtual void Y(const bitLenInt& target)
-    {
-        IS(target);
-        X(target);
-        S(target);
-    }
-
-    virtual void SqrtY(const bitLenInt& target)
-    {
-        IS(target);
-        H(target);
-        S(target);
-        H(target);
-        S(target);
-    }
-
-    virtual void ISqrtY(const bitLenInt& target)
-    {
-        IS(target);
-        H(target);
-        IS(target);
-        H(target);
-        S(target);
-    }
-
-    virtual void CZ(const bitLenInt& control, const bitLenInt& target)
+    /// Apply an inverse phase gate (|0>->|0>, |1>->-i|1>, or "S adjoint") to qubit b
+    void IS(const bitLenInt& target);
+    /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
+    void Z(const bitLenInt& target);
+    /// Apply an X (or NOT) gate to target
+    void X(const bitLenInt& target);
+    /// Apply a Pauli Y gate to target
+    void Y(const bitLenInt& target);
+    /// Apply square root of X gate
+    void SqrtX(const bitLenInt& target);
+    /// Apply inverse square root of X gate
+    void ISqrtX(const bitLenInt& target);
+    /// Apply square root of Y gate
+    void SqrtY(const bitLenInt& target);
+    /// Apply inverse square root of Y gate
+    void ISqrtY(const bitLenInt& target);
+    /// Apply a CZ gate with control and target
+    void CZ(const bitLenInt& control, const bitLenInt& target)
     {
         H(target);
         CNOT(control, target);
         H(target);
     }
-
-    virtual void CY(const bitLenInt& control, const bitLenInt& target)
+    /// Apply a CY gate with control and target
+    void CY(const bitLenInt& control, const bitLenInt& target)
     {
         IS(target);
         CNOT(control, target);
         S(target);
     }
 
-    virtual void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)
+    void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
         if (qubit1 == qubit2) {
             return;
@@ -259,7 +238,7 @@ public:
         CNOT(qubit1, qubit2);
     }
 
-    virtual void ISwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
+    void ISwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
         if (qubit1 == qubit2) {
             return;
@@ -280,6 +259,12 @@ public:
 
     /// Convert the state to ket notation
     void GetQuantumState(complex* stateVec);
+
+    /// Convert the state to ket notation, directly into another QInterface
+    void GetQuantumState(QInterfacePtr eng);
+
+    /// Get all probabilities corresponding to ket notation
+    void GetProbs(real1* outputProbs);
 
     /**
      * Returns "true" if target qubit is a Z basis eigenstate

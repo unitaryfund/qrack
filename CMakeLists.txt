@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 3.1 DESCRIPTION "High Performance Quantum Bit Simulation")
+project (Qrack VERSION 6.2.0 DESCRIPTION "High Performance Quantum Bit Simulation")
 
 # Installation commands
 include (GNUInstallDirs)
@@ -30,6 +30,7 @@ add_library (qrack STATIC
     src/qpager.cpp
     src/qstabilizer.cpp
     src/qstabilizerhybrid.cpp
+    src/qmaskfusion.cpp
     )
 	
 add_library (qrack_pinvoke SHARED
@@ -205,6 +206,7 @@ install (FILES
     include/qengine.hpp
     include/qengine_cpu.hpp
     include/qengineshard.hpp
+    include/mpsshard.hpp
     include/qunit.hpp
     include/qunitmulti.hpp
     include/qengine_opencl.hpp
@@ -213,6 +215,7 @@ install (FILES
     include/qneuron.hpp
     include/qpager.hpp
     include/qhybrid.hpp
+    include/qmaskfusion.hpp
     include/qstabilizer.hpp
     include/qstabilizerhybrid.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack

@@ -23,10 +23,13 @@
 #include <ostream>
 #endif
 
-#include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
 #include "common/rdrandwrapper.hpp"
 #include "hamiltonian.hpp"
+
+#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
+#define IS_SAME(c1, c2) (IS_NORM_0((c1) - (c2)))
+#define IS_OPPOSITE(c1, c2) (IS_NORM_0((c1) + (c2)))
 
 namespace Qrack {
 
@@ -111,6 +114,11 @@ enum QInterfaceEngine {
     QINTERFACE_HYBRID,
 
     /**
+     * Create a QMaskFusion, coalescing Pauli gates.
+     */
+    QINTERFACE_MASK_FUSION,
+
+    /**
      * Create a QStabilizerHybrid, switching between a QStabilizer and a QHybrid as efficient.
      */
     QINTERFACE_STABILIZER_HYBRID,
@@ -135,28 +143,34 @@ enum QInterfaceEngine {
      */
     QINTERFACE_QUNIT_MULTI,
 
-    QINTERFACE_FIRST = QINTERFACE_CPU,
-
 #if ENABLE_OPENCL
     QINTERFACE_OPTIMAL_SCHROEDINGER = QINTERFACE_QPAGER,
 
-    QINTERFACE_OPTIMAL_SINGLE_PAGE = QINTERFACE_HYBRID,
+    QINTERFACE_OPTIMAL_SINGLE_PAGE = QINTERFACE_MASK_FUSION,
+
+    QINTERFACE_OPTIMAL_BASE = QINTERFACE_HYBRID,
 
     QINTERFACE_OPTIMAL_G0_CHILD = QINTERFACE_STABILIZER_HYBRID,
 
     QINTERFACE_OPTIMAL_G1_CHILD = QINTERFACE_QPAGER,
 
-    QINTERFACE_OPTIMAL_G2_CHILD = QINTERFACE_HYBRID,
+    QINTERFACE_OPTIMAL_G2_CHILD = QINTERFACE_MASK_FUSION,
+
+    QINTERFACE_OPTIMAL_G3_CHILD = QINTERFACE_HYBRID,
 #else
     QINTERFACE_OPTIMAL_SCHROEDINGER = QINTERFACE_CPU,
 
-    QINTERFACE_OPTIMAL_SINGLE_PAGE = QINTERFACE_CPU,
+    QINTERFACE_OPTIMAL_SINGLE_PAGE = QINTERFACE_MASK_FUSION,
+
+    QINTERFACE_OPTIMAL_BASE = QINTERFACE_CPU,
 
     QINTERFACE_OPTIMAL_G0_CHILD = QINTERFACE_STABILIZER_HYBRID,
 
-    QINTERFACE_OPTIMAL_G1_CHILD = QINTERFACE_CPU,
+    QINTERFACE_OPTIMAL_G1_CHILD = QINTERFACE_MASK_FUSION,
 
     QINTERFACE_OPTIMAL_G2_CHILD = QINTERFACE_CPU,
+
+    QINTERFACE_OPTIMAL_G3_CHILD = QINTERFACE_CPU,
 #endif
 
     QINTERFACE_OPTIMAL = QINTERFACE_QUNIT,
@@ -241,7 +255,8 @@ public:
         , randGlobalPhase(randomGlobalPhase)
         , amplitudeFloor(norm_thresh)
     {
-        SetQubitCount(n);
+        qubitCount = n;
+        maxQPower = pow2(qubitCount);
 
 #if !ENABLE_RDRAND
         useHardwareRNG = false;
@@ -477,7 +492,7 @@ public:
      * Apply an arbitrary single bit unitary transformation, with arbitrary (anti-)control bits.
      */
     virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx) = 0;
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     /**
      * Apply a single bit transformation that only effects phase.
@@ -694,6 +709,16 @@ public:
     virtual void U2(bitLenInt target, real1_f phi, real1_f lambda) { U(target, M_PI / 2, phi, lambda); }
 
     /**
+     * Inverse 2-parameter unitary gate
+     *
+     * Applies the inverse of U2
+     */
+    virtual void IU2(bitLenInt target, real1_f phi, real1_f lambda)
+    {
+        U(target, M_PI / 2, -lambda - PI_R1, -phi + PI_R1);
+    }
+
+    /**
      * Controlled general unitary gate
      *
      * Applies a controlled gate guaranteed to be unitary, from three angles, as commonly defined, spanning all possible
@@ -701,6 +726,16 @@ public:
      * values).
      */
     virtual void CU(
+        bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
+
+    /**
+     * (Anti-)Controlled general unitary gate
+     *
+     * Applies an (anti-)controlled gate guaranteed to be unitary, from three angles, as commonly defined, spanning all
+     * possible single bit unitary gates, (up to a global phase factor which has no effect on Hermitian operator
+     * expectation values).
+     */
+    virtual void AntiCU(
         bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
 
     /**
@@ -851,13 +886,29 @@ public:
     virtual void X(bitLenInt qubitIndex);
 
     /**
+     * Masked X gate
+     *
+     * Applies the Pauli "X" operator to all qubits in the mask. A qubit index "n" is in the mask if (((1 << n) & mask)
+     * > 0). The Pauli "X" operator is equivalent to a logical "NOT."
+     */
+    virtual void XMask(bitCapInt mask);
+
+    /**
      * Y gate
      *
      * Applies the Pauli "Y" operator to the qubit at "qubitIndex." The Pauli
-     * "Y" operator is similar to a logical "NOT" with permutation phase
+     * "Y" operator is similar to a logical "NOT" with permutation phase.
      * effects.
      */
     virtual void Y(bitLenInt qubitIndex);
+
+    /**
+     * Masked Y gate
+     *
+     * Applies the Pauli "Y" operator to all qubits in the mask. A qubit index "n" is in the mask if (((1 << n) & mask)
+     * > 0). The Pauli "Y" operator is similar to a logical "NOT" with permutation phase.
+     */
+    virtual void YMask(bitCapInt mask);
 
     /**
      * Z gate
@@ -866,6 +917,21 @@ public:
      * "Z" operator reverses the phase of |1> and leaves |0> unchanged.
      */
     virtual void Z(bitLenInt qubitIndex);
+
+    /**
+     * Masked Z gate
+     *
+     * Applies the Pauli "Z" operator to all qubits in the mask. A qubit index "n" is in the mask if (((1 << n) & mask)
+     * > 0). The Pauli "Z" operator reverses the phase of |1> and leaves |0> unchanged.
+     */
+    virtual void ZMask(bitCapInt mask);
+
+    /**
+     * Parity phase gate
+     *
+     * Applies e^(i*angle) phase factor to all combinations of bits with odd parity, based upon permutations of qubits.
+     */
+    virtual void PhaseParity(real1 radians, bitCapInt mask);
 
     /**
      * Square root of X gate
@@ -924,6 +990,14 @@ public:
     virtual void CH(bitLenInt control, bitLenInt target);
 
     /**
+     * (Anti-)controlled H gate
+     *
+     * If the "control" bit is set to 1, then the "H" Walsh-Hadamard transform operator is applied
+     * to "target."
+     */
+    virtual void AntiCH(bitLenInt control, bitLenInt target);
+
+    /**
      * Controlled S gate
      *
      * If the "control" bit is set to 1, then the S gate is applied
@@ -932,12 +1006,28 @@ public:
     virtual void CS(bitLenInt control, bitLenInt target);
 
     /**
+     * (Anti-)controlled S gate
+     *
+     * If the "control" bit is set to 1, then the S gate is applied
+     * to "target."
+     */
+    virtual void AntiCS(bitLenInt control, bitLenInt target);
+
+    /**
      * Controlled inverse S gate
      *
      * If the "control" bit is set to 1, then the inverse S gate is applied
      * to "target."
      */
     virtual void CIS(bitLenInt control, bitLenInt target);
+
+    /**
+     * (Anti-)controlled inverse S gate
+     *
+     * If the "control" bit is set to 1, then the inverse S gate is applied
+     * to "target."
+     */
+    virtual void AntiCIS(bitLenInt control, bitLenInt target);
 
     /**
      * Controlled T gate
@@ -964,12 +1054,28 @@ public:
     virtual void CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
 
     /**
+     * (Anti-)controlled "PhaseRootN" gate
+     *
+     * If the "control" bit is set to 0, then the "PhaseRootN" gate is applied
+     * to "target."
+     */
+    virtual void AntiCPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+
+    /**
      * Controlled inverse "PhaseRootN" gate
      *
      * If the "control" bit is set to 1, then the inverse "PhaseRootN" gate is applied
      * to "target."
      */
     virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
+
+    /**
+     * (Anti-)controlled inverse "PhaseRootN" gate
+     *
+     * If the "control" bit is set to 0, then the inverse "PhaseRootN" gate is applied
+     * to "target."
+     */
+    virtual void AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target);
 
     /** @} */
 
@@ -2164,6 +2270,26 @@ public:
      */
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
 
+    /**
+     * Direct measure of listed permutation probability
+     *
+     * The probabilities of all included permutations of bits, with bits valued from low to high as the order of the
+     * "bits" array parameter argument, are returned in the "probsArray" parameter.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual void ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, real1* probsArray);
+
+    /**
+     * Get permutation expectation value of bits
+     *
+     * The permutation expectation value of all included bits is returned, with bits valued from low to high as the
+     * order of the "bits" array parameter argument.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0);
+
     /** Overall probability of any odd permutation of the masked set of bits */
     virtual real1_f ProbParity(const bitCapInt& mask) = 0;
 
@@ -2201,14 +2327,14 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = REAL1_EPSILON)
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         return SumSqrDiff(toCompare) <= error_tol;
     }
 
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare) = 0;
 
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = REAL1_EPSILON);
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON);
 
     /**
      * Force a calculation of the norm of the state vector, in order to make it unit length before the next probability
@@ -2274,7 +2400,7 @@ public:
      */
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return false; }
     /**
-     *  Set Reactive separation
+     *  Set Reactive separation (on by default if available)
      */
     virtual void SetReactiveSeparate(const bool& isAggSep) {}
     /**
