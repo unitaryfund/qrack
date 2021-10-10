@@ -1739,15 +1739,9 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
 
         std::map<bitCapInt, int> nCombinedResults;
 
-        if (combinedResults.size() == 1U) {
-            pickIter = combinedResults.begin();
-            for (mapIter = topLevelResults.begin(); mapIter != topLevelResults.end(); mapIter++) {
-                nCombinedResults[mapIter->first | pickIter->first] = mapIter->second;
-            }
-            combinedResults = nCombinedResults;
-            continue;
+        if (combinedResults.size() < topLevelResults.size()) {
+            std::swap(topLevelResults, combinedResults);
         }
-
         if (topLevelResults.size() == 1U) {
             pickIter = topLevelResults.begin();
             for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
@@ -1758,9 +1752,6 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         }
 
         shotsLeft = shots;
-        if (topLevelResults.size() > combinedResults.size()) {
-            std::swap(topLevelResults, combinedResults);
-        }
         for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
             for (shot = 0; shot < mapIter->second; shot++) {
                 pick = (int)(shotsLeft * Rand());
