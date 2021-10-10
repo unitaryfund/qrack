@@ -780,6 +780,10 @@ real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& l
 std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
 {
+    if (!shots) {
+        return std::map<bitCapInt, int>();
+    }
+
     bitLenInt i;
     bitCapIntOcl j;
 
