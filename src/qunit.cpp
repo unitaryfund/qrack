@@ -1753,7 +1753,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
     bitCapInt zeroPerm;
     bitCapInt onePerm;
 
-    for (i = 0U; i < singleBits.size(); i++) {
+    for (i = 0U; i < (bitLenInt)singleBits.size(); i++) {
         index = singleBits[i];
 
         real1_f prob = clampProb(norm(shards[index].amp1));
