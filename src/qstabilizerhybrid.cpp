@@ -881,38 +881,21 @@ bitCapInt QStabilizerHybrid::MAll()
 std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
     const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
 {
-    bitLenInt qIndex;
-    if (stabilizer && (qPowerCount != qubitCount)) {
-        for (qIndex = 0; qIndex < qPowerCount; qIndex++) {
-            if (!stabilizer->CanDecomposeDispose(log2(qPowers[qIndex]), 1)) {
-                SwitchToEngine();
-                break;
-            }
-        }
-    }
-
     if (engine) {
         return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
 
+    bitLenInt qIndex;
     bitCapInt sample, raw;
     std::map<bitCapInt, int> results;
     QInterfacePtr clone = Clone();
 
     for (unsigned int shot = 0; shot < shots; shot++) {
         sample = 0U;
-        if (qPowerCount == qubitCount) {
-            raw = clone->MAll();
-            for (qIndex = 0; qIndex < qPowerCount; qIndex++) {
-                if (raw & qPowers[qIndex]) {
-                    sample |= pow2(qIndex);
-                }
-            }
-        } else {
-            for (qIndex = 0; qIndex < qPowerCount; qIndex++) {
-                if (clone->M(log2(qPowers[qIndex]))) {
-                    sample |= pow2(qIndex);
-                }
+        raw = clone->MAll();
+        for (qIndex = 0; qIndex < qPowerCount; qIndex++) {
+            if (raw & qPowers[qIndex]) {
+                sample |= pow2(qIndex);
             }
         }
         results[sample]++;
