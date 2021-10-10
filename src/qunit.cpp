@@ -1672,6 +1672,10 @@ bitCapInt QUnit::MAll()
 std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
     const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
 {
+    if (!shots) {
+        return std::map<bitCapInt, int>();
+    }
+
     ToPermBasisProb();
 
     bitLenInt i;
@@ -1704,10 +1708,10 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
 
     bitCapInt mask;
     QInterfacePtr unit;
-    std::map<bitCapInt, int>::iterator mapIter;
+    std::map<bitCapInt, int>::iterator mapIter, pickIter;
     std::map<QInterfacePtr, std::vector<bitCapInt>>::iterator subQPowersIt;
 
-    int count, shot;
+    int count, shot, shotsLeft, pick;
     std::map<bitCapInt, int> combinedResults;
     combinedResults[0U] = shots;
 
@@ -1715,9 +1719,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         unit = subQPowersIt->first;
         std::map<bitCapInt, int> unitResults =
             unit->MultiShotMeasureMask(&(subQPowersIt->second[0]), subQPowersIt->second.size(), shots);
-
-        count = 0;
-        std::vector<bitCapInt> shotsVec(shots);
+        std::map<bitCapInt, int> topLevelResults;
         for (mapIter = unitResults.begin(); mapIter != unitResults.end(); mapIter++) {
             mask = 0U;
             for (i = 0U; i < subQPowersIt->second.size(); i++) {
@@ -1725,16 +1727,34 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
                     mask |= subIQPowers[unit][i];
                 }
             }
-            std::fill(shotsVec.begin() + count, shotsVec.begin() + count + mapIter->second, mask);
-            count += mapIter->second;
+            topLevelResults[mask] = mapIter->second;
         }
-        std::random_shuffle(shotsVec.begin(), shotsVec.end());
+        // Release unitResults memory:
+        unitResults = std::map<bitCapInt, int>();
 
+        shotsLeft = shots;
         std::map<bitCapInt, int> nCombinedResults;
         for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
             for (shot = 0; shot < mapIter->second; shot++) {
-                nCombinedResults[mapIter->first | shotsVec.back()]++;
-                shotsVec.pop_back();
+                pick = (int)(shotsLeft * Rand());
+                if (shotsLeft <= pick) {
+                    pick = shotsLeft - 1;
+                }
+                shotsLeft--;
+
+                pickIter = topLevelResults.begin();
+                count = pickIter->second;
+                while (pick > count) {
+                    pickIter++;
+                    count += pickIter->second;
+                }
+
+                nCombinedResults[mapIter->first | pickIter->first]++;
+
+                pickIter->second--;
+                if (pickIter->second == 0) {
+                    topLevelResults.erase(pickIter);
+                }
             }
         }
         combinedResults = nCombinedResults;
