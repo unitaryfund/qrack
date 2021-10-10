@@ -1669,6 +1669,112 @@ bitCapInt QUnit::MAll()
     return toRet;
 }
 
+std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
+    const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
+{
+    ToPermBasisProb();
+
+    bitLenInt i;
+
+    bitLenInt index;
+    std::vector<bitLenInt> qIndices(qPowerCount);
+    std::map<bitLenInt, bitCapInt> iQPowers;
+    for (i = 0; i < qPowerCount; i++) {
+        index = log2(qPowers[i]);
+        qIndices[i] = index;
+        iQPowers[index] = pow2(i);
+    }
+
+    std::map<QInterfacePtr, std::vector<bitCapInt>> subQPowers;
+    std::map<QInterfacePtr, std::vector<bitCapInt>> subIQPowers;
+    std::vector<bitLenInt> singleBits;
+
+    for (i = 0; i < qPowerCount; i++) {
+        index = qIndices[i];
+        QEngineShard& shard = shards[index];
+
+        if (!shard.unit) {
+            singleBits.push_back(index);
+            continue;
+        }
+
+        subQPowers[shard.unit].push_back(pow2(shard.mapped));
+        subIQPowers[shard.unit].push_back(iQPowers[index]);
+    }
+
+    bitCapInt mask;
+    QInterfacePtr unit;
+    std::map<bitCapInt, int>::iterator mapIter;
+    std::map<QInterfacePtr, std::vector<bitCapInt>>::iterator subQPowersIt;
+
+    int count, shot;
+    std::map<bitCapInt, int> combinedResults;
+    combinedResults[0U] = shots;
+
+    for (subQPowersIt = subQPowers.begin(); subQPowersIt != subQPowers.end(); subQPowersIt++) {
+        unit = subQPowersIt->first;
+        std::map<bitCapInt, int> unitResults =
+            unit->MultiShotMeasureMask(&(subQPowersIt->second[0]), subQPowersIt->second.size(), shots);
+
+        count = 0;
+        std::vector<bitCapInt> shotsVec(shots);
+        for (mapIter = unitResults.begin(); mapIter != unitResults.end(); mapIter++) {
+            mask = 0U;
+            for (i = 0U; i < subQPowersIt->second.size(); i++) {
+                if ((mapIter->first >> i) & 1U) {
+                    mask |= subIQPowers[unit][i];
+                }
+            }
+            std::fill(shotsVec.begin() + count, shotsVec.begin() + count + mapIter->second, mask);
+            count += mapIter->second;
+        }
+        std::random_shuffle(shotsVec.begin(), shotsVec.end());
+
+        std::map<bitCapInt, int> nCombinedResults;
+        for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
+            for (shot = 0; shot < mapIter->second; shot++) {
+                nCombinedResults[mapIter->first | shotsVec.back()]++;
+                shotsVec.pop_back();
+            }
+        }
+        combinedResults = nCombinedResults;
+    }
+
+    bitCapInt zeroPerm;
+    bitCapInt onePerm;
+
+    for (i = 0U; i < (bitLenInt)singleBits.size(); i++) {
+        index = singleBits[i];
+
+        real1_f prob = clampProb(norm(shards[index].amp1));
+        if (prob == ZERO_R1) {
+            continue;
+        }
+
+        std::map<bitCapInt, int> nCombinedResults;
+        if (prob == ONE_R1) {
+            for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
+                nCombinedResults[mapIter->first | iQPowers[index]] = mapIter->second;
+            }
+        } else {
+            for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
+                zeroPerm = mapIter->first;
+                onePerm = mapIter->first | iQPowers[index];
+                for (shot = 0; shot < mapIter->second; shot++) {
+                    if (Rand() > prob) {
+                        nCombinedResults[zeroPerm]++;
+                    } else {
+                        nCombinedResults[onePerm]++;
+                    }
+                }
+            }
+        }
+        combinedResults = nCombinedResults;
+    }
+
+    return combinedResults;
+}
+
 /// Set register bits to given permutation
 void QUnit::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {

@@ -558,11 +558,7 @@ public:
     }
 
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
-        const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
-    {
-        SwitchToEngine();
-        return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
-    }
+        const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots);
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
