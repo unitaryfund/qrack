@@ -1742,7 +1742,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         if (combinedResults.size() == 1U) {
             pickIter = combinedResults.begin();
             for (mapIter = topLevelResults.begin(); mapIter != topLevelResults.end(); mapIter++) {
-                nCombinedResults[mapIter->first | pickIter->first]++;
+                nCombinedResults[mapIter->first | pickIter->first] = mapIter->second;
             }
             combinedResults = nCombinedResults;
             continue;
@@ -1751,7 +1751,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         if (topLevelResults.size() == 1U) {
             pickIter = topLevelResults.begin();
             for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
-                nCombinedResults[mapIter->first | pickIter->first]++;
+                nCombinedResults[mapIter->first | pickIter->first] = mapIter->second;
             }
             combinedResults = nCombinedResults;
             continue;
