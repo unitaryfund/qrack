@@ -1674,10 +1674,6 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
 {
     ToPermBasisProb();
 
-    if (shards[0].GetQubitCount() == qubitCount) {
-        return QInterface::MultiShotMeasureMask(qPowers, qPowerCount, shots);
-    }
-
     bitLenInt i;
 
     bitLenInt index;
@@ -1690,6 +1686,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
     }
 
     std::map<QInterfacePtr, std::vector<bitCapInt>> subQPowers;
+    std::map<QInterfacePtr, std::vector<bitCapInt>> subIQPowers;
     std::vector<bitLenInt> singleBits;
 
     for (i = 0; i < qPowerCount; i++) {
@@ -1702,6 +1699,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         }
 
         subQPowers[shard.unit].push_back(pow2(shard.mapped));
+        subIQPowers[shard.unit].push_back(iQPowers[index]);
     }
 
     bitCapInt mask;
@@ -1718,24 +1716,16 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         std::map<bitCapInt, int> unitResults =
             unit->MultiShotMeasureMask(&(subQPowersIt->second[0]), subQPowersIt->second.size(), shots);
 
-        std::map<bitCapInt, int> topLevelResults;
-        for (mapIter = unitResults.begin(); mapIter != unitResults.end(); mapIter++) {
-            mask = 0U;
-            for (i = 0U; i < qubitCount; i++) {
-                if (shards[i].unit != unit) {
-                    continue;
-                }
-                if ((mapIter->first >> shards[i].mapped) & 1U) {
-                    mask |= iQPowers[i];
-                }
-            }
-            topLevelResults[mask] = mapIter->second;
-        }
-
         count = 0;
         std::vector<bitCapInt> shotsVec(shots);
-        for (mapIter = topLevelResults.begin(); mapIter != topLevelResults.end(); mapIter++) {
-            std::fill(shotsVec.begin() + count, shotsVec.begin() + count + mapIter->second, mapIter->first);
+        for (mapIter = unitResults.begin(); mapIter != unitResults.end(); mapIter++) {
+            mask = 0U;
+            for (i = 0U; i < subQPowersIt->second.size(); i++) {
+                if ((mapIter->first >> i) & 1U) {
+                    mask |= subIQPowers[unit][i];
+                }
+            }
+            std::fill(shotsVec.begin() + count, shotsVec.begin() + count + mapIter->second, mask);
             count += mapIter->second;
         }
         std::random_shuffle(shotsVec.begin(), shotsVec.end());
