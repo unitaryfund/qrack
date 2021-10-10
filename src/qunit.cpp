@@ -1680,19 +1680,24 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
 
     bitLenInt i;
 
+    bitLenInt index;
     std::vector<bitLenInt> qIndices(qPowerCount);
+    std::map<bitLenInt, bitCapInt> iQPowers;
     for (i = 0; i < qPowerCount; i++) {
-        qIndices[i] = log2(qPowers[i]);
+        index = log2(qPowers[i]);
+        qIndices[i] = index;
+        iQPowers[index] = pow2(i);
     }
 
     std::map<QInterfacePtr, std::vector<bitCapInt>> subQPowers;
     std::vector<bitLenInt> singleBits;
 
     for (i = 0; i < qPowerCount; i++) {
-        QEngineShard& shard = shards[qIndices[i]];
+        index = qIndices[i];
+        QEngineShard& shard = shards[index];
 
         if (!shard.unit) {
-            singleBits.push_back(qIndices[i]);
+            singleBits.push_back(index);
             continue;
         }
 
@@ -1721,7 +1726,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
                     continue;
                 }
                 if ((mapIter->first >> shards[i].mapped) & 1U) {
-                    mask |= pow2(i);
+                    mask |= iQPowers[i];
                 }
             }
             topLevelResults[mask] = mapIter->second;
@@ -1745,7 +1750,6 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         combinedResults = nCombinedResults;
     }
 
-    bitLenInt index;
     bitCapInt zeroPerm;
     bitCapInt onePerm;
 
@@ -1760,12 +1764,12 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         std::map<bitCapInt, int> nCombinedResults;
         if (prob == ONE_R1) {
             for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
-                nCombinedResults[mapIter->first | pow2(index)] = mapIter->second;
+                nCombinedResults[mapIter->first | iQPowers[index]] = mapIter->second;
             }
         } else {
             for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
                 zeroPerm = mapIter->first;
-                onePerm = mapIter->first | pow2(index);
+                onePerm = mapIter->first | iQPowers[index];
                 for (shot = 0; shot < mapIter->second; shot++) {
                     if (Rand() > prob) {
                         nCombinedResults[zeroPerm]++;
