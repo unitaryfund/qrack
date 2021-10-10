@@ -1758,6 +1758,9 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         }
 
         shotsLeft = shots;
+        if (topLevelResults.size() > combinedResults.size()) {
+            std::swap(topLevelResults, combinedResults);
+        }
         for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
             for (shot = 0; shot < mapIter->second; shot++) {
                 pick = (int)(shotsLeft * Rand());
