@@ -1702,15 +1702,19 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
     bitCapInt mask;
     QInterfacePtr unit;
     std::map<bitCapInt, int>::iterator mapIter;
-    std::vector<std::map<bitCapInt, int>> subresults;
-    std::map<QInterfacePtr, std::vector<bitCapInt>>::iterator subunitIt;
+    std::map<QInterfacePtr, std::vector<bitCapInt>>::iterator subQPowersIt;
 
-    for (subunitIt = subQPowers.begin(); subunitIt != subQPowers.end(); subunitIt++) {
-        unit = subunitIt->first;
+    int count, shot;
+    std::map<bitCapInt, int> combinedResults;
+    combinedResults[0U] = shots;
+
+    for (subQPowersIt = subQPowers.begin(); subQPowersIt != subQPowers.end(); subQPowersIt++) {
+        unit = subQPowersIt->first;
         std::map<bitCapInt, int> unitResults =
-            unit->MultiShotMeasureMask(&(subunitIt->second[0]), subunitIt->second.size(), shots);
+            unit->MultiShotMeasureMask(&(subQPowersIt->second[0]), subQPowersIt->second.size(), shots);
+
         std::map<bitCapInt, int> topLevelResults;
-        for (mapIter == unitResults.begin(); mapIter != unitResults.end(); mapIter++) {
+        for (mapIter = unitResults.begin(); mapIter != unitResults.end(); mapIter++) {
             mask = 0U;
             for (i = 0U; i < qubitCount; i++) {
                 if (shards[i].unit != unit) {
@@ -1722,24 +1726,17 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
             }
             topLevelResults[mask] = mapIter->second;
         }
-        subresults.push_back(topLevelResults);
-    }
 
-    int count, shot;
-    std::map<bitCapInt, int> combinedResults;
-    combinedResults[0U] = shots;
-
-    for (i = 0U; i < subresults.size(); i++) {
         count = 0;
         std::vector<bitCapInt> shotsVec(shots);
-        for (mapIter == subresults[i].begin(); mapIter != subresults[i].end(); mapIter++) {
+        for (mapIter = topLevelResults.begin(); mapIter != topLevelResults.end(); mapIter++) {
             std::fill(shotsVec.begin() + count, shotsVec.begin() + count + mapIter->second, mapIter->first);
             count += mapIter->second;
         }
         std::random_shuffle(shotsVec.begin(), shotsVec.end());
 
         std::map<bitCapInt, int> nCombinedResults;
-        for (mapIter == combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
+        for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
             for (shot = 0; shot < mapIter->second; shot++) {
                 nCombinedResults[mapIter->first | shotsVec.back()]++;
                 shotsVec.pop_back();
@@ -1748,36 +1745,36 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         combinedResults = nCombinedResults;
     }
 
+    bitLenInt index;
     bitCapInt zeroPerm;
     bitCapInt onePerm;
-    bool bit;
 
     for (i = 0U; i < singleBits.size(); i++) {
-        real1_f prob = clampProb(norm(shards[singleBits[i]].amp1));
+        index = singleBits[i];
+
+        real1_f prob = clampProb(norm(shards[index].amp1));
         if (prob == ZERO_R1) {
             continue;
         }
 
         std::map<bitCapInt, int> nCombinedResults;
         if (prob == ONE_R1) {
-            for (mapIter == combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
-                nCombinedResults[mapIter->first | pow2(singleBits[i])] = mapIter->second;
+            for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
+                nCombinedResults[mapIter->first | pow2(index)] = mapIter->second;
             }
         } else {
-            for (mapIter == combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
+            for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
                 zeroPerm = mapIter->first;
-                onePerm = mapIter->first | pow2(singleBits[i]);
+                onePerm = mapIter->first | pow2(index);
                 for (shot = 0; shot < mapIter->second; shot++) {
-                    bit = (Rand() <= prob);
-                    if (bit) {
-                        nCombinedResults[onePerm]++;
-                    } else {
+                    if (Rand() > prob) {
                         nCombinedResults[zeroPerm]++;
+                    } else {
+                        nCombinedResults[onePerm]++;
                     }
                 }
             }
         }
-
         combinedResults = nCombinedResults;
     }
 
