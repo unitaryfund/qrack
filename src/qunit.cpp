@@ -1732,16 +1732,20 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         // Release unitResults memory:
         unitResults = std::map<bitCapInt, int>();
 
-        if (combinedResults[0] == (int)shots) {
-            combinedResults = topLevelResults;
-            continue;
-        }
-
         std::map<bitCapInt, int> nCombinedResults;
 
+        // Swap if needed, so topLevelResults.size() is smaller.
         if (combinedResults.size() < topLevelResults.size()) {
             std::swap(topLevelResults, combinedResults);
         }
+        // (Since swapped...)
+
+        // If either map is fully |0>, nothing changes (after the swap).
+        if (topLevelResults[0] == (int)shots) {
+            continue;
+        }
+
+        // If either map has exactly 1 key, (therefore with `shots` value,) pass it through without a "shuffle."
         if (topLevelResults.size() == 1U) {
             pickIter = topLevelResults.begin();
             for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
@@ -1751,6 +1755,8 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
             continue;
         }
 
+        // ... Otherwise, we've committed to simulating a random pairing selection from either side, (but
+        // `topLevelResults` has fewer or the same count of keys).
         shotsLeft = shots;
         for (mapIter = combinedResults.begin(); mapIter != combinedResults.end(); mapIter++) {
             for (shot = 0; shot < mapIter->second; shot++) {
