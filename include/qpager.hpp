@@ -227,7 +227,7 @@ public:
 
     virtual void XMask(bitCapInt mask);
     virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
-    virtual void PhaseParity(real1 radians, bitCapInt mask);
+    virtual void PhaseParity(real1_f radians, bitCapInt mask);
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 

@@ -524,7 +524,7 @@ void QInterface::ZMask(bitCapInt mask)
     }
 }
 
-void QInterface::PhaseParity(real1 radians, bitCapInt mask)
+void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
 {
     if (!mask) {
         return;

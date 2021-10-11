@@ -346,7 +346,7 @@ public:
 
         BitMask((bitCapIntOcl)mask, OCL_API_X_MASK);
     }
-    virtual void PhaseParity(real1 radians, bitCapInt mask)
+    virtual void PhaseParity(real1_f radians, bitCapInt mask)
     {
         if (!mask) {
             return;

@@ -227,7 +227,7 @@ public:
     }
 
     virtual void XMask(bitCapInt mask) { engine->XMask(mask); }
-    virtual void PhaseParity(real1 radians, bitCapInt mask) { engine->PhaseParity(radians, mask); }
+    virtual void PhaseParity(real1_f radians, bitCapInt mask) { engine->PhaseParity(radians, mask); }
 
     virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle) { engine->UniformParityRZ(mask, angle); }
     virtual void CUniformParityRZ(

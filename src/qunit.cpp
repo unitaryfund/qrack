@@ -1402,7 +1402,7 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
         return;
     }
 
-    complex phaseFac = complex(cos(radians / 2), sin(radians / 2));
+    complex phaseFac = complex((real1)cos(radians / 2), (real1)sin(radians / 2));
 
     if (!(mask & (mask - ONE_BCI))) {
         ApplySinglePhase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));

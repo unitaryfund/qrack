@@ -931,7 +931,7 @@ public:
      *
      * Applies e^(i*angle) phase factor to all combinations of bits with odd parity, based upon permutations of qubits.
      */
-    virtual void PhaseParity(real1 radians, bitCapInt mask);
+    virtual void PhaseParity(real1_f radians, bitCapInt mask);
 
     /**
      * Square root of X gate

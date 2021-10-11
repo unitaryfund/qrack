@@ -431,8 +431,9 @@ protected:
         shard.isPauliX = true;
         shard.isPauliY = false;
 
-        complex mtrx[4] = { (ONE_R1 / 2) * (ONE_CMPLX + I_CMPLX), (ONE_R1 / 2) * (ONE_CMPLX - I_CMPLX),
-            (ONE_R1 / 2) * (ONE_CMPLX - I_CMPLX), (ONE_R1 / 2) * (ONE_CMPLX + I_CMPLX) };
+        complex mtrx[4] = { ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX),
+            ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX), ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX),
+            ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX) };
 
         if (shard.unit) {
             shard.unit->ApplySingleBit(mtrx, shard.mapped);
@@ -512,8 +513,8 @@ protected:
         shard.isPauliX = false;
         shard.isPauliY = true;
 
-        complex mtrx[4] = { (ONE_R1 / 2) * (ONE_CMPLX - I_CMPLX), (ONE_R1 / 2) * (ONE_CMPLX + I_CMPLX),
-            (ONE_R1 / 2) * (ONE_CMPLX + I_CMPLX), (ONE_R1 / 2) * (ONE_CMPLX - I_CMPLX) };
+        complex mtrx[4] = { ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX), ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX),
+            ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX), ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX) };
 
         if (shard.unit) {
             shard.unit->ApplySingleBit(mtrx, shard.mapped);

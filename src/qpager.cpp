@@ -917,7 +917,7 @@ void QPager::XMask(bitCapInt mask)
     }
 }
 
-void QPager::PhaseParity(real1 radians, bitCapInt mask)
+void QPager::PhaseParity(real1_f radians, bitCapInt mask)
 {
     bitCapIntOcl i;
 
@@ -925,7 +925,7 @@ void QPager::PhaseParity(real1 radians, bitCapInt mask)
     bitCapInt pageMask = pageMaxQPower() - ONE_BCI;
     bitCapIntOcl intraMask = (bitCapIntOcl)(mask & pageMask);
     bitCapInt interMask = (mask ^ (bitCapInt)intraMask) >> qubitsPerPage();
-    complex phaseFac = std::polar(ONE_R1, radians / 2);
+    complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
     complex iPhaseFac = ONE_CMPLX / phaseFac;
     bitCapInt v;
     for (i = 0; i < qPages.size(); i++) {
