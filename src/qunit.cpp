@@ -1722,7 +1722,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         std::map<bitCapInt, int> topLevelResults;
         for (mapIter = unitResults.begin(); mapIter != unitResults.end(); mapIter++) {
             mask = 0U;
-            for (i = 0U; i < subQPowersIt->second.size(); i++) {
+            for (i = 0U; i < (bitLenInt)subQPowersIt->second.size(); i++) {
                 if ((mapIter->first >> i) & 1U) {
                     mask |= subIQPowers[unit][i];
                 }
