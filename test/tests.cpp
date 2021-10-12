@@ -5610,7 +5610,9 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
             }
         }
 
-        bitCapInt result = testCase->MAll();
+        bitCapInt qPowers[6] = { 1<<0, 1<<1, 1<<2, 1<<3, 1<<4, 1<<5 };
+        std::map<bitCapInt, int> results = testCase->MultiShotMeasureMask(qPowers, 6, 1);
+        bitCapInt result = results.begin()->first;
 
         if (result != randPerm) {
             for (d = 0; d < Depth; d++) {
