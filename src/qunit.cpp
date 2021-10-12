@@ -1741,7 +1741,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         // (Since swapped...)
 
         // If either map is fully |0>, nothing changes (after the swap).
-        if (topLevelResults[0] == (int)shots) {
+        if ((topLevelResults.begin()->first == 0) && (topLevelResults[0] == (int)shots)) {
             continue;
         }
 
