@@ -921,18 +921,18 @@ void QPager::PhaseParity(real1_f radians, bitCapInt mask)
 {
     bitCapIntOcl i;
 
-    bitCapInt parityStartSize = 4U * sizeof(bitCapIntOcl);
+    bitCapIntOcl parityStartSize = 4U * sizeof(bitCapIntOcl);
     bitCapInt pageMask = pageMaxQPower() - ONE_BCI;
     bitCapIntOcl intraMask = (bitCapIntOcl)(mask & pageMask);
-    bitCapInt interMask = (mask ^ (bitCapInt)intraMask) >> qubitsPerPage();
+    bitCapIntOcl interMask = (((bitCapIntOcl)mask) ^ intraMask) >> qubitsPerPage();
     complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
     complex iPhaseFac = ONE_CMPLX / phaseFac;
-    bitCapInt v;
+    bitCapIntOcl v;
     for (i = 0; i < qPages.size(); i++) {
         QEnginePtr engine = qPages[i];
 
         v = interMask & i;
-        for (bitCapInt paritySize = parityStartSize; paritySize > 0U; paritySize >>= 1U) {
+        for (bitCapIntOcl paritySize = parityStartSize; paritySize > 0U; paritySize >>= 1U) {
             v ^= v >> paritySize;
         }
         v &= 1U;

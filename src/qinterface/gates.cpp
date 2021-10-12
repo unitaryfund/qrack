@@ -530,7 +530,7 @@ void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
         return;
     }
 
-    std::vector<bitCapInt> qubits;
+    std::vector<bitLenInt> qubits;
     bitCapInt v = mask;
     while (mask) {
         v = v & (v - ONE_BCI);

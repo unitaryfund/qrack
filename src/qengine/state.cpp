@@ -595,7 +595,7 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
     }
 
     Dispatch([this, mask, radians] {
-        bitCapInt parityStartSize = 4U * sizeof(bitCapIntOcl);
+        bitCapIntOcl parityStartSize = 4U * sizeof(bitCapIntOcl);
         complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
         complex iPhaseFac = ONE_CMPLX / phaseFac;
         bitCapInt otherMask = (maxQPower - ONE_BCI) ^ mask;
@@ -603,8 +603,8 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
             bitCapInt otherRes = lcv & otherMask;
             bitCapInt setInt = lcv & mask;
 
-            bitCapInt v = setInt;
-            for (bitCapInt paritySize = parityStartSize; paritySize > 0U; paritySize >>= 1U) {
+            bitCapIntOcl v = (bitCapIntOcl)setInt;
+            for (bitCapIntOcl paritySize = parityStartSize; paritySize > 0U; paritySize >>= 1U) {
                 v ^= v >> paritySize;
             }
             v &= 1U;
