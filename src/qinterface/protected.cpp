@@ -47,6 +47,7 @@ void cl_free(void* toFree)
 #endif
 }
 
+// See https://stackoverflow.com/questions/1505675/power-of-an-integer-in-c
 bitCapInt intPow(bitCapInt base, bitCapInt power)
 {
     if (power == 0U) {
@@ -55,7 +56,13 @@ bitCapInt intPow(bitCapInt base, bitCapInt power)
     if (power == ONE_BCI) {
         return base;
     }
-    return base * intPow(base, power - 1);
+
+    bitCapInt tmp = intPow(base, power / 2);
+    if (power & 1U) {
+        return base * tmp * tmp;
+    }
+
+    return tmp * tmp;
 }
 
 bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
@@ -66,7 +73,13 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
     if (power == ONE_BCI) {
         return base;
     }
-    return base * intPowOcl(base, power - 1);
+
+    bitCapIntOcl tmp = intPowOcl(base, power / 2);
+    if (power & 1U) {
+        return base * tmp * tmp;
+    }
+
+    return tmp * tmp;
 }
 
 void mul2x2(complex* left, complex* right, complex* out)
