@@ -1961,7 +1961,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         real1_f gateRand;
         bitLenInt gate;
         int b1, b2;
-        bitLenInt i, d;
+        bitLenInt i;
+        int d;
         int row, col;
         int tempRow, tempCol;
 

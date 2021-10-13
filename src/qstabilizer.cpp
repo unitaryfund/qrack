@@ -259,7 +259,7 @@ void QStabilizer::seed(const bitLenInt& g)
     std::fill(x[elemCount].begin(), x[elemCount].end(), 0);
     std::fill(z[elemCount].begin(), z[elemCount].end(), 0);
 
-    for (int i = elemCount - 1; i >= qubitCount + g; i--) {
+    for (int i = elemCount - 1; i >= (int)(qubitCount + g); i--) {
         f = r[i];
         for (j = qubitCount - 1; j >= 0; j--) {
             if (z[i][j]) {
