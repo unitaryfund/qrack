@@ -2766,39 +2766,10 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
 {
-    QEngineShard& tShard = shards[target];
-    QEngineShard& cShard = shards[control];
-
-    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
-        if (IS_AMP_0(cShard.amp1)) {
-            Flush0Eigenstate(control);
-            Z(target);
-            return;
-        }
-        if (IS_AMP_0(cShard.amp0)) {
-            Flush1Eigenstate(control);
-            return;
-        }
-    }
-
-    if (!freezeBasis2Qb) {
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL);
-        RevertBasis2Qb(target, ONLY_INVERT, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
-
-        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
-            tShard.AddAntiPhaseAngles(&cShard, -ONE_CMPLX, ONE_CMPLX);
-            OptimizePairBuffers(control, target, true);
-
-            return;
-        }
-    }
-
-    bitLenInt controls[1] = { control };
-    bitLenInt controlLen = 1;
-
-    CTRLED_PHASE_INVERT_WRAP(
-        AntiCZ(CTRL_1_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), Z(target), true, true, ONE_CMPLX, ONE_CMPLX);
+    // TODO: Implement optimized version.
+    X(control);
+    CZ(control, target);
+    X(control);
 }
 
 void QUnit::CH(bitLenInt control, bitLenInt target)
