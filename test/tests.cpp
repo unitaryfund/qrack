@@ -5769,7 +5769,7 @@ TEST_CASE("test_mirror_circuit_stabilizer", "[mirror]")
 
                 multiGate.gate = gate;
 
-                if (multiGate.gate > 2) {
+                if (multiGate.gate >= GateCount2Qb) {
                     multiGate.b3 = pickRandomBit(testCase, &unusedBits);
                 }
 
