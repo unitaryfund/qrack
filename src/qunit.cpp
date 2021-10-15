@@ -2766,10 +2766,8 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
 {
-    // TODO: Implement optimized version.
-    X(control);
-    CZ(control, target);
-    X(control);
+    bitLenInt controls[1] = { control };
+    ApplyAntiControlledSinglePhase(controls, 1U, target, ONE_CMPLX, -ONE_CMPLX);
 }
 
 void QUnit::CH(bitLenInt control, bitLenInt target)
