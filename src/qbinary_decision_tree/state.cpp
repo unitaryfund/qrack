@@ -201,12 +201,14 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTree toCopy, bitLenInt sta
             QBinaryDecisionTreePtr toCopyClone = clone->Clone();
             leaf->branches[0] = toCopyClone->root->branches[0];
             leaf->branches[1] = toCopyClone->root->branches[1];
+            leaf->scale *= toCopyClone->root->scale;
         });
     } else if (start == qubitCount) {
         SetTraversal([toCopy](bitCapInt i, QBinaryDecisionTreeNode leaf) {
             QBinaryDecisionTreePtr toCopyClone = toCopy->Clone();
             leaf->branches[0] = toCopyClone->root->branches[0];
             leaf->branches[1] = toCopyClone->root->branches[1];
+            leaf->scale *= toCopyClone->root->scale;
         });
     } else {
         throw std::runtime_error("Mid-range QBinaryDecisionTree::Compose() not yet implemented.");
