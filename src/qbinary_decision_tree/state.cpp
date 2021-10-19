@@ -19,8 +19,6 @@
 
 #include "qbinary_decision_tree.hpp"
 
-#define IS_NORM_0(c) (norm(c) <= amplitudeFloor)
-
 namespace Qrack {
 
 QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
@@ -55,6 +53,27 @@ void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac =
     }
 }
 
+QInterfacePtr QBinaryDecisionTree::Clone()
+{
+    QBinaryDecisionTree copyPtr = std::make_shared<QBinaryDecisionTree>(qubitCount, 0, rand_generator, ONE_CMPLX,
+        doNormalize, randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
+
+    bitLenInt j;
+    QBinaryDecisionTreeNodePtr leaf;
+    QBinaryDecisionTreeNodePtr copyLeaf;
+    for (bitCapInt i = 0; i < maxQPower; i++) {
+        leaf = root;
+        copyLeaf = copyPtr->root;
+        for (j = 0; j < qubitCount; j++) {
+            leaf = leaf->branches[(i >> j) & 1U];
+            if (!leaf) {
+                break;
+            }
+            copyLeaf = std::make_shared<QBinaryDecisionTreeNode>(leaf.scale);
+        }
+    }
+}
+
 void QBinaryDecisionTree::GetTraversal(Fn getLambda)
 {
     complex scale;
@@ -77,7 +96,6 @@ void QBinaryDecisionTree::GetTraversal(Fn getLambda)
 }
 void QBinaryDecisionTree::SetTraversal(Fn setLambda)
 {
-    root = std::make_shared<QBinaryDecisionTreeNode>();
     root->Branch(qubitCount);
 
     bitCapInt maxQPower = pow2(qubitCount);
@@ -108,6 +126,7 @@ StateVectorPtr QBinaryDecisionTree::ToStateVector(bool isSparse)
 void QBinaryDecisionTree::FromStateVector(StateVectorPtr stateVec)
 {
     qubitMap = QBdtQubitMap(qubitCount);
+    root = std::make_shared<QBinaryDecisionTreeNode>();
     SetTraversal([stateVec](bitCapInt i, QBinaryDecisionTreeNode leaf) { leaf->scale = stateVec->read(i); });
 }
 void QBinaryDecisionTree::GetQuantumState(complex* state)
@@ -117,6 +136,7 @@ void QBinaryDecisionTree::GetQuantumState(complex* state)
 void QBinaryDecisionTree::SetQuantumState(const complex* state)
 {
     qubitMap = QBdtQubitMap(qubitCount);
+    root = std::make_shared<QBinaryDecisionTreeNode>();
     SetTraversal([state](bitCapInt i, QBinaryDecisionTreeNode leaf) { leaf->scale = state[i]; });
 }
 void QBinaryDecisionTree::GetProbs(real1* outputProbs)
@@ -168,5 +188,14 @@ void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
     if (IS_NORM_0(child.scale - leaf->branches[bit ^ 1U].scale)) {
         root->Prune(perm);
     }
+}
+
+bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTree toCopy, bitLenInt start)
+{
+    SetTraversal([toCopy](bitCapInt i, QBinaryDecisionTreeNode leaf) {
+        QBinaryDecisionTreePtr clone = toCopy->Clone();
+        leaf->branches[0] = clone->root->branches[0];
+        leaf->branches[1] = clone->root->branches[1];
+    });
 }
 } // namespace Qrack

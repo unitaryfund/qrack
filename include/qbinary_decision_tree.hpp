@@ -22,8 +22,6 @@
 #include "qinterface.hpp"
 #include "statevector.hpp"
 
-#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
-
 namespace Qrack {
 
 struct QBinaryDecisionTreeNode;
@@ -50,8 +48,12 @@ struct QBinaryDecisionTreeNode {
 
     void Branch(bitLenInt depth = 1U, complex val = ONE_CMPLX)
     {
-        branches[0] = std::make_shared<QBinaryDecisionTreeNode>(val);
-        branches[1] = std::make_shared<QBinaryDecisionTreeNode>(val);
+        if (!branches[0]) {
+            branches[0] = std::make_shared<QBinaryDecisionTreeNode>(val);
+        }
+        if (!branches[1]) {
+            branches[1] = std::make_shared<QBinaryDecisionTreeNode>(val);
+        }
 
         if (depth) {
             branches[0]->Branch(depth - 1U, val);
@@ -113,11 +115,13 @@ struct QBinaryDecisionTreeNode {
 
 class QBdtQubitMap {
 protected:
+    bool didSwap;
     std::vector<bitLenInt> swapMap;
 
 public:
     QBdtQubitMap(bitLenInt qubitCount)
-        : swapMap(qubitCount)
+        : didSwap(false)
+        , swapMap(qubitCount)
     {
         for (bitLenInt i = 0; i < qubitCount; i++) {
             swapMap[i] = i;
@@ -136,6 +140,10 @@ public:
 
     void insert(bitLenInt start, QBdtQubitMap& toInsert)
     {
+        if (start != swapMap.size()) {
+            didSwap = true;
+        }
+
         bitLenInt oSize = size();
 
         swapMap.insert(swapMap.begin() + start, toInsert.swapMap.begin(), toInsert.swapMap.end());
@@ -161,10 +169,18 @@ public:
         swapMap.erase(swapMap.begin() + begin, swapMap.begin() + end);
     }
 
-    void swap(bitLenInt qubit1, bitLenInt qubit2) { std::swap(swapMap[qubit1], swapMap[qubit2]); }
+    void swap(bitLenInt qubit1, bitLenInt qubit2)
+    {
+        didSwap = true;
+        std::swap(swapMap[qubit1], swapMap[qubit2]);
+    }
 
     bitCapInt mapPermutation(bitCapInt perm)
     {
+        if (!didSwap) {
+            return perm;
+        }
+
         bitCapInt toRet = 0;
         for (bitLenInt i = 0; i < size(); i++) {
             if ((perm >> i) & 1U) {
@@ -205,6 +221,8 @@ public:
 
     void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG);
 
+    QInterfacePtr Clone();
+
     void GetQuantumState(complex* state);
     void SetQuantumState(const complex* state);
     void GetProbs(real1* outputProbs);
@@ -212,6 +230,10 @@ public:
     complex GetAmplitude(bitCapInt perm);
     void SetAmplitude(bitCapInt perm, complex amp);
 
-    bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start);
+    bitLenInt Compose(QBinaryDecisionTree toCopy, bitLenInt start);
+    bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
+    {
+        return Compose(std::dynamic_pointer_cast<QBinaryDecisionTree>(toCopy), start);
+    }
 };
 } // namespace Qrack
