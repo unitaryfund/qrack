@@ -231,7 +231,7 @@ void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr 
         }
     }
 
-    // ANY child tree from this point is assumed to be EXACTLY EQUIVALENT for the length to Decompose().
+    // ANY child tree at this depth is assumed to be EXACTLY EQUIVALENT for the length to Decompose().
     // WARNING: "Compose()" doesn't seem to need a normalization pass, but does this?
 
     if (child && dest) {
