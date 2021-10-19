@@ -117,5 +117,9 @@ public:
 
     void GetQuantumState(complex* state);
     void SetQuantumState(const complex* state);
+    void GetProbs(real1* outputProbs);
+
+    complex GetAmplitude(bitCapInt perm);
+    void SetAmplitude(bitCapInt perm, complex amp);
 };
 } // namespace Qrack
