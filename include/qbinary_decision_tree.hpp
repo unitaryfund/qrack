@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "qinterface.hpp"
 #include "statevector.hpp"
 
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
@@ -35,13 +36,13 @@ struct QBinaryDecisionTreeNode {
     complex scale;
     QBinaryDecisionTreeNodePtr branches[2];
 
-    QBinaryDecisionTree()
+    QBinaryDecisionTreeNode()
         : scale(ONE_CMPLX)
         , branches({ NULL, NULL })
     {
     }
 
-    QBinaryDecisionTree(complex val)
+    QBinaryDecisionTreeNode(complex val)
         : scale(val)
         , branches({ NULL, NULL })
     {
@@ -53,41 +54,45 @@ struct QBinaryDecisionTreeNode {
         branches[1] = std::make_shared<QBinaryDecisionTreeNode>(val);
 
         if (depth) {
-            branches[0].Branch(depth - 1U, val);
-            branches[1].Branch(depth - 1U, val);
+            branches[0]->Branch(depth - 1U, val);
+            branches[1]->Branch(depth - 1U, val);
         }
     }
 
     void Prune()
     {
         if (branches[0]) {
-            branches[0].Prune();
+            branches[0]->Prune();
         }
         if (branches[1]) {
-            branches[1].Prune();
+            branches[1]->Prune();
         }
 
         if (!branches[0] || !branches[1]) {
             return;
         }
 
-        if (branches[0].branches[0] || branches[0].branches[1] || branches[1].branches[0] || branches[1].branches[1]) {
+        if (branches[0]->branches[0] || branches[0]->branches[1] || branches[1]->branches[0] ||
+            branches[1]->branches[1]) {
             return;
         }
 
         // We have 2 branches (with no children).
-        if (IS_NORM_0(branches[0].scale - branches[1].scale)) {
-            scale *= branches[0].scale;
+        if (IS_NORM_0(branches[0]->scale - branches[1]->scale)) {
+            scale *= branches[0]->scale;
             branches[0] = NULL;
             branches[1] = NULL;
         }
     }
 };
 
-class QBinaryDecisionTree {
+class QBinaryDecisionTree : virtual public QInterface {
 protected:
-    QBinaryDecisionTreeNodePtr root;
     bitLenInt qubitCount;
+    QBinaryDecisionTreeNodePtr root;
+
+    StateVectorPtr ToStateVector(bool isSparse = false);
+    void FromStateVector(StateVectorPtr stateVec);
 
 public:
     QBinaryDecisionTree()
@@ -96,64 +101,9 @@ public:
     {
     }
 
-    QBinaryDecisionTree(bitLenInt qbitCount, bitCapInt initState)
-        : qubitCount(qbitCount)
-        , maxQPower(pow2(qbitCount))
-        , root(NULL)
-    {
-        SetPermutation(initState);
-    }
+    QBinaryDecisionTree(bitLenInt qbitCount, bitCapInt initState);
+    QBinaryDecisionTree(bitLenInt qbCount, StateVectorPtr stateVec);
 
-    QBinaryDecisionTree(bitLenInt qubitCount, StateVectorPtr stateVec)
-    {
-        root = std::make_shared<QBinaryDecisionTreeNode>() root.Branch(qubitCount);
-
-        bitCapaInt maxQPower = pow2(qubitCount);
-        bitLenInt j;
-
-        QBinaryDecisionTreeNodePtr leaf;
-        for (bitCapInt i = 0; i < maxQPower; i++) {
-            leaf = root;
-            for (j = 0; j < qubitCount; j++) {
-                leaf = leaf.branches[(i >> j) & 1U];
-            }
-            leaf.scale = stateVec.read(i);
-        }
-
-        root.Prune();
-    }
-
-    void SetPermutation(bitCapInt initState)
-    {
-        root = std::make_shared<QBinaryDecisionTreeNode>(ONE_CMPLX) QBinaryDecisionTreeNodePtr leaf = root;
-        for (bitLenInt qubit = 0; qubit < qubitCount; qubit++) {
-            leaf.Branch(1U, ZERO_CMPLX);
-            leaf = leaf.branches[(initState >> qubit) & 1U];
-            leaf.scale = ONE_CMPLX;
-        }
-    }
-
-    StateVectorPtr ToStateVectorArray(bool isSparse = false)
-    {
-        // TODO: We can make sparse state vector array initialization more efficient.
-        StateVectorPtr toRet = isSparse ? std::make_shared<StateVectorSparse>() : std::make_shared<StateVectorArray>();
-        bitCapaInt maxQPower = pow2(qubitCount);
-        toRet.Alloc(maxQPower);
-        complex scale;
-        bitLenInt j;
-        QBinaryDecisionTreeNodePtr leaf;
-        for (bitCapInt i = 0; i < maxQPower; i++) {
-            leaf = root;
-            scale = leaf.scale;
-            for (j = 0; j < qubitCount; j++) {
-                leaf = leaf.branches[(i >> j) & 1U];
-                if (!leaf) {
-                    break;
-                }
-                scale *= leaf.scale;
-            }
-            toRet.write(i, scale);
-        }
-    }
+    void SetPermutation(bitCapInt initState);
 };
 } // namespace Qrack

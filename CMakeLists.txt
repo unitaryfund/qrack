@@ -26,6 +26,7 @@ add_library (qrack STATIC
     src/qengine/arithmetic.cpp
     src/qengine/state.cpp
     src/qengine/utility.cpp
+    src/qbinary_decision_tree/state.cpp
     src/qunit.cpp
     src/qpager.cpp
     src/qstabilizer.cpp
@@ -203,6 +204,7 @@ install (FILES
     include/qmaskfusion.hpp
     include/qstabilizer.hpp
     include/qstabilizerhybrid.hpp
+    include/qbinary_decision_tree.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 
