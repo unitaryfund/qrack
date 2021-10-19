@@ -149,7 +149,7 @@ void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
 
     child.scale = amp / scale;
 
-    if (child.scale = leaf->branches[bit ^ 1U].scale) {
+    if (IS_NORM_0(child.scale - leaf->branches[bit ^ 1U].scale)) {
         root->Prune();
     }
 }
