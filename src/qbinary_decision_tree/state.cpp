@@ -214,4 +214,66 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTree toCopy, bitLenInt sta
 
     SetQubitCount(qubitCount + toCopy->qubitCount);
 }
+void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest)
+{
+    bitLenInt i;
+    QBinaryDecisionTreeNodePtr leaf;
+    QBinaryDecisionTreeNodePtr child = root;
+    for (i = 0; i < start; i++) {
+        leaf = child;
+        child = leaf.branches[0];
+        if (!child) {
+            // All amplitudes must be the same.
+            if (dest) {
+                dest->root = randGlobalPhase ? std::polar(ONE_R1, 2 * PI_R1 * Rand()) : ONE_CMPLX;
+            }
+            break;
+        }
+    }
+
+    // ANY child tree from this point is assumed to be EXACTLY EQUIVALENT for the length to Decompose().
+    // WARNING: "Compose()" doesn't seem to need a normalization pass, but does this?
+
+    if (child && dest) {
+        dest->root = child;
+        dest->SetQubitCount(qubitCount - start);
+        QBinaryDecisionTreePtr clone = dest->Clone();
+        dest->root = clone->root;
+
+        if ((start + length) < qubitCount) {
+            dest->Dispose(start + length, remainder);
+        }
+    }
+
+    QBinaryDecisionTreeNodePtr remainderLeaf;
+    for (bitCapInt i = 0; i < maxQPower; i++) {
+        leaf = root;
+        scale = leaf->scale;
+        for (j = 0; j < start; j++) {
+            leaf = leaf->branches[(i >> j) & 1U];
+            if (!leaf) {
+                break;
+            }
+        }
+        if (!leaf) {
+            continue;
+        }
+        remainderLeaf = leaf for (j = 0; j < length; j++)
+        {
+            remainderLeaf = remainderLeaf->branches[(i >> j) & 1U];
+            if (!remainderLeaf) {
+                break;
+            }
+        }
+        if (!remainderLeaf) {
+            continue;
+        }
+        leaf->branches[0] = remainderLeaf->branches[0];
+        leaf->branches[1] = remainderLeaf->branches[1];
+        leaf->scale = remainderLeaf->scale;
+    }
+
+    SetQubitCount(qubitCount - length);
+}
+
 } // namespace Qrack

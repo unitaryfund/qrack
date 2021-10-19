@@ -202,6 +202,8 @@ protected:
     StateVectorPtr ToStateVector(bool isSparse = false);
     void FromStateVector(StateVectorPtr stateVec);
 
+    void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest);
+
 public:
     QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -235,5 +237,13 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QBinaryDecisionTree>(toCopy), start);
     }
+    void Decompose(bitLenInt start, QInterfacePtr dest)
+    {
+        DecomposeDispose(
+            start, destination->GetQubitCount(), std::dynamic_pointer_cast<QBinaryDecisionTree>(destination));
+    }
+    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
+
+    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) { DecomposeDispose(start, length, NULL); }
 };
 } // namespace Qrack
