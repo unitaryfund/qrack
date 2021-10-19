@@ -192,11 +192,23 @@ void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
 
 bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTree toCopy, bitLenInt start)
 {
-    SetTraversal([toCopy](bitCapInt i, QBinaryDecisionTreeNode leaf) {
+    if (start == 0) {
         QBinaryDecisionTreePtr clone = toCopy->Clone();
-        leaf->branches[0] = clone->root->branches[0];
-        leaf->branches[1] = clone->root->branches[1];
-    });
+        std::swap(root, clone->root);
+        SetTraversal([clone](bitCapInt i, QBinaryDecisionTreeNode leaf) {
+            QBinaryDecisionTreePtr toCopyClone = clone->Clone();
+            leaf->branches[0] = toCopyClone->root->branches[0];
+            leaf->branches[1] = toCopyClone->root->branches[1];
+        });
+    } else if (start == qubitCount) {
+        SetTraversal([toCopy](bitCapInt i, QBinaryDecisionTreeNode leaf) {
+            QBinaryDecisionTreePtr toCopyClone = toCopy->Clone();
+            leaf->branches[0] = toCopyClone->root->branches[0];
+            leaf->branches[1] = toCopyClone->root->branches[1];
+        });
+    } else {
+        throw std::runtime_error("Mid-range QBinaryDecisionTree::Compose() not yet implemented.");
+    }
 
     SetQubitCount(qubitCount + toCopy->qubitCount);
 }
