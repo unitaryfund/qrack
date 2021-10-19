@@ -197,5 +197,7 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTree toCopy, bitLenInt sta
         leaf->branches[0] = clone->root->branches[0];
         leaf->branches[1] = clone->root->branches[1];
     });
+
+    SetQubitCount(qubitCount + toCopy->qubitCount);
 }
 } // namespace Qrack
