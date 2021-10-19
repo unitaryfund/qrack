@@ -194,10 +194,9 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTree toCopy, bitLenInt sta
 {
     if (start == 0) {
         QBinaryDecisionTreePtr clone = toCopy->Clone();
-        bitLenInt toCopyQubitCount = toCopy->qubitCount;
         std::swap(root, clone->root);
         clone->SetQubitCount(qubitCount);
-        SetQubitCount(toCopyQubitCount);
+        SetQubitCount(toCopy->qubitCount);
         SetTraversal([clone](bitCapInt i, QBinaryDecisionTreeNode leaf) {
             QBinaryDecisionTreePtr toCopyClone = clone->Clone();
             leaf->branches[0] = toCopyClone->root->branches[0];
