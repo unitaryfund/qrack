@@ -23,18 +23,14 @@
 
 namespace Qrack {
 
-QBinaryDecisionTree::QBinaryDecisionTree(bitLenInt qbitCount, bitCapInt initState)
-    : qubitCount(qbitCount)
+QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
+    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceId,
+    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> ignored,
+    bitLenInt qubitThreshold, real1_f sep_thresh)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1)
     , root(NULL)
 {
     SetPermutation(initState);
-}
-
-QBinaryDecisionTree::QBinaryDecisionTree(bitLenInt qbCount, StateVectorPtr stateVec)
-    : qubitCount(qbCount)
-    , root(NULL)
-{
-    FromStateVector(stateVec);
 }
 
 void QBinaryDecisionTree::SetPermutation(bitCapInt initState)
@@ -48,12 +44,8 @@ void QBinaryDecisionTree::SetPermutation(bitCapInt initState)
     }
 }
 
-StateVectorPtr QBinaryDecisionTree::ToStateVector(bool isSparse)
+void QBinaryDecisionTree::GetTraversal(Fn getLambda)
 {
-    // TODO: We can make sparse state vector array initialization more efficient.
-    bitCapInt maxQPower = pow2(qubitCount);
-    StateVectorPtr toRet = isSparse ? (StateVectorPtr)std::make_shared<StateVectorSparse>(maxQPower)
-                                    : (StateVectorPtr)std::make_shared<StateVectorArray>(maxQPower);
     complex scale;
     bitLenInt j;
     QBinaryDecisionTreeNodePtr leaf;
@@ -67,13 +59,13 @@ StateVectorPtr QBinaryDecisionTree::ToStateVector(bool isSparse)
             }
             scale *= leaf->scale;
         }
-        toRet->write(i, scale);
+        getLambda(i, scale);
     }
 
     return toRet;
 }
 
-void QBinaryDecisionTree::FromStateVector(StateVectorPtr stateVec)
+void QBinaryDecisionTree::SetTraversal(Fn setLambda)
 {
     root = std::make_shared<QBinaryDecisionTreeNode>();
     root->Branch(qubitCount);
@@ -87,9 +79,36 @@ void QBinaryDecisionTree::FromStateVector(StateVectorPtr stateVec)
         for (j = 0; j < qubitCount; j++) {
             leaf = leaf->branches[(i >> j) & 1U];
         }
-        leaf->scale = stateVec->read(i);
+        setLamda(i, leaf);
     }
 
     root->Prune();
+}
+
+StateVectorPtr QBinaryDecisionTree::ToStateVector(bool isSparse)
+{
+    // TODO: We can make sparse state vector array initialization more efficient.
+    bitCapInt maxQPower = pow2(qubitCount);
+    StateVectorPtr toRet = isSparse ? (StateVectorPtr)std::make_shared<StateVectorSparse>(maxQPower)
+                                    : (StateVectorPtr)std::make_shared<StateVectorArray>(maxQPower);
+
+    GetTraversal([toRet](bitCapInt i, complex scale) { toRet->write(i, scale); });
+
+    return toRet;
+}
+
+void QBinaryDecisionTree::FromStateVector(StateVectorPtr stateVec)
+{
+    SetTraversal([stateVec](bitCapInt i, QBinaryDecisionTreeNode leaf) { leaf->scale = stateVec->read(i); });
+}
+
+void QBinaryDecisionTree::GetQuantumState(complex* state)
+{
+    GetTraversal([toRet](bitCapInt i, complex scale) { state[i] = scale; });
+}
+
+void QBinaryDecisionTree::SetQuantumState(const complex* state)
+{
+    SetTraversal([state](bitCapInt i, QBinaryDecisionTreeNode leaf) { leaf->scale = state[i]; });
 }
 } // namespace Qrack

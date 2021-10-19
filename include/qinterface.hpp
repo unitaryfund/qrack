@@ -114,6 +114,11 @@ enum QInterfaceEngine {
     QINTERFACE_HYBRID,
 
     /**
+     * Create a QBinaryDecisionTree, (CPU-based).
+     */
+    QINTERFACE_BDT,
+
+    /**
      * Create a QMaskFusion, coalescing Pauli gates.
      */
     QINTERFACE_MASK_FUSION,

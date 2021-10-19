@@ -59,6 +59,7 @@ int main(int argc, char* argv[])
     bool cpu = false;
     bool opencl = false;
     bool hybrid = false;
+    bool bdt = false;
     bool stabilizer = false;
     bool stabilizer_qpager = false;
 
@@ -80,6 +81,7 @@ int main(int argc, char* argv[])
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl)["--proc-opencl"]("Single (parallel) processor OpenCL tests") |
         Opt(hybrid)["--proc-hybrid"]("Enable CPU/OpenCL hybrid implementation tests") |
+        Opt(bdt)["--proc-bdt"]("Enable binary decision tree implementation tests") |
         Opt(stabilizer)["--proc-stabilizer"]("Enable (hybrid) stabilizer implementation tests") |
         Opt(async_time)["--async-time"]("Time based on asynchronous return") |
         Opt(enable_normalization)["--enable-normalization"](
@@ -133,10 +135,11 @@ int main(int argc, char* argv[])
         // qunit_multi_qpager = true;
     }
 
-    if (!cpu && !opencl && !hybrid && !stabilizer && !stabilizer_qpager) {
+    if (!cpu && !opencl && !hybrid && !bdt && !stabilizer && !stabilizer_qpager) {
         cpu = true;
         opencl = true;
         hybrid = true;
+        bdt = true;
         stabilizer = true;
         // stabilizer_qpager = true;
     }
@@ -155,6 +158,13 @@ int main(int argc, char* argv[])
     if (num_failed == 0 && qengine) {
         /* Perform the run against the default (software) variant. */
         if (num_failed == 0 && cpu) {
+            testEngineType = QINTERFACE_CPU;
+            testSubEngineType = QINTERFACE_CPU;
+            session.config().stream() << "############ QEngine -> CPU ############" << std::endl;
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && bdt) {
             testEngineType = QINTERFACE_CPU;
             testSubEngineType = QINTERFACE_CPU;
             session.config().stream() << "############ QEngine -> CPU ############" << std::endl;
