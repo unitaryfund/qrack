@@ -19,7 +19,7 @@
 
 #include "qbinary_decision_tree.hpp"
 
-#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
+#define IS_NORM_0(c) (norm(c) <= amplitudeFloor)
 
 namespace Qrack {
 
@@ -33,14 +33,23 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     SetPermutation(initState);
 }
 
-void QBinaryDecisionTree::SetPermutation(bitCapInt initState)
+void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG)
 {
+    if (phaseFac == CMPLX_DEFAULT_ARG) {
+        if (randGlobalPhase) {
+            real1_f angle = Rand() * 2 * PI_R1;
+            phaseFac = complex((real1)cos(angle), (real1)sin(angle));
+        } else {
+            phaseFac = complex(ONE_R1, ZERO_R1);
+        }
+    }
+
     root = std::make_shared<QBinaryDecisionTreeNode>(ONE_CMPLX);
     QBinaryDecisionTreeNodePtr leaf = root;
     for (bitLenInt qubit = 0; qubit < qubitCount; qubit++) {
         leaf->Branch(1U, ZERO_CMPLX);
         leaf = leaf->branches[(initState >> qubit) & 1U];
-        leaf->scale = ONE_CMPLX;
+        leaf->scale = phaseFac;
     }
 }
 
@@ -150,7 +159,7 @@ void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
     child.scale = amp / scale;
 
     if (IS_NORM_0(child.scale - leaf->branches[bit ^ 1U].scale)) {
-        root->Prune();
+        root->Prune(perm);
     }
 }
 } // namespace Qrack

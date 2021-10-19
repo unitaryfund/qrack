@@ -84,6 +84,31 @@ struct QBinaryDecisionTreeNode {
             branches[1] = NULL;
         }
     }
+
+    void Prune(bitCapInt perm)
+    {
+        bitCapInt bit = perm & 1U;
+        perm >>= 1U;
+        if (branches[bit]) {
+            branches[bit]->Prune(perm);
+        }
+
+        if (!branches[0] || !branches[1]) {
+            return;
+        }
+
+        if (branches[0]->branches[0] || branches[0]->branches[1] || branches[1]->branches[0] ||
+            branches[1]->branches[1]) {
+            return;
+        }
+
+        // We have 2 branches (with no children).
+        if (IS_NORM_0(branches[0]->scale - branches[1]->scale)) {
+            scale *= branches[0]->scale;
+            branches[0] = NULL;
+            branches[1] = NULL;
+        }
+    }
 };
 
 class QBinaryDecisionTree : virtual public QInterface {
@@ -113,7 +138,7 @@ public:
     {
     }
 
-    void SetPermutation(bitCapInt initState);
+    void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     void GetQuantumState(complex* state);
     void SetQuantumState(const complex* state);
