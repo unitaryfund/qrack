@@ -33,8 +33,6 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
 
 void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG)
 {
-    qubitMap = QBdtQubitMap(qubitCount);
-
     if (phaseFac == CMPLX_DEFAULT_ARG) {
         if (randGlobalPhase) {
             real1_f angle = Rand() * 2 * PI_R1;
@@ -119,35 +117,31 @@ StateVectorPtr QBinaryDecisionTree::ToStateVector(bool isSparse)
     StateVectorPtr toRet = isSparse ? (StateVectorPtr)std::make_shared<StateVectorSparse>(maxQPower)
                                     : (StateVectorPtr)std::make_shared<StateVectorArray>(maxQPower);
 
-    GetTraversal([toRet](bitCapInt i, complex scale) { toRet->write(qubitMap.mapPermutation(i), scale); });
+    GetTraversal([toRet](bitCapInt i, complex scale) { toRet->write(i, scale); });
 
     return toRet;
 }
 void QBinaryDecisionTree::FromStateVector(StateVectorPtr stateVec)
 {
-    qubitMap = QBdtQubitMap(qubitCount);
     root = std::make_shared<QBinaryDecisionTreeNode>();
     SetTraversal([stateVec](bitCapInt i, QBinaryDecisionTreeNode leaf) { leaf->scale = stateVec->read(i); });
 }
 void QBinaryDecisionTree::GetQuantumState(complex* state)
 {
-    GetTraversal([state](bitCapInt i, complex scale) { state[qubitMap.mapPermutation(i)] = scale; });
+    GetTraversal([state](bitCapInt i, complex scale) { state[i] = scale; });
 }
 void QBinaryDecisionTree::SetQuantumState(const complex* state)
 {
-    qubitMap = QBdtQubitMap(qubitCount);
     root = std::make_shared<QBinaryDecisionTreeNode>();
     SetTraversal([state](bitCapInt i, QBinaryDecisionTreeNode leaf) { leaf->scale = state[i]; });
 }
 void QBinaryDecisionTree::GetProbs(real1* outputProbs)
 {
-    GetTraversal(
-        [outputProbs](bitCapInt i, complex scale) { outputProbs[qubitMap.mapPermutation(i)] = scale * scale; });
+    GetTraversal([outputProbs](bitCapInt i, complex scale) { outputProbs[i] = scale * scale; });
 }
 
 complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
 {
-    perm = qubitMap.mapPermutation(perm);
     complex scale;
     bitLenInt j;
     QBinaryDecisionTreeNodePtr leaf = root;
@@ -164,7 +158,6 @@ complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
 }
 void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
 {
-    perm = qubitMap.mapPermutation(perm);
     int bit;
     complex scale;
     bitLenInt j;
