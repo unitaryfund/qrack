@@ -239,8 +239,7 @@ public:
     }
     void Decompose(bitLenInt start, QInterfacePtr dest)
     {
-        DecomposeDispose(
-            start, destination->GetQubitCount(), std::dynamic_pointer_cast<QBinaryDecisionTree>(destination));
+        DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBinaryDecisionTree>(dest));
     }
     void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
 
