@@ -258,8 +258,8 @@ void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr 
         if (!leaf) {
             continue;
         }
-        remainderLeaf = leaf for (j = 0; j < length; j++)
-        {
+        remainderLeaf = leaf;
+        for (j = 0; j < length; j++) {
             remainderLeaf = remainderLeaf->branches[(i >> (start + j) & 1U];
             if (!remainderLeaf) {
                 break;
