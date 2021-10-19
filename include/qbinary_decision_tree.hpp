@@ -111,9 +111,74 @@ struct QBinaryDecisionTreeNode {
     }
 };
 
+class QBdtQubitMap {
+protected:
+    std::vector<bitLenInt> swapMap;
+
+public:
+    QBdtQubitMap(bitLenInt qubitCount)
+        : swapMap(qubitCount)
+    {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            swapMap[i] = i;
+        }
+    }
+
+    typedef std::vector<bitLenInt>::iterator iterator;
+
+    bitLenInt& operator[](const bitLenInt& i) { return swapMap[i]; }
+
+    iterator begin() { return swapMap.begin(); }
+
+    iterator end() { return swapMap.end(); }
+
+    bitLenInt size() { return swapMap.size(); }
+
+    void insert(bitLenInt start, QBdtQubitMap& toInsert)
+    {
+        bitLenInt oSize = size();
+
+        swapMap.insert(swapMap.begin() + start, toInsert.swapMap.begin(), toInsert.swapMap.end());
+
+        for (bitLenInt lcv = 0; lcv < toInsert.size(); lcv++) {
+            swapMap[start + lcv] += oSize;
+        }
+    }
+
+    void erase(bitLenInt begin, bitLenInt end)
+    {
+        bitLenInt offset, lcv;
+
+        for (bitLenInt index = begin; index < end; index++) {
+            offset = swapMap[index];
+            for (lcv = 0; lcv < (bitLenInt)swapMap.size(); lcv++) {
+                if (swapMap[lcv] >= offset) {
+                    swapMap[lcv]--;
+                }
+            }
+        }
+
+        swapMap.erase(swapMap.begin() + begin, swapMap.begin() + end);
+    }
+
+    void swap(bitLenInt qubit1, bitLenInt qubit2) { std::swap(swapMap[qubit1], swapMap[qubit2]); }
+
+    bitCapInt mapPermutation(bitCapInt perm)
+    {
+        bitCapInt toRet = 0;
+        for (bitLenInt i = 0; i < size(); i++) {
+            if ((perm >> i) & 1U) {
+                toRet |= pow2(swapMap[i]);
+            }
+        }
+        return toRet;
+    }
+};
+
 class QBinaryDecisionTree : virtual public QInterface {
 protected:
     QBinaryDecisionTreeNodePtr root;
+    QBdtQubitMap qubitMap;
 
     template <typename Fn> void GetTraversal(Fn getLambda);
     template <typename Fn> void SetTraversal(Fn setLambda);
@@ -146,5 +211,7 @@ public:
 
     complex GetAmplitude(bitCapInt perm);
     void SetAmplitude(bitCapInt perm, complex amp);
+
+    bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start);
 };
 } // namespace Qrack
