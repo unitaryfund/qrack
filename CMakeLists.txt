@@ -192,6 +192,7 @@ install (FILES
     include/qfactory.hpp
     include/qengine.hpp
     include/qengine_cpu.hpp
+    include/qubitswapmap.hpp
     include/qengineshard.hpp
     include/mpsshard.hpp
     include/qunit.hpp
