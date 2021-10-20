@@ -116,14 +116,16 @@ void QInterface::AI(bitLenInt target, real1_f azimuth, real1_f inclination)
 /// Inverse "Azimuth, Inclination"
 void QInterface::IAI(bitLenInt target, real1_f azimuth, real1_f inclination)
 {
-    real1 cosineA = (real1)cos(-azimuth / 2);
-    real1 sineA = (real1)sin(-azimuth / 2);
-    real1 cosineI = (real1)cos(-inclination);
-    real1 sineI = (real1)sin(-inclination);
+    real1 cosineA = (real1)cos(azimuth / 2);
+    real1 sineA = (real1)sin(azimuth / 2);
+    real1 cosineI = (real1)cos(inclination);
+    real1 sineI = (real1)sin(inclination);
     complex expI = complex(cosineI, sineI);
     complex expNegI = complex(cosineI, -sineI);
-    complex mtrx[4] = { cosineA, expI * sineA, -expNegI * sineA, cosineA };
-    ApplySingleBit(mtrx, target);
+    complex mtrx[4] = { cosineA, -expNegI * sineA, expI * sineA, cosineA };
+    complex invMtrx[4];
+    inv2x2(mtrx, invMtrx);
+    ApplySingleBit(invMtrx, target);
 }
 
 /// Uniformly controlled y axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli y axis for each permutation
