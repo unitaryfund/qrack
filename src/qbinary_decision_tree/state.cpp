@@ -293,7 +293,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
         leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
     }
 
-    root->Prune(qubitPower);
+    root->Prune(qubitIndex);
 }
 
 void QBinaryDecisionTree::ApplyControlledSingleBit(
