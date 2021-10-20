@@ -815,11 +815,6 @@ bool QUnit::TrySeparate(bitLenInt qubit)
             return true;
         }
 
-        // If this is 0.5, it wasn't this basis, but it's worth checking the next basis.
-        if (abs(prob) > separabilityThreshold) {
-            return false;
-        }
-
         if (!shard.isPauliX && !shard.isPauliY) {
             probZ = prob;
         } else if (shard.isPauliX) {
