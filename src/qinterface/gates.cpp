@@ -95,6 +95,15 @@ void QInterface::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const
     ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
 }
 
+/// Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary
+/// (anti-)control bits.
+void QInterface::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
+    const bitLenInt& target, const complex topRight, const complex bottomLeft)
+{
+    const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+    ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+}
+
 /// Apply a swap with arbitrary (anti) control bits.
 void QInterface::AntiCSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
@@ -110,15 +119,6 @@ void QInterface::AntiCSwap(
     ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
 }
 
-/// Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary
-/// (anti-)control bits.
-void QInterface::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-    const bitLenInt& target, const complex topRight, const complex bottomLeft)
-{
-    const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
-}
-
 void QInterface::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
@@ -129,6 +129,39 @@ void QInterface::ApplyAntiControlledSingleBit(
     for (bitLenInt i = 0; i < controlLen; i++) {
         X(controls[i]);
     }
+}
+
+/// Apply a swap with arbitrary control bits.
+void QInterface::CSqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
+    std::copy(controls, controls + controlLen, lControls.get());
+
+    lControls.get()[controlLen] = qubit1;
+
+    ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+
+    complex mtrxTop1[4] = { (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)),
+        (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)) };
+    ApplySingleBit(mtrxTop1, qubit1);
+
+    complex mtrxBottom1[4] = { (complex)sqrt(ONE_R1 / 2), -sqrt((ONE_R1 / 2) * I_CMPLX), (complex)sqrt(ONE_R1 / 2),
+        sqrt((ONE_R1 / 2) * I_CMPLX) };
+    ApplySingleBit(mtrxBottom1, qubit2);
+
+    ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+
+    complex mtrxTop2[4] = { (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)),
+        (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)) };
+    ApplySingleBit(mtrxTop2, qubit1);
+
+    H(qubit2);
+
+    ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+
+    IS(qubit1);
+    S(qubit2);
 }
 
 /// Apply 1/(2^N) phase rotation

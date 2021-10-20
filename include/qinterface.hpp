@@ -591,7 +591,7 @@ public:
      * Apply a square root of swap with arbitrary control bits.
      */
     virtual void CSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
 
     /**
      * Apply a square root of swap with arbitrary (anti) control bits.
