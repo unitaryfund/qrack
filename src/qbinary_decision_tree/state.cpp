@@ -300,7 +300,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     bitLenInt j;
     complex Y0;
     bitLenInt maxControl = max_element(controls, controls + controlLen);
-    bitCapInt qubitPower = pow2((maxControl < qubitIndex) ? qubitIndex : maxControl);
+    bitLenInt maxElement = (maxControl < qubitIndex) ? qubitIndex : maxControl;
+    bitCapInt qubitPower = pow2(maxElement);
     QBinaryDecisionTreeNodePtr leaf, child;
     for (bitCapInt i = 0; i < qubitPower; i++) {
         for (j = 0; j < controlLen; j++) {
@@ -313,7 +314,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         }
 
         leaf = root;
-        for (j = 0; j < qubitIndex; j++) {
+        for (j = 0; j < maxElement; j++) {
             child = leaf->branches[(i >> j) & 1U];
             if (!child) {
                 leaf.Branch();
