@@ -299,24 +299,39 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
 void QBinaryDecisionTree::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
+    complex invMtrx[4];
+    inv2x2(mtrx, invMtrx);
+
+    std::unique_ptr<bitLenInt[]> sortedControls(new bitLenInt[controlLen]);
+    std::copy(controls, controls + controlLen, sortedControls.get());
+    std::sort(sortedControls.get(), sortedControls.get() + controlLen);
+
     bitLenInt j;
+    for (j = 0; j < controlLen; j++) {
+        if (target < sortedControls[j]) {
+            break;
+        }
+    }
+    bitLenInt controlBound = j;
+    bitLenInt controlRemainder = controlLen - controlBound;
+
+    bitCapInt qubitPower = pow2(qubitIndex);
     complex Y0;
-    bitLenInt maxControl = max_element(controls, controls + controlLen);
-    bitLenInt maxElement = (maxControl < qubitIndex) ? qubitIndex : maxControl;
-    bitCapInt qubitPower = pow2(maxElement);
     QBinaryDecisionTreeNodePtr leaf, child;
     for (bitCapInt i = 0; i < qubitPower; i++) {
-        for (j = 0; j < controlLen; j++) {
-            if (!((i >> controls[j]) & 1U)) {
+        // If controls with lower index than target aren't set, skip.
+        for (j = 0; j < controlBound; j++) {
+            if (!((i >> sortedControls[j]) & 1U)) {
                 break;
             }
         }
-        if (j < controlLen) {
+        if (j < controlBound) {
             continue;
         }
 
+        // Iterate to target bit.
         leaf = root;
-        for (j = 0; j < maxElement; j++) {
+        for (j = 0; j < qubitIndex; j++) {
             child = leaf->branches[(i >> j) & 1U];
             if (!child) {
                 leaf.Branch();
@@ -325,9 +340,33 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         }
         leaf->Branch();
 
+        // Apply gate payload to target.
         Y0 = leaf->branches[0]->scale;
         leaf->branches[0]->scale = mtrx[0] * leaf->branches[0]->scale + mtrx[1] * leaf->branches[1]->scale;
         leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
+
+        // If controls with higher index than target aren't set, apply inverse gate payload.
+        for (j = controlBound; j < controlLen; j++) {
+            if (!((i >> sortedControls[j]) & 1U)) {
+                break;
+            }
+        }
+        if (j == controlLen) {
+            continue;
+        }
+
+        for (j = 0; j < controlRemainder; j++) {
+            child = leaf->branches[(i >> (controlBound + j)) & 1U];
+            if (!child) {
+                leaf.Branch();
+            }
+            leaf = child;
+        }
+        leaf->Branch();
+
+        Y0 = leaf->branches[0]->scale;
+        leaf->branches[0]->scale = invMtrx[0] * leaf->branches[0]->scale + invMtrx[1] * leaf->branches[1]->scale;
+        leaf->branches[1]->scale = invMtrx[2] * Y0 + invMtrx[3] * leaf->branches[1]->scale;
     }
 
     root->Prune(maxElement);

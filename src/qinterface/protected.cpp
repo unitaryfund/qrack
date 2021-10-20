@@ -175,6 +175,15 @@ void exp2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, o
 
 void log2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, false); }
 
+void inv2x2(complex* matrix2x2, complex* outMatrix2x2)
+{
+    complex det = ONE_CMPLX / (matrix2x2[0] * matrix2x2[3] - matrix2x2[1] * matrix2x2[2]);
+    outMatrix2x2[0] = det * matrix2x2[3];
+    outMatrix2x2[1] = det * -matrix2x2[1];
+    outMatrix2x2[2] = det * -matrix2x2[2];
+    outMatrix2x2[3] = det * matrix2x2[0];
+}
+
 /// Check if an addition with overflow sets the flag
 bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower)
 {
