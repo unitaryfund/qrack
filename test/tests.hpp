@@ -31,6 +31,7 @@ extern enum Qrack::QInterfaceEngine testSubEngineType;
 extern enum Qrack::QInterfaceEngine testSubSubEngineType;
 extern qrack_rand_gen_ptr rng;
 extern bool enable_normalization;
+extern bool use_host_dma;
 extern bool disable_hardware_rng;
 extern bool async_time;
 extern bool sparse;
@@ -91,8 +92,8 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr
             maxProbIdx = i;
         }
         // if (prob != ZERO_R1) {
-        //    std::cout<<"(Perm "<<(int)i<<" "<<prob<<std::endl;
-        //}
+        //     std::cout<<"(Perm "<<(int)i<<" "<<prob<<std::endl;
+        // }
     }
 
     os << qftReg->GetQubitCount() << "/";

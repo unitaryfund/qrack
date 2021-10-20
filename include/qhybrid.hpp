@@ -108,7 +108,11 @@ public:
         SetAmplitudePage(std::dynamic_pointer_cast<QHybrid>(pageEnginePtr), srcOffset, dstOffset, length);
     }
     virtual void ShuffleBuffers(QEnginePtr oEngine) { ShuffleBuffers(std::dynamic_pointer_cast<QHybrid>(oEngine)); }
-    virtual void ShuffleBuffers(QHybridPtr oEngine) { engine->ShuffleBuffers(oEngine->engine); }
+    virtual void ShuffleBuffers(QHybridPtr oEngine)
+    {
+        oEngine->SwitchModes(isGpu);
+        engine->ShuffleBuffers(oEngine->engine);
+    }
     virtual void QueueSetDoNormalize(const bool& doNorm) { engine->QueueSetDoNormalize(doNorm); }
     virtual void QueueSetRunningNorm(const real1_f& runningNrm) { engine->QueueSetRunningNorm(runningNrm); }
 
@@ -144,7 +148,7 @@ public:
     {
         Decompose(start, std::dynamic_pointer_cast<QHybrid>(dest));
     }
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = REAL1_EPSILON)
+    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         return TryDecompose(start, std::dynamic_pointer_cast<QHybrid>(dest), error_tol);
     }
@@ -171,7 +175,7 @@ public:
         return engine->Dispose(start, length, disposedPerm);
     }
 
-    virtual bool TryDecompose(bitLenInt start, QHybridPtr dest, real1_f error_tol = REAL1_EPSILON)
+    virtual bool TryDecompose(bitLenInt start, QHybridPtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
         SwitchModes(nQubitCount >= thresholdQubits);
@@ -221,6 +225,10 @@ public:
         engine->UniformlyControlledSingleBit(
             controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
     }
+
+    virtual void XMask(bitCapInt mask) { engine->XMask(mask); }
+    virtual void PhaseParity(real1_f radians, bitCapInt mask) { engine->PhaseParity(radians, mask); }
+
     virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle) { engine->UniformParityRZ(mask, angle); }
     virtual void CUniformParityRZ(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
@@ -421,6 +429,11 @@ public:
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         engine->NormalizeState(nrm, norm_thresh);
+    }
+
+    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0)
+    {
+        return engine->ExpectationBitsAll(bits, length, offset);
     }
 
     virtual void Finish() { engine->Finish(); }

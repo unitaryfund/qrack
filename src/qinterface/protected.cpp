@@ -47,6 +47,7 @@ void cl_free(void* toFree)
 #endif
 }
 
+// See https://stackoverflow.com/questions/1505675/power-of-an-integer-in-c
 bitCapInt intPow(bitCapInt base, bitCapInt power)
 {
     if (power == 0U) {
@@ -55,7 +56,13 @@ bitCapInt intPow(bitCapInt base, bitCapInt power)
     if (power == ONE_BCI) {
         return base;
     }
-    return base * intPow(base, power - 1);
+
+    bitCapInt tmp = intPow(base, power / 2);
+    if (power & 1U) {
+        return base * tmp * tmp;
+    }
+
+    return tmp * tmp;
 }
 
 bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
@@ -66,7 +73,13 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
     if (power == ONE_BCI) {
         return base;
     }
-    return base * intPowOcl(base, power - 1);
+
+    bitCapIntOcl tmp = intPowOcl(base, power / 2);
+    if (power & 1U) {
+        return base * tmp * tmp;
+    }
+
+    return tmp * tmp;
 }
 
 void mul2x2(complex* left, complex* right, complex* out)
@@ -83,12 +96,7 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
     // basis, and apply.
 
     // Diagonal matrices are a special case.
-    bool isDiag = true;
-    if (norm(matrix2x2[1]) != 0) {
-        isDiag = false;
-    } else if (norm(matrix2x2[2]) != 0) {
-        isDiag = false;
-    }
+    bool isDiag = IS_NORM_0(matrix2x2[1]) && IS_NORM_0(matrix2x2[2]);
 
     complex expOfGate[4];
     complex jacobian[4];
@@ -131,7 +139,10 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
         inverseJacobian[2] = -jacobian[2] / determinant;
         inverseJacobian[3] = jacobian[0] / determinant;
     } else {
-        std::copy(matrix2x2, matrix2x2 + 4, expOfGate);
+        expOfGate[0] = matrix2x2[0];
+        expOfGate[1] = ZERO_CMPLX;
+        expOfGate[2] = ZERO_CMPLX;
+        expOfGate[3] = matrix2x2[3];
     }
 
     if (isExp) {
@@ -228,8 +239,7 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
 {
     // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
     // operator, then we can discard this buffer without applying it.
-    if ((norm(mtrx[0] - mtrx[3]) > FP_NORM_EPSILON) || (norm(mtrx[1]) > FP_NORM_EPSILON) ||
-        (norm(mtrx[2]) > FP_NORM_EPSILON)) {
+    if (!IS_NORM_0(mtrx[1]) || !IS_NORM_0(mtrx[2]) || !IS_SAME(mtrx[0], mtrx[3])) {
         return false;
     }
 
@@ -239,7 +249,7 @@ bool QInterface::IsIdentity(const complex* mtrx, bool isControlled)
     // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
     // the global phase offset.
 
-    if ((isControlled || !randGlobalPhase) && (norm(mtrx[0] - ONE_CMPLX) > FP_NORM_EPSILON)) {
+    if ((isControlled || !randGlobalPhase) && !IS_SAME(ONE_CMPLX, mtrx[0])) {
         return false;
     }
 

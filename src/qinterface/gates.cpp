@@ -89,6 +89,18 @@ void QInterface::ApplyAntiControlledSingleInvert(const bitLenInt* controls, cons
     ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
 }
 
+void QInterface::ApplyAntiControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+{
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        X(controls[i]);
+    }
+    ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        X(controls[i]);
+    }
+}
+
 /// Apply 1/(2^N) phase rotation
 void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
 {
@@ -191,8 +203,14 @@ void QInterface::IT(bitLenInt qubit) { IPhaseRootN(3U, qubit); }
 /// Apply controlled S gate to bit
 void QInterface::CS(bitLenInt control, bitLenInt target) { CPhaseRootN(2U, control, target); }
 
+/// Apply (anti-)controlled S gate to bit
+void QInterface::AntiCS(bitLenInt control, bitLenInt target) { AntiCPhaseRootN(2U, control, target); }
+
 /// Apply controlled IS gate to bit
 void QInterface::CIS(bitLenInt control, bitLenInt target) { CIPhaseRootN(2U, control, target); }
+
+/// Apply (anti-)controlled IS gate to bit
+void QInterface::AntiCIS(bitLenInt control, bitLenInt target) { AntiCIPhaseRootN(2U, control, target); }
 
 /// Apply controlled T gate to bit
 void QInterface::CT(bitLenInt control, bitLenInt target) { CPhaseRootN(3U, control, target); }
@@ -263,13 +281,22 @@ void QInterface::AntiCZ(bitLenInt control, bitLenInt target)
     ApplyAntiControlledSinglePhase(controls, 1, target, ONE_CMPLX, -ONE_CMPLX);
 }
 
-/// Apply controlled Pauli Z matrix to bit
+/// Apply controlled Hadamard matrix to bit
 void QInterface::CH(bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
     const complex h[4] = { complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(ONE_R1 / SQRT2_R1, ZERO_R1),
         complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(-ONE_R1 / SQRT2_R1, ZERO_R1) };
     ApplyControlledSingleBit(controls, 1, target, h);
+}
+
+/// Apply (anti-)controlled Hadamard matrix to bit
+void QInterface::AntiCH(bitLenInt control, bitLenInt target)
+{
+    bitLenInt controls[1] = { control };
+    const complex h[4] = { complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(ONE_R1 / SQRT2_R1, ZERO_R1),
+        complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(-ONE_R1 / SQRT2_R1, ZERO_R1) };
+    ApplyAntiControlledSingleBit(controls, 1, target, h);
 }
 
 /// Doubly-controlled not
@@ -345,6 +372,58 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))));
 }
 
+/// Apply (anti-)controlled "PhaseRootN" gate to bit
+void QInterface::AntiCPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+{
+    if (n == 0) {
+        return;
+    }
+    if (n == 1) {
+        AntiCZ(control, target);
+        return;
+    }
+
+    bitLenInt controls[1] = { control };
+
+    if (n == 2) {
+        ApplyAntiControlledSinglePhase(controls, 1, target, ONE_CMPLX, I_CMPLX);
+        return;
+    }
+    if (n == 3) {
+        ApplyAntiControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_I);
+        return;
+    }
+
+    ApplyAntiControlledSinglePhase(
+        controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))));
+}
+
+/// Apply (anti-)controlled "IPhaseRootN" gate to bit
+void QInterface::AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
+{
+    if (n == 0) {
+        return;
+    }
+    if (n == 1) {
+        AntiCZ(control, target);
+        return;
+    }
+
+    bitLenInt controls[1] = { control };
+
+    if (n == 2) {
+        ApplyAntiControlledSinglePhase(controls, 1, target, ONE_CMPLX, -I_CMPLX);
+        return;
+    }
+    if (n == 3) {
+        ApplyAntiControlledSinglePhase(controls, 1, target, ONE_CMPLX, C_SQRT_N_I);
+        return;
+    }
+
+    ApplyAntiControlledSinglePhase(
+        controls, 1, target, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))));
+}
+
 void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
     bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)
@@ -387,12 +466,87 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     }
 
     bitLenInt min1 = length - 1U;
-    bitLenInt* controls = new bitLenInt[min1];
+    std::unique_ptr<bitLenInt[]> controls(new bitLenInt[min1]);
     for (bitLenInt i = 0; i < min1; i++) {
         controls[i] = start + i;
     }
-    ApplyAntiControlledSinglePhase(controls, min1, start + min1, -ONE_CMPLX, ONE_CMPLX);
-    delete[] controls;
+    ApplyAntiControlledSinglePhase(controls.get(), min1, start + min1, -ONE_CMPLX, ONE_CMPLX);
+}
+
+void QInterface::XMask(bitCapInt mask)
+{
+    bitCapInt v = mask;
+    while (mask) {
+        v = v & (v - ONE_BCI);
+        X(log2(mask ^ v));
+        mask = v;
+    }
+}
+
+void QInterface::YMask(bitCapInt mask)
+{
+    bitLenInt bit = log2(mask);
+    if (pow2(bit) == mask) {
+        Y(bit);
+        return;
+    }
+
+    ZMask(mask);
+    XMask(mask);
+
+    if (randGlobalPhase) {
+        return;
+    }
+
+    int parity = 0;
+    bitCapInt v = mask;
+    while (v) {
+        v = v & (v - ONE_BCI);
+        parity = (parity + 1) & 3;
+    }
+
+    if (parity == 1) {
+        ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+    } else if (parity == 2) {
+        PhaseFlip();
+    } else if (parity == 3) {
+        ApplySinglePhase(-I_CMPLX, -I_CMPLX, 0);
+    }
+}
+
+void QInterface::ZMask(bitCapInt mask)
+{
+    bitCapInt v = mask;
+    while (mask) {
+        v = v & (v - ONE_BCI);
+        Z(log2(mask ^ v));
+        mask = v;
+    }
+}
+
+void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
+{
+    if (!mask) {
+        return;
+    }
+
+    std::vector<bitLenInt> qubits;
+    bitCapInt v = mask;
+    while (mask) {
+        v = v & (v - ONE_BCI);
+        qubits.push_back(log2(mask ^ v));
+        mask = v;
+    }
+
+    int i;
+    int end = (int)(qubits.size() - 1);
+    for (i = 0; i < end; i++) {
+        CNOT(qubits[i], qubits[i + 1U]);
+    }
+    RZ(radians, qubits[end]);
+    for (i = (end - 1U); i >= 0; i--) {
+        CNOT(qubits[i], qubits[i + 1U]);
+    }
 }
 
 void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
@@ -402,19 +556,18 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
     // Exponentiation of an arbitrary serial string of gates, each HamiltonianOp component times timeDiff, e^(-i * H *
     // t) as e^(-i * H_(N - 1) * t) * e^(-i * H_(N - 2) * t) * ... e^(-i * H_0 * t)
 
-    for (bitLenInt i = 0; i < h.size(); i++) {
+    for (size_t i = 0; i < h.size(); i++) {
         HamiltonianOpPtr op = h[i];
         complex* opMtrx = op->matrix.get();
-        complex* mtrx;
 
         bitCapIntOcl maxJ = 4;
         if (op->uniform) {
             maxJ *= pow2Ocl(op->controlLen);
         }
-        mtrx = new complex[maxJ];
+        std::unique_ptr<complex[]> mtrx(new complex[maxJ]);
 
         for (bitCapIntOcl j = 0; j < maxJ; j++) {
-            mtrx[j] = opMtrx[j] * (-timeDiff);
+            mtrx.get()[j] = opMtrx[j] * (-timeDiff);
         }
 
         if (op->toggles) {
@@ -426,14 +579,13 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
         }
 
         if (op->uniform) {
-            complex* expMtrx = new complex[maxJ];
+            std::unique_ptr<complex[]> expMtrx(new complex[maxJ]);
             for (bitCapIntOcl j = 0; j < pow2(op->controlLen); j++) {
-                exp2x2(mtrx + (j * 4U), expMtrx + (j * 4U));
+                exp2x2(mtrx.get() + (j * 4U), expMtrx.get() + (j * 4U));
             }
-            UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx);
-            delete[] expMtrx;
+            UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx.get());
         } else {
-            Exp(op->controls, op->controlLen, op->targetBit, mtrx, op->anti);
+            Exp(op->controls, op->controlLen, op->targetBit, mtrx.get(), op->anti);
         }
 
         if (op->toggles) {
@@ -443,8 +595,6 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
                 }
             }
         }
-
-        delete[] mtrx;
     }
 }
 

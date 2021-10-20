@@ -100,8 +100,8 @@ void QStabilizer::rowcopy(const bitLenInt& i, const bitLenInt& k)
         return;
     }
 
-    std::copy(x[k].begin(), x[k].end(), x[i].begin());
-    std::copy(z[k].begin(), z[k].end(), z[i].begin());
+    x[i] = x[k];
+    z[i] = z[k];
     r[i] = r[k];
 }
 
@@ -164,7 +164,7 @@ uint8_t QStabilizer::clifford(const bitLenInt& i, const bitLenInt& k)
 
     e = (e + r[i] + r[k]) & 0x3;
 
-    return (uint8_t)((e < 0) ? (e + 4U) : e);
+    return e;
 }
 
 /// Left-multiply row i by row k
@@ -259,7 +259,7 @@ void QStabilizer::seed(const bitLenInt& g)
     std::fill(x[elemCount].begin(), x[elemCount].end(), 0);
     std::fill(z[elemCount].begin(), z[elemCount].end(), 0);
 
-    for (int i = elemCount - 1; i >= qubitCount + g; i--) {
+    for (int i = elemCount - 1; i >= (int)(qubitCount + g); i--) {
         f = r[i];
         for (j = qubitCount - 1; j >= 0; j--) {
             if (z[i][j]) {
@@ -278,8 +278,8 @@ void QStabilizer::seed(const bitLenInt& g)
     }
 }
 
-/// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
-void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
+/// Helper for setBasisState() and setBasisProb()
+AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
 {
     bitLenInt elemCount = qubitCount << 1U;
     bitLenInt j;
@@ -307,7 +307,28 @@ void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
         }
     }
 
-    stateVec[perm] = amp;
+    return AmplitudeEntry(perm, amp);
+}
+
+/// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
+void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec, QInterfacePtr eng)
+{
+    AmplitudeEntry entry = getBasisAmp(nrm);
+
+    if (stateVec) {
+        stateVec[entry.permutation] = entry.amplitude;
+    }
+
+    if (eng) {
+        eng->SetAmplitude(entry.permutation, entry.amplitude);
+    }
+}
+
+/// Returns the probability from applying the Pauli operator in the "scratch space" of q to |0...0>
+void QStabilizer::setBasisProb(const real1_f& nrm, real1* outputProbs)
+{
+    AmplitudeEntry entry = getBasisAmp(nrm);
+    outputProbs[entry.permutation] = norm(entry.amplitude);
 }
 
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
@@ -334,7 +355,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     // init stateVec as all 0 values
     std::fill(stateVec, stateVec + pow2Ocl(qubitCount), ZERO_CMPLX);
 
-    setBasisState(nrm, stateVec);
+    setBasisState(nrm, stateVec, NULL);
     for (t = 0; t < permCountMin1; t++) {
         t2 = t ^ (t + 1);
         for (i = 0; i < g; i++) {
@@ -342,7 +363,76 @@ void QStabilizer::GetQuantumState(complex* stateVec)
                 rowmult(elemCount, qubitCount + i);
             }
         }
-        setBasisState(nrm, stateVec);
+        setBasisState(nrm, stateVec, NULL);
+    }
+}
+
+/// Convert the state to ket notation (warning: could be huge!)
+void QStabilizer::GetQuantumState(QInterfacePtr eng)
+{
+    Finish();
+
+    bitCapIntOcl t;
+    bitCapIntOcl t2;
+    bitLenInt i;
+
+    // log_2 of number of nonzero basis states
+    bitLenInt g = gaussian();
+    bitCapIntOcl permCount = pow2Ocl(g);
+    bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    bitLenInt elemCount = qubitCount << 1U;
+    real1_f nrm = sqrt(ONE_R1 / permCount);
+
+    seed(g);
+
+    // init stateVec as all 0 values
+    eng->SetPermutation(0);
+    eng->SetAmplitude(0, ZERO_CMPLX);
+
+    setBasisState(nrm, NULL, eng);
+    for (t = 0; t < permCountMin1; t++) {
+        t2 = t ^ (t + 1);
+        for (i = 0; i < g; i++) {
+            if (t2 & pow2Ocl(i)) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        setBasisState(nrm, NULL, eng);
+    }
+
+    eng->UpdateRunningNorm();
+}
+
+/// Get all probabilities corresponding to ket notation
+void QStabilizer::GetProbs(real1* outputProbs)
+{
+    Finish();
+
+    bitCapIntOcl t;
+    bitCapIntOcl t2;
+    bitLenInt i;
+
+    // log_2 of number of nonzero basis states
+    bitLenInt g = gaussian();
+    bitCapIntOcl permCount = pow2Ocl(g);
+    bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    bitLenInt elemCount = qubitCount << 1U;
+    real1_f nrm = sqrt(ONE_R1 / permCount);
+
+    seed(g);
+
+    // init stateVec as all 0 values
+    std::fill(outputProbs, outputProbs + pow2Ocl(qubitCount), ZERO_R1);
+
+    setBasisProb(nrm, outputProbs);
+    for (t = 0; t < permCountMin1; t++) {
+        t2 = t ^ (t + 1);
+        for (i = 0; i < g; i++) {
+            if (t2 & pow2Ocl(i)) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        setBasisProb(nrm, outputProbs);
     }
 }
 
@@ -364,49 +454,6 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
             if (x[i][c] && z[i][t] && (x[i][t] == z[i][c])) {
                 r[i] = (r[i] + 2) & 0x3;
             }
-        }
-    });
-}
-
-/// Apply a CZ gate with control and target
-void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
-{
-    Dispatch([this, c, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
-
-        for (bitLenInt i = 0; i < maxLcv; i++) {
-            if (x[i][t]) {
-                z[i][c] = !z[i][c];
-            }
-            if (x[i][c]) {
-                z[i][t] = !z[i][t];
-            }
-        }
-    });
-}
-
-/// Apply a CNOT gate with control and target
-void QStabilizer::CY(const bitLenInt& c, const bitLenInt& t)
-{
-    Dispatch([this, c, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
-
-        for (bitLenInt i = 0; i < maxLcv; i++) {
-            z[i][t] = z[i][t] ^ x[i][t];
-
-            if (z[i][t]) {
-                z[i][c] = !z[i][c];
-            }
-
-            if (x[i][c]) {
-                if (x[i][t] && z[i][t] && !z[i][c]) {
-                    r[i] = (r[i] + 2) & 0x3;
-                }
-
-                x[i][t] = !x[i][t];
-            }
-
-            z[i][t] = z[i][t] ^ x[i][t];
         }
     });
 }
@@ -491,7 +538,7 @@ void QStabilizer::Y(const bitLenInt& t)
         bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
-            if (x[i][t] != z[i][t]) {
+            if (z[i][t] ^ x[i][t]) {
                 r[i] = (r[i] + 2) & 0x3;
             }
         }
@@ -821,6 +868,9 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
         return;
     }
 
+    if (dest) {
+        dest->Dump();
+    }
     Finish();
 
     // We assume that the bits to "decompose" the representation of already have 0 cross-terms in their generators
@@ -835,8 +885,6 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     bitLenInt secondEnd = nQubitCount + end;
 
     if (dest) {
-        dest->Finish();
-
         for (i = 0; i < length; i++) {
             j = start + i;
             std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[i].begin());
@@ -878,18 +926,21 @@ bool QStabilizer::ApproxCompare(QStabilizerPtr o)
     Finish();
     o->Finish();
 
-    if (r != o->r) {
-        return false;
-    }
+    bitLenInt rowCount = (qubitCount << 1U);
+    bitLenInt i, j;
 
-    bitLenInt rowCount = (qubitCount << 1U) + 1U;
-
-    for (bitLenInt i = 0; i < rowCount; i++) {
-        if (x[i] != o->x[i]) {
+    for (i = 0; i < rowCount; i++) {
+        if (r[i] != o->r[i]) {
             return false;
         }
-        if (z[i] != o->z[i]) {
-            return false;
+
+        for (j = 0; j < qubitCount; j++) {
+            if (x[i][j] != o->x[i][j]) {
+                return false;
+            }
+            if (z[i][j] != o->z[i][j]) {
+                return false;
+            }
         }
     }
 

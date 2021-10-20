@@ -53,7 +53,7 @@ real1_f calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* 
 
     (*numerator) = approxNumer;
     (*denominator) = approxDenom;
-    return ((real1)approxNumer) / (bitCapIntOcl)approxDenom;
+    return ((real1_f)approxNumer) / (bitCapIntOcl)approxDenom;
 }
 
 int main()

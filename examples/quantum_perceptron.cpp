@@ -59,7 +59,7 @@ int main()
         powersOf2[i] = 1U << i;
     }
 
-    QInterfacePtr qReg2 = CreateQuantumInterface(QINTERFACE_QUNIT, QINTERFACE_OPTIMAL, ControlLog, 0);
+    QInterfacePtr qReg2 = CreateQuantumInterface(QINTERFACE_OPTIMAL, ControlLog, 0);
 
     qReg->Compose(qReg2);
     qReg->SetPermutation(1U << (ControlCount + 1));

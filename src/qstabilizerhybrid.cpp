@@ -13,20 +13,27 @@
 #include "qfactory.hpp"
 #include "qstabilizerhybrid.hpp"
 
-#define IS_NORM_0(c) (norm(c) <= amplitudeFloor)
+#define IS_REAL_0(r) (abs(r) <= FP_NORM_EPSILON)
+#define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \
+    ((IS_REAL_0(std::real(top)) || IS_REAL_0(std::imag(top))) && (IS_SAME(top, bottom) || IS_SAME(top, -bottom)))
+#define IS_CLIFFORD(mtrx)                                                                                              \
+    (IS_SAME(mtrx[0], mtrx[1]) || IS_SAME(mtrx[0], -mtrx[1]) || IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) ||                 \
+        IS_SAME(mtrx[0], -I_CMPLX * mtrx[1])) &&                                                                       \
+        (IS_SAME(mtrx[0], mtrx[2]) || IS_SAME(mtrx[0], -mtrx[2]) || IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) ||             \
+            IS_SAME(mtrx[0], -I_CMPLX * mtrx[2])) &&                                                                   \
+        (IS_SAME(mtrx[0], mtrx[3]) || IS_SAME(mtrx[0], -mtrx[3]) || IS_SAME(mtrx[0], I_CMPLX * mtrx[3]) ||             \
+            IS_SAME(mtrx[0], -I_CMPLX * mtrx[3]))
 
 namespace Qrack {
 
-QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subEng, bitLenInt qBitCount,
-    bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem,
-    int deviceId, bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> ignored,
+QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
+    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceId,
+    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> ignored,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1)
-    , engineType(eng)
-    , subEngineType(subEng)
+    , engineTypes(eng)
     , engine(NULL)
     , shards(qubitCount)
-    , shardsEigenZ(qubitCount)
     , devID(deviceId)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
@@ -36,30 +43,6 @@ QStabilizerHybrid::QStabilizerHybrid(QInterfaceEngine eng, QInterfaceEngine subE
     , separabilityThreshold(sep_thresh)
     , thresholdQubits(qubitThreshold)
 {
-    if (subEngineType == QINTERFACE_STABILIZER_HYBRID) {
-#if ENABLE_OPENCL
-        subEngineType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
-#else
-        subEngineType = QINTERFACE_CPU;
-#endif
-    }
-
-    if (engineType == QINTERFACE_STABILIZER_HYBRID) {
-#if ENABLE_OPENCL
-        engineType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
-#else
-        engineType = QINTERFACE_CPU;
-#endif
-    }
-
-    if ((engineType == QINTERFACE_QPAGER) && (subEngineType == QINTERFACE_QPAGER)) {
-#if ENABLE_OPENCL
-        subEngineType = OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_HYBRID : QINTERFACE_CPU;
-#else
-        subEngineType = QINTERFACE_CPU;
-#endif
-    }
-
     concurrency = std::thread::hardware_concurrency();
     stabilizer = MakeStabilizer(initState);
     amplitudeFloor = REAL1_EPSILON;
@@ -72,36 +55,82 @@ QStabilizerPtr QStabilizerHybrid::MakeStabilizer(const bitCapInt& perm)
 
 QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
 {
-    QInterfacePtr toRet = CreateQuantumInterface(engineType, subEngineType, qubitCount, 0, rand_generator, phaseFactor,
+    QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qubitCount, perm, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
         std::vector<int>{}, thresholdQubits, separabilityThreshold);
     toRet->SetConcurrency(concurrency);
     return toRet;
 }
 
+void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
+{
+    if (engine) {
+        return;
+    }
+
+    MpsShardPtr toRet = NULL;
+    // If in PauliX or PauliY basis, compose gate with conversion from/to PauliZ basis.
+    if (stabilizer->IsSeparableX(target)) {
+        // X eigenstate
+        stabilizer->H(target);
+
+        complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+            complex(-SQRT1_2_R1, ZERO_R1) };
+        toRet = std::make_shared<MpsShard>(mtrx);
+    } else if (stabilizer->IsSeparableY(target)) {
+        // Y eigenstate
+        stabilizer->H(target);
+        stabilizer->S(target);
+
+        complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1), complex(SQRT1_2_R1, ZERO_R1),
+            complex(ZERO_R1, SQRT1_2_R1) };
+        toRet = std::make_shared<MpsShard>(mtrx);
+    }
+
+    if (!toRet) {
+        return;
+    }
+
+    if (shards[target]) {
+        toRet->Compose(shards[target]->gate);
+    }
+
+    shards[target] = toRet;
+
+    if (IS_CLIFFORD(shards[target]->gate)) {
+        MpsShardPtr shard = shards[target];
+        shards[target] = NULL;
+        ApplySingleBit(shard->gate, target);
+    }
+}
+
 QInterfacePtr QStabilizerHybrid::Clone()
 {
-    Finish();
+    std::vector<QInterfaceEngine> tEngines = engineTypes;
+    tEngines.insert(tEngines.begin(), QINTERFACE_STABILIZER_HYBRID);
 
-    QStabilizerHybridPtr c =
-        std::dynamic_pointer_cast<QStabilizerHybrid>(CreateQuantumInterface(QINTERFACE_STABILIZER_HYBRID, engineType,
-            subEngineType, qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
-            useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
+    QStabilizerHybridPtr c = std::dynamic_pointer_cast<QStabilizerHybrid>(CreateQuantumInterface(tEngines, qubitCount,
+        0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
+        (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
+
+    // TODO: Remove.
+    SwitchToEngine();
+
+    Finish();
+    c->Finish();
 
     if (stabilizer) {
-        c->stabilizer = std::make_shared<QStabilizer>(*stabilizer);
-        for (bitLenInt i = 0; i < shards.size(); i++) {
+        c->engine = NULL;
+        c->stabilizer = stabilizer->Clone();
+        for (bitLenInt i = 0; i < qubitCount; i++) {
             if (shards[i]) {
-                c->shards[i] = std::make_shared<QStabilizerShard>(shards[i]->gate);
+                c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
             }
-            c->shardsEigenZ[i] = shardsEigenZ[i];
         }
     } else {
-        complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
-        engine->GetQuantumState(stateVec);
-        c->SwitchToEngine();
-        c->engine->SetQuantumState(stateVec);
-        delete[] stateVec;
+        // Clone and set engine directly.
+        c->engine = engine->Clone();
+        c->stabilizer = NULL;
     }
 
     return c;
@@ -113,177 +142,10 @@ void QStabilizerHybrid::SwitchToEngine()
         return;
     }
 
-    complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
-    stabilizer->GetQuantumState(stateVec);
-
     engine = MakeEngine();
-    engine->SetQuantumState(stateVec);
-    delete[] stateVec;
-
-    if (engineType != QINTERFACE_QUNIT) {
-        stabilizer.reset();
-        FlushBuffers();
-        return;
-    }
-
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (stabilizer->IsSeparableZ(i)) {
-            engine->SetBit(i, stabilizer->M(i));
-            continue;
-        }
-
-        stabilizer->H(i);
-        if (stabilizer->IsSeparableZ(i)) {
-            engine->SetBit(i, stabilizer->M(i));
-            engine->H(i);
-            continue;
-        }
-
-        stabilizer->S(i);
-        if (stabilizer->IsSeparableZ(i)) {
-            engine->SetBit(i, stabilizer->M(i));
-            engine->H(i);
-            engine->S(i);
-        }
-    }
-
+    stabilizer->GetQuantumState(engine);
     stabilizer.reset();
     FlushBuffers();
-}
-
-void QStabilizerHybrid::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
-{
-    if (stabilizer) {
-        real1_f prob = Prob(control1);
-        if (prob == ZERO_R1) {
-            return;
-        }
-        if (prob == ONE_R1) {
-            CNOT(control2, target);
-            return;
-        }
-
-        prob = Prob(control2);
-        if (prob == ZERO_R1) {
-            return;
-        }
-        if (prob == ONE_R1) {
-            CNOT(control1, target);
-            return;
-        }
-
-        SwitchToEngine();
-    }
-
-    engine->CCNOT(control1, control2, target);
-}
-
-void QStabilizerHybrid::CH(bitLenInt control, bitLenInt target)
-{
-    if (stabilizer) {
-        real1_f prob = Prob(control);
-        if (prob == ZERO_R1) {
-            return;
-        }
-        if (prob == ONE_R1) {
-            H(target);
-            return;
-        }
-
-        SwitchToEngine();
-    }
-
-    engine->CH(control, target);
-}
-
-void QStabilizerHybrid::CS(bitLenInt control, bitLenInt target)
-{
-    if (stabilizer) {
-        real1_f prob = Prob(control);
-        if (prob == ZERO_R1) {
-            return;
-        }
-        if (prob == ONE_R1) {
-            S(target);
-            return;
-        }
-
-        SwitchToEngine();
-    }
-
-    engine->CS(control, target);
-}
-
-void QStabilizerHybrid::CIS(bitLenInt control, bitLenInt target)
-{
-    if (stabilizer) {
-        real1_f prob = Prob(control);
-        if (prob == ZERO_R1) {
-            return;
-        }
-        if (prob == ONE_R1) {
-            IS(target);
-            return;
-        }
-
-        SwitchToEngine();
-    }
-
-    engine->CIS(control, target);
-}
-
-void QStabilizerHybrid::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
-{
-    if (stabilizer) {
-        real1_f prob = Prob(control1);
-        if (prob == ZERO_R1) {
-            return;
-        }
-        if (prob == ONE_R1) {
-            CZ(control2, target);
-            return;
-        }
-
-        prob = Prob(control2);
-        if (prob == ZERO_R1) {
-            return;
-        }
-        if (prob == ONE_R1) {
-            CZ(control1, target);
-            return;
-        }
-
-        SwitchToEngine();
-    }
-
-    engine->CCZ(control1, control2, target);
-}
-
-void QStabilizerHybrid::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
-{
-    if (stabilizer) {
-        real1_f prob = Prob(control1);
-        if (prob == ZERO_R1) {
-            return;
-        }
-        if (prob == ONE_R1) {
-            CY(control2, target);
-            return;
-        }
-
-        prob = Prob(control2);
-        if (prob == ZERO_R1) {
-            return;
-        }
-        if (prob == ONE_R1) {
-            CY(control1, target);
-            return;
-        }
-
-        SwitchToEngine();
-    }
-
-    engine->CCY(control1, control2, target);
 }
 
 void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
@@ -297,12 +159,15 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
         engine = NULL;
 
         dest->shards = shards;
-        dest->shardsEigenZ = shardsEigenZ;
         DumpBuffers();
 
         SetQubitCount(1);
         stabilizer = MakeStabilizer(0);
         return;
+    }
+
+    if (stabilizer && !stabilizer->CanDecomposeDispose(start, length)) {
+        SwitchToEngine();
     }
 
     if (engine) {
@@ -320,8 +185,6 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     stabilizer->Decompose(start, dest->stabilizer);
     std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     shards.erase(shards.begin() + start, shards.begin() + start + length);
-    std::copy(shardsEigenZ.begin() + start, shardsEigenZ.begin() + start + length, dest->shardsEigenZ.begin());
-    shardsEigenZ.erase(shardsEigenZ.begin() + start, shardsEigenZ.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -349,7 +212,6 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
     }
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
-    shardsEigenZ.erase(shardsEigenZ.begin() + start, shardsEigenZ.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -377,7 +239,6 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
     }
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
-    shardsEigenZ.erase(shardsEigenZ.begin() + start, shardsEigenZ.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
@@ -386,50 +247,7 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
     DumpBuffers();
 
     if (qubitCount == 1U) {
-        bool isClifford = false;
-        bool isSet;
-        bool isX = false;
-        bool isY = false;
-        if (norm(inputState[1]) <= REAL1_EPSILON) {
-            isClifford = true;
-            isSet = false;
-        } else if (norm(inputState[0]) <= REAL1_EPSILON) {
-            isClifford = true;
-            isSet = true;
-        } else if (norm(inputState[0] - inputState[1]) <= REAL1_EPSILON) {
-            isClifford = true;
-            isSet = false;
-            isX = true;
-        } else if (norm(inputState[0] + inputState[1]) <= REAL1_EPSILON) {
-            isClifford = true;
-            isSet = true;
-            isX = true;
-        } else if (norm((I_CMPLX * inputState[0]) - inputState[1]) <= REAL1_EPSILON) {
-            isClifford = true;
-            isSet = false;
-            isY = true;
-        } else if (norm((I_CMPLX * inputState[0]) + inputState[1]) <= REAL1_EPSILON) {
-            isClifford = true;
-            isSet = true;
-            isY = true;
-        }
-
-        engine.reset();
-
-        if (isClifford) {
-            if (stabilizer) {
-                stabilizer->SetPermutation(isSet ? 1 : 0);
-            } else {
-                stabilizer = MakeStabilizer(isSet ? 1 : 0);
-            }
-            if (isX || isY) {
-                stabilizer->H(0);
-            }
-            if (isY) {
-                stabilizer->S(0);
-            }
-            return;
-        }
+        engine = NULL;
 
         if (stabilizer) {
             stabilizer->SetPermutation(0);
@@ -437,11 +255,13 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
             stabilizer = MakeStabilizer(0);
         }
 
-        real1 sqrtProb = sqrt(norm(inputState[1]));
-        real1 sqrt1MinProb = sqrt(norm(inputState[0]));
-        complex probMatrix[4] = { sqrt1MinProb, sqrtProb, sqrtProb, -sqrt1MinProb };
-        ApplySingleBit(probMatrix, 0);
-        ApplySinglePhase(inputState[0] / sqrt1MinProb, inputState[1] / sqrtProb, 0);
+        real1 prob = (real1)clampProb(norm(inputState[1]));
+        real1 sqrtProb = sqrt(prob);
+        real1 sqrt1MinProb = (real1)sqrt(clampProb(ONE_R1 - prob));
+        complex phase0 = std::polar(ONE_R1, arg(inputState[0]));
+        complex phase1 = std::polar(ONE_R1, arg(inputState[1]));
+        complex mtrx[4] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
+        ApplySingleBit(mtrx, 0);
 
         return;
     }
@@ -455,12 +275,7 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
     FlushBuffers();
 
     if (stabilizer) {
-        complex* stateVec = new complex[(bitCapIntOcl)maxQPower];
-        stabilizer->GetQuantumState(stateVec);
-        for (bitCapIntOcl i = 0; i < maxQPower; i++) {
-            outputProbs[i] = norm(stateVec[i]);
-        }
-        delete[] stateVec;
+        stabilizer->GetProbs(outputProbs);
     } else {
         engine->GetProbs(outputProbs);
     }
@@ -468,28 +283,21 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
 
 void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
-    bool wasCached;
     complex mtrx[4];
     if (shards[target]) {
-        QStabilizerShardPtr shard = shards[target];
-        shard->Compose(lMtrx);
-        std::copy(shard->gate, shard->gate + 4, mtrx);
+        shards[target]->Compose(lMtrx);
+        std::copy(shards[target]->gate, shards[target]->gate + 4, mtrx);
         shards[target] = NULL;
-        wasCached = true;
     } else {
         std::copy(lMtrx, lMtrx + 4, mtrx);
-        wasCached = false;
     }
 
-    if (IsIdentity(mtrx, false)) {
-        return;
-    }
-
-    if (!wasCached && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
         return;
     }
-    if (!wasCached && IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         ApplySingleInvert(mtrx[1], mtrx[2], target);
         return;
     }
@@ -499,114 +307,111 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) &&
-        IS_SAME(mtrx[2], -mtrx[3])) {
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
         stabilizer->H(target);
         return;
     }
 
-    if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[3], complex(ZERO_R1, -SQRT1_2_R1))) {
-        if (IS_SAME(mtrx[1], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[2], complex(ZERO_R1, SQRT1_2_R1))) {
-            stabilizer->H(target);
-            stabilizer->S(target);
-            return;
-        }
-
-        if (IS_SAME(mtrx[1], complex(ZERO_R1, SQRT1_2_R1)) && IS_SAME(mtrx[2], complex(SQRT1_2_R1, ZERO_R1))) {
-            stabilizer->S(target);
-            stabilizer->H(target);
-            return;
-        }
-    }
-
-    if (IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[3], complex(ZERO_R1, SQRT1_2_R1))) {
-        if (IS_SAME(mtrx[1], complex(SQRT1_2_R1, ZERO_R1)) && IS_SAME(mtrx[2], complex(ZERO_R1, -SQRT1_2_R1))) {
-            stabilizer->H(target);
-            stabilizer->IS(target);
-            return;
-        }
-
-        if (IS_SAME(mtrx[1], complex(ZERO_R1, -SQRT1_2_R1)) && IS_SAME(mtrx[2], complex(SQRT1_2_R1, ZERO_R1))) {
-            stabilizer->IS(target);
-            stabilizer->H(target);
-            return;
-        }
-    }
-
-    if (IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[1], complex(ONE_R1, ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
-        IS_SAME(mtrx[1], mtrx[2])) {
-        stabilizer->ISqrtX(target);
-        return;
-    }
-
-    if (IS_SAME(mtrx[0], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) && IS_SAME(mtrx[0], mtrx[3]) &&
-        IS_SAME(mtrx[1], mtrx[2])) {
-        stabilizer->SqrtX(target);
-        return;
-    }
-
-    if (IS_SAME(mtrx[0], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[1], complex(ONE_R1, -ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[2], complex(-ONE_R1, ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[3], complex(ONE_R1, -ONE_R1) / (real1)2.0f)) {
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        // Equivalent to X before H
         stabilizer->ISqrtY(target);
         return;
     }
 
-    if (IS_SAME(mtrx[0], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[1], complex(-ONE_R1, -ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[2], complex(ONE_R1, ONE_R1) / (real1)2.0f) &&
-        IS_SAME(mtrx[3], complex(ONE_R1, ONE_R1) / (real1)2.0f)) {
+    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        // Equivalent to H before X
         stabilizer->SqrtY(target);
         return;
     }
 
-    QStabilizerShardPtr shard = std::make_shared<QStabilizerShard>(mtrx);
-    if (!wasCached) {
-        // If in PauliX or PauliY basis, compose gate with conversion from/to PauliZ basis.
-        if (stabilizer->IsSeparableZ(target)) {
-            shardsEigenZ[target] = true;
-        } else if (stabilizer->IsSeparableX(target)) {
-            complex nMtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-                complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
-            QStabilizerShardPtr nShard = std::make_shared<QStabilizerShard>(nMtrx);
-            nShard->Compose(shard->gate);
-            shard = nShard;
-            stabilizer->H(target);
-            shardsEigenZ[target] = true;
-        } else if (stabilizer->IsSeparableY(target)) {
-            complex nMtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-                complex(ZERO_R1, SQRT1_2_R1), complex(ZERO_R1, -SQRT1_2_R1) };
-            QStabilizerShardPtr nShard = std::make_shared<QStabilizerShard>(nMtrx);
-            nShard->Compose(shard->gate);
-            shard = nShard;
-            stabilizer->IS(target);
-            stabilizer->H(target);
-            shardsEigenZ[target] = true;
-        } else {
-            shardsEigenZ[target] = false;
-        }
+    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        stabilizer->X(target);
+        stabilizer->SqrtY(target);
+        return;
     }
 
-    if (shardsEigenZ[target]) {
-        if (IS_NORM_0(shard->gate[1]) && IS_NORM_0(shard->gate[2])) {
-            return;
-        }
-        if (IS_NORM_0(shard->gate[0]) && IS_NORM_0(shard->gate[3])) {
-            stabilizer->X(target);
-            return;
-        }
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        stabilizer->H(target);
+        stabilizer->S(target);
+        return;
     }
 
-    shards[target] = shard;
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+        stabilizer->ISqrtY(target);
+        stabilizer->S(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        stabilizer->Y(target);
+        stabilizer->H(target);
+        stabilizer->S(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+        stabilizer->Z(target);
+        stabilizer->H(target);
+        stabilizer->S(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+        stabilizer->IS(target);
+        stabilizer->H(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        stabilizer->IS(target);
+        stabilizer->SqrtY(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+        stabilizer->IS(target);
+        stabilizer->H(target);
+        stabilizer->Y(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        stabilizer->IS(target);
+        stabilizer->H(target);
+        stabilizer->Z(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        stabilizer->SqrtX(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        stabilizer->ISqrtX(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        stabilizer->SqrtX(target);
+        stabilizer->Z(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        stabilizer->Z(target);
+        stabilizer->SqrtX(target);
+        return;
+    }
+
+    shards[target] = std::make_shared<MpsShard>(mtrx);
+    CacheEigenstate(target);
 }
 
 void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
+    complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (shards[target]) {
-        complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         ApplySingleBit(mtrx, target);
         return;
     }
@@ -625,14 +430,12 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
         return;
     }
 
-    complex sTest = bottomRight / topLeft;
-
-    if (IS_SAME(sTest, I_CMPLX)) {
+    if (IS_SAME(topLeft, -I_CMPLX * bottomRight)) {
         stabilizer->S(target);
         return;
     }
 
-    if (IS_SAME(sTest, -I_CMPLX)) {
+    if (IS_SAME(topLeft, I_CMPLX * bottomRight)) {
         stabilizer->IS(target);
         return;
     }
@@ -642,14 +445,14 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
         return;
     }
 
-    complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-    shards[target] = std::make_shared<QStabilizerShard>(mtrx);
+    shards[target] = std::make_shared<MpsShard>(mtrx);
+    CacheEigenstate(target);
 }
 
 void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
 {
+    complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (shards[target]) {
-        complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         ApplySingleBit(mtrx, target);
         return;
     }
@@ -665,27 +468,30 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
     }
 
     if (IS_SAME(topRight, -bottomLeft)) {
-        stabilizer->X(target);
-        stabilizer->Z(target);
+        stabilizer->Y(target);
         return;
     }
 
-    complex sTest = topRight / bottomLeft;
-
-    if (IS_SAME(sTest, I_CMPLX)) {
+    if (IS_SAME(topRight, -I_CMPLX * bottomLeft)) {
         stabilizer->X(target);
         stabilizer->S(target);
         return;
     }
 
-    if (IS_SAME(sTest, -I_CMPLX)) {
+    if (IS_SAME(topRight, I_CMPLX * bottomLeft)) {
+        stabilizer->S(target);
         stabilizer->X(target);
-        stabilizer->IS(target);
         return;
     }
 
-    complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    shards[target] = std::make_shared<QStabilizerShard>(mtrx);
+    if (stabilizer->IsSeparableZ(target)) {
+        // This gate has no meaningful effect on phase.
+        stabilizer->X(target);
+        return;
+    }
+
+    shards[target] = std::make_shared<MpsShard>(mtrx);
+    CacheEigenstate(target);
 }
 
 void QStabilizerHybrid::ApplyControlledSingleBit(
@@ -730,39 +536,70 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
 
     if (controls.size() > 1U) {
         SwitchToEngine();
+    } else {
+        FlushIfBlocked(controls[0], target, true);
     }
-
-    FlushIfBlocked(controls, target);
 
     if (engine) {
         engine->ApplyControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
         return;
     }
 
+    bitLenInt control = controls[0];
+    bool didDivert = false;
+
     if (IS_SAME(topLeft, ONE_CMPLX)) {
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
-            return;
-        }
-
-        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
-            stabilizer->CZ(controls[0], target);
-            return;
+            didDivert = true;
+        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            stabilizer->CZ(control, target);
+            didDivert = true;
         }
     } else if (IS_SAME(topLeft, -ONE_CMPLX)) {
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            return;
+            stabilizer->CNOT(control, target);
+            stabilizer->CZ(control, target);
+            stabilizer->CNOT(control, target);
+            didDivert = true;
+        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            stabilizer->CZ(control, target);
+            stabilizer->CNOT(control, target);
+            stabilizer->CZ(control, target);
+            stabilizer->CNOT(control, target);
+            didDivert = true;
         }
+    } else if (IS_SAME(topLeft, I_CMPLX)) {
+        if (IS_SAME(bottomRight, I_CMPLX)) {
+            stabilizer->CZ(control, target);
+            stabilizer->CY(control, target);
+            stabilizer->CNOT(control, target);
+            didDivert = true;
+        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
+            stabilizer->CY(control, target);
+            stabilizer->CNOT(control, target);
+            didDivert = true;
+        }
+    } else if (IS_SAME(topLeft, -I_CMPLX)) {
+        if (IS_SAME(bottomRight, I_CMPLX)) {
+            stabilizer->CNOT(control, target);
+            stabilizer->CY(control, target);
+            didDivert = true;
+        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
+            stabilizer->CY(control, target);
+            stabilizer->CZ(control, target);
+            stabilizer->CNOT(control, target);
+            didDivert = true;
+        }
+    }
 
-        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            return;
+    if (didDivert) {
+        if (shards[control]) {
+            CacheEigenstate(control);
         }
+        if (shards[target]) {
+            CacheEigenstate(target);
+        }
+        return;
     }
 
     SwitchToEngine();
@@ -784,45 +621,67 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
 
     if (controls.size() > 1U) {
         SwitchToEngine();
+    } else {
+        FlushIfBlocked(controls[0], target);
     }
-
-    FlushIfBlocked(controls, target);
 
     if (engine) {
         engine->ApplyControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
         return;
     }
 
+    bitLenInt control = controls[0];
+    bool didDivert = false;
+
     if (IS_SAME(topRight, ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
-            stabilizer->CNOT(controls[0], target);
-            return;
+            stabilizer->CNOT(control, target);
+            didDivert = true;
+        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            stabilizer->CNOT(control, target);
+            stabilizer->CZ(control, target);
+            didDivert = true;
         }
-
-        if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            return;
-        }
-    }
-
-    if (IS_SAME(topRight, -ONE_CMPLX)) {
+    } else if (IS_SAME(topRight, -ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            return;
+            stabilizer->CZ(control, target);
+            stabilizer->CNOT(control, target);
+            didDivert = true;
+        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            stabilizer->CZ(control, target);
+            stabilizer->CNOT(control, target);
+            stabilizer->CZ(control, target);
+            didDivert = true;
         }
-
-        if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            return;
+    } else if (IS_SAME(topRight, I_CMPLX)) {
+        if (IS_SAME(bottomLeft, I_CMPLX)) {
+            stabilizer->CZ(control, target);
+            stabilizer->CY(control, target);
+            didDivert = true;
+        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            stabilizer->CZ(control, target);
+            stabilizer->CY(control, target);
+            stabilizer->CZ(control, target);
+            didDivert = true;
+        }
+    } else if (IS_SAME(topRight, -I_CMPLX)) {
+        if (IS_SAME(bottomLeft, I_CMPLX)) {
+            stabilizer->CY(control, target);
+            didDivert = true;
+        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            stabilizer->CY(control, target);
+            stabilizer->CZ(control, target);
+            didDivert = true;
         }
     }
 
-    if (IS_SAME(topRight, -I_CMPLX) && IS_SAME(bottomLeft, I_CMPLX)) {
-        stabilizer->CY(controls[0], target);
+    if (didDivert) {
+        if (shards[control]) {
+            CacheEigenstate(control);
+        }
+        if (shards[target]) {
+            CacheEigenstate(target);
+        }
         return;
     }
 
@@ -844,7 +703,7 @@ void QStabilizerHybrid::ApplyAntiControlledSingleBit(
     }
 
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, controls)) {
+    if (TrimControls(lControls, lControlLen, controls, true)) {
         return;
     }
 
@@ -870,51 +729,20 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControl
         return;
     }
 
-    if (controls.size() > 1U) {
+    if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topLeft, bottomRight)) {
         SwitchToEngine();
+    } else {
+        FlushIfBlocked(controls[0], target, true);
     }
-
-    FlushIfBlocked(controls, target);
 
     if (engine) {
         engine->ApplyAntiControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
         return;
     }
 
-    if (IS_SAME(topLeft, ONE_CMPLX)) {
-        if (IS_SAME(bottomRight, ONE_CMPLX)) {
-            return;
-        }
-
-        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
-            stabilizer->X(controls[0]);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->X(controls[0]);
-            return;
-        }
-    } else if (IS_SAME(topLeft, -ONE_CMPLX)) {
-        if (IS_SAME(bottomRight, ONE_CMPLX)) {
-            stabilizer->X(controls[0]);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->X(controls[0]);
-            return;
-        }
-
-        if (IS_SAME(bottomRight, -ONE_CMPLX)) {
-            stabilizer->X(controls[0]);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->X(controls[0]);
-            return;
-        }
-    }
-
-    SwitchToEngine();
-    engine->ApplyAntiControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
+    X(controls[0]);
+    ApplyControlledSinglePhase(&(controls[0]), 1U, target, topLeft, bottomRight);
+    X(controls[0]);
 }
 
 void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lControls, const bitLenInt& lControlLen,
@@ -930,10 +758,10 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
         return;
     }
 
-    FlushIfBlocked(controls, target);
-
-    if (controls.size() > 1U) {
+    if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
         SwitchToEngine();
+    } else {
+        FlushIfBlocked(controls[0], target);
     }
 
     if (engine) {
@@ -941,66 +769,146 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
         return;
     }
 
-    if (IS_SAME(topRight, ONE_CMPLX)) {
-        if (IS_SAME(bottomLeft, ONE_CMPLX)) {
-            stabilizer->X(controls[0]);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->X(controls[0]);
-            return;
-        }
+    X(controls[0]);
+    ApplyControlledSingleInvert(&(controls[0]), 1U, target, topRight, bottomLeft);
+    X(controls[0]);
+}
 
-        if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
-            stabilizer->X(controls[0]);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->X(controls[0]);
-            return;
-        }
+real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
+{
+    if (engine) {
+        return engine->Prob(qubit);
     }
 
-    if (IS_SAME(topRight, -ONE_CMPLX)) {
-        if (IS_SAME(bottomLeft, ONE_CMPLX)) {
-            stabilizer->X(controls[0]);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->X(controls[0]);
-            return;
-        }
-
-        if (IS_SAME(topRight, -ONE_CMPLX) && IS_SAME(bottomLeft, -ONE_CMPLX)) {
-            stabilizer->X(controls[0]);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->CNOT(controls[0], target);
-            stabilizer->CZ(controls[0], target);
-            stabilizer->X(controls[0]);
-            return;
-        }
+    if (shards[qubit] && shards[qubit]->IsInvert()) {
+        InvertBuffer(qubit);
     }
 
-    if (IS_SAME(topRight, -I_CMPLX) && IS_SAME(bottomLeft, I_CMPLX)) {
-        stabilizer->X(controls[0]);
-        stabilizer->CY(controls[0], target);
-        stabilizer->X(controls[0]);
-        return;
+    if (shards[qubit] && !shards[qubit]->IsPhase()) {
+        // Bit was already rotated to Z basis, if separable.
+        if (stabilizer->IsSeparableZ(qubit)) {
+            if (stabilizer->M(qubit)) {
+                return norm(shards[qubit]->gate[3]);
+            }
+            return norm(shards[qubit]->gate[2]);
+        }
+
+        // Otherwise, buffer will not change the fact that state appears maximally mixed.
+        return ONE_R1 / 2;
     }
 
-    SwitchToEngine();
-    engine->ApplyAntiControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
+    if (stabilizer->IsSeparableZ(qubit)) {
+        return stabilizer->M(qubit) ? ONE_R1 : ZERO_R1;
+    }
+
+    // Otherwise, state appears locally maximally mixed.
+    return ONE_R1 / 2;
+}
+
+bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
+{
+    // This check will first try to coax into decomposable form:
+    if (stabilizer && !stabilizer->CanDecomposeDispose(qubit, 1)) {
+        SwitchToEngine();
+    }
+
+    if (engine) {
+        return engine->ForceM(qubit, result, doForce, doApply);
+    }
+
+    if (shards[qubit] && shards[qubit]->IsInvert()) {
+        InvertBuffer(qubit);
+    }
+
+    if (shards[qubit]) {
+        if (!shards[qubit]->IsPhase() && stabilizer->IsSeparableZ(qubit)) {
+            if (doForce) {
+                if (doApply) {
+                    if (result != stabilizer->M(qubit)) {
+                        stabilizer->X(qubit);
+                    }
+                    shards[qubit] = NULL;
+                }
+
+                return result;
+            }
+            // Bit was already rotated to Z basis, if separable.
+            return CollapseSeparableShard(qubit);
+        }
+
+        // Otherwise, buffer will not change the fact that state appears maximally mixed.
+        shards[qubit] = NULL;
+    }
+
+    return stabilizer->M(qubit, result, doForce, doApply);
 }
 
 bitCapInt QStabilizerHybrid::MAll()
 {
-    FlushBuffers();
-
     if (stabilizer) {
-        bitCapIntOcl toRet = 0;
         for (bitLenInt i = 0; i < qubitCount; i++) {
-            toRet |= ((stabilizer->M(i) ? ONE_BCI : 0) << i);
+            if (shards[i] && shards[i]->IsInvert()) {
+                InvertBuffer(i);
+            }
+            if (shards[i]) {
+                if (!shards[i]->IsPhase() && stabilizer->IsSeparableZ(i)) {
+                    // Bit was already rotated to Z basis, if separable.
+                    CollapseSeparableShard(i);
+                }
+
+                // Otherwise, buffer will not change the fact that state appears maximally mixed.
+                shards[i] = NULL;
+            }
         }
-        return (bitCapInt)toRet;
     }
 
-    SwitchToEngine();
-    return engine->MAll();
+    bitCapInt toRet = 0;
+    if (stabilizer) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            if (stabilizer->M(i)) {
+                toRet |= pow2(i);
+            }
+        }
+    } else {
+        toRet = engine->MAll();
+    }
+
+    SetPermutation(toRet);
+
+    return toRet;
+}
+
+std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
+    const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
+{
+    if (!shots) {
+        return std::map<bitCapInt, int>();
+    }
+
+    if (engine) {
+        return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
+    }
+
+    bitLenInt qIndex;
+    bitCapInt sample, raw;
+    std::map<bitCapInt, int> results;
+    QInterfacePtr clone = Clone();
+
+    for (unsigned int shot = 0; shot < shots; shot++) {
+        sample = 0U;
+        raw = clone->MAll();
+        for (qIndex = 0; qIndex < qPowerCount; qIndex++) {
+            if (raw & qPowers[qIndex]) {
+                sample |= pow2(qIndex);
+            }
+        }
+        results[sample]++;
+
+        if (shot < (shots - 1U)) {
+            clone = Clone();
+        }
+    }
+
+    return results;
 }
 } // namespace Qrack

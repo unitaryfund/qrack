@@ -74,8 +74,10 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_CUNIFORMPARITYRZ, "cuniformparityrz"),
     OCLKernelHandle(OCL_API_X_SINGLE, "xsingle"),
     OCLKernelHandle(OCL_API_X_SINGLE_WIDE, "xsinglewide"),
+    OCLKernelHandle(OCL_API_X_MASK, "xmask"),
     OCLKernelHandle(OCL_API_Z_SINGLE, "zsingle"),
     OCLKernelHandle(OCL_API_Z_SINGLE_WIDE, "zsinglewide"),
+    OCLKernelHandle(OCL_API_PHASE_PARITY, "phaseparity"),
     OCLKernelHandle(OCL_API_COMPOSE, "compose"),
     OCLKernelHandle(OCL_API_COMPOSE_WIDE, "compose"),
     OCLKernelHandle(OCL_API_COMPOSE_MID, "composemid"),
@@ -90,6 +92,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_PROBMASKALL, "probmaskall"),
     OCLKernelHandle(OCL_API_PROBPARITY, "probparity"),
     OCLKernelHandle(OCL_API_FORCEMPARITY, "forcemparity"),
+    OCLKernelHandle(OCL_API_EXPPERM, "expperm"),
     OCLKernelHandle(OCL_API_ROL, "rol"),
     OCLKernelHandle(OCL_API_INC, "inc"),
     OCLKernelHandle(OCL_API_CINC, "cinc"),
@@ -126,8 +129,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_FULLADD, "fulladd"),
     OCLKernelHandle(OCL_API_IFULLADD, "ifulladd"),
     OCLKernelHandle(OCL_API_CLEARBUFFER, "clearbuffer"),
-    OCLKernelHandle(OCL_API_SHUFFLEBUFFERS, "shufflebuffers"),
-    OCLKernelHandle(OCL_API_COPYPAGE, "copypage")
+    OCLKernelHandle(OCL_API_SHUFFLEBUFFERS, "shufflebuffers")
 };
 // clang-format on
 
@@ -342,7 +344,8 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         std::cout << "Device #" << i << ", ";
         cl::Program program = MakeProgram(buildFromSource, sources, clBinName, devCntxt);
 
-        cl_int buildError = program.build({ all_devices[i] }, "-cl-denorms-are-zero -cl-fast-relaxed-math");
+        cl_int buildError =
+            program.build({ all_devices[i] }, "-cl-strict-aliasing -cl-denorms-are-zero -cl-fast-relaxed-math -Werror");
         if (buildError != CL_SUCCESS) {
             std::cout << "Error building for device #" << i << ": " << buildError << ", "
                       << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(all_devices[i])
@@ -385,6 +388,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         m_pInstance = new OCLEngine();
     }
     m_pInstance->SetDeviceContextPtrVector(all_dev_contexts, default_dev_context);
+    m_pInstance->activeAllocSizes = std::vector<size_t>(all_dev_contexts.size());
 
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
     std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
@@ -395,8 +399,11 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 }
 
 OCLEngine::OCLEngine()
+    : maxActiveAllocSize(-1)
 {
-    // Intentionally left blank;
+    if (getenv("QRACK_MAX_ALLOC_MB")) {
+        maxActiveAllocSize = 1024 * 1024 * (size_t)std::stoi(std::string(getenv("QRACK_MAX_ALLOC_MB")));
+    }
 }
 OCLEngine* OCLEngine::m_pInstance = NULL;
 OCLEngine* OCLEngine::Instance()

@@ -24,7 +24,7 @@ typedef std::shared_ptr<QPager> QPagerPtr;
  */
 class QPager : public QInterface {
 protected:
-    QInterfaceEngine engine;
+    std::vector<QInterfaceEngine> engines;
     int devID;
     complex phaseFactor;
     bool useHostRam;
@@ -35,8 +35,10 @@ protected:
     std::vector<int> deviceIDs;
 
     bool useHardwareThreshold;
+    bool useGpuThreshold;
     bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
+    bitLenInt deviceGlobalQubits;
     bitLenInt thresholdQubitsPerPage;
     bitLenInt pStridePow;
     bitLenInt baseQubitsPerPage;
@@ -51,30 +53,27 @@ protected:
     {
         QInterface::SetQubitCount(qb);
 
-        bitLenInt qpd = 2U;
-        if (getenv("QRACK_DEVICE_GLOBAL_QB")) {
-            qpd = (bitLenInt)std::stoi(std::string(getenv("QRACK_DEVICE_GLOBAL_QB")));
-        }
+        if (useHardwareThreshold) {
+            if (useGpuThreshold) {
+                // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
+                // environment variable.
 
-        if (useHardwareThreshold && ((engine == QINTERFACE_OPENCL) || (engine == QINTERFACE_HYBRID))) {
-            // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
-            // environment variable.
+                thresholdQubitsPerPage = maxPageQubits;
 
-            thresholdQubitsPerPage = maxPageQubits;
+                bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
+                if (threshTest < thresholdQubitsPerPage) {
+                    thresholdQubitsPerPage = threshTest;
+                }
 
-            if ((qubitCount - qpd) < thresholdQubitsPerPage) {
-                thresholdQubitsPerPage = qubitCount - qpd;
-            }
+                if (thresholdQubitsPerPage < minPageQubits) {
+                    thresholdQubitsPerPage = minPageQubits;
+                }
+            } else {
+                thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
 
-            if (thresholdQubitsPerPage < minPageQubits) {
-                thresholdQubitsPerPage = minPageQubits;
-            }
-        } else if (useHardwareThreshold) {
-            thresholdQubitsPerPage = qubitCount - qpd;
-
-            minPageQubits = log2(std::thread::hardware_concurrency()) + pStridePow;
-            if (thresholdQubitsPerPage < minPageQubits) {
-                thresholdQubitsPerPage = minPageQubits;
+                if (thresholdQubitsPerPage < minPageQubits) {
+                    thresholdQubitsPerPage = minPageQubits;
+                }
             }
         }
 
@@ -96,7 +95,7 @@ protected:
     void SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl = false, const bool& isAnti = false);
     template <typename Qubit1Fn>
     void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, const complex* mtrx,
-        const bool& isSqiCtrl = false);
+        const bool& isSqiCtrl = false, const bool& isIntraCtrled = false);
     template <typename Qubit1Fn>
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
     void MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac);
@@ -111,22 +110,30 @@ protected:
     void ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex* mtrx);
 
+    void Init();
+
 public:
-    QPager(QInterfaceEngine eng, bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored = false, bool useHostMem = false,
-        int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
-        real1_f separation_thresh = FP_NORM_EPSILON);
+    QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
+        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
+        bool ignored = false, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
+        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
+        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
 
     QPager(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored = false, bool useHostMem = false,
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
-        : QPager(QINTERFACE_OPTIMAL_SINGLE_PAGE, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem,
+        : QPager({ QINTERFACE_OPTIMAL_SINGLE_PAGE }, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem,
               deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
     {
     }
+
+    QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ignored = 0,
+        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
+        bool ignored2 = false, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
+        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
+        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
 
     virtual void SetConcurrency(uint32_t threadsPerEngine)
     {
@@ -218,6 +225,10 @@ public:
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
 
+    virtual void XMask(bitCapInt mask);
+    virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
+    virtual void PhaseParity(real1_f radians, bitCapInt mask);
+
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
@@ -270,8 +281,6 @@ public:
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
-
     virtual real1_f Prob(bitLenInt qubitIndex);
     virtual real1_f ProbAll(bitCapInt fullRegister);
     virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
@@ -294,6 +303,7 @@ public:
         CombineEngines();
         return qPages[0]->ForceMParity(mask, result, doForce);
     }
+    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0);
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) {

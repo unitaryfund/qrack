@@ -42,6 +42,7 @@ struct QueueItem {
     OCLAPI api_call;
     size_t workItemCount;
     size_t localGroupSize;
+    size_t deallocSize;
     std::vector<BufferPtr> buffers;
     size_t localBuffSize;
     bool isSetDoNorm;
@@ -49,10 +50,11 @@ struct QueueItem {
     bool doNorm;
     real1 runningNorm;
 
-    QueueItem(OCLAPI ac, size_t wic, size_t lgs, std::vector<BufferPtr> b, size_t lbs)
+    QueueItem(OCLAPI ac, size_t wic, size_t lgs, size_t ds, std::vector<BufferPtr> b, size_t lbs)
         : api_call(ac)
         , workItemCount(wic)
         , localGroupSize(lgs)
+        , deallocSize(ds)
         , buffers(b)
         , localBuffSize(lbs)
         , isSetDoNorm(false)
@@ -66,6 +68,7 @@ struct QueueItem {
         : api_call()
         , workItemCount(0)
         , localGroupSize(0)
+        , deallocSize(0)
         , buffers()
         , localBuffSize(0)
         , isSetDoNorm(true)
@@ -79,6 +82,7 @@ struct QueueItem {
         : api_call()
         , workItemCount(0)
         , localGroupSize(0)
+        , deallocSize(0)
         , buffers()
         , localBuffSize(0)
         , isSetDoNorm(false)
@@ -98,15 +102,32 @@ struct PoolItem {
     std::shared_ptr<real1> angleArray;
     complex* otherStateVec;
 
+    virtual BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
+    {
+        cl_int error;
+        BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
+        if (error != CL_SUCCESS) {
+            if ((error == CL_MEM_OBJECT_ALLOCATION_FAILURE) || (error == CL_OUT_OF_HOST_MEMORY) ||
+                (error == CL_INVALID_BUFFER_SIZE)) {
+                throw std::bad_alloc();
+            }
+            throw std::runtime_error("OpenCL error code on buffer allocation attempt: " + std::to_string(error));
+        }
+
+        return toRet;
+    }
+
     PoolItem(cl::Context& context)
         : probArray(NULL)
         , angleArray(NULL)
         , otherStateVec(NULL)
     {
-        cmplxBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
-        realBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
-        ulongBuffer = std::make_shared<cl::Buffer>(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * BCI_ARG_LEN);
+        cmplxBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
+        realBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
+        ulongBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * BCI_ARG_LEN);
     }
+
+    virtual ~PoolItem() {}
 };
 
 typedef std::shared_ptr<PoolItem> PoolItemPtr;
@@ -152,6 +173,7 @@ protected:
     size_t maxWorkItems;
     size_t maxMem;
     size_t maxAlloc;
+    size_t totalOclAllocSize;
     unsigned int procElemCount;
     bool unlockHostMem;
     cl_int lockSyncFlags;
@@ -187,19 +209,34 @@ public:
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored2 = {}, bitLenInt ignored4 = 0,
         real1_f ignored3 = FP_NORM_EPSILON);
 
-    virtual ~QEngineOCL() { ZeroAmplitudes(); }
+    virtual ~QEngineOCL() { FreeAll(); }
+
+    virtual void FreeAll()
+    {
+        ZeroAmplitudes();
+
+        powersBuffer = NULL;
+        if (nrmArray) {
+            FreeAligned(nrmArray);
+            nrmArray = NULL;
+        }
+
+        SubtractAlloc(totalOclAllocSize);
+    }
 
     virtual void ZeroAmplitudes()
     {
+        clDump();
+        runningNorm = ZERO_R1;
+
         if (!stateBuffer) {
-            runningNorm = ZERO_R1;
             return;
         }
 
-        clDump();
-        runningNorm = ZERO_R1;
         ResetStateBuffer(NULL);
         FreeStateVec();
+
+        SubtractAlloc(sizeof(complex) * maxQPowerOcl);
     }
 
     virtual void SetQubitCount(bitLenInt qb)
@@ -233,9 +270,6 @@ public:
 
     virtual void CopyStateVec(QEnginePtr src)
     {
-        Finish();
-        src->Finish();
-
         if (src->IsZeroAmplitude()) {
             ZeroAmplitudes();
             return;
@@ -272,9 +306,9 @@ public:
         }
     }
     virtual void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
-        size_t localBuffSize = 0)
+        size_t localBuffSize = 0, size_t deallocSize = 0)
     {
-        AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, args, localBuffSize));
+        AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize, args, localBuffSize));
     }
 
     bitCapIntOcl GetMaxSize() { return maxAlloc / sizeof(complex); };
@@ -298,6 +332,34 @@ public:
     virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
     using QEngine::ApplySinglePhase;
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
+
+    virtual void XMask(bitCapInt mask)
+    {
+        if (!mask) {
+            return;
+        }
+
+        if (!(mask & (mask - ONE_BCI))) {
+            X(log2(mask));
+            return;
+        }
+
+        BitMask((bitCapIntOcl)mask, OCL_API_X_MASK);
+    }
+    virtual void PhaseParity(real1_f radians, bitCapInt mask)
+    {
+        if (!mask) {
+            return;
+        }
+
+        if (!(mask & (mask - ONE_BCI))) {
+            complex phaseFac = std::polar(ONE_R1, radians / 2);
+            ApplySinglePhase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
+            return;
+        }
+
+        BitMask((bitCapIntOcl)mask, OCL_API_PHASE_PARITY, radians);
+    }
 
     using QEngine::Compose;
     virtual bitLenInt Compose(QEngineOCLPtr toCopy);
@@ -353,6 +415,7 @@ public:
     virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
     virtual real1_f ProbParity(const bitCapInt& mask);
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
+    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0);
 
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
@@ -383,6 +446,38 @@ public:
     void DispatchQueue(cl_event event, cl_int type);
 
 protected:
+    virtual void AddAlloc(size_t size)
+    {
+        size_t currentAlloc = OCLEngine::Instance()->AddToActiveAllocSize(deviceID, size);
+        if (currentAlloc > OCLEngine::Instance()->GetMaxActiveAllocSize()) {
+            OCLEngine::Instance()->SubtractFromActiveAllocSize(deviceID, size);
+            FreeAll();
+            throw std::bad_alloc();
+        }
+        totalOclAllocSize += size;
+    }
+    virtual void SubtractAlloc(size_t size)
+    {
+        OCLEngine::Instance()->SubtractFromActiveAllocSize(deviceID, size);
+        totalOclAllocSize -= size;
+    }
+
+    virtual BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
+    {
+        cl_int error;
+        BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
+        if (error != CL_SUCCESS) {
+            FreeAll();
+            if ((error == CL_MEM_OBJECT_ALLOCATION_FAILURE) || (error == CL_OUT_OF_HOST_MEMORY) ||
+                (error == CL_INVALID_BUFFER_SIZE)) {
+                throw std::bad_alloc();
+            }
+            throw std::runtime_error("OpenCL error code on buffer allocation attempt: " + std::to_string(error));
+        }
+
+        return toRet;
+    }
+
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
     virtual complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
@@ -441,6 +536,18 @@ protected:
     virtual void clFinish(bool doHard = false);
 
     /**
+     * Flushes the OpenCL event queue, and checks for errors.
+     */
+    virtual void clFlush()
+    {
+        cl_int error = queue.flush();
+        if (error != CL_SUCCESS) {
+            FreeAll();
+            throw std::runtime_error("Failed to flush queue, error code: " + std::to_string(error));
+        }
+    }
+
+    /**
      * Dumps the remaining asynchronous wait event list or queue of OpenCL events, for the current queue.
      */
     virtual void clDump();
@@ -462,6 +569,8 @@ protected:
     }
     virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
         const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh = REAL1_DEFAULT_ARG);
+
+    virtual void BitMask(bitCapIntOcl mask, OCLAPI api_call, real1 phase = PI_R1);
 
     virtual void ApplyM(bitCapInt mask, bool result, complex nrm);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);

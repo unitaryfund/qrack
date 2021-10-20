@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <unordered_set>
+
 #include "qinterface.hpp"
 
-#define IS_SAME(c1, c2) (norm((c1) - (c2)) <= FP_NORM_EPSILON)
-#define IS_OPPOSITE(c1, c2) (norm((c1) + (c2)) <= FP_NORM_EPSILON)
 #define IS_ARG_0(c) IS_SAME(c, ONE_CMPLX)
 #define IS_ARG_PI(c) IS_OPPOSITE(c, ONE_CMPLX)
 
@@ -303,29 +303,29 @@ protected:
     }
 
 public:
-    void AddPhaseAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    void AddPhaseAngles(QEngineShardPtr control, const complex& topLeft, const complex& bottomRight)
     {
-        AddAngles(control, cmplxDiff, cmplxSame, &QEngineShard::MakePhaseControlledBy, targetOfShards,
+        AddAngles(control, topLeft, bottomRight, &QEngineShard::MakePhaseControlledBy, targetOfShards,
             &QEngineShard::RemoveControl);
     }
-    void AddAntiPhaseAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    void AddAntiPhaseAngles(QEngineShardPtr control, const complex& bottomRight, const complex& topLeft)
     {
-        AddAngles(control, cmplxDiff, cmplxSame, &QEngineShard::MakePhaseAntiControlledBy, antiTargetOfShards,
+        AddAngles(control, bottomRight, topLeft, &QEngineShard::MakePhaseAntiControlledBy, antiTargetOfShards,
             &QEngineShard::RemoveAntiControl);
     }
-    void AddInversionAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    void AddInversionAngles(QEngineShardPtr control, const complex& topRight, const complex& bottomLeft)
     {
         MakePhaseControlledBy(control);
         targetOfShards[control]->isInvert = !targetOfShards[control]->isInvert;
         std::swap(targetOfShards[control]->cmplxDiff, targetOfShards[control]->cmplxSame);
-        AddPhaseAngles(control, cmplxDiff, cmplxSame);
+        AddPhaseAngles(control, topRight, bottomLeft);
     }
-    void AddAntiInversionAngles(QEngineShardPtr control, const complex& cmplxDiff, const complex& cmplxSame)
+    void AddAntiInversionAngles(QEngineShardPtr control, const complex& bottomLeft, const complex& topRight)
     {
         MakePhaseAntiControlledBy(control);
         antiTargetOfShards[control]->isInvert = !antiTargetOfShards[control]->isInvert;
         std::swap(antiTargetOfShards[control]->cmplxDiff, antiTargetOfShards[control]->cmplxSame);
-        AddAntiPhaseAngles(control, cmplxDiff, cmplxSame);
+        AddAntiPhaseAngles(control, bottomLeft, topRight);
     }
 
 protected:
@@ -483,7 +483,7 @@ public:
         } else {
             std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
             std::swap(antiPhaseShard->second->cmplxDiff, antiPhaseShard->second->cmplxSame);
-            std::swap(targetOfShards[control], antiTargetOfShards[control]);
+            targetOfShards[control].swap(antiTargetOfShards[control]);
         }
     }
 
@@ -546,6 +546,7 @@ protected:
     {
         PhaseShardPtr buffer;
         ShardToPhaseMap::iterator phaseShard = localMap.begin();
+        bitLenInt i = 0;
 
         while (phaseShard != localMap.end()) {
             buffer = phaseShard->second;
@@ -554,8 +555,30 @@ protected:
                 ((*phaseShard->first).*remoteMapGet)().erase(this);
                 localMap.erase(phaseShard);
             } else {
-                phaseShard++;
+                i++;
             }
+
+            phaseShard = localMap.begin();
+            std::advance(phaseShard, i);
+        }
+    }
+
+    void RemovePhaseBuffers(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet)
+    {
+        ShardToPhaseMap::iterator phaseShard = localMap.begin();
+        bitLenInt i = 0;
+
+        while (phaseShard != localMap.end()) {
+            if (!phaseShard->second->isInvert) {
+                // The buffer is equal to the identity operator, and it can be removed.
+                ((*phaseShard->first).*remoteMapGet)().erase(this);
+                localMap.erase(phaseShard);
+            } else {
+                i++;
+            }
+
+            phaseShard = localMap.begin();
+            std::advance(phaseShard, i);
         }
     }
 
@@ -568,16 +591,16 @@ public:
         // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
         for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
-            if (norm(buffer->cmplxDiff - buffer->cmplxSame) < ONE_R1) {
+            if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
                 if (buffer->isInvert) {
-                    buffer->cmplxSame = -buffer->cmplxDiff;
                     buffer->isInvert = false;
+                    buffer->cmplxSame *= -ONE_CMPLX;
                 }
             } else {
                 if (buffer->isInvert) {
                     std::swap(buffer->cmplxDiff, buffer->cmplxSame);
                 } else {
-                    buffer->cmplxSame = buffer->cmplxDiff;
+                    buffer->cmplxSame *= -ONE_CMPLX;
                     buffer->isInvert = true;
                 }
             }
@@ -587,17 +610,16 @@ public:
 
         for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
-            if (norm(buffer->cmplxDiff - buffer->cmplxSame) < ONE_R1) {
+            if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
                 if (buffer->isInvert) {
-                    buffer->cmplxDiff = -buffer->cmplxSame;
                     buffer->isInvert = false;
-                } else {
+                    buffer->cmplxDiff *= -ONE_CMPLX;
                 }
             } else {
                 if (buffer->isInvert) {
                     std::swap(buffer->cmplxDiff, buffer->cmplxSame);
                 } else {
-                    buffer->cmplxDiff = buffer->cmplxSame;
+                    buffer->cmplxDiff *= -ONE_CMPLX;
                     buffer->isInvert = true;
                 }
             }
@@ -606,11 +628,12 @@ public:
         RemoveIdentityBuffers(antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
     }
 
-    bool IsInvertControlOf(QEngineShardPtr target) { return (controlsShards.find(target) != controlsShards.end()); }
-
-    bool IsInvertAntiControlOf(QEngineShardPtr target)
+    void DumpPhaseBuffers()
     {
-        return (antiControlsShards.find(target) != antiControlsShards.end());
+        RemovePhaseBuffers(targetOfShards, &QEngineShard::GetControlsShards);
+        RemovePhaseBuffers(antiTargetOfShards, &QEngineShard::GetAntiControlsShards);
+        RemovePhaseBuffers(controlsShards, &QEngineShard::GetTargetOfShards);
+        RemovePhaseBuffers(antiControlsShards, &QEngineShard::GetAntiTargetOfShards);
     }
 
     bool IsInvertControl()
@@ -651,8 +674,6 @@ public:
         return false;
     }
 
-    bool IsInvert() { return IsInvertTarget() || IsInvertControl(); }
-
 protected:
     void ClearMapInvertPhase(ShardToPhaseMap& shards)
     {
@@ -686,7 +707,7 @@ public:
 
         return unit->Prob(mapped);
     }
-    bool isClifford() { return unit ? unit->isClifford(mapped) : true; };
+    bool isClifford() { return unit && unit->isClifford(mapped); };
 };
 
 class QEngineShardMap {
@@ -745,7 +766,7 @@ public:
             offset = swapMap[index];
             shards.erase(shards.begin() + offset);
 
-            for (lcv = 0; lcv < swapMap.size(); lcv++) {
+            for (lcv = 0; lcv < (bitLenInt)swapMap.size(); lcv++) {
                 if (swapMap[lcv] >= offset) {
                     swapMap[lcv]--;
                 }

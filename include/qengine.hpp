@@ -31,6 +31,10 @@ protected:
     /// summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
     real1 runningNorm;
 
+    bool IsPhase(const complex* mtrx) { return IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]); }
+
+    bool IsInvert(const complex* mtrx) { return IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]); }
+
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, bool useHardwareRNG = true, real1_f norm_thresh = REAL1_EPSILON)
@@ -48,8 +52,6 @@ public:
     {
         // Intentionally left blank
     }
-
-    virtual ~QEngine() { Finish(); }
 
     virtual real1_f GetRunningNorm()
     {
@@ -73,6 +75,8 @@ public:
 
     virtual void QueueSetDoNormalize(const bool& doNorm) = 0;
     virtual void QueueSetRunningNorm(const real1_f& runningNrm) = 0;
+
+    virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);

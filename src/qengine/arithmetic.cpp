@@ -120,13 +120,13 @@ void QEngineCPU::CINC(
         return;
     }
 
-    bitCapInt* controlPowers = new bitCapInt[controlLen];
+    std::unique_ptr<bitCapInt[]> controlPowers(new bitCapInt[controlLen]);
     bitCapInt controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        controlPowers[i] = pow2(controls[i]);
-        controlMask |= controlPowers[i];
+        controlPowers.get()[i] = pow2(controls[i]);
+        controlMask |= controlPowers.get()[i];
     }
-    std::sort(controlPowers, controlPowers + controlLen);
+    std::sort(controlPowers.get(), controlPowers.get() + controlLen);
 
     bitCapInt inOutMask = lengthMask << inOutStart;
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inOutMask | controlMask);
@@ -137,14 +137,12 @@ void QEngineCPU::CINC(
     nStateVec->copy(stateVec);
     stateVec->isReadLocked = false;
 
-    par_for_mask(0, maxQPower, controlPowers, controlLen, [&](const bitCapInt lcv, const int cpu) {
+    par_for_mask(0, maxQPower, controlPowers.get(), controlLen, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inOutInt = (lcv & inOutMask) >> inOutStart;
         bitCapInt outInt = (inOutInt + toAdd) & lengthMask;
         nStateVec->write((outInt << inOutStart) | otherRes | controlMask, stateVec->read(lcv | controlMask));
     });
-
-    delete[] controlPowers;
 
     ResetStateVec(nStateVec);
 }
@@ -419,18 +417,18 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
     bitCapInt inOutMask = lowMask << inOutStart;
     bitCapInt carryMask = lowMask << carryStart;
 
-    bitCapInt* skipPowers = new bitCapInt[controlLen + length];
-    bitCapInt* controlPowers = new bitCapInt[controlLen];
+    std::unique_ptr<bitCapInt[]> skipPowers(new bitCapInt[controlLen + length]);
+    std::unique_ptr<bitCapInt[]> controlPowers(new bitCapInt[controlLen]);
     bitCapInt controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        controlPowers[i] = pow2(controls[i]);
-        skipPowers[i] = controlPowers[i];
-        controlMask |= controlPowers[i];
+        controlPowers.get()[i] = pow2(controls[i]);
+        skipPowers.get()[i] = controlPowers.get()[i];
+        controlMask |= controlPowers.get()[i];
     }
     for (bitLenInt i = 0; i < length; i++) {
-        skipPowers[i + controlLen] = pow2(carryStart + i);
+        skipPowers.get()[i + controlLen] = pow2(carryStart + i);
     }
-    std::sort(skipPowers, skipPowers + controlLen + length);
+    std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
 
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inOutMask | carryMask | controlMask);
 
@@ -440,7 +438,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
     nStateVec->clear();
     stateVec->isReadLocked = false;
 
-    par_for_mask(0, maxQPower, skipPowers, controlLen + length, [&](const bitCapInt lcv, const int cpu) {
+    par_for_mask(0, maxQPower, skipPowers.get(), controlLen + length, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt mulInt = ((lcv & inOutMask) >> inOutStart) * toMul;
         bitCapInt mulRes = ((mulInt & lowMask) << inOutStart) | (((mulInt & highMask) >> length) << carryStart) |
@@ -454,15 +452,12 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
             partControlMask = 0;
             for (bitLenInt k = 0; k < controlLen; k++) {
                 if ((j >> k) & ONE_BCI) {
-                    partControlMask |= controlPowers[k];
+                    partControlMask |= controlPowers.get()[k];
                 }
             }
             nStateVec->write(lcv | partControlMask, stateVec->read(lcv | partControlMask));
         }
     });
-
-    delete[] skipPowers;
-    delete[] controlPowers;
 
     ResetStateVec(nStateVec);
 }
@@ -581,18 +576,18 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
     bitCapInt inMask = lowMask << inStart;
     bitCapInt outMask = lowMask << outStart;
 
-    bitCapInt* skipPowers = new bitCapInt[controlLen + length];
-    bitCapInt* controlPowers = new bitCapInt[controlLen];
+    std::unique_ptr<bitCapInt[]> skipPowers(new bitCapInt[controlLen + length]);
+    std::unique_ptr<bitCapInt[]> controlPowers(new bitCapInt[controlLen]);
     bitCapInt controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        controlPowers[i] = pow2(controls[i]);
-        skipPowers[i] = controlPowers[i];
-        controlMask |= controlPowers[i];
+        controlPowers.get()[i] = pow2(controls[i]);
+        skipPowers.get()[i] = controlPowers.get()[i];
+        controlMask |= controlPowers.get()[i];
     }
     for (bitLenInt i = 0; i < length; i++) {
-        skipPowers[i + controlLen] = pow2(outStart + i);
+        skipPowers.get()[i + controlLen] = pow2(outStart + i);
     }
-    std::sort(skipPowers, skipPowers + controlLen + length);
+    std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
 
     bitCapInt otherMask = (maxQPower - ONE_BCI) ^ (inMask | outMask | controlMask);
 
@@ -602,7 +597,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
     nStateVec->clear();
     stateVec->isReadLocked = false;
 
-    par_for_mask(0, maxQPower, skipPowers, controlLen + length, [&](const bitCapInt lcv, const int cpu) {
+    par_for_mask(0, maxQPower, skipPowers.get(), controlLen + length, [&](const bitCapInt lcv, const int cpu) {
         bitCapInt otherRes = lcv & otherMask;
         bitCapInt inRes = lcv & inMask;
         bitCapInt outRes = (kernelFn(inRes >> inStart) % modN) << outStart;
@@ -619,15 +614,12 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
             partControlMask = 0;
             for (bitLenInt k = 0; k < controlLen; k++) {
                 if ((j >> k) & ONE_BCI) {
-                    partControlMask |= controlPowers[k];
+                    partControlMask |= controlPowers.get()[k];
                 }
             }
             nStateVec->write(lcv | partControlMask, stateVec->read(lcv | partControlMask));
         }
     });
-
-    delete[] skipPowers;
-    delete[] controlPowers;
 
     ResetStateVec(nStateVec);
 }
@@ -793,7 +785,7 @@ void QEngineCPU::INCDECBCDC(
         test2 = (int)(partToAdd % 10);
         partToAdd /= 10;
         nibbles[0] = test1 + test2;
-        if ((test1 > 9) || (test2 > 9)) {
+        if (test1 > 9) {
             isValid = false;
         }
 
@@ -803,7 +795,7 @@ void QEngineCPU::INCDECBCDC(
             test2 = (int)(partToAdd % 10);
             partToAdd /= 10;
             nibbles[j] = test1 + test2;
-            if ((test1 > 9) || (test2 > 9)) {
+            if (test1 > 9) {
                 isValid = false;
             }
         }

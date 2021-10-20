@@ -101,12 +101,12 @@ public:
     }
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
     {
-        Finish();
-
         if (!stateVec) {
             ResetStateVec(AllocStateVec(maxQPower));
             stateVec->clear();
         }
+
+        Finish();
 
         stateVec->copy_in(pagePtr, offset, length);
 
@@ -117,9 +117,6 @@ public:
     {
         QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
         StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
-
-        Finish();
-        pageEngineCpuPtr->Finish();
 
         if (!stateVec && !oStateVec) {
             return;
@@ -135,6 +132,9 @@ public:
             stateVec->clear();
         }
 
+        Finish();
+        pageEngineCpuPtr->Finish();
+
         stateVec->copy_in(oStateVec, srcOffset, dstOffset, length);
 
         runningNorm = REAL1_DEFAULT_ARG;
@@ -142,9 +142,6 @@ public:
     virtual void ShuffleBuffers(QEnginePtr engine)
     {
         QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);
-
-        Finish();
-        engineCpu->Finish();
 
         if (!stateVec && !(engineCpu->stateVec)) {
             return;
@@ -160,6 +157,9 @@ public:
             engineCpu->stateVec->clear();
         }
 
+        Finish();
+        engineCpu->Finish();
+
         stateVec->shuffle(engineCpu->stateVec);
 
         runningNorm = REAL1_DEFAULT_ARG;
@@ -170,9 +170,6 @@ public:
 
     virtual void CopyStateVec(QEnginePtr src)
     {
-        Finish();
-        src->Finish();
-
         if (src->IsZeroAmplitude()) {
             ZeroAmplitudes();
             return;
@@ -181,6 +178,9 @@ public:
         if (!stateVec) {
             ResetStateVec(AllocStateVec(maxQPower));
         }
+
+        Finish();
+        src->Finish();
 
         complex* sv;
         if (isSparse) {
@@ -229,6 +229,9 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
     /** @} */
+
+    virtual void XMask(bitCapInt mask);
+    virtual void PhaseParity(real1_f radians, bitCapInt mask);
 
     /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.

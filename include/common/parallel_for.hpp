@@ -33,6 +33,7 @@ public:
 
     void SetConcurrencyLevel(int32_t num) { numCores = num; }
     int32_t GetConcurrencyLevel() { return numCores; }
+    bitCapIntOcl GetStride() { return pStride; }
     /*
      * Parallelization routines for spreading work across multiple cores.
      */

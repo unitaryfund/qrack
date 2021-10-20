@@ -79,10 +79,13 @@ enum OCLAPI {
     OCL_API_PROBMASKALL,
     OCL_API_PROBPARITY,
     OCL_API_FORCEMPARITY,
+    OCL_API_EXPPERM,
     OCL_API_X_SINGLE,
     OCL_API_X_SINGLE_WIDE,
+    OCL_API_X_MASK,
     OCL_API_Z_SINGLE,
     OCL_API_Z_SINGLE_WIDE,
+    OCL_API_PHASE_PARITY,
     OCL_API_ROL,
     OCL_API_INC,
     OCL_API_CINC,
@@ -119,8 +122,7 @@ enum OCLAPI {
     OCL_API_FULLADD,
     OCL_API_IFULLADD,
     OCL_API_CLEARBUFFER,
-    OCL_API_SHUFFLEBUFFERS,
-    OCL_API_COPYPAGE
+    OCL_API_SHUFFLEBUFFERS
 };
 
 struct OCLKernelHandle {
@@ -285,11 +287,47 @@ public:
         return std::string(getenv("HOME") ? getenv("HOME") : "") + "/.qrack/";
 #endif
     }
+    size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
+    size_t GetActiveAllocSize(const int& dev) { return activeAllocSizes[dev]; }
+    size_t AddToActiveAllocSize(const int& dev, size_t size)
+    {
+        if (size == 0) {
+            return activeAllocSizes[dev];
+        }
+
+        std::lock_guard<std::mutex> lock(allocMutex);
+        activeAllocSizes[dev] += size;
+
+        return activeAllocSizes[dev];
+    }
+    size_t SubtractFromActiveAllocSize(const int& dev, size_t size)
+    {
+        if (size == 0) {
+            return activeAllocSizes[dev];
+        }
+
+        std::lock_guard<std::mutex> lock(allocMutex);
+        if (size < activeAllocSizes[dev]) {
+            activeAllocSizes[dev] -= size;
+        } else {
+            activeAllocSizes[dev] = 0;
+        }
+        return activeAllocSizes[dev];
+    }
+    void ResetActiveAllocSize(const int& dev)
+    {
+        std::lock_guard<std::mutex> lock(allocMutex);
+        // User code should catch std::bad_alloc and reset:
+        activeAllocSizes[dev] = 0;
+    }
 
 private:
     static const std::vector<OCLKernelHandle> kernelHandles;
     static const std::string binary_file_prefix;
     static const std::string binary_file_ext;
+    std::vector<size_t> activeAllocSizes;
+    size_t maxActiveAllocSize;
+    std::mutex allocMutex;
     std::vector<DeviceContextPtr> all_device_contexts;
     DeviceContextPtr default_device_context;
 
