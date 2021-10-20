@@ -95,6 +95,21 @@ void QInterface::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const
     ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
 }
 
+/// Apply a swap with arbitrary (anti) control bits.
+void QInterface::AntiCSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
+    std::copy(controls, controls + controlLen, lControls.get());
+
+    lControls.get()[controlLen] = qubit1;
+    ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    lControls.get()[controlLen] = qubit2;
+    ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit1, ONE_CMPLX, ONE_CMPLX);
+    lControls.get()[controlLen] = qubit1;
+    ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+}
+
 /// Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary
 /// (anti-)control bits.
 void QInterface::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
