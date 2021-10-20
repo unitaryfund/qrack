@@ -271,6 +271,92 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     SetQubitCount(qubitCount - length);
 }
 
+real1_f QBinaryDecisionTree::Prob(bitLenInt qubitIndex)
+{
+    bitCapInt qPower = pow2(qubitIndex);
+    real1 prob = ZERO_R1;
+    complex scale;
+    bitLenInt j;
+    QBinaryDecisionTreeNodePtr leaf;
+    for (bitCapInt i = 0; i < maxQPower; i++) {
+        if (!(i & qPower)) {
+            continue;
+        }
+
+        leaf = root;
+        scale = leaf->scale;
+        for (j = 0; j < qubitCount; j++) {
+            leaf = leaf->branches[(i >> j) & 1U];
+            if (!leaf) {
+                break;
+            }
+            scale *= leaf->scale;
+        }
+        prob += norm(scale);
+    }
+
+    return (real1)prob;
+}
+
+bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
+{
+    real1_f oneChance = Prob(qubit);
+    if (!doForce) {
+        if (oneChance >= ONE_R1) {
+            result = true;
+        } else if (oneChance <= ZERO_R1) {
+            result = false;
+        } else {
+            result = (Rand() <= oneChance);
+        }
+    }
+
+    real1 nrmlzr;
+    if (result) {
+        nrmlzr = oneChance;
+    } else {
+        nrmlzr = ONE_R1 - oneChance;
+    }
+
+    if (nrmlzr <= ZERO_R1) {
+        throw "ERROR: Forced a measurement result with 0 probability";
+    }
+
+    if (!doApply || (nrmlzr == ONE_R1)) {
+        return result;
+    }
+
+    bitCapInt qPower = pow2(qubit);
+    complex nrm = GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr));
+
+    bitLenInt j;
+    complex Y0;
+    QBinaryDecisionTreeNodePtr leaf, child;
+    for (bitCapInt i = 0; i < qPower; i++) {
+        leaf = root;
+        for (j = 0; j < qubit; j++) {
+            child = leaf->branches[(i >> j) & 1U];
+            if (!child) {
+                leaf.Branch();
+            }
+            leaf = child;
+        }
+        leaf->Branch();
+
+        if (result) {
+            leaf->branches[0] = NULL;
+            leaf->branches[1]->scale *= nrm;
+        } else {
+            leaf->branches[0]->scale *= nrm;
+            leaf->branches[1] = NULL;
+        }
+    }
+
+    root->Prune(qubitIndex);
+
+    return result;
+}
+
 void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex)
 {
     bitLenInt j;

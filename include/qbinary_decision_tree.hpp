@@ -180,6 +180,10 @@ public:
         DecomposeDispose(start, length, NULL);
     }
 
+    virtual real1_f Prob(bitLenInt qubitIndex);
+
+    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
+
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
