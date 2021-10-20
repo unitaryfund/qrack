@@ -274,6 +274,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex)
 {
     bitLenInt j;
+    complex Y0;
     bitCapInt qubitPower = pow2(qubitIndex);
     QBinaryDecisionTreeNodePtr leaf, child;
     for (bitCapInt i = 0; i < qubitPower; i++) {
@@ -287,7 +288,41 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
         }
         leaf->Branch();
 
-        complex Y0 = leaf->branches[0]->scale;
+        Y0 = leaf->branches[0]->scale;
+        leaf->branches[0]->scale = mtrx[0] * leaf->branches[0]->scale + mtrx[1] * leaf->branches[1]->scale;
+        leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
+    }
+}
+
+void QBinaryDecisionTree::ApplyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+{
+    bitLenInt j;
+    complex Y0;
+    bitLenInt maxControl = max_element(controls, controls + controlLen);
+    bitCapInt qubitPower = pow2((maxControl < qubitIndex) ? qubitIndex : maxControl);
+    QBinaryDecisionTreeNodePtr leaf, child;
+    for (bitCapInt i = 0; i < qubitPower; i++) {
+        for (j = 0; j < controlLen; j++) {
+            if (!((i >> controls[j]) & 1U)) {
+                break;
+            }
+        }
+        if (j < controlLen) {
+            continue;
+        }
+
+        leaf = root;
+        for (j = 0; j < qubitIndex; j++) {
+            child = leaf->branches[(i >> j) & 1U];
+            if (!child) {
+                leaf.Branch();
+            }
+            leaf = child;
+        }
+        leaf->Branch();
+
+        Y0 = leaf->branches[0]->scale;
         leaf->branches[0]->scale = mtrx[0] * leaf->branches[0]->scale + mtrx[1] * leaf->branches[1]->scale;
         leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
     }

@@ -174,5 +174,7 @@ public:
     }
 
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex);
+    virtual void ApplyControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 };
 } // namespace Qrack
