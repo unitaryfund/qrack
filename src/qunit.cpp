@@ -841,6 +841,8 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
+    RevertBasis1Qb(qubit);
+
     real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
     real1_f azimuth = atan2(probY, probX);
     if (probX < 0) {
