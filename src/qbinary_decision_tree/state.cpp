@@ -292,6 +292,8 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
         leaf->branches[0]->scale = mtrx[0] * leaf->branches[0]->scale + mtrx[1] * leaf->branches[1]->scale;
         leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
     }
+
+    root->Prune(qubitPower);
 }
 
 void QBinaryDecisionTree::ApplyControlledSingleBit(
@@ -327,6 +329,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         leaf->branches[0]->scale = mtrx[0] * leaf->branches[0]->scale + mtrx[1] * leaf->branches[1]->scale;
         leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
     }
+
+    root->Prune(maxElement);
 }
 
 } // namespace Qrack

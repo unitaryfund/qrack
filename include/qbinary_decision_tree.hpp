@@ -65,13 +65,14 @@ struct QBinaryDecisionTreeNode {
         }
     }
 
-    void Prune()
+    void Prune(bitLenInt depth = bitsInCap)
     {
+        depth--;
         if (branches[0]) {
-            branches[0]->Prune();
+            branches[0]->Prune(depth);
         }
         if (branches[1]) {
-            branches[1]->Prune();
+            branches[1]->Prune(depth);
         }
 
         if (!branches[0] || !branches[1]) {
@@ -91,12 +92,13 @@ struct QBinaryDecisionTreeNode {
         }
     }
 
-    void Prune(bitCapInt perm)
+    void Prune(bitCapInt perm, bitLenInt depth = bitsInCap)
     {
         bitCapInt bit = perm & 1U;
         perm >>= 1U;
+        depth--;
         if (branches[bit]) {
-            branches[bit]->Prune(perm);
+            branches[bit]->Prune(perm, depth);
         }
 
         if (!branches[0] || !branches[1]) {
