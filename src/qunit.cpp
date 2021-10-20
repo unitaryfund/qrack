@@ -803,9 +803,6 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return TrySeparateClifford(qubit);
     }
 
-    bool willSeparate = false;
-    bool canHyperSeparate = (separabilityThreshold > FP_NORM_EPSILON);
-
     real1_f prob;
     real1_f probX = ZERO_R1;
     real1_f probY = ZERO_R1;
@@ -831,10 +828,6 @@ bool QUnit::TrySeparate(bitLenInt qubit)
             probY = prob;
         }
 
-        if (canHyperSeparate) {
-            willSeparate |= (abs(prob) < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - abs(prob)) <= separabilityThreshold);
-        }
-
         if (i >= 2) {
             continue;
         }
@@ -848,41 +841,22 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
     }
 
-    probZ = abs(probZ);
-    probX = abs(probX);
-    probY = abs(probY);
-
-    if (!willSeparate) {
-        if (canHyperSeparate) {
-            // Convert back to the basis with the highest projection:
-            if ((probZ >= probY) && (probZ >= probX)) {
-                RevertBasis1Qb(qubit);
-            } else if ((probX >= probY) && (probX >= probZ)) {
-                RevertBasisToX1Qb(qubit);
-            } else {
-                RevertBasisToY1Qb(qubit);
-            }
-        }
-
+    real1_f r = sqrt(probZ * probZ + probX * probX + probY * probY);
+    if ((ONE_R1 / 2 - r) > separabilityThreshold) {
         return false;
     }
 
-    // If we made it here, we're hyper-separating single bits, and we need to pick the best fit of the 3.
-    if ((probY >= probZ) && (probY >= probX)) {
-        // Y is best.
-        RevertBasisToY1Qb(qubit);
-        SeparateBit(probY >= ZERO_R1, qubit);
-    } else if ((probX >= probZ) && (probX >= probY)) {
-        // X is best.
-        RevertBasisToX1Qb(qubit);
-        SeparateBit(probX >= ZERO_R1, qubit);
-    } else {
-        // Z is best.
-        RevertBasis1Qb(qubit);
-        SeparateBit(probZ >= ZERO_R1, qubit);
+    real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
+    real1_f azimuth = atan2(probY, probX);
+    if (probX < 0) {
+        azimuth += PI_R1;
     }
 
-    return false;
+    IAI(qubit, azimuth, inclination);
+    ProbBase(qubit);
+    AI(qubit, azimuth, inclination);
+
+    return !shard.unit;
 }
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
