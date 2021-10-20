@@ -369,7 +369,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         leaf->branches[1]->scale = invMtrx[2] * Y0 + invMtrx[3] * leaf->branches[1]->scale;
     }
 
-    root->Prune(maxElement);
+    root->Prune((qubitIndex < sortedControls.back()) ? sortedControls.back() : qubitIndex);
 }
 
 } // namespace Qrack
