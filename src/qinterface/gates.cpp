@@ -72,6 +72,21 @@ void QInterface::ApplyControlledSingleInvert(const bitLenInt* controls, const bi
     ApplyControlledSingleBit(controls, controlLen, target, mtrx);
 }
 
+/// Apply a swap with arbitrary control bits.
+void QInterface::CSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
+    std::copy(controls, controls + controlLen, lControls.get());
+
+    lControls.get()[controlLen] = qubit1;
+    ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    lControls.get()[controlLen] = qubit2;
+    ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit1, ONE_CMPLX, ONE_CMPLX);
+    lControls.get()[controlLen] = qubit1;
+    ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+}
+
 /// Apply a single bit transformation that only effects phase, with arbitrary (anti-)control bits.
 void QInterface::ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topLeft, const complex bottomRight)
