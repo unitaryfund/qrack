@@ -209,7 +209,7 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTree toCopy, bitLenInt sta
 
     SetQubitCount(qubitCount + toCopy->qubitCount);
 }
-void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest)
+void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest)
 {
     bitLenInt i;
     QBinaryDecisionTreeNodePtr leaf;
@@ -269,6 +269,28 @@ void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr 
     }
 
     SetQubitCount(qubitCount - length);
+}
+
+void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex)
+{
+    bitLenInt j;
+    bitCapInt qubitPower = pow2(qubitIndex);
+    QBinaryDecisionTreeNodePtr leaf, child;
+    for (bitCapInt i = 0; i < qubitPower; i++) {
+        leaf = root;
+        for (j = 0; j < qubitIndex; j++) {
+            child = leaf->branches[(i >> j) & 1U];
+            if (!child) {
+                leaf.Branch();
+            }
+            leaf = child;
+        }
+        leaf->Branch();
+
+        complex Y0 = leaf->branches[0]->scale;
+        leaf->branches[0] = mtrx[0] * leaf->branches[0] + mtrx[1] * leaf->branches[1];
+        leaf->branches[1] = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1];
+    }
 }
 
 } // namespace Qrack

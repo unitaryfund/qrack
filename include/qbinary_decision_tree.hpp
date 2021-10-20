@@ -48,6 +48,10 @@ struct QBinaryDecisionTreeNode {
 
     void Branch(bitLenInt depth = 1U, complex val = ONE_CMPLX)
     {
+        if (depth == 0) {
+            return;
+        }
+
         if (!branches[0]) {
             branches[0] = std::make_shared<QBinaryDecisionTreeNode>(val);
         }
@@ -142,28 +146,33 @@ public:
     {
     }
 
-    void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG);
+    virtual void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG);
 
-    QInterfacePtr Clone();
+    virtual QInterfacePtr Clone();
 
-    void GetQuantumState(complex* state);
-    void SetQuantumState(const complex* state);
-    void GetProbs(real1* outputProbs);
+    virtual void GetQuantumState(complex* state);
+    virtual void SetQuantumState(const complex* state);
+    virtual void GetProbs(real1* outputProbs);
 
-    complex GetAmplitude(bitCapInt perm);
-    void SetAmplitude(bitCapInt perm, complex amp);
+    virtual complex GetAmplitude(bitCapInt perm);
+    virtual void SetAmplitude(bitCapInt perm, complex amp);
 
-    bitLenInt Compose(QBinaryDecisionTree toCopy, bitLenInt start);
-    bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
+    virtual bitLenInt Compose(QBinaryDecisionTree toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
         return Compose(std::dynamic_pointer_cast<QBinaryDecisionTree>(toCopy), start);
     }
-    void Decompose(bitLenInt start, QInterfacePtr dest)
+    virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBinaryDecisionTree>(dest));
     }
-    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
+    virtual void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
 
-    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) { DecomposeDispose(start, length, NULL); }
+    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+    {
+        DecomposeDispose(start, length, NULL);
+    }
+
+    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex);
 };
 } // namespace Qrack
