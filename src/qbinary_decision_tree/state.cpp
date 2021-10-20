@@ -288,8 +288,8 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
         leaf->Branch();
 
         complex Y0 = leaf->branches[0]->scale;
-        leaf->branches[0] = mtrx[0] * leaf->branches[0] + mtrx[1] * leaf->branches[1];
-        leaf->branches[1] = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1];
+        leaf->branches[0]->scale = mtrx[0] * leaf->branches[0]->scale + mtrx[1] * leaf->branches[1]->scale;
+        leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
     }
 }
 
