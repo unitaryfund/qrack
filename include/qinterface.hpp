@@ -39,7 +39,7 @@ void cl_free(void* toFree);
 void mul2x2(complex* left, complex* right, complex* out);
 void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
 void log2x2(complex* matrix2x2, complex* outMatrix2x2);
-void inv2x2(complex* left, complex* right, complex* out);
+void inv2x2(complex* matrix2x2, complex* outMatrix2x2);
 bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount);
