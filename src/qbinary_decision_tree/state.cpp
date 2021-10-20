@@ -315,7 +315,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     bitLenInt controlBound = j;
     bitLenInt controlRemainder = controlLen - controlBound;
 
-    bitLenInt failureDepth;
     bitCapInt qubitPower = pow2(qubitIndex);
     complex Y0;
     QBinaryDecisionTreeNodePtr leaf, child;
@@ -355,9 +354,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         if (j == controlLen) {
             continue;
         }
-        failureDepth = j;
 
-        for (j = 0; j < failureDepth; j++) {
+        for (j = 0; j < controlRemainder; j++) {
             child = leaf->branches[(i >> (controlBound + j)) & 1U];
             if (!child) {
                 leaf.Branch();
