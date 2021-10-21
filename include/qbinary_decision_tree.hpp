@@ -19,8 +19,8 @@
 
 #pragma once
 
+#include "qengine_cpu.hpp"
 #include "qinterface.hpp"
-#include "statevector.hpp"
 
 namespace Qrack {
 
@@ -130,9 +130,27 @@ protected:
 
     template <typename Fn> void GetTraversal(Fn getLambda);
     template <typename Fn> void SetTraversal(Fn setLambda);
+    template <typename Fn> void ExecuteAsQEngineCPU(Fn operation)
+    {
+        QInterfacePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+            randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
 
-    StateVectorPtr ToStateVector(bool isSparse = false);
-    void FromStateVector(StateVectorPtr stateVec);
+        GetQuantumState(copyPtr);
+        operation(copyPtr);
+        SetQuantumState(copyPtr);
+    }
+
+    template <typename Fn> bitCapInt ResultAsQEngineCPU(Fn operation)
+    {
+        QInterfacePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+            randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+
+        GetQuantumState(copyPtr);
+        bitCapInt toRet = operation(copyPtr);
+        SetQuantumState(copyPtr);
+
+        return toRet;
+    }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest);
 
@@ -206,5 +224,32 @@ public:
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+
+    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
+    virtual real1_f ProbParity(const bitCapInt& mask);
+
+    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, unsigned char* values, bool resetValue = true)
+    {
+        return ResultAsQEngineCPU([&](QInterfacePtr eng) {
+            return eng->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
+        });
+    }
+
+    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+    {
+        return ResultAsQEngineCPU([&](QInterfacePtr eng) {
+            return eng->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+        });
+    }
+
+    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+    {
+        return ResultAsQEngineCPU([&](QInterfacePtr eng) {
+            return eng->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+        });
+    }
 };
 } // namespace Qrack

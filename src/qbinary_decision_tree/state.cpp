@@ -31,6 +31,30 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     SetPermutation(initState);
 }
 
+bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool doForce = true)
+{
+    QInterfacePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+
+    GetQuantumState(copyPtr);
+    bool toRet = copyPtr->ForceMParity(mask, result, doForce);
+    SetQuatumState(copyPtr);
+
+    return toRet;
+}
+
+real1_f QBinaryDecisionTree::ProbParity(const bitCapInt& mask)
+{
+    QInterfacePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+
+    GetQuantumState(copyPtr);
+    real1_f toRet = copyPtr->ProbParity(mask, result, doForce);
+    SetQuatumState(copyPtr);
+
+    return toRet;
+}
+
 void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
 {
     if (phaseFac == CMPLX_DEFAULT_ARG) {
@@ -109,22 +133,6 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
     }
 
     root->Prune();
-}
-StateVectorPtr QBinaryDecisionTree::ToStateVector(bool isSparse)
-{
-    // TODO: We can make sparse state vector array initialization more efficient.
-    bitCapInt maxQPower = pow2(qubitCount);
-    StateVectorPtr toRet = isSparse ? (StateVectorPtr)std::make_shared<StateVectorSparse>(maxQPower)
-                                    : (StateVectorPtr)std::make_shared<StateVectorArray>(maxQPower);
-
-    GetTraversal([toRet](bitCapInt i, complex scale) { toRet->write(i, scale); });
-
-    return toRet;
-}
-void QBinaryDecisionTree::FromStateVector(StateVectorPtr stateVec)
-{
-    root = std::make_shared<QBinaryDecisionTreeNode>();
-    SetTraversal([stateVec](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = stateVec->read(i); });
 }
 void QBinaryDecisionTree::GetQuantumState(complex* state)
 {
