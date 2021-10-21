@@ -31,14 +31,14 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     SetPermutation(initState);
 }
 
-bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool doForce = true)
+bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 {
     QInterfacePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
 
     GetQuantumState(copyPtr);
     bool toRet = copyPtr->ForceMParity(mask, result, doForce);
-    SetQuatumState(copyPtr);
+    SetQuantumState(copyPtr);
 
     return toRet;
 }
@@ -49,8 +49,8 @@ real1_f QBinaryDecisionTree::ProbParity(const bitCapInt& mask)
         randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
 
     GetQuantumState(copyPtr);
-    real1_f toRet = copyPtr->ProbParity(mask, result, doForce);
-    SetQuatumState(copyPtr);
+    real1_f toRet = copyPtr->ProbParity(mask);
+    SetQuantumState(copyPtr);
 
     return toRet;
 }
@@ -207,7 +207,7 @@ complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
 }
 void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
 {
-    int bit;
+    int bit = 0;
     complex scale;
     bitLenInt j;
     QBinaryDecisionTreeNodePtr leaf = root;
