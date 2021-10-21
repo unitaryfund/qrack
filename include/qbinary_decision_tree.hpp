@@ -152,16 +152,22 @@ public:
               useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold, separation_thresh)
     {
     }
-    
+
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         // Intentionally left blank.
     }
-    
+
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         // Intentionally left blank.
     }
+
+    virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
+    {
+        return SumSqrDiff(std::dynamic_pointer_cast<QBinaryDecisionTree>(toCompare));
+    }
+    virtual real1_f SumSqrDiff(QBinaryDecisionTreePtr toCompare);
 
     virtual void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG);
 

@@ -89,8 +89,6 @@ template <typename Fn> void QBinaryDecisionTree::GetTraversal(Fn getLambda)
         }
         getLambda(i, scale);
     }
-
-    return toRet;
 }
 template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
 {
@@ -138,6 +136,38 @@ void QBinaryDecisionTree::SetQuantumState(const complex* state)
 void QBinaryDecisionTree::GetProbs(real1* outputProbs)
 {
     GetTraversal([outputProbs](bitCapInt i, complex scale) { outputProbs[i] = scale * scale; });
+}
+
+real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
+{
+    real1 projection = 0;
+
+    complex scale1, scale2;
+    bitLenInt j;
+    QBinaryDecisionTreeNodePtr leaf1, leaf2;
+    for (bitCapInt i = 0; i < maxQPower; i++) {
+        leaf1 = root;
+        leaf2 = toCompare->root;
+        scale1 = leaf1->scale;
+        scale2 = leaf2->scale;
+        for (j = 0; j < qubitCount; j++) {
+            leaf1 = leaf1->branches[(i >> j) & 1U];
+            if (!leaf1) {
+                break;
+            }
+            scale1 *= leaf->scale1;
+        }
+        for (j = 0; j < qubitCount; j++) {
+            leaf2 = leaf2->branches[(i >> j) & 1U];
+            if (!leaf2) {
+                break;
+            }
+            scale2 *= leaf->scale2;
+        }
+        projection += conj(scale2) * scale1;
+    }
+
+    return clampProb(ONE_R1 - projection);
 }
 
 complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
