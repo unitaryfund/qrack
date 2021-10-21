@@ -79,6 +79,13 @@ struct QBinaryDecisionTreeNode {
             return;
         }
 
+        if (IS_NORM_0(branches[0]->scale)) {
+            branches[0] = NULL;
+        }
+        if (IS_NORM_0(branches[1]->scale)) {
+            branches[1] = NULL;
+        }
+
         if (branches[0]->branches[0] || branches[0]->branches[1] || branches[1]->branches[0] ||
             branches[1]->branches[1]) {
             return;
@@ -91,13 +98,6 @@ struct QBinaryDecisionTreeNode {
             branches[1] = NULL;
 
             return;
-        }
-
-        if (IS_NORM_0(branches[0]->scale)) {
-            branches[0] = NULL;
-        }
-        if (IS_NORM_0(branches[1]->scale)) {
-            branches[1] = NULL;
         }
     }
 
@@ -117,6 +117,13 @@ struct QBinaryDecisionTreeNode {
 
         if (!branches[0] || !branches[1]) {
             return;
+        }
+
+        if (IS_NORM_0(branches[0]->scale)) {
+            branches[0] = NULL;
+        }
+        if (IS_NORM_0(branches[1]->scale)) {
+            branches[1] = NULL;
         }
 
         if (branches[0]->branches[0] || branches[0]->branches[1] || branches[1]->branches[0] ||
