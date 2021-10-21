@@ -100,7 +100,7 @@ void QInterface::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 }
 
 /// Square root of Swap gate
-void QInterface::SqrtSwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QInterface::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
     CNOT(qubit1, qubit2);
 
@@ -127,14 +127,8 @@ void QInterface::SqrtSwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
 }
 
 /// Apply an (inverse) square root of swap with arbitrary control (or "anti-control") bits.
-void QInterface::ISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1,
-    const bitLenInt& qubit2, const bool& isAnti)
+void QInterface::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
-    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
-    std::copy(controls, controls + controlLen, lControls.get());
-
-    lControls.get()[controlLen] = qubit1;
-
     IS(qubit2);
     S(qubit1);
 

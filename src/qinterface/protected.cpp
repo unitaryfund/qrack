@@ -82,7 +82,7 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
     return tmp * tmp;
 }
 
-void mul2x2(complex* left, complex* right, complex* out)
+void mul2x2(const complex* left, const complex* right, complex* out)
 {
     out[0] = (left[0] * right[0]) + (left[1] * right[2]);
     out[1] = (left[0] * right[1]) + (left[1] * right[3]);
@@ -90,7 +90,7 @@ void mul2x2(complex* left, complex* right, complex* out)
     out[3] = (left[2] * right[1]) + (left[3] * right[3]);
 }
 
-void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
+void _expLog2x2(const complex* matrix2x2, complex* outMatrix2x2, bool isExp)
 {
     // Solve for the eigenvalues and eigenvectors of a 2x2 matrix, diagonalize, exponentiate, return to the original
     // basis, and apply.
@@ -171,11 +171,11 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
     std::copy(expOfGate, expOfGate + 4, outMatrix2x2);
 }
 
-void exp2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, true); }
+void exp2x2(const complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, true); }
 
-void log2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, false); }
+void log2x2(const complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, false); }
 
-void inv2x2(complex* matrix2x2, complex* outMatrix2x2)
+void inv2x2(const complex* matrix2x2, complex* outMatrix2x2)
 {
     complex det = ONE_CMPLX / (matrix2x2[0] * matrix2x2[3] - matrix2x2[1] * matrix2x2[2]);
     outMatrix2x2[0] = det * matrix2x2[3];
