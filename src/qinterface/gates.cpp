@@ -132,15 +132,19 @@ void QInterface::ApplyAntiControlledSingleBit(
 }
 
 /// Apply a swap with arbitrary control bits.
-void QInterface::CSqrtSwap(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QInterface::xCSqrtSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2, const bool& isAnti)
 {
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
     std::copy(controls, controls + controlLen, lControls.get());
 
     lControls.get()[controlLen] = qubit1;
 
-    ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    if (isAnti) {
+        ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    } else {
+        ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    }
 
     complex mtrxTop1[4] = { (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)),
         (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)) };
@@ -150,7 +154,11 @@ void QInterface::CSqrtSwap(
         sqrt((ONE_R1 / 2) * I_CMPLX) };
     ApplySingleBit(mtrxBottom1, qubit2);
 
-    ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    if (isAnti) {
+        ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    } else {
+        ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    }
 
     complex mtrxTop2[4] = { (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)),
         (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)) };
@@ -158,7 +166,11 @@ void QInterface::CSqrtSwap(
 
     H(qubit2);
 
-    ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    if (isAnti) {
+        ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    } else {
+        ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    }
 
     IS(qubit1);
     S(qubit2);
