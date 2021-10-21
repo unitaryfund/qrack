@@ -137,11 +137,17 @@ void QInterface::AntiCSwap(
     std::copy(controls, controls + controlLen, lControls.get());
 
     lControls.get()[controlLen] = qubit1;
+    X(qubit1);
     ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    X(qubit1);
     lControls.get()[controlLen] = qubit2;
+    X(qubit2);
     ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit1, ONE_CMPLX, ONE_CMPLX);
+    X(qubit2);
     lControls.get()[controlLen] = qubit1;
+    X(qubit1);
     ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    X(qubit1);
 }
 
 void QInterface::ApplyAntiControlledSingleBit(
