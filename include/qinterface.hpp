@@ -2228,7 +2228,7 @@ public:
     virtual void SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Inverse square root of Swap gate */
-    virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+    virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /** Bitwise inverse square root of swap */
     virtual void ISqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);

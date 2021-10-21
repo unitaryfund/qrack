@@ -126,6 +126,39 @@ void QInterface::SqrtSwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
     S(qubit2);
 }
 
+/// Apply an (inverse) square root of swap with arbitrary control (or "anti-control") bits.
+void QInterface::ISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1,
+    const bitLenInt& qubit2, const bool& isAnti)
+{
+    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
+    std::copy(controls, controls + controlLen, lControls.get());
+
+    lControls.get()[controlLen] = qubit1;
+
+    IS(qubit2);
+    S(qubit1);
+
+    CNOT(qubit1, qubit2);
+
+    H(qubit2);
+
+    complex mtrxTop2[4] = { (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)),
+        (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)) };
+    ApplySingleBit(mtrxTop2, qubit1);
+
+    CNOT(qubit1, qubit2);
+
+    complex mtrxBottom1[4] = { (complex)sqrt(ONE_R1 / 2), (complex)sqrt(ONE_R1 / 2), sqrt((ONE_R1 / 2) * I_CMPLX),
+        -sqrt((ONE_R1 / 2) * I_CMPLX) };
+    ApplySingleBit(mtrxBottom1, qubit2);
+
+    complex mtrxTop1[4] = { (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)),
+        (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)) };
+    ApplySingleBit(mtrxTop1, qubit1);
+
+    CNOT(qubit1, qubit2);
+}
+
 /// Apply a swap with arbitrary control bits.
 void QInterface::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
@@ -201,7 +234,9 @@ void QInterface::xCSqrtSwap(const bitLenInt* controls, const bitLenInt& controlL
     lControls.get()[controlLen] = qubit1;
 
     if (isAnti) {
+        X(qubit1);
         ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+        X(qubit1);
     } else {
         ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
     }
@@ -253,7 +288,9 @@ void QInterface::xCISqrtSwap(const bitLenInt* controls, const bitLenInt& control
     S(qubit1);
 
     if (isAnti) {
+        X(qubit1);
         ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+        X(qubit2);
     } else {
         ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
     }
