@@ -174,7 +174,9 @@ public:
     virtual QInterfacePtr Clone();
 
     virtual void GetQuantumState(complex* state);
+    virtual void GetQuantumState(QInterfacePtr eng);
     virtual void SetQuantumState(const complex* state);
+    virtual void SetQuantumState(QInterfacePtr eng);
     virtual void GetProbs(real1* outputProbs);
 
     virtual complex GetAmplitude(bitCapInt perm);
