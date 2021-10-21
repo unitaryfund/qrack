@@ -301,6 +301,23 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubitIndex)
     return (real1)prob;
 }
 
+real1_f QBinaryDecisionTree::ProbAll(bitCapInt fullRegister)
+{
+    complex scale;
+    bitLenInt j;
+    QBinaryDecisionTreeNodePtr leaf = root;
+    scale = leaf->scale;
+    for (j = 0; j < qubitCount; j++) {
+        leaf = leaf->branches[(fullRegister >> j) & 1U];
+        if (!leaf) {
+            break;
+        }
+        scale *= leaf->scale;
+    }
+
+    return clampProb(norm(scale));
+}
+
 bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
     real1_f oneChance = Prob(qubit);

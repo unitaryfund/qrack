@@ -152,6 +152,16 @@ public:
               useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold, separation_thresh)
     {
     }
+    
+    virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        // Intentionally left blank.
+    }
+    
+    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        // Intentionally left blank.
+    }
 
     virtual void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG);
 
@@ -181,6 +191,7 @@ public:
     }
 
     virtual real1_f Prob(bitLenInt qubitIndex);
+    virtual real1_f ProbAll(bitCapInt fullRegister);
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
