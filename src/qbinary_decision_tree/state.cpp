@@ -183,7 +183,7 @@ void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
     }
 }
 
-bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTree toCopy, bitLenInt start)
+bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start)
 {
     if (start == 0) {
         QBinaryDecisionTreePtr clone = toCopy->Clone();

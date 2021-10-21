@@ -164,7 +164,7 @@ public:
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetAmplitude(bitCapInt perm, complex amp);
 
-    virtual bitLenInt Compose(QBinaryDecisionTree toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
         return Compose(std::dynamic_pointer_cast<QBinaryDecisionTree>(toCopy), start);
