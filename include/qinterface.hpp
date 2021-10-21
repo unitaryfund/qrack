@@ -255,8 +255,14 @@ protected:
     /**
      * Apply a square root of swap with arbitrary control (or "anti-control") bits.
      */
-    virtual void xCSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2, const bool& isAnti);
+    virtual void xCSqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1,
+        const bitLenInt& qubit2, const bool& isAnti);
+
+    /**
+     * Apply an (inverse) square root of swap with arbitrary control (or "anti-control") bits.
+     */
+    virtual void xCISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1,
+        const bitLenInt& qubit2, const bool& isAnti);
 
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
@@ -597,7 +603,8 @@ public:
      * Apply a square root of swap with arbitrary control bits.
      */
     virtual void CSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) {
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
         xCSqrtSwap(controls, controlLen, qubit1, qubit2, false);
     }
 
@@ -605,7 +612,8 @@ public:
      * Apply a square root of swap with arbitrary (anti) control bits.
      */
     virtual void AntiCSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) {
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
         xCSqrtSwap(controls, controlLen, qubit1, qubit2, true);
     }
 
@@ -613,14 +621,19 @@ public:
      * Apply an inverse square root of swap with arbitrary control bits.
      */
     virtual void CISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
+        xCISqrtSwap(controls, controlLen, qubit1, qubit2, false);
+    }
 
     /**
      * Apply an inverse square root of swap with arbitrary (anti) control bits.
      */
     virtual void AntiCISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
-
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    {
+        xCISqrtSwap(controls, controlLen, qubit1, qubit2, true);
+    }
     /**
      * Doubly-controlled NOT gate
      *

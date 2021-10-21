@@ -131,9 +131,9 @@ void QInterface::ApplyAntiControlledSingleBit(
     }
 }
 
-/// Apply a swap with arbitrary control bits.
-void QInterface::xCSqrtSwap(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2, const bool& isAnti)
+/// Apply a square root of swap with arbitrary control (or "anti-control") bits.
+void QInterface::xCSqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1,
+    const bitLenInt& qubit2, const bool& isAnti)
 {
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
     std::copy(controls, controls + controlLen, lControls.get());
@@ -174,6 +174,51 @@ void QInterface::xCSqrtSwap(
 
     IS(qubit1);
     S(qubit2);
+}
+
+/// Apply an (inverse) square root of swap with arbitrary control (or "anti-control") bits.
+void QInterface::xCISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1,
+    const bitLenInt& qubit2, const bool& isAnti)
+{
+    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
+    std::copy(controls, controls + controlLen, lControls.get());
+
+    lControls.get()[controlLen] = qubit1;
+
+    IS(qubit2);
+    S(qubit1);
+
+    if (isAnti) {
+        ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    } else {
+        ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    }
+
+    H(qubit2);
+
+    complex mtrxTop2[4] = { (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)),
+        (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)) };
+    ApplySingleBit(mtrxTop2, qubit1);
+
+    if (isAnti) {
+        ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    } else {
+        ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    }
+
+    complex mtrxBottom1[4] = { (complex)sqrt(ONE_R1 / 2), (complex)sqrt(ONE_R1 / 2), sqrt((ONE_R1 / 2) * I_CMPLX),
+        -sqrt((ONE_R1 / 2) * I_CMPLX) };
+    ApplySingleBit(mtrxBottom1, qubit2);
+
+    complex mtrxTop1[4] = { (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)),
+        (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)) };
+    ApplySingleBit(mtrxTop1, qubit1);
+
+    if (isAnti) {
+        ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    } else {
+        ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    }
 }
 
 /// Apply 1/(2^N) phase rotation
