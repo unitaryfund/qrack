@@ -89,6 +89,15 @@ struct QBinaryDecisionTreeNode {
             scale *= branches[0]->scale;
             branches[0] = NULL;
             branches[1] = NULL;
+
+            return;
+        }
+
+        if (IS_NORM_0(branches[0]->scale)) {
+            branches[0] = NULL;
+        }
+        if (IS_NORM_0(branches[1]->scale)) {
+            branches[1] = NULL;
         }
     }
 

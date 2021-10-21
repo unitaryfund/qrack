@@ -460,44 +460,29 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
 void QBinaryDecisionTree::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    complex invMtrx[4];
-    inv2x2((complex*)mtrx, invMtrx);
-
-    std::unique_ptr<bitLenInt[]> sortedControls(new bitLenInt[controlLen]);
-    std::copy(controls, controls + controlLen, sortedControls.get());
-    std::sort(sortedControls.get(), sortedControls.get() + controlLen);
-
     bitLenInt j;
+
+    bitCapInt controlMask = 0;
     for (j = 0; j < controlLen; j++) {
-        if (target < sortedControls[j]) {
-            break;
-        }
-    }
-    bitLenInt controlBound = j;
-    bitLenInt controlRemainder = controlLen - controlBound;
-
-    bitCapInt lowMask = 0;
-    bitCapInt highMask = 0;
-    for (j = 0; j < controlBound; j++) {
-        lowMask |= pow2(sortedControls.get()[j]);
-    }
-    for (j = controlBound; j < controlLen; j++) {
-        highMask |= pow2(sortedControls.get()[j]);
+        controlMask |= pow2(controls[j]);
     }
 
-    bitCapInt qubitPower = pow2(target);
+    bitLenInt highestControl = max_element(controls, controls + controlLen);
+    bitLenInt highBit = (target < highestControl) ? highestControl : target;
+    bitCapInt qubitPower = pow2(highBit);
+
     complex Y0;
     int bit;
     QBinaryDecisionTreeNodePtr leaf, child;
     for (bitCapInt i = 0; i < qubitPower; i++) {
         // If controls with lower index than target aren't set, skip.
-        if ((i & lowMask) != lowMask) {
+        if ((i & controlMask) != controlMask) {
             continue;
         }
 
-        // Iterate to target bit.
+        // Iterate to highest bit.
         leaf = root;
-        for (j = 0; j < target; j++) {
+        for (j = 0; j < highBit; j++) {
             bit = (i >> j) & 1U;
             child = leaf->branches[bit];
             if (!child) {
@@ -512,29 +497,9 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         Y0 = leaf->branches[0]->scale;
         leaf->branches[0]->scale = mtrx[0] * leaf->branches[0]->scale + mtrx[1] * leaf->branches[1]->scale;
         leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
-
-        // If controls with higher index than target aren't set, apply inverse gate payload.
-        if ((i & highMask) == highMask) {
-            continue;
-        }
-
-        for (j = 0; j < controlRemainder; j++) {
-            bit = (i >> (controlBound + j)) & 1U;
-            child = leaf->branches[bit];
-            if (!child) {
-                child = std::make_shared<QBinaryDecisionTreeNode>(ONE_CMPLX);
-                leaf->branches[bit] = child;
-            }
-            leaf = child;
-        }
-        leaf->Branch();
-
-        Y0 = leaf->branches[0]->scale;
-        leaf->branches[0]->scale = invMtrx[0] * leaf->branches[0]->scale + invMtrx[1] * leaf->branches[1]->scale;
-        leaf->branches[1]->scale = invMtrx[2] * Y0 + invMtrx[3] * leaf->branches[1]->scale;
     }
 
-    root->Prune((target < sortedControls.get()[controlLen - 1U]) ? sortedControls.get()[controlLen - 1U] : target);
+    root->Prune(highBit);
 }
 
 } // namespace Qrack
