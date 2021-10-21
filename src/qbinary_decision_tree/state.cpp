@@ -467,7 +467,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         controlMask |= pow2(controls[j]);
     }
 
-    bitLenInt highestControl = max_element(controls, controls + controlLen);
+    bitLenInt highestControl = *std::max_element(controls, controls + controlLen);
     bitLenInt highBit = (target < highestControl) ? highestControl : target;
     bitCapInt qubitPower = pow2(highBit);
 
