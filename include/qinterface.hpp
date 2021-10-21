@@ -2222,7 +2222,7 @@ public:
     virtual void ISwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Square root of Swap gate */
-    virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+    virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /** Bitwise square root of swap */
     virtual void SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);

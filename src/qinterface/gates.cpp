@@ -72,6 +72,7 @@ void QInterface::ApplyControlledSingleInvert(const bitLenInt* controls, const bi
     ApplyControlledSingleBit(controls, controlLen, target, mtrx);
 }
 
+/// Swap values of two bits in register
 void QInterface::Swap(bitLenInt control, bitLenInt target)
 {
     if (control == target) {
@@ -83,6 +84,7 @@ void QInterface::Swap(bitLenInt control, bitLenInt target)
     CNOT(control, target);
 }
 
+/// Swap values of two bits in register, and apply phase factor of i if bits are different
 void QInterface::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 {
     if (qubit1 == qubit2) {
@@ -95,6 +97,33 @@ void QInterface::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     CNOT(qubit1, qubit2);
     CNOT(qubit2, qubit1);
     H(qubit2);
+}
+
+/// Square root of Swap gate
+void QInterface::SqrtSwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    CNOT(qubit1, qubit2);
+
+    complex mtrxTop1[4] = { (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)),
+        (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)) };
+    ApplySingleBit(mtrxTop1, qubit1);
+
+    complex mtrxBottom1[4] = { (complex)sqrt(ONE_R1 / 2), -sqrt((ONE_R1 / 2) * I_CMPLX), (complex)sqrt(ONE_R1 / 2),
+        sqrt((ONE_R1 / 2) * I_CMPLX) };
+    ApplySingleBit(mtrxBottom1, qubit2);
+
+    CNOT(qubit1, qubit2);
+
+    complex mtrxTop2[4] = { (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)),
+        (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)) };
+    ApplySingleBit(mtrxTop2, qubit1);
+
+    H(qubit2);
+
+    CNOT(qubit1, qubit2);
+
+    IS(qubit1);
+    S(qubit2);
 }
 
 /// Apply a swap with arbitrary control bits.
