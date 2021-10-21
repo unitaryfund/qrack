@@ -72,6 +72,13 @@ void QInterface::ApplyControlledSingleInvert(const bitLenInt* controls, const bi
     ApplyControlledSingleBit(controls, controlLen, target, mtrx);
 }
 
+void QInterface::Swap(bitLenInt control, bitLenInt target)
+{
+    CNOT(control, target);
+    CNOT(target, control);
+    CNOT(control, target);
+}
+
 /// Apply a swap with arbitrary control bits.
 void QInterface::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
