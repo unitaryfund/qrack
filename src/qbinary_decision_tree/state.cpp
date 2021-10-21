@@ -455,7 +455,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     complex invMtrx[4];
-    inv2x2(mtrx, invMtrx);
+    inv2x2((complex*)mtrx, invMtrx);
 
     std::unique_ptr<bitLenInt[]> sortedControls(new bitLenInt[controlLen]);
     std::copy(controls, controls + controlLen, sortedControls.get());
