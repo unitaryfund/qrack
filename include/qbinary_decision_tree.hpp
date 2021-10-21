@@ -67,23 +67,29 @@ struct QBinaryDecisionTreeNode {
 
     void Prune(bitLenInt depth = bitsInCap)
     {
+        if (!depth) {
+            return;
+        }
+
         depth--;
+
         if (branches[0]) {
-            branches[0]->Prune(depth);
+            if (IS_NORM_0(branches[0]->scale)) {
+                branches[0] = NULL;
+            } else {
+                branches[0]->Prune(depth);
+            }
         }
         if (branches[1]) {
-            branches[1]->Prune(depth);
+            if (IS_NORM_0(branches[1]->scale)) {
+                branches[1] = NULL;
+            } else {
+                branches[1]->Prune(depth);
+            }
         }
 
         if (!branches[0] || !branches[1]) {
             return;
-        }
-
-        if (IS_NORM_0(branches[0]->scale)) {
-            branches[0] = NULL;
-        }
-        if (IS_NORM_0(branches[1]->scale)) {
-            branches[1] = NULL;
         }
 
         if (branches[0]->branches[0] || branches[0]->branches[1] || branches[1]->branches[0] ||
@@ -112,18 +118,15 @@ struct QBinaryDecisionTreeNode {
         depth--;
 
         if (branches[bit]) {
-            branches[bit]->Prune(perm, depth);
+            if (IS_NORM_0(branches[bit]->scale)) {
+                branches[bit] = NULL;
+            } else {
+                branches[bit]->Prune(depth);
+            }
         }
 
         if (!branches[0] || !branches[1]) {
             return;
-        }
-
-        if (IS_NORM_0(branches[0]->scale)) {
-            branches[0] = NULL;
-        }
-        if (IS_NORM_0(branches[1]->scale)) {
-            branches[1] = NULL;
         }
 
         if (branches[0]->branches[0] || branches[0]->branches[1] || branches[1]->branches[0] ||
