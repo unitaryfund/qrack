@@ -119,7 +119,7 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth, complex val)
     }
 
     if (branches[0] == branches[1]) {
-        branches[1] = ShallowClone();
+        branches[1] = branches[0]->ShallowClone();
     }
 
     branches[0]->Branch(depth - 1U, val);
