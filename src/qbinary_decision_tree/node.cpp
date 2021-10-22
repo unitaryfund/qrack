@@ -79,13 +79,13 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
             }
         }
 
-        if (!IS_NORM_0(scale1 - scale2)) {
+        if (!IS_NORM_0(scale1 - scale2) || (leaf1 && (leaf1->branches[0] || leaf1->branches[1])) ||
+            (leaf2 && (leaf2->branches[0] || leaf2->branches[1]))) {
             break;
         }
     }
 
-    if ((i != depthPow) || (leaf1 && (leaf1->branches[0] || leaf1->branches[1])) ||
-        (leaf2 && (leaf2->branches[0] || leaf2->branches[1]))) {
+    if (i != depthPow) {
         // The branches are not equal to depth, or they might be unequal past depth.
         return;
     }
