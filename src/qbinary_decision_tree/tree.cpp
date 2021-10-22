@@ -335,7 +335,7 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubitIndex)
     bitLenInt j;
     QBinaryDecisionTreeNodePtr leaf;
     for (bitCapInt lcv = 0; lcv < maxLcv; lcv++) {
-        i = lcv & qPower;                                                                                                   \
+        i = lcv & qPower;
         i |= ((lcv ^ i) << ONE_BCI) | qPower;
 
         leaf = root;
