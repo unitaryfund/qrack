@@ -92,19 +92,42 @@ struct QBinaryDecisionTreeNode {
             return;
         }
 
-        if (branches[0]->branches[0] || branches[0]->branches[1] || branches[1]->branches[0] ||
-            branches[1]->branches[1]) {
+        bitCapInt depthPow = pow2(depth);
+        complex scale1, scale2;
+        bitCapInt i;
+        bitLenInt j;
+        size_t bit;
+        QBinaryDecisionTreeNodePtr leaf1, leaf2;
+        for (i = 0; i < depthPow; i++) {
+            leaf1 = branches[0];
+            leaf2 = branches[1];
+
+            scale1 = ONE_CMPLX;
+            scale2 = ONE_CMPLX;
+
+            for (j = 0; j < depth; j++) {
+                bit = (i >> j) & 1U;
+
+                if (leaf1) {
+                    leaf1 = leaf1->branches[bit];
+                    scale1 *= leaf1->scale;
+                }
+                if (leaf2) {
+                    leaf2 = leaf2->branches[bit];
+                    scale2 *= leaf2->scale;
+                }
+            }
+
+            if (!IS_NORM_0(scale1 - scale2)) {
+                break;
+            }
+        }
+
+        if (i != depthPow) {
             return;
         }
 
-        // We have 2 branches (with no children).
-        if (IS_NORM_0(branches[0]->scale - branches[1]->scale)) {
-            scale *= branches[0]->scale;
-            branches[0] = NULL;
-            branches[1] = NULL;
-
-            return;
-        }
+        branches[0] = branches[1];
     }
 
     void Prune(bitCapInt perm, bitLenInt depth = bitsInCap)
@@ -113,7 +136,7 @@ struct QBinaryDecisionTreeNode {
             return;
         }
 
-        bitCapInt bit = perm & 1U;
+        size_t bit = perm & 1U;
         perm >>= 1U;
         depth--;
 
@@ -129,16 +152,38 @@ struct QBinaryDecisionTreeNode {
             return;
         }
 
-        if (branches[0]->branches[0] || branches[0]->branches[1] || branches[1]->branches[0] ||
-            branches[1]->branches[1]) {
-            return;
+        bitCapInt depthPow = pow2(depth);
+        complex scale1, scale2;
+        bitCapInt i;
+        bitLenInt j;
+        QBinaryDecisionTreeNodePtr leaf1, leaf2;
+        for (i = 0; i < depthPow; i++) {
+            leaf1 = branches[0];
+            leaf2 = branches[1];
+
+            scale1 = ONE_CMPLX;
+            scale2 = ONE_CMPLX;
+
+            for (j = 0; j < depth; j++) {
+                bit = (i >> j) & 1U;
+
+                if (leaf1) {
+                    leaf1 = leaf1->branches[bit];
+                    scale1 *= leaf1->scale;
+                }
+                if (leaf2) {
+                    leaf2 = leaf2->branches[bit];
+                    scale2 *= leaf2->scale;
+                }
+            }
+
+            if (!IS_NORM_0(scale1 - scale2)) {
+                break;
+            }
         }
 
-        // We have 2 branches (with no children).
-        if (IS_NORM_0(branches[0]->scale - branches[1]->scale)) {
-            scale *= branches[0]->scale;
-            branches[0] = NULL;
-            branches[1] = NULL;
+        if (i == depthPow) {
+            branches[0] = branches[1];
         }
     }
 };
