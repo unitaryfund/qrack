@@ -206,6 +206,7 @@ install (FILES
     include/qstabilizer.hpp
     include/qstabilizerhybrid.hpp
     include/qbinary_decision_tree.hpp
+    include/qbinary_decision_tree_node.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 
