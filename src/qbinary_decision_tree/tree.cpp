@@ -66,12 +66,14 @@ void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
         }
     }
 
-    root = std::make_shared<QBinaryDecisionTreeNode>(ONE_CMPLX);
+    root = std::make_shared<QBinaryDecisionTreeNode>(phaseFac);
     QBinaryDecisionTreeNodePtr leaf = root;
+    size_t bit;
     for (bitLenInt qubit = 0; qubit < qubitCount; qubit++) {
-        leaf->Branch(1U, ZERO_CMPLX);
-        leaf = leaf->branches[(initState >> qubit) & 1U];
-        leaf->scale = phaseFac;
+        bit = (initState >> qubit) & 1U;
+        leaf->branches[bit] = std::make_shared<QBinaryDecisionTreeNode>(ONE_CMPLX);
+        leaf->branches[bit ^ 1U] = std::make_shared<QBinaryDecisionTreeNode>(ZERO_CMPLX);
+        leaf = leaf->branches[bit];
     }
 }
 

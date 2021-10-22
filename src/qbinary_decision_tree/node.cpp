@@ -38,7 +38,8 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
     for (bitLenInt i = bit; i < maxLcv; i++) {
         if (branches[i]) {
             if (IS_NORM_0(branches[i]->scale)) {
-                branches[i] = NULL;
+                branches[i]->branches[0] = NULL;
+                branches[i]->branches[1] = NULL;
             } else {
                 branches[i]->PruneShallowOrDeep(depth, isShallow, perm);
             }
