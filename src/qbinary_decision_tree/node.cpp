@@ -47,6 +47,10 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
         if (branches[i]) {
             branches[i]->PruneShallowOrDeep(depth, isShallow, perm);
         }
+        if (branches[0] == branches[1]) {
+            // No point in pruning same pointer branch twice.
+            break;
+        }
     }
 
     // We're going to try to combine 0 and 1 branches, now.
