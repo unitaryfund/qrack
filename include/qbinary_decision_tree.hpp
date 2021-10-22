@@ -30,7 +30,91 @@ typedef std::shared_ptr<QBinaryDecisionTreeNode> QBinaryDecisionTreeNodePtr;
 class QBinaryDecisionTree;
 typedef std::shared_ptr<QBinaryDecisionTree> QBinaryDecisionTreePtr;
 
-struct QBinaryDecisionTreeNode {
+class QBinaryDecisionTreeNode {
+protected:
+    void PruneShallowOrDeep(bitLenInt depth, bool isShallow = false, bitCapInt perm = 0)
+    {
+        if (!depth) {
+            return;
+        }
+        depth--;
+
+        // If perm == 0, then bit == 0.
+        size_t bit = perm & 1U;
+        perm >>= 1U;
+
+        bitLenInt maxLcv = isShallow ? (bit + 1U) : 2;
+        for (bitLenInt i = bit; i < maxLcv; i++) {
+            if (branches[i]) {
+                if (IS_NORM_0(branches[i]->scale)) {
+                    branches[i] = NULL;
+                } else {
+                    branches[i]->Prune(depth);
+                }
+            }
+        }
+
+        if (!branches[0] || !branches[1]) {
+            return;
+        }
+
+        bitCapInt depthPow = pow2(depth);
+        complex scale1, scale2;
+        bitCapInt i;
+        bitLenInt j;
+        QBinaryDecisionTreeNodePtr leaf1, leaf2;
+        for (i = 0; i < depthPow; i++) {
+            leaf1 = branches[0];
+            leaf2 = branches[1];
+
+            scale1 = ONE_CMPLX;
+            scale2 = ONE_CMPLX;
+
+            for (j = 0; j < depth; j++) {
+                bit = (i >> j) & 1U;
+
+                if (leaf1) {
+                    leaf1 = leaf1->branches[bit];
+                    scale1 *= leaf1->scale;
+                }
+                if (leaf2) {
+                    leaf2 = leaf2->branches[bit];
+                    scale2 *= leaf2->scale;
+                }
+            }
+
+            if (!IS_NORM_0(scale1 - scale2)) {
+                break;
+            }
+        }
+
+        if (i != depthPow) {
+            return;
+        }
+
+        branches[0] = branches[1];
+
+        // If all descendent pairs are the same, contract the scale multiple into this is a terminal leaf.
+        leaf1 = branches[0];
+        leaf2 = branches[1];
+        scale1 = scale;
+        while (leaf1 == leaf2) {
+            if (!leaf1) {
+                break;
+            }
+
+            scale1 *= leaf1->scale;
+
+            leaf1 = leaf1->branches[0];
+            leaf2 = leaf1->branches[1];
+        }
+
+        if (!leaf1) {
+            scale = scale1;
+        }
+    }
+
+public:
     complex scale;
     QBinaryDecisionTreeNodePtr branches[2];
 
@@ -78,167 +162,9 @@ struct QBinaryDecisionTreeNode {
         branches[1]->Branch(depth - 1U, val);
     }
 
-    void Prune(bitLenInt depth = bitsInCap)
-    {
-        if (!depth) {
-            return;
-        }
+    void Prune(bitLenInt depth = bitsInCap) { PruneShallowOrDeep(depth, false); }
 
-        depth--;
-
-        if (branches[0]) {
-            if (IS_NORM_0(branches[0]->scale)) {
-                branches[0] = NULL;
-            } else {
-                branches[0]->Prune(depth);
-            }
-        }
-        if (branches[1]) {
-            if (IS_NORM_0(branches[1]->scale)) {
-                branches[1] = NULL;
-            } else {
-                branches[1]->Prune(depth);
-            }
-        }
-
-        if (!branches[0] || !branches[1]) {
-            return;
-        }
-
-        bitCapInt depthPow = pow2(depth);
-        complex scale1, scale2;
-        bitCapInt i;
-        bitLenInt j;
-        size_t bit;
-        QBinaryDecisionTreeNodePtr leaf1, leaf2;
-        for (i = 0; i < depthPow; i++) {
-            leaf1 = branches[0];
-            leaf2 = branches[1];
-
-            scale1 = ONE_CMPLX;
-            scale2 = ONE_CMPLX;
-
-            for (j = 0; j < depth; j++) {
-                bit = (i >> j) & 1U;
-
-                if (leaf1) {
-                    leaf1 = leaf1->branches[bit];
-                    scale1 *= leaf1->scale;
-                }
-                if (leaf2) {
-                    leaf2 = leaf2->branches[bit];
-                    scale2 *= leaf2->scale;
-                }
-            }
-
-            if (!IS_NORM_0(scale1 - scale2)) {
-                break;
-            }
-        }
-
-        if (i != depthPow) {
-            return;
-        }
-
-        branches[0] = branches[1];
-
-        // If all descendent pairs are the same, contract the scale multiple into this is a terminal leaf.
-        leaf1 = branches[0];
-        leaf2 = branches[1];
-        scale1 = scale;
-        while (leaf1 == leaf2) {
-            if (!leaf1) {
-                break;
-            }
-
-            scale1 *= leaf1->scale;
-
-            leaf1 = leaf1->branches[0];
-            leaf2 = leaf1->branches[1];
-        }
-
-        if (!leaf1) {
-            scale = scale1;
-        }
-    }
-
-    void Prune(bitCapInt perm, bitLenInt depth = bitsInCap)
-    {
-        if (!depth) {
-            return;
-        }
-
-        size_t bit = perm & 1U;
-        perm >>= 1U;
-        depth--;
-
-        if (branches[bit]) {
-            if (IS_NORM_0(branches[bit]->scale)) {
-                branches[bit] = NULL;
-            } else {
-                branches[bit]->Prune(depth);
-            }
-        }
-
-        if (!branches[0] || !branches[1]) {
-            return;
-        }
-
-        bitCapInt depthPow = pow2(depth);
-        complex scale1, scale2;
-        bitCapInt i;
-        bitLenInt j;
-        QBinaryDecisionTreeNodePtr leaf1, leaf2;
-        for (i = 0; i < depthPow; i++) {
-            leaf1 = branches[0];
-            leaf2 = branches[1];
-
-            scale1 = ONE_CMPLX;
-            scale2 = ONE_CMPLX;
-
-            for (j = 0; j < depth; j++) {
-                bit = (i >> j) & 1U;
-
-                if (leaf1) {
-                    leaf1 = leaf1->branches[bit];
-                    scale1 *= leaf1->scale;
-                }
-                if (leaf2) {
-                    leaf2 = leaf2->branches[bit];
-                    scale2 *= leaf2->scale;
-                }
-            }
-
-            if (!IS_NORM_0(scale1 - scale2)) {
-                break;
-            }
-        }
-
-        if (i != depthPow) {
-            return;
-        }
-
-        branches[0] = branches[1];
-
-        // If all descendent pairs are the same, contract the scale multiple into this is a terminal leaf.
-        leaf1 = branches[0];
-        leaf2 = branches[1];
-        scale1 = scale;
-        while (leaf1 == leaf2) {
-            if (!leaf1) {
-                break;
-            }
-
-            scale1 *= leaf1->scale;
-
-            leaf1 = leaf1->branches[0];
-            leaf2 = leaf1->branches[1];
-        }
-
-        if (!leaf1) {
-            scale = scale1;
-        }
-    }
+    void Prune(bitCapInt perm, bitLenInt depth = bitsInCap) { PruneShallowOrDeep(depth, true, perm); }
 };
 
 class QBinaryDecisionTree : virtual public QInterface {
