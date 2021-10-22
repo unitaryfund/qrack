@@ -54,6 +54,9 @@ struct QBinaryDecisionTreeNode {
 
     QBinaryDecisionTreeNodePtr ShallowClone() { return std::make_shared<QBinaryDecisionTreeNode>(scale, branches); }
 
+    // tMG SP1
+    bool isNoChildren() { return !branches[0] && !branches[1]; }
+
     void Branch(bitLenInt depth = 1U, complex val = ONE_CMPLX)
     {
         if (!depth) {
@@ -136,6 +139,12 @@ struct QBinaryDecisionTreeNode {
         if (i == depthPow) {
             branches[0] = branches[1];
         }
+
+        if (branches[0]->isNoChildren() && branches[1]->isNoChildren()) {
+            scale *= branches[0]->scale;
+            branches[0] = NULL;
+            branches[1] = NULL;
+        }
     }
 
     void Prune(bitCapInt perm, bitLenInt depth = bitsInCap)
@@ -190,8 +199,16 @@ struct QBinaryDecisionTreeNode {
             }
         }
 
-        if (i == depthPow) {
-            branches[0] = branches[1];
+        if (i != depthPow) {
+            return;
+        }
+
+        branches[0] = branches[1];
+
+        if (branches[0]->isNoChildren() && branches[1]->isNoChildren()) {
+            scale *= branches[0]->scale;
+            branches[0] = NULL;
+            branches[1] = NULL;
         }
     }
 };
