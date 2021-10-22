@@ -326,14 +326,15 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 real1_f QBinaryDecisionTree::Prob(bitLenInt qubitIndex)
 {
     bitCapInt qPower = pow2(qubitIndex);
+    bitCapInt maxLcv = maxQPower >> ONE_BCI;
     real1 prob = ZERO_R1;
     complex scale;
+    bitCapInt i;
     bitLenInt j;
     QBinaryDecisionTreeNodePtr leaf;
-    for (bitCapInt i = 0; i < maxQPower; i++) {
-        if (!(i & qPower)) {
-            continue;
-        }
+    for (bitCapInt lcv = 0; lcv < maxLcv; lcv++) {
+        i = lcv & qPower;                                                                                                   \
+        i |= ((lcv ^ i) << ONE_BCI) | qPower;
 
         leaf = root;
         scale = leaf->scale;
