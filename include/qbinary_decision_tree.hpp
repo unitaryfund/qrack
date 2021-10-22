@@ -123,11 +123,9 @@ struct QBinaryDecisionTreeNode {
             }
         }
 
-        if (i != depthPow) {
-            return;
+        if (i == depthPow) {
+            branches[0] = branches[1];
         }
-
-        branches[0] = branches[1];
     }
 
     void Prune(bitCapInt perm, bitLenInt depth = bitsInCap)
