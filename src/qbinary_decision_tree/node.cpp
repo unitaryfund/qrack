@@ -28,7 +28,6 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
     if (!depth) {
         return;
     }
-    depth--;
 
     // If perm == 0, then bit == 0.
     size_t bit = perm & 1U;
@@ -40,7 +39,7 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
             if (IS_NORM_0(branches[i]->scale)) {
                 branches[i] = NULL;
             } else {
-                branches[i]->PruneShallowOrDeep(depth, isShallow, perm);
+                branches[i]->PruneShallowOrDeep(depth - 1U, isShallow, perm);
             }
         }
     }
