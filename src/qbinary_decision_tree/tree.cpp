@@ -440,18 +440,17 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
     bitCapInt qubitPower = pow2(qubitIndex);
     QBinaryDecisionTreeNodePtr leaf, child;
     for (bitCapInt i = 0; i < qubitPower; i++) {
+        // Iterate to qubit depth.
         leaf = root;
+        leaf->Branch();
         for (j = 0; j < qubitIndex; j++) {
             bit = (i >> j) & 1U;
             child = leaf->branches[bit];
-            if (!child) {
-                child = std::make_shared<QBinaryDecisionTreeNode>(ONE_CMPLX);
-                leaf->branches[bit] = child;
-            }
             leaf = child;
+            leaf->Branch();
         }
-        leaf->Branch();
 
+        // Apply gate.
         Y0 = leaf->branches[0]->scale;
         leaf->branches[0]->scale = mtrx[0] * leaf->branches[0]->scale + mtrx[1] * leaf->branches[1]->scale;
         leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
@@ -484,17 +483,15 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         }
 
         // Iterate to highest bit.
+        leaf->Branch();
         leaf = root;
+        leaf->Branch();
         for (j = 0; j < highBit; j++) {
             bit = (i >> j) & 1U;
             child = leaf->branches[bit];
-            if (!child) {
-                child = std::make_shared<QBinaryDecisionTreeNode>(ONE_CMPLX);
-                leaf->branches[bit] = child;
-            }
             leaf = child;
+            leaf->Branch();
         }
-        leaf->Branch();
 
         // Apply gate payload to target.
         Y0 = leaf->branches[0]->scale;
