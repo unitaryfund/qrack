@@ -479,17 +479,34 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
 void QBinaryDecisionTree::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
+    std::unique_ptr<bitLenInt[]> sortedControls(new bitLenInt[controlLen]);
+    std::copy(controls, controls + controlLen, sortedControls.get());
+    std::sort(sortedControls.get(), sortedControls.get() + controlLen);
+
     bitLenInt j;
+    for (j = 0; j < controlLen; j++) {
+        if (target < sortedControls[j]) {
+            break;
+        }
+    }
+    bitLenInt controlBound = j;
+    // bitLenInt controlRemainder = controlLen - controlBound;
+
+    bitLenInt highControl = sortedControls[controlLen - 1U];
+    bitLenInt highBit = (target < highControl) ? highControl : target;
 
     bitCapInt controlMask = 0;
-    for (j = 0; j < controlLen; j++) {
-        controlMask |= pow2(controls[j]);
+    bitCapInt highMask = 0;
+    for (j = 0; j < controlBound; j++) {
+        controlMask |= pow2(sortedControls.get()[j]);
     }
+    for (j = controlBound; j < controlLen; j++) {
+        highMask |= pow2(sortedControls.get()[j]);
+    }
+    controlMask |= highMask;
 
-    bitLenInt highestControl = *std::max_element(controls, controls + controlLen);
-    bitLenInt highBit = (target < highestControl) ? highestControl : target;
-    bitCapInt qubitPower = pow2(highBit);
-
+    bitCapInt qubitPower = pow2(target);
+    complex Y0;
     int bit;
     QBinaryDecisionTreeNodePtr leaf, child;
     for (bitCapInt i = 0; i < qubitPower; i++) {
@@ -508,6 +525,10 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             leaf = child;
             leaf->Branch();
         }
+
+        // TODO: Consider CNOT(0, 2, 1), (with target bit last). Draw a binary tree from root to 3 more levels down.
+        // Order the exponential rows by "control," "target", "control." Pointers have to be swapped and scaled across
+        // more than immediate depth.
 
         Apply2x2OnLeaf(mtrx, leaf);
     }
