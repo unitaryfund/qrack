@@ -116,25 +116,25 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
     branches[1] = NULL;
 }
 
-void QBinaryDecisionTreeNode::Branch(bitLenInt depth, complex val)
+void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
 {
     if (!depth) {
         return;
     }
 
     if (!branches[0]) {
-        branches[0] = std::make_shared<QBinaryDecisionTreeNode>(val);
+        branches[0] = std::make_shared<QBinaryDecisionTreeNode>();
     }
     if (!branches[1]) {
-        branches[1] = std::make_shared<QBinaryDecisionTreeNode>(val);
+        branches[1] = std::make_shared<QBinaryDecisionTreeNode>();
     }
 
     if (branches[0] == branches[1]) {
-        branches[1] = branches[0]->ShallowClone();
+        branches[1] = branches[0]->DeepClone();
     }
 
-    branches[0]->Branch(depth - 1U, val);
-    branches[1]->Branch(depth - 1U, val);
+    branches[0]->Branch(depth - 1U);
+    branches[1]->Branch(depth - 1U);
 }
 
 } // namespace Qrack

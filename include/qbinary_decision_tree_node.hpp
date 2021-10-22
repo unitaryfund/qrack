@@ -49,12 +49,27 @@ public:
     QBinaryDecisionTreeNode(complex scl, QBinaryDecisionTreeNodePtr brnchs[2])
         : scale(scl)
     {
-        std::copy(brnchs, brnchs + 2, branches);
+        branches[0] = brnchs[0] ? brnchs[0]->DeepClone() : NULL;
+
+        if (brnchs[0] == brnchs[1]) {
+            branches[1] = branches[0];
+        } else {
+            branches[1] = brnchs[1] ? brnchs[1]->DeepClone() : NULL;
+        }
     }
 
-    QBinaryDecisionTreeNodePtr ShallowClone() { return std::make_shared<QBinaryDecisionTreeNode>(scale, branches); }
+    QBinaryDecisionTreeNodePtr DeepClone() { return std::make_shared<QBinaryDecisionTreeNode>(scale, branches); }
 
-    void Branch(bitLenInt depth = 1U, complex val = ONE_CMPLX);
+    QBinaryDecisionTreeNodePtr ShallowClone()
+    {
+        QBinaryDecisionTreeNodePtr toRet = std::make_shared<QBinaryDecisionTreeNode>(scale);
+        toRet->branches[0] = branches[0];
+        toRet->branches[1] = branches[1];
+
+        return toRet;
+    }
+
+    void Branch(bitLenInt depth = 1U);
 
     void Prune(bitLenInt depth = bitsInCap) { PruneShallowOrDeep(depth, false); }
 

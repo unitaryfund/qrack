@@ -328,15 +328,14 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 real1_f QBinaryDecisionTree::Prob(bitLenInt qubitIndex)
 {
     bitCapInt qPower = pow2(qubitIndex);
-    bitCapInt maxLcv = maxQPower >> ONE_BCI;
     real1 prob = ZERO_R1;
     complex scale;
-    bitCapInt i;
     bitLenInt j;
     QBinaryDecisionTreeNodePtr leaf;
-    for (bitCapInt lcv = 0; lcv < maxLcv; lcv++) {
-        i = lcv & qPower;
-        i |= ((lcv ^ i) << ONE_BCI) | qPower;
+    for (bitCapInt i = 0; i < maxQPower; i++) {
+        if ((i & qPower) != qPower) {
+            continue;
+        }
 
         leaf = root;
         scale = leaf->scale;
@@ -432,10 +431,31 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
     return result;
 }
 
+void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf)
+{
+    if (IS_NORM_0(leaf->branches[0]->scale) && IS_NORM_0(leaf->branches[1]->scale)) {
+        return;
+    }
+
+    if (IS_NORM_0(leaf->branches[0]->scale)) {
+        leaf->branches[0] = leaf->branches[1] ? leaf->branches[1]->DeepClone() : NULL;
+        leaf->branches[0]->scale = ZERO_CMPLX;
+    }
+
+    if (IS_NORM_0(leaf->branches[1]->scale)) {
+        leaf->branches[1] = leaf->branches[0] ? leaf->branches[0]->DeepClone() : NULL;
+        leaf->branches[1]->scale = ZERO_CMPLX;
+    }
+
+    // Apply gate.
+    complex Y0 = leaf->branches[0]->scale;
+    leaf->branches[0]->scale = mtrx[0] * Y0 + mtrx[1] * leaf->branches[1]->scale;
+    leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
+}
+
 void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex)
 {
     bitLenInt j;
-    complex Y0;
     int bit;
     bitCapInt qubitPower = pow2(qubitIndex);
     QBinaryDecisionTreeNodePtr leaf, child;
@@ -450,10 +470,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
             leaf->Branch();
         }
 
-        // Apply gate.
-        Y0 = leaf->branches[0]->scale;
-        leaf->branches[0]->scale = mtrx[0] * leaf->branches[0]->scale + mtrx[1] * leaf->branches[1]->scale;
-        leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
+        Apply2x2OnLeaf(mtrx, leaf);
     }
 
     root->Prune(qubitIndex);
@@ -473,7 +490,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     bitLenInt highBit = (target < highestControl) ? highestControl : target;
     bitCapInt qubitPower = pow2(highBit);
 
-    complex Y0;
     int bit;
     QBinaryDecisionTreeNodePtr leaf, child;
     for (bitCapInt i = 0; i < qubitPower; i++) {
@@ -493,10 +509,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             leaf->Branch();
         }
 
-        // Apply gate payload to target.
-        Y0 = leaf->branches[0]->scale;
-        leaf->branches[0]->scale = mtrx[0] * leaf->branches[0]->scale + mtrx[1] * leaf->branches[1]->scale;
-        leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
+        Apply2x2OnLeaf(mtrx, leaf);
     }
 
     root->Prune(highBit);

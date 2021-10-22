@@ -58,6 +58,8 @@ protected:
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest);
 
+    void Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf);
+
 public:
     QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
