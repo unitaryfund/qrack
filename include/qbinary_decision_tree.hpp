@@ -136,14 +136,29 @@ struct QBinaryDecisionTreeNode {
             }
         }
 
-        if (i == depthPow) {
-            branches[0] = branches[1];
+        if (i != depthPow) {
+            return;
         }
 
-        if (branches[0]->isNoChildren() && branches[1]->isNoChildren()) {
-            scale *= branches[0]->scale;
-            branches[0] = NULL;
-            branches[1] = NULL;
+        branches[0] = branches[1];
+
+        // If all descendent pairs are the same, contract the scale multiple into this is a terminal leaf.
+        leaf1 = branches[0];
+        leaf2 = branches[1];
+        scale1 = scale;
+        while (leaf1 == leaf2) {
+            if (!leaf1) {
+                break;
+            }
+
+            scale1 *= leaf1->scale;
+
+            leaf1 = leaf1->branches[0];
+            leaf2 = leaf1->branches[1];
+        }
+
+        if (!leaf1) {
+            scale = scale1;
         }
     }
 
@@ -205,10 +220,23 @@ struct QBinaryDecisionTreeNode {
 
         branches[0] = branches[1];
 
-        if (branches[0]->isNoChildren() && branches[1]->isNoChildren()) {
-            scale *= branches[0]->scale;
-            branches[0] = NULL;
-            branches[1] = NULL;
+        // If all descendent pairs are the same, contract the scale multiple into this is a terminal leaf.
+        leaf1 = branches[0];
+        leaf2 = branches[1];
+        scale1 = scale;
+        while (leaf1 == leaf2) {
+            if (!leaf1) {
+                break;
+            }
+
+            scale1 *= leaf1->scale;
+
+            leaf1 = leaf1->branches[0];
+            leaf2 = leaf1->branches[1];
+        }
+
+        if (!leaf1) {
+            scale = scale1;
         }
     }
 };
