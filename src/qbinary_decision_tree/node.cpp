@@ -104,9 +104,14 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
         leaf2 = leaf1->branches[1];
     }
 
-    if (!leaf1) {
-        scale = scale1;
+    if (leaf1) {
+        return;
     }
+
+    // Same branch, all the way down.
+    scale = scale1;
+    branches[0] = NULL;
+    branches[1] = NULL;
 }
 
 void QBinaryDecisionTreeNode::Branch(bitLenInt depth, complex val)
