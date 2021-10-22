@@ -40,15 +40,23 @@ struct QBinaryDecisionTreeNode {
     {
     }
 
-    QBinaryDecisionTreeNode(complex val)
-        : scale(val)
+    QBinaryDecisionTreeNode(complex scl)
+        : scale(scl)
         , branches({ NULL, NULL })
     {
     }
 
+    QBinaryDecisionTreeNode(complex scl, QBinaryDecisionTreeNodePtr brnchs[2])
+        : scale(scl)
+    {
+        std::copy(brnchs, brnchs + 2, branches);
+    }
+
+    QBinaryDecisionTreeNodePtr ShallowClone() { return std::make_shared<QBinaryDecisionTreeNode>(scale, branches); }
+
     void Branch(bitLenInt depth = 1U, complex val = ONE_CMPLX)
     {
-        if (depth == 0) {
+        if (!depth) {
             return;
         }
 
@@ -59,10 +67,12 @@ struct QBinaryDecisionTreeNode {
             branches[1] = std::make_shared<QBinaryDecisionTreeNode>(val);
         }
 
-        if (depth) {
-            branches[0]->Branch(depth - 1U, val);
-            branches[1]->Branch(depth - 1U, val);
+        if (branches[0] == branches[1]) {
+            branches[1] = ShallowClone();
         }
+
+        branches[0]->Branch(depth - 1U, val);
+        branches[1]->Branch(depth - 1U, val);
     }
 
     void Prune(bitLenInt depth = bitsInCap)
