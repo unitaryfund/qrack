@@ -29,6 +29,7 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
         return;
     }
 
+    // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NORM_0(scale)) {
         scale = ZERO_CMPLX;
         branches[0] = NULL;
@@ -36,12 +37,11 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
         return;
     }
 
+    // Prune recursively to depth.
     depth--;
-
-    // If perm == 0, then bit == 0.
+    // (If perm == 0, then bit == 0.)
     size_t bit = perm & 1U;
     perm >>= 1U;
-
     bitLenInt maxLcv = isShallow ? (bit + 1U) : 2;
     for (bitLenInt i = bit; i < maxLcv; i++) {
         if (branches[i]) {
@@ -49,6 +49,7 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
         }
     }
 
+    // We're going to try to combine 0 and 1 branches, now.
     if (!branches[0] || !branches[1]) {
         return;
     }
@@ -83,10 +84,13 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
         }
     }
 
-    if (i != depthPow) {
+    if ((i != depthPow) || (leaf1 && (leaf1->branches[0] || leaf1->branches[1])) ||
+        (leaf2 && (leaf2->branches[0] || leaf2->branches[1]))) {
+        // The branches are not equal to depth, or they might be unequal past depth.
         return;
     }
 
+    // Otherwise, the branches are equal.
     branches[0] = branches[1];
 
     // If all descendent pairs are the same, contract the scale multiple into this as a terminal leaf.
