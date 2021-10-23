@@ -520,7 +520,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
         // We have at least one control with a higher index than the target. (We skipped by control PERMUTATION above.)
 
-        // Consider CNOT(0, 2, 1), (with target bit last). Draw a binary tree from root to 3 more levels down, (where
+        // Consider CCNOT(0, 2, 1), (with target bit last). Draw a binary tree from root to 3 more levels down, (where
         // each branch from a node is a choice between |0> and |1> for the next-indexed qubit state). Order the
         // exponential rows by "control," "target", "control." Pointers have to be swapped and scaled across more than
         // immediate depth.
