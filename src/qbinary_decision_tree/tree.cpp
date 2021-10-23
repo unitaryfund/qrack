@@ -484,22 +484,16 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     std::copy(controls, controls + controlLen, sortedControls.get());
     std::sort(sortedControls.get(), sortedControls.get() + controlLen);
 
-    bitLenInt j;
-    for (j = 0; j < controlLen; j++) {
-        if (target < sortedControls[j]) {
-            break;
-        }
-    }
-
     bitLenInt highControl = sortedControls[controlLen - 1U];
     bitLenInt highBit = (target < highControl) ? highControl : target;
 
+    bitLenInt j;
     bitCapInt controlMask = 0;
     for (j = 0; j < controlLen; j++) {
         controlMask |= pow2(sortedControls.get()[j]);
     }
 
-    bitCapInt qubitPower = pow2(target);
+    bitCapInt qubitPower = pow2(highBit);
     complex Y0;
     int bit;
     QBinaryDecisionTreeNodePtr parent, child0, child1;
@@ -519,7 +513,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             parent->Branch();
         }
 
-        if (highControl < highBit) {
+        if (highControl < target) {
             // All controls have lower indices that the target, and we're done.
             Apply2x2OnLeaves(mtrx, parent->branches[0], parent->branches[1]);
             continue;
