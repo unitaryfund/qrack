@@ -542,7 +542,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         parent->Branch();
         child1 = parent->branches[0];
         child2 = parent->branches[1];
-        for (j = controlBound; j < highControl; j++) {
+        for (j = target; j < highControl; j++) {
 
             child1->Branch();
             if (child2 != child1) {
