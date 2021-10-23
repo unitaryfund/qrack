@@ -550,8 +550,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
     // A control occurs after the target, and we "push apart" by 1 bit.
     bitCapInt qubitPower = pow2(highControl - 1U);
-    bitCapInt targetPower = pow2(target);
-    bitCapInt targetMask = targetPower - ONE_BCI;
+    bitCapInt targetMask = pow2(target) - ONE_BCI;
 
     bitLenInt j;
     bitCapInt controlMask = 0;
@@ -559,10 +558,10 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         controlMask |= pow2(controls[j]);
     }
 
+    QBinaryDecisionTreeNodePtr parent, child0, child1;
     bitCapInt i;
     complex Y0;
     int bit;
-    QBinaryDecisionTreeNodePtr parent, child0, child1;
     for (bitCapInt lcv = 0; lcv < qubitPower; lcv++) {
         i = lcv & targetMask;
         i |= (lcv ^ i) << ONE_BCI;
