@@ -602,14 +602,14 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             parent = child0;
         }
 
-        // Iterate for target bit.
-        bitPow = targetPow;
-        bit = (i >> target) & 1U;
-        child0 = parent->branches[0];
-        child1 = parent->branches[1];
-
         // (The remainder is "embarrassingly parallel," from below this point.)
         for (lcv2 = 0; lcv2 < highControlPower; lcv2++) {
+            // Iterate for target bit.
+            bitPow = targetPow;
+            bit = (i >> target) & 1U;
+            child0 = parent->branches[0];
+            child1 = parent->branches[1];
+
             k = i | (lcv2 << (target + 1U));
 
             // If all controls are set, skip.
