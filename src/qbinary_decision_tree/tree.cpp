@@ -510,7 +510,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     int bit;
     QBinaryDecisionTreeNodePtr parent, child1, child2;
     for (bitCapInt i = 0; i < qubitPower; i++) {
-        // If controls with lower index than target aren't set, skip.
+        // If any controls aren't set, skip.
         if ((i & controlMask) != controlMask) {
             continue;
         }
