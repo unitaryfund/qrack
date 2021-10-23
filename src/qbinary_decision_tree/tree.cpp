@@ -583,10 +583,11 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     // A control occurs after the target, and we "push apart" by 1 bit.
     bitLenInt highControl = sortedControls.get()[controlLen - 1U];
     bitCapInt qubitPower = pow2(highControl);
-    bitCapInt targetMask = pow2(target) - ONE_BCI;
+    bitCapInt targetPow = pow2(target);
+    bitCapInt targetMask = targetPow - ONE_BCI;
 
     QBinaryDecisionTreeNodePtr parent, child0, child1;
-    bitCapInt i;
+    bitCapInt i, bitPow;
     complex Y0;
     int bit;
     for (bitCapInt lcv = 0; lcv < qubitPower; lcv++) {
@@ -598,15 +599,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             continue;
         }
 
-        // If the target bit is 1 level up from a single control, amplitudes to be acted on are every other amplitude at
-        // final control depth. If the target bit is 2 levels up from a single control, amplitudes to be acted on are
-        // every fourth amplitude at final control depth.
-        // ... etc, by powers of 2.
-
-        // The pattern is the same, at this point in our loop, whether we have many controls or just one control, at any
-        // depth. Initially filtering by PERMUTATION, above, strikes subsets due to control bits as appropriate, or else
-        // iterates over both |0> and |1> branches of bits that aren't involved in this gate.
-
         // Iterate to target bit.
         parent = root;
         for (j = 0; j < target; j++) {
@@ -616,6 +608,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         }
 
         // Iterate for target bit.
+        bitPow = targetPow;
+        bit = (i >> target) & 1U;
         child0 = parent->branches[0];
         child1 = parent->branches[1];
         child0->Branch();
@@ -624,7 +618,13 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
         // Starting where "j" left off, we trace the permutation for both children.
         for (; j < highControl; j++) {
+            bitPow = pow2(j);
             bit = (i >> j) & 1U;
+
+            if (!bit && ((bitPow & highControlMask) == bitPow)) {
+                // Break at first reset control bit.
+                break;
+            }
 
             child0 = child0->branches[bit];
             child1 = child1->branches[bit];
@@ -633,8 +633,13 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             child1->Branch();
         }
 
+        if (!bit && ((bitPow & highControlMask) == bitPow) && (i ^ highControlMask)) {
+            // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
+            continue;
+        }
+
         // Ultimately, we have to modify the "branches[]" pointer values, for the last bit.
-        bit = (i >> highControl) & 1U;
+        bit = (i >> j) & 1U;
         Apply2x2OnLeaves(invMtrx, &(child0->branches[bit]), &(child1->branches[bit]));
     }
 
