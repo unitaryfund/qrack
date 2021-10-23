@@ -528,14 +528,19 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         // TODO: This still doesn't quite work.
 
         parent->Branch();
-        parent->branches[0]->Branch();
-        if (parent->branches[1] == parent->branches[0]) {
-            parent->branches[1] = parent->branches[0]->DeepClone();
+
+        QBinaryDecisionTreeNodePtr& l0 = parent->branches[0];
+        QBinaryDecisionTreeNodePtr& l1 = parent->branches[1];
+
+        l0->Branch();
+        if (l1 == l0) {
+            l1 = l0->DeepClone();
         } else {
-            parent->branches[1]->Branch();
+            l1->Branch();
         }
-        child0 = parent->branches[0];
-        child1 = parent->branches[1];
+        child0 = l0;
+        child1 = l1;
+
         for (j = target; j < (highControl - 1U); j++) {
             bit = (i >> j) & 1U;
 
