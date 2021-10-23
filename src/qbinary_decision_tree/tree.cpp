@@ -480,17 +480,17 @@ void QBinaryDecisionTree::Apply2x2OnLeaves(
     (*leaf1)->scale = mtrx[2] * Y0 + mtrx[3] * (*leaf1)->scale;
 }
 
-void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex)
+void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt target)
 {
     bitLenInt j;
     int bit;
-    bitCapInt qubitPower = pow2(qubitIndex);
+    bitCapInt qubitPower = pow2(target);
     QBinaryDecisionTreeNodePtr leaf, child;
     for (bitCapInt i = 0; i < qubitPower; i++) {
         // Iterate to qubit depth.
         leaf = root;
         leaf->Branch();
-        for (j = 0; j < qubitIndex; j++) {
+        for (j = 0; j < target; j++) {
             bit = (i >> j) & 1U;
             child = leaf->branches[bit];
             leaf = child;
@@ -500,10 +500,10 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
         Apply2x2OnLeaves(mtrx, &(leaf->branches[0]), &(leaf->branches[1]));
     }
 
-    root->Prune(qubitIndex);
+    root->Prune(target);
 }
 
-void QBinaryDecisionTree::ApplyControlledSingleBit(
+void QBinaryDecisionTree::ApplyLowControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     bitLenInt j;
@@ -512,20 +512,51 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         controlMask |= pow2(controls[j]);
     }
 
+    int bit;
+    bitCapInt qubitPower = pow2(target);
+    QBinaryDecisionTreeNodePtr parent, child;
+    for (bitCapInt i = 0; i < qubitPower; i++) {
+        // If any controls aren't set, skip.
+        if ((i & controlMask) != controlMask) {
+            continue;
+        }
+
+        // Iterate to target bit.
+        parent = root;
+        parent->Branch();
+        for (j = 0; j < target; j++) {
+            bit = (i >> j) & 1U;
+            child = parent->branches[bit];
+            parent = child;
+            parent->Branch();
+        }
+
+        // All controls have lower indices that the target, and we're done.
+        Apply2x2OnLeaves(mtrx, &(parent->branches[0]), &(parent->branches[1]));
+    }
+
+    root->Prune(target);
+}
+
+void QBinaryDecisionTree::ApplyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+{
+    bitLenInt highControl = *std::max_element(controls, controls + controlLen);
+    if (highControl < target) {
+        // Special case
+        ApplyLowControlledSingleBit(controls, controlLen, target, mtrx);
+        return;
+    }
+
+    // A control occurs after the target, and we "push apart" by 1 bit.
+    bitCapInt qubitPower = pow2(highControl - 1U);
     bitCapInt targetPower = pow2(target);
     bitCapInt targetMask = targetPower - ONE_BCI;
 
-    bitLenInt highControl = *std::max_element(controls, controls + controlLen);
-    bitLenInt highBit;
-    bitCapInt qubitPower;
-    if (highControl < target) {
-        // All controls occur before the target.
-        highBit = target;
-        qubitPower = targetPower;
-    } else {
-        // A control occurs after the target, and we "push apart" by 1 bit.
-        highBit = highControl;
-        qubitPower = pow2(highControl - 1U);
+    bitLenInt j;
+    bitCapInt controlMask = 0;
+    for (j = 0; j < controlLen; j++) {
+        controlMask |= pow2(controls[j]);
     }
 
     bitCapInt i;
@@ -549,12 +580,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             child0 = parent->branches[bit];
             parent = child0;
             parent->Branch();
-        }
-
-        if (highControl < target) {
-            // All controls have lower indices that the target, and we're done.
-            Apply2x2OnLeaves(mtrx, &(parent->branches[0]), &(parent->branches[1]));
-            continue;
         }
 
         // We have at least one control with a higher index than the target. (We skipped by control PERMUTATION above.)
@@ -612,7 +637,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         Apply2x2OnLeaves(mtrx, &(child0->branches[bit]), &(child1->branches[bit]));
     }
 
-    root->Prune(highBit);
+    root->Prune(highControl);
 }
 
 } // namespace Qrack
