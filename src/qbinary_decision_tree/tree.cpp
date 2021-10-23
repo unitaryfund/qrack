@@ -128,10 +128,37 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
     QBinaryDecisionTreeNodePtr leaf;
     for (bitCapInt i = 0; i < maxQPower; i++) {
         leaf = root;
+        leaf->Branch();
         for (j = 0; j < qubitCount; j++) {
             leaf = leaf->branches[(i >> j) & 1U];
+            leaf->Branch();
         }
         setLambda(i, leaf);
+    }
+
+    root->Prune();
+}
+template <typename Fn> void QBinaryDecisionTree::ProductSetTraversal(Fn setLambda)
+{
+    root->Branch(qubitCount);
+
+    bitCapInt maxQPower = pow2(qubitCount);
+    bitLenInt j;
+
+    QBinaryDecisionTreeNodePtr leaf;
+    for (bitCapInt i = 0; i < maxQPower; i++) {
+        leaf = root;
+        leaf->Branch();
+        for (j = 0; j < qubitCount; j++) {
+            leaf = leaf->branches[(i >> j) & 1U];
+            if (IS_NORM_0(leaf->scale)) {
+                break;
+            }
+            leaf->Branch();
+        }
+        if (!IS_NORM_0(leaf->scale)) {
+            setLambda(i, leaf);
+        }
     }
 
     root->Prune();
@@ -241,17 +268,13 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
         std::swap(root, clone->root);
         clone->SetQubitCount(qubitCount);
         SetQubitCount(toCopy->qubitCount);
-        SetTraversal([clone](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) {
+        ProductSetTraversal([clone](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) {
             QBinaryDecisionTreePtr toCopyClone = std::dynamic_pointer_cast<QBinaryDecisionTree>(clone->Clone());
-            leaf->branches[0] = toCopyClone->root->branches[0];
-            leaf->branches[1] = toCopyClone->root->branches[1];
             leaf->scale *= toCopyClone->root->scale;
         });
     } else if (start == qubitCount) {
-        SetTraversal([toCopy](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) {
+        ProductSetTraversal([toCopy](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) {
             QBinaryDecisionTreePtr toCopyClone = std::dynamic_pointer_cast<QBinaryDecisionTree>(toCopy->Clone());
-            leaf->branches[0] = toCopyClone->root->branches[0];
-            leaf->branches[1] = toCopyClone->root->branches[1];
             leaf->scale *= toCopyClone->root->scale;
         });
     } else {

@@ -34,6 +34,7 @@ protected:
 
     template <typename Fn> void GetTraversal(Fn getLambda);
     template <typename Fn> void SetTraversal(Fn setLambda);
+    template <typename Fn> void ProductSetTraversal(Fn setLambda);
     template <typename Fn> void ExecuteAsQEngineCPU(Fn operation)
     {
         QInterfacePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
