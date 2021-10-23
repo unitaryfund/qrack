@@ -531,7 +531,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         // ... etc, by powers of 2.
 
         // The pattern is the same, at this point in our loop, whether we have many controls or just one control, at any
-        // depth. Initially filtering by PERMUTATION, above, strikes subsets due to control bits as appropriate, or
+        // depth. Initially filtering by PERMUTATION, above, strikes subsets due to control bits as appropriate, or else
         // iterates over both |0> and |1> branches of bits that aren't involved in this gate.
 
         parent->Branch();
