@@ -58,7 +58,7 @@ protected:
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest);
 
-    void Apply2x2OnLeaves(const complex* mtrx, QBinaryDecisionTreeNodePtr& leaf0, QBinaryDecisionTreeNodePtr& leaf1);
+    void Apply2x2OnLeaves(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf0, QBinaryDecisionTreeNodePtr leaf1);
 
 public:
     QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,

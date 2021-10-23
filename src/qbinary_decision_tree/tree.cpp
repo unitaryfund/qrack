@@ -432,22 +432,8 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 }
 
 void QBinaryDecisionTree::Apply2x2OnLeaves(
-    const complex* mtrx, QBinaryDecisionTreeNodePtr& leaf0, QBinaryDecisionTreeNodePtr& leaf1)
+    const complex* mtrx, QBinaryDecisionTreeNodePtr leaf0, QBinaryDecisionTreeNodePtr leaf1)
 {
-    if (IS_NORM_0(leaf0->scale) && IS_NORM_0(leaf1->scale)) {
-        return;
-    }
-
-    if (IS_NORM_0(leaf0->scale)) {
-        leaf0 = leaf1 ? leaf1->DeepClone() : NULL;
-        leaf0->scale = ZERO_CMPLX;
-    }
-
-    if (IS_NORM_0(leaf1->scale)) {
-        leaf1 = leaf0 ? leaf0->DeepClone() : NULL;
-        leaf1->scale = ZERO_CMPLX;
-    }
-
     // Apply gate.
     complex Y0 = leaf0->scale;
     leaf0->scale = mtrx[0] * Y0 + mtrx[1] * leaf1->scale;
@@ -469,6 +455,22 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
             child = leaf->branches[bit];
             leaf = child;
             leaf->Branch();
+        }
+
+        // TODO: This code is repetitive, but putting it in `Apply2x2OnLeaves()` seems to break RAII.
+
+        if (IS_NORM_0(leaf->branches[0]->scale) && IS_NORM_0(leaf->branches[1]->scale)) {
+            return;
+        }
+
+        if (IS_NORM_0(leaf->branches[0]->scale)) {
+            leaf->branches[0] = leaf->branches[1] ? leaf->branches[1]->DeepClone() : NULL;
+            leaf->branches[0]->scale = ZERO_CMPLX;
+        }
+
+        if (IS_NORM_0(leaf->branches[1]->scale)) {
+            leaf->branches[1] = leaf->branches[0] ? leaf->branches[0]->DeepClone() : NULL;
+            leaf->branches[1]->scale = ZERO_CMPLX;
         }
 
         Apply2x2OnLeaves(mtrx, leaf->branches[0], leaf->branches[1]);
@@ -530,7 +532,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         parent->Branch();
         child0 = parent->branches[0];
         child1 = parent->branches[1];
-        for (j = target; j < highControl; j++) {
+        for (j = target; j < (highControl - 1U); j++) {
 
             child0->Branch();
             if (child1 != child0) {
@@ -540,6 +542,29 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             bit = (i >> j) & 1U;
             child0 = child0->branches[bit];
             child1 = child1->branches[bit];
+        }
+
+        child0->Branch();
+        if (child1 != child0) {
+            child1->Branch();
+        }
+
+        bit = (i >> j) & 1U;
+
+        // TODO: This code is repetitive, but putting it in `Apply2x2OnLeaves()` seems to break RAII.
+
+        if (IS_NORM_0(child0->branches[bit]->scale) && IS_NORM_0(child1->branches[bit]->scale)) {
+            return;
+        }
+
+        if (IS_NORM_0(child0->branches[bit]->scale)) {
+            child0->branches[bit] = child1->branches[bit] ? child1->branches[bit]->DeepClone() : NULL;
+            child0->branches[bit]->scale = ZERO_CMPLX;
+        }
+
+        if (IS_NORM_0(child1->branches[bit]->scale)) {
+            child1->branches[bit] = child0->branches[bit] ? child0->branches[bit]->DeepClone() : NULL;
+            child1->branches[bit]->scale = ZERO_CMPLX;
         }
 
         Apply2x2OnLeaves(mtrx, child0, child1);
