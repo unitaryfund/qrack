@@ -128,10 +128,8 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
     QBinaryDecisionTreeNodePtr leaf;
     for (bitCapInt i = 0; i < maxQPower; i++) {
         leaf = root;
-        leaf->Branch();
         for (j = 0; j < qubitCount; j++) {
             leaf = leaf->branches[(i >> j) & 1U];
-            leaf->Branch();
         }
         setLambda(i, leaf);
     }
@@ -140,15 +138,13 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
 }
 template <typename Fn> void QBinaryDecisionTree::ProductSetTraversal(Fn setLambda)
 {
-    root->Branch(qubitCount);
-
-    bitCapInt maxQPower = pow2(qubitCount);
-    bitLenInt j;
-
     if (IS_NORM_0(root->scale)) {
         // The tree isn't normalized, in this case, but this is defensive.
         return;
     }
+
+    bitCapInt maxQPower = pow2(qubitCount);
+    bitLenInt j;
 
     QBinaryDecisionTreeNodePtr leaf;
     for (bitCapInt i = 0; i < maxQPower; i++) {
