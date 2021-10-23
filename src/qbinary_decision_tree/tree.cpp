@@ -633,7 +633,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             child1->Branch();
         }
 
-        if (!bit && ((bitPow & highControlMask) == bitPow) && (i ^ highControlMask)) {
+        if (!bit && ((bitPow & highControlMask) == bitPow) && (i < bitPow)) {
             // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
             continue;
         }
