@@ -515,7 +515,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             continue;
         }
 
-        // Iterate to highest bit.
+        // Iterate to target bit.
         parent = root;
         parent->Branch();
         for (j = 0; j < target; j++) {
