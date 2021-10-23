@@ -568,6 +568,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
         // All remaining controls have lower indices than the target.
         Apply2x2OnLeaves(mtrx, &(parent->branches[0]), &(parent->branches[1]));
+        // (Consider "j" to be advanced by 1);
 
         if (!highControlMask) {
             continue;
@@ -586,18 +587,17 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             }
 
             // Iterate for target bit.
-            bitPow = targetPow;
-            bit = (k >> target) & 1U;
             child0 = parent->branches[0];
             child1 = parent->branches[1];
-            bitPow = pow2(j);
-            bit = (k >> j) & 1U;
             // (Children are already branched, to depth=1.)
+
+            // Stay one bit advanced, for the last pair of children;
+            bitPow = pow2(targetPow + 1U);
+            bit = (k >> (target + 1U)) & 1U;
 
             // Starting where "j" left off, we trace the permutation for both children.
             // Break at first reset control bit, as we KNOW there is at least one reset control.
-            for (j = (target + 1U); bit || !(bitPow & highControlMask); j++) {
-
+            for (j = (target + 2U); bit || !(bitPow & highControlMask); j++) {
                 child0 = child0->branches[bit];
                 child1 = child1->branches[bit];
 
