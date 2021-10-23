@@ -120,6 +120,7 @@ template <typename Fn> void QBinaryDecisionTree::GetTraversal(Fn getLambda)
 }
 template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
 {
+    root = std::make_shared<QBinaryDecisionTreeNode>();
     root->Branch(qubitCount);
 
     bitCapInt maxQPower = pow2(qubitCount);
@@ -174,12 +175,10 @@ void QBinaryDecisionTree::GetQuantumState(QInterfacePtr eng)
 }
 void QBinaryDecisionTree::SetQuantumState(const complex* state)
 {
-    root = std::make_shared<QBinaryDecisionTreeNode>();
     SetTraversal([state](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = state[i]; });
 }
 void QBinaryDecisionTree::SetQuantumState(QInterfacePtr eng)
 {
-    root = std::make_shared<QBinaryDecisionTreeNode>();
     SetTraversal([eng](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = eng->GetAmplitude(i); });
 }
 void QBinaryDecisionTree::GetProbs(real1* outputProbs)
