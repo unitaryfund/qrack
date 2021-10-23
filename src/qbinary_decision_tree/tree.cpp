@@ -551,7 +551,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     root->Branch(target + 1U);
 
     // A control occurs after the target, and we "push apart" by 1 bit.
-    bitCapInt qubitPower = pow2(highControl - 1U);
+    bitCapInt qubitPower = pow2(highControl);
     bitCapInt targetMask = pow2(target) - ONE_BCI;
 
     bitLenInt j;
