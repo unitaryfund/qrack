@@ -461,16 +461,18 @@ void QBinaryDecisionTree::Apply2x2OnLeaves(
     const complex* mtrx, QBinaryDecisionTreeNodePtr* leaf0, QBinaryDecisionTreeNodePtr* leaf1)
 {
     if (IS_NORM_0((*leaf0)->scale) && IS_NORM_0((*leaf1)->scale)) {
+        (*leaf0)->scale = ZERO_CMPLX;
+        (*leaf1)->scale = ZERO_CMPLX;
         return;
     }
 
     if (IS_NORM_0((*leaf0)->scale)) {
-        (*leaf0) = (*leaf1) ? (*leaf1)->DeepClone() : NULL;
+        (*leaf0) = (*leaf1)->DeepClone();
         (*leaf0)->scale = ZERO_CMPLX;
     }
 
     if (IS_NORM_0((*leaf1)->scale)) {
-        (*leaf1) = (*leaf0) ? (*leaf0)->DeepClone() : NULL;
+        (*leaf1) = (*leaf0)->DeepClone();
         (*leaf1)->scale = ZERO_CMPLX;
     }
 
