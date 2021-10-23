@@ -590,7 +590,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             bit = (k >> target) & 1U;
             child0 = parent->branches[0];
             child1 = parent->branches[1];
-            child0->Branch();
             bitPow = pow2(j);
             bit = (k >> j) & 1U;
             // (Children are already branched, to depth=1.)
