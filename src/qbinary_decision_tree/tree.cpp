@@ -483,17 +483,13 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
 void QBinaryDecisionTree::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    std::unique_ptr<bitLenInt[]> sortedControls(new bitLenInt[controlLen]);
-    std::copy(controls, controls + controlLen, sortedControls.get());
-    std::sort(sortedControls.get(), sortedControls.get() + controlLen);
-
-    bitLenInt highControl = sortedControls[controlLen - 1U];
+    bitLenInt highControl = *std::max_element(controls, controls + controlLen);
     bitLenInt highBit = (target < highControl) ? highControl : target;
 
     bitLenInt j;
     bitCapInt controlMask = 0;
     for (j = 0; j < controlLen; j++) {
-        controlMask |= pow2(sortedControls.get()[j]);
+        controlMask |= pow2(controls[j]);
     }
 
     bitCapInt qubitPower = pow2(highBit);
@@ -528,7 +524,11 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         // Order the exponential rows by "control," "target", "control." Pointers have to be swapped and scaled across
         // more than immediate depth.
 
-        // TODO: This still doesn't quite work.
+        // TODO:
+        // If the target bit is index 0, amplitudes to be acted on are directly adjacent at final control depth.
+        // If the target bit is index 1, amplitudes to be acted on are every other amplitude at final control depth.
+        // If the target bit is index 2, amplitudes to be acted on are every fourth amplitude at final control depth.
+        // ... etc..
 
         parent->Branch();
 
