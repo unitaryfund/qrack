@@ -482,6 +482,8 @@ void QBinaryDecisionTree::Apply2x2OnLeaves(
 
 void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt target)
 {
+    root->Branch(target + 1U);
+
     bitLenInt j;
     int bit;
     bitCapInt qubitPower = pow2(target);
@@ -489,12 +491,10 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt target)
     for (bitCapInt i = 0; i < qubitPower; i++) {
         // Iterate to qubit depth.
         leaf = root;
-        leaf->Branch();
         for (j = 0; j < target; j++) {
             bit = (i >> j) & 1U;
             child = leaf->branches[bit];
             leaf = child;
-            leaf->Branch();
         }
 
         Apply2x2OnLeaves(mtrx, &(leaf->branches[0]), &(leaf->branches[1]));
@@ -506,6 +506,8 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt target)
 void QBinaryDecisionTree::ApplyLowControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
+    root->Branch(target + 1U);
+
     bitLenInt j;
     bitCapInt controlMask = 0;
     for (j = 0; j < controlLen; j++) {
@@ -523,12 +525,10 @@ void QBinaryDecisionTree::ApplyLowControlledSingleBit(
 
         // Iterate to target bit.
         parent = root;
-        parent->Branch();
         for (j = 0; j < target; j++) {
             bit = (i >> j) & 1U;
             child = parent->branches[bit];
             parent = child;
-            parent->Branch();
         }
 
         // All controls have lower indices that the target, and we're done.
@@ -547,6 +547,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         ApplyLowControlledSingleBit(controls, controlLen, target, mtrx);
         return;
     }
+
+    root->Branch(target + 1U);
 
     // A control occurs after the target, and we "push apart" by 1 bit.
     bitCapInt qubitPower = pow2(highControl - 1U);
@@ -573,12 +575,10 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
         // Iterate to target bit.
         parent = root;
-        parent->Branch();
         for (j = 0; j < target; j++) {
             bit = (i >> j) & 1U;
             child0 = parent->branches[bit];
             parent = child0;
-            parent->Branch();
         }
 
         // We have at least one control with a higher index than the target. (We skipped by control PERMUTATION above.)
@@ -598,20 +598,12 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         // iterates over both |0> and |1> branches of bits that aren't involved in this gate.
 
         // The target bit is the only special case, where we branch directly from the parent.
-        parent->Branch();
 
-        QBinaryDecisionTreeNodePtr& l0 = parent->branches[0];
-        QBinaryDecisionTreeNodePtr& l1 = parent->branches[1];
-
-        l0->Branch();
-        if (l1 == l0) {
-            l1 = l0->DeepClone();
-        } else {
-            l1->Branch();
+        if (parent->branches[0] == parent->branches[1]) {
+            parent->branches[0] = parent->branches[1]->DeepClone();
         }
-
-        child0 = l0;
-        child1 = l1;
+        child0 = parent->branches[0];
+        child1 = parent->branches[1];
 
         // Iterating on depth bit forward, we trace the permutation for both children.
         for (j = (target + 1U); j < highControl; j++) {
