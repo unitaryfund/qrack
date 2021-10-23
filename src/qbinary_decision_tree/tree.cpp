@@ -551,6 +551,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     bitCapInt k, lcv2, bitPow;
     complex Y0;
     int bit;
+    // Both the outer loop and inner loop appear to be "embarrassingly parallel."
     for (bitCapInt i = 0; i < targetPow; i++) {
         // If any controls lower than the target aren't set, skip.
         if ((i & lowControlMask) != lowControlMask) {
