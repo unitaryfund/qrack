@@ -545,7 +545,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     bitLenInt highBit =
         (target < sortedControls.get()[controlLen - 1U]) ? sortedControls.get()[controlLen - 1U] : target;
     bitCapInt targetPow = pow2(target);
-    bitCapInt highControlPower = pow2(highBit - target) >> 1U;
+    bitCapInt highControlPower = pow2(highBit - target);
 
     QBinaryDecisionTreeNodePtr parent, child0, child1;
     bitCapInt k, lcv2, bitPow;
@@ -592,7 +592,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             // (Children are already branched, to depth=1.)
 
             // Stay one bit advanced, for the last pair of children;
-            bitPow = pow2(targetPow + 1U);
+            bitPow = pow2(target + 1U);
             bit = (k >> (target + 1U)) & 1U;
 
             // Starting where "j" left off, we trace the permutation for both children.
