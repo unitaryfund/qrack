@@ -582,22 +582,17 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
     // A control occurs after the target, and we "push apart" by 1 bit.
     bitLenInt highControl = sortedControls.get()[controlLen - 1U];
-    bitCapInt qubitPower = pow2(highControl);
     bitCapInt targetPow = pow2(target);
     bitCapInt targetMask = targetPow - ONE_BCI;
+    bitCapInt highControlPower = pow2(highControl - (target + 1U));
 
     QBinaryDecisionTreeNodePtr parent, child0, child1;
-    bitCapInt i, bitPow;
+    bitCapInt i, k, lcv2, bitPow;
     complex Y0;
     int bit;
-    for (bitCapInt lcv = 0; lcv < qubitPower; lcv++) {
+    for (bitCapInt lcv = 0; lcv < targetPow; lcv++) {
         i = lcv & targetMask;
         i |= (lcv ^ i) << ONE_BCI;
-
-        // If all controls are set, skip.
-        if ((i & highControlMask) == highControlMask) {
-            continue;
-        }
 
         // Iterate to target bit.
         parent = root;
@@ -612,33 +607,40 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         bit = (i >> target) & 1U;
         child0 = parent->branches[0];
         child1 = parent->branches[1];
-        j++;
 
         // (The remainder is "embarrassingly parallel," from below this point.)
+        for (lcv2 = 0; lcv2 < highControlPower; lcv2++) {
+            k = i | (lcv2 << (target + 1U));
 
-        // Starting where "j" left off, we trace the permutation for both children.
-        for (;; j++) {
-            bitPow = pow2(j);
-            bit = (i >> j) & 1U;
-
-            if (!bit && ((bitPow & highControlMask) == bitPow)) {
-                // Break at first reset control bit, as we KNOW there is at least one reset control.
-                break;
+            // If all controls are set, skip.
+            if ((k & highControlMask) == highControlMask) {
+                continue;
             }
 
-            child0 = child0->branches[bit];
-            child1 = child1->branches[bit];
+            // Starting where "j" left off, we trace the permutation for both children.
+            for (j = (target + 1U);; j++) {
+                bitPow = pow2(j);
+                bit = (k >> j) & 1U;
 
-            child0->Branch();
-            child1->Branch();
-        }
+                if (!bit && ((bitPow & highControlMask) == bitPow)) {
+                    // Break at first reset control bit, as we KNOW there is at least one reset control.
+                    break;
+                }
 
-        if (i > bitPow) {
-            // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
-            continue;
+                child0 = child0->branches[bit];
+                child1 = child1->branches[bit];
+
+                child0->Branch();
+                child1->Branch();
+            }
+
+            if (k > bitPow) {
+                // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
+                continue;
+            }
+            // Ultimately, we have to modify the "branches[]" pointer values, for the last bit.
+            Apply2x2OnLeaves(invMtrx, &(child0->branches[bit]), &(child1->branches[bit]));
         }
-        // Ultimately, we have to modify the "branches[]" pointer values, for the last bit.
-        Apply2x2OnLeaves(invMtrx, &(child0->branches[bit]), &(child1->branches[bit]));
     }
 
     root->Prune(highControl);
