@@ -563,7 +563,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         return;
     }
 
-    root->Branch(target + 1U);
+    root->Branch(target + 2U);
 
     bitCapInt highControlMask = 0;
     for (; j < controlLen; j++) {
@@ -612,9 +612,9 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         bit = (i >> target) & 1U;
         child0 = parent->branches[0];
         child1 = parent->branches[1];
-        child0->Branch();
-        child1->Branch();
         j++;
+
+        // (The remainder is "embarrassingly parallel," from below this point.)
 
         // Starting where "j" left off, we trace the permutation for both children.
         for (;; j++) {
