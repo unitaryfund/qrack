@@ -554,11 +554,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             child1 = child1->branches[bit];
         }
 
-        child0->Branch();
-        if (child1 != child0) {
-            child1->Branch();
-        }
-
         bit = (i >> j) & 1U;
 
         QBinaryDecisionTreeNodePtr& leaf0 = child0->branches[bit];
