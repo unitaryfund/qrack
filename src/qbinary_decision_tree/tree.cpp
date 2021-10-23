@@ -19,8 +19,6 @@
 
 #include "qbinary_decision_tree.hpp"
 
-#include <iostream>
-
 namespace Qrack {
 
 QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
@@ -608,14 +606,18 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             continue;
         }
 
+        // TODO: If a permutation is set, for example, scale=0 for all branches except the permutation.
+        // We need to clone and set scale so that this can work at depth greater than base case, above.
+
+        // Iterate for target bit.
         child0 = parent->branches[0];
         child1 = parent->branches[1];
-
         child0->Branch();
         child1->Branch();
+        j++;
 
-        // Iterating on depth bit forward, we trace the permutation for both children.
-        for (j = (target + 1U); j < highControl; j++) {
+        // Starting where "j" left off, we trace the permutation for both children.
+        for (; j < highControl; j++) {
             bit = (i >> j) & 1U;
 
             child0 = child0->branches[bit];
