@@ -328,14 +328,15 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 real1_f QBinaryDecisionTree::Prob(bitLenInt qubitIndex)
 {
     bitCapInt qPower = pow2(qubitIndex);
+    bitCapInt maxLcv = maxQPower >> 1U;
     real1 prob = ZERO_R1;
     complex scale;
+    bitCapInt i;
     bitLenInt j;
     QBinaryDecisionTreeNodePtr leaf;
-    for (bitCapInt i = 0; i < maxQPower; i++) {
-        if ((i & qPower) != qPower) {
-            continue;
-        }
+    for (bitCapInt lcv = 0; lcv < maxLcv; lcv++) {
+        i = lcv & qPower;
+        i |= (lcv ^ i) << ONE_BCI;
 
         leaf = root;
         scale = leaf->scale;
@@ -461,7 +462,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
         QBinaryDecisionTreeNodePtr& leaf1 = leaf->branches[1];
 
         if (IS_NORM_0(leaf0->scale) && IS_NORM_0(leaf1->scale)) {
-            return;
+            continue;
         }
 
         if (IS_NORM_0(leaf0->scale)) {
@@ -556,7 +557,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         QBinaryDecisionTreeNodePtr& leaf1 = child1->branches[bit];
 
         if (IS_NORM_0(leaf0->scale) && IS_NORM_0(leaf1->scale)) {
-            return;
+            continue;
         }
 
         if (IS_NORM_0(leaf0->scale)) {
