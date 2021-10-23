@@ -506,20 +506,36 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
 void QBinaryDecisionTree::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    bitLenInt highControl = *std::max_element(controls, controls + controlLen);
-    bitLenInt highBit = (target < highControl) ? highControl : target;
-
     bitLenInt j;
     bitCapInt controlMask = 0;
     for (j = 0; j < controlLen; j++) {
         controlMask |= pow2(controls[j]);
     }
 
-    bitCapInt qubitPower = pow2(highBit);
+    bitCapInt targetPower = pow2(target);
+    bitCapInt targetMask = targetPower - ONE_BCI;
+
+    bitLenInt highControl = *std::max_element(controls, controls + controlLen);
+    bitLenInt highBit;
+    bitCapInt qubitPower;
+    if (highControl < target) {
+        // All controls occur before the target.
+        highBit = target;
+        qubitPower = targetPower;
+    } else {
+        // A control occurs after the target, and we "push apart" by 1 bit.
+        highBit = highControl;
+        qubitPower = pow2(highControl - 1U);
+    }
+
+    bitCapInt i;
     complex Y0;
     int bit;
     QBinaryDecisionTreeNodePtr parent, child0, child1;
-    for (bitCapInt i = 0; i < qubitPower; i++) {
+    for (bitCapInt lcv = 0; lcv < qubitPower; lcv++) {
+        i = lcv & targetMask;
+        i |= (lcv ^ i) << ONE_BCI;
+
         // If any controls aren't set, skip.
         if ((i & controlMask) != controlMask) {
             continue;
@@ -557,6 +573,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         // depth. Initially filtering by PERMUTATION, above, strikes subsets due to control bits as appropriate, or else
         // iterates over both |0> and |1> branches of bits that aren't involved in this gate.
 
+        // The target bit is the only special case, where we branch directly from the parent.
         parent->Branch();
 
         QBinaryDecisionTreeNodePtr& l0 = parent->branches[0];
@@ -572,6 +589,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         child0 = l0;
         child1 = l1;
 
+        // Iterating on depth bit forward, we trace the permutation for both children.
         for (j = (target + 1U); j < highControl; j++) {
             bit = (i >> j) & 1U;
 
@@ -589,8 +607,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             child1 = leaf1;
         }
 
+        // Ultimately, we have to modify the "branches[]" pointer values, for the last bit.
         bit = (i >> j) & 1U;
-
         Apply2x2OnLeaves(mtrx, &(child0->branches[bit]), &(child1->branches[bit]));
     }
 
