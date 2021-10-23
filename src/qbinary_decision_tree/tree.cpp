@@ -19,6 +19,8 @@
 
 #include "qbinary_decision_tree.hpp"
 
+#include <iostream>
+
 namespace Qrack {
 
 QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
@@ -600,6 +602,12 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         // iterates over both |0> and |1> branches of bits that aren't involved in this gate.
 
         // The target bit is the only special case, where we branch directly from the parent.
+
+        if (highControl == (target + 1U)) {
+            bit = (i >> highControl) & 1U;
+            Apply2x2OnLeaves(mtrx, &(parent->branches[0]), &(parent->branches[1]));
+            continue;
+        }
 
         child0 = parent->branches[0];
         child1 = parent->branches[1];
