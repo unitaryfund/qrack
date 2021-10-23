@@ -508,6 +508,11 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt target)
 void QBinaryDecisionTree::ApplyLowControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
+    if (!controlLen) {
+        ApplySingleBit(mtrx, target);
+        return;
+    }
+
     root->Branch(target + 1U);
 
     bitLenInt j;
@@ -543,24 +548,56 @@ void QBinaryDecisionTree::ApplyLowControlledSingleBit(
 void QBinaryDecisionTree::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
-    bitLenInt highControl = *std::max_element(controls, controls + controlLen);
-    if (highControl < target) {
-        // Special case
-        ApplyLowControlledSingleBit(controls, controlLen, target, mtrx);
+    std::unique_ptr<bitLenInt[]> sortedControls(new bitLenInt[controlLen]);
+    std::copy(controls, controls + controlLen, sortedControls.get());
+    std::sort(sortedControls.get(), sortedControls.get() + controlLen);
+
+    bitLenInt j = 0;
+    while ((j < controlLen) && (sortedControls.get()[j] < target)) {
+        j++;
+    }
+
+    ApplyLowControlledSingleBit(sortedControls.get(), j, target, mtrx);
+
+    if (j == controlLen) {
         return;
     }
 
-    root->Branch(target + 1U);
+    bitCapInt highControlMask = 0;
+    for (; j < controlLen; j++) {
+        highControlMask |= pow2(sortedControls.get()[j]);
+    }
+
+    // The rest of the gate is only applying the INVERSE operation if control condition is NOT satisfied.
+
+    // We have at least one control with a higher index than the target. (We skipped by control PERMUTATION above.)
+
+    // Consider CCNOT(0, 2, 1), (with target bit last). Draw a binary tree from root to 3 more levels down, (where
+    // each branch from a node is a choice between |0> and |1> for the next-indexed qubit state). Order the
+    // exponential rows by "control," "target", "control." Pointers have to be swapped and scaled across more than
+    // immediate depth.
+
+    // If the target bit is 1 level up from a single control, amplitudes to be acted on are every other amplitude at
+    // final control depth. If the target bit is 2 levels up from a single control, amplitudes to be acted on are
+    // every fourth amplitude at final control depth.
+    // ... etc, by powers of 2.
+
+    // The pattern is the same, at this point in our loop, whether we have many controls or just one control, at any
+    // depth. Initially filtering by PERMUTATION, above, strikes subsets due to control bits as appropriate, or else
+    // iterates over both |0> and |1> branches of bits that aren't involved in this gate.
+
+    // The target bit is the only special case, where we branch directly from the parent.
+
+    // TODO: If a permutation is set, for example, scale=0 for all branches except the permutation.
+    // We need to clone and set scale so that this can work at depth greater than base case, above.
+
+    complex invMtrx[4];
+    inv2x2((complex*)mtrx, invMtrx);
 
     // A control occurs after the target, and we "push apart" by 1 bit.
+    bitLenInt highControl = sortedControls.get()[controlLen - 1U];
     bitCapInt qubitPower = pow2(highControl);
     bitCapInt targetMask = pow2(target) - ONE_BCI;
-
-    bitLenInt j;
-    bitCapInt controlMask = 0;
-    for (j = 0; j < controlLen; j++) {
-        controlMask |= pow2(controls[j]);
-    }
 
     QBinaryDecisionTreeNodePtr parent, child0, child1;
     bitCapInt i;
@@ -570,8 +607,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         i = lcv & targetMask;
         i |= (lcv ^ i) << ONE_BCI;
 
-        // If any controls aren't set, skip.
-        if ((i & controlMask) != controlMask) {
+        // If all controls are set, skip.
+        if ((i & highControlMask) == highControlMask) {
             continue;
         }
 
@@ -582,32 +619,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             child0 = parent->branches[bit];
             parent = child0;
         }
-
-        // We have at least one control with a higher index than the target. (We skipped by control PERMUTATION above.)
-
-        // Consider CCNOT(0, 2, 1), (with target bit last). Draw a binary tree from root to 3 more levels down, (where
-        // each branch from a node is a choice between |0> and |1> for the next-indexed qubit state). Order the
-        // exponential rows by "control," "target", "control." Pointers have to be swapped and scaled across more than
-        // immediate depth.
-
-        // If the target bit is 1 level up from a single control, amplitudes to be acted on are every other amplitude at
-        // final control depth. If the target bit is 2 levels up from a single control, amplitudes to be acted on are
-        // every fourth amplitude at final control depth.
-        // ... etc, by powers of 2.
-
-        // The pattern is the same, at this point in our loop, whether we have many controls or just one control, at any
-        // depth. Initially filtering by PERMUTATION, above, strikes subsets due to control bits as appropriate, or else
-        // iterates over both |0> and |1> branches of bits that aren't involved in this gate.
-
-        // The target bit is the only special case, where we branch directly from the parent.
-
-        if (highControl == (target + 1U)) {
-            Apply2x2OnLeaves(mtrx, &(parent->branches[0]), &(parent->branches[1]));
-            continue;
-        }
-
-        // TODO: If a permutation is set, for example, scale=0 for all branches except the permutation.
-        // We need to clone and set scale so that this can work at depth greater than base case, above.
 
         // Iterate for target bit.
         child0 = parent->branches[0];
@@ -629,7 +640,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
         // Ultimately, we have to modify the "branches[]" pointer values, for the last bit.
         bit = (i >> highControl) & 1U;
-        Apply2x2OnLeaves(mtrx, &(child0->branches[bit]), &(child1->branches[bit]));
+        Apply2x2OnLeaves(invMtrx, &(child0->branches[bit]), &(child1->branches[bit]));
     }
 
     root->Prune(highControl);
