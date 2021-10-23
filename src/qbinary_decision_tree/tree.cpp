@@ -551,7 +551,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     bitCapInt k, lcv2, bitPow;
     complex Y0;
     int bit;
-    // Both the outer loop and inner loop appear to be "embarrassingly parallel."
+    // Both the outer loop and the inner loop appear to be "embarrassingly parallel."
     for (bitCapInt i = 0; i < targetPow; i++) {
         // If any controls lower than the target aren't set, skip.
         if ((i & lowControlMask) != lowControlMask) {
@@ -587,27 +587,26 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
             // Iterate for target bit.
             bitPow = targetPow;
-            bit = (i >> target) & 1U;
+            bit = (k >> target) & 1U;
             child0 = parent->branches[0];
             child1 = parent->branches[1];
             child0->Branch();
+            bitPow = pow2(j);
+            bit = (k >> j) & 1U;
             // (Children are already branched, to depth=1.)
 
             // Starting where "j" left off, we trace the permutation for both children.
-            for (j = (target + 1U);; j++) {
-                bitPow = pow2(j);
-                bit = (k >> j) & 1U;
-
-                if (!bit && ((bitPow & highControlMask) == bitPow)) {
-                    // Break at first reset control bit, as we KNOW there is at least one reset control.
-                    break;
-                }
+            // Break at first reset control bit, as we KNOW there is at least one reset control.
+            for (j = (target + 1U); bit || !(bitPow & highControlMask); j++) {
 
                 child0 = child0->branches[bit];
                 child1 = child1->branches[bit];
 
                 child0->Branch();
                 child1->Branch();
+
+                bitPow = pow2(j);
+                bit = (k >> j) & 1U;
             }
 
             // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
