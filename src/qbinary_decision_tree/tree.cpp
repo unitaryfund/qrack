@@ -434,9 +434,6 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 void QBinaryDecisionTree::Apply2x2OnLeaves(
     const complex* mtrx, QBinaryDecisionTreeNodePtr& leaf0, QBinaryDecisionTreeNodePtr& leaf1)
 {
-    // WARNING: This appears to break RAII, whether it resembles the recursive node approach.
-    // It is also much more succinct than naive RAII (or SBRM).
-
     if (IS_NORM_0(leaf0->scale) && IS_NORM_0(leaf1->scale)) {
         return;
     }
@@ -533,7 +530,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         parent->Branch();
         child0 = parent->branches[0];
         child1 = parent->branches[1];
-        for (j = target; j < (highControl - 1U); j++) {
+        for (j = target; j < highControl; j++) {
 
             child0->Branch();
             if (child1 != child0) {
@@ -545,13 +542,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             child1 = child1->branches[bit];
         }
 
-        child0->Branch();
-        if (child1 != child0) {
-            child1->Branch();
-        }
-
-        bit = (i >> j) & 1U;
-        Apply2x2OnLeaves(mtrx, child0->branches[bit], child1->branches[bit]);
+        Apply2x2OnLeaves(mtrx, child0, child1);
     }
 
     root->Prune(highBit);
