@@ -65,43 +65,36 @@ namespace Qrack {
 #define REG_GATE_C1_1(gate)                                                                                            \
     void QInterface::gate(bitLenInt control, bitLenInt target, bitLenInt length)                                       \
     {                                                                                                                  \
-        ControlledLoopFixture(length, [&](bitLenInt bit) { gate(control + bit, target + bit); });                      \
+        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+            gate(control + bit, target + bit);                                                                         \
+        }                                                                                                              \
     }
 
 #define REG_GATE_C2_1(gate)                                                                                            \
     void QInterface::gate(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)                  \
     {                                                                                                                  \
-        ControlledLoopFixture(length, [&](bitLenInt bit) { gate(control1 + bit, control2 + bit, target + bit); });     \
+        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+            gate(control1 + bit, control2 + bit, target + bit);                                                        \
+        }                                                                                                              \
     }
 
 #define REG_GATE_C1_1R(gate)                                                                                           \
     void QInterface::gate(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length)                      \
     {                                                                                                                  \
-        ControlledLoopFixture(length, [&](bitLenInt bit) { gate(radians, control + bit, target + bit); });             \
+        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+            gate(radians, control + bit, target + bit);                                                                \
+        }                                                                                                              \
     }
 
 #define REG_GATE_C1_1D(gate)                                                                                           \
     void QInterface::gate(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)       \
     {                                                                                                                  \
-        ControlledLoopFixture(                                                                                         \
-            length, [&](bitLenInt bit) { gate(numerator, denominator, control + bit, target + bit); });                \
+        for (bitLenInt bit = 0; bit < length; bit++) {                                                                 \
+            gate(numerator, denominator, control + bit, target + bit);                                                 \
+        }                                                                                                              \
     }
 
 inline real1_f dyadAngle(int numerator, int denomPower) { return (-M_PI * numerator * 2) / pow(2, denomPower); };
-
-template <typename GateFunc> void QInterface::ControlledLoopFixture(bitLenInt length, GateFunc gate)
-{
-    // For length-wise application of controlled gates, there's no point in having normalization on, up to the last
-    // gate. Application of a controlled gate updates the "running norm". The running norm is corrected on the
-    // application of a gate that isn't controlled. We just want one running norm update, for the last gate.
-    bool wasNormOn = doNormalize;
-    doNormalize = false;
-    for (bitLenInt bit = 0; bit < (length - 1); bit++) {
-        gate(bit);
-    }
-    doNormalize = wasNormOn;
-    gate(length - 1);
-}
 
 /// Bit-wise apply swap to two registers
 REG_GATE_2(Swap);
@@ -431,7 +424,9 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, b
         return;
     }
 
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CPhaseRootN(n, control + bit, target + bit); });
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CPhaseRootN(n, control + bit, target + bit);
+    }
 }
 
 /// Apply controlled IT gate to each bit
@@ -445,7 +440,9 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, 
         return;
     }
 
-    ControlledLoopFixture(length, [&](bitLenInt bit) { CIPhaseRootN(n, control + bit, target + bit); });
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        CIPhaseRootN(n, control + bit, target + bit);
+    }
 }
 
 /// Arithmetic shift left, with last 2 bits as sign and carry
