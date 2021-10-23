@@ -599,28 +599,21 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
         // The target bit is the only special case, where we branch directly from the parent.
 
-        if (parent->branches[0] == parent->branches[1]) {
-            parent->branches[0] = parent->branches[1]->DeepClone();
-        }
         child0 = parent->branches[0];
         child1 = parent->branches[1];
+
+        child0->Branch();
+        child1->Branch();
 
         // Iterating on depth bit forward, we trace the permutation for both children.
         for (j = (target + 1U); j < highControl; j++) {
             bit = (i >> j) & 1U;
 
-            QBinaryDecisionTreeNodePtr& leaf0 = child0->branches[bit];
-            QBinaryDecisionTreeNodePtr& leaf1 = child1->branches[bit];
+            child0 = child0->branches[bit];
+            child1 = child1->branches[bit];
 
-            leaf0->Branch();
-            if (leaf1 == leaf0) {
-                leaf1 = leaf0->DeepClone();
-            } else {
-                leaf1->Branch();
-            }
-
-            child0 = leaf0;
-            child1 = leaf1;
+            child0->Branch();
+            child1->Branch();
         }
 
         // Ultimately, we have to modify the "branches[]" pointer values, for the last bit.
