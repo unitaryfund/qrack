@@ -490,25 +490,19 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             break;
         }
     }
-    bitLenInt controlBound = j;
 
     bitLenInt highControl = sortedControls[controlLen - 1U];
     bitLenInt highBit = (target < highControl) ? highControl : target;
 
     bitCapInt controlMask = 0;
-    bitCapInt highMask = 0;
-    for (j = 0; j < controlBound; j++) {
+    for (j = 0; j < controlLen; j++) {
         controlMask |= pow2(sortedControls.get()[j]);
     }
-    for (j = controlBound; j < controlLen; j++) {
-        highMask |= pow2(sortedControls.get()[j]);
-    }
-    controlMask |= highMask;
 
     bitCapInt qubitPower = pow2(target);
     complex Y0;
     int bit;
-    QBinaryDecisionTreeNodePtr parent, child1, child2;
+    QBinaryDecisionTreeNodePtr parent, child0, child1;
     for (bitCapInt i = 0; i < qubitPower; i++) {
         // If any controls aren't set, skip.
         if ((i & controlMask) != controlMask) {
@@ -520,14 +514,14 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         parent->Branch();
         for (j = 0; j < target; j++) {
             bit = (i >> j) & 1U;
-            child1 = parent->branches[bit];
-            parent = child1;
+            child0 = parent->branches[bit];
+            parent = child0;
             parent->Branch();
         }
 
         if (highControl < highBit) {
             // All controls have lower indices that the target, and we're done.
-            Apply2x2OnLeaves(mtrx, parent->branches[0], parent->branches[0]);
+            Apply2x2OnLeaves(mtrx, parent->branches[0], parent->branches[1]);
             continue;
         }
 
@@ -540,21 +534,21 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         // TODO: This still doesn't quite work.
 
         parent->Branch();
-        child1 = parent->branches[0];
-        child2 = parent->branches[1];
+        child0 = parent->branches[0];
+        child1 = parent->branches[1];
         for (j = target; j < highControl; j++) {
 
-            child1->Branch();
-            if (child2 != child1) {
-                child2->Branch();
+            child0->Branch();
+            if (child1 != child0) {
+                child1->Branch();
             }
 
             bit = (i >> j) & 1U;
+            child0 = child0->branches[bit];
             child1 = child1->branches[bit];
-            child2 = child2->branches[bit];
         }
 
-        Apply2x2OnLeaves(mtrx, child1, child2);
+        Apply2x2OnLeaves(mtrx, child0, child1);
     }
 
     root->Prune(highBit);
