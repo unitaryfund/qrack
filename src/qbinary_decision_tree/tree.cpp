@@ -145,6 +145,11 @@ template <typename Fn> void QBinaryDecisionTree::ProductSetTraversal(Fn setLambd
     bitCapInt maxQPower = pow2(qubitCount);
     bitLenInt j;
 
+    if (IS_NORM_0(root->scale)) {
+        // The tree isn't normalized, in this case, but this is defensive.
+        return;
+    }
+
     QBinaryDecisionTreeNodePtr leaf;
     for (bitCapInt i = 0; i < maxQPower; i++) {
         leaf = root;
