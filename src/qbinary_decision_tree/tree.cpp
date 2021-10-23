@@ -505,7 +505,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt target)
     root->Prune(target);
 }
 
-void QBinaryDecisionTree::ApplyLowControlledSingleBit(
+void QBinaryDecisionTree::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     if (!controlLen) {
@@ -515,60 +515,20 @@ void QBinaryDecisionTree::ApplyLowControlledSingleBit(
 
     root->Branch(target + 1U);
 
-    bitLenInt j;
-    bitCapInt controlMask = 0;
-    for (j = 0; j < controlLen; j++) {
-        controlMask |= pow2(controls[j]);
-    }
-
-    int bit;
-    bitCapInt qubitPower = pow2(target);
-    QBinaryDecisionTreeNodePtr parent, child;
-    for (bitCapInt i = 0; i < qubitPower; i++) {
-        // If any controls aren't set, skip.
-        if ((i & controlMask) != controlMask) {
-            continue;
-        }
-
-        // Iterate to target bit.
-        parent = root;
-        for (j = 0; j < target; j++) {
-            bit = (i >> j) & 1U;
-            child = parent->branches[bit];
-            parent = child;
-        }
-
-        // All controls have lower indices that the target, and we're done.
-        Apply2x2OnLeaves(mtrx, &(parent->branches[0]), &(parent->branches[1]));
-    }
-
-    root->Prune(target);
-}
-
-void QBinaryDecisionTree::ApplyControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
-{
     std::unique_ptr<bitLenInt[]> sortedControls(new bitLenInt[controlLen]);
     std::copy(controls, controls + controlLen, sortedControls.get());
     std::sort(sortedControls.get(), sortedControls.get() + controlLen);
 
-    bitLenInt j = 0;
-    while ((j < controlLen) && (sortedControls.get()[j] < target)) {
-        j++;
+    bitLenInt j;
+    bitCapInt lowControlMask = 0;
+    for (j = 0; (j < controlLen) && (sortedControls.get()[j] < target); j++) {
+        lowControlMask |= pow2(sortedControls.get()[j]);
     }
 
-    ApplyLowControlledSingleBit(sortedControls.get(), j, target, mtrx);
-
-    if (j == controlLen) {
-        return;
-    }
-
-    root->Branch(target + 2U);
-
-    // "controlMask" is only controls HIGHER than target, in the remaining body.
-    bitCapInt controlMask = 0;
+    // "highControlMask" is only controls HIGHER than target, in the remaining body.
+    bitCapInt highControlMask = 0;
     for (; j < controlLen; j++) {
-        controlMask |= pow2(sortedControls.get()[j]);
+        highControlMask |= pow2(sortedControls.get()[j]);
     }
 
     // The rest of the gate is only applying the INVERSE operation if control condition is NOT satisfied.
@@ -582,18 +542,20 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     inv2x2((complex*)mtrx, invMtrx);
 
     // A control occurs after the target, and we "push apart" by 1 bit.
-    bitLenInt highControl = sortedControls.get()[controlLen - 1U];
+    bitLenInt highBit =
+        (target < sortedControls.get()[controlLen - 1U]) ? sortedControls.get()[controlLen - 1U] : target;
     bitCapInt targetPow = pow2(target);
-    bitCapInt targetMask = targetPow - ONE_BCI;
-    bitCapInt controlPower = pow2(highControl - (target + 1U));
+    bitCapInt highControlPower = pow2(highBit - target) >> 1U;
 
     QBinaryDecisionTreeNodePtr parent, child0, child1;
-    bitCapInt i, k, lcv2, bitPow;
+    bitCapInt k, lcv2, bitPow;
     complex Y0;
     int bit;
-    for (bitCapInt lcv = 0; lcv < targetPow; lcv++) {
-        i = lcv & targetMask;
-        i |= (lcv ^ i) << ONE_BCI;
+    for (bitCapInt i = 0; i < targetPow; i++) {
+        // If any controls lower than the target aren't set, skip.
+        if ((i & lowControlMask) != lowControlMask) {
+            continue;
+        }
 
         // Iterate to target bit.
         parent = root;
@@ -603,8 +565,20 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             parent = child0;
         }
 
+        // All remaining controls have lower indices than the target.
+        Apply2x2OnLeaves(mtrx, &(parent->branches[0]), &(parent->branches[1]));
+
+        if (!highControlMask) {
+            continue;
+        }
+
+        parent->branches[0]->Branch();
+        parent->branches[1]->Branch();
+
         // (The remainder is "embarrassingly parallel," from below this point.)
-        for (lcv2 = 0; lcv2 < controlPower; lcv2++) {
+        for (lcv2 = 0; lcv2 < highControlPower; lcv2++) {
+            k = i | (lcv2 << (target + 1U));
+
             // Iterate for target bit.
             bitPow = targetPow;
             bit = (i >> target) & 1U;
@@ -612,10 +586,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             child1 = parent->branches[1];
             // (Children are already branched, to depth=1.)
 
-            k = i | (lcv2 << (target + 1U));
-
             // If all controls are set, skip.
-            if ((k & controlMask) == controlMask) {
+            if ((k & highControlMask) == highControlMask) {
                 continue;
             }
 
@@ -624,7 +596,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                 bitPow = pow2(j);
                 bit = (k >> j) & 1U;
 
-                if (!bit && ((bitPow & controlMask) == bitPow)) {
+                if (!bit && ((bitPow & highControlMask) == bitPow)) {
                     // Break at first reset control bit, as we KNOW there is at least one reset control.
                     break;
                 }
@@ -645,7 +617,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         }
     }
 
-    root->Prune(highControl);
+    root->Prune(highBit);
 }
 
 } // namespace Qrack
