@@ -608,7 +608,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         }
 
         // Ultimately, we have to modify the "branches[]" pointer values, for the last bit.
-        bit = (i >> j) & 1U;
+        bit = (i >> highControl) & 1U;
         Apply2x2OnLeaves(mtrx, &(child0->branches[bit]), &(child1->branches[bit]));
     }
 
