@@ -525,12 +525,15 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         // more than immediate depth.
 
         // TODO:
-        // If the target bit is index 0, amplitudes to be acted on are directly adjacent at final control depth.
-        // If the target bit is index 1, amplitudes to be acted on are every other amplitude at final control depth.
-        // If the target bit is index 2, amplitudes to be acted on are every fourth amplitude at final control depth.
+        // If the target bit is 1 level up from a single control, amplitudes to be acted on are directly adjacent at
+        // final control depth. If the target bit is 2 levels up from a single control, amplitudes to be acted on are
+        // every other amplitude at final control depth. If the target bit is 3 levels up from a single control,
+        // amplitudes to be acted on are every fourth amplitude at final control depth.
         // ... etc..
 
         parent->Branch();
+
+        bit = (i >> target) & 1U;
 
         QBinaryDecisionTreeNodePtr& l0 = parent->branches[0];
         QBinaryDecisionTreeNodePtr& l1 = parent->branches[1];
@@ -545,7 +548,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         child0 = l0;
         child1 = l1;
 
-        for (j = target; j < (highControl - 1U); j++) {
+        for (j = (target + 1U); j < highControl; j++) {
             bit = (i >> j) & 1U;
 
             QBinaryDecisionTreeNodePtr& leaf0 = child0->branches[bit];
