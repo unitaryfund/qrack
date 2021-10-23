@@ -604,7 +604,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         // The target bit is the only special case, where we branch directly from the parent.
 
         if (highControl == (target + 1U)) {
-            bit = (i >> highControl) & 1U;
             Apply2x2OnLeaves(mtrx, &(parent->branches[0]), &(parent->branches[1]));
             continue;
         }
