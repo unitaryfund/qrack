@@ -457,23 +457,24 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt qubitInd
             leaf->Branch();
         }
 
-        // TODO: This code is repetitive, but putting it in `Apply2x2OnLeaves()` seems to break RAII.
+        QBinaryDecisionTreeNodePtr& leaf0 = leaf->branches[0];
+        QBinaryDecisionTreeNodePtr& leaf1 = leaf->branches[1];
 
-        if (IS_NORM_0(leaf->branches[0]->scale) && IS_NORM_0(leaf->branches[1]->scale)) {
+        if (IS_NORM_0(leaf0->scale) && IS_NORM_0(leaf1->scale)) {
             return;
         }
 
-        if (IS_NORM_0(leaf->branches[0]->scale)) {
-            leaf->branches[0] = leaf->branches[1] ? leaf->branches[1]->DeepClone() : NULL;
-            leaf->branches[0]->scale = ZERO_CMPLX;
+        if (IS_NORM_0(leaf0->scale)) {
+            leaf0 = leaf1 ? leaf1->DeepClone() : NULL;
+            leaf0->scale = ZERO_CMPLX;
         }
 
-        if (IS_NORM_0(leaf->branches[1]->scale)) {
-            leaf->branches[1] = leaf->branches[0] ? leaf->branches[0]->DeepClone() : NULL;
-            leaf->branches[1]->scale = ZERO_CMPLX;
+        if (IS_NORM_0(leaf1->scale)) {
+            leaf1 = leaf0 ? leaf0->DeepClone() : NULL;
+            leaf1->scale = ZERO_CMPLX;
         }
 
-        Apply2x2OnLeaves(mtrx, leaf->branches[0], leaf->branches[1]);
+        Apply2x2OnLeaves(mtrx, leaf0, leaf1);
     }
 
     root->Prune(qubitIndex);
@@ -551,23 +552,24 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
         bit = (i >> j) & 1U;
 
-        // TODO: This code is repetitive, but putting it in `Apply2x2OnLeaves()` seems to break RAII.
+        QBinaryDecisionTreeNodePtr& leaf0 = child0->branches[bit];
+        QBinaryDecisionTreeNodePtr& leaf1 = child1->branches[bit];
 
-        if (IS_NORM_0(child0->branches[bit]->scale) && IS_NORM_0(child1->branches[bit]->scale)) {
+        if (IS_NORM_0(leaf0->scale) && IS_NORM_0(leaf1->scale)) {
             return;
         }
 
-        if (IS_NORM_0(child0->branches[bit]->scale)) {
-            child0->branches[bit] = child1->branches[bit] ? child1->branches[bit]->DeepClone() : NULL;
-            child0->branches[bit]->scale = ZERO_CMPLX;
+        if (IS_NORM_0(leaf0->scale)) {
+            leaf0 = leaf1 ? leaf1->DeepClone() : NULL;
+            leaf0->scale = ZERO_CMPLX;
         }
 
-        if (IS_NORM_0(child1->branches[bit]->scale)) {
-            child1->branches[bit] = child0->branches[bit] ? child0->branches[bit]->DeepClone() : NULL;
-            child1->branches[bit]->scale = ZERO_CMPLX;
+        if (IS_NORM_0(leaf1->scale)) {
+            leaf1 = leaf0 ? leaf0->DeepClone() : NULL;
+            leaf1->scale = ZERO_CMPLX;
         }
 
-        Apply2x2OnLeaves(mtrx, child0, child1);
+        Apply2x2OnLeaves(mtrx, leaf0, leaf1);
     }
 
     root->Prune(highBit);
