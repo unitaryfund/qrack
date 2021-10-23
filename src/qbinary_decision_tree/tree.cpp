@@ -565,9 +565,10 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
     root->Branch(target + 2U);
 
-    bitCapInt highControlMask = 0;
+    // "controlMask" is only controls HIGHER than target, in the remaining body.
+    bitCapInt controlMask = 0;
     for (; j < controlLen; j++) {
-        highControlMask |= pow2(sortedControls.get()[j]);
+        controlMask |= pow2(sortedControls.get()[j]);
     }
 
     // The rest of the gate is only applying the INVERSE operation if control condition is NOT satisfied.
@@ -584,7 +585,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     bitLenInt highControl = sortedControls.get()[controlLen - 1U];
     bitCapInt targetPow = pow2(target);
     bitCapInt targetMask = targetPow - ONE_BCI;
-    bitCapInt highControlPower = pow2(highControl - (target + 1U));
+    bitCapInt controlPower = pow2(highControl - (target + 1U));
 
     QBinaryDecisionTreeNodePtr parent, child0, child1;
     bitCapInt i, k, lcv2, bitPow;
@@ -603,17 +604,18 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         }
 
         // (The remainder is "embarrassingly parallel," from below this point.)
-        for (lcv2 = 0; lcv2 < highControlPower; lcv2++) {
+        for (lcv2 = 0; lcv2 < controlPower; lcv2++) {
             // Iterate for target bit.
             bitPow = targetPow;
             bit = (i >> target) & 1U;
             child0 = parent->branches[0];
             child1 = parent->branches[1];
+            // (Children are already branched, to depth=1.)
 
             k = i | (lcv2 << (target + 1U));
 
             // If all controls are set, skip.
-            if ((k & highControlMask) == highControlMask) {
+            if ((k & controlMask) == controlMask) {
                 continue;
             }
 
@@ -622,7 +624,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                 bitPow = pow2(j);
                 bit = (k >> j) & 1U;
 
-                if (!bit && ((bitPow & highControlMask) == bitPow)) {
+                if (!bit && ((bitPow & controlMask) == bitPow)) {
                     // Break at first reset control bit, as we KNOW there is at least one reset control.
                     break;
                 }
