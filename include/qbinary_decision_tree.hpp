@@ -30,6 +30,25 @@ typedef std::shared_ptr<QBinaryDecisionTree> QBinaryDecisionTreePtr;
 class QBinaryDecisionTree : virtual public QInterface, public ParallelFor {
 protected:
     QBinaryDecisionTreeNodePtr root;
+#if ENABLE_QUNIT_CPU_PARALLEL
+    DispatchQueue dispatchQueue;
+#endif
+    bitLenInt pStridePow;
+
+    typedef std::function<void(void)> DispatchFn;
+    virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn)
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        if (workItemCount < GetParallelThreshold()) {
+            dispatchQueue.dispatch(fn);
+        } else {
+            Finish();
+            fn();
+        }
+#else
+        fn();
+#endif
+    }
 
     template <typename Fn> void GetTraversal(Fn getLambda);
     template <typename Fn> void SetTraversal(Fn setLambda);
@@ -75,6 +94,29 @@ public:
         : QBinaryDecisionTree({}, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId,
               useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold, separation_thresh)
     {
+    }
+
+    virtual void Finish()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.finish();
+#endif
+    };
+
+    virtual bool isFinished()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        return dispatchQueue.isFinished();
+#else
+        return true;
+#endif
+    }
+
+    virtual void Dump()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL
+        dispatchQueue.dump();
+#endif
     }
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)

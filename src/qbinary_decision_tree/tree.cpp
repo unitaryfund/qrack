@@ -28,6 +28,8 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1)
     , root(NULL)
 {
+    pStridePow =
+        getenv("QRACK_PSTRIDEPOW") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW;
     SetConcurrency(std::thread::hardware_concurrency());
     SetPermutation(initState);
 }
@@ -58,6 +60,8 @@ real1_f QBinaryDecisionTree::ProbParity(const bitCapInt& mask)
 
 void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
 {
+    Dump();
+
     if (phaseFac == CMPLX_DEFAULT_ARG) {
         if (randGlobalPhase) {
             real1_f angle = Rand() * 2 * PI_R1;
@@ -80,6 +84,8 @@ void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
 
 QInterfacePtr QBinaryDecisionTree::Clone()
 {
+    Finish();
+
     QBinaryDecisionTreePtr copyPtr = std::make_shared<QBinaryDecisionTree>(qubitCount, 0, rand_generator, ONE_CMPLX,
         doNormalize, randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
 
@@ -103,6 +109,8 @@ QInterfacePtr QBinaryDecisionTree::Clone()
 
 template <typename Fn> void QBinaryDecisionTree::GetTraversal(Fn getLambda)
 {
+    Finish();
+
     complex scale;
     bitLenInt j;
     QBinaryDecisionTreeNodePtr leaf;
@@ -121,6 +129,8 @@ template <typename Fn> void QBinaryDecisionTree::GetTraversal(Fn getLambda)
 }
 template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
 {
+    Dump();
+
     root = std::make_shared<QBinaryDecisionTreeNode>();
     root->Branch(qubitCount);
 
@@ -189,6 +199,8 @@ void QBinaryDecisionTree::GetProbs(real1* outputProbs)
 
 real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
 {
+    Finish();
+
     real1 projection = 0;
 
     complex scale1, scale2;
@@ -221,6 +233,8 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
 
 complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
 {
+    Finish();
+
     complex scale;
     bitLenInt j;
     QBinaryDecisionTreeNodePtr leaf = root;
@@ -237,6 +251,8 @@ complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
 }
 void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
 {
+    Finish();
+
     int bit = 0;
     complex scale;
     bitLenInt j;
@@ -264,6 +280,9 @@ void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
 
 bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start)
 {
+    Finish();
+    toCopy->Finish();
+
     if (start == 0) {
         QBinaryDecisionTreePtr clone = std::dynamic_pointer_cast<QBinaryDecisionTree>(toCopy->Clone());
         std::swap(root, clone->root);
@@ -288,6 +307,11 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
 }
 void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest)
 {
+    Finish();
+    if (dest) {
+        dest->Dump();
+    }
+
     bitLenInt i, j;
     QBinaryDecisionTreeNodePtr leaf;
     QBinaryDecisionTreeNodePtr child = root;
@@ -351,6 +375,8 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 
 real1_f QBinaryDecisionTree::Prob(bitLenInt qubitIndex)
 {
+    Finish();
+
     bitCapInt qPower = pow2(qubitIndex);
     bitCapInt qMask = qPower - ONE_BCI;
     bitCapInt maxLcv = maxQPower >> ONE_BCI;
@@ -381,6 +407,8 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubitIndex)
 
 real1_f QBinaryDecisionTree::ProbAll(bitCapInt fullRegister)
 {
+    Finish();
+
     complex scale;
     bitLenInt j;
     QBinaryDecisionTreeNodePtr leaf = root;
@@ -398,6 +426,8 @@ real1_f QBinaryDecisionTree::ProbAll(bitCapInt fullRegister)
 
 bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
+    Finish();
+
     real1_f oneChance = Prob(qubit);
     if (!doForce) {
         if (oneChance >= ONE_R1) {
@@ -483,40 +513,49 @@ void QBinaryDecisionTree::Apply2x2OnLeaves(
     (*leaf1)->scale = mtrx[2] * Y0 + mtrx[3] * (*leaf1)->scale;
 }
 
-void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt target)
+void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
     root->Branch(target + 1U);
 
-    par_for(0, pow2(target), [&](const bitCapInt& i, const int& cpu) {
-        int bit;
-        QBinaryDecisionTreeNodePtr child;
-        QBinaryDecisionTreeNodePtr leaf = root;
+    bitCapInt targetPow = pow2(target);
+    std::shared_ptr<complex[]> mtrx(new complex[4]);
+    std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
-        // Iterate to qubit depth.
-        for (bitLenInt j = 0; j < target; j++) {
-            bit = (i >> j) & 1U;
-            child = leaf->branches[bit];
-            leaf = child;
-        }
+    Dispatch(targetPow, [this, mtrx, target]() {
+        par_for(0, pow2(target), [&](const bitCapInt& i, const int& cpu) {
+            int bit;
+            QBinaryDecisionTreeNodePtr child;
+            QBinaryDecisionTreeNodePtr leaf = root;
 
-        Apply2x2OnLeaves(mtrx, &(leaf->branches[0]), &(leaf->branches[1]));
+            // Iterate to qubit depth.
+            for (bitLenInt j = 0; j < target; j++) {
+                bit = (i >> j) & 1U;
+                child = leaf->branches[bit];
+                leaf = child;
+            }
+
+            Apply2x2OnLeaves(mtrx.get(), &(leaf->branches[0]), &(leaf->branches[1]));
+        });
+
+        root->Prune(target);
     });
-
-    root->Prune(target);
 }
 
 void QBinaryDecisionTree::ApplyControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* lMtrx)
 {
     if (!controlLen) {
-        ApplySingleBit(mtrx, target);
+        ApplySingleBit(lMtrx, target);
         return;
     }
 
     root->Branch(target + 1U);
 
+    std::shared_ptr<complex[]> mtrx(new complex[4]);
+    std::copy(lMtrx, lMtrx + 4, mtrx.get());
+
     std::unique_ptr<bitLenInt[]> sortedControls(new bitLenInt[controlLen]);
-    std::unique_ptr<bitCapInt[]> qPowersSorted(new bitCapInt[controlLen]);
+    std::shared_ptr<bitCapInt[]> qPowersSorted(new bitCapInt[controlLen]);
     std::copy(controls, controls + controlLen, sortedControls.get());
     std::sort(sortedControls.get(), sortedControls.get() + controlLen);
 
@@ -537,95 +576,102 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         highControlMask |= qPowersSorted[c];
     }
 
-    complex invMtrx[4];
-    inv2x2((complex*)mtrx, invMtrx);
-
     bitLenInt highBit =
         (target < sortedControls.get()[controlLen - 1U]) ? sortedControls.get()[controlLen - 1U] : target;
     bitCapInt targetPow = pow2(target);
     bitCapInt highControlPower = pow2(highBit - target);
 
-    // Both the outer loop and the inner loop appear to be "embarrassingly parallel."
-    // If any controls lower than the target aren't set, skip.
-    par_for_mask(0, targetPow, qPowersSorted.get(), controlBound, [&](const bitCapInt& lcv, const int& cpu) {
-        QBinaryDecisionTreeNodePtr parent, iChild;
-        int iBit;
+    bitCapInt outerThresh = (targetPow >> controlBound);
+    bitCapInt parallelThresh = (outerThresh < highControlPower) ? highControlPower : outerThresh;
 
-        bitCapInt i = lcv | lowControlMask;
+    Dispatch(parallelThresh,
+        [this, mtrx, target, controlBound, lowControlMask, highControlMask, highBit, targetPow, highControlPower,
+            qPowersSorted]() {
+            complex invMtrx[4];
+            inv2x2((complex*)mtrx.get(), invMtrx);
 
-        // Iterate to target bit.
-        parent = root;
-        for (bitLenInt k = 0; k < target; k++) {
-            iBit = (i >> k) & 1U;
-            iChild = parent->branches[iBit];
-            parent = iChild;
-        }
+            // Both the outer loop and the inner loop appear to be "embarrassingly parallel."
+            // If any controls lower than the target aren't set, skip.
+            par_for_mask(0, targetPow, qPowersSorted.get(), controlBound, [&](const bitCapInt& lcv, const int& cpu) {
+                QBinaryDecisionTreeNodePtr parent, iChild;
+                int iBit;
 
-        // All remaining controls have lower indices than the target.
-        Apply2x2OnLeaves(mtrx, &(parent->branches[0]), &(parent->branches[1]));
-        // (Consider "j" to be advanced by 1);
+                bitCapInt i = lcv | lowControlMask;
 
-        if (!highControlMask) {
-            return;
-        }
+                // Iterate to target bit.
+                parent = root;
+                for (bitLenInt k = 0; k < target; k++) {
+                    iBit = (i >> k) & 1U;
+                    iChild = parent->branches[iBit];
+                    parent = iChild;
+                }
 
-        // The rest of the gate is only applying the INVERSE operation if control condition is NOT satisfied.
+                // All remaining controls have lower indices than the target.
+                Apply2x2OnLeaves(mtrx.get(), &(parent->branches[0]), &(parent->branches[1]));
+                // (Consider "j" to be advanced by 1);
 
-        // Consider CCNOT(0, 2, 1), (with target bit last). Draw a binary tree from root to 3 more levels down, (where
-        // each branch from a node is a choice between |0> and |1> for the next-indexed qubit state). Order the
-        // exponential rows by "control," "target", "control." Pointers have to be swapped and scaled across more than
-        // immediate depth.
+                if (!highControlMask) {
+                    return;
+                }
 
-        parent->branches[0]->Branch();
-        parent->branches[1]->Branch();
+                // The rest of the gate is only applying the INVERSE operation if control condition is NOT satisfied.
 
-        // (The remainder is "embarrassingly parallel," from below this point.)
-        ParallelFunc innerLoop = [&](const bitCapInt& lcv2, const int& cpu2) {
-            bitCapInt j = i | (lcv2 << (target + 1U));
+                // Consider CCNOT(0, 2, 1), (with target bit last). Draw a binary tree from root to 3 more levels down,
+                // (where each branch from a node is a choice between |0> and |1> for the next-indexed qubit state).
+                // Order the exponential rows by "control," "target", "control." Pointers have to be swapped and scaled
+                // across more than immediate depth.
 
-            // If all controls higher than the target are set, skip.
-            if ((j & highControlMask) == highControlMask) {
-                return;
-            }
+                parent->branches[0]->Branch();
+                parent->branches[1]->Branch();
 
-            // Iterate for target bit.
-            QBinaryDecisionTreeNodePtr child0 = parent->branches[0];
-            QBinaryDecisionTreeNodePtr child1 = parent->branches[1];
-            // (Children are already branched, to depth=1.)
+                // (The remainder is "embarrassingly parallel," from below this point.)
+                ParallelFunc innerLoop = [&](const bitCapInt& lcv2, const int& cpu2) {
+                    bitCapInt j = i | (lcv2 << (target + 1U));
 
-            // Stay one bit advanced, for the last pair of children;
-            bitCapInt bitPow = pow2(target + 1U);
-            bitLenInt jBit = (j >> (target + 1U)) & 1U;
+                    // If all controls higher than the target are set, skip.
+                    if ((j & highControlMask) == highControlMask) {
+                        return;
+                    }
 
-            // Starting where "j" left off, we trace the permutation for both children.
-            // Break at first reset control bit, as we KNOW there is at least one reset control.
-            for (bitLenInt k = (target + 2U); jBit || !(bitPow & highControlMask); k++) {
-                child0 = child0->branches[jBit];
-                child1 = child1->branches[jBit];
+                    // Iterate for target bit.
+                    QBinaryDecisionTreeNodePtr child0 = parent->branches[0];
+                    QBinaryDecisionTreeNodePtr child1 = parent->branches[1];
+                    // (Children are already branched, to depth=1.)
 
-                child0->Branch();
-                child1->Branch();
+                    // Stay one bit advanced, for the last pair of children;
+                    bitCapInt bitPow = pow2(target + 1U);
+                    bitLenInt jBit = (j >> (target + 1U)) & 1U;
 
-                bitPow = pow2(k);
-                jBit = (j >> k) & 1U;
-            }
+                    // Starting where "j" left off, we trace the permutation for both children.
+                    // Break at first reset control bit, as we KNOW there is at least one reset control.
+                    for (bitLenInt k = (target + 2U); jBit || !(bitPow & highControlMask); k++) {
+                        child0 = child0->branches[jBit];
+                        child1 = child1->branches[jBit];
 
-            // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
-            if (j < bitPow) {
-                Apply2x2OnLeaves(invMtrx, &(child0->branches[jBit]), &(child1->branches[jBit]));
-            }
-        };
+                        child0->Branch();
+                        child1->Branch();
 
-        if ((targetPow >> controlBound) < GetParallelThreshold()) {
-            par_for(0, highControlPower, innerLoop);
-        } else {
-            for (bitCapInt lcv2 = 0; lcv2 < highControlPower; lcv2++) {
-                innerLoop(lcv2, cpu);
-            }
-        }
-    });
+                        bitPow = pow2(k);
+                        jBit = (j >> k) & 1U;
+                    }
 
-    root->Prune(highBit);
+                    // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
+                    if (j < bitPow) {
+                        Apply2x2OnLeaves(invMtrx, &(child0->branches[jBit]), &(child1->branches[jBit]));
+                    }
+                };
+
+                if ((targetPow >> controlBound) < GetParallelThreshold()) {
+                    par_for(0, highControlPower, innerLoop);
+                } else {
+                    for (bitCapInt lcv2 = 0; lcv2 < highControlPower; lcv2++) {
+                        innerLoop(lcv2, cpu);
+                    }
+                }
+            });
+
+            root->Prune(highBit);
+        });
 }
 
 } // namespace Qrack
