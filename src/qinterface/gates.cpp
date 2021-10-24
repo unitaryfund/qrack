@@ -786,7 +786,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
         std::unique_ptr<complex[]> mtrx(new complex[maxJ]);
 
         for (bitCapIntOcl j = 0; j < maxJ; j++) {
-            mtrx.get()[j] = opMtrx[j] * (-timeDiff);
+            mtrx[j] = opMtrx[j] * (-timeDiff);
         }
 
         if (op->toggles) {

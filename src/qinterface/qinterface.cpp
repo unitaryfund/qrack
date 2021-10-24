@@ -802,7 +802,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
                 maskPerm |= pow2Ocl(i);
             }
         }
-        maskProbsArray.get()[maskPerm] += allProbsArray.get()[j];
+        maskProbsArray[maskPerm] += allProbsArray[j];
     }
 
     allProbsArray.reset();
@@ -814,7 +814,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         maskProb = Rand();
         cumulativeProb = ZERO_R1;
         for (j = 0; j < maskMaxQPower; j++) {
-            cumulativeProb += maskProbsArray.get()[j];
+            cumulativeProb += maskProbsArray[j];
             if ((maskProb <= cumulativeProb) || (j == lastPerm)) {
                 if (results.find(j) == results.end()) {
                     results[j] = 1;

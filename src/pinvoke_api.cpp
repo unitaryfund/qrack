@@ -228,14 +228,14 @@ unsigned MapArithmetic(QInterfacePtr simulator, unsigned n, unsigned* q)
     unsigned start = shards[simulator.get()][q[0]];
     std::unique_ptr<bitLenInt[]> bitArray(new bitLenInt[n]);
     for (unsigned i = 0U; i < n; i++) {
-        bitArray.get()[i] = shards[simulator.get()][q[i]];
-        if (start > bitArray.get()[i]) {
-            start = bitArray.get()[i];
+        bitArray[i] = shards[simulator.get()][q[i]];
+        if (start > bitArray[i]) {
+            start = bitArray[i];
         }
     }
     for (unsigned i = 0U; i < n; i++) {
-        simulator->Swap(start + i, bitArray.get()[i]);
-        SwapShardValues(start + i, bitArray.get()[i], shards[simulator.get()]);
+        simulator->Swap(start + i, bitArray[i]);
+        SwapShardValues(start + i, bitArray[i], shards[simulator.get()]);
     }
 
     return start;
@@ -259,14 +259,14 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, unsigned n, unsigne
     std::unique_ptr<bitLenInt[]> bitArray1(new bitLenInt[n]);
     std::unique_ptr<bitLenInt[]> bitArray2(new bitLenInt[n]);
     for (unsigned i = 0; i < n; i++) {
-        bitArray1.get()[i] = shards[simulator.get()][q1[i]];
-        if (start1 > bitArray1.get()[i]) {
-            start1 = bitArray1.get()[i];
+        bitArray1[i] = shards[simulator.get()][q1[i]];
+        if (start1 > bitArray1[i]) {
+            start1 = bitArray1[i];
         }
 
-        bitArray2.get()[i] = shards[simulator.get()][q2[i]];
-        if (start2 > bitArray2.get()[i]) {
-            start2 = bitArray2.get()[i];
+        bitArray2[i] = shards[simulator.get()][q2[i]];
+        if (start2 > bitArray2[i]) {
+            start2 = bitArray2[i];
         }
     }
 
@@ -278,8 +278,8 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, unsigned n, unsigne
     }
 
     for (unsigned i = 0U; i < n; i++) {
-        simulator->Swap(start1 + i, bitArray1.get()[i]);
-        SwapShardValues(start1 + i, bitArray1.get()[i], shards[simulator.get()]);
+        simulator->Swap(start1 + i, bitArray1[i]);
+        SwapShardValues(start1 + i, bitArray1[i], shards[simulator.get()]);
     }
 
     if ((start1 + n) > start2) {
@@ -287,8 +287,8 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, unsigned n, unsigne
     }
 
     for (unsigned i = 0U; i < n; i++) {
-        simulator->Swap(start2 + i, bitArray2.get()[i]);
-        SwapShardValues(start2 + i, bitArray2.get()[i], shards[simulator.get()]);
+        simulator->Swap(start2 + i, bitArray2[i]);
+        SwapShardValues(start2 + i, bitArray2[i], shards[simulator.get()]);
     }
 
     if (isReversed) {
@@ -305,16 +305,16 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsign
     std::unique_ptr<bitLenInt[]> bitArray1(new bitLenInt[n1]);
     std::unique_ptr<bitLenInt[]> bitArray2(new bitLenInt[n2]);
     for (unsigned i = 0; i < n1; i++) {
-        bitArray1.get()[i] = shards[simulator.get()][q1[i]];
-        if (start1 > bitArray1.get()[i]) {
-            start1 = bitArray1.get()[i];
+        bitArray1[i] = shards[simulator.get()][q1[i]];
+        if (start1 > bitArray1[i]) {
+            start1 = bitArray1[i];
         }
     }
 
     for (unsigned i = 0; i < n2; i++) {
-        bitArray2.get()[i] = shards[simulator.get()][q2[i]];
-        if (start2 > bitArray2.get()[i]) {
-            start2 = bitArray2.get()[i];
+        bitArray2[i] = shards[simulator.get()][q2[i]];
+        if (start2 > bitArray2[i]) {
+            start2 = bitArray2[i];
         }
     }
 
@@ -327,8 +327,8 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsign
     }
 
     for (unsigned i = 0U; i < n1; i++) {
-        simulator->Swap(start1 + i, bitArray1.get()[i]);
-        SwapShardValues(start1 + i, bitArray1.get()[i], shards[simulator.get()]);
+        simulator->Swap(start1 + i, bitArray1[i]);
+        SwapShardValues(start1 + i, bitArray1[i], shards[simulator.get()]);
     }
 
     if ((start1 + n1) > start2) {
@@ -336,8 +336,8 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsign
     }
 
     for (unsigned i = 0U; i < n2; i++) {
-        simulator->Swap(start2 + i, bitArray2.get()[i]);
-        SwapShardValues(start2 + i, bitArray2.get()[i], shards[simulator.get()]);
+        simulator->Swap(start2 + i, bitArray2[i]);
+        SwapShardValues(start2 + i, bitArray2[i], shards[simulator.get()]);
     }
 
     if (isReversed) {
@@ -529,7 +529,7 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
     std::unique_ptr<complex[]> wfn(new complex[wfnl]);
     simulator->GetQuantumState(wfn.get());
     for (size_t i = 0; i < wfnl; i++) {
-        if (!callback(i, real(wfn.get()[i]), imag(wfn.get()[i]))) {
+        if (!callback(i, real(wfn[i]), imag(wfn[i]))) {
             break;
         }
     }
@@ -789,7 +789,7 @@ MICROSOFT_QUANTUM_DECL void Mtrx(_In_ unsigned sid, _In_reads_(8) double* m, _In
     QInterfacePtr simulator = simulators[sid];                                                                         \
     std::unique_ptr<bitLenInt[]> ctrlsArray(new bitLenInt[numC]);                                                      \
     for (unsigned i = 0; i < numC; i++) {                                                                              \
-        ctrlsArray.get()[i] = shards[simulator.get()][c[i]];                                                           \
+        ctrlsArray[i] = shards[simulator.get()][c[i]];                                                                 \
     }
 
 /**
@@ -1138,7 +1138,7 @@ MICROSOFT_QUANTUM_DECL void MeasureShots(
     QInterfacePtr simulator = simulators[sid];
     std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[n]);
     for (unsigned i = 0; i < n; i++) {
-        qPowers.get()[i] = Qrack::pow2(shards[simulator.get()][q[i]]);
+        qPowers[i] = Qrack::pow2(shards[simulator.get()][q[i]]);
     }
 
     std::map<bitCapInt, int> result = simulator->MultiShotMeasureMask(qPowers.get(), n, s);
@@ -1626,7 +1626,7 @@ MICROSOFT_QUANTUM_DECL bool TrySeparateTol(
     QInterfacePtr simulator = simulators[sid];
     std::unique_ptr<bitLenInt[]> bitArray(new bitLenInt[n]);
     for (unsigned i = 0; i < n; i++) {
-        bitArray.get()[i] = shards[simulator.get()][q[i]];
+        bitArray[i] = shards[simulator.get()][q[i]];
     }
 
     return simulator->TrySeparate(bitArray.get(), (bitLenInt)n, (real1_f)tol);

@@ -859,7 +859,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         } else {
             qPowersSortedOcl = std::unique_ptr<bitCapIntOcl[]>(new bitCapIntOcl[bitCount]);
             for (bitLenInt i = 0; i < bitCount; i++) {
-                qPowersSortedOcl.get()[i] = (bitCapIntOcl)qPowersSorted[i];
+                qPowersSortedOcl[i] = (bitCapIntOcl)qPowersSorted[i];
             }
             DISPATCH_TEMP_WRITE(waitVec, *locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSortedOcl.get(),
                 writeControlsEvent, error);
@@ -1071,10 +1071,10 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 
     std::unique_ptr<bitCapIntOcl[]> qPowers(new bitCapIntOcl[controlLen + mtrxSkipLen]);
     for (bitLenInt i = 0; i < controlLen; i++) {
-        qPowers.get()[i] = pow2Ocl(controls[i]);
+        qPowers[i] = pow2Ocl(controls[i]);
     }
     for (bitLenInt i = 0; i < mtrxSkipLen; i++) {
-        qPowers.get()[controlLen + i] = (bitCapIntOcl)mtrxSkipPowers[i];
+        qPowers[controlLen + i] = (bitCapIntOcl)mtrxSkipPowers[i];
     }
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
@@ -1146,8 +1146,8 @@ void QEngineOCL::CUniformParityRZ(
     bitCapIntOcl controlMask = 0;
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
     for (bitLenInt i = 0; i < controlLen; i++) {
-        controlPowers.get()[i] = pow2Ocl(controls[i]);
-        controlMask |= controlPowers.get()[i];
+        controlPowers[i] = pow2Ocl(controls[i]);
+        controlMask |= controlPowers[i];
     }
     std::sort(controlPowers.get(), controlPowers.get() + controlLen);
     BufferPtr controlBuffer = MakeBuffer(
@@ -1856,7 +1856,7 @@ real1_f QEngineOCL::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& l
 
     std::unique_ptr<bitCapIntOcl[]> bitPowers(new bitCapIntOcl[length]);
     for (bitLenInt p = 0; p < length; p++) {
-        bitPowers.get()[p] = pow2Ocl(bits[p]);
+        bitPowers[p] = pow2Ocl(bits[p]);
     }
 
     cl_int error;
@@ -1946,8 +1946,8 @@ void QEngineOCL::CINT(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt start
     bitCapIntOcl controlMask = 0;
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
     for (bitLenInt i = 0; i < controlLen; i++) {
-        controlPowers.get()[i] = pow2Ocl(controls[i]);
-        controlMask |= controlPowers.get()[i];
+        controlPowers[i] = pow2Ocl(controls[i]);
+        controlMask |= controlPowers[i];
     }
     std::sort(controlPowers.get(), controlPowers.get() + controlLen);
 
@@ -2438,11 +2438,11 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOu
     bitCapIntOcl controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
         controlPower = pow2Ocl(controls[i]);
-        skipPowers.get()[i] = controlPower;
+        skipPowers[i] = controlPower;
         controlMask |= controlPower;
     }
     for (bitLenInt i = 0; i < length; i++) {
-        skipPowers.get()[i + controlLen] = pow2Ocl(carryStart + i);
+        skipPowers[i + controlLen] = pow2Ocl(carryStart + i);
     }
     std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
 
@@ -2473,11 +2473,11 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
     bitCapIntOcl controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
         controlPower = pow2Ocl(controls[i]);
-        skipPowers.get()[i] = controlPower;
+        skipPowers[i] = controlPower;
         controlMask |= controlPower;
     }
     for (bitLenInt i = 0; i < length; i++) {
-        skipPowers.get()[i + controlLen] = pow2Ocl(carryStart + i);
+        skipPowers[i + controlLen] = pow2Ocl(carryStart + i);
     }
     std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
 
@@ -2805,7 +2805,7 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 
     complex totInner = ZERO_CMPLX;
     for (int i = 0; i < partInnerSize; i++) {
-        totInner += partInner.get()[i];
+        totInner += partInner[i];
     }
 
     return ONE_R1 - clampProb(norm(totInner));

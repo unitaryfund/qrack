@@ -2007,7 +2007,7 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
 
     std::unique_ptr<bitLenInt[]> mappedControls(new bitLenInt[trimmedControls.size()]);
     for (i = 0; i < (bitLenInt)trimmedControls.size(); i++) {
-        mappedControls.get()[i] = shards[trimmedControls[i]].mapped;
+        mappedControls[i] = shards[trimmedControls[i]].mapped;
         shards[trimmedControls[i]].isPhaseDirty = true;
     }
 
@@ -3066,20 +3066,20 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 
         if (IS_1_R1(-bottomRight)) {
             if (controlLen == 2U) {
-                CCZ(controls.get()[0], controls.get()[1], target);
+                CCZ(controls[0], controls[1], target);
                 return;
             }
             if (controlLen == 1U) {
-                CZ(controls.get()[0], target);
+                CZ(controls[0], target);
                 return;
             }
         }
 
         if (!shards[target].isPauliX && !shards[target].isPauliY) {
             for (bitLenInt i = 0; i < controlLen; i++) {
-                QEngineShard& cShard = shards[controls.get()[i]];
+                QEngineShard& cShard = shards[controls[i]];
                 if (cShard.isPauliX || cShard.isPauliY) {
-                    std::swap(controls.get()[i], target);
+                    std::swap(controls[i], target);
                     break;
                 }
             }
@@ -3087,7 +3087,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
     }
 
     if (!freezeBasis2Qb && (controlLen == 1U)) {
-        bitLenInt control = controls.get()[0];
+        bitLenInt control = controls[0];
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
         if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
@@ -3219,9 +3219,9 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 
         if (!shards[target].isPauliX && !shards[target].isPauliY) {
             for (bitLenInt i = 0; i < controlLen; i++) {
-                QEngineShard& cShard = shards[controls.get()[i]];
+                QEngineShard& cShard = shards[controls[i]];
                 if (cShard.isPauliX || cShard.isPauliY) {
-                    std::swap(controls.get()[i], target);
+                    std::swap(controls[i], target);
                     break;
                 }
             }
@@ -3229,7 +3229,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
     }
 
     if (!freezeBasis2Qb && (controlLen == 1U)) {
-        bitLenInt control = controls.get()[0];
+        bitLenInt control = controls[0];
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
         if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
@@ -3858,7 +3858,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                     DirtyShardIndexVector(allBits);
                     QInterfacePtr unit = Entangle(ebits);
                     for (bitLenInt cIndex = 0; cIndex < controlLen; cIndex++) {
-                        lControls.get()[cIndex] = shards[cIndex].mapped;
+                        lControls[cIndex] = shards[cIndex].mapped;
                     }
                     unit->CINC(partMod, shards[start].mapped, partLength, lControls.get(), controlLen);
                 } else {
@@ -3913,7 +3913,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             QInterfacePtr unit = Entangle(ebits);
             DirtyShardIndexVector(allBits);
             for (bitLenInt cIndex = 0; cIndex < controlLen; cIndex++) {
-                lControls.get()[cIndex] = shards[cIndex].mapped;
+                lControls[cIndex] = shards[cIndex].mapped;
             }
             unit->CINC(toMod, shards[start].mapped, length, lControls.get(), controlLen);
         } else {
@@ -4349,7 +4349,7 @@ void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bit
             std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlVec.size() + 1U]);
             std::copy(controlVec.begin(), controlVec.end(), lControls.get());
             for (bitLenInt i = 0; i < length; i++) {
-                lControls.get()[controlVec.size()] = inStart + i;
+                lControls[controlVec.size()] = inStart + i;
                 if (inverse) {
                     CDEC(toModExp, outStart, length, lControls.get(), controlVec.size() + 1U);
                 } else {
