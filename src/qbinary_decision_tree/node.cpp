@@ -121,14 +121,6 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
         branches[1] = branches[0]->ShallowClone();
     }
 
-    // If we push zero into a lower branch, we'll prune upwards.
-    // However, we'll prune OVER nonzero scales, if we don't push down.
-    if (IS_NORM_0(scale)) {
-        scale = ONE_CMPLX;
-        branches[0]->scale = ZERO_CMPLX;
-        branches[1]->scale = ZERO_CMPLX;
-    }
-
     branches[0]->Branch(depth - 1U);
     branches[1]->Branch(depth - 1U);
 }

@@ -254,6 +254,8 @@ void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
 {
     Finish();
 
+    root->Branch(qubitCount);
+
     int bit = 0;
     complex scale;
     bitLenInt j;
@@ -264,19 +266,12 @@ void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
         child = leaf;
         bit = (perm >> j) & 1U;
         child = leaf->branches[bit];
-        if (!child) {
-            child = std::make_shared<QBinaryDecisionTreeNode>(ONE_CMPLX);
-            leaf->branches[bit] = child;
-        } else {
-            scale *= leaf->scale;
-        }
+        scale *= leaf->scale;
     }
 
     child->scale = amp / scale;
 
-    if (IS_NORM_0(child->scale - leaf->branches[bit ^ 1U]->scale)) {
-        root->Prune(qubitCount, perm);
-    }
+    root->Prune(qubitCount, perm);
 }
 
 bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start)
@@ -456,7 +451,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
     }
 
     bitCapInt qPower = pow2(qubit);
-    complex nrm = GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr));
+    complex nrm = GetNonunitaryPhase();
 
     bitLenInt j;
     complex Y0;
@@ -476,11 +471,11 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         leaf->Branch();
 
         if (result) {
-            leaf->branches[0] = NULL;
-            leaf->branches[1]->scale *= nrm;
+            leaf->branches[0] = std::make_shared<QBinaryDecisionTreeNode>(ZERO_CMPLX);
+            leaf->branches[1]->scale = nrm;
         } else {
-            leaf->branches[0]->scale *= nrm;
-            leaf->branches[1] = NULL;
+            leaf->branches[0]->scale = nrm;
+            leaf->branches[1] = std::make_shared<QBinaryDecisionTreeNode>(ZERO_CMPLX);
         }
     }
 
