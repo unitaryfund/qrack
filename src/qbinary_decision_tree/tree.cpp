@@ -499,12 +499,12 @@ void QBinaryDecisionTree::Apply2x2OnLeaves(
     }
 
     if (IS_NORM_0((*leaf0)->scale)) {
-        (*leaf0) = (*leaf1)->DeepClone();
+        (*leaf0) = (*leaf1)->ShallowClone();
         (*leaf0)->scale = ZERO_CMPLX;
     }
 
     if (IS_NORM_0((*leaf1)->scale)) {
-        (*leaf1) = (*leaf0)->DeepClone();
+        (*leaf1) = (*leaf0)->ShallowClone();
         (*leaf1)->scale = ZERO_CMPLX;
     }
 
