@@ -469,17 +469,17 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 
 void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf)
 {
-    bool isBranch0Norm0 = leaf->branches[0]->branches[0] && IS_NORM_0(leaf->branches[0]->scale);
-    bool isBranch1Norm0 = leaf->branches[1]->branches[0] && IS_NORM_0(leaf->branches[1]->scale);
+    bool isBranch0Norm0 = IS_NORM_0(leaf->branches[0]->scale);
+    bool isBranch1Norm0 = IS_NORM_0(leaf->branches[1]->scale);
 
     if (isBranch0Norm0) {
-        leaf->branches[0]->branches[0] = leaf->branches[1]->branches[0];
-        leaf->branches[0]->branches[1] = leaf->branches[1]->branches[1];
+        leaf->branches[0] = leaf->branches[1]->ShallowClone();
+        leaf->branches[0]->scale = ZERO_CMPLX;
     }
 
     if (isBranch1Norm0) {
-        leaf->branches[1]->branches[0] = leaf->branches[0]->branches[0];
-        leaf->branches[1]->branches[1] = leaf->branches[0]->branches[1];
+        leaf->branches[1] = leaf->branches[0]->ShallowClone();
+        leaf->branches[1]->scale = ZERO_CMPLX;
     }
 
     // Apply gate.
