@@ -23,20 +23,16 @@
 
 namespace Qrack {
 
-bool QBinaryDecisionTreeNode::isZero()
-{
-    return IS_NORM_0(scale) || (branches[0] && branches[1] && branches[0]->isZero() && branches[1]->isZero());
-}
-
 void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, bitCapInt perm)
 {
     if (!depth) {
         return;
     }
 
-    if (!branches[0] != !branches[1]) {
-        throw std::runtime_error("Binary decision tree branch exists, paired with null. Branches MUST exist in pairs.");
-    }
+    // if (!branches[0] != !branches[1]) {
+    //     throw std::runtime_error("Binary decision tree branch exists, paired with null. Branches MUST exist in
+    //     pairs.");
+    // }
 
     if (!branches[0]) {
         return;
@@ -107,9 +103,10 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
         return;
     }
 
-    if (!branches[0] != !branches[1]) {
-        throw std::runtime_error("Binary decision tree branch exists, paired with null. Branches MUST exist in pairs.");
-    }
+    // if (!branches[0] != !branches[1]) {
+    //     throw std::runtime_error("Binary decision tree branch exists, paired with null. Branches MUST exist in
+    //     pairs.");
+    // }
 
     if (!branches[0]) {
         branches[0] = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);

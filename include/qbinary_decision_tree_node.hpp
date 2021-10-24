@@ -49,10 +49,10 @@ public:
     QBinaryDecisionTreeNode(complex scl, QBinaryDecisionTreeNodePtr brnchs[2])
         : scale(scl)
     {
-        if (!brnchs[0] != !brnchs[1]) {
-            throw std::runtime_error(
-                "Binary decision tree branch exists, paired with null. Branches MUST exist in pairs.");
-        }
+        // if (!brnchs[0] != !brnchs[1]) {
+        //     throw std::runtime_error(
+        //         "Binary decision tree branch exists, paired with null. Branches MUST exist in pairs.");
+        // }
 
         branches[0] = brnchs[0] ? brnchs[0]->DeepClone() : NULL;
         if (brnchs[0] == brnchs[1]) {
@@ -72,8 +72,6 @@ public:
 
         return toRet;
     }
-
-    bool isZero();
 
     bool isNoChildren() { return !branches[0] && !branches[1]; }
 

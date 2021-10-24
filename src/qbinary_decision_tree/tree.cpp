@@ -484,32 +484,25 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
     return result;
 }
 
-void QBinaryDecisionTree::Apply2x2OnLeaves(
-    const complex* mtrx, QBinaryDecisionTreeNodePtr* leaf0, QBinaryDecisionTreeNodePtr* leaf1)
+void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf)
 {
-    bool isLeaf0Norm0 = (*leaf0)->isZero();
-    bool isLeaf1Norm0 = (*leaf1)->isZero();
+    bool isBranch0Norm0 = leaf->branches[0]->branches[0] && IS_NORM_0(leaf->branches[0]->scale);
+    bool isBranch1Norm0 = leaf->branches[1]->branches[0] && IS_NORM_0(leaf->branches[1]->scale);
 
-    if (isLeaf0Norm0 && isLeaf1Norm0) {
-        (*leaf0)->scale = ZERO_CMPLX;
-        (*leaf1)->scale = ZERO_CMPLX;
-        return;
+    if (isBranch0Norm0) {
+        leaf->branches[0]->branches[0] = leaf->branches[1]->branches[0];
+        leaf->branches[0]->branches[1] = leaf->branches[1]->branches[1];
     }
 
-    if (isLeaf0Norm0) {
-        (*leaf0) = (*leaf1)->ShallowClone();
-        (*leaf0)->scale = ZERO_CMPLX;
-    }
-
-    if (isLeaf1Norm0) {
-        (*leaf1) = (*leaf0)->ShallowClone();
-        (*leaf1)->scale = ZERO_CMPLX;
+    if (isBranch1Norm0) {
+        leaf->branches[1]->branches[0] = leaf->branches[0]->branches[0];
+        leaf->branches[1]->branches[1] = leaf->branches[0]->branches[1];
     }
 
     // Apply gate.
-    complex Y0 = (*leaf0)->scale;
-    (*leaf0)->scale = mtrx[0] * Y0 + mtrx[1] * (*leaf1)->scale;
-    (*leaf1)->scale = mtrx[2] * Y0 + mtrx[3] * (*leaf1)->scale;
+    complex Y0 = leaf->branches[0]->scale;
+    leaf->branches[0]->scale = mtrx[0] * Y0 + mtrx[1] * leaf->branches[1]->scale;
+    leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
 }
 
 void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
@@ -533,7 +526,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
                 leaf = child;
             }
 
-            Apply2x2OnLeaves(mtrx.get(), &(leaf->branches[0]), &(leaf->branches[1]));
+            Apply2x2OnLeaf(mtrx.get(), leaf);
         });
 
         root->Prune(target + 1U);
@@ -605,12 +598,15 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                 }
 
                 // All remaining controls have lower indices than the target.
-                Apply2x2OnLeaves(mtrx.get(), &(parent->branches[0]), &(parent->branches[1]));
+                Apply2x2OnLeaf(mtrx.get(), parent);
                 // (Consider "j" to be advanced by 1);
 
                 if (!highControlMask) {
                     return;
                 }
+
+                // TODO:
+                throw std::runtime_error("Can't handle controls at higher indices than target, yet.");
 
                 // The rest of the gate is only applying the INVERSE operation if control condition is NOT satisfied.
 
@@ -665,8 +661,9 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                         child1->Branch();
                     }
 
+                    // TODO:
                     // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
-                    Apply2x2OnLeaves(invMtrx, &(child0->branches[0]), &(child1->branches[0]));
+                    // Apply2x2OnLeaves(invMtrx, &(child0->branches[0]), &(child1->branches[0]));
                 };
 
                 if ((targetPow >> controlBound) < GetParallelThreshold()) {
