@@ -34,6 +34,14 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         return;
     }
 
+    if (!branches[0] != !branches[1]) {
+        throw std::runtime_error("Binary decision tree branch exists, paired with null. Branches MUST exist in pairs.");
+    }
+
+    if (!branches[0]) {
+        return;
+    }
+
     // Prune recursively to depth.
     depth--;
     // (If perm == 0, then bit == 0.)
@@ -42,37 +50,19 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
 
     if (isNarrow || (branches[0] == branches[1])) {
         // Either we're narrow, or else there's no point in pruning same pointer branch twice.
-        if (branches[bit]) {
-            branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm);
-        }
+        branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm);
     } else {
         for (bitLenInt i = 0U; i < 2U; i++) {
-            if (branches[i]) {
-                branches[i]->PruneNarrowOrWide(depth, false, perm);
-            }
+            branches[i]->PruneNarrowOrWide(depth, false, perm);
         }
     }
 
     // If scale of this node is zero, nothing under it makes a difference.
     // To contract a tree of all zero scales, as this is depth first, takes 2 orders, of identity and direct descendent.
-    if (IS_NORM_0(scale) ||
-        (branches[0] && branches[1] && IS_NORM_0(branches[0]->scale) && IS_NORM_0(branches[1]->scale))) {
+    if (IS_NORM_0(scale) || (IS_NORM_0(branches[0]->scale) && IS_NORM_0(branches[1]->scale))) {
         scale = ZERO_CMPLX;
         branches[0] = NULL;
         branches[1] = NULL;
-        return;
-    }
-
-    // If scale is ONE_CMPLX up to a NULL boundary, then the ONE_CMPLX scale nodes are redundant.
-    if (branches[0] && IS_NORM_0(ONE_CMPLX - branches[0]->scale) && branches[0]->isNoChildren()) {
-        branches[0] = NULL;
-    }
-    if (branches[1] && IS_NORM_0(ONE_CMPLX - branches[1]->scale) && branches[1]->isNoChildren()) {
-        branches[1] = NULL;
-    }
-
-    // We're going to try to combine 0 and 1 branches, now.
-    if (!branches[0] || !branches[1]) {
         return;
     }
 
@@ -117,11 +107,13 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
         return;
     }
 
-    if (!branches[0]) {
-        branches[0] = std::make_shared<QBinaryDecisionTreeNode>();
+    if (!branches[0] != !branches[1]) {
+        throw std::runtime_error("Binary decision tree branch exists, paired with null. Branches MUST exist in pairs.");
     }
-    if (!branches[1]) {
-        branches[1] = std::make_shared<QBinaryDecisionTreeNode>();
+
+    if (!branches[0]) {
+        branches[0] = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);
+        branches[1] = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);
     }
 
     if (branches[0] == branches[1]) {
