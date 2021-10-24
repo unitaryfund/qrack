@@ -1200,16 +1200,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cit_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x")
 {
-    qftReg->SetPermutation(0x80001);
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->SetPermutation(0xF0001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xF0001));
     qftReg->X(19);
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x70001));
     qftReg->X(19);
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xF0001));
     qftReg->H(19);
     qftReg->X(19);
     qftReg->H(19);
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xF0001));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x_reg")
