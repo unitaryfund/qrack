@@ -132,6 +132,7 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
     }
 
     root->Prune(qubitCount);
+    root->Normalize(qubitCount);
 }
 void QBinaryDecisionTree::GetQuantumState(complex* state)
 {
@@ -418,46 +419,26 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     std::copy(controls, controls + controlLen, sortedControls.get());
     std::sort(sortedControls.get(), sortedControls.get() + controlLen);
 
-    bitLenInt controlBound;
     bitCapInt lowControlMask = 0;
     bitLenInt c;
     for (c = 0; (c < controlLen) && (sortedControls[c] < target); c++) {
         qPowersSorted[c] = pow2(sortedControls[c]);
         lowControlMask |= qPowersSorted[c];
     }
-
-    controlBound = c;
-
-    // "highControlMask" is only controls HIGHER than target, in the remaining body.
-    bitCapInt highControlMask = 0;
-    for (c = controlBound; c < controlLen; c++) {
-        qPowersSorted[c] = pow2(sortedControls[c]);
-        highControlMask |= qPowersSorted[c];
-    }
-
     // TODO: This is a horrible kludge.
-    if (highControlMask) {
+    if (c < controlLen) {
+        // At least one control bit index is higher than the target.
         ExecuteAsQEngineCPU(
             [&](QInterfacePtr eng) { eng->ApplyControlledSingleBit(controls, controlLen, target, lMtrx); });
         return;
     }
 
-    bitLenInt highBit = (target < sortedControls[controlLen - 1U]) ? sortedControls[controlLen - 1U] : target;
     bitCapInt targetPow = pow2(target);
-    bitCapInt highControlPower = pow2(highBit - target);
 
-    bitCapInt outerThresh = (targetPow >> controlBound);
-    bitCapInt parallelThresh = (outerThresh < highControlPower) ? highControlPower : outerThresh;
-
-    Dispatch(parallelThresh,
-        [this, mtrx, target, controlBound, lowControlMask, highControlMask, highBit, targetPow, highControlPower,
-            qPowersSorted]() {
-            complex invMtrx[4];
-            inv2x2((complex*)mtrx.get(), invMtrx);
-
-            // Both the outer loop and the inner loop appear to be "embarrassingly parallel."
-            // If any controls lower than the target aren't set, skip.
-            par_for_mask(0, targetPow, qPowersSorted.get(), controlBound, [&](const bitCapInt& lcv, const int& cpu) {
+    Dispatch((targetPow >> controlLen),
+        [this, mtrx, target, controlLen, lowControlMask, targetPow, qPowersSorted]() {
+            // If any controls aren't set, skip.
+            par_for_mask(0, targetPow, qPowersSorted.get(), controlLen, [&](const bitCapInt& lcv, const int& cpu) {
                 bitCapInt i = lcv | lowControlMask;
 
                 int iBit;
