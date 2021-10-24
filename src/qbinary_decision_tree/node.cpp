@@ -30,7 +30,9 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
     }
 
     // If scale of this node is zero, nothing under it makes a difference.
-    if (IS_NORM_0(scale)) {
+    // To contract a tree of all zero scales, as this is depth first, takes 2 orders, of identity and direct descendent.
+    if (IS_NORM_0(scale) ||
+        (branches[0] && branches[1] && IS_NORM_0(branches[0]->scale) && IS_NORM_0(branches[1]->scale))) {
         scale = ZERO_CMPLX;
         branches[0] = NULL;
         branches[1] = NULL;
@@ -42,14 +44,15 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
     // (If perm == 0, then bit == 0.)
     size_t bit = perm & 1U;
     perm >>= 1U;
-    bitLenInt maxLcv = isShallow ? (bit + 1U) : 2;
-    for (bitLenInt i = bit; i < maxLcv; i++) {
-        if (branches[i]) {
-            branches[i]->PruneShallowOrDeep(depth, isShallow, perm);
-        }
-        if (branches[0] == branches[1]) {
-            // No point in pruning same pointer branch twice.
-            break;
+
+    if (isShallow || (branches[0] == branches[1])) {
+        // Either we're shallow, or else there's no point in pruning same pointer branch twice.
+        branches[bit]->PruneShallowOrDeep(depth, isShallow, perm);
+    } else {
+        for (bitLenInt i = 0U; i < 2U; i++) {
+            if (branches[i]) {
+                branches[i]->PruneShallowOrDeep(depth, isShallow, perm);
+            }
         }
     }
 
