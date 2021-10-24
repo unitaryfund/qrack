@@ -23,7 +23,7 @@
 
 namespace Qrack {
 
-void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow, bitCapInt perm)
+void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, bitCapInt perm)
 {
     if (!depth) {
         return;
@@ -43,13 +43,13 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
     size_t bit = perm & 1U;
     perm >>= 1U;
 
-    if (isShallow || (branches[0] == branches[1])) {
-        // Either we're shallow, or else there's no point in pruning same pointer branch twice.
-        branches[bit]->PruneShallowOrDeep(depth, isShallow, perm);
+    if (isNarrow || (branches[0] == branches[1])) {
+        // Either we're narrow, or else there's no point in pruning same pointer branch twice.
+        branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm);
     } else {
         for (bitLenInt i = 0U; i < 2U; i++) {
             if (branches[i]) {
-                branches[i]->PruneShallowOrDeep(depth, isShallow, perm);
+                branches[i]->PruneNarrowOrWide(depth, isNarrow, perm);
             }
         }
     }
