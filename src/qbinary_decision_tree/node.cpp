@@ -29,11 +29,6 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         return;
     }
 
-    // if (!branches[0] != !branches[1]) {
-    //     throw std::runtime_error("Binary decision tree branch exists, paired with null. Branches MUST exist in
-    //     pairs.");
-    // }
-
     if (!branches[0]) {
         return;
     }
@@ -62,6 +57,11 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         return;
     }
 
+    if (branches[0] == branches[1]) {
+        // Combining branches is the only other thing we try, below.
+    }
+    // Now, we try to combine pointers to equivalent branches.
+
     bitCapInt depthPow = ONE_BCI << depth;
     complex scale1, scale2;
     bitCapInt i;
@@ -81,6 +81,7 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
                 scale1 *= leaf1->scale;
                 leaf1 = leaf1->branches[bit];
             }
+
             if (leaf2) {
                 scale2 *= leaf2->scale;
                 leaf2 = leaf2->branches[bit];
@@ -102,11 +103,6 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
     if (!depth || IS_NORM_0(scale)) {
         return;
     }
-
-    // if (!branches[0] != !branches[1]) {
-    //     throw std::runtime_error("Binary decision tree branch exists, paired with null. Branches MUST exist in
-    //     pairs.");
-    // }
 
     if (!branches[0]) {
         branches[0] = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);
