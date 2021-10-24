@@ -29,14 +29,6 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         return;
     }
 
-    // If scale of this node is zero, nothing under it makes a difference.
-    if (IS_NORM_0(scale)) {
-        scale = ZERO_CMPLX;
-        branches[0] = NULL;
-        branches[1] = NULL;
-        return;
-    }
-
     // Prune recursively to depth.
     depth--;
     // (If perm == 0, then bit == 0.)
@@ -45,13 +37,23 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
 
     if (isNarrow || (branches[0] == branches[1])) {
         // Either we're narrow, or else there's no point in pruning same pointer branch twice.
-        branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm);
+        if (branches[bit]) {
+            branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm);
+        }
     } else {
         for (bitLenInt i = 0U; i < 2U; i++) {
             if (branches[i]) {
                 branches[i]->PruneNarrowOrWide(depth, isNarrow, perm);
             }
         }
+    }
+
+    // If scale of this node is zero, nothing under it makes a difference.
+    if (IS_NORM_0(scale)) {
+        scale = ZERO_CMPLX;
+        branches[0] = NULL;
+        branches[1] = NULL;
+        return;
     }
 
     // To contract a tree of all zero scales, as this is depth first, takes 2 orders, of identity and direct descendent.
