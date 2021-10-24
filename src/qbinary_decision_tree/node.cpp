@@ -109,7 +109,7 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
         return;
     }
 
-    if (!depth || !branches[0]) {
+    if (!depth) {
         return;
     }
 
@@ -135,15 +135,17 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
         return;
     }
 
-    if (!depth || !branches[0]) {
+    if (!depth) {
         return;
     }
 
     depth--;
 
-    // We go depth-first, but it doesn't matter, (or only for the
-    branches[0]->Normalize(depth - 1U);
-    branches[1]->Normalize(depth - 1U);
+    // We go depth-first, but it doesn't matter.
+    if (branches[0]) {
+        branches[0]->Normalize(depth - 1U);
+        branches[1]->Normalize(depth - 1U);
+    }
 
     // Now that my children have normalized THEIR children, I normalize my own.
     real1 nrm = (real1)std::sqrt(norm(branches[0]->scale) + norm(branches[1]->scale));

@@ -116,6 +116,7 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
     Dump();
 
     root = std::make_shared<QBinaryDecisionTreeNode>();
+    root->Branch(qubitCount);
 
     bitCapInt maxQPower = pow2(qubitCount);
     complex scale = (complex)std::pow(SQRT1_2_R1, qubitCount);
@@ -125,37 +126,9 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
     for (bitCapInt i = 0; i < maxQPower; i++) {
         leaf = root;
         for (j = 0; j < qubitCount; j++) {
-            leaf->Branch();
             leaf = leaf->branches[(i >> j) & 1U];
         }
         setLambda(i, scale, leaf);
-    }
-
-    root->Prune(qubitCount);
-}
-template <typename Fn> void QBinaryDecisionTree::ProductSetTraversal(Fn setLambda)
-{
-    if (IS_NORM_0(root->scale)) {
-        // The tree isn't normalized, in this case, but this is defensive.
-        return;
-    }
-
-    bitCapInt maxQPower = pow2(qubitCount);
-    complex scale = (complex)std::pow(SQRT1_2_R1, qubitCount);
-    bitLenInt j;
-
-    QBinaryDecisionTreeNodePtr leaf;
-    for (bitCapInt i = 0; i < maxQPower; i++) {
-        leaf = root;
-        for (j = 0; j < qubitCount; j++) {
-            leaf = leaf->branches[(i >> j) & 1U];
-            if (IS_NORM_0(leaf->scale)) {
-                break;
-            }
-        }
-        if (!IS_NORM_0(leaf->scale)) {
-            setLambda(i, scale, leaf);
-        }
     }
 
     root->Prune(qubitCount);
@@ -246,23 +219,7 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
     Finish();
     toCopy->Finish();
 
-    if (start == 0) {
-        QBinaryDecisionTreePtr clone = std::dynamic_pointer_cast<QBinaryDecisionTree>(toCopy->Clone());
-        std::swap(root, clone->root);
-        clone->SetQubitCount(qubitCount);
-        SetQubitCount(toCopy->qubitCount);
-        ProductSetTraversal([clone](bitCapInt i, complex scale, QBinaryDecisionTreeNodePtr leaf) {
-            QBinaryDecisionTreePtr toCopyClone = std::dynamic_pointer_cast<QBinaryDecisionTree>(clone->Clone());
-            leaf->scale *= toCopyClone->root->scale / scale;
-        });
-    } else if (start == qubitCount) {
-        ProductSetTraversal([toCopy](bitCapInt i, complex scale, QBinaryDecisionTreeNodePtr leaf) {
-            QBinaryDecisionTreePtr toCopyClone = std::dynamic_pointer_cast<QBinaryDecisionTree>(toCopy->Clone());
-            leaf->scale *= toCopyClone->root->scale / scale;
-        });
-    } else {
-        throw std::runtime_error("Mid-range QBinaryDecisionTree::Compose() not yet implemented.");
-    }
+    ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->Compose(toCopy, start); });
 
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
@@ -271,62 +228,12 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
 void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest)
 {
     Finish();
+
     if (dest) {
         dest->Dump();
-    }
-
-    bitLenInt i, j;
-    QBinaryDecisionTreeNodePtr leaf;
-    QBinaryDecisionTreeNodePtr child = root;
-    for (i = 0; i < start; i++) {
-        leaf = child;
-        child = leaf->branches[0];
-        if (IS_NORM_0(child->scale)) {
-            child = leaf->branches[1];
-        }
-    }
-
-    // ANY child tree at this depth is assumed to be EXACTLY EQUIVALENT for the length to Decompose().
-    // WARNING: "Compose()" doesn't seem to need a normalization pass, but does this?
-
-    if (child && dest) {
-        dest->root = child;
-        dest->SetQubitCount(qubitCount - start);
-        QBinaryDecisionTreePtr clone = std::dynamic_pointer_cast<QBinaryDecisionTree>(dest->Clone());
-        dest->root = clone->root;
-
-        if ((start + length) < qubitCount) {
-            dest->Dispose(start + length, qubitCount - (start + length));
-        }
-    }
-
-    complex scale;
-    QBinaryDecisionTreeNodePtr remainderLeaf;
-    for (bitCapInt i = 0; i < maxQPower; i++) {
-        leaf = root;
-        scale = leaf->scale;
-        for (j = 0; j < start; j++) {
-            leaf = leaf->branches[(i >> j) & 1U];
-            if (!leaf) {
-                break;
-            }
-        }
-        if (!leaf) {
-            continue;
-        }
-        remainderLeaf = leaf;
-        for (j = 0; j < length; j++) {
-            remainderLeaf = remainderLeaf->branches[(i >> (start + j)) & 1U];
-            if (!remainderLeaf) {
-                break;
-            }
-        }
-        if (!remainderLeaf) {
-            continue;
-        }
-        leaf->branches[0] = remainderLeaf->branches[0];
-        leaf->branches[1] = remainderLeaf->branches[1];
-        leaf->scale = remainderLeaf->scale;
+        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->Decompose(start, dest); });
+    } else {
+        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->Dispose(start, length); });
     }
 
     SetQubitCount(qubitCount - length);

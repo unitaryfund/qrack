@@ -52,7 +52,6 @@ protected:
 
     template <typename Fn> void GetTraversal(Fn getLambda);
     template <typename Fn> void SetTraversal(Fn setLambda);
-    template <typename Fn> void ProductSetTraversal(Fn setLambda);
     template <typename Fn> void ExecuteAsQEngineCPU(Fn operation)
     {
         Finish();
