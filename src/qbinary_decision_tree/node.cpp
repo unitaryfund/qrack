@@ -58,6 +58,13 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         return;
     }
 
+    if (branches[0] && IS_NORM_0(ONE_CMPLX - branches[0]->scale) && branches[0]->isNoChildren()) {
+        branches[0] = NULL;
+    }
+    if (branches[1] && IS_NORM_0(ONE_CMPLX - branches[1]->scale) && branches[1]->isNoChildren()) {
+        branches[1] = NULL;
+    }
+
     // We're going to try to combine 0 and 1 branches, now.
     if (!branches[0] || !branches[1]) {
         return;
