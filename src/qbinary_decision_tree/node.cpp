@@ -134,7 +134,7 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
     branches[0]->scale *= scale;
     if (branches[0] == branches[1]) {
         // Deeply split all clones.
-        branches[1] = branches[0]->DeepClone();
+        branches[1] = branches[0]->ShallowClone();
     } else {
         // If branches are not the same, we need to scale both.
         branches[1]->scale *= scale;
