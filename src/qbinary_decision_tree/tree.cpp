@@ -539,40 +539,33 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             // Both the outer loop and the inner loop appear to be "embarrassingly parallel."
             // If any controls lower than the target aren't set, skip.
             par_for_mask(0, targetPow, qPowersSorted.get(), controlBound, [&](const bitCapInt& lcv, const int& cpu) {
-                QBinaryDecisionTreeNodePtr parent, iChild;
-                int iBit;
-
                 bitCapInt i = lcv | lowControlMask;
 
+                int iBit;
+                QBinaryDecisionTreeNodePtr iLeaf = root;
+
                 // Iterate to target bit.
-                parent = root;
                 for (bitLenInt k = 0; k < target; k++) {
                     iBit = (i >> k) & 1U;
-                    iChild = parent->branches[iBit];
-                    parent = iChild;
+                    iLeaf = iLeaf->branches[iBit];
+                    if (IS_NORM_0(iLeaf->scale)) {
+                        return;
+                    }
                 }
 
                 // All remaining controls have lower indices than the target.
-                Apply2x2OnLeaf(mtrx.get(), parent);
+                Apply2x2OnLeaf(mtrx.get(), iLeaf);
                 // (Consider "j" to be advanced by 1);
 
                 if (!highControlMask) {
                     return;
                 }
 
-                // TODO:
-                throw std::runtime_error("Can't handle controls at higher indices than target, yet.");
-
                 // The rest of the gate is only applying the INVERSE operation if control condition is NOT satisfied.
-
-                // Consider CCNOT(0, 2, 1), (with target bit last). Draw a binary tree from root to 3 more levels down,
-                // (where each branch from a node is a choice between |0> and |1> for the next-indexed qubit state).
-                // Order the exponential rows by "control," "target", "control." Pointers have to be swapped and scaled
-                // across more than immediate depth.
 
                 // (The remainder is "embarrassingly parallel," from below this point.)
                 ParallelFunc innerLoop = [&](const bitCapInt& lcv2, const int& cpu2) {
-                    bitCapInt j = i | (lcv2 << (target + 1U));
+                    bitCapInt j = i | (lcv2 << target);
 
                     bitCapInt resetControlMask = (j & highControlMask) ^ highControlMask;
                     // If all controls higher than the target are set, skip.
@@ -590,29 +583,21 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                         }
                     }
 
-                    // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
-                    if (lowResetPow < j) {
-                        return;
-                    }
-
-                    // Iterate for target bit.
-                    QBinaryDecisionTreeNodePtr child0 = parent->branches[0];
-                    QBinaryDecisionTreeNodePtr child1 = parent->branches[1];
-                    // (Children are already branched, to depth=1.)
+                    int jBit;
+                    QBinaryDecisionTreeNodePtr jLeaf = iLeaf;
 
                     // Starting where "j" left off, we trace the permutation for both children.
                     // Break at first reset control bit, as we KNOW there is at least one reset control.
-                    int jBit;
-                    for (bitLenInt k = (target + 1U); k < lowResetBit; k++) {
+                    for (bitLenInt k = target; k < lowResetBit; k++) {
                         jBit = (j >> k) & 1U;
-
-                        child0 = child0->branches[jBit];
-                        child1 = child1->branches[jBit];
+                        jLeaf = jLeaf->branches[jBit];
+                        if (IS_NORM_0(jLeaf->scale)) {
+                            return;
+                        }
                     }
 
-                    // TODO:
-                    // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
-                    // Apply2x2OnLeaves(invMtrx, &(child0->branches[0]), &(child1->branches[0]));
+                    // Act inverse gate at LOWEST DEPTH that ANY control qubit is reset.
+                    Apply2x2OnLeaf(invMtrx, jLeaf);
                 };
 
                 if ((targetPow >> controlBound) < GetParallelThreshold()) {
