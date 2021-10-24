@@ -30,9 +30,7 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
     }
 
     // If scale of this node is zero, nothing under it makes a difference.
-    // To contract a tree of all zero scales, as this is depth first, takes 2 orders, of identity and direct descendent.
-    if (IS_NORM_0(scale) ||
-        ((!branches[0] || IS_NORM_0(branches[0]->scale)) && (!branches[1] || IS_NORM_0(branches[1]->scale)))) {
+    if (IS_NORM_0(scale)) {
         scale = ZERO_CMPLX;
         branches[0] = NULL;
         branches[1] = NULL;
@@ -54,6 +52,14 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
                 branches[i]->PruneShallowOrDeep(depth, isShallow, perm);
             }
         }
+    }
+
+    // To contract a tree of all zero scales, as this is depth first, takes 2 orders, of identity and direct descendent.
+    if ((!branches[0] || IS_NORM_0(branches[0]->scale)) && (!branches[1] || IS_NORM_0(branches[1]->scale))) {
+        scale = ZERO_CMPLX;
+        branches[0] = NULL;
+        branches[1] = NULL;
+        return;
     }
 
     // We're going to try to combine 0 and 1 branches, now.
@@ -91,32 +97,11 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
         }
     }
 
-    if (i < depthPow) {
-        // The branches are not equal to depth, or they might be unequal past depth.
-        return;
+    if (i == depthPow) {
+        // The branches terminate equal, within depth.
+        branches[1] = branches[0];
     }
-
-    // Otherwise, the branches are equal.
-    branches[1] = branches[0];
-
-    // If all descendent pairs are the same, contract the scale multiple into this as a terminal leaf.
-    leaf1 = branches[0];
-    leaf2 = leaf1;
-    scale1 = scale;
-    while (leaf1 && (leaf1 == leaf2)) {
-        scale1 *= leaf1->scale;
-        leaf1 = leaf2->branches[0];
-        leaf2 = leaf2->branches[1];
-    }
-
-    if (leaf1) {
-        return;
-    }
-
-    // Same branch, all the way down.
-    scale = scale1;
-    branches[0] = NULL;
-    branches[1] = NULL;
+    // Otherwise, the branches are not equal to depth, or they might be unequal past depth.
 }
 
 void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
