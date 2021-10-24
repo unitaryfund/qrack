@@ -548,20 +548,17 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     // Both the outer loop and the inner loop appear to be "embarrassingly parallel."
     // If any controls lower than the target aren't set, skip.
     par_for_mask(0, targetPow, qPowersSorted.get(), controlBound, [&](const bitCapInt& lcv, const int& cpu) {
-        QBinaryDecisionTreeNodePtr parent, child0, child1;
-        bitCapInt k, lcv2, bitPow;
-        bitLenInt j;
-        complex Y0;
-        int bit;
+        QBinaryDecisionTreeNodePtr parent, iChild;
+        int iBit;
 
         bitCapInt i = lcv | lowControlMask;
 
         // Iterate to target bit.
         parent = root;
-        for (j = 0; j < target; j++) {
-            bit = (i >> j) & 1U;
-            child0 = parent->branches[bit];
-            parent = child0;
+        for (bitLenInt k = 0; k < target; k++) {
+            iBit = (i >> k) & 1U;
+            iChild = parent->branches[iBit];
+            parent = iChild;
         }
 
         // All remaining controls have lower indices than the target.
@@ -583,39 +580,47 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         parent->branches[1]->Branch();
 
         // (The remainder is "embarrassingly parallel," from below this point.)
-        for (lcv2 = 0; lcv2 < highControlPower; lcv2++) {
-            k = i | (lcv2 << (target + 1U));
+        ParallelFunc innerLoop = [&](const bitCapInt& lcv2, const int& cpu2) {
+            bitCapInt j = i | (lcv2 << (target + 1U));
 
             // If all controls higher than the target are set, skip.
-            if ((k & highControlMask) == highControlMask) {
-                continue;
+            if ((j & highControlMask) == highControlMask) {
+                return;
             }
 
             // Iterate for target bit.
-            child0 = parent->branches[0];
-            child1 = parent->branches[1];
+            QBinaryDecisionTreeNodePtr child0 = parent->branches[0];
+            QBinaryDecisionTreeNodePtr child1 = parent->branches[1];
             // (Children are already branched, to depth=1.)
 
             // Stay one bit advanced, for the last pair of children;
-            bitPow = pow2(target + 1U);
-            bit = (k >> (target + 1U)) & 1U;
+            bitCapInt bitPow = pow2(target + 1U);
+            bitLenInt jBit = (j >> (target + 1U)) & 1U;
 
             // Starting where "j" left off, we trace the permutation for both children.
             // Break at first reset control bit, as we KNOW there is at least one reset control.
-            for (j = (target + 2U); bit || !(bitPow & highControlMask); j++) {
-                child0 = child0->branches[bit];
-                child1 = child1->branches[bit];
+            for (bitLenInt k = (target + 2U); jBit || !(bitPow & highControlMask); k++) {
+                child0 = child0->branches[jBit];
+                child1 = child1->branches[jBit];
 
                 child0->Branch();
                 child1->Branch();
 
-                bitPow = pow2(j);
-                bit = (k >> j) & 1U;
+                bitPow = pow2(k);
+                jBit = (j >> k) & 1U;
             }
 
             // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
-            if (k < bitPow) {
-                Apply2x2OnLeaves(invMtrx, &(child0->branches[bit]), &(child1->branches[bit]));
+            if (j < bitPow) {
+                Apply2x2OnLeaves(invMtrx, &(child0->branches[jBit]), &(child1->branches[jBit]));
+            }
+        };
+
+        if ((targetPow >> controlBound) < GetParallelThreshold()) {
+            par_for(0, highControlPower, innerLoop);
+        } else {
+            for (bitCapInt lcv2 = 0; lcv2 < highControlPower; lcv2++) {
+                innerLoop(lcv2, cpu);
             }
         }
     });

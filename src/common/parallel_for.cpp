@@ -63,7 +63,7 @@ void ParallelFor::par_for_inc(const bitCapInt begin, const bitCapInt itemCount, 
 {
     const bitCapIntOcl Stride = pStride;
 
-    if ((itemCount / Stride) < (bitCapInt)numCores) {
+    if (itemCount < GetParallelThreshold()) {
         bitCapInt maxLcv = begin + itemCount;
         for (bitCapInt j = begin; j < maxLcv; j++) {
             fn(inc(j, 0), 0);
@@ -234,7 +234,7 @@ real1_f ParallelFor::par_norm(const bitCapInt maxQPower, const StateVectorPtr st
     const bitCapIntOcl itemCount = (bitCapIntOcl)maxQPower;
 
     real1_f nrmSqr = ZERO_R1;
-    if ((itemCount / Stride) < (bitCapIntOcl)numCores) {
+    if (itemCount < GetParallelThreshold()) {
         real1_f nrm;
         for (bitCapIntOcl j = 0; j < itemCount; j++) {
             nrm = norm(stateArray->read(j));
@@ -286,7 +286,7 @@ real1_f ParallelFor::par_norm_exact(const bitCapInt maxQPower, const StateVector
     const bitCapIntOcl itemCount = (bitCapIntOcl)maxQPower;
 
     real1_f nrmSqr = ZERO_R1;
-    if ((itemCount / Stride) < (bitCapInt)numCores) {
+    if (itemCount < GetParallelThreshold()) {
         for (bitCapIntOcl j = 0; j < maxQPower; j++) {
             nrmSqr += norm(stateArray->read(j));
         }
