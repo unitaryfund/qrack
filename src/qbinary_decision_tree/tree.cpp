@@ -516,13 +516,13 @@ void QBinaryDecisionTree::Apply2x2OnLeaves(
 
 void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
-    root->Branch(target + 1U);
-
     bitCapInt targetPow = pow2(target);
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
     Dispatch(targetPow, [this, mtrx, target]() {
+        root->Branch(target + 1U);
+
         par_for(0, pow2(target), [&](const bitCapInt& i, const int& cpu) {
             int bit;
             QBinaryDecisionTreeNodePtr child;
@@ -549,8 +549,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         ApplySingleBit(lMtrx, target);
         return;
     }
-
-    root->Branch(target + 1U);
 
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
@@ -587,6 +585,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     Dispatch(parallelThresh,
         [this, mtrx, target, controlBound, lowControlMask, highControlMask, highBit, targetPow, highControlPower,
             qPowersSorted]() {
+            root->Branch(target + 1U);
+
             complex invMtrx[4];
             inv2x2((complex*)mtrx.get(), invMtrx);
 
