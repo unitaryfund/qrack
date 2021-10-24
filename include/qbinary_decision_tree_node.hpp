@@ -75,9 +75,9 @@ public:
 
     void Branch(bitLenInt depth = 1U);
 
-    void Prune(bitLenInt depth = bitsInCap) { PruneNarrowOrWide(depth, false); }
+    void Prune(bitLenInt depth) { PruneNarrowOrWide(depth, false); }
 
-    void Prune(bitCapInt perm, bitLenInt depth = bitsInCap) { PruneNarrowOrWide(depth, true, perm); }
+    void Prune(bitLenInt depth, bitCapInt perm) { PruneNarrowOrWide(depth, true, perm); }
 };
 
 } // namespace Qrack

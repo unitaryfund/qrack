@@ -48,7 +48,7 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
     } else {
         for (bitLenInt i = 0U; i < 2U; i++) {
             if (branches[i]) {
-                branches[i]->PruneNarrowOrWide(depth, isNarrow, perm);
+                branches[i]->PruneNarrowOrWide(depth, false, perm);
             }
         }
     }

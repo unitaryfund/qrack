@@ -143,7 +143,7 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
         setLambda(i, leaf);
     }
 
-    root->Prune();
+    root->Prune(qubitCount);
 }
 template <typename Fn> void QBinaryDecisionTree::ProductSetTraversal(Fn setLambda)
 {
@@ -171,7 +171,7 @@ template <typename Fn> void QBinaryDecisionTree::ProductSetTraversal(Fn setLambd
         }
     }
 
-    root->Prune();
+    root->Prune(qubitCount);
 }
 void QBinaryDecisionTree::GetQuantumState(complex* state)
 {
@@ -275,7 +275,7 @@ void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
     child->scale = amp / scale;
 
     if (IS_NORM_0(child->scale - leaf->branches[bit ^ 1U]->scale)) {
-        root->Prune(perm);
+        root->Prune(qubitCount, perm);
     }
 }
 
@@ -484,7 +484,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         }
     }
 
-    root->Prune(qubit);
+    root->Prune(qubit + 1U);
 
     return result;
 }
@@ -523,10 +523,10 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
-    Dispatch(targetPow, [this, mtrx, target]() {
+    Dispatch(targetPow, [this, mtrx, target, targetPow]() {
         root->Branch(target + 1U);
 
-        par_for(0, pow2(target), [&](const bitCapInt& i, const int& cpu) {
+        par_for(0, targetPow, [&](const bitCapInt& i, const int& cpu) {
             int bit;
             QBinaryDecisionTreeNodePtr child;
             QBinaryDecisionTreeNodePtr leaf = root;
@@ -541,7 +541,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
             Apply2x2OnLeaves(mtrx.get(), &(leaf->branches[0]), &(leaf->branches[1]));
         });
 
-        root->Prune(target);
+        root->Prune(target + 1U);
     });
 }
 
@@ -683,7 +683,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                 }
             });
 
-            root->Prune(highBit);
+            root->Prune(highBit + 1U);
         });
 }
 
