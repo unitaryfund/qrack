@@ -142,10 +142,10 @@ template <typename Fn> void QBinaryDecisionTree::ProductSetTraversal(Fn setLambd
     bitCapInt maxQPower = pow2(qubitCount);
     bitLenInt j;
 
+    root->Branch();
     QBinaryDecisionTreeNodePtr leaf;
     for (bitCapInt i = 0; i < maxQPower; i++) {
         leaf = root;
-        leaf->Branch();
         for (j = 0; j < qubitCount; j++) {
             leaf = leaf->branches[(i >> j) & 1U];
             if (IS_NORM_0(leaf->scale)) {
@@ -433,25 +433,28 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         return result;
     }
 
+    root->Branch(qubit + 1U);
+
     bitCapInt qPower = pow2(qubit);
     complex nrm = GetNonunitaryPhase();
 
     bitLenInt j;
     complex Y0;
     int bit;
-    QBinaryDecisionTreeNodePtr leaf, child;
+    QBinaryDecisionTreeNodePtr leaf;
     for (bitCapInt i = 0; i < qPower; i++) {
         leaf = root;
         for (j = 0; j < qubit; j++) {
             bit = (i >> j) & 1U;
-            child = leaf->branches[bit];
-            if (!child) {
-                child = std::make_shared<QBinaryDecisionTreeNode>(ONE_CMPLX);
-                leaf->branches[bit] = child;
+            leaf = leaf->branches[bit];
+            if (IS_NORM_0(leaf->scale)) {
+                break;
             }
-            leaf = child;
         }
-        leaf->Branch();
+
+        if (IS_NORM_0(leaf->scale)) {
+            continue;
+        }
 
         if (result) {
             leaf->branches[0] = std::make_shared<QBinaryDecisionTreeNode>(ZERO_CMPLX);
