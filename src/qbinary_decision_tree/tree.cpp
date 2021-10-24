@@ -142,7 +142,6 @@ template <typename Fn> void QBinaryDecisionTree::ProductSetTraversal(Fn setLambd
     bitCapInt maxQPower = pow2(qubitCount);
     bitLenInt j;
 
-    root->Branch();
     QBinaryDecisionTreeNodePtr leaf;
     for (bitCapInt i = 0; i < maxQPower; i++) {
         leaf = root;
@@ -151,7 +150,6 @@ template <typename Fn> void QBinaryDecisionTree::ProductSetTraversal(Fn setLambd
             if (IS_NORM_0(leaf->scale)) {
                 break;
             }
-            leaf->Branch();
         }
         if (!IS_NORM_0(leaf->scale)) {
             setLambda(i, leaf);
@@ -236,29 +234,6 @@ complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
     }
 
     return scale;
-}
-void QBinaryDecisionTree::SetAmplitude(bitCapInt perm, complex amp)
-{
-    Finish();
-
-    root->Branch(qubitCount);
-
-    int bit = 0;
-    complex scale;
-    bitLenInt j;
-    QBinaryDecisionTreeNodePtr leaf = root;
-    QBinaryDecisionTreeNodePtr child;
-    scale = leaf->scale;
-    for (j = 0; j < qubitCount; j++) {
-        child = leaf;
-        bit = (perm >> j) & 1U;
-        child = leaf->branches[bit];
-        scale *= leaf->scale;
-    }
-
-    child->scale = amp / scale;
-
-    root->Prune(qubitCount, perm);
 }
 
 bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start)
@@ -433,8 +408,6 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         return result;
     }
 
-    root->Branch(qubit + 1U);
-
     bitCapInt qPower = pow2(qubit);
     complex nrm = GetNonunitaryPhase();
 
@@ -495,8 +468,6 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
     Dispatch(targetPow, [this, mtrx, target, targetPow]() {
-        root->Branch(target + 1U);
-
         par_for(0, targetPow, [&](const bitCapInt& i, const int& cpu) {
             int bit;
             QBinaryDecisionTreeNodePtr leaf = root;
@@ -562,8 +533,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     Dispatch(parallelThresh,
         [this, mtrx, target, controlBound, lowControlMask, highControlMask, highBit, targetPow, highControlPower,
             qPowersSorted]() {
-            root->Branch(target + 1U);
-
             complex invMtrx[4];
             inv2x2((complex*)mtrx.get(), invMtrx);
 
@@ -600,9 +569,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                 // (where each branch from a node is a choice between |0> and |1> for the next-indexed qubit state).
                 // Order the exponential rows by "control," "target", "control." Pointers have to be swapped and scaled
                 // across more than immediate depth.
-
-                parent->branches[0]->Branch();
-                parent->branches[1]->Branch();
 
                 // (The remainder is "embarrassingly parallel," from below this point.)
                 ParallelFunc innerLoop = [&](const bitCapInt& lcv2, const int& cpu2) {
@@ -642,9 +608,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
                         child0 = child0->branches[jBit];
                         child1 = child1->branches[jBit];
-
-                        child0->Branch();
-                        child1->Branch();
                     }
 
                     // TODO:

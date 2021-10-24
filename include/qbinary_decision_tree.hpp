@@ -55,6 +55,8 @@ protected:
     template <typename Fn> void ProductSetTraversal(Fn setLambda);
     template <typename Fn> void ExecuteAsQEngineCPU(Fn operation)
     {
+        Finish();
+
         QInterfacePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
             randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
 
@@ -65,6 +67,8 @@ protected:
 
     template <typename Fn> bitCapInt ResultAsQEngineCPU(Fn operation)
     {
+        Finish();
+
         QInterfacePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
             randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
 
@@ -146,7 +150,10 @@ public:
     virtual void GetProbs(real1* outputProbs);
 
     virtual complex GetAmplitude(bitCapInt perm);
-    virtual void SetAmplitude(bitCapInt perm, complex amp);
+    virtual void SetAmplitude(bitCapInt perm, complex amp)
+    {
+        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->SetAmplitude(perm, amp); });
+    }
 
     virtual bitLenInt Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
