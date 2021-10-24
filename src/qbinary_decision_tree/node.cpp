@@ -92,22 +92,14 @@ void QBinaryDecisionTreeNode::PruneShallowOrDeep(bitLenInt depth, bool isShallow
             }
         }
 
-        if (leaf1 || leaf2) {
-            // We can't do any more combining, at any depth.
+        if (leaf1 || leaf2 || !IS_NORM_0(scale1 - scale2)) {
+            // We can't combine our immediate children.
             return;
         }
-
-        if (!IS_NORM_0(scale1 - scale2)) {
-            // We can't combine, at depth.
-            break;
-        }
     }
 
-    if (i == depthPow) {
-        // The branches terminate equal, within depth.
-        branches[1] = branches[0];
-    }
-    // Otherwise, the branches are not equal to depth, or they might be unequal past depth.
+    // The branches terminate equal, within depth.
+    branches[1] = branches[0];
 }
 
 void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
