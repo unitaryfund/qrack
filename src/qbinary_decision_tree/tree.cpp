@@ -654,23 +654,21 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                     QBinaryDecisionTreeNodePtr child1 = parent->branches[1];
                     // (Children are already branched, to depth=1.)
 
-                    // Stay one bit advanced, for the last pair of children;
-                    bitLenInt jBit = (j >> (target + 1U)) & 1U;
-
                     // Starting where "j" left off, we trace the permutation for both children.
                     // Break at first reset control bit, as we KNOW there is at least one reset control.
-                    for (bitLenInt k = (target + 2U); k <= lowResetBit; k++) {
+                    int jBit;
+                    for (bitLenInt k = (target + 1U); k < lowResetBit; k++) {
+                        jBit = (j >> k) & 1U;
+
                         child0 = child0->branches[jBit];
                         child1 = child1->branches[jBit];
 
                         child0->Branch();
                         child1->Branch();
-
-                        jBit = (j >> k) & 1U;
                     }
 
                     // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
-                    Apply2x2OnLeaves(invMtrx, &(child0->branches[jBit]), &(child1->branches[jBit]));
+                    Apply2x2OnLeaves(invMtrx, &(child0->branches[0]), &(child1->branches[0]));
                 };
 
                 if ((targetPow >> controlBound) < GetParallelThreshold()) {
