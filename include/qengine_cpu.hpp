@@ -201,11 +201,11 @@ public:
 
     virtual void QueueSetDoNormalize(const bool& doNorm)
     {
-        Dispatch([this, doNorm] { doNormalize = doNorm; });
+        Dispatch(1U, [this, doNorm] { doNormalize = doNorm; });
     }
     virtual void QueueSetRunningNorm(const real1_f& runningNrm)
     {
-        Dispatch([this, runningNrm] { runningNorm = runningNrm; });
+        Dispatch(1U, [this, runningNrm] { runningNorm = runningNrm; });
     }
 
     virtual void SetQuantumState(const complex* inputState);
@@ -321,10 +321,10 @@ protected:
     virtual void ResetStateVec(StateVectorPtr sv) { stateVec = sv; }
 
     typedef std::function<void(void)> DispatchFn;
-    virtual void Dispatch(DispatchFn fn)
+    virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
-        if ((maxQPower / pStridePow) < (bitCapInt)GetConcurrencyLevel()) {
+        if (workItemCount < GetParallelThreshold()) {
             dispatchQueue.dispatch(fn);
         } else {
             Finish();
