@@ -628,14 +628,13 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                 ParallelFunc innerLoop = [&](const bitCapInt& lcv2, const int& cpu2) {
                     bitCapInt j = i | (lcv2 << (target + 1U));
 
-                    // If all controls higher than the target are set, skip.
-
                     bitCapInt resetControlMask = (j & highControlMask) ^ highControlMask;
-
+                    // If all controls higher than the target are set, skip.
                     if (!resetControlMask) {
                         return;
                     }
 
+                    // Find lowest index control that is reset.
                     bitLenInt lowResetBit;
                     bitCapInt lowResetPow;
                     for (lowResetBit = target; lowResetBit < qubitCount; lowResetBit++) {
