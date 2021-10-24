@@ -492,18 +492,21 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 void QBinaryDecisionTree::Apply2x2OnLeaves(
     const complex* mtrx, QBinaryDecisionTreeNodePtr* leaf0, QBinaryDecisionTreeNodePtr* leaf1)
 {
-    if (IS_NORM_0((*leaf0)->scale) && IS_NORM_0((*leaf1)->scale)) {
+    bool isLeaf0Norm0 = (*leaf0)->isZero();
+    bool isLeaf1Norm0 = (*leaf1)->isZero();
+
+    if (isLeaf0Norm0 && isLeaf1Norm0) {
         (*leaf0)->scale = ZERO_CMPLX;
         (*leaf1)->scale = ZERO_CMPLX;
         return;
     }
 
-    if (IS_NORM_0((*leaf0)->scale)) {
+    if (isLeaf0Norm0) {
         (*leaf0) = (*leaf1)->ShallowClone();
         (*leaf0)->scale = ZERO_CMPLX;
     }
 
-    if (IS_NORM_0((*leaf1)->scale)) {
+    if (isLeaf1Norm0) {
         (*leaf1) = (*leaf0)->ShallowClone();
         (*leaf1)->scale = ZERO_CMPLX;
     }

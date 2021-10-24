@@ -23,6 +23,11 @@
 
 namespace Qrack {
 
+bool QBinaryDecisionTreeNode::isZero()
+{
+    return IS_NORM_0(scale) || (branches[0] && branches[1] && branches[0]->isZero() && branches[1]->isZero());
+}
+
 void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, bitCapInt perm)
 {
     if (!depth) {
@@ -129,6 +134,7 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
         // If branches are not the same, we need to scale both.
         branches[1]->scale *= scale;
     }
+
     // We rescaled, by pushing our scale into (both) lower branches.
     scale = ONE_CMPLX;
 

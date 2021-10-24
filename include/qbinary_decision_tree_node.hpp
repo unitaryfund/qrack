@@ -69,6 +69,8 @@ public:
         return toRet;
     }
 
+    bool isZero();
+
     bool isNoChildren() { return !branches[0] && !branches[1]; }
 
     void Branch(bitLenInt depth = 1U);
