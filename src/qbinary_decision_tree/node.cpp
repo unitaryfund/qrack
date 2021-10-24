@@ -25,40 +25,43 @@ namespace Qrack {
 
 void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, bitCapInt perm)
 {
-    if (!depth) {
+    if (IS_NORM_0(scale)) {
+        branches[0] = NULL;
+        branches[1] = NULL;
         return;
     }
 
-    if (!branches[0]) {
+    if (!depth || !branches[0]) {
         return;
-    }
-
-    // Prune recursively to depth.
-    depth--;
-    // (If perm == 0, then bit == 0.)
-    size_t bit = perm & 1U;
-    perm >>= 1U;
-
-    if (isNarrow || (branches[0] == branches[1])) {
-        // Either we're narrow, or else there's no point in pruning same pointer branch twice.
-        branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm);
-    } else {
-        for (bitLenInt i = 0U; i < 2U; i++) {
-            branches[i]->PruneNarrowOrWide(depth, false, perm);
-        }
     }
 
     // If scale of this node is zero, nothing under it makes a difference.
     // To contract a tree of all zero scales, as this is depth first, takes 2 orders, of identity and direct descendent.
-    if (IS_NORM_0(scale) || (IS_NORM_0(branches[0]->scale) && IS_NORM_0(branches[1]->scale))) {
+    if (IS_NORM_0(branches[0]->scale) && IS_NORM_0(branches[1]->scale)) {
         scale = ZERO_CMPLX;
         branches[0] = NULL;
         branches[1] = NULL;
         return;
     }
 
+    // Prune recursively to depth.
+    depth--;
+    size_t bit = perm & 1U;
+    perm >>= 1U;
+
+    if (isNarrow) {
+        // Either we're narrow, or else there's no point in pruning same pointer branch twice.
+        branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm);
+    } else {
+        int maxLcv = (branches[0] == branches[1]) ? 1 : 2;
+        for (int i = 0; i < maxLcv; i++) {
+            branches[i]->PruneNarrowOrWide(depth, false, perm);
+        }
+    }
+
     if (branches[0] == branches[1]) {
         // Combining branches is the only other thing we try, below.
+        return;
     }
     // Now, we try to combine pointers to equivalent branches.
 
@@ -100,7 +103,13 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
 
 void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
 {
-    if (!depth || IS_NORM_0(scale)) {
+    if (IS_NORM_0(scale)) {
+        branches[0] = NULL;
+        branches[1] = NULL;
+        return;
+    }
+
+    if (!depth || !branches[0]) {
         return;
     }
 
@@ -116,6 +125,30 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
 
     branches[0]->Branch(depth - 1U);
     branches[1]->Branch(depth - 1U);
+}
+
+void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
+{
+    if (IS_NORM_0(scale)) {
+        branches[0] = NULL;
+        branches[1] = NULL;
+        return;
+    }
+
+    if (!depth || !branches[0]) {
+        return;
+    }
+
+    depth--;
+
+    // We go depth-first, but it doesn't matter, (or only for the
+    branches[0]->Normalize(depth - 1U);
+    branches[1]->Normalize(depth - 1U);
+
+    // Now that my children have normalized THEIR children, I normalize my own.
+    real1 nrm = (real1)std::sqrt(norm(branches[0]->scale) + norm(branches[1]->scale));
+    branches[0]->scale *= ONE_R1 / nrm;
+    branches[1]->scale *= ONE_R1 / nrm;
 }
 
 } // namespace Qrack

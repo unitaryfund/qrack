@@ -75,6 +75,8 @@ public:
     void Prune(bitLenInt depth) { PruneNarrowOrWide(depth, false); }
 
     void Prune(bitLenInt depth, bitCapInt perm) { PruneNarrowOrWide(depth, true, perm); }
+
+    void Normalize(bitLenInt depth);
 };
 
 } // namespace Qrack
