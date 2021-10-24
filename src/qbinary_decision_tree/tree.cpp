@@ -563,8 +563,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     bitLenInt controlBound;
     bitCapInt lowControlMask = 0;
     bitLenInt c;
-    for (c = 0; (c < controlLen) && (sortedControls.get()[c] < target); c++) {
-        qPowersSorted[c] = pow2(sortedControls.get()[c]);
+    for (c = 0; (c < controlLen) && (sortedControls[c] < target); c++) {
+        qPowersSorted[c] = pow2(sortedControls[c]);
         lowControlMask |= qPowersSorted[c];
     }
 
@@ -573,12 +573,11 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     // "highControlMask" is only controls HIGHER than target, in the remaining body.
     bitCapInt highControlMask = 0;
     for (c = controlBound; c < controlLen; c++) {
-        qPowersSorted[c] = pow2(sortedControls.get()[c]);
+        qPowersSorted[c] = pow2(sortedControls[c]);
         highControlMask |= qPowersSorted[c];
     }
 
-    bitLenInt highBit =
-        (target < sortedControls.get()[controlLen - 1U]) ? sortedControls.get()[controlLen - 1U] : target;
+    bitLenInt highBit = (target < sortedControls[controlLen - 1U]) ? sortedControls[controlLen - 1U] : target;
     bitCapInt targetPow = pow2(target);
     bitCapInt highControlPower = pow2(highBit - target);
 
