@@ -21,14 +21,13 @@
 
 #include "qbinary_decision_tree_node.hpp"
 #include "qengine_cpu.hpp"
-#include "qinterface.hpp"
 
 namespace Qrack {
 
 class QBinaryDecisionTree;
 typedef std::shared_ptr<QBinaryDecisionTree> QBinaryDecisionTreePtr;
 
-class QBinaryDecisionTree : virtual public QInterface {
+class QBinaryDecisionTree : virtual public QInterface, public ParallelFor {
 protected:
     QBinaryDecisionTreeNodePtr root;
 

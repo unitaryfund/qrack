@@ -28,6 +28,7 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1)
     , root(NULL)
 {
+    SetConcurrency(std::thread::hardware_concurrency());
     SetPermutation(initState);
 }
 
@@ -486,21 +487,20 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* mtrx, bitLenInt target)
 {
     root->Branch(target + 1U);
 
-    bitLenInt j;
-    int bit;
-    bitCapInt qubitPower = pow2(target);
-    QBinaryDecisionTreeNodePtr leaf, child;
-    for (bitCapInt i = 0; i < qubitPower; i++) {
+    par_for(0, pow2(target), [&](const bitCapInt& i, const int& cpu) {
+        int bit;
+        QBinaryDecisionTreeNodePtr child;
+        QBinaryDecisionTreeNodePtr leaf = root;
+
         // Iterate to qubit depth.
-        leaf = root;
-        for (j = 0; j < target; j++) {
+        for (bitLenInt j = 0; j < target; j++) {
             bit = (i >> j) & 1U;
             child = leaf->branches[bit];
             leaf = child;
         }
 
         Apply2x2OnLeaves(mtrx, &(leaf->branches[0]), &(leaf->branches[1]));
-    }
+    });
 
     root->Prune(target);
 }
@@ -531,17 +531,9 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         highControlMask |= pow2(sortedControls.get()[j]);
     }
 
-    // The rest of the gate is only applying the INVERSE operation if control condition is NOT satisfied.
-
-    // Consider CCNOT(0, 2, 1), (with target bit last). Draw a binary tree from root to 3 more levels down, (where
-    // each branch from a node is a choice between |0> and |1> for the next-indexed qubit state). Order the
-    // exponential rows by "control," "target", "control." Pointers have to be swapped and scaled across more than
-    // immediate depth.
-
     complex invMtrx[4];
     inv2x2((complex*)mtrx, invMtrx);
 
-    // A control occurs after the target, and we "push apart" by 1 bit.
     bitLenInt highBit =
         (target < sortedControls.get()[controlLen - 1U]) ? sortedControls.get()[controlLen - 1U] : target;
     bitCapInt targetPow = pow2(target);
@@ -573,6 +565,13 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         if (!highControlMask) {
             continue;
         }
+
+        // The rest of the gate is only applying the INVERSE operation if control condition is NOT satisfied.
+
+        // Consider CCNOT(0, 2, 1), (with target bit last). Draw a binary tree from root to 3 more levels down, (where
+        // each branch from a node is a choice between |0> and |1> for the next-indexed qubit state). Order the
+        // exponential rows by "control," "target", "control." Pointers have to be swapped and scaled across more than
+        // immediate depth.
 
         parent->branches[0]->Branch();
         parent->branches[1]->Branch();
