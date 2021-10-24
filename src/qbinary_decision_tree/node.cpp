@@ -124,19 +124,18 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
         branches[1] = std::make_shared<QBinaryDecisionTreeNode>();
     }
 
-    // If we push zero into a lower branch, we'll prune upwards.
-    // However, we'll prune OVER nonzero scales, if we don't push down.
-    branches[0]->scale *= scale;
     if (branches[0] == branches[1]) {
         // Split all clones.
         branches[1] = branches[0]->ShallowClone();
-    } else {
-        // If branches are not the same, we need to scale both.
-        branches[1]->scale *= scale;
     }
 
-    // We rescaled, by pushing our scale into (both) lower branches.
-    scale = ONE_CMPLX;
+    // If we push zero into a lower branch, we'll prune upwards.
+    // However, we'll prune OVER nonzero scales, if we don't push down.
+    if (IS_NORM_0(scale)) {
+        scale = ONE_CMPLX;
+        branches[0]->scale = ZERO_CMPLX;
+        branches[1]->scale = ZERO_CMPLX;
+    }
 
     branches[0]->Branch(depth - 1U);
     branches[1]->Branch(depth - 1U);
