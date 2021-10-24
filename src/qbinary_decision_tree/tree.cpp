@@ -111,13 +111,10 @@ template <typename Fn> void QBinaryDecisionTree::GetTraversal(Fn getLambda)
 {
     Finish();
 
-    complex scale;
-    bitLenInt j;
-    QBinaryDecisionTreeNodePtr leaf;
-    for (bitCapInt i = 0; i < maxQPower; i++) {
-        leaf = root;
-        scale = leaf->scale;
-        for (j = 0; j < qubitCount; j++) {
+    par_for(0, maxQPower, [&](const bitCapInt& i, const int& cpu) {
+        QBinaryDecisionTreeNodePtr leaf = root;
+        complex scale = leaf->scale;
+        for (bitLenInt j = 0; j < qubitCount; j++) {
             leaf = leaf->branches[(i >> j) & 1U];
             if (!leaf) {
                 break;
@@ -125,7 +122,7 @@ template <typename Fn> void QBinaryDecisionTree::GetTraversal(Fn getLambda)
             scale *= leaf->scale;
         }
         getLambda(i, scale);
-    }
+    });
 }
 template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
 {
@@ -201,16 +198,15 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
 {
     Finish();
 
-    real1 projection = 0;
+    int numCores = GetConcurrencyLevel();
+    std::unique_ptr<complex[]> partInner(new complex[numCores]());
 
-    complex scale1, scale2;
-    bitLenInt j;
-    QBinaryDecisionTreeNodePtr leaf1, leaf2;
-    for (bitCapInt i = 0; i < maxQPower; i++) {
-        leaf1 = root;
-        leaf2 = toCompare->root;
-        scale1 = leaf1->scale;
-        scale2 = leaf2->scale;
+    par_for(0, maxQPower, [&](const bitCapInt& i, const int& cpu) {
+        QBinaryDecisionTreeNodePtr leaf1 = root;
+        QBinaryDecisionTreeNodePtr leaf2 = toCompare->root;
+        complex scale1 = leaf1->scale;
+        complex scale2 = leaf2->scale;
+        bitLenInt j;
         for (j = 0; j < qubitCount; j++) {
             leaf1 = leaf1->branches[(i >> j) & 1U];
             if (!leaf1) {
@@ -225,10 +221,15 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
             }
             scale2 *= leaf2->scale;
         }
-        projection += norm(conj(scale2) * scale1);
+        partInner[cpu] += conj(scale2) * scale1;
+    });
+
+    complex projection = 0;
+    for (int i = 0; i < numCores; i++) {
+        projection += partInner[i];
     }
 
-    return clampProb(ONE_R1 - projection);
+    return ONE_R1 - clampProb(norm(projection));
 }
 
 complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
@@ -378,31 +379,31 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubitIndex)
     Finish();
 
     bitCapInt qPower = pow2(qubitIndex);
-    bitCapInt qMask = qPower - ONE_BCI;
-    bitCapInt maxLcv = maxQPower >> ONE_BCI;
 
-    real1 prob = ZERO_R1;
-    complex scale;
-    bitCapInt i;
-    bitLenInt j;
-    QBinaryDecisionTreeNodePtr leaf;
-    for (bitCapInt lcv = 0; lcv < maxLcv; lcv++) {
-        i = lcv & qMask;
-        i |= ((lcv ^ i) << ONE_BCI) | qPower;
+    int numCores = GetConcurrencyLevel();
+    std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
 
-        leaf = root;
-        scale = leaf->scale;
-        for (j = 0; j < qubitCount; j++) {
+    par_for_skip(0, maxQPower, qPower, 1U, [&](const bitCapInt lcv, const int cpu) {
+        bitCapInt i = lcv | qPower;
+
+        QBinaryDecisionTreeNodePtr leaf = root;
+        complex scale = leaf->scale;
+        for (bitLenInt j = 0; j < qubitCount; j++) {
             leaf = leaf->branches[(i >> j) & 1U];
             if (!leaf) {
                 break;
             }
             scale *= leaf->scale;
         }
-        prob += norm(scale);
+        oneChanceBuff[cpu] += norm(scale);
+    });
+
+    real1 oneChance = ZERO_R1;
+    for (int i = 0; i < numCores; i++) {
+        oneChance += oneChanceBuff[i];
     }
 
-    return (real1)prob;
+    return clampProb(oneChance);
 }
 
 real1_f QBinaryDecisionTree::ProbAll(bitCapInt fullRegister)
