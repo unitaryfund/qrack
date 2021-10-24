@@ -58,6 +58,7 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         return;
     }
 
+    // If scale is ONE_CMPLX up to a NULL boundary, then the ONE_CMPLX scale nodes are redundant.
     if (branches[0] && IS_NORM_0(ONE_CMPLX - branches[0]->scale) && branches[0]->isNoChildren()) {
         branches[0] = NULL;
     }
