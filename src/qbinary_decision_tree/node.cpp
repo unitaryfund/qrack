@@ -51,7 +51,7 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
     // If scale of this node is zero, nothing under it makes a difference.
     // To contract a tree of all zero scales, as this is depth first, takes 2 orders, of identity and direct descendent.
     if (IS_NORM_0(scale) ||
-        ((!branches[0] || IS_NORM_0(branches[0]->scale)) && (!branches[1] || IS_NORM_0(branches[1]->scale)))) {
+        (branches[0] && IS_NORM_0(branches[0]->scale) && branches[1] && IS_NORM_0(branches[1]->scale))) {
         scale = ZERO_CMPLX;
         branches[0] = NULL;
         branches[1] = NULL;
