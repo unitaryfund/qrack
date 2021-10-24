@@ -583,6 +583,11 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                         }
                     }
 
+                    // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
+                    if (lowResetPow < j) {
+                        return;
+                    }
+
                     int jBit;
                     QBinaryDecisionTreeNodePtr jLeaf = iLeaf;
 
@@ -596,7 +601,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                         }
                     }
 
-                    // Act inverse gate at LOWEST DEPTH that ANY control qubit is reset.
+                    // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
                     Apply2x2OnLeaf(invMtrx, jLeaf);
                 };
 
