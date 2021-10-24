@@ -99,7 +99,7 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
 
 void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
 {
-    if (!depth) {
+    if (!depth || IS_NORM_0(scale)) {
         return;
     }
 

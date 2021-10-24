@@ -499,17 +499,20 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 
         par_for(0, targetPow, [&](const bitCapInt& i, const int& cpu) {
             int bit;
-            QBinaryDecisionTreeNodePtr child;
             QBinaryDecisionTreeNodePtr leaf = root;
 
             // Iterate to qubit depth.
             for (bitLenInt j = 0; j < target; j++) {
                 bit = (i >> j) & 1U;
-                child = leaf->branches[bit];
-                leaf = child;
+                leaf = leaf->branches[bit];
+                if (IS_NORM_0(leaf->scale)) {
+                    break;
+                }
             }
 
-            Apply2x2OnLeaf(mtrx.get(), leaf);
+            if (!IS_NORM_0(leaf->scale)) {
+                Apply2x2OnLeaf(mtrx.get(), leaf);
+            }
         });
 
         root->Prune(target + 1U);
