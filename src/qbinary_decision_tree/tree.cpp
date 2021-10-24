@@ -116,18 +116,19 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
     Dump();
 
     root = std::make_shared<QBinaryDecisionTreeNode>();
-    root->Branch(qubitCount);
 
     bitCapInt maxQPower = pow2(qubitCount);
+    complex scale = (complex)std::pow(SQRT1_2_R1, qubitCount);
     bitLenInt j;
 
     QBinaryDecisionTreeNodePtr leaf;
     for (bitCapInt i = 0; i < maxQPower; i++) {
         leaf = root;
         for (j = 0; j < qubitCount; j++) {
+            leaf->Branch();
             leaf = leaf->branches[(i >> j) & 1U];
         }
-        setLambda(i, leaf);
+        setLambda(i, scale, leaf);
     }
 
     root->Prune(qubitCount);
@@ -140,6 +141,7 @@ template <typename Fn> void QBinaryDecisionTree::ProductSetTraversal(Fn setLambd
     }
 
     bitCapInt maxQPower = pow2(qubitCount);
+    complex scale = (complex)std::pow(SQRT1_2_R1, qubitCount);
     bitLenInt j;
 
     QBinaryDecisionTreeNodePtr leaf;
@@ -152,7 +154,7 @@ template <typename Fn> void QBinaryDecisionTree::ProductSetTraversal(Fn setLambd
             }
         }
         if (!IS_NORM_0(leaf->scale)) {
-            setLambda(i, leaf);
+            setLambda(i, scale, leaf);
         }
     }
 
@@ -168,11 +170,14 @@ void QBinaryDecisionTree::GetQuantumState(QInterfacePtr eng)
 }
 void QBinaryDecisionTree::SetQuantumState(const complex* state)
 {
-    SetTraversal([state](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = state[i]; });
+    SetTraversal(
+        [state](bitCapInt i, complex scale, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = state[i] / scale; });
 }
 void QBinaryDecisionTree::SetQuantumState(QInterfacePtr eng)
 {
-    SetTraversal([eng](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = eng->GetAmplitude(i); });
+    SetTraversal([eng](bitCapInt i, complex scale, QBinaryDecisionTreeNodePtr leaf) {
+        leaf->scale = eng->GetAmplitude(i) / scale;
+    });
 }
 void QBinaryDecisionTree::GetProbs(real1* outputProbs)
 {
@@ -246,14 +251,14 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
         std::swap(root, clone->root);
         clone->SetQubitCount(qubitCount);
         SetQubitCount(toCopy->qubitCount);
-        ProductSetTraversal([clone](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) {
+        ProductSetTraversal([clone](bitCapInt i, complex scale, QBinaryDecisionTreeNodePtr leaf) {
             QBinaryDecisionTreePtr toCopyClone = std::dynamic_pointer_cast<QBinaryDecisionTree>(clone->Clone());
-            leaf->scale *= toCopyClone->root->scale;
+            leaf->scale *= toCopyClone->root->scale / scale;
         });
     } else if (start == qubitCount) {
-        ProductSetTraversal([toCopy](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) {
+        ProductSetTraversal([toCopy](bitCapInt i, complex scale, QBinaryDecisionTreeNodePtr leaf) {
             QBinaryDecisionTreePtr toCopyClone = std::dynamic_pointer_cast<QBinaryDecisionTree>(toCopy->Clone());
-            leaf->scale *= toCopyClone->root->scale;
+            leaf->scale *= toCopyClone->root->scale / scale;
         });
     } else {
         throw std::runtime_error("Mid-range QBinaryDecisionTree::Compose() not yet implemented.");
@@ -523,6 +528,13 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         highControlMask |= qPowersSorted[c];
     }
 
+    // TODO: This is a horrible kludge.
+    if (highControlMask) {
+        ExecuteAsQEngineCPU(
+            [&](QInterfacePtr eng) { eng->ApplyControlledSingleBit(controls, controlLen, target, lMtrx); });
+        return;
+    }
+
     bitLenInt highBit = (target < sortedControls[controlLen - 1U]) ? sortedControls[controlLen - 1U] : target;
     bitCapInt targetPow = pow2(target);
     bitCapInt highControlPower = pow2(highBit - target);
@@ -553,65 +565,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                     }
                 }
 
-                // All remaining controls have lower indices than the target.
+                // (We can't handle controls with higher index than target, yet.
                 Apply2x2OnLeaf(mtrx.get(), iLeaf);
-                // (Consider "j" to be advanced by 1);
-
-                if (!highControlMask) {
-                    return;
-                }
-
-                // The rest of the gate is only applying the INVERSE operation if control condition is NOT satisfied.
-
-                // (The remainder is "embarrassingly parallel," from below this point.)
-                ParallelFunc innerLoop = [&](const bitCapInt& lcv2, const int& cpu2) {
-                    bitCapInt j = i | (lcv2 << target);
-
-                    bitCapInt resetControlMask = (j & highControlMask) ^ highControlMask;
-                    // If all controls higher than the target are set, skip.
-                    if (!resetControlMask) {
-                        return;
-                    }
-
-                    // Find lowest index control that is reset.
-                    bitLenInt lowResetBit;
-                    bitCapInt lowResetPow;
-                    for (lowResetBit = target; lowResetBit < qubitCount; lowResetBit++) {
-                        lowResetPow = resetControlMask & pow2(lowResetBit);
-                        if (lowResetPow) {
-                            break;
-                        }
-                    }
-
-                    // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
-                    if (lowResetPow < j) {
-                        return;
-                    }
-
-                    int jBit;
-                    QBinaryDecisionTreeNodePtr jLeaf = iLeaf;
-
-                    // Starting where "j" left off, we trace the permutation for both children.
-                    // Break at first reset control bit, as we KNOW there is at least one reset control.
-                    for (bitLenInt k = target; k < lowResetBit; k++) {
-                        jBit = (j >> k) & 1U;
-                        jLeaf = jLeaf->branches[jBit];
-                        if (IS_NORM_0(jLeaf->scale)) {
-                            return;
-                        }
-                    }
-
-                    // Act inverse gate ONCE at LOWEST DEPTH that ANY control qubit is reset.
-                    Apply2x2OnLeaf(invMtrx, jLeaf);
-                };
-
-                if ((targetPow >> controlBound) < GetParallelThreshold()) {
-                    par_for(0, highControlPower, innerLoop);
-                } else {
-                    for (bitCapInt lcv2 = 0; lcv2 < highControlPower; lcv2++) {
-                        innerLoop(lcv2, cpu);
-                    }
-                }
             });
 
             root->Prune(qubitCount);
