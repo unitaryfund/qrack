@@ -55,10 +55,8 @@ bool QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
 
     if (isNarrow) {
         // Either we're narrow, or else there's no point in pruning same pointer branch twice.
-        if (branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm)) {
-            if (Normalize(1U)) {
-                return true;
-            }
+        if (branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm) && Normalize(1U)) {
+            return true;
         }
     } else {
         int maxLcv = (branches[0] == branches[1]) ? 1 : 2;
@@ -66,10 +64,8 @@ bool QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         for (int i = 0; i < maxLcv; i++) {
             isDenormal |= branches[i]->PruneNarrowOrWide(depth, false, perm);
         }
-        if (isDenormal) {
-            if (Normalize(1U)) {
-                return true;
-            }
+        if (isDenormal && Normalize(1U)) {
+            return true;
         }
     }
 
@@ -168,8 +164,12 @@ bool QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
         return true;
     }
 
+    nrm = sqrt(nrm);
+
     branches[0]->scale *= ONE_R1 / nrm;
-    branches[1]->scale *= ONE_R1 / nrm;
+    if (branches[0] != branches[1]) {
+        branches[1]->scale *= ONE_R1 / nrm;
+    }
 
     // Put recursion at end of method, in case we divert.
     bool toRet = branches[0]->Normalize(depth - 1U);
