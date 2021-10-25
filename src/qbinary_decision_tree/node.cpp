@@ -153,18 +153,22 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
         return;
     }
 
-    depth--;
+    // Now that my children have normalized THEIR children, I normalize my own.
+    real1 nrm = (real1)(norm(branches[0]->scale) + norm(branches[1]->scale));
 
-    // We go depth-first, but it doesn't matter.
+    if (nrm <= FP_NORM_EPSILON) {
+        // throw std::runtime_error("QBinaryDecisionTree: Tried to normalize 0.");
+        return;
+    }
+
+    branches[0]->scale *= ONE_R1 / nrm;
+    branches[1]->scale *= ONE_R1 / nrm;
+
+    // Put recursion at end of method, in case we divert.
     branches[0]->Normalize(depth - 1U);
     if (branches[0] != branches[1]) {
         branches[1]->Normalize(depth - 1U);
     }
-
-    // Now that my children have normalized THEIR children, I normalize my own.
-    real1 nrm = (real1)std::sqrt(norm(branches[0]->scale) + norm(branches[1]->scale));
-    branches[0]->scale *= ONE_R1 / nrm;
-    branches[1]->scale *= ONE_R1 / nrm;
 }
 
 } // namespace Qrack
