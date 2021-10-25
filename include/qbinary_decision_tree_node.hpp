@@ -86,7 +86,7 @@ public:
         }
     }
 
-    void Normalize(bitLenInt depth);
+    bool Normalize(bitLenInt depth);
 };
 
 } // namespace Qrack

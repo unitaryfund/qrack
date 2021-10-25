@@ -53,10 +53,12 @@ bool QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
     size_t bit = perm & 1U;
     perm >>= 1U;
 
+    bool toRet = false;
+
     if (isNarrow) {
         // Either we're narrow, or else there's no point in pruning same pointer branch twice.
         if (branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm)) {
-            Normalize(1U);
+            toRet = Normalize(1U);
         }
     } else {
         int maxLcv = (branches[0] == branches[1]) ? 1 : 2;
@@ -65,13 +67,13 @@ bool QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
             isDenormal |= branches[i]->PruneNarrowOrWide(depth, false, perm);
         }
         if (isDenormal) {
-            Normalize(1U);
+            toRet = Normalize(1U);
         }
     }
 
     if (branches[0] == branches[1]) {
         // Combining branches is the only other thing we try, below.
-        return false;
+        return toRet;
     }
     // Now, we try to combine pointers to equivalent branches.
 
@@ -103,14 +105,14 @@ bool QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
 
         if (leaf1 || leaf2 || !IS_NORM_0(scale1 - scale2)) {
             // We can't combine our immediate children within depth.
-            return false;
+            return toRet;
         }
     }
 
     // The branches terminate equal, within depth.
     branches[1] = branches[0];
 
-    return false;
+    return toRet;
 }
 
 void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
@@ -140,17 +142,17 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
     branches[1]->Branch(depth - 1U);
 }
 
-void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
+bool QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
 {
     if (IS_NORM_0(scale)) {
         scale = ZERO_CMPLX;
         branches[0] = NULL;
         branches[1] = NULL;
-        return;
+        return false;
     }
 
     if (!depth || !branches[0]) {
-        return;
+        return false;
     }
 
     // Now that my children have normalized THEIR children, I normalize my own.
@@ -158,7 +160,10 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
 
     if (nrm <= FP_NORM_EPSILON) {
         // throw std::runtime_error("QBinaryDecisionTree: Tried to normalize 0.");
-        return;
+        scale = ZERO_CMPLX;
+        branches[0] = NULL;
+        branches[1] = NULL;
+        return true;
     }
 
     branches[0]->scale *= ONE_R1 / nrm;
@@ -169,6 +174,8 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
     if (branches[0] != branches[1]) {
         branches[1]->Normalize(depth - 1U);
     }
+
+    return false;
 }
 
 } // namespace Qrack
