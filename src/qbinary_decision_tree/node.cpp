@@ -199,13 +199,12 @@ bool QBinaryDecisionTreeNode::ConvertStateVec(bitLenInt depth)
 
     // One, and only one, isRescale is true.
     if (isRescale0) {
-        scale = SQRT2_R1 * branches[1]->scale;
+        scale /= abs(branches[1]->scale);
+        branches[1]->scale = ONE_CMPLX;
     } else {
-        scale = SQRT2_R1 * branches[0]->scale;
+        scale /= abs(branches[0]->scale);
+        branches[0]->scale = ONE_CMPLX;
     }
-
-    branches[0] = NULL;
-    branches[1] = NULL;
 
     return false;
 }
