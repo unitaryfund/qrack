@@ -110,13 +110,13 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
         branches[1] = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);
     }
 
-    if (branches[0] == branches[1]) {
-        // Split all clones.
-        branches[1] = branches[0]->ShallowClone();
-    }
-
+    // Depth-first
     branches[0]->Branch(depth - 1U);
     branches[1]->Branch(depth - 1U);
+
+    // Split all clones.
+    branches[0] = branches[0]->ShallowClone();
+    branches[1] = branches[1]->ShallowClone();
 }
 
 void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)

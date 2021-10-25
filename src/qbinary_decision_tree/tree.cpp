@@ -375,9 +375,8 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
         leaf->branches[1]->scale = ZERO_CMPLX;
     }
 
-    if (leaf->branches[0] == leaf->branches[1]) {
-        leaf->branches[0] = leaf->branches[1]->ShallowClone();
-    }
+    leaf->branches[0] = leaf->branches[0]->ShallowClone();
+    leaf->branches[1] = leaf->branches[1]->ShallowClone();
 
     // Apply gate.
     complex Y0 = leaf->branches[0]->scale;
@@ -397,7 +396,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
     Dispatch(targetPow, [this, mtrx, target, targetPow]() {
-        root->Branch(target);
+        root->Branch(target + 1U);
 
         par_for(0, targetPow, [&](const bitCapInt& i, const int& cpu) {
             int bit;
@@ -459,7 +458,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     bitCapInt targetPow = pow2(target);
 
     Dispatch(targetPow, [this, mtrx, target, targetPow, lowControlMask, qPowersSorted, controlLen]() {
-        root->Branch(target);
+        root->Branch(target + 1U);
 
         par_for_mask(0, targetPow, qPowersSorted.get(), controlLen, [&](const bitCapInt& lcv, const int& cpu) {
             // If any controls aren't set, skip.
