@@ -70,6 +70,13 @@ public:
 
     bool isNoChildren() { return !branches[0] && !branches[1]; }
 
+    void SetZero()
+    {
+        scale = ZERO_CMPLX;
+        branches[0] = NULL;
+        branches[1] = NULL;
+    }
+
     void Branch(bitLenInt depth = 1U);
 
     void Prune(bitLenInt depth) { PruneNarrowOrWide(depth, false); }

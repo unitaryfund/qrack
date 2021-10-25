@@ -27,24 +27,11 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
 {
     // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NORM_0(scale)) {
-        scale = ZERO_CMPLX;
-        branches[0] = NULL;
-        branches[1] = NULL;
+        SetZero();
         return;
     }
 
     if (!depth || !branches[0]) {
-        return;
-    }
-
-    // Branch pairs are normalized to 1 total probability, at all times.
-    // However, this is a method of recursive state vector conversion.
-    if (IS_NORM_0(branches[0]->scale) && IS_NORM_0(branches[1]->scale)) {
-        scale = ZERO_CMPLX;
-        branches[0] = NULL;
-        branches[1] = NULL;
-
-        // This is the only "true" return in the method.
         return;
     }
 
@@ -110,9 +97,7 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
 void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
 {
     if (IS_NORM_0(scale)) {
-        scale = ZERO_CMPLX;
-        branches[0] = NULL;
-        branches[1] = NULL;
+        SetZero();
         return;
     }
 
@@ -137,9 +122,7 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
 void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
 {
     if (IS_NORM_0(scale)) {
-        scale = ZERO_CMPLX;
-        branches[0] = NULL;
-        branches[1] = NULL;
+        SetZero();
         return;
     }
 
@@ -167,9 +150,7 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
 void QBinaryDecisionTreeNode::ConvertStateVec(bitLenInt depth)
 {
     if (IS_NORM_0(scale)) {
-        scale = ZERO_CMPLX;
-        branches[0] = NULL;
-        branches[1] = NULL;
+        SetZero();
         return;
     }
 
@@ -189,9 +170,7 @@ void QBinaryDecisionTreeNode::ConvertStateVec(bitLenInt depth)
     real1 nrm1 = norm(branches[1]->scale);
 
     if ((nrm0 + nrm1) <= FP_NORM_EPSILON) {
-        scale = ZERO_CMPLX;
-        branches[0] = NULL;
-        branches[1] = NULL;
+        SetZero();
         return;
     }
 
