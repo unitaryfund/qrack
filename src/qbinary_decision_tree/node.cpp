@@ -147,6 +147,12 @@ bool QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
         return false;
     }
 
+    // Depth-first
+    bool toRet = branches[0]->Normalize(depth - 1U);
+    if (branches[0] != branches[1]) {
+        toRet |= branches[1]->Normalize(depth - 1U);
+    }
+
     // Now that my children have normalized THEIR children, I normalize my own.
     real1 nrm = (real1)(norm(branches[0]->scale) + norm(branches[1]->scale));
 
@@ -163,12 +169,6 @@ bool QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
     branches[0]->scale *= ONE_R1 / nrm;
     if (branches[0] != branches[1]) {
         branches[1]->scale *= ONE_R1 / nrm;
-    }
-
-    // Put recursion at end of method, in case we divert.
-    bool toRet = branches[0]->Normalize(depth - 1U);
-    if (branches[0] != branches[1]) {
-        toRet |= branches[1]->Normalize(depth - 1U);
     }
 
     return toRet;
