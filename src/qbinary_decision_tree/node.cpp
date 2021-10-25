@@ -174,6 +174,20 @@ void QBinaryDecisionTreeNode::ConvertStateVec(bitLenInt depth)
         return;
     }
 
+    if (nrm0 <= FP_NORM_EPSILON) {
+        scale = branches[1]->scale;
+        branches[0]->scale = ZERO_CMPLX;
+        branches[1]->scale = ONE_CMPLX;
+        return;
+    }
+
+    if (nrm1 <= FP_NORM_EPSILON) {
+        scale = branches[0]->scale;
+        branches[0]->scale = ONE_CMPLX;
+        branches[1]->scale = ZERO_CMPLX;
+        return;
+    }
+
     scale = sqrt(nrm0 + nrm1);
     Normalize(1U);
 }
