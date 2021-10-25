@@ -387,11 +387,18 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
 
 void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
+    // TODO: BDT gates aren't actually being used, yet. ShallowClone() ambiguity seems to be breaking 1qb gates. //
+    ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->ApplySingleBit(lMtrx, target); });
+    return;
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     bitCapInt targetPow = pow2(target);
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
     Dispatch(targetPow, [this, mtrx, target, targetPow]() {
+        root->Branch(target);
+
         par_for(0, targetPow, [&](const bitCapInt& i, const int& cpu) {
             int bit;
             QBinaryDecisionTreeNodePtr leaf = root;
@@ -405,7 +412,9 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
                 }
             }
 
-            Apply2x2OnLeaf(mtrx.get(), leaf);
+            if (!IS_NORM_0(leaf->scale)) {
+                Apply2x2OnLeaf(mtrx.get(), leaf);
+            }
         });
 
         root->Prune(qubitCount);
@@ -419,6 +428,11 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         ApplySingleBit(lMtrx, target);
         return;
     }
+
+    // TODO: BDT gates aren't actually being used, yet. ShallowClone() ambiguity seems to be breaking 1qb gates. //
+    ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->ApplyControlledSingleBit(controls, controlLen, target, lMtrx); });
+    return;
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
@@ -445,6 +459,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     bitCapInt targetPow = pow2(target);
 
     Dispatch(targetPow, [this, mtrx, target, targetPow, lowControlMask, qPowersSorted, controlLen]() {
+        root->Branch(target);
+
         par_for_mask(0, targetPow, qPowersSorted.get(), controlLen, [&](const bitCapInt& lcv, const int& cpu) {
             // If any controls aren't set, skip.
             bitCapInt i = lcv | lowControlMask;
@@ -461,7 +477,9 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                 }
             }
 
-            Apply2x2OnLeaf(mtrx.get(), leaf);
+            if (!IS_NORM_0(leaf->scale)) {
+                Apply2x2OnLeaf(mtrx.get(), leaf);
+            }
         });
 
         root->Prune(qubitCount);
