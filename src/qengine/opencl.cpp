@@ -2690,16 +2690,7 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
         return;
     }
 
-    if (runningNorm >= ZERO_R1) {
-        runningNorm -= norm(GetAmplitude(perm));
-        runningNorm += norm(amp);
-        if (runningNorm <= REAL1_EPSILON) {
-            ZeroAmplitudes();
-            return;
-        }
-    } else {
-        runningNorm = REAL1_DEFAULT_ARG;
-    }
+    runningNorm = REAL1_DEFAULT_ARG;
 
     if (!stateBuffer) {
         ReinitBuffer();
