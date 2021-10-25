@@ -53,12 +53,12 @@ bool QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
     size_t bit = perm & 1U;
     perm >>= 1U;
 
-    bool toRet = false;
-
     if (isNarrow) {
         // Either we're narrow, or else there's no point in pruning same pointer branch twice.
         if (branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm)) {
-            toRet = Normalize(1U);
+            if (Normalize(1U)) {
+                return true;
+            }
         }
     } else {
         int maxLcv = (branches[0] == branches[1]) ? 1 : 2;
@@ -67,13 +67,15 @@ bool QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
             isDenormal |= branches[i]->PruneNarrowOrWide(depth, false, perm);
         }
         if (isDenormal) {
-            toRet = Normalize(1U);
+            if (Normalize(1U)) {
+                return true;
+            }
         }
     }
 
     if (branches[0] == branches[1]) {
         // Combining branches is the only other thing we try, below.
-        return toRet;
+        return false;
     }
     // Now, we try to combine pointers to equivalent branches.
 
@@ -105,14 +107,14 @@ bool QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
 
         if (leaf1 || leaf2 || !IS_NORM_0(scale1 - scale2)) {
             // We can't combine our immediate children within depth.
-            return toRet;
+            return false;
         }
     }
 
     // The branches terminate equal, within depth.
     branches[1] = branches[0];
 
-    return toRet;
+    return false;
 }
 
 void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
@@ -170,12 +172,12 @@ bool QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
     branches[1]->scale *= ONE_R1 / nrm;
 
     // Put recursion at end of method, in case we divert.
-    branches[0]->Normalize(depth - 1U);
+    bool toRet = branches[0]->Normalize(depth - 1U);
     if (branches[0] != branches[1]) {
-        branches[1]->Normalize(depth - 1U);
+        toRet |= branches[1]->Normalize(depth - 1U);
     }
 
-    return false;
+    return toRet;
 }
 
 } // namespace Qrack
