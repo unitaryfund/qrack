@@ -415,18 +415,18 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
     std::unique_ptr<bitLenInt[]> sortedControls(new bitLenInt[controlLen]);
-    std::shared_ptr<bitCapInt[]> qPowersSorted(new bitCapInt[controlLen]);
     std::copy(controls, controls + controlLen, sortedControls.get());
     std::sort(sortedControls.get(), sortedControls.get() + controlLen);
 
+    std::shared_ptr<bitCapInt[]> qPowersSorted(new bitCapInt[controlLen]);
     bitCapInt lowControlMask = 0;
     bitLenInt c;
-    for (c = 0; (c < controlLen) && (sortedControls[c] < target); c++) {
+    for (c = 0; c < controlLen; c++) {
         qPowersSorted[c] = pow2(sortedControls[c]);
         lowControlMask |= qPowersSorted[c];
     }
     // TODO: This is a horrible kludge.
-    if (c < controlLen) {
+    if (target < sortedControls[controlLen - 1U]) {
         // At least one control bit index is higher than the target.
         ExecuteAsQEngineCPU(
             [&](QInterfacePtr eng) { eng->ApplyControlledSingleBit(controls, controlLen, target, lMtrx); });
@@ -435,25 +435,26 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
     bitCapInt targetPow = pow2(target);
 
-    Dispatch((targetPow >> controlLen), [this, mtrx, target, controlLen, lowControlMask, targetPow, qPowersSorted]() {
-        // If any controls aren't set, skip.
+    Dispatch(targetPow, [this, mtrx, target, targetPow, lowControlMask, qPowersSorted, controlLen]() {
         par_for_mask(0, targetPow, qPowersSorted.get(), controlLen, [&](const bitCapInt& lcv, const int& cpu) {
+            // If any controls aren't set, skip.
             bitCapInt i = lcv | lowControlMask;
 
-            int iBit;
-            QBinaryDecisionTreeNodePtr iLeaf = root;
+            int bit;
+            QBinaryDecisionTreeNodePtr leaf = root;
 
-            // Iterate to target bit.
-            for (bitLenInt k = 0; k < target; k++) {
-                iBit = (i >> k) & 1U;
-                iLeaf = iLeaf->branches[iBit];
-                if (IS_NORM_0(iLeaf->scale)) {
-                    return;
+            // Iterate to qubit depth.
+            for (bitLenInt j = 0; j < target; j++) {
+                bit = (i >> j) & 1U;
+                leaf = leaf->branches[bit];
+                if (IS_NORM_0(leaf->scale)) {
+                    break;
                 }
             }
 
-            // (We can't handle controls with higher index than target, yet.)
-            Apply2x2OnLeaf(mtrx.get(), iLeaf);
+            if (!IS_NORM_0(leaf->scale)) {
+                Apply2x2OnLeaf(mtrx.get(), leaf);
+            }
         });
 
         root->Prune(qubitCount);
