@@ -130,7 +130,7 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
         setLambda(i, leaf);
     }
 
-    root->Normalize(qubitCount);
+    root->ConvertStateVec(qubitCount);
     root->Prune(qubitCount);
 }
 void QBinaryDecisionTree::GetQuantumState(complex* state)

@@ -134,36 +134,23 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
     branches[1]->Branch(depth - 1U);
 }
 
-bool QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
+void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
 {
     if (IS_NORM_0(scale)) {
         scale = ZERO_CMPLX;
         branches[0] = NULL;
         branches[1] = NULL;
-        return false;
+        return;
     }
 
     if (!depth || !branches[0]) {
-        return false;
+        return;
     }
 
-    // Depth-first
-    bool toRet = branches[0]->Normalize(depth - 1U);
-    if (branches[0] != branches[1]) {
-        toRet |= branches[1]->Normalize(depth - 1U);
-    }
-
-    // Now that my children have normalized THEIR children, I normalize my own.
     real1 nrm = (real1)(norm(branches[0]->scale) + norm(branches[1]->scale));
-
     if (nrm <= FP_NORM_EPSILON) {
-        // throw std::runtime_error("QBinaryDecisionTree: Tried to normalize 0.");
-        scale = ZERO_CMPLX;
-        branches[0] = NULL;
-        branches[1] = NULL;
-        return true;
+        throw std::runtime_error("QBinaryDecisionTree: Tried to normalize 0.");
     }
-
     nrm = sqrt(nrm);
 
     branches[0]->scale *= ONE_R1 / nrm;
@@ -171,7 +158,56 @@ bool QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
         branches[1]->scale *= ONE_R1 / nrm;
     }
 
-    return toRet;
+    branches[0]->Normalize(depth - 1U);
+    if (branches[0] != branches[1]) {
+        branches[1]->Normalize(depth - 1U);
+    }
+}
+
+bool QBinaryDecisionTreeNode::ConvertStateVec(bitLenInt depth)
+{
+    if (IS_NORM_0(scale)) {
+        scale = ZERO_CMPLX;
+        branches[0] = NULL;
+        branches[1] = NULL;
+        return true;
+    }
+
+    if (!depth || !branches[0]) {
+        return false;
+    }
+
+    depth--;
+
+    // Depth-first
+    bool isRescale0 = branches[0]->ConvertStateVec(depth);
+    bool isRescale1 = isRescale0;
+    if (branches[0] != branches[1]) {
+        isRescale1 = branches[1]->ConvertStateVec(depth);
+    }
+
+    if (isRescale0 && isRescale1) {
+        scale = ZERO_CMPLX;
+        branches[0] = NULL;
+        branches[1] = NULL;
+        return true;
+    }
+
+    if (!isRescale0 && !isRescale1) {
+        return false;
+    }
+
+    // One, and only one, isRescale is true.
+    if (isRescale0) {
+        scale = SQRT2_R1 * branches[1]->scale;
+    } else {
+        scale = SQRT2_R1 * branches[0]->scale;
+    }
+
+    branches[0] = NULL;
+    branches[1] = NULL;
+
+    return false;
 }
 
 } // namespace Qrack
