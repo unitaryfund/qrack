@@ -56,7 +56,7 @@ protected:
     {
         Finish();
 
-        QInterfacePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+        QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
             randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
 
         GetQuantumState(copyPtr);
@@ -68,7 +68,7 @@ protected:
     {
         Finish();
 
-        QInterfacePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+        QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
             randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
 
         GetQuantumState(copyPtr);
@@ -143,9 +143,9 @@ public:
     virtual QInterfacePtr Clone();
 
     virtual void GetQuantumState(complex* state);
-    virtual void GetQuantumState(QInterfacePtr eng);
+    virtual void GetQuantumState(QEnginePtr eng);
     virtual void SetQuantumState(const complex* state);
-    virtual void SetQuantumState(QInterfacePtr eng);
+    virtual void SetQuantumState(QEnginePtr eng);
     virtual void GetProbs(real1* outputProbs);
 
     virtual complex GetAmplitude(bitCapInt perm);

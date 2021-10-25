@@ -36,7 +36,7 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
 
 bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 {
-    QInterfacePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+    QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
 
     GetQuantumState(copyPtr);
@@ -48,7 +48,7 @@ bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool 
 
 real1_f QBinaryDecisionTree::ProbParity(const bitCapInt& mask)
 {
-    QInterfacePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+    QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
 
     GetQuantumState(copyPtr);
@@ -136,15 +136,16 @@ void QBinaryDecisionTree::GetQuantumState(complex* state)
 {
     GetTraversal([state](bitCapInt i, complex scale) { state[i] = scale; });
 }
-void QBinaryDecisionTree::GetQuantumState(QInterfacePtr eng)
+void QBinaryDecisionTree::GetQuantumState(QEnginePtr eng)
 {
+    eng->ZeroAmplitudes();
     GetTraversal([eng](bitCapInt i, complex scale) { eng->SetAmplitude(i, scale); });
 }
 void QBinaryDecisionTree::SetQuantumState(const complex* state)
 {
     SetTraversal([state](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = state[i]; });
 }
-void QBinaryDecisionTree::SetQuantumState(QInterfacePtr eng)
+void QBinaryDecisionTree::SetQuantumState(QEnginePtr eng)
 {
     SetTraversal([eng](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = eng->GetAmplitude(i); });
 }
