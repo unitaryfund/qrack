@@ -358,14 +358,29 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 
 void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf)
 {
-    if (IS_NORM_0(leaf->branches[0]->scale)) {
+    if (IS_NORM_0(leaf->scale)) {
+        return;
+    }
+
+    bool isLeaf0Norm0 = IS_NORM_0(leaf->branches[0]->scale);
+    bool isLeaf1Norm0 = IS_NORM_0(leaf->branches[1]->scale);
+
+    if (isLeaf0Norm0 && isLeaf1Norm0) {
+        return;
+    }
+
+    if (isLeaf0Norm0) {
         leaf->branches[0] = leaf->branches[1]->ShallowClone();
         leaf->branches[0]->scale = ZERO_CMPLX;
     }
 
-    if (IS_NORM_0(leaf->branches[1]->scale)) {
+    if (isLeaf1Norm0) {
         leaf->branches[1] = leaf->branches[0]->ShallowClone();
         leaf->branches[1]->scale = ZERO_CMPLX;
+    }
+
+    if (leaf->branches[0] == leaf->branches[1]) {
+        leaf->branches[0] = leaf->branches[1]->ShallowClone();
     }
 
     // Apply gate.
@@ -394,9 +409,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
                 }
             }
 
-            if (!IS_NORM_0(leaf->scale)) {
-                Apply2x2OnLeaf(mtrx.get(), leaf);
-            }
+            Apply2x2OnLeaf(mtrx.get(), leaf);
         });
 
         root->Prune(qubitCount);
@@ -452,9 +465,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                 }
             }
 
-            if (!IS_NORM_0(leaf->scale)) {
-                Apply2x2OnLeaf(mtrx.get(), leaf);
-            }
+            Apply2x2OnLeaf(mtrx.get(), leaf);
         });
 
         root->Prune(qubitCount);
