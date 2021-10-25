@@ -38,7 +38,7 @@ complex QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarro
 
     // Branch pairs are normalized to 1 total probability, at all times.
     // However, this is a method of recursive state vector conversion.
-    if (IS_NORM_0(scale - SQRT1_2_R1) && IS_NORM_0(branches[0]->scale) && IS_NORM_0(branches[1]->scale)) {
+    if (IS_NORM_0(branches[0]->scale) && IS_NORM_0(branches[1]->scale)) {
         scale = ZERO_CMPLX;
         branches[0] = NULL;
         branches[1] = NULL;
