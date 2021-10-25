@@ -178,6 +178,7 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
         scale = branches[1]->scale;
         branches[0]->SetZero();
         branches[1]->scale = ONE_CMPLX;
+        branches[1]->PruneNarrowOrWide(depth, false, 0);
         return;
     }
 
@@ -185,6 +186,7 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
         scale = branches[0]->scale;
         branches[0]->scale = ONE_CMPLX;
         branches[1]->SetZero();
+        branches[0]->PruneNarrowOrWide(depth, false, 0);
         return;
     }
 
