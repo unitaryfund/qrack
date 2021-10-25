@@ -435,30 +435,29 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
     bitCapInt targetPow = pow2(target);
 
-    Dispatch((targetPow >> controlLen),
-        [this, mtrx, target, controlLen, lowControlMask, targetPow, qPowersSorted]() {
-            // If any controls aren't set, skip.
-            par_for_mask(0, targetPow, qPowersSorted.get(), controlLen, [&](const bitCapInt& lcv, const int& cpu) {
-                bitCapInt i = lcv | lowControlMask;
+    Dispatch((targetPow >> controlLen), [this, mtrx, target, controlLen, lowControlMask, targetPow, qPowersSorted]() {
+        // If any controls aren't set, skip.
+        par_for_mask(0, targetPow, qPowersSorted.get(), controlLen, [&](const bitCapInt& lcv, const int& cpu) {
+            bitCapInt i = lcv | lowControlMask;
 
-                int iBit;
-                QBinaryDecisionTreeNodePtr iLeaf = root;
+            int iBit;
+            QBinaryDecisionTreeNodePtr iLeaf = root;
 
-                // Iterate to target bit.
-                for (bitLenInt k = 0; k < target; k++) {
-                    iBit = (i >> k) & 1U;
-                    iLeaf = iLeaf->branches[iBit];
-                    if (IS_NORM_0(iLeaf->scale)) {
-                        return;
-                    }
+            // Iterate to target bit.
+            for (bitLenInt k = 0; k < target; k++) {
+                iBit = (i >> k) & 1U;
+                iLeaf = iLeaf->branches[iBit];
+                if (IS_NORM_0(iLeaf->scale)) {
+                    return;
                 }
+            }
 
-                // (We can't handle controls with higher index than target, yet.
-                Apply2x2OnLeaf(mtrx.get(), iLeaf);
-            });
-
-            root->Prune(qubitCount);
+            // (We can't handle controls with higher index than target, yet.)
+            Apply2x2OnLeaf(mtrx.get(), iLeaf);
         });
+
+        root->Prune(qubitCount);
+    });
 }
 
 } // namespace Qrack
