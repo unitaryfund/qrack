@@ -130,6 +130,11 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
         return;
     }
 
+    branches[0]->Normalize(depth - 1U);
+    if (branches[0] != branches[1]) {
+        branches[1]->Normalize(depth - 1U);
+    }
+
     real1 nrm = (real1)(norm(branches[0]->scale) + norm(branches[1]->scale));
     if (nrm <= FP_NORM_EPSILON) {
         throw std::runtime_error("QBinaryDecisionTree: Tried to normalize 0.");
@@ -140,14 +145,9 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
     if (branches[0] != branches[1]) {
         branches[1]->scale *= ONE_R1 / nrm;
     }
-
-    branches[0]->Normalize(depth - 1U);
-    if (branches[0] != branches[1]) {
-        branches[1]->Normalize(depth - 1U);
-    }
 }
 
-void QBinaryDecisionTreeNode::ConvertStateVec(bitLenInt depth)
+void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
 {
     if (IS_NORM_0(scale)) {
         SetZero();
@@ -161,9 +161,9 @@ void QBinaryDecisionTreeNode::ConvertStateVec(bitLenInt depth)
     depth--;
 
     // Depth-first
-    branches[0]->ConvertStateVec(depth);
+    branches[0]->ConvertStateVector(depth);
     if (branches[0] != branches[1]) {
-        branches[1]->ConvertStateVec(depth);
+        branches[1]->ConvertStateVector(depth);
     }
 
     real1 nrm0 = norm(branches[0]->scale);
@@ -176,7 +176,7 @@ void QBinaryDecisionTreeNode::ConvertStateVec(bitLenInt depth)
 
     if (nrm0 <= FP_NORM_EPSILON) {
         scale = branches[1]->scale;
-        branches[0]->scale = ZERO_CMPLX;
+        branches[0]->SetZero();
         branches[1]->scale = ONE_CMPLX;
         return;
     }
@@ -184,12 +184,17 @@ void QBinaryDecisionTreeNode::ConvertStateVec(bitLenInt depth)
     if (nrm1 <= FP_NORM_EPSILON) {
         scale = branches[0]->scale;
         branches[0]->scale = ONE_CMPLX;
-        branches[1]->scale = ZERO_CMPLX;
+        branches[1]->SetZero();
         return;
     }
 
     scale = sqrt(nrm0 + nrm1);
     Normalize(1U);
+
+    int maxLcv = (branches[0] == branches[1]) ? 1 : 2;
+    for (int i = 0; i < maxLcv; i++) {
+        branches[i]->PruneNarrowOrWide(depth, false, 0);
+    }
 }
 
 } // namespace Qrack

@@ -85,7 +85,7 @@ public:
 
     void Normalize(bitLenInt depth);
 
-    void ConvertStateVec(bitLenInt depth);
+    void ConvertStateVector(bitLenInt depth);
 };
 
 } // namespace Qrack
