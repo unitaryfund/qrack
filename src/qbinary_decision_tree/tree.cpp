@@ -119,7 +119,6 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
     root->Branch(qubitCount);
 
     bitCapInt maxQPower = pow2(qubitCount);
-    complex scale = (complex)std::pow(SQRT1_2_R1, qubitCount);
     bitLenInt j;
 
     QBinaryDecisionTreeNodePtr leaf;
@@ -128,11 +127,11 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
         for (j = 0; j < qubitCount; j++) {
             leaf = leaf->branches[(i >> j) & 1U];
         }
-        setLambda(i, scale, leaf);
+        setLambda(i, leaf);
     }
 
-    root->Prune(qubitCount);
     root->Normalize(qubitCount);
+    root->Prune(qubitCount);
 }
 void QBinaryDecisionTree::GetQuantumState(complex* state)
 {
@@ -144,14 +143,11 @@ void QBinaryDecisionTree::GetQuantumState(QInterfacePtr eng)
 }
 void QBinaryDecisionTree::SetQuantumState(const complex* state)
 {
-    SetTraversal(
-        [state](bitCapInt i, complex scale, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = state[i] / scale; });
+    SetTraversal([state](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = state[i]; });
 }
 void QBinaryDecisionTree::SetQuantumState(QInterfacePtr eng)
 {
-    SetTraversal([eng](bitCapInt i, complex scale, QBinaryDecisionTreeNodePtr leaf) {
-        leaf->scale = eng->GetAmplitude(i) / scale;
-    });
+    SetTraversal([eng](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = eng->GetAmplitude(i); });
 }
 void QBinaryDecisionTree::GetProbs(real1* outputProbs)
 {

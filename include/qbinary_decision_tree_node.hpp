@@ -28,7 +28,7 @@ typedef std::shared_ptr<QBinaryDecisionTreeNode> QBinaryDecisionTreeNodePtr;
 
 class QBinaryDecisionTreeNode {
 protected:
-    bool PruneNarrowOrWide(bitLenInt depth, bool isNarrow = false, bitCapInt perm = 0);
+    void PruneNarrowOrWide(bitLenInt depth, bool isNarrow = false, bitCapInt perm = 0);
 
 public:
     complex scale;
@@ -72,19 +72,9 @@ public:
 
     void Branch(bitLenInt depth = 1U);
 
-    void Prune(bitLenInt depth)
-    {
-        if (PruneNarrowOrWide(depth, false)) {
-            Normalize(1U);
-        }
-    }
+    void Prune(bitLenInt depth) { PruneNarrowOrWide(depth, false); }
 
-    void Prune(bitLenInt depth, bitCapInt perm)
-    {
-        if (PruneNarrowOrWide(depth, true, perm)) {
-            Normalize(1U);
-        }
-    }
+    void Prune(bitLenInt depth, bitCapInt perm) { PruneNarrowOrWide(depth, true, perm); }
 
     bool Normalize(bitLenInt depth);
 };
