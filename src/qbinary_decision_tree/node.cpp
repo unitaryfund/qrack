@@ -164,49 +164,39 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
     }
 }
 
-bool QBinaryDecisionTreeNode::ConvertStateVec(bitLenInt depth)
+void QBinaryDecisionTreeNode::ConvertStateVec(bitLenInt depth)
 {
     if (IS_NORM_0(scale)) {
         scale = ZERO_CMPLX;
         branches[0] = NULL;
         branches[1] = NULL;
-        return true;
+        return;
     }
 
     if (!depth || !branches[0]) {
-        return false;
+        return;
     }
 
     depth--;
 
     // Depth-first
-    bool isRescale0 = branches[0]->ConvertStateVec(depth);
-    bool isRescale1 = isRescale0;
+    branches[0]->ConvertStateVec(depth);
     if (branches[0] != branches[1]) {
-        isRescale1 = branches[1]->ConvertStateVec(depth);
+        branches[1]->ConvertStateVec(depth);
     }
 
-    if (isRescale0 && isRescale1) {
+    real1 nrm0 = norm(branches[0]->scale);
+    real1 nrm1 = norm(branches[1]->scale);
+
+    if ((nrm0 + nrm1) <= FP_NORM_EPSILON) {
         scale = ZERO_CMPLX;
         branches[0] = NULL;
         branches[1] = NULL;
-        return true;
+        return;
     }
 
-    if (!isRescale0 && !isRescale1) {
-        return false;
-    }
-
-    // One, and only one, isRescale is true.
-    if (isRescale0) {
-        scale /= abs(branches[1]->scale);
-        branches[1]->scale = ONE_CMPLX;
-    } else {
-        scale /= abs(branches[0]->scale);
-        branches[0]->scale = ONE_CMPLX;
-    }
-
-    return false;
+    scale = sqrt(nrm0 + nrm1);
+    Normalize(1U);
 }
 
 } // namespace Qrack
