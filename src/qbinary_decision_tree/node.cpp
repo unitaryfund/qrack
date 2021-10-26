@@ -57,32 +57,31 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
     // Now, we try to combine pointers to equivalent branches.
 
     bitCapInt depthPow = ONE_BCI << depth;
-    complex scale1, scale2;
-    bitCapInt i;
+    complex scale0, scale1;
     bitLenInt j;
-    QBinaryDecisionTreeNodePtr leaf1, leaf2;
-    for (i = 0; i < depthPow; i++) {
-        leaf1 = branches[0];
-        leaf2 = branches[1];
+    QBinaryDecisionTreeNodePtr leaf0, leaf1;
+    for (bitCapInt i = 0; i < depthPow; i++) {
+        leaf0 = branches[0];
+        leaf1 = branches[1];
 
-        scale1 = ONE_CMPLX;
-        scale2 = ONE_CMPLX;
+        scale0 = leaf0->scale;
+        scale1 = leaf1->scale;
 
         for (j = 0; j < depth; j++) {
             bit = (i >> j) & 1U;
+
+            if (leaf0) {
+                scale0 *= leaf0->scale;
+                leaf0 = leaf0->branches[bit];
+            }
 
             if (leaf1) {
                 scale1 *= leaf1->scale;
                 leaf1 = leaf1->branches[bit];
             }
-
-            if (leaf2) {
-                scale2 *= leaf2->scale;
-                leaf2 = leaf2->branches[bit];
-            }
         }
 
-        if (leaf1 || leaf2 || !IS_NORM_0(scale1 - scale2)) {
+        if (leaf0 || leaf1 || !IS_NORM_0(scale0 - scale1)) {
             // We can't combine our immediate children within depth.
             return;
         }
@@ -90,8 +89,6 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
 
     // The branches terminate equal, within depth.
     branches[1] = branches[0];
-
-    return;
 }
 
 void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
@@ -157,8 +154,6 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
         return;
     }
 
-    depth--;
-
     // Depth-first
     branches[0]->ConvertStateVector(depth);
     if (branches[0] != branches[1]) {
@@ -189,17 +184,79 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
         return;
     }
 
-    // TODO: Something's still not right, with phase at higher levels of tree, in conversion to/from state vectors.
     scale = std::polar((real1)sqrt(nrm0 + nrm1), (real1)std::arg(branches[0]->scale));
     branches[0]->scale /= scale;
     if (branches[0] != branches[1]) {
         branches[1]->scale /= scale;
     }
 
-    int maxLcv = (branches[0] == branches[1]) ? 1 : 2;
-    for (int i = 0; i < maxLcv; i++) {
-        branches[i]->Prune(depth);
+    CorrectPhase();
+}
+
+void QBinaryDecisionTreeNode::CorrectPhase()
+{
+    // If scale of this node is zero, nothing under it makes a difference.
+    if (IS_NORM_0(scale)) {
+        SetZero();
+        return;
     }
+
+    if (!branches[0] || (branches[0] == branches[1]) || !(branches[0]->branches[0])) {
+        // Combining branches UP TO OVERALL PHASE is the only other thing we try, below.
+        return;
+    }
+
+    complex scale0, scale1;
+    complex phaseFac = CMPLX_DEFAULT_ARG;
+    bitLenInt j;
+    size_t bit;
+    QBinaryDecisionTreeNodePtr leaf0, leaf1;
+    for (bitCapInt i = 0; i < 4; i++) {
+        leaf0 = branches[0];
+        leaf1 = branches[1];
+
+        scale0 = ONE_CMPLX;
+        scale1 = ONE_CMPLX;
+
+        for (j = 0; j < 2; j++) {
+            bit = (i >> j) & 1U;
+
+            if (leaf0) {
+                scale0 *= leaf0->scale;
+                leaf0 = leaf0->branches[bit];
+            }
+
+            if (leaf1) {
+                scale1 *= leaf1->scale;
+                leaf1 = leaf1->branches[bit];
+            }
+        }
+
+        if (IS_NORM_0(scale0) && IS_NORM_0(scale1)) {
+            continue;
+        }
+
+        if (IS_NORM_0(scale0) || IS_NORM_0(scale1)) {
+            return;
+        }
+
+        if (phaseFac == CMPLX_DEFAULT_ARG) {
+            phaseFac = std::polar(ONE_R1, std::arg(scale0) - std::arg(scale1));
+        }
+
+        if (!IS_NORM_0(scale0 - phaseFac * scale1)) {
+            return;
+        }
+    }
+
+    if ((phaseFac == CMPLX_DEFAULT_ARG) || IS_NORM_0(ONE_CMPLX - phaseFac)) {
+        return;
+    }
+
+    branches[0]->scale *= phaseFac;
+    branches[1]->scale *= phaseFac;
+    branches[1]->branches[0]->scale /= phaseFac;
+    branches[0]->branches[1]->scale /= phaseFac;
 }
 
 } // namespace Qrack
