@@ -386,11 +386,6 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
 
 void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
-    // TODO: BDT gates aren't actually being used, yet. ShallowClone() ambiguity seems to be breaking 1qb gates. //
-    ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->ApplySingleBit(lMtrx, target); });
-    return;
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     bitCapInt targetPow = pow2(target);
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
@@ -407,13 +402,11 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
                 bit = (i >> j) & 1U;
                 leaf = leaf->branches[bit];
                 if (IS_NORM_0(leaf->scale)) {
-                    break;
+                    return;
                 }
             }
 
-            if (!IS_NORM_0(leaf->scale)) {
-                Apply2x2OnLeaf(mtrx.get(), leaf);
-            }
+            Apply2x2OnLeaf(mtrx.get(), leaf);
         });
 
         root->Prune(qubitCount);
@@ -427,11 +420,6 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
         ApplySingleBit(lMtrx, target);
         return;
     }
-
-    // TODO: BDT gates aren't actually being used, yet. ShallowClone() ambiguity seems to be breaking 1qb gates. //
-    ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->ApplyControlledSingleBit(controls, controlLen, target, lMtrx); });
-    return;
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
@@ -472,13 +460,11 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                 bit = (i >> j) & 1U;
                 leaf = leaf->branches[bit];
                 if (IS_NORM_0(leaf->scale)) {
-                    break;
+                    return;
                 }
             }
 
-            if (!IS_NORM_0(leaf->scale)) {
-                Apply2x2OnLeaf(mtrx.get(), leaf);
-            }
+            Apply2x2OnLeaf(mtrx.get(), leaf);
         });
 
         root->Prune(qubitCount);
