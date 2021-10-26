@@ -309,7 +309,9 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
             leaf->branches[1] = NULL;
         });
 
+        dest->root->scale = ONE_CMPLX;
         SetQubitCount(qubitCount - length);
+
         return;
     }
 
@@ -331,7 +333,9 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
             leaf->branches[0] = NULL;
             leaf->branches[1] = NULL;
         });
+
         SetQubitCount(qubitCount - length);
+
         return;
     }
 
