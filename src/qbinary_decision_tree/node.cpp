@@ -253,10 +253,13 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
+    complex halfPhaseFac = std::polar(ONE_R1, ((real1)std::arg(phaseFac)) / 2);
     branches[0]->scale /= phaseFac;
+    branches[0]->branches[0]->scale *= halfPhaseFac;
+    branches[0]->branches[1]->scale /= halfPhaseFac;
     branches[1]->scale *= phaseFac;
-    branches[0]->branches[1]->scale *= phaseFac;
-    branches[1]->branches[0]->scale /= phaseFac;
+    branches[1]->branches[0]->scale /= halfPhaseFac;
+    branches[1]->branches[1]->scale *= halfPhaseFac;
 }
 
 } // namespace Qrack
