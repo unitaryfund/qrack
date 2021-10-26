@@ -281,7 +281,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         std::mutex destMutex;
         par_for(0, maxLcv, [&](const bitCapInt& i, const int& cpu) {
             QBinaryDecisionTreeNodePtr leaf = root;
-            for (bitLenInt j = 0; j < (start - 1U); j++) {
+            for (bitLenInt j = 0; j < start; j++) {
                 leaf = leaf->branches[(i >> j) & 1U];
                 if (!leaf) {
                     return;
@@ -317,7 +317,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         bitCapInt maxLcv = pow2(start);
         par_for(0, maxLcv, [&](const bitCapInt& i, const int& cpu) {
             QBinaryDecisionTreeNodePtr leaf = root;
-            for (bitLenInt j = 0; j < (start - 1U); j++) {
+            for (bitLenInt j = 0; j < start; j++) {
                 leaf = leaf->branches[(i >> j) & 1U];
                 if (!leaf) {
                     return;
