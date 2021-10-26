@@ -189,7 +189,7 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
         return;
     }
 
-    scale = sqrt(nrm0 + nrm1);
+    scale = complex(sqrt(nrm0 + nrm1), ZERO_R1);
     branches[0]->scale /= scale;
     if (branches[0] != branches[1]) {
         branches[1]->scale /= scale;

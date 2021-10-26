@@ -354,22 +354,16 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 
 void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf)
 {
-    if (IS_NORM_0(leaf->scale)) {
-        return;
-    }
-
     bool isLeaf0Norm0 = IS_NORM_0(leaf->branches[0]->scale);
     bool isLeaf1Norm0 = IS_NORM_0(leaf->branches[1]->scale);
 
     if (isLeaf0Norm0 && isLeaf1Norm0) {
         return;
     }
-
     if (isLeaf0Norm0) {
         leaf->branches[0] = leaf->branches[1]->ShallowClone();
         leaf->branches[0]->scale = ZERO_CMPLX;
     }
-
     if (isLeaf1Norm0) {
         leaf->branches[1] = leaf->branches[0]->ShallowClone();
         leaf->branches[1]->scale = ZERO_CMPLX;
@@ -382,6 +376,13 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
     complex Y0 = leaf->branches[0]->scale;
     leaf->branches[0]->scale = mtrx[0] * Y0 + mtrx[1] * leaf->branches[1]->scale;
     leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
+
+    if (IS_NORM_0(leaf->branches[0]->scale)) {
+        leaf->branches[0]->SetZero();
+    }
+    if (IS_NORM_0(leaf->branches[1]->scale)) {
+        leaf->branches[1]->SetZero();
+    }
 }
 
 void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
