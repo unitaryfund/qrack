@@ -253,10 +253,10 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
-    branches[0]->scale *= phaseFac;
+    branches[0]->scale /= phaseFac;
     branches[1]->scale *= phaseFac;
+    branches[0]->branches[1]->scale *= phaseFac;
     branches[1]->branches[0]->scale /= phaseFac;
-    branches[0]->branches[1]->scale /= phaseFac;
 }
 
 } // namespace Qrack
