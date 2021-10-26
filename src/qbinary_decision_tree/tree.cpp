@@ -292,10 +292,10 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
                 return;
             }
 
-            // Don't lock, if the rootClone is set.
+            // Don't lock, if the dest->root is set.
             if (!dest->root && (leaf->branches[0] || leaf->branches[1])) {
                 const std::lock_guard<std::mutex> destLock(destMutex);
-                // Now that we've locked, is the rootClone still not set?
+                // Now that we've locked, is the dest->root still not set?
                 if (!dest->root) {
                     if (leaf->branches[0]) {
                         dest->root = leaf->branches[0]->DeepClone();

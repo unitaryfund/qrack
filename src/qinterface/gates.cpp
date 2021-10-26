@@ -102,23 +102,23 @@ void QInterface::ISwap(bitLenInt qubit1, bitLenInt qubit2)
 /// Square root of Swap gate
 void QInterface::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
-    CNOT(qubit1, qubit2);
-
-    complex mtrxTop1[4] = { (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)),
-        (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)) };
-    ApplySingleBit(mtrxTop1, qubit1);
-
-    complex mtrxBottom1[4] = { (complex)sqrt(ONE_R1 / 2), -sqrt((ONE_R1 / 2) * I_CMPLX), (complex)sqrt(ONE_R1 / 2),
-        sqrt((ONE_R1 / 2) * I_CMPLX) };
-    ApplySingleBit(mtrxBottom1, qubit2);
+    // See:
+    // https://quantumcomputing.stackexchange.com/questions/2228/how-to-implement-the-square-root-of-swap-gate-on-the-ibm-q-composer
 
     CNOT(qubit1, qubit2);
 
-    complex mtrxTop2[4] = { (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)),
-        (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)) };
-    ApplySingleBit(mtrxTop2, qubit1);
-
+    H(qubit1);
+    IT(qubit2);
+    T(qubit1);
     H(qubit2);
+    H(qubit1);
+
+    CNOT(qubit1, qubit2);
+
+    H(qubit1);
+    H(qubit2);
+    IT(qubit1);
+    H(qubit1);
 
     CNOT(qubit1, qubit2);
 
@@ -129,26 +129,23 @@ void QInterface::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 /// Apply an (inverse) square root of swap with arbitrary control (or "anti-control") bits.
 void QInterface::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
-    IS(qubit2);
-    S(qubit1);
+    S(qubit2);
+    IS(qubit1);
 
     CNOT(qubit1, qubit2);
 
+    H(qubit1);
+    IT(qubit1);
     H(qubit2);
-
-    complex mtrxTop2[4] = { (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)),
-        (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)) };
-    ApplySingleBit(mtrxTop2, qubit1);
+    H(qubit1);
 
     CNOT(qubit1, qubit2);
 
-    complex mtrxBottom1[4] = { (complex)sqrt(ONE_R1 / 2), (complex)sqrt(ONE_R1 / 2), sqrt((ONE_R1 / 2) * I_CMPLX),
-        -sqrt((ONE_R1 / 2) * I_CMPLX) };
-    ApplySingleBit(mtrxBottom1, qubit2);
-
-    complex mtrxTop1[4] = { (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)),
-        (ONE_R1 / 2) * (ONE_CMPLX + sqrt(I_CMPLX)), (ONE_R1 / 2) * (ONE_CMPLX - sqrt(I_CMPLX)) };
-    ApplySingleBit(mtrxTop1, qubit1);
+    H(qubit1);
+    H(qubit2);
+    T(qubit1);
+    IT(qubit2);
+    H(qubit1);
 
     CNOT(qubit1, qubit2);
 }
