@@ -354,34 +354,37 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 
 void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf)
 {
-    bool isLeaf0Norm0 = IS_NORM_0(leaf->branches[0]->scale);
-    bool isLeaf1Norm0 = IS_NORM_0(leaf->branches[1]->scale);
+    QBinaryDecisionTreeNodePtr& branch0 = leaf->branches[0];
+    QBinaryDecisionTreeNodePtr& branch1 = leaf->branches[1];
 
-    if (isLeaf0Norm0 && isLeaf1Norm0) {
-        return;
-    }
-    if (isLeaf0Norm0) {
-        leaf->branches[0] = leaf->branches[1]->ShallowClone();
-        leaf->branches[0]->scale = ZERO_CMPLX;
-    }
-    if (isLeaf1Norm0) {
-        leaf->branches[1] = leaf->branches[0]->ShallowClone();
-        leaf->branches[1]->scale = ZERO_CMPLX;
-    }
+    branch0 = branch0->ShallowClone();
+    branch1 = branch1->ShallowClone();
 
-    leaf->branches[0] = leaf->branches[0]->ShallowClone();
-    leaf->branches[1] = leaf->branches[1]->ShallowClone();
+    bool wasLeaf0Norm0 = IS_NORM_0(branch0->scale);
+    bool wasLeaf1Norm0 = IS_NORM_0(branch1->scale);
 
     // Apply gate.
-    complex Y0 = leaf->branches[0]->scale;
-    leaf->branches[0]->scale = mtrx[0] * Y0 + mtrx[1] * leaf->branches[1]->scale;
-    leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
+    complex Y0 = branch0->scale;
+    branch0->scale = mtrx[0] * Y0 + mtrx[1] * branch1->scale;
+    branch1->scale = mtrx[2] * Y0 + mtrx[3] * branch1->scale;
 
-    if (IS_NORM_0(leaf->branches[0]->scale)) {
-        leaf->branches[0]->SetZero();
+    bool isLeaf0Norm0 = IS_NORM_0(branch0->scale);
+    bool isLeaf1Norm0 = IS_NORM_0(branch1->scale);
+
+    if (wasLeaf0Norm0 && !isLeaf0Norm0) {
+        branch0->branches[0] = branch1->branches[0];
+        branch0->branches[1] = branch1->branches[1];
     }
-    if (IS_NORM_0(leaf->branches[1]->scale)) {
-        leaf->branches[1]->SetZero();
+    if (wasLeaf1Norm0 && !isLeaf1Norm0) {
+        branch1->branches[0] = branch0->branches[0];
+        branch1->branches[1] = branch0->branches[1];
+    }
+
+    if (isLeaf0Norm0) {
+        branch0->SetZero();
+    }
+    if (isLeaf1Norm0) {
+        branch1->SetZero();
     }
 }
 
