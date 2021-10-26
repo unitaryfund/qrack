@@ -139,9 +139,9 @@ int main(int argc, char* argv[])
         cpu = true;
         opencl = true;
         hybrid = true;
-        bdt = true;
         stabilizer = true;
         // stabilizer_qpager = true;
+        // bdt = true;
     }
 
     if (devListStr.compare("") != 0) {
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && bdt) {
             testEngineType = QINTERFACE_BDT;
             testSubEngineType = QINTERFACE_BDT;
-            session.config().stream() << "############ QEngine -> QBinaryDecisionTree ############" << std::endl;
+            session.config().stream() << "############ QBinaryDecisionTree ############" << std::endl;
             num_failed = session.run();
         }
 
@@ -241,6 +241,12 @@ int main(int argc, char* argv[])
                 session.config().stream() << "############ QUnit -> QEngine -> CPU ############" << std::endl;
             }
             testSubEngineType = QINTERFACE_CPU;
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && bdt) {
+            session.config().stream() << "############ QUnit -> QBinaryDecisionTree ############" << std::endl;
+            testSubEngineType = QINTERFACE_BDT;
             num_failed = session.run();
         }
 
