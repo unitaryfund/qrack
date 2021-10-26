@@ -207,7 +207,6 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     }
 
     complex scale0, scale1;
-    complex phaseFac = CMPLX_DEFAULT_ARG;
     bitLenInt j;
     size_t bit;
     QBinaryDecisionTreeNodePtr leaf0, leaf1;
@@ -240,26 +239,21 @@ void QBinaryDecisionTreeNode::CorrectPhase()
             return;
         }
 
-        if (phaseFac == CMPLX_DEFAULT_ARG) {
-            phaseFac = std::polar(ONE_R1, std::arg(scale0) - std::arg(scale1));
-        }
-
-        if (!IS_NORM_0(scale0 - phaseFac * scale1)) {
+        // TODO: We might have to handle scale factors besides -1, but it's not obvious exactly how that would arise.
+        if (!IS_NORM_0(scale0 + scale1)) {
             return;
         }
     }
 
-    if ((phaseFac == CMPLX_DEFAULT_ARG) || IS_NORM_0(ONE_CMPLX - phaseFac)) {
-        return;
-    }
+    QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    QBinaryDecisionTreeNodePtr& b0b1 = b0->branches[1];
+    QBinaryDecisionTreeNodePtr& b1 = branches[1];
+    QBinaryDecisionTreeNodePtr& b1b0 = b1->branches[0];
 
-    complex halfPhaseFac = std::polar(ONE_R1, ((real1)std::arg(phaseFac)) / 2);
-    branches[0]->scale /= phaseFac;
-    branches[0]->branches[0]->scale *= halfPhaseFac;
-    branches[0]->branches[1]->scale /= halfPhaseFac;
-    branches[1]->scale *= phaseFac;
-    branches[1]->branches[0]->scale /= halfPhaseFac;
-    branches[1]->branches[1]->scale *= halfPhaseFac;
+    b0->scale = -b0->scale;
+    b1->scale = -b1->scale;
+    b0b1->scale = -b0b1->scale;
+    b1b0->scale = -b1b0->scale;
 }
 
 } // namespace Qrack
