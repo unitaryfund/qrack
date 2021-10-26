@@ -189,7 +189,8 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
         return;
     }
 
-    scale = complex(sqrt(nrm0 + nrm1), ZERO_R1);
+    // TODO: Something's still not right, with phase at higher levels of tree, in conversion to/from state vectors.
+    scale = std::polar((real1)sqrt(nrm0 + nrm1), (real1)std::arg(branches[0]->scale));
     branches[0]->scale /= scale;
     if (branches[0] != branches[1]) {
         branches[1]->scale /= scale;
