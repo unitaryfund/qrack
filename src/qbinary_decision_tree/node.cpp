@@ -201,16 +201,17 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
-    if (!branches[0] || (branches[0] == branches[1]) || !(branches[0]->branches[0]) || !(branches[1]->branches[0])) {
+    QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    QBinaryDecisionTreeNodePtr& b0b0 = b0->branches[0];
+    QBinaryDecisionTreeNodePtr& b1 = branches[1];
+    QBinaryDecisionTreeNodePtr& b1b0 = b1->branches[0];
+
+    if (!b0 || (b0 == b1) || !b0b0 || !b1b0) {
         // Combining branches UP TO OVERALL PHASE is the only other thing we try, below.
         return;
     }
 
-    QBinaryDecisionTreeNodePtr& b0 = branches[0];
-    QBinaryDecisionTreeNodePtr& b0b0 = b0->branches[0];
     QBinaryDecisionTreeNodePtr& b0b1 = b0->branches[1];
-    QBinaryDecisionTreeNodePtr& b1 = branches[1];
-    QBinaryDecisionTreeNodePtr& b1b0 = b1->branches[0];
     QBinaryDecisionTreeNodePtr& b1b1 = b1->branches[1];
 
     // Assume from ConvertStateVector() that b0b0->scale == ONE_CMPLX.
