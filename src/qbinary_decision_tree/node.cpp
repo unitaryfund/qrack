@@ -201,60 +201,26 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
-    if (!branches[0] || (branches[0] == branches[1]) || !(branches[0]->branches[0]) || !(branches[1]->branches[0]) ||
-        !IS_NORM_0(branches[0]->branches[0]->scale - branches[1]->branches[0]->scale)) {
+    if (!branches[0] || (branches[0] == branches[1]) || !(branches[0]->branches[0]) || !(branches[1]->branches[0])) {
         // Combining branches UP TO OVERALL PHASE is the only other thing we try, below.
         return;
     }
 
-    complex scale0, scale1;
-    bitLenInt j;
-    size_t bit;
-    QBinaryDecisionTreeNodePtr leaf0, leaf1;
-    for (bitCapInt i = 0; i < 4; i++) {
-        leaf0 = branches[0];
-        leaf1 = branches[1];
-
-        scale0 = ONE_CMPLX;
-        scale1 = ONE_CMPLX;
-
-        for (j = 0; j < 2; j++) {
-            bit = (i >> j) & 1U;
-
-            if (leaf0) {
-                scale0 *= leaf0->scale;
-                leaf0 = leaf0->branches[bit];
-            }
-
-            if (leaf1) {
-                scale1 *= leaf1->scale;
-                leaf1 = leaf1->branches[bit];
-            }
-        }
-
-        if (IS_NORM_0(scale0) && IS_NORM_0(scale1)) {
-            continue;
-        }
-
-        if (IS_NORM_0(scale0) || IS_NORM_0(scale1)) {
-            return;
-        }
-
-        // TODO: We might have to handle scale factors besides -1, but it's not obvious exactly how that would arise.
-        if (!IS_NORM_0(scale0 + scale1)) {
-            return;
-        }
-    }
-
     QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    QBinaryDecisionTreeNodePtr& b0b0 = b0->branches[0];
     QBinaryDecisionTreeNodePtr& b0b1 = b0->branches[1];
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
     QBinaryDecisionTreeNodePtr& b1b0 = b1->branches[0];
+    QBinaryDecisionTreeNodePtr& b1b1 = b1->branches[1];
 
-    b0->scale = -b0->scale;
-    b1->scale = -b1->scale;
-    b0b1->scale = -b0b1->scale;
-    b1b0->scale = -b1b0->scale;
+    // Assume from ConvertStateVector() that b0b0->scale == ONE_CMPLX.
+    if (IS_NORM_0(b0b0->scale + b0b1->scale) && IS_NORM_0(b0->scale * b0b0->scale + b1->scale * b1b0->scale) &&
+        IS_NORM_0(b0->scale * b0b1->scale + b1->scale * b1b1->scale)) {
+        b0->scale = -b0->scale;
+        b1->scale = -b1->scale;
+        b0b1->scale = -b0b1->scale;
+        b1b0->scale = -b1b0->scale;
+    }
 }
 
 } // namespace Qrack
