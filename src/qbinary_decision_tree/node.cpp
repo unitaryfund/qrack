@@ -223,14 +223,36 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     QBinaryDecisionTreeNodePtr& b0b1 = b0->branches[1];
     QBinaryDecisionTreeNodePtr& b1b1 = b1->branches[1];
 
-    // Assume from ConvertStateVector() that b0b0->scale == ONE_CMPLX.
-    if (IS_NORM_0(b0->scale * b0b0->scale + b1->scale * b1b0->scale) &&
-        IS_NORM_0(b0->scale * b0b1->scale + b1->scale * b1b1->scale)) {
-        b0->scale = -b0->scale;
-        b1->scale = -b1->scale;
-        b0b1->scale = -b0b1->scale;
-        b1b0->scale = -b1b0->scale;
+    // First, if our four branches differ only by an OVERALL PHASE factor, we pull this factor up into the two parents,
+    // equally.
+
+    complex offsetFactor = (b1->scale * b1b0->scale) / (b0->scale * b0b0->scale);
+
+    if (IS_NORM_0(ONE_CMPLX - offsetFactor) || (abs(ONE_R1 - norm(offsetFactor)) > FP_NORM_EPSILON) ||
+        !IS_NORM_0(offsetFactor * b0->scale * b0b1->scale - b1->scale * b1b1->scale)) {
+        return;
     }
+
+    complex halfOffsetFactor = std::polar(ONE_R1, ((real1)std::arg(offsetFactor)) / 2);
+
+    b0->scale *= halfOffsetFactor;
+    b0b0->scale /= halfOffsetFactor;
+    b0b1->scale /= halfOffsetFactor;
+
+    b1->scale /= halfOffsetFactor;
+    b1b0->scale *= halfOffsetFactor;
+    b1b1->scale *= halfOffsetFactor;
+
+    // Next, if our 2 sets of 2 children both ALSO have exactly opposite phase, this is due to a Hadamard at the
+    // previous level.
+
+    if (!IS_NORM_0(b0b0->scale + b1b0->scale) || !IS_NORM_0(b0b1->scale + b1b1->scale)) {
+        return;
+    }
+
+    b1->scale = -b1->scale;
+    b0b1->scale = -b0b1->scale;
+    b1b1->scale = -b1b1->scale;
 }
 
 } // namespace Qrack
