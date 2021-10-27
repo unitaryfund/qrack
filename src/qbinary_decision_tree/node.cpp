@@ -214,7 +214,7 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     QBinaryDecisionTreeNodePtr& b1b1 = b1->branches[1];
 
     // Assume from ConvertStateVector() that b0b0->scale == ONE_CMPLX.
-    if (IS_NORM_0(b0b0->scale + b0b1->scale) && IS_NORM_0(b0->scale * b0b0->scale + b1->scale * b1b0->scale) &&
+    if (IS_NORM_0(b0->scale * b0b0->scale + b1->scale * b1b0->scale) &&
         IS_NORM_0(b0->scale * b0b1->scale + b1->scale * b1b1->scale)) {
         b0->scale = -b0->scale;
         b1->scale = -b1->scale;
