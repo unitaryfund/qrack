@@ -201,7 +201,8 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
-    if (!branches[0] || (branches[0] == branches[1]) || !(branches[0]->branches[0])) {
+    if (!branches[0] || (branches[0] == branches[1]) || !(branches[0]->branches[0]) || !(branches[1]->branches[0]) ||
+        !IS_NORM_0(branches[0]->branches[0]->scale - branches[1]->branches[0]->scale)) {
         // Combining branches UP TO OVERALL PHASE is the only other thing we try, below.
         return;
     }
