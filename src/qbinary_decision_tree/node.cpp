@@ -223,8 +223,8 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     QBinaryDecisionTreeNodePtr& b0b1 = b0->branches[1];
     QBinaryDecisionTreeNodePtr& b1b1 = b1->branches[1];
 
-    // First, if our four branches differ only by an OVERALL PHASE factor, we pull this factor up into the two parents,
-    // equally.
+    // First, if our 2 sets of 2 children differ only by an OVERALL PHASE factor, we pull this factor up into the two
+    // parents, equally.
 
     complex offsetFactor = (b1->scale * b1b0->scale) / (b0->scale * b0b0->scale);
 
