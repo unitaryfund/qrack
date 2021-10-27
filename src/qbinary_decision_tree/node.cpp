@@ -230,7 +230,7 @@ void QBinaryDecisionTreeNode::CorrectPhase()
 
     bool isNorm0 = false;
 
-    if (!IS_NORM_0(b0b0->scale)) {
+    if (IS_NORM_0(b0b0->scale)) {
         // We perform the same check for "grandchildren" equality, as below, but this would otherwise produce a "NaN"
         // division-by-zero offsetFactor.
 
