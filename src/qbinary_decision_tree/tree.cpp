@@ -357,25 +357,24 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     }
 }
 
-real1_f QBinaryDecisionTree::Prob(bitLenInt qubitIndex)
+real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
 {
     Finish();
 
-    bitCapInt qPower = pow2(qubitIndex);
+    bitCapInt qPower = pow2(qubit);
+    bitCapInt maxI = qPower << ONE_BCI;
 
     int numCores = GetConcurrencyLevel();
     std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
 
-    par_for_skip(0, maxQPower, qPower, 1U, [&](const bitCapInt lcv, const int cpu) {
-        bitCapInt i = lcv | qPower;
-
+    par_for(qPower, maxI, [&](const bitCapInt i, const int cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         complex scale = root->scale;
-        for (bitLenInt j = 0; j < qubitCount; j++) {
+        for (bitLenInt j = 0; j <= qubit; j++) {
             leaf = leaf->branches[(i >> j) & 1U];
             scale *= leaf->scale;
             if (IS_NORM_0(scale)) {
-                break;
+                return;
             }
         }
         oneChanceBuff[cpu] += norm(scale);
@@ -443,7 +442,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 
     bitLenInt j;
     complex Y0;
-    int bit;
+    size_t bit;
     QBinaryDecisionTreeNodePtr leaf;
     for (bitCapInt i = 0; i < qPower; i++) {
         leaf = root;
@@ -519,7 +518,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         root->Branch(target + 1U);
 
         par_for(0, targetPow, [&](const bitCapInt& i, const int& cpu) {
-            int bit;
+            size_t bit;
             QBinaryDecisionTreeNodePtr leaf = root;
 
             // Iterate to qubit depth.
@@ -577,7 +576,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             // If any controls aren't set, skip.
             bitCapInt i = lcv | lowControlMask;
 
-            int bit;
+            size_t bit;
             QBinaryDecisionTreeNodePtr leaf = root;
 
             // Iterate to qubit depth.

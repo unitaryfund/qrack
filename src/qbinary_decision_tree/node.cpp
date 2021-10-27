@@ -46,8 +46,8 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         // Either we're narrow, or else there's no point in pruning same pointer branch twice.
         branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm);
     } else {
-        int maxLcv = (b0 == b1) ? 1 : 2;
-        for (int i = 0; i < maxLcv; i++) {
+        size_t maxLcv = (b0 == b1) ? 1 : 2;
+        for (size_t i = 0; i < maxLcv; i++) {
             branches[i]->PruneNarrowOrWide(depth, false, perm);
         }
     }
