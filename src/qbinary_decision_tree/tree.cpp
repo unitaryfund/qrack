@@ -309,7 +309,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
             leaf->branches[1] = NULL;
         });
 
-        dest->root->scale = ONE_CMPLX;
+        dest->root->scale = GetNonunitaryPhase();
         SetQubitCount(qubitCount - length);
 
         return;
