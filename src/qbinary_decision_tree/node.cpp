@@ -31,9 +31,11 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         return;
     }
 
-    if (!depth || !branches[0]) {
+    QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    if (!depth || !b0) {
         return;
     }
+    QBinaryDecisionTreeNodePtr& b1 = branches[1];
 
     // Prune recursively to depth.
     depth--;
@@ -44,13 +46,13 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         // Either we're narrow, or else there's no point in pruning same pointer branch twice.
         branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm);
     } else {
-        int maxLcv = (branches[0] == branches[1]) ? 1 : 2;
+        int maxLcv = (b0 == b1) ? 1 : 2;
         for (int i = 0; i < maxLcv; i++) {
             branches[i]->PruneNarrowOrWide(depth, false, perm);
         }
     }
 
-    if (branches[0] == branches[1]) {
+    if (b0 == b1) {
         // Combining branches is the only other thing we try, below.
         return;
     }
@@ -61,8 +63,8 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
     bitLenInt j;
     QBinaryDecisionTreeNodePtr leaf0, leaf1;
     for (bitCapInt i = 0; i < depthPow; i++) {
-        leaf0 = branches[0];
-        leaf1 = branches[1];
+        leaf0 = b0;
+        leaf1 = b1;
 
         scale0 = leaf0->scale;
         scale1 = leaf1->scale;
@@ -88,7 +90,7 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
     }
 
     // The branches terminate equal, within depth.
-    branches[1] = branches[0];
+    b1 = b0;
 }
 
 void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
@@ -102,17 +104,20 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
         return;
     }
 
-    if (!branches[0]) {
-        branches[0] = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);
-        branches[1] = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);
+    QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    QBinaryDecisionTreeNodePtr& b1 = branches[1];
+
+    if (!b0) {
+        b0 = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);
+        b1 = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);
     }
 
     // Split all clones.
-    branches[0] = branches[0]->ShallowClone();
-    branches[1] = branches[1]->ShallowClone();
+    b0 = b0->ShallowClone();
+    b1 = b1->ShallowClone();
 
-    branches[0]->Branch(depth - 1U);
-    branches[1]->Branch(depth - 1U);
+    b0->Branch(depth - 1U);
+    b1->Branch(depth - 1U);
 }
 
 void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
@@ -122,24 +127,26 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
         return;
     }
 
-    if (!depth || !branches[0]) {
+    QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    if (!depth || !b0) {
         return;
     }
+    QBinaryDecisionTreeNodePtr& b1 = branches[1];
 
-    branches[0]->Normalize(depth - 1U);
-    if (branches[0] != branches[1]) {
-        branches[1]->Normalize(depth - 1U);
+    b0->Normalize(depth - 1U);
+    if (b0 != b1) {
+        b1->Normalize(depth - 1U);
     }
 
-    real1 nrm = (real1)(norm(branches[0]->scale) + norm(branches[1]->scale));
+    real1 nrm = (real1)(norm(b0->scale) + norm(b1->scale));
     if (nrm <= FP_NORM_EPSILON) {
         throw std::runtime_error("QBinaryDecisionTree: Tried to normalize 0.");
     }
     nrm = sqrt(nrm);
 
-    branches[0]->scale *= ONE_R1 / nrm;
-    if (branches[0] != branches[1]) {
-        branches[1]->scale *= ONE_R1 / nrm;
+    b0->scale *= ONE_R1 / nrm;
+    if (b0 != b1) {
+        b1->scale *= ONE_R1 / nrm;
     }
 }
 
@@ -150,18 +157,20 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
         return;
     }
 
-    if (!depth || !branches[0]) {
+    QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    if (!depth || !b0) {
         return;
     }
 
     // Depth-first
-    branches[0]->ConvertStateVector(depth);
-    if (branches[0] != branches[1]) {
-        branches[1]->ConvertStateVector(depth);
+    QBinaryDecisionTreeNodePtr& b1 = branches[1];
+    b0->ConvertStateVector(depth);
+    if (b0 != b1) {
+        b1->ConvertStateVector(depth);
     }
 
-    real1 nrm0 = norm(branches[0]->scale);
-    real1 nrm1 = norm(branches[1]->scale);
+    real1 nrm0 = norm(b0->scale);
+    real1 nrm1 = norm(b1->scale);
 
     if ((nrm0 + nrm1) <= FP_NORM_EPSILON) {
         SetZero();
@@ -169,25 +178,25 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     }
 
     if (nrm0 <= FP_NORM_EPSILON) {
-        scale = branches[1]->scale;
-        branches[0]->SetZero();
-        branches[1]->scale = ONE_CMPLX;
-        branches[1]->Prune(depth);
+        scale = b1->scale;
+        b0->SetZero();
+        b1->scale = ONE_CMPLX;
+        b1->Prune(depth);
         return;
     }
 
     if (nrm1 <= FP_NORM_EPSILON) {
-        scale = branches[0]->scale;
-        branches[0]->scale = ONE_CMPLX;
-        branches[1]->SetZero();
-        branches[0]->Prune(depth);
+        scale = b0->scale;
+        b0->scale = ONE_CMPLX;
+        b1->SetZero();
+        b0->Prune(depth);
         return;
     }
 
-    scale = std::polar((real1)sqrt(nrm0 + nrm1), (real1)std::arg(branches[0]->scale));
-    branches[0]->scale /= scale;
-    if (branches[0] != branches[1]) {
-        branches[1]->scale /= scale;
+    scale = std::polar((real1)sqrt(nrm0 + nrm1), (real1)std::arg(b0->scale));
+    b0->scale /= scale;
+    if (b0 != b1) {
+        b1->scale /= scale;
     }
 
     CorrectPhase();
