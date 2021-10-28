@@ -178,6 +178,7 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     }
 
     if (nrm0 <= FP_NORM_EPSILON) {
+        // + sign
         scale = b1->scale;
         b0->SetZero();
         b1->scale = ONE_CMPLX;
@@ -186,8 +187,9 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     }
 
     if (nrm1 <= FP_NORM_EPSILON) {
-        scale = b0->scale;
-        b0->scale = ONE_CMPLX;
+        // - sign
+        scale = -b0->scale;
+        b0->scale = -ONE_CMPLX;
         b1->SetZero();
         b0->Prune(depth);
         return;
@@ -294,12 +296,17 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         // ... cancel the full-depth effect below, on the ket:
         // b0->scale *= I_CMPLX;
         // b1->scale /= I_CMPLX;
-    }
 
-    // This changes the ket value, specifically if b0b0 != 0 and b0b1 != 0. (We can't change the ket value, except for
-    // unobservable phase factors.)
-    b0->scale *= I_CMPLX;
-    b1->scale /= I_CMPLX;
+        // This changes the ket value, specifically if b0b0 != 0 and b0b1 != 0. (We can't change the ket value, except
+        // for unobservable phase factors.)
+        b0->scale *= I_CMPLX;
+        b1->scale /= I_CMPLX;
+    } else {
+        // This changes the ket value, specifically if b0b0 != 0 and b0b1 != 0. (We can't change the ket value, except
+        // for unobservable phase factors.)
+        b0->scale *= I_CMPLX;
+        b1->scale /= I_CMPLX;
+    }
 
     /*
     // Say we want to prepare |-> in the b0b0 level:
