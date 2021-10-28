@@ -294,9 +294,6 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         b0b0->scale /= I_CMPLX;
         b1b0->scale *= I_CMPLX;
         // ... cancel the full-depth effect below, on the ket:
-        // b0->scale *= I_CMPLX;
-        // b1->scale /= I_CMPLX;
-
         b0->scale *= I_CMPLX;
         b1->scale /= I_CMPLX;
         // We preserved the original ket values, (up to global phase).
@@ -330,8 +327,7 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         b1b1b0->scale *= I_CMPLX;
         b1b1b1->scale *= I_CMPLX;
 
-        // Here, failure to overall-cancel |-> preparation above is the only remaining problem that doesn't preserve the
-        // ket:
+        // Here, failure to overall-cancel |-> prep, above, is the only remaining failure to preserve the ket:
         return;
     }
 
