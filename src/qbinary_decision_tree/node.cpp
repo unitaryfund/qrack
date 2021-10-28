@@ -228,14 +228,13 @@ void QBinaryDecisionTreeNode::CorrectPhase()
 
     complex offsetFactor;
 
+    if (IS_NORM_0(b0b0->scale) != IS_NORM_0(b1b0->scale)) {
+        return;
+    }
+
     if (IS_NORM_0(b0b0->scale)) {
         // We perform the same check for "grandchildren" equality, as below, but this would otherwise produce a "NaN"
         // division-by-zero offsetFactor.
-
-        if (!IS_NORM_0(b1b0->scale)) {
-            return;
-        }
-
         offsetFactor = (b1->scale * b1b1->scale) / (b0->scale * b0b1->scale);
 
         if (IS_NORM_0(ONE_CMPLX - offsetFactor) || (abs(ONE_R1 - norm(offsetFactor)) > FP_NORM_EPSILON)) {
@@ -250,6 +249,12 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         }
     }
 
+    if (IS_NORM_0(b0->scale * b0b1->scale + b1->scale * b1b0->scale)) {
+        b0b1->scale = -b0b1->scale;
+        b1b0->scale = -b1b0->scale;
+        return;
+    }
+
     complex halfOffsetFactor = std::polar(ONE_R1, ((real1)std::arg(offsetFactor)) / 2);
 
     b0->scale *= halfOffsetFactor;
@@ -260,10 +265,14 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     b1b0->scale *= halfOffsetFactor;
     b1b1->scale *= halfOffsetFactor;
 
+    if (IS_NORM_0(b0b0->scale)) {
+        return;
+    }
+
     // Next, if our 2 sets of 2 children both ALSO have exactly opposite phase, this is due to a Hadamard at the
     // previous level.
 
-    if (IS_NORM_0(b0b0->scale) || !IS_NORM_0(b0b0->scale + b1b0->scale) || !IS_NORM_0(b0b1->scale + b1b1->scale)) {
+    if (!IS_NORM_0(b0->scale * b0b0->scale + b1->scale * b1b0->scale)) {
         return;
     }
 
