@@ -262,6 +262,9 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     // destructive interference, to ultimately preserve exact numerical ket amplitudes at the base of the tree, as
     // decisision diagrams do in the first place.
 
+    // Conceptually, we want to preserve the ket representation up to arbitrary phase factors (on separable subsystems)
+    // while handling states like |+> and |->.
+
     b0b0->scale *= I_CMPLX;
     b0b1->scale /= I_CMPLX;
 
@@ -270,30 +273,39 @@ void QBinaryDecisionTreeNode::CorrectPhase()
 
     // b0b0 and b0b1 cannot both be 0.
 
-    if (IS_NORM_0(b0b1->scale)) {
-        // This preserves the original values if b0b1 == 0.
-        scale /= I_CMPLX;
-    }
-
     if (IS_NORM_0(b0b0->scale)) {
         // This preserves the original values if b0b0 == 0.
         scale *= I_CMPLX;
         return;
     }
 
-    // This changes the ket value, if b0b1 != 0 or otherwise. (We can't change the ket value, except for unobservable
-    // phase factors.)
+    if (IS_NORM_0(b0b1->scale)) {
+        // This preserves the original values if b0b1 == 0.
+
+        // This line...
+        scale /= I_CMPLX;
+        // ...cancels the full-depth effect above, on the ket:
+        // b0b0->scale *= I_CMPLX;
+        // b1b0->scale *= I_CMPLX;
+
+        // These lines...
+        b0b0->scale /= I_CMPLX;
+        b1b0->scale *= I_CMPLX;
+        // ... cancel the full-depth effect below, on the ket:
+        // b0->scale *= I_CMPLX;
+        // b1->scale /= I_CMPLX;
+    }
+
+    // This changes the ket value, specifically if b0b0 != 0 and b0b1 != 0. (We can't change the ket value, except for
+    // unobservable phase factors.)
     b0->scale *= I_CMPLX;
     b1->scale /= I_CMPLX;
 
     /*
-    Conceptually, we want to preserve the ket representation up to arbitrary phase factors (on separable subsystems)
-    while handling states like |+> and |->.
+    // Say we want to prepare |-> in the b0b0 level:
 
-    Say we want to prepare |-> in the b0b0 level:
-
-    b0->scale *= I_CMPLX;
-    b1->scale /= I_CMPLX;
+    //b0->scale *= I_CMPLX;
+    //b1->scale /= I_CMPLX;
 
     // Cut the middle level out.
 
