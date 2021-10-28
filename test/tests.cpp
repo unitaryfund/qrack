@@ -1504,13 +1504,22 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccy")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cz")
 {
-    qftReg = MakeEngine(3);
-    qftReg->SetPermutation(6);
-    REQUIRE_THAT(qftReg, HasProbability(6));
-    qftReg->H(0, 2);
-    qftReg->CZ(2, 0);
-    qftReg->H(0, 2);
-    REQUIRE_THAT(qftReg, HasProbability(7));
+    qftReg->SetReg(0, 8, 0x35);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x35));
+    qftReg->H(0, 4);
+    qftReg->CZ(4, 0);
+    qftReg->CZ(5, 1);
+    qftReg->CZ(6, 2);
+    qftReg->CZ(7, 3);
+    qftReg->H(0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
+
+    qftReg->SetPermutation(0x03);
+    qftReg->H(0);
+    qftReg->CZ(0, 1);
+    qftReg->CZ(0, 1);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticz")
