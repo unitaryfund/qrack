@@ -226,6 +226,10 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     // First, if our 2 sets of 2 children differ only by an OVERALL PHASE factor, we pull this factor up into the two
     // parents, equally.
 
+    if (IS_NORM_0(b0->scale) || IS_NORM_0(b1->scale)) {
+        return;
+    }
+
     if (IS_NORM_0(b0b0->scale) != IS_NORM_0(b1b0->scale)) {
         return;
     }
