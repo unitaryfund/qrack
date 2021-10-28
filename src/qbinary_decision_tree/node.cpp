@@ -267,76 +267,72 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     // Conceptually, we want to preserve the ket representation up to arbitrary phase factors (on separable subsystems)
     // while handling states like |+> and |->.
 
-    b0b0->scale *= I_CMPLX;
-    b0b1->scale /= I_CMPLX;
-
-    b1b0->scale *= I_CMPLX;
-    b1b1->scale /= I_CMPLX;
-
     // b0b0 and b0b1 cannot both be 0.
 
     if (IS_NORM_0(b0b0->scale)) {
         // This preserves the original values if b0b0 == 0.
+        b0b1->scale /= I_CMPLX;
+        b1b1->scale /= I_CMPLX;
         scale *= I_CMPLX;
         return;
     }
 
     if (IS_NORM_0(b0b1->scale)) {
         // This preserves the original values if b0b1 == 0.
-
-        // This line...
-        scale /= I_CMPLX;
-        // ...cancels the full-depth effect above, on the ket:
-        // b0b0->scale *= I_CMPLX;
-        // b1b0->scale *= I_CMPLX;
-
-        // These lines...
-        b0b0->scale /= I_CMPLX;
-        b1b0->scale *= I_CMPLX;
-        // ... cancel the full-depth effect below, on the ket:
         b0->scale *= I_CMPLX;
         b1->scale /= I_CMPLX;
-        // We preserved the original ket values, (up to global phase).
 
+        b0b0->scale /= I_CMPLX;
+        b0b1->scale /= I_CMPLX;
+
+        b1b0->scale *= I_CMPLX;
+        b1b1->scale *= I_CMPLX;
         return;
     }
+
+    // This prepares a |->.
+    b0->scale *= I_CMPLX;
+    b1->scale /= I_CMPLX;
 
     QBinaryDecisionTreeNodePtr& b0b0b0 = b0b0->branches[0];
     QBinaryDecisionTreeNodePtr& b1b0b0 = b1b0->branches[0];
     QBinaryDecisionTreeNodePtr& b0b1b0 = b0b1->branches[0];
     QBinaryDecisionTreeNodePtr& b1b1b0 = b1b1->branches[0];
 
-    // This prepares a |->.
-    b0->scale *= I_CMPLX;
-    b1->scale /= I_CMPLX;
+    if (!b0b0b0 || !b1b0b0 || !b0b1b0 || !b1b1b0) {
+        // These lines below cancel the overall effect on amplitudes from |-> prepartion.
+        b0b0->scale /= I_CMPLX;
+        b0b1->scale /= I_CMPLX;
 
-    if (b0b0b0 && b1b0b0 && b0b1b0 && b1b1b0) {
-        QBinaryDecisionTreeNodePtr& b0b0b1 = b0b0->branches[1];
-        QBinaryDecisionTreeNodePtr& b1b0b1 = b1b0->branches[1];
-        QBinaryDecisionTreeNodePtr& b0b1b1 = b0b1->branches[1];
-        QBinaryDecisionTreeNodePtr& b1b1b1 = b1b1->branches[1];
+        b1b0->scale *= I_CMPLX;
+        b1b1->scale *= I_CMPLX;
 
-        // These lines cancel the very top lines, just after the TODO.
-        b0b0b0->scale /= I_CMPLX;
-        b0b0b1->scale /= I_CMPLX;
-        b0b1b0->scale *= I_CMPLX;
-        b0b1b1->scale *= I_CMPLX;
-
-        b1b0b0->scale /= I_CMPLX;
-        b1b0b1->scale /= I_CMPLX;
-        b1b1b0->scale *= I_CMPLX;
-        b1b1b1->scale *= I_CMPLX;
-
-        // Here, failure to overall-cancel |-> prep, above, is the only remaining failure to preserve the ket:
         return;
     }
 
-    // These lines below cancel the overall effect on amplitudes from |-> prepartion.
-    b0b0->scale /= I_CMPLX;
+    QBinaryDecisionTreeNodePtr& b0b0b1 = b0b0->branches[1];
+    QBinaryDecisionTreeNodePtr& b1b0b1 = b1b0->branches[1];
+    QBinaryDecisionTreeNodePtr& b0b1b1 = b0b1->branches[1];
+    QBinaryDecisionTreeNodePtr& b1b1b1 = b1b1->branches[1];
+
+    // These lines overall-cancel.
+    b0b0->scale *= I_CMPLX;
     b0b1->scale /= I_CMPLX;
 
     b1b0->scale *= I_CMPLX;
-    b1b1->scale *= I_CMPLX;
+    b1b1->scale /= I_CMPLX;
+
+    b0b0b0->scale /= I_CMPLX;
+    b0b0b1->scale /= I_CMPLX;
+    b0b1b0->scale *= I_CMPLX;
+    b0b1b1->scale *= I_CMPLX;
+
+    b1b0b0->scale /= I_CMPLX;
+    b1b0b1->scale /= I_CMPLX;
+    b1b1b0->scale *= I_CMPLX;
+    b1b1b1->scale *= I_CMPLX;
+
+    // TODO: We fail to cancel the phase factor from |-> prep.
 }
 
 } // namespace Qrack
