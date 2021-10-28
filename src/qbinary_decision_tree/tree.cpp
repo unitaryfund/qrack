@@ -134,6 +134,7 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
 
     root->ConvertStateVector(qubitCount);
     root->scale = ONE_CMPLX;
+    // "qubitCount" is necessarily a terminal (or separable) boundary.
     root->Prune(qubitCount);
 }
 void QBinaryDecisionTree::GetQuantumState(complex* state)
@@ -437,6 +438,8 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         return result;
     }
 
+    root->Branch(qubit + 1U);
+
     bitCapInt qPower = pow2(qubit);
     complex nrm = GetNonunitaryPhase();
 
@@ -467,7 +470,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         }
     }
 
-    root->Prune(qubitCount);
+    root->Prune(qubit + 2U);
 
     return result;
 }
@@ -533,7 +536,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
             Apply2x2OnLeaf(mtrx.get(), leaf);
         });
 
-        root->Prune(qubitCount);
+        root->Prune(target + 2U);
     });
 }
 
@@ -591,7 +594,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             Apply2x2OnLeaf(mtrx.get(), leaf);
         });
 
-        root->Prune(qubitCount);
+        root->Prune(target + 2U);
     });
 }
 
