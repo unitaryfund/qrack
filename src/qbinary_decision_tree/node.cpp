@@ -262,13 +262,15 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     // destructive interference, to ultimately preserve exact numerical ket amplitudes at the base of the tree, as
     // decisision diagrams do in the first place.
 
+    // Until the conditional, this preserves the original values if b0b0 == 0.
+
     b0b0->scale *= I_CMPLX;
     b0b1->scale /= I_CMPLX;
 
     b1b0->scale *= I_CMPLX;
     b1b1->scale /= I_CMPLX;
 
-    // scale = -scale;
+    scale *= I_CMPLX;
 
     if (IS_NORM_0(b0b0->scale)) {
         return;
