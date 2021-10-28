@@ -272,6 +272,28 @@ void QBinaryDecisionTreeNode::CorrectPhase()
 
     b1b0->scale *= I_CMPLX;
     b1b1->scale /= I_CMPLX;
+
+    /*
+    Conceptually, we want to preserve the ket representation up to arbitrary phase factors (on separable subsystems)
+    while handling states like |+> and |->.
+
+    Say we want to prepare |-> in the b0b0 level:
+
+    b0->scale *= I_CMPLX;
+    b1->scale /= I_CMPLX;
+
+    // Cut the middle level out.
+
+    b0b0b0->scale /= I_CMPLX;
+    b0b0b1->scale /= I_CMPLX;
+    b0b1b0->scale /= I_CMPLX;
+    b0b1b1->scale /= I_CMPLX;
+
+    b1b0b0->scale *= I_CMPLX;
+    b1b0b1->scale *= I_CMPLX;
+    b1b1b0->scale *= I_CMPLX;
+    b1b1b1->scale *= I_CMPLX;
+    */
 }
 
 } // namespace Qrack
