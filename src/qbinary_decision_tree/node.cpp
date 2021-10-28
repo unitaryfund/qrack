@@ -343,8 +343,8 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     }
 
     // This fails to overall-cancel |-> prep.
-    b0->scale *= I_CMPLX;
-    b1->scale /= I_CMPLX;
+    // b0->scale *= I_CMPLX;
+    // b1->scale /= I_CMPLX;
 
     // NOTE: The point is for this to pass test_cnot and a simplified test_cz, in such a way that AT LEAST the phase
     // factors overall-cancel to reproduce the original kets. We can probably generalize this approach into branches
