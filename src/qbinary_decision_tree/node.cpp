@@ -297,10 +297,9 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         // b0->scale *= I_CMPLX;
         // b1->scale /= I_CMPLX;
 
-        // This changes the ket value, specifically if b0b0 != 0 and b0b1 != 0. (We can't change the ket value, except
-        // for unobservable phase factors.)
         b0->scale *= I_CMPLX;
         b1->scale /= I_CMPLX;
+        // We preserved the original ket values, (up to global phase).
 
         return;
     }
