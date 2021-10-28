@@ -301,12 +301,32 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         // for unobservable phase factors.)
         b0->scale *= I_CMPLX;
         b1->scale /= I_CMPLX;
-    } else {
-        // This changes the ket value, specifically if b0b0 != 0 and b0b1 != 0. (We can't change the ket value, except
-        // for unobservable phase factors.)
-        b0->scale *= I_CMPLX;
-        b1->scale /= I_CMPLX;
+
+        return;
     }
+
+    // This passes unit tests while preserving ket value, if we DON'T have "great grandchildren."
+    b0->scale *= I_CMPLX;
+    b1->scale /= I_CMPLX;
+
+    QBinaryDecisionTreeNodePtr& b0b0b0 = b0b0->branches[0];
+    QBinaryDecisionTreeNodePtr& b1b0b0 = b1b0->branches[0];
+    QBinaryDecisionTreeNodePtr& b0b1b0 = b0b1->branches[0];
+    QBinaryDecisionTreeNodePtr& b1b1b0 = b1b1->branches[0];
+    if (!b0b0b0 || !b1b0b0 || !b0b1b0 || !b1b1b0) {
+        // We still need the equivalent of this, regardless of the conditional.
+
+        b0b0->scale /= I_CMPLX;
+        b0b1->scale /= I_CMPLX;
+
+        b1b0->scale *= I_CMPLX;
+        b1b1->scale *= I_CMPLX;
+
+        return;
+    }
+
+    // Below here is the problem, that doesn't preserve the ket, because of the absence of the nested factors
+    // immediately above.
 
     /*
     // Say we want to prepare |-> in the b0b0 level:
