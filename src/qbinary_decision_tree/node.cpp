@@ -258,9 +258,14 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
-    b1->scale = -b1->scale;
-    b0b1->scale = -b0b1->scale;
-    b1b1->scale = -b1b1->scale;
+    b0->scale /= I_CMPLX;
+    b1->scale *= I_CMPLX;
+
+    b0b0->scale /= I_CMPLX;
+    b0b1->scale *= I_CMPLX;
+
+    b1b0->scale /= I_CMPLX;
+    b1b1->scale *= I_CMPLX;
 }
 
 } // namespace Qrack
