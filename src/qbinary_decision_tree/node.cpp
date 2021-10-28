@@ -271,9 +271,9 @@ void QBinaryDecisionTreeNode::CorrectPhase()
 
     if (IS_NORM_0(b0b0->scale)) {
         // This preserves the original values if b0b0 == 0.
+        scale *= I_CMPLX;
         b0b1->scale /= I_CMPLX;
         b1b1->scale /= I_CMPLX;
-        scale *= I_CMPLX;
         return;
     }
 
@@ -337,8 +337,8 @@ void QBinaryDecisionTreeNode::CorrectPhase()
 
     if (b0b0b0b0 && b1b0b0b0 && b0b1b0b0 && b1b1b0b0 && b0b0b1b0 && b1b0b1b0 && b0b1b1b0 && b1b1b1b0) {
         // This undoes |-> preparation, from above, and we overall-cancel.
-        b0->scale *= I_CMPLX;
-        b1->scale /= I_CMPLX;
+        b0->scale /= I_CMPLX;
+        b1->scale *= I_CMPLX;
         return;
     }
 
