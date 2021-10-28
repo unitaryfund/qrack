@@ -342,24 +342,13 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
-    b0b0->scale *= I_CMPLX;
-    b0b1->scale *= I_CMPLX;
+    // This fails to overall-cancel |-> prep.
+    b0->scale *= I_CMPLX;
+    b1->scale /= I_CMPLX;
 
-    b1b0->scale /= I_CMPLX;
-    b1b1->scale /= I_CMPLX;
-
-    b0b0b0->scale /= I_CMPLX;
-    b0b0b1->scale /= I_CMPLX;
-    b0b1b0->scale /= I_CMPLX;
-    b0b1b1->scale /= I_CMPLX;
-
-    b1b0b0->scale *= I_CMPLX;
-    b1b0b1->scale *= I_CMPLX;
-    b1b1b0->scale *= I_CMPLX;
-    b1b1b1->scale *= I_CMPLX;
-
-    // NOTE: This passes test_cnot and a simplified test CZ, and AT LEAST the phase factors overall-cancel to reproduce
-    // the original kets. We can probably generalize this basis into branches within a loop.
+    // NOTE: The point is for this to pass test_cnot and a simplified test_cz, in such a way that AT LEAST the phase
+    // factors overall-cancel to reproduce the original kets. We can probably generalize this approach into branches
+    // within a loop.
 }
 
 } // namespace Qrack
