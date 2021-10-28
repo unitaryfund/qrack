@@ -25,15 +25,18 @@ namespace Qrack {
 
 void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, bitCapInt perm)
 {
-    // Assume user code calls into an instantiated object. This method doesn't need to do anything if there are no
-    // branches, anyway. Then, we will never recurse into a NULL pointer depth.
-    QBinaryDecisionTreeNodePtr& b0 = branches[0];
-    if (!b0) {
+    if (!depth) {
         return;
     }
+
     // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NORM_0(scale)) {
         SetZero();
+        return;
+    }
+
+    QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    if (!b0) {
         return;
     }
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
@@ -122,15 +125,18 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
 
 void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
 {
-    // Assume user code calls into an instantiated object. This method doesn't need to do anything if there are no
-    // branches, anyway. Then, we will never recurse into a NULL pointer depth.
-    QBinaryDecisionTreeNodePtr& b0 = branches[0];
-    if (!b0) {
+    if (!depth) {
         return;
     }
+
     // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NORM_0(scale)) {
         SetZero();
+        return;
+    }
+
+    QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    if (!b0) {
         return;
     }
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
@@ -154,15 +160,18 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
 
 void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
 {
-    // Assume user code calls into an instantiated object. This method doesn't need to do anything if there are no
-    // branches, anyway. Then, we will never recurse into a NULL pointer depth.
-    QBinaryDecisionTreeNodePtr& b0 = branches[0];
-    if (!b0) {
+    if (!depth) {
         return;
     }
+
     // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NORM_0(scale)) {
         SetZero();
+        return;
+    }
+
+    QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    if (!b0) {
         return;
     }
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
