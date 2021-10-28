@@ -304,47 +304,42 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
-    // This passes unit tests while preserving ket value, if we DON'T have "great grandchildren."
-    b0->scale *= I_CMPLX;
-    b1->scale /= I_CMPLX;
-
     QBinaryDecisionTreeNodePtr& b0b0b0 = b0b0->branches[0];
     QBinaryDecisionTreeNodePtr& b1b0b0 = b1b0->branches[0];
     QBinaryDecisionTreeNodePtr& b0b1b0 = b0b1->branches[0];
     QBinaryDecisionTreeNodePtr& b1b1b0 = b1b1->branches[0];
-    if (!b0b0b0 || !b1b0b0 || !b0b1b0 || !b1b1b0) {
-        // We still need the equivalent of this, regardless of the conditional.
 
-        b0b0->scale /= I_CMPLX;
-        b0b1->scale /= I_CMPLX;
+    if (b0b0b0 && b1b0b0 && b0b1b0 && b1b1b0) {
+        QBinaryDecisionTreeNodePtr& b0b0b1 = b0b0->branches[1];
+        QBinaryDecisionTreeNodePtr& b1b0b1 = b1b0->branches[1];
+        QBinaryDecisionTreeNodePtr& b0b1b1 = b0b1->branches[1];
+        QBinaryDecisionTreeNodePtr& b1b1b1 = b1b1->branches[1];
 
-        b1b0->scale *= I_CMPLX;
-        b1b1->scale *= I_CMPLX;
+        b0b0b0->scale /= I_CMPLX;
+        b0b0b1->scale /= I_CMPLX;
+        b0b1b0->scale *= I_CMPLX;
+        b0b1b1->scale *= I_CMPLX;
 
+        b1b0b0->scale /= I_CMPLX;
+        b1b0b1->scale /= I_CMPLX;
+        b1b1b0->scale *= I_CMPLX;
+        b1b1b1->scale *= I_CMPLX;
+
+        // This line is the only remaining problem that doesn't preserve the ket.
+        b0->scale = -b0->scale;
         return;
     }
 
-    // Below here is the problem, that doesn't preserve the ket, because of the absence of the nested factors
-    // immediately above.
+    // This prepares a |->.
+    b0->scale *= I_CMPLX;
+    b1->scale /= I_CMPLX;
 
-    /*
-    // Say we want to prepare |-> in the b0b0 level:
+    // These lines below cancel the overall effect on amplitudes.
+    b0b0->scale /= I_CMPLX;
+    b0b1->scale /= I_CMPLX;
 
-    //b0->scale *= I_CMPLX;
-    //b1->scale /= I_CMPLX;
-
-    // Cut the middle level out.
-
-    b0b0b0->scale /= I_CMPLX;
-    b0b0b1->scale /= I_CMPLX;
-    b0b1b0->scale /= I_CMPLX;
-    b0b1b1->scale /= I_CMPLX;
-
-    b1b0b0->scale *= I_CMPLX;
-    b1b0b1->scale *= I_CMPLX;
-    b1b1b0->scale *= I_CMPLX;
-    b1b1b1->scale *= I_CMPLX;
-    */
+    b1b0->scale *= I_CMPLX;
+    b1b1->scale *= I_CMPLX;
 }
 
 } // namespace Qrack
