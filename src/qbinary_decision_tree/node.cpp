@@ -278,18 +278,24 @@ void QBinaryDecisionTreeNode::CorrectPhase()
 
     if (IS_NORM_0(b0b0->scale)) {
         // This preserves the original values if b0b0 == 0.
+
+        // (Depth 0)
         scale *= I_CMPLX;
+
+        // (Depth 1)
         b0b1->scale /= I_CMPLX;
         b1b1->scale /= I_CMPLX;
         return;
     }
 
     // This prepares a |->.
+    // (Depth 1)
     b0->scale *= I_CMPLX;
     b1->scale /= I_CMPLX;
 
     if (IS_NORM_0(b0b1->scale)) {
         // This preserves the original values if b0b1 == 0.
+        // (Depth 2)
         b0b0->scale /= I_CMPLX;
         b1b0->scale *= I_CMPLX;
         return;
@@ -301,6 +307,7 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     QBinaryDecisionTreeNodePtr& b1b1b0 = b1b1->branches[0];
     if (!b0b0b0 || !b1b0b0 || !b0b1b0 || !b1b1b0) {
         // These lines below cancel the overall effect on amplitudes from |-> prepartion.
+        // (Depth 2)
         b0b0->scale /= I_CMPLX;
         b0b1->scale /= I_CMPLX;
 
@@ -309,6 +316,9 @@ void QBinaryDecisionTreeNode::CorrectPhase()
 
         return;
     }
+
+    // (Depth 3)
+
     QBinaryDecisionTreeNodePtr& b0b0b1 = b0b0->branches[1];
     QBinaryDecisionTreeNodePtr& b1b0b1 = b1b0->branches[1];
     QBinaryDecisionTreeNodePtr& b0b1b1 = b0b1->branches[1];
@@ -342,10 +352,13 @@ void QBinaryDecisionTreeNode::CorrectPhase()
 
     if (b0b0b0b0 && b1b0b0b0 && b0b1b0b0 && b1b1b0b0 && b0b0b1b0 && b1b0b1b0 && b0b1b1b0 && b1b1b1b0) {
         // This undoes |-> preparation, from above, and we overall-cancel.
+        // (Depth 3)
         b0->scale /= I_CMPLX;
         b1->scale *= I_CMPLX;
         return;
     }
+
+    // (Depth 4... Not complete, but sometimes gets it right enough.)
 
     // This fails to overall-cancel |-> prep.
     // b0->scale *= I_CMPLX;
