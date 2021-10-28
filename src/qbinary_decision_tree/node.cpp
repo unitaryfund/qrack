@@ -309,12 +309,17 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     QBinaryDecisionTreeNodePtr& b0b1b0 = b0b1->branches[0];
     QBinaryDecisionTreeNodePtr& b1b1b0 = b1b1->branches[0];
 
+    // This prepares a |->.
+    b0->scale *= I_CMPLX;
+    b1->scale /= I_CMPLX;
+
     if (b0b0b0 && b1b0b0 && b0b1b0 && b1b1b0) {
         QBinaryDecisionTreeNodePtr& b0b0b1 = b0b0->branches[1];
         QBinaryDecisionTreeNodePtr& b1b0b1 = b1b0->branches[1];
         QBinaryDecisionTreeNodePtr& b0b1b1 = b0b1->branches[1];
         QBinaryDecisionTreeNodePtr& b1b1b1 = b1b1->branches[1];
 
+        // These lines cancel the very top lines, just after the TODO.
         b0b0b0->scale /= I_CMPLX;
         b0b0b1->scale /= I_CMPLX;
         b0b1b0->scale *= I_CMPLX;
@@ -325,16 +330,12 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         b1b1b0->scale *= I_CMPLX;
         b1b1b1->scale *= I_CMPLX;
 
-        // This line is the only remaining problem that doesn't preserve the ket.
-        b0->scale = -b0->scale;
+        // Here, failure to overall-cancel |-> preparation above is the only remaining problem that doesn't preserve the
+        // ket:
         return;
     }
 
-    // This prepares a |->.
-    b0->scale *= I_CMPLX;
-    b1->scale /= I_CMPLX;
-
-    // These lines below cancel the overall effect on amplitudes.
+    // These lines below cancel the overall effect on amplitudes from |-> prepartion.
     b0b0->scale /= I_CMPLX;
     b0b1->scale /= I_CMPLX;
 
