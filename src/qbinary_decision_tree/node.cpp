@@ -298,7 +298,6 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     QBinaryDecisionTreeNodePtr& b1b0b0 = b1b0->branches[0];
     QBinaryDecisionTreeNodePtr& b0b1b0 = b0b1->branches[0];
     QBinaryDecisionTreeNodePtr& b1b1b0 = b1b1->branches[0];
-
     if (!b0b0b0 || !b1b0b0 || !b0b1b0 || !b1b1b0) {
         // These lines below cancel the overall effect on amplitudes from |-> prepartion.
         b0b0->scale /= I_CMPLX;
@@ -309,7 +308,6 @@ void QBinaryDecisionTreeNode::CorrectPhase()
 
         return;
     }
-
     QBinaryDecisionTreeNodePtr& b0b0b1 = b0b0->branches[1];
     QBinaryDecisionTreeNodePtr& b1b0b1 = b1b0->branches[1];
     QBinaryDecisionTreeNodePtr& b0b1b1 = b0b1->branches[1];
@@ -332,7 +330,40 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     b1b1b0->scale *= I_CMPLX;
     b1b1b1->scale *= I_CMPLX;
 
-    // TODO: We fail to cancel the phase factor from |-> prep.
+    QBinaryDecisionTreeNodePtr& b0b0b0b0 = b0b0b0->branches[0];
+    QBinaryDecisionTreeNodePtr& b1b0b0b0 = b1b0b0->branches[0];
+    QBinaryDecisionTreeNodePtr& b0b1b0b0 = b0b1b0->branches[0];
+    QBinaryDecisionTreeNodePtr& b1b1b0b0 = b1b1b0->branches[0];
+    QBinaryDecisionTreeNodePtr& b0b0b1b0 = b0b0b1->branches[0];
+    QBinaryDecisionTreeNodePtr& b1b0b1b0 = b1b0b1->branches[0];
+    QBinaryDecisionTreeNodePtr& b0b1b1b0 = b0b1b1->branches[0];
+    QBinaryDecisionTreeNodePtr& b1b1b1b0 = b1b1b1->branches[0];
+
+    if (b0b0b0b0 && b1b0b0b0 && b0b1b0b0 && b1b1b0b0 && b0b0b1b0 && b1b0b1b0 && b0b1b1b0 && b1b1b1b0) {
+        // This undoes |-> preparation, from above, and we overall-cancel.
+        b0->scale *= I_CMPLX;
+        b1->scale /= I_CMPLX;
+        return;
+    }
+
+    b0b0->scale *= I_CMPLX;
+    b0b1->scale *= I_CMPLX;
+
+    b1b0->scale /= I_CMPLX;
+    b1b1->scale /= I_CMPLX;
+
+    b0b0b0->scale /= I_CMPLX;
+    b0b0b1->scale /= I_CMPLX;
+    b0b1b0->scale /= I_CMPLX;
+    b0b1b1->scale /= I_CMPLX;
+
+    b1b0b0->scale *= I_CMPLX;
+    b1b0b1->scale *= I_CMPLX;
+    b1b1b0->scale *= I_CMPLX;
+    b1b1b1->scale *= I_CMPLX;
+
+    // NOTE: This passes test_cnot and a simplified test CZ, and AT LEAST the phase factors overall-cancel to reproduce
+    // the original kets. We can probably generalize this basis into branches within a loop.
 }
 
 } // namespace Qrack
