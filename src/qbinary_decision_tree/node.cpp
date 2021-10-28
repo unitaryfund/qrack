@@ -230,28 +230,16 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
+    complex offsetFactor;
+
     if (IS_NORM_0(b0b0->scale)) {
         // We perform the same check for "grandchildren" equality, as below, but this would otherwise produce a "NaN"
         // division-by-zero offsetFactor.
-        complex offsetFactor = (b1->scale * b1b1->scale) / (b0->scale * b0b1->scale);
+        offsetFactor = (b1->scale * b1b1->scale) / (b0->scale * b0b1->scale);
+    } else {
 
-        if (IS_NORM_0(ONE_CMPLX - offsetFactor) || (abs(ONE_R1 - norm(offsetFactor)) > FP_NORM_EPSILON)) {
-            return;
-        }
-        complex halfOffsetFactor = std::polar(ONE_R1, ((real1)std::arg(offsetFactor)) / 2);
-
-        b0->scale *= halfOffsetFactor;
-        b0b0->scale /= halfOffsetFactor;
-        b0b1->scale /= halfOffsetFactor;
-
-        b1->scale /= halfOffsetFactor;
-        b1b0->scale *= halfOffsetFactor;
-        b1b1->scale *= halfOffsetFactor;
-
-        return;
+        offsetFactor = (b1->scale * b1b0->scale) / (b0->scale * b0b0->scale);
     }
-
-    complex offsetFactor = (b1->scale * b1b0->scale) / (b0->scale * b0b0->scale);
 
     if (IS_NORM_0(ONE_CMPLX - offsetFactor) || (abs(ONE_R1 - norm(offsetFactor)) > FP_NORM_EPSILON) ||
         !IS_NORM_0(offsetFactor * b0->scale * b0b1->scale - b1->scale * b1b1->scale)) {
@@ -267,6 +255,10 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     b1->scale /= halfOffsetFactor;
     b1b0->scale *= halfOffsetFactor;
     b1b1->scale *= halfOffsetFactor;
+
+    if (IS_NORM_0(b0b0->scale)) {
+        return;
+    }
 
     b1->scale = -b1->scale;
     b0b1->scale = -b0b1->scale;
