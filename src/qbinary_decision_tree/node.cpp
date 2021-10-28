@@ -263,19 +263,19 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     // decisision diagrams do in the first place.
 
     b0b0->scale *= I_CMPLX;
+    b0b1->scale /= I_CMPLX;
+
     b1b0->scale *= I_CMPLX;
+    b1b1->scale /= I_CMPLX;
+
+    // scale = -scale;
 
     if (IS_NORM_0(b0b0->scale)) {
         return;
     }
 
-    scale = -scale;
-
     b0->scale *= I_CMPLX;
-    b0b1->scale /= I_CMPLX;
-
     b1->scale /= I_CMPLX;
-    b1b1->scale /= I_CMPLX;
 
     /*
     Conceptually, we want to preserve the ket representation up to arbitrary phase factors (on separable subsystems)
