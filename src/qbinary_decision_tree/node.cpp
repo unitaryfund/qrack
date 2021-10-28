@@ -262,6 +262,8 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
+    scale = -scale;
+
     b0->scale /= I_CMPLX;
     b1->scale *= I_CMPLX;
 
