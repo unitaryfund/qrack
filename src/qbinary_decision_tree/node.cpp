@@ -281,12 +281,8 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         // This preserves the original values if b0b1 == 0.
         b0->scale *= I_CMPLX;
         b1->scale /= I_CMPLX;
-
         b0b0->scale /= I_CMPLX;
-        b0b1->scale /= I_CMPLX;
-
         b1b0->scale *= I_CMPLX;
-        b1b1->scale *= I_CMPLX;
         return;
     }
 
