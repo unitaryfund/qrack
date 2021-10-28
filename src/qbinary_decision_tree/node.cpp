@@ -233,11 +233,9 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     complex offsetFactor;
 
     if (IS_NORM_0(b0b0->scale)) {
-        // We perform the same check for "grandchildren" equality, as below, but this would otherwise produce a "NaN"
-        // division-by-zero offsetFactor.
+        // Avoid division by 0.
         offsetFactor = (b1->scale * b1b1->scale) / (b0->scale * b0b1->scale);
     } else {
-
         offsetFactor = (b1->scale * b1b0->scale) / (b0->scale * b0b0->scale);
     }
 
