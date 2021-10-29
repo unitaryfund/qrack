@@ -301,35 +301,30 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
+    // These lines below cancel the overall effect on amplitudes from |-> prepartion.
+    // (Depth 2)
+    b0b0->scale /= I_CMPLX;
+    b0b1->scale /= I_CMPLX;
+
+    b1b0->scale *= I_CMPLX;
+    b1b1->scale *= I_CMPLX;
+
     QBinaryDecisionTreeNodePtr& b0b0b0 = b0b0->branches[0];
     QBinaryDecisionTreeNodePtr& b1b0b0 = b1b0->branches[0];
     QBinaryDecisionTreeNodePtr& b0b1b0 = b0b1->branches[0];
     QBinaryDecisionTreeNodePtr& b1b1b0 = b1b1->branches[0];
     if (!b0b0b0 || !b1b0b0 || !b0b1b0 || !b1b1b0) {
-        // These lines below cancel the overall effect on amplitudes from |-> prepartion.
-        // (Depth 2)
-        b0b0->scale /= I_CMPLX;
-        b0b1->scale /= I_CMPLX;
-
-        b1b0->scale *= I_CMPLX;
-        b1b1->scale *= I_CMPLX;
-
         return;
     }
-
-    // (Depth 3)
-
     QBinaryDecisionTreeNodePtr& b0b0b1 = b0b0->branches[1];
     QBinaryDecisionTreeNodePtr& b1b0b1 = b1b0->branches[1];
     QBinaryDecisionTreeNodePtr& b0b1b1 = b0b1->branches[1];
     QBinaryDecisionTreeNodePtr& b1b1b1 = b1b1->branches[1];
 
-    // These lines overall-cancel.
-    b0b0->scale *= I_CMPLX;
-    b0b1->scale /= I_CMPLX;
+    // (Depth 3)
 
-    b1b0->scale *= I_CMPLX;
-    b1b1->scale /= I_CMPLX;
+    b0b0->scale = -b0b0->scale;
+    b1b1->scale = -b1b1->scale;
 
     b0b0b0->scale /= I_CMPLX;
     b0b0b1->scale /= I_CMPLX;
