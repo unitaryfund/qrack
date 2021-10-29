@@ -87,8 +87,7 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
             }
         }
 
-        if ((leaf0 != leaf1) || !IS_NORM_0(scale0 - scale1)) {
-            // We can't combine our immediate children within depth.
+        if (leaf0 || leaf1 || !IS_NORM_0(scale0 - scale1)) {
             return;
         }
     }
