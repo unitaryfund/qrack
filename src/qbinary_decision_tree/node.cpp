@@ -336,7 +336,7 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
-    // This prepares 2x |->.
+    // This prepares a 2x |->.
     b0b0->scale *= I_CMPLX;
     b0b1->scale /= I_CMPLX;
     b1b0->scale *= I_CMPLX;
