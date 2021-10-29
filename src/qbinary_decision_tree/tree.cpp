@@ -109,6 +109,9 @@ template <typename Fn> void QBinaryDecisionTree::GetTraversal(Fn getLambda)
                 break;
             }
             scale *= leaf->scale;
+            if (IS_NORM_0(scale)) {
+                return;
+            }
         }
         getLambda(i, scale);
     });
@@ -178,6 +181,9 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
                 break;
             }
             scale1 *= leaf1->scale;
+            if (IS_NORM_0(scale1)) {
+                return;
+            }
         }
         for (j = 0; j < qubitCount; j++) {
             leaf2 = leaf2->branches[(i >> j) & 1U];
@@ -185,6 +191,9 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
                 break;
             }
             scale2 *= leaf2->scale;
+            if (IS_NORM_0(scale2)) {
+                return;
+            }
         }
         partInner[cpu] += conj(scale2) * scale1;
     });
@@ -211,6 +220,9 @@ complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
             break;
         }
         scale *= leaf->scale;
+        if (IS_NORM_0(scale)) {
+            break;
+        }
     }
 
     return scale;
@@ -377,6 +389,9 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
                 break;
             }
             scale *= leaf->scale;
+            if (IS_NORM_0(scale)) {
+                return;
+            }
         }
         oneChanceBuff[cpu] += norm(scale);
     });
@@ -403,6 +418,9 @@ real1_f QBinaryDecisionTree::ProbAll(bitCapInt fullRegister)
             break;
         }
         scale *= leaf->scale;
+        if (IS_NORM_0(scale)) {
+            break;
+        }
     }
 
     return clampProb(norm(scale));
@@ -528,7 +546,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
             for (bitLenInt j = 0; j < target; j++) {
                 bit = (i >> j) & 1U;
                 leaf = leaf->branches[bit];
-                if (leaf || IS_NORM_0(leaf->scale)) {
+                if (!leaf || IS_NORM_0(leaf->scale)) {
                     return;
                 }
             }
