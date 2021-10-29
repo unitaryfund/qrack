@@ -296,9 +296,8 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     // These lines below cancel the overall effect on amplitudes from |-> prepartion.
     // (Depth 2)
     b0b0->scale /= I_CMPLX;
-    b1b0->scale *= I_CMPLX;
-    
     b0b1->scale /= I_CMPLX;
+    b1b0->scale *= I_CMPLX;
     b1b1->scale *= I_CMPLX;
 }
 
