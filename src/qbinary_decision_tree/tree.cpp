@@ -470,7 +470,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         }
     }
 
-    root->Prune(qubitCount);
+    root->Prune(qubit + 2U);
 
     return result;
 }
@@ -536,7 +536,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
             Apply2x2OnLeaf(mtrx.get(), leaf);
         });
 
-        root->Prune(qubitCount);
+        root->Prune(target + 2U);
     });
 }
 
@@ -594,7 +594,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             Apply2x2OnLeaf(mtrx.get(), leaf);
         });
 
-        root->Prune(qubitCount);
+        root->Prune(target + 2U);
     });
 }
 

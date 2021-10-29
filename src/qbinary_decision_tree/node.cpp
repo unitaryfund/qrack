@@ -76,18 +76,22 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         for (j = 0; j < depth; j++) {
             bit = (i >> j) & 1U;
 
+            if (leaf0 == leaf1) {
+                break;
+            }
+
             if (leaf0) {
                 scale0 *= leaf0->scale;
                 leaf0 = leaf0->branches[bit];
             } else if (leaf1) {
                 scale1 *= leaf1->scale;
                 leaf1 = leaf1->branches[bit];
-            } else {
-                break;
             }
+
+            break;
         }
 
-        if (leaf0 || leaf1 || !IS_NORM_0(scale0 - scale1)) {
+        if ((leaf0 != leaf1) || !IS_NORM_0(scale0 - scale1)) {
             // We can't combine our immediate children within depth.
             return;
         }
