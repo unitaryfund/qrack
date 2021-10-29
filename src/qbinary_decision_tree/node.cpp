@@ -25,6 +25,7 @@ namespace Qrack {
 
 void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, bitCapInt perm)
 {
+
     if (!depth) {
         return;
     }
@@ -55,14 +56,15 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         }
     }
 
+    if (!IS_NORM_0(b0->scale - b1->scale)) {
+        return;
+    }
+
     if (b0 == b1) {
         // Combining branches is the only other thing we try, below.
         return;
     }
     // Now, we try to combine pointers to equivalent branches.
-
-    // We might split immediate children at depth, in a gate, but we don't recurse from here.
-    depth++;
 
     bitCapInt depthPow = ONE_BCI << depth;
     complex scale0, scale1;
@@ -85,11 +87,10 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
             if (leaf0) {
                 scale0 *= leaf0->scale;
                 leaf0 = leaf0->branches[bit];
-            } else if (leaf1) {
+            }
+            if (leaf1) {
                 scale1 *= leaf1->scale;
                 leaf1 = leaf1->branches[bit];
-            } else {
-                break;
             }
         }
 
