@@ -342,12 +342,13 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     b1b0->scale *= I_CMPLX;
     b1b1->scale /= I_CMPLX;
 
+    b0b0b0->scale /= I_CMPLX;
+    b0b1b0->scale *= I_CMPLX;
+    b1b0b0->scale /= I_CMPLX;
+    b1b1b0->scale *= I_CMPLX;
+
     if (IS_NORM_0(b0b1b0->scale) && IS_NORM_0(b0b1b1->scale)) {
         // (Depth 3)
-        b0b0b0->scale /= I_CMPLX;
-        b0b1b0->scale *= I_CMPLX;
-        b1b0b0->scale /= I_CMPLX;
-        b1b1b0->scale *= I_CMPLX;
         return;
     }
 
@@ -355,14 +356,9 @@ void QBinaryDecisionTreeNode::CorrectPhase()
 
     // These lines overall-cancel.
 
-    b0b0b0->scale /= I_CMPLX;
     b0b0b1->scale /= I_CMPLX;
-    b0b1b0->scale *= I_CMPLX;
     b0b1b1->scale *= I_CMPLX;
-
-    b1b0b0->scale /= I_CMPLX;
     b1b0b1->scale /= I_CMPLX;
-    b1b1b0->scale *= I_CMPLX;
     b1b1b1->scale *= I_CMPLX;
 
     QBinaryDecisionTreeNodePtr& b0b0b0b0 = b0b0b0->branches[0];
