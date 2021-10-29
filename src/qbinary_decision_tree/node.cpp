@@ -79,11 +79,11 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
             if (leaf0) {
                 scale0 *= leaf0->scale;
                 leaf0 = leaf0->branches[bit];
-            }
-
-            if (leaf1) {
+            } else if (leaf1) {
                 scale1 *= leaf1->scale;
                 leaf1 = leaf1->branches[bit];
+            } else {
+                break;
             }
         }
 
