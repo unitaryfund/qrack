@@ -25,7 +25,6 @@ namespace Qrack {
 
 void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, bitCapInt perm)
 {
-
     if (!depth) {
         return;
     }

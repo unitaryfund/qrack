@@ -181,7 +181,6 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
         }
         for (j = 0; j < qubitCount; j++) {
             leaf2 = leaf2->branches[(i >> j) & 1U];
-            scale2 *= leaf2->scale;
             if (!leaf2) {
                 break;
             }
