@@ -306,37 +306,6 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     // (Depth 2)
     b0b1->scale /= I_CMPLX;
     b1b1->scale *= I_CMPLX;
-
-    QBinaryDecisionTreeNodePtr& b0b0b0 = b0b0->branches[0];
-    QBinaryDecisionTreeNodePtr& b1b0b0 = b1b0->branches[0];
-    QBinaryDecisionTreeNodePtr& b0b1b0 = b0b1->branches[0];
-    QBinaryDecisionTreeNodePtr& b1b1b0 = b1b1->branches[0];
-    if (!b0b0b0 || !b1b0b0 || !b0b1b0 || !b1b1b0) {
-        return;
-    }
-    QBinaryDecisionTreeNodePtr& b0b0b1 = b0b0->branches[1];
-    QBinaryDecisionTreeNodePtr& b1b0b1 = b1b0->branches[1];
-    QBinaryDecisionTreeNodePtr& b0b1b1 = b0b1->branches[1];
-    QBinaryDecisionTreeNodePtr& b1b1b1 = b1b1->branches[1];
-
-    // (Depth 3... Not complete, but sometimes gets it right enough.)
-
-    // NOTE: The point is for this to pass test_cnot and a simplified test_cz, in such a way that AT LEAST the phase
-    // factors overall-cancel to reproduce the original kets. We can probably generalize this approach into branches
-    // within a loop.
-
-    b0b0->scale = -b0b0->scale;
-    b1b1->scale = -b1b1->scale;
-
-    b0b0b0->scale /= I_CMPLX;
-    b0b0b1->scale /= I_CMPLX;
-    b0b1b0->scale *= I_CMPLX;
-    b0b1b1->scale *= I_CMPLX;
-
-    b1b0b0->scale /= I_CMPLX;
-    b1b0b1->scale /= I_CMPLX;
-    b1b1b0->scale *= I_CMPLX;
-    b1b1b1->scale *= I_CMPLX;
 }
 
 } // namespace Qrack
