@@ -105,10 +105,10 @@ template <typename Fn> void QBinaryDecisionTree::GetTraversal(Fn getLambda)
         complex scale = leaf->scale;
         for (bitLenInt j = 0; j < qubitCount; j++) {
             leaf = leaf->branches[(i >> j) & 1U];
-            scale *= leaf->scale;
-            if (IS_NORM_0(scale)) {
+            if (!leaf) {
                 break;
             }
+            scale *= leaf->scale;
         }
         getLambda(i, scale);
     });
@@ -174,17 +174,18 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
         bitLenInt j;
         for (j = 0; j < qubitCount; j++) {
             leaf1 = leaf1->branches[(i >> j) & 1U];
-            scale1 *= leaf1->scale;
-            if (IS_NORM_0(scale1)) {
+            if (!leaf1) {
                 break;
             }
+            scale1 *= leaf1->scale;
         }
         for (j = 0; j < qubitCount; j++) {
             leaf2 = leaf2->branches[(i >> j) & 1U];
             scale2 *= leaf2->scale;
-            if (IS_NORM_0(scale2)) {
+            if (!leaf2) {
                 break;
             }
+            scale2 *= leaf2->scale;
         }
         partInner[cpu] += conj(scale2) * scale1;
     });
@@ -207,10 +208,10 @@ complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
     scale = leaf->scale;
     for (j = 0; j < qubitCount; j++) {
         leaf = leaf->branches[(perm >> j) & 1U];
-        scale *= leaf->scale;
-        if (IS_NORM_0(scale)) {
+        if (!leaf) {
             break;
         }
+        scale *= leaf->scale;
     }
 
     return scale;
@@ -373,10 +374,10 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
         complex scale = root->scale;
         for (bitLenInt j = 0; j <= qubit; j++) {
             leaf = leaf->branches[(i >> j) & 1U];
-            scale *= leaf->scale;
-            if (IS_NORM_0(scale)) {
-                return;
+            if (!leaf) {
+                break;
             }
+            scale *= leaf->scale;
         }
         oneChanceBuff[cpu] += norm(scale);
     });
@@ -399,10 +400,10 @@ real1_f QBinaryDecisionTree::ProbAll(bitCapInt fullRegister)
     scale = leaf->scale;
     for (j = 0; j < qubitCount; j++) {
         leaf = leaf->branches[(fullRegister >> j) & 1U];
-        scale *= leaf->scale;
-        if (IS_NORM_0(scale)) {
+        if (!leaf) {
             break;
         }
+        scale *= leaf->scale;
     }
 
     return clampProb(norm(scale));
@@ -452,12 +453,12 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         for (j = 0; j < qubit; j++) {
             bit = (i >> j) & 1U;
             leaf = leaf->branches[bit];
-            if (IS_NORM_0(leaf->scale)) {
+            if (!leaf || IS_NORM_0(leaf->scale)) {
                 break;
             }
         }
 
-        if (IS_NORM_0(leaf->scale)) {
+        if (!leaf || IS_NORM_0(leaf->scale)) {
             continue;
         }
 
@@ -528,7 +529,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
             for (bitLenInt j = 0; j < target; j++) {
                 bit = (i >> j) & 1U;
                 leaf = leaf->branches[bit];
-                if (IS_NORM_0(leaf->scale)) {
+                if (leaf || IS_NORM_0(leaf->scale)) {
                     return;
                 }
             }
@@ -586,7 +587,7 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             for (bitLenInt j = 0; j < target; j++) {
                 bit = (i >> j) & 1U;
                 leaf = leaf->branches[bit];
-                if (IS_NORM_0(leaf->scale)) {
+                if (!leaf || IS_NORM_0(leaf->scale)) {
                     return;
                 }
             }
