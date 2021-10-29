@@ -248,7 +248,6 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     }
 
     complex offsetFactor;
-
     if (IS_NORM_0(b0b0->scale)) {
         // Avoid division by 0.
         offsetFactor = (b1->scale * b1b1->scale) / (b0->scale * b0b1->scale);
@@ -271,22 +270,7 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     b1b0->scale *= halfOffsetFactor;
     b1b1->scale *= halfOffsetFactor;
 
-    // Conceptually, we want to preserve the ket representation up to arbitrary phase factors (on separable subsystems)
-    // while handling states like |+> and |->.
-
-    // b0b0 and b0b1 cannot both be 0.
-
-    if (IS_NORM_0(b0b0->scale)) {
-        // This preserves the original values if b0b0 == 0.
-
-        // (Depth 0)
-        scale *= I_CMPLX;
-
-        // (Depth 1)
-        b0b1->scale /= I_CMPLX;
-        b1b1->scale /= I_CMPLX;
-        return;
-    }
+    // We want to preserve the original numerical ket representation while handling states like |+> and |->.
 
     // This prepares a |->.
     // (Depth 1)
