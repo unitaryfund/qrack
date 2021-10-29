@@ -282,7 +282,7 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         // (Depth 0)
         scale *= I_CMPLX;
 
-        // (Depth 1)
+        // (Depth 2)
         b0b1->scale /= I_CMPLX;
         b1b1->scale /= I_CMPLX;
         return;
@@ -324,12 +324,36 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     QBinaryDecisionTreeNodePtr& b0b1b1 = b0b1->branches[1];
     QBinaryDecisionTreeNodePtr& b1b1b1 = b1b1->branches[1];
 
-    // These lines overall-cancel.
+    if (IS_NORM_0(b0b0b0->scale) && IS_NORM_0(b0b0b1->scale)) {
+        // (Depth 1)
+        b0->scale *= I_CMPLX;
+
+        // (Depth 3)
+        b0b0b1->scale /= I_CMPLX;
+        b0b1b1->scale /= I_CMPLX;
+        b1b0b1->scale /= I_CMPLX;
+        b1b1b1->scale /= I_CMPLX;
+        return;
+    }
+
+    // This prepares a 2x |->.
     b0b0->scale *= I_CMPLX;
     b0b1->scale /= I_CMPLX;
-
     b1b0->scale *= I_CMPLX;
     b1b1->scale /= I_CMPLX;
+
+    if (IS_NORM_0(b0b1b0->scale) && IS_NORM_0(b0b1b1->scale)) {
+        // (Depth 3)
+        b0b0b0->scale /= I_CMPLX;
+        b0b1b0->scale *= I_CMPLX;
+        b1b0b0->scale /= I_CMPLX;
+        b1b1b0->scale *= I_CMPLX;
+        return;
+    }
+
+    // (Less reliable for generality, below...)
+
+    // These lines overall-cancel.
 
     b0b0b0->scale /= I_CMPLX;
     b0b0b1->scale /= I_CMPLX;
