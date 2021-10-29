@@ -267,10 +267,6 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     b1b0->scale *= halfOffsetFactor;
     b1b1->scale *= halfOffsetFactor;
 
-    // TODO: From here down, try to "Rubik's Cube" the transformation from past to before the norm == 0 check, with
-    // destructive interference, to ultimately preserve exact numerical ket amplitudes at the base of the tree, as
-    // decisision diagrams do in the first place.
-
     // Conceptually, we want to preserve the ket representation up to arbitrary phase factors (on separable subsystems)
     // while handling states like |+> and |->.
 
