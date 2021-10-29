@@ -270,7 +270,7 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     b1b0->scale *= halfOffsetFactor;
     b1b1->scale *= halfOffsetFactor;
 
-    if (IS_NORM_0(I_CMPLX - offsetFactor)) {
+    if (IS_NORM_0(I_CMPLX - offsetFactor) || IS_NORM_0(I_CMPLX + offsetFactor)) {
         return;
     }
 
