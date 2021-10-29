@@ -42,17 +42,16 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
 
     // Prune recursively to depth.
-    depth--;
     size_t bit = perm & 1U;
     perm >>= 1U;
 
     if (isNarrow) {
         // Either we're narrow, or else there's no point in pruning same pointer branch twice.
-        branches[bit]->PruneNarrowOrWide(depth, isNarrow, perm);
+        branches[bit]->PruneNarrowOrWide(depth - 1U, isNarrow, perm);
     } else {
         size_t maxLcv = (b0 == b1) ? 1 : 2;
         for (size_t i = 0; i < maxLcv; i++) {
-            branches[i]->PruneNarrowOrWide(depth, false, perm);
+            branches[i]->PruneNarrowOrWide(depth - 1U, false, perm);
         }
     }
 
@@ -61,6 +60,9 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         return;
     }
     // Now, we try to combine pointers to equivalent branches.
+
+    // We might split immediate children at depth, in a gate, but we don't recurse from here.
+    depth++;
 
     bitCapInt depthPow = ONE_BCI << depth;
     complex scale0, scale1;
