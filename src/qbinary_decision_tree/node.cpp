@@ -293,17 +293,11 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     b0->scale *= I_CMPLX;
     b1->scale /= I_CMPLX;
 
-    // This preserves the original values if b0b1 == 0.
+    // These lines below cancel the overall effect on amplitudes from |-> prepartion.
     // (Depth 2)
     b0b0->scale /= I_CMPLX;
     b1b0->scale *= I_CMPLX;
-
-    if (IS_NORM_0(b0b1->scale)) {
-        return;
-    }
-
-    // These lines below cancel the overall effect on amplitudes from |-> prepartion.
-    // (Depth 2)
+    
     b0b1->scale /= I_CMPLX;
     b1b1->scale *= I_CMPLX;
 }
