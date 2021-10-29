@@ -134,7 +134,8 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
 
     root->ConvertStateVector(qubitCount);
     root->scale = ONE_CMPLX;
-    root->Prune(qubitCount + 1U);
+    // "qubitCount" is necessarily a terminal (or separable) boundary.
+    root->Prune(qubitCount);
 }
 void QBinaryDecisionTree::GetQuantumState(complex* state)
 {
