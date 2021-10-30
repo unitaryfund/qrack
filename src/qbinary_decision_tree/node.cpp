@@ -280,13 +280,13 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     // (Depth 1)
     b0->scale *= I_CMPLX;
     b1->scale /= I_CMPLX;
-
-    // These lines below cancel the overall effect on amplitudes from |-> prepartion.
     // (Depth 2)
     b0b0->scale /= I_CMPLX;
     b0b1->scale /= I_CMPLX;
     b1b0->scale *= I_CMPLX;
     b1b1->scale *= I_CMPLX;
+
+    // Notice that the overall effect on tree to traversal, to produce a ket amplitude, is totally cancelled.
 }
 
 } // namespace Qrack
