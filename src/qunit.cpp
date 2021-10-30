@@ -3564,20 +3564,6 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
     std::copy(targets.begin(), targets.end(), allBits.begin() + controlVec.size());
     std::sort(allBits.begin(), allBits.end());
-
-    bool isPotentiallySeparable = true;
-    QInterfacePtr origUnit = NULL;
-    for (i = 0; i < allBits.size(); i++) {
-        QEngineShard& shard = shards[allBits[i]];
-        if (origUnit == NULL) {
-            origUnit = shard.unit;
-        }
-        if (origUnit != shard.unit) {
-            isPotentiallySeparable = false;
-            break;
-        }
-    }
-
     std::vector<bitLenInt> allBitsMapped(allBits);
 
     std::vector<bitLenInt*> ebits(allBitsMapped.size());
@@ -3601,7 +3587,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     // target bit in X or Y basis and acting as if Z basis by commutation).
     cfn(unit, controlVec);
 
-    if (!isPotentiallySeparable || !isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb) {
+    if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb) {
         return;
     }
 
