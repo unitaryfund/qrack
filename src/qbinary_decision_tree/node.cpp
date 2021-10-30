@@ -222,30 +222,40 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
 void QBinaryDecisionTreeNode::CorrectPhase()
 {
     QBinaryDecisionTreeNodePtr& b0 = branches[0];
-    QBinaryDecisionTreeNodePtr& b0b0 = b0->branches[0];
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
-    QBinaryDecisionTreeNodePtr& b1b0 = b1->branches[0];
 
+    QBinaryDecisionTreeNodePtr& b0b0 = b0->branches[0];
+    QBinaryDecisionTreeNodePtr& b1b0 = b1->branches[0];
     if (!b0 || (b0 == b1) || !b0b0 || !b1b0) {
         // Combining branches UP TO OVERALL PHASE is the only other thing we try, below.
         return;
     }
-
     QBinaryDecisionTreeNodePtr& b0b1 = b0->branches[1];
     QBinaryDecisionTreeNodePtr& b1b1 = b1->branches[1];
 
-    // First, if our 2 sets of 2 children differ only by an OVERALL PHASE factor, we pull this factor up into the two
-    // parents, equally.
-
     if (IS_NORM_0(b0->scale) || IS_NORM_0(b1->scale)) {
         return;
+    }
+
+    // We want to preserve the original numerical ket representation while handling states like |+> and |->.
+
+    complex offsetFactor = b1->scale / b0->scale;
+    if (!IS_NORM_0(ONE_CMPLX - offsetFactor) && (abs(ONE_R1 - norm(offsetFactor)) <= FP_NORM_EPSILON)) {
+        offsetFactor = sqrt(offsetFactor);
+
+        b0->scale *= offsetFactor;
+        b1->scale /= offsetFactor;
+
+        b0b0->scale /= offsetFactor;
+        b0b1->scale /= offsetFactor;
+        b1b0->scale *= offsetFactor;
+        b1b1->scale *= offsetFactor;
     }
 
     if (IS_NORM_0(b0b0->scale) != IS_NORM_0(b1b0->scale)) {
         return;
     }
 
-    complex offsetFactor;
     if (IS_NORM_0(b0b0->scale)) {
         // Avoid division by 0.
         offsetFactor = (b1->scale * b1b1->scale) / (b0->scale * b0b1->scale);
@@ -261,7 +271,7 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
-    // We want to preserve the original numerical ket representation while handling states like |+> and |->.
+    offsetFactor = sqrt(offsetFactor);
 
     b0->scale *= offsetFactor;
     b1->scale /= offsetFactor;
