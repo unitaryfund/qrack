@@ -378,7 +378,8 @@ public:
         ExecuteAsQEngineCPU(
             [&](QInterfacePtr eng) { eng->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen); });
     }
-    virtual void PhaseParity(real1_f radians, bitCapInt mask) {
+    virtual void PhaseParity(real1_f radians, bitCapInt mask)
+    {
         ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->PhaseParity(radians, mask); });
     }
 };

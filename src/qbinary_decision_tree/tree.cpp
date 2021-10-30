@@ -234,35 +234,34 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
     toCopy->Finish();
 
     if (start == 0) {
-        QBinaryDecisionTreeNodePtr rootClone = toCopy->root->DeepClone();
+        QBinaryDecisionTreeNodePtr rootClone = toCopy->root->ShallowClone();
         std::swap(root, rootClone);
         par_for(0, toCopy->maxQPower, [&](const bitCapInt& i, const int& cpu) {
             QBinaryDecisionTreeNodePtr leaf = root;
-            for (bitLenInt j = 0; j < (toCopy->qubitCount - 1U); j++) {
+            for (bitLenInt j = 0; j < toCopy->qubitCount; j++) {
                 leaf = leaf->branches[(i >> j) & 1U];
                 if (!leaf) {
                     return;
                 }
             }
-            leaf->branches[0] = rootClone;
-            leaf->branches[1] = rootClone;
+            leaf->branches[0] = rootClone->branches[0];
+            leaf->branches[1] = rootClone->branches[1];
         });
         SetQubitCount(qubitCount + toCopy->qubitCount);
         return start;
     }
 
     if (start == qubitCount) {
-        QBinaryDecisionTreeNodePtr rootClone = toCopy->root->DeepClone();
         par_for(0, maxQPower, [&](const bitCapInt& i, const int& cpu) {
             QBinaryDecisionTreeNodePtr leaf = root;
-            for (bitLenInt j = 0; j < (qubitCount - 1U); j++) {
+            for (bitLenInt j = 0; j < qubitCount; j++) {
                 leaf = leaf->branches[(i >> j) & 1U];
                 if (!leaf) {
                     return;
                 }
             }
-            leaf->branches[0] = rootClone;
-            leaf->branches[1] = rootClone;
+            leaf->branches[0] = toCopy->root->branches[0];
+            leaf->branches[1] = toCopy->root->branches[1];
         });
         SetQubitCount(qubitCount + toCopy->qubitCount);
         return start;
@@ -274,9 +273,8 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
 
         toCopy->GetQuantumState(copyPtr);
         eng->Compose(copyPtr, start);
-        toCopy->SetQuantumState(copyPtr);
-
         SetQubitCount(qubitCount + toCopy->qubitCount);
+        toCopy->SetQuantumState(copyPtr);
     });
 
     return start;
@@ -286,70 +284,6 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     Finish();
     if (dest) {
         dest->Dump();
-    }
-
-    if (dest && ((start + length) == qubitCount)) {
-        dest->root = NULL;
-        bitCapInt maxLcv = pow2(start);
-        std::mutex destMutex;
-        par_for(0, maxLcv, [&](const bitCapInt& i, const int& cpu) {
-            QBinaryDecisionTreeNodePtr leaf = root;
-            for (bitLenInt j = 0; j < start; j++) {
-                leaf = leaf->branches[(i >> j) & 1U];
-                if (!leaf) {
-                    return;
-                }
-            }
-
-            if (!leaf) {
-                return;
-            }
-
-            // Don't lock, if the dest->root is set.
-            if (!dest->root && (leaf->branches[0] || leaf->branches[1])) {
-                const std::lock_guard<std::mutex> destLock(destMutex);
-                // Now that we've locked, is the dest->root still not set?
-                if (!dest->root) {
-                    if (leaf->branches[0]) {
-                        dest->root = leaf->branches[0]->DeepClone();
-                    } else if (leaf->branches[1]) {
-                        dest->root = leaf->branches[1]->DeepClone();
-                    }
-                }
-            }
-
-            leaf->branches[0] = NULL;
-            leaf->branches[1] = NULL;
-        });
-
-        dest->root->scale = GetNonunitaryPhase();
-        SetQubitCount(qubitCount - length);
-
-        return;
-    }
-
-    if ((start + length) == qubitCount) {
-        bitCapInt maxLcv = pow2(start);
-        par_for(0, maxLcv, [&](const bitCapInt& i, const int& cpu) {
-            QBinaryDecisionTreeNodePtr leaf = root;
-            for (bitLenInt j = 0; j < start; j++) {
-                leaf = leaf->branches[(i >> j) & 1U];
-                if (!leaf) {
-                    return;
-                }
-            }
-
-            if (!leaf) {
-                return;
-            }
-
-            leaf->branches[0] = NULL;
-            leaf->branches[1] = NULL;
-        });
-
-        SetQubitCount(qubitCount - length);
-
-        return;
     }
 
     if (dest) {
