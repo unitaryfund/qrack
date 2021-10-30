@@ -251,10 +251,13 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         offsetFactor = (b1->scale * b1b1->scale) / (b0->scale * b0b1->scale);
     } else {
         offsetFactor = (b1->scale * b1b0->scale) / (b0->scale * b0b0->scale);
+
+        if (!IS_NORM_0(offsetFactor * b0->scale * b0b1->scale - b1->scale * b1b1->scale)) {
+            return;
+        }
     }
 
-    if (IS_NORM_0(ONE_CMPLX - offsetFactor) || (abs(ONE_R1 - norm(offsetFactor)) > FP_NORM_EPSILON) ||
-        !IS_NORM_0(offsetFactor * b0->scale * b0b1->scale - b1->scale * b1b1->scale)) {
+    if (IS_NORM_0(ONE_CMPLX - offsetFactor) || (abs(ONE_R1 - norm(offsetFactor)) > FP_NORM_EPSILON)) {
         return;
     }
 
