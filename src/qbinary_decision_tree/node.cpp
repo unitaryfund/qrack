@@ -233,7 +233,7 @@ void QBinaryDecisionTreeNode::CorrectPhase()
 
     complex offsetFactor = sqrt(b1->scale / b0->scale);
 
-    if (!IS_NORM_0(offsetFactor)) {
+    if (!IS_NORM_0(ONE_CMPLX - offsetFactor)) {
         return;
     }
 
