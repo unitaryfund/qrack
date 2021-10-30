@@ -48,18 +48,6 @@ bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool 
     return toRet;
 }
 
-real1_f QBinaryDecisionTree::ProbParity(const bitCapInt& mask)
-{
-    QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
-
-    GetQuantumState(copyPtr);
-    real1_f toRet = copyPtr->ProbParity(mask);
-    SetQuantumState(copyPtr);
-
-    return toRet;
-}
-
 void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
 {
     Dump();

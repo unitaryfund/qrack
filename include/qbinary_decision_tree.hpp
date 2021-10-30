@@ -64,7 +64,7 @@ protected:
         SetQuantumState(copyPtr);
     }
 
-    template <typename Fn> bitCapInt ResultAsQEngineCPU(Fn operation)
+    template <typename Fn> bitCapInt BitCapIntAsQEngineCPU(Fn operation)
     {
         Finish();
 
@@ -73,6 +73,20 @@ protected:
 
         GetQuantumState(copyPtr);
         bitCapInt toRet = operation(copyPtr);
+        SetQuantumState(copyPtr);
+
+        return toRet;
+    }
+
+    template <typename Fn> real1_f Real1AsQEngineCPU(Fn operation)
+    {
+        Finish();
+
+        QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+            randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+
+        GetQuantumState(copyPtr);
+        real1_f toRet = operation(copyPtr);
         SetQuantumState(copyPtr);
 
         return toRet;
@@ -180,26 +194,29 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
-    virtual real1_f ProbParity(const bitCapInt& mask);
+    virtual real1_f ProbParity(const bitCapInt& mask)
+    {
+        return Real1AsQEngineCPU([&](QInterfacePtr eng) { return eng->ProbParity(mask); });
+    }
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true)
     {
-        return ResultAsQEngineCPU([&](QInterfacePtr eng) {
+        return BitCapIntAsQEngineCPU([&](QInterfacePtr eng) {
             return eng->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
         });
     }
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
     {
-        return ResultAsQEngineCPU([&](QInterfacePtr eng) {
+        return BitCapIntAsQEngineCPU([&](QInterfacePtr eng) {
             return eng->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         });
     }
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
     {
-        return ResultAsQEngineCPU([&](QInterfacePtr eng) {
+        return BitCapIntAsQEngineCPU([&](QInterfacePtr eng) {
             return eng->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         });
     }
