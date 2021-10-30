@@ -226,6 +226,8 @@ protected:
         return toClamp;
     }
 
+    template <typename GateFunc> void ControlledLoopFixture(bitLenInt length, GateFunc gate);
+
     void FreeAligned(void* toFree)
     {
         if (toFree) {
@@ -249,18 +251,6 @@ protected:
             return ONE_CMPLX;
         }
     }
-
-    /**
-     * Apply a square root of swap with arbitrary control (or "anti-control") bits.
-     */
-    virtual void xCSqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1,
-        const bitLenInt& qubit2, const bool& isAnti);
-
-    /**
-     * Apply an (inverse) square root of swap with arbitrary control (or "anti-control") bits.
-     */
-    virtual void xCISqrtSwap(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1,
-        const bitLenInt& qubit2, const bool& isAnti);
 
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
@@ -589,49 +579,38 @@ public:
      * Apply a swap with arbitrary control bits.
      */
     virtual void CSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
 
     /**
      * Apply a swap with arbitrary (anti) control bits.
      */
     virtual void AntiCSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
 
     /**
      * Apply a square root of swap with arbitrary control bits.
      */
     virtual void CSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
-    {
-        xCSqrtSwap(controls, controlLen, qubit1, qubit2, false);
-    }
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
 
     /**
      * Apply a square root of swap with arbitrary (anti) control bits.
      */
     virtual void AntiCSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
-    {
-        xCSqrtSwap(controls, controlLen, qubit1, qubit2, true);
-    }
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
 
     /**
      * Apply an inverse square root of swap with arbitrary control bits.
      */
     virtual void CISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
-    {
-        xCISqrtSwap(controls, controlLen, qubit1, qubit2, false);
-    }
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
 
     /**
      * Apply an inverse square root of swap with arbitrary (anti) control bits.
      */
     virtual void AntiCISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
-    {
-        xCISqrtSwap(controls, controlLen, qubit1, qubit2, true);
-    }
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+
     /**
      * Doubly-controlled NOT gate
      *
@@ -2208,25 +2187,25 @@ public:
     virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values) = 0;
 
     /** Swap values of two bits in register */
-    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
 
     /** Bitwise swap */
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Swap values of two bits in register, and apply phase factor of i if bits are different */
-    virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
 
     /** Bitwise swap */
     virtual void ISwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Square root of Swap gate */
-    virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
 
     /** Bitwise square root of swap */
     virtual void SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Inverse square root of Swap gate */
-    virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
 
     /** Bitwise inverse square root of swap */
     virtual void ISqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
