@@ -224,62 +224,23 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     QBinaryDecisionTreeNodePtr& b0 = branches[0];
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
 
-    QBinaryDecisionTreeNodePtr& b0b0 = b0->branches[0];
-    QBinaryDecisionTreeNodePtr& b1b0 = b1->branches[0];
-    if (!b0 || (b0 == b1) || !b0b0 || !b1b0) {
+    if (!b0 || (b0 == b1)) {
         // Combining branches UP TO OVERALL PHASE is the only other thing we try, below.
-        return;
-    }
-    QBinaryDecisionTreeNodePtr& b0b1 = b0->branches[1];
-    QBinaryDecisionTreeNodePtr& b1b1 = b1->branches[1];
-
-    if (IS_NORM_0(b0->scale) || IS_NORM_0(b1->scale)) {
         return;
     }
 
     // We want to preserve the original numerical ket representation while handling states like |+> and |->.
 
-    complex offsetFactor = b1->scale / b0->scale;
-    if (!IS_NORM_0(ONE_CMPLX - offsetFactor) && (abs(ONE_R1 - norm(offsetFactor)) <= FP_NORM_EPSILON)) {
-        offsetFactor = sqrt(offsetFactor);
+    complex offsetFactor = sqrt(b1->scale / b0->scale);
 
-        b0->scale *= offsetFactor;
-        b1->scale /= offsetFactor;
-
-        b0b0->scale /= offsetFactor;
-        b0b1->scale /= offsetFactor;
-        b1b0->scale *= offsetFactor;
-        b1b1->scale *= offsetFactor;
-    }
-
-    if (IS_NORM_0(b0b0->scale) != IS_NORM_0(b1b0->scale)) {
+    if (!IS_NORM_0(offsetFactor)) {
         return;
     }
 
-    if (IS_NORM_0(b0b0->scale)) {
-        // Avoid division by 0.
-        offsetFactor = (b1->scale * b1b1->scale) / (b0->scale * b0b1->scale);
-    } else {
-        offsetFactor = (b1->scale * b1b0->scale) / (b0->scale * b0b0->scale);
+    scale *= offsetFactor;
 
-        if (!IS_NORM_0(offsetFactor * b0->scale * b0b1->scale - b1->scale * b1b1->scale)) {
-            return;
-        }
-    }
-
-    if (IS_NORM_0(ONE_CMPLX - offsetFactor) || (abs(ONE_R1 - norm(offsetFactor)) > FP_NORM_EPSILON)) {
-        return;
-    }
-
-    offsetFactor = sqrt(offsetFactor);
-
-    b0->scale *= offsetFactor;
+    b0->scale /= offsetFactor;
     b1->scale /= offsetFactor;
-
-    b0b0->scale /= offsetFactor;
-    b0b1->scale /= offsetFactor;
-    b1b0->scale *= offsetFactor;
-    b1b1->scale *= offsetFactor;
 
     // Notice that the overall effect on tree to traversal, to produce a ket amplitude, is totally cancelled.
 }
