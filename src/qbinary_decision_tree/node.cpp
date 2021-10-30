@@ -215,34 +215,6 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     if (b0 != b1) {
         b1->scale /= scale;
     }
-
-    CorrectPhase();
-}
-
-void QBinaryDecisionTreeNode::CorrectPhase()
-{
-    QBinaryDecisionTreeNodePtr& b0 = branches[0];
-    QBinaryDecisionTreeNodePtr& b1 = branches[1];
-
-    if (!b0 || (b0 == b1) || IS_NORM_0(b0->scale) || IS_NORM_0(b1->scale)) {
-        // Combining branches UP TO OVERALL PHASE is the only other thing we try, below.
-        return;
-    }
-
-    // We want to preserve the original numerical ket representation while handling states like |+> and |->.
-
-    complex offsetFactor = sqrt(b1->scale / b0->scale);
-
-    if (!IS_NORM_0(ONE_CMPLX - offsetFactor)) {
-        return;
-    }
-
-    scale *= offsetFactor;
-
-    b0->scale /= offsetFactor;
-    b1->scale /= offsetFactor;
-
-    // Notice that the overall effect on tree to traversal, to produce a ket amplitude, is totally cancelled.
 }
 
 } // namespace Qrack
