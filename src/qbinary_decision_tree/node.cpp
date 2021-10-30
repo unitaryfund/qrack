@@ -197,7 +197,6 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     }
 
     if (nrm0 <= FP_NORM_EPSILON) {
-        // + sign
         scale = b1->scale;
         b0->SetZero();
         b1->scale = ONE_CMPLX;
@@ -205,9 +204,8 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     }
 
     if (nrm1 <= FP_NORM_EPSILON) {
-        // - sign
-        scale = -b0->scale;
-        b0->scale = -ONE_CMPLX;
+        scale = b0->scale;
+        b0->scale = ONE_CMPLX;
         b1->SetZero();
         return;
     }
@@ -260,31 +258,15 @@ void QBinaryDecisionTreeNode::CorrectPhase()
         return;
     }
 
-    complex halfOffsetFactor = std::polar(ONE_R1, ((real1)std::arg(offsetFactor)) / 2);
-
-    b0->scale *= halfOffsetFactor;
-    b0b0->scale /= halfOffsetFactor;
-    b0b1->scale /= halfOffsetFactor;
-
-    b1->scale /= halfOffsetFactor;
-    b1b0->scale *= halfOffsetFactor;
-    b1b1->scale *= halfOffsetFactor;
-
-    if (IS_NORM_0(I_CMPLX - offsetFactor)) {
-        return;
-    }
-
     // We want to preserve the original numerical ket representation while handling states like |+> and |->.
 
-    // This prepares a |->.
-    // (Depth 1)
-    b0->scale *= I_CMPLX;
-    b1->scale /= I_CMPLX;
-    // (Depth 2)
-    b0b0->scale /= I_CMPLX;
-    b0b1->scale /= I_CMPLX;
-    b1b0->scale *= I_CMPLX;
-    b1b1->scale *= I_CMPLX;
+    b0->scale *= offsetFactor;
+    b1->scale /= offsetFactor;
+
+    b0b0->scale /= offsetFactor;
+    b0b1->scale /= offsetFactor;
+    b1b0->scale *= offsetFactor;
+    b1b1->scale *= offsetFactor;
 
     // Notice that the overall effect on tree to traversal, to produce a ket amplitude, is totally cancelled.
 }
