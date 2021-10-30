@@ -224,7 +224,7 @@ void QBinaryDecisionTreeNode::CorrectPhase()
     QBinaryDecisionTreeNodePtr& b0 = branches[0];
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
 
-    if (!b0 || (b0 == b1)) {
+    if (!b0 || (b0 == b1) || IS_NORM_0(b0->scale) || IS_NORM_0(b1->scale)) {
         // Combining branches UP TO OVERALL PHASE is the only other thing we try, below.
         return;
     }
