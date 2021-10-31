@@ -405,9 +405,6 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
     QBinaryDecisionTreeNodePtr& branch0 = leaf->branches[0];
     QBinaryDecisionTreeNodePtr& branch1 = leaf->branches[1];
 
-    branch0 = branch0->ShallowClone();
-    branch1 = branch1->ShallowClone();
-
     bool wasLeaf0Norm0 = IS_NORM_0(branch0->scale);
     bool wasLeaf1Norm0 = IS_NORM_0(branch1->scale);
 
