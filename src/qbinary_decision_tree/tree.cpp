@@ -482,21 +482,17 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
     bitCapInt qPower = pow2(qubit);
     complex nrm = GetNonunitaryPhase();
 
-    bitLenInt j;
-    size_t bit;
-    QBinaryDecisionTreeNodePtr leaf;
-    for (bitCapInt i = 0; i < qPower; i++) {
-        leaf = root;
-        for (j = 0; j < qubit; j++) {
-            bit = (i >> j) & 1U;
-            leaf = leaf->branches[bit];
+    par_for(0, qPower, [&](const bitCapInt i, const int cpu) {
+        QBinaryDecisionTreeNodePtr leaf = root;
+        for (bitLenInt j = 0; j < qubit; j++) {
+            leaf = leaf->branches[(i >> j) & 1U];
             if (!leaf || IS_NORM_0(leaf->scale)) {
-                break;
+                return;
             }
         }
 
         if (!leaf || IS_NORM_0(leaf->scale)) {
-            continue;
+            return;
         }
 
         if (result) {
@@ -506,7 +502,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
             leaf->branches[0]->scale = nrm;
             leaf->branches[1]->SetZero();
         }
-    }
+    });
 
     root->Prune(qubit + 1U);
 
