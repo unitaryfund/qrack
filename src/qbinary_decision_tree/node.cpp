@@ -52,15 +52,16 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         }
     }
 
-    if (!IS_NORM_0(b0->scale - b1->scale)) {
-        return;
-    }
-
     if (b0 == b1) {
         // Combining branches is the only other thing we try, below.
         return;
     }
+
     // Now, we try to combine pointers to equivalent branches.
+
+    if (!IS_NORM_0(b0->scale - b1->scale)) {
+        return;
+    }
 
     bitCapInt depthPow = ONE_BCI << depth;
     complex scale0, scale1;
@@ -70,8 +71,8 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
         leaf0 = b0;
         leaf1 = b1;
 
-        scale0 = leaf0->scale;
-        scale1 = leaf1->scale;
+        scale0 = ONE_CMPLX;
+        scale1 = ONE_CMPLX;
 
         for (j = 0; j < depth; j++) {
             bit = (i >> j) & 1U;
@@ -131,8 +132,6 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
     if (!depth) {
         return;
     }
-
-    // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NORM_0(scale)) {
         SetZero();
         return;
@@ -161,9 +160,6 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     if (!depth) {
         return;
     }
-    depth--;
-
-    // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NORM_0(scale)) {
         SetZero();
         return;
@@ -176,6 +172,7 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
 
     // Depth-first
+    depth--;
     b0->ConvertStateVector(depth);
     if (b0 != b1) {
         b1->ConvertStateVector(depth);
