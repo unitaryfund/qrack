@@ -162,7 +162,7 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
             }
             scale1 *= leaf1->scale;
             if (IS_NORM_0(scale1)) {
-                return;
+                break;
             }
         }
         for (j = 0; j < qubitCount; j++) {
@@ -172,7 +172,7 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
             }
             scale2 *= leaf2->scale;
             if (IS_NORM_0(scale2)) {
-                return;
+                break;
             }
         }
         partInner[cpu] += conj(scale2) * scale1;
