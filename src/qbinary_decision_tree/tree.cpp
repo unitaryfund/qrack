@@ -396,11 +396,20 @@ bitCapInt QBinaryDecisionTree::MAll()
     Finish();
 
     bitCapInt result = 0;
-    real1 prob;
+    bool bitResult;
+    real1_f oneChance;
     QBinaryDecisionTreeNodePtr leaf = root;
     for (bitLenInt i = 0; i < qubitCount; i++) {
-        prob = clampProb(norm(leaf->branches[1]->scale));
-        if ((prob == ONE_R1) || (prob > ZERO_R1 && (Rand() < prob))) {
+        oneChance = clampProb(norm(leaf->branches[1]->scale));
+        if (oneChance >= ONE_R1) {
+            bitResult = true;
+        } else if (oneChance <= ZERO_R1) {
+            bitResult = false;
+        } else {
+            bitResult = (Rand() <= oneChance);
+        }
+
+        if (bitResult) {
             leaf->branches[0]->SetZero();
             leaf->branches[1]->scale = GetNonunitaryPhase();
             leaf = leaf->branches[1];
