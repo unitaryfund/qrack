@@ -384,11 +384,11 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         }
 
         if (result) {
-            leaf->branches[0] = std::make_shared<QBinaryDecisionTreeNode>(ZERO_CMPLX);
+            leaf->branches[0]->SetZero();
             leaf->branches[1]->scale = nrm;
         } else {
             leaf->branches[0]->scale = nrm;
-            leaf->branches[1] = std::make_shared<QBinaryDecisionTreeNode>(ZERO_CMPLX);
+            leaf->branches[1]->SetZero();
         }
     }
 

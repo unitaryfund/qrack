@@ -185,6 +185,13 @@ public:
     virtual real1_f ProbAll(bitCapInt fullRegister);
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
+    virtual bitCapInt ForceMReg(
+        bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true)
+    {
+        return BitCapIntAsQEngineCPU([&](QInterfacePtr eng) {
+            return eng->ForceMReg(start, length, result, doForce, doApply);
+        });
+    }
 
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
     virtual void ApplyControlledSingleBit(
