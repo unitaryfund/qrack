@@ -2,16 +2,13 @@
 //
 // (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
 //
-// QEngineShard is the atomic qubit unit of the QUnit mapper. "PhaseShard" optimizations are basically just a very
-// specific "gate fusion" type optimization, where multiple gates are composed into single product gates before
-// application to the state vector, to reduce the total number of gates that need to be applied. Rather than handling
-// this as a "QFusion" layer optimization, which will typically sit BETWEEN a base QEngine set of "shards" and a QUnit
-// that owns them, this particular gate fusion optimization can be avoid representational entanglement in QUnit in the
-// first place, which QFusion would not help with. Alternatively, another QFusion would have to be in place ABOVE the
-// QUnit layer, (with QEngine "below,") for this to work. Additionally, QFusion is designed to handle more general gate
-// fusion, not specifically controlled phase gates, which are entirely commuting among each other and possibly a
-// jumping-off point for further general "Fourier basis" optimizations which should probably reside in QUnit, analogous
-// to the |+>/|-> basis changes QUnit takes advantage of for "H" gates.
+// QBinaryDecision tree is an alternative approach to quantum state representation, as
+// opposed to state vector representation. This is a compressed form that can be
+// operated directly on while compressed. Inspiration for the Qrack implementation was
+// taken from JKQ DDSIM, maintained by the Institute for Integrated Circuits at the
+// Johannes Kepler University Linz:
+//
+// https://github.com/iic-jku/ddsim
 //
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
