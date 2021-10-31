@@ -695,6 +695,15 @@ void QBinaryDecisionTree::ApplyControlledSingle(
 void QBinaryDecisionTree::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* lMtrx)
 {
+    if ((lMtrx[1] == ZERO_CMPLX) && (lMtrx[2] == ZERO_CMPLX)) {
+        ApplyControlledSinglePhase(controls, controlLen, target, lMtrx[0], lMtrx[3]);
+        return;
+    }
+    if ((lMtrx[0] == ZERO_CMPLX) && (lMtrx[3] == ZERO_CMPLX)) {
+        ApplyControlledSingleInvert(controls, controlLen, target, lMtrx[1], lMtrx[2]);
+        return;
+    }
+
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
@@ -707,6 +716,10 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 void QBinaryDecisionTree::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
     const bitLenInt& target, const complex topLeft, const complex bottomRight)
 {
+    if ((topLeft == ONE_CMPLX) && (bottomRight == ONE_CMPLX)) {
+        return;
+    }
+
     ApplyControlledSingle(
         controls, controlLen, target,
         [this, topLeft, bottomRight](QBinaryDecisionTreeNodePtr leaf) {
