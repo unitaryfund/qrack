@@ -95,7 +95,7 @@ template <typename Fn> void QBinaryDecisionTree::GetTraversal(Fn getLambda)
             }
             scale *= leaf->scale;
             if (IS_NORM_0(scale)) {
-                return;
+                break;
             }
         }
         getLambda(i, scale);
