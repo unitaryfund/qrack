@@ -400,6 +400,7 @@ bitCapInt QBinaryDecisionTree::MAll()
     real1_f oneChance;
     QBinaryDecisionTreeNodePtr leaf = root;
     for (bitLenInt i = 0; i < qubitCount; i++) {
+        leaf->Branch();
         oneChance = clampProb(norm(leaf->branches[1]->scale));
         if (oneChance >= ONE_R1) {
             bitResult = true;
