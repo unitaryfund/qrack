@@ -352,8 +352,8 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 {
     Finish();
 
-    real1_f oneChance = Prob(qubit);
     if (!doForce) {
+        real1_f oneChance = Prob(qubit);
         if (oneChance >= ONE_R1) {
             result = true;
         } else if (oneChance <= ZERO_R1) {
@@ -361,21 +361,6 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         } else {
             result = (Rand() <= oneChance);
         }
-    }
-
-    real1 nrmlzr;
-    if (result) {
-        nrmlzr = oneChance;
-    } else {
-        nrmlzr = ONE_R1 - oneChance;
-    }
-
-    if (nrmlzr <= ZERO_R1) {
-        throw "ERROR: Forced a measurement result with 0 probability";
-    }
-
-    if (!doApply || (nrmlzr == ONE_R1)) {
-        return result;
     }
 
     root->Branch(qubit + 1U);
