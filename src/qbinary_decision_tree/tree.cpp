@@ -337,7 +337,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         QBinaryDecisionTreeNodePtr leaf = root;
         for (bitLenInt j = 0; j < start; j++) {
             leaf = leaf->branches[(i >> j) & 1U];
-            if (!leaf) {
+            if (!leaf || IS_NORM_0(leaf->scale)) {
                 return;
             }
         }
