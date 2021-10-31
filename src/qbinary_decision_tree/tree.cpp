@@ -398,6 +398,8 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 
 bitCapInt QBinaryDecisionTree::MAll()
 {
+    Finish();
+
     bitCapInt result = 0;
     real1 prob;
     QBinaryDecisionTreeNodePtr leaf = root;
