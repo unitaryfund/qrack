@@ -183,6 +183,7 @@ public:
 
     virtual real1_f Prob(bitLenInt qubitIndex);
     virtual real1_f ProbAll(bitCapInt fullRegister);
+    virtual real1_f ProbParity(const bitCapInt& mask);
 
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
@@ -210,16 +211,6 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
-    virtual real1_f ProbParity(const bitCapInt& mask)
-    {
-        Finish();
-
-        QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
-
-        GetQuantumState(copyPtr);
-        return copyPtr->ProbParity(mask);
-    }
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true)

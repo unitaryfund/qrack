@@ -412,6 +412,56 @@ real1_f QBinaryDecisionTree::ProbAll(bitCapInt fullRegister)
     return clampProb(norm(scale));
 }
 
+real1_f QBinaryDecisionTree::ProbParity(const bitCapInt& mask)
+{
+    Finish();
+
+    if (!mask) {
+        return ZERO_R1;
+    }
+
+    bitLenInt highBit = log2(mask);
+    bitCapInt highBitPow = pow2(highBit);
+
+    int numCores = GetConcurrencyLevel();
+    std::unique_ptr<real1[]> oddChanceBuff(new real1[numCores]());
+
+    par_for(0, highBitPow, [&](const bitCapInt i, const int cpu) {
+        bool parity = false;
+        bitCapInt v = i & mask;
+        while (v) {
+            parity = !parity;
+            v = v & (v - ONE_BCI);
+        }
+
+        if (!parity) {
+            return;
+        }
+
+        QBinaryDecisionTreeNodePtr leaf = root;
+        complex scale = root->scale;
+        for (bitLenInt j = 0; j <= highBit; j++) {
+            leaf = leaf->branches[(i >> j) & 1U];
+            if (!leaf) {
+                break;
+            }
+            scale *= leaf->scale;
+            if (IS_NORM_0(scale)) {
+                return;
+            }
+        }
+
+        oddChanceBuff[cpu] += norm(scale);
+    });
+
+    real1 oddChance = ZERO_R1;
+    for (int i = 0; i < numCores; i++) {
+        oddChance += oddChanceBuff[i];
+    }
+
+    return clampProb(oddChance);
+}
+
 bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
     Finish();
