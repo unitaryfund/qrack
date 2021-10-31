@@ -305,7 +305,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         if (dest) {
             dest->root->Prune(length);
         }
-        SetQubitCount(end);
+        SetQubitCount(qubitCount - length);
         return;
     }
 
