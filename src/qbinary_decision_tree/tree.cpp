@@ -366,7 +366,6 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
     complex nrm = GetNonunitaryPhase();
 
     bitLenInt j;
-    complex Y0;
     size_t bit;
     QBinaryDecisionTreeNodePtr leaf;
     for (bitCapInt i = 0; i < qPower; i++) {
@@ -393,6 +392,28 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
     }
 
     root->Prune(qubit + 1U);
+
+    return result;
+}
+
+bitCapInt QBinaryDecisionTree::MAll()
+{
+    bitCapInt result = 0;
+    real1 prob;
+    QBinaryDecisionTreeNodePtr leaf = root;
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        prob = clampProb(norm(leaf->branches[1]->scale));
+        if ((prob == ONE_R1) || (prob > ZERO_R1 && (Rand() < prob))) {
+            leaf->branches[0]->SetZero();
+            leaf->branches[1]->scale = GetNonunitaryPhase();
+            leaf = leaf->branches[1];
+            result |= pow2(i);
+        } else {
+            leaf->branches[0]->scale = GetNonunitaryPhase();
+            leaf->branches[1]->SetZero();
+            leaf = leaf->branches[0];
+        }
+    }
 
     return result;
 }
@@ -470,19 +491,18 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
-    std::unique_ptr<bitLenInt[]> sortedControls(new bitLenInt[controlLen]);
-    std::copy(controls, controls + controlLen, sortedControls.get());
-    std::sort(sortedControls.get(), sortedControls.get() + controlLen);
+    std::vector<bitLenInt> sortedControls(controlLen);
+    std::copy(controls, controls + controlLen, sortedControls.begin());
+    std::sort(sortedControls.begin(), sortedControls.end());
 
     std::shared_ptr<bitCapInt[]> qPowersSorted(new bitCapInt[controlLen]);
     bitCapInt lowControlMask = 0;
-    bitLenInt c;
-    for (c = 0; c < controlLen; c++) {
+    for (bitLenInt c = 0; c < controlLen; c++) {
         qPowersSorted[c] = pow2(sortedControls[c]);
         lowControlMask |= qPowersSorted[c];
     }
     // TODO: This is a horrible kludge.
-    if (target < sortedControls[controlLen - 1U]) {
+    if (target < sortedControls.back()) {
         // At least one control bit index is higher than the target.
         ExecuteAsQEngineCPU(
             [&](QInterfacePtr eng) { eng->ApplyControlledSingleBit(controls, controlLen, target, lMtrx); });

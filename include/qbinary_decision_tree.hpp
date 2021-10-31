@@ -203,6 +203,7 @@ public:
         return BitCapIntAsQEngineCPU(
             [&](QInterfacePtr eng) { return eng->ForceMReg(start, length, result, doForce, doApply); });
     }
+    virtual bitCapInt MAll();
 
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
     virtual void ApplyControlledSingleBit(
