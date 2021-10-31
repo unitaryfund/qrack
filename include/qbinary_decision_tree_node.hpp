@@ -20,7 +20,7 @@
 
 namespace Qrack {
 
-class QBinaryDecisionTreeNode;
+struct QBinaryDecisionTreeNode;
 typedef std::shared_ptr<QBinaryDecisionTreeNode> QBinaryDecisionTreeNodePtr;
 
 struct QBinaryDecisionTreeNode {
