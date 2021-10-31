@@ -285,7 +285,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 
         if (!startNode) {
             const std::lock_guard<std::mutex> destLock(destMutex);
-            // Now that we've locked, is the dest->root still not set?
+            // Now that we've locked, is the startNode still not set?
             if (!startNode) {
                 startNode = leaf->ShallowClone();
             }
@@ -323,7 +323,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 
         if (!endNode) {
             const std::lock_guard<std::mutex> destLock(destMutex);
-            // Now that we've locked, is the dest->root still not set?
+            // Now that we've locked, is the endNode still not set?
             if (!endNode) {
                 endNode = leaf->ShallowClone();
             }
