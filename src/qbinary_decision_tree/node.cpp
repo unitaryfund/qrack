@@ -116,11 +116,11 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
     if (!b0) {
         b0 = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);
         b1 = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);
+    } else {
+        // Split all clones.
+        b0 = b0->ShallowClone();
+        b1 = b1->ShallowClone();
     }
-
-    // Split all clones.
-    b0 = b0->ShallowClone();
-    b1 = b1->ShallowClone();
 
     b0->Branch(depth - 1U);
     b1->Branch(depth - 1U);
@@ -149,12 +149,7 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
         b1->Normalize(depth - 1U);
     }
 
-    real1 nrm = (real1)(norm(b0->scale) + norm(b1->scale));
-    if (nrm <= FP_NORM_EPSILON) {
-        throw std::runtime_error("QBinaryDecisionTree: Tried to normalize 0.");
-    }
-    nrm = sqrt(nrm);
-
+    real1 nrm = (real1)sqrt(norm(b0->scale) + norm(b1->scale));
     b0->scale *= ONE_R1 / nrm;
     if (b0 != b1) {
         b1->scale *= ONE_R1 / nrm;
@@ -166,6 +161,7 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     if (!depth) {
         return;
     }
+    depth--;
 
     // If scale of this node is zero, nothing under it makes a difference.
     if (IS_NORM_0(scale)) {
