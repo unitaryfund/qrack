@@ -641,16 +641,14 @@ void QBinaryDecisionTree::ApplySingleInvert(const complex topRight, const comple
     });
 }
 
-void QBinaryDecisionTree::ApplyControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* lMtrx)
+template <typename Lfn, typename Efn>
+void QBinaryDecisionTree::ApplyControlledSingle(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, Lfn leafFunc, Efn engineFunc)
 {
     if (!controlLen) {
-        ApplySingleBit(lMtrx, target);
+        ApplySingle(target, leafFunc);
         return;
     }
-
-    std::shared_ptr<complex[]> mtrx(new complex[4]);
-    std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
     std::vector<bitLenInt> sortedControls(controlLen);
     std::copy(controls, controls + controlLen, sortedControls.begin());
@@ -665,14 +663,13 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     // TODO: This is a horrible kludge.
     if (target < sortedControls.back()) {
         // At least one control bit index is higher than the target.
-        ExecuteAsQEngineCPU(
-            [&](QInterfacePtr eng) { eng->ApplyControlledSingleBit(controls, controlLen, target, lMtrx); });
+        ExecuteAsQEngineCPU(engineFunc);
         return;
     }
 
     bitCapInt targetPow = pow2(target);
 
-    Dispatch(targetPow, [this, mtrx, target, targetPow, lowControlMask, qPowersSorted, controlLen]() {
+    Dispatch(targetPow, [this, target, targetPow, lowControlMask, qPowersSorted, controlLen, leafFunc]() {
         root->Branch(target + 1U);
 
         par_for_mask(0, targetPow, qPowersSorted.get(), controlLen, [&](const bitCapInt& lcv, const int& cpu) {
@@ -688,11 +685,52 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
                 }
             }
 
-            Apply2x2OnLeaf(mtrx.get(), leaf);
+            leafFunc(leaf);
         });
 
         root->Prune(target + 1U);
     });
+}
+
+void QBinaryDecisionTree::ApplyControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* lMtrx)
+{
+    std::shared_ptr<complex[]> mtrx(new complex[4]);
+    std::copy(lMtrx, lMtrx + 4, mtrx.get());
+
+    ApplyControlledSingle(
+        controls, controlLen, target,
+        [this, mtrx](QBinaryDecisionTreeNodePtr leaf) { Apply2x2OnLeaf(mtrx.get(), leaf); },
+        [&](QInterfacePtr eng) { eng->ApplyControlledSingleBit(controls, controlLen, target, lMtrx); });
+}
+
+void QBinaryDecisionTree::ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+    const bitLenInt& target, const complex topLeft, const complex bottomRight)
+{
+    ApplyControlledSingle(
+        controls, controlLen, target,
+        [this, topLeft, bottomRight](QBinaryDecisionTreeNodePtr leaf) {
+            leaf->branches[0]->scale *= topLeft;
+            leaf->branches[1]->scale *= bottomRight;
+        },
+        [&](QInterfacePtr eng) {
+            eng->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
+        });
+}
+
+void QBinaryDecisionTree::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
+    const bitLenInt& target, const complex topRight, const complex bottomLeft)
+{
+    ApplyControlledSingle(
+        controls, controlLen, target,
+        [this, topRight, bottomLeft](QBinaryDecisionTreeNodePtr leaf) {
+            std::swap(leaf->branches[0], leaf->branches[1]);
+            leaf->branches[0]->scale *= topRight;
+            leaf->branches[1]->scale *= bottomLeft;
+        },
+        [&](QInterfacePtr eng) {
+            eng->ApplyControlledSingleInvert(controls, controlLen, target, topRight, bottomLeft);
+        });
 }
 
 } // namespace Qrack

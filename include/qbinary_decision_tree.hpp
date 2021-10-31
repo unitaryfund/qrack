@@ -94,6 +94,9 @@ protected:
     void Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf);
 
     template <typename Fn> void ApplySingle(bitLenInt target, Fn leafFunc);
+    template <typename Lfn, typename Efn>
+    void ApplyControlledSingle(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, Lfn leafFunc, Efn engineFunc);
 
 public:
     QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -213,6 +216,10 @@ public:
     virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topLeft, const complex bottomRight);
+    virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, const complex topRight, const complex bottomLeft);
 
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
 
