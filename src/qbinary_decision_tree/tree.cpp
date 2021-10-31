@@ -301,11 +301,11 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     }
 
     if (qubitCount <= end) {
-        root->Prune(end);
+        SetQubitCount(qubitCount - length);
+        root->Prune(qubitCount);
         if (dest) {
             dest->root->Prune(length);
         }
-        SetQubitCount(qubitCount - length);
         return;
     }
 
@@ -336,7 +336,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         leaf->branches[0] = NULL;
         leaf->branches[1] = NULL;
     });
-    
+
     startNode->Prune(length);
 
     par_for(0, maxI, [&](const bitCapInt& i, const int& cpu) {
@@ -352,7 +352,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     });
 
     SetQubitCount(qubitCount - length);
-    
+
     root->Prune(qubitCount);
 }
 
