@@ -46,19 +46,6 @@ public:
     {
     }
 
-    QBinaryDecisionTreeNode(complex scl, QBinaryDecisionTreeNodePtr brnchs[2])
-        : scale(scl)
-    {
-        branches[0] = brnchs[0] ? brnchs[0]->DeepClone() : NULL;
-        if (brnchs[0] == brnchs[1]) {
-            branches[1] = branches[0];
-        } else {
-            branches[1] = brnchs[1] ? brnchs[1]->DeepClone() : NULL;
-        }
-    }
-
-    QBinaryDecisionTreeNodePtr DeepClone() { return std::make_shared<QBinaryDecisionTreeNode>(scale, branches); }
-
     QBinaryDecisionTreeNodePtr ShallowClone()
     {
         QBinaryDecisionTreeNodePtr toRet = std::make_shared<QBinaryDecisionTreeNode>(scale);

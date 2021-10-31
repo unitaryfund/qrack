@@ -79,7 +79,7 @@ QInterfacePtr QBinaryDecisionTree::Clone()
     QBinaryDecisionTreePtr copyPtr = std::make_shared<QBinaryDecisionTree>(qubitCount, 0, rand_generator, ONE_CMPLX,
         doNormalize, randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
 
-    copyPtr->root = root ? root->DeepClone() : NULL;
+    copyPtr->root = root ? root->ShallowClone() : NULL;
 
     return copyPtr;
 }
