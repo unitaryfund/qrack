@@ -184,13 +184,24 @@ public:
     virtual real1_f Prob(bitLenInt qubitIndex);
     virtual real1_f ProbAll(bitCapInt fullRegister);
 
+    virtual std::map<bitCapInt, int> MultiShotMeasureMask(
+        const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
+    {
+        Finish();
+
+        QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+            randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+
+        GetQuantumState(copyPtr);
+        return copyPtr->MultiShotMeasureMask(qPowers, qPowerCount, shots);
+    }
+
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt ForceMReg(
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true)
     {
-        return BitCapIntAsQEngineCPU([&](QInterfacePtr eng) {
-            return eng->ForceMReg(start, length, result, doForce, doApply);
-        });
+        return BitCapIntAsQEngineCPU(
+            [&](QInterfacePtr eng) { return eng->ForceMReg(start, length, result, doForce, doApply); });
     }
 
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
@@ -200,7 +211,13 @@ public:
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
     virtual real1_f ProbParity(const bitCapInt& mask)
     {
-        return Real1AsQEngineCPU([&](QInterfacePtr eng) { return eng->ProbParity(mask); });
+        Finish();
+
+        QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+            randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+
+        GetQuantumState(copyPtr);
+        return copyPtr->ProbParity(mask);
     }
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
