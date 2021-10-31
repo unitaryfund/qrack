@@ -93,6 +93,8 @@ protected:
 
     void Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf);
 
+    template <typename Fn> void ApplySingle(bitLenInt target, Fn leafFunc);
+
 public:
     QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
