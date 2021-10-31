@@ -20,7 +20,7 @@
 
 namespace Qrack {
 
-void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, bitCapInt perm)
+void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
 {
     if (!depth) {
         return;
@@ -39,17 +39,9 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
 
     // Prune recursively to depth.
-    size_t bit = perm & 1U;
-    perm >>= 1U;
-
-    if (isNarrow) {
-        // Either we're narrow, or else there's no point in pruning same pointer branch twice.
-        branches[bit]->PruneNarrowOrWide(depth - 1U, isNarrow, perm);
-    } else {
-        size_t maxLcv = (b0 == b1) ? 1 : 2;
-        for (size_t i = 0; i < maxLcv; i++) {
-            branches[i]->PruneNarrowOrWide(depth - 1U, false, perm);
-        }
+    size_t maxLcv = (b0 == b1) ? 1 : 2;
+    for (size_t i = 0; i < maxLcv; i++) {
+        branches[i]->Prune(depth - 1U);
     }
 
     if (b0 == b1) {
@@ -59,35 +51,37 @@ void QBinaryDecisionTreeNode::PruneNarrowOrWide(bitLenInt depth, bool isNarrow, 
 
     // Now, we try to combine pointers to equivalent branches.
 
-    if (!IS_NORM_0(b0->scale - b1->scale)) {
-        return;
-    }
-
+    size_t bit;
+    bitLenInt j;
     bitCapInt depthPow = ONE_BCI << depth;
     complex scale0, scale1;
-    bitLenInt j;
     QBinaryDecisionTreeNodePtr leaf0, leaf1;
     for (bitCapInt i = 0; i < depthPow; i++) {
         leaf0 = b0;
         leaf1 = b1;
 
-        scale0 = ONE_CMPLX;
-        scale1 = ONE_CMPLX;
+        scale0 = leaf0->scale;
+        scale1 = leaf1->scale;
 
         for (j = 0; j < depth; j++) {
             bit = (i >> j) & 1U;
 
-            if (leaf0 == leaf1) {
-                break;
+            if (leaf0) {
+                leaf0 = leaf0->branches[bit];
+                if (leaf0) {
+                    scale0 *= leaf0->scale;
+                }
             }
 
-            if (leaf0) {
-                scale0 *= leaf0->scale;
-                leaf0 = leaf0->branches[bit];
-            }
             if (leaf1) {
-                scale1 *= leaf1->scale;
                 leaf1 = leaf1->branches[bit];
+                if (leaf1) {
+                    scale1 *= leaf1->scale;
+                }
+            }
+
+            if (leaf0 == leaf1) {
+                break;
             }
         }
 
