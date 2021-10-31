@@ -451,6 +451,10 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
     if (isLeaf1Norm0) {
         branch1->SetZero();
     }
+
+    Y0 = sqrt(norm(branch0->scale) + norm(branch1->scale));
+    branch0->scale /= Y0;
+    branch1->scale /= Y0;
 }
 
 void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
