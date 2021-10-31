@@ -39,9 +39,9 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
 
     // Prune recursively to depth.
-    size_t maxLcv = (b0 == b1) ? 1 : 2;
-    for (size_t i = 0; i < maxLcv; i++) {
-        branches[i]->Prune(depth - 1U);
+    branches[0]->Prune(depth - 1U);
+    if (b0 != b1) {
+        branches[1]->Prune(depth - 1U);
     }
 
     if (b0 == b1) {
