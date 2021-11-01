@@ -75,20 +75,6 @@ protected:
         return toRet;
     }
 
-    template <typename Fn> real1_f Real1AsQEngineCPU(Fn operation)
-    {
-        Finish();
-
-        QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
-
-        GetQuantumState(copyPtr);
-        real1_f toRet = operation(copyPtr);
-        SetQuantumState(copyPtr);
-
-        return toRet;
-    }
-
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest);
 
     void Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf);
