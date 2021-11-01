@@ -432,9 +432,5 @@ public:
     {
         ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->PhaseParity(radians, mask); });
     }
-    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length)
-    {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->ZeroPhaseFlip(start, length); });
-    }
 };
 } // namespace Qrack
