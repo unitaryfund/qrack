@@ -47,12 +47,11 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
     complex phaseFac = std::polar(ONE_R1, (real1)(IS_NORM_0(b0->scale) ? std::arg(b1->scale) : std::arg(b0->scale)));
     scale *= phaseFac;
     b0->scale /= phaseFac;
-    b1->scale /= phaseFac;
-
     if (b0 == b1) {
         // Combining branches is the only other thing we try, below.
         return;
     }
+    b1->scale /= phaseFac;
 
     if (!IS_NORM_0(b0->scale - b1->scale)) {
         return;
