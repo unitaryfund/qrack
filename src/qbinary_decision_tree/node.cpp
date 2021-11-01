@@ -185,6 +185,9 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     }
 
     if (nrm0 <= FP_NORM_EPSILON) {
+        // TODO: It's suspicious that the phase factor promotion is non-arbitrary to our state vector conversion, but
+        // this just works "on accident." If we're anchoring ourselves to the 0-most pole, this seems to chaotically
+        // reverse convention.
         scale = b1->scale;
         b0->SetZero();
         b1->scale = ONE_CMPLX;
