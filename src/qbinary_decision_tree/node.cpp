@@ -53,10 +53,6 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
     }
     b1->scale /= phaseFac;
 
-    if (!IS_NORM_0(b0->scale - b1->scale)) {
-        return;
-    }
-
     // Now, we try to combine pointers to equivalent branches.
 
     size_t bit;
@@ -68,8 +64,8 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         leaf0 = b0;
         leaf1 = b1;
 
-        scale0 = ONE_CMPLX;
-        scale1 = ONE_CMPLX;
+        scale0 = b0->scale;
+        scale1 = b1->scale;
 
         for (j = 0; j < depth; j++) {
             bit = (i >> j) & 1U;
