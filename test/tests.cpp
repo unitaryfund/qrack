@@ -5451,6 +5451,26 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_19", "[mirror]")
     REQUIRE(qftReg->MAll() == 11);
 }
 
+// QBinaryDecisionTree bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_20", "[mirror]")
+{
+    qftReg = MakeEngine(2);
+    qftReg->SetPermutation(2);
+
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->X(1);
+    qftReg->CZ(0, 1);
+    qftReg->H(0);
+    qftReg->H(0);
+    qftReg->CZ(0, 1);
+    qftReg->X(1);
+    qftReg->H(1);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 2);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
