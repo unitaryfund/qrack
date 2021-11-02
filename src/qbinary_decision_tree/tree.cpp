@@ -596,7 +596,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(
         qPowersSorted[c] = pow2(sortedControls[c]);
         lowControlMask |= qPowersSorted[c];
     }
-    bitLenInt controlBound = c - 1U;
+    bitLenInt controlBound = c;
     bitCapInt highControlMask = 0U;
     for (; c < controlLen; c++) {
         qPowersSorted[c] = pow2(sortedControls[c]);
