@@ -364,22 +364,26 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
     Finish();
 
     bitCapInt qPower = pow2(qubit);
-    bitCapInt maxI = qPower << ONE_BCI;
 
     int numCores = GetConcurrencyLevel();
     std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
 
-    par_for(qPower, maxI, [&](const bitCapInt i, const int cpu) {
+    par_for(0, qPower, [&](const bitCapInt i, const int cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         complex scale = root->scale;
-        for (bitLenInt j = 0; j <= qubit; j++) {
+        for (bitLenInt j = 0; j < qubit; j++) {
             if (IS_NORM_0(scale)) {
                 return;
             }
             leaf = leaf->branches[(i >> j) & 1U];
             scale *= leaf->scale;
         }
-        oneChanceBuff[cpu] += norm(scale);
+
+        if (IS_NORM_0(scale)) {
+            return;
+        }
+
+        oneChanceBuff[cpu] += norm(scale * leaf->branches[1]->scale);
     });
 
     real1 oneChance = ZERO_R1;
