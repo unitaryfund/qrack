@@ -506,7 +506,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
 
     size_t bit;
     bitLenInt j;
-    bitCapInt remainderPow = ONE_BCI << remainder;
+    bitCapInt remainderPow = pow2(remainder);
     complex scale0, scale1;
     QBinaryDecisionTreeNodePtr leaf0, leaf1;
     for (bitCapInt i = 0; i < remainderPow; i++) {
