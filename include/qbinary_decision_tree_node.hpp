@@ -57,7 +57,7 @@ struct QBinaryDecisionTreeNode {
 
     void Branch(bitLenInt depth = 1U, bool isZeroBranch = false);
 
-    void Prune(bitLenInt depth);
+    void Prune(bitLenInt depth = 1U);
 
     void Normalize(bitLenInt depth);
 

@@ -198,6 +198,8 @@ public:
     virtual bitCapInt MAll();
 
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
+    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target);
+    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 

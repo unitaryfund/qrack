@@ -575,11 +575,45 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
 
 void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
+    if ((lMtrx[1] == ZERO_CMPLX) && (lMtrx[2] == ZERO_CMPLX)) {
+        ApplySinglePhase(lMtrx[0], lMtrx[3], target);
+        return;
+    }
+    if ((lMtrx[0] == ZERO_CMPLX) && (lMtrx[3] == ZERO_CMPLX)) {
+        ApplySingleInvert(lMtrx[1], lMtrx[2], target);
+        return;
+    }
+
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
     ApplySingle(target, [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bool isParallel, bitCapInt ignored) {
         Apply2x2OnLeaf(mtrx.get(), leaf, target, isParallel, 0U);
+    });
+}
+
+void QBinaryDecisionTree::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
+{
+    if ((topLeft == bottomRight) && (randGlobalPhase || (topLeft == ONE_CMPLX))) {
+        return;
+    }
+
+    ApplySingle(target, [this, topLeft, bottomRight](QBinaryDecisionTreeNodePtr leaf, bool ignored1, bitCapInt ignored2) {
+        leaf->Branch();
+        leaf->branches[0]->scale *= topLeft;
+        leaf->branches[1]->scale *= bottomRight;
+        leaf->Prune();
+    });
+}
+
+void QBinaryDecisionTree::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
+{
+    ApplySingle(target, [this, topRight, bottomLeft](QBinaryDecisionTreeNodePtr leaf, bool ignored1, bitCapInt ignored2) {
+        leaf->Branch();
+        std::swap(leaf->branches[0], leaf->branches[1]);
+        leaf->branches[0]->scale *= topRight;
+        leaf->branches[1]->scale *= bottomLeft;
+        leaf->Prune();
     });
 }
 
