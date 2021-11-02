@@ -493,7 +493,8 @@ bitCapInt QBinaryDecisionTree::MAll()
     return result;
 }
 
-void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth)
+void QBinaryDecisionTree::Apply2x2OnLeaf(
+    const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth, bitCapInt highControlMask)
 {
     bitLenInt remainder = qubitCount - depth;
     leaf->Branch(remainder, true);
@@ -525,6 +526,12 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
             scale1 *= leaf1->scale;
         }
 
+        if ((i & highControlMask) != highControlMask) {
+            leaf0->scale = scale0;
+            leaf1->scale = scale1;
+            continue;
+        }
+
         complex Y0 = scale0;
         complex Y1 = scale1;
         leaf0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
@@ -552,7 +559,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
                 }
             }
 
-            leafFunc(leaf);
+            leafFunc(leaf, 0U);
         });
 
         root->Prune(target);
@@ -564,8 +571,9 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
-    ApplySingle(
-        target, [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf) { Apply2x2OnLeaf(mtrx.get(), leaf, target); });
+    ApplySingle(target, [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bitCapInt ignored) {
+        Apply2x2OnLeaf(mtrx.get(), leaf, target, 0U);
+    });
 }
 
 template <typename Lfn, typename Efn>
@@ -582,41 +590,44 @@ void QBinaryDecisionTree::ApplyControlledSingle(
     std::sort(sortedControls.begin(), sortedControls.end());
 
     std::shared_ptr<bitCapInt[]> qPowersSorted(new bitCapInt[controlLen]);
-    bitCapInt lowControlMask = 0;
-    for (bitLenInt c = 0; c < controlLen; c++) {
+    bitCapInt lowControlMask = 0U;
+    bitLenInt c;
+    for (c = 0U; (c < controlLen) && (sortedControls[c] < target); c++) {
         qPowersSorted[c] = pow2(sortedControls[c]);
         lowControlMask |= qPowersSorted[c];
     }
-    // TODO: This is a horrible kludge.
-    if (target < sortedControls.back()) {
-        // At least one control bit index is higher than the target.
-        ExecuteAsQEngineCPU(engineFunc);
-        return;
+    bitLenInt controlBound = c - 1U;
+    bitCapInt highControlMask = 0U;
+    for (; c < controlLen; c++) {
+        qPowersSorted[c] = pow2(sortedControls[c]);
+        highControlMask |= qPowersSorted[c];
     }
+    highControlMask >>= (target + 1U);
 
     bitCapInt targetPow = pow2(target);
 
-    Dispatch(targetPow, [this, target, targetPow, lowControlMask, qPowersSorted, controlLen, leafFunc]() {
-        root->Branch(target);
+    Dispatch(
+        targetPow, [this, target, targetPow, lowControlMask, highControlMask, qPowersSorted, controlBound, leafFunc]() {
+            root->Branch(target);
 
-        par_for_mask(0, targetPow, qPowersSorted.get(), controlLen, [&](const bitCapInt& lcv, const int& cpu) {
-            // If any controls aren't set, skip.
-            bitCapInt i = lcv | lowControlMask;
+            par_for_mask(0, targetPow, qPowersSorted.get(), controlBound, [&](const bitCapInt& lcv, const int& cpu) {
+                // If any controls aren't set, skip.
+                bitCapInt i = lcv | lowControlMask;
 
-            QBinaryDecisionTreeNodePtr leaf = root;
-            // Iterate to qubit depth.
-            for (bitLenInt j = 0; j < target; j++) {
-                leaf = leaf->branches[(i >> j) & 1U];
-                if (!leaf || IS_NORM_0(leaf->scale)) {
-                    return;
+                QBinaryDecisionTreeNodePtr leaf = root;
+                // Iterate to qubit depth.
+                for (bitLenInt j = 0; j < target; j++) {
+                    leaf = leaf->branches[(i >> j) & 1U];
+                    if (!leaf || IS_NORM_0(leaf->scale)) {
+                        return;
+                    }
                 }
-            }
 
-            leafFunc(leaf);
+                leafFunc(leaf, highControlMask);
+            });
+
+            root->Prune(target);
         });
-
-        root->Prune(target);
-    });
 }
 
 void QBinaryDecisionTree::ApplyControlledSingleBit(
@@ -627,7 +638,9 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 
     ApplyControlledSingle(
         controls, controlLen, target,
-        [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf) { Apply2x2OnLeaf(mtrx.get(), leaf, target); },
+        [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bitCapInt highControlMask) {
+            Apply2x2OnLeaf(mtrx.get(), leaf, target, highControlMask);
+        },
         [&](QInterfacePtr eng) { eng->ApplyControlledSingleBit(controls, controlLen, target, lMtrx); });
 }
 
