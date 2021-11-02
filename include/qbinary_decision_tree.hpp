@@ -77,7 +77,7 @@ protected:
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest);
 
-    void Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf);
+    void Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth);
 
     template <typename Fn> void ApplySingle(bitLenInt target, Fn leafFunc);
     template <typename Lfn, typename Efn>
@@ -197,14 +197,8 @@ public:
     virtual bitCapInt MAll();
 
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target);
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
-    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight);
-    virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft);
 
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
     virtual real1_f ProbParity(const bitCapInt& mask)

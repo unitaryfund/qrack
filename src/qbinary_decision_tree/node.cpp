@@ -99,12 +99,12 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
     b1 = b0;
 }
 
-void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
+void QBinaryDecisionTreeNode::Branch(bitLenInt depth, bool isZeroBranch)
 {
     if (!depth) {
         return;
     }
-    if (IS_NORM_0(scale)) {
+    if (!isZeroBranch && IS_NORM_0(scale)) {
         SetZero();
         return;
     }
@@ -121,8 +121,8 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth)
         b1 = b1->ShallowClone();
     }
 
-    b0->Branch(depth - 1U);
-    b1->Branch(depth - 1U);
+    b0->Branch(depth - 1U, isZeroBranch);
+    b1->Branch(depth - 1U, isZeroBranch);
 }
 
 void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
