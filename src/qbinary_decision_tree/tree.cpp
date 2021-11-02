@@ -598,7 +598,7 @@ void QBinaryDecisionTree::ApplySinglePhase(const complex topLeft, const complex 
         return;
     }
 
-    ApplySingle(target, [this, topLeft, bottomRight](QBinaryDecisionTreeNodePtr leaf, bool ignored1, bitCapInt ignored2) {
+    ApplySingle(target, [topLeft, bottomRight](QBinaryDecisionTreeNodePtr leaf, bool ignored1, bitCapInt ignored2) {
         leaf->Branch();
         leaf->branches[0]->scale *= topLeft;
         leaf->branches[1]->scale *= bottomRight;
@@ -608,7 +608,7 @@ void QBinaryDecisionTree::ApplySinglePhase(const complex topLeft, const complex 
 
 void QBinaryDecisionTree::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
 {
-    ApplySingle(target, [this, topRight, bottomLeft](QBinaryDecisionTreeNodePtr leaf, bool ignored1, bitCapInt ignored2) {
+    ApplySingle(target, [topRight, bottomLeft](QBinaryDecisionTreeNodePtr leaf, bool ignored1, bitCapInt ignored2) {
         leaf->Branch();
         std::swap(leaf->branches[0], leaf->branches[1]);
         leaf->branches[0]->scale *= topRight;
@@ -617,9 +617,9 @@ void QBinaryDecisionTree::ApplySingleInvert(const complex topRight, const comple
     });
 }
 
-template <typename Lfn, typename Efn>
-void QBinaryDecisionTree::ApplyControlledSingle(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, Lfn leafFunc, Efn engineFunc)
+template <typename Lfn>
+void QBinaryDecisionTree::ApplyControlledSingle(std::shared_ptr<complex[]> mtrx, const bitLenInt* controls,
+    const bitLenInt& controlLen, const bitLenInt& target, Lfn leafFunc)
 {
     if (!controlLen) {
         ApplySingle(target, leafFunc);
@@ -647,10 +647,16 @@ void QBinaryDecisionTree::ApplyControlledSingle(
 
     bitCapInt targetPow = pow2(target);
 
-    Dispatch(
-        targetPow, [this, target, targetPow, lowControlMask, highControlMask, qPowersSorted, controlBound, leafFunc]() {
+    Dispatch(targetPow,
+        [this, mtrx, target, targetPow, lowControlMask, highControlMask, qPowersSorted, controlBound, leafFunc]() {
             root->Branch(target);
 
+            bool isPhase = false;
+            bool isInvert = false;
+            if (!highControlMask) {
+                isPhase = ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX));
+                isInvert = ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX));
+            }
             bool isParallel = ((targetPow >> controlBound) < GetParallelThreshold());
             par_for_mask(0, targetPow, qPowersSorted.get(), controlBound, [&](const bitCapInt& lcv, const int& cpu) {
                 // If any controls aren't set, skip.
@@ -665,7 +671,20 @@ void QBinaryDecisionTree::ApplyControlledSingle(
                     }
                 }
 
-                leafFunc(leaf, isParallel, highControlMask);
+                if (isPhase) {
+                    leaf->Branch();
+                    leaf->branches[0]->scale *= mtrx[0];
+                    leaf->branches[1]->scale *= mtrx[3];
+                    leaf->Prune();
+                } else if (isInvert) {
+                    leaf->Branch();
+                    std::swap(leaf->branches[0], leaf->branches[1]);
+                    leaf->branches[0]->scale *= mtrx[1];
+                    leaf->branches[1]->scale *= mtrx[2];
+                    leaf->Prune();
+                } else {
+                    leafFunc(leaf, isParallel, highControlMask);
+                }
             });
 
             root->Prune(target);
@@ -678,12 +697,10 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
-    ApplyControlledSingle(
-        controls, controlLen, target,
+    ApplyControlledSingle(mtrx, controls, controlLen, target,
         [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bool isParallel, bitCapInt highControlMask) {
             Apply2x2OnLeaf(mtrx.get(), leaf, target, isParallel, highControlMask);
-        },
-        [&](QInterfacePtr eng) { eng->ApplyControlledSingleBit(controls, controlLen, target, lMtrx); });
+        });
 }
 
 } // namespace Qrack

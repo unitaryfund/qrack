@@ -81,9 +81,9 @@ protected:
         bitCapInt highControlMask);
 
     template <typename Fn> void ApplySingle(bitLenInt target, Fn leafFunc);
-    template <typename Lfn, typename Efn>
-    void ApplyControlledSingle(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, Lfn leafFunc, Efn engineFunc);
+    template <typename Lfn>
+    void ApplyControlledSingle(std::shared_ptr<complex[]> mtrx, const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, Lfn leafFunc);
 
 public:
     QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
