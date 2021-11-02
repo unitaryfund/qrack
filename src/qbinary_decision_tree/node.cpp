@@ -158,10 +158,6 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     if (!depth) {
         return;
     }
-    if (IS_NORM_0(scale)) {
-        SetZero();
-        return;
-    }
 
     QBinaryDecisionTreeNodePtr& b0 = branches[0];
     if (!b0) {
