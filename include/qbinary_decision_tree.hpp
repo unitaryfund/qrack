@@ -77,8 +77,8 @@ protected:
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest);
 
-    void Apply2x2OnLeaf(
-        const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth, bitCapInt highControlMask);
+    void Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth, bool isParallel,
+        bitCapInt highControlMask);
 
     template <typename Fn> void ApplySingle(bitLenInt target, Fn leafFunc);
     template <typename Lfn, typename Efn>
