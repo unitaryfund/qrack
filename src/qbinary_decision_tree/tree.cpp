@@ -496,7 +496,6 @@ bitCapInt QBinaryDecisionTree::MAll()
 void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth)
 {
     bitLenInt remainder = qubitCount - depth;
-    complex origScale = leaf->scale;
     leaf->Branch(remainder, true);
 
     remainder--;
@@ -532,8 +531,8 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
         leaf1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
     }
 
-    leaf->ConvertStateVector(remainder + 1U);
-    leaf->scale = origScale;
+    b0->ConvertStateVector(remainder);
+    b1->ConvertStateVector(remainder);
     leaf->Prune(remainder + 1U);
 }
 
