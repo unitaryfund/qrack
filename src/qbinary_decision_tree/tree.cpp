@@ -431,7 +431,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
     root->Branch(qubit + 1U);
 
     bitCapInt qPower = pow2(qubit);
-    complex nrm = GetNonunitaryPhase();
+    root->scale = GetNonunitaryPhase();
 
     par_for(0, qPower, [&](const bitCapInt i, const int cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
@@ -448,9 +448,9 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 
         if (result) {
             leaf->branches[0]->SetZero();
-            leaf->branches[1]->scale = nrm;
+            leaf->branches[1]->scale /= abs(leaf->branches[1]->scale);
         } else {
-            leaf->branches[0]->scale = nrm;
+            leaf->branches[0]->scale /= abs(leaf->branches[0]->scale);
             leaf->branches[1]->SetZero();
         }
     });
