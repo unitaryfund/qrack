@@ -45,18 +45,6 @@ bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool 
     return toRet;
 }
 
-void QBinaryDecisionTree::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
-{
-    // Low index qubits are first prioritized for performance as controls.
-    if (qubitIndex2 < qubitIndex1) {
-        std::swap(qubitIndex1, qubitIndex2);
-    }
-
-    CNOT(qubitIndex1, qubitIndex2);
-    CNOT(qubitIndex2, qubitIndex1);
-    CNOT(qubitIndex1, qubitIndex2);
-}
-
 void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
 {
     Dump();

@@ -531,6 +531,44 @@ void QInterface::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     CNOT(qubitIndex1, qubitIndex2);
 }
 
+void QInterface::CSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]());
+    std::copy(controls, controls + controlLen, lControls.get());
+
+    lControls[controlLen] = qubit1;
+    ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+
+    lControls[controlLen] = qubit2;
+    ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit1, ONE_CMPLX, ONE_CMPLX);
+
+    lControls[controlLen] = qubit1;
+    ApplyControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+}
+
+void QInterface::AntiCSwap(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+{
+    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]());
+    std::copy(controls, controls + controlLen, lControls.get());
+
+    lControls[controlLen] = qubit1;
+    X(qubit1);
+    ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    X(qubit1);
+
+    lControls[controlLen] = qubit2;
+    X(qubit2);
+    ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit1, ONE_CMPLX, ONE_CMPLX);
+    X(qubit2);
+
+    lControls[controlLen] = qubit1;
+    X(qubit1);
+    ApplyAntiControlledSingleInvert(lControls.get(), controlLen + 1U, qubit2, ONE_CMPLX, ONE_CMPLX);
+    X(qubit1);
+}
+
 void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
 {
     if (!mask) {

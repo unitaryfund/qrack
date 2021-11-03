@@ -241,7 +241,6 @@ public:
         ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->Hash(start, length, values); });
     }
 
-    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->SqrtSwap(qubitIndex1, qubitIndex2); });
@@ -257,16 +256,6 @@ public:
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubitIndex1, qubitIndex2); });
-    }
-    virtual void CSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
-    {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->CSwap(controls, controlLen, qubit1, qubit2); });
-    }
-    virtual void AntiCSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
-    {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->AntiCSwap(controls, controlLen, qubit1, qubit2); });
     }
     virtual void CSqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
