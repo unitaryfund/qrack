@@ -73,8 +73,9 @@ QInterfacePtr QBinaryDecisionTree::Clone()
 {
     Finish();
 
-    QBinaryDecisionTreePtr copyPtr = std::make_shared<QBinaryDecisionTree>(qubitCount, 0, rand_generator, ONE_CMPLX,
-        doNormalize, randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+    QBinaryDecisionTreePtr copyPtr =
+        std::make_shared<QBinaryDecisionTree>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+            false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
     copyPtr->root = root ? root->ShallowClone() : NULL;
 
@@ -502,7 +503,7 @@ bitCapInt QBinaryDecisionTree::MAll()
 void QBinaryDecisionTree::Apply2x2OnLeaf(
     const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth, bool isParallel, bitCapInt highControlMask)
 {
-    leaf->Branch(1, true);
+    leaf->Branch();
     bitLenInt remainder = qubitCount - (depth + 1);
 
     QBinaryDecisionTreeNodePtr& b0 = leaf->branches[0];
