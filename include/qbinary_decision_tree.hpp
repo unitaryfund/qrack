@@ -78,12 +78,12 @@ protected:
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest);
 
     void Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth, bool isParallel,
-        bitCapInt highControlMask);
+        bitCapInt highControlMask, bool isAnti);
 
     template <typename Fn> void ApplySingle(bitLenInt target, Fn leafFunc);
     template <typename Lfn>
-    void ApplyControlledSingle(std::shared_ptr<complex[]> mtrx, const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, Lfn leafFunc);
+    void ApplyControlledSingle(bool isAnti, std::shared_ptr<complex[]> mtrx, const bitLenInt* controls,
+        const bitLenInt& controlLen, const bitLenInt& target, Lfn leafFunc);
 
 public:
     QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -201,6 +201,8 @@ public:
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target);
     virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target);
     virtual void ApplyControlledSingleBit(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
+    virtual void ApplyAntiControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);

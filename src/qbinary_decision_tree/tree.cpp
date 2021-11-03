@@ -498,8 +498,8 @@ bitCapInt QBinaryDecisionTree::MAll()
     return result;
 }
 
-void QBinaryDecisionTree::Apply2x2OnLeaf(
-    const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth, bool isParallel, bitCapInt highControlMask)
+void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth,
+    bool isParallel, bitCapInt highControlMask, bool isAnti)
 {
     leaf->Branch();
     bitLenInt remainder = qubitCount - (depth + 1);
@@ -507,7 +507,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
     QBinaryDecisionTreeNodePtr& b0 = leaf->branches[0];
     QBinaryDecisionTreeNodePtr& b1 = leaf->branches[1];
 
-    ParallelFunc fn = [b0, b1, remainder, highControlMask, mtrx](const bitCapInt& i, const int& cpu) {
+    ParallelFunc fn = [isAnti, b0, b1, remainder, highControlMask, mtrx](const bitCapInt& i, const int& cpu) {
         QBinaryDecisionTreeNodePtr leaf0 = b0;
         QBinaryDecisionTreeNodePtr leaf1 = b1;
 
@@ -528,7 +528,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
             scale1 *= leaf1->scale;
         }
 
-        if ((i & highControlMask) != highControlMask) {
+        if ((!isAnti && ((i & highControlMask) != highControlMask)) || (isAnti && ((i & highControlMask) != 0U))) {
             leaf0->scale = scale0;
             leaf1->scale = scale1;
             return;
@@ -597,7 +597,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
     ApplySingle(target, [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bool isParallel, bitCapInt ignored) {
-        Apply2x2OnLeaf(mtrx.get(), leaf, target, isParallel, 0U);
+        Apply2x2OnLeaf(mtrx.get(), leaf, target, isParallel, 0U, false);
     });
 }
 
@@ -627,7 +627,7 @@ void QBinaryDecisionTree::ApplySingleInvert(const complex topRight, const comple
 }
 
 template <typename Lfn>
-void QBinaryDecisionTree::ApplyControlledSingle(std::shared_ptr<complex[]> mtrx, const bitLenInt* controls,
+void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<complex[]> mtrx, const bitLenInt* controls,
     const bitLenInt& controlLen, const bitLenInt& target, Lfn leafFunc)
 {
     if (!controlLen) {
@@ -657,7 +657,8 @@ void QBinaryDecisionTree::ApplyControlledSingle(std::shared_ptr<complex[]> mtrx,
     bitCapInt targetPow = pow2(target);
 
     Dispatch(targetPow,
-        [this, mtrx, target, targetPow, lowControlMask, highControlMask, qPowersSorted, controlBound, leafFunc]() {
+        [this, isAnti, mtrx, target, targetPow, lowControlMask, highControlMask, qPowersSorted, controlBound,
+            leafFunc]() {
             root->Branch(target);
 
             bool isPhase = false;
@@ -669,7 +670,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(std::shared_ptr<complex[]> mtrx,
             bool isParallel = ((targetPow >> controlBound) < GetParallelThreshold());
             par_for_mask(0, targetPow, qPowersSorted.get(), controlBound, [&](const bitCapInt& lcv, const int& cpu) {
                 // If any controls aren't set, skip.
-                bitCapInt i = lcv | lowControlMask;
+                bitCapInt i = isAnti ? lcv : (lcv | lowControlMask);
 
                 QBinaryDecisionTreeNodePtr leaf = root;
                 // Iterate to qubit depth.
@@ -710,9 +711,21 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
-    ApplyControlledSingle(mtrx, controls, controlLen, target,
+    ApplyControlledSingle(false, mtrx, controls, controlLen, target,
         [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bool isParallel, bitCapInt highControlMask) {
-            Apply2x2OnLeaf(mtrx.get(), leaf, target, isParallel, highControlMask);
+            Apply2x2OnLeaf(mtrx.get(), leaf, target, isParallel, highControlMask, false);
+        });
+}
+
+void QBinaryDecisionTree::ApplyAntiControlledSingleBit(
+    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* lMtrx)
+{
+    std::shared_ptr<complex[]> mtrx(new complex[4]);
+    std::copy(lMtrx, lMtrx + 4, mtrx.get());
+
+    ApplyControlledSingle(true, mtrx, controls, controlLen, target,
+        [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bool isParallel, bitCapInt highControlMask) {
+            Apply2x2OnLeaf(mtrx.get(), leaf, target, isParallel, highControlMask, true);
         });
 }
 
