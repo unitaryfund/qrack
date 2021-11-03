@@ -60,9 +60,9 @@ QEnginePtr QHybrid::MakeEngine(bool isOpenCL, bitCapInt initState)
 
 QInterfacePtr QHybrid::Clone()
 {
-    QHybridPtr c = std::dynamic_pointer_cast<QHybrid>(CreateQuantumInterface(QINTERFACE_HYBRID, qubitCount, 0,
-        rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-        (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
+    QHybridPtr c = std::make_shared<QHybrid>(qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
+        useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits,
+        separabilityThreshold);
     c->SetConcurrency(concurrency);
     c->engine->CopyStateVec(engine);
     return c;

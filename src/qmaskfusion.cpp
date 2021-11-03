@@ -58,12 +58,9 @@ QInterfacePtr QMaskFusion::Clone()
 {
     FlushBuffers();
 
-    std::vector<QInterfaceEngine> tEngines = engTypes;
-    tEngines.insert(tEngines.begin(), QINTERFACE_MASK_FUSION);
-
-    QMaskFusionPtr c = std::dynamic_pointer_cast<QMaskFusion>(CreateQuantumInterface(tEngines, qubitCount, 0,
-        rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-        (real1_f)amplitudeFloor, devices, thresholdQubits, separabilityThreshold));
+    QMaskFusionPtr c = std::make_shared<QMaskFusion>(engTypes, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, devices, thresholdQubits,
+        separabilityThreshold);
     c->engine = std::dynamic_pointer_cast<QEngine>(engine->Clone());
     return c;
 }
