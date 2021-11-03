@@ -241,10 +241,7 @@ public:
         ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->Hash(start, length, values); });
     }
 
-    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
-    {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->Swap(qubitIndex1, qubitIndex2); });
-    }
+    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->SqrtSwap(qubitIndex1, qubitIndex2); });

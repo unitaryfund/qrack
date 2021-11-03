@@ -524,6 +524,13 @@ void QInterface::ZMask(bitCapInt mask)
     }
 }
 
+void QInterface::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+{
+    CNOT(qubitIndex1, qubitIndex2);
+    CNOT(qubitIndex2, qubitIndex1);
+    CNOT(qubitIndex1, qubitIndex2);
+}
+
 void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
 {
     if (!mask) {
