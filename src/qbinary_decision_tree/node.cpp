@@ -196,9 +196,7 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
 
     scale = std::polar((real1)sqrt(nrm0 + nrm1), (real1)std::arg(b0->scale));
     b0->scale /= scale;
-    if (b0 != b1) {
-        b1->scale /= scale;
-    }
+    b1->scale /= scale;
 }
 
 } // namespace Qrack

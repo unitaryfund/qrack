@@ -77,7 +77,7 @@ QInterfacePtr QBinaryDecisionTree::Clone()
         std::make_shared<QBinaryDecisionTree>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
             false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
-    copyPtr->root = root ? root->ShallowClone() : NULL;
+    copyPtr->root = root->ShallowClone();
 
     return copyPtr;
 }
@@ -251,7 +251,6 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
         toCopy->GetQuantumState(copyPtr);
         eng->Compose(copyPtr, start);
         SetQubitCount(qubitCount + toCopy->qubitCount);
-        toCopy->SetQuantumState(copyPtr);
     });
 
     return start;
@@ -292,12 +291,13 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         leaf->branches[1] = NULL;
     });
 
+    startNode->scale /= abs(startNode->scale);
+
     if (dest) {
         dest->root = startNode;
-        dest->root->scale = GetNonunitaryPhase();
     }
 
-    if (qubitCount <= end) {
+    if (qubitCount == end) {
         SetQubitCount(qubitCount - length);
         root->Prune(qubitCount);
         if (dest) {
