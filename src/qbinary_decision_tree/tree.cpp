@@ -415,17 +415,22 @@ real1_f QBinaryDecisionTree::ProbAll(bitCapInt fullRegister)
 
 bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
+    if (doForce) {
+        if (doApply) {
+            ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->ForceM(qubit, result, true, doApply); });
+        }
+        return result;
+    }
+
     Finish();
 
-    if (!doForce) {
-        real1_f oneChance = Prob(qubit);
-        if (oneChance >= ONE_R1) {
-            result = true;
-        } else if (oneChance <= ZERO_R1) {
-            result = false;
-        } else {
-            result = (Rand() <= oneChance);
-        }
+    real1_f oneChance = Prob(qubit);
+    if (oneChance >= ONE_R1) {
+        result = true;
+    } else if (oneChance <= ZERO_R1) {
+        result = false;
+    } else {
+        result = (Rand() <= oneChance);
     }
 
     root->Branch(qubit + 1U);
