@@ -1652,7 +1652,7 @@ bitCapInt QUnit::MAll()
                 shards[i].amp0 = GetNonunitaryPhase();
                 shards[i].amp1 = ZERO_CMPLX;
             }
-        } else if (!(toFind->isClifford())) {
+        } else if (!toFind->isClifford() && !toFind->isBinaryDecisionTree()) {
             if (M(i)) {
                 toRet |= pow2(i);
             }
