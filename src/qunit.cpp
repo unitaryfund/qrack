@@ -1547,7 +1547,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     QEngineShard& shard = shards[qubit];
 
     bool result;
-    if (!shard.isProbDirty) {
+    if (!shard.isProbDirty && (!shard.unit || !shard.unit->isBinaryDecisionTree())) {
         real1_f prob = norm(shard.amp1);
         if (doForce) {
             result = res;
@@ -1559,6 +1559,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
             result = (Rand() <= prob);
         }
     } else {
+        // Binary decision tree HAS to be collapsed into the right state before Decompose()/Dispose().
         result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
     }
 

@@ -2372,6 +2372,12 @@ public:
     virtual bool isFinished() { return true; };
 
     /**
+     * Returns "true" if current state representation is definitely a binary decision tree, "false" if it is definitely
+     * not, or "true" if it cannot be determined.
+     */
+    virtual bool isBinaryDecisionTree() { return false; };
+
+    /**
      * Returns "true" if current state is identifiably within the Clifford set, or "false" if it is not or cannot be
      * determined.
      */

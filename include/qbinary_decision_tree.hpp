@@ -102,6 +102,8 @@ public:
     {
     }
 
+    virtual bool isBinaryDecisionTree() { return true; };
+
     virtual void Finish()
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
