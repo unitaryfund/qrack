@@ -202,7 +202,7 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
 
     if (start == 0) {
         QBinaryDecisionTreeNodePtr rootClone = toCopy->root->ShallowClone();
-        std::swap(root, rootClone);
+        root.swap(rootClone);
         par_for(0, toCopy->maxQPower, [&](const bitCapInt& i, const int& cpu) {
             QBinaryDecisionTreeNodePtr leaf = root;
             for (bitLenInt j = 0; j < toCopy->qubitCount; j++) {
@@ -263,7 +263,6 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     }
 
     bitLenInt end = start + length;
-
     if (end < qubitCount) {
         ExecuteAsQEngineCPU([&](QInterfacePtr eng) {
             if (dest) {
@@ -581,7 +580,7 @@ void QBinaryDecisionTree::ApplySingleInvert(const complex topRight, const comple
 {
     ApplySingle(target, [topRight, bottomLeft](QBinaryDecisionTreeNodePtr leaf, bool ignored1, bitCapInt ignored2) {
         leaf->Branch();
-        std::swap(leaf->branches[0], leaf->branches[1]);
+        leaf->branches[0].swap(leaf->branches[1]);
         leaf->branches[0]->scale *= topRight;
         leaf->branches[1]->scale *= bottomLeft;
         leaf->Prune();
@@ -654,7 +653,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                     leaf->Prune();
                 } else if (isInvert) {
                     leaf->Branch();
-                    std::swap(leaf->branches[0], leaf->branches[1]);
+                    leaf->branches[0].swap(leaf->branches[1]);
                     leaf->branches[0]->scale *= mtrx[1];
                     leaf->branches[1]->scale *= mtrx[2];
                     leaf->Prune();
