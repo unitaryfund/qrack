@@ -215,53 +215,64 @@ complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start)
 {
+    if (start && (start != qubitCount)) {
+        return QInterface::Compose(toCopy, start);
+    }
+
     Finish();
     toCopy->Finish();
 
-    if (!start || (start == qubitCount)) {
-        bitLenInt qbCount;
-        bitCapInt maxI;
-        QBinaryDecisionTreeNodePtr rootClone = toCopy->root->ShallowClone();
-        if (start) {
-            qbCount = qubitCount;
-            maxI = maxQPower;
-        } else {
-            qbCount = toCopy->qubitCount;
-            maxI = toCopy->maxQPower;
-            root.swap(rootClone);
-        }
-        par_for(0, maxI, [&](const bitCapInt& i, const int& cpu) {
-            QBinaryDecisionTreeNodePtr leaf = root;
-            for (bitLenInt j = 0; j < qbCount; j++) {
-                if (IS_NORM_0(leaf->scale)) {
-                    return;
-                }
-                leaf = leaf->branches[(i >> j) & 1U];
-            }
-
+    bitLenInt qbCount;
+    bitCapInt maxI;
+    QBinaryDecisionTreeNodePtr rootClone = toCopy->root->ShallowClone();
+    if (start) {
+        qbCount = qubitCount;
+        maxI = maxQPower;
+    } else {
+        qbCount = toCopy->qubitCount;
+        maxI = toCopy->maxQPower;
+        root.swap(rootClone);
+    }
+    par_for(0, maxI, [&](const bitCapInt& i, const int& cpu) {
+        QBinaryDecisionTreeNodePtr leaf = root;
+        for (bitLenInt j = 0; j < qbCount; j++) {
             if (IS_NORM_0(leaf->scale)) {
                 return;
             }
+            leaf = leaf->branches[(i >> j) & 1U];
+        }
 
-            leaf->branches[0] = rootClone->branches[0];
-            leaf->branches[1] = rootClone->branches[1];
-        });
-        SetQubitCount(qubitCount + toCopy->qubitCount);
-        return start;
-    }
+        if (IS_NORM_0(leaf->scale)) {
+            return;
+        }
 
-    ExecuteAsQEngine([&](QInterfacePtr eng) {
-        QEnginePtr copyPtr = toCopy->MakeEngine();
-
-        toCopy->GetQuantumState(copyPtr);
-        eng->Compose(copyPtr, start);
-        SetQubitCount(qubitCount + toCopy->qubitCount);
+        leaf->branches[0] = rootClone->branches[0];
+        leaf->branches[1] = rootClone->branches[1];
     });
+    SetQubitCount(qubitCount + toCopy->qubitCount);
 
     return start;
 }
 void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest)
 {
+    bitLenInt end = start + length;
+
+    if (start && (end < qubitCount)) {
+        bitLenInt offset = qubitCount - end;
+
+        ROL(offset, 0, qubitCount);
+
+        if (dest) {
+            Decompose(qubitCount - length, dest);
+        } else {
+            Dispose(qubitCount - length, length);
+        }
+
+        ROR(offset, 0, qubitCount);
+
+        return;
+    }
+
     Finish();
     if (dest) {
         dest->Dump();
@@ -271,23 +282,6 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     if (isReversed) {
         start = length;
         length = qubitCount - length;
-    }
-
-    bitLenInt end = start + length;
-    if (end < qubitCount) {
-        ExecuteAsQEngine([&](QInterfacePtr eng) {
-            if (dest) {
-                QEnginePtr copyPtr = dest->MakeEngine();
-                eng->Decompose(start, copyPtr);
-                dest->SetQuantumState(copyPtr);
-            } else {
-                eng->Dispose(start, length);
-            }
-
-            SetQubitCount(qubitCount - length);
-        });
-
-        return;
     }
 
     bitCapInt maxI = pow2(start);
