@@ -263,6 +263,24 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     }
 
     bitLenInt end = start + length;
+
+    if (end < qubitCount) {
+        ExecuteAsQEngineCPU([&](QInterfacePtr eng) {
+            if (dest) {
+                QEnginePtr copyPtr = std::make_shared<QEngineCPU>(length, 0, rand_generator, ONE_CMPLX, doNormalize,
+                    randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+                eng->Decompose(start, copyPtr);
+                dest->SetQuantumState(copyPtr);
+            } else {
+                eng->Dispose(start, length);
+            }
+
+            SetQubitCount(qubitCount - length);
+        });
+
+        return;
+    }
+
     bitCapInt maxI = pow2(start);
     QBinaryDecisionTreeNodePtr startNode = NULL;
     std::mutex destMutex;
@@ -291,71 +309,15 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         leaf->branches[1] = NULL;
     });
 
+    // In theory, pruning here shouldn't do anything, but we likely don't have a perfect QBDT directed acyclic graph.
+    root->Prune(start + 1U);
     startNode->scale /= abs(startNode->scale);
 
     if (dest) {
         dest->root = startNode;
     }
 
-    if (qubitCount == end) {
-        SetQubitCount(qubitCount - length);
-        root->Prune(qubitCount);
-        if (dest) {
-            dest->root->Prune(length);
-        }
-        return;
-    }
-
-    bitCapInt lengthPow = pow2(length);
-    QBinaryDecisionTreeNodePtr endNode = NULL;
-
-    par_for(0, lengthPow, [&](const bitCapInt& i, const int& cpu) {
-        QBinaryDecisionTreeNodePtr leaf = startNode;
-        for (bitLenInt j = 0; j < length; j++) {
-            if (IS_NORM_0(leaf->scale)) {
-                return;
-            }
-            leaf = leaf->branches[(i >> j) & 1U];
-        }
-
-        if (IS_NORM_0(leaf->scale)) {
-            return;
-        }
-
-        if (!endNode) {
-            const std::lock_guard<std::mutex> destLock(destMutex);
-            // Now that we've locked, is the endNode still not set?
-            if (!endNode) {
-                endNode = leaf->ShallowClone();
-            }
-        }
-
-        leaf->branches[0] = NULL;
-        leaf->branches[1] = NULL;
-    });
-
-    startNode->Prune(length);
-
-    par_for(0, maxI, [&](const bitCapInt& i, const int& cpu) {
-        QBinaryDecisionTreeNodePtr leaf = root;
-        for (bitLenInt j = 0; j < start; j++) {
-            if (IS_NORM_0(leaf->scale)) {
-                return;
-            }
-            leaf = leaf->branches[(i >> j) & 1U];
-        }
-
-        if (IS_NORM_0(leaf->scale)) {
-            return;
-        }
-
-        leaf->branches[0] = endNode->branches[0];
-        leaf->branches[1] = endNode->branches[1];
-    });
-
     SetQubitCount(qubitCount - length);
-
-    root->Prune(qubitCount);
 }
 
 real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
