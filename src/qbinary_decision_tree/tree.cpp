@@ -255,6 +255,24 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
 }
 void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest)
 {
+    bitLenInt end = start + length;
+
+    if (start && (end < qubitCount)) {
+        bitLenInt offset = qubitCount - end;
+
+        ROL(offset, 0, qubitCount);
+
+        if (dest) {
+            Decompose(qubitCount - length, dest);
+        } else {
+            Dispose(qubitCount - length, length);
+        }
+
+        ROR(offset, 0, qubitCount);
+
+        return;
+    }
+
     Finish();
     if (dest) {
         dest->Dump();
@@ -264,23 +282,6 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     if (isReversed) {
         start = length;
         length = qubitCount - length;
-    }
-
-    bitLenInt end = start + length;
-    if (end < qubitCount) {
-        ExecuteAsQEngine([&](QInterfacePtr eng) {
-            if (dest) {
-                QEnginePtr copyPtr = dest->MakeEngine();
-                eng->Decompose(start, copyPtr);
-                dest->SetQuantumState(copyPtr);
-            } else {
-                eng->Dispose(start, length);
-            }
-
-            SetQubitCount(qubitCount - length);
-        });
-
-        return;
     }
 
     bitCapInt maxI = pow2(start);
