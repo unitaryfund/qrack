@@ -15,6 +15,7 @@
 // for details.
 
 #include "qbinary_decision_tree.hpp"
+#include "qfactory.hpp"
 
 #include <mutex>
 
@@ -25,18 +26,35 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> ignored,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1)
+    , engines(eng)
+    , devID(deviceId)
     , root(NULL)
 {
+    if ((engines[0] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
+#if ENABLE_OPENCL
+        if (!OCLEngine::Instance()->GetDeviceCount()) {
+            engines[0] = QINTERFACE_CPU;
+        }
+#else
+        engines[0] = QINTERFACE_CPU;
+#endif
+    }
+
     pStridePow =
         getenv("QRACK_PSTRIDEPOW") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW;
     SetConcurrency(std::thread::hardware_concurrency());
     SetPermutation(initState);
 }
 
+QEnginePtr QBinaryDecisionTree::MakeEngine()
+{
+    return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, qubitCount, 0, rand_generator, ONE_CMPLX,
+        doNormalize, randGlobalPhase, false, devID, hardware_rand_generator != NULL, false, amplitudeFloor));
+}
+
 bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 {
-    QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+    QEnginePtr copyPtr = MakeEngine();
 
     GetQuantumState(copyPtr);
     bool toRet = copyPtr->ForceMParity(mask, result, doForce);
@@ -232,9 +250,8 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
         return start;
     }
 
-    ExecuteAsQEngineCPU([&](QInterfacePtr eng) {
-        QEnginePtr copyPtr = std::make_shared<QEngineCPU>(toCopy->qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+    ExecuteAsQEngine([&](QInterfacePtr eng) {
+        QEnginePtr copyPtr = toCopy->MakeEngine();
 
         toCopy->GetQuantumState(copyPtr);
         eng->Compose(copyPtr, start);
@@ -258,10 +275,9 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 
     bitLenInt end = start + length;
     if (end < qubitCount) {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) {
+        ExecuteAsQEngine([&](QInterfacePtr eng) {
             if (dest) {
-                QEnginePtr copyPtr = std::make_shared<QEngineCPU>(length, 0, rand_generator, ONE_CMPLX, doNormalize,
-                    randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+                QEnginePtr copyPtr = dest->MakeEngine();
                 eng->Decompose(start, copyPtr);
                 dest->SetQuantumState(copyPtr);
             } else {
@@ -377,7 +393,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 {
     if (doForce) {
         if (doApply) {
-            ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->ForceM(qubit, result, true, doApply); });
+            ExecuteAsQEngine([&](QInterfacePtr eng) { eng->ForceM(qubit, result, true, doApply); });
         }
         return result;
     }

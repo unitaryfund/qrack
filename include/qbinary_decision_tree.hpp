@@ -17,7 +17,10 @@
 #pragma once
 
 #include "qbinary_decision_tree_node.hpp"
-#include "qengine_cpu.hpp"
+#include "qengine.hpp"
+
+#include "common/dispatchqueue.hpp"
+#include "common/parallel_for.hpp"
 
 namespace Qrack {
 
@@ -26,6 +29,8 @@ typedef std::shared_ptr<QBinaryDecisionTree> QBinaryDecisionTreePtr;
 
 class QBinaryDecisionTree : virtual public QInterface, public ParallelFor {
 protected:
+    std::vector<QInterfaceEngine> engines;
+    int devID;
     QBinaryDecisionTreeNodePtr root;
 #if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
@@ -47,26 +52,26 @@ protected:
 #endif
     }
 
+    QEnginePtr MakeEngine();
+
     template <typename Fn> void GetTraversal(Fn getLambda);
     template <typename Fn> void SetTraversal(Fn setLambda);
-    template <typename Fn> void ExecuteAsQEngineCPU(Fn operation)
+    template <typename Fn> void ExecuteAsQEngine(Fn operation)
     {
         Finish();
 
-        QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+        QEnginePtr copyPtr = MakeEngine();
 
         GetQuantumState(copyPtr);
         operation(copyPtr);
         SetQuantumState(copyPtr);
     }
 
-    template <typename Fn> bitCapInt BitCapIntAsQEngineCPU(Fn operation)
+    template <typename Fn> bitCapInt BitCapIntAsQEngine(Fn operation)
     {
         Finish();
 
-        QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+        QEnginePtr copyPtr = MakeEngine();
 
         GetQuantumState(copyPtr);
         bitCapInt toRet = operation(copyPtr);
@@ -97,8 +102,9 @@ public:
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
-        : QBinaryDecisionTree({}, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId,
-              useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold, separation_thresh)
+        : QBinaryDecisionTree({ QINTERFACE_HYBRID }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
+              useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold,
+              separation_thresh)
     {
     }
 
@@ -156,7 +162,7 @@ public:
     virtual complex GetAmplitude(bitCapInt perm);
     virtual void SetAmplitude(bitCapInt perm, complex amp)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->SetAmplitude(perm, amp); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->SetAmplitude(perm, amp); });
     }
 
     virtual bitLenInt Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start);
@@ -183,8 +189,7 @@ public:
     {
         Finish();
 
-        QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+        QEnginePtr copyPtr = MakeEngine();
 
         GetQuantumState(copyPtr);
         return copyPtr->MultiShotMeasureMask(qPowers, qPowerCount, shots);
@@ -194,7 +199,7 @@ public:
     virtual bitCapInt ForceMReg(
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true)
     {
-        return BitCapIntAsQEngineCPU(
+        return BitCapIntAsQEngine(
             [&](QInterfacePtr eng) { return eng->ForceMReg(start, length, result, doForce, doApply); });
     }
     virtual bitCapInt MAll();
@@ -212,8 +217,7 @@ public:
     {
         Finish();
 
-        QEnginePtr copyPtr = std::make_shared<QEngineCPU>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-            randGlobalPhase, false, -1, hardware_rand_generator != NULL, false, amplitudeFloor);
+        QEnginePtr copyPtr = MakeEngine();
 
         GetQuantumState(copyPtr);
         return copyPtr->ProbParity(mask);
@@ -222,188 +226,188 @@ public:
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true)
     {
-        return BitCapIntAsQEngineCPU([&](QInterfacePtr eng) {
+        return BitCapIntAsQEngine([&](QInterfacePtr eng) {
             return eng->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
         });
     }
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
     {
-        return BitCapIntAsQEngineCPU([&](QInterfacePtr eng) {
+        return BitCapIntAsQEngine([&](QInterfacePtr eng) {
             return eng->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         });
     }
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
     {
-        return BitCapIntAsQEngineCPU([&](QInterfacePtr eng) {
+        return BitCapIntAsQEngine([&](QInterfacePtr eng) {
             return eng->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         });
     }
     virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->Hash(start, length, values); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->Hash(start, length, values); });
     }
 
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->SqrtSwap(qubitIndex1, qubitIndex2); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->SqrtSwap(qubitIndex1, qubitIndex2); });
     }
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->ISqrtSwap(qubitIndex1, qubitIndex2); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->ISqrtSwap(qubitIndex1, qubitIndex2); });
     }
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->ISwap(qubitIndex1, qubitIndex2); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->ISwap(qubitIndex1, qubitIndex2); });
     }
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubitIndex1, qubitIndex2); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubitIndex1, qubitIndex2); });
     }
     virtual void CSqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->CSqrtSwap(controls, controlLen, qubit1, qubit2); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->CSqrtSwap(controls, controlLen, qubit1, qubit2); });
     }
     virtual void AntiCSqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2); });
     }
     virtual void CISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->CISqrtSwap(controls, controlLen, qubit1, qubit2); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->CISqrtSwap(controls, controlLen, qubit1, qubit2); });
     }
     virtual void AntiCISqrtSwap(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2); });
     }
 
     virtual void CUniformParityRZ(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->CUniformParityRZ(controls, controlLen, mask, angle); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->CUniformParityRZ(controls, controlLen, mask, angle); });
     }
 
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->PhaseFlipIfLess(greaterPerm, start, length); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->PhaseFlipIfLess(greaterPerm, start, length); });
     }
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex); });
     }
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->INC(toAdd, start, length); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->INC(toAdd, start, length); });
     }
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->CINC(toAdd, inOutStart, length, controls, controlLen); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->CINC(toAdd, inOutStart, length, controls, controlLen); });
     }
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->INCC(toAdd, start, length, carryIndex); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->INCC(toAdd, start, length, carryIndex); });
     }
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->INCS(toAdd, start, length, overflowIndex); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->INCS(toAdd, start, length, overflowIndex); });
     }
     virtual void INCSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->INCSC(toAdd, start, length, overflowIndex, carryIndex); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->INCSC(toAdd, start, length, overflowIndex, carryIndex); });
     }
     virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->INCSC(toAdd, start, length, carryIndex); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->INCSC(toAdd, start, length, carryIndex); });
     }
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->DECC(toSub, start, length, carryIndex); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->DECC(toSub, start, length, carryIndex); });
     }
     virtual void DECSC(
         bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->DECSC(toSub, start, length, overflowIndex, carryIndex); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->DECSC(toSub, start, length, overflowIndex, carryIndex); });
     }
     virtual void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->DECSC(toSub, start, length, carryIndex); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->DECSC(toSub, start, length, carryIndex); });
     }
 #if ENABLE_BCD
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->INCBCD(toAdd, start, length); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->INCBCD(toAdd, start, length); });
     }
     virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->INCBCDC(toAdd, start, length, carryIndex); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->INCBCDC(toAdd, start, length, carryIndex); });
     }
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->DECBCDC(toSub, start, length, carryIndex); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->DECBCDC(toSub, start, length, carryIndex); });
     }
 #endif
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->MUL(toMul, inOutStart, carryStart, length); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->MUL(toMul, inOutStart, carryStart, length); });
     }
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->DIV(toDiv, inOutStart, carryStart, length); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->DIV(toDiv, inOutStart, carryStart, length); });
     }
     virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->MULModNOut(toMul, modN, inStart, outStart, length); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->MULModNOut(toMul, modN, inStart, outStart, length); });
     }
     virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->IMULModNOut(toMul, modN, inStart, outStart, length); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->IMULModNOut(toMul, modN, inStart, outStart, length); });
     }
     virtual void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->POWModNOut(base, modN, inStart, outStart, length); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->POWModNOut(base, modN, inStart, outStart, length); });
     }
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen)
     {
-        ExecuteAsQEngineCPU(
+        ExecuteAsQEngine(
             [&](QInterfacePtr eng) { eng->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen); });
     }
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen)
     {
-        ExecuteAsQEngineCPU(
+        ExecuteAsQEngine(
             [&](QInterfacePtr eng) { eng->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen); });
     }
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen)
     {
-        ExecuteAsQEngineCPU(
+        ExecuteAsQEngine(
             [&](QInterfacePtr eng) { eng->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen); });
     }
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) {
+        ExecuteAsQEngine([&](QInterfacePtr eng) {
             eng->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
         });
     }
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen)
     {
-        ExecuteAsQEngineCPU(
+        ExecuteAsQEngine(
             [&](QInterfacePtr eng) { eng->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen); });
     }
     virtual void PhaseParity(real1_f radians, bitCapInt mask)
     {
-        ExecuteAsQEngineCPU([&](QInterfacePtr eng) { eng->PhaseParity(radians, mask); });
+        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->PhaseParity(radians, mask); });
     }
 };
 } // namespace Qrack
