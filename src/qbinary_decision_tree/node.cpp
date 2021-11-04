@@ -96,13 +96,14 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
             }
         }
 
-        if ((leaf0 != leaf1) || !IS_NORM_0(scale0 - scale1)) {
+        if ((leaf0 != leaf1)) {
             // We can't combine our immediate children within depth.
             isSameAtTop = false;
             continue;
         }
 
         if (!j || !IS_NORM_0(prevScale0 - prevScale1) || IS_NORM_0(prevScale0) || IS_NORM_0(prevScale1)) {
+            isSameAtTop &= IS_NORM_0(scale0 - scale1);
             continue;
         }
 
@@ -123,6 +124,8 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         if (IS_NORM_0(sb0->scale - sb1->scale) && (sb0->branches[bit] == sb1->branches[bit])) {
             sb1 = sb0;
         }
+
+        isSameAtTop &= IS_NORM_0(scale0 - scale1);
     }
 
     if (isSameAtTop) {
