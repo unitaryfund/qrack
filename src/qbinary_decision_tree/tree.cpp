@@ -129,7 +129,7 @@ void QBinaryDecisionTree::SetQuantumState(const complex* state)
 {
     SetTraversal([state](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = state[i]; });
 }
-void QBinaryDecisionTree::SetQuantumState(QEnginePtr eng)
+void QBinaryDecisionTree::SetQuantumState(QInterfacePtr eng)
 {
     SetTraversal([eng](bitCapInt i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = eng->GetAmplitude(i); });
 }
