@@ -16,6 +16,8 @@
 
 #include "qbinary_decision_tree_node.hpp"
 
+#include <iostream>
+
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 
 namespace Qrack {
@@ -115,13 +117,21 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
 
         leaf0 = b0;
         leaf1 = b1;
-        for (k = 0; k < j; k++) {
+        for (k = 0; k < (j - 1U); k++) {
             bit = (i >> k) & 1U;
             leaf0 = leaf0->branches[bit];
             leaf1 = leaf1->branches[bit];
         }
+
         bit = (i >> k) & 1U;
-        leaf1->branches[bit] = leaf0->branches[bit];
+        QBinaryDecisionTreeNodePtr& sb0 = leaf0->branches[bit];
+        QBinaryDecisionTreeNodePtr& sb1 = leaf1->branches[bit];
+
+        bit = (i >> (k + 1U)) & 1U;
+        bit ^= 1U;
+        if (IS_NORM_0(sb0->scale - sb1->scale) && (sb0->branches[bit] == sb1->branches[bit])) {
+            sb1 = sb0;
+        }
     }
 
     if (isSameAtTop) {
