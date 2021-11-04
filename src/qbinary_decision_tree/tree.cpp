@@ -262,6 +262,12 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         dest->Dump();
     }
 
+    bool isReversed = !start;
+    if (isReversed) {
+        start = length;
+        length = qubitCount - length;
+    }
+
     bitLenInt end = start + length;
     if (end < qubitCount) {
         ExecuteAsQEngineCPU([&](QInterfacePtr eng) {
@@ -311,6 +317,12 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     // In theory, pruning here shouldn't do anything, but we likely don't have a perfect QBDT directed acyclic graph.
     root->Prune(start + 1U);
     startNode->scale /= abs(startNode->scale);
+
+    if (isReversed) {
+        // start = 0;
+        length = qubitCount - length;
+        root.swap(startNode);
+    }
 
     if (dest) {
         dest->root = startNode;
