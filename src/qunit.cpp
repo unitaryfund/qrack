@@ -4723,6 +4723,7 @@ QInterfacePtr QUnit::Clone()
 
     Finish();
     copyPtr->Finish();
+    copyPtr->SetReactiveSeparate(isReactiveSeparate);
 
     return CloneBody(copyPtr);
 }
