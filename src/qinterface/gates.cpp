@@ -531,6 +531,16 @@ void QInterface::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     CNOT(qubitIndex1, qubitIndex2);
 }
 
+void QInterface::ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+{
+    S(qubitIndex1);
+    S(qubitIndex2);
+    H(qubitIndex1);
+    CNOT(qubitIndex1, qubitIndex2);
+    CNOT(qubitIndex2, qubitIndex1);
+    H(qubitIndex2);
+}
+
 void QInterface::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {

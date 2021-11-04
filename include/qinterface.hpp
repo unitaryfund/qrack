@@ -2193,7 +2193,7 @@ public:
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Swap values of two bits in register, and apply phase factor of i if bits are different */
-    virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+    virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /** Bitwise swap */
     virtual void ISwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
