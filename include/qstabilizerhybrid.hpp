@@ -273,6 +273,8 @@ public:
 
     virtual bool isClifford(const bitLenInt& qubit) { return !engine && !(shards[qubit]); };
 
+    virtual bool isBinaryDecisionTree() { return engine && engine->isBinaryDecisionTree(); };
+
     using QInterface::Compose;
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy)
     {

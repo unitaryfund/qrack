@@ -66,6 +66,7 @@ int main(int argc, char* argv[])
     bool bdt = false;
     bool stabilizer = false;
     bool stabilizer_qpager = false;
+    bool stabilizer_bdt = false;
 
     std::string devListStr;
 
@@ -84,6 +85,8 @@ int main(int argc, char* argv[])
         Opt(qunit_multi_qpager)["--layer-qunit-multi-qpager"]("Enable QUnitMulti with QPager implementation tests") |
         Opt(stabilizer_qpager)["--proc-stabilizer-qpager"](
             "Enable QStabilizerHybrid over QPager implementation tests") |
+        Opt(stabilizer_bdt)["--proc-stabilizer-bdt"](
+            "Enable QStabilizerHybrid over QBinaryDecisionTree implementation tests") |
         Opt(cpu)["--proc-cpu"]("Enable the CPU-based implementation tests") |
         Opt(opencl)["--proc-opencl"]("Single (parallel) processor OpenCL tests") |
         Opt(hybrid)["--proc-hybrid"]("Enable CPU/OpenCL hybrid implementation tests") |
@@ -151,13 +154,14 @@ int main(int argc, char* argv[])
         // qunit_multi_qpager = true;
     }
 
-    if (!cpu && !opencl && !hybrid && !bdt && !stabilizer && !stabilizer_qpager) {
+    if (!cpu && !opencl && !hybrid && !bdt && !stabilizer && !stabilizer_qpager && !stabilizer_bdt) {
         cpu = true;
         opencl = true;
         hybrid = true;
         stabilizer = true;
-        // stabilizer_qpager = true;
         // bdt = true;
+        // stabilizer_qpager = true;
+        // stabilizer_bdt = true;
     }
 
     if (devListStr.compare("") != 0) {
@@ -328,6 +332,14 @@ int main(int argc, char* argv[])
             num_failed = session.run();
         }
 
+        if (num_failed == 0 && stabilizer_bdt) {
+            session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QBinaryDecisionTree ############"
+                                      << std::endl;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_BDT;
+            num_failed = session.run();
+        }
+
         if (num_failed == 0 && stabilizer_qpager) {
             session.config().stream() << "############ QUnit -> QStabilizerHybrid -> QPager -> QHybrid ############"
                                       << std::endl;
@@ -364,6 +376,15 @@ int main(int argc, char* argv[])
             testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
             testSubSubEngineType = QINTERFACE_HYBRID;
             SHOW_OCL_BANNER();
+            num_failed = session.run();
+        }
+
+        if (num_failed == 0 && stabilizer_bdt) {
+            session.config().stream()
+                << "############ QUnitMulti -> QStabilizerHybrid -> QBinaryDecisionTree ############" << std::endl;
+            testEngineType = QINTERFACE_QUNIT_MULTI;
+            testSubEngineType = QINTERFACE_STABILIZER_HYBRID;
+            testSubSubEngineType = QINTERFACE_BDT;
             num_failed = session.run();
         }
 #else
