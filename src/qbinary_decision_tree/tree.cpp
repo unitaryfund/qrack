@@ -312,8 +312,6 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         leaf->branches[1] = NULL;
     });
 
-    // In theory, pruning here shouldn't do anything, but we likely don't have a perfect QBDT directed acyclic graph.
-    root->Prune(start + 1U);
     startNode->scale /= abs(startNode->scale);
 
     if (isReversed) {
