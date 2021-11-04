@@ -1472,12 +1472,8 @@ QInterfacePtr QPager::Clone()
 {
     SeparateEngines();
 
-    std::vector<QInterfaceEngine> tEngines = engines;
-    tEngines.insert(tEngines.begin(), QINTERFACE_QPAGER);
-
-    QPagerPtr clone = std::dynamic_pointer_cast<QPager>(
-        CreateQuantumInterface(tEngines, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
-            0, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
+    QPagerPtr clone = std::make_shared<QPager>(engines, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
 
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         clone->qPages[i] = std::dynamic_pointer_cast<QEngine>(qPages[i]->Clone());

@@ -1200,16 +1200,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cit_reg")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x")
 {
-    qftReg->SetPermutation(0x80001);
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    qftReg->SetPermutation(0xF0001);
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xF0001));
     qftReg->X(19);
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x70001));
     qftReg->X(19);
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xF0001));
     qftReg->H(19);
     qftReg->X(19);
     qftReg->H(19);
-    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
+    REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xF0001));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_x_reg")
@@ -3831,7 +3831,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
 {
     if (testEngineType == QINTERFACE_QUNIT_MULTI || testEngineType == QINTERFACE_QPAGER ||
-        testEngineType == QINTERFACE_STABILIZER_HYBRID) {
+        testEngineType == QINTERFACE_STABILIZER_HYBRID || testEngineType == QINTERFACE_BDT ||
+        testSubEngineType == QINTERFACE_BDT || testSubSubEngineType == QINTERFACE_BDT) {
         // Not yet supported.
         return;
     }
@@ -5449,6 +5450,26 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_19", "[mirror]")
     qftReg->H(2);
 
     REQUIRE(qftReg->MAll() == 11);
+}
+
+// QBinaryDecisionTree bug
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_20", "[mirror]")
+{
+    qftReg = MakeEngine(2);
+    qftReg->SetPermutation(2);
+
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->X(1);
+    qftReg->CZ(0, 1);
+    qftReg->H(0);
+    qftReg->H(0);
+    qftReg->CZ(0, 1);
+    qftReg->X(1);
+    qftReg->H(1);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 2);
 }
 
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)

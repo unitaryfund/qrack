@@ -39,6 +39,7 @@ void cl_free(void* toFree);
 void mul2x2(complex* left, complex* right, complex* out);
 void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
 void log2x2(complex* matrix2x2, complex* outMatrix2x2);
+void inv2x2(complex* matrix2x2, complex* outMatrix2x2);
 bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount);
@@ -112,6 +113,11 @@ enum QInterfaceEngine {
      * Create a QHybrid, switching between QEngineCPU and QEngineOCL as efficient.
      */
     QINTERFACE_HYBRID,
+
+    /**
+     * Create a QBinaryDecisionTree, (CPU-based).
+     */
+    QINTERFACE_BDT,
 
     /**
      * Create a QMaskFusion, coalescing Pauli gates.
@@ -573,13 +579,13 @@ public:
      * Apply a swap with arbitrary control bits.
      */
     virtual void CSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
 
     /**
      * Apply a swap with arbitrary (anti) control bits.
      */
     virtual void AntiCSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
 
     /**
      * Apply a square root of swap with arbitrary control bits.
@@ -2181,7 +2187,7 @@ public:
     virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values) = 0;
 
     /** Swap values of two bits in register */
-    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
+    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /** Bitwise swap */
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
@@ -2364,6 +2370,12 @@ public:
      * is done.
      */
     virtual bool isFinished() { return true; };
+
+    /**
+     * Returns "true" if current state representation is definitely a binary decision tree, "false" if it is definitely
+     * not, or "true" if it cannot be determined.
+     */
+    virtual bool isBinaryDecisionTree() { return false; };
 
     /**
      * Returns "true" if current state is identifiably within the Clifford set, or "false" if it is not or cannot be

@@ -106,12 +106,9 @@ void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
 
 QInterfacePtr QStabilizerHybrid::Clone()
 {
-    std::vector<QInterfaceEngine> tEngines = engineTypes;
-    tEngines.insert(tEngines.begin(), QINTERFACE_STABILIZER_HYBRID);
-
-    QStabilizerHybridPtr c = std::dynamic_pointer_cast<QStabilizerHybrid>(CreateQuantumInterface(tEngines, qubitCount,
-        0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-        (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
+    QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(engineTypes, qubitCount, 0, rand_generator,
+        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+        std::vector<int>{}, thresholdQubits, separabilityThreshold);
 
     // TODO: Remove.
     SwitchToEngine();
