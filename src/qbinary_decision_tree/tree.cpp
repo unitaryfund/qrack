@@ -200,12 +200,21 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
     Finish();
     toCopy->Finish();
 
-    if (start == 0) {
+    if (!start || (start == qubitCount)) {
+        bitLenInt qbCount;
+        bitCapInt maxI;
         QBinaryDecisionTreeNodePtr rootClone = toCopy->root->ShallowClone();
-        root.swap(rootClone);
-        par_for(0, toCopy->maxQPower, [&](const bitCapInt& i, const int& cpu) {
+        if (start) {
+            qbCount = qubitCount;
+            maxI = maxQPower;
+        } else {
+            qbCount = toCopy->qubitCount;
+            maxI = toCopy->maxQPower;
+            root.swap(rootClone);
+        }
+        par_for(0, maxI, [&](const bitCapInt& i, const int& cpu) {
             QBinaryDecisionTreeNodePtr leaf = root;
-            for (bitLenInt j = 0; j < toCopy->qubitCount; j++) {
+            for (bitLenInt j = 0; j < qbCount; j++) {
                 if (IS_NORM_0(leaf->scale)) {
                     return;
                 }
@@ -218,27 +227,6 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
 
             leaf->branches[0] = rootClone->branches[0];
             leaf->branches[1] = rootClone->branches[1];
-        });
-        SetQubitCount(qubitCount + toCopy->qubitCount);
-        return start;
-    }
-
-    if (start == qubitCount) {
-        par_for(0, maxQPower, [&](const bitCapInt& i, const int& cpu) {
-            QBinaryDecisionTreeNodePtr leaf = root;
-            for (bitLenInt j = 0; j < qubitCount; j++) {
-                if (IS_NORM_0(leaf->scale)) {
-                    return;
-                }
-                leaf = leaf->branches[(i >> j) & 1U];
-            }
-
-            if (IS_NORM_0(leaf->scale)) {
-                return;
-            }
-
-            leaf->branches[0] = toCopy->root->branches[0];
-            leaf->branches[1] = toCopy->root->branches[1];
         });
         SetQubitCount(qubitCount + toCopy->qubitCount);
         return start;
