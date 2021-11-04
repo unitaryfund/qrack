@@ -215,48 +215,41 @@ complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start)
 {
+    if (start && (start != qubitCount)) {
+        return QInterface::Compose(toCopy, start);
+    }
+
     Finish();
     toCopy->Finish();
 
-    if (!start || (start == qubitCount)) {
-        bitLenInt qbCount;
-        bitCapInt maxI;
-        QBinaryDecisionTreeNodePtr rootClone = toCopy->root->ShallowClone();
-        if (start) {
-            qbCount = qubitCount;
-            maxI = maxQPower;
-        } else {
-            qbCount = toCopy->qubitCount;
-            maxI = toCopy->maxQPower;
-            root.swap(rootClone);
-        }
-        par_for(0, maxI, [&](const bitCapInt& i, const int& cpu) {
-            QBinaryDecisionTreeNodePtr leaf = root;
-            for (bitLenInt j = 0; j < qbCount; j++) {
-                if (IS_NORM_0(leaf->scale)) {
-                    return;
-                }
-                leaf = leaf->branches[(i >> j) & 1U];
-            }
-
+    bitLenInt qbCount;
+    bitCapInt maxI;
+    QBinaryDecisionTreeNodePtr rootClone = toCopy->root->ShallowClone();
+    if (start) {
+        qbCount = qubitCount;
+        maxI = maxQPower;
+    } else {
+        qbCount = toCopy->qubitCount;
+        maxI = toCopy->maxQPower;
+        root.swap(rootClone);
+    }
+    par_for(0, maxI, [&](const bitCapInt& i, const int& cpu) {
+        QBinaryDecisionTreeNodePtr leaf = root;
+        for (bitLenInt j = 0; j < qbCount; j++) {
             if (IS_NORM_0(leaf->scale)) {
                 return;
             }
+            leaf = leaf->branches[(i >> j) & 1U];
+        }
 
-            leaf->branches[0] = rootClone->branches[0];
-            leaf->branches[1] = rootClone->branches[1];
-        });
-        SetQubitCount(qubitCount + toCopy->qubitCount);
-        return start;
-    }
+        if (IS_NORM_0(leaf->scale)) {
+            return;
+        }
 
-    ExecuteAsQEngine([&](QInterfacePtr eng) {
-        QEnginePtr copyPtr = toCopy->MakeEngine();
-
-        toCopy->GetQuantumState(copyPtr);
-        eng->Compose(copyPtr, start);
-        SetQubitCount(qubitCount + toCopy->qubitCount);
+        leaf->branches[0] = rootClone->branches[0];
+        leaf->branches[1] = rootClone->branches[1];
     });
+    SetQubitCount(qubitCount + toCopy->qubitCount);
 
     return start;
 }

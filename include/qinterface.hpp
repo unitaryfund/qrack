@@ -393,7 +393,17 @@ public:
      */
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(toCopy, qubitCount); }
     virtual std::map<QInterfacePtr, bitLenInt> Compose(std::vector<QInterfacePtr> toCopy);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start) = 0;
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
+    {
+        bitLenInt origSize = qubitCount;
+        ROL(origSize - start, 0, origSize);
+
+        bitLenInt result = Compose(toCopy);
+
+        ROR(origSize - start, 0, qubitCount);
+
+        return result;
+    }
 
     /**
      * Minimally decompose a set of contiguous bits from the separably composed unit,
