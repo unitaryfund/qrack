@@ -196,12 +196,6 @@ public:
     }
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
-    virtual bitCapInt ForceMReg(
-        bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true)
-    {
-        return BitCapIntAsQEngine(
-            [&](QInterfacePtr eng) { return eng->ForceMReg(start, length, result, doForce, doApply); });
-    }
     virtual bitCapInt MAll();
 
     virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
