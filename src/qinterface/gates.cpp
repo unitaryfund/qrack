@@ -541,6 +541,44 @@ void QInterface::ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     H(qubitIndex2);
 }
 
+void QInterface::SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+{
+    // https://quantumcomputing.stackexchange.com/questions/2228/how-to-implement-the-square-root-of-swap-gate-on-the-ibm-q-composer
+    CNOT(qubitIndex1, qubitIndex2);
+    H(qubitIndex1);
+    IT(qubitIndex2);
+    T(qubitIndex1);
+    H(qubitIndex2);
+    H(qubitIndex1);
+    CNOT(qubitIndex1, qubitIndex2);
+    H(qubitIndex1);
+    H(qubitIndex2);
+    IT(qubitIndex1);
+    H(qubitIndex1);
+    CNOT(qubitIndex1, qubitIndex2);
+    IS(qubitIndex1);
+    S(qubitIndex2);
+}
+
+void QInterface::ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+{
+    // https://quantumcomputing.stackexchange.com/questions/2228/how-to-implement-the-square-root-of-swap-gate-on-the-ibm-q-composer
+    IS(qubitIndex2);
+    S(qubitIndex1);
+    CNOT(qubitIndex1, qubitIndex2);
+    H(qubitIndex1);
+    T(qubitIndex1);
+    H(qubitIndex2);
+    H(qubitIndex1);
+    CNOT(qubitIndex1, qubitIndex2);
+    H(qubitIndex1);
+    H(qubitIndex2);
+    IT(qubitIndex1);
+    T(qubitIndex2);
+    H(qubitIndex1);
+    CNOT(qubitIndex1, qubitIndex2);
+}
+
 void QInterface::CSwap(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
 {

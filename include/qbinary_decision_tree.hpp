@@ -245,14 +245,6 @@ public:
         ExecuteAsQEngine([&](QInterfacePtr eng) { eng->Hash(start, length, values); });
     }
 
-    virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
-    {
-        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->SqrtSwap(qubitIndex1, qubitIndex2); });
-    }
-    virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
-    {
-        ExecuteAsQEngine([&](QInterfacePtr eng) { eng->ISqrtSwap(qubitIndex1, qubitIndex2); });
-    }
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         ExecuteAsQEngine([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubitIndex1, qubitIndex2); });
