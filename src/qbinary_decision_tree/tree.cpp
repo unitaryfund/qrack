@@ -496,6 +496,12 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
 
             leaf1 = leaf1->branches[bit];
             scale1 *= leaf1->scale;
+
+            if (IS_NORM_0(scale0) && IS_NORM_0(scale1)) {
+                leaf0->scale = ZERO_CMPLX;
+                leaf1->scale = ZERO_CMPLX;
+                return;
+            }
         }
 
         if ((!isAnti && ((i & highControlMask) != highControlMask)) || (isAnti && ((i & highControlMask) != 0U))) {
