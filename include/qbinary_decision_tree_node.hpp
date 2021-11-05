@@ -64,6 +64,8 @@ struct QBinaryDecisionTreeNode {
     void ConvertStateVector(bitLenInt depth);
 
     void CorrectPhase();
+
+    size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
 };
 
 } // namespace Qrack

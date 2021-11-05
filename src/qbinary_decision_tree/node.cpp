@@ -74,7 +74,7 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         scale1 = b1->scale;
 
         for (j = 0; j < depth; j++) {
-            bit = (i >> j) & 1U;
+            bit = SelectBit(i, j);
 
             if (leaf0) {
                 prevScale0 = leaf0->scale;
@@ -115,16 +115,16 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         leaf0 = b0;
         leaf1 = b1;
         for (k = 0; k < (j - 1U); k++) {
-            bit = (i >> k) & 1U;
+            bit = SelectBit(i, k);
             leaf0 = leaf0->branches[bit];
             leaf1 = leaf1->branches[bit];
         }
 
-        bit = (i >> k) & 1U;
+        bit = SelectBit(i, k);
         QBinaryDecisionTreeNodePtr& sb0 = leaf0->branches[bit];
         QBinaryDecisionTreeNodePtr& sb1 = leaf1->branches[bit];
 
-        bit = (i >> (k + 1U)) & 1U;
+        bit = SelectBit(i, (k + 1U));
         bit ^= 1U;
         if (IS_NORM_0(sb0->scale - sb1->scale) && (sb0->branches[bit] == sb1->branches[bit])) {
             sb1 = sb0;
