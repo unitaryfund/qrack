@@ -186,7 +186,7 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
         partInner[cpu] += conj(scale2) * scale1;
     });
 
-    complex projection = 0;
+    complex projection = ZERO_CMPLX;
     for (int i = 0; i < numCores; i++) {
         projection += partInner[i];
     }
