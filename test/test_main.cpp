@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
 
         if (num_failed == 0 && bdt) {
             testEngineType = QINTERFACE_BDT;
-            testSubEngineType = QINTERFACE_HYBRID;
+            testSubEngineType = QINTERFACE_CPU;
             session.config().stream() << "############ QBinaryDecisionTree ############" << std::endl;
             num_failed = session.run();
         }
@@ -251,7 +251,7 @@ int main(int argc, char* argv[])
         if (num_failed == 0 && bdt) {
             session.config().stream() << "############ QUnit -> QBinaryDecisionTree ############" << std::endl;
             testSubEngineType = QINTERFACE_BDT;
-            testSubSubEngineType = QINTERFACE_HYBRID;
+            testSubSubEngineType = QINTERFACE_CPU;
             num_failed = session.run();
         }
 
