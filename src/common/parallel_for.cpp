@@ -26,22 +26,10 @@
 
 #include "common/parallel_for.hpp"
 
-#if ENABLE_UINT128
-#define DECLARE_ATOMIC_BITCAPINT()                                                                                     \
-    std::mutex idxLock;                                                                                                \
-    bitCapInt idx;
-#define ATOMIC_ASYNC(...)                                                                                              \
-    std::async(std::launch::async, [__VA_ARGS__, &idxLock]()
-#define ATOMIC_INC()                                                                                                   \
-    idxLock.lock();                                                                                                    \
-    i = idx++;                                                                                                         \
-    idxLock.unlock();
-#else
 #define DECLARE_ATOMIC_BITCAPINT() std::atomic<bitCapIntOcl> idx;
 #define ATOMIC_ASYNC(...)                                                                                              \
     std::async(std::launch::async, [__VA_ARGS__]()
 #define ATOMIC_INC() i = idx++;
-#endif
 
 namespace Qrack {
 
