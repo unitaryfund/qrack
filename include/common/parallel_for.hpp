@@ -23,7 +23,7 @@ namespace Qrack {
 
 class ParallelFor {
 private:
-    int32_t numCores;
+    unsigned numCores;
     bitCapIntOcl pStride;
 
 public:
@@ -31,8 +31,8 @@ public:
 
     virtual ~ParallelFor() {}
 
-    void SetConcurrencyLevel(int32_t num) { numCores = num; }
-    int32_t GetConcurrencyLevel() { return numCores; }
+    void SetConcurrencyLevel(unsigned num) { numCores = num; }
+    unsigned GetConcurrencyLevel() { return numCores; }
     bitCapIntOcl GetStride() { return pStride; }
     bitCapIntOcl GetParallelThreshold() { return pStride * numCores; }
     /*

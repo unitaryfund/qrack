@@ -147,8 +147,8 @@ namespace Qrack {
 typedef std::shared_ptr<complex> BitOp;
 
 /** Called once per value between begin and end. */
-typedef std::function<void(const bitCapInt, const int cpu)> ParallelFunc;
-typedef std::function<bitCapInt(const bitCapInt, const int cpu)> IncrementFunc;
+typedef std::function<void(const bitCapInt&, const unsigned& cpu)> ParallelFunc;
+typedef std::function<bitCapInt(const bitCapInt&, const unsigned& cpu)> IncrementFunc;
 
 class StateVector;
 class StateVectorArray;
