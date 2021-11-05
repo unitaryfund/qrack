@@ -131,7 +131,7 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         }
 
         // WARNING: Mutates loop control variable!!!
-        if (!isSameAtTop && (powJ < depthPow)) {
+        if (!isSameAtTop) {
             i |= powJ;
         }
     }
