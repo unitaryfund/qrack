@@ -152,7 +152,6 @@ typedef std::shared_ptr<PoolItem> PoolItemPtr;
  */
 class QEngineOCL : virtual public QEngine {
 protected:
-    bitCapIntOcl maxQPowerOcl;
     complex* stateVec;
     int deviceID;
     DeviceContextPtr device_context;
@@ -239,12 +238,6 @@ public:
         SubtractAlloc(sizeof(complex) * maxQPowerOcl);
     }
 
-    virtual void SetQubitCount(bitLenInt qb)
-    {
-        QEngine::SetQubitCount(qb);
-        maxQPowerOcl = (bitCapIntOcl)maxQPower;
-    }
-
     virtual void FreeStateVec(complex* sv = NULL)
     {
         bool doReset = false;
@@ -286,10 +279,10 @@ public:
         runningNorm = src->GetRunningNorm();
     }
 
-    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length);
-    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length);
-    virtual void SetAmplitudePage(
-        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length);
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapIntOcl offset, const bitCapIntOcl length);
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapIntOcl offset, const bitCapIntOcl length);
+    virtual void SetAmplitudePage(QEnginePtr pageEnginePtr, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset,
+        const bitCapIntOcl length);
     virtual void ShuffleBuffers(QEnginePtr engine);
 
     virtual void QueueSetDoNormalize(const bool& doNorm) { AddQueueItem(QueueItem(doNorm)); }
@@ -562,13 +555,14 @@ protected:
         const bitLenInt controlLen, unsigned char* values = NULL, bitCapIntOcl valuesLength = 0);
 
     using QEngine::Apply2x2;
-    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, SPECIAL_2X2::NONE, norm_thresh);
     }
-    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapIntOcl* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special,
+        real1_f norm_thresh = REAL1_DEFAULT_ARG);
 
     virtual void BitMask(bitCapIntOcl mask, OCLAPI api_call, real1 phase = PI_R1);
 

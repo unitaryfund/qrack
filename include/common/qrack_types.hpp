@@ -147,8 +147,8 @@ namespace Qrack {
 typedef std::shared_ptr<complex> BitOp;
 
 /** Called once per value between begin and end. */
-typedef std::function<void(const bitCapInt&, const unsigned& cpu)> ParallelFunc;
-typedef std::function<bitCapInt(const bitCapInt&, const unsigned& cpu)> IncrementFunc;
+typedef std::function<void(const bitCapIntOcl&, const unsigned& cpu)> ParallelFunc;
+typedef std::function<bitCapIntOcl(const bitCapIntOcl&, const unsigned& cpu)> IncrementFunc;
 
 class StateVector;
 class StateVectorArray;
@@ -164,28 +164,28 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
 // This is a buffer struct that's capable of representing controlled single bit gates and arithmetic, when subclassed.
 class StateVector {
 protected:
-    bitCapInt capacity;
+    bitCapIntOcl capacity;
 
 public:
     bool isReadLocked;
 
-    StateVector(bitCapInt cap)
+    StateVector(bitCapIntOcl cap)
         : capacity(cap)
         , isReadLocked(true)
     {
     }
-    virtual complex read(const bitCapInt& i) = 0;
-    virtual void write(const bitCapInt& i, const complex& c) = 0;
+    virtual complex read(const bitCapIntOcl& i) = 0;
+    virtual void write(const bitCapIntOcl& i, const complex& c) = 0;
     /// Optimized "write" that is only guaranteed to write if either amplitude is nonzero. (Useful for the result of 2x2
     /// tensor slicing.)
-    virtual void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) = 0;
+    virtual void write2(const bitCapIntOcl& i1, const complex& c1, const bitCapIntOcl& i2, const complex& c2) = 0;
     virtual void clear() = 0;
     virtual void copy_in(const complex* inArray) = 0;
-    virtual void copy_in(const complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
-    virtual void copy_in(
-        StateVectorPtr copyInSv, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length) = 0;
+    virtual void copy_in(const complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
+    virtual void copy_in(StateVectorPtr copyInSv, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset,
+        const bitCapIntOcl length) = 0;
     virtual void copy_out(complex* outArray) = 0;
-    virtual void copy_out(complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
+    virtual void copy_out(complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
     virtual void copy(StateVectorPtr toCopy) = 0;
     virtual void shuffle(StateVectorPtr svp) = 0;
     virtual void get_probs(real1* outArray) = 0;

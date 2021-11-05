@@ -36,6 +36,13 @@ protected:
     DispatchQueue dispatchQueue;
 #endif
     bitLenInt pStridePow;
+    bitCapIntOcl maxQPowerOcl;
+
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        QInterface::SetQubitCount(qb);
+        maxQPowerOcl = (bitCapIntOcl)maxQPower;
+    }
 
     typedef std::function<void(void)> DispatchFn;
     virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn)

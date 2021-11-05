@@ -106,7 +106,7 @@ void QInterface::UniformlyControlledRY(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles)
 {
     bitCapIntOcl permCount = pow2Ocl(controlLen);
-    std::unique_ptr<complex[]> pauliRYs(new complex[4U * (bitCapIntOcl)permCount]);
+    std::unique_ptr<complex[]> pauliRYs(new complex[4U * permCount]);
 
     real1 cosine, sine;
     for (bitCapIntOcl i = 0; i < permCount; i++) {
@@ -128,7 +128,7 @@ void QInterface::UniformlyControlledRZ(
     const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles)
 {
     bitCapIntOcl permCount = pow2Ocl(controlLen);
-    std::unique_ptr<complex[]> pauliRZs(new complex[4U * (bitCapIntOcl)permCount]);
+    std::unique_ptr<complex[]> pauliRZs(new complex[4U * permCount]);
 
     real1 cosine, sine;
     for (bitCapIntOcl i = 0; i < permCount; i++) {

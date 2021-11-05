@@ -89,20 +89,20 @@ public:
 
     virtual void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }
 
-    virtual void GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    virtual void GetAmplitudePage(complex* pagePtr, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
         Finish();
 
         if (stateVec) {
             stateVec->copy_out(pagePtr, offset, length);
         } else {
-            std::fill(pagePtr, pagePtr + (bitCapIntOcl)length, ZERO_CMPLX);
+            std::fill(pagePtr, pagePtr + length, ZERO_CMPLX);
         }
     }
-    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
         if (!stateVec) {
-            ResetStateVec(AllocStateVec(maxQPower));
+            ResetStateVec(AllocStateVec(maxQPowerOcl));
             stateVec->clear();
         }
 
@@ -113,7 +113,7 @@ public:
         runningNorm = REAL1_DEFAULT_ARG;
     }
     virtual void SetAmplitudePage(
-        QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+        QEnginePtr pageEnginePtr, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset, const bitCapIntOcl length)
     {
         QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
         StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
@@ -128,7 +128,7 @@ public:
         }
 
         if (!stateVec) {
-            ResetStateVec(AllocStateVec(maxQPower));
+            ResetStateVec(AllocStateVec(maxQPowerOcl));
             stateVec->clear();
         }
 
@@ -148,12 +148,12 @@ public:
         }
 
         if (!stateVec) {
-            ResetStateVec(AllocStateVec(maxQPower));
+            ResetStateVec(AllocStateVec(maxQPowerOcl));
             stateVec->clear();
         }
 
         if (!(engineCpu->stateVec)) {
-            engineCpu->ResetStateVec(engineCpu->AllocStateVec(maxQPower));
+            engineCpu->ResetStateVec(engineCpu->AllocStateVec(maxQPowerOcl));
             engineCpu->stateVec->clear();
         }
 
@@ -176,7 +176,7 @@ public:
         }
 
         if (!stateVec) {
-            ResetStateVec(AllocStateVec(maxQPower));
+            ResetStateVec(AllocStateVec(maxQPowerOcl));
         }
 
         Finish();
@@ -317,7 +317,7 @@ public:
 protected:
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
-    virtual StateVectorPtr AllocStateVec(bitCapInt elemCount);
+    virtual StateVectorPtr AllocStateVec(bitCapIntOcl elemCount);
     virtual void ResetStateVec(StateVectorPtr sv) { stateVec = sv; }
 
     typedef std::function<void(void)> DispatchFn;
@@ -336,8 +336,8 @@ protected:
     }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
-    virtual void Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-        const bitCapInt* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, const bitLenInt bitCount,
+        const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
@@ -352,13 +352,13 @@ protected:
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
 #endif
 
-    typedef std::function<bitCapInt(const bitCapInt&, const bitCapInt&)> IOFn;
+    typedef std::function<bitCapIntOcl(const bitCapIntOcl&, const bitCapIntOcl&)> IOFn;
     void MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& toMul, const bitLenInt& inOutStart,
         const bitLenInt& carryStart, const bitLenInt& length);
     void CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& toMul, const bitLenInt& inOutStart,
         const bitLenInt& carryStart, const bitLenInt& length, const bitLenInt* controls, const bitLenInt controlLen);
 
-    typedef std::function<bitCapInt(const bitCapInt&)> MFn;
+    typedef std::function<bitCapIntOcl(const bitCapIntOcl&)> MFn;
     void ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart, const bitLenInt& outStart,
         const bitLenInt& length, const bool& inverse = false);
     void CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart, const bitLenInt& outStart,
