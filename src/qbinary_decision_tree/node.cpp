@@ -58,6 +58,7 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
     bool isSameAtTop = true;
     size_t bit;
     bitLenInt j, k;
+    bitCapInt powJ;
     bitCapInt depthPow = ONE_BCI << depth;
     complex scale0, scale1, prevScale0, prevScale1;
     QBinaryDecisionTreeNodePtr leaf0, leaf1;
@@ -104,7 +105,9 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
 
         isSameAtTop &= IS_NORM_0(scale0 - scale1);
 
-        if (!j || (i >= (ONE_BCI << j)) || !IS_NORM_0(prevScale0 - prevScale1) || IS_NORM_0(prevScale0) ||
+        powJ = (ONE_BCI << j);
+
+        if (!j || (i >= powJ) || !IS_NORM_0(prevScale0 - prevScale1) || IS_NORM_0(prevScale0) ||
             IS_NORM_0(prevScale1)) {
             continue;
         }
@@ -125,6 +128,11 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         bit ^= 1U;
         if (IS_NORM_0(sb0->scale - sb1->scale) && (sb0->branches[bit] == sb1->branches[bit])) {
             sb1 = sb0;
+        }
+
+        // WARNING: Mutates loop control variable!!!
+        if (!isSameAtTop && (powJ < depthPow)) {
+            i |= powJ;
         }
     }
 
