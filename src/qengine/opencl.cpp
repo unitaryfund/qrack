@@ -95,7 +95,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     SetPermutation(initState, phaseFac);
 }
 
-void QEngineOCL::GetAmplitudePage(complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+void QEngineOCL::GetAmplitudePage(complex* pagePtr, const bitCapIntOcl offset, const bitCapIntOcl length)
 {
     if (!stateBuffer) {
         std::fill(pagePtr, pagePtr + (bitCapIntOcl)length, ZERO_CMPLX);
@@ -103,12 +103,12 @@ void QEngineOCL::GetAmplitudePage(complex* pagePtr, const bitCapInt offset, cons
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
-    queue.enqueueReadBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
-        sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
+    queue.enqueueReadBuffer(
+        *stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr, waitVec.get());
     wait_refs.clear();
 }
 
-void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset, const bitCapInt length)
+void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapIntOcl offset, const bitCapIntOcl length)
 {
     if (!stateBuffer) {
         ReinitBuffer();
@@ -118,8 +118,8 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
     }
 
     EventVecPtr waitVec = ResetWaitEvents();
-    cl_int error = queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)offset,
-        sizeof(complex) * (bitCapIntOcl)length, pagePtr, waitVec.get());
+    cl_int error = queue.enqueueWriteBuffer(
+        *stateBuffer, CL_TRUE, sizeof(complex) * offset, sizeof(complex) * length, pagePtr, waitVec.get());
     wait_refs.clear();
     if (error != CL_SUCCESS) {
         FreeAll();
@@ -130,7 +130,7 @@ void QEngineOCL::SetAmplitudePage(const complex* pagePtr, const bitCapInt offset
 }
 
 void QEngineOCL::SetAmplitudePage(
-    QEnginePtr pageEnginePtr, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    QEnginePtr pageEnginePtr, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset, const bitCapIntOcl length)
 {
     QEngineOCLPtr pageEngineOclPtr = std::dynamic_pointer_cast<QEngineOCL>(pageEnginePtr);
     BufferPtr oStateBuffer = pageEngineOclPtr->stateBuffer;
@@ -143,7 +143,7 @@ void QEngineOCL::SetAmplitudePage(
         if (length == maxQPower) {
             ZeroAmplitudes();
         } else {
-            ClearBuffer(stateBuffer, (bitCapIntOcl)dstOffset, (bitCapIntOcl)length);
+            ClearBuffer(stateBuffer, dstOffset, length);
         }
 
         runningNorm = ZERO_R1;
@@ -163,8 +163,8 @@ void QEngineOCL::SetAmplitudePage(
     EventVecPtr waitVec = ResetWaitEvents();
 
     cl::Event copyEvent;
-    error = queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, sizeof(complex) * (bitCapIntOcl)srcOffset,
-        sizeof(complex) * (bitCapIntOcl)dstOffset, sizeof(complex) * (bitCapIntOcl)length, waitVec.get(), &copyEvent);
+    error = queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, sizeof(complex) * srcOffset,
+        sizeof(complex) * dstOffset, sizeof(complex) * length, waitVec.get(), &copyEvent);
     if (error != CL_SUCCESS) {
         FreeAll();
         throw std::runtime_error("Failed to enqueue buffer copy, error code: " + std::to_string(error));
@@ -721,8 +721,8 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
 void QEngineOCL::X(bitLenInt qubit)
 {
     const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    bitCapInt qPowers[1];
-    qPowers[0] = pow2(qubit);
+    bitCapIntOcl qPowers[1];
+    qPowers[0] = pow2Ocl(qubit);
     Apply2x2(0U, qPowers[0], pauliX, 1U, qPowers, false, SPECIAL_2X2::PAULIX);
 }
 
@@ -730,8 +730,8 @@ void QEngineOCL::X(bitLenInt qubit)
 void QEngineOCL::Z(bitLenInt qubit)
 {
     const complex pauliZ[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    bitCapInt qPowers[1];
-    qPowers[0] = pow2(qubit);
+    bitCapIntOcl qPowers[1];
+    qPowers[0] = pow2Ocl(qubit);
     Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PAULIZ);
 }
 
@@ -743,8 +743,8 @@ void QEngineOCL::ApplySingleInvert(const complex topRight, const complex bottomL
     }
 
     const complex pauliX[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    bitCapInt qPowers[1];
-    qPowers[0] = pow2(qubitIndex);
+    bitCapIntOcl qPowers[1];
+    qPowers[0] = pow2Ocl(qubitIndex);
     Apply2x2(0U, qPowers[0], pauliX, 1U, qPowers, false, SPECIAL_2X2::INVERT);
 }
 
@@ -760,13 +760,13 @@ void QEngineOCL::ApplySinglePhase(const complex topLeft, const complex bottomRig
     }
 
     const complex pauliZ[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-    bitCapInt qPowers[1];
-    qPowers[0] = pow2(qubitIndex);
+    bitCapIntOcl qPowers[1];
+    qPowers[0] = pow2Ocl(qubitIndex);
     Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PHASE);
 }
 
-void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* mtrx, const bitLenInt bitCount,
-    const bitCapInt* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh)
+void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, const bitLenInt bitCount,
+    const bitCapIntOcl* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special, real1_f norm_thresh)
 {
     CHECK_ZERO_SKIP();
 
@@ -794,7 +794,7 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
 
     // Load the integer kernel arguments buffer.
     bitCapIntOcl maxI = maxQPowerOcl >> bitCount;
-    bitCapIntOcl bciArgs[5] = { (bitCapIntOcl)offset2, (bitCapIntOcl)offset1, maxI, bitCount, 0 };
+    bitCapIntOcl bciArgs[5] = { offset2, offset1, maxI, bitCount, 0 };
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
     // amount of work in this method call instance.
@@ -812,17 +812,17 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
         // arguments.
         if (ngc == maxI) {
             bciArgsSize = 3;
-            bciArgs[2] = (bitCapIntOcl)(qPowersSorted[0] - 1U);
+            bciArgs[2] = qPowersSorted[0] - ONE_BCI;
         } else {
             bciArgsSize = 4;
-            bciArgs[3] = (bitCapIntOcl)(qPowersSorted[0] - 1U);
+            bciArgs[3] = qPowersSorted[0] - ONE_BCI;
         }
     } else if (bitCount == 2) {
         // Double bit gates include both controlled and swap gates. To reuse the code for both cases, we need two offset
         // arguments. Hence, we cannot easily overwrite either of the bit offset arguments.
         bciArgsSize = 5;
-        bciArgs[3] = (bitCapIntOcl)(qPowersSorted[0] - 1U);
-        bciArgs[4] = (bitCapIntOcl)(qPowersSorted[1] - 1U);
+        bciArgs[3] = qPowersSorted[0] - ONE_BCI;
+        bciArgs[4] = qPowersSorted[1] - ONE_BCI;
     }
     cl::Event writeArgsEvent;
     DISPATCH_TEMP_WRITE(
@@ -846,7 +846,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     BufferPtr locPowersBuffer;
     cl::Event writeControlsEvent;
-    std::unique_ptr<bitCapIntOcl[]> qPowersSortedOcl = NULL;
     if (bitCount > 2) {
         if (doCalcNorm) {
             locPowersBuffer = powersBuffer;
@@ -857,12 +856,8 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
             DISPATCH_TEMP_WRITE(
                 waitVec, *locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSorted, writeControlsEvent, error);
         } else {
-            qPowersSortedOcl = std::unique_ptr<bitCapIntOcl[]>(new bitCapIntOcl[bitCount]);
-            for (bitLenInt i = 0; i < bitCount; i++) {
-                qPowersSortedOcl[i] = (bitCapIntOcl)qPowersSorted[i];
-            }
-            DISPATCH_TEMP_WRITE(waitVec, *locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSortedOcl.get(),
-                writeControlsEvent, error);
+            DISPATCH_TEMP_WRITE(
+                waitVec, *locPowersBuffer, sizeof(bitCapIntOcl) * bitCount, qPowersSorted, writeControlsEvent, error);
         }
     }
 
@@ -950,9 +945,6 @@ void QEngineOCL::Apply2x2(bitCapInt offset1, bitCapInt offset2, const complex* m
     }
     if (bitCount > 2) {
         writeControlsEvent.wait();
-        if (sizeof(bitCapInt) != sizeof(bitCapIntOcl)) {
-            qPowersSortedOcl.reset();
-        }
     }
     wait_refs.clear();
 

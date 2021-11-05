@@ -29,6 +29,7 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     , engines(eng)
     , devID(deviceId)
     , root(NULL)
+    , maxQPowerOcl(pow2Ocl(qBitCount))
 {
     if ((engines[0] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
 #if ENABLE_OPENCL
@@ -104,7 +105,7 @@ template <typename Fn> void QBinaryDecisionTree::GetTraversal(Fn getLambda)
 {
     Finish();
 
-    par_for(0, maxQPower, [&](const bitCapInt& i, const int& cpu) {
+    par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         complex scale = leaf->scale;
         for (bitLenInt j = 0; j < qubitCount; j++) {
@@ -124,7 +125,7 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
     root = std::make_shared<QBinaryDecisionTreeNode>();
     root->Branch(qubitCount);
 
-    par_for(0, maxQPower, [&](const bitCapInt& i, const int& cpu) {
+    par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         for (bitLenInt j = 0; j < qubitCount; j++) {
             leaf = leaf->branches[SelectBit(i, j)];
@@ -163,7 +164,7 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
     int numCores = GetConcurrencyLevel();
     std::unique_ptr<complex[]> partInner(new complex[numCores]());
 
-    par_for(0, maxQPower, [&](const bitCapInt& i, const int& cpu) {
+    par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         QBinaryDecisionTreeNodePtr leaf1 = root;
         QBinaryDecisionTreeNodePtr leaf2 = toCompare->root;
         complex scale1 = leaf1->scale;
@@ -223,17 +224,17 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
     toCopy->Finish();
 
     bitLenInt qbCount;
-    bitCapInt maxI;
+    bitCapIntOcl maxI;
     QBinaryDecisionTreeNodePtr rootClone = toCopy->root->ShallowClone();
     if (start) {
         qbCount = qubitCount;
-        maxI = maxQPower;
+        maxI = maxQPowerOcl;
     } else {
         qbCount = toCopy->qubitCount;
-        maxI = toCopy->maxQPower;
+        maxI = toCopy->maxQPowerOcl;
         root.swap(rootClone);
     }
-    par_for(0, maxI, [&](const bitCapInt& i, const int& cpu) {
+    par_for(0, maxI, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         for (bitLenInt j = 0; j < qbCount; j++) {
             if (IS_NORM_0(leaf->scale)) {
@@ -284,10 +285,10 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         length = qubitCount - length;
     }
 
-    bitCapInt maxI = pow2(start);
+    bitCapIntOcl maxI = pow2Ocl(start);
     QBinaryDecisionTreeNodePtr startNode = NULL;
     std::mutex destMutex;
-    par_for(0, maxI, [&](const bitCapInt& i, const int& cpu) {
+    par_for(0, maxI, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         for (bitLenInt j = 0; j < start; j++) {
             if (IS_NORM_0(leaf->scale)) {
@@ -331,7 +332,7 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
 {
     Finish();
 
-    bitCapInt qPower = pow2(qubit);
+    bitCapIntOcl qPower = pow2Ocl(qubit);
 
     int numCores = GetConcurrencyLevel();
     std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
@@ -403,7 +404,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 
     root->Branch(qubit + 1U);
 
-    bitCapInt qPower = pow2(qubit);
+    bitCapIntOcl qPower = pow2Ocl(qubit);
     root->scale = GetNonunitaryPhase();
 
     par_for(0, qPower, [&](const bitCapInt i, const int cpu) {
@@ -509,11 +510,11 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
         leaf1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
     };
 
-    bitCapInt remainderPow = pow2(remainder);
+    bitCapIntOcl remainderPow = pow2Ocl(remainder);
     if (isParallel) {
         par_for(0, remainderPow, fn);
     } else {
-        for (bitCapInt i = 0; i < remainderPow; i++) {
+        for (bitCapIntOcl i = 0; i < remainderPow; i++) {
             fn(i, 0);
         }
     }
@@ -525,7 +526,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
 
 template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, Fn leafFunc)
 {
-    bitCapInt targetPow = pow2(target);
+    bitCapIntOcl targetPow = pow2Ocl(target);
     Dispatch(targetPow, [this, target, targetPow, leafFunc]() {
         root->Branch(target);
 
@@ -608,22 +609,22 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
     std::copy(controls, controls + controlLen, sortedControls.begin());
     std::sort(sortedControls.begin(), sortedControls.end());
 
-    std::shared_ptr<bitCapInt[]> qPowersSorted(new bitCapInt[controlLen]);
-    bitCapInt lowControlMask = 0U;
+    std::shared_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen]);
+    bitCapIntOcl lowControlMask = 0U;
     bitLenInt c;
     for (c = 0U; (c < controlLen) && (sortedControls[c] < target); c++) {
-        qPowersSorted[c] = pow2(sortedControls[c]);
+        qPowersSorted[c] = pow2Ocl(sortedControls[c]);
         lowControlMask |= qPowersSorted[c];
     }
     bitLenInt controlBound = c;
-    bitCapInt highControlMask = 0U;
+    bitCapIntOcl highControlMask = 0U;
     for (; c < controlLen; c++) {
-        qPowersSorted[c] = pow2(sortedControls[c]);
+        qPowersSorted[c] = pow2Ocl(sortedControls[c]);
         highControlMask |= qPowersSorted[c];
     }
     highControlMask >>= (target + 1U);
 
-    bitCapInt targetPow = pow2(target);
+    bitCapIntOcl targetPow = pow2Ocl(target);
 
     Dispatch(targetPow,
         [this, isAnti, mtrx, target, targetPow, lowControlMask, highControlMask, qPowersSorted, controlBound,
