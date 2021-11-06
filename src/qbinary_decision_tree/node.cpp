@@ -66,8 +66,8 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         leaf0 = b0;
         leaf1 = b1;
 
-        prevScale0 = scale;
-        prevScale1 = scale;
+        prevScale0 = leaf0->scale;
+        prevScale1 = leaf1->scale;
 
         scale0 = ONE_CMPLX;
         scale1 = ONE_CMPLX;
