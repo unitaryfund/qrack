@@ -477,15 +477,29 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
     QBinaryDecisionTreeNodePtr& b0 = leaf->branches[0];
     QBinaryDecisionTreeNodePtr& b1 = leaf->branches[1];
 
-    ParallelFunc fn = [isAnti, b0, b1, remainder, highControlMask, mtrx](const bitCapInt& i, const int& cpu) {
+    bitCapIntOcl remainderPow = pow2Ocl(remainder);
+    std::vector<std::set<bitCapInt>> zeroMasks(remainder);
+    bitLenInt j;
+    size_t bit;
+
+    for (bitCapIntOcl i = 0; i < remainderPow; i++) {
+        for (j = 0; j < remainder; j++) {
+            if (zeroMasks[j].find(i & (pow2Ocl(j + 1U) - ONE_BCI)) != zeroMasks[j].end()) {
+                break;
+            }
+        }
+
+        if (j < remainder) {
+            continue;
+        }
+
         QBinaryDecisionTreeNodePtr leaf0 = b0;
         QBinaryDecisionTreeNodePtr leaf1 = b1;
 
         complex scale0 = b0->scale;
         complex scale1 = b1->scale;
 
-        size_t bit;
-        for (bitLenInt j = 0; j < remainder; j++) {
+        for (j = 0; j < remainder; j++) {
             leaf0->Branch(1, true);
             leaf1->Branch(1, true);
 
@@ -498,31 +512,27 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
             scale1 *= leaf1->scale;
 
             if (IS_NORM_0(scale0) && IS_NORM_0(scale1)) {
-                leaf0->scale = ZERO_CMPLX;
-                leaf1->scale = ZERO_CMPLX;
-                return;
+                zeroMasks[j].insert(i & (pow2Ocl(j + 1U) - ONE_BCI));
+                break;
             }
+        }
+
+        if (IS_NORM_0(scale0) && IS_NORM_0(scale1)) {
+            leaf0->scale = ZERO_CMPLX;
+            leaf1->scale = ZERO_CMPLX;
+            continue;
         }
 
         if ((!isAnti && ((i & highControlMask) != highControlMask)) || (isAnti && ((i & highControlMask) != 0U))) {
             leaf0->scale = scale0;
             leaf1->scale = scale1;
-            return;
+            continue;
         }
 
         complex Y0 = scale0;
         complex Y1 = scale1;
         leaf0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
         leaf1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
-    };
-
-    bitCapIntOcl remainderPow = pow2Ocl(remainder);
-    if (isParallel) {
-        par_for(0, remainderPow, fn);
-    } else {
-        for (bitCapIntOcl i = 0; i < remainderPow; i++) {
-            fn(i, 0);
-        }
     }
 
     b0->ConvertStateVector(remainder);
