@@ -549,22 +549,22 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
         root->Branch(target);
 
         bool isParallel = (targetPow < GetParallelThreshold());
-        par_for(0, targetPow, [&](const bitCapInt& i, const int& cpu) {
+        for (bitCapInt i = 0; i < targetPow; i++) {
             QBinaryDecisionTreeNodePtr leaf = root;
             // Iterate to qubit depth.
             for (bitLenInt j = 0; j < target; j++) {
                 if (IS_NORM_0(leaf->scale)) {
-                    return;
+                    break;
                 }
                 leaf = leaf->branches[SelectBit(i, j)];
             }
 
             if (IS_NORM_0(leaf->scale)) {
-                return;
+                continue;
             }
 
             leafFunc(leaf, isParallel, 0U);
-        });
+        }
 
         root->Prune(target);
     });
@@ -627,7 +627,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
     std::copy(controls, controls + controlLen, sortedControls.begin());
     std::sort(sortedControls.begin(), sortedControls.end());
 
-    std::shared_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen]);
+    std::vector<bitCapIntOcl> qPowersSorted(controlLen);
     bitCapIntOcl lowControlMask = 0U;
     bitLenInt c;
     for (c = 0U; (c < controlLen) && (sortedControls[c] < target); c++) {
@@ -656,21 +656,36 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                 isInvert = ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX));
             }
             bool isParallel = ((targetPow >> controlBound) < GetParallelThreshold());
-            par_for_mask(0, targetPow, qPowersSorted.get(), controlBound, [&](const bitCapInt& lcv, const int& cpu) {
-                // If any controls aren't set, skip.
-                bitCapInt i = isAnti ? lcv : (lcv | lowControlMask);
+
+            bitCapInt i, iHigh, iLow;
+            bitLenInt p;
+            bitCapInt maxLcv = targetPow >> controlBound;
+            for (bitCapInt lcv = 0U; lcv < maxLcv; lcv++) {
+                iHigh = lcv;
+                i = 0U;
+                for (p = 0U; p < controlBound; p++) {
+                    iLow = iHigh & (qPowersSorted[p] - ONE_BCI);
+                    i |= iLow;
+                    iHigh = (iHigh ^ iLow) << ONE_BCI;
+                }
+                i |= iHigh;
+
+                // If any controls aren't set, skip, (but we push apart).
+                if (!isAnti) {
+                    i |= lowControlMask;
+                }
 
                 QBinaryDecisionTreeNodePtr leaf = root;
                 // Iterate to qubit depth.
                 for (bitLenInt j = 0; j < target; j++) {
                     if (IS_NORM_0(leaf->scale)) {
-                        return;
+                        break;
                     }
                     leaf = leaf->branches[SelectBit(i, j)];
                 }
 
                 if (IS_NORM_0(leaf->scale)) {
-                    return;
+                    continue;
                 }
 
                 if (isPhase) {
@@ -687,7 +702,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                 } else {
                     leafFunc(leaf, isParallel, highControlMask);
                 }
-            });
+            }
 
             root->Prune(target);
         });
