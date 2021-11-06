@@ -76,14 +76,14 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
             bit = SelectBit(i, j);
 
             if (leaf0) {
-                scale0 *= leaf0->scale;
                 prevScale0 = leaf0->scale;
+                scale0 *= prevScale0;
                 leaf0 = leaf0->branches[bit];
             }
 
             if (leaf1) {
-                scale1 *= leaf1->scale;
                 prevScale1 = leaf1->scale;
+                scale1 *= prevScale1;
                 leaf1 = leaf1->branches[bit];
             }
 
