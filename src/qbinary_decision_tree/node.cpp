@@ -105,7 +105,16 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
 
         isSameAtTop &= IS_NORM_0(scale0 - scale1);
 
-        if (!j || !IS_NORM_0(prevScale0 - prevScale1) || IS_NORM_0(prevScale0) || IS_NORM_0(prevScale1)) {
+        if (!IS_NORM_0(prevScale0 - prevScale1) || IS_NORM_0(prevScale0) || IS_NORM_0(prevScale1)) {
+            continue;
+        }
+
+        if (!j) {
+            if ((b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1])) {
+                b1 = b0;
+                return;
+            }
+
             continue;
         }
 
