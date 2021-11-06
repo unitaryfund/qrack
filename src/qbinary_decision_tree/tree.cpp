@@ -504,7 +504,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
             leaf0->Branch(1, true);
             leaf1->Branch(1, true);
 
-            bit = (size_t)((i >> j) & 1U);
+            bit = SelectBit(i, j);
 
             leaf0 = leaf0->branches[bit];
             scale0 *= leaf0->scale;
@@ -528,7 +528,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
             continue;
         }
 
-        if ((!isAnti && ((i & highControlMask) != highControlMask)) || (isAnti && ((i & highControlMask) != 0U))) {
+        if ((i & highControlMask) != (isAnti ? 0U : highControlMask)) {
             leaf0->scale = scale0;
             leaf1->scale = scale1;
             continue;
