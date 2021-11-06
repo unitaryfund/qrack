@@ -477,19 +477,20 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
     QBinaryDecisionTreeNodePtr& b0 = leaf->branches[0];
     QBinaryDecisionTreeNodePtr& b1 = leaf->branches[1];
 
+    bitLenInt remainderMin1 = remainder - 1U;
     bitCapIntOcl remainderPow = pow2Ocl(remainder);
-    std::vector<std::set<bitCapInt>> zeroMasks(remainder);
+    std::vector<std::set<bitCapInt>> zeroMasks(remainderMin1);
     bitLenInt j;
     size_t bit;
 
     for (bitCapIntOcl i = 0; i < remainderPow; i++) {
-        for (j = 0; j < remainder; j++) {
+        for (j = 0; j < remainderMin1; j++) {
             if (zeroMasks[j].find(i & (pow2Ocl(j + 1U) - ONE_BCI)) != zeroMasks[j].end()) {
                 break;
             }
         }
 
-        if (j < remainder) {
+        if (j < remainderMin1) {
             continue;
         }
 
@@ -512,7 +513,6 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
             scale1 *= leaf1->scale;
 
             if (IS_NORM_0(scale0) && IS_NORM_0(scale1)) {
-                zeroMasks[j].insert(i & (pow2Ocl(j + 1U) - ONE_BCI));
                 break;
             }
         }
@@ -520,6 +520,11 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
         if (IS_NORM_0(scale0) && IS_NORM_0(scale1)) {
             leaf0->scale = ZERO_CMPLX;
             leaf1->scale = ZERO_CMPLX;
+
+            if (j < remainderMin1) {
+                zeroMasks[j].insert(i & (pow2Ocl(j + 1U) - ONE_BCI));
+            }
+
             continue;
         }
 

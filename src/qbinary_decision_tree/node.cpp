@@ -16,6 +16,8 @@
 
 #include "qbinary_decision_tree_node.hpp"
 
+#include <set>
+
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 
 namespace Qrack {
@@ -58,11 +60,23 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
     bool isSameAtTop = true;
     size_t bit;
     bitLenInt j, k;
+    bitLenInt depthMin1 = depth - 1U;
     bitCapInt depthPow = ONE_BCI << depth;
     complex scale0, scale1, prevScale0, prevScale1;
     QBinaryDecisionTreeNodePtr leaf0, leaf1;
+    std::vector<std::set<bitCapInt>> sameMasks(depth);
     std::vector<complex> branch1Scales(depth);
     for (bitCapInt i = 0; i < depthPow; i++) {
+        for (j = 0; j < depthMin1; j++) {
+            if (sameMasks[j].find(i & ((ONE_BCI << (j + 1U)) - ONE_BCI)) != sameMasks[j].end()) {
+                break;
+            }
+        }
+
+        if (j < depthMin1) {
+            continue;
+        }
+
         leaf0 = b0;
         leaf1 = b1;
 
@@ -96,6 +110,10 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
             // We can't combine our immediate children within depth.
             isSameAtTop = false;
             continue;
+        }
+
+        if (j < depthMin1) {
+            sameMasks[j].insert(i & ((ONE_BCI << (j + 1U)) - ONE_BCI));
         }
 
         if (leaf0) {
