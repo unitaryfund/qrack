@@ -37,6 +37,7 @@ protected:
 #endif
     bitLenInt pStridePow;
     bitCapIntOcl maxQPowerOcl;
+    std::vector<std::set<bitCapInt>> zeroMasks;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
