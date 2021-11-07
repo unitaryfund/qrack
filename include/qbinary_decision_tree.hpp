@@ -238,7 +238,8 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
-    virtual real1_f ProbParity(const bitCapInt& mask) {
+    virtual real1_f ProbParity(const bitCapInt& mask)
+    {
         QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
         return unit->ProbParity(mask);
     }
