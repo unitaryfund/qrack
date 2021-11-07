@@ -65,8 +65,8 @@ protected:
 
     QInterfacePtr MakeTempStateVector()
     {
-        Finish();
         QInterfacePtr copyPtr = MakeStateVector();
+        Finish();
         GetQuantumState(copyPtr);
 
         // If the calling function fully deferences our return, it's automatically freed.
@@ -78,6 +78,7 @@ protected:
             return;
         }
 
+        Finish();
         stateVecUnit = MakeStateVector();
         GetQuantumState(stateVecUnit);
         root = NULL;
@@ -88,6 +89,7 @@ protected:
             return;
         }
 
+        Finish();
         SetQuantumState(stateVecUnit);
         stateVecUnit = NULL;
     }
@@ -98,14 +100,12 @@ protected:
     {
         SetStateVector();
         operation(stateVecUnit);
-        ResetStateVector();
     }
 
     template <typename Fn> bitCapInt BitCapIntAsStateVector(Fn operation)
     {
         SetStateVector();
         bitCapInt toRet = operation(stateVecUnit);
-        ResetStateVector();
 
         return toRet;
     }
