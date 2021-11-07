@@ -217,7 +217,7 @@ complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start)
 {
-    if (start && (start != qubitCount)) {
+    if (start != qubitCount) {
         return QInterface::Compose(toCopy, start);
     }
 
@@ -226,15 +226,9 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
 
     bitLenInt qbCount;
     bitCapIntOcl maxI;
-    QBinaryDecisionTreeNodePtr rootClone = toCopy->root->ShallowClone();
-    if (start) {
-        qbCount = qubitCount;
-        maxI = maxQPowerOcl;
-    } else {
-        qbCount = toCopy->qubitCount;
-        maxI = toCopy->maxQPowerOcl;
-        root.swap(rootClone);
-    }
+    qbCount = qubitCount;
+    maxI = maxQPowerOcl;
+
     par_for(0, maxI, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         for (bitLenInt j = 0; j < qbCount; j++) {
@@ -248,13 +242,12 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
             return;
         }
 
-        leaf->branches[0] = rootClone->branches[0];
-        leaf->branches[1] = rootClone->branches[1];
+        leaf->branches[0] = toCopy->root->branches[0];
+        leaf->branches[1] = toCopy->root->branches[1];
     });
 
+    zeroMasks.insert(zeroMasks.end(), toCopy->zeroMasks.begin(), toCopy->zeroMasks.end());
     SetQubitCount(qubitCount + toCopy->qubitCount);
-    zeroMasks.clear();
-    zeroMasks.resize(qubitCount);
 
     return start;
 }
@@ -262,7 +255,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 {
     bitLenInt end = start + length;
 
-    if (start && (end < qubitCount)) {
+    if (end != qubitCount) {
         bitLenInt offset = qubitCount - end;
 
         ROL(offset, 0, qubitCount);
@@ -281,12 +274,6 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     Finish();
     if (dest) {
         dest->Dump();
-    }
-
-    bool isReversed = !start;
-    if (isReversed) {
-        start = length;
-        length = qubitCount - length;
     }
 
     bitCapIntOcl maxI = pow2Ocl(start);
@@ -319,19 +306,13 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 
     startNode->scale /= abs(startNode->scale);
 
-    if (isReversed) {
-        // start = 0;
-        length = qubitCount - length;
-        root.swap(startNode);
-    }
-
     if (dest) {
         dest->root = startNode;
+        std::copy(zeroMasks.begin() + start, zeroMasks.end(), dest->zeroMasks.begin());
     }
 
+    zeroMasks.erase(zeroMasks.begin() + start, zeroMasks.end());
     SetQubitCount(qubitCount - length);
-    zeroMasks.clear();
-    zeroMasks.resize(qubitCount);
 }
 
 real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
