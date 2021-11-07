@@ -477,20 +477,19 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
     QBinaryDecisionTreeNodePtr& b0 = leaf->branches[0];
     QBinaryDecisionTreeNodePtr& b1 = leaf->branches[1];
 
-    bitLenInt remainderMin1 = remainder - 1U;
     bitCapIntOcl remainderPow = pow2Ocl(remainder);
-    std::vector<std::set<bitCapInt>> zeroMasks(remainderMin1);
+    std::vector<std::set<bitCapInt>> zeroMasks(remainder);
     bitLenInt j;
     size_t bit;
 
     for (bitCapIntOcl i = 0; i < remainderPow; i++) {
-        for (j = 0; j < remainderMin1; j++) {
+        for (j = 0; j < remainder; j++) {
             if (zeroMasks[j].find(i & (pow2Ocl(j + 1U) - ONE_BCI)) != zeroMasks[j].end()) {
                 break;
             }
         }
 
-        if (j < remainderMin1) {
+        if (j < remainder) {
             continue;
         }
 
@@ -521,9 +520,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
             leaf0->scale = ZERO_CMPLX;
             leaf1->scale = ZERO_CMPLX;
 
-            if (j < remainderMin1) {
-                zeroMasks[j].insert(i & (pow2Ocl(j + 1U) - ONE_BCI));
-            }
+            zeroMasks[j].insert(i & (pow2Ocl(j + 1U) - ONE_BCI));
 
             continue;
         }
