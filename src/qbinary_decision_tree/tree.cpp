@@ -515,8 +515,8 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
         }
 
         if (isZero) {
-            leaf0->scale = ZERO_CMPLX;
-            leaf1->scale = ZERO_CMPLX;
+            leaf0->SetZero();
+            leaf1->SetZero();
 
             bitCapInt mask = (i & (pow2Ocl(j + 1U) - ONE_BCI));
 
