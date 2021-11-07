@@ -120,6 +120,10 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
             continue;
         }
 
+        if (!leaf0) {
+            continue;
+        }
+
         leaf0 = b0;
         leaf1 = b1;
         for (k = 0; k < (j - 1U); k++) {
