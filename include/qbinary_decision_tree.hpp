@@ -60,7 +60,7 @@ protected:
 #endif
     }
 
-    QInterfacePtr MakeEngine();
+    QInterfacePtr MakeStateVector();
 
     template <typename Fn> void GetTraversal(Fn getLambda);
     template <typename Fn> void SetTraversal(Fn setLambda);
@@ -68,7 +68,7 @@ protected:
     {
         Finish();
 
-        QInterfacePtr copyPtr = MakeEngine();
+        QInterfacePtr copyPtr = MakeStateVector();
 
         GetQuantumState(copyPtr);
         operation(copyPtr);
@@ -79,7 +79,7 @@ protected:
     {
         Finish();
 
-        QInterfacePtr copyPtr = MakeEngine();
+        QInterfacePtr copyPtr = MakeStateVector();
 
         GetQuantumState(copyPtr);
         bitCapInt toRet = operation(copyPtr);
@@ -199,7 +199,7 @@ public:
     {
         Finish();
 
-        QInterfacePtr copyPtr = MakeEngine();
+        QInterfacePtr copyPtr = MakeStateVector();
 
         GetQuantumState(copyPtr);
         return copyPtr->MultiShotMeasureMask(qPowers, qPowerCount, shots);
@@ -221,7 +221,7 @@ public:
     {
         Finish();
 
-        QInterfacePtr copyPtr = MakeEngine();
+        QInterfacePtr copyPtr = MakeStateVector();
 
         GetQuantumState(copyPtr);
         return copyPtr->ProbParity(mask);

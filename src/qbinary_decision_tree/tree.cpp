@@ -48,7 +48,7 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     SetPermutation(initState);
 }
 
-QInterfacePtr QBinaryDecisionTree::MakeEngine()
+QInterfacePtr QBinaryDecisionTree::MakeStateVector()
 {
     return CreateQuantumInterface(engines, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
         false, devID, hardware_rand_generator != NULL, false, amplitudeFloor);
@@ -56,7 +56,7 @@ QInterfacePtr QBinaryDecisionTree::MakeEngine()
 
 bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 {
-    QInterfacePtr copyPtr = MakeEngine();
+    QInterfacePtr copyPtr = MakeStateVector();
 
     GetQuantumState(copyPtr);
     bool toRet = copyPtr->ForceMParity(mask, result, doForce);
