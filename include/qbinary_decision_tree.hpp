@@ -32,6 +32,7 @@ protected:
     std::vector<QInterfaceEngine> engines;
     int devID;
     QBinaryDecisionTreeNodePtr root;
+    QInterfacePtr stateVecUnit;
 #if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
 #endif
@@ -62,28 +63,49 @@ protected:
 
     QInterfacePtr MakeStateVector();
 
+    QInterfacePtr MakeTempStateVector()
+    {
+        QInterfacePtr copyPtr = MakeStateVector();
+        Finish();
+        GetQuantumState(copyPtr);
+
+        // If the calling function fully deferences our return, it's automatically freed.
+        return copyPtr;
+    }
+    void SetStateVector()
+    {
+        if (stateVecUnit) {
+            return;
+        }
+
+        Finish();
+        stateVecUnit = MakeStateVector();
+        GetQuantumState(stateVecUnit);
+        root = NULL;
+    }
+    void ResetStateVector()
+    {
+        if (!stateVecUnit) {
+            return;
+        }
+
+        Finish();
+        SetQuantumState(stateVecUnit);
+        stateVecUnit = NULL;
+    }
+
     template <typename Fn> void GetTraversal(Fn getLambda);
     template <typename Fn> void SetTraversal(Fn setLambda);
     template <typename Fn> void ExecuteAsStateVector(Fn operation)
     {
-        Finish();
-
-        QInterfacePtr copyPtr = MakeStateVector();
-
-        GetQuantumState(copyPtr);
-        operation(copyPtr);
-        SetQuantumState(copyPtr);
+        SetStateVector();
+        operation(stateVecUnit);
     }
 
     template <typename Fn> bitCapInt BitCapIntAsStateVector(Fn operation)
     {
-        Finish();
-
-        QInterfacePtr copyPtr = MakeStateVector();
-
-        GetQuantumState(copyPtr);
-        bitCapInt toRet = operation(copyPtr);
-        SetQuantumState(copyPtr);
+        SetStateVector();
+        bitCapInt toRet = operation(stateVecUnit);
 
         return toRet;
     }
@@ -125,14 +147,17 @@ public:
 #if ENABLE_QUNIT_CPU_PARALLEL
         dispatchQueue.finish();
 #endif
+        if (stateVecUnit) {
+            stateVecUnit->Finish();
+        }
     };
 
     virtual bool isFinished()
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
-        return dispatchQueue.isFinished();
+        return dispatchQueue.isFinished() && (!stateVecUnit || stateVecUnit->isFinished());
 #else
-        return true;
+        return !stateVecUnit || stateVecUnit->isFinished();
 #endif
     }
 
@@ -197,12 +222,8 @@ public:
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
     {
-        Finish();
-
-        QInterfacePtr copyPtr = MakeStateVector();
-
-        GetQuantumState(copyPtr);
-        return copyPtr->MultiShotMeasureMask(qPowers, qPowerCount, shots);
+        QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
+        return unit->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
@@ -219,12 +240,8 @@ public:
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
     virtual real1_f ProbParity(const bitCapInt& mask)
     {
-        Finish();
-
-        QInterfacePtr copyPtr = MakeStateVector();
-
-        GetQuantumState(copyPtr);
-        return copyPtr->ProbParity(mask);
+        QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
+        return unit->ProbParity(mask);
     }
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,

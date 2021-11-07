@@ -29,6 +29,7 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     , engines(eng)
     , devID(deviceId)
     , root(NULL)
+    , stateVecUnit(NULL)
     , maxQPowerOcl(pow2Ocl(qBitCount))
     , zeroMasks(qubitCount)
 {
@@ -56,11 +57,8 @@ QInterfacePtr QBinaryDecisionTree::MakeStateVector()
 
 bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 {
-    QInterfacePtr copyPtr = MakeStateVector();
-
-    GetQuantumState(copyPtr);
-    bool toRet = copyPtr->ForceMParity(mask, result, doForce);
-    SetQuantumState(copyPtr);
+    SetStateVector();
+    bool toRet = stateVecUnit->ForceMParity(mask, result, doForce);
 
     return toRet;
 }
@@ -91,6 +89,7 @@ void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
 
 QInterfacePtr QBinaryDecisionTree::Clone()
 {
+    ResetStateVector();
     Finish();
 
     QBinaryDecisionTreePtr copyPtr =
@@ -139,6 +138,10 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
 }
 void QBinaryDecisionTree::GetQuantumState(complex* state)
 {
+    if (stateVecUnit) {
+        stateVecUnit->GetQuantumState(state);
+        return;
+    }
     GetTraversal([state](bitCapIntOcl i, complex scale) { state[i] = scale; });
 }
 void QBinaryDecisionTree::GetQuantumState(QInterfacePtr eng)
@@ -147,6 +150,10 @@ void QBinaryDecisionTree::GetQuantumState(QInterfacePtr eng)
 }
 void QBinaryDecisionTree::SetQuantumState(const complex* state)
 {
+    if (stateVecUnit) {
+        stateVecUnit->SetQuantumState(state);
+        return;
+    }
     SetTraversal([state](bitCapIntOcl i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = state[i]; });
 }
 void QBinaryDecisionTree::SetQuantumState(QInterfacePtr eng)
@@ -155,12 +162,18 @@ void QBinaryDecisionTree::SetQuantumState(QInterfacePtr eng)
 }
 void QBinaryDecisionTree::GetProbs(real1* outputProbs)
 {
+    if (stateVecUnit) {
+        stateVecUnit->GetProbs(outputProbs);
+        return;
+    }
     GetTraversal([outputProbs](bitCapIntOcl i, complex scale) { outputProbs[i] = norm(scale); });
 }
 
 real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
 {
+    ResetStateVector();
     Finish();
+    toCompare->ResetStateVector();
     toCompare->Finish();
 
     int numCores = GetConcurrencyLevel();
@@ -199,6 +212,10 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
 
 complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
 {
+    if (stateVecUnit) {
+        return stateVecUnit->GetAmplitude(perm);
+    }
+
     Finish();
 
     complex scale;
@@ -222,7 +239,9 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
         return QInterface::Compose(toCopy, start);
     }
 
+    ResetStateVector();
     Finish();
+    toCopy->ResetStateVector();
     toCopy->Finish();
 
     bitLenInt qbCount;
@@ -272,8 +291,10 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         return;
     }
 
+    ResetStateVector();
     Finish();
     if (dest) {
+        dest->ResetStateVector();
         dest->Dump();
     }
 
@@ -318,6 +339,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 
 real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
 {
+    ResetStateVector();
     Finish();
 
     bitCapIntOcl qPower = pow2Ocl(qubit);
@@ -353,6 +375,10 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
 
 real1_f QBinaryDecisionTree::ProbAll(bitCapInt fullRegister)
 {
+    if (stateVecUnit) {
+        return stateVecUnit->ProbAll(fullRegister);
+    }
+
     Finish();
 
     complex scale;
@@ -379,6 +405,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         return result;
     }
 
+    ResetStateVector();
     Finish();
 
     real1_f oneChance = Prob(qubit);
@@ -424,6 +451,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 
 bitCapInt QBinaryDecisionTree::MAll()
 {
+    ResetStateVector();
     Finish();
 
     bitCapInt result = 0;
@@ -556,6 +584,9 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
 template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, Fn leafFunc)
 {
     bitCapIntOcl targetPow = pow2Ocl(target);
+
+    ResetStateVector();
+
     Dispatch(targetPow, [this, target, targetPow, leafFunc]() {
         root->Branch(target);
 
@@ -656,6 +687,8 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
     highControlMask >>= (target + 1U);
 
     bitCapIntOcl targetPow = pow2Ocl(target);
+
+    ResetStateVector();
 
     Dispatch(targetPow,
         [this, isAnti, mtrx, target, targetPow, lowControlMask, highControlMask, qPowersSorted, controlBound,
