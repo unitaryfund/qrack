@@ -484,13 +484,13 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
     bool isZero;
 
     for (bitCapIntOcl i = 0; i < remainderPow; i++) {
-        for (j = 0; j < remainder; j++) {
+        for (j = depth + 1U; j < qubitCount; j++) {
             if (halfZeroMasks[j].find(i & (pow2Ocl(j + 1U) - ONE_BCI)) != halfZeroMasks[j].end()) {
                 break;
             }
         }
 
-        if (j < remainder) {
+        if (j < qubitCount) {
             continue;
         }
 
@@ -532,6 +532,8 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
 
             bitCapInt mask = (i & (pow2Ocl(j + 1U) - ONE_BCI));
 
+            j += depth + 1U;
+
             halfZeroMasks[j].insert(mask);
 
             bit ^= 1U;
@@ -568,8 +570,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
     Dispatch(targetPow, [this, target, targetPow, leafFunc]() {
         root->Branch(target);
 
-        bitLenInt remainder = qubitCount - (target + 1);
-        zeroMasks.resize(remainder);
+        zeroMasks.resize(qubitCount);
 
         bool isParallel = (targetPow < GetParallelThreshold());
         for (bitCapInt i = 0; i < targetPow; i++) {
@@ -674,8 +675,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
             leafFunc]() {
             root->Branch(target);
 
-            bitLenInt remainder = qubitCount - (target + 1);
-            zeroMasks.resize(remainder);
+            zeroMasks.resize(qubitCount);
 
             bool isPhase = false;
             bool isInvert = false;
