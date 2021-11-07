@@ -222,7 +222,8 @@ public:
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
     {
-        return MakeTempStateVector()->MultiShotMeasureMask(qPowers, qPowerCount, shots);
+        QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
+        return unit->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
@@ -237,7 +238,10 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
 
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
-    virtual real1_f ProbParity(const bitCapInt& mask) { return MakeTempStateVector()->ProbParity(mask); }
+    virtual real1_f ProbParity(const bitCapInt& mask) {
+        QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
+        return unit->ProbParity(mask);
+    }
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true)
