@@ -569,7 +569,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
         root->Branch(target);
 
         bitLenInt remainder = qubitCount - (target + 1);
-        zeroMasks = std::vector<std::set<bitCapInt>>(remainder);
+        zeroMasks.resize(remainder);
 
         bool isParallel = (targetPow < GetParallelThreshold());
         for (bitCapInt i = 0; i < targetPow; i++) {
@@ -589,7 +589,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
             leafFunc(leaf, isParallel, 0U);
         }
 
-        zeroMasks = std::vector<std::set<bitCapInt>>();
+        zeroMasks.clear();
 
         root->Prune(target);
     });
@@ -675,7 +675,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
             root->Branch(target);
 
             bitLenInt remainder = qubitCount - (target + 1);
-            zeroMasks = std::vector<std::set<bitCapInt>>(remainder);
+            zeroMasks.resize(remainder);
 
             bool isPhase = false;
             bool isInvert = false;
@@ -732,7 +732,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                 }
             }
 
-            zeroMasks = std::vector<std::set<bitCapInt>>();
+            zeroMasks.clear();
 
             root->Prune(target);
         });
