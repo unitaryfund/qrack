@@ -48,15 +48,15 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     SetPermutation(initState);
 }
 
-QEnginePtr QBinaryDecisionTree::MakeEngine()
+QInterfacePtr QBinaryDecisionTree::MakeEngine()
 {
-    return std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, qubitCount, 0, rand_generator, ONE_CMPLX,
-        doNormalize, randGlobalPhase, false, devID, hardware_rand_generator != NULL, false, amplitudeFloor));
+    return CreateQuantumInterface(engines, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+        false, devID, hardware_rand_generator != NULL, false, amplitudeFloor);
 }
 
 bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 {
-    QEnginePtr copyPtr = MakeEngine();
+    QInterfacePtr copyPtr = MakeEngine();
 
     GetQuantumState(copyPtr);
     bool toRet = copyPtr->ForceMParity(mask, result, doForce);
@@ -141,7 +141,7 @@ void QBinaryDecisionTree::GetQuantumState(complex* state)
 {
     GetTraversal([state](bitCapIntOcl i, complex scale) { state[i] = scale; });
 }
-void QBinaryDecisionTree::GetQuantumState(QEnginePtr eng)
+void QBinaryDecisionTree::GetQuantumState(QInterfacePtr eng)
 {
     GetTraversal([eng](bitCapIntOcl i, complex scale) { eng->SetAmplitude(i, scale); });
 }
@@ -373,7 +373,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 {
     if (doForce) {
         if (doApply) {
-            ExecuteAsQEngine([&](QInterfacePtr eng) { eng->ForceM(qubit, result, true, doApply); });
+            ExecuteAsStateVector([&](QInterfacePtr eng) { eng->ForceM(qubit, result, true, doApply); });
         }
         return result;
     }
