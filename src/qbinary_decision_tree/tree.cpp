@@ -160,6 +160,7 @@ void QBinaryDecisionTree::GetProbs(real1* outputProbs)
 real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
 {
     Finish();
+    toCompare->Finish();
 
     int numCores = GetConcurrencyLevel();
     std::unique_ptr<complex[]> partInner(new complex[numCores]());
