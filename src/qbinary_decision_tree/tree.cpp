@@ -29,6 +29,7 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     , engines(eng)
     , devID(deviceId)
     , root(NULL)
+    , stateVecUnit(NULL)
     , maxQPowerOcl(pow2Ocl(qBitCount))
     , zeroMasks(qubitCount)
 {
@@ -56,11 +57,9 @@ QInterfacePtr QBinaryDecisionTree::MakeStateVector()
 
 bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
 {
-    QInterfacePtr copyPtr = MakeStateVector();
-
-    GetQuantumState(copyPtr);
-    bool toRet = copyPtr->ForceMParity(mask, result, doForce);
-    SetQuantumState(copyPtr);
+    SetStateVector();
+    bool toRet = stateVecUnit->ForceMParity(mask, result, doForce);
+    ResetStateVector();
 
     return toRet;
 }
