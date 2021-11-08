@@ -119,7 +119,13 @@ protected:
     void ApplyControlledSingle(bool isAnti, std::shared_ptr<complex[]> mtrx, const bitLenInt* controls,
         const bitLenInt& controlLen, const bitLenInt& target, Lfn leafFunc);
 
-    size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
+    static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
+
+    static bitCapInt RemovePower(bitCapInt perm, bitCapInt power)
+    {
+        bitCapInt mask = power - ONE_BCI;
+        return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
+    }
 
 public:
     QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,

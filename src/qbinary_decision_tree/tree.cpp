@@ -660,12 +660,14 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
     std::copy(controls, controls + controlLen, sortedControls.begin());
     std::sort(sortedControls.begin(), sortedControls.end());
 
+    std::vector<bitCapIntOcl> qPowersSorted;
     bitCapIntOcl lowControlMask = 0U;
     bitLenInt c;
     for (c = 0U; (c < controlLen) && (sortedControls[c] < target); c++) {
-        lowControlMask |= pow2Ocl(target - (sortedControls[c] + ONE_BCI));
+        qPowersSorted.push_back(pow2Ocl(target - (sortedControls[c] + ONE_BCI)));
+        lowControlMask |= qPowersSorted.back();
     }
-    bitLenInt controlBound = c;
+    std::reverse(qPowersSorted.begin(), qPowersSorted.end());
 
     bitCapIntOcl highControlMask = 0U;
     for (; c < controlLen; c++) {
@@ -679,7 +681,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
     ResetStateVector();
 
     Dispatch(targetPow,
-        [this, mtrx, target, targetPow, lowControlMask, highControlMask, maskTarget, controlBound, leafFunc]() {
+        [this, mtrx, target, targetPow, qPowersSorted, lowControlMask, highControlMask, maskTarget, leafFunc]() {
             root->Branch(target);
 
             bool isPhase = false;
@@ -689,11 +691,19 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                 isInvert = ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX));
             }
 
+            bitCapInt i, iHigh, iLow;
             bitLenInt j;
-            for (bitCapIntOcl i = 0U; i < targetPow; i++) {
-                if ((i & lowControlMask) != maskTarget) {
-                    continue;
+            int p;
+            bitCapInt maxLcv = targetPow >> qPowersSorted.size();
+            for (bitCapInt lcv = 0U; lcv < maxLcv; lcv++) {
+                iHigh = lcv;
+                i = 0U;
+                for (p = 0; p < (int)qPowersSorted.size(); p++) {
+                    iLow = iHigh & (qPowersSorted[p] - ONE_BCI);
+                    i |= iLow;
+                    iHigh = (iHigh ^ iLow) << ONE_BCI;
                 }
+                i |= iHigh | maskTarget;
 
                 QBinaryDecisionTreeNodePtr leaf = root;
                 // Iterate to qubit depth.
@@ -707,6 +717,11 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                 if (IS_NORM_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
                     i |= pow2Ocl(target - j) - ONE_BCI;
+                    for (p = qPowersSorted.size() - 1; p >= 0; p--) {
+                        i = RemovePower(i, qPowersSorted[p]);
+                    }
+                    lcv = i;
+
                     continue;
                 }
 
