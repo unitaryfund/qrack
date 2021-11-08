@@ -61,31 +61,26 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
     size_t bit;
     bitLenInt j;
     bitCapInt depthPow = ONE_BCI << depth;
-    complex scale0, scale1, prevScale0, prevScale1;
+    complex scale0, scale1;
     QBinaryDecisionTreeNodePtr leaf0, leaf1;
     std::vector<complex> branch1Scales(depth);
     for (bitCapInt i = 0; i < depthPow; i++) {
         leaf0 = b0;
         leaf1 = b1;
 
-        prevScale0 = leaf0->scale;
-        prevScale1 = leaf1->scale;
-
-        scale0 = ONE_CMPLX;
-        scale1 = ONE_CMPLX;
+        scale0 = b0->scale;
+        scale1 = b1->scale;
 
         for (j = 0; j < depth; j++) {
             bit = SelectBit(i, depth - (j + 1U));
 
             if (leaf0) {
-                prevScale0 = leaf0->scale;
-                scale0 *= prevScale0;
+                scale0 *= leaf0->scale;
                 leaf0 = leaf0->branches[bit];
             }
 
             if (leaf1) {
-                prevScale1 = leaf1->scale;
-                scale1 *= prevScale1;
+                scale1 *= leaf1->scale;
                 leaf1 = leaf1->branches[bit];
             }
 
