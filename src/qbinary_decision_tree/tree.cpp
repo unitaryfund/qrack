@@ -602,10 +602,11 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
                 if (IS_NORM_0(leaf->scale)) {
                     break;
                 }
-                leaf = leaf->branches[SelectBit(i, j)];
+                leaf = leaf->branches[SelectBit(i, (target - (j + 1U)))];
             }
 
             if (IS_NORM_0(leaf->scale)) {
+                i |= pow2Ocl(target - j) - ONE_BCI;
                 continue;
             }
 
