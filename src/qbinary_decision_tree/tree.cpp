@@ -498,8 +498,8 @@ bitCapInt QBinaryDecisionTree::MAll()
     return result;
 }
 
-void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth,
-    bool isParallel, bitCapInt highControlMask, bool isAnti)
+void QBinaryDecisionTree::Apply2x2OnLeaf(
+    const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth, bitCapInt highControlMask, bool isAnti)
 {
     leaf->Branch();
     bitLenInt remainder = qubitCount - (depth + 1);
@@ -596,7 +596,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
                 continue;
             }
 
-            leafFunc(leaf, true, 0U);
+            leafFunc(leaf, 0U);
         }
 
         root->Prune(target);
@@ -617,8 +617,8 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     std::shared_ptr<complex[]> mtrx(new complex[4]);
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
-    ApplySingle(target, [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bool isParallel, bitCapInt ignored) {
-        Apply2x2OnLeaf(mtrx.get(), leaf, target, isParallel, 0U, false);
+    ApplySingle(target, [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bitCapInt ignored) {
+        Apply2x2OnLeaf(mtrx.get(), leaf, target, 0U, false);
     });
 }
 
@@ -628,7 +628,7 @@ void QBinaryDecisionTree::ApplySinglePhase(const complex topLeft, const complex 
         return;
     }
 
-    ApplySingle(target, [topLeft, bottomRight](QBinaryDecisionTreeNodePtr leaf, bool ignored1, bitCapInt ignored2) {
+    ApplySingle(target, [topLeft, bottomRight](QBinaryDecisionTreeNodePtr leaf, bitCapInt ignored2) {
         leaf->Branch();
         leaf->branches[0]->scale *= topLeft;
         leaf->branches[1]->scale *= bottomRight;
@@ -638,7 +638,7 @@ void QBinaryDecisionTree::ApplySinglePhase(const complex topLeft, const complex 
 
 void QBinaryDecisionTree::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
 {
-    ApplySingle(target, [topRight, bottomLeft](QBinaryDecisionTreeNodePtr leaf, bool ignored1, bitCapInt ignored2) {
+    ApplySingle(target, [topRight, bottomLeft](QBinaryDecisionTreeNodePtr leaf, bitCapInt ignored2) {
         leaf->Branch();
         leaf->branches[0].swap(leaf->branches[1]);
         leaf->branches[0]->scale *= topRight;
@@ -722,7 +722,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                     leaf->branches[1]->scale *= mtrx[2];
                     leaf->Prune();
                 } else {
-                    leafFunc(leaf, true, highControlMask);
+                    leafFunc(leaf, highControlMask);
                 }
             }
 
@@ -737,8 +737,8 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
     ApplyControlledSingle(false, mtrx, controls, controlLen, target,
-        [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bool isParallel, bitCapInt highControlMask) {
-            Apply2x2OnLeaf(mtrx.get(), leaf, target, isParallel, highControlMask, false);
+        [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bitCapInt highControlMask) {
+            Apply2x2OnLeaf(mtrx.get(), leaf, target, highControlMask, false);
         });
 }
 
@@ -749,8 +749,8 @@ void QBinaryDecisionTree::ApplyAntiControlledSingleBit(
     std::copy(lMtrx, lMtrx + 4, mtrx.get());
 
     ApplyControlledSingle(true, mtrx, controls, controlLen, target,
-        [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bool isParallel, bitCapInt highControlMask) {
-            Apply2x2OnLeaf(mtrx.get(), leaf, target, isParallel, highControlMask, true);
+        [this, mtrx, target](QBinaryDecisionTreeNodePtr leaf, bitCapInt highControlMask) {
+            Apply2x2OnLeaf(mtrx.get(), leaf, target, highControlMask, true);
         });
 }
 
