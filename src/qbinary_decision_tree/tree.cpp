@@ -508,6 +508,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
     QBinaryDecisionTreeNodePtr& b1 = leaf->branches[1];
 
     bitCapIntOcl remainderPow = pow2Ocl(remainder);
+    bitCapIntOcl maskTarget = (isAnti ? 0U : highControlMask);
     std::vector<std::set<bitCapInt>> zeroMasks(remainder);
     bitLenInt j;
     size_t bit;
@@ -567,7 +568,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
             continue;
         }
 
-        if ((i & highControlMask) != (isAnti ? 0U : highControlMask)) {
+        if ((i & highControlMask) != maskTarget) {
             leaf0->scale = scale0;
             leaf1->scale = scale1;
             continue;
@@ -606,6 +607,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
             }
 
             if (IS_NORM_0(leaf->scale)) {
+                // WARNING: Mutates loop control variable!
                 i |= pow2Ocl(target - j) - ONE_BCI;
                 continue;
             }
@@ -674,19 +676,18 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
     std::copy(controls, controls + controlLen, sortedControls.begin());
     std::sort(sortedControls.begin(), sortedControls.end());
 
-    std::vector<bitCapIntOcl> qPowersSorted(controlLen);
+    std::vector<bitCapIntOcl> qPowersSorted;
     bitCapIntOcl lowControlMask = 0U;
     bitLenInt c;
     for (c = 0U; (c < controlLen) && (sortedControls[c] < target); c++) {
-        qPowersSorted[c] = pow2Ocl(target - (sortedControls[c] + ONE_BCI));
+        qPowersSorted.push_back(pow2Ocl(target - (sortedControls[c] + ONE_BCI)));
         lowControlMask |= qPowersSorted[c];
     }
     bitLenInt controlBound = c;
-    std::reverse(qPowersSorted.begin(), qPowersSorted.begin() + controlBound);
+    std::reverse(qPowersSorted.begin(), qPowersSorted.end());
     bitCapIntOcl highControlMask = 0U;
     for (; c < controlLen; c++) {
-        qPowersSorted[c] = pow2Ocl(sortedControls[c]);
-        highControlMask |= qPowersSorted[c];
+        highControlMask |= pow2Ocl(sortedControls[c]);;
     }
     highControlMask >>= (target + 1U);
 
@@ -695,7 +696,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
     ResetStateVector();
 
     Dispatch(targetPow,
-        [this, isAnti, mtrx, target, targetPow, lowControlMask, highControlMask, qPowersSorted, controlBound,
+        [this, isAnti, mtrx, target, targetPow, lowControlMask, highControlMask, controlBound,
             leafFunc]() {
             root->Branch(target);
 
@@ -707,22 +708,11 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
             }
             bool isParallel = ((targetPow >> controlBound) < GetParallelThreshold());
 
-            bitCapInt i, iHigh, iLow, j;
-            bitLenInt p;
-            bitCapInt maxLcv = targetPow >> controlBound;
-            for (bitCapInt lcv = 0U; lcv < maxLcv; lcv++) {
-                iHigh = lcv;
-                i = 0U;
-                for (p = 0U; p < controlBound; p++) {
-                    iLow = iHigh & (qPowersSorted[p] - ONE_BCI);
-                    i |= iLow;
-                    iHigh = (iHigh ^ iLow) << ONE_BCI;
-                }
-                i |= iHigh;
-
-                // If any controls aren't set, skip, (but we push apart).
-                if (!isAnti) {
-                    i |= lowControlMask;
+            bitCapIntOcl maskTarget = (isAnti ? 0U : lowControlMask);
+            bitLenInt j;
+            for (bitCapIntOcl i = 0U; i < targetPow; i++) {
+                if ((i & lowControlMask) != maskTarget) {
+                    continue;
                 }
 
                 QBinaryDecisionTreeNodePtr leaf = root;
@@ -735,6 +725,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                 }
 
                 if (IS_NORM_0(leaf->scale)) {
+                    // WARNING: Mutates loop control variable!
                     i |= pow2Ocl(target - j) - ONE_BCI;
                     continue;
                 }
