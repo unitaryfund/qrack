@@ -602,7 +602,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
                 if (IS_NORM_0(leaf->scale)) {
                     break;
                 }
-                leaf = leaf->branches[SelectBit(i, (target - (j + 1U)))];
+                leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
             }
 
             if (IS_NORM_0(leaf->scale)) {
@@ -678,10 +678,11 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
     bitCapIntOcl lowControlMask = 0U;
     bitLenInt c;
     for (c = 0U; (c < controlLen) && (sortedControls[c] < target); c++) {
-        qPowersSorted[c] = pow2Ocl(sortedControls[c]);
+        qPowersSorted[c] = pow2Ocl(target - (sortedControls[c] + ONE_BCI));
         lowControlMask |= qPowersSorted[c];
     }
     bitLenInt controlBound = c;
+    std::reverse(qPowersSorted.begin(), qPowersSorted.begin() + controlBound);
     bitCapIntOcl highControlMask = 0U;
     for (; c < controlLen; c++) {
         qPowersSorted[c] = pow2Ocl(sortedControls[c]);
@@ -730,10 +731,11 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                     if (IS_NORM_0(leaf->scale)) {
                         break;
                     }
-                    leaf = leaf->branches[SelectBit(i, j)];
+                    leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
                 }
 
                 if (IS_NORM_0(leaf->scale)) {
+                    i |= pow2Ocl(target - j) - ONE_BCI;
                     continue;
                 }
 
