@@ -41,9 +41,10 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
 
     // Prune recursively to depth.
-    branches[0]->Prune(depth - 1U);
+    depth--;
+    branches[0]->Prune(depth);
     if (b0 != b1) {
-        branches[1]->Prune(depth - 1U);
+        branches[1]->Prune(depth);
     }
 
     complex phaseFac = std::polar(ONE_R1, (real1)(IS_NORM_0(b0->scale) ? std::arg(b1->scale) : std::arg(b0->scale)));
@@ -57,9 +58,8 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
 
     // Now, we try to combine pointers to equivalent branches.
 
-    bool isSameAtTop = true;
     size_t bit;
-    bitLenInt j, k;
+    bitLenInt j;
     bitCapInt depthPow = ONE_BCI << depth;
     complex scale0, scale1, prevScale0, prevScale1;
     QBinaryDecisionTreeNodePtr leaf0, leaf1;
@@ -75,7 +75,7 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         scale1 = ONE_CMPLX;
 
         for (j = 0; j < depth; j++) {
-            bit = SelectBit(i, j);
+            bit = SelectBit(i, depth - (j + 1U));
 
             if (leaf0) {
                 prevScale0 = leaf0->scale;
@@ -94,59 +94,17 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
             }
         }
 
-        if ((leaf0 != leaf1)) {
+        if ((leaf0 != leaf1) || !IS_NORM_0(scale0 - scale1)) {
             // We can't combine our immediate children within depth.
-            isSameAtTop = false;
-            continue;
+            return;
         }
 
-        if (leaf0) {
-            scale0 *= leaf0->scale;
-            scale1 *= leaf1->scale;
-        }
-
-        isSameAtTop &= IS_NORM_0(scale0 - scale1);
-
-        if (!IS_NORM_0(prevScale0 - prevScale1) || IS_NORM_0(prevScale0) || IS_NORM_0(prevScale1)) {
-            continue;
-        }
-
-        if (!j) {
-            if ((b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1])) {
-                b1 = b0;
-                return;
-            }
-
-            continue;
-        }
-
-        if (!leaf0) {
-            continue;
-        }
-
-        leaf0 = b0;
-        leaf1 = b1;
-        for (k = 0; k < (j - 1U); k++) {
-            bit = SelectBit(i, k);
-            leaf0 = leaf0->branches[bit];
-            leaf1 = leaf1->branches[bit];
-        }
-
-        bit = SelectBit(i, k);
-        QBinaryDecisionTreeNodePtr& sb0 = leaf0->branches[bit];
-        QBinaryDecisionTreeNodePtr& sb1 = leaf1->branches[bit];
-
-        bit = SelectBit(i, (k + 1U));
-        bit ^= 1U;
-        if (IS_NORM_0(sb0->scale - sb1->scale) && (sb0->branches[bit] == sb1->branches[bit])) {
-            sb1 = sb0;
-        }
+        // WARNING: Mutates loop control variable!
+        i |= (ONE_BCI << (depth - j)) - ONE_BCI;
     }
 
-    if (isSameAtTop) {
-        // The branches terminate equal, within depth.
-        b1 = b0;
-    }
+    // The branches terminate equal, within depth.
+    b1 = b0;
 }
 
 void QBinaryDecisionTreeNode::Branch(bitLenInt depth, bool isZeroBranch)
