@@ -553,14 +553,6 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
 
             halfZeroMasks[jAlign].insert(mask);
 
-            bit ^= 1U;
-            leaf0 = prevLeaf0->branches[bit];
-            leaf1 = prevLeaf1->branches[bit];
-
-            if (IS_NORM_0(leaf0->scale) && IS_NORM_0(leaf1->scale)) {
-                zeroMasks[jAlign].insert(mask);
-            }
-
             continue;
         }
 
@@ -590,13 +582,16 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
     Dispatch(targetPow, [this, target, targetPow, leafFunc]() {
         root->Branch(target);
 
-        zeroMasks[target].clear();
+        bitLenInt j;
+        for (j = target + 1U; j < qubitCount; j++) {
+            zeroMasks[j].clear();
+        }
 
         bool isParallel = (targetPow < GetParallelThreshold());
         for (bitCapInt i = 0; i < targetPow; i++) {
             QBinaryDecisionTreeNodePtr leaf = root;
             // Iterate to qubit depth.
-            for (bitLenInt j = 0; j < target; j++) {
+            for (j = 0; j < target; j++) {
                 if (IS_NORM_0(leaf->scale)) {
                     break;
                 }
@@ -604,6 +599,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
             }
 
             if (IS_NORM_0(leaf->scale)) {
+                zeroMasks[j].insert(i);
                 continue;
             }
 
@@ -695,7 +691,10 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
             leafFunc]() {
             root->Branch(target);
 
-            zeroMasks[target].clear();
+            bitLenInt j;
+            for (j = target + 1U; j < qubitCount; j++) {
+                zeroMasks[j].clear();
+            }
 
             bool isPhase = false;
             bool isInvert = false;
@@ -725,7 +724,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
 
                 QBinaryDecisionTreeNodePtr leaf = root;
                 // Iterate to qubit depth.
-                for (bitLenInt j = 0; j < target; j++) {
+                for (j = 0; j < target; j++) {
                     if (IS_NORM_0(leaf->scale)) {
                         break;
                     }
@@ -733,6 +732,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                 }
 
                 if (IS_NORM_0(leaf->scale)) {
+                    zeroMasks[j].insert(i);
                     continue;
                 }
 
