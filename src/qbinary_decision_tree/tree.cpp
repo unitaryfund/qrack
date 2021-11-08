@@ -513,7 +513,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
     size_t bit;
     bool isZero;
 
-    for (bitCapIntOcl i = 0; i < remainderPow; i++) {
+    par_for(0, remainderPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         QBinaryDecisionTreeNodePtr leaf0 = b0;
         QBinaryDecisionTreeNodePtr leaf1 = b1;
 
@@ -550,20 +550,20 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
             leaf0->SetZero();
             leaf1->SetZero();
 
-            continue;
+            return;
         }
 
         if ((i & highControlMask) != maskTarget) {
             leaf0->scale = scale0;
             leaf1->scale = scale1;
-            continue;
+            return;
         }
 
         complex Y0 = scale0;
         complex Y1 = scale1;
         leaf0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
         leaf1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
-    }
+    });
 
     b0->ConvertStateVector(remainder);
     b1->ConvertStateVector(remainder);
@@ -580,7 +580,6 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
         root->Branch(target);
 
         bitLenInt j;
-        bool isParallel = (targetPow < GetParallelThreshold());
         for (bitCapInt i = 0; i < targetPow; i++) {
             QBinaryDecisionTreeNodePtr leaf = root;
             // Iterate to qubit depth.
@@ -597,7 +596,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
                 continue;
             }
 
-            leafFunc(leaf, isParallel, 0U);
+            leafFunc(leaf, true, 0U);
         }
 
         root->Prune(target);
@@ -689,7 +688,6 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                 isPhase = ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX));
                 isInvert = ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX));
             }
-            bool isParallel = ((targetPow >> controlBound) < GetParallelThreshold());
 
             bitLenInt j;
             for (bitCapIntOcl i = 0U; i < targetPow; i++) {
@@ -724,7 +722,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                     leaf->branches[1]->scale *= mtrx[2];
                     leaf->Prune();
                 } else {
-                    leafFunc(leaf, isParallel, highControlMask);
+                    leafFunc(leaf, true, highControlMask);
                 }
             }
 
