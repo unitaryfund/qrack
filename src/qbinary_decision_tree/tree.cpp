@@ -509,22 +509,11 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
 
     bitCapIntOcl remainderPow = pow2Ocl(remainder);
     bitCapIntOcl maskTarget = (isAnti ? 0U : highControlMask);
-    std::vector<std::set<bitCapInt>> zeroMasks(remainder);
     bitLenInt j;
     size_t bit;
     bool isZero;
 
     for (bitCapIntOcl i = 0; i < remainderPow; i++) {
-        for (j = 0; j < remainder; j++) {
-            if (zeroMasks[j].find(i & (pow2Ocl(j + 1U) - ONE_BCI)) != zeroMasks[j].end()) {
-                break;
-            }
-        }
-
-        if (j < remainder) {
-            continue;
-        }
-
         QBinaryDecisionTreeNodePtr leaf0 = b0;
         QBinaryDecisionTreeNodePtr leaf1 = b1;
 
@@ -560,10 +549,6 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
         if (isZero) {
             leaf0->SetZero();
             leaf1->SetZero();
-
-            bitCapInt mask = (i & (pow2Ocl(j + 1U) - ONE_BCI));
-
-            zeroMasks[j].insert(mask);
 
             continue;
         }
@@ -676,18 +661,17 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
     std::copy(controls, controls + controlLen, sortedControls.begin());
     std::sort(sortedControls.begin(), sortedControls.end());
 
-    std::vector<bitCapIntOcl> qPowersSorted;
     bitCapIntOcl lowControlMask = 0U;
     bitLenInt c;
     for (c = 0U; (c < controlLen) && (sortedControls[c] < target); c++) {
-        qPowersSorted.push_back(pow2Ocl(target - (sortedControls[c] + ONE_BCI)));
-        lowControlMask |= qPowersSorted[c];
+        lowControlMask |= pow2Ocl(target - (sortedControls[c] + ONE_BCI));
     }
     bitLenInt controlBound = c;
-    std::reverse(qPowersSorted.begin(), qPowersSorted.end());
+
     bitCapIntOcl highControlMask = 0U;
     for (; c < controlLen; c++) {
-        highControlMask |= pow2Ocl(sortedControls[c]);;
+        highControlMask |= pow2Ocl(sortedControls[c]);
+        ;
     }
     highControlMask >>= (target + 1U);
 
@@ -695,9 +679,8 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
 
     ResetStateVector();
 
-    Dispatch(targetPow,
-        [this, isAnti, mtrx, target, targetPow, lowControlMask, highControlMask, controlBound,
-            leafFunc]() {
+    Dispatch(
+        targetPow, [this, isAnti, mtrx, target, targetPow, lowControlMask, highControlMask, controlBound, leafFunc]() {
             root->Branch(target);
 
             bool isPhase = false;
