@@ -31,7 +31,6 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     , root(NULL)
     , stateVecUnit(NULL)
     , maxQPowerOcl(pow2Ocl(qBitCount))
-    , zeroMasks(qubitCount)
 {
     if ((engines[0] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
 #if ENABLE_OPENCL
@@ -235,7 +234,7 @@ complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start)
 {
-    if (start != qubitCount) {
+    if (start && (start != qubitCount)) {
         return QInterface::Compose(toCopy, start);
     }
 
@@ -246,9 +245,16 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
 
     bitLenInt qbCount;
     bitCapIntOcl maxI;
-    qbCount = qubitCount;
-    maxI = maxQPowerOcl;
 
+    QBinaryDecisionTreeNodePtr rootClone = toCopy->root->ShallowClone();
+    if (start) {
+        qbCount = qubitCount;
+        maxI = maxQPowerOcl;
+    } else {
+        qbCount = toCopy->qubitCount;
+        maxI = toCopy->maxQPowerOcl;
+        root.swap(rootClone);
+    }
     par_for(0, maxI, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         for (bitLenInt j = 0; j < qbCount; j++) {
@@ -262,11 +268,9 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
             return;
         }
 
-        leaf->branches[0] = toCopy->root->branches[0];
-        leaf->branches[1] = toCopy->root->branches[1];
+        leaf->branches[0] = rootClone->branches[0];
+        leaf->branches[1] = rootClone->branches[1];
     });
-
-    zeroMasks.insert(zeroMasks.end(), toCopy->zeroMasks.begin(), toCopy->zeroMasks.end());
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
     return start;
@@ -275,7 +279,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 {
     bitLenInt end = start + length;
 
-    if (end != qubitCount) {
+    if (start && (end < qubitCount)) {
         bitLenInt offset = qubitCount - end;
 
         ROL(offset, 0, qubitCount);
@@ -296,6 +300,12 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     if (dest) {
         dest->ResetStateVector();
         dest->Dump();
+    }
+
+    bool isReversed = !start;
+    if (isReversed) {
+        start = length;
+        length = qubitCount - length;
     }
 
     bitCapIntOcl maxI = pow2Ocl(start);
@@ -328,12 +338,16 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 
     startNode->scale /= abs(startNode->scale);
 
-    if (dest) {
-        dest->root = startNode;
-        std::copy(zeroMasks.begin() + start, zeroMasks.end(), dest->zeroMasks.begin());
+    if (isReversed) {
+        // start = 0;
+        length = qubitCount - length;
+        root.swap(startNode);
     }
 
-    zeroMasks.erase(zeroMasks.begin() + start, zeroMasks.end());
+    if (dest) {
+        dest->root = startNode;
+    }
+
     SetQubitCount(qubitCount - length);
 }
 
@@ -494,15 +508,14 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
     QBinaryDecisionTreeNodePtr& b1 = leaf->branches[1];
 
     bitCapIntOcl remainderPow = pow2Ocl(remainder);
-    std::vector<std::set<bitCapInt>> halfZeroMasks = zeroMasks;
-    bitLenInt j, jAlign;
+    std::vector<std::set<bitCapInt>> zeroMasks(remainder);
+    bitLenInt j;
     size_t bit;
     bool isZero;
 
     for (bitCapIntOcl i = 0; i < remainderPow; i++) {
         for (j = 0; j < remainder; j++) {
-            jAlign = j + depth + 1U;
-            if (halfZeroMasks[jAlign].find(i & (pow2Ocl(j + 1U) - ONE_BCI)) != halfZeroMasks[jAlign].end()) {
+            if (zeroMasks[j].find(i & (pow2Ocl(j + 1U) - ONE_BCI)) != zeroMasks[j].end()) {
                 break;
             }
         }
@@ -549,17 +562,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
 
             bitCapInt mask = (i & (pow2Ocl(j + 1U) - ONE_BCI));
 
-            jAlign = j + depth + 1U;
-
-            halfZeroMasks[jAlign].insert(mask);
-
-            bit ^= 1U;
-            leaf0 = prevLeaf0->branches[bit];
-            leaf1 = prevLeaf1->branches[bit];
-
-            if (IS_NORM_0(leaf0->scale) && IS_NORM_0(leaf1->scale)) {
-                zeroMasks[jAlign].insert(mask);
-            }
+            zeroMasks[j].insert(mask);
 
             continue;
         }
@@ -590,13 +593,12 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
     Dispatch(targetPow, [this, target, targetPow, leafFunc]() {
         root->Branch(target);
 
-        zeroMasks[target].clear();
-
+        bitLenInt j;
         bool isParallel = (targetPow < GetParallelThreshold());
         for (bitCapInt i = 0; i < targetPow; i++) {
             QBinaryDecisionTreeNodePtr leaf = root;
             // Iterate to qubit depth.
-            for (bitLenInt j = 0; j < target; j++) {
+            for (j = 0; j < target; j++) {
                 if (IS_NORM_0(leaf->scale)) {
                     break;
                 }
@@ -695,8 +697,6 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
             leafFunc]() {
             root->Branch(target);
 
-            zeroMasks[target].clear();
-
             bool isPhase = false;
             bool isInvert = false;
             if (!highControlMask) {
@@ -705,7 +705,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
             }
             bool isParallel = ((targetPow >> controlBound) < GetParallelThreshold());
 
-            bitCapInt i, iHigh, iLow;
+            bitCapInt i, iHigh, iLow, j;
             bitLenInt p;
             bitCapInt maxLcv = targetPow >> controlBound;
             for (bitCapInt lcv = 0U; lcv < maxLcv; lcv++) {
@@ -725,7 +725,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
 
                 QBinaryDecisionTreeNodePtr leaf = root;
                 // Iterate to qubit depth.
-                for (bitLenInt j = 0; j < target; j++) {
+                for (j = 0; j < target; j++) {
                     if (IS_NORM_0(leaf->scale)) {
                         break;
                     }
