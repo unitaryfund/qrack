@@ -542,6 +542,9 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
             isZero = IS_NORM_0(scale0) && IS_NORM_0(scale1);
 
             if (isZero) {
+                // WARNING: Mutates loop control variable!
+                i |= pow2Ocl(remainder - (j + 1U)) - ONE_BCI;
+
                 break;
             }
         }
@@ -549,9 +552,6 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
         if (isZero) {
             leaf0->SetZero();
             leaf1->SetZero();
-
-            // WARNING: Mutates loop control variable!
-            i |= pow2Ocl(remainder - (j + 1U)) - ONE_BCI;
 
             continue;
         }
@@ -589,14 +589,14 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
             // Iterate to qubit depth.
             for (j = 0; j < target; j++) {
                 if (IS_NORM_0(leaf->scale)) {
+                    // WARNING: Mutates loop control variable!
+                    i |= pow2Ocl(target - j) - ONE_BCI;
                     break;
                 }
                 leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
             }
 
             if (IS_NORM_0(leaf->scale)) {
-                // WARNING: Mutates loop control variable!
-                i |= pow2Ocl(target - j) - ONE_BCI;
                 continue;
             }
 
@@ -712,19 +712,19 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                 // Iterate to qubit depth.
                 for (j = 0; j < target; j++) {
                     if (IS_NORM_0(leaf->scale)) {
+                        // WARNING: Mutates loop control variable!
+                        i |= pow2Ocl(target - j) - ONE_BCI;
+                        for (p = qPowersSorted.size() - 1; p >= 0; p--) {
+                            i = RemovePower(i, qPowersSorted[p]);
+                        }
+                        lcv = i;
+
                         break;
                     }
                     leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
                 }
 
                 if (IS_NORM_0(leaf->scale)) {
-                    // WARNING: Mutates loop control variable!
-                    i |= pow2Ocl(target - j) - ONE_BCI;
-                    for (p = qPowersSorted.size() - 1; p >= 0; p--) {
-                        i = RemovePower(i, qPowersSorted[p]);
-                    }
-                    lcv = i;
-
                     continue;
                 }
 
