@@ -419,9 +419,6 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         return result;
     }
 
-    ResetStateVector();
-    Finish();
-
     real1_f oneChance = Prob(qubit);
     if (oneChance >= ONE_R1) {
         result = true;
@@ -430,6 +427,13 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
     } else {
         result = (Rand() <= oneChance);
     }
+
+    if (!doApply) {
+        return result;
+    }
+
+    ResetStateVector();
+    Finish();
 
     root->Branch(qubit + 1U);
 
