@@ -64,21 +64,18 @@ void ParallelFor::par_for_inc(
     for (unsigned cpu = 0; cpu != numCores; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(cpu, &idx, &begin, &itemCount, &Stride, inc, fn)
         {
-            bitCapIntOcl i, j, l;
+            bitCapIntOcl i, j, l, maxJ;
             bitCapIntOcl k = 0;
             for (;;) {
                 ATOMIC_INC();
                 l = i * Stride;
-                for (j = 0; j < Stride; j++) {
-                    k = j + l;
-                    /* Easiest to clamp on end. */
-                    if (k >= itemCount) {
-                        break;
-                    }
-                    fn(inc(begin + k, cpu), cpu);
-                }
-                if (k >= itemCount) {
+                if (l >= itemCount) {
                     break;
+                }
+                maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
+                for (j = 0; j < maxJ; j++) {
+                    k = j + l;
+                    fn(inc(begin + k, cpu), cpu);
                 }
             }
         });
@@ -229,7 +226,7 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
     for (unsigned cpu = 0; cpu != numCores; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(cpu, &idx, &begin, &itemCount, &Stride, &updateMutex, fn)
         {
-            bitCapIntOcl i, j, l;
+            bitCapIntOcl i, j, l, maxJ;
             bitCapIntOcl k = 0;
             for (;;) {
                 if (true) {
@@ -237,17 +234,14 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
                     ATOMIC_INC();
                 }
                 l = i * Stride;
-                for (j = 0; j < Stride; j++) {
+                if (l >= itemCount) {
+                    break;
+                }
+                maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
+                for (j = 0; j < maxJ; j++) {
                     k = j + l;
-                    /* Easiest to clamp on end. */
-                    if (k >= itemCount) {
-                        break;
-                    }
                     k |= fn(begin + k, cpu);
                     j = k - l;
-                }
-                if (k >= itemCount) {
-                    break;
                 }
                 i = k / Stride;
                 if (i > idx) {
