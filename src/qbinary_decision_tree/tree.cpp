@@ -255,22 +255,27 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
         maxI = toCopy->maxQPowerOcl;
         root.swap(rootClone);
     }
-    par_for(0, maxI, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+
+    bitLenInt j;
+    for (bitCapInt i = 0; i < maxI; i++) {
         QBinaryDecisionTreeNodePtr leaf = root;
-        for (bitLenInt j = 0; j < qbCount; j++) {
+        for (j = 0; j < qbCount; j++) {
             if (IS_NORM_0(leaf->scale)) {
-                return;
+                // WARNING: Mutates loop control variable!
+                i |= pow2Ocl(qbCount - j) - ONE_BCI;
+                break;
             }
-            leaf = leaf->branches[SelectBit(i, j)];
+            leaf = leaf->branches[SelectBit(i, qbCount - (j + 1U))];
         }
 
         if (IS_NORM_0(leaf->scale)) {
-            return;
+            continue;
         }
 
         leaf->branches[0] = rootClone->branches[0];
         leaf->branches[1] = rootClone->branches[1];
-    });
+    }
+
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
     return start;
