@@ -20,9 +20,7 @@
 #include <future>
 #include <math.h>
 
-#if ENABLE_UINT128
 #include <mutex>
-#endif
 
 #include "common/parallel_for.hpp"
 
@@ -204,6 +202,70 @@ void ParallelFor::par_for_mask(const bitCapIntOcl begin, const bitCapIntOcl end,
         };
 
         par_for_inc(begin, (end - begin) >> maskLen, incFn, fn);
+    }
+}
+
+void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
+{
+    bitCapIntOcl itemCount = end - begin;
+
+    if (itemCount < GetParallelThreshold()) {
+        bitCapIntOcl maxLcv = begin + itemCount;
+        bitCapIntOcl result;
+        for (bitCapIntOcl j = begin; j < maxLcv; j++) {
+            result = fn(j, 0);
+            if (result) {
+                j |= result;
+            }
+        }
+        return;
+    }
+
+    const bitCapIntOcl Stride = pStride;
+
+    bitCapIntOcl idx = 0;
+    std::vector<std::future<void>> futures(numCores);
+    std::mutex updateMutex;
+    for (unsigned cpu = 0; cpu != numCores; ++cpu) {
+        futures[cpu] = ATOMIC_ASYNC(cpu, &idx, &begin, &itemCount, &Stride, &updateMutex, fn)
+        {
+            bitCapIntOcl i, j, l;
+            bitCapIntOcl k = 0;
+            for (;;) {
+                if (true) {
+                    std::lock_guard<std::mutex> updateLock(updateMutex);
+                    ATOMIC_INC();
+                }
+                l = i * Stride;
+                for (j = 0; j < Stride; j++) {
+                    k = j + l;
+                    /* Easiest to clamp on end. */
+                    if (k >= itemCount) {
+                        break;
+                    }
+                    k |= fn(begin + k, cpu);
+                    j = k - l;
+                }
+                if (k >= itemCount) {
+                    break;
+                }
+                if (j <= Stride) {
+                    continue;
+                }
+                l += j;
+                i = l / Stride;
+                if (i > idx) {
+                    std::lock_guard<std::mutex> updateLock(updateMutex);
+                    if (i > idx) {
+                        idx = i;
+                    }
+                }
+            }
+        });
+    }
+
+    for (unsigned cpu = 0; cpu != numCores; ++cpu) {
+        futures[cpu].get();
     }
 }
 

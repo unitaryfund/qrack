@@ -516,11 +516,11 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
 
     bitCapIntOcl remainderPow = pow2Ocl(remainder);
     bitCapIntOcl maskTarget = (isAnti ? 0U : highControlMask);
-    bitLenInt j;
-    size_t bit;
-    bool isZero;
 
-    for (bitCapInt i = 0; i < remainderPow; i++) {
+    par_for_qbdt(0, remainderPow, [&](const bitCapInt i, const int cpu) {
+        size_t bit;
+        bool isZero;
+
         QBinaryDecisionTreeNodePtr leaf0 = b0;
         QBinaryDecisionTreeNodePtr leaf1 = b1;
 
@@ -530,6 +530,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
         // b0 and b1 can't both be 0.
         isZero = false;
 
+        bitLenInt j = 0;
         for (j = 0; j < remainder; j++) {
             leaf0->Branch(1, true);
             leaf1->Branch(1, true);
@@ -545,9 +546,6 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
             isZero = IS_NORM_0(scale0) && IS_NORM_0(scale1);
 
             if (isZero) {
-                // WARNING: Mutates loop control variable!
-                i |= pow2Ocl(remainder - (j + 1U)) - ONE_BCI;
-
                 break;
             }
         }
@@ -556,21 +554,24 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
             leaf0->SetZero();
             leaf1->SetZero();
 
-            continue;
+            // WARNING: Mutates loop control variable!
+            return pow2Ocl(remainder - (j + 1U)) - ONE_BCI;
         }
 
         if ((i & highControlMask) != maskTarget) {
             leaf0->scale = scale0;
             leaf1->scale = scale1;
 
-            continue;
+            return (bitCapIntOcl)0U;
         }
 
         complex Y0 = scale0;
         complex Y1 = scale1;
         leaf0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
         leaf1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
-    }
+
+        return (bitCapIntOcl)0U;
+    });
 
     b0->ConvertStateVector(remainder);
     b1->ConvertStateVector(remainder);
@@ -586,25 +587,23 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(bitLenInt target, F
     Dispatch(targetPow, [this, target, targetPow, leafFunc]() {
         root->Branch(target);
 
-        bitLenInt j;
-        for (bitCapInt i = 0; i < targetPow; i++) {
+        par_for_qbdt(0, targetPow, [&](const bitCapInt i, const int cpu) {
             QBinaryDecisionTreeNodePtr leaf = root;
             // Iterate to qubit depth.
-            for (j = 0; j < target; j++) {
+            for (bitLenInt j = 0; j < target; j++) {
                 if (IS_NORM_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
-                    i |= pow2Ocl(target - j) - ONE_BCI;
-                    break;
+                    return pow2Ocl(target - j) - ONE_BCI;
                 }
                 leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
             }
 
-            if (IS_NORM_0(leaf->scale)) {
-                continue;
+            if (!IS_NORM_0(leaf->scale)) {
+                leafFunc(leaf, 0U);
             }
 
-            leafFunc(leaf, 0U);
-        }
+            return (bitCapIntOcl)0U;
+        });
 
         root->Prune(target);
     });
@@ -697,13 +696,12 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                 isInvert = ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX));
             }
 
-            bitCapInt i, iHigh, iLow;
-            bitLenInt j;
-            int p;
             bitCapInt maxLcv = targetPow >> qPowersSorted.size();
-            for (bitCapInt lcv = 0U; lcv < maxLcv; lcv++) {
-                iHigh = lcv;
-                i = 0U;
+            par_for_qbdt(0, maxLcv, [&](const bitCapInt lcv, const int cpu) {
+                bitCapInt i = 0U;
+                bitCapInt iHigh = lcv;
+                bitCapInt iLow;
+                int p;
                 for (p = 0; p < (int)qPowersSorted.size(); p++) {
                     iLow = iHigh & (qPowersSorted[p] - ONE_BCI);
                     i |= iLow;
@@ -713,22 +711,20 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
 
                 QBinaryDecisionTreeNodePtr leaf = root;
                 // Iterate to qubit depth.
-                for (j = 0; j < target; j++) {
+                for (bitLenInt j = 0; j < target; j++) {
                     if (IS_NORM_0(leaf->scale)) {
                         // WARNING: Mutates loop control variable!
-                        i |= pow2Ocl(target - j) - ONE_BCI;
+                        i = pow2Ocl(target - j) - ONE_BCI;
                         for (p = qPowersSorted.size() - 1; p >= 0; p--) {
                             i = RemovePower(i, qPowersSorted[p]);
                         }
-                        lcv = i;
-
-                        break;
+                        return i;
                     }
                     leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
                 }
 
                 if (IS_NORM_0(leaf->scale)) {
-                    continue;
+                    return (bitCapIntOcl)0U;
                 }
 
                 if (isPhase) {
@@ -745,7 +741,9 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
                 } else {
                     leafFunc(leaf, highControlMask);
                 }
-            }
+
+                return (bitCapIntOcl)0U;
+            });
 
             root->Prune(target);
         });

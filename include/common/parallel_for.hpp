@@ -73,6 +73,9 @@ public:
     void par_for_sparse_compose(const std::vector<bitCapIntOcl>& lowSet, const std::vector<bitCapIntOcl>& highSet,
         const bitLenInt& highStart, ParallelFunc fn);
 
+    /** Iterate over a QBDT tree */
+    void par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn);
+
     /** Calculate the normal for the array, (with flooring). */
     real1_f par_norm(const bitCapIntOcl maxQPower, const StateVectorPtr stateArray, real1_f norm_thresh = ZERO_R1);
 
