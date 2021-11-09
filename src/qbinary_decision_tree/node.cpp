@@ -16,6 +16,7 @@
 
 #include "qbinary_decision_tree_node.hpp"
 
+#include <future>
 #include <set>
 
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
@@ -58,20 +59,18 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
 
     // Now, we try to combine pointers to equivalent branches.
 
-    size_t bit = 0U;
-    bitCapInt i;
-    bitLenInt j;
     bitCapInt depthPow = ONE_BCI << depth;
-    complex scale0, scale1;
-    QBinaryDecisionTreeNodePtr leaf0, leaf1;
 
     // Combine single elements at bottom of full depth, up to where branches are equal below:
-    for (i = 0; i < depthPow; i++) {
-        leaf0 = b0;
-        leaf1 = b1;
+    par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        QBinaryDecisionTreeNodePtr leaf0 = b0;
+        QBinaryDecisionTreeNodePtr leaf1 = b1;
 
-        scale0 = b0->scale;
-        scale1 = b1->scale;
+        complex scale0 = b0->scale;
+        complex scale1 = b1->scale;
+
+        size_t bit = 0U;
+        bitLenInt j;
 
         for (j = 0; j < depth; j++) {
             bit = SelectBit(i, depth - (j + 1U));
@@ -88,24 +87,29 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         }
 
         if (!leaf0 || !leaf1 || (leaf0->branches[bit] != leaf1->branches[bit])) {
-            continue;
+            return (bitCapIntOcl)0U;
         }
-
-        // WARNING: Mutates loop control variable!
-        i |= (ONE_BCI << (depth - j)) - ONE_BCI;
 
         if (IS_NORM_0(scale0 - scale1)) {
             leaf1->branches[bit] = leaf0->branches[bit];
         }
-    }
+
+        // WARNING: Mutates loop control variable!
+        return (ONE_BCI << (bitCapIntOcl)(depth - j)) - ONE_BCI;
+    });
+
+    bool isSameAtTop = true;
 
     // Combine all elements at top of depth, as my 2 direct descendent branches:
-    for (i = 0; i < depthPow; i++) {
-        leaf0 = b0;
-        leaf1 = b1;
+    par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        QBinaryDecisionTreeNodePtr leaf0 = b0;
+        QBinaryDecisionTreeNodePtr leaf1 = b1;
 
-        scale0 = b0->scale;
-        scale1 = b1->scale;
+        complex scale0 = b0->scale;
+        complex scale1 = b1->scale;
+
+        size_t bit = 0U;
+        bitLenInt j;
 
         for (j = 0; j < depth; j++) {
             bit = SelectBit(i, depth - (j + 1U));
@@ -127,15 +131,18 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
 
         if ((leaf0 != leaf1) || !IS_NORM_0(scale0 - scale1)) {
             // We can't combine our immediate children within depth.
-            return;
+            isSameAtTop = false;
+            return depthPow;
         }
 
         // WARNING: Mutates loop control variable!
-        i |= (ONE_BCI << (depth - j)) - ONE_BCI;
-    }
+        return (ONE_BCI << (depth - j)) - ONE_BCI;
+    });
 
     // The branches terminate equal, within depth.
-    b1 = b0;
+    if (isSameAtTop) {
+        b1 = b0;
+    }
 }
 
 void QBinaryDecisionTreeNode::Branch(bitLenInt depth, bool isZeroBranch)
@@ -236,6 +243,63 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     scale = std::polar((real1)sqrt(nrm0 + nrm1), (real1)std::arg(b0->scale));
     b0->scale /= scale;
     b1->scale /= scale;
+}
+
+// TODO: Find some way to abstract this with ParallelFor. (It's a duplicate method.)
+// The reason for this design choice is that the memory per node for "Stride" and "numCores" attributes are on order of
+// all other RAM per node in total. Remember that trees are recursively constructed with exponential scaling, and the
+// memory per node should be thought of as akin to the memory per Schrödinger amplitude.
+void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
+{
+    bitCapIntOcl itemCount = end - begin;
+
+    const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)9U);
+    const unsigned numCores = std::thread::hardware_concurrency();
+
+    if (itemCount < (Stride * numCores)) {
+        bitCapIntOcl maxLcv = begin + itemCount;
+        for (bitCapIntOcl j = begin; j < maxLcv; j++) {
+            j |= fn(j, 0);
+        }
+        return;
+    }
+
+    bitCapIntOcl idx = 0;
+    std::vector<std::future<void>> futures(numCores);
+    std::mutex updateMutex;
+    for (unsigned cpu = 0; cpu != numCores; ++cpu) {
+        futures[cpu] = std::async(std::launch::async, [cpu, &idx, &begin, &itemCount, &Stride, &updateMutex, fn]() {
+            bitCapIntOcl i, j, l, maxJ;
+            bitCapIntOcl k = 0;
+            for (;;) {
+                if (true) {
+                    std::lock_guard<std::mutex> updateLock(updateMutex);
+                    i = idx++;
+                }
+                l = i * Stride;
+                if (l >= itemCount) {
+                    break;
+                }
+                maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
+                for (j = 0; j < maxJ; j++) {
+                    k = j + l;
+                    k |= fn(begin + k, cpu);
+                    j = k - l;
+                }
+                i = k / Stride;
+                if (i > idx) {
+                    std::lock_guard<std::mutex> updateLock(updateMutex);
+                    if (i > idx) {
+                        idx = i;
+                    }
+                }
+            }
+        });
+    }
+
+    for (unsigned cpu = 0; cpu != numCores; ++cpu) {
+        futures[cpu].get();
+    }
 }
 
 } // namespace Qrack

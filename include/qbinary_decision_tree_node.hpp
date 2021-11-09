@@ -66,6 +66,8 @@ struct QBinaryDecisionTreeNode {
     void CorrectPhase();
 
     size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
+
+    void par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn);
 };
 
 } // namespace Qrack
