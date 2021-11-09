@@ -517,8 +517,6 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
         QBinaryDecisionTreeNodePtr leaf0 = b0;
         QBinaryDecisionTreeNodePtr leaf1 = b1;
 
-        QBinaryDecisionTreeNodePtr prevLeaf0, prevLeaf1;
-
         complex scale0 = b0->scale;
         complex scale1 = b1->scale;
 
@@ -531,11 +529,9 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
 
             bit = SelectBit(i, j);
 
-            prevLeaf0 = leaf0;
             leaf0 = leaf0->branches[bit];
             scale0 *= leaf0->scale;
 
-            prevLeaf1 = leaf1;
             leaf1 = leaf1->branches[bit];
             scale1 *= leaf1->scale;
 
