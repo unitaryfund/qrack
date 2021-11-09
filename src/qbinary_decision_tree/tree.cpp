@@ -517,7 +517,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
     size_t bit;
     bool isZero;
 
-    par_for(0, remainderPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+    for (bitCapInt i = 0; i < remainderPow; i++) {
         QBinaryDecisionTreeNodePtr leaf0 = b0;
         QBinaryDecisionTreeNodePtr leaf1 = b1;
 
@@ -531,7 +531,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
             leaf0->Branch(1, true);
             leaf1->Branch(1, true);
 
-            bit = SelectBit(i, j);
+            bit = SelectBit(i, remainder - (j + 1U));
 
             leaf0 = leaf0->branches[bit];
             scale0 *= leaf0->scale;
@@ -550,20 +550,24 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(
             leaf0->SetZero();
             leaf1->SetZero();
 
-            return;
+            // WARNING: Mutates loop control variable!
+            i |= pow2Ocl(remainder - (j + 1U)) - ONE_BCI;
+
+            continue;
         }
 
         if ((i & highControlMask) != maskTarget) {
             leaf0->scale = scale0;
             leaf1->scale = scale1;
-            return;
+
+            continue;
         }
 
         complex Y0 = scale0;
         complex Y1 = scale1;
         leaf0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
         leaf1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
-    });
+    }
 
     b0->ConvertStateVector(remainder);
     b1->ConvertStateVector(remainder);
@@ -671,9 +675,8 @@ void QBinaryDecisionTree::ApplyControlledSingle(bool isAnti, std::shared_ptr<com
 
     bitCapIntOcl highControlMask = 0U;
     for (; c < controlLen; c++) {
-        highControlMask |= pow2Ocl(sortedControls[c]);
+        highControlMask |= pow2Ocl(qubitCount - (sortedControls[c] + ONE_BCI));
     }
-    highControlMask >>= (target + 1U);
 
     bitCapIntOcl targetPow = pow2Ocl(target);
     bitCapIntOcl maskTarget = (isAnti ? 0U : lowControlMask);

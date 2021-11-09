@@ -59,13 +59,14 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
     // Now, we try to combine pointers to equivalent branches.
 
     size_t bit = 0U;
+    bitCapInt i;
     bitLenInt j;
     bitCapInt depthPow = ONE_BCI << depth;
     complex scale0, scale1;
     QBinaryDecisionTreeNodePtr leaf0, leaf1;
 
     // Combine single elements at bottom of full depth, up to where branches are equal below:
-    for (bitCapInt i = 0; i < depthPow; i++) {
+    for (i = 0; i < depthPow; i++) {
         leaf0 = b0;
         leaf1 = b1;
 
@@ -99,7 +100,7 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
     }
 
     // Combine all elements at top of depth, as my 2 direct descendent branches:
-    for (bitCapInt i = 0; i < depthPow; i++) {
+    for (i = 0; i < depthPow; i++) {
         leaf0 = b0;
         leaf1 = b1;
 
