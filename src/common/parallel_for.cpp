@@ -249,8 +249,7 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
                 if (k >= itemCount) {
                     break;
                 }
-                l += j;
-                i = l / Stride;
+                i = k / Stride;
                 if (i > idx) {
                     std::lock_guard<std::mutex> updateLock(updateMutex);
                     if (i > idx) {
