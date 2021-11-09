@@ -313,33 +313,31 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         length = qubitCount - length;
     }
 
+    bitLenInt j;
     bitCapIntOcl maxI = pow2Ocl(start);
     QBinaryDecisionTreeNodePtr startNode = NULL;
-    std::mutex destMutex;
-    par_for(0, maxI, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+    for (bitCapInt i = 0; i < maxI; i++) {
         QBinaryDecisionTreeNodePtr leaf = root;
-        for (bitLenInt j = 0; j < start; j++) {
+        for (j = 0; j < start; j++) {
             if (IS_NORM_0(leaf->scale)) {
-                return;
+                // WARNING: Mutates loop control variable!
+                i |= pow2Ocl(start - j) - ONE_BCI;
+                break;
             }
-            leaf = leaf->branches[SelectBit(i, j)];
+            leaf = leaf->branches[SelectBit(i, start - (j + 1U))];
         }
 
         if (!leaf || IS_NORM_0(leaf->scale)) {
-            return;
+            continue;
         }
 
         if (!startNode) {
-            const std::lock_guard<std::mutex> destLock(destMutex);
-            // Now that we've locked, is the startNode still not set?
-            if (!startNode) {
-                startNode = leaf->ShallowClone();
-            }
+            startNode = leaf->ShallowClone();
         }
 
         leaf->branches[0] = NULL;
         leaf->branches[1] = NULL;
-    });
+    }
 
     startNode->scale /= abs(startNode->scale);
 
