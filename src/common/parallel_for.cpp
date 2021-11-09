@@ -249,7 +249,7 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
                 if (k >= itemCount) {
                     break;
                 }
-                if (j <= Stride) {
+                if (j < (Stride << ONE_BCI)) {
                     continue;
                 }
                 l += j;
