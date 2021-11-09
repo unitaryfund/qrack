@@ -208,12 +208,8 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
 
     if (itemCount < GetParallelThreshold()) {
         bitCapIntOcl maxLcv = begin + itemCount;
-        bitCapIntOcl result;
         for (bitCapIntOcl j = begin; j < maxLcv; j++) {
-            result = fn(j, 0);
-            if (result) {
-                j |= result;
-            }
+            j |= fn(j, 0);
         }
         return;
     }
