@@ -314,28 +314,30 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     bitLenInt j;
     bitCapIntOcl maxI = pow2Ocl(start);
     QBinaryDecisionTreeNodePtr startNode = NULL;
-    for (bitCapInt i = 0; i < maxI; i++) {
+    par_for_qbdt(0, maxI, [&](const bitCapInt i, const int cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         for (j = 0; j < start; j++) {
             if (IS_NORM_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
-                i |= pow2Ocl(start - j) - ONE_BCI;
-                break;
+                return pow2Ocl(start - j) - ONE_BCI;
             }
             leaf = leaf->branches[SelectBit(i, start - (j + 1U))];
         }
 
         if (!leaf || IS_NORM_0(leaf->scale)) {
-            continue;
+            return (bitCapIntOcl)0U;
         }
 
         if (!startNode) {
+            // Whichever parallel write wins, this works.
             startNode = leaf->ShallowClone();
         }
 
         leaf->branches[0] = NULL;
         leaf->branches[1] = NULL;
-    }
+
+        return (bitCapIntOcl)0U;
+    });
 
     startNode->scale /= abs(startNode->scale);
 
