@@ -21,6 +21,7 @@
 
 #include "common/dispatchqueue.hpp"
 #include "common/parallel_for.hpp"
+#include "mpsshard.hpp"
 
 namespace Qrack {
 
@@ -38,6 +39,8 @@ protected:
 #endif
     bitLenInt pStridePow;
     bitCapIntOcl maxQPowerOcl;
+    bool isFusionFlush;
+    std::vector<MpsShardPtr> shards;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -77,6 +80,7 @@ protected:
             return;
         }
 
+        FlushBuffers();
         Finish();
         stateVecUnit = MakeStateVector();
         GetQuantumState(stateVecUnit);
@@ -88,7 +92,6 @@ protected:
             return;
         }
 
-        Finish();
         SetQuantumState(stateVecUnit);
         stateVecUnit = NULL;
     }
@@ -125,6 +128,33 @@ protected:
     {
         bitCapInt mask = power - ONE_BCI;
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
+    }
+
+    void FlushBuffer(const bitLenInt& i)
+    {
+        MpsShardPtr shard = shards[i];
+        if (!shard) {
+            return;
+        }
+
+        shards[i] = NULL;
+        isFusionFlush = true;
+        ApplySingleBit(shard->gate, i);
+        isFusionFlush = false;
+    }
+
+    void FlushBuffers()
+    {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            FlushBuffer(i);
+        }
+    }
+
+    void DumpBuffers()
+    {
+        for (bitLenInt i = 0U; i < qubitCount; i++) {
+            shards[i] = NULL;
+        }
     }
 
 public:
@@ -227,6 +257,7 @@ public:
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
     {
+        FlushBuffers();
         QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
         return unit->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
@@ -245,6 +276,7 @@ public:
     virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
     virtual real1_f ProbParity(const bitCapInt& mask)
     {
+        FlushBuffers();
         QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
         return unit->ProbParity(mask);
     }
