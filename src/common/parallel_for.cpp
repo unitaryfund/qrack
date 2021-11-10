@@ -206,7 +206,9 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
 {
     bitCapIntOcl itemCount = end - begin;
 
-    if (itemCount < GetParallelThreshold()) {
+    // Empirically, this often works better if we add the "<< ONE_BCI," or factor of 2. We might guess that, on average
+    // in general use, about half the full-depth amplitudes are redundant.
+    if (itemCount < (GetParallelThreshold() << ONE_BCI)) {
         bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; j++) {
             j |= fn(j, 0);
@@ -214,7 +216,7 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
         return;
     }
 
-    const bitCapIntOcl Stride = pStride;
+    const bitCapIntOcl Stride = pStride << ONE_BCI;
 
     bitCapIntOcl idx = 0;
     std::vector<std::future<void>> futures(numCores);
