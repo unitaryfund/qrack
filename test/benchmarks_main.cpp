@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
         Opt(single_qubit_run)["--single"]("Only run single (maximum) qubit count for tests") |
         Opt(sparse)["--sparse"](
             "(For QEngineCPU, under QUnit:) Use a state vector optimized for sparse representation and iteration.") |
-        Opt(benchmarkSamples, "samples")["--benchmark-samples"]("number of samples to collect (default: 100)") |
+        Opt(benchmarkSamples, "samples")["--samples"]("number of samples to collect (default: 100)") |
         Opt(benchmarkDepth, "depth")["--benchmark-depth"](
             "depth of randomly constructed circuits, when applicable, with 1 round of single qubit and 1 round of "
             "multi-qubit gates being 1 unit of depth (default: 20)") |

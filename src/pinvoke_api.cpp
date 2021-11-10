@@ -360,7 +360,7 @@ extern "C" {
  * (External API) Initialize a simulator ID with "q" qubits and "Schmidt decomposition" ("sd") on/off
  */
 MICROSOFT_QUANTUM_DECL unsigned init_count_type(
-    _In_ unsigned q, _In_ bool md, _In_ bool sd, _In_ bool sh, _In_ bool zxf, _In_ bool hy)
+    _In_ unsigned q, _In_ bool md, _In_ bool sd, _In_ bool sh, _In_ bool bdt, _In_ bool pg, _In_ bool zxf, _In_ bool hy)
 {
     META_LOCK_GUARD()
 
@@ -392,7 +392,11 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(
         simulatorType.push_back(QINTERFACE_STABILIZER_HYBRID);
     }
 
-    if (isOcl) {
+    if (bdt) {
+        simulatorType.push_back(QINTERFACE_BDT);
+    }
+
+    if (pg) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
