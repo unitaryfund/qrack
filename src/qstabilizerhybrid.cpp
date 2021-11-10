@@ -879,25 +879,28 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
         return std::map<bitCapInt, int>();
     }
 
-    if (shots > 1U) {
-        SwitchToEngine();
-    }
-
     if (engine) {
         return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
 
-    std::map<bitCapInt, int> results;
+    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
 
-    bitCapInt sample = 0U;
-    bitCapInt raw = Clone()->MAll();
-    for (bitLenInt qIndex = 0; qIndex < qPowerCount; qIndex++) {
-        if (raw & qPowers[qIndex]) {
-            sample |= pow2(qIndex);
+    if (shots == 1) {
+        bitCapInt raw = clone->MAll();
+        bitCapInt sample = 0U;
+        for (bitLenInt i = 0U; i < qPowerCount; i++) {
+            if (raw & qPowers[i]) {
+                sample |= pow2(i);
+            }
         }
-    }
-    results[sample] = 1;
+        std::map<bitCapInt, int> results;
+        results[sample] = 1U;
 
-    return results;
+        return results;
+    }
+
+    clone->SwitchToEngine();
+
+    return clone->MultiShotMeasureMask(qPowers, qPowerCount, shots);
 }
 } // namespace Qrack
