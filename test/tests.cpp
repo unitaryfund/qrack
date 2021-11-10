@@ -3831,8 +3831,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
 {
     if (testEngineType == QINTERFACE_QUNIT_MULTI || testEngineType == QINTERFACE_QPAGER ||
-        testEngineType == QINTERFACE_STABILIZER_HYBRID || testEngineType == QINTERFACE_BDT ||
-        testSubEngineType == QINTERFACE_BDT || testSubSubEngineType == QINTERFACE_BDT) {
+        testEngineType == QINTERFACE_STABILIZER_HYBRID || testSubEngineType == QINTERFACE_STABILIZER_HYBRID ||
+        testEngineType == QINTERFACE_BDT || testSubEngineType == QINTERFACE_BDT ||
+        testSubSubEngineType == QINTERFACE_BDT) {
         // Not yet supported.
         return;
     }

@@ -817,6 +817,10 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
 
 bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt length)
 {
+    if (qubitCount == 1U) {
+        return true;
+    }
+
     Finish();
 
     // We want to have the maximum number of 0 cross terms possible.

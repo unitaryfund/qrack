@@ -798,10 +798,21 @@ public:
             return ONE_R1;
         }
 
-        SwitchToEngine();
-        toCompare->SwitchToEngine();
+        QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
+        QStabilizerHybridPtr thatClone =
+            toCompare->stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
 
-        return engine->SumSqrDiff(toCompare->engine);
+        if (thisClone) {
+            thisClone->SwitchToEngine();
+        }
+        if (thatClone) {
+            thatClone->SwitchToEngine();
+        }
+
+        QInterfacePtr thisEngine = thisClone ? thisClone->engine : engine;
+        QInterfacePtr thatEngine = thatClone ? thatClone->engine : toCompare->engine;
+
+        return thisEngine->SumSqrDiff(thatEngine);
     }
 
     virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
@@ -814,16 +825,25 @@ public:
         FlushBuffers();
         toCompare->FlushBuffers();
 
-        if (!stabilizer == !(toCompare->engine)) {
-            SwitchToEngine();
-            toCompare->SwitchToEngine();
-        }
-
-        if (stabilizer) {
+        if (stabilizer && toCompare->stabilizer) {
             return stabilizer->ApproxCompare(toCompare->stabilizer);
         }
 
-        return engine->ApproxCompare(toCompare->engine, error_tol);
+        QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
+        QStabilizerHybridPtr thatClone =
+            toCompare->stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
+
+        if (thisClone) {
+            thisClone->SwitchToEngine();
+        }
+        if (thatClone) {
+            thatClone->SwitchToEngine();
+        }
+
+        QInterfacePtr thisEngine = thisClone ? thisClone->engine : engine;
+        QInterfacePtr thatEngine = thatClone ? thatClone->engine : toCompare->engine;
+
+        return thisEngine->ApproxCompare(thatEngine, error_tol);
     }
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
@@ -851,6 +871,10 @@ public:
 
     virtual bool TrySeparate(bitLenInt qubit)
     {
+        if (qubitCount == 1U) {
+            return true;
+        }
+
         if (stabilizer) {
             return stabilizer->CanDecomposeDispose(qubit, 1);
         }
@@ -859,6 +883,10 @@ public:
     }
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     {
+        if (qubitCount == 2U) {
+            return true;
+        }
+
         if (stabilizer) {
             if (qubit2 < qubit1) {
                 std::swap(qubit1, qubit2);
