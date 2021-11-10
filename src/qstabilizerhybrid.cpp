@@ -110,9 +110,6 @@ QInterfacePtr QStabilizerHybrid::Clone()
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
         std::vector<int>{}, thresholdQubits, separabilityThreshold);
 
-    // TODO: Remove.
-    SwitchToEngine();
-
     Finish();
     c->Finish();
 
@@ -882,29 +879,24 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
         return std::map<bitCapInt, int>();
     }
 
+    if (shots > 1U) {
+        SwitchToEngine();
+    }
+
     if (engine) {
         return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
 
-    bitLenInt qIndex;
-    bitCapInt sample, raw;
     std::map<bitCapInt, int> results;
-    QInterfacePtr clone = Clone();
 
-    for (unsigned int shot = 0; shot < shots; shot++) {
-        sample = 0U;
-        raw = clone->MAll();
-        for (qIndex = 0; qIndex < qPowerCount; qIndex++) {
-            if (raw & qPowers[qIndex]) {
-                sample |= pow2(qIndex);
-            }
-        }
-        results[sample]++;
-
-        if (shot < (shots - 1U)) {
-            clone = Clone();
+    bitCapInt sample = 0U;
+    bitCapInt raw = Clone()->MAll();
+    for (bitLenInt qIndex = 0; qIndex < qPowerCount; qIndex++) {
+        if (raw & qPowers[qIndex]) {
+            sample |= pow2(qIndex);
         }
     }
+    results[sample] = 1;
 
     return results;
 }

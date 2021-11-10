@@ -1547,7 +1547,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     QEngineShard& shard = shards[qubit];
 
     bool result;
-    if (!shard.isProbDirty && (!shard.unit || !shard.unit->isBinaryDecisionTree())) {
+    if (!shard.isProbDirty && (!shard.unit || (!shard.unit->isClifford() && !shard.unit->isBinaryDecisionTree()))) {
         real1_f prob = norm(shard.amp1);
         if (doForce) {
             result = res;

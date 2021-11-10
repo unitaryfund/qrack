@@ -96,17 +96,16 @@ public:
 
     QStabilizerPtr Clone()
     {
-        QStabilizerPtr clone =
-            std::make_shared<QStabilizer>(qubitCount, 0, hardware_rand_generator != NULL, rand_generator);
-
-        clone->Finish();
         Finish();
 
-        clone->SetRandomSeed(randomSeed);
+        QStabilizerPtr clone =
+            std::make_shared<QStabilizer>(qubitCount, 0, hardware_rand_generator != NULL, rand_generator);
+        clone->Finish();
 
         clone->x = x;
         clone->z = z;
         clone->r = r;
+        clone->randomSeed = randomSeed;
 
         return clone;
     }
