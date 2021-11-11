@@ -45,6 +45,12 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
 #endif
     }
 
+#if ENABLE_OPENCL
+    if ((engines.size() == 1U) && (engines[0] == QINTERFACE_QPAGER) && !OCLEngine::Instance()->GetDeviceCount()) {
+        engines[0] = QINTERFACE_CPU;
+    }
+#endif
+
     if (getenv("QRACK_BDT_THRESHOLD")) {
         bdtThreshold = (bitLenInt)std::stoi(std::string(getenv("QRACK_BDT_THRESHOLD")));
     }
