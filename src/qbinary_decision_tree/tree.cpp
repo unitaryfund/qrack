@@ -124,11 +124,11 @@ template <typename Fn> void QBinaryDecisionTree::GetTraversal(Fn getLambda)
 template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
 {
     root = std::make_shared<QBinaryDecisionTreeNode>();
-    root->Branch(qubitCount);
 
     par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         for (bitLenInt j = 0; j < qubitCount; j++) {
+            leaf->Branch();
             leaf = leaf->branches[SelectBit(i, j)];
         }
         setLambda((bitCapIntOcl)i, leaf);
@@ -467,8 +467,6 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
     FlushBuffer(qubit);
     Finish();
 
-    root->Branch(qubit + 1U);
-
     bitCapIntOcl qPower = pow2Ocl(qubit);
     root->scale = GetNonunitaryPhase();
 
@@ -478,12 +476,14 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
             if (IS_NORM_0(leaf->scale)) {
                 return;
             }
+            leaf->Branch();
             leaf = leaf->branches[SelectBit(i, j)];
         }
 
         if (IS_NORM_0(leaf->scale)) {
             return;
         }
+        leaf->Branch();
 
         if (result) {
             leaf->branches[0]->SetZero();
@@ -625,8 +625,6 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(const complex* lMtr
     ResetStateVector();
 
     Dispatch(targetPow, [this, mtrx, target, targetPow, leafFunc]() {
-        root->Branch(target);
-
         bool isParallel = (pow2Ocl(target) < GetParallelThreshold());
 
         par_for_qbdt(0, targetPow, [&](const bitCapInt i, const int cpu) {
@@ -637,6 +635,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(const complex* lMtr
                     // WARNING: Mutates loop control variable!
                     return pow2Ocl(target - j) - ONE_BCI;
                 }
+                leaf->Branch();
                 leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
             }
 
