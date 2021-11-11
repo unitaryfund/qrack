@@ -764,7 +764,9 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
     Dispatch(targetPow, [this, mtrxS, target, targetPow, qPowersSorted, highControlMask, maskTarget, leafFunc]() {
         complex* mtrx = mtrxS.get();
 
-        root->Branch(target);
+        if (qPowersSorted.size()) {
+            root->Branch(target);
+        }
 
         bool isPhase = false;
         bool isInvert = false;
@@ -798,6 +800,9 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
                         i = RemovePower(i, qPowersSorted[p]);
                     }
                     return i;
+                }
+                if (!qPowersSorted.size()) {
+                    leaf->Branch();
                 }
                 leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
             }
