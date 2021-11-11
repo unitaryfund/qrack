@@ -117,10 +117,10 @@ protected:
     void Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth,
         bitCapInt highControlMask, bool isAnti, bool isParallel);
 
-    template <typename Fn> void ApplySingle(bitLenInt target, Fn leafFunc);
+    template <typename Fn> void ApplySingle(const complex* mtrx, bitLenInt target, Fn leafFunc);
     template <typename Lfn>
-    void ApplyControlledSingle(bool isAnti, std::shared_ptr<complex[]> mtrx, const bitLenInt* controls,
-        const bitLenInt& controlLen, const bitLenInt& target, Lfn leafFunc);
+    void ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, const bitLenInt& controlLen,
+        const bitLenInt& target, bool isAnti, Lfn leafFunc);
 
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
 
