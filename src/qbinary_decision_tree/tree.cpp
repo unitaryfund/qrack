@@ -643,13 +643,13 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(const complex* lMtr
 
 void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 {
-    std::shared_ptr<complex[]> mtrx(new complex[4], std::default_delete<complex[]>());
+    complex mtrx[4];
     if (shards[target]) {
         shards[target]->Compose(lMtrx);
-        std::copy(shards[target]->gate, shards[target]->gate + 4, mtrx.get());
+        std::copy(shards[target]->gate, shards[target]->gate + 4, mtrx);
         shards[target] = NULL;
     } else {
-        std::copy(lMtrx, lMtrx + 4, mtrx.get());
+        std::copy(lMtrx, lMtrx + 4, mtrx);
     }
 
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
@@ -663,11 +663,11 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 
     if (!isFusionFlush) {
         ResetStateVector();
-        shards[target] = std::make_shared<MpsShard>(mtrx.get());
+        shards[target] = std::make_shared<MpsShard>(mtrx);
         return;
     }
 
-    ApplySingle(mtrx.get(), target,
+    ApplySingle(mtrx, target,
         [this, target](QBinaryDecisionTreeNodePtr leaf, const complex* mtrx, bitCapInt ignored, bool isParallel) {
             Apply2x2OnLeaf(mtrx, leaf, target, 0U, false, isParallel);
         });
