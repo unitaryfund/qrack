@@ -235,11 +235,13 @@ public:
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->SetAmplitude(perm, amp); });
     }
 
+    using QInterface::Compose;
     virtual bitLenInt Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
         return Compose(std::dynamic_pointer_cast<QBinaryDecisionTree>(toCopy), start);
     }
+
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBinaryDecisionTree>(dest));
