@@ -29,14 +29,16 @@ struct QBinaryDecisionTreeNode {
 
     QBinaryDecisionTreeNode()
         : scale(ONE_CMPLX)
-        , branches({ NULL, NULL })
     {
+        branches[0] = NULL;
+        branches[1] = NULL;
     }
 
     QBinaryDecisionTreeNode(complex scl)
         : scale(scl)
-        , branches({ NULL, NULL })
     {
+        branches[0] = NULL;
+        branches[1] = NULL;
     }
 
     QBinaryDecisionTreeNodePtr ShallowClone()

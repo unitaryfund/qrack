@@ -721,8 +721,8 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
         return;
     }
 
-    std::shared_ptr<complex[]> mtrx(new complex[4], std::default_delete<complex[]>());
-    std::copy(lMtrx, lMtrx + 4, mtrx.get());
+    std::shared_ptr<complex[]> mtrxS(new complex[4], std::default_delete<complex[]>());
+    std::copy(lMtrx, lMtrx + 4, mtrxS.get());
 
     std::vector<bitLenInt> sortedControls(controlLen);
     std::copy(controls, controls + controlLen, sortedControls.begin());
@@ -753,7 +753,9 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
     }
 
     Dispatch(targetPow,
-        [this, mtrx, target, targetPow, qPowersSorted, lowControlMask, highControlMask, maskTarget, leafFunc]() {
+        [this, mtrxS, target, targetPow, qPowersSorted, lowControlMask, highControlMask, maskTarget, leafFunc]() {
+            complex* mtrx = mtrxS.get();
+
             root->Branch(target);
 
             bool isPhase = false;
@@ -808,7 +810,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
                     leaf->branches[1]->scale *= mtrx[2];
                     leaf->Prune();
                 } else {
-                    leafFunc(leaf, mtrx.get(), highControlMask, isParallel);
+                    leafFunc(leaf, mtrx, highControlMask, isParallel);
                 }
 
                 return (bitCapIntOcl)0U;
