@@ -30,6 +30,7 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     , devID(deviceId)
     , root(NULL)
     , stateVecUnit(NULL)
+    , bdtThreshold(30)
     , maxQPowerOcl(pow2Ocl(qBitCount))
     , isFusionFlush(false)
     , shards(qBitCount)
@@ -44,8 +45,10 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
 #endif
     }
 
-    pStridePow =
-        getenv("QRACK_PSTRIDEPOW") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW;
+    if (getenv("QRACK_BDT_THRESHOLD")) {
+        bdtThreshold = (bitLenInt)std::stoi(std::string(getenv("QRACK_BDT_THRESHOLD")));
+    }
+
     SetConcurrency(std::thread::hardware_concurrency());
     SetPermutation(initState);
 }
@@ -68,6 +71,15 @@ void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
 {
     DumpBuffers();
     Dump();
+
+    if (qubitCount <= bdtThreshold) {
+        root = NULL;
+        if (stateVecUnit == NULL) {
+            stateVecUnit = MakeStateVector();
+        }
+        stateVecUnit->SetPermutation(initState, phaseFac);
+        return;
+    }
 
     if (phaseFac == CMPLX_DEFAULT_ARG) {
         if (randGlobalPhase) {
@@ -187,6 +199,12 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
         return ONE_R1;
     }
 
+    if (qubitCount <= bdtThreshold) {
+        SetStateVector();
+        toCompare->SetStateVector();
+        return stateVecUnit->SumSqrDiff(toCompare->stateVecUnit);
+    }
+
     ResetStateVector();
     FlushBuffers();
     Finish();
@@ -254,6 +272,14 @@ complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start)
 {
+    if ((qubitCount + toCopy->qubitCount) <= bdtThreshold) {
+        SetStateVector();
+        toCopy->SetStateVector();
+        shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
+        SetQubitCount(qubitCount + toCopy->qubitCount);
+        return stateVecUnit->Compose(toCopy->stateVecUnit, start);
+    }
+
     if (start && (start != qubitCount)) {
         return QInterface::Compose(toCopy, start);
     }
@@ -302,6 +328,20 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
 }
 void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest)
 {
+    if (stateVecUnit && ((qubitCount - length) <= bdtThreshold)) {
+        if (dest) {
+            dest->SetStateVector();
+            stateVecUnit->Decompose(start, dest->stateVecUnit);
+            std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
+        } else {
+            stateVecUnit->Dispose(start, length);
+        }
+        shards.erase(shards.begin() + start, shards.begin() + start + length);
+        SetQubitCount(qubitCount - length);
+
+        return;
+    }
+
     bitLenInt end = start + length;
 
     if (start && (end < qubitCount)) {
@@ -382,6 +422,11 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
 
 real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
 {
+    if (qubitCount <= bdtThreshold) {
+        SetStateVector();
+        return stateVecUnit->Prob(qubit);
+    }
+
     ResetStateVector();
     FlushBuffer(qubit);
     Finish();
@@ -443,6 +488,11 @@ real1_f QBinaryDecisionTree::ProbAll(bitCapInt fullRegister)
 
 bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
+    if (qubitCount <= bdtThreshold) {
+        SetStateVector();
+        return stateVecUnit->ForceM(qubit, result, doForce, doApply);
+    }
+
     if (doForce) {
         if (doApply) {
             ExecuteAsStateVector([&](QInterfacePtr eng) { eng->ForceM(qubit, result, true, doApply); });
@@ -501,6 +551,11 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
 
 bitCapInt QBinaryDecisionTree::MAll()
 {
+    if (qubitCount <= bdtThreshold) {
+        SetStateVector();
+        return stateVecUnit->MAll();
+    }
+
     ResetStateVector();
     FlushBuffers();
     Finish();
@@ -671,6 +726,10 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     if (!isFusionFlush) {
+        if (stateVecUnit && (qubitCount <= bdtThreshold)) {
+            stateVecUnit->ApplySingleBit(mtrx, target);
+            return;
+        }
         ResetStateVector();
         shards[target] = std::make_shared<MpsShard>(mtrx);
         return;
@@ -708,6 +767,12 @@ void QBinaryDecisionTree::ApplySingleInvert(const complex topRight, const comple
     complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (shards[target]) {
         ApplySingleBit(mtrx, target);
+        return;
+    }
+
+    if (qubitCount <= bdtThreshold) {
+        SetStateVector();
+        stateVecUnit->ApplySingleInvert(topRight, bottomLeft, target);
         return;
     }
 
@@ -836,6 +901,12 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
 void QBinaryDecisionTree::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
+    if (qubitCount <= bdtThreshold) {
+        SetStateVector();
+        stateVecUnit->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+        return;
+    }
+
     ApplyControlledSingle(mtrx, controls, controlLen, target, false,
         [this, target](QBinaryDecisionTreeNodePtr leaf, const complex* mtrx, bitCapInt highControlMask,
             bool isParallel) { Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, false, isParallel); });
@@ -844,6 +915,12 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
 void QBinaryDecisionTree::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
+    if (qubitCount <= bdtThreshold) {
+        SetStateVector();
+        stateVecUnit->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+        return;
+    }
+
     ApplyControlledSingle(mtrx, controls, controlLen, target, true,
         [this, target](QBinaryDecisionTreeNodePtr leaf, const complex* mtrx, bitCapInt highControlMask,
             bool isParallel) { Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, true, isParallel); });

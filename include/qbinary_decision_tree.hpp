@@ -37,7 +37,7 @@ protected:
 #if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
 #endif
-    bitLenInt pStridePow;
+    bitLenInt bdtThreshold;
     bitCapIntOcl maxQPowerOcl;
     bool isFusionFlush;
     std::vector<MpsShardPtr> shards;
@@ -250,6 +250,14 @@ public:
 
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
+        if (stateVecUnit && ((qubitCount - length) <= bdtThreshold)) {
+            stateVecUnit->Dispose(start, length, disposedPerm);
+            shards.erase(shards.begin() + start, shards.begin() + start + length);
+            SetQubitCount(qubitCount - length);
+
+            return;
+        }
+
         DecomposeDispose(start, length, NULL);
     }
 
