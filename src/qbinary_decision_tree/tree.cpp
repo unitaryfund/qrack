@@ -91,7 +91,6 @@ void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
 
 QInterfacePtr QBinaryDecisionTree::Clone()
 {
-    ResetStateVector();
     FlushBuffers();
     Finish();
 
@@ -99,7 +98,8 @@ QInterfacePtr QBinaryDecisionTree::Clone()
         std::make_shared<QBinaryDecisionTree>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
             false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
-    copyPtr->root = root->ShallowClone();
+    copyPtr->root = root ? root->ShallowClone() : NULL;
+    copyPtr->stateVecUnit = stateVecUnit ? stateVecUnit->Clone() : NULL;
 
     return copyPtr;
 }
@@ -177,6 +177,16 @@ void QBinaryDecisionTree::GetProbs(real1* outputProbs)
 
 real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
 {
+    if (this == toCompare.get()) {
+        return ZERO_R1;
+    }
+
+    // If the qubit counts are unequal, these can't be approximately equal objects.
+    if (qubitCount != toCompare->qubitCount) {
+        // Max square difference:
+        return ONE_R1;
+    }
+
     ResetStateVector();
     FlushBuffers();
     Finish();
