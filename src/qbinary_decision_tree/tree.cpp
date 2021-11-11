@@ -867,7 +867,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
                 if (IS_NORM_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
                     i = pow2Ocl(target - j) - ONE_BCI;
-                    for (p = qPowersSorted.size() - 1; p >= 0; p--) {
+                    for (p = (int)(qPowersSorted.size() - 1U); p >= 0; p--) {
                         i = RemovePower(i, qPowersSorted[p]);
                     }
                     return i;
