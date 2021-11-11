@@ -752,72 +752,71 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
         FlushBuffer(controls[i]);
     }
 
-    Dispatch(targetPow,
-        [this, mtrxS, target, targetPow, qPowersSorted, lowControlMask, highControlMask, maskTarget, leafFunc]() {
-            complex* mtrx = mtrxS.get();
+    Dispatch(targetPow, [this, mtrxS, target, targetPow, qPowersSorted, highControlMask, maskTarget, leafFunc]() {
+        complex* mtrx = mtrxS.get();
 
-            root->Branch(target);
+        root->Branch(target);
 
-            bool isPhase = false;
-            bool isInvert = false;
-            if (!highControlMask) {
-                isPhase = ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX));
-                isInvert = ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX));
+        bool isPhase = false;
+        bool isInvert = false;
+        if (!highControlMask) {
+            isPhase = ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX));
+            isInvert = ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX));
+        }
+
+        bitCapInt maxLcv = targetPow >> qPowersSorted.size();
+        bool isParallel = (maxLcv < GetParallelThreshold());
+
+        par_for_qbdt(0, maxLcv, [&](const bitCapInt lcv, const int cpu) {
+            bitCapInt i = 0U;
+            bitCapInt iHigh = lcv;
+            bitCapInt iLow;
+            int p;
+            for (p = 0; p < (int)qPowersSorted.size(); p++) {
+                iLow = iHigh & (qPowersSorted[p] - ONE_BCI);
+                i |= iLow;
+                iHigh = (iHigh ^ iLow) << ONE_BCI;
+            }
+            i |= iHigh | maskTarget;
+
+            QBinaryDecisionTreeNodePtr leaf = root;
+            // Iterate to qubit depth.
+            for (bitLenInt j = 0; j < target; j++) {
+                if (IS_NORM_0(leaf->scale)) {
+                    // WARNING: Mutates loop control variable!
+                    i = pow2Ocl(target - j) - ONE_BCI;
+                    for (p = qPowersSorted.size() - 1; p >= 0; p--) {
+                        i = RemovePower(i, qPowersSorted[p]);
+                    }
+                    return i;
+                }
+                leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
             }
 
-            bitCapInt maxLcv = targetPow >> qPowersSorted.size();
-            bool isParallel = (maxLcv < GetParallelThreshold());
-
-            par_for_qbdt(0, maxLcv, [&](const bitCapInt lcv, const int cpu) {
-                bitCapInt i = 0U;
-                bitCapInt iHigh = lcv;
-                bitCapInt iLow;
-                int p;
-                for (p = 0; p < (int)qPowersSorted.size(); p++) {
-                    iLow = iHigh & (qPowersSorted[p] - ONE_BCI);
-                    i |= iLow;
-                    iHigh = (iHigh ^ iLow) << ONE_BCI;
-                }
-                i |= iHigh | maskTarget;
-
-                QBinaryDecisionTreeNodePtr leaf = root;
-                // Iterate to qubit depth.
-                for (bitLenInt j = 0; j < target; j++) {
-                    if (IS_NORM_0(leaf->scale)) {
-                        // WARNING: Mutates loop control variable!
-                        i = pow2Ocl(target - j) - ONE_BCI;
-                        for (p = qPowersSorted.size() - 1; p >= 0; p--) {
-                            i = RemovePower(i, qPowersSorted[p]);
-                        }
-                        return i;
-                    }
-                    leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
-                }
-
-                if (IS_NORM_0(leaf->scale)) {
-                    return (bitCapIntOcl)0U;
-                }
-
-                if (isPhase) {
-                    leaf->Branch();
-                    leaf->branches[0]->scale *= mtrx[0];
-                    leaf->branches[1]->scale *= mtrx[3];
-                    leaf->Prune();
-                } else if (isInvert) {
-                    leaf->Branch();
-                    leaf->branches[0].swap(leaf->branches[1]);
-                    leaf->branches[0]->scale *= mtrx[1];
-                    leaf->branches[1]->scale *= mtrx[2];
-                    leaf->Prune();
-                } else {
-                    leafFunc(leaf, mtrx, highControlMask, isParallel);
-                }
-
+            if (IS_NORM_0(leaf->scale)) {
                 return (bitCapIntOcl)0U;
-            });
+            }
 
-            root->Prune(target);
+            if (isPhase) {
+                leaf->Branch();
+                leaf->branches[0]->scale *= mtrx[0];
+                leaf->branches[1]->scale *= mtrx[3];
+                leaf->Prune();
+            } else if (isInvert) {
+                leaf->Branch();
+                leaf->branches[0].swap(leaf->branches[1]);
+                leaf->branches[0]->scale *= mtrx[1];
+                leaf->branches[1]->scale *= mtrx[2];
+                leaf->Prune();
+            } else {
+                leafFunc(leaf, mtrx, highControlMask, isParallel);
+            }
+
+            return (bitCapIntOcl)0U;
         });
+
+        root->Prune(target);
+    });
 }
 
 void QBinaryDecisionTree::ApplyControlledSingleBit(
