@@ -608,7 +608,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
 
 template <typename Fn> void QBinaryDecisionTree::ApplySingle(const complex* lMtrx, bitLenInt target, Fn leafFunc)
 {
-    std::shared_ptr<complex[]> mtrx(new complex[4], std::default_delete<complex[]>());
+    std::shared_ptr<complex> mtrx(new complex[4], std::default_delete<complex[]>());
     std::copy(lMtrx, lMtrx + 4U, mtrx.get());
     bitCapIntOcl targetPow = pow2Ocl(target);
 
@@ -721,7 +721,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
         return;
     }
 
-    std::shared_ptr<complex[]> mtrxS(new complex[4], std::default_delete<complex[]>());
+    std::shared_ptr<complex> mtrxS(new complex[4], std::default_delete<complex[]>());
     std::copy(lMtrx, lMtrx + 4, mtrxS.get());
 
     std::vector<bitLenInt> sortedControls(controlLen);
