@@ -113,6 +113,9 @@ Setting the environment variable `QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE` to any v
 
 If using `QPager` under the `QUnit` layer, then the environment variable `QRACK_QUNIT_PAGING_THRESHOLD` is the number of qubits in overall width at which `QUnit` will use paging, 21 qubits by default. `QRACK_MAX_PAGING_QB` sets a maximum qubit allocation *only* for instances of `QPager`, allowing `QUnit` simulations to more gracefully attempt greater than "Schrödinger method" simulation maximum widths, while other OpenCL types have automatic memory guards.
 
+## QBinaryDecisionTree threshold option
+`QBinaryDecisionTree` is a CPU-based optimization layer for reducing the total RAM footprint of high qubit width simulations. When used under the `QUnit` layer, state vector simulations are preferable for low widths, but higher qubit widths can be sometimes be accommodated only with binary decision trees. Hence, Qrack exposes the `QRACK_BDT_THRESHOLD` environment variable. `QUnit` subsystems with the `QBinaryDecisionTree` layer engage binary decision tree methods at any qubit width _greater_ than the (integer) value of this environment variable. (Hence, 0 value engages binary decision trees at _all_ widths, and 30 engages the method at 31 qubits or greater.)
+
 ## Build and environment options for CPU engines
 `QEngineCPU` and `QHybrid` batch work items in groups of 2^`PSTRIDEPOW` before dispatching them to single CPU threads, potentially greatly reducing waiting on mutexes without signficantly hurting utilization and scheduling. The default for this option can be controlled at build time, by passing `-DPSTRIDEPOW=n` to CMake, with "n" being an integer greater than or equal to 0. (The default is n=9, which is approximately optimal on many typical PCs.) This can be overridden at run time by the enviroment variable `QRACK_PSTRIDEPOW=n`. If an environment variable is not defined for this option, the default from CMake build will be used.
 
