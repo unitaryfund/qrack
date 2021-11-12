@@ -12,7 +12,10 @@
 
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include <cfloat>
+#include <cmath>
 #include <complex>
 #include <functional>
 #include <memory>
