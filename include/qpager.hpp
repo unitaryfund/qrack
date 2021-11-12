@@ -30,7 +30,6 @@ protected:
     bool useHostRam;
     bool useRDRAND;
     bool isSparse;
-    real1 runningNorm;
     std::vector<QEnginePtr> qPages;
     std::vector<int> deviceIDs;
 
@@ -160,12 +159,17 @@ public:
     virtual complex GetAmplitude(bitCapInt perm)
     {
         bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pageMaxQPower());
-        return qPages[subIndex]->GetAmplitude(perm - (subIndex * pageMaxQPower()));
+        return qPages[subIndex]->GetAmplitude(perm & (pageMaxQPower() - ONE_BCI));
     }
     virtual void SetAmplitude(bitCapInt perm, complex amp)
     {
         bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pageMaxQPower());
-        return qPages[subIndex]->SetAmplitude(perm - (subIndex * pageMaxQPower()), amp);
+        qPages[subIndex]->SetAmplitude(perm & (pageMaxQPower() - ONE_BCI), amp);
+    }
+    real1_f ProbAll(bitCapInt fullRegister)
+    {
+        bitCapIntOcl subIndex = (bitCapIntOcl)(fullRegister / pageMaxQPower());
+        return qPages[subIndex]->ProbAll(fullRegister & (pageMaxQPower() - ONE_BCI));
     }
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
@@ -282,7 +286,6 @@ public:
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     virtual real1_f Prob(bitLenInt qubitIndex);
-    virtual real1_f ProbAll(bitCapInt fullRegister);
     virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
     // TODO: QPager not yet used in Q#, but this would need a real implementation:
     virtual real1_f ProbParity(const bitCapInt& mask)

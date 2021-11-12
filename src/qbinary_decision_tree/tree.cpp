@@ -749,6 +749,12 @@ void QBinaryDecisionTree::ApplySinglePhase(const complex topLeft, const complex 
         return;
     }
 
+    if (qubitCount <= bdtThreshold) {
+        SetStateVector();
+        stateVecUnit->ApplySinglePhase(topLeft, bottomRight, target);
+        return;
+    }
+
     if (IS_NORM_0(topLeft - bottomRight) && (randGlobalPhase || IS_NORM_0(ONE_CMPLX - topLeft))) {
         return;
     }

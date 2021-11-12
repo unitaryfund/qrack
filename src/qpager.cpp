@@ -26,7 +26,6 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
-    , runningNorm(ONE_R1)
     , deviceIDs(devList)
     , useHardwareThreshold(false)
     , minPageQubits(0)
@@ -74,7 +73,6 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
-    , runningNorm(ONE_R1)
     , deviceIDs(devList)
     , useHardwareThreshold(false)
     , minPageQubits(0)
@@ -238,7 +236,7 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl,
     bitCapIntOcl i;
 
     if (doNormalize) {
-        runningNorm = ZERO_R1;
+        real1_f runningNorm = ZERO_R1;
         for (i = 0; i < qPages.size(); i++) {
             qPages[i]->Finish();
             runningNorm += qPages[i]->GetRunningNorm();
@@ -1407,13 +1405,6 @@ real1_f QPager::Prob(bitLenInt qubit)
     }
 
     return clampProb(oneChance);
-}
-
-real1_f QPager::ProbAll(bitCapInt fullRegister)
-{
-    bitCapIntOcl subIndex = (bitCapIntOcl)(fullRegister / pageMaxQPower());
-    fullRegister -= subIndex * pageMaxQPower();
-    return qPages[subIndex]->ProbAll(fullRegister);
 }
 
 real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
