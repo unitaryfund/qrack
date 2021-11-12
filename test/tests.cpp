@@ -286,20 +286,6 @@ TEST_CASE("test_exp2x2_log2x2")
 }
 
 #if ENABLE_OPENCL && !ENABLE_SNUCL
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_oclengine")
-{
-    if (testEngineType == QINTERFACE_OPENCL) {
-        std::vector<DeviceContextPtr> devices = OCLEngine::Instance()->GetDeviceContextPtrVector();
-        REQUIRE(devices.size() > 0);
-
-        OCLEngine::Instance()->SetDefaultDeviceContext(OCLEngine::Instance()->GetDeviceContextPtr(-1));
-
-        CHECK_THROWS(OCLEngine::Instance()->GetDeviceContextPtr(-2));
-
-        Qrack::OCLEngine::InitOCL(true, true, "_test_ocl_kernel_compile/");
-    }
-}
-
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_change_device")
 {
     if (testEngineType == QINTERFACE_OPENCL) {
