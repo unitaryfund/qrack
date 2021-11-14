@@ -18,14 +18,13 @@
 
 #include <atomic>
 #include <math.h>
+#include <mutex>
+
+#include "common/parallel_for.hpp"
 
 #if ENABLE_PTHREAD
 #include <future>
 #endif
-
-#include <mutex>
-
-#include "common/parallel_for.hpp"
 
 #define DECLARE_ATOMIC_BITCAPINT() std::atomic<bitCapIntOcl> idx;
 #define ATOMIC_ASYNC(...)                                                                                              \
