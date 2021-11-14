@@ -361,7 +361,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
         });
 }
 #else
-void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapInt offset2, const complex* matrix, const bitLenInt bitCount,
+void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* matrix, const bitLenInt bitCount,
     const bitCapIntOcl* qPowsSorted, bool doCalcNorm, real1_f nrm_thresh)
 {
     CHECK_ZERO_SKIP();

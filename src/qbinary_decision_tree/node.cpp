@@ -59,7 +59,7 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
 
     // Now, we try to combine pointers to equivalent branches.
 
-    bitCapInt depthPow = ONE_BCI << depth;
+    bitCapIntOcl depthPow = ONE_BCI << depth;
 
     // Combine single elements at bottom of full depth, up to where branches are equal below:
     par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
