@@ -15,6 +15,8 @@
 #include "qengine.hpp"
 #include "qstabilizer.hpp"
 
+#include "common/qrack_types.hpp"
+
 #if ENABLE_OPENCL
 #include "common/oclengine.hpp"
 #endif

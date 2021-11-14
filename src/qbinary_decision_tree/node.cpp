@@ -16,7 +16,9 @@
 
 #include "qbinary_decision_tree_node.hpp"
 
+#if ENABLE_PTHREAD
 #include <future>
+#endif
 #include <set>
 
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
@@ -245,6 +247,7 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     b1->scale /= scale;
 }
 
+#if ENABLE_PTHREAD
 // TODO: Find some way to abstract this with ParallelFor. (It's a duplicate method.)
 // The reason for this design choice is that the memory per node for "Stride" and "numCores" attributes are on order of
 // all other RAM per node in total. Remember that trees are recursively constructed with exponential scaling, and the
@@ -302,5 +305,15 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
         futures[cpu].get();
     }
 }
+#else
+void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
+{
+    bitCapIntOcl itemCount = end - begin;
 
+    bitCapIntOcl maxLcv = begin + itemCount;
+    for (bitCapIntOcl j = begin; j < maxLcv; j++) {
+        j |= fn(j, 0);
+    }
+}
+#endif
 } // namespace Qrack

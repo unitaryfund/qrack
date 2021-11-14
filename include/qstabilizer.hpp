@@ -29,7 +29,7 @@
 #include "common/qrack_types.hpp"
 #include "common/rdrandwrapper.hpp"
 
-#if ENABLE_QUNIT_CPU_PARALLEL
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #include "common/dispatchqueue.hpp"
 #endif
 

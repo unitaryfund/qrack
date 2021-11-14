@@ -14,12 +14,15 @@
 #pragma once
 
 #include <algorithm>
-#include <future>
 #include <mutex>
 #include <set>
 
 #include "common/parallel_for.hpp"
 #include "common/qrack_types.hpp"
+
+#if ENABLE_PTHREAD
+#include <future>
+#endif
 
 #if ENABLE_UINT128
 #if BOOST_AVAILABLE
@@ -391,6 +394,7 @@ public:
             }
 
             combineCount = (int32_t)toRet.size() / 2U;
+#if ENABLE_PTHREAD
             std::vector<std::future<void>> futures(combineCount);
             for (i = (combineCount - 1U); i >= 0; i--) {
                 futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
@@ -398,11 +402,17 @@ public:
                     toRet[i + combineCount].clear();
                 });
             }
-
             for (i = (combineCount - 1U); i >= 0; i--) {
                 futures[i].get();
                 toRet.pop_back();
             }
+#else
+            for (i = (combineCount - 1U); i >= 0; i--) {
+                toRet[i].insert(toRet[i].end(), toRet[i + combineCount].begin(), toRet[i + combineCount].end());
+                toRet[i + combineCount].clear();
+                toRet.pop_back();
+            }
+#endif
         }
 
         return toRet[0];
@@ -467,6 +477,7 @@ public:
             }
 
             combineCount = (int32_t)(toRet.size()) / 2U;
+#if ENABLE_PTHREAD
             std::vector<std::future<void>> futures(combineCount);
             for (i = (combineCount - 1U); i >= 0; i--) {
                 futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
@@ -479,6 +490,13 @@ public:
                 futures[i].get();
                 toRet.pop_back();
             }
+#else
+            for (i = (combineCount - 1U); i >= 0; i--) {
+                toRet[i].insert(toRet[i + combineCount].begin(), toRet[i + combineCount].end());
+                toRet[i + combineCount].clear();
+                toRet.pop_back();
+            }
+#endif
         }
 
         return toRet[0];
