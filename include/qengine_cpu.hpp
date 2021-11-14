@@ -18,7 +18,7 @@
 #include "qengine.hpp"
 #include "statevector.hpp"
 
-#if ENABLE_QUNIT_CPU_PARALLEL
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHRED
 #include "common/dispatchqueue.hpp"
 #endif
 

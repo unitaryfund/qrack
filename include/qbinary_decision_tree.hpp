@@ -19,7 +19,9 @@
 #include "qbinary_decision_tree_node.hpp"
 #include "qinterface.hpp"
 
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #include "common/dispatchqueue.hpp"
+#endif
 #include "common/parallel_for.hpp"
 #include "mpsshard.hpp"
 

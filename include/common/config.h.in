@@ -1,3 +1,4 @@
+#cmakedefine ENABLE_PTHREAD 1
 #cmakedefine ENABLE_OPENCL 1
 #cmakedefine ENABLE_SNUCL 1
 #cmakedefine ENABLE_COMPLEX_X2 1

@@ -49,7 +49,9 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
         bdtThreshold = (bitLenInt)std::stoi(std::string(getenv("QRACK_BDT_THRESHOLD")));
     }
 
+#if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
+#endif
     SetPermutation(initState);
 }
 
