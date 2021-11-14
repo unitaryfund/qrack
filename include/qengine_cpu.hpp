@@ -18,7 +18,7 @@
 #include "qengine.hpp"
 #include "statevector.hpp"
 
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHRED
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #include "common/dispatchqueue.hpp"
 #endif
 
@@ -39,7 +39,7 @@ class QEngineCPU : virtual public QEngine, public ParallelFor {
 protected:
     StateVectorPtr stateVec;
     bool isSparse;
-#if ENABLE_QUNIT_CPU_PARALLEL
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     DispatchQueue dispatchQueue;
 #endif
     bitLenInt pStridePow;
@@ -59,14 +59,14 @@ public:
 
     virtual void Finish()
     {
-#if ENABLE_QUNIT_CPU_PARALLEL
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         dispatchQueue.finish();
 #endif
     };
 
     virtual bool isFinished()
     {
-#if ENABLE_QUNIT_CPU_PARALLEL
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         return dispatchQueue.isFinished();
 #else
         return true;
@@ -75,7 +75,7 @@ public:
 
     virtual void Dump()
     {
-#if ENABLE_QUNIT_CPU_PARALLEL
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         dispatchQueue.dump();
 #endif
     }
@@ -323,7 +323,7 @@ protected:
     typedef std::function<void(void)> DispatchFn;
     virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn)
     {
-#if ENABLE_QUNIT_CPU_PARALLEL
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         if (workItemCount < GetParallelThreshold()) {
             dispatchQueue.dispatch(fn);
         } else {
