@@ -16,20 +16,20 @@
 #include <direct.h>
 #endif
 
-#include <atomic>
 #include <math.h>
-#include <mutex>
 
 #include "common/parallel_for.hpp"
 
 #if ENABLE_PTHREAD
+#include <atomic>
 #include <future>
-#endif
+#include <mutex>
 
 #define DECLARE_ATOMIC_BITCAPINT() std::atomic<bitCapIntOcl> idx;
 #define ATOMIC_ASYNC(...)                                                                                              \
     std::async(std::launch::async, [__VA_ARGS__]()
 #define ATOMIC_INC() i = idx++;
+#endif
 
 namespace Qrack {
 
