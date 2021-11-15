@@ -99,7 +99,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         }
 
         qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, numBits, 0, rng,
-            ONE_CMPLX, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse,
+            CMPLX_DEFAULT_ARG, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse,
             REAL1_EPSILON, devList);
         avgt = 0.0;
         sampleFailureCount = 0;
@@ -109,7 +109,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         for (sample = 0; sample < benchmarkSamples; sample++) {
             if (!qUniverse) {
                 if (resetRandomPerm) {
-                    qftReg->SetPermutation((bitCapIntOcl)(qftReg->Rand() * (bitCapIntOcl)qftReg->GetMaxQPower()));
+                    bitCapInt perm = (bitCapInt)(qftReg->Rand() * qftReg->GetMaxQPower());
+                    if (perm >= qftReg->GetMaxQPower()) {
+                        perm = qftReg->GetMaxQPower() - ONE_BCI;
+                    }
+                    qftReg->SetPermutation(perm);
                 } else {
                     qftReg->SetPermutation(0);
                 }
