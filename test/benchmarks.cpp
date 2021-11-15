@@ -87,8 +87,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
     int sampleFailureCount;
 
-    QInterfacePtr qftReg = NULL;
-
     for (numBits = mnQbts; numBits <= mxQbts; numBits++) {
 
         if (isBinaryOutput) {
@@ -98,12 +96,11 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             mOutputFile << sizeof(bitCapInt) << " bytes in bitCapInt" << std::endl;
         }
 
-        qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, numBits, 0, rng,
-            CMPLX_DEFAULT_ARG, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse,
-            REAL1_EPSILON, devList);
+        QInterfacePtr qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType },
+            numBits, 0, rng, CMPLX_DEFAULT_ARG, enable_normalization, true, use_host_dma, device_id,
+            !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
         avgt = 0.0;
         sampleFailureCount = 0;
-
         trialClocks.clear();
 
         for (sample = 0; sample < benchmarkSamples; sample++) {
@@ -139,7 +136,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 fn(qftReg, numBits);
                 isTrialSuccessful = true;
             } catch (const std::exception& e) {
-                qftReg = NULL;
+                qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, numBits, 0,
+                    rng, CMPLX_DEFAULT_ARG, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng,
+                    sparse, REAL1_EPSILON, devList);
                 sampleFailureCount++;
                 isTrialSuccessful = false;
             }
