@@ -136,9 +136,13 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 fn(qftReg, numBits);
                 isTrialSuccessful = true;
             } catch (const std::exception& e) {
+                // Release before re-alloc:
+                qftReg = NULL;
+                // Re-alloc:
                 qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, numBits, 0,
                     rng, CMPLX_DEFAULT_ARG, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng,
                     sparse, REAL1_EPSILON, devList);
+
                 sampleFailureCount++;
                 isTrialSuccessful = false;
             }
