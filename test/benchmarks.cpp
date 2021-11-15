@@ -47,7 +47,7 @@ double formatTime(double t, bool logNormal)
 
 void RandomInitQubit(QInterfacePtr sim, bitLenInt i)
 {
-    real1_f theta = 2 * M_PI * sim->Rand();
+    real1_f theta = 4 * M_PI * sim->Rand();
     real1_f phi = 2 * M_PI * sim->Rand();
     real1_f lambda = 2 * M_PI * sim->Rand();
 
