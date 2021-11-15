@@ -59,7 +59,7 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
                 baseQubitsPerPage, initState - (pagePerm - basePageMaxQPower), deviceIDs[i % deviceIDs.size()]));
         } else {
             qPages.push_back(MakeEngine(baseQubitsPerPage, 0, deviceIDs[i % deviceIDs.size()]));
-            qPages.back()->SetAmplitude(0, ZERO_CMPLX);
+            qPages.back()->ZeroAmplitudes();
         }
     }
 }
