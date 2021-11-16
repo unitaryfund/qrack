@@ -121,8 +121,8 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
         jacobian[3] = matrix2x2[3] - eigenvalue2;
 
         expOfGate[0] = eigenvalue1;
-        expOfGate[1] = complex(ZERO_R1, ZERO_R1);
-        expOfGate[2] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[1] = ZERO_CMPLX;
+        expOfGate[2] = ZERO_CMPLX;
         expOfGate[3] = eigenvalue2;
 
         real1 nrm = (real1)std::sqrt(norm(jacobian[0]) + norm(jacobian[2]));
@@ -151,15 +151,15 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
         // Note: For a (2x2) hermitian input gate, this theoretically produces a unitary output transformation.
         expOfGate[0] = ((real1)std::exp(real(expOfGate[0]))) *
             complex((real1)cos(imag(expOfGate[0])), (real1)sin(imag(expOfGate[0])));
-        expOfGate[1] = complex(ZERO_R1, ZERO_R1);
-        expOfGate[2] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[1] = ZERO_CMPLX;
+        expOfGate[2] = ZERO_CMPLX;
         expOfGate[3] = ((real1)std::exp(real(expOfGate[3]))) *
             complex((real1)cos(imag(expOfGate[3])), (real1)sin(imag(expOfGate[3])));
     } else {
         // In this branch, we calculate log(matrix2x2).
         expOfGate[0] = complex((real1)std::log(abs(expOfGate[0])), (real1)arg(expOfGate[0]));
-        expOfGate[1] = complex(ZERO_R1, ZERO_R1);
-        expOfGate[2] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[1] = ZERO_CMPLX;
+        expOfGate[2] = ZERO_CMPLX;
         expOfGate[3] = complex((real1)std::log(abs(expOfGate[3])), (real1)arg(expOfGate[3]));
     }
 
