@@ -724,7 +724,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         bitCapIntOcl partToAdd = toAddOcl;
         bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         int8_t test1, test2;
-        bitLenInt j;
+        int j;
         std::unique_ptr<int8_t[]> nibbles(new int8_t[nibbleCount]);
         bool isValid = true;
         for (j = 0; j < nibbleCount; j++) {
