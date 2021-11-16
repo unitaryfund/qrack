@@ -845,12 +845,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_invert
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_invert")
 {
     qftReg->SetPermutation(0x01);
-    qftReg->ApplySingleInvert(ONE_CMPLX, ONE_CMPLX, 0);
+    qftReg->Invert(ONE_CMPLX, ONE_CMPLX, 0);
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 
     qftReg->SetPermutation(0x00);
     qftReg->H(0);
-    qftReg->ApplySingleInvert(ONE_CMPLX, -ONE_CMPLX, 0);
+    qftReg->Invert(ONE_CMPLX, -ONE_CMPLX, 0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0x01));
 }
@@ -951,7 +951,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_s")
     qftReg->H(0);
     qftReg->S(0);
     qftReg->IS(0);
-    qftReg->ApplySinglePhase(ONE_CMPLX, I_CMPLX, 0);
+    qftReg->Phase(ONE_CMPLX, I_CMPLX, 0);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbParity(1));
 }
 
@@ -4741,11 +4741,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_universal_set")
     qftReg->SetPermutation(0);
 
     qftReg->H(0);
-    qftReg->ApplySinglePhase(ONE_CMPLX, -ONE_CMPLX, 0);
+    qftReg->Phase(ONE_CMPLX, -ONE_CMPLX, 0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
 
-    qftReg->ApplySingleInvert(ONE_CMPLX, ONE_CMPLX, 1);
+    qftReg->Invert(ONE_CMPLX, ONE_CMPLX, 1);
     qftReg->H(0);
     qftReg->CZ(1, 0);
     qftReg->H(0);

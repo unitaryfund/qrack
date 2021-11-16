@@ -321,10 +321,10 @@ public:
     virtual void X(bitLenInt target);
     using QEngine::Z;
     virtual void Z(bitLenInt target);
-    using QEngine::ApplySingleInvert;
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
-    using QEngine::ApplySinglePhase;
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
+    using QEngine::Invert;
+    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
+    using QEngine::Phase;
+    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
 
     virtual void XMask(bitCapInt mask)
     {
@@ -347,7 +347,7 @@ public:
 
         if (!(mask & (mask - ONE_BCI))) {
             complex phaseFac = std::polar(ONE_R1, radians / 2);
-            ApplySinglePhase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
+            Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
             return;
         }
 

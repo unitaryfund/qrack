@@ -90,13 +90,13 @@ void QMaskFusion::FlushBuffers()
     if (!randGlobalPhase) {
         switch (phase) {
         case 1U:
-            engine->ApplySinglePhase(I_CMPLX, I_CMPLX, 0U);
+            engine->Phase(I_CMPLX, I_CMPLX, 0U);
             break;
         case 2U:
-            engine->ApplySinglePhase(-ONE_CMPLX, -ONE_CMPLX, 0U);
+            engine->Phase(-ONE_CMPLX, -ONE_CMPLX, 0U);
             break;
         case 3U:
-            engine->ApplySinglePhase(-I_CMPLX, -I_CMPLX, 0U);
+            engine->Phase(-I_CMPLX, -I_CMPLX, 0U);
             break;
         default:
             // Identity
@@ -176,12 +176,12 @@ void QMaskFusion::Mtrx(const complex* lMtrx, bitLenInt target)
     zxShards[target].phase = 0U;
 
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        ApplySinglePhase(mtrx[0], mtrx[3], target);
+        Phase(mtrx[0], mtrx[3], target);
         return;
     }
 
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        ApplySingleInvert(mtrx[1], mtrx[2], target);
+        Invert(mtrx[1], mtrx[2], target);
         return;
     }
 

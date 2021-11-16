@@ -526,12 +526,12 @@ public:
     /**
      * Apply a single bit transformation that only effects phase.
      */
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
+    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex);
 
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase.
      */
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
+    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex);
 
     /**
      * Apply a single bit transformation that only effects phase, with arbitrary control bits.

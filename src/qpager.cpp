@@ -384,10 +384,10 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
             doBottom = !IS_NORM_0(bottom);
 
             if (doTop) {
-                engine1->ApplySinglePhase(top, top, 0);
+                engine1->Phase(top, top, 0);
             }
             if (doBottom) {
-                engine2->ApplySinglePhase(bottom, bottom, 0);
+                engine2->Phase(bottom, bottom, 0);
             }
 
             continue;
@@ -722,10 +722,10 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
 void QPager::Mtrx(const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        ApplySinglePhase(mtrx[0], mtrx[3], target);
+        Phase(mtrx[0], mtrx[3], target);
         return;
     } else if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        ApplySingleInvert(mtrx[1], mtrx[2], target);
+        Invert(mtrx[1], mtrx[2], target);
         return;
     }
 
@@ -741,11 +741,11 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
     if (target < qpp) {
         if (isInvert) {
             SingleBitGate(target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) {
-                engine->ApplySingleInvert(top, bottom, lTarget);
+                engine->Invert(top, bottom, lTarget);
             });
         } else {
             SingleBitGate(target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) {
-                engine->ApplySinglePhase(top, bottom, lTarget);
+                engine->Phase(top, bottom, lTarget);
             });
         }
 
@@ -772,10 +772,10 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
         }
 
         if (top != ONE_CMPLX) {
-            qPages[j]->ApplySinglePhase(top, top, 0);
+            qPages[j]->Phase(top, top, 0);
         }
         if (bottom != ONE_CMPLX) {
-            qPages[j + targetPow]->ApplySinglePhase(bottom, bottom, 0);
+            qPages[j + targetPow]->Phase(bottom, bottom, 0);
         }
     }
 }
@@ -985,9 +985,9 @@ void QPager::PhaseParity(real1_f radians, bitCapInt mask)
         if (intraMask) {
             engine->PhaseParity(v ? -radians : radians, intraMask);
         } else if (v) {
-            engine->ApplySinglePhase(phaseFac, phaseFac, 0U);
+            engine->Phase(phaseFac, phaseFac, 0U);
         } else {
-            engine->ApplySinglePhase(iPhaseFac, iPhaseFac, 0U);
+            engine->Phase(iPhaseFac, iPhaseFac, 0U);
         }
     }
 }
@@ -1304,8 +1304,8 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
             continue;
         }
 
-        qPages[j + qubit1Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
-        qPages[j + qubit2Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+        qPages[j + qubit1Pow]->Phase(I_CMPLX, I_CMPLX, 0);
+        qPages[j + qubit2Pow]->Phase(I_CMPLX, I_CMPLX, 0);
     }
 }
 
@@ -1342,8 +1342,8 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
 
             if (qubit1 == sqi) {
                 if (isIPhaseFac) {
-                    engine1->ApplySinglePhase(ZERO_CMPLX, I_CMPLX, sqi);
-                    engine2->ApplySinglePhase(I_CMPLX, ZERO_CMPLX, sqi);
+                    engine1->Phase(ZERO_CMPLX, I_CMPLX, sqi);
+                    engine2->Phase(I_CMPLX, ZERO_CMPLX, sqi);
                 }
                 return;
             }

@@ -27,10 +27,10 @@
     }
 
 #define GATE_1_PHASE(gate, topLeft, bottomRight)                                                                       \
-    void QInterface::gate(bitLenInt qubit) { ApplySinglePhase(topLeft, bottomRight, qubit); }
+    void QInterface::gate(bitLenInt qubit) { Phase(topLeft, bottomRight, qubit); }
 
 #define GATE_1_INVERT(gate, topRight, bottomLeft)                                                                      \
-    void QInterface::gate(bitLenInt qubit) { ApplySingleInvert(topRight, bottomLeft, qubit); }
+    void QInterface::gate(bitLenInt qubit) { Invert(topRight, bottomLeft, qubit); }
 
 namespace Qrack {
 
@@ -43,14 +43,14 @@ void QInterface::SetBit(bitLenInt qubit1, bool value)
 }
 
 /// Apply a single bit transformation that only effects phase.
-void QInterface::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
+void QInterface::Phase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
 {
     const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     Mtrx(mtrx, qubitIndex);
 }
 
 /// Apply a single bit transformation that reverses bit probability and might effect phase.
-void QInterface::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
+void QInterface::Invert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
 {
     const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     Mtrx(mtrx, qubitIndex);
@@ -112,15 +112,15 @@ void QInterface::PhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
     if (n == 2) {
-        ApplySinglePhase(ONE_CMPLX, I_CMPLX, qubit);
+        Phase(ONE_CMPLX, I_CMPLX, qubit);
         return;
     }
     if (n == 3) {
-        ApplySinglePhase(ONE_CMPLX, C_SQRT_I, qubit);
+        Phase(ONE_CMPLX, C_SQRT_I, qubit);
         return;
     }
 
-    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), qubit);
+    Phase(ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), qubit);
 }
 
 /// Apply inverse 1/(2^N) phase rotation
@@ -134,15 +134,15 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
         return;
     }
     if (n == 2) {
-        ApplySinglePhase(ONE_CMPLX, -I_CMPLX, qubit);
+        Phase(ONE_CMPLX, -I_CMPLX, qubit);
         return;
     }
     if (n == 3) {
-        ApplySinglePhase(ONE_CMPLX, C_SQRT_N_I, qubit);
+        Phase(ONE_CMPLX, C_SQRT_N_I, qubit);
         return;
     }
 
-    ApplySinglePhase(ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), qubit);
+    Phase(ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), qubit);
 }
 
 /// NOT gate, which is also Pauli x matrix
@@ -450,7 +450,7 @@ void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 void QInterface::PhaseFlip()
 {
     if (!randGlobalPhase) {
-        ApplySinglePhase(-ONE_CMPLX, -ONE_CMPLX, 0);
+        Phase(-ONE_CMPLX, -ONE_CMPLX, 0);
     }
 }
 
@@ -461,7 +461,7 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
     }
 
     if (length == 1U) {
-        ApplySinglePhase(-ONE_CMPLX, ONE_CMPLX, start);
+        Phase(-ONE_CMPLX, ONE_CMPLX, start);
         return;
     }
 
@@ -506,11 +506,11 @@ void QInterface::YMask(bitCapInt mask)
     }
 
     if (parity == 1) {
-        ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+        Phase(I_CMPLX, I_CMPLX, 0);
     } else if (parity == 2) {
         PhaseFlip();
     } else if (parity == 3) {
-        ApplySinglePhase(-I_CMPLX, -I_CMPLX, 0);
+        Phase(-I_CMPLX, -I_CMPLX, 0);
     }
 }
 

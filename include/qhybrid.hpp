@@ -200,13 +200,13 @@ public:
     }
 
     virtual void Mtrx(const complex* mtrx, bitLenInt qubitIndex) { engine->Mtrx(mtrx, qubitIndex); }
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
+    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
     {
-        engine->ApplySinglePhase(topLeft, bottomRight, qubitIndex);
+        engine->Phase(topLeft, bottomRight, qubitIndex);
     }
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
+    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
     {
-        engine->ApplySingleInvert(topRight, bottomLeft, qubitIndex);
+        engine->Invert(topRight, bottomLeft, qubitIndex);
     }
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)

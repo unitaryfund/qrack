@@ -19,7 +19,7 @@ namespace Qrack {
 /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
 void QInterface::RT(real1_f radians, bitLenInt qubit)
 {
-    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex((real1)cos(radians / 2), (real1)sin(radians / 2)), qubit);
+    Phase(complex(ONE_R1, ZERO_R1), complex((real1)cos(radians / 2), (real1)sin(radians / 2)), qubit);
 }
 
 /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
@@ -46,7 +46,7 @@ void QInterface::RZ(real1_f radians, bitLenInt qubit)
 {
     real1 cosine = (real1)cos(radians / 2);
     real1 sine = (real1)sin(radians / 2);
-    ApplySinglePhase(complex(cosine, -sine), complex(cosine, sine), qubit);
+    Phase(complex(cosine, -sine), complex(cosine, sine), qubit);
 }
 
 /// General unitary gate
@@ -148,7 +148,7 @@ void QInterface::UniformlyControlledRZ(
 void QInterface::Exp(real1_f radians, bitLenInt qubit)
 {
     complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
-    ApplySinglePhase(phaseFac, phaseFac, qubit);
+    Phase(phaseFac, phaseFac, qubit);
 }
 
 /// Imaginary exponentiate of arbitrary single bit gate
@@ -173,21 +173,21 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
 void QInterface::ExpX(real1_f radians, bitLenInt qubit)
 {
     complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
-    ApplySingleInvert(phaseFac, phaseFac, qubit);
+    Invert(phaseFac, phaseFac, qubit);
 }
 
 /// Exponentiate Pauli Y operator
 void QInterface::ExpY(real1_f radians, bitLenInt qubit)
 {
     complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
-    ApplySingleInvert(phaseFac * complex(ZERO_R1, -ONE_R1), phaseFac * complex(ZERO_R1, ONE_R1), qubit);
+    Invert(phaseFac * complex(ZERO_R1, -ONE_R1), phaseFac * complex(ZERO_R1, ONE_R1), qubit);
 }
 
 /// Exponentiate Pauli Z operator
 void QInterface::ExpZ(real1_f radians, bitLenInt qubit)
 {
     complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
-    ApplySinglePhase(phaseFac, -phaseFac, qubit);
+    Phase(phaseFac, -phaseFac, qubit);
 }
 
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state

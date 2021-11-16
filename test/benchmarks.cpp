@@ -714,7 +714,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
 
                 // Continuous Z root gates option:
                 // gateRand = 2 * PI_R1 * qReg->Rand();
-                // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                // qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 gateRand = 8 * qReg->Rand();
@@ -852,7 +852,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 
                 // Continuous Z root gates option:
                 // gateRand = 2 * PI_R1 * qReg->Rand();
-                // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                // qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 gateRand = 8 * qReg->Rand();
@@ -1040,7 +1040,7 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
 
                 // Continuous Z root gates option:
                 gateRand = 2 * PI_R1 * qReg->Rand();
-                qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 /*
@@ -1230,7 +1230,7 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
 
                 // Continuous Z root gates option:
                 gateRand = 2 * PI_R1 * qReg->Rand();
-                qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 /*
@@ -1481,7 +1481,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
 
                 // Continuous Z root gates option:
                 gateRand = 2 * PI_R1 * qReg->Rand();
-                qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 /*
@@ -1820,9 +1820,9 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         qReg->H(i);
                     } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                        qReg->ApplySinglePhase(ONE_CMPLX, polar0, i);
+                        qReg->Phase(ONE_CMPLX, polar0, i);
                     } else {
-                        qReg->ApplySingleInvert(ONE_CMPLX, polar0, i);
+                        qReg->Invert(ONE_CMPLX, polar0, i);
                     }
                 }
 

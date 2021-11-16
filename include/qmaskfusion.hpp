@@ -348,7 +348,7 @@ public:
     virtual void Z(bitLenInt target);
 
     virtual void Mtrx(const complex* mtrx, bitLenInt target);
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
+    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt target)
     {
         if (IS_SAME(topLeft, bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {
             return;
@@ -369,12 +369,12 @@ public:
 
         if (zxShards[target].isX) {
             zxShards[target].isX = false;
-            engine->ApplySingleInvert(tl, br, target);
+            engine->Invert(tl, br, target);
         } else {
-            engine->ApplySinglePhase(tl, br, target);
+            engine->Phase(tl, br, target);
         }
     }
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
+    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt target)
     {
         if (IS_SAME(topRight, bottomLeft) && (randGlobalPhase || IS_SAME(topRight, ONE_CMPLX))) {
             X(target);
@@ -396,9 +396,9 @@ public:
 
         if (zxShards[target].isX) {
             zxShards[target].isX = false;
-            engine->ApplySinglePhase(tr, bl, target);
+            engine->Phase(tr, bl, target);
         } else {
-            engine->ApplySingleInvert(tr, bl, target);
+            engine->Invert(tr, bl, target);
         }
     }
 

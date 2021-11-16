@@ -409,9 +409,9 @@ public:
 
     virtual void Mtrx(const complex* mtrx, bitLenInt target);
 
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target);
+    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt target);
 
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target);
+    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt target);
 
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);

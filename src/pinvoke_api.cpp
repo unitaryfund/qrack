@@ -136,7 +136,7 @@ void RHelper(unsigned sid, unsigned b, double phi, unsigned q)
         // However, the underlying QInterface will not execute the gate
         // UNLESS it is specifically "keeping book" for non-measurable phase effects.
         complex phaseFac = exp(complex(ZERO_R1, (real1)(phi / 4)));
-        simulator->ApplySinglePhase(phaseFac, phaseFac, shards[simulator.get()][q]);
+        simulator->Phase(phaseFac, phaseFac, shards[simulator.get()][q]);
         break;
     }
     case PauliX:

@@ -1411,7 +1411,7 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
     complex phaseFac = complex((real1)cos(radians / 2), (real1)sin(radians / 2));
 
     if (!(mask & (mask - ONE_BCI))) {
-        ApplySinglePhase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
+        Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
         return;
     }
 
@@ -1442,18 +1442,18 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 
     if (eIndices.size() == 0) {
         if (flipResult) {
-            ApplySinglePhase(phaseFac, phaseFac, 0U);
+            Phase(phaseFac, phaseFac, 0U);
         } else {
-            ApplySinglePhase(ONE_CMPLX / phaseFac, ONE_CMPLX / phaseFac, 0U);
+            Phase(ONE_CMPLX / phaseFac, ONE_CMPLX / phaseFac, 0U);
         }
         return;
     }
 
     if (eIndices.size() == 1U) {
         if (flipResult) {
-            ApplySinglePhase(phaseFac, ONE_CMPLX / phaseFac, log2(mask));
+            Phase(phaseFac, ONE_CMPLX / phaseFac, log2(mask));
         } else {
-            ApplySinglePhase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
+            Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
         }
         return;
     }
@@ -2083,7 +2083,7 @@ void QUnit::CUniformParityRZ(
             phaseFac = complex(cosine, -sine);
         }
         if (controls.size() == 0) {
-            return ApplySinglePhase(phaseFac, phaseFac, 0);
+            return Phase(phaseFac, phaseFac, 0);
         } else {
             return ApplyControlledSinglePhase(&(controls[0]), controls.size(), 0, phaseFac, phaseFac);
         }
@@ -2101,7 +2101,7 @@ void QUnit::CUniformParityRZ(
             phaseFacAdj = complex(cosine, -sine);
         }
         if (controls.size() == 0) {
-            return ApplySinglePhase(phaseFacAdj, phaseFac, eIndices[0]);
+            return Phase(phaseFacAdj, phaseFac, eIndices[0]);
         } else {
             return ApplyControlledSinglePhase(&(controls[0]), controls.size(), eIndices[0], phaseFacAdj, phaseFac);
         }
@@ -2909,7 +2909,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
         [&]() { Z(target); }, true);
 }
 
-void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
+void QUnit::Phase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
     if (randGlobalPhase || IS_1_R1(topLeft)) {
         if (IS_NORM_0(topLeft - bottomRight)) {
@@ -2946,7 +2946,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
 
     if (!shard.isPauliX && !shard.isPauliY) {
         if (shard.unit) {
-            shard.unit->ApplySinglePhase(topLeft, bottomRight, shard.mapped);
+            shard.unit->Phase(topLeft, bottomRight, shard.mapped);
         }
         if (DIRTY(shard)) {
             shard.isPhaseDirty = true;
@@ -2981,7 +2981,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
     }
 }
 
-void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
+void QUnit::Invert(const complex topRight, const complex bottomLeft, bitLenInt target)
 {
     if (IS_NORM_0(topRight - bottomLeft) && (randGlobalPhase || IS_1_CMPLX(topRight))) {
         X(target);
@@ -3018,7 +3018,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         }
     } else {
         if (shard.unit) {
-            shard.unit->ApplySingleInvert(topRight, bottomLeft, shard.mapped);
+            shard.unit->Invert(topRight, bottomLeft, shard.mapped);
         }
         if (DIRTY(shard)) {
             shard.isPhaseDirty = true;
@@ -3038,13 +3038,13 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
 {
     // Commutes with controlled phase optimizations
     if (!controlLen) {
-        ApplySinglePhase(topLeft, bottomRight, cTarget);
+        Phase(topLeft, bottomRight, cTarget);
         return;
     }
 
     if (controlLen == 1) {
         if (IS_NORM_0(topLeft - bottomRight)) {
-            ApplySinglePhase(ONE_CMPLX, bottomRight, cControls[0]);
+            Phase(ONE_CMPLX, bottomRight, cControls[0]);
             return;
         }
 
@@ -3100,7 +3100,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
         if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
             if (SHARD_STATE(cShard)) {
                 Flush1Eigenstate(control);
-                ApplySinglePhase(topLeft, bottomRight, target);
+                Phase(topLeft, bottomRight, target);
             } else {
                 Flush0Eigenstate(control);
             }
@@ -3132,7 +3132,7 @@ void QUnit::ApplyControlledSinglePhase(const bitLenInt* cControls, const bitLenI
                 unit->ApplyControlledSinglePhase(CTRL_P_ARGS);
             }
         },
-        [&]() { ApplySinglePhase(topLeft, bottomRight, target); }, true);
+        [&]() { Phase(topLeft, bottomRight, target); }, true);
 }
 
 void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target,
@@ -3167,7 +3167,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
         if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
             if (SHARD_STATE(cShard)) {
                 Flush1Eigenstate(control);
-                ApplySingleInvert(topRight, bottomLeft, target);
+                Invert(topRight, bottomLeft, target);
             } else {
                 Flush0Eigenstate(control);
             }
@@ -3188,7 +3188,7 @@ void QUnit::ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenI
     }
 
     CTRLED_PHASE_INVERT_WRAP(ApplyControlledSingleInvert(CTRL_I_ARGS), ApplyControlledSingleBit(CTRL_GEN_ARGS),
-        ApplySingleInvert(topRight, bottomLeft, target), false, true, topRight, bottomLeft);
+        Invert(topRight, bottomLeft, target), false, true, topRight, bottomLeft);
 }
 
 void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bitLenInt& controlLen,
@@ -3196,13 +3196,13 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
 {
     // Commutes with controlled phase optimizations
     if (!controlLen) {
-        ApplySinglePhase(topLeft, bottomRight, cTarget);
+        Phase(topLeft, bottomRight, cTarget);
         return;
     }
 
     if (controlLen == 1) {
         if (IS_NORM_0(topLeft - bottomRight)) {
-            ApplySinglePhase(topLeft, ONE_CMPLX, cControls[0]);
+            Phase(topLeft, ONE_CMPLX, cControls[0]);
             return;
         }
     }
@@ -3244,7 +3244,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
                 Flush1Eigenstate(control);
             } else {
                 Flush0Eigenstate(control);
-                ApplySinglePhase(topLeft, bottomRight, target);
+                Phase(topLeft, bottomRight, target);
             }
             return;
         }
@@ -3273,7 +3273,7 @@ void QUnit::ApplyAntiControlledSinglePhase(const bitLenInt* cControls, const bit
                 unit->ApplyAntiControlledSinglePhase(CTRL_P_ARGS);
             }
         },
-        [&]() { ApplySinglePhase(topLeft, bottomRight, target); }, true);
+        [&]() { Phase(topLeft, bottomRight, target); }, true);
 }
 
 void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -3306,7 +3306,7 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
                 Flush1Eigenstate(control);
             } else {
                 Flush0Eigenstate(control);
-                ApplySingleInvert(topRight, bottomLeft, target);
+                Invert(topRight, bottomLeft, target);
             }
 
             return;
@@ -3325,7 +3325,7 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
     }
 
     CTRLED_PHASE_INVERT_WRAP(ApplyAntiControlledSingleInvert(CTRL_I_ARGS), ApplyAntiControlledSingleBit(CTRL_GEN_ARGS),
-        ApplySingleInvert(topRight, bottomLeft, target), true, true, topRight, bottomLeft);
+        Invert(topRight, bottomLeft, target), true, true, topRight, bottomLeft);
 }
 
 void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
@@ -3333,11 +3333,11 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
     QEngineShard& shard = shards[target];
 
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        ApplySinglePhase(mtrx[0], mtrx[3], target);
+        Phase(mtrx[0], mtrx[3], target);
         return;
     }
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        ApplySingleInvert(mtrx[1], mtrx[2], target);
+        Invert(mtrx[1], mtrx[2], target);
         return;
     }
     if ((randGlobalPhase || IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1))) && IS_SAME(mtrx[0], mtrx[1]) &&
@@ -3375,7 +3375,7 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
         bool wasPauliY = shard.isPauliY;
         shard.isPauliX = false;
         shard.isPauliY = false;
-        ApplySinglePhase(trnsMtrx[0], trnsMtrx[3], target);
+        Phase(trnsMtrx[0], trnsMtrx[3], target);
         shard.isPauliX = wasPauliX;
         shard.isPauliY = wasPauliY;
         return;
@@ -3386,7 +3386,7 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
         bool wasPauliY = shard.isPauliY;
         shard.isPauliX = false;
         shard.isPauliY = false;
-        ApplySingleInvert(trnsMtrx[1], trnsMtrx[2], target);
+        Invert(trnsMtrx[1], trnsMtrx[2], target);
         shard.isPauliX = wasPauliX;
         shard.isPauliY = wasPauliY;
         return;
@@ -5088,7 +5088,7 @@ void QUnit::OptimizePairBuffers(const bitLenInt& control, const bitLenInt& targe
     if (IS_NORM_0(buffer->cmplxDiff - aBuffer->cmplxSame) && IS_NORM_0(buffer->cmplxSame - aBuffer->cmplxDiff)) {
         tShard.RemoveControl(&cShard);
         tShard.RemoveAntiControl(&cShard);
-        ApplySinglePhase(buffer->cmplxDiff, buffer->cmplxSame, target);
+        Phase(buffer->cmplxDiff, buffer->cmplxSame, target);
     } else if (isInvert) {
         if (IS_1_CMPLX(buffer->cmplxDiff) && IS_1_CMPLX(buffer->cmplxSame)) {
             tShard.RemoveControl(&cShard);

@@ -579,7 +579,7 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
 
     if (!(mask & (mask - ONE_BCI))) {
         complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
-        ApplySinglePhase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
+        Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
         return;
     }
 

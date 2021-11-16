@@ -719,11 +719,11 @@ void QBinaryDecisionTree::Mtrx(const complex* lMtrx, bitLenInt target)
     }
 
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        ApplySinglePhase(mtrx[0], mtrx[3], target);
+        Phase(mtrx[0], mtrx[3], target);
         return;
     }
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        ApplySingleInvert(mtrx[1], mtrx[2], target);
+        Invert(mtrx[1], mtrx[2], target);
         return;
     }
 
@@ -743,7 +743,7 @@ void QBinaryDecisionTree::Mtrx(const complex* lMtrx, bitLenInt target)
         });
 }
 
-void QBinaryDecisionTree::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
+void QBinaryDecisionTree::Phase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
     complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (shards[target]) {
@@ -753,7 +753,7 @@ void QBinaryDecisionTree::ApplySinglePhase(const complex topLeft, const complex 
 
     if (qubitCount <= bdtThreshold) {
         SetStateVector();
-        stateVecUnit->ApplySinglePhase(topLeft, bottomRight, target);
+        stateVecUnit->Phase(topLeft, bottomRight, target);
         return;
     }
 
@@ -770,7 +770,7 @@ void QBinaryDecisionTree::ApplySinglePhase(const complex topLeft, const complex 
         });
 }
 
-void QBinaryDecisionTree::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
+void QBinaryDecisionTree::Invert(const complex topRight, const complex bottomLeft, bitLenInt target)
 {
     complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (shards[target]) {
@@ -780,7 +780,7 @@ void QBinaryDecisionTree::ApplySingleInvert(const complex topRight, const comple
 
     if (qubitCount <= bdtThreshold) {
         SetStateVector();
-        stateVecUnit->ApplySingleInvert(topRight, bottomLeft, target);
+        stateVecUnit->Invert(topRight, bottomLeft, target);
         return;
     }
 
