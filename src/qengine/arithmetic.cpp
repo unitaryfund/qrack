@@ -879,17 +879,20 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
     ParallelFunc fn;
     if (valueBytes == 1) {
         fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            nStateVec->write(lcv | ((bitCapIntOcl)values[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
+            nStateVec->write(
+                lcv | ((bitCapIntOcl)values[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
         };
     } else if (valueBytes == 2) {
         uint16_t* inputIntPtr = (uint16_t*)values;
         fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            nStateVec->write(lcv | ((bitCapIntOcl)inputIntPtr[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
+            nStateVec->write(
+                lcv | ((bitCapIntOcl)inputIntPtr[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
         };
     } else if (valueBytes == 4) {
         uint32_t* inputIntPtr = (uint32_t*)values;
         fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            nStateVec->write(lcv | ((bitCapIntOcl)inputIntPtr[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
+            nStateVec->write(
+                lcv | ((bitCapIntOcl)inputIntPtr[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
         };
     } else {
         fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
