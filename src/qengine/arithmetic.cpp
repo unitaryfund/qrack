@@ -723,9 +723,9 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         bitCapIntOcl otherRes = lcv & otherMask;
         bitCapIntOcl partToAdd = toAddOcl;
         bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
-        int test1, test2;
-        int j;
-        int* nibbles = new int[nibbleCount];
+        int8_t test1, test2;
+        bitLenInt j;
+        std::unique_ptr<int8_t[]> nibbles(new int8_t[nibbleCount]);
         bool isValid = true;
         for (j = 0; j < nibbleCount; j++) {
             test1 = (int)(inOutInt & 15UL);
@@ -746,13 +746,12 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
                         nibbles[j + 1]++;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4U * ONE_BCI);
+                outInt |= (bitCapIntOcl)nibbles[j] << (j * 4U * ONE_BCI);
             }
             nStateVec->write((outInt << inOutStart) | otherRes, stateVec->read(lcv));
         } else {
             nStateVec->write(lcv, stateVec->read(lcv));
         }
-        delete[] nibbles;
     };
 
     if (stateVec->is_sparse()) {

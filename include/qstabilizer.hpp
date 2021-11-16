@@ -88,7 +88,7 @@ protected:
 #endif
     }
 
-    bitCapIntOcl pow2Ocl(const bitLenInt& qubit) { return ONE_BCI << (bitCapIntOcl)qubit; }
+    bitCapIntOcl pow2Ocl(const bitLenInt& qubit) { return (bitCapIntOcl)ONE_BCI << qubit; }
 
 public:
     QStabilizer(

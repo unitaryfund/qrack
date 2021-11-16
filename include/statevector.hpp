@@ -359,7 +359,7 @@ public:
     {
         int64_t i, combineCount;
 
-        int32_t threadCount = GetConcurrencyLevel();
+        int64_t threadCount = GetConcurrencyLevel();
         std::vector<std::vector<bitCapIntOcl>> toRet(threadCount);
         std::vector<std::vector<bitCapIntOcl>>::iterator toRetIt;
 
@@ -373,7 +373,7 @@ public:
 
         mtx.unlock();
 
-        for (i = (int32_t)(toRet.size() - 1); i >= 0; i--) {
+        for (i = (int64_t)(toRet.size() - 1); i >= 0; i--) {
             if (toRet[i].size() == 0) {
                 toRetIt = toRet.begin();
                 std::advance(toRetIt, i);
@@ -465,7 +465,6 @@ public:
         }
 
         if (toRet.size() == 0) {
-            mtx.unlock();
             return {};
         }
 
