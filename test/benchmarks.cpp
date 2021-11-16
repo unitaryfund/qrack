@@ -278,6 +278,7 @@ TEST_CASE("test_swap_single", "[gates]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->Swap(0, 1); });
 }
 
+#if ENABLE_REG_GATES
 TEST_CASE("test_cnot_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CNOT(0, n / 2, n / 2); });
@@ -348,6 +349,7 @@ TEST_CASE("test_crt_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CRT(M_PI, 0, n / 2, n / 2); });
 }
+#endif
 #endif
 
 TEST_CASE("test_rol", "[gates]")

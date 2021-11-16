@@ -1448,14 +1448,19 @@ public:
      * @{
      */
 
+    /** Bitwise Hadamard */
+    virtual void H(bitLenInt start, bitLenInt length);
+
+    /** Bitwise Pauli X (or logical "NOT") operator */
+    virtual void X(bitLenInt start, bitLenInt length);
+
+#if ENABLE_REG_GATES
+
     /** Bitwise general unitary */
     virtual void U(bitLenInt start, bitLenInt length, real1_f theta, real1_f phi, real1_f lambda);
 
     /** Bitwise 2-parameter unitary */
     virtual void U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lambda);
-
-    /** Bitwise Hadamard */
-    virtual void H(bitLenInt start, bitLenInt length);
 
     /** Bitwise Y-basis transformation gate */
     virtual void SH(bitLenInt start, bitLenInt length);
@@ -1483,9 +1488,6 @@ public:
 
     /** Bitwise inverse "PhaseRootN" operator (1/(2^N) phase rotation) */
     virtual void IPhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length);
-
-    /** Bitwise Pauli X (or logical "NOT") operator */
-    virtual void X(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli Y operator */
     virtual void Y(bitLenInt start, bitLenInt length);
@@ -1546,6 +1548,21 @@ public:
 
     /** Bitwise doubly "anti-"controlled-Z */
     virtual void AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length);
+
+    /** Bitwise swap */
+    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Bitwise swap */
+    virtual void ISwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Bitwise square root of swap */
+    virtual void SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Bitwise inverse square root of swap */
+    virtual void ISqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Bitwise "fSim" */
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /**
      * Bitwise "AND"
@@ -1832,6 +1849,7 @@ public:
     virtual void CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length);
 
     /** @} */
+#endif
 
     /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.
@@ -2214,32 +2232,17 @@ public:
     /** Swap values of two bits in register */
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    /** Bitwise swap */
-    virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
-
     /** Swap values of two bits in register, and apply phase factor of i if bits are different */
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
-
-    /** Bitwise swap */
-    virtual void ISwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Square root of Swap gate */
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    /** Bitwise square root of swap */
-    virtual void SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
-
     /** Inverse square root of Swap gate */
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    /** Bitwise inverse square root of swap */
-    virtual void ISqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
-
     /** The 2-qubit "fSim" gate, (useful in the simulation of particles with fermionic statistics) */
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2) = 0;
-
-    /** Bitwise "fSim" */
-    virtual void FSim(real1_f theta, real1_f phi, bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Reverse all of the bits in a sequence. */
     virtual void Reverse(bitLenInt first, bitLenInt last)

@@ -27,14 +27,6 @@ void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
     Mtrx(uGate, target);
 }
 
-/// Apply general unitary gate to each bit in "length," starting from bit index "start"
-void QInterface::U(bitLenInt start, bitLenInt length, real1_f theta, real1_f phi, real1_f lambda)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        U(start + bit, theta, phi, lambda);
-    }
-}
-
 /// Controlled general unitary gate
 void QInterface::CU(
     bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
@@ -57,14 +49,6 @@ void QInterface::AntiCU(
         sin0 * complex((real1)cos(phi), (real1)sin(phi)),
         cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
     MACMtrx(controls, controlLen, uGate, target);
-}
-
-/// Apply 2-parameter unitary gate to each bit in "length," starting from bit index "start"
-void QInterface::U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lambda)
-{
-    for (bitLenInt bit = 0; bit < length; bit++) {
-        U2(start + bit, phi, lambda);
-    }
 }
 
 /// Uniformly controlled y axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli y axis for each permutation

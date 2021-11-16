@@ -55,6 +55,7 @@ void QPearson(size_t len, unsigned char* T, QInterfacePtr qReg)
 {
     size_t i;
     size_t j;
+    size_t k;
     bitLenInt x_index;
     bitLenInt h_index = (len + HASH_SIZE - 1U) * 8;
 
@@ -65,7 +66,9 @@ void QPearson(size_t len, unsigned char* T, QInterfacePtr qReg)
         for (i = 1; i < len; ++i) {
             x_index += 8;
             // XOR might collapse the state, as we have defined the API.
-            qReg->XOR(x_index, h_index, h_index, 8);
+            for (k = 0; k < 8; k++) {
+                qReg->XOR(x_index + k, h_index + k, h_index + k);
+            }
             // This is a valid API if the hash table is one-to-one (unitary).
             qReg->Hash(h_index, 8, T);
         }
