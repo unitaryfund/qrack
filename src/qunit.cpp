@@ -989,7 +989,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit2);
     freezeTrySeparate = true;
     CY(qubit1, qubit2);
-    shard1.unit->MCInvert(control, 1U, I_CMPLX, -I_CMPLX, shard2.mapped);
+    shard1.unit->MCInvert(control, 1U, -I_CMPLX, -I_CMPLX, shard2.mapped);
     CZ(qubit1, qubit2);
     freezeTrySeparate = false;
 
