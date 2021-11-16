@@ -37,9 +37,9 @@ ParallelFor::ParallelFor()
     : numCores(1)
 {
     if (getenv("QRACK_PSTRIDEPOW")) {
-        pStride = (ONE_BCI << (bitCapIntOcl)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))));
+        pStride = ((bitCapIntOcl)ONE_BCI << (bitCapIntOcl)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))));
     } else {
-        pStride = (ONE_BCI << (bitCapIntOcl)PSTRIDEPOW);
+        pStride = ((bitCapIntOcl)ONE_BCI << PSTRIDEPOW);
     }
 }
 

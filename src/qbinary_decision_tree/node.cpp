@@ -61,7 +61,7 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
 
     // Now, we try to combine pointers to equivalent branches.
 
-    bitCapIntOcl depthPow = ONE_BCI << depth;
+    bitCapIntOcl depthPow = (bitCapIntOcl)ONE_BCI << depth;
 
     // Combine single elements at bottom of full depth, up to where branches are equal below:
     par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
@@ -97,7 +97,7 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         }
 
         // WARNING: Mutates loop control variable!
-        return (bitCapIntOcl)((ONE_BCI << (bitCapIntOcl)(depth - j)) - ONE_BCI);
+        return (bitCapIntOcl)(((bitCapIntOcl)ONE_BCI << (depth - j)) - ONE_BCI);
     });
 
     bool isSameAtTop = true;
@@ -138,7 +138,7 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         }
 
         // WARNING: Mutates loop control variable!
-        return (bitCapIntOcl)((ONE_BCI << (depth - j)) - ONE_BCI);
+        return (bitCapIntOcl)(((bitCapIntOcl)ONE_BCI << (depth - j)) - ONE_BCI);
     });
 
     // The branches terminate equal, within depth.
