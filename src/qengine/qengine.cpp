@@ -221,8 +221,7 @@ void QEngine::CSwap(
         return;
     }
 
-    const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX,
-        ZERO_CMPLX };
+    const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     bitCapIntOcl skipMask = 0;
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2]);
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -243,8 +242,7 @@ void QEngine::AntiCSwap(
         return;
     }
 
-    const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX,
-        ZERO_CMPLX };
+    const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2]);
     for (bitLenInt i = 0; i < controlLen; i++) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
@@ -374,8 +372,7 @@ void QEngine::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX,
-        ZERO_CMPLX };
+    const complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     bitCapIntOcl qPowersSorted[2];
     qPowersSorted[0] = pow2Ocl(qubit1);
     qPowersSorted[1] = pow2Ocl(qubit2);
@@ -390,8 +387,7 @@ void QEngine::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    const complex pauliX[4] = { ZERO_CMPLX, I_CMPLX, I_CMPLX,
-        ZERO_CMPLX };
+    const complex pauliX[4] = { ZERO_CMPLX, I_CMPLX, I_CMPLX, ZERO_CMPLX };
     bitCapIntOcl qPowersSorted[2];
     qPowersSorted[0] = pow2Ocl(qubit1);
     qPowersSorted[1] = pow2Ocl(qubit2);

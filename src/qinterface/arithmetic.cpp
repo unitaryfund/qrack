@@ -99,8 +99,7 @@ void QInterface::CFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenIn
     cBits[controlLen + 1] = carryInSumOut;
     ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, ONE_CMPLX, ONE_CMPLX);
 
-    ApplyControlledSingleInvert(
-        cBits, controlLen + 1, carryInSumOut, ONE_CMPLX, ONE_CMPLX);
+    ApplyControlledSingleInvert(cBits, controlLen + 1, carryInSumOut, ONE_CMPLX, ONE_CMPLX);
 
     cBits[controlLen] = inputBit1;
     ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, ONE_CMPLX, ONE_CMPLX);
@@ -123,8 +122,7 @@ void QInterface::CIFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenI
     ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, ONE_CMPLX, ONE_CMPLX);
 
     cBits[controlLen] = inputBit2;
-    ApplyControlledSingleInvert(
-        cBits, controlLen + 1, carryInSumOut, ONE_CMPLX, ONE_CMPLX);
+    ApplyControlledSingleInvert(cBits, controlLen + 1, carryInSumOut, ONE_CMPLX, ONE_CMPLX);
 
     cBits[controlLen + 1] = carryInSumOut;
     ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, ONE_CMPLX, ONE_CMPLX);

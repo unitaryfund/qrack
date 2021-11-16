@@ -260,8 +260,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
 
 TEST_CASE("test_exp2x2_log2x2")
 {
-    complex mtrx1[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX,
-        ONE_CMPLX };
+    complex mtrx1[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ONE_CMPLX };
     complex mtrx2[4];
 
     exp2x2(mtrx1, mtrx2);
@@ -3751,9 +3750,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
     qftReg->Compose(qftReg2);
 
     // Try across device/heap allocation case:
-    qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0, rng,
-        ONE_CMPLX, enable_normalization, true, true, device_id, !disable_hardware_rng, sparse,
-        REAL1_EPSILON, devList);
+    qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0, rng, ONE_CMPLX,
+        enable_normalization, true, true, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
     qftReg->SetPermutation(0x2b);
     qftReg->Decompose(0, qftReg2);
@@ -3808,8 +3806,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
 
     // Try across device/heap allocation case:
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
-    qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng,
-        ONE_CMPLX, false, true, true);
+    qftReg2 = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng, ONE_CMPLX, false, true, true);
     qftReg->Compose(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
