@@ -2443,8 +2443,7 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         return;
     }
 
-    CTRLED_PHASE_INVERT_WRAP(
-        CNOT(CTRL_1_ARGS), MCMtrx(CTRL_GEN_ARGS), X(target), false, true, ONE_CMPLX, ONE_CMPLX);
+    CTRLED_PHASE_INVERT_WRAP(CNOT(CTRL_1_ARGS), MCMtrx(CTRL_GEN_ARGS), X(target), false, true, ONE_CMPLX, ONE_CMPLX);
 }
 
 void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
@@ -2483,8 +2482,8 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
-    CTRLED_PHASE_INVERT_WRAP(AntiCNOT(CTRL_1_ARGS), MACMtrx(CTRL_GEN_ARGS), X(target), true, true,
-        ONE_CMPLX, ONE_CMPLX);
+    CTRLED_PHASE_INVERT_WRAP(
+        AntiCNOT(CTRL_1_ARGS), MACMtrx(CTRL_GEN_ARGS), X(target), true, true, ONE_CMPLX, ONE_CMPLX);
 }
 
 void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -2573,7 +2572,8 @@ void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
         controls, 2, { target }, true,
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
             if (shards[target].isPauliX) {
-                unit->MACPhase(&(mappedControls[0]), mappedControls.size(), ONE_CMPLX, -ONE_CMPLX, shards[target].mapped);
+                unit->MACPhase(
+                    &(mappedControls[0]), mappedControls.size(), ONE_CMPLX, -ONE_CMPLX, shards[target].mapped);
             } else if (shards[target].isPauliY) {
                 unit->MACInvert(&(mappedControls[0]), mappedControls.size(), -I_CMPLX, I_CMPLX, shards[target].mapped);
             } else {
@@ -2620,8 +2620,7 @@ void QUnit::CY(bitLenInt control, bitLenInt target)
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
-    CTRLED_PHASE_INVERT_WRAP(
-        CY(CTRL_1_ARGS), MCMtrx(CTRL_GEN_ARGS), Y(target), false, true, -I_CMPLX, I_CMPLX);
+    CTRLED_PHASE_INVERT_WRAP(CY(CTRL_1_ARGS), MCMtrx(CTRL_GEN_ARGS), Y(target), false, true, -I_CMPLX, I_CMPLX);
 }
 
 void QUnit::AntiCY(bitLenInt control, bitLenInt target)
@@ -2657,8 +2656,7 @@ void QUnit::AntiCY(bitLenInt control, bitLenInt target)
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
-    CTRLED_PHASE_INVERT_WRAP(
-        AntiCY(CTRL_1_ARGS), MACMtrx(CTRL_GEN_ARGS), Y(target), true, true, -I_CMPLX, I_CMPLX);
+    CTRLED_PHASE_INVERT_WRAP(AntiCY(CTRL_1_ARGS), MACMtrx(CTRL_GEN_ARGS), Y(target), true, true, -I_CMPLX, I_CMPLX);
 }
 
 void QUnit::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
@@ -2764,8 +2762,7 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
     bitLenInt controls[1] = { control };
     bitLenInt controlLen = 1;
 
-    CTRLED_PHASE_INVERT_WRAP(
-        CZ(CTRL_1_ARGS), MCMtrx(CTRL_GEN_ARGS), Z(target), false, false, ONE_CMPLX, -ONE_CMPLX);
+    CTRLED_PHASE_INVERT_WRAP(CZ(CTRL_1_ARGS), MCMtrx(CTRL_GEN_ARGS), Z(target), false, false, ONE_CMPLX, -ONE_CMPLX);
 }
 
 void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
@@ -3030,7 +3027,8 @@ void QUnit::Invert(const complex topRight, const complex bottomLeft, bitLenInt t
     }
 }
 
-void QUnit::MCPhase(const bitLenInt* cControls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
+void QUnit::MCPhase(
+    const bitLenInt* cControls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
     // Commutes with controlled phase optimizations
     if (!controlLen) {
@@ -3130,7 +3128,8 @@ void QUnit::MCPhase(const bitLenInt* cControls, bitLenInt controlLen, complex to
         [&]() { Phase(topLeft, bottomRight, target); }, true);
 }
 
-void QUnit::MCInvert(const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
+void QUnit::MCInvert(
+    const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
     if (IS_1_R1(topRight) && IS_1_R1(bottomLeft)) {
         if (controlLen == 2U) {
@@ -3181,11 +3180,12 @@ void QUnit::MCInvert(const bitLenInt* controls, bitLenInt controlLen, complex to
         }
     }
 
-    CTRLED_PHASE_INVERT_WRAP(MCInvert(CTRL_I_ARGS), MCMtrx(CTRL_GEN_ARGS),
-        Invert(topRight, bottomLeft, target), false, true, topRight, bottomLeft);
+    CTRLED_PHASE_INVERT_WRAP(MCInvert(CTRL_I_ARGS), MCMtrx(CTRL_GEN_ARGS), Invert(topRight, bottomLeft, target), false,
+        true, topRight, bottomLeft);
 }
 
-void QUnit::MACPhase(const bitLenInt* cControls, bitLenInt controlLen, const complex topLeft, const complex bottomRight, bitLenInt cTarget)
+void QUnit::MACPhase(const bitLenInt* cControls, bitLenInt controlLen, const complex topLeft, const complex bottomRight,
+    bitLenInt cTarget)
 {
     // Commutes with controlled phase optimizations
     if (!controlLen) {
@@ -3269,7 +3269,8 @@ void QUnit::MACPhase(const bitLenInt* cControls, bitLenInt controlLen, const com
         [&]() { Phase(topLeft, bottomRight, target); }, true);
 }
 
-void QUnit::MACInvert(const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
+void QUnit::MACInvert(
+    const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
     if (IS_1_R1(topRight) && IS_1_R1(bottomLeft)) {
         if (controlLen == 2U) {
@@ -3316,8 +3317,8 @@ void QUnit::MACInvert(const bitLenInt* controls, bitLenInt controlLen, complex t
         }
     }
 
-    CTRLED_PHASE_INVERT_WRAP(MACInvert(CTRL_I_ARGS), MACMtrx(CTRL_GEN_ARGS),
-        Invert(topRight, bottomLeft, target), true, true, topRight, bottomLeft);
+    CTRLED_PHASE_INVERT_WRAP(MACInvert(CTRL_I_ARGS), MACMtrx(CTRL_GEN_ARGS), Invert(topRight, bottomLeft, target), true,
+        true, topRight, bottomLeft);
 }
 
 void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
@@ -3400,8 +3401,7 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
     }
 }
 
-void QUnit::MCMtrx(
-    const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
+void QUnit::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
     if (IsIdentity(mtrx, true)) {
         return;

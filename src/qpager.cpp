@@ -740,13 +740,11 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
 
     if (target < qpp) {
         if (isInvert) {
-            SingleBitGate(target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) {
-                engine->Invert(top, bottom, lTarget);
-            });
+            SingleBitGate(
+                target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) { engine->Invert(top, bottom, lTarget); });
         } else {
-            SingleBitGate(target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) {
-                engine->Phase(top, bottom, lTarget);
-            });
+            SingleBitGate(
+                target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) { engine->Phase(top, bottom, lTarget); });
         }
 
         return;

@@ -23,7 +23,7 @@
     void QInterface::gate(bitLenInt qubit)                                                                             \
     {                                                                                                                  \
         const complex mtrx[4] = { mtrx00, mtrx01, mtrx10, mtrx11 };                                                    \
-        Mtrx(mtrx, qubit);                                                                                   \
+        Mtrx(mtrx, qubit);                                                                                             \
     }
 
 #define GATE_1_PHASE(gate, topLeft, bottomRight)                                                                       \
@@ -57,21 +57,24 @@ void QInterface::Invert(const complex topRight, const complex bottomLeft, bitLen
 }
 
 /// Apply a single bit transformation that only effects phase, with arbitrary control bits.
-void QInterface::MCPhase(const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
+void QInterface::MCPhase(
+    const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
     const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     MCMtrx(controls, controlLen, mtrx, target);
 }
 
 /// Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary control bits.
-void QInterface::MCInvert(const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
+void QInterface::MCInvert(
+    const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
     const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     MCMtrx(controls, controlLen, mtrx, target);
 }
 
 /// Apply a single bit transformation that only effects phase, with arbitrary (anti-)control bits.
-void QInterface::MACPhase(const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
+void QInterface::MACPhase(
+    const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
     const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     MACMtrx(controls, controlLen, mtrx, target);
@@ -79,7 +82,8 @@ void QInterface::MACPhase(const bitLenInt* controls, bitLenInt controlLen, compl
 
 /// Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary
 /// (anti-)control bits.
-void QInterface::MACInvert(const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
+void QInterface::MACInvert(
+    const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
     const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     MACMtrx(controls, controlLen, mtrx, target);
@@ -362,7 +366,8 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         return;
     }
 
-    MCPhase(controls, 1, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), target);
+    MCPhase(
+        controls, 1, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), target);
 }
 
 /// Apply (anti-)controlled "PhaseRootN" gate to bit

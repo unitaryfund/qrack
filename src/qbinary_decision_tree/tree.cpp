@@ -906,8 +906,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
     });
 }
 
-void QBinaryDecisionTree::MCMtrx(
-    const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
+void QBinaryDecisionTree::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
     if (qubitCount <= bdtThreshold) {
         SetStateVector();

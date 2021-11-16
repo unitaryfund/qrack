@@ -422,13 +422,14 @@ public:
         FlushIfBuffered(target) || FlushIfPhaseBlocked(controls, controlLen);
         engine->MACMtrx(controls, controlLen, mtrx, target);
     }
-    virtual void MCPhase(const bitLenInt* controls, bitLenInt controlLen,
-        complex topLeft, complex bottomRight, bitLenInt target)
+    virtual void MCPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
     {
         FlushIfPhaseBlocked(target) || FlushIfPhaseBlocked(controls, controlLen);
         engine->MCPhase(controls, controlLen, topLeft, bottomRight, target);
     }
-    virtual void MACPhase(const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target) 
+    virtual void MACPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
     {
         FlushIfPhaseBlocked(target) || FlushIfPhaseBlocked(controls, controlLen);
         engine->MACPhase(controls, controlLen, topLeft, bottomRight, target);

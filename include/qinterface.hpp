@@ -514,14 +514,12 @@ public:
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary control bits.
      */
-    virtual void MCMtrx(
-        const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target) = 0;
+    virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary (anti-)control bits.
      */
-    virtual void MACMtrx(
-        const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
+    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
 
     /**
      * Apply a single bit transformation that only effects phase.
@@ -536,28 +534,28 @@ public:
     /**
      * Apply a single bit transformation that only effects phase, with arbitrary control bits.
      */
-    virtual void MCPhase(const bitLenInt* controls, bitLenInt controlLen,
-        complex topLeft, complex bottomRight, bitLenInt target);
+    virtual void MCPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
 
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary control
      * bits.
      */
-    virtual void MCInvert(const bitLenInt* controls, bitLenInt controlLen,
-        complex topRight, complex bottomLeft, bitLenInt target);
+    virtual void MCInvert(
+        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
     /**
      * Apply a single bit transformation that only effects phase, with arbitrary (anti-)control bits.
      */
-    virtual void MACPhase(const bitLenInt* controls, bitLenInt controlLen,
-        complex topLeft, complex bottomRight, bitLenInt target);
+    virtual void MACPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
 
     /**
      * Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary
      * (anti-)control bits.
      */
-    virtual void MACInvert(const bitLenInt* controls, bitLenInt controlLen,
-        complex topRight, complex bottomLeft, bitLenInt target);
+    virtual void MACInvert(
+        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
     /**
      * Apply a "uniformly controlled" arbitrary single bit unitary transformation. (See
      * https://arxiv.org/abs/quant-ph/0312218)

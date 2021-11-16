@@ -488,11 +488,10 @@ void QStabilizerHybrid::Invert(const complex topRight, const complex bottomLeft,
     CacheEigenstate(target);
 }
 
-void QStabilizerHybrid::MCMtrx(
-    const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
+void QStabilizerHybrid::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        MCPhase(lControls, lControlLen, mtrx[0], mtrx[3] , target);
+        MCPhase(lControls, lControlLen, mtrx[0], mtrx[3], target);
         return;
     }
 
@@ -515,8 +514,8 @@ void QStabilizerHybrid::MCMtrx(
     engine->MCMtrx(lControls, lControlLen, mtrx, target);
 }
 
-void QStabilizerHybrid::MCPhase(const bitLenInt* lControls, bitLenInt lControlLen,
-    complex topLeft, complex bottomRight, bitLenInt target)
+void QStabilizerHybrid::MCPhase(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls)) {
@@ -600,8 +599,8 @@ void QStabilizerHybrid::MCPhase(const bitLenInt* lControls, bitLenInt lControlLe
     engine->MCPhase(lControls, lControlLen, topLeft, bottomRight, target);
 }
 
-void QStabilizerHybrid::MCInvert(const bitLenInt* lControls, bitLenInt lControlLen,
-    complex topRight, complex bottomLeft, bitLenInt target)
+void QStabilizerHybrid::MCInvert(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls)) {
@@ -710,8 +709,8 @@ void QStabilizerHybrid::MACMtrx(
     engine->MACMtrx(lControls, lControlLen, mtrx, target);
 }
 
-void QStabilizerHybrid::MACPhase(const bitLenInt* lControls, bitLenInt lControlLen,
-    complex topLeft, complex bottomRight, bitLenInt target)
+void QStabilizerHybrid::MACPhase(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls, true)) {
@@ -739,8 +738,8 @@ void QStabilizerHybrid::MACPhase(const bitLenInt* lControls, bitLenInt lControlL
     X(controls[0]);
 }
 
-void QStabilizerHybrid::MACInvert(const bitLenInt* lControls, bitLenInt lControlLen,
-    complex topRight, complex bottomLeft, bitLenInt target)
+void QStabilizerHybrid::MACInvert(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls, true)) {
