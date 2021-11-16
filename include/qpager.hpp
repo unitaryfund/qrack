@@ -190,7 +190,7 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex);
+    virtual void Mtrx(const complex* mtrx, bitLenInt qubitIndex);
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
     {
         ApplySingleEither(false, topLeft, bottomRight, qubitIndex);

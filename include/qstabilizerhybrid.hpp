@@ -132,7 +132,7 @@ protected:
             MpsShardPtr shard = shards[i];
             if (shard) {
                 shards[i] = NULL;
-                ApplySingleBit(shard->gate, i);
+                Mtrx(shard->gate, i);
             }
         }
     }
@@ -407,7 +407,7 @@ public:
 
     virtual bitCapInt MAll();
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
+    virtual void Mtrx(const complex* mtrx, bitLenInt target);
 
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target);
 
@@ -437,7 +437,7 @@ public:
     {
         // If there are no controls, this is equivalent to the single bit gate.
         if (!controlLen) {
-            ApplySingleBit(mtrxs, qubitIndex);
+            Mtrx(mtrxs, qubitIndex);
             return;
         }
 

@@ -719,7 +719,7 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 }
 
-void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
+void QPager::Mtrx(const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         ApplySinglePhase(mtrx[0], mtrx[3], target);
@@ -730,7 +730,7 @@ void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
     }
 
     SeparateEngines();
-    SingleBitGate(target, [mtrx](QEnginePtr engine, bitLenInt lTarget) { engine->ApplySingleBit(mtrx, lTarget); });
+    SingleBitGate(target, [mtrx](QEnginePtr engine, bitLenInt lTarget) { engine->Mtrx(mtrx, lTarget); });
 }
 
 void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom, bitLenInt target)
@@ -784,7 +784,7 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
     const bitLenInt& target, const complex* mtrx)
 {
     if (controlLen == 0) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
@@ -813,7 +813,7 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
                 engine->ApplyControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
             }
         } else {
-            engine->ApplySingleBit(mtrx, lTarget);
+            engine->Mtrx(mtrx, lTarget);
         }
     };
 

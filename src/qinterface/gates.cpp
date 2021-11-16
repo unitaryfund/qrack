@@ -23,7 +23,7 @@
     void QInterface::gate(bitLenInt qubit)                                                                             \
     {                                                                                                                  \
         const complex mtrx[4] = { mtrx00, mtrx01, mtrx10, mtrx11 };                                                    \
-        ApplySingleBit(mtrx, qubit);                                                                                   \
+        Mtrx(mtrx, qubit);                                                                                   \
     }
 
 #define GATE_1_PHASE(gate, topLeft, bottomRight)                                                                       \
@@ -46,14 +46,14 @@ void QInterface::SetBit(bitLenInt qubit1, bool value)
 void QInterface::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
 {
     const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-    ApplySingleBit(mtrx, qubitIndex);
+    Mtrx(mtrx, qubitIndex);
 }
 
 /// Apply a single bit transformation that reverses bit probability and might effect phase.
 void QInterface::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
 {
     const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    ApplySingleBit(mtrx, qubitIndex);
+    Mtrx(mtrx, qubitIndex);
 }
 
 /// Apply a single bit transformation that only effects phase, with arbitrary control bits.

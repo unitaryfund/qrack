@@ -785,7 +785,7 @@ MICROSOFT_QUANTUM_DECL void Mtrx(_In_ unsigned sid, _In_reads_(8) double* m, _In
         complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->ApplySingleBit(mtrx, shards[simulator.get()][q]);
+    simulator->Mtrx(mtrx, shards[simulator.get()][q]);
 }
 
 #define MAP_CONTROLS_AND_LOCK(sid, numC)                                                                               \

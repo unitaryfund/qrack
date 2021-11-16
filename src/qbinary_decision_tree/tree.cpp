@@ -707,7 +707,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(const complex* lMtr
     });
 }
 
-void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
+void QBinaryDecisionTree::Mtrx(const complex* lMtrx, bitLenInt target)
 {
     complex mtrx[4];
     if (shards[target]) {
@@ -729,7 +729,7 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
 
     if (!isFusionFlush) {
         if (stateVecUnit && (qubitCount <= bdtThreshold)) {
-            stateVecUnit->ApplySingleBit(mtrx, target);
+            stateVecUnit->Mtrx(mtrx, target);
             return;
         }
         ResetStateVector();
@@ -747,7 +747,7 @@ void QBinaryDecisionTree::ApplySinglePhase(const complex topLeft, const complex 
 {
     complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (shards[target]) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
@@ -774,7 +774,7 @@ void QBinaryDecisionTree::ApplySingleInvert(const complex topRight, const comple
 {
     complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (shards[target]) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 

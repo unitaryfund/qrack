@@ -509,7 +509,7 @@ public:
     /**
      * Apply an arbitrary single bit unitary transformation.
      */
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex) = 0;
+    virtual void Mtrx(const complex* mtrx, bitLenInt qubitIndex) = 0;
 
     /**
      * Apply an arbitrary single bit unitary transformation, with arbitrary control bits.

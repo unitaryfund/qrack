@@ -161,7 +161,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
     return result;
 }
 
-void QEngine::ApplySingleBit(const complex* mtrx, bitLenInt qubit)
+void QEngine::Mtrx(const complex* mtrx, bitLenInt qubit)
 {
     if (IsIdentity(mtrx, false)) {
         return;
@@ -178,7 +178,7 @@ void QEngine::ApplyControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     if (controlLen == 0) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
@@ -198,7 +198,7 @@ void QEngine::ApplyAntiControlledSingleBit(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     if (controlLen == 0) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 

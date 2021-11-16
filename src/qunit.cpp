@@ -1970,7 +1970,7 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
 {
     // If there are no controls, this is equivalent to the single bit gate.
     if (!controlLen) {
-        ApplySingleBit(mtrxs, qubitIndex);
+        Mtrx(mtrxs, qubitIndex);
         return;
     }
 
@@ -1994,7 +1994,7 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLen
         complex mtrx[4];
         std::copy(
             mtrxs + (bitCapIntOcl)(controlPerm * 4UL), mtrxs + (bitCapIntOcl)((controlPerm + ONE_BCI) * 4U), mtrx);
-        ApplySingleBit(mtrx, qubitIndex);
+        Mtrx(mtrx, qubitIndex);
         return;
     }
 
@@ -2965,7 +2965,7 @@ void QUnit::ApplySinglePhase(const complex topLeft, const complex bottomRight, b
     TransformPhase(topLeft, bottomRight, mtrx);
 
     if (shard.unit) {
-        shard.unit->ApplySingleBit(mtrx, shard.mapped);
+        shard.unit->Mtrx(mtrx, shard.mapped);
     }
     if (DIRTY(shard)) {
         shard.MakeDirty();
@@ -3002,7 +3002,7 @@ void QUnit::ApplySingleInvert(const complex topRight, const complex bottomLeft, 
         }
 
         if (shard.unit) {
-            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+            shard.unit->Mtrx(mtrx, shard.mapped);
         }
         if (DIRTY(shard)) {
             shard.MakeDirty();
@@ -3328,7 +3328,7 @@ void QUnit::ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bit
         ApplySingleInvert(topRight, bottomLeft, target), true, true, topRight, bottomLeft);
 }
 
-void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
+void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
 {
     QEngineShard& shard = shards[target];
 
@@ -3393,7 +3393,7 @@ void QUnit::ApplySingleBit(const complex* mtrx, bitLenInt target)
     }
 
     if (shard.unit) {
-        shard.unit->ApplySingleBit(trnsMtrx, shard.mapped);
+        shard.unit->Mtrx(trnsMtrx, shard.mapped);
     }
     if (DIRTY(shard)) {
         shard.MakeDirty();
@@ -3431,7 +3431,7 @@ void QUnit::ApplyControlledSingleBit(
         return;
     }
 
-    CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, target), false);
+    CTRLED_GEN_WRAP(ApplyControlledSingleBit(CTRL_GEN_ARGS), Mtrx(mtrx, target), false);
 }
 
 void QUnit::ApplyAntiControlledSingleBit(
@@ -3457,7 +3457,7 @@ void QUnit::ApplyAntiControlledSingleBit(
         return;
     }
 
-    CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), ApplySingleBit(mtrx, target), true);
+    CTRLED_GEN_WRAP(ApplyAntiControlledSingleBit(CTRL_GEN_ARGS), Mtrx(mtrx, target), true);
 }
 
 void QUnit::CSwap(

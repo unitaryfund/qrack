@@ -714,9 +714,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_single_bit")
     complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->ApplySingleBit(pauliX, 19);
+    qftReg->Mtrx(pauliX, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 1));
-    qftReg->ApplySingleBit(pauliX, 19);
+    qftReg->Mtrx(pauliX, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
 }
 

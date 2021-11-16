@@ -141,7 +141,7 @@ protected:
 
         shards[i] = NULL;
         isFusionFlush = true;
-        ApplySingleBit(shard->gate, i);
+        Mtrx(shard->gate, i);
         isFusionFlush = false;
     }
 
@@ -277,7 +277,7 @@ public:
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt MAll();
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
+    virtual void Mtrx(const complex* mtrx, bitLenInt target);
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target);
     virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target);
     virtual void ApplyControlledSingleBit(

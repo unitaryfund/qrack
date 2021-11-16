@@ -100,7 +100,7 @@ void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
     if (IS_CLIFFORD(shards[target]->gate)) {
         MpsShardPtr shard = shards[target];
         shards[target] = NULL;
-        ApplySingleBit(shard->gate, target);
+        Mtrx(shard->gate, target);
     }
 }
 
@@ -255,7 +255,7 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
         complex phase0 = std::polar(ONE_R1, arg(inputState[0]));
         complex phase1 = std::polar(ONE_R1, arg(inputState[1]));
         complex mtrx[4] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
-        ApplySingleBit(mtrx, 0);
+        Mtrx(mtrx, 0);
 
         return;
     }
@@ -275,7 +275,7 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
     }
 }
 
-void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
+void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
 {
     complex mtrx[4];
     if (shards[target]) {
@@ -297,7 +297,7 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     if (engine) {
-        engine->ApplySingleBit(mtrx, target);
+        engine->Mtrx(mtrx, target);
         return;
     }
 
@@ -406,7 +406,7 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
 {
     complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (shards[target]) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
@@ -447,7 +447,7 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
 {
     complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (shards[target]) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
@@ -507,7 +507,7 @@ void QStabilizerHybrid::ApplyControlledSingleBit(
     }
 
     if (!controls.size()) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
@@ -702,7 +702,7 @@ void QStabilizerHybrid::ApplyAntiControlledSingleBit(
     }
 
     if (!controls.size()) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 

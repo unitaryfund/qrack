@@ -347,7 +347,7 @@ public:
     using QInterface::Z;
     virtual void Z(bitLenInt target);
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
+    virtual void Mtrx(const complex* mtrx, bitLenInt target);
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
     {
         if (IS_SAME(topLeft, bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {

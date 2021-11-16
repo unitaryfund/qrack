@@ -199,7 +199,7 @@ public:
         engine->SetPermutation(perm, phaseFac);
     }
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex) { engine->ApplySingleBit(mtrx, qubitIndex); }
+    virtual void Mtrx(const complex* mtrx, bitLenInt qubitIndex) { engine->Mtrx(mtrx, qubitIndex); }
     virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
     {
         engine->ApplySinglePhase(topLeft, bottomRight, qubitIndex);

@@ -171,7 +171,7 @@ public:
         const bitLenInt& target, const complex topLeft, const complex bottomRight);
     virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
         const bitLenInt& target, const complex topRight, const complex bottomLeft);
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubit);
+    virtual void Mtrx(const complex* mtrx, bitLenInt qubit);
     virtual void ApplyControlledSingleBit(
         const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
     virtual void ApplyAntiControlledSingleBit(
@@ -436,7 +436,7 @@ protected:
             ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX) };
 
         if (shard.unit) {
-            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+            shard.unit->Mtrx(mtrx, shard.mapped);
         }
         if (shard.isPhaseDirty || shard.isProbDirty) {
             shard.MakeDirty();
@@ -518,7 +518,7 @@ protected:
             ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX) };
 
         if (shard.unit) {
-            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+            shard.unit->Mtrx(mtrx, shard.mapped);
         }
         if (shard.isPhaseDirty || shard.isProbDirty) {
             shard.MakeDirty();
@@ -543,7 +543,7 @@ protected:
             complex(ZERO_R1, -SQRT1_2_R1) };
 
         if (shard.unit) {
-            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+            shard.unit->Mtrx(mtrx, shard.mapped);
         }
         if (shard.isPhaseDirty || shard.isProbDirty) {
             shard.MakeDirty();
@@ -568,7 +568,7 @@ protected:
             complex(ZERO_R1, SQRT1_2_R1) };
 
         if (shard.unit) {
-            shard.unit->ApplySingleBit(mtrx, shard.mapped);
+            shard.unit->Mtrx(mtrx, shard.mapped);
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {

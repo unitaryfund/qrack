@@ -134,7 +134,7 @@ void QMaskFusion::Z(bitLenInt target)
     isCacheEmpty = false;
 }
 
-void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
+void QMaskFusion::Mtrx(const complex* lMtrx, bitLenInt target)
 {
     complex mtrx[4] = { lMtrx[0], lMtrx[1], lMtrx[2], lMtrx[3] };
 
@@ -185,7 +185,7 @@ void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    engine->ApplySingleBit(mtrx, target);
+    engine->Mtrx(mtrx, target);
 }
 
 } // namespace Qrack

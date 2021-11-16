@@ -29,7 +29,7 @@ void QInterface::RX(real1_f radians, bitLenInt qubit)
     real1 sine = (real1)sin(radians / 2);
     complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
         complex(cosine, ZERO_R1) };
-    ApplySingleBit(pauliRX, qubit);
+    Mtrx(pauliRX, qubit);
 }
 
 /// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
@@ -38,7 +38,7 @@ void QInterface::RY(real1_f radians, bitLenInt qubit)
     real1 cosine = (real1)cos(radians / 2);
     real1 sine = (real1)sin(radians / 2);
     complex pauliRY[4] = { cosine, -sine, sine, cosine };
-    ApplySingleBit(pauliRY, qubit);
+    Mtrx(pauliRY, qubit);
 }
 
 /// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
@@ -57,7 +57,7 @@ void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
     const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
         sin0 * complex((real1)cos(phi), (real1)sin(phi)),
         cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
-    ApplySingleBit(uGate, target);
+    Mtrx(uGate, target);
 }
 
 /// Apply general unitary gate to each bit in "length," starting from bit index "start"
@@ -161,7 +161,7 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
     }
     exp2x2(timesI, toApply);
     if (controlLen == 0) {
-        ApplySingleBit(toApply, qubit);
+        Mtrx(toApply, qubit);
     } else if (antiCtrled) {
         ApplyAntiControlledSingleBit(controls, controlLen, qubit, toApply);
     } else {
