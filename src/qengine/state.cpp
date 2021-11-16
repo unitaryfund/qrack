@@ -114,7 +114,7 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
             real1_f angle = Rand() * 2 * PI_R1;
             phase = complex((real1)cos(angle), (real1)sin(angle));
         } else {
-            phase = complex(ONE_R1, ZERO_R1);
+            phase = ONE_CMPLX;
         }
         stateVec->write((bitCapIntOcl)perm, phase);
     } else {
@@ -1469,7 +1469,7 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
             if ((i & regMask) == result) {
                 stateVec->write(i, nrm * stateVec->read(i));
             } else {
-                stateVec->write(i, complex(ZERO_R1, ZERO_R1));
+                stateVec->write(i, ZERO_CMPLX);
             }
         };
 

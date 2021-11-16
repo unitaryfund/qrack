@@ -19,7 +19,7 @@ namespace Qrack {
 /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
 void QInterface::RT(real1_f radians, bitLenInt qubit)
 {
-    ApplySinglePhase(complex(ONE_R1, ZERO_R1), complex((real1)cos(radians / 2), (real1)sin(radians / 2)), qubit);
+    ApplySinglePhase(ONE_CMPLX, complex((real1)cos(radians / 2), (real1)sin(radians / 2)), qubit);
 }
 
 /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
@@ -136,8 +136,8 @@ void QInterface::UniformlyControlledRZ(
         sine = sin(angles[i] / 2);
 
         pauliRZs[0U + 4U * i] = complex(cosine, -sine);
-        pauliRZs[1U + 4U * i] = complex(ZERO_R1, ZERO_R1);
-        pauliRZs[2U + 4U * i] = complex(ZERO_R1, ZERO_R1);
+        pauliRZs[1U + 4U * i] = ZERO_CMPLX;
+        pauliRZs[2U + 4U * i] = ZERO_CMPLX;
         pauliRZs[3U + 4U * i] = complex(cosine, sine);
     }
 
@@ -157,7 +157,7 @@ void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit,
     complex timesI[4];
     complex toApply[4];
     for (bitLenInt i = 0; i < 4; i++) {
-        timesI[i] = complex(ZERO_R1, ONE_R1) * matrix2x2[i];
+        timesI[i] = I_CMPLX * matrix2x2[i];
     }
     exp2x2(timesI, toApply);
     if (controlLen == 0) {
@@ -180,7 +180,7 @@ void QInterface::ExpX(real1_f radians, bitLenInt qubit)
 void QInterface::ExpY(real1_f radians, bitLenInt qubit)
 {
     complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
-    ApplySingleInvert(phaseFac * complex(ZERO_R1, -ONE_R1), phaseFac * complex(ZERO_R1, ONE_R1), qubit);
+    ApplySingleInvert(phaseFac * -I_CMPLX, phaseFac * I_CMPLX, qubit);
 }
 
 /// Exponentiate Pauli Z operator
@@ -195,7 +195,7 @@ void QInterface::CRT(real1_f radians, bitLenInt control, bitLenInt target)
 {
     bitLenInt controls[1] = { control };
     ApplyControlledSinglePhase(
-        controls, 1, target, complex(ONE_R1, ZERO_R1), complex((real1)cos(radians / 2), (real1)sin(radians / 2)));
+        controls, 1, target, ONE_CMPLX, complex((real1)cos(radians / 2), (real1)sin(radians / 2)));
 }
 
 /// Controlled x axis rotation - if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis

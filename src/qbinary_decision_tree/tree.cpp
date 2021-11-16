@@ -88,7 +88,7 @@ void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
             real1_f angle = Rand() * 2 * PI_R1;
             phaseFac = complex((real1)cos(angle), (real1)sin(angle));
         } else {
-            phaseFac = complex(ONE_R1, ZERO_R1);
+            phaseFac = ONE_CMPLX;
         }
     }
 

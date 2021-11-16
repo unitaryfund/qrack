@@ -260,8 +260,8 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
 
 TEST_CASE("test_exp2x2_log2x2")
 {
-    complex mtrx1[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(ONE_R1, ZERO_R1) };
+    complex mtrx1[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX,
+        ONE_CMPLX };
     complex mtrx2[4];
 
     exp2x2(mtrx1, mtrx2);
@@ -798,10 +798,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_bit")
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     qftReg->H(0);
-    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 0, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
+    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 0, ONE_CMPLX, -ONE_CMPLX);
     qftReg->H(0);
     qftReg->H(1);
-    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 1, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
+    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 1, ONE_CMPLX, -ONE_CMPLX);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
@@ -834,10 +834,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_invert
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     qftReg->H(0);
-    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 0, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
+    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 0, ONE_CMPLX, -ONE_CMPLX);
     qftReg->H(0);
     qftReg->H(1);
-    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 1, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
+    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 1, ONE_CMPLX, -ONE_CMPLX);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
@@ -3752,7 +3752,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
 
     // Try across device/heap allocation case:
     qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0, rng,
-        complex(ONE_R1, ZERO_R1), enable_normalization, true, true, device_id, !disable_hardware_rng, sparse,
+        ONE_CMPLX, enable_normalization, true, true, device_id, !disable_hardware_rng, sparse,
         REAL1_EPSILON, devList);
 
     qftReg->SetPermutation(0x2b);
@@ -3809,7 +3809,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
     // Try across device/heap allocation case:
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
     qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng,
-        complex(ONE_R1, ZERO_R1), false, true, true);
+        ONE_CMPLX, false, true, true);
     qftReg->Compose(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
@@ -4565,10 +4565,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve_uniform")
     real1 e0 = (real1)sqrt(ONE_R1 - aParam * aParam);
 
     BitOp o2neg1(new complex[8], std::default_delete<complex[]>());
-    o2neg1.get()[0] = complex(ONE_R1, ZERO_R1);
-    o2neg1.get()[1] = complex(ZERO_R1, ZERO_R1);
-    o2neg1.get()[2] = complex(ZERO_R1, ZERO_R1);
-    o2neg1.get()[3] = complex(ONE_R1, ZERO_R1);
+    o2neg1.get()[0] = ONE_CMPLX;
+    o2neg1.get()[1] = ZERO_CMPLX;
+    o2neg1.get()[2] = ZERO_CMPLX;
+    o2neg1.get()[3] = ONE_CMPLX;
     o2neg1.get()[4] = complex(e0, ZERO_R1);
     o2neg1.get()[5] = complex(-aParam, ZERO_R1);
     o2neg1.get()[6] = complex(-aParam, ZERO_R1);
