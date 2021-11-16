@@ -425,7 +425,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
     bitCapIntOcl inOutMask = lowMask << inOutStart;
     bitCapIntOcl carryMask = lowMask << carryStart;
 
-    std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
+    std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[(size_t)controlLen + length]);
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
     bitCapIntOcl controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -434,7 +434,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
         controlMask |= controlPowers[i];
     }
     for (bitLenInt i = 0; i < length; i++) {
-        skipPowers[i + controlLen] = pow2Ocl(carryStart + i);
+        skipPowers[(size_t)i + controlLen] = pow2Ocl(carryStart + i);
     }
     std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
 
@@ -594,7 +594,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
     bitCapIntOcl inMask = lowMask << inStart;
     bitCapIntOcl outMask = lowMask << outStart;
 
-    std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
+    std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[(size_t)controlLen + length]);
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
     bitCapIntOcl controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -603,7 +603,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
         controlMask |= controlPowers[i];
     }
     for (bitLenInt i = 0; i < length; i++) {
-        skipPowers[i + controlLen] = pow2Ocl(outStart + i);
+        skipPowers[(size_t)i + controlLen] = pow2Ocl(outStart + i);
     }
     std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
 
@@ -743,7 +743,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
                 if (nibbles[j] > 9) {
                     nibbles[j] -= 10;
                     if ((j + 1) < nibbleCount) {
-                        nibbles[j + 1]++;
+                        nibbles[(size_t)j + 1]++;
                     }
                 }
                 outInt |= (bitCapIntOcl)nibbles[j] << (j * 4U * ONE_BCI);
@@ -838,7 +838,7 @@ void QEngineCPU::INCDECBCDC(
                         carryRes = carryMask;
                     }
                 }
-                outInt |= nibbles[j] << (j * 4U * ONE_BCI);
+                outInt |= (bitCapIntOcl)nibbles[j] << (j * 4U * ONE_BCI);
             }
             outRes = (outInt << inOutStart) | otherRes | carryRes;
             nStateVec->write(outRes, stateVec->read(lcv));
@@ -879,24 +879,24 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
     ParallelFunc fn;
     if (valueBytes == 1) {
         fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            nStateVec->write(lcv | (values[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
+            nStateVec->write(lcv | ((bitCapIntOcl)values[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
         };
     } else if (valueBytes == 2) {
         uint16_t* inputIntPtr = (uint16_t*)values;
         fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            nStateVec->write(lcv | (inputIntPtr[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
+            nStateVec->write(lcv | ((bitCapIntOcl)inputIntPtr[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
         };
     } else if (valueBytes == 4) {
         uint32_t* inputIntPtr = (uint32_t*)values;
         fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            nStateVec->write(lcv | (inputIntPtr[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
+            nStateVec->write(lcv | ((bitCapIntOcl)inputIntPtr[(lcv & inputMask) >> indexStart] << valueStart), stateVec->read(lcv));
         };
     } else {
         fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             bitCapIntOcl inputInt = (lcv & inputMask) >> indexStart;
             bitCapIntOcl outputInt = 0;
             for (bitCapIntOcl j = 0; j < valueBytes; j++) {
-                outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+                outputInt |= (bitCapIntOcl)values[inputInt * valueBytes + j] << (8U * j);
             }
             bitCapIntOcl outputRes = outputInt << valueStart;
             nStateVec->write(outputRes | lcv, stateVec->read(lcv));
@@ -916,7 +916,7 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
     average = GetExpectation(valueStart, valueLength);
 #endif
 
-    return (bitCapInt)(average + (ONE_R1 / 2));
+    return (bitCapInt)(average + (real1)0.5f);
 }
 
 /// Add based on an indexed load from classical memory
@@ -992,7 +992,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
             outputInt = ((uint32_t*)values)[inputInt];
         } else {
             for (bitCapIntOcl j = 0; j < valueBytes; j++) {
-                outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+                outputInt |= (bitCapIntOcl)values[inputInt * valueBytes + j] << (8U * j);
             }
         }
         outputInt += (outputRes >> valueStart) + carryIn;
@@ -1028,7 +1028,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
 #endif
 
     // Return the expectation value.
-    return (bitCapInt)(average + (ONE_R1 / 2));
+    return (bitCapInt)(average + (real1)0.5f);
 }
 
 /// Subtract based on an indexed load from classical memory
@@ -1104,7 +1104,7 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
             outputInt = ((uint32_t*)values)[inputInt];
         } else {
             for (bitCapIntOcl j = 0; j < valueBytes; j++) {
-                outputInt |= values[inputInt * valueBytes + j] << (8U * j);
+                outputInt |= (bitCapIntOcl)values[inputInt * valueBytes + j] << (8U * j);
             }
         }
         outputInt = (outputRes >> valueStart) + (lengthPower - (outputInt + carryIn));
@@ -1144,7 +1144,7 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 #endif
 
     // Return the expectation value.
-    return (bitCapInt)(average + (ONE_R1 / 2));
+    return (bitCapInt)(average + (real1)0.5f);
 }
 
 /// Transform a length of qubit register via lookup through a hash table.
@@ -1173,7 +1173,7 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
             outputInt = ((uint32_t*)values)[inputInt];
         } else {
             for (bitCapIntOcl j = 0; j < bytes; j++) {
-                outputInt |= values[inputInt * bytes + j] << (8U * j);
+                outputInt |= (bitCapIntOcl)values[inputInt * bytes + j] << (8U * j);
             }
         }
         bitCapIntOcl outputRes = outputInt << start;
