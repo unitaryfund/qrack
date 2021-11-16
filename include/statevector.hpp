@@ -357,7 +357,7 @@ public:
 
     std::vector<bitCapIntOcl> iterable()
     {
-        int32_t i, combineCount;
+        int64_t i, combineCount;
 
         int32_t threadCount = GetConcurrencyLevel();
         std::vector<std::vector<bitCapIntOcl>> toRet(threadCount);
@@ -393,7 +393,7 @@ public:
                 toRet.pop_back();
             }
 
-            combineCount = (int32_t)toRet.size() / 2U;
+            combineCount = (int64_t)toRet.size() / 2U;
 #if ENABLE_PTHREAD
             std::vector<std::future<void>> futures(combineCount);
             for (i = (combineCount - 1U); i >= 0; i--) {
@@ -426,7 +426,7 @@ public:
             return {};
         }
 
-        int32_t i, combineCount;
+        int64_t i, combineCount;
 
         bitCapIntOcl unsetMask = ~setMask;
 
@@ -456,7 +456,7 @@ public:
 
         mtx.unlock();
 
-        for (i = (int32_t)(toRet.size() - 1); i >= 0; i--) {
+        for (i = (int64_t)(toRet.size() - 1); i >= 0; i--) {
             if (toRet[i].size() == 0) {
                 toRetIt = toRet.begin();
                 std::advance(toRetIt, i);

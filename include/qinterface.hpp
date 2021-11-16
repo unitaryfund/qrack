@@ -47,10 +47,10 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
 #if ENABLE_UINT128
 std::ostream& operator<<(std::ostream& left, __uint128_t right);
 #endif
-inline bitCapInt pow2(const bitLenInt& p) { return ONE_BCI << p; }
-inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return ONE_BCI << p; }
-inline bitCapInt pow2Mask(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
-inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return (ONE_BCI << p) - ONE_BCI; }
+inline bitCapInt pow2(const bitLenInt& p) { return (bitCapInt)ONE_BCI << p; }
+inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return (bitCapIntOcl)ONE_BCI << p; }
+inline bitCapInt pow2Mask(const bitLenInt& p) { return ((bitCapInt)ONE_BCI << p) - ONE_BCI; }
+inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return ((bitCapIntOcl)ONE_BCI << p) - ONE_BCI; }
 inline bitLenInt log2(bitCapInt n)
 {
     bitLenInt pow = 0;
@@ -61,15 +61,15 @@ inline bitLenInt log2(bitCapInt n)
     }
     return pow;
 }
-inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return (ONE_BCI << bit) & source; }
-inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source) { return (ONE_BCI << bit) & source; }
+inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return ((bitCapInt)ONE_BCI << bit) & source; }
+inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source) { return ((bitCapIntOcl)ONE_BCI << bit) & source; }
 inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
 {
-    return ((ONE_BCI << length) - ONE_BCI) << start;
+    return (((bitCapInt)ONE_BCI << length) - ONE_BCI) << start;
 }
 inline bitCapIntOcl bitRegMaskOcl(const bitLenInt& start, const bitLenInt& length)
 {
-    return ((ONE_BCI << length) - ONE_BCI) << start;
+    return (((bitCapIntOcl)ONE_BCI << length) - ONE_BCI) << start;
 }
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
 inline bool isPowerOfTwo(const bitCapInt& x) { return ((x != 0U) && !(x & (x - ONE_BCI))); }
@@ -286,6 +286,14 @@ public:
     }
 
     QInterface()
+        : qubitCount(0)
+        , maxQPower(1)
+        , randomSeed(0)
+        , rand_distribution(0.0, 1.0)
+        , hardware_rand_generator(NULL)
+        , doNormalize(false)
+        , randGlobalPhase(true)
+        , amplitudeFloor(REAL1_EPSILON)
     {
         // Intentionally left blank
     }
