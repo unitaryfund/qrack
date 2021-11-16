@@ -342,7 +342,7 @@ public:
         }
     }
 
-    virtual int GetDeviceID() { return qPages[0]->GetDeviceID(); }
+    virtual int64_t GetDeviceID() { return qPages[0]->GetDeviceID(); }
 
     bitCapIntOcl GetMaxSize() { return qPages[0]->GetMaxSize(); };
 

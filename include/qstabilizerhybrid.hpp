@@ -938,7 +938,7 @@ public:
         }
     }
 
-    virtual int GetDeviceID() { return devID; }
+    virtual int64_t GetDeviceID() { return devID; }
 
     bitCapIntOcl GetMaxSize()
     {
