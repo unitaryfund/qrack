@@ -456,6 +456,12 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
                             break;
                         }
                     }
+
+                    if (!pShard) {
+                        // This should never happen.
+                        throw std::runtime_error("QUnit::Detach found NULL pShard.");
+                    }
+
                     complex amps[2];
                     pShard->unit->GetQuantumState(amps);
                     pShard->amp0 = amps[0];
@@ -635,8 +641,8 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
     }
 
     for (bitLenInt i = 0; i < length2; i++) {
-        bits[i + length1] = i + start2;
-        ebits[i + length1] = &bits[i + length1];
+        bits[(size_t)i + length1] = i + start2;
+        ebits[(size_t)i + length1] = &bits[(size_t)i + length1];
     }
 
     QInterfacePtr toRet = EntangleInCurrentBasis(ebits.begin(), ebits.end());
@@ -651,8 +657,8 @@ QInterfacePtr QUnit::EntangleRange(
     ToPermBasis(start2, length2);
     ToPermBasis(start3, length3);
 
-    std::vector<bitLenInt> bits(length1 + length2 + length3);
-    std::vector<bitLenInt*> ebits(length1 + length2 + length3);
+    std::vector<bitLenInt> bits((size_t)length1 + length2 + length3);
+    std::vector<bitLenInt*> ebits((size_t)length1 + length2 + length3);
 
     if (start2 < start1) {
         std::swap(start1, start2);
@@ -675,13 +681,13 @@ QInterfacePtr QUnit::EntangleRange(
     }
 
     for (bitLenInt i = 0; i < length2; i++) {
-        bits[i + length1] = i + start2;
-        ebits[i + length1] = &bits[i + length1];
+        bits[(size_t)i + length1] = i + start2;
+        ebits[(size_t)i + length1] = &bits[(size_t)i + length1];
     }
 
     for (bitLenInt i = 0; i < length3; i++) {
-        bits[i + length1 + length2] = i + start3;
-        ebits[i + length1 + length2] = &bits[i + length1 + length2];
+        bits[(size_t)i + length1 + length2] = i + start3;
+        ebits[(size_t)i + length1 + length2] = &bits[(size_t)i + length1 + length2];
     }
 
     QInterfacePtr toRet = EntangleInCurrentBasis(ebits.begin(), ebits.end());

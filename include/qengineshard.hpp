@@ -754,7 +754,7 @@ public:
         swapMap.insert(swapMap.begin() + start, toInsert.swapMap.begin(), toInsert.swapMap.end());
 
         for (bitLenInt lcv = 0; lcv < toInsert.size(); lcv++) {
-            swapMap[start + lcv] += oSize;
+            swapMap[(size_t)start + lcv] += oSize;
         }
     }
 
