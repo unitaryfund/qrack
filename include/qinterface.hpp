@@ -1205,6 +1205,49 @@ public:
      */
 
     /**
+     * Apply a "uniformly controlled" rotation of a bit around the Pauli Y axis. (See
+     * https://arxiv.org/abs/quant-ph/0312218)
+     *
+     * A different rotation angle is associated with each permutation of the control bits. The first control bit index
+     * in the "controls" array is the least significant bit of the permutation, proceeding to the most significant bit.
+     * "angles" is an array where each subsequent component is rotation angle associated with the next permutation of
+     * the control bits, starting from 0. All combinations of control bits apply one of rotation angles. For k control
+     * bits, there are therefore 2^k real components in "angles."
+     */
+    virtual void UniformlyControlledRY(
+        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
+
+    /**
+     * Apply a "uniformly controlled" rotation of a bit around the Pauli Z axis. (See
+     * https://arxiv.org/abs/quant-ph/0312218)
+     *
+     * A different rotation angle is associated with each permutation of the control bits. The first control bit index
+     * in the "controls" array is the least significant bit of the permutation, proceeding to the most significant bit.
+     * "angles" is an array where each subsequent component is rotation angle associated with the next permutation of
+     * the control bits, starting from 0. All combinations of control bits apply one of rotation angles. For k control
+     * bits, there are therefore 2^k real components in "angles."
+     */
+    virtual void UniformlyControlledRZ(
+        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
+
+    /**
+     * If the target qubit set parity is odd, this applies a phase factor of e^{i angle}. If the target qubit set parity
+     * is even, this applies the conjugate, e^{-i angle}.
+     */
+    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
+    {
+        CUniformParityRZ(NULL, 0, mask, angle);
+    }
+
+    /**
+     * If the controls are set and the target qubit set parity is odd, this applies a phase factor of e^{i angle}. If
+     * the controls are set and the target qubit set parity is even, this applies the conjugate, e^{-i angle}.
+     * Otherwise, do nothing if any control is not set.
+     */
+    virtual void CUniformParityRZ(
+        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle) = 0;
+
+    /**
      * Phase shift gate
      *
      * Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
@@ -1212,19 +1255,34 @@ public:
     virtual void RT(real1_f radians, bitLenInt qubitIndex);
 
     /**
+     * X axis rotation gate
+     *
+     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
+     */
+    virtual void RX(real1_f radians, bitLenInt qubitIndex);
+
+    /**
+     * Y axis rotation gate
+     *
+     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
+     */
+    virtual void RY(real1_f radians, bitLenInt qubitIndex);
+
+    /**
+     * Z axis rotation gate
+     *
+     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
+     */
+    virtual void RZ(real1_f radians, bitLenInt qubitIndex);
+
+#if ENABLE_ROT_API
+    /**
      * Dyadic fraction phase shift gate
      *
      * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around |1>
      * state.
      */
     virtual void RTDyad(int numerator, int denomPower, bitLenInt qubitIndex);
-
-    /**
-     * X axis rotation gate
-     *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
-     */
-    virtual void RX(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction X axis rotation gate
@@ -1316,13 +1374,6 @@ public:
     virtual void CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
     /**
-     * Y axis rotation gate
-     *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
-     */
-    virtual void RY(real1_f radians, bitLenInt qubitIndex);
-
-    /**
      * Dyadic fraction Y axis rotation gate
      *
      * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Y axis.
@@ -1344,56 +1395,6 @@ public:
      * axis.
      */
     virtual void CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
-
-    /**
-     * Apply a "uniformly controlled" rotation of a bit around the Pauli Y axis. (See
-     * https://arxiv.org/abs/quant-ph/0312218)
-     *
-     * A different rotation angle is associated with each permutation of the control bits. The first control bit index
-     * in the "controls" array is the least significant bit of the permutation, proceeding to the most significant bit.
-     * "angles" is an array where each subsequent component is rotation angle associated with the next permutation of
-     * the control bits, starting from 0. All combinations of control bits apply one of rotation angles. For k control
-     * bits, there are therefore 2^k real components in "angles."
-     */
-    virtual void UniformlyControlledRY(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
-
-    /**
-     * Apply a "uniformly controlled" rotation of a bit around the Pauli Z axis. (See
-     * https://arxiv.org/abs/quant-ph/0312218)
-     *
-     * A different rotation angle is associated with each permutation of the control bits. The first control bit index
-     * in the "controls" array is the least significant bit of the permutation, proceeding to the most significant bit.
-     * "angles" is an array where each subsequent component is rotation angle associated with the next permutation of
-     * the control bits, starting from 0. All combinations of control bits apply one of rotation angles. For k control
-     * bits, there are therefore 2^k real components in "angles."
-     */
-    virtual void UniformlyControlledRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
-
-    /**
-     * If the target qubit set parity is odd, this applies a phase factor of e^{i angle}. If the target qubit set parity
-     * is even, this applies the conjugate, e^{-i angle}.
-     */
-    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
-    {
-        CUniformParityRZ(NULL, 0, mask, angle);
-    }
-
-    /**
-     * If the controls are set and the target qubit set parity is odd, this applies a phase factor of e^{i angle}. If
-     * the controls are set and the target qubit set parity is even, this applies the conjugate, e^{-i angle}.
-     * Otherwise, do nothing if any control is not set.
-     */
-    virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle) = 0;
-
-    /**
-     * Z axis rotation gate
-     *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
-     */
-    virtual void RZ(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Z axis rotation gate
@@ -1434,6 +1435,7 @@ public:
      * around |1> state.
      */
     virtual void CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
+#endif
 
     /** @} */
 
@@ -1591,6 +1593,7 @@ public:
     /** Classical bitwise "XNOR" */
     virtual void CLXNOR(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length);
 
+#if ENABLE_ROT_API
     /**
      * Bitwise phase shift gate
      *
@@ -1770,6 +1773,7 @@ public:
      * operator
      */
     virtual void ExpZDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
+#endif
 
     /**
      * Bitwise controlled H gate

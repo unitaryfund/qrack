@@ -338,6 +338,7 @@ TEST_CASE("test_clxor_all", "[gates]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CLXOR(0, 0x0d, 0, n); });
 }
 
+#if ENABLE_ROT_API
 TEST_CASE("test_rt_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->RT(M_PI, 0, n); });
@@ -347,6 +348,7 @@ TEST_CASE("test_crt_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CRT(M_PI, 0, n / 2, n / 2); });
 }
+#endif
 
 TEST_CASE("test_rol", "[gates]")
 {

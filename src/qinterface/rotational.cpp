@@ -16,39 +16,6 @@
 
 namespace Qrack {
 
-/// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
-void QInterface::RT(real1_f radians, bitLenInt qubit)
-{
-    Phase(ONE_CMPLX, complex((real1)cos(radians / 2), (real1)sin(radians / 2)), qubit);
-}
-
-/// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
-void QInterface::RX(real1_f radians, bitLenInt qubit)
-{
-    real1 cosine = (real1)cos(radians / 2);
-    real1 sine = (real1)sin(radians / 2);
-    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
-        complex(cosine, ZERO_R1) };
-    Mtrx(pauliRX, qubit);
-}
-
-/// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
-void QInterface::RY(real1_f radians, bitLenInt qubit)
-{
-    real1 cosine = (real1)cos(radians / 2);
-    real1 sine = (real1)sin(radians / 2);
-    complex pauliRY[4] = { cosine, -sine, sine, cosine };
-    Mtrx(pauliRY, qubit);
-}
-
-/// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
-void QInterface::RZ(real1_f radians, bitLenInt qubit)
-{
-    real1 cosine = (real1)cos(radians / 2);
-    real1 sine = (real1)sin(radians / 2);
-    Phase(complex(cosine, -sine), complex(cosine, sine), qubit);
-}
-
 /// General unitary gate
 void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
@@ -144,6 +111,40 @@ void QInterface::UniformlyControlledRZ(
     UniformlyControlledSingleBit(controls, controlLen, qubitIndex, pauliRZs.get());
 }
 
+/// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state
+void QInterface::RT(real1_f radians, bitLenInt qubit)
+{
+    Phase(ONE_CMPLX, complex((real1)cos(radians / 2), (real1)sin(radians / 2)), qubit);
+}
+
+/// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
+void QInterface::RX(real1_f radians, bitLenInt qubit)
+{
+    real1 cosine = (real1)cos(radians / 2);
+    real1 sine = (real1)sin(radians / 2);
+    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
+        complex(cosine, ZERO_R1) };
+    Mtrx(pauliRX, qubit);
+}
+
+/// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
+void QInterface::RY(real1_f radians, bitLenInt qubit)
+{
+    real1 cosine = (real1)cos(radians / 2);
+    real1 sine = (real1)sin(radians / 2);
+    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+    Mtrx(pauliRY, qubit);
+}
+
+/// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
+void QInterface::RZ(real1_f radians, bitLenInt qubit)
+{
+    real1 cosine = (real1)cos(radians / 2);
+    real1 sine = (real1)sin(radians / 2);
+    Phase(complex(cosine, -sine), complex(cosine, sine), qubit);
+}
+
+#if ENABLE_ROT_API
 /// Exponentiate identity operator
 void QInterface::Exp(real1_f radians, bitLenInt qubit)
 {
@@ -227,5 +228,5 @@ void QInterface::CRZ(real1_f radians, bitLenInt control, bitLenInt target)
     bitLenInt controls[1] = { control };
     MCPhase(controls, 1, complex(cosine, -sine), complex(cosine, sine), target);
 }
-
+#endif
 } // namespace Qrack

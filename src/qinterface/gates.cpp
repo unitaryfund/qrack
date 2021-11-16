@@ -634,7 +634,9 @@ void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
     for (i = 0; i < end; i++) {
         CNOT(qubits[i], qubits[i + 1U]);
     }
-    RZ(radians, qubits[end]);
+    real1_f cosine = cos(radians / 2);
+    real1_f sine = sin(radians / 2);
+    Phase(cosine - I_CMPLX * sine, cosine + I_CMPLX * sine, qubits[end]);
     for (i = (end - 1U); i >= 0; i--) {
         CNOT(qubits[i], qubits[i + 1U]);
     }
@@ -676,7 +678,16 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
             }
             UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx.get());
         } else {
-            Exp(op->controls, op->controlLen, op->targetBit, mtrx.get(), op->anti);
+            complex timesI[4] = { I_CMPLX * mtrx[0], I_CMPLX * mtrx[1], I_CMPLX * mtrx[2], I_CMPLX * mtrx[3] };
+            complex toApply[4];
+            exp2x2(timesI, toApply);
+            if (op->controlLen == 0) {
+                Mtrx(toApply, op->targetBit);
+            } else if (op->anti) {
+                MACMtrx(op->controls, op->controlLen, toApply, op->targetBit);
+            } else {
+                MCMtrx(op->controls, op->controlLen, toApply, op->targetBit);
+            }
         }
 
         if (op->toggles) {

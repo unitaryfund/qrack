@@ -259,144 +259,6 @@ REG_GATE_3B(CLNOR);
 /// output
 REG_GATE_3B(CLXNOR);
 
-///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
-REG_GATE_1R(RT);
-
-/// Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / 2^denomPower) around |1> state.
-void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit) { RT(dyadAngle(numerator, denomPower), qubit); }
-
-/// Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state.
-REG_GATE_1D(RTDyad);
-
-/// Bitwise (identity) exponentiation gate - Applies exponentiation of the identity operator
-REG_GATE_1R(Exp);
-
-/// Dyadic fraction (identity) exponentiation gate - Applies exponentiation of the identity operator
-void QInterface::ExpDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    Exp(dyadAngle(numerator, denomPower), qubit);
-}
-
-/// Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$,
-REG_GATE_1D(ExpDyad);
-
-/// Bitwise Pauli X exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
-REG_GATE_1R(ExpX);
-
-/// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
-void QInterface::ExpXDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    ExpX(dyadAngle(numerator, denomPower), qubit);
-}
-
-/// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
-REG_GATE_1D(ExpXDyad);
-
-/// Bitwise Pauli Y exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
-REG_GATE_1R(ExpY);
-
-/// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
-void QInterface::ExpYDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    ExpY(dyadAngle(numerator, denomPower), qubit);
-}
-
-/// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
-REG_GATE_1D(ExpYDyad);
-
-/// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
-void QInterface::ExpZDyad(int numerator, int denomPower, bitLenInt qubit)
-{
-    ExpZ(dyadAngle(numerator, denomPower), qubit);
-}
-
-/**
- * Bitwise Pauli Z exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
- */
-REG_GATE_1R(ExpZ);
-
-/// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
-REG_GATE_1D(ExpZDyad);
-
-/// x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis
-REG_GATE_1R(RX);
-
-/// Dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
-void QInterface::RXDyad(int numerator, int denomPower, bitLenInt qubit) { RX(dyadAngle(numerator, denomPower), qubit); }
-
-/// Dyadic fraction x axis rotation gate - Rotates around Pauli x
-REG_GATE_1D(RXDyad);
-
-/// y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis
-REG_GATE_1R(RY);
-
-/// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
-void QInterface::RYDyad(int numerator, int denomPower, bitLenInt qubit) { RY(dyadAngle(numerator, denomPower), qubit); }
-
-/// Dyadic fraction y axis rotation gate - Rotates each bit around Pauli y axis.
-REG_GATE_1D(RYDyad);
-
-/// z axis rotation gate - Rotates each bit around Pauli z axis
-REG_GATE_1R(RZ);
-
-/// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
-void QInterface::RZDyad(int numerator, int denomPower, bitLenInt qubit) { RZ(dyadAngle(numerator, denomPower), qubit); }
-
-/// Dyadic fraction z axis rotation gate - Rotates each bit around Pauli y axis.
-REG_GATE_1D(RZDyad)
-
-/// Controlled "phase shift gate"
-REG_GATE_C1_1R(CRT);
-
-/// Controlled dyadic "phase shift gate" - if control bit is true, rotates target bit as e^(i*(M_PI * numerator) /
-/// 2^denomPower) around |1> state
-void QInterface::CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
-{
-    CRT(dyadAngle(numerator, denomPower), control, target);
-}
-
-/// Controlled dyadic fraction "phase shift gate"
-REG_GATE_C1_1D(CRTDyad);
-
-/// Controlled x axis rotation
-REG_GATE_C1_1R(CRX);
-
-/// Controlled dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
-void QInterface::CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
-{
-    CRX(dyadAngle(numerator, denomPower), control, target);
-}
-
-/// Controlled dyadic fraction x axis rotation gate - for each bit, if control bit is true, rotates target bit as as
-/// e^(i*(M_PI * numerator) / denominator) around Pauli x axis
-REG_GATE_C1_1D(CRXDyad);
-
-/// Controlled y axis rotation
-REG_GATE_C1_1R(CRY);
-
-/// Controlled dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
-void QInterface::CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
-{
-    CRY(dyadAngle(numerator, denomPower), control, target);
-}
-
-/// Controlled dyadic fraction y axis rotation gate - for each bit, if control bit is true, rotates target bit as
-/// e^(i*(M_PI * numerator) / denominator) around Pauli y axis
-REG_GATE_C1_1D(CRYDyad);
-
-/// Controlled z axis rotation
-REG_GATE_C1_1R(CRZ);
-
-/// Controlled dyadic fraction z axis rotation gate - Rotates around Pauli z axis.
-void QInterface::CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
-{
-    CRZ(dyadAngle(numerator, denomPower), control, target);
-}
-
-/// Controlled dyadic fraction z axis rotation gate - for each bit, if control bit is true, rotates target bit as
-/// e^(i*(M_PI * numerator) / denominator) around Pauli z axis
-REG_GATE_C1_1D(CRZDyad);
-
 /// Apply "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
 void QInterface::PhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
 {
@@ -851,4 +713,143 @@ bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error
     return didSeparate;
 }
 
+#if ENABLE_ROT_API
+///"Phase shift gate" - Rotates each bit as e^(-i*\theta/2) around |1> state
+REG_GATE_1R(RT);
+
+/// Dyadic fraction "phase shift gate" - Rotates as e^(i*(M_PI * numerator) / 2^denomPower) around |1> state.
+void QInterface::RTDyad(int numerator, int denomPower, bitLenInt qubit) { RT(dyadAngle(numerator, denomPower), qubit); }
+
+/// Dyadic fraction "phase shift gate" - Rotates each bit as e^(i*(M_PI * numerator) / denominator) around |1> state.
+REG_GATE_1D(RTDyad);
+
+/// Bitwise (identity) exponentiation gate - Applies exponentiation of the identity operator
+REG_GATE_1R(Exp);
+
+/// Dyadic fraction (identity) exponentiation gate - Applies exponentiation of the identity operator
+void QInterface::ExpDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    Exp(dyadAngle(numerator, denomPower), qubit);
+}
+
+/// Dyadic fraction (identity) exponentiation gate - Applies \f$ e^{-i * \pi * numerator * I / 2^denomPower} \f$,
+REG_GATE_1D(ExpDyad);
+
+/// Bitwise Pauli X exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+REG_GATE_1R(ExpX);
+
+/// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
+void QInterface::ExpXDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    ExpX(dyadAngle(numerator, denomPower), qubit);
+}
+
+/// Dyadic fraction Pauli X exponentiation gate - Applies exponentiation of the Pauli X operator
+REG_GATE_1D(ExpXDyad);
+
+/// Bitwise Pauli Y exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+REG_GATE_1R(ExpY);
+
+/// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
+void QInterface::ExpYDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    ExpY(dyadAngle(numerator, denomPower), qubit);
+}
+
+/// Dyadic fraction Pauli Y exponentiation gate - Applies exponentiation of the Pauli Y operator
+REG_GATE_1D(ExpYDyad);
+
+/// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
+void QInterface::ExpZDyad(int numerator, int denomPower, bitLenInt qubit)
+{
+    ExpZ(dyadAngle(numerator, denomPower), qubit);
+}
+
+/**
+ * Bitwise Pauli Z exponentiation gate - Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+ */
+REG_GATE_1R(ExpZ);
+
+/// Dyadic fraction Pauli Z exponentiation gate - Applies exponentiation of the Pauli Z operator
+REG_GATE_1D(ExpZDyad);
+
+/// x axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli x axis
+REG_GATE_1R(RX);
+
+/// Dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
+void QInterface::RXDyad(int numerator, int denomPower, bitLenInt qubit) { RX(dyadAngle(numerator, denomPower), qubit); }
+
+/// Dyadic fraction x axis rotation gate - Rotates around Pauli x
+REG_GATE_1D(RXDyad);
+
+/// y axis rotation gate - Rotates each bit as e^(-i*\theta/2) around Pauli y axis
+REG_GATE_1R(RY);
+
+/// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
+void QInterface::RYDyad(int numerator, int denomPower, bitLenInt qubit) { RY(dyadAngle(numerator, denomPower), qubit); }
+
+/// Dyadic fraction y axis rotation gate - Rotates each bit around Pauli y axis.
+REG_GATE_1D(RYDyad);
+
+/// z axis rotation gate - Rotates each bit around Pauli z axis
+REG_GATE_1R(RZ);
+
+/// Dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
+void QInterface::RZDyad(int numerator, int denomPower, bitLenInt qubit) { RZ(dyadAngle(numerator, denomPower), qubit); }
+
+/// Dyadic fraction z axis rotation gate - Rotates each bit around Pauli y axis.
+REG_GATE_1D(RZDyad)
+
+/// Controlled "phase shift gate"
+REG_GATE_C1_1R(CRT);
+
+/// Controlled dyadic "phase shift gate" - if control bit is true, rotates target bit as e^(i*(M_PI * numerator) /
+/// 2^denomPower) around |1> state
+void QInterface::CRTDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
+{
+    CRT(dyadAngle(numerator, denomPower), control, target);
+}
+
+/// Controlled dyadic fraction "phase shift gate"
+REG_GATE_C1_1D(CRTDyad);
+
+/// Controlled x axis rotation
+REG_GATE_C1_1R(CRX);
+
+/// Controlled dyadic fraction x axis rotation gate - Rotates around Pauli x axis.
+void QInterface::CRXDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
+{
+    CRX(dyadAngle(numerator, denomPower), control, target);
+}
+
+/// Controlled dyadic fraction x axis rotation gate - for each bit, if control bit is true, rotates target bit as as
+/// e^(i*(M_PI * numerator) / denominator) around Pauli x axis
+REG_GATE_C1_1D(CRXDyad);
+
+/// Controlled y axis rotation
+REG_GATE_C1_1R(CRY);
+
+/// Controlled dyadic fraction y axis rotation gate - Rotates around Pauli y axis.
+void QInterface::CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
+{
+    CRY(dyadAngle(numerator, denomPower), control, target);
+}
+
+/// Controlled dyadic fraction y axis rotation gate - for each bit, if control bit is true, rotates target bit as
+/// e^(i*(M_PI * numerator) / denominator) around Pauli y axis
+REG_GATE_C1_1D(CRYDyad);
+
+/// Controlled z axis rotation
+REG_GATE_C1_1R(CRZ);
+
+/// Controlled dyadic fraction z axis rotation gate - Rotates around Pauli z axis.
+void QInterface::CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target)
+{
+    CRZ(dyadAngle(numerator, denomPower), control, target);
+}
+
+/// Controlled dyadic fraction z axis rotation gate - for each bit, if control bit is true, rotates target bit as
+/// e^(i*(M_PI * numerator) / denominator) around Pauli z axis
+REG_GATE_C1_1D(CRZDyad);
+#endif
 } // namespace Qrack
