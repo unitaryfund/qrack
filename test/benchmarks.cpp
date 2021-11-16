@@ -1591,7 +1591,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                             controls[0] = b1;
                             top = std::polar(ONE_R1, (real1)(2 * PI_R1 * qReg->Rand()));
                             bottom = std::conj(top);
-                            qReg->ApplyControlledSinglePhase(controls, 1U, b2, top, bottom);
+                            qReg->MCPhase(controls, 1U, top, bottom, b2);
                         } else {
                             // "Phase" transforms:
                             gateRand = DimCount1Qb * qReg->Rand();
@@ -1611,7 +1611,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                             controls[0] = b1;
                             top = std::polar(ONE_R1, (real1)(2 * PI_R1 * qReg->Rand()));
                             bottom = std::conj(top);
-                            qReg->ApplyAntiControlledSinglePhase(controls, 1U, b2, top, bottom);
+                            qReg->MACPhase(controls, 1U, top, bottom, b2);
                         }
                     }
                 }
@@ -1857,9 +1857,9 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                         control[0] = b1;
                         polar0 = complex(std::polar(ONE_R1, (real1)(2 * M_PI * qReg->Rand())));
                         if (gateRand < (gateThreshold * ONE_R1 / gateMax)) {
-                            qReg->ApplyControlledSinglePhase(control, 1U, b2, polar0, -polar0);
+                            qReg->MCPhase(control, 1U, polar0, -polar0, b2);
                         } else {
-                            qReg->ApplyControlledSingleInvert(control, 1U, b2, polar0, polar0);
+                            qReg->MCInvert(control, 1U, polar0, polar0, b2);
                         }
                     }
                 }
@@ -2074,7 +2074,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     qReg->ISwap(b1, b2);
                     // "1/6 of CZ" is read to indicate the 6th root.
                     controls[0] = b1;
-                    qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, sixthRoot);
+                    qReg->MCPhase(controls, 1U, ONE_CMPLX, sixthRoot, b2);
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
 
                     // qReg->TrySeparate(b1, b2);

@@ -808,9 +808,9 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
     auto sg = [anti, mtrx, intraControls](QEnginePtr engine, bitLenInt lTarget) {
         if (intraControls.size()) {
             if (anti) {
-                engine->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
+                engine->MACMtrx(&(intraControls[0]), intraControls.size(), mtrx, lTarget);
             } else {
-                engine->ApplyControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
+                engine->MCMtrx(&(intraControls[0]), intraControls.size(), mtrx, lTarget);
             }
         } else {
             engine->Mtrx(mtrx, lTarget);

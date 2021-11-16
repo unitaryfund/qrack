@@ -402,39 +402,36 @@ public:
         }
     }
 
-    virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-            ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+            MCPhase(controls, controlLen, mtrx[0], mtrx[3], target);
             return;
         }
 
         FlushIfBuffered(target) || FlushIfPhaseBlocked(controls, controlLen);
-        engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+        engine->MCMtrx(controls, controlLen, mtrx, target);
     }
-    virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-            ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+            MACPhase(controls, controlLen, mtrx[0], mtrx[3], target);
             return;
         }
 
         FlushIfBuffered(target) || FlushIfPhaseBlocked(controls, controlLen);
-        engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+        engine->MACMtrx(controls, controlLen, mtrx, target);
     }
-    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight)
+    virtual void MCPhase(const bitLenInt* controls, bitLenInt controlLen,
+        complex topLeft, complex bottomRight, bitLenInt target)
     {
         FlushIfPhaseBlocked(target) || FlushIfPhaseBlocked(controls, controlLen);
-        engine->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
+        engine->MCPhase(controls, controlLen, topLeft, bottomRight, target);
     }
-    virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight)
+    virtual void MACPhase(const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target) 
     {
         FlushIfPhaseBlocked(target) || FlushIfPhaseBlocked(controls, controlLen);
-        engine->ApplyAntiControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
+        engine->MACPhase(controls, controlLen, topLeft, bottomRight, target);
     }
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,

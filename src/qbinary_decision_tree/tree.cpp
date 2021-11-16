@@ -88,7 +88,7 @@ void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
             real1_f angle = Rand() * 2 * PI_R1;
             phaseFac = complex((real1)cos(angle), (real1)sin(angle));
         } else {
-            phaseFac = complex(ONE_R1, ZERO_R1);
+            phaseFac = ONE_CMPLX;
         }
     }
 
@@ -906,12 +906,12 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
     });
 }
 
-void QBinaryDecisionTree::ApplyControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+void QBinaryDecisionTree::MCMtrx(
+    const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
     if (qubitCount <= bdtThreshold) {
         SetStateVector();
-        stateVecUnit->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+        stateVecUnit->MCMtrx(controls, controlLen, mtrx, target);
         return;
     }
 
@@ -920,12 +920,12 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             bool isParallel) { Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, false, isParallel); });
 }
 
-void QBinaryDecisionTree::ApplyAntiControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+void QBinaryDecisionTree::MACMtrx(
+    const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
     if (qubitCount <= bdtThreshold) {
         SetStateVector();
-        stateVecUnit->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+        stateVecUnit->MACMtrx(controls, controlLen, mtrx, target);
         return;
     }
 

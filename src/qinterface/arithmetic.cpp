@@ -91,19 +91,18 @@ void QInterface::CFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenIn
     // Assume outputBit is in 0 state.
     cBits[controlLen] = inputBit1;
     cBits[controlLen + 1] = inputBit2;
-    ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+    MCInvert(cBits, controlLen + 2, ONE_CMPLX, ONE_CMPLX, carryOut);
 
-    ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+    MCInvert(cBits, controlLen + 1, ONE_CMPLX, ONE_CMPLX, inputBit2);
 
     cBits[controlLen] = inputBit2;
     cBits[controlLen + 1] = carryInSumOut;
-    ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+    MCInvert(cBits, controlLen + 2, ONE_CMPLX, ONE_CMPLX, carryOut);
 
-    ApplyControlledSingleInvert(
-        cBits, controlLen + 1, carryInSumOut, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+    MCInvert(cBits, controlLen + 1, ONE_CMPLX, ONE_CMPLX, carryInSumOut);
 
     cBits[controlLen] = inputBit1;
-    ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+    MCInvert(cBits, controlLen + 1, ONE_CMPLX, ONE_CMPLX, inputBit2);
 }
 
 /// Inverse of FullAdd
@@ -120,19 +119,18 @@ void QInterface::CIFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenI
 
     // Assume outputBit is in 0 state.
     cBits[controlLen] = inputBit1;
-    ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+    MCInvert(cBits, controlLen + 1, ONE_CMPLX, ONE_CMPLX, inputBit2);
 
     cBits[controlLen] = inputBit2;
-    ApplyControlledSingleInvert(
-        cBits, controlLen + 1, carryInSumOut, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+    MCInvert(cBits, controlLen + 1, ONE_CMPLX, ONE_CMPLX, carryInSumOut);
 
     cBits[controlLen + 1] = carryInSumOut;
-    ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+    MCInvert(cBits, controlLen + 2, ONE_CMPLX, ONE_CMPLX, carryOut);
 
     cBits[controlLen] = inputBit1;
-    ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+    MCInvert(cBits, controlLen + 1, ONE_CMPLX, ONE_CMPLX, inputBit2);
     cBits[controlLen + 1] = inputBit2;
-    ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, complex(ONE_R1, ZERO_R1), complex(ONE_R1, ZERO_R1));
+    MCInvert(cBits, controlLen + 2, ONE_CMPLX, ONE_CMPLX, carryOut);
 }
 
 void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)

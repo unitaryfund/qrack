@@ -260,8 +260,8 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
 
 TEST_CASE("test_exp2x2_log2x2")
 {
-    complex mtrx1[4] = { complex(ONE_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1), complex(ZERO_R1, ZERO_R1),
-        complex(ONE_R1, ZERO_R1) };
+    complex mtrx1[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX,
+        ONE_CMPLX };
     complex mtrx2[4];
 
     exp2x2(mtrx1, mtrx2);
@@ -387,7 +387,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticy")
     qftReg->SetPermutation(0x01);
     qftReg->H(0, 2);
     qftReg->AntiCY(0, 1);
-    qftReg->ApplyAntiControlledSingleInvert(controls, 1, 1, -I_CMPLX, I_CMPLX);
+    qftReg->MACInvert(controls, 1, -I_CMPLX, I_CMPLX, 1);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x01));
 
@@ -395,14 +395,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticy")
     qftReg->H(0, 2);
     qftReg->Z(0);
     qftReg->AntiCY(0, 1);
-    qftReg->ApplyAntiControlledSingleInvert(controls, 1, 1, -I_CMPLX, I_CMPLX);
+    qftReg->MACInvert(controls, 1, -I_CMPLX, I_CMPLX, 1);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x01));
 
     qftReg->SetPermutation(0x00);
     qftReg->H(0, 2);
     qftReg->AntiCY(0, 1);
-    qftReg->ApplyAntiControlledSingleInvert(controls, 1, 1, -I_CMPLX, I_CMPLX);
+    qftReg->MACInvert(controls, 1, -I_CMPLX, I_CMPLX, 1);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
@@ -420,7 +420,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccnot")
     qftReg->H(0, 3);
     qftReg->CCNOT(0, 1, 2);
     qftReg->H(2);
-    qftReg->ApplyControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->MCPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, 2);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x03));
 }
@@ -447,7 +447,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcnot")
     qftReg->H(0, 3);
     qftReg->AntiCCNOT(0, 1, 2);
     qftReg->H(2);
-    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, 2);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
@@ -464,9 +464,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcy")
     qftReg->SetPermutation(0x00);
     qftReg->H(0, 3);
     qftReg->AntiCCY(0, 1, 2);
-    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, I_CMPLX, -I_CMPLX);
+    qftReg->MACPhase(controls, 2, I_CMPLX, -I_CMPLX, 2);
     qftReg->H(2);
-    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, 2);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
@@ -483,9 +483,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticcz")
     qftReg->SetPermutation(0x00);
     qftReg->H(0, 3);
     qftReg->AntiCCZ(0, 1, 2);
-    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, I_CMPLX, -I_CMPLX);
+    qftReg->MACPhase(controls, 2, I_CMPLX, -I_CMPLX, 2);
     qftReg->H(2);
-    qftReg->ApplyAntiControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, 2);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x00));
 }
@@ -726,22 +726,22 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_controlled_single_bit")
     bitLenInt controls[3] = { 0, 1, 3 };
     qftReg->SetPermutation(0x8000F);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x8000F));
-    qftReg->ApplyControlledSingleBit(controls, 3, 19, pauliX);
+    qftReg->MCMtrx(controls, 3, pauliX, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x0F));
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->ApplyControlledSingleBit(controls, 3, 19, pauliX);
+    qftReg->MCMtrx(controls, 3, pauliX, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
-    qftReg->ApplyControlledSingleBit(controls, 3, 19, pauliX);
-    qftReg->ApplyControlledSingleBit(controls, 3, 19, pauliX);
+    qftReg->MCMtrx(controls, 3, pauliX, 19);
+    qftReg->MCMtrx(controls, 3, pauliX, 19);
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->ApplyControlledSingleBit(NULL, 0, 0, pauliX);
+    qftReg->MCMtrx(NULL, 0, pauliX, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
 }
 
@@ -752,22 +752,22 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_controlled_single_invert")
     bitLenInt controls[3] = { 0, 1, 3 };
     qftReg->SetPermutation(0x8000F);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x8000F));
-    qftReg->ApplyControlledSingleInvert(controls, 3, 19, topRight, bottomLeft);
+    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x0F));
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->ApplyControlledSingleInvert(controls, 3, 19, topRight, bottomLeft);
+    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
-    qftReg->ApplyControlledSingleInvert(controls, 3, 19, topRight, bottomLeft);
-    qftReg->ApplyControlledSingleInvert(controls, 3, 19, topRight, bottomLeft);
+    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
+    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->ApplyControlledSingleInvert(NULL, 0, 0, topRight, bottomLeft);
+    qftReg->MCInvert(NULL, 0, topRight, bottomLeft, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
 }
 
@@ -777,31 +777,31 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_bit")
     bitLenInt controls[3] = { 0, 1, 3 };
     qftReg->SetPermutation(0x80000);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
-    qftReg->ApplyAntiControlledSingleBit(controls, 3, 19, pauliX);
+    qftReg->MACMtrx(controls, 3, pauliX, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x00));
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->ApplyAntiControlledSingleBit(controls, 3, 19, pauliX);
+    qftReg->MACMtrx(controls, 3, pauliX, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
-    qftReg->ApplyAntiControlledSingleBit(controls, 3, 19, pauliX);
-    qftReg->ApplyAntiControlledSingleBit(controls, 3, 19, pauliX);
+    qftReg->MACMtrx(controls, 3, pauliX, 19);
+    qftReg->MACMtrx(controls, 3, pauliX, 19);
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->ApplyAntiControlledSingleBit(NULL, 0, 0, pauliX);
+    qftReg->MACMtrx(NULL, 0, pauliX, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     qftReg->H(0);
-    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 0, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
+    qftReg->MACPhase(NULL, 0, ONE_CMPLX, -ONE_CMPLX, 0);
     qftReg->H(0);
     qftReg->H(1);
-    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 1, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
+    qftReg->MACPhase(NULL, 0, ONE_CMPLX, -ONE_CMPLX, 1);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
@@ -813,31 +813,31 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anticontrolled_single_invert
     bitLenInt controls[3] = { 0, 1, 3 };
     qftReg->SetPermutation(0x80000);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
-    qftReg->ApplyControlledSingleInvert(controls, 3, 19, topRight, bottomLeft);
+    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
     qftReg->SetPermutation(0x80001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->ApplyControlledSingleInvert(controls, 3, 19, topRight, bottomLeft);
+    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
-    qftReg->ApplyControlledSingleInvert(controls, 3, 19, topRight, bottomLeft);
-    qftReg->ApplyControlledSingleInvert(controls, 3, 19, topRight, bottomLeft);
+    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
+    qftReg->MCInvert(controls, 3, topRight, bottomLeft, 19);
     qftReg->H(0);
     qftReg->H(1);
     qftReg->H(3);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
-    qftReg->ApplyControlledSingleInvert(NULL, 0, 0, topRight, bottomLeft);
+    qftReg->MCInvert(NULL, 0, topRight, bottomLeft, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80000));
 
     qftReg->SetReg(0, 8, 0x02);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
     qftReg->H(0);
-    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 0, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
+    qftReg->MACPhase(NULL, 0, ONE_CMPLX, -ONE_CMPLX, 0);
     qftReg->H(0);
     qftReg->H(1);
-    qftReg->ApplyAntiControlledSinglePhase(NULL, 0, 1, complex(ONE_R1, ZERO_R1), complex(-ONE_R1, ZERO_R1));
+    qftReg->MACPhase(NULL, 0, ONE_CMPLX, -ONE_CMPLX, 1);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
@@ -861,19 +861,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_controlled_single_phase")
 
     qftReg->SetPermutation(0x01);
     qftReg->H(1);
-    qftReg->ApplyControlledSinglePhase(NULL, 0U, 1U, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->MCPhase(NULL, 0U, ONE_CMPLX, -ONE_CMPLX, 1U);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0x03));
 
     qftReg->SetPermutation(0x01);
     qftReg->H(1);
-    qftReg->ApplyControlledSinglePhase(controls, 1U, 1U, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->MCPhase(controls, 1U, ONE_CMPLX, -ONE_CMPLX, 1U);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0x03));
 
     qftReg->SetPermutation(0x01);
     qftReg->H(1);
-    qftReg->ApplyControlledSinglePhase(controls, 1U, 1U, ONE_CMPLX, ONE_CMPLX);
+    qftReg->MCPhase(controls, 1U, ONE_CMPLX, ONE_CMPLX, 1U);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0x01));
 }
@@ -884,13 +884,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_apply_anti_controlled_single_phase
 
     qftReg->SetPermutation(0x00);
     qftReg->H(1);
-    qftReg->ApplyAntiControlledSinglePhase(NULL, 0U, 1U, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->MACPhase(NULL, 0U, ONE_CMPLX, -ONE_CMPLX, 1U);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0x02));
 
     qftReg->SetPermutation(0x00);
     qftReg->H(1);
-    qftReg->ApplyAntiControlledSinglePhase(controls, 1U, 1U, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->MACPhase(controls, 1U, ONE_CMPLX, -ONE_CMPLX, 1U);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0x02));
 }
@@ -1481,9 +1481,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ccy")
     qftReg->SetPermutation(0x03);
     qftReg->H(0, 3);
     qftReg->CCY(0, 1, 2);
-    qftReg->ApplyControlledSinglePhase(controls, 2, 2, I_CMPLX, -I_CMPLX);
+    qftReg->MCPhase(controls, 2, I_CMPLX, -I_CMPLX, 2);
     qftReg->H(2);
-    qftReg->ApplyControlledSinglePhase(controls, 2, 2, ONE_CMPLX, -ONE_CMPLX);
+    qftReg->MCPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, 2);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x03));
 }
@@ -3752,7 +3752,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decompose")
 
     // Try across device/heap allocation case:
     qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0, rng,
-        complex(ONE_R1, ZERO_R1), enable_normalization, true, true, device_id, !disable_hardware_rng, sparse,
+        ONE_CMPLX, enable_normalization, true, true, device_id, !disable_hardware_rng, sparse,
         REAL1_EPSILON, devList);
 
     qftReg->SetPermutation(0x2b);
@@ -3809,7 +3809,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
     // Try across device/heap allocation case:
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
     qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng,
-        complex(ONE_R1, ZERO_R1), false, true, true);
+        ONE_CMPLX, false, true, true);
     qftReg->Compose(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
@@ -4565,10 +4565,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve_uniform")
     real1 e0 = (real1)sqrt(ONE_R1 - aParam * aParam);
 
     BitOp o2neg1(new complex[8], std::default_delete<complex[]>());
-    o2neg1.get()[0] = complex(ONE_R1, ZERO_R1);
-    o2neg1.get()[1] = complex(ZERO_R1, ZERO_R1);
-    o2neg1.get()[2] = complex(ZERO_R1, ZERO_R1);
-    o2neg1.get()[3] = complex(ONE_R1, ZERO_R1);
+    o2neg1.get()[0] = ONE_CMPLX;
+    o2neg1.get()[1] = ZERO_CMPLX;
+    o2neg1.get()[2] = ZERO_CMPLX;
+    o2neg1.get()[3] = ONE_CMPLX;
     o2neg1.get()[4] = complex(e0, ZERO_R1);
     o2neg1.get()[5] = complex(-aParam, ZERO_R1);
     o2neg1.get()[6] = complex(-aParam, ZERO_R1);
@@ -5843,7 +5843,7 @@ TEST_CASE("test_mirror_circuit_stabilizer", "[mirror]")
                     testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
                 } else {
                     bitLenInt controls[2] = { multiGate.b1, multiGate.b2 };
-                    testCase->ApplyAntiControlledSinglePhase(controls, 2, multiGate.b3, ONE_CMPLX, -ONE_CMPLX);
+                    testCase->MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, multiGate.b3);
                 }
             }
         }
@@ -5879,7 +5879,7 @@ TEST_CASE("test_mirror_circuit_stabilizer", "[mirror]")
                     testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
                 } else {
                     bitLenInt controls[2] = { multiGate.b1, multiGate.b2 };
-                    testCase->ApplyAntiControlledSinglePhase(controls, 2, multiGate.b3, ONE_CMPLX, -ONE_CMPLX);
+                    testCase->MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, multiGate.b3);
                 }
             }
 

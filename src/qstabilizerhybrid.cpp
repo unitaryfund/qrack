@@ -488,16 +488,16 @@ void QStabilizerHybrid::Invert(const complex topRight, const complex bottomLeft,
     CacheEigenstate(target);
 }
 
-void QStabilizerHybrid::ApplyControlledSingleBit(
-    const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& target, const complex* mtrx)
+void QStabilizerHybrid::MCMtrx(
+    const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        ApplyControlledSinglePhase(lControls, lControlLen, target, mtrx[0], mtrx[3]);
+        MCPhase(lControls, lControlLen, mtrx[0], mtrx[3] , target);
         return;
     }
 
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        ApplyControlledSingleInvert(lControls, lControlLen, target, mtrx[1], mtrx[2]);
+        MCInvert(lControls, lControlLen, mtrx[1], mtrx[2], target);
         return;
     }
 
@@ -512,11 +512,11 @@ void QStabilizerHybrid::ApplyControlledSingleBit(
     }
 
     SwitchToEngine();
-    engine->ApplyControlledSingleBit(lControls, lControlLen, target, mtrx);
+    engine->MCMtrx(lControls, lControlLen, mtrx, target);
 }
 
-void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, const bitLenInt& lControlLen,
-    const bitLenInt& target, const complex topLeft, const complex bottomRight)
+void QStabilizerHybrid::MCPhase(const bitLenInt* lControls, bitLenInt lControlLen,
+    complex topLeft, complex bottomRight, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls)) {
@@ -535,7 +535,7 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
     }
 
     if (engine) {
-        engine->ApplyControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
+        engine->MCPhase(lControls, lControlLen, topLeft, bottomRight, target);
         return;
     }
 
@@ -597,11 +597,11 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
     }
 
     SwitchToEngine();
-    engine->ApplyControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
+    engine->MCPhase(lControls, lControlLen, topLeft, bottomRight, target);
 }
 
-void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, const bitLenInt& lControlLen,
-    const bitLenInt& target, const complex topRight, const complex bottomLeft)
+void QStabilizerHybrid::MCInvert(const bitLenInt* lControls, bitLenInt lControlLen,
+    complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls)) {
@@ -620,7 +620,7 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
     }
 
     if (engine) {
-        engine->ApplyControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
+        engine->MCInvert(lControls, lControlLen, topRight, bottomLeft, target);
         return;
     }
 
@@ -680,19 +680,19 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
     }
 
     SwitchToEngine();
-    engine->ApplyControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
+    engine->MCInvert(lControls, lControlLen, topRight, bottomLeft, target);
 }
 
-void QStabilizerHybrid::ApplyAntiControlledSingleBit(
-    const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& target, const complex* mtrx)
+void QStabilizerHybrid::MACMtrx(
+    const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        ApplyAntiControlledSinglePhase(lControls, lControlLen, target, mtrx[0], mtrx[3]);
+        MACPhase(lControls, lControlLen, mtrx[0], mtrx[3], target);
         return;
     }
 
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        ApplyAntiControlledSingleInvert(lControls, lControlLen, target, mtrx[1], mtrx[2]);
+        MACInvert(lControls, lControlLen, mtrx[1], mtrx[2], target);
         return;
     }
 
@@ -707,11 +707,11 @@ void QStabilizerHybrid::ApplyAntiControlledSingleBit(
     }
 
     SwitchToEngine();
-    engine->ApplyAntiControlledSingleBit(lControls, lControlLen, target, mtrx);
+    engine->MACMtrx(lControls, lControlLen, mtrx, target);
 }
 
-void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControls, const bitLenInt& lControlLen,
-    const bitLenInt& target, const complex topLeft, const complex bottomRight)
+void QStabilizerHybrid::MACPhase(const bitLenInt* lControls, bitLenInt lControlLen,
+    complex topLeft, complex bottomRight, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls, true)) {
@@ -730,17 +730,17 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControl
     }
 
     if (engine) {
-        engine->ApplyAntiControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
+        engine->MACPhase(lControls, lControlLen, topLeft, bottomRight, target);
         return;
     }
 
     X(controls[0]);
-    ApplyControlledSinglePhase(&(controls[0]), 1U, target, topLeft, bottomRight);
+    MCPhase(&(controls[0]), 1U, topLeft, bottomRight, target);
     X(controls[0]);
 }
 
-void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lControls, const bitLenInt& lControlLen,
-    const bitLenInt& target, const complex topRight, const complex bottomLeft)
+void QStabilizerHybrid::MACInvert(const bitLenInt* lControls, bitLenInt lControlLen,
+    complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls, true)) {
@@ -759,12 +759,12 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
     }
 
     if (engine) {
-        engine->ApplyAntiControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
+        engine->MACInvert(lControls, lControlLen, topRight, bottomLeft, target);
         return;
     }
 
     X(controls[0]);
-    ApplyControlledSingleInvert(&(controls[0]), 1U, target, topRight, bottomLeft);
+    MCInvert(&(controls[0]), 1U, topRight, bottomLeft, target);
     X(controls[0]);
 }
 
