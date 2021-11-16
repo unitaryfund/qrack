@@ -414,7 +414,7 @@ public:
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
 
     virtual void SetDevice(const int& dID, const bool& forceReInit = false);
-    virtual int GetDeviceID() { return deviceID; }
+    virtual int64_t GetDeviceID() { return deviceID; }
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);

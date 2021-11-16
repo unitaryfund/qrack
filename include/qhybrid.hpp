@@ -448,7 +448,7 @@ public:
         engine->SetDevice(dID, forceReInit);
     }
 
-    virtual int GetDeviceID() { return devID; }
+    virtual int64_t GetDeviceID() { return devID; }
 
     bitCapIntOcl GetMaxSize() { return engine->GetMaxSize(); };
 
