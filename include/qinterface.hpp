@@ -61,8 +61,14 @@ inline bitLenInt log2(bitCapInt n)
     }
     return pow;
 }
-inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source) { return ((bitCapInt)ONE_BCI << bit) & source; }
-inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source) { return ((bitCapIntOcl)ONE_BCI << bit) & source; }
+inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source)
+{
+    return ((bitCapInt)ONE_BCI << bit) & source;
+}
+inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source)
+{
+    return ((bitCapIntOcl)ONE_BCI << bit) & source;
+}
 inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
 {
     return (((bitCapInt)ONE_BCI << length) - ONE_BCI) << start;

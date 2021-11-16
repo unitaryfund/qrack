@@ -120,7 +120,7 @@ void QUnitMulti::RedistributeQEngines()
     std::vector<bitCapInt> devSizes(deviceList.size());
     std::fill(devSizes.begin(), devSizes.end(), 0U);
     bitCapInt sz;
-    bitLenInt deviceID, devIndex;
+    size_t deviceID, devIndex;
     size_t i, j;
 
     for (i = 0; i < qinfos.size(); i++) {

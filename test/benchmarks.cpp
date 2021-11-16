@@ -402,12 +402,12 @@ void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> 
 {
     bitCapIntOcl i, j;
 
-    bitCapIntOcl wordLength = (max_qubits / 16 + 1);
-    bitCapIntOcl indexLength = (1 << (max_qubits / 2));
+    bitCapIntOcl wordLength = (max_qubits / 16U + 1U);
+    bitCapIntOcl indexLength = ((bitCapIntOcl)ONE_BCI << (max_qubits / 2U));
     unsigned char* testPage = new unsigned char[wordLength * indexLength];
     for (j = 0; j < indexLength; j++) {
         for (i = 0; i < wordLength; i++) {
-            testPage[j * wordLength + i] = (j & (0xff << (8 * i))) >> (8 * i);
+            testPage[j * wordLength + i] = (j & (0xff << (8U * i))) >> (8U * i);
         }
     }
     benchmarkLoop([fn, testPage](QInterfacePtr qftReg, bitLenInt n) { fn(qftReg, n, testPage); });
@@ -1638,9 +1638,9 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
             for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
-                    theta = 2 * M_PI * qReg->Rand();
-                    phi = 2 * M_PI * qReg->Rand();
-                    lambda = 2 * M_PI * qReg->Rand();
+                    theta = 2 * PI_R1 * qReg->Rand();
+                    phi = 2 * PI_R1 * qReg->Rand();
+                    lambda = 2 * PI_R1 * qReg->Rand();
 
                     qReg->U(i, theta, phi, lambda);
                 }

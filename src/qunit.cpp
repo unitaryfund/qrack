@@ -621,8 +621,8 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
     ToPermBasis(start1, length1);
     ToPermBasis(start2, length2);
 
-    std::vector<bitLenInt> bits(length1 + length2);
-    std::vector<bitLenInt*> ebits(length1 + length2);
+    std::vector<bitLenInt> bits((size_t)length1 + length2);
+    std::vector<bitLenInt*> ebits((size_t)length1 + length2);
 
     if (start2 < start1) {
         std::swap(start1, start2);
@@ -3757,7 +3757,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         return;
     }
 
-    std::vector<bitLenInt> allBits(controlLen + 1);
+    std::vector<bitLenInt> allBits((size_t)controlLen + 1U);
     std::copy(controls, controls + controlLen, allBits.begin());
     std::sort(allBits.begin(), allBits.begin() + controlLen);
 
@@ -4451,7 +4451,7 @@ bitCapInt QUnit::GetIndexedEigenstate(
     bitLenInt valueBytes = (valueLength + 7U) / 8U;
     bitCapInt value = 0;
     for (bitCapIntOcl j = 0; j < valueBytes; j++) {
-        value |= values[indexInt * valueBytes + j] << (8U * j);
+        value |= (bitCapInt)values[indexInt * valueBytes + j] << (8U * j);
     }
 
     return value;
@@ -4463,7 +4463,7 @@ bitCapInt QUnit::GetIndexedEigenstate(bitLenInt start, bitLenInt length, unsigne
     bitLenInt bytes = (length + 7U) / 8U;
     bitCapInt value = 0;
     for (bitCapIntOcl j = 0; j < bytes; j++) {
-        value |= values[indexInt * bytes + j] << (8U * j);
+        value |= (bitCapInt)values[indexInt * bytes + j] << (8U * j);
     }
 
     return value;
