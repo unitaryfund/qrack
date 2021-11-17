@@ -602,7 +602,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
     QBinaryDecisionTreeNodePtr& b1 = leaf->branches[1];
 
     bitCapIntOcl remainderPow = pow2Ocl(remainder);
-    bitCapIntOcl maskTarget = (isAnti ? 0U : highControlMask);
+    bitCapIntOcl maskTarget = (isAnti ? (bitCapIntOcl)0U : (bitCapIntOcl)highControlMask);
 
     IncrementFunc fn = [&](const bitCapIntOcl i, const int cpu) {
         size_t bit;
@@ -870,7 +870,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
                     // WARNING: Mutates loop control variable!
                     i = pow2Ocl(target - j) - ONE_BCI;
                     for (p = (int)(qPowersSorted.size() - 1U); p >= 0; p--) {
-                        i = RemovePower(i, qPowersSorted[p]);
+                        i = (bitCapIntOcl)RemovePower(i, qPowersSorted[p]);
                     }
                     return i;
                 }

@@ -106,7 +106,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
         for (sample = 0; sample < benchmarkSamples; sample++) {
             if (!qUniverse) {
                 if (resetRandomPerm) {
-                    bitCapInt perm = (bitCapInt)(qftReg->Rand() * qftReg->GetMaxQPower());
+                    bitCapInt perm = (bitCapInt)(qftReg->Rand() * (bitCapIntOcl)qftReg->GetMaxQPower());
                     if (perm >= qftReg->GetMaxQPower()) {
                         perm = qftReg->GetMaxQPower() - ONE_BCI;
                     }
