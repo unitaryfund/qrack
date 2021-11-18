@@ -86,6 +86,8 @@ CMake on Windows will set up a 32-bit Visual Studio project by default, (if usin
     $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" -DFPPOW=6 ..
 ```
 
+After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
+
 ## WebAssembly (WASM) builds
 
 By nature of its pure C++11 design, Qrack happens to offer excellent compatibility with Emscripten ("WebAssembly") projects. See [the qrack.net repository](https://github.com/vm6502q/qrack.net) for an example and [qrack.net](https://qrack.net) for a live demo. OpenCL GPU operation is not yet available for WASM builds. While CPU multithreading might be possible in WASM, it is advisable that `pthread` usage and linking is disabled for most conventional Web applications, with `-DENABLE_PTHREAD=OFF` and `-DENABLE_QUNIT_CPU_PARALLEL=OFF` in CMake:
@@ -94,7 +96,7 @@ By nature of its pure C++11 design, Qrack happens to offer excellent compatibili
 emcmake cmake -DENABLE_OPENCL=OFF -DENABLE_QUNIT_CPU_PARALLEL=OFF -DENABLE_COMPLEX_X2=OFF -DENABLE_RDRAND=OFF -DUINTPOW=5 -DENABLE_PTHREAD=OFF ..
 ```
 
-After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
+`-DQBCAPPOW=10` could be added to the above to support high-width stabilizer and Schmidt decomposition cases, with the appropriate build of the Boost headers for the toolchain.
 
 ## Performing code coverage
 
