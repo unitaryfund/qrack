@@ -11,6 +11,7 @@ include_directories ("include" "include/common")
 
 set(ENABLE_PTHREAD ON CACHE STRING "Enable pthread parallelism (for CPU)")
 set(PSTRIDEPOW "9" CACHE STRING "Stride of parallel for loops (as a power of 2)")
+set(ENABLE_EMIT_LLVM OFF CACHE STRING "Emit object files as LLVM IR (with clang)")
 
 # Declare the library
 add_library (qrack STATIC
@@ -35,10 +36,16 @@ add_library (qrack STATIC
     src/qstabilizerhybrid.cpp
     src/qmaskfusion.cpp
     )
-	
-add_library (qrack_pinvoke SHARED
-    src/pinvoke_api.cpp
-    )
+
+if (ENABLE_EMIT_LLVM)
+    add_library (qrack_pinvoke OBJECT
+        src/pinvoke_api.cpp
+        )
+else (ENABLE_EMIT_LLVM)
+    add_library (qrack_pinvoke SHARED
+        src/pinvoke_api.cpp
+        )
+endif (ENABLE_EMIT_LLVM)
 
 set(QRACK_LIBS qrack)
 if (ENABLE_PTHREAD)
@@ -50,41 +57,42 @@ if (ENABLE_PTHREAD)
 endif (ENABLE_PTHREAD)
 
 target_link_libraries (qrack_pinvoke ${QRACK_LIBS})
+if (NOT ENABLE_EMIT_LLVM)
+    # Declare the unittest executable
+    add_executable (unittest
+        test/test_main.cpp
+        test/tests.cpp
+        )
 
-# Declare the unittest executable
-add_executable (unittest
-    test/test_main.cpp
-    test/tests.cpp
-    )
+    target_link_libraries (unittest ${QRACK_LIBS})
 
-target_link_libraries (unittest ${QRACK_LIBS})
+    add_test (NAME qrack_tests
+        COMMAND unittest
+        )
 
-add_test (NAME qrack_tests
-    COMMAND unittest
-    )
+    # Declare the benchmark executable
+    add_executable (benchmarks
+        test/benchmarks_main.cpp
+        test/benchmarks.cpp
+        )
 
-# Declare the benchmark executable
-add_executable (benchmarks
-    test/benchmarks_main.cpp
-    test/benchmarks.cpp
-    )
+    target_link_libraries (benchmarks ${QRACK_LIBS})
 
-target_link_libraries (benchmarks ${QRACK_LIBS})
+    # Declare the accuracy executable
+    add_executable (accuracy
+        test/accuracy_main.cpp
+        test/accuracy.cpp
+        )
 
-# Declare the accuracy executable
-add_executable (accuracy
-    test/accuracy_main.cpp
-    test/accuracy.cpp
-    )
+    target_link_libraries (accuracy ${QRACK_LIBS})
 
-target_link_libraries (accuracy ${QRACK_LIBS})
+    # Declare the OCL precompilation executable
+    add_executable (qrack_cl_precompile
+        src/qrack_cl_precompile.cpp
+        )
 
-# Declare the OCL precompilation executable
-add_executable (qrack_cl_precompile
-    src/qrack_cl_precompile.cpp
-    )
-
-target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
+    target_link_libraries (qrack_cl_precompile ${QRACK_LIBS})
+endif (NOT ENABLE_EMIT_LLVM)
 
 # Included after the library and other modules have been declared
 option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
@@ -98,8 +106,10 @@ include ("cmake/Pure32.cmake")
 include ("cmake/Boost.cmake")
 include ("cmake/QUnit_CPU_Parallel.cmake")
 include ("cmake/OclMemGuards.cmake")
-include ("cmake/Examples.cmake")
 include ("cmake/VM6502Q.cmake")
+if (NOT ENABLE_EMIT_LLVM)
+    include ("cmake/Examples.cmake")
+endif (NOT ENABLE_EMIT_LLVM)
 include ("cmake/OpenCL.cmake" )
 
 message ("Qubit capacity power is: ${QBCAPPOW}")
@@ -113,6 +123,7 @@ message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
 message ("OpenCL memory guards are: ${ENABLE_OCL_MEM_GUARDS}")
 message ("BCD ALU API inclusion is: ${ENABLE_BCD}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
+message ("Compiling libraries to LLVM IR is: ${ENABLE_EMIT_LLVM}")
 
 if (MSVC)
     set(QRACK_COMPILE_OPTS -std=c++11 -Wall)
@@ -139,17 +150,22 @@ if (FPPOW LESS 5)
     endif ()
 endif (FPPOW LESS 5)
 
+if (ENABLE_EMIT_LLVM)
+    set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -emit-llvm)
+endif (ENABLE_EMIT_LLVM)
+
 include ("cmake/RDRand.cmake")
 
 configure_file(include/common/config.h.in include/common/config.h @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/common)
 
-enable_testing()
+if (NOT ENABLE_EMIT_LLVM)
+    enable_testing()
+    # Run the unittest executable on 'make test'
 
-# Run the unittest executable on 'make test'
-
-target_include_directories (unittest PUBLIC test)
-target_include_directories (benchmarks PUBLIC test)
+    target_include_directories (unittest PUBLIC test)
+    target_include_directories (benchmarks PUBLIC test)
+endif (NOT ENABLE_EMIT_LLVM)
 
 if (APPLE)
     set(TEST_COMPILE_OPTS -Wno-inconsistent-missing-override)
@@ -158,14 +174,16 @@ endif (APPLE)
 target_compile_options (qrack PUBLIC ${QRACK_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 target_compile_options (qrack_pinvoke PUBLIC ${QRACK_COMPILE_OPTS})
 target_compile_definitions(qrack_pinvoke PUBLIC -DDLL_EXPORTS)
-target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
+if (NOT ENABLE_EMIT_LLVM)
+    target_compile_options (unittest PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (benchmarks PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
+    target_compile_options (qrack_cl_precompile PUBLIC ${TEST_COMPILE_OPTS})
+endif (NOT ENABLE_EMIT_LLVM)
 
 set_target_properties (qrack PROPERTIES
     VERSION ${PROJECT_VERSION}
     )
-	
+
 set_target_properties (qrack_pinvoke PROPERTIES
     VERSION ${PROJECT_VERSION}
     )
@@ -215,13 +233,17 @@ install (TARGETS qrack
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
-	
-install (TARGETS qrack_pinvoke
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
+
+if (NOT ENABLE_EMIT_LLVM)
+    install (TARGETS qrack_pinvoke
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        )
+endif (NOT ENABLE_EMIT_LLVM)
 
 # Install the pkg-config file
 configure_file (qrack.pc.in qrack.pc @ONLY)
 install (FILES ${CMAKE_BINARY_DIR}/qrack.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
-install(TARGETS qrack_cl_precompile DESTINATION bin)
+if (NOT ENABLE_EMIT_LLVM)
+    install(TARGETS qrack_cl_precompile DESTINATION bin)
+endif (NOT ENABLE_EMIT_LLVM)
