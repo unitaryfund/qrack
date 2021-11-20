@@ -215,7 +215,7 @@ Qrack was originally written so that the disassembler of VM6502Q should show the
 $ cmake -DENABLE_BCD=OFF -DENABLE_REG_GATES=OFF -DENABLE_ROT_API=OFF ..
 ```
 
-Prior to the Qrack v7 API, a larger set of convenience methods were included in all builds, which increased the size of the library binary. By default, `ENABLE_REG_GATES` and `ENABLE_ROT_API` are now `OFF`, while `ENABLE_BCD` defaults to `ON` for supporting the VM6502Q quantum-extended MOS-6502 emulator project.
+Prior to the Qrack v7 API, a larger set of convenience methods were included in all builds, which increased the size of the library binary. By default, `ENABLE_REG_GATES`, `ENABLE_ROT_API` and  `ENABLE_BCD` all default to `OFF`.
 
 `ENABLE_REG_GATES` adds various looped-over-width gates to the API, like the lengthwise `CNOT(control, target, length)` method. This method is a convenience wrapper on a loop of `CNOT` operations for `length`, starting from `control` and `target`, to `control + length - 1` and `target + length - 1`. These methods were seen as opportunities for optimization, at a much earlier point, but they have fallen out of internal use, and basically none of them are optimized as special cases, anymore. Disabling `ENABLE_REG_GATES` does **not** remove lengthwise `X(target, length)` and `H(target, length)` methods, as these specific convenience methods are still commonly used in the protected API, for negating or superposing across register width.
 
