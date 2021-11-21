@@ -6,12 +6,13 @@ include (GNUInstallDirs)
 
 include ("cmake/Coverage.cmake")
 include ("cmake/Format.cmake")
+include ("cmake/EmitLlvm.cmake")
+# PSTRIDEPOW relates to parallel for loops:
+include ("cmake/ParFor.cmake")
+include ("cmake/QUnit_CPU_Parallel.cmake")
+include ("cmake/Pthread.cmake")
 
 include_directories ("include" "include/common")
-
-set(ENABLE_PTHREAD ON CACHE STRING "Enable pthread parallelism (for CPU)")
-set(PSTRIDEPOW "9" CACHE STRING "Stride of parallel for loops (as a power of 2)")
-set(ENABLE_EMIT_LLVM OFF CACHE STRING "Emit object files as LLVM IR (with clang)")
 
 # Declare the library
 add_library (qrack STATIC
@@ -120,9 +121,9 @@ message ("Floating-point capacity power is: ${FPPOW}")
 message ("UInt capacity power is: ${UINTPOW}")
 message ("CPU parallelism is: ${ENABLE_PTHREAD}")
 message ("CPU work item stride power is: ${PSTRIDEPOW}")
+message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
 message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
 message ("Complex_x2/AVX support is: ${ENABLE_COMPLEX_X2}")
-message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
 message ("OpenCL memory guards are: ${ENABLE_OCL_MEM_GUARDS}")
 message ("BCD ALU API inclusion is: ${ENABLE_BCD}")
 message ("Extended rotation API inclusion is: ${ENABLE_ROT_API}")
