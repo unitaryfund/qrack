@@ -289,6 +289,7 @@ public:
 #endif
 #else
         return std::string(".qrack/");
+#endif
     }
     size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
     size_t GetActiveAllocSize(const int& dev) { return activeAllocSizes[dev]; }

@@ -111,7 +111,7 @@ void QUnitMulti::RedistributeQEngines()
     }
 #else
     return;
-}
+#endif
 
     // No need to redistribute, if there is only 1 device
     if (deviceList.size() == 1) {

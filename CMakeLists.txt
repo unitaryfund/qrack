@@ -127,6 +127,7 @@ message ("OpenCL memory guards are: ${ENABLE_OCL_MEM_GUARDS}")
 message ("BCD ALU API inclusion is: ${ENABLE_BCD}")
 message ("Extended rotation API inclusion is: ${ENABLE_ROT_API}")
 message ("Register-spanning API inclusion is: ${ENABLE_REG_GATES}")
+message ("Environment variable usage is: ${ENABLE_ENV_VARS}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 message ("Compiling libraries to LLVM IR is: ${ENABLE_EMIT_LLVM}")
 
@@ -159,6 +160,10 @@ if (FPPOW LESS 5)
         set(TEST_COMPILE_OPTS ${TEST_COMPILE_OPTS} -mfp16-format=ieee)
     endif ()
 endif (FPPOW LESS 5)
+
+if (EMSCRIPTEN AND ENABLE_COMPLEX_X2)
+    set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -msimd128 -msse -msse2)
+endif (EMSCRIPTEN AND ENABLE_COMPLEX_X2)
 
 if (ENABLE_EMIT_LLVM)
     set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -emit-llvm)
