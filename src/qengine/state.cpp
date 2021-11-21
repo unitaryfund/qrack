@@ -48,8 +48,12 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
 {
+#if ENABLE_ENV_VARS
     pStridePow =
         getenv("QRACK_PSTRIDEPOW") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW;
+#else
+    pStridePow = PSTRIDEPOW;
+#endif
 
     SetConcurrency(std::thread::hardware_concurrency());
 

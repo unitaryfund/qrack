@@ -36,8 +36,12 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
         // concurrency.
         bitLenInt gpuQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
 
+#if ENABLE_ENV_VARS
         bitLenInt pStridePow =
             getenv("QRACK_PSTRIDEPOW") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW;
+#else
+        bitLenInt pStride = PSTRIDEPOW;
+#endif
 
         bitLenInt cpuQubits = (concurrency == 1 ? pStridePow : (log2(concurrency - 1) + pStridePow + 1));
 

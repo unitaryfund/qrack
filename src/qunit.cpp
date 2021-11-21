@@ -78,6 +78,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , separabilityThreshold(sep_thresh)
     , deviceIDs(devList)
 {
+#if ENABLE_ENV_VARS
     if (getenv("QRACK_QUNIT_PAGING_THRESHOLD")) {
         pagingThresholdQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_QUNIT_PAGING_THRESHOLD")));
     }
@@ -85,6 +86,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
         separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
     }
+#endif
 
     canSuppressPaging = (engines[0] == QINTERFACE_QPAGER) ||
         ((engines[0] == QINTERFACE_STABILIZER_HYBRID) && ((engines.size() == 1U) || (engines[1] == QINTERFACE_QPAGER)));

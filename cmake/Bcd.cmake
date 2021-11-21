@@ -1,1 +1,1 @@
-option (ENABLE_BCD "Include binary-coded-decimal ALU API (on by default)" OFF)
+option (ENABLE_BCD "Include binary-coded-decimal ALU API (off by default)" OFF)

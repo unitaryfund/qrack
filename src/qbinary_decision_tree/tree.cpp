@@ -45,9 +45,13 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
 #endif
     }
 
+#if ENABLE_ENV_VARS
     if (getenv("QRACK_BDT_THRESHOLD")) {
         bdtThreshold = (bitLenInt)std::stoi(std::string(getenv("QRACK_BDT_THRESHOLD")));
     }
+#else
+    bdtThreshold = PSTRIDEPOW;
+#endif
 
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
