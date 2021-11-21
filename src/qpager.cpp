@@ -98,9 +98,11 @@ void QPager::Init()
 #endif
     }
 
+#if ENABLE_ENV_VARS
     if (getenv("QRACK_DEVICE_GLOBAL_QB")) {
         deviceGlobalQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_DEVICE_GLOBAL_QB")));
     }
+#endif
 
 #if ENABLE_OPENCL
     if ((thresholdQubitsPerPage == 0) && (engines[0] != QINTERFACE_CPU) && !OCLEngine::Instance()->GetDeviceCount()) {
@@ -111,9 +113,11 @@ void QPager::Init()
         // environment variable.
 
         bitLenInt pps = 0;
+#if ENABLE_ENV_VARS
         if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
             pps = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
         }
+#endif
 
         maxPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - pps;
 
@@ -142,8 +146,12 @@ void QPager::Init()
 
         maxPageQubits = -1;
 
+#if ENABLE_ENV_VARS
         pStridePow =
             getenv("QRACK_PSTRIDEPOW") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW;
+#else
+        pStridePow = PSTRIDEPOW;
+#endif
 
 #if ENABLE_PTHREAD
         minPageQubits = log2(std::thread::hardware_concurrency()) + 1U + pStridePow;
@@ -167,9 +175,11 @@ void QPager::Init()
         throw std::invalid_argument(
             "Cannot instantiate a register with greater capacity than native types on emulating system.");
     }
+#if ENABLE_ENV_VARS
     if (getenv("QRACK_MAX_PAGING_QB")) {
         maxQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
     }
+#endif
     if (qubitCount > maxQubits) {
         throw std::invalid_argument(
             "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");

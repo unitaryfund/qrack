@@ -269,6 +269,7 @@ public:
     /// Get default location for precompiled binaries:
     static std::string GetDefaultBinaryPath()
     {
+#if ENABLE_ENV_VARS
         if (getenv("QRACK_OCL_PATH")) {
             std::string toRet = std::string(getenv("QRACK_OCL_PATH"));
             if ((toRet.back() != '/') && (toRet.back() != '\\')) {
@@ -286,6 +287,8 @@ public:
 #else
         return std::string(getenv("HOME") ? getenv("HOME") : "") + "/.qrack/";
 #endif
+#else
+        return std::string(".qrack/");
     }
     size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
     size_t GetActiveAllocSize(const int& dev) { return activeAllocSizes[dev]; }
