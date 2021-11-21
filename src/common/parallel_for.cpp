@@ -185,17 +185,16 @@ void ParallelFor::par_for_inc(
     for (unsigned cpu = 0; cpu != numCores; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(cpu, &idx, &begin, &itemCount, &Stride, inc, fn)
         {
-            bitCapIntOcl i, j, l, maxJ;
-            bitCapIntOcl k = 0;
             for (;;) {
+                bitCapIntOcl i;
                 ATOMIC_INC();
-                l = i * Stride;
+                bitCapIntOcl l = i * Stride;
                 if (l >= itemCount) {
                     break;
                 }
-                maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
-                for (j = 0; j < maxJ; j++) {
-                    k = j + l;
+                bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
+                for (bitCapIntOcl j = 0; j < maxJ; j++) {
+                    bitCapIntOcl k = j + l;
                     fn(inc(begin + k, cpu), cpu);
                 }
             }
@@ -229,19 +228,19 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
     for (unsigned cpu = 0; cpu != numCores; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(cpu, &idx, &begin, &itemCount, &Stride, &updateMutex, fn)
         {
-            bitCapIntOcl i, j, l, maxJ;
-            bitCapIntOcl k = 0;
             for (;;) {
+                bitCapIntOcl i;
                 if (true) {
                     std::lock_guard<std::mutex> updateLock(updateMutex);
                     ATOMIC_INC();
                 }
-                l = i * Stride;
+                bitCapIntOcl l = i * Stride;
                 if (l >= itemCount) {
                     break;
                 }
-                maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
-                for (j = 0; j < maxJ; j++) {
+                bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
+                bitCapIntOcl k = 0;
+                for (bitCapIntOcl j = 0; j < maxJ; j++) {
                     k = j + l;
                     k |= fn(begin + k, cpu);
                     j = k - l;
@@ -289,23 +288,21 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
         futures[cpu] = ATOMIC_ASYNC(&idx, &itemCount, stateArray, &Stride, &norm_thresh)
         {
             real1_f sqrNorm = ZERO_R1;
-            real1_f nrm;
-            bitCapIntOcl i, j;
-            bitCapIntOcl k = 0;
             for (;;) {
+                bitCapIntOcl i;
                 ATOMIC_INC();
-                for (j = 0; j < Stride; j++) {
-                    k = i * Stride + j;
-                    if (k >= itemCount)
-                        break;
-
-                    nrm = norm(stateArray->read(k));
+                bitCapIntOcl l = i * Stride;
+                if (l >= itemCount) {
+                    break;
+                }
+                bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
+                for (bitCapIntOcl j = 0; j < maxJ; j++) {
+                    bitCapIntOcl k = i * Stride + j;
+                    real1_f nrm = norm(stateArray->read(k));
                     if (nrm >= norm_thresh) {
                         sqrNorm += nrm;
                     }
                 }
-                if (k >= itemCount)
-                    break;
             }
             return sqrNorm;
         });
@@ -337,19 +334,18 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
         futures[cpu] = ATOMIC_ASYNC(&idx, &itemCount, &Stride, stateArray)
         {
             real1_f sqrNorm = ZERO_R1;
-            bitCapIntOcl i, j;
-            bitCapIntOcl k = 0;
-            for (;;) {
-                ATOMIC_INC();
-                for (j = 0; j < Stride; j++) {
-                    k = i * Stride + j;
-                    if (k >= itemCount)
-                        break;
 
-                    sqrNorm += norm(stateArray->read(k));
-                }
-                if (k >= itemCount)
+            for (;;) {
+                bitCapIntOcl i;
+                ATOMIC_INC();
+                bitCapIntOcl l = i * Stride;
+                if (l >= itemCount) {
                     break;
+                }
+                bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
+                for (bitCapIntOcl j = 0; j < maxJ; j++) {
+                    sqrNorm += norm(stateArray->read(i * Stride + j));
+                }
             }
             return sqrNorm;
         });
@@ -392,9 +388,8 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
     }
 
     real1_f nrmSqr = ZERO_R1;
-    real1_f nrm;
     for (bitCapIntOcl j = 0; j < itemCount; j++) {
-        nrm = norm(stateArray->read(j));
+        real1_f nrm = norm(stateArray->read(j));
         if (nrm >= norm_thresh) {
             nrmSqr += nrm;
         }
