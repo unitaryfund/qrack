@@ -276,16 +276,18 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
             bitCapIntOcl i, j, l, maxJ;
             bitCapIntOcl k = 0;
             for (;;) {
+                bitCapIntOcl i;
                 if (true) {
                     std::lock_guard<std::mutex> updateLock(updateMutex);
                     i = idx++;
                 }
-                l = i * Stride;
+                bitCapIntOcl l = i * Stride;
                 if (l >= itemCount) {
                     break;
                 }
-                maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
-                for (j = 0; j < maxJ; j++) {
+                bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
+                bitCapIntOcl k = 0;
+                for (bitCapIntOcl j = 0; j < maxJ; j++) {
                     k = j + l;
                     k |= fn(begin + k, cpu);
                     j = k - l;
