@@ -78,7 +78,7 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
     , deviceIDs(devList)
     , useHardwareThreshold(false)
     , minPageQubits(0)
-    , deviceGlobalQubits(3)
+    , deviceGlobalQubits(2)
     , thresholdQubitsPerPage(qubitThreshold)
     , pStridePow(PSTRIDEPOW)
 {
