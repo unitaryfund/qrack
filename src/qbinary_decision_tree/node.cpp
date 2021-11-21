@@ -273,8 +273,6 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
     for (unsigned cpu = 0; cpu != numCores; ++cpu) {
         futures[cpu] = std::async(std::launch::async, [cpu, &idx, &begin, &itemCount, &updateMutex, fn]() {
             const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)10U);
-            bitCapIntOcl i, j, l, maxJ;
-            bitCapIntOcl k = 0;
             for (;;) {
                 bitCapIntOcl i;
                 if (true) {
