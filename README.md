@@ -98,6 +98,24 @@ emcmake cmake -DENABLE_OPENCL=OFF -DENABLE_QUNIT_CPU_PARALLEL=OFF -DENABLE_COMPL
 
 `-DQBCAPPOW=10` could be added to the above to support high-width stabilizer and Schmidt decomposition cases, with the appropriate build of the Boost headers for the toolchain.
 
+## Compiling to C from WASM
+
+Arbitrary Qrack executables will not all necessarily link, at this time. However, `wasm2c` can generate C code from Qrack executables and modules, and *some* will successfully link.
+
+For example, generate a `.c` module and a `.h` header from your build/examples directory:
+
+```sh
+wasm2c teleport.wasm -o teleport.c
+```
+
+Compile and link it from `wabt`, (though the command below assumes that `wabt` is already in your path).
+
+```sh
+emcc -o teleport -Iwabt/wasm2c/ teleport.c wabt/wasm2c/wasm-rt-impl.c -lm
+```
+
+We apologize for providing an example that will not quite work. However, with `emcc` or `cc`, this is the general idea. Once the generated `.c` and `.h` file are syntactically valid, via modification of your original Qrack C++ program, then static linkage must be specified with `-l`, assuming appropriate libraries for static linkage are actually available. (Emscripten is under active development, and we thank its maintainers.)
+
 ## Performing code coverage
 
 ```sh
