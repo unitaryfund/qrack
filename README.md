@@ -119,7 +119,7 @@ wasm2c teleport.wasm -o teleport.c
 Compile and link it from `wabt`, (though the command below assumes that `wabt` is already in your path).
 
 ```sh
-emcc -o teleport -Iwabt/wasm2c/ teleport.c wabt/wasm2c/wasm-rt-impl.c -lm
+cc -o teleport -Iwabt/wasm2c/ teleport.c wabt/wasm2c/wasm-rt-impl.c -lm
 ```
 
 We apologize for providing an example that will not quite work. However, with `emcc` or `cc`, this is the general idea. Once the generated `.c` and `.h` file are syntactically valid, via modification of your original Qrack C++ program, then static linkage must be specified with `-l`, assuming appropriate libraries for static linkage are actually available. (Emscripten is under active development, and we thank its maintainers.)
