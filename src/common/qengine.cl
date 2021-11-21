@@ -64,14 +64,13 @@ inline cmplx conj(const cmplx cmp)
     real1 dotMulRes;
 
 #define PREP_SPECIAL_2X2()                                                                                             \
-    bitCapIntOcl lcv, i;                                                                                               \
-    cmplx Y0;
+    bitCapIntOcl lcv, i;
 
 #define PUSH_APART_GEN()                                                                                               \
-    iHigh = lcv;                                                                                                       \
     i = 0U;                                                                                                            \
-    for (p = 0U; p < BITCOUNT_ARG; p++) {                                                                              \
-        iLow = iHigh & (qPowersSorted[p] - ONE_BCI);                                                                   \
+    bitCapIntOcl iHigh = lcv;                                                                                          \
+    for (bitLenInt p = 0U; p < BITCOUNT_ARG; p++) {                                                                    \
+        bitCapIntOcl iLow = iHigh & (qPowersSorted[p] - ONE_BCI);                                                      \
         i |= iLow;                                                                                                     \
         iHigh = (iHigh ^ iLow) << ONE_BCI;                                                                             \
     }                                                                                                                  \
@@ -83,8 +82,8 @@ inline cmplx conj(const cmplx cmp)
 
 #define PUSH_APART_2()                                                                                                 \
     i = lcv & qMask1;                                                                                                  \
-    iHigh = (lcv ^ i) << ONE_BCI;                                                                                      \
-    iLow = iHigh & qMask2;                                                                                             \
+    bitCapIntOcl iHigh = (lcv ^ i) << ONE_BCI;                                                                         \
+    bitCapIntOcl iLow = iHigh & qMask2;                                                                                \
     i |= iLow | ((iHigh ^ iLow) << ONE_BCI);
 
 #define APPLY_AND_OUT()                                                                                                \
@@ -97,7 +96,7 @@ inline cmplx conj(const cmplx cmp)
     stateVec[i | OFFSET2_ARG] = mulRes.hi;
 
 #define APPLY_X()                                                                                                      \
-    Y0 = stateVec[i];                                                                                                  \
+    cmplx Y0 = stateVec[i];                                                                                            \
     stateVec[i] = stateVec[i | OFFSET2_ARG];                                                                           \
     stateVec[i | OFFSET2_ARG] = Y0;
 
@@ -108,7 +107,7 @@ inline cmplx conj(const cmplx cmp)
     stateVec[i | OFFSET2_ARG] = zmul(bottomRight, stateVec[i | OFFSET2_ARG]);
 
 #define APPLY_INVERT()                                                                                                 \
-    Y0 = stateVec[i];                                                                                                  \
+    cmplx Y0 = stateVec[i];                                                                                            \
     stateVec[i] = zmul(topRight, stateVec[i | OFFSET2_ARG]);                                                           \
     stateVec[i | OFFSET2_ARG] = zmul(bottomLeft, Y0);
 
@@ -156,9 +155,6 @@ void kernel apply2x2(global cmplx* stateVec, constant real1* cmplxPtr, constant 
 {
     PREP_2X2();
 
-    bitCapIntOcl iLow, iHigh;
-    bitLenInt p;
-
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_GEN();
         APPLY_AND_OUT();
@@ -183,7 +179,6 @@ void kernel apply2x2double(global cmplx* stateVec, constant real1* cmplxPtr, con
 
     bitCapIntOcl qMask1 = bitCapIntOclPtr[3];
     bitCapIntOcl qMask2 = bitCapIntOclPtr[4];
-    bitCapIntOcl iLow, iHigh;
 
     for (lcv = ID; lcv < MAXI_ARG; lcv += Nthreads) {
         PUSH_APART_2();
@@ -195,9 +190,6 @@ void kernel apply2x2wide(global cmplx* stateVec, constant real1* cmplxPtr, const
     constant bitCapIntOcl* qPowersSorted)
 {
     PREP_2X2_WIDE();
-
-    bitCapIntOcl iLow, iHigh;
-    bitLenInt p;
 
     lcv = ID;
     PUSH_APART_GEN();
@@ -221,7 +213,6 @@ void kernel apply2x2doublewide(global cmplx* stateVec, constant real1* cmplxPtr,
 
     bitCapIntOcl qMask1 = bitCapIntOclPtr[3];
     bitCapIntOcl qMask2 = bitCapIntOclPtr[4];
-    bitCapIntOcl iLow, iHigh;
 
     lcv = ID;
     PUSH_APART_2();
@@ -292,7 +283,6 @@ void kernel xsinglewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapInt
 void kernel xmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl lcv, otherRes, setInt, resetInt;
-    cmplx Y0;
 
     bitCapIntOcl Nthreads = get_global_size(0);
 
@@ -312,7 +302,7 @@ void kernel xmask(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr
         setInt |= otherRes;
         resetInt |= otherRes;
 
-        Y0 = stateVec[resetInt];
+        cmplx Y0 = stateVec[resetInt];
         stateVec[resetInt] = stateVec[setInt];
         stateVec[setInt] = Y0;
     }
@@ -404,7 +394,6 @@ void kernel invertsingle(global cmplx* stateVec, constant cmplx* cmplxPtr, const
 {
     bitCapIntOcl lcv, i;
     bitCapIntOcl Nthreads = get_global_size(0);
-    cmplx Y0;
 
     bitCapIntOcl qMask = bitCapIntOclPtr[3];
     cmplx topRight = cmplxPtr[1];
@@ -419,7 +408,6 @@ void kernel invertsingle(global cmplx* stateVec, constant cmplx* cmplxPtr, const
 void kernel invertsinglewide(global cmplx* stateVec, constant cmplx* cmplxPtr, constant bitCapIntOcl* bitCapIntOclPtr)
 {
     bitCapIntOcl i;
-    cmplx Y0;
     
     bitCapIntOcl qMask = bitCapIntOclPtr[2];
     cmplx topRight = cmplxPtr[1];
@@ -1551,7 +1539,7 @@ void kernel fulladd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     cmplx ins0c0, ins0c1, ins1c0, ins1c1;
     cmplx outs0c0, outs0c1, outs1c0, outs1c1;
 
-    bitCapIntOcl i, iLow, iHigh;
+    bitCapIntOcl i;
 
     bool aVal, bVal;
 
@@ -1631,7 +1619,7 @@ void kernel ifulladd(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOcl
     cmplx ins0c0, ins0c1, ins1c0, ins1c1;
     cmplx outs0c0, outs0c1, outs1c0, outs1c1;
 
-    bitCapIntOcl i, iLow, iHigh;
+    bitCapIntOcl i;
 
     bool aVal, bVal;
 
