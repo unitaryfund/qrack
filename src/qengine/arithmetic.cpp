@@ -628,9 +628,8 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
             }
             nStateVec->write(lcv, stateVec->read(lcv));
 
-            bitCapIntOcl partControlMask;
             for (bitCapIntOcl j = ONE_BCI; j < pow2Mask(controlLen); j++) {
-                partControlMask = 0;
+                bitCapIntOcl partControlMask = 0;
                 for (bitLenInt k = 0; k < controlLen; k++) {
                     if ((j >> k) & ONE_BCI) {
                         partControlMask |= controlPowers[k];
@@ -723,13 +722,12 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         bitCapIntOcl otherRes = lcv & otherMask;
         bitCapIntOcl partToAdd = toAddOcl;
         bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
-        int8_t test1, test2;
         std::unique_ptr<int8_t[]> nibbles(new int8_t[nibbleCount]);
         bool isValid = true;
         for (int j = 0; j < nibbleCount; j++) {
-            test1 = (int)(inOutInt & 15UL);
+            int8_t test1 = (int)(inOutInt & 15UL);
             inOutInt >>= 4UL;
-            test2 = (int)(partToAdd % 10);
+            int8_t test2 = (int)(partToAdd % 10);
             partToAdd /= 10;
             nibbles[j] = test1 + test2;
             if (test1 > 9) {
@@ -801,7 +799,6 @@ void QEngineCPU::INCDECBCDC(
         bitCapIntOcl partToAdd = toModOcl;
         bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         int test1, test2;
-        int j;
         int* nibbles = new int[nibbleCount];
         bool isValid = true;
 
@@ -814,7 +811,7 @@ void QEngineCPU::INCDECBCDC(
             isValid = false;
         }
 
-        for (j = 1; j < nibbleCount; j++) {
+        for (int j = 1; j < nibbleCount; j++) {
             test1 = (int)(inOutInt & 15UL);
             inOutInt >>= 4U * ONE_BCI;
             test2 = (int)(partToAdd % 10);
@@ -828,7 +825,7 @@ void QEngineCPU::INCDECBCDC(
             bitCapIntOcl outInt = 0;
             bitCapIntOcl outRes = 0;
             bitCapIntOcl carryRes = 0;
-            for (j = 0; j < nibbleCount; j++) {
+            for (int j = 0; j < nibbleCount; j++) {
                 if (nibbles[j] > 9) {
                     nibbles[j] -= 10;
                     if ((j + 1) < nibbleCount) {

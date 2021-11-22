@@ -428,9 +428,8 @@ void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
     const bitCapInt& mtrxSkipValueMask)
 {
-    bitCapInt index;
     for (bitCapInt lcv = 0; lcv < pow2(controlLen); lcv++) {
-        index = pushApartBits(lcv, mtrxSkipPowers, mtrxSkipLen) | mtrxSkipValueMask;
+        bitCapInt index = pushApartBits(lcv, mtrxSkipPowers, mtrxSkipLen) | mtrxSkipValueMask;
         for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
             if (!((lcv >> bit_pos) & 1)) {
                 X(controls[bit_pos]);
@@ -631,13 +630,12 @@ void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
         mask = v;
     }
 
-    int i;
     int end = (int)(qubits.size() - 1);
-    for (i = 0; i < end; i++) {
+    for (int i = 0; i < end; i++) {
         CNOT(qubits[i], qubits[i + 1U]);
     }
     RZ(radians, qubits[end]);
-    for (i = (end - 1U); i >= 0; i--) {
+    for (int i = (end - 1U); i >= 0; i--) {
         CNOT(qubits[i], qubits[i + 1U]);
     }
 }

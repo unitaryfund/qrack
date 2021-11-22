@@ -61,10 +61,9 @@ QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
 {
     bitLenInt deviceId = defaultDeviceID;
     uint64_t sz = OCLEngine::Instance()->GetActiveAllocSize(deviceId);
-    uint64_t tSz;
 
     for (size_t i = 0U; i < deviceList.size(); i++) {
-        tSz = OCLEngine::Instance()->GetActiveAllocSize(deviceList[i].id);
+        uint64_t tSz = OCLEngine::Instance()->GetActiveAllocSize(deviceList[i].id);
         if (sz > tSz) {
             sz = tSz;
             deviceId = deviceList[i].id;
@@ -84,12 +83,11 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
     // Get shard sizes and devices
     std::vector<QInterfacePtr> qips;
     std::vector<QEngineInfo> qinfos;
-    int deviceIndex;
 
     for (auto&& shard : shards) {
         if (shard.unit && (std::find(qips.begin(), qips.end(), shard.unit) == qips.end())) {
             qips.push_back(shard.unit);
-            deviceIndex = std::distance(deviceList.begin(),
+            int deviceIndex = std::distance(deviceList.begin(),
                 std::find_if(deviceList.begin(), deviceList.end(),
                     [&](DeviceInfo di) { return di.id == shard.unit->GetDeviceID(); }));
             qinfos.push_back(QEngineInfo(shard.unit, deviceIndex));
@@ -123,11 +121,8 @@ void QUnitMulti::RedistributeQEngines()
 
     std::vector<bitCapInt> devSizes(deviceList.size());
     std::fill(devSizes.begin(), devSizes.end(), 0U);
-    bitCapInt sz;
-    size_t deviceID, devIndex;
-    size_t i, j;
 
-    for (i = 0; i < qinfos.size(); i++) {
+    for (size_t i = 0; i < qinfos.size(); i++) {
         // If the engine adds negligible load, we can let any given unit keep its
         // residency on this device.
         // In fact, single qubit units will be handled entirely by the CPU, anyway.
@@ -138,9 +133,9 @@ void QUnitMulti::RedistributeQEngines()
         }
 
         // If the original OpenCL device has equal load to the least, we prefer the original.
-        deviceID = qinfos[i].unit->GetDeviceID();
-        devIndex = qinfos[i].deviceIndex;
-        sz = devSizes[devIndex];
+        size_t deviceID = qinfos[i].unit->GetDeviceID();
+        size_t devIndex = qinfos[i].deviceIndex;
+        bitCapInt sz = devSizes[devIndex];
 
         // If the original device has 0 determined load, don't switch the unit.
         if (sz > 0) {
@@ -152,7 +147,7 @@ void QUnitMulti::RedistributeQEngines()
             }
 
             // Find the device with the lowest load.
-            for (j = 0; j < deviceList.size(); j++) {
+            for (size_t j = 0; j < deviceList.size(); j++) {
                 if ((devSizes[j] < sz) && ((devSizes[j] + qinfos[i].unit->GetMaxQPower()) <= deviceList[j].maxSize)) {
                     deviceID = deviceList[j].id;
                     devIndex = j;
