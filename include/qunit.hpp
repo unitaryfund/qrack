@@ -617,11 +617,10 @@ protected:
     }
     void ToPermBasis(const bitLenInt& start, const bitLenInt& length)
     {
-        bitLenInt i;
-        for (i = 0; i < length; i++) {
+        for (bitLenInt i = 0; i < length; i++) {
             RevertBasis1Qb(start + i);
         }
-        for (i = 0; i < length; i++) {
+        for (bitLenInt i = 0; i < length; i++) {
             RevertBasis2Qb(start + i);
         }
     }
@@ -633,11 +632,10 @@ protected:
     }
     void ToPermBasisProb(const bitLenInt& start, const bitLenInt& length)
     {
-        bitLenInt i;
-        for (i = 0; i < length; i++) {
+        for (bitLenInt i = 0; i < length; i++) {
             RevertBasis1Qb(start + i);
         }
-        for (i = 0; i < length; i++) {
+        for (bitLenInt i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT, ONLY_TARGETS);
         }
     }
@@ -657,16 +655,14 @@ protected:
             return;
         }
 
-        bitLenInt i;
-
         std::set<bitLenInt> exceptBits;
-        for (i = 0; i < length; i++) {
+        for (bitLenInt i = 0; i < length; i++) {
             exceptBits.insert(start + i);
         }
-        for (i = 0; i < length; i++) {
+        for (bitLenInt i = 0; i < length; i++) {
             RevertBasis1Qb(start + i);
         }
-        for (i = 0; i < length; i++) {
+        for (bitLenInt i = 0; i < length; i++) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
             RevertBasis2Qb(start + i, ONLY_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, exceptBits);
             shards[start + i].DumpMultiBit();
@@ -674,11 +670,10 @@ protected:
     }
     void ToPermBasisAllMeasure()
     {
-        bitLenInt i;
-        for (i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
             RevertBasis1Qb(i);
         }
-        for (i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
             shards[i].ClearInvertPhase();
             RevertBasis2Qb(i, ONLY_INVERT);
             shards[i].DumpMultiBit();

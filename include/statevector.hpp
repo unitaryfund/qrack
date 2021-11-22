@@ -294,11 +294,9 @@ public:
             return;
         }
 
-        complex amp;
-
         mtx.lock();
         for (bitCapIntOcl i = 0; i < length; i++) {
-            amp = copyIn->read(i + srcOffset);
+            complex amp = copyIn->read(i + srcOffset);
             if (amp == ZERO_CMPLX) {
                 amplitudes.erase(i + srcOffset);
             } else {
@@ -335,11 +333,10 @@ public:
 
     void shuffle(StateVectorSparsePtr svp)
     {
-        complex amp;
         size_t halfCap = (size_t)(capacity >> ONE_BCI);
         mtx.lock();
         for (bitCapIntOcl i = 0; i < halfCap; i++) {
-            amp = svp->read(i);
+            complex amp = svp->read(i);
             svp->write(i, read(i + halfCap));
             write(i + halfCap, amp);
         }
@@ -357,8 +354,6 @@ public:
 
     std::vector<bitCapIntOcl> iterable()
     {
-        int64_t i, combineCount;
-
         int64_t threadCount = GetConcurrencyLevel();
         std::vector<std::vector<bitCapIntOcl>> toRet(threadCount);
         std::vector<std::vector<bitCapIntOcl>>::iterator toRetIt;
@@ -373,7 +368,7 @@ public:
 
         mtx.unlock();
 
-        for (i = (int64_t)(toRet.size() - 1); i >= 0; i--) {
+        for (int64_t i = (int64_t)(toRet.size() - 1); i >= 0; i--) {
             if (toRet[i].size() == 0) {
                 toRetIt = toRet.begin();
                 std::advance(toRetIt, i);
@@ -393,21 +388,21 @@ public:
                 toRet.pop_back();
             }
 
-            combineCount = (int64_t)toRet.size() / 2U;
+            int64_t combineCount = (int64_t)toRet.size() / 2U;
 #if ENABLE_PTHREAD
             std::vector<std::future<void>> futures(combineCount);
-            for (i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
                 futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
                     toRet[i].insert(toRet[i].end(), toRet[i + combineCount].begin(), toRet[i + combineCount].end());
                     toRet[i + combineCount].clear();
                 });
             }
-            for (i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
                 futures[i].get();
                 toRet.pop_back();
             }
 #else
-            for (i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
                 toRet[i].insert(toRet[i].end(), toRet[i + combineCount].begin(), toRet[i + combineCount].end());
                 toRet[i + combineCount].clear();
                 toRet.pop_back();
@@ -425,8 +420,6 @@ public:
         if ((filterMask == 0) && (filterValues != 0)) {
             return {};
         }
-
-        int64_t i, combineCount;
 
         bitCapIntOcl unsetMask = ~setMask;
 
@@ -456,7 +449,7 @@ public:
 
         mtx.unlock();
 
-        for (i = (int64_t)(toRet.size() - 1); i >= 0; i--) {
+        for (int64_t i = (int64_t)(toRet.size() - 1); i >= 0; i--) {
             if (toRet[i].size() == 0) {
                 toRetIt = toRet.begin();
                 std::advance(toRetIt, i);
@@ -475,22 +468,22 @@ public:
                 toRet.pop_back();
             }
 
-            combineCount = (int32_t)(toRet.size()) / 2U;
+            int64_t combineCount = (int32_t)(toRet.size()) / 2U;
 #if ENABLE_PTHREAD
             std::vector<std::future<void>> futures(combineCount);
-            for (i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
                 futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
                     toRet[i].insert(toRet[i + combineCount].begin(), toRet[i + combineCount].end());
                     toRet[i + combineCount].clear();
                 });
             }
 
-            for (i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
                 futures[i].get();
                 toRet.pop_back();
             }
 #else
-            for (i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
                 toRet[i].insert(toRet[i + combineCount].begin(), toRet[i + combineCount].end());
                 toRet[i + combineCount].clear();
                 toRet.pop_back();

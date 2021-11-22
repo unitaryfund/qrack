@@ -165,9 +165,7 @@ public:
     }
     void DumpMultiBit()
     {
-        ShardToPhaseMap::iterator phaseShard;
-
-        phaseShard = controlsShards.begin();
+        auto phaseShard = controlsShards.begin();
         while (phaseShard != controlsShards.end()) {
             RemoveTarget(phaseShard->first);
             phaseShard = controlsShards.begin();
@@ -192,7 +190,7 @@ public:
 protected:
     void RemoveBuffer(QEngineShardPtr p, ShardToPhaseMap& localMap, GetBufferFn remoteMapGet)
     {
-        ShardToPhaseMap::iterator phaseShard = localMap.find(p);
+        auto phaseShard = localMap.find(p);
         if (phaseShard != localMap.end()) {
             ((*phaseShard->first).*remoteMapGet)().erase(this);
             localMap.erase(phaseShard);
@@ -215,7 +213,7 @@ protected:
     void DumpBuffer(OptimizeFn optimizeFn, ShardToPhaseMap& localMap, AddRemoveFn remoteFn)
     {
         ((*this).*optimizeFn)();
-        ShardToPhaseMap::iterator phaseShard = localMap.begin();
+        auto phaseShard = localMap.begin();
         while (phaseShard != localMap.end()) {
             ((*this).*remoteFn)(phaseShard->first);
             phaseShard = localMap.begin();
@@ -226,12 +224,11 @@ protected:
     {
         ((*this).*optimizeFn)();
 
-        PhaseShardPtr buffer;
-        ShardToPhaseMap::iterator phaseShard = localMap.begin();
+        auto phaseShard = localMap.begin();
         int lcv = 0;
 
         while (phaseShard != localMap.end()) {
-            buffer = phaseShard->second;
+            PhaseShardPtr buffer = phaseShard->second;
             if (!buffer->isInvert && IS_SAME(buffer->cmplxDiff, buffer->cmplxSame)) {
                 ((*this).*remoteFn)(phaseShard->first);
             } else {
@@ -331,15 +328,11 @@ public:
 protected:
     void OptimizeBuffer(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet, AddAnglesFn phaseFn, bool makeThisControl)
     {
-        PhaseShardPtr buffer;
-        QEngineShardPtr partner;
-
-        ShardToPhaseMap::iterator phaseShard;
         ShardToPhaseMap tempLocalMap = localMap;
 
-        for (phaseShard = tempLocalMap.begin(); phaseShard != tempLocalMap.end(); phaseShard++) {
-            buffer = phaseShard->second;
-            partner = phaseShard->first;
+        for (auto phaseShard = tempLocalMap.begin(); phaseShard != tempLocalMap.end(); phaseShard++) {
+            PhaseShardPtr buffer = phaseShard->second;
+            QEngineShardPtr partner = phaseShard->first;
 
             if (buffer->isInvert || !IS_ARG_0(buffer->cmplxDiff)) {
                 continue;
@@ -378,15 +371,10 @@ public:
 
     void OptimizeBothTargets()
     {
-        PhaseShardPtr buffer;
-        QEngineShardPtr partner;
-
-        ShardToPhaseMap::iterator phaseShard;
-
         ShardToPhaseMap tempLocalMap = targetOfShards;
-        for (phaseShard = tempLocalMap.begin(); phaseShard != tempLocalMap.end(); phaseShard++) {
-            buffer = phaseShard->second;
-            partner = phaseShard->first;
+        for (auto phaseShard = tempLocalMap.begin(); phaseShard != tempLocalMap.end(); phaseShard++) {
+            PhaseShardPtr buffer = phaseShard->second;
+            QEngineShardPtr partner = phaseShard->first;
 
             if (buffer->isInvert) {
                 continue;
@@ -404,9 +392,9 @@ public:
         }
 
         tempLocalMap = antiTargetOfShards;
-        for (phaseShard = tempLocalMap.begin(); phaseShard != tempLocalMap.end(); phaseShard++) {
-            buffer = phaseShard->second;
-            partner = phaseShard->first;
+        for (auto phaseShard = tempLocalMap.begin(); phaseShard != tempLocalMap.end(); phaseShard++) {
+            PhaseShardPtr buffer = phaseShard->second;
+            QEngineShardPtr partner = phaseShard->first;
 
             if (buffer->isInvert) {
                 continue;
@@ -427,24 +415,19 @@ public:
 protected:
     void CombineBuffers(GetBufferFn targetMapGet, GetBufferFn controlMapGet, AddAnglesFn angleFn)
     {
-        PhaseShardPtr buffer1, buffer2;
-        ShardToPhaseMap::iterator partnerShard;
-        QEngineShardPtr partner;
-
-        ShardToPhaseMap::iterator phaseShard;
         ShardToPhaseMap tempControls = ((*this).*controlMapGet)();
         ShardToPhaseMap tempTargets = ((*this).*targetMapGet)();
 
-        for (phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
-            partner = phaseShard->first;
+        for (auto phaseShard = tempControls.begin(); phaseShard != tempControls.end(); phaseShard++) {
+            QEngineShardPtr partner = phaseShard->first;
 
-            partnerShard = tempTargets.find(partner);
+            auto partnerShard = tempTargets.find(partner);
             if (partnerShard == tempTargets.end()) {
                 continue;
             }
 
-            buffer1 = phaseShard->second;
-            buffer2 = partnerShard->second;
+            PhaseShardPtr buffer1 = phaseShard->second;
+            PhaseShardPtr buffer2 = partnerShard->second;
 
             if (!buffer1->isInvert && IS_ARG_0(buffer1->cmplxDiff)) {
                 ((*partner).*targetMapGet)().erase(this);
@@ -470,8 +453,8 @@ public:
 
     void SwapTargetAnti(QEngineShardPtr control)
     {
-        ShardToPhaseMap::iterator phaseShard = targetOfShards.find(control);
-        ShardToPhaseMap::iterator antiPhaseShard = antiTargetOfShards.find(control);
+        auto phaseShard = targetOfShards.find(control);
+        auto antiPhaseShard = antiTargetOfShards.find(control);
         if (antiPhaseShard == antiTargetOfShards.end()) {
             std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
             antiTargetOfShards[phaseShard->first] = phaseShard->second;
@@ -490,11 +473,10 @@ public:
     void FlipPhaseAnti()
     {
         std::unordered_set<QEngineShardPtr> toSwap;
-        ShardToPhaseMap::iterator ctrlPhaseShard;
-        for (ctrlPhaseShard = controlsShards.begin(); ctrlPhaseShard != controlsShards.end(); ctrlPhaseShard++) {
+        for (auto ctrlPhaseShard = controlsShards.begin(); ctrlPhaseShard != controlsShards.end(); ctrlPhaseShard++) {
             toSwap.insert(ctrlPhaseShard->first);
         }
-        for (ctrlPhaseShard = antiControlsShards.begin(); ctrlPhaseShard != antiControlsShards.end();
+        for (auto ctrlPhaseShard = antiControlsShards.begin(); ctrlPhaseShard != antiControlsShards.end();
              ctrlPhaseShard++) {
             toSwap.insert(ctrlPhaseShard->first);
         }
@@ -504,24 +486,19 @@ public:
         }
         std::swap(controlsShards, antiControlsShards);
 
-        ShardToPhaseMap::iterator phaseShard;
-
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+        for (auto phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
         }
 
-        for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
+        for (auto phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
             std::swap(phaseShard->second->cmplxDiff, phaseShard->second->cmplxSame);
         }
     }
 
     void CommutePhase(const complex& topLeft, const complex& bottomRight)
     {
-        ShardToPhaseMap::iterator phaseShard;
-        PhaseShardPtr buffer;
-
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
-            buffer = phaseShard->second;
+        for (auto phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+            PhaseShardPtr buffer = phaseShard->second;
             if (!buffer->isInvert) {
                 return;
             }
@@ -530,8 +507,8 @@ public:
             buffer->cmplxSame *= bottomRight / topLeft;
         }
 
-        for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
-            buffer = phaseShard->second;
+        for (auto phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
+            PhaseShardPtr buffer = phaseShard->second;
             if (!buffer->isInvert) {
                 return;
             }
@@ -544,12 +521,11 @@ public:
 protected:
     void RemoveIdentityBuffers(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet)
     {
-        PhaseShardPtr buffer;
-        ShardToPhaseMap::iterator phaseShard = localMap.begin();
+        auto phaseShard = localMap.begin();
         bitLenInt i = 0;
 
         while (phaseShard != localMap.end()) {
-            buffer = phaseShard->second;
+            PhaseShardPtr buffer = phaseShard->second;
             if (!buffer->isInvert && IS_ARG_0(buffer->cmplxDiff) && IS_ARG_0(buffer->cmplxSame)) {
                 // The buffer is equal to the identity operator, and it can be removed.
                 ((*phaseShard->first).*remoteMapGet)().erase(this);
@@ -565,7 +541,7 @@ protected:
 
     void RemovePhaseBuffers(ShardToPhaseMap& localMap, GetBufferFn remoteMapGet)
     {
-        ShardToPhaseMap::iterator phaseShard = localMap.begin();
+        auto phaseShard = localMap.begin();
         bitLenInt i = 0;
 
         while (phaseShard != localMap.end()) {
@@ -585,11 +561,8 @@ protected:
 public:
     void CommuteH()
     {
-        ShardToPhaseMap::iterator phaseShard;
-        PhaseShardPtr buffer;
-
         // See QUnit::CommuteH() for which cases cannot be commuted and are flushed.
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+        for (auto phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
             if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
                 if (buffer->isInvert) {
@@ -608,7 +581,7 @@ public:
 
         RemoveIdentityBuffers(targetOfShards, &QEngineShard::GetControlsShards);
 
-        for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
+        for (auto phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
             PhaseShardPtr buffer = phaseShard->second;
             if (abs(buffer->cmplxDiff - buffer->cmplxSame) < 1) {
                 if (buffer->isInvert) {
@@ -638,15 +611,13 @@ public:
 
     bool IsInvertControl()
     {
-        ShardToPhaseMap::iterator phaseShard;
-
-        for (phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
+        for (auto phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
                 return true;
             }
         }
 
-        for (phaseShard = antiControlsShards.begin(); phaseShard != antiControlsShards.end(); phaseShard++) {
+        for (auto phaseShard = antiControlsShards.begin(); phaseShard != antiControlsShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
                 return true;
             }
@@ -657,15 +628,13 @@ public:
 
     bool IsInvertTarget()
     {
-        ShardToPhaseMap::iterator phaseShard;
-
-        for (phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
+        for (auto phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
                 return true;
             }
         }
 
-        for (phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
+        for (auto phaseShard = antiTargetOfShards.begin(); phaseShard != antiTargetOfShards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
                 return true;
             }
@@ -677,9 +646,7 @@ public:
 protected:
     void ClearMapInvertPhase(ShardToPhaseMap& shards)
     {
-        ShardToPhaseMap::iterator phaseShard;
-
-        for (phaseShard = shards.begin(); phaseShard != shards.end(); phaseShard++) {
+        for (auto phaseShard = shards.begin(); phaseShard != shards.end(); phaseShard++) {
             if (phaseShard->second->isInvert) {
                 phaseShard->second->cmplxDiff = ONE_CMPLX;
                 phaseShard->second->cmplxSame = ONE_CMPLX;
@@ -760,13 +727,11 @@ public:
 
     void erase(bitLenInt begin, bitLenInt end)
     {
-        bitLenInt offset, lcv;
-
         for (bitLenInt index = begin; index < end; index++) {
-            offset = swapMap[index];
+            bitLenInt offset = swapMap[index];
             shards.erase(shards.begin() + offset);
 
-            for (lcv = 0; lcv < (bitLenInt)swapMap.size(); lcv++) {
+            for (bitLenInt lcv = 0; lcv < (bitLenInt)swapMap.size(); lcv++) {
                 if (swapMap[lcv] >= offset) {
                     swapMap[lcv]--;
                 }

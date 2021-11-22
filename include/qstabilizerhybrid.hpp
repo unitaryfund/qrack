@@ -112,10 +112,8 @@ protected:
 
     virtual void FlushBuffers()
     {
-        bitLenInt i;
-
         if (stabilizer) {
-            for (i = 0; i < qubitCount; i++) {
+            for (bitLenInt i = 0; i < qubitCount; i++) {
                 if (shards[i]) {
                     // This will call FlushBuffers() again after no longer stabilizer.
                     SwitchToEngine();
@@ -128,7 +126,7 @@ protected:
             return;
         }
 
-        for (i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
             MpsShardPtr shard = shards[i];
             if (shard) {
                 shards[i] = NULL;
@@ -152,9 +150,8 @@ protected:
             return false;
         }
 
-        bitLenInt bit;
         for (bitLenInt i = 0; i < lControlLen; i++) {
-            bit = lControls[i];
+            bitLenInt bit = lControls[i];
 
             if (!stabilizer->IsSeparableZ(bit)) {
                 output.push_back(bit);
