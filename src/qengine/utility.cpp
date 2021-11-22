@@ -32,13 +32,11 @@ QInterfacePtr QEngineCPU::Clone()
 real1_f QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
 {
     real1 average = ZERO_R1;
-    real1 prob;
     real1 totProb = ZERO_R1;
-    bitCapIntOcl i, outputInt;
     bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
-    for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> valueStart;
-        prob = norm(stateVec->read(i));
+    for (bitCapIntOcl i = 0; i < maxQPower; i++) {
+        bitCapIntOcl outputInt = (i & outputMask) >> valueStart;
+        real1 prob = norm(stateVec->read(i));
         totProb += prob;
         average += prob * outputInt;
     }

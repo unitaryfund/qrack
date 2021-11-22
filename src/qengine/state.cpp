@@ -561,12 +561,11 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
             }
         }
 
-        bitCapIntOcl i, iHigh, iLow;
-        bitCapIntOcl p;
+        bitCapIntOcl i, iHigh;
         iHigh = offset;
         i = 0;
-        for (p = 0; p < mtrxSkipLen; p++) {
-            iLow = iHigh & (mtrxSkipPowersOcl[p] - ONE_BCI);
+        for (bitCapIntOcl p = 0; p < mtrxSkipLen; p++) {
+            bitCapIntOcl iLow = iHigh & (mtrxSkipPowersOcl[p] - ONE_BCI);
             i |= iLow;
             iHigh = (iHigh ^ iLow) << ONE_BCI;
         }
@@ -778,7 +777,6 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     std::map<QInterfacePtr, bitLenInt> ret;
     bitLenInt nQubitCount = qubitCount;
 
-    bitLenInt i;
     bitLenInt toComposeCount = toCopy.size();
 
     std::vector<bitLenInt> offset(toComposeCount);
@@ -792,7 +790,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     }
     Finish();
 
-    for (i = 0; i < toComposeCount; i++) {
+    for (bitLenInt i = 0; i < toComposeCount; i++) {
         QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[i]);
         if (src->doNormalize) {
             src->NormalizeState();
@@ -876,18 +874,15 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     if (destination) {
         par_for(0, remainderPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            bitCapIntOcl j, k, l;
+            bitCapIntOcl j;
             j = lcv & pow2MaskOcl(start);
             j |= (lcv ^ j) << length;
 
-            real1 nrm;
-            complex amp;
+            for (bitCapIntOcl k = 0; k < partPower; k++) {
+                bitCapIntOcl l = j | (k << start);
 
-            for (k = 0; k < partPower; k++) {
-                l = j | (k << start);
-
-                amp = stateVec->read(l);
-                nrm = norm(amp);
+                complex amp = stateVec->read(l);
+                real1 nrm = norm(amp);
                 remainderStateProb[lcv] += nrm;
 
                 if (nrm > amplitudeFloor) {
@@ -897,19 +892,16 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         });
 
         par_for(0, partPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            bitCapIntOcl j, k, l;
+            bitCapIntOcl j;
             j = lcv << start;
 
-            real1 nrm;
-            complex amp;
-
-            for (k = 0; k < remainderPower; k++) {
-                l = k & pow2MaskOcl(start);
+            for (bitCapIntOcl k = 0; k < remainderPower; k++) {
+                bitCapIntOcl l = k & pow2MaskOcl(start);
                 l |= (k ^ l) << length;
                 l = j | l;
 
-                amp = stateVec->read(l);
-                nrm = norm(amp);
+                complex amp = stateVec->read(l);
+                real1 nrm = norm(amp);
                 partStateProb[lcv] += nrm;
 
                 if (nrm > amplitudeFloor) {
@@ -919,29 +911,27 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         });
     } else {
         par_for(0, remainderPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            bitCapIntOcl j, k, l;
+            bitCapIntOcl j;
             j = lcv & pow2MaskOcl(start);
             j |= (lcv ^ j) << length;
 
-            for (k = 0; k < partPower; k++) {
-                l = j | (k << start);
+            for (bitCapIntOcl k = 0; k < partPower; k++) {
+                bitCapIntOcl l = j | (k << start);
 
                 remainderStateProb[lcv] += norm(stateVec->read(l));
             }
         });
 
         par_for(0, partPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            bitCapIntOcl j, k, l;
+            bitCapIntOcl j;
             j = lcv << start;
 
-            complex amp;
-
-            for (k = 0; k < remainderPower; k++) {
-                l = k & pow2MaskOcl(start);
+            for (bitCapIntOcl k = 0; k < remainderPower; k++) {
+                bitCapIntOcl l = k & pow2MaskOcl(start);
                 l |= (k ^ l) << length;
                 l = j | l;
 
-                amp = stateVec->read(l);
+                complex amp = stateVec->read(l);
 
                 if (norm(amp) > amplitudeFloor) {
                     remainderStateAngle[k] = arg(amp);
@@ -1143,11 +1133,10 @@ real1_f QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation
     }
 
     bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
-    bitCapIntOcl oldV;
     bitLenInt length; // c accumulates the total bits set in v
     std::vector<bitCapIntOcl> skipPowersVec;
     for (length = 0; v; length++) {
-        oldV = v;
+        bitCapIntOcl oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         skipPowersVec.push_back((v ^ oldV) & oldV);
     }

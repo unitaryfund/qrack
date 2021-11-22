@@ -80,13 +80,11 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
     }
 
     bitLenInt end = start + (length - 1U);
-    bitLenInt i, j, hBit;
-    bitLenInt c, t;
-    for (i = 0; i < length; i++) {
-        hBit = end - i;
-        for (j = 0; j < i; j++) {
-            c = hBit;
-            t = hBit + 1U + j;
+    for (bitLenInt i = 0; i < length; i++) {
+        bitLenInt hBit = end - i;
+        for (bitLenInt j = 0; j < i; j++) {
+            bitLenInt c = hBit;
+            bitLenInt t = hBit + 1U + j;
             CPhaseRootN(j + 2U, c, t);
             if (trySeparate) {
                 TrySeparate(c, t);
@@ -103,12 +101,10 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
         return;
     }
 
-    bitLenInt i, j;
-    bitLenInt c, t;
-    for (i = 0; i < length; i++) {
-        for (j = 0; j < i; j++) {
-            c = (start + i) - (j + 1U);
-            t = start + i;
+    for (bitLenInt i = 0; i < length; i++) {
+        for (bitLenInt j = 0; j < i; j++) {
+            bitLenInt c = (start + i) - (j + 1U);
+            bitLenInt t = start + i;
             CIPhaseRootN(j + 2U, c, t);
             if (trySeparate) {
                 TrySeparate(c, t);
@@ -126,10 +122,9 @@ void QInterface::QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate)
     }
 
     bitLenInt end = (length - 1U);
-    bitLenInt i, j;
-    for (i = 0; i < length; i++) {
+    for (bitLenInt i = 0; i < length; i++) {
         H(qubits[end - i]);
-        for (j = 0; j < (bitLenInt)((length - 1U) - i); j++) {
+        for (bitLenInt j = 0; j < (bitLenInt)((length - 1U) - i); j++) {
             CPhaseRootN(j + 2U, qubits[(end - i) - (j + 1U)], qubits[end - i]);
         }
 
@@ -146,9 +141,8 @@ void QInterface::IQFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate)
         return;
     }
 
-    bitLenInt i, j;
-    for (i = 0; i < length; i++) {
-        for (j = 0; j < i; j++) {
+    for (bitLenInt i = 0; i < length; i++) {
+        for (bitLenInt j = 0; j < i; j++) {
             CIPhaseRootN(j + 2U, qubits[i - (j + 1U)], qubits[i]);
         }
         H(qubits[i]);
@@ -168,10 +162,9 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     } else if ((start == 0) && (length == qubitCount)) {
         SetPermutation(value);
     } else {
-        bool bitVal;
         bitCapInt regVal = MReg(start, length);
         for (bitLenInt i = 0; i < length; i++) {
-            bitVal = (bitCapIntOcl)bitSlice(i, regVal);
+            bool bitVal = (bitCapIntOcl)bitSlice(i, regVal);
             if ((bitVal && !bitSlice(i, value)) || (!bitVal && bitSlice(i, value)))
                 X(start + i);
         }
@@ -182,9 +175,8 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
     bitCapInt res = 0;
-    bitCapInt power;
     for (bitLenInt bit = 0; bit < length; bit++) {
-        power = pow2(bit);
+        bitCapInt power = pow2(bit);
         res |= ForceM(start + bit, (bool)(power & result), doForce, doApply) ? power : 0;
     }
     return res;
@@ -270,22 +262,19 @@ std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr
 void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 {
     bitCapInt v = mask; // count the number of bits set in v
-    bitCapInt oldV;
     bitLenInt length;
     std::vector<bitCapInt> bitPowers;
     for (length = 0; v; length++) {
-        oldV = v;
+        bitCapInt oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         bitPowers.push_back((v ^ oldV) & oldV);
     }
 
     std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
 
-    bitCapIntOcl retIndex;
-    bitLenInt p;
     for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
-        retIndex = 0;
-        for (p = 0; p < length; p++) {
+        bitCapIntOcl retIndex = 0;
+        for (bitLenInt p = 0; p < length; p++) {
             if (lcv & bitPowers[p]) {
                 retIndex |= pow2Ocl(p);
             }
@@ -298,16 +287,14 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, rea
 {
     std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
 
-    bitLenInt p;
     std::vector<bitCapInt> bitPowers(length);
-    for (p = 0; p < length; p++) {
+    for (bitLenInt p = 0; p < length; p++) {
         bitPowers[p] = pow2(bits[p]);
     }
 
-    bitCapIntOcl retIndex;
     for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
-        retIndex = 0;
-        for (p = 0; p < length; p++) {
+        bitCapIntOcl retIndex = 0;
+        for (bitLenInt p = 0; p < length; p++) {
             if (lcv & bitPowers[p]) {
                 retIndex |= pow2Ocl(p);
             }
@@ -322,17 +309,15 @@ real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& l
         return Prob(bits[0]);
     }
 
-    bitLenInt p;
     std::vector<bitCapInt> bitPowers(length);
-    for (p = 0; p < length; p++) {
+    for (bitLenInt p = 0; p < length; p++) {
         bitPowers[p] = pow2(bits[p]);
     }
 
     real1_f expectation = 0;
-    bitCapInt retIndex;
     for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
-        retIndex = 0;
-        for (p = 0; p < length; p++) {
+        bitCapInt retIndex = 0;
+        for (bitLenInt p = 0; p < length; p++) {
             if (lcv & bitPowers[p]) {
                 retIndex |= pow2(p);
             }
@@ -350,11 +335,8 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         return std::map<bitCapInt, int>();
     }
 
-    bitLenInt i;
-    bitCapIntOcl j;
-
     std::vector<bitCapInt> maskMap(qPowerCount);
-    for (i = 0; i < qPowerCount; i++) {
+    for (bitLenInt i = 0; i < qPowerCount; i++) {
         maskMap[i] = qPowers[i];
     }
 
@@ -364,9 +346,9 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     bitCapInt maskMaxQPower = pow2(qPowerCount);
     bitCapIntOcl maskPerm;
     std::unique_ptr<real1[]> maskProbsArray(new real1[(bitCapIntOcl)maskMaxQPower]());
-    for (j = 0; j < maxQPower; j++) {
+    for (bitCapIntOcl j = 0; j < maxQPower; j++) {
         maskPerm = 0;
-        for (i = 0; i < qPowerCount; i++) {
+        for (bitLenInt i = 0; i < qPowerCount; i++) {
             if (j & maskMap[i]) {
                 maskPerm |= pow2Ocl(i);
             }
@@ -382,7 +364,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     for (unsigned int shot = 0; shot < shots; shot++) {
         maskProb = Rand();
         cumulativeProb = ZERO_R1;
-        for (j = 0; j < maskMaxQPower; j++) {
+        for (bitCapIntOcl j = 0; j < maskMaxQPower; j++) {
             cumulativeProb += maskProbsArray[j];
             if ((maskProb <= cumulativeProb) || (j == lastPerm)) {
                 if (results.find(j) == results.end()) {

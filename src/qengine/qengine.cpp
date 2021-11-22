@@ -75,13 +75,11 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
         NormalizeState();
     }
 
-    bitCapIntOcl i;
-
     complex phase = GetNonunitaryPhase();
 
     std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[length]);
     bitCapInt regMask = 0;
-    for (i = 0; i < length; i++) {
+    for (bitCapIntOcl i = 0; i < length; i++) {
         qPowers[i] = pow2(bits[i]);
         regMask |= qPowers[i];
     }
@@ -142,7 +140,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
 
     probArray.reset();
 
-    i = 0;
+    bitCapIntOcl i = 0;
     for (bitLenInt p = 0; p < length; p++) {
         if (pow2(p) & result) {
             i |= (bitCapIntOcl)qPowers[p];
@@ -338,12 +336,11 @@ void QEngine::ApplyControlled2x2(
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 1U]);
     bitCapIntOcl targetMask = pow2Ocl(target);
     bitCapIntOcl fullMask = 0U;
-    bitCapIntOcl controlMask;
     for (bitLenInt i = 0U; i < controlLen; i++) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
         fullMask |= qPowersSorted[i];
     }
-    controlMask = fullMask;
+    bitCapIntOcl controlMask = fullMask;
     qPowersSorted[controlLen] = targetMask;
     fullMask |= targetMask;
     std::sort(qPowersSorted.get(), qPowersSorted.get() + controlLen + 1U);

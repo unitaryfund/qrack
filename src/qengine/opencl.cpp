@@ -1668,11 +1668,10 @@ real1_f QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation
     cl_int error;
 
     bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
-    bitCapIntOcl oldV;
     bitLenInt length; // c accumulates the total bits set in v
     std::vector<bitCapIntOcl> skipPowersVec;
     for (length = 0; v; length++) {
-        oldV = v;
+        bitCapIntOcl oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         skipPowersVec.push_back((v ^ oldV) & oldV);
     }
@@ -1711,11 +1710,10 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     }
 
     bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
-    bitCapIntOcl oldV;
     bitLenInt length;
     std::vector<bitCapIntOcl> powersVec;
     for (length = 0; v; length++) {
-        oldV = v;
+        bitCapIntOcl oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         powersVec.push_back((v ^ oldV) & oldV);
     }
@@ -1742,7 +1740,7 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     bitLenInt skipLength = 0; // c accumulates the total bits set in v
     std::vector<bitCapIntOcl> skipPowersVec;
     for (skipLength = 0; v; skipLength++) {
-        oldV = v;
+        bitCapIntOcl oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         skipPower = (v ^ oldV) & oldV;
         skipPowersVec.push_back(skipPower);
@@ -2426,10 +2424,9 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOu
     bitCapIntOcl carryMask = lowMask << carryStart;
 
     std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
-    bitCapIntOcl controlPower;
     bitCapIntOcl controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        controlPower = pow2Ocl(controls[i]);
+        bitCapIntOcl controlPower = pow2Ocl(controls[i]);
         skipPowers[i] = controlPower;
         controlMask |= controlPower;
     }
@@ -2461,10 +2458,9 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
     bitCapIntOcl carryMask = lowMask << carryStart;
 
     std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
-    bitCapIntOcl controlPower;
     bitCapIntOcl controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        controlPower = pow2Ocl(controls[i]);
+        bitCapIntOcl controlPower = pow2Ocl(controls[i]);
         skipPowers[i] = controlPower;
         controlMask |= controlPower;
     }
@@ -2489,14 +2485,12 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
 real1_f QEngineOCL::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
 {
     real1 average = ZERO_R1;
-    real1 prob;
     real1 totProb = ZERO_R1;
-    bitCapIntOcl i, outputInt;
     bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
     LockSync(CL_MAP_READ);
-    for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> valueStart;
-        prob = norm(stateVec[i]);
+    for (bitCapIntOcl i = 0; i < maxQPower; i++) {
+        bitCapIntOcl outputInt = (i & outputMask) >> valueStart;
+        real1 prob = norm(stateVec[i]);
         totProb += prob;
         average += prob * outputInt;
     }

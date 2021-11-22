@@ -67,14 +67,12 @@ QInterfacePtr QMaskFusion::Clone()
 
 void QMaskFusion::FlushBuffers()
 {
-    bitLenInt i;
-    bitCapInt bitPow;
     bitCapInt zMask = 0U;
     bitCapInt xMask = 0U;
     uint8_t phase = 0U;
-    for (i = 0U; i < qubitCount; i++) {
+    for (bitLenInt i = 0U; i < qubitCount; i++) {
         QMaskFusionShard& shard = zxShards[i];
-        bitPow = pow2(i);
+        bitCapInt bitPow = pow2(i);
         if (shard.isZ) {
             zMask |= bitPow;
         }

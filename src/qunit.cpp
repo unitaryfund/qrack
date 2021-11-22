@@ -121,13 +121,12 @@ void QUnit::TurnOnPaging()
     }
     isPagingSuppressed = false;
 
-    bitLenInt i;
     if (engines[0] == QINTERFACE_QPAGER) {
         std::vector<QInterfaceEngine> tEngines = engines;
         tEngines.erase(tEngines.begin());
 
         std::map<QInterfacePtr, QPagerPtr> nEngines;
-        for (i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
             QEnginePtr unit = std::dynamic_pointer_cast<QEngine>(shards[i].unit);
             if (unit && (nEngines.find(unit) == nEngines.end())) {
                 nEngines[unit] = std::make_shared<QPager>(unit, tEngines, unit->GetQubitCount(), 0, rand_generator,
@@ -136,7 +135,7 @@ void QUnit::TurnOnPaging()
             }
         }
 
-        for (i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
             QInterfacePtr unit = shards[i].unit;
             if (unit) {
                 shards[i].unit = nEngines[unit];
@@ -145,7 +144,7 @@ void QUnit::TurnOnPaging()
     }
 
     if (engines[0] == QINTERFACE_STABILIZER_HYBRID) {
-        for (i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
             QStabilizerHybridPtr unit = std::dynamic_pointer_cast<QStabilizerHybrid>(shards[i].unit);
             if (unit) {
                 unit->TurnOnPaging();
@@ -161,17 +160,16 @@ void QUnit::TurnOffPaging()
     }
     isPagingSuppressed = true;
 
-    bitLenInt i;
     if (engines[0] == QINTERFACE_QPAGER) {
         std::map<QPagerPtr, QInterfacePtr> nEngines;
-        for (i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
             QPagerPtr unit = std::dynamic_pointer_cast<QPager>(shards[i].unit);
             if (unit && (nEngines.find(unit) == nEngines.end())) {
                 nEngines[unit] = unit->ReleaseEngine();
             }
         }
 
-        for (i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
             QPagerPtr unit = std::dynamic_pointer_cast<QPager>(shards[i].unit);
             if (unit) {
                 shards[i].unit = nEngines[unit];
@@ -180,7 +178,7 @@ void QUnit::TurnOffPaging()
     }
 
     if (engines[0] == QINTERFACE_STABILIZER_HYBRID) {
-        for (i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
             QStabilizerHybridPtr unit = std::dynamic_pointer_cast<QStabilizerHybrid>(shards[i].unit);
             if (unit) {
                 unit->TurnOffPaging();
