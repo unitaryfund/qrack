@@ -244,8 +244,6 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
     if (home == "*") {
         home = GetDefaultBinaryPath();
     }
-
-    int i;
     // get all platforms (drivers), e.g. NVIDIA
 
     std::vector<cl::Platform> all_platforms;
@@ -393,7 +391,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
     std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
     std::cout << "Default device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
-    for (i = 0; i < deviceCount; i++) {
+    for (int i = 0; i < deviceCount; i++) {
         std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
 }

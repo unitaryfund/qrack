@@ -116,10 +116,9 @@ protected:
             return true;
         }
 
-        bitLenInt control, i;
         bool isBlocked = false;
-        for (i = 0U; i < controlLen; i++) {
-            control = controls[i];
+        for (bitLenInt i = 0U; i < controlLen; i++) {
+            bitLenInt control = controls[i];
             isBlocked = zxShards[control].isX;
             if (isBlocked) {
                 break;
