@@ -724,10 +724,9 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         bitCapIntOcl partToAdd = toAddOcl;
         bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         int8_t test1, test2;
-        int j;
         std::unique_ptr<int8_t[]> nibbles(new int8_t[nibbleCount]);
         bool isValid = true;
-        for (j = 0; j < nibbleCount; j++) {
+        for (int j = 0; j < nibbleCount; j++) {
             test1 = (int)(inOutInt & 15UL);
             inOutInt >>= 4UL;
             test2 = (int)(partToAdd % 10);
@@ -739,7 +738,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         }
         if (isValid) {
             bitCapIntOcl outInt = 0;
-            for (j = 0; j < nibbleCount; j++) {
+            for (int j = 0; j < nibbleCount; j++) {
                 if (nibbles[j] > 9) {
                     nibbles[j] -= 10;
                     if ((j + 1) < nibbleCount) {
