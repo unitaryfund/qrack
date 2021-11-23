@@ -9,6 +9,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include <chrono>
 #include <cmath>
 #include <iomanip> // For setw
 #include <iostream> // For cout
@@ -64,6 +65,9 @@ int main()
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
 
+    const double clockFactor = 1.0 / 1000.0; // Report in ms
+    auto iterClock = std::chrono::high_resolution_clock::now();
+
     bitLenInt qubitCount = ceil(log2(toFactor));
 
     // Choose a base at random:
@@ -75,6 +79,9 @@ int main()
     bitCapInt testFactor = gcd(toFactor, base);
     if (testFactor != 1) {
         std::cout << "Chose non- relative prime: " << testFactor << " * " << (toFactor / testFactor) << std::endl;
+        auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - iterClock);
+        std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
         return 0;
     }
 
@@ -90,6 +97,9 @@ int main()
     bitCapInt y = qReg->MReg(0, qubitCount);
     if (y == 0) {
         std::cout << "Failed: y = 0 in period estimation subroutine." << std::endl;
+        auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - iterClock);
+        std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
         return 0;
     }
     bitCapInt qubitPower = 1U << qubitCount;
@@ -133,6 +143,9 @@ int main()
     } else {
         std::cout << "Failure: Found " << res1 << " and " << res2 << std::endl;
     }
+    auto tClock =
+        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
+    std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
 
     return 0;
 }
