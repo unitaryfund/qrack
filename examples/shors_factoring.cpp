@@ -94,7 +94,7 @@ int main()
     qReg->POWModNOut(base, toFactor, 0, qubitCount, qubitCount);
     qReg->IQFT(0, qubitCount);
 
-    bitCapInt y = qReg->MReg(0, qubitCount);
+    bitCapInt y = qReg->MAll() & (pow2(qubitCount) - ONE_BCI);
     if (y == 0) {
         std::cout << "Failed: y = 0 in period estimation subroutine." << std::endl;
         auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
