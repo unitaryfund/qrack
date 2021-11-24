@@ -1,5 +1,6 @@
 #cmakedefine ENABLE_BCD 1
 #cmakedefine ENABLE_COMPLEX_X2 1
+#cmakedefine ENABLE_ENV_VARS 1
 #cmakedefine ENABLE_OCL_MEM_GUARDS 1
 #cmakedefine ENABLE_OPENCL 1
 #cmakedefine ENABLE_PTHREAD 1
