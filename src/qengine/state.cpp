@@ -348,15 +348,10 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             ParallelFunc fn;
             if (!doCalcNorm) {
                 fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                    complex qubit[2];
-
                     complex Y0 = stateVec->read(lcv + offset1);
-                    qubit[1] = stateVec->read(lcv + offset2);
-
-                    qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
-                    qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
-
-                    stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
+                    complex Y1 = stateVec->read(lcv + offset2);
+                    stateVec->write2(
+                        lcv + offset1, (mtrx[0] * Y0) + (mtrx[1] * Y1), lcv + offset2, (mtrx[2] * Y0) + (mtrx[3] * Y1));
                 };
             } else if (norm_thresh > ZERO_R1) {
                 fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
