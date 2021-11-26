@@ -1710,7 +1710,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
     }
 
     std::map<bitCapInt, int> combinedResults;
-    combinedResults[0U] = shots;
+    combinedResults[0U] = (int)shots;
 
     for (auto subQPowersIt = subQPowers.begin(); subQPowersIt != subQPowers.end(); subQPowersIt++) {
         QInterfacePtr unit = subQPowersIt->first;
