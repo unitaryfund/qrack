@@ -126,6 +126,15 @@ void QInterface::RZ(real1_f radians, bitLenInt qubit)
     Phase(complex(cosine, -sine), complex(cosine, sine), qubit);
 }
 
+/// Controlled z axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli z axis
+void QInterface::CRZ(real1_f radians, bitLenInt control, bitLenInt target)
+{
+    real1 cosine = (real1)cos(radians / 2);
+    real1 sine = (real1)sin(radians / 2);
+    bitLenInt controls[1] = { control };
+    MCPhase(controls, 1, complex(cosine, -sine), complex(cosine, sine), target);
+}
+
 #if ENABLE_ROT_API
 /// Exponentiate identity operator
 void QInterface::Exp(real1_f radians, bitLenInt qubit)
@@ -200,15 +209,6 @@ void QInterface::CRY(real1_f radians, bitLenInt control, bitLenInt target)
         complex(cosine, ZERO_R1) };
     bitLenInt controls[1] = { control };
     MCMtrx(controls, 1, pauliRY, target);
-}
-
-/// Controlled z axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli z axis
-void QInterface::CRZ(real1_f radians, bitLenInt control, bitLenInt target)
-{
-    real1 cosine = (real1)cos(radians / 2);
-    real1 sine = (real1)sin(radians / 2);
-    bitLenInt controls[1] = { control };
-    MCPhase(controls, 1, complex(cosine, -sine), complex(cosine, sine), target);
 }
 #endif
 } // namespace Qrack

@@ -1275,6 +1275,14 @@ public:
      */
     virtual void RZ(real1_f radians, bitLenInt qubitIndex);
 
+    /**
+     * Controlled Z axis rotation gate
+     *
+     * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
+     * Pauli Zaxis.
+     */
+    virtual void CRZ(real1_f radians, bitLenInt control, bitLenInt target);
+
 #if ENABLE_ROT_API
     /**
      * Dyadic fraction phase shift gate
@@ -1402,14 +1410,6 @@ public:
      * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Z axis.
      */
     virtual void RZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
-
-    /**
-     * Controlled Z axis rotation gate
-     *
-     * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
-     * Pauli Zaxis.
-     */
-    virtual void CRZ(real1_f radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction Z axis rotation gate
