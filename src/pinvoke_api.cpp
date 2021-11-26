@@ -70,7 +70,7 @@ bitLenInt MaxShardQubits()
     if (_maxShardQubits == 0) {
 #if ENABLE_ENV_VARS
         _maxShardQubits =
-            getenv("QRACK_MAX_PAGING_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB"))) : -1;
+            (bitLenInt)(getenv("QRACK_MAX_PAGING_QB") ? std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB"))) : -1);
 #else
         _maxShardQubits = -1;
 #endif
