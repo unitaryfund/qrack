@@ -39,7 +39,7 @@ ParallelFor::ParallelFor()
 #if ENABLE_ENV_VARS
     pStride = getenv("QRACK_PSTRIDEPOW")
         ? ((bitCapIntOcl)ONE_BCI << (bitCapIntOcl)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))))
-        : ((bitCapIntOcl)ONE_BCI << PSTRIDEPOW);
+        : ((bitCapIntOcl)ONE_BCI << (bitLenInt)PSTRIDEPOW);
 #else
     pStride = ((bitCapIntOcl)ONE_BCI << PSTRIDEPOW);
 #endif

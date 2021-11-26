@@ -51,7 +51,7 @@ struct QEngineInfo {
 };
 
 struct DeviceInfo {
-    int id;
+    size_t id;
     bitCapInt maxSize;
 
     bool operator<(const DeviceInfo& other) const { return maxSize < other.maxSize; }
