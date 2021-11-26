@@ -404,7 +404,6 @@ public:
 #else
             for (int64_t i = (combineCount - 1U); i >= 0; i--) {
                 toRet[i].insert(toRet[i].end(), toRet[i + combineCount].begin(), toRet[i + combineCount].end());
-                toRet[i + combineCount].clear();
                 toRet.pop_back();
             }
 #endif
@@ -485,7 +484,6 @@ public:
 #else
             for (int64_t i = (combineCount - 1U); i >= 0; i--) {
                 toRet[i].insert(toRet[i + combineCount].begin(), toRet[i + combineCount].end());
-                toRet[i + combineCount].clear();
                 toRet.pop_back();
             }
 #endif
