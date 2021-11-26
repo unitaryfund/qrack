@@ -272,12 +272,12 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
 
                     qubit.cmplx2 = matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
 
-                    rngNrm[cpu] += norm(qubit.cmplx2);
-
 #if FPPOW < 6
+                    rngNrm[cpu] += norm(qubit.cmplx2);
                     stateVec->write(lcv + offset1, qubit.cmplx[0]);
                     stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
+                    rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[0]);
                     stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
 #endif
                 };
