@@ -259,7 +259,7 @@ public:
     /// Get the count of devices in the current list.
     int GetDeviceCount() { return all_device_contexts.size(); }
     /// Get default device ID.
-    int GetDefaultDeviceID() { return default_device_context->device_id; }
+    size_t GetDefaultDeviceID() { return default_device_context->device_id; }
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
     /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded

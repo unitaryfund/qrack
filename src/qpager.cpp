@@ -146,7 +146,8 @@ void QPager::Init()
         maxPageQubits = -1;
 
 #if ENABLE_ENV_VARS
-        pStridePow = (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
+        pStridePow =
+            (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
 #else
         pStridePow = PSTRIDEPOW;
 #endif
