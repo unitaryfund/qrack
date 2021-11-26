@@ -196,8 +196,8 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     }
 
     // This does nothing if the first unit is the default device:
-    if ((unit1->GetDeviceID() < 0) ? (deviceList[0].id != OCLEngine::Instance()->GetDefaultDeviceID())
-                                   : (deviceList[0].id != (size_t)unit1->GetDeviceID())) {
+    if (deviceList[0].id !=
+        ((unit1->GetDeviceID() < 0) ? OCLEngine::Instance()->GetDefaultDeviceID() : (size_t)unit1->GetDeviceID())) {
         // Check if size exceeds single device capacity:
         bitLenInt qubitCount = 0;
         std::map<QInterfacePtr, bool> found;
