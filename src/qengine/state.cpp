@@ -230,14 +230,8 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             if (!doCalcNorm) {
                 fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
                     ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
-
                     qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-#if FPPOW < 6
-                    stateVec->write(lcv + offset1, qubit.cmplx[0]);
-                    stateVec->write(lcv + offset2, qubit.cmplx[1]);
-#else
                     stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
-#endif
                 };
             } else if (norm_thresh > ZERO_R1) {
                 fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
@@ -258,13 +252,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                     } else {
                         rngNrm[cpu] += dotMulRes;
                     }
-
-#if FPPOW < 6
-                    stateVec->write(lcv + offset1, qubit.cmplx[0]);
-                    stateVec->write(lcv + offset2, qubit.cmplx[1]);
-#else
                     stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
-#endif
                 };
             } else {
                 fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
@@ -274,12 +262,10 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
 
 #if FPPOW < 6
                     rngNrm[cpu] += norm(qubit.cmplx2);
-                    stateVec->write(lcv + offset1, qubit.cmplx[0]);
-                    stateVec->write(lcv + offset2, qubit.cmplx[1]);
 #else
                     rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[0]);
-                    stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
 #endif
+                    stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
                 };
             }
 
