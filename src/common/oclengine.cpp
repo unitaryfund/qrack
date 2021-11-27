@@ -50,7 +50,7 @@ DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev)
     } else if (dev == -1) {
         return default_device_context;
     } else {
-        return all_device_contexts[(size_t)dev];
+        return all_device_contexts[dev];
     }
 }
 

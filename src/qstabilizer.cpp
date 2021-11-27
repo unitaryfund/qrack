@@ -729,7 +729,7 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
         // Set Zbar_p := Z_b
         rowset(p + n, t + n);
 
-        r[(size_t)p + n] = result ? 2U : 0U;
+        r[p + n] = result ? 2U : 0U;
         // Now update the Xbar's and Zbar's that don't commute with Z_b
         for (bitLenInt i = 0; i < elemCount; i++) {
             if ((i != p) && x[i][t]) {

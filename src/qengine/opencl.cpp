@@ -1061,7 +1061,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 
     DISPATCH_WRITE(waitVec, *uniformBuffer, sizeof(complex) * 4U * pow2Ocl(controlLen + mtrxSkipLen), mtrxs, error);
 
-    std::unique_ptr<bitCapIntOcl[]> qPowers(new bitCapIntOcl[(size_t)controlLen + mtrxSkipLen]);
+    std::unique_ptr<bitCapIntOcl[]> qPowers(new bitCapIntOcl[controlLen + mtrxSkipLen]);
     for (bitLenInt i = 0; i < controlLen; i++) {
         qPowers[i] = pow2Ocl(controls[i]);
     }
@@ -2431,7 +2431,7 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, const bitLenInt inOu
         controlMask |= controlPower;
     }
     for (bitLenInt i = 0; i < length; i++) {
-        skipPowers[(size_t)i + controlLen] = pow2Ocl(carryStart + i);
+        skipPowers[i + controlLen] = pow2Ocl(carryStart + i);
     }
     std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
 
@@ -2465,14 +2465,14 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
         controlMask |= controlPower;
     }
     for (bitLenInt i = 0; i < length; i++) {
-        skipPowers[(size_t)i + controlLen] = pow2Ocl(carryStart + i);
+        skipPowers[i + controlLen] = pow2Ocl(carryStart + i);
     }
     std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, toMod, controlLen, controlMask, inOutMask, carryMask, modN,
         length, inOutStart, carryStart };
 
-    size_t sizeDiff = sizeof(bitCapIntOcl) * (((size_t)controlLen * 2) + length);
+    size_t sizeDiff = sizeof(bitCapIntOcl) * ((controlLen * 2U) + length);
     AddAlloc(sizeDiff);
     BufferPtr controlBuffer = MakeBuffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeDiff, skipPowers.get());
     skipPowers.reset();
