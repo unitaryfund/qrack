@@ -218,7 +218,7 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
     toCompare->FlushBuffers();
     toCompare->Finish();
 
-    int numCores = GetConcurrencyLevel();
+    unsigned numCores = GetConcurrencyLevel();
     std::unique_ptr<complex[]> partInner(new complex[numCores]());
 
     par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& i, const unsigned& cpu) {
@@ -245,7 +245,7 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
     });
 
     complex projection = ZERO_CMPLX;
-    for (int i = 0; i < numCores; i++) {
+    for (unsigned i = 0; i < numCores; i++) {
         projection += partInner[i];
     }
 
@@ -461,7 +461,7 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
     });
 
     real1 oneChance = ZERO_R1;
-    for (int i = 0; i < numCores; i++) {
+    for (unsigned i = 0; i < numCores; i++) {
         oneChance += oneChanceBuff[i];
     }
 
