@@ -292,7 +292,10 @@ public:
 #endif
     }
     size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
-    size_t GetActiveAllocSize(const int& dev) { return activeAllocSizes[dev]; }
+    size_t GetActiveAllocSize(const int& dev)
+    {
+        return (dev < 0) ? activeAllocSizes[GetDefaultDeviceID()] : activeAllocSizes[(size_t)dev];
+    }
     size_t AddToActiveAllocSize(const int& dev, size_t size)
     {
         if (dev < -1) {
