@@ -43,7 +43,7 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
         bitLenInt pStridePow = PSTRIDEPOW;
 #endif
 
-        bitLenInt cpuQubits = (concurrency == 1 ? pStridePow : (log2(concurrency - 1) + pStridePow + 1));
+        bitLenInt cpuQubits = (concurrency == 1U) ? pStridePow : (log2(concurrency - 1U) + pStridePow);
 
         thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
