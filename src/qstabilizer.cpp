@@ -162,7 +162,7 @@ uint8_t QStabilizer::clifford(const bitLenInt& i, const bitLenInt& k)
         }
     }
 
-    e = (e + r[i] + r[k]) & 0x3;
+    e = (e + r[i] + r[k]) & 0x3U;
 
     return e;
 }
@@ -288,7 +288,7 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
     for (j = 0; j < qubitCount; j++) {
         // Pauli operator is "Y"
         if (x[elemCount][j] && z[elemCount][j]) {
-            e = (e + 1) & 0x3;
+            e = (e + 1) & 0x3U;
         }
     }
 
@@ -452,7 +452,7 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
             }
 
             if (x[i][c] && z[i][t] && (x[i][t] == z[i][c])) {
-                r[i] = (r[i] + 2) & 0x3;
+                r[i] = (r[i] + 2) & 0x3U;
             }
         }
     });
@@ -467,7 +467,7 @@ void QStabilizer::H(const bitLenInt& t)
         for (bitLenInt i = 0; i < maxLcv; i++) {
             std::swap(x[i][t], z[i][t]);
             if (x[i][t] && z[i][t]) {
-                r[i] = (r[i] + 2) & 0x3;
+                r[i] = (r[i] + 2) & 0x3U;
             }
         }
     });
@@ -481,7 +481,7 @@ void QStabilizer::S(const bitLenInt& t)
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (x[i][t] && z[i][t]) {
-                r[i] = (r[i] + 2) & 0x3;
+                r[i] = (r[i] + 2) & 0x3U;
             }
             z[i][t] = z[i][t] ^ x[i][t];
         }
@@ -497,7 +497,7 @@ void QStabilizer::IS(const bitLenInt& t)
         for (bitLenInt i = 0; i < maxLcv; i++) {
             z[i][t] = z[i][t] ^ x[i][t];
             if (x[i][t] && z[i][t]) {
-                r[i] = (r[i] + 2) & 0x3;
+                r[i] = (r[i] + 2) & 0x3U;
             }
         }
     });
@@ -511,7 +511,7 @@ void QStabilizer::Z(const bitLenInt& t)
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (x[i][t]) {
-                r[i] = (r[i] + 2) & 0x3;
+                r[i] = (r[i] + 2) & 0x3U;
             }
         }
     });
@@ -525,7 +525,7 @@ void QStabilizer::X(const bitLenInt& t)
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (z[i][t]) {
-                r[i] = (r[i] + 2) & 0x3;
+                r[i] = (r[i] + 2) & 0x3U;
             }
         }
     });
@@ -539,7 +539,7 @@ void QStabilizer::Y(const bitLenInt& t)
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (z[i][t] ^ x[i][t]) {
-                r[i] = (r[i] + 2) & 0x3;
+                r[i] = (r[i] + 2) & 0x3U;
             }
         }
     });
@@ -554,7 +554,7 @@ void QStabilizer::SqrtX(const bitLenInt& t)
         for (bitLenInt i = 0; i < maxLcv; i++) {
             x[i][t] = x[i][t] ^ z[i][t];
             if (x[i][t] && z[i][t]) {
-                r[i] = (r[i] + 2) & 0x3;
+                r[i] = (r[i] + 2) & 0x3U;
             }
         }
     });
@@ -568,7 +568,7 @@ void QStabilizer::ISqrtX(const bitLenInt& t)
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (x[i][t] && z[i][t]) {
-                r[i] = (r[i] + 2) & 0x3;
+                r[i] = (r[i] + 2) & 0x3U;
             }
             x[i][t] = x[i][t] ^ z[i][t];
         }
@@ -584,7 +584,7 @@ void QStabilizer::SqrtY(const bitLenInt& t)
         for (bitLenInt i = 0; i < maxLcv; i++) {
             std::swap(x[i][t], z[i][t]);
             if (!x[i][t] && z[i][t]) {
-                r[i] = (r[i] + 2) & 0x3;
+                r[i] = (r[i] + 2) & 0x3U;
             }
         }
     });
@@ -598,7 +598,7 @@ void QStabilizer::ISqrtY(const bitLenInt& t)
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (!x[i][t] && z[i][t]) {
-                r[i] = (r[i] + 2) & 0x3;
+                r[i] = (r[i] + 2) & 0x3U;
             }
             std::swap(x[i][t], z[i][t]);
         }
@@ -729,7 +729,7 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
         // Set Zbar_p := Z_b
         rowset(p + n, t + n);
 
-        r[p + n] = result ? 2 : 0;
+        r[(size_t)p + n] = result ? 2U : 0U;
         // Now update the Xbar's and Zbar's that don't commute with Z_b
         for (bitLenInt i = 0; i < elemCount; i++) {
             if ((i != p) && x[i][t]) {

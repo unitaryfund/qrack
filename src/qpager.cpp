@@ -143,6 +143,7 @@ void QPager::Init()
 
         thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
 
+        // WARNING: Intent is for max of unsigned type.
         maxPageQubits = -1;
 
 #if ENABLE_ENV_VARS
