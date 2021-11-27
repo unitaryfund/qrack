@@ -254,7 +254,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                     }
                     stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
                 };
-            } else {
+            } else if (abs(ONE_R1 - nrm) > REAL1_EPSILON) {
                 fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
                     ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
 
@@ -265,6 +265,20 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
 #else
                     rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[0]);
 #endif
+                    stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+                };
+            } else {
+                fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+                    ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+
+                    qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
+
+#if FPPOW < 6
+                    rngNrm[cpu] += norm(qubit.cmplx2);
+#else
+                    rngNrm[cpu] += norm(qubit.cmplx[0]) + norm(qubit.cmplx[0]);
+#endif
+
                     stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
                 };
             }
@@ -365,7 +379,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
 
                     stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
                 };
-            } else {
+            } else if (abs(ONE_R1 - nrm) > REAL1_EPSILON) {
                 fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
                     complex qubit[2];
 
@@ -374,6 +388,20 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
 
                     qubit[0] = nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1]));
                     qubit[1] = nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+
+                    rngNrm[cpu] = norm(qubit[0]) + norm(qubit[1]);
+
+                    stateVec->write2(lcv + offset1, qubit[0], lcv + offset2, qubit[1]);
+                };
+            } else {
+                fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+                    complex qubit[2];
+
+                    complex Y0 = stateVec->read(lcv + offset1);
+                    qubit[1] = stateVec->read(lcv + offset2);
+
+                    qubit[0] = (mtrx[0] * Y0) + (mtrx[1] * qubit[1]);
+                    qubit[1] = (mtrx[2] * Y0) + (mtrx[3] * qubit[1]);
 
                     rngNrm[cpu] = norm(qubit[0]) + norm(qubit[1]);
 
