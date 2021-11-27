@@ -507,7 +507,7 @@ protected:
      * to the state vector is done, before performing other OpenCL operations on it, it must be unmapped with
      * UnlockSync().
      */
-    void LockSync(cl_int flags = (CL_MAP_READ | CL_MAP_WRITE));
+    void LockSync(cl_map_flags flags = (CL_MAP_READ | CL_MAP_WRITE));
     /**
      * Unlocks synchronization between the state vector buffer and general RAM, so the state vector can be operated on
      * with OpenCL kernels and operations.

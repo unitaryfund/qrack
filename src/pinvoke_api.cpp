@@ -144,13 +144,13 @@ void RHelper(unsigned sid, unsigned b, double phi, unsigned q)
         break;
     }
     case PauliX:
-        simulator->RX(phi, shards[simulator.get()][q]);
+        simulator->RX((real1_f)phi, shards[simulator.get()][q]);
         break;
     case PauliY:
-        simulator->RY(phi, shards[simulator.get()][q]);
+        simulator->RY((real1_f)phi, shards[simulator.get()][q]);
         break;
     case PauliZ:
-        simulator->RZ(phi, shards[simulator.get()][q]);
+        simulator->RZ((real1_f)phi, shards[simulator.get()][q]);
         break;
     default:
         break;
@@ -607,7 +607,7 @@ MICROSOFT_QUANTUM_DECL void PhaseParity(
         mask |= pow2(shards[simulator.get()][q[i]]);
     }
 
-    simulator->PhaseParity(lambda, mask);
+    simulator->PhaseParity((real1_f)lambda, mask);
 }
 
 /**
@@ -775,7 +775,7 @@ MICROSOFT_QUANTUM_DECL void U(
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->U(shards[simulator.get()][q], theta, phi, lambda);
+    simulator->U(shards[simulator.get()][q], (real1_f)theta, (real1_f)phi, (real1_f)lambda);
 }
 
 /**
@@ -882,7 +882,7 @@ MICROSOFT_QUANTUM_DECL void MCU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
     _In_ double theta, _In_ double phi, _In_ double lambda)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->CU(ctrlsArray.get(), n, shards[simulator.get()][q], theta, phi, lambda);
+    simulator->CU(ctrlsArray.get(), n, shards[simulator.get()][q], (real1_f)theta, (real1_f)phi, (real1_f)lambda);
 }
 
 /**
@@ -980,7 +980,7 @@ MICROSOFT_QUANTUM_DECL void MACU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
     _In_ double theta, _In_ double phi, _In_ double lambda)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->AntiCU(ctrlsArray.get(), n, shards[simulator.get()][q], theta, phi, lambda);
+    simulator->AntiCU(ctrlsArray.get(), n, shards[simulator.get()][q], (real1_f)theta, (real1_f)phi, (real1_f)lambda);
 }
 
 /**
@@ -1057,7 +1057,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
         TransformPauliBasis(simulator, n, b, q);
 
         std::size_t mask = make_mask(qVec);
-        simulator->UniformParityRZ((bitCapInt)mask, -phi);
+        simulator->UniformParityRZ((bitCapInt)mask, (real1_f)(-phi));
 
         RevertPauliBasis(simulator, n, b, q);
     }
@@ -1093,7 +1093,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         TransformPauliBasis(simulator, n, b, q);
 
         std::size_t mask = make_mask(qVec);
-        simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), (bitCapInt)mask, -phi);
+        simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), (bitCapInt)mask, (real1_f)(-phi));
 
         RevertPauliBasis(simulator, n, b, q);
     }
