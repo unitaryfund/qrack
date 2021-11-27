@@ -35,6 +35,7 @@ protected:
 
     bool useHardwareThreshold;
     bool useGpuThreshold;
+    bitLenInt segmentGlobalQb;
     bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
     bitLenInt deviceGlobalQubits;
@@ -56,9 +57,7 @@ protected:
             if (useGpuThreshold) {
                 // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
                 // environment variable.
-
                 thresholdQubitsPerPage = maxPageQubits;
-
                 bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
                 if (threshTest < thresholdQubitsPerPage) {
                     thresholdQubitsPerPage = threshTest;
@@ -337,6 +336,28 @@ public:
 
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->SetDevice(dID, forceReInit);
+        }
+
+        if (!useGpuThreshold) {
+            return;
+        }
+
+        maxPageQubits =
+            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
+
+        // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
+        // environment variable.
+        thresholdQubitsPerPage = maxPageQubits;
+        bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
+        if (threshTest < thresholdQubitsPerPage) {
+            thresholdQubitsPerPage = threshTest;
+        }
+
+        // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
+        // concurrency.
+        minPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+        if (thresholdQubitsPerPage < minPageQubits) {
+            thresholdQubitsPerPage = minPageQubits;
         }
     }
 

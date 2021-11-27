@@ -76,6 +76,7 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
     , isSparse(useSparseStateVec)
     , deviceIDs(devList)
     , useHardwareThreshold(false)
+    , segmentGlobalQb(0)
     , minPageQubits(0)
     , deviceGlobalQubits(2)
     , thresholdQubitsPerPage(qubitThreshold)
@@ -101,27 +102,37 @@ void QPager::Init()
     if (getenv("QRACK_DEVICE_GLOBAL_QB")) {
         deviceGlobalQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_DEVICE_GLOBAL_QB")));
     }
+
+    if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
+        segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
+    }
 #endif
 
+    if ((engines[0] != QINTERFACE_CPU) && OCLEngine::Instance()->GetDeviceCount()) {
+        maxPageQubits =
+            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
+    }
+
+    bitLenInt engineLevel = 0;
+    QInterfaceEngine rootEngine = engines[0];
+    while ((engines.size() < engineLevel) && (rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL) &&
+        (rootEngine != QINTERFACE_HYBRID)) {
+        engineLevel++;
+        rootEngine = engines[engineLevel];
+    }
+
 #if ENABLE_OPENCL
-    if ((thresholdQubitsPerPage == 0) && (engines[0] != QINTERFACE_CPU) && !OCLEngine::Instance()->GetDeviceCount()) {
+    if ((rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL)) {
+        rootEngine = QINTERFACE_HYBRID;
+    }
+
+    if ((thresholdQubitsPerPage == 0) && (rootEngine == QINTERFACE_OPENCL) && OCLEngine::Instance()->GetDeviceCount()) {
         useHardwareThreshold = true;
         useGpuThreshold = true;
 
         // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
         // environment variable.
-
-        bitLenInt pps = 0;
-#if ENABLE_ENV_VARS
-        if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
-            pps = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
-        }
-#endif
-
-        maxPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - pps;
-
         thresholdQubitsPerPage = maxPageQubits;
-
         bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
         if (threshTest < thresholdQubitsPerPage) {
             thresholdQubitsPerPage = threshTest;
@@ -129,8 +140,7 @@ void QPager::Init()
 
         // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
         // concurrency.
-        minPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 2U;
-
+        minPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
         if (thresholdQubitsPerPage < minPageQubits) {
             thresholdQubitsPerPage = minPageQubits;
         }
@@ -143,9 +153,6 @@ void QPager::Init()
 
         thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
 
-        // WARNING: Intent is for max of unsigned type.
-        maxPageQubits = -1;
-
 #if ENABLE_ENV_VARS
         pStridePow =
             (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
@@ -154,7 +161,7 @@ void QPager::Init()
 #endif
 
 #if ENABLE_PTHREAD
-        minPageQubits = log2(std::thread::hardware_concurrency()) + 1U + pStridePow;
+        minPageQubits = log2(std::thread::hardware_concurrency() - 1U) + 1U + pStridePow;
 #else
         minPageQubits = 1U + pStridePow;
 #endif
