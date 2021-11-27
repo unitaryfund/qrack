@@ -64,7 +64,7 @@ typedef std::shared_ptr<QUnitMulti> QUnitMultiPtr;
 class QUnitMulti : public QUnit, public ParallelFor {
 
 protected:
-    int defaultDeviceID;
+    size_t defaultDeviceID;
     std::vector<DeviceInfo> deviceList;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
