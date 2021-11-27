@@ -341,10 +341,12 @@ public:
             qPages[i]->SetDevice(dID, forceReInit);
         }
 
+#if ENABLE_OPENCL
         if (rootEngine != QINTERFACE_CPU) {
             maxPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) -
                 segmentGlobalQb;
         }
+#endif
 
         if (!useGpuThreshold) {
             return;
