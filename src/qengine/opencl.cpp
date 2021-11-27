@@ -210,7 +210,7 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     engineOcl->runningNorm = REAL1_DEFAULT_ARG;
 }
 
-void QEngineOCL::LockSync(cl_int flags)
+void QEngineOCL::LockSync(cl_map_flags flags)
 {
     lockSyncFlags = flags;
     clFinish();
