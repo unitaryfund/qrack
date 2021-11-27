@@ -346,18 +346,9 @@ public:
             maxPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) -
                 segmentGlobalQb;
         }
-#endif
 
         if (!useGpuThreshold) {
             return;
-        }
-
-        // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
-        // environment variable.
-        thresholdQubitsPerPage = maxPageQubits;
-        bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
-        if (threshTest < thresholdQubitsPerPage) {
-            thresholdQubitsPerPage = threshTest;
         }
 
         // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
@@ -366,6 +357,7 @@ public:
         if (thresholdQubitsPerPage < minPageQubits) {
             thresholdQubitsPerPage = minPageQubits;
         }
+#endif
     }
 
     virtual int64_t GetDeviceID() { return qPages[0]->GetDeviceID(); }
