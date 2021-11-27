@@ -175,7 +175,7 @@ protected:
     size_t totalOclAllocSize;
     unsigned int procElemCount;
     bool unlockHostMem;
-    cl_int lockSyncFlags;
+    cl_map_flags lockSyncFlags;
     bool usingHostRam;
     complex permutationAmp;
 
