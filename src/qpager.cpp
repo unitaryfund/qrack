@@ -126,7 +126,7 @@ void QPager::Init()
         rootEngine = QINTERFACE_HYBRID;
     }
 
-    if ((thresholdQubitsPerPage == 0) && (rootEngine == QINTERFACE_OPENCL) && OCLEngine::Instance()->GetDeviceCount()) {
+    if ((thresholdQubitsPerPage == 0) && (rootEngine == QINTERFACE_OPENCL)) {
         useHardwareThreshold = true;
         useGpuThreshold = true;
 
