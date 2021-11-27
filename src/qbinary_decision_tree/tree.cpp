@@ -439,7 +439,7 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
 
     bitCapIntOcl qPower = pow2Ocl(qubit);
 
-    int numCores = GetConcurrencyLevel();
+    unsigned numCores = GetConcurrencyLevel();
     std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
 
     par_for(0, qPower, [&](const bitCapIntOcl i, const int cpu) {
