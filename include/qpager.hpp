@@ -25,6 +25,7 @@ typedef std::shared_ptr<QPager> QPagerPtr;
 class QPager : public QInterface {
 protected:
     std::vector<QInterfaceEngine> engines;
+    QInterfaceEngine rootEngine;
     int devID;
     complex phaseFactor;
     bool useHostRam;
@@ -336,6 +337,11 @@ public:
 
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->SetDevice(dID, forceReInit);
+        }
+
+        if (rootEngine != QINTERFACE_CPU) {
+            maxPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) -
+                segmentGlobalQb;
         }
 
         if (!useGpuThreshold) {
