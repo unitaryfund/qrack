@@ -425,7 +425,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
     bitCapIntOcl inOutMask = lowMask << inOutStart;
     bitCapIntOcl carryMask = lowMask << carryStart;
 
-    std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[(size_t)controlLen + length]);
+    std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
     bitCapIntOcl controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -434,7 +434,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
         controlMask |= controlPowers[i];
     }
     for (bitLenInt i = 0; i < length; i++) {
-        skipPowers[(size_t)i + controlLen] = pow2Ocl(carryStart + i);
+        skipPowers[i + controlLen] = pow2Ocl(carryStart + i);
     }
     std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
 
@@ -594,7 +594,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
     bitCapIntOcl inMask = lowMask << inStart;
     bitCapIntOcl outMask = lowMask << outStart;
 
-    std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[(size_t)controlLen + length]);
+    std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
     bitCapIntOcl controlMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
@@ -603,7 +603,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
         controlMask |= controlPowers[i];
     }
     for (bitLenInt i = 0; i < length; i++) {
-        skipPowers[(size_t)i + controlLen] = pow2Ocl(outStart + i);
+        skipPowers[i + controlLen] = pow2Ocl(outStart + i);
     }
     std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
 
@@ -740,7 +740,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
                 if (nibbles[j] > 9) {
                     nibbles[j] -= 10;
                     if ((j + 1) < nibbleCount) {
-                        nibbles[(size_t)j + 1]++;
+                        nibbles[j + 1]++;
                     }
                 }
                 outInt |= (bitCapIntOcl)nibbles[j] << (j * 4U * ONE_BCI);

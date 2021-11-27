@@ -626,8 +626,8 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
     ToPermBasis(start1, length1);
     ToPermBasis(start2, length2);
 
-    std::vector<bitLenInt> bits((size_t)length1 + length2);
-    std::vector<bitLenInt*> ebits((size_t)length1 + length2);
+    std::vector<bitLenInt> bits(length1 + length2);
+    std::vector<bitLenInt*> ebits(length1 + length2);
 
     if (start2 < start1) {
         std::swap(start1, start2);
@@ -640,8 +640,8 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
     }
 
     for (bitLenInt i = 0; i < length2; i++) {
-        bits[(size_t)i + length1] = i + start2;
-        ebits[(size_t)i + length1] = &bits[(size_t)i + length1];
+        bits[i + length1] = i + start2;
+        ebits[i + length1] = &bits[i + length1];
     }
 
     QInterfacePtr toRet = EntangleInCurrentBasis(ebits.begin(), ebits.end());
@@ -656,8 +656,8 @@ QInterfacePtr QUnit::EntangleRange(
     ToPermBasis(start2, length2);
     ToPermBasis(start3, length3);
 
-    std::vector<bitLenInt> bits((size_t)length1 + length2 + length3);
-    std::vector<bitLenInt*> ebits((size_t)length1 + length2 + length3);
+    std::vector<bitLenInt> bits(length1 + length2 + length3);
+    std::vector<bitLenInt*> ebits(length1 + length2 + length3);
 
     if (start2 < start1) {
         std::swap(start1, start2);
@@ -680,13 +680,13 @@ QInterfacePtr QUnit::EntangleRange(
     }
 
     for (bitLenInt i = 0; i < length2; i++) {
-        bits[(size_t)i + length1] = i + start2;
-        ebits[(size_t)i + length1] = &bits[(size_t)i + length1];
+        bits[i + length1] = i + start2;
+        ebits[i + length1] = &bits[i + length1];
     }
 
     for (bitLenInt i = 0; i < length3; i++) {
-        bits[(size_t)i + length1 + length2] = i + start3;
-        ebits[(size_t)i + length1 + length2] = &bits[(size_t)i + length1 + length2];
+        bits[i + length1 + length2] = i + start3;
+        ebits[i + length1 + length2] = &bits[i + length1 + length2];
     }
 
     QInterfacePtr toRet = EntangleInCurrentBasis(ebits.begin(), ebits.end());
@@ -3736,7 +3736,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         return;
     }
 
-    std::vector<bitLenInt> allBits((size_t)controlLen + 1U);
+    std::vector<bitLenInt> allBits(controlLen + 1U);
     std::copy(controls, controls + controlLen, allBits.begin());
     std::sort(allBits.begin(), allBits.begin() + controlLen);
 

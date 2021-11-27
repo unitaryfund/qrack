@@ -84,7 +84,7 @@ void QInterface::CFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenIn
     bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
-    std::unique_ptr<bitLenInt[]> cBitsU(new bitLenInt[(size_t)controlLen + 2]);
+    std::unique_ptr<bitLenInt[]> cBitsU(new bitLenInt[controlLen + 2U]);
     bitLenInt* cBits = cBitsU.get();
     std::copy(controlBits, controlBits + controlLen, cBits);
 
@@ -113,7 +113,7 @@ void QInterface::CIFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenI
     // Quantum computing is reversible! Simply perform the inverse operations in reverse order!
     // (CNOT and CCNOT are self-inverse.)
 
-    std::unique_ptr<bitLenInt[]> cBitsU(new bitLenInt[(size_t)controlLen + 2]);
+    std::unique_ptr<bitLenInt[]> cBitsU(new bitLenInt[controlLen + 2U]);
     bitLenInt* cBits = cBitsU.get();
     std::copy(controlBits, controlBits + controlLen, cBits);
 
