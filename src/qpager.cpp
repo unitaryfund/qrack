@@ -161,9 +161,10 @@ void QPager::Init()
 #endif
 
 #if ENABLE_PTHREAD
-        minPageQubits = log2(std::thread::hardware_concurrency() - 1U) + 1U + pStridePow;
+        unsigned numCores = std::thread::hardware_concurrency();
+        minPageQubits = pStridePow + ((numCores == 1U) ? 1U : (log2(numCores - 1U) + 1U));
 #else
-        minPageQubits = 1U + pStridePow;
+        minPageQubits = pStridePow + 1U;
 #endif
 
         if (thresholdQubitsPerPage < minPageQubits) {
