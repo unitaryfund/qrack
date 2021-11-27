@@ -116,12 +116,12 @@ void QPager::Init()
         rootEngine = engines[engineLevel];
     }
 
+#if ENABLE_OPENCL
     if (rootEngine != QINTERFACE_CPU) {
         maxPageQubits =
             log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
     }
 
-#if ENABLE_OPENCL
     if ((rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL)) {
         rootEngine = QINTERFACE_HYBRID;
     }
