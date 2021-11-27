@@ -78,6 +78,7 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
     , useHardwareThreshold(false)
     , segmentGlobalQb(0)
     , minPageQubits(0)
+    , maxPageQubits(-1)
     , deviceGlobalQubits(2)
     , thresholdQubitsPerPage(qubitThreshold)
     , pStridePow(PSTRIDEPOW)
@@ -107,18 +108,17 @@ void QPager::Init()
         segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
     }
 #endif
-
-    if ((engines[0] != QINTERFACE_CPU) && OCLEngine::Instance()->GetDeviceCount()) {
-        maxPageQubits =
-            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
-    }
-
     bitLenInt engineLevel = 0;
-    QInterfaceEngine rootEngine = engines[0];
+    rootEngine = engines[0];
     while ((engines.size() < engineLevel) && (rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL) &&
         (rootEngine != QINTERFACE_HYBRID)) {
         engineLevel++;
         rootEngine = engines[engineLevel];
+    }
+
+    if (rootEngine != QINTERFACE_CPU) {
+        maxPageQubits =
+            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
     }
 
 #if ENABLE_OPENCL
