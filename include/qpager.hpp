@@ -350,9 +350,6 @@ public:
             return;
         }
 
-        maxPageQubits =
-            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
-
         // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
         // environment variable.
         thresholdQubitsPerPage = maxPageQubits;
