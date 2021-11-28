@@ -8,7 +8,7 @@ include ("cmake/Coverage.cmake")
 include ("cmake/Format.cmake")
 include ("cmake/EmitLlvm.cmake")
 # PSTRIDEPOW relates to parallel for loops:
-include ("cmake/ParFor.cmake")
+include ("cmake/Pstridepow.cmake")
 include ("cmake/QUnit_CPU_Parallel.cmake")
 include ("cmake/Pthread.cmake")
 
