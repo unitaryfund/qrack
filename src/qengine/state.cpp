@@ -246,20 +246,21 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     Dispatch(maxQPower >> bitCount,
         [this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, doApplyNorm, nrm, nrm_thresh] {
             complex* mtrx = mtrxS.get();
-            bitCapIntOcl* qPowersSorted = qPowersSortedS.get();
+            const bitCapIntOcl* qPowersSorted = qPowersSortedS.get();
 
-            real1_f norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
-            unsigned numCores = GetConcurrencyLevel();
+            const real1_f norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
+            const unsigned numCores = GetConcurrencyLevel();
 
-            ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
-            ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
+            const ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
+            const ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
 
-            ComplexUnion mtrxPhase;
+            ComplexUnion mtrxPhaseT;
             if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
-                mtrxPhase = ComplexUnion(mtrx[0], mtrx[3]);
+                mtrxPhaseT = ComplexUnion(mtrx[0], mtrx[3]);
             } else {
-                mtrxPhase = ComplexUnion(mtrx[1], mtrx[2]);
+                mtrxPhaseT = ComplexUnion(mtrx[1], mtrx[2]);
             }
+            const ComplexUnion mtrxPhase = mtrxPhaseT;
 
             std::unique_ptr<real1[]> rngNrm(new real1[numCores]());
             ParallelFunc fn;
@@ -423,70 +424,72 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     Dispatch(maxQPower >> bitCount,
         [this, mtrxS, qPowersSortedS, offset1, offset2, bitCount, doCalcNorm, doApplyNorm, nrm, nrm_thresh] {
             complex* mtrx = mtrxS.get();
-            bitCapIntOcl* qPowersSorted = qPowersSortedS.get();
+            const complex mtrx0 = mtrx[0];
+            const complex mtrx1 = mtrx[1];
+            const complex mtrx2 = mtrx[2];
+            const complex mtrx3 = mtrx[3];
+            const bitCapIntOcl* qPowersSorted = qPowersSortedS.get();
 
-            real1_f norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
-            unsigned numCores = GetConcurrencyLevel();
+            const real1_f norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
+            const unsigned numCores = GetConcurrencyLevel();
 
             std::unique_ptr<real1[]> rngNrm(new real1[numCores]());
             ParallelFunc fn;
             if (!doCalcNorm) {
-                if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
+                if ((mtrx1 == ZERO_CMPLX) && (mtrx2 == ZERO_CMPLX)) {
                     fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                        stateVec->write2(lcv + offset1, mtrx[0] * stateVec->read(lcv + offset1), lcv + offset2,
-                            mtrx[3] * stateVec->read(lcv + offset2));
+                        stateVec->write2(lcv + offset1, mtrx0 * stateVec->read(lcv + offset1), lcv + offset2,
+                            mtrx3 * stateVec->read(lcv + offset2));
                     };
-                } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
+                } else if ((mtrx0 == ZERO_CMPLX) && (mtrx3 == ZERO_CMPLX)) {
                     fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                        stateVec->write2(lcv + offset1, mtrx[1] * stateVec->read(lcv + offset2), lcv + offset2,
-                            mtrx[2] * stateVec->read(lcv + offset1));
+                        stateVec->write2(lcv + offset1, mtrx1 * stateVec->read(lcv + offset2), lcv + offset2,
+                            mtrx2 * stateVec->read(lcv + offset1));
                     };
                 } else {
                     fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
                         complex Y0 = stateVec->read(lcv + offset1);
                         complex Y1 = stateVec->read(lcv + offset2);
-                        stateVec->write2(lcv + offset1, (mtrx[0] * Y0) + (mtrx[1] * Y1), lcv + offset2,
-                            (mtrx[2] * Y0) + (mtrx[3] * Y1));
+                        stateVec->write2(
+                            lcv + offset1, (mtrx0 * Y0) + (mtrx1 * Y1), lcv + offset2, (mtrx2 * Y0) + (mtrx3 * Y1));
                     };
                 }
             } else if (norm_thresh > ZERO_R1) {
                 if (abs(ONE_R1 - nrm) > REAL1_EPSILON) {
-                    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
-                        fn = NORM_THRESH_KERNEL(nrm * (mtrx[0] * Y0), nrm * (mtrx[3] * qubit[1]));
-                    } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
-                        fn = NORM_THRESH_KERNEL(nrm * (mtrx[1] * qubit[1]), nrm * (mtrx[2] * Y0));
-                    } else {
-                        fn = NORM_THRESH_KERNEL(nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1])),
-                            nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1])));
-                    }
-                } else {
-                    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
-                        fn = NORM_THRESH_KERNEL(mtrx[0] * Y0, mtrx[3] * qubit[1]);
-                    } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
-                        fn = NORM_THRESH_KERNEL(mtrx[1] * qubit[1], mtrx[2] * Y0);
+                    if ((mtrx1 == ZERO_CMPLX) && (mtrx2 == ZERO_CMPLX)) {
+                        fn = NORM_THRESH_KERNEL(nrm * (mtrx0 * Y0), nrm * (mtrx3 * qubit[1]));
+                    } else if ((mtrx0 == ZERO_CMPLX) && (mtrx3 == ZERO_CMPLX)) {
+                        fn = NORM_THRESH_KERNEL(nrm * (mtrx1 * qubit[1]), nrm * (mtrx2 * Y0));
                     } else {
                         fn = NORM_THRESH_KERNEL(
-                            (mtrx[0] * Y0) + (mtrx[1] * qubit[1]), (mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+                            nrm * ((mtrx0 * Y0) + (mtrx1 * qubit[1])), nrm * ((mtrx2 * Y0) + (mtrx3 * qubit[1])));
+                    }
+                } else {
+                    if ((mtrx1 == ZERO_CMPLX) && (mtrx2 == ZERO_CMPLX)) {
+                        fn = NORM_THRESH_KERNEL(mtrx0 * Y0, mtrx3 * qubit[1]);
+                    } else if ((mtrx0 == ZERO_CMPLX) && (mtrx3 == ZERO_CMPLX)) {
+                        fn = NORM_THRESH_KERNEL(mtrx1 * qubit[1], mtrx2 * Y0);
+                    } else {
+                        fn = NORM_THRESH_KERNEL((mtrx0 * Y0) + (mtrx1 * qubit[1]), (mtrx2 * Y0) + (mtrx3 * qubit[1]));
                     }
                 }
             } else {
                 if (abs(ONE_R1 - nrm) > REAL1_EPSILON) {
-                    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
-                        fn = NORM_CALC_KERNEL(nrm * (mtrx[0] * Y0), nrm * (mtrx[3] * qubit[1]));
-                    } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
-                        fn = NORM_CALC_KERNEL(nrm * (mtrx[1] * qubit[1]), nrm * (mtrx[2] * Y0));
-                    } else {
-                        fn = NORM_CALC_KERNEL(nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1])),
-                            nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1])));
-                    }
-                } else {
-                    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
-                        fn = NORM_CALC_KERNEL(mtrx[0] * Y0, mtrx[3] * qubit[1]);
-                    } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
-                        fn = NORM_CALC_KERNEL(mtrx[1] * qubit[1], mtrx[2] * Y0);
+                    if ((mtrx1 == ZERO_CMPLX) && (mtrx2 == ZERO_CMPLX)) {
+                        fn = NORM_CALC_KERNEL(nrm * (mtrx0 * Y0), nrm * (mtrx3 * qubit[1]));
+                    } else if ((mtrx0 == ZERO_CMPLX) && (mtrx3 == ZERO_CMPLX)) {
+                        fn = NORM_CALC_KERNEL(nrm * (mtrx1 * qubit[1]), nrm * (mtrx2 * Y0));
                     } else {
                         fn = NORM_CALC_KERNEL(
-                            (mtrx[0] * Y0) + (mtrx[1] * qubit[1]), (mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+                            nrm * ((mtrx0 * Y0) + (mtrx1 * qubit[1])), nrm * ((mtrx2 * Y0) + (mtrx3 * qubit[1])));
+                    }
+                } else {
+                    if ((mtrx1 == ZERO_CMPLX) && (mtrx2 == ZERO_CMPLX)) {
+                        fn = NORM_CALC_KERNEL(mtrx0 * Y0, mtrx3 * qubit[1]);
+                    } else if ((mtrx0 == ZERO_CMPLX) && (mtrx3 == ZERO_CMPLX)) {
+                        fn = NORM_CALC_KERNEL(mtrx1 * qubit[1], mtrx2 * Y0);
+                    } else {
+                        fn = NORM_CALC_KERNEL((mtrx0 * Y0) + (mtrx1 * qubit[1]), (mtrx2 * Y0) + (mtrx3 * qubit[1]));
                     }
                 }
             }
