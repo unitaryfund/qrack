@@ -285,15 +285,31 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                 }
             } else if (norm_thresh > ZERO_R1) {
                 if (abs(ONE_R1 - nrm) > REAL1_EPSILON) {
-                    fn = NORM_THRESH_KERNEL(matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2));
+                    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
+                        fn = NORM_THRESH_KERNEL(nrm * mtrxPhase.cmplx2 * qubit.cmplx2);
+                    } else {
+                        fn = NORM_THRESH_KERNEL(matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2));
+                    }
                 } else {
-                    fn = NORM_THRESH_KERNEL(matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2));
+                    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
+                        fn = NORM_THRESH_KERNEL(mtrxPhase.cmplx2 * qubit.cmplx2);
+                    } else {
+                        fn = NORM_THRESH_KERNEL(matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2));
+                    }
                 }
             } else {
                 if (abs(ONE_R1 - nrm) > REAL1_EPSILON) {
-                    fn = NORM_CALC_KERNEL(matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2));
+                    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
+                        fn = NORM_CALC_KERNEL(nrm * mtrxPhase.cmplx2 * qubit.cmplx2);
+                    } else {
+                        fn = NORM_CALC_KERNEL(matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2));
+                    }
                 } else {
-                    fn = NORM_CALC_KERNEL(matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2));
+                    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
+                        fn = NORM_CALC_KERNEL(mtrxPhase.cmplx2 * qubit.cmplx2);
+                    } else {
+                        fn = NORM_CALC_KERNEL(matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2));
+                    }
                 }
             }
 
@@ -423,18 +439,43 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
                 }
             } else if (norm_thresh > ZERO_R1) {
                 if (abs(ONE_R1 - nrm) > REAL1_EPSILON) {
-                    fn = NORM_THRESH_KERNEL(
-                        nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1])), nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1])));
+                    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
+                        fn = NORM_THRESH_KERNEL(nrm * (mtrx[0] * Y0), nrm * (mtrx[3] * qubit[1]));
+                    } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
+                        fn = NORM_THRESH_KERNEL(nrm * (mtrx[1] * qubit[1]), nrm * (mtrx[2] * Y0));
+                    } else {
+                        fn = NORM_THRESH_KERNEL(nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1])),
+                            nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1])));
+                    }
                 } else {
-                    fn = NORM_THRESH_KERNEL(
-                        (mtrx[0] * Y0) + (mtrx[1] * qubit[1]), (mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+                    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
+                        fn = NORM_THRESH_KERNEL(mtrx[0] * Y0, mtrx[3] * qubit[1]);
+                    } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
+                        fn = NORM_THRESH_KERNEL(mtrx[1] * qubit[1], mtrx[2] * Y0);
+                    } else {
+                        fn = NORM_THRESH_KERNEL(
+                            (mtrx[0] * Y0) + (mtrx[1] * qubit[1]), (mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+                    }
                 }
             } else {
                 if (abs(ONE_R1 - nrm) > REAL1_EPSILON) {
-                    fn = NORM_CALC_KERNEL(
-                        nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1])), nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1])));
+                    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
+                        fn = NORM_CALC_KERNEL(nrm * (mtrx[0] * Y0), nrm * (mtrx[3] * qubit[1]));
+                    } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
+                        fn = NORM_CALC_KERNEL(nrm * (mtrx[1] * qubit[1]), nrm * (mtrx[2] * Y0));
+                    } else {
+                        fn = NORM_CALC_KERNEL(nrm * ((mtrx[0] * Y0) + (mtrx[1] * qubit[1])),
+                            nrm * ((mtrx[2] * Y0) + (mtrx[3] * qubit[1])));
+                    }
                 } else {
-                    fn = NORM_CALC_KERNEL((mtrx[0] * Y0) + (mtrx[1] * qubit[1]), (mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+                    if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
+                        fn = NORM_CALC_KERNEL(mtrx[0] * Y0, mtrx[3] * qubit[1]);
+                    } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
+                        fn = NORM_CALC_KERNEL(mtrx[1] * qubit[1], mtrx[2] * Y0);
+                    } else {
+                        fn = NORM_CALC_KERNEL(
+                            (mtrx[0] * Y0) + (mtrx[1] * qubit[1]), (mtrx[2] * Y0) + (mtrx[3] * qubit[1]));
+                    }
                 }
             }
 
