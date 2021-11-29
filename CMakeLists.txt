@@ -28,8 +28,6 @@ add_library (qrack STATIC
     src/qengine/arithmetic.cpp
     src/qengine/state.cpp
     src/qengine/utility.cpp
-    src/qbinary_decision_tree/node.cpp
-    src/qbinary_decision_tree/tree.cpp
     src/qunit.cpp
     src/qpager.cpp
     src/qstabilizer.cpp
@@ -107,6 +105,7 @@ include ("cmake/FpPow.cmake")
 include ("cmake/OclMemGuards.cmake")
 include ("cmake/Pure32.cmake")
 include ("cmake/QbCapPow.cmake")
+include ("cmake/Qbdt.cmake")
 include ("cmake/QUnit_CPU_Parallel.cmake")
 include ("cmake/RegGates.cmake")
 include ("cmake/RotApi.cmake")
@@ -126,6 +125,7 @@ message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
 message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
 message ("Complex_x2/AVX support is: ${ENABLE_COMPLEX_X2}")
 message ("OpenCL memory guards are: ${ENABLE_OCL_MEM_GUARDS}")
+message ("QBinaryDecisionTree inclusion is: ${ENABLE_QBDT}")
 message ("General ALU API inclusion is: ${ENABLE_ALU}")
 message ("BCD ALU API inclusion is: ${ENABLE_BCD}")
 message ("Extended rotation API inclusion is: ${ENABLE_ROT_API}")
