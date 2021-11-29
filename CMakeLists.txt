@@ -19,7 +19,6 @@ add_library (qrack STATIC
     src/common/parallel_for.cpp
     src/common/rdrandwrapper.cpp
     src/common/dispatchqueue.cpp
-    src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
     src/qinterface/protected.cpp
