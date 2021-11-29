@@ -1435,6 +1435,7 @@ MICROSOFT_QUANTUM_DECL void IQFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
 #endif
 }
 
+#if ENABLE_ALU
 MICROSOFT_QUANTUM_DECL void ADD(_In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q)
 {
     SIMULATOR_LOCK_GUARD(sid)
@@ -1605,6 +1606,7 @@ MICROSOFT_QUANTUM_DECL void Hash(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
     unsigned start = MapArithmetic(simulator, n, q);
     simulator->Hash(start, n, t);
 }
+#endif
 
 MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ unsigned sid, _In_ unsigned qi1)
 {

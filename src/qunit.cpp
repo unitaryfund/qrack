@@ -3587,6 +3587,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
     }
 }
 
+#if ENABLE_ALU
 bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
 {
     if (!controlLen) {
@@ -4380,49 +4381,6 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
     CMULModx(&QInterface::CPOWModNOut, toMod, modN, inStart, outStart, length, controlVec);
 }
 
-void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-{
-    // Keep the bits separate, if cheap to do so:
-    if (CheckBitsPermutation(start, length)) {
-        if (GetCachedPermutation(start, length) < greaterPerm) {
-            // This has no physical effect, but we do it to respect direct simulator check of amplitudes:
-            QEngineShard& shard = shards[start];
-            if (shard.unit) {
-                shard.unit->PhaseFlip();
-            }
-
-            shard.amp0 = -shard.amp0;
-            shard.amp1 = -shard.amp1;
-        }
-        return;
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    DirtyShardRange(start, length);
-    EntangleRange(start, length);
-    shards[start].unit->PhaseFlipIfLess(greaterPerm, shards[start].mapped, length);
-}
-
-void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-{
-    // Keep the bits separate, if cheap to do so:
-    if (!shards[flagIndex].isProbDirty) {
-        real1_f prob = Prob(flagIndex);
-        if (IS_0_R1(prob)) {
-            return;
-        } else if (IS_1_R1(prob)) {
-            PhaseFlipIfLess(greaterPerm, start, length);
-            return;
-        }
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    EntangleRange(start, length, flagIndex, 1);
-    shards[start].unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
-    DirtyShardRange(start, length);
-    shards[flagIndex].isPhaseDirty = true;
-}
-
 bitCapInt QUnit::GetIndexedEigenstate(
     bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength, unsigned char* values)
 {
@@ -4568,6 +4526,50 @@ void QUnit::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
     EntangleRange(start, length);
     shards[start].unit->Hash(shards[start].mapped, length, values);
 }
+
+void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+{
+    // Keep the bits separate, if cheap to do so:
+    if (CheckBitsPermutation(start, length)) {
+        if (GetCachedPermutation(start, length) < greaterPerm) {
+            // This has no physical effect, but we do it to respect direct simulator check of amplitudes:
+            QEngineShard& shard = shards[start];
+            if (shard.unit) {
+                shard.unit->PhaseFlip();
+            }
+
+            shard.amp0 = -shard.amp0;
+            shard.amp1 = -shard.amp1;
+        }
+        return;
+    }
+
+    // Otherwise, form the potentially entangled representation:
+    DirtyShardRange(start, length);
+    EntangleRange(start, length);
+    shards[start].unit->PhaseFlipIfLess(greaterPerm, shards[start].mapped, length);
+}
+
+void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+{
+    // Keep the bits separate, if cheap to do so:
+    if (!shards[flagIndex].isProbDirty) {
+        real1_f prob = Prob(flagIndex);
+        if (IS_0_R1(prob)) {
+            return;
+        } else if (IS_1_R1(prob)) {
+            PhaseFlipIfLess(greaterPerm, start, length);
+            return;
+        }
+    }
+
+    // Otherwise, form the potentially entangled representation:
+    EntangleRange(start, length, flagIndex, 1);
+    shards[start].unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
+    DirtyShardRange(start, length);
+    shards[flagIndex].isPhaseDirty = true;
+}
+#endif
 
 bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1_f param1, real1_f param2, int32_t param3)
 {

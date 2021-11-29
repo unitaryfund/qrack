@@ -203,6 +203,7 @@ public:
 
     /** @} */
 
+#if ENABLE_ALU
     /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.
      *
@@ -242,18 +243,7 @@ public:
         bitLenInt* controls, bitLenInt controlLen);
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         bitLenInt* controls, bitLenInt controlLen);
-
-    /** @} */
-
-    /**
-     * \defgroup ExtraOps Extra operations and capabilities
-     *
-     * @{
-     */
-
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
-    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -261,6 +251,18 @@ public:
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values);
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
+
+    /** @} */
+#endif
+
+    /**
+     * \defgroup ExtraOps Extra operations and capabilities
+     *
+     * @{
+     */
+
+    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
@@ -316,6 +318,7 @@ protected:
 
     virtual bool TrySeparateClifford(bitLenInt qubit);
 
+#if ENABLE_ALU
     typedef void (QInterface::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
     typedef void (QInterface::*INCxxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt, bitLenInt);
     typedef void (QInterface::*CMULFn)(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
@@ -346,6 +349,10 @@ protected:
     bool INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex);
     bool INTSCOptimize(
         bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex, bitLenInt overflowIndex);
+    bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, unsigned char* values);
+    bitCapInt GetIndexedEigenstate(bitLenInt start, bitLenInt length, unsigned char* values);
+#endif
 
     virtual QInterfacePtr Entangle(std::vector<bitLenInt> bits);
     virtual QInterfacePtr Entangle(std::vector<bitLenInt*> bits);
@@ -393,10 +400,6 @@ protected:
     void ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& controlLen, std::vector<bitLenInt> targets,
         const bool& anti, CF cfn, F f, const bool& isPhase = false, const bool& isInvert = false,
         const bool& inCurrentBasis = false);
-
-    bitCapInt GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, unsigned char* values);
-    bitCapInt GetIndexedEigenstate(bitLenInt start, bitLenInt length, unsigned char* values);
 
     void TransformX2x2(const complex* mtrxIn, complex* mtrxOut);
     void TransformXInvert(const complex& topRight, const complex& bottomLeft, complex* mtrxOut);

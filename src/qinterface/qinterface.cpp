@@ -14,64 +14,6 @@
 
 namespace Qrack {
 
-/// Arithmetic shift left, with last 2 bits as sign and carry
-void QInterface::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        if (shift >= length) {
-            SetReg(start, length, 0);
-        } else {
-            Swap(end - 1, end - 2);
-            ROL(shift, start, length);
-            SetReg(start, shift, 0);
-            Swap(end - 1, end - 2);
-        }
-    }
-}
-
-/// Arithmetic shift right, with last 2 bits as sign and carry
-void QInterface::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        if (shift >= length) {
-            SetReg(start, length, 0);
-        } else {
-            Swap(end - 1, end - 2);
-            ROR(shift, start, length);
-            SetReg(end - shift - 1, shift, 0);
-            Swap(end - 1, end - 2);
-        }
-    }
-}
-
-/// Logical shift left, filling the extra bits with |0>
-void QInterface::LSL(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    if ((length > 0) && (shift > 0)) {
-        if (shift >= length) {
-            SetReg(start, length, 0);
-        } else {
-            ROL(shift, start, length);
-            SetReg(start, shift, 0);
-        }
-    }
-}
-
-/// Logical shift right, filling the extra bits with |0>
-void QInterface::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
-{
-    if ((length > 0) && (shift > 0)) {
-        if (shift >= length) {
-            SetReg(start, length, 0);
-        } else {
-            SetReg(start, shift, 0);
-            ROR(shift, start, length);
-        }
-    }
-}
-
 /// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
 void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
 {

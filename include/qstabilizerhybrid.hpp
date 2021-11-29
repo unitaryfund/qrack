@@ -551,6 +551,7 @@ public:
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots);
 
+#if ENABLE_ALU
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
         SwitchToEngine();
@@ -672,28 +673,6 @@ public:
         engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
     }
 
-    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length)
-    {
-        SwitchToEngine();
-        engine->ZeroPhaseFlip(start, length);
-    }
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-    {
-        SwitchToEngine();
-        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
-    }
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-    {
-        SwitchToEngine();
-        engine->PhaseFlipIfLess(greaterPerm, start, length);
-    }
-    virtual void PhaseFlip()
-    {
-        if (engine) {
-            engine->PhaseFlip();
-        }
-    }
-
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true)
     {
@@ -716,6 +695,30 @@ public:
     {
         SwitchToEngine();
         engine->Hash(start, length, values);
+    }
+
+    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+    {
+        SwitchToEngine();
+        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
+    }
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+    {
+        SwitchToEngine();
+        engine->PhaseFlipIfLess(greaterPerm, start, length);
+    }
+#endif
+
+    virtual void PhaseFlip()
+    {
+        if (engine) {
+            engine->PhaseFlip();
+        }
+    }
+    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length)
+    {
+        SwitchToEngine();
+        engine->ZeroPhaseFlip(start, length);
     }
 
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)

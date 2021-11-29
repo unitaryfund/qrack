@@ -14,6 +14,7 @@
 
 namespace Qrack {
 
+#if ENABLE_ALU
 // Arithmetic:
 
 /// Subtract integer (without sign)
@@ -218,5 +219,6 @@ void QInterface::CIADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt inpu
     }
     CIFullAdd(controls, controlLen, input1, input2, carry, output);
 }
+#endif
 
 } // namespace Qrack

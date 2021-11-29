@@ -1,3 +1,4 @@
+#cmakedefine ENABLE_ALU 1
 #cmakedefine ENABLE_BCD 1
 #cmakedefine ENABLE_COMPLEX_X2 1
 #cmakedefine ENABLE_ENV_VARS 1

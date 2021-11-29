@@ -270,6 +270,7 @@ public:
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
+#if ENABLE_ALU
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { engine->INC(toAdd, start, length); }
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
@@ -363,15 +364,6 @@ public:
         engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
     }
 
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-    {
-        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
-    }
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-    {
-        engine->PhaseFlipIfLess(greaterPerm, start, length);
-    }
-
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true)
     {
@@ -388,6 +380,16 @@ public:
         return engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }
     virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values) { engine->Hash(start, length, values); }
+
+    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+    {
+        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
+    }
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+    {
+        engine->PhaseFlipIfLess(greaterPerm, start, length);
+    }
+#endif
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { engine->Swap(qubitIndex1, qubitIndex2); }
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { engine->ISwap(qubitIndex1, qubitIndex2); }
@@ -474,6 +476,7 @@ protected:
 
     virtual void FreeStateVec(complex* sv = NULL) { engine->FreeStateVec(sv); }
 
+#if ENABLE_ALU
     virtual void INCDECC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
     {
@@ -495,6 +498,7 @@ protected:
     {
         engine->INCDECBCDC(toMod, inOutStart, length, carryIndex);
     }
+#endif
 #endif
 };
 } // namespace Qrack

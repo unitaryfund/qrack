@@ -1857,6 +1857,13 @@ public:
      * @{
      */
 
+    /** Circular shift left - shift bits left, and carry last bits. */
+    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
+
+    /** Circular shift right - shift bits right, and carry first bits. */
+    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
+
+#if ENABLE_ALU
     /** Arithmetic shift left, with last 2 bits as sign and carry */
     virtual void ASL(bitLenInt shift, bitLenInt start, bitLenInt length);
 
@@ -1868,12 +1875,6 @@ public:
 
     /** Logical shift right, filling the extra bits with |0> */
     virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
-
-    /** Circular shift left - shift bits left, and carry last bits. */
-    virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
-
-    /** Circular shift right - shift bits right, and carry first bits. */
-    virtual void ROR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Add integer (without sign) */
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
@@ -2027,81 +2028,6 @@ public:
     virtual void CIADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
         bitLenInt length, bitLenInt carry);
 
-    /** @} */
-
-    /**
-     * \defgroup ExtraOps Extra operations and capabilities
-     *
-     * @{
-     */
-
-    /** Quantum Fourier Transform - Apply the quantum Fourier transform to the register.
-     *
-     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
-     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
-     * Otherwise, turning it on will probably take longer.
-     */
-    virtual void QFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
-
-    /** Quantum Fourier Transform (random access) - Apply the quantum Fourier transform to the register.
-     *
-     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
-     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
-     * Otherwise, turning it on will probably take longer.
-     */
-    virtual void QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
-
-    /** Inverse Quantum Fourier Transform - Apply the inverse quantum Fourier transform to the register.
-     *
-     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
-     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
-     * Otherwise, turning it on will probably take longer.
-     */
-    virtual void IQFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
-
-    /** Inverse Quantum Fourier Transform (random access) - Apply the inverse quantum Fourier transform to the register.
-     *
-     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
-     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
-     * Otherwise, turning it on will probably take longer.
-     */
-    virtual void IQFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
-
-    /** Reverse the phase of the state where the register equals zero. */
-    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
-
-    /** The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation. */
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) = 0;
-
-    /** This is an expedient for an adaptive Grover's search for a function's global minimum. */
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length) = 0;
-
-    /** Phase flip always - equivalent to Z X Z X on any bit in the QInterface */
-    virtual void PhaseFlip();
-
-    /** Set register bits to given permutation */
-    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
-
-    /** Measure permutation state of a register */
-    virtual bitCapInt MReg(bitLenInt start, bitLenInt length) { return ForceMReg(start, length, 0, false); }
-
-    /** Measure permutation state of all coherent bits */
-    virtual bitCapInt MAll() { return MReg(0, qubitCount); }
-
-    /**
-     * Act as if is a measurement was applied, except force the (usually random) result
-     *
-     * \warning PSEUDO-QUANTUM
-     */
-    virtual bitCapInt ForceMReg(
-        bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
-
-    /** Measure bits with indices in array, and return a mask of the results */
-    virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length) { return ForceM(bits, length, NULL); }
-
-    /** Measure bits with indices in array, and return a mask of the results */
-    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
-
     /**
      * Set 8 bit register bits by a superposed index-offset-based read from
      * classical memory
@@ -2228,6 +2154,82 @@ public:
      * as IndexedLDA(). Essentially, this is an IndexedLDA() operation that replaces the index register with the value
      * register, but the lookup table must therefore be one-to-one, for this operation to be unitary, as required. */
     virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values) = 0;
+
+    /** The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation. */
+    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) = 0;
+
+    /** This is an expedient for an adaptive Grover's search for a function's global minimum. */
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length) = 0;
+#endif
+
+    /** @} */
+
+    /**
+     * \defgroup ExtraOps Extra operations and capabilities
+     *
+     * @{
+     */
+
+    /** Quantum Fourier Transform - Apply the quantum Fourier transform to the register.
+     *
+     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
+     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
+     * Otherwise, turning it on will probably take longer.
+     */
+    virtual void QFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
+
+    /** Quantum Fourier Transform (random access) - Apply the quantum Fourier transform to the register.
+     *
+     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
+     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
+     * Otherwise, turning it on will probably take longer.
+     */
+    virtual void QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
+
+    /** Inverse Quantum Fourier Transform - Apply the inverse quantum Fourier transform to the register.
+     *
+     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
+     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
+     * Otherwise, turning it on will probably take longer.
+     */
+    virtual void IQFT(bitLenInt start, bitLenInt length, bool trySeparate = false);
+
+    /** Inverse Quantum Fourier Transform (random access) - Apply the inverse quantum Fourier transform to the register.
+     *
+     * "trySeparate" is an optional hit-or-miss optimization, specifically for QUnit types. Our suggestion is, turn it
+     * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
+     * Otherwise, turning it on will probably take longer.
+     */
+    virtual void IQFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
+
+    /** Reverse the phase of the state where the register equals zero. */
+    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);
+
+    /** Phase flip always - equivalent to Z X Z X on any bit in the QInterface */
+    virtual void PhaseFlip();
+
+    /** Set register bits to given permutation */
+    virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
+
+    /** Measure permutation state of a register */
+    virtual bitCapInt MReg(bitLenInt start, bitLenInt length) { return ForceMReg(start, length, 0, false); }
+
+    /** Measure permutation state of all coherent bits */
+    virtual bitCapInt MAll() { return MReg(0, qubitCount); }
+
+    /**
+     * Act as if is a measurement was applied, except force the (usually random) result
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual bitCapInt ForceMReg(
+        bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
+
+    /** Measure bits with indices in array, and return a mask of the results */
+    virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length) { return ForceM(bits, length, NULL); }
+
+    /** Measure bits with indices in array, and return a mask of the results */
+    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
 
     /** Swap values of two bits in register */
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);

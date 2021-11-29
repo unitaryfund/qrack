@@ -352,11 +352,22 @@ TEST_CASE("test_crt_all", "[gates]")
 #endif
 #endif
 
+TEST_CASE("test_m", "[measure]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->M(n - 1); });
+}
+
+TEST_CASE("test_mreg", "[measure]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->MReg(0, n); });
+}
+
 TEST_CASE("test_rol", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ROL(1, 0, n); });
 }
 
+#if ENABLE_ALU
 TEST_CASE("test_inc", "[arithmetic]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INC(1, 0, n); });
@@ -377,14 +388,15 @@ TEST_CASE("test_incsc", "[arithmetic]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INCSC(1, 0, n - 2, n - 2, n - 1); });
 }
 
-TEST_CASE("test_zero_phase_flip", "[phaseflip]")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ZeroPhaseFlip(0, n); });
-}
-
 TEST_CASE("test_c_phase_flip_if_less", "[phaseflip]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CPhaseFlipIfLess(1, 0, n - 1, n - 1); });
+}
+#endif
+
+TEST_CASE("test_zero_phase_flip", "[phaseflip]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ZeroPhaseFlip(0, n); });
 }
 
 TEST_CASE("test_phase_flip", "[phaseflip]")
@@ -392,16 +404,7 @@ TEST_CASE("test_phase_flip", "[phaseflip]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->PhaseFlip(); });
 }
 
-TEST_CASE("test_m", "[measure]")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->M(n - 1); });
-}
-
-TEST_CASE("test_mreg", "[measure]")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->MReg(0, n); });
-}
-
+#if ENABLE_ALU
 void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> fn)
 {
     bitCapIntOcl i, j;
@@ -438,6 +441,7 @@ TEST_CASE("test_sbc_superposition_reg", "[indexed]")
         qftReg->IndexedSBC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
     });
 }
+#endif
 
 TEST_CASE("test_setbit", "[aux]")
 {
@@ -454,6 +458,7 @@ TEST_CASE("test_set_reg", "[aux]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->SetReg(0, n, 1); });
 }
 
+#if ENABLE_ALU
 TEST_CASE("test_grover", "[grover]")
 {
 
@@ -488,6 +493,7 @@ TEST_CASE("test_grover", "[grover]")
         qftReg->MReg(0, n);
     });
 }
+#endif
 
 TEST_CASE("test_qft_ideal_init", "[qft]")
 {

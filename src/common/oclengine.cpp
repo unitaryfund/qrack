@@ -34,8 +34,11 @@
 
 #include "qenginecl.hpp"
 
+#if ENABLE_ALU
+#include "qheader_alucl.hpp"
 #if ENABLE_BCD
 #include "qheader_bcdcl.hpp"
+#endif
 #endif
 
 namespace Qrack {
@@ -94,6 +97,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_FORCEMPARITY, "forcemparity"),
     OCLKernelHandle(OCL_API_EXPPERM, "expperm"),
     OCLKernelHandle(OCL_API_ROL, "rol"),
+#if ENABLE_ALU
     OCLKernelHandle(OCL_API_INC, "inc"),
     OCLKernelHandle(OCL_API_CINC, "cinc"),
     OCLKernelHandle(OCL_API_INCDECC, "incdecc"),
@@ -128,6 +132,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_CPOWMODN_OUT, "cpowmodnout"),
     OCLKernelHandle(OCL_API_FULLADD, "fulladd"),
     OCLKernelHandle(OCL_API_IFULLADD, "ifulladd"),
+#endif
     OCLKernelHandle(OCL_API_CLEARBUFFER, "clearbuffer"),
     OCLKernelHandle(OCL_API_SHUFFLEBUFFERS, "shufflebuffers")
 };
@@ -318,8 +323,11 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
 
+#if ENABLE_ALU
+    sources.push_back({ (const char*)qheader_alu_cl, (long unsigned int)qheader_alu_cl_len });
 #if ENABLE_BCD
     sources.push_back({ (const char*)qheader_bcd_cl, (long unsigned int)qheader_bcd_cl_len });
+#endif
 #endif
 
     int plat_id = -1;

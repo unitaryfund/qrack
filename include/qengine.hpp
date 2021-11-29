@@ -132,6 +132,7 @@ public:
     virtual void ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray);
     virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation) = 0;
 
+#if ENABLE_ALU
     virtual void INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
     virtual void DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex);
     virtual void INCSC(
@@ -143,6 +144,7 @@ public:
 #if ENABLE_BCD
     virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+#endif
 #endif
 
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
@@ -160,6 +162,7 @@ public:
 
     virtual void FreeStateVec(complex* sv = NULL) = 0;
 
+#if ENABLE_ALU
     /**
      * Common driver method behind INCC and DECC
      */
@@ -181,6 +184,7 @@ public:
      */
     virtual void INCDECBCDC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex) = 0;
+#endif
 #endif
 };
 } // namespace Qrack

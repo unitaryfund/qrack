@@ -496,6 +496,7 @@ public:
     }
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) { engine->ApplyM(regMask, result, nrm); }
 
+#if ENABLE_ALU
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
         FlushIfBuffered(start, length);
@@ -580,17 +581,6 @@ public:
         engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
     }
 
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-    {
-        FlushIfBuffered(start, length) || FlushIfBuffered(flagIndex);
-        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
-    }
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-    {
-        FlushIfBuffered(start, length);
-        engine->PhaseFlipIfLess(greaterPerm, start, length);
-    }
-
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true)
     {
@@ -616,6 +606,18 @@ public:
         FlushIfBuffered(start, length);
         engine->Hash(start, length, values);
     }
+
+    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+    {
+        FlushIfBuffered(start, length) || FlushIfBuffered(flagIndex);
+        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
+    }
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+    {
+        FlushIfBuffered(start, length);
+        engine->PhaseFlipIfLess(greaterPerm, start, length);
+    }
+#endif
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
@@ -743,6 +745,7 @@ protected:
 
     virtual void FreeStateVec(complex* sv = NULL) { engine->FreeStateVec(sv); }
 
+#if ENABLE_ALU
     virtual void INCDECC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
     {
@@ -768,6 +771,7 @@ protected:
         FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryIndex);
         engine->INCDECBCDC(toMod, inOutStart, length, carryIndex);
     }
+#endif
 #endif
 };
 } // namespace Qrack

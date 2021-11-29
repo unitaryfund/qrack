@@ -512,6 +512,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     return result;
 }
 
+#if ENABLE_ALU
 /// Add integer (without sign, with carry)
 void QEngine::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
@@ -640,6 +641,7 @@ void QEngine::DECBCDC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
     bitCapInt invToSub = maxVal - toSub;
     INCDECBCDC(invToSub, inOutStart, length, carryIndex);
 }
+#endif
 #endif
 
 } // namespace Qrack

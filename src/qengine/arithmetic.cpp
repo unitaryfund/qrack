@@ -59,6 +59,65 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
     ResetStateVec(nStateVec);
 }
 
+#if ENABLE_ALU
+/// Arithmetic shift left, with last 2 bits as sign and carry
+void QInterface::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if ((length > 0) && (shift > 0)) {
+        bitLenInt end = start + length;
+        if (shift >= length) {
+            SetReg(start, length, 0);
+        } else {
+            Swap(end - 1, end - 2);
+            ROL(shift, start, length);
+            SetReg(start, shift, 0);
+            Swap(end - 1, end - 2);
+        }
+    }
+}
+
+/// Arithmetic shift right, with last 2 bits as sign and carry
+void QInterface::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if ((length > 0) && (shift > 0)) {
+        bitLenInt end = start + length;
+        if (shift >= length) {
+            SetReg(start, length, 0);
+        } else {
+            Swap(end - 1, end - 2);
+            ROR(shift, start, length);
+            SetReg(end - shift - 1, shift, 0);
+            Swap(end - 1, end - 2);
+        }
+    }
+}
+
+/// Logical shift left, filling the extra bits with |0>
+void QInterface::LSL(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if ((length > 0) && (shift > 0)) {
+        if (shift >= length) {
+            SetReg(start, length, 0);
+        } else {
+            ROL(shift, start, length);
+            SetReg(start, shift, 0);
+        }
+    }
+}
+
+/// Logical shift right, filling the extra bits with |0>
+void QInterface::LSR(bitLenInt shift, bitLenInt start, bitLenInt length)
+{
+    if ((length > 0) && (shift > 0)) {
+        if (shift >= length) {
+            SetReg(start, length, 0);
+        } else {
+            SetReg(start, shift, 0);
+            ROR(shift, start, length);
+        }
+    }
+}
+
 /// Add integer (without sign)
 void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 {
@@ -1323,5 +1382,37 @@ void QEngineCPU::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
         stateVec->write(lcv | carryInSumOutMask | carryOutMask, ins1c1);
     });
 }
+
+/// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
+void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+{
+    CHECK_ZERO_SKIP();
+
+    Dispatch(maxQPower, [this, greaterPerm, start, length, flagIndex] {
+        bitCapIntOcl regMask = bitRegMaskOcl(start, length);
+        bitCapIntOcl flagMask = pow2Ocl(flagIndex);
+
+        par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            if ((((lcv & regMask) >> start) < greaterPerm) & ((lcv & flagMask) == flagMask))
+                stateVec->write(lcv, -stateVec->read(lcv));
+        });
+    });
+}
+
+/// This is an expedient for an adaptive Grover's search for a function's global minimum.
+void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+{
+    CHECK_ZERO_SKIP();
+
+    Dispatch(maxQPower, [this, greaterPerm, start, length] {
+        bitCapIntOcl regMask = bitRegMaskOcl(start, length);
+
+        par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+            if (((lcv & regMask) >> start) < greaterPerm)
+                stateVec->write(lcv, -stateVec->read(lcv));
+        });
+    });
+}
+#endif
 
 }; // namespace Qrack

@@ -1065,6 +1065,7 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     return result;
 }
 
+#if ENABLE_ALU
 void QPager::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
     CombineAndOp(
@@ -1218,17 +1219,6 @@ void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitL
         controlLen);
 }
 
-void QPager::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-{
-    CombineAndOp([&](QEnginePtr engine) { engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex); },
-        { static_cast<bitLenInt>(start + length - 1U), flagIndex });
-}
-void QPager::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-{
-    CombineAndOp([&](QEnginePtr engine) { engine->PhaseFlipIfLess(greaterPerm, start, length); },
-        { static_cast<bitLenInt>(start + length - 1U) });
-}
-
 bitCapInt QPager::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
     unsigned char* values, bool ignored)
 {
@@ -1269,6 +1259,18 @@ void QPager::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
     CombineAndOp([&](QEnginePtr engine) { engine->Hash(start, length, values); },
         { static_cast<bitLenInt>(start + length - 1U) });
 }
+
+void QPager::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), flagIndex });
+}
+void QPager::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->PhaseFlipIfLess(greaterPerm, start, length); },
+        { static_cast<bitLenInt>(start + length - 1U) });
+}
+#endif
 
 void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
 {
