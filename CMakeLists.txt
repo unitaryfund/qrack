@@ -18,7 +18,6 @@ include_directories ("include" "include/common")
 add_library (qrack STATIC
     src/common/parallel_for.cpp
     src/common/rdrandwrapper.cpp
-    src/common/dispatchqueue.cpp
     src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
@@ -37,6 +36,12 @@ add_library (qrack STATIC
     src/qstabilizerhybrid.cpp
     src/qmaskfusion.cpp
     )
+
+if (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
+    target_sources (qrack PRIVATE
+        src/common/dispatchqueue.cpp
+        )
+endif (ENABLE_PTHREAD AND ENABLE_QUNIT_CPU_PARALLEL)
 
 if (ENABLE_EMIT_LLVM)
     add_library (qrack_pinvoke OBJECT

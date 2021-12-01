@@ -14,6 +14,12 @@
 
 #pragma once
 
+#include "config.h"
+
+#if !ENABLE_PTHREAD || !ENABLE_QUNIT_CPU_PARALLEL
+#error PTHREAD or QUNIT_CPU_PARALLEL has not been enabled
+#endif
+
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
