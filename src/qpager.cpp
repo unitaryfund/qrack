@@ -1367,16 +1367,16 @@ void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    bitLenInt qpp = baseQubitsPerPage;
+    SeparateEngines();
+
+    bitLenInt qpp = qubitsPerPage();
     bool isQubit1Meta = qubit1 >= qpp;
     bool isQubit2Meta = qubit2 >= qpp;
     if (isQubit1Meta && isQubit2Meta) {
-        SeparateEngines();
         MetaSwap(qubit1, qubit2, false);
         return;
     }
     if (isQubit1Meta || isQubit2Meta) {
-        SeparateEngines();
         SemiMetaSwap(qubit1, qubit2, false);
         return;
     }
@@ -1389,16 +1389,16 @@ void QPager::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    bitLenInt qpp = baseQubitsPerPage;
+    SeparateEngines();
+
+    bitLenInt qpp = qubitsPerPage();
     bool isQubit1Meta = qubit1 >= qpp;
     bool isQubit2Meta = qubit2 >= qpp;
     if (isQubit1Meta && isQubit2Meta) {
-        SeparateEngines();
         MetaSwap(qubit1, qubit2, true);
         return;
     }
     if (isQubit1Meta || isQubit2Meta) {
-        SeparateEngines();
         SemiMetaSwap(qubit1, qubit2, true);
         return;
     }
