@@ -123,7 +123,6 @@ void DispatchQueue::dispatch_thread_handler(void)
         // after wait, we own the lock
 
         if (quit_) {
-            isFinished_ = true;
             continue;
         }
 
