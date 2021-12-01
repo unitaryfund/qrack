@@ -120,23 +120,26 @@ void DispatchQueue::dispatch_thread_handler(void)
     do {
         // Wait until we have data or a quit signal
         cv_.wait(lock, [this] { return (q_.size() || quit_); });
-
         // after wait, we own the lock
-        if (!quit_ && q_.size()) {
-            auto op = std::move(q_.front());
-            q_.pop();
 
-            // unlock now that we're done messing with the queue
-            lock.unlock();
+        if (quit_) {
+            isFinished_ = true;
+            continue;
+        }
 
-            op();
+        auto op = std::move(q_.front());
+        q_.pop();
 
-            lock.lock();
+        // unlock now that we're done messing with the queue
+        lock.unlock();
 
-            if (!q_.size()) {
-                isFinished_ = true;
-                cvFinished_.notify_all();
-            }
+        op();
+
+        lock.lock();
+
+        if (!q_.size()) {
+            isFinished_ = true;
+            cvFinished_.notify_all();
         }
     } while (!quit_);
 }
