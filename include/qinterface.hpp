@@ -16,7 +16,6 @@
 
 #include <ctime>
 #include <map>
-#include <memory>
 #include <vector>
 
 #if ENABLE_UINT128

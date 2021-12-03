@@ -20,8 +20,6 @@
 #include "common/dispatchqueue.hpp"
 #endif
 
-#include <memory>
-
 namespace Qrack {
 
 class QEngineCPU;
