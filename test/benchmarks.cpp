@@ -157,7 +157,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
                     std::chrono::high_resolution_clock::now() - iterClock);
                 if (logNormal) {
-                    trialClocks.push_back(log2(tClock.count() * clockFactor));
+                    trialClocks.push_back(Qrack::log2(tClock.count() * clockFactor));
                 } else {
                     trialClocks.push_back(tClock.count() * clockFactor);
                 }
