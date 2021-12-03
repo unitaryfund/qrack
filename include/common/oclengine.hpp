@@ -12,6 +12,8 @@
 
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include "config.h"
 
 #if !ENABLE_OPENCL

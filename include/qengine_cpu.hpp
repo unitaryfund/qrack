@@ -12,8 +12,6 @@
 
 #pragma once
 
-#include <memory>
-
 #include "common/parallel_for.hpp"
 #include "qengine.hpp"
 #include "statevector.hpp"
@@ -21,6 +19,8 @@
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #include "common/dispatchqueue.hpp"
 #endif
+
+#include <memory>
 
 namespace Qrack {
 

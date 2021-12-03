@@ -10,15 +10,13 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#define _USE_MATH_DEFINES
+#include "common/parallel_for.hpp"
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <direct.h>
 #endif
 
 #include <math.h>
-
-#include "common/parallel_for.hpp"
 
 #if ENABLE_PTHREAD
 #include <atomic>

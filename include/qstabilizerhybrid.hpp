@@ -11,15 +11,15 @@
 // for details.
 #pragma once
 
-#include "mpsshard.hpp"
-#include "qengine.hpp"
-#include "qstabilizer.hpp"
-
 #include "common/qrack_types.hpp"
 
 #if ENABLE_OPENCL
 #include "common/oclengine.hpp"
 #endif
+
+#include "mpsshard.hpp"
+#include "qengine.hpp"
+#include "qstabilizer.hpp"
 
 namespace Qrack {
 

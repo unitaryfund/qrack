@@ -11,11 +11,11 @@
 // for details.
 #pragma once
 
-#include "qengine.hpp"
-
 #if ENABLE_OPENCL
 #include "common/oclengine.hpp"
 #endif
+
+#include "qengine.hpp"
 
 namespace Qrack {
 

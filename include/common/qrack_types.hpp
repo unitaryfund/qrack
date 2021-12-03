@@ -13,6 +13,7 @@
 #pragma once
 
 #define _USE_MATH_DEFINES
+#include "config.h"
 
 #include <cfloat>
 #include <cmath>
@@ -20,8 +21,6 @@
 #include <functional>
 #include <memory>
 #include <random>
-
-#include "config.h"
 
 #if UINTPOW < 5
 #define ONE_BCI ((uint16_t)1U)

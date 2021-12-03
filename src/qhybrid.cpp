@@ -8,12 +8,9 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <thread>
-
-#include "common/oclengine.hpp"
-
 #include "qfactory.hpp"
-#include "qhybrid.hpp"
+
+#include <thread>
 
 namespace Qrack {
 

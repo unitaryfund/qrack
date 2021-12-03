@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include "qrack_types.hpp"
+
 #if ENABLE_RNDFILE
 #include <future>
 #include <string>
@@ -26,8 +28,6 @@
 #endif
 #include <immintrin.h>
 #endif
-
-#include "qrack_types.hpp"
 
 namespace Qrack {
 

@@ -12,8 +12,6 @@
 
 #include "qinterface.hpp"
 
-#include <future>
-
 namespace Qrack {
 
 /// "Phase shift gate" - Rotates as e^(-i*\theta/2) around |1> state

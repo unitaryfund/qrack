@@ -10,14 +10,14 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#define CATCH_CONFIG_RUNNER /* Access to the configuration. */
+#include "tests.hpp"
+
 #include <iostream>
 #include <random>
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
-
-#define CATCH_CONFIG_RUNNER /* Access to the configuration. */
-#include "tests.hpp"
 
 using namespace Qrack;
 

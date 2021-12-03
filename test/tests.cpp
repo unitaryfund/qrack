@@ -10,6 +10,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "qfactory.hpp"
+
 #include <atomic>
 #include <iostream>
 #include <list>
@@ -17,7 +19,6 @@
 #include <stdlib.h>
 
 #include "catch.hpp"
-#include "qfactory.hpp"
 #include "qneuron.hpp"
 
 #include "tests.hpp"

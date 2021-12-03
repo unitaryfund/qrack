@@ -18,11 +18,11 @@
 #error OpenCL has not been enabled
 #endif
 
-#include <list>
-#include <mutex>
-
 #include "common/oclengine.hpp"
 #include "qengine.hpp"
+
+#include <list>
+#include <mutex>
 
 #define BCI_ARG_LEN 10
 #define CMPLX_NORM_LEN 6

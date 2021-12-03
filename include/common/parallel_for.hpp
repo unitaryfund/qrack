@@ -12,12 +12,12 @@
 
 #pragma once
 
+/* Needed for bitCapInt typedefs. */
+#include "qrack_types.hpp"
+
 #include <algorithm>
 #include <set>
 #include <vector>
-
-/* Needed for bitCapInt typedefs. */
-#include "qrack_types.hpp"
 
 namespace Qrack {
 
