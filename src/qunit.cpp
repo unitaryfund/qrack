@@ -1632,6 +1632,16 @@ bitCapInt QUnit::MAll()
         shard.ClearInvertPhase();
         shard.DumpPhaseBuffers();
     }
+
+    std::vector<QInterfacePtr> units;
+    for (bitLenInt i = 0; i < shards.size(); i++) {
+        QEngineShard shard = shards[i];
+        if (shard.IsInvertControl() && shard.unit && shard.unit->isClifford()) {
+            // Clifford might become ket during measurement
+            ToPermBasisMeasure(i);
+        }
+    }
+
     for (bitLenInt i = 0; i < qubitCount; i++) {
         if (shards[i].IsInvertControl()) {
             // Measurement commutes with control
@@ -1641,7 +1651,7 @@ bitCapInt QUnit::MAll()
 
     bitCapInt toRet = 0;
 
-    std::vector<QInterfacePtr> units;
+    units.clear();
     std::map<QInterfacePtr, bitCapInt> partResult;
 
     for (bitLenInt i = 0; i < qubitCount; i++) {
