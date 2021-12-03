@@ -13,7 +13,6 @@
 
 #include "common/qrack_types.hpp"
 
-#include <memory>
 #include <vector>
 
 struct _QrackTimeEvolveOpHeader {

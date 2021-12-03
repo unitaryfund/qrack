@@ -13,12 +13,12 @@
 
 #pragma once
 
+#include "common/parallel_for.hpp"
+#include "common/qrack_types.hpp"
+
 #include <algorithm>
 #include <mutex>
 #include <set>
-
-#include "common/parallel_for.hpp"
-#include "common/qrack_types.hpp"
 
 #if ENABLE_PTHREAD
 #include <future>

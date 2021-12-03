@@ -24,8 +24,6 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "common/qrack_types.hpp"
 #include "common/rdrandwrapper.hpp"
 
@@ -34,6 +32,8 @@
 #endif
 
 #include "qinterface.hpp"
+
+#include <cstdint>
 
 namespace Qrack {
 
