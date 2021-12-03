@@ -829,7 +829,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
     }
 
     // This check will first try to coax into decomposable form:
-    if (stabilizer && !stabilizer->CanDecomposeDispose(qubit, 1)) {
+    if (!stabilizer->CanDecomposeDispose(qubit, 1)) {
         SwitchToEngine();
         return engine->ForceM(qubit, result, doForce, doApply);
     }
