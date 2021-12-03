@@ -12,12 +12,12 @@
 
 #pragma once
 
+#include "qfactory.hpp"
+
 #include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <string>
-
-#include "qfactory.hpp"
 
 /* A quick-and-dirty epsilon for clamping floating point values. */
 #define QRACK_TEST_EPSILON 0.9

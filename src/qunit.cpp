@@ -21,12 +21,11 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "qfactory.hpp"
+
 #include <ctime>
 #include <initializer_list>
 #include <map>
-
-#include "qfactory.hpp"
-#include "qunit.hpp"
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_AMP_0(c) (norm(c) <= separabilityThreshold)

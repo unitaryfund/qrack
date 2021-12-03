@@ -11,10 +11,10 @@
 // for details.
 #pragma once
 
+#include "common/qrack_types.hpp"
+
 #include <memory>
 #include <vector>
-
-#include "common/qrack_types.hpp"
 
 struct _QrackTimeEvolveOpHeader {
     unsigned target;

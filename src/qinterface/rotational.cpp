@@ -12,8 +12,6 @@
 
 #include "qinterface.hpp"
 
-#include <future>
-
 namespace Qrack {
 
 /// General unitary gate

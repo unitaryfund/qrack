@@ -12,7 +12,6 @@
 
 #include "qinterface.hpp"
 #include <algorithm>
-#include <cmath>
 
 namespace Qrack {
 

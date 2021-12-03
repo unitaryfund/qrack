@@ -10,14 +10,14 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <fstream>
-#include <iostream> // For cout
-#include <string>
-
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"
 // "qneuron.hpp" defines the QNeuron class.
 #include "qneuron.hpp"
+
+#include <fstream>
+#include <iostream> // For cout
+#include <string>
 
 using namespace Qrack;
 

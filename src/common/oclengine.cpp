@@ -10,11 +10,11 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "oclengine.hpp"
+
 #include <algorithm>
 #include <iostream>
 #include <memory>
-
-#include "oclengine.hpp"
 
 #if UINTPOW < 5
 #include "qheader_uint16cl.hpp"

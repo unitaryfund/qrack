@@ -9,11 +9,11 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <iomanip> // For setw
-#include <iostream> // For cout
-
 // "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
 #include "qfactory.hpp"
+
+#include <iomanip> // For setw
+#include <iostream> // For cout
 
 using namespace Qrack;
 

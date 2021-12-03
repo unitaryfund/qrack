@@ -12,9 +12,6 @@
 
 // From https://github.com/embeddedartistry/embedded-resources/blob/master/examples/cpp/dispatch.cpp
 
-#include <chrono>
-
-#include "config.h"
 #include "dispatchqueue.hpp"
 
 namespace Qrack {

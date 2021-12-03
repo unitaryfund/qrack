@@ -12,13 +12,13 @@
 
 #pragma once
 
-#include <algorithm>
-
 #include "common/oclengine.hpp"
 #include "common/parallel_for.hpp"
 #include "qengine_opencl.hpp"
 #include "qinterface.hpp"
 #include "qunit.hpp"
+
+#include <algorithm>
 
 namespace Qrack {
 

@@ -12,9 +12,9 @@
 
 #pragma once
 
-#include <algorithm>
-
 #include "qinterface.hpp"
+
+#include <algorithm>
 
 namespace Qrack {
 

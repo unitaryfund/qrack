@@ -14,12 +14,12 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+// "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
+#include "qfactory.hpp"
+
 #include <algorithm> // std::random_shuffle
 #include <cstddef> // size_t
 #include <iostream> // std::cout
-
-// "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
-#include "qfactory.hpp"
 
 using namespace Qrack;
 

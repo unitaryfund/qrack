@@ -8,10 +8,9 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <thread>
-
 #include "qfactory.hpp"
-#include "qstabilizerhybrid.hpp"
+
+#include <thread>
 
 #define IS_REAL_0(r) (abs(r) <= FP_NORM_EPSILON)
 #define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \

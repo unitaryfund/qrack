@@ -11,19 +11,17 @@
 // for details.
 #pragma once
 
+#include "common/rdrandwrapper.hpp"
+#include "hamiltonian.hpp"
+
 #include <ctime>
 #include <map>
-#include <math.h>
 #include <memory>
 #include <vector>
 
 #if ENABLE_UINT128
 #include <ostream>
 #endif
-
-#include "common/qrack_types.hpp"
-#include "common/rdrandwrapper.hpp"
-#include "hamiltonian.hpp"
 
 #define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
 #define IS_SAME(c1, c2) (IS_NORM_0((c1) - (c2)))

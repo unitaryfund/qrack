@@ -20,6 +20,8 @@
 #error PTHREAD or QUNIT_CPU_PARALLEL has not been enabled
 #endif
 
+#define _USE_MATH_DEFINES
+
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
