@@ -286,6 +286,7 @@ public:
         }
     }
 
+    /** Default constructor, primarily for protected internal use */
     QInterface()
         : qubitCount(0)
         , maxQPower(1)
