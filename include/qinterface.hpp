@@ -286,6 +286,7 @@ public:
         }
     }
 
+    /** Default constructor, primarily for protected internal use */
     QInterface()
         : qubitCount(0)
         , maxQPower(1)
@@ -2438,10 +2439,14 @@ public:
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return false; }
     /**
      *  Set Reactive separation (on by default if available)
+     *
+     *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to more-aggresively recover separability of subsystems. It can either hurt or help performance, though it commonly helps.
      */
     virtual void SetReactiveSeparate(const bool& isAggSep) {}
     /**
      *  Get Reactive separation
+     *
+     *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to more-aggresively recover separability of subsystems. It can either hurt or help performance, though it commonly helps.
      */
     virtual bool GetReactiveSeparate() { return false; }
 
