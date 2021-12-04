@@ -2440,13 +2440,17 @@ public:
     /**
      *  Set reactive separation option (on by default if available)
      *
-     *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to more-aggresively recover separability of subsystems. It can either hurt or help performance, though it commonly helps.
+     *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to
+     * more-aggresively recover separability of subsystems. It can either hurt or help performance, though it commonly
+     * helps.
      */
     virtual void SetReactiveSeparate(const bool& isAggSep) {}
     /**
      *  Get reactive separation option
      *
-     *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to more-aggresively recover separability of subsystems. It can either hurt or help performance, though it commonly helps.
+     *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to
+     * more-aggresively recover separability of subsystems. It can either hurt or help performance, though it commonly
+     * helps.
      */
     virtual bool GetReactiveSeparate() { return false; }
 

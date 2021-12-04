@@ -56,6 +56,7 @@ public:
         }
     };
 
+    /** Default constructor, primarily for protected internal use */
     QEngine()
         : useHostRam(false)
         , runningNorm(ONE_R1)
@@ -70,21 +71,29 @@ public:
         return runningNorm;
     }
 
+    /** Set all amplitudes to 0, and optionally temporarily deallocate state vector RAM */
     virtual void ZeroAmplitudes() = 0;
-
+    /** Exactly copy the state vector of a different QEngine instance */
     virtual void CopyStateVec(QEnginePtr src) = 0;
-
+    /** Returns "true" only if amplitudes are all totally 0 */
     virtual bool IsZeroAmplitude() = 0;
-
+    /** Copy a "page" of amplitudes from this QEngine's internal state, into `pagePtr`. */
     virtual void GetAmplitudePage(complex* pagePtr, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
+    /** Copy a "page" of amplitudes from `pagePtr` into this QEngine's internal state. */
     virtual void SetAmplitudePage(const complex* pagePtr, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
+    /** Copy a "page" of amplitudes from another QEngine, pointed to by `pageEnginePtr`, into this QEngine's internal
+     * state. */
     virtual void SetAmplitudePage(QEnginePtr pageEnginePtr, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset,
         const bitCapIntOcl length) = 0;
     /** Swap the high half of this engine with the low half of another. This is necessary for gates which cross
      * sub-engine  boundaries. */
     virtual void ShuffleBuffers(QEnginePtr engine) = 0;
 
+    /** Add an operation to the (OpenCL) queue, to set the value of `doNormalize`, which controls whether to
+     * automatically normalize the state. */
     virtual void QueueSetDoNormalize(const bool& doNorm) = 0;
+    /** Add an operation to the (OpenCL) queue, to set the value of `runningNorm`, which is the normalization constant
+     * for the next normalization operation. */
     virtual void QueueSetRunningNorm(const real1_f& runningNrm) = 0;
 
     virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
