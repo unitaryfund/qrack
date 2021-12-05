@@ -1194,7 +1194,7 @@ public:
     /** @} */
 
     /**
-     * \defgroup RotGates Rotational gates:
+     * \defgroup RotGates Rotational gates
      *
      * NOTE: Dyadic operation angle sign is reversed from radian rotation
      * operators and lacks a division by a factor of two.
