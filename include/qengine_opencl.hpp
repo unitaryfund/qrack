@@ -346,7 +346,7 @@ public:
         }
 
         if (!(mask & (mask - ONE_BCI))) {
-            complex phaseFac = std::polar(ONE_R1, radians / 2);
+            complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
             ApplySinglePhase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
             return;
         }
@@ -564,7 +564,7 @@ protected:
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special,
         real1_f norm_thresh = REAL1_DEFAULT_ARG);
 
-    virtual void BitMask(bitCapIntOcl mask, OCLAPI api_call, real1 phase = PI_R1);
+    virtual void BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase = PI_R1);
 
     virtual void ApplyM(bitCapInt mask, bool result, complex nrm);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);

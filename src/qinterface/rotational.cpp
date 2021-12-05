@@ -107,8 +107,8 @@ void QInterface::UniformlyControlledRY(
     std::unique_ptr<complex[]> pauliRYs(new complex[4U * permCount]);
 
     for (bitCapIntOcl i = 0; i < permCount; i++) {
-        real1 cosine = cos(angles[i] / 2);
-        real1 sine = sin(angles[i] / 2);
+        real1 cosine = (real1)cos(angles[i] / 2);
+        real1 sine = (real1)sin(angles[i] / 2);
 
         pauliRYs[0U + 4U * i] = complex(cosine, ZERO_R1);
         pauliRYs[1U + 4U * i] = complex(-sine, ZERO_R1);
@@ -128,8 +128,8 @@ void QInterface::UniformlyControlledRZ(
     std::unique_ptr<complex[]> pauliRZs(new complex[4U * permCount]);
 
     for (bitCapIntOcl i = 0; i < permCount; i++) {
-        real1 cosine = cos(angles[i] / 2);
-        real1 sine = sin(angles[i] / 2);
+        real1 cosine = (real1)cos(angles[i] / 2);
+        real1 sine = (real1)sin(angles[i] / 2);
 
         pauliRZs[0U + 4U * i] = complex(cosine, -sine);
         pauliRZs[1U + 4U * i] = ZERO_CMPLX;

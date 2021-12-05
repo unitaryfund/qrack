@@ -791,7 +791,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     bitCapInt lastPerm = maskMaxQPower - 1U;
     std::map<bitCapInt, int> results;
     for (unsigned int shot = 0; shot < shots; shot++) {
-        real1 maskProb = Rand();
+        real1 maskProb = (real1)Rand();
         real1 cumulativeProb = ZERO_R1;
         for (bitCapIntOcl j = 0; j < maskMaxQPower; j++) {
             cumulativeProb += maskProbsArray[j];
