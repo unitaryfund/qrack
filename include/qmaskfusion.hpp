@@ -503,7 +503,7 @@ public:
         engine->INC(toAdd, start, length);
     }
     virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
     {
         FlushIfBuffered(inOutStart, length) || FlushIfPhaseBlocked(controls, controlLen);
         engine->CINC(toAdd, inOutStart, length, controls, controlLen);
@@ -546,35 +546,35 @@ public:
         engine->POWModNOut(base, modN, inStart, outStart, length);
     }
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryStart, length) ||
             FlushIfPhaseBlocked(controls, controlLen);
         engine->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
     }
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryStart, length) ||
             FlushIfPhaseBlocked(controls, controlLen);
         engine->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
     }
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         FlushIfBuffered(inStart, length) || FlushIfBuffered(outStart, length) ||
             FlushIfPhaseBlocked(controls, controlLen);
         engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         FlushIfBuffered(inStart, length) || FlushIfBuffered(outStart, length) ||
             FlushIfPhaseBlocked(controls, controlLen);
         engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         FlushIfBuffered(inStart, length) || FlushIfBuffered(outStart, length) ||
             FlushIfPhaseBlocked(controls, controlLen);
@@ -699,7 +699,7 @@ public:
 
     virtual bool TrySeparate(bitLenInt qubit) { return engine->TrySeparate(qubit); }
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return engine->TrySeparate(qubit1, qubit2); }
-    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
+    virtual bool TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error_tol)
     {
         return engine->TrySeparate(qubits, length, error_tol);
     }

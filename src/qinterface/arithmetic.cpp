@@ -40,7 +40,7 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
 
 /// Subtract integer (without sign, with controls)
 void QInterface::CDEC(
-    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
     bitCapInt invToSub = pow2(length) - toSub;
     CINC(invToSub, inOutStart, length, controls, controlLen);
@@ -84,7 +84,7 @@ void QInterface::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 }
 
 /// Quantum analog of classical "Full Adder" gate
-void QInterface::CFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+void QInterface::CFullAdd(const bitLenInt* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
     bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
@@ -110,7 +110,7 @@ void QInterface::CFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenIn
 }
 
 /// Inverse of FullAdd
-void QInterface::CIFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+void QInterface::CIFullAdd(const bitLenInt* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
     bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
@@ -179,8 +179,8 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
     IFullAdd(input1, input2, carry, output);
 }
 
-void QInterface::CADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
-    bitLenInt length, bitLenInt carry)
+void QInterface::CADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+    bitLenInt output, bitLenInt length, bitLenInt carry)
 {
     if (length == 0) {
         return;
@@ -201,8 +201,8 @@ void QInterface::CADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input
     CFullAdd(controls, controlLen, input1 + end, input2 + end, output + end, carry);
 }
 
-void QInterface::CIADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
-    bitLenInt length, bitLenInt carry)
+void QInterface::CIADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+    bitLenInt output, bitLenInt length, bitLenInt carry)
 {
     if (length == 0) {
         return;

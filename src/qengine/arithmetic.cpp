@@ -160,7 +160,7 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 
 /// Add integer (without sign, with controls)
 void QEngineCPU::CINC(
-    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
     CHECK_ZERO_SKIP();
 
@@ -531,7 +531,7 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
 }
 
 void QEngineCPU::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
         MUL(toMul, inOutStart, carryStart, length);
@@ -554,7 +554,7 @@ void QEngineCPU::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
 }
 
 void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
         DIV(toDiv, inOutStart, carryStart, length);
@@ -702,7 +702,7 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
 }
 
 void QEngineCPU::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
         MULModNOut(toMod, modN, inStart, outStart, length);
@@ -718,7 +718,7 @@ void QEngineCPU::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
 }
 
 void QEngineCPU::CIMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
         IMULModNOut(toMod, modN, inStart, outStart, length);
@@ -732,7 +732,7 @@ void QEngineCPU::CIMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart
 }
 
 void QEngineCPU::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
         POWModNOut(toMod, modN, inStart, outStart, length);

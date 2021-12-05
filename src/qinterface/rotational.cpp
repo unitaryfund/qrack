@@ -27,7 +27,7 @@ void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 
 /// Controlled general unitary gate
 void QInterface::CU(
-    bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
+    const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
     real1 cos0 = (real1)cos(theta / 2);
     real1 sin0 = (real1)sin(theta / 2);
@@ -39,7 +39,7 @@ void QInterface::CU(
 
 /// (Anti-)Controlled general unitary gate
 void QInterface::AntiCU(
-    bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
+    const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
     real1 cos0 = (real1)cos(theta / 2);
     real1 sin0 = (real1)sin(theta / 2);
@@ -142,7 +142,8 @@ void QInterface::Exp(real1_f radians, bitLenInt qubit)
 }
 
 /// Imaginary exponentiate of arbitrary single bit gate
-void QInterface::Exp(bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled)
+void QInterface::Exp(
+    const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled)
 {
     complex timesI[4];
     complex toApply[4];

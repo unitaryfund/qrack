@@ -1070,7 +1070,7 @@ void QPager::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     CombineAndOp(
         [&](QEnginePtr engine) { engine->INC(toAdd, start, length); }, { static_cast<bitLenInt>(start + length - 1U) });
 }
-void QPager::CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QPager::CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
     CombineAndOpControlled([&](QEnginePtr engine) { engine->CINC(toAdd, start, length, controls, controlLen); },
         { static_cast<bitLenInt>(start + length - 1U) }, controls, controlLen);
@@ -1152,8 +1152,8 @@ void QPager::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLe
     CombineAndOp([&](QEnginePtr engine) { engine->POWModNOut(base, modN, inStart, outStart, length); },
         { static_cast<bitLenInt>(inStart + length - 1U), static_cast<bitLenInt>(outStart + length - 1U) });
 }
-void QPager::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
-    bitLenInt controlLen)
+void QPager::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         MUL(toMul, inOutStart, carryStart, length);
@@ -1165,8 +1165,8 @@ void QPager::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, b
         { static_cast<bitLenInt>(inOutStart + length - 1U), static_cast<bitLenInt>(carryStart + length - 1U) },
         controls, controlLen);
 }
-void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
-    bitLenInt controlLen)
+void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         DIV(toDiv, inOutStart, carryStart, length);
@@ -1179,7 +1179,7 @@ void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, b
         controls, controlLen);
 }
 void QPager::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         MULModNOut(toMul, modN, inStart, outStart, length);
@@ -1192,7 +1192,7 @@ void QPager::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bit
         controlLen);
 }
 void QPager::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         IMULModNOut(toMul, modN, inStart, outStart, length);
@@ -1205,7 +1205,7 @@ void QPager::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bi
         controlLen);
 }
 void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         POWModNOut(base, modN, inStart, outStart, length);

@@ -1976,7 +1976,7 @@ void QEngineOCL::INC(bitCapInt toAdd, const bitLenInt start, const bitLenInt len
 }
 
 void QEngineOCL::CINC(
-    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
         INC(toAdd, inOutStart, length);
@@ -2273,7 +2273,7 @@ void QEngineOCL::FullAdx(
 
 /** Controlled multiplication by integer */
 void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     CHECK_ZERO_SKIP();
 
@@ -2295,7 +2295,7 @@ void QEngineOCL::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStar
 
 /** Controlled division by integer */
 void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
         DIV(toDiv, inOutStart, carryStart, length);
@@ -2316,7 +2316,7 @@ void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
 
 /** Controlled multiplication modulo N by integer, (out of place) */
 void QEngineOCL::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     CHECK_ZERO_SKIP();
 
@@ -2338,7 +2338,7 @@ void QEngineOCL::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 }
 
 void QEngineOCL::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (controlLen == 0) {
         IMULModNOut(toMul, modN, inStart, outStart, length);
@@ -2357,7 +2357,7 @@ void QEngineOCL::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
 
 /** Controlled multiplication modulo N by integer, (out of place) */
 void QEngineOCL::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     CHECK_ZERO_SKIP();
 

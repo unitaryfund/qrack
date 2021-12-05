@@ -57,7 +57,7 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
 }
 
 /// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
-void QInterface::QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate)
+void QInterface::QFTR(const bitLenInt* qubits, bitLenInt length, bool trySeparate)
 {
     if (length == 0) {
         return;
@@ -77,7 +77,7 @@ void QInterface::QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate)
 }
 
 /// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
-void QInterface::IQFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate)
+void QInterface::IQFTR(const bitLenInt* qubits, bitLenInt length, bool trySeparate)
 {
     if (length == 0) {
         return;

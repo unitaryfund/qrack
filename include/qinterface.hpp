@@ -749,7 +749,7 @@ public:
      * values).
      */
     virtual void CU(
-        bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
+        const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
 
     /**
      * (Anti-)Controlled general unitary gate
@@ -759,7 +759,7 @@ public:
      * expectation values).
      */
     virtual void AntiCU(
-        bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
+        const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda);
 
     /**
      * Hadamard gate
@@ -1308,7 +1308,7 @@ public:
      * Applies \f$ e^{-i*Op} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
      */
     virtual void Exp(
-        bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled = false);
+        const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled = false);
 
     /**
      * Dyadic fraction (identity) exponentiation gate
@@ -1877,7 +1877,7 @@ public:
 
     /** Add integer (without sign, with controls) */
     virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen) = 0;
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** Add integer (without sign, with carry) */
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
@@ -1897,7 +1897,7 @@ public:
 
     /** Subtract classical integer (without sign, with controls) */
     virtual void CDEC(
-        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
+        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
 
     /** Subtract classical integer (without sign, with carry) */
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
@@ -1946,23 +1946,23 @@ public:
 
     /** Controlled multiplication by integer */
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen) = 0;
+        const bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** Controlled division by power of integer */
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen) = 0;
+        const bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** Controlled multiplication modulo N by integer, (out of place) */
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen) = 0;
+        const bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** Inverse: controlled multiplication modulo N by integer, (out of place) */
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen) = 0;
+        const bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /** Controlled, raise a classical base to a quantum power, modulo N, (out of place) */
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen) = 0;
+        const bitLenInt* controls, bitLenInt controlLen) = 0;
 
     /**
      * Quantum analog of classical "Full Adder" gate
@@ -1983,7 +1983,7 @@ public:
      *
      * (Assumes the outputBit is in the 0 state)
      */
-    virtual void CFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+    virtual void CFullAdd(const bitLenInt* controls, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
         bitLenInt carryInSumOut, bitLenInt carryOut);
 
     /**
@@ -1991,7 +1991,7 @@ public:
      *
      * (Can be thought of as "subtraction," but with a register convention that the same inputs invert CFullAdd.)
      */
-    virtual void CIFullAdd(bitLenInt* controls, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+    virtual void CIFullAdd(const bitLenInt* controls, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
         bitLenInt carryInSumOut, bitLenInt carryOut);
 
     /**
@@ -2013,16 +2013,16 @@ public:
      *
      * (Assumes the output register is in the 0 state)
      */
-    virtual void CADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
-        bitLenInt length, bitLenInt carry);
+    virtual void CADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+        bitLenInt output, bitLenInt length, bitLenInt carry);
 
     /**
      * Inverse of CADC
      *
      * (Can be thought of as "subtraction," but with a register convention that the same inputs invert CADC.)
      */
-    virtual void CIADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
-        bitLenInt length, bitLenInt carry);
+    virtual void CIADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+        bitLenInt output, bitLenInt length, bitLenInt carry);
 
     /**
      * Set 8 bit register bits by a superposed index-offset-based read from
@@ -2180,7 +2180,7 @@ public:
      * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
      * Otherwise, turning it on will probably take longer.
      */
-    virtual void QFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
+    virtual void QFTR(const bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
 
     /** Inverse Quantum Fourier Transform - Apply the inverse quantum Fourier transform to the register.
      *
@@ -2196,7 +2196,7 @@ public:
      * on for speed and memory effciency if you expect the result of the QFT to be in a permutation basis eigenstate.
      * Otherwise, turning it on will probably take longer.
      */
-    virtual void IQFTR(bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
+    virtual void IQFTR(const bitLenInt* qubits, bitLenInt length, bool trySeparate = false);
 
     /** Reverse the phase of the state where the register equals zero. */
     virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length);

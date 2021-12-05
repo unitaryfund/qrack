@@ -3597,7 +3597,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
 }
 
 #if ENABLE_ALU
-bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
+bool QUnit::CArithmeticOptimize(const bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
 {
     if (!controlLen) {
         return false;
@@ -3631,7 +3631,7 @@ bool QUnit::CArithmeticOptimize(bitLenInt* controls, bitLenInt controlLen, std::
     return false;
 }
 
-void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
@@ -3733,7 +3733,7 @@ bool QUnit::INTSCOptimize(
 }
 
 void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     // Keep the bits separate, if cheap to do so:
     toMod &= pow2Mask(length);
@@ -4248,7 +4248,7 @@ QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt s
 }
 
 void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
@@ -4279,8 +4279,8 @@ void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt st
     DirtyShardRangePhase(start, length);
 }
 
-void QUnit::CMUL(
-    bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QUnit::CMUL(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
+    bitLenInt controlLen)
 {
     if (!controlLen) {
         MUL(toMod, start, carryStart, length);
@@ -4290,8 +4290,8 @@ void QUnit::CMUL(
     CMULx(&QInterface::CMUL, toMod, start, carryStart, length, controls, controlLen);
 }
 
-void QUnit::CDIV(
-    bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QUnit::CDIV(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
+    bitLenInt controlLen)
 {
     if (!controlLen) {
         DIV(toMod, start, carryStart, length);
@@ -4302,7 +4302,7 @@ void QUnit::CDIV(
 }
 
 void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen, bool inverse)
+    const bitLenInt* controls, bitLenInt controlLen, bool inverse)
 {
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
@@ -4359,19 +4359,19 @@ void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bit
 }
 
 void QUnit::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     CxMULModNOut(toMod, modN, inStart, outStart, length, controls, controlLen, false);
 }
 
 void QUnit::CIMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     CxMULModNOut(toMod, modN, inStart, outStart, length, controls, controlLen, true);
 }
 
 void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         POWModNOut(toMod, modN, inStart, outStart, length);
