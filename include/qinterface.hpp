@@ -1307,8 +1307,8 @@ public:
      *
      * Applies \f$ e^{-i*Op} \f$, where "Op" is a 2x2 matrix, (with controls on the application of the gate).
      */
-    virtual void Exp(
-        const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, complex* matrix2x2, bool antiCtrled = false);
+    virtual void Exp(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, const complex* matrix2x2,
+        bool antiCtrled = false);
 
     /**
      * Dyadic fraction (identity) exponentiation gate
