@@ -368,7 +368,7 @@ public:
 #endif
     }
 
-    virtual int64_t GetDeviceID() { return qPages[0]->GetDeviceID(); }
+    virtual int64_t GetDevice() { return qPages[0]->GetDevice(); }
 
     bitCapIntOcl GetMaxSize() { return qPages[0]->GetMaxSize(); };
 

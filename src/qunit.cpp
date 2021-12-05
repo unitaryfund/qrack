@@ -4630,6 +4630,17 @@ bool QUnit::isFinished()
         [](QInterfacePtr unit, real1_f unused1, real1_f unused2, int32_t unused3) { return unit->isFinished(); });
 }
 
+void QUnit::SetDevice(const int& dID, const bool& forceReInit)
+{
+    devID = dID;
+    ParallelUnitApply(
+        [](QInterfacePtr unit, real1_f unused1, real1_f forceReInit, int32_t dID) {
+            unit->SetDevice(dID, (forceReInit > 0.5));
+            return true;
+        },
+        ZERO_R1, forceReInit ? ONE_R1 : ZERO_R1, dID);
+}
+
 real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)
 {
     if (this == toCompare.get()) {

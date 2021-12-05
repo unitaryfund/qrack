@@ -416,7 +416,7 @@ public:
     virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0);
 
     virtual void SetDevice(const int& dID, const bool& forceReInit = false);
-    virtual int64_t GetDeviceID() { return deviceID; }
+    virtual int64_t GetDevice() { return deviceID; }
 
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);

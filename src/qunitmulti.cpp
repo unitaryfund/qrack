@@ -87,8 +87,8 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
             qips.push_back(shard.unit);
             int deviceIndex = std::distance(
                 deviceList.begin(), std::find_if(deviceList.begin(), deviceList.end(), [&](DeviceInfo di) {
-                    return di.id == (shard.unit->GetDeviceID() < 0) ? OCLEngine::Instance()->GetDefaultDeviceID()
-                                                                    : (size_t)shard.unit->GetDeviceID();
+                    return di.id == (shard.unit->GetDevice() < 0) ? OCLEngine::Instance()->GetDefaultDeviceID()
+                                                                  : (size_t)shard.unit->GetDevice();
                 }));
             qinfos.push_back(QEngineInfo(shard.unit, deviceIndex));
         }
@@ -133,7 +133,7 @@ void QUnitMulti::RedistributeQEngines()
         }
 
         // If the original OpenCL device has equal load to the least, we prefer the original.
-        size_t deviceID = qinfos[i].unit->GetDeviceID();
+        size_t deviceID = qinfos[i].unit->GetDevice();
         size_t devIndex = qinfos[i].deviceIndex;
         bitCapInt sz = devSizes[devIndex];
 
@@ -195,7 +195,7 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
 
     // This does nothing if the first unit is the default device:
     if (deviceList[0].id !=
-        ((unit1->GetDeviceID() < 0) ? OCLEngine::Instance()->GetDefaultDeviceID() : (size_t)unit1->GetDeviceID())) {
+        ((unit1->GetDevice() < 0) ? OCLEngine::Instance()->GetDefaultDeviceID() : (size_t)unit1->GetDevice())) {
         // Check if size exceeds single device capacity:
         bitLenInt qubitCount = 0;
         std::map<QInterfacePtr, bool> found;

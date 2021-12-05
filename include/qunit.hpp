@@ -96,6 +96,9 @@ public:
     virtual void SetReactiveSeparate(const bool& isAggSep) { isReactiveSeparate = isAggSep; }
     virtual bool GetReactiveSeparate() { return isReactiveSeparate; }
 
+    virtual void SetDevice(const int& dID, const bool& forceReInit = false);
+    virtual int64_t GetDevice() { return devID; }
+
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
