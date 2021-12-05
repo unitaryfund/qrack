@@ -3529,6 +3529,9 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, const bitLenInt& co
             RevertBasis2Qb(controls[i], ONLY_INVERT, ONLY_TARGETS);
         }
         QEngineShard& shard = shards[controls[i]];
+        if (shard.isProbDirty && shard.isClifford()) {
+            ProbBase(controls[i]);
+        }
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         bool isEigenstate = false;
         if (!shard.isProbDirty) {
