@@ -2761,8 +2761,38 @@ void QUnit::CZ(bitLenInt control, bitLenInt target)
 
 void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
 {
+    QEngineShard& cShard = shards[control];
+
+    if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
+        if (SHARD_STATE(cShard)) {
+            Flush1Eigenstate(control);
+        } else {
+            Flush0Eigenstate(control);
+            Z(target);
+        }
+        return;
+    }
+
+    QEngineShard& tShard = shards[target];
+
+    if (!freezeBasis2Qb) {
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, {}, { control });
+
+        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
+            tShard.AddAntiPhaseAngles(&cShard, -ONE_CMPLX, ONE_CMPLX);
+            OptimizePairBuffers(control, target, true);
+
+            return;
+        }
+    }
+
     bitLenInt controls[1] = { control };
-    MACPhase(controls, 1U, ONE_CMPLX, -ONE_CMPLX, target);
+    bitLenInt controlLen = 1;
+
+    CTRLED_PHASE_INVERT_WRAP(
+        AntiCZ(CTRL_1_ARGS), MACMtrx(CTRL_GEN_ARGS), Z(target), true, false, ONE_CMPLX, -ONE_CMPLX);
 }
 
 void QUnit::CH(bitLenInt control, bitLenInt target)
