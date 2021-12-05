@@ -3222,6 +3222,11 @@ void QUnit::MACPhase(const bitLenInt* cControls, bitLenInt controlLen, const com
             Phase(topLeft, ONE_CMPLX, cControls[0]);
             return;
         }
+
+        if (IS_1_CMPLX(topLeft) && IS_1_CMPLX(-bottomRight)) {
+            AntiCZ(cControls[0], cTarget);
+            return;
+        }
     }
 
     std::unique_ptr<bitLenInt[]> controls(new bitLenInt[controlLen]);
