@@ -1370,8 +1370,8 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
 
     /**
-     * If the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$. If the target qubit set parity
-     * is even, this applies the conjugate, \f$e^{-i angle}\f$.
+     * If the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$. If the target qubit set
+     * parity is even, this applies the conjugate, \f$e^{-i angle}\f$.
      */
     virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
     {
@@ -1379,8 +1379,8 @@ public:
     }
 
     /**
-     * If the controls are set and the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$. If
-     * the controls are set and the target qubit set parity is even, this applies the conjugate, \f$e^{-i angle}\f$.
+     * If the controls are set and the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$.
+     * If the controls are set and the target qubit set parity is even, this applies the conjugate, \f$e^{-i angle}\f$.
      * Otherwise, do nothing if any control is not set.
      */
     virtual void CUniformParityRZ(
