@@ -3074,7 +3074,6 @@ void QUnit::MCPhase(
 
     std::unique_ptr<bitLenInt[]> controls(new bitLenInt[controlLen]);
     std::copy(cControls, cControls + controlLen, controls.get());
-
     QEngineShard& shard = shards[target];
 
     if (IS_1_R1(bottomRight) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard))) {
@@ -3209,11 +3208,11 @@ void QUnit::MCInvert(
 }
 
 void QUnit::MACPhase(const bitLenInt* cControls, bitLenInt controlLen, const complex topLeft, const complex bottomRight,
-    bitLenInt cTarget)
+    bitLenInt target)
 {
     // Commutes with controlled phase optimizations
     if (!controlLen) {
-        Phase(topLeft, bottomRight, cTarget);
+        Phase(topLeft, bottomRight, target);
         return;
     }
 
@@ -3224,15 +3223,13 @@ void QUnit::MACPhase(const bitLenInt* cControls, bitLenInt controlLen, const com
         }
 
         if (IS_1_CMPLX(topLeft) && IS_1_CMPLX(-bottomRight)) {
-            AntiCZ(cControls[0], cTarget);
+            AntiCZ(cControls[0], target);
             return;
         }
     }
 
     std::unique_ptr<bitLenInt[]> controls(new bitLenInt[controlLen]);
     std::copy(cControls, cControls + controlLen, controls.get());
-    bitLenInt target = cTarget;
-
     QEngineShard& shard = shards[target];
 
     if (IS_1_R1(topLeft) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard))) {
