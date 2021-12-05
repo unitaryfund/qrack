@@ -718,7 +718,7 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
     return true;
 }
 
-bool QUnit::TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
+bool QUnit::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error_tol)
 {
     if (length == 1U) {
         bitLenInt qubit = qubits[0];

@@ -303,7 +303,7 @@ public:
     }
     virtual bool isClifford(const bitLenInt& qubit) { return shards[qubit].isClifford(); };
 
-    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol);
+    virtual bool TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error_tol);
     virtual bool TrySeparate(bitLenInt qubit);
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2);
 
