@@ -10,8 +10,9 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-// TODO: Handle cl_khr_fp16 detection and selection
 #pragma OPENCL EXTENSION cl_nv_fp16 : enable
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+
 #define cmplx half2
 #define cmplx2 half4
 #define cmplx4 half8
@@ -23,6 +24,8 @@
 #define PI_R1 ((real1)M_PI_F)
 #define REAL1_EPSILON ((real1)2e-17h)
 
+// Macro is defined, and functions are undefined, for NVIDIA pragma
+#ifdef __OVERLOADABLE__
 real1 __OVERLOADABLE__ dot(const half2 a, const half2 b) {
     float2 af = (float2)((float)a.x, (float)a.y);
     float2 bf = (float2)((float)b.x, (float)b.y);
@@ -48,3 +51,4 @@ half2 __OVERLOADABLE__ sqrt(const half2 a) {
     float2 af = sqrt((float2)((float)a.x, (float)a.y));
     return (half2)((half)af.x, (half)af.y);
 }
+#endif

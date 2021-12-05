@@ -905,7 +905,7 @@ void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     }
 }
 
-void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1 phase)
+void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
 {
     CHECK_ZERO_SKIP();
 
@@ -926,7 +926,7 @@ void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1 phase)
 
     bool isPhaseParity = (api_call == OCL_API_PHASE_PARITY);
     if (isPhaseParity) {
-        complex phaseFac = std::polar(ONE_R1, phase / 2);
+        complex phaseFac = std::polar(ONE_R1, (real1)(phase / 2));
         ;
         complex cmplxArray[2] = { phaseFac, ONE_CMPLX / phaseFac };
         cl::Event writePhaseEvent;

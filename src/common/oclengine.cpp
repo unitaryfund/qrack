@@ -351,7 +351,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         cl::Program program = MakeProgram(buildFromSource, sources, clBinName, devCntxt);
 
         cl_int buildError =
-            program.build({ all_devices[i] }, "-cl-strict-aliasing -cl-denorms-are-zero -cl-fast-relaxed-math -Werror");
+            program.build({ all_devices[i] }, "-cl-strict-aliasing -cl-denorms-are-zero -cl-fast-relaxed-math");
         if (buildError != CL_SUCCESS) {
             std::cout << "Error building for device #" << i << ": " << buildError << ", "
                       << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(all_devices[i])
