@@ -318,7 +318,7 @@ public:
     /** Get the count of bits in this register */
     bitLenInt GetQubitCount() { return qubitCount; }
 
-    /** Get the maximum number of basis states, namely \f$ n^2 \f$ for \f$ n \f$ qubits*/
+    /** Get the maximum number of basis states, namely \f$ 2^n \f$ for \f$ n \f$ qubits*/
     bitCapInt GetMaxQPower() { return maxQPower; }
 
     /** Generate a random real number between 0 and 1 */
@@ -1205,7 +1205,7 @@ public:
     /**
      * Phase shift gate
      *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
+     * Rotates as \f$ e^{-i \theta/2} \f$ around |1> state
      */
     virtual void RT(real1_f radians, bitLenInt qubitIndex);
 
@@ -1220,7 +1220,7 @@ public:
     /**
      * X axis rotation gate
      *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
+     * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli X axis
      */
     virtual void RX(real1_f radians, bitLenInt qubitIndex);
 
@@ -1234,7 +1234,7 @@ public:
     /**
      * (Identity) Exponentiation gate
      *
-     * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
+     * Applies \f$ e^{-i \theta*I} \f$, exponentiation of the identity operator
      */
     virtual void Exp(real1_f radians, bitLenInt qubitIndex);
 
@@ -1249,7 +1249,7 @@ public:
     /**
      * Dyadic fraction (identity) exponentiation gate
      *
-     * Applies \f$ \exp\left(-i * \pi * numerator * I / 2^{denomPower}\right) \f$, exponentiation of the identity
+     * Applies \f$ \exp\left(-i \pi numerator I / 2^{denomPower}\right) \f$, exponentiation of the identity
      * operator
      */
     virtual void ExpDyad(int numerator, int denomPower, bitLenInt qubitIndex);
@@ -1257,14 +1257,14 @@ public:
     /**
      * Pauli X exponentiation gate
      *
-     * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+     * Applies \f$ e^{-i \theta \sigma_x} \f$, exponentiation of the Pauli X operator
      */
     virtual void ExpX(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Pauli X exponentiation gate
      *
-     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_x / 2^{denomPower}\right) \f$, exponentiation of the Pauli X
+     * Applies \f$ \exp\left(-i \pi numerator \sigma_x / 2^{denomPower}\right) \f$, exponentiation of the Pauli X
      * operator
      */
     virtual void ExpXDyad(int numerator, int denomPower, bitLenInt qubitIndex);
@@ -1272,14 +1272,14 @@ public:
     /**
      * Pauli Y exponentiation gate
      *
-     * Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+     * Applies \f$ e^{-i \theta \sigma_y} \f$, exponentiation of the Pauli Y operator
      */
     virtual void ExpY(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Pauli Y exponentiation gate
      *
-     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_y / 2^{denomPower}\right) \f$, exponentiation of the Pauli Y
+     * Applies \f$ \exp\left(-i \pi numerator \sigma_y / 2^{denomPower}\right) \f$, exponentiation of the Pauli Y
      * operator
      */
     virtual void ExpYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
@@ -1287,14 +1287,14 @@ public:
     /**
      * Pauli Z exponentiation gate
      *
-     * Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+     * Applies \f$ e^{-i \theta \sigma_z} \f$, exponentiation of the Pauli Z operator
      */
     virtual void ExpZ(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Pauli Z exponentiation gate
      *
-     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_z / 2^{denomPower}\right) \f$, exponentiation of the Pauli Z
+     * Applies \f$ \exp\left(-i \pi numerator \sigma_z / 2^{denomPower}\right) \f$, exponentiation of the Pauli Z
      * operator
      */
     virtual void ExpZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
@@ -1302,7 +1302,7 @@ public:
     /**
      * Controlled X axis rotation gate
      *
-     * If "control" is 1, rotates as \f$ e^{-i*\theta/2} \f$ on Pauli x axis.
+     * If "control" is 1, rotates as \f$ e^{-i \theta/2} \f$ on Pauli x axis.
      */
     virtual void CRX(real1_f radians, bitLenInt control, bitLenInt target);
 
@@ -1316,7 +1316,7 @@ public:
     /**
      * Y axis rotation gate
      *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
+     * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli y axis.
      */
     virtual void RY(real1_f radians, bitLenInt qubitIndex);
 
@@ -1330,7 +1330,7 @@ public:
     /**
      * Controlled Y axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
+     * If "control" is set to 1, rotates as \f$ e^{-i \theta/2} \f$ around
      * Pauli Y axis.
      */
     virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target);
@@ -1370,8 +1370,8 @@ public:
         const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
 
     /**
-     * If the target qubit set parity is odd, this applies a phase factor of e^{i angle}. If the target qubit set parity
-     * is even, this applies the conjugate, e^{-i angle}.
+     * If the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$. If the target qubit set parity
+     * is even, this applies the conjugate, \f$e^{-i angle}\f$.
      */
     virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
     {
@@ -1379,8 +1379,8 @@ public:
     }
 
     /**
-     * If the controls are set and the target qubit set parity is odd, this applies a phase factor of e^{i angle}. If
-     * the controls are set and the target qubit set parity is even, this applies the conjugate, e^{-i angle}.
+     * If the controls are set and the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$. If
+     * the controls are set and the target qubit set parity is even, this applies the conjugate, \f$e^{-i angle}\f$.
      * Otherwise, do nothing if any control is not set.
      */
     virtual void CUniformParityRZ(
@@ -1389,21 +1389,21 @@ public:
     /**
      * Z axis rotation gate
      *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
+     * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli Z axis.
      */
     virtual void RZ(real1_f radians, bitLenInt qubitIndex);
 
     /**
      * Dyadic fraction Z axis rotation gate
      *
-     * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Z axis.
+     * Rotates as \f$ \exp\left(i \pi numerator / 2^{denomPower}\right) \f$ around Pauli Z axis.
      */
     virtual void RZDyad(int numerator, int denomPower, bitLenInt qubitIndex);
 
     /**
      * Controlled Z axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
+     * If "control" is set to 1, rotates as \f$ e^{-i \theta/2} \f$ around
      * Pauli Zaxis.
      */
     virtual void CRZ(real1_f radians, bitLenInt control, bitLenInt target);
@@ -1411,7 +1411,7 @@ public:
     /**
      * Controlled dyadic fraction Z axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Z
+     * If "control" is set to 1, rotates as \f$ \exp\left(i \pi numerator / 2^{denomPower}\right) \f$ around Pauli Z
      * axis.
      */
     virtual void CRZDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
@@ -1419,7 +1419,7 @@ public:
     /**
      * Controlled "phase shift gate"
      *
-     * If control bit is set to 1, rotates target bit as \f$ e^{-i*\theta/2}
+     * If control bit is set to 1, rotates target bit as \f$ e^{-i \theta/2}
      * \f$ around |1> state.
      */
 
@@ -1592,7 +1592,7 @@ public:
     /**
      * Bitwise phase shift gate
      *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around |1> state
+     * Rotates as \f$ e^{-i \theta/2} \f$ around |1> state
      */
     virtual void RT(real1_f radians, bitLenInt start, bitLenInt length);
 
@@ -1607,7 +1607,7 @@ public:
     /**
      * Bitwise X axis rotation gate
      *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli X axis
+     * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli X axis
      */
     virtual void RX(real1_f radians, bitLenInt start, bitLenInt length);
 
@@ -1621,7 +1621,7 @@ public:
     /**
      * Bitwise controlled X axis rotation gate
      *
-     * If "control" is 1, rotates as \f$ e^{-i*\theta/2} \f$ on Pauli x axis.
+     * If "control" is 1, rotates as \f$ e^{-i \theta/2} \f$ on Pauli x axis.
      */
     virtual void CRX(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length);
 
@@ -1635,7 +1635,7 @@ public:
     /**
      * Bitwise Y axis rotation gate
      *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli y axis.
+     * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli y axis.
      */
     virtual void RY(real1_f radians, bitLenInt start, bitLenInt length);
 
@@ -1650,7 +1650,7 @@ public:
     /**
      * Bitwise controlled Y axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
+     * If "control" is set to 1, rotates as \f$ e^{-i \theta/2} \f$ around
      * Pauli Y axis.
      */
     virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length);
@@ -1666,7 +1666,7 @@ public:
     /**
      * Bitwise Z axis rotation gate
      *
-     * Rotates as \f$ e^{-i*\theta/2} \f$ around Pauli Z axis.
+     * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli Z axis.
      */
     virtual void RZ(real1_f radians, bitLenInt start, bitLenInt length);
 
@@ -1680,7 +1680,7 @@ public:
     /**
      * Bitwise controlled Z axis rotation gate
      *
-     * If "control" is set to 1, rotates as \f$ e^{-i*\theta/2} \f$ around
+     * If "control" is set to 1, rotates as \f$ e^{-i \theta/2} \f$ around
      * Pauli Zaxis.
      */
     virtual void CRZ(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length);
@@ -1696,7 +1696,7 @@ public:
     /**
      * Bitwise controlled "phase shift gate"
      *
-     * If control bit is set to 1, rotates target bit as \f$ e^{-i*\theta/2}
+     * If control bit is set to 1, rotates target bit as \f$ e^{-i \theta/2}
      * \f$ around |1> state.
      */
     virtual void CRT(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length);
@@ -1712,14 +1712,14 @@ public:
     /**
      * Bitwise (identity) exponentiation gate
      *
-     * Applies \f$ e^{-i*\theta*I} \f$, exponentiation of the identity operator
+     * Applies \f$ e^{-i \theta*I} \f$, exponentiation of the identity operator
      */
     virtual void Exp(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise Dyadic fraction (identity) exponentiation gate
      *
-     * Applies \f$ \exp\left(-i * \pi * numerator * I / 2^{denomPower}\right) \f$, exponentiation of the identity
+     * Applies \f$ \exp\left(-i \pi numerator I / 2^{denomPower}\right) \f$, exponentiation of the identity
      * operator
      */
     virtual void ExpDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
@@ -1727,14 +1727,14 @@ public:
     /**
      * Bitwise Pauli X exponentiation gate
      *
-     * Applies \f$ e^{-i*\theta*\sigma_x} \f$, exponentiation of the Pauli X operator
+     * Applies \f$ e^{-i \theta \sigma_x} \f$, exponentiation of the Pauli X operator
      */
     virtual void ExpX(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise Dyadic fraction Pauli X exponentiation gate
      *
-     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_x / 2^{denomPower}\right) \f$, exponentiation of the Pauli X
+     * Applies \f$ \exp\left(-i \pi numerator \sigma_x / 2^{denomPower}\right) \f$, exponentiation of the Pauli X
      * operator
      */
     virtual void ExpXDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
@@ -1742,14 +1742,14 @@ public:
     /**
      * Bitwise Pauli Y exponentiation gate
      *
-     * Applies \f$ e^{-i*\theta*\sigma_y} \f$, exponentiation of the Pauli Y operator
+     * Applies \f$ e^{-i \theta \sigma_y} \f$, exponentiation of the Pauli Y operator
      */
     virtual void ExpY(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise Dyadic fraction Pauli Y exponentiation gate
      *
-     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_y / 2^{denomPower}\right) \f$, exponentiation of the Pauli Y
+     * Applies \f$ \exp\left(-i \pi numerator \sigma_y / 2^{denomPower}\right) \f$, exponentiation of the Pauli Y
      * operator
      */
     virtual void ExpYDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
@@ -1757,14 +1757,14 @@ public:
     /**
      * Bitwise Pauli Z exponentiation gate
      *
-     * Applies \f$ e^{-i*\theta*\sigma_z} \f$, exponentiation of the Pauli Z operator
+     * Applies \f$ e^{-i \theta \sigma_z} \f$, exponentiation of the Pauli Z operator
      */
     virtual void ExpZ(real1_f radians, bitLenInt start, bitLenInt length);
 
     /**
      * Bitwise Dyadic fraction Pauli Z exponentiation gate
      *
-     * Applies \f$ \exp\left(-i * \pi * numerator * \sigma_z / 2^{denomPower}\right) \f$, exponentiation of the Pauli Z
+     * Applies \f$ \exp\left(-i \pi numerator \sigma_z / 2^{denomPower}\right) \f$, exponentiation of the Pauli Z
      * operator
      */
     virtual void ExpZDyad(int numerator, int denomPower, bitLenInt start, bitLenInt length);
