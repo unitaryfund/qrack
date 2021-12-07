@@ -300,11 +300,10 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     allProbsArray.reset();
 
     bitCapInt lastPerm = maskMaxQPower - 1U;
-    real1 maskProb, cumulativeProb;
     std::map<bitCapInt, int> results;
     for (unsigned int shot = 0; shot < shots; shot++) {
-        maskProb = Rand();
-        cumulativeProb = ZERO_R1;
+        real1 maskProb = Rand();
+        real1 cumulativeProb = ZERO_R1;
         for (bitCapIntOcl j = 0; j < maskMaxQPower; j++) {
             cumulativeProb += maskProbsArray[j];
             if ((maskProb <= cumulativeProb) || (j == lastPerm)) {
