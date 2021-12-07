@@ -12,6 +12,8 @@
 
 #include "qinterface.hpp"
 
+#include <algorithm>
+
 namespace Qrack {
 
 #define REG_GATE_1(gate)                                                                                               \
@@ -785,25 +787,29 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         }
         maskProbsArray[maskPerm] += allProbsArray[j];
     }
-
     allProbsArray.reset();
 
-    bitCapInt lastPerm = maskMaxQPower - 1U;
+    for (bitCapIntOcl j = 1U; j < maskMaxQPower; j++) {
+        maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
+    }
+
     std::map<bitCapInt, int> results;
     for (unsigned int shot = 0; shot < shots; shot++) {
         real1 maskProb = (real1)Rand();
-        real1 cumulativeProb = ZERO_R1;
-        for (bitCapIntOcl j = 0; j < maskMaxQPower; j++) {
-            cumulativeProb += maskProbsArray[j];
-            if ((maskProb <= cumulativeProb) || (j == lastPerm)) {
-                auto result = results.find(j);
-                if (result == results.end()) {
-                    results[j] = 1;
-                } else {
-                    result->second++;
-                }
-                break;
-            }
+        real1* bound = std::upper_bound(maskProbsArray.get(), maskProbsArray.get() + maskMaxQPower, maskProb);
+        size_t dist = bound - maskProbsArray.get();
+        if (dist >= maskMaxQPower) {
+            bound--;
+        }
+        while (dist && maskProbsArray[dist - 1U] == maskProb) {
+            dist--;
+        }
+
+        auto result = results.find(dist);
+        if (result == results.end()) {
+            results[dist] = 1;
+        } else {
+            result->second++;
         }
     }
 
