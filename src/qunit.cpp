@@ -1738,8 +1738,6 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
         // Release unitResults memory:
         unitResults = std::map<bitCapInt, int>();
 
-        std::map<bitCapInt, int> nCombinedResults;
-
         // If either map is fully |0>, nothing changes (after the swap).
         if ((topLevelResults.begin()->first == 0) && (topLevelResults[0] == (int)shots)) {
             continue;
@@ -1754,6 +1752,8 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
             std::swap(topLevelResults, combinedResults);
         }
         // (Since swapped...)
+
+        std::map<bitCapInt, int> nCombinedResults;
 
         // If either map has exactly 1 key, (therefore with `shots` value,) pass it through without a "shuffle."
         if (topLevelResults.size() == 1U) {
