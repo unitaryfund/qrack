@@ -2788,8 +2788,8 @@ void QUnit::AntiCZ(bitLenInt control, bitLenInt target)
 
     if (!freezeBasis2Qb) {
         RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
             tShard.AddAntiPhaseAngles(&cShard, -ONE_CMPLX, ONE_CMPLX);
