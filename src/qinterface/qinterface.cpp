@@ -286,10 +286,9 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     GetProbs(allProbsArray.get());
 
     bitCapInt maskMaxQPower = pow2(qPowerCount);
-    bitCapIntOcl maskPerm;
     std::unique_ptr<real1[]> maskProbsArray(new real1[(bitCapIntOcl)maskMaxQPower]());
     for (bitCapIntOcl j = 0; j < maxQPower; j++) {
-        maskPerm = 0;
+        bitCapIntOcl maskPerm = 0;
         for (bitLenInt i = 0; i < qPowerCount; i++) {
             if (j & maskMap[i]) {
                 maskPerm |= pow2Ocl(i);
