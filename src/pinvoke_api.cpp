@@ -7,16 +7,17 @@
 // for details.
 
 #include "pinvoke_api.hpp"
-#include "hamiltonian.hpp"
 
-// for details.
+// "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
+#include "qfactory.hpp"
+
+#if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
+#include "hamiltonian.hpp"
+#endif
 
 #include <map>
 #include <mutex>
 #include <vector>
-
-// "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
-#include "qfactory.hpp"
 
 #define META_LOCK_GUARD()                                                                                              \
     const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                    \
