@@ -5461,6 +5461,115 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_20", "[mirror]")
     REQUIRE(qftReg->MAll() == 2);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_21", "[mirror]")
+{
+    qftReg = MakeEngine(6);
+    qftReg->SetPermutation(34);
+
+    qftReg->Z(0);
+    qftReg->H(1);
+    qftReg->T(2);
+    qftReg->IT(3);
+    qftReg->S(4);
+    qftReg->X(5);
+    qftReg->CNOT(4, 5);
+    qftReg->AntiCNOT(2, 0);
+    qftReg->CNOT(1, 3);
+    qftReg->T(0);
+    qftReg->T(1);
+    qftReg->IS(2);
+    qftReg->IT(3);
+    qftReg->Y(4);
+    qftReg->H(5);
+    qftReg->AntiCY(0, 4);
+    qftReg->AntiCZ(1, 3);
+    qftReg->AntiCNOT(5, 2);
+    qftReg->Y(0);
+    qftReg->Y(1);
+    qftReg->Y(2);
+    qftReg->Y(3);
+    qftReg->Z(4);
+    qftReg->T(5);
+    qftReg->CCNOT(4, 2, 5);
+    qftReg->CY(1, 3);
+    qftReg->T(0);
+    qftReg->X(1);
+    qftReg->Y(2);
+    qftReg->T(3);
+    qftReg->X(4);
+    qftReg->IS(5);
+    qftReg->AntiCCY(0, 2, 4);
+    qftReg->AntiCCY(1, 3, 5);
+    qftReg->IT(0);
+    qftReg->T(1);
+    qftReg->IS(2);
+    qftReg->IT(3);
+    qftReg->H(4);
+    qftReg->X(5);
+    qftReg->CCZ(3, 1, 4);
+    qftReg->AntiCCNOT(5, 0, 2);
+    qftReg->IT(0);
+    qftReg->H(1);
+    qftReg->X(2);
+    qftReg->S(3);
+    qftReg->Z(4);
+    qftReg->Z(5);
+    qftReg->AntiCNOT(5, 1);
+    qftReg->AntiCCNOT(2, 3, 0);
+    qftReg->AntiCCNOT(2, 3, 0);
+    qftReg->AntiCNOT(5, 1);
+    qftReg->Z(5);
+    qftReg->Z(4);
+    qftReg->IS(3);
+    qftReg->X(2);
+    qftReg->H(1);
+    qftReg->T(0);
+    qftReg->AntiCCNOT(5, 0, 2);
+    qftReg->CCZ(3, 1, 4);
+    qftReg->X(5);
+    qftReg->H(4);
+    qftReg->T(3);
+    qftReg->S(2);
+    qftReg->IT(1);
+    qftReg->T(0);
+    qftReg->AntiCCY(1, 3, 5);
+    qftReg->AntiCCY(0, 2, 4);
+    qftReg->S(5);
+    qftReg->X(4);
+    qftReg->IT(3);
+    qftReg->Y(2);
+    qftReg->X(1);
+    qftReg->IT(0);
+    qftReg->CY(1, 3);
+    qftReg->CCNOT(4, 2, 5);
+    qftReg->IT(5);
+    qftReg->Z(4);
+    qftReg->Y(3);
+    qftReg->Y(2);
+    qftReg->Y(1);
+    qftReg->Y(0);
+    qftReg->AntiCNOT(5, 2);
+    qftReg->AntiCZ(1, 3);
+    qftReg->AntiCY(0, 4);
+    qftReg->H(5);
+    qftReg->Y(4);
+    qftReg->T(3);
+    qftReg->S(2);
+    qftReg->IT(1);
+    qftReg->IT(0);
+    qftReg->CNOT(1, 3);
+    qftReg->AntiCNOT(2, 0);
+    qftReg->CNOT(4, 5);
+    qftReg->X(5);
+    qftReg->IS(4);
+    qftReg->T(3);
+    qftReg->IT(2);
+    qftReg->H(1);
+    qftReg->Z(0);
+
+    REQUIRE(qftReg->MAll() == 34);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
