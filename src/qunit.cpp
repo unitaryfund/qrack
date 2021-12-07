@@ -328,7 +328,7 @@ complex QUnit::GetAmplitudeOrProb(const bitCapInt& perm, const bool& isProb)
             perms[shard.unit] = 0U;
         }
         if ((perm >> (bitCapIntOcl)i) & ONE_BCI) {
-            perms[shards[i].unit] |= pow2(shards[i].mapped);
+            perms[shard.unit] |= pow2(shard.mapped);
         }
     }
 
@@ -1319,10 +1319,11 @@ real1_f QUnit::ProbParity(const bitCapInt& mask)
 
         RevertBasis1Qb(qIndices[i]);
 
-        if (units.find(shard.unit) == units.end()) {
+        auto unit = units.find(shard.unit);
+        if (unit == units.end()) {
             units[shard.unit] = pow2(shard.mapped);
         } else {
-            units[shard.unit] |= pow2(shard.mapped);
+            unit->second |= pow2(shard.mapped);
         }
     }
 

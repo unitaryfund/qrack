@@ -796,10 +796,11 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         for (bitCapIntOcl j = 0; j < maskMaxQPower; j++) {
             cumulativeProb += maskProbsArray[j];
             if ((maskProb <= cumulativeProb) || (j == lastPerm)) {
-                if (results.find(j) == results.end()) {
+                auto result = results.find(j);
+                if (result == results.end()) {
                     results[j] = 1;
                 } else {
-                    results[j]++;
+                    result->second++;
                 }
                 break;
             }
