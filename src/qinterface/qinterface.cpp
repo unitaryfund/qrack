@@ -801,8 +801,10 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         if (dist >= maskMaxQPower) {
             bound--;
         }
-        while (dist && maskProbsArray[dist - 1U] == maskProb) {
-            dist--;
+        if (maskProb > 0) {
+            while (dist && maskProbsArray[dist - 1U] == maskProb) {
+                dist--;
+            }
         }
 
         auto result = results.find(dist);
