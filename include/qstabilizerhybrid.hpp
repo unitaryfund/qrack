@@ -902,7 +902,7 @@ public:
 
         return engine->TrySeparate(qubit1, qubit2);
     }
-    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
+    virtual bool TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error_tol)
     {
         if (stabilizer) {
             std::vector<bitLenInt> q(length);
