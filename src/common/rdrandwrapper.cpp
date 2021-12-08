@@ -140,11 +140,9 @@ bool RdRandom::SupportsRDRAND()
 #endif
 }
 
+#if ENABLE_RNDFILE
 real1_f RdRandom::Next()
 {
-    real1_f res = ZERO_R1;
-    real1_f part = ONE_R1;
-#if ENABLE_RNDFILE
     if (!didInit) {
         while ((data1.size() - dataOffset) < 4) {
             if (_readNextRandDataFile(fileOffset, data1)) {
@@ -176,27 +174,35 @@ real1_f RdRandom::Next()
         }
         isPageTwo = !isPageTwo;
     }
-    size_t precision = sizeof(real1_f) - 1U;
-    for (unsigned int i = 0; i < precision; i++) {
+
+    const size_t bytePrecision = sizeof(real1_f);
+    real1_f res = ZERO_R1;
+    real1_f part = ONE_R1;
+    for (unsigned i = 0U; i < bytePrecision; i++) {
         part /= 256;
         res += part * (data1[dataOffset + i] + 128);
     }
     dataOffset += 4;
     return res;
+}
 #else
+real1_f RdRandom::Next()
+{
     unsigned int v;
     if (!getRdRand(&v)) {
-        throw "Failed to get hardware RNG number.";
+        throw std::runtime_error("Failed to get hardware RNG number.");
     }
-    v &= 0x7fffffff;
-    for (int i = 0; i < 31; i++) {
+
+    real1_f res = ZERO_R1;
+    real1_f part = ONE_R1;
+    for (unsigned i = 0U; i < 32U; i++) {
         part /= 2;
-        if (v & (1U << i)) {
+        if ((v >> i) & 1U) {
             res += part;
         }
     }
-#endif
     return res;
 }
+#endif
 
 } // namespace Qrack
