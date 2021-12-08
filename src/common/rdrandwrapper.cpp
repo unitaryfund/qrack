@@ -201,6 +201,20 @@ real1_f RdRandom::Next()
             res += part;
         }
     }
+
+#if FPPOW > 5
+    if (!getRdRand(&v)) {
+        throw std::runtime_error("Failed to get hardware RNG number.");
+    }
+
+    for (unsigned i = 0U; i < 32U; i++) {
+        part /= 2;
+        if ((v >> i) & 1U) {
+            res += part;
+        }
+    }
+#endif
+
     return res;
 }
 #endif
