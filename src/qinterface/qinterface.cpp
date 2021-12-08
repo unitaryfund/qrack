@@ -314,11 +314,33 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         return results;
     }
 
-    for (bitCapIntOcl j = 1U; j < maskMaxQPower; j++) {
+    bitCapIntOcl singlePerm = (maskProbsArray[0] > FP_NORM_EPSILON) ? 0U : maskMaxQPower;
+    bitCapIntOcl j;
+    for (j = 1U; j < maskMaxQPower; j++) {
+        if (maskProbsArray[j] > FP_NORM_EPSILON) {
+            if (singlePerm == maskMaxQPower) {
+                singlePerm = j;
+            } else {
+                break;
+            }
+        }
+
+        maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
+    }
+
+    bool isSinglePerm = (j == maskMaxQPower);
+
+    for (; j < maskMaxQPower; j++) {
         maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
     }
 
     std::map<bitCapInt, int> results;
+
+    if (isSinglePerm) {
+        results[singlePerm] = shots;
+        return results;
+    }
+
     for (unsigned int shot = 0; shot < shots; shot++) {
         real1 maskProb = (real1)Rand();
         real1* bound = std::upper_bound(maskProbsArray.get(), maskProbsArray.get() + maskMaxQPower, maskProb);
