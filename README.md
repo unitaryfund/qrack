@@ -239,7 +239,7 @@ Prior to the Qrack v7 API, a larger set of convenience methods were included in 
 
 `ENABLE_ROT_API` adds many less common **rotation** methods to the API, like dyadic fraction rotations. These never found common use in the protected API, while they add significant size to compiled binaries.
 
-"BCD" arithmetic ("binary coded decimal") is necessary to support emulation based on the MOS-6502. However, this is an outmoded form of binary arithmetic for most or all conceivable purposes for which one would want a quantum computer. (It stores integers as base 10 digits, in binary.) On by default, turning this option off will slightly reduce binary size by excising BCD ALU operations from the API.
+"BCD" arithmetic ("binary coded decimal") is necessary to support emulation based on the MOS-6502. However, this is an outmoded form of binary arithmetic for most or all conceivable purposes for which one would want a quantum computer. (It stores integers as base 10 digits, in binary.) Off by default, turning this option on will slightly increase binary size by including BCD ALU operations from the API, but this is necessary to support the VM6502Q chip-like emulator project.
 
 ## Copyright, License, and Acknowledgements
 
