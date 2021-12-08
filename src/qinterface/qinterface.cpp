@@ -817,19 +817,17 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
     }
 
-    bool isSinglePerm = (j == maskMaxQPower);
+    if (j == maskMaxQPower) {
+        std::map<bitCapInt, int> results;
+        results[singlePerm] = shots;
+        return results;
+    }
 
     for (; j < maskMaxQPower; j++) {
         maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
     }
 
     std::map<bitCapInt, int> results;
-
-    if (isSinglePerm) {
-        results[singlePerm] = shots;
-        return results;
-    }
-
     for (unsigned int shot = 0; shot < shots; shot++) {
         real1 maskProb = (real1)Rand();
         real1* bound = std::upper_bound(maskProbsArray.get(), maskProbsArray.get() + maskMaxQPower, maskProb);
@@ -853,6 +851,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
 
     return results;
 }
+
 
 bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol)
 {
