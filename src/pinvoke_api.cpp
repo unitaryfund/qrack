@@ -1121,7 +1121,7 @@ MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q)
 MICROSOFT_QUANTUM_DECL unsigned MAll(_In_ unsigned sid)
 {
     SIMULATOR_LOCK_GUARD_INT(sid)
-    return simulators[sid]->MAll();
+    return (unsigned)simulators[sid]->MAll();
 }
 
 /**
