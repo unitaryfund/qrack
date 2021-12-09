@@ -125,7 +125,7 @@ int main()
     bitCapIntOcl res1 = f1;
     bitCapIntOcl res2 = f2;
     if (((f1 * f2) != toFactor) && ((f1 * f2) > 1) &&
-        (((int)((ONE_R1 * toFactor) / (f1 * f2)) * f1 * f2) == (int)toFactor)) {
+        (((uint64_t)((ONE_R1 * toFactor) / (f1 * f2)) * f1 * f2) == toFactor)) {
         res1 = f1 * f2;
         res2 = toFactor / (f1 * f2);
     }
