@@ -1112,6 +1112,16 @@ MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q)
 }
 
 /**
+ * (External API) Measure all bits separately in |0>/|1> basis, and return the result in low-to-high order corresponding
+ * with first-to-last in original order of allocation.
+ */
+MICROSOFT_QUANTUM_DECL unsigned MAll(_In_ unsigned sid)
+{
+    SIMULATOR_LOCK_GUARD_INT(sid)
+    return simulators[sid]->MAll();
+}
+
+/**
  * (External API) Measure bits in specified Pauli bases
  */
 MICROSOFT_QUANTUM_DECL unsigned Measure(
