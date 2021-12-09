@@ -350,7 +350,7 @@ public:
         }
     }
 
-    bool is_sparse() { return (amplitudes.size() < (capacity >> ONE_BCI)); }
+    bool is_sparse() { return (amplitudes.size() < (size_t)(capacity >> ONE_BCI)); }
 
     std::vector<bitCapIntOcl> iterable()
     {

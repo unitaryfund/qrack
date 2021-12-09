@@ -1391,9 +1391,10 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     Dispatch(maxQPower, [this, greaterPerm, start, length, flagIndex] {
         bitCapIntOcl regMask = bitRegMaskOcl(start, length);
         bitCapIntOcl flagMask = pow2Ocl(flagIndex);
+        bitCapIntOcl greaterPermOcl = (bitCapIntOcl)greaterPerm;
 
         par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            if ((((lcv & regMask) >> start) < greaterPerm) & ((lcv & flagMask) == flagMask))
+            if ((((lcv & regMask) >> start) < greaterPermOcl) & ((lcv & flagMask) == flagMask))
                 stateVec->write(lcv, -stateVec->read(lcv));
         });
     });
@@ -1406,13 +1407,13 @@ void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
 
     Dispatch(maxQPower, [this, greaterPerm, start, length] {
         bitCapIntOcl regMask = bitRegMaskOcl(start, length);
+        bitCapIntOcl greaterPermOcl = (bitCapIntOcl)greaterPerm;
 
         par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            if (((lcv & regMask) >> start) < greaterPerm)
+            if (((lcv & regMask) >> start) < greaterPermOcl)
                 stateVec->write(lcv, -stateVec->read(lcv));
         });
     });
 }
 #endif
-
 }; // namespace Qrack
