@@ -22,7 +22,10 @@
 #include <memory>
 #include <random>
 
-#if UINTPOW < 5
+#if UINTPOW < 4
+#define ONE_BCI ((uint8_t)1U)
+#define bitCapIntOcl uint8_t
+#elif UINTPOW < 5
 #define ONE_BCI ((uint16_t)1U)
 #define bitCapIntOcl uint16_t
 #elif UINTPOW < 6

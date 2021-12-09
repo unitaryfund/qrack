@@ -142,11 +142,12 @@ TEST_CASE("test_push_apart_bits")
     REQUIRE(pushApartBits(perm, skipPowers, 1U) == 0x23U);
 }
 
+#if UINTPOW > 3
 TEST_CASE("test_qengine_cpu_par_for")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
-    const int NUM_ENTRIES = 2000;
+    const bitCapIntOcl NUM_ENTRIES = 2000;
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
 
@@ -174,7 +175,7 @@ TEST_CASE("test_qengine_cpu_par_for_skip")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
-    const int NUM_ENTRIES = 2000;
+    const bitCapIntOcl NUM_ENTRIES = 2000;
     const int NUM_CALLS = 1000;
 
     std::atomic_bool hit[NUM_ENTRIES];
@@ -232,7 +233,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
 {
     QEngineCPUPtr qengine = std::make_shared<QEngineCPU>(1, 0);
 
-    const int NUM_ENTRIES = 2000;
+    const bitCapIntOcl NUM_ENTRIES = 2000;
 
     std::atomic_bool hit[NUM_ENTRIES];
     std::atomic_int calls;
@@ -258,6 +259,7 @@ TEST_CASE("test_qengine_cpu_par_for_mask")
         calls++;
     });
 }
+#endif
 
 TEST_CASE("test_exp2x2_log2x2")
 {
