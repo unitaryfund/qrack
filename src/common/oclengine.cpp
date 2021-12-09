@@ -16,7 +16,9 @@
 #include <iostream>
 #include <memory>
 
-#if UINTPOW < 5
+#if UINTPOW < 4
+#include "qheader_uint8cl.hpp"
+#elif UINTPOW < 5
 #include "qheader_uint16cl.hpp"
 #elif UINTPOW < 6
 #include "qheader_uint32cl.hpp"
@@ -304,8 +306,9 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
-
-#if UINTPOW < 5
+#if UINTPOW < 4
+    sources.push_back({ (const char*)qheader_uint8_cl, (long unsigned int)qheader_uint8_cl_len });
+#elif UINTPOW < 5
     sources.push_back({ (const char*)qheader_uint16_cl, (long unsigned int)qheader_uint16_cl_len });
 #elif UINTPOW < 6
     sources.push_back({ (const char*)qheader_uint32_cl, (long unsigned int)qheader_uint32_cl_len });

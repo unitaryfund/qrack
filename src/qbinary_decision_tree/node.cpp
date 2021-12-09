@@ -252,11 +252,21 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
 // The reason for this design choice is that the memory per node for "Stride" and "numCores" attributes are on order of
 // all other RAM per node in total. Remember that trees are recursively constructed with exponential scaling, and the
 // memory per node should be thought of as akin to the memory per Schrödinger amplitude.
+#if UINTPOW < 4
+void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
+{
+    bitCapIntOcl itemCount = end - begin;
+    bitCapIntOcl maxLcv = begin + itemCount;
+    for (bitCapIntOcl j = begin; j < maxLcv; j++) {
+        j |= fn(j, 0);
+    }
+}
+#else
 void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
 {
     bitCapIntOcl itemCount = end - begin;
 
-    const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)10U);
+    const bitCapIntOcl Stride = (bitCapIntOcl)(ONE_BCI << (bitCapIntOcl)10U);
     const unsigned numCores = std::thread::hardware_concurrency();
 
     if (itemCount < (Stride * numCores)) {
@@ -272,7 +282,7 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
     std::mutex updateMutex;
     for (unsigned cpu = 0; cpu != numCores; ++cpu) {
         futures[cpu] = std::async(std::launch::async, [cpu, &idx, &begin, &itemCount, &updateMutex, fn]() {
-            const bitCapIntOcl Stride = (ONE_BCI << (bitCapIntOcl)10U);
+            const bitCapIntOcl Stride = (bitCapIntOcl)(ONE_BCI << (bitCapIntOcl)10U);
             for (;;) {
                 bitCapIntOcl i;
                 if (true) {
@@ -305,6 +315,7 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
         futures[cpu].get();
     }
 }
+#endif
 #else
 void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
 {
