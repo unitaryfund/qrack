@@ -13,7 +13,6 @@
 #pragma once
 
 #include "common/oclengine.hpp"
-#include "common/parallel_for.hpp"
 #include "qengine_opencl.hpp"
 #include "qinterface.hpp"
 #include "qunit.hpp"
@@ -61,7 +60,7 @@ struct DeviceInfo {
 class QUnitMulti;
 typedef std::shared_ptr<QUnitMulti> QUnitMultiPtr;
 
-class QUnitMulti : public QUnit, public ParallelFor {
+class QUnitMulti : public QUnit {
 
 protected:
     size_t defaultDeviceID;
