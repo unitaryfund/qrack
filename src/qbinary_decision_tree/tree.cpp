@@ -312,7 +312,7 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
         for (bitLenInt j = 0; j < qbCount; j++) {
             if (IS_NORM_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
-                return pow2Ocl(qbCount - j) - ONE_BCI;
+                return (bitCapIntOcl)(pow2Ocl(qbCount - j) - ONE_BCI);
             }
             leaf = leaf->branches[SelectBit(i, qbCount - (j + 1U))];
         }
@@ -387,7 +387,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
         for (j = 0; j < start; j++) {
             if (IS_NORM_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
-                return pow2Ocl(start - j) - ONE_BCI;
+                return (bitCapIntOcl)(pow2Ocl(start - j) - ONE_BCI);
             }
             leaf = leaf->branches[SelectBit(i, start - (j + 1U))];
         }
@@ -645,7 +645,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
             leaf1->SetZero();
 
             // WARNING: Mutates loop control variable!
-            return pow2Ocl(remainder - (j + 1U)) - ONE_BCI;
+            return (bitCapIntOcl)(pow2Ocl(remainder - (j + 1U)) - ONE_BCI);
         }
 
         if ((i & highControlMask) != maskTarget) {
@@ -693,7 +693,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(const complex* lMtr
             for (bitLenInt j = 0; j < target; j++) {
                 if (IS_NORM_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
-                    return pow2Ocl(target - j) - ONE_BCI;
+                    return (bitCapIntOcl)(pow2Ocl(target - j) - ONE_BCI);
                 }
                 leaf->Branch();
                 leaf = leaf->branches[SelectBit(i, target - (j + 1U))];

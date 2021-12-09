@@ -1323,5 +1323,4 @@ void QEngineCPU::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
         stateVec->write(lcv | carryInSumOutMask | carryOutMask, ins1c1);
     });
 }
-
 }; // namespace Qrack

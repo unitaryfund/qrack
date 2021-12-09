@@ -65,7 +65,7 @@ int main()
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
 
-    bitLenInt qubitCount = ceil(log2(toFactor));
+    bitLenInt qubitCount = ceil(Qrack::log2(toFactor));
 
     // Choose a base at random:
     std::random_device rand_dev;
@@ -125,7 +125,7 @@ int main()
     bitCapIntOcl res1 = f1;
     bitCapIntOcl res2 = f2;
     if (((f1 * f2) != toFactor) && ((f1 * f2) > 1) &&
-        (((int)((ONE_R1 * toFactor) / (f1 * f2)) * f1 * f2) == toFactor)) {
+        (((int)((ONE_R1 * toFactor) / (f1 * f2)) * f1 * f2) == (int)toFactor)) {
         res1 = f1 * f2;
         res2 = toFactor / (f1 * f2);
     }
