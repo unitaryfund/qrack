@@ -773,9 +773,6 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         maskMap[i] = qPowers[i];
     }
 
-    std::unique_ptr<real1[]> allProbsArray(new real1[(bitCapIntOcl)maxQPower]);
-    GetProbs(allProbsArray.get());
-
     bitCapInt maskMaxQPower = pow2(qPowerCount);
     std::unique_ptr<real1[]> maskProbsArray(new real1[(bitCapIntOcl)maskMaxQPower]());
     for (bitCapIntOcl j = 0; j < maxQPower; j++) {
@@ -785,9 +782,8 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
                 maskPerm |= pow2Ocl(i);
             }
         }
-        maskProbsArray[maskPerm] += allProbsArray[j];
+        maskProbsArray[maskPerm] += ProbAll(j);
     }
-    allProbsArray.reset();
 
     if (shots == 1U) {
         real1 maskProb = (real1)Rand();
@@ -851,7 +847,6 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
 
     return results;
 }
-
 
 bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol)
 {
