@@ -782,7 +782,13 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         for (bitCapIntOcl j = 0U; j < maskMaxQPower; j++) {
             cumulativeProb += ProbAll(j);
             if (cumulativeProb >= maskProb) {
-                results[j] = 1U;
+                bitCapIntOcl maskPerm = 0;
+                for (bitLenInt i = 0; i < qPowerCount; i++) {
+                    if (j & maskMap[i]) {
+                        maskPerm |= pow2Ocl(i);
+                    }
+                }
+                results[maskPerm] = 1U;
                 break;
             }
         }
