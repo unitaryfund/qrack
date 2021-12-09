@@ -262,15 +262,14 @@ protected:
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
         bool randomGlobalPhase = true, real1_f norm_thresh = REAL1_EPSILON)
-        : rand_distribution(0.0, 1.0)
+        : qubitCount(n)
+        , maxQPower(pow2(qubitCount))
+        , rand_distribution(0.0, 1.0)
         , hardware_rand_generator(NULL)
         , doNormalize(doNorm)
         , randGlobalPhase(randomGlobalPhase)
         , amplitudeFloor(norm_thresh)
     {
-        qubitCount = n;
-        maxQPower = pow2(qubitCount);
-
 #if !ENABLE_RDRAND
         useHardwareRNG = false;
 #endif
