@@ -120,6 +120,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
 
 // measurements
 MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL unsigned MAll(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL unsigned Measure(
     _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_reads_(n) unsigned* q);
 MICROSOFT_QUANTUM_DECL void MeasureShots(
