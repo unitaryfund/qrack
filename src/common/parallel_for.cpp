@@ -32,16 +32,15 @@
 namespace Qrack {
 
 ParallelFor::ParallelFor()
-    : numCores(1)
-{
 #if ENABLE_ENV_VARS
-    pStride = getenv("QRACK_PSTRIDEPOW")
+    : pStride(getenv("QRACK_PSTRIDEPOW")
         ? ((bitCapIntOcl)ONE_BCI << (bitCapIntOcl)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))))
-        : ((bitCapIntOcl)ONE_BCI << (bitLenInt)PSTRIDEPOW);
+        : ((bitCapIntOcl)ONE_BCI << (bitLenInt)PSTRIDEPOW))
 #else
-    pStride = ((bitCapIntOcl)ONE_BCI << PSTRIDEPOW);
+    : pStride((bitCapIntOcl)ONE_BCI << PSTRIDEPOW)
 #endif
-}
+    , numCores(1)
+{}
 
 void ParallelFor::par_for(const bitCapIntOcl begin, const bitCapIntOcl end, ParallelFunc fn)
 {
