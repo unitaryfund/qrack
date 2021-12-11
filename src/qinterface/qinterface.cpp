@@ -858,12 +858,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
             }
         }
 
-        auto result = results.find(dist);
-        if (result == results.end()) {
-            results[dist] = 1;
-        } else {
-            result->second++;
-        }
+        results[dist]++;
     }
 
     return results;

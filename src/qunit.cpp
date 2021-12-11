@@ -1319,12 +1319,7 @@ real1_f QUnit::ProbParity(const bitCapInt& mask)
 
         RevertBasis1Qb(qIndices[i]);
 
-        auto unit = units.find(shard.unit);
-        if (unit == units.end()) {
-            units[shard.unit] = pow2(shard.mapped);
-        } else {
-            unit->second |= pow2(shard.mapped);
-        }
+        units[shard.unit] |= pow2(shard.mapped);
     }
 
     if (qIndices.size() == 0) {
