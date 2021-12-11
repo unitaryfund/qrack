@@ -56,7 +56,7 @@ bitCapInt intPow(bitCapInt base, bitCapInt power)
         return base;
     }
 
-    bitCapInt tmp = intPow(base, power / 2);
+    bitCapInt tmp = intPow(base, power >> 1U);
     if (power & 1U) {
         return base * tmp * tmp;
     }
@@ -73,7 +73,7 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
         return base;
     }
 
-    bitCapIntOcl tmp = intPowOcl(base, power / 2);
+    bitCapIntOcl tmp = intPowOcl(base, power >> 1U);
     if (power & 1U) {
         return base * tmp * tmp;
     }
