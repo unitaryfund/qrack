@@ -57,7 +57,7 @@ void cl_free(void* toFree)
 
 // See https://stackoverflow.com/questions/1505675/power-of-an-integer-in-c
 #define _INTPOW(type, fn)                                                                                              \
-    type fn(bitCapInt base, bitCapInt power)                                                                           \
+    type fn(type base, type power)                                                                                     \
     {                                                                                                                  \
         if (power == 0U) {                                                                                             \
             return ONE_BCI;                                                                                            \
