@@ -314,9 +314,11 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         return std::map<bitCapInt, int>();
     }
 
+    std::unique_ptr<bitLenInt[]> bitMap(new bitLenInt[qPowerCount]);
     std::vector<bitCapInt> maskMap(qPowerCount);
     for (bitLenInt i = 0; i < qPowerCount; i++) {
         maskMap[i] = qPowers[i];
+        bitMap[i] = log2(qPowers[i]);
     }
 
     bitCapInt maskMaxQPower = pow2(qPowerCount);
@@ -341,16 +343,8 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         return results;
     }
 
-    std::unique_ptr<real1[]> maskProbsArray(new real1[(bitCapIntOcl)maskMaxQPower]());
-    for (bitCapIntOcl j = 0; j < maxQPower; j++) {
-        bitCapIntOcl maskPerm = 0;
-        for (bitLenInt i = 0; i < qPowerCount; i++) {
-            if (j & maskMap[i]) {
-                maskPerm |= pow2Ocl(i);
-            }
-        }
-        maskProbsArray[maskPerm] += ProbAll(j);
-    }
+    std::unique_ptr<real1[]> maskProbsArray(new real1[(bitCapIntOcl)maskMaxQPower]);
+    ProbBitsAll(bitMap.get(), qPowerCount, maskProbsArray.get());
 
     if (shots == 1U) {
         real1 maskProb = (real1)Rand();
@@ -417,9 +411,11 @@ void QInterface::MultiShotMeasureMask(
         return;
     }
 
+    std::unique_ptr<bitLenInt[]> bitMap(new bitLenInt[qPowerCount]);
     std::vector<bitCapInt> maskMap(qPowerCount);
     for (bitLenInt i = 0; i < qPowerCount; i++) {
         maskMap[i] = qPowers[i];
+        bitMap[i] = log2(qPowers[i]);
     }
 
     bitCapInt maskMaxQPower = pow2(qPowerCount);
@@ -443,16 +439,8 @@ void QInterface::MultiShotMeasureMask(
         return;
     }
 
-    std::unique_ptr<real1[]> maskProbsArray(new real1[(bitCapIntOcl)maskMaxQPower]());
-    for (bitCapIntOcl j = 0; j < maxQPower; j++) {
-        bitCapIntOcl maskPerm = 0;
-        for (bitLenInt i = 0; i < qPowerCount; i++) {
-            if (j & maskMap[i]) {
-                maskPerm |= pow2Ocl(i);
-            }
-        }
-        maskProbsArray[maskPerm] += ProbAll(j);
-    }
+    std::unique_ptr<real1[]> maskProbsArray(new real1[(bitCapIntOcl)maskMaxQPower]);
+    ProbBitsAll(bitMap.get(), qPowerCount, maskProbsArray.get());
 
     if (shots == 1U) {
         real1 maskProb = (real1)Rand();
