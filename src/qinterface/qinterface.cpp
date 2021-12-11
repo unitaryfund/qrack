@@ -264,6 +264,21 @@ void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
 
 void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, real1* probsArray)
 {
+    if (length == qubitCount) {
+        bool isOrdered = true;
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            if (bits[i] != i) {
+                isOrdered = false;
+                break;
+            }
+        }
+
+        if (isOrdered) {
+            GetProbs(probsArray);
+            return;
+        }
+    }
+
     std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
 
     std::vector<bitCapInt> bitPowers(length);
