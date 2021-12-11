@@ -1829,9 +1829,20 @@ void QUnit::MultiShotMeasureMask(const bitCapInt* qPowers, bitLenInt qPowerCount
 
     ToPermBasisProb();
 
-    if (shards[0].unit && (shards[0].GetQubitCount() == qubitCount)) {
+    QInterfacePtr unit = shards[log2(qPowers[0])].unit;
+    if (unit) {
         std::unique_ptr<bitCapInt[]> mappedIndices(new bitCapInt[qPowerCount]);
-        for (bitLenInt i = 0; i < qPowerCount; i++) {
+        for (bitLenInt j = 0; j < qubitCount; j++) {
+            if (qPowers[0] == pow2(j)) {
+                mappedIndices[0] = pow2(shards[j].mapped);
+                break;
+            }
+        }
+        for (bitLenInt i = 1U; i < qPowerCount; i++) {
+            if (unit != shards[log2(qPowers[i])].unit) {
+                unit = NULL;
+                break;
+            }
             for (bitLenInt j = 0; j < qubitCount; j++) {
                 if (qPowers[i] == pow2(j)) {
                     mappedIndices[i] = pow2(shards[j].mapped);
@@ -1839,8 +1850,11 @@ void QUnit::MultiShotMeasureMask(const bitCapInt* qPowers, bitLenInt qPowerCount
                 }
             }
         }
-        shards[0].unit->MultiShotMeasureMask(mappedIndices.get(), qPowerCount, shots, shotsArray);
-        return;
+
+        if (unit) {
+            unit->MultiShotMeasureMask(mappedIndices.get(), qPowerCount, shots, shotsArray);
+            return;
+        }
     }
 
     std::map<bitCapInt, int> results = MultiShotMeasureMask(qPowers, qPowerCount, shots);

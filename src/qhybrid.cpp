@@ -38,7 +38,8 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
         bitLenInt pStridePow = PSTRIDEPOW;
 #endif
 
-        bitLenInt cpuQubits = (GetConcurrencyLevel() == 1U) ? pStridePow : (log2(GetConcurrencyLevel() - 1U) + pStridePow + 1U);
+        bitLenInt cpuQubits =
+            (GetConcurrencyLevel() == 1U) ? pStridePow : (log2(GetConcurrencyLevel() - 1U) + pStridePow + 1U);
 
         thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
