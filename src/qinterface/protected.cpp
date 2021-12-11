@@ -11,6 +11,15 @@
 // for details.
 
 #include "qinterface.hpp"
+
+#if ENABLE_COMPLEX_X2
+#if FPPOW == 5
+#include "common/complex8x2simd.hpp"
+#elif FPPOW == 6
+#include "common/complex16x2simd.hpp"
+#endif
+#endif
+
 #include <algorithm>
 
 namespace Qrack {
@@ -70,10 +79,16 @@ _INTPOW(bitCapIntOcl, intPowOcl)
 
 void mul2x2(complex* left, complex* right, complex* out)
 {
-    out[0] = (left[0] * right[0]) + (left[1] * right[2]);
-    out[1] = (left[0] * right[1]) + (left[1] * right[3]);
-    out[2] = (left[2] * right[0]) + (left[3] * right[2]);
-    out[3] = (left[2] * right[1]) + (left[3] * right[3]);
+    complex2 left0(left[0], left[2]);
+    complex2 left1(left[1], left[3]);
+
+    complex2 col = complex2(matrixMul(left0.c2, left1.c2, complex2(right[0], right[2]).c2));
+    out[0] = col.c[0];
+    out[2] = col.c[1];
+
+    col = complex2(matrixMul(left0.c2, left1.c2, complex2(right[1], right[3]).c2));
+    out[1] = col.c[0];
+    out[3] = col.c[1];
 }
 
 void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
