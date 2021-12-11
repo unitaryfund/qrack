@@ -72,10 +72,18 @@ struct Complex16x2Simd {
     }
 };
 
-union _cmplx_union {
-    double comp[4];
-    Complex16x2Simd cmplx2;
-    _cmplx_union(const Complex16x2Simd& c2) { cmplx2 = c2; }
+union complex2 {
+    Complex16x2Simd c2;
+    std::complex<double> c[2];
+    double f[4];
+    complex2() {}
+    complex2(const Complex16x2Simd& cm2) { c2 = cm2; }
+    complex2(const std::complex<double>& cm1, const std::complex<double>& cm2)
+    {
+        c[0] = cm1;
+        c[1] = cm2;
+    }
+    inline complex2 operator*(const complex2 rhs) const { return c2 * rhs.c2; }
 };
 
 inline Complex16x2Simd dupeLo(const Complex16x2Simd& cmplx2)
@@ -116,10 +124,10 @@ inline Complex16x2Simd operator*(const double lhs, const Complex16x2Simd& rhs)
     return _mm256_mul_pd(_mm256_set1_pd(lhs), rhs._val2);
 }
 
-inline float norm(const Complex16x2Simd& c)
+inline double norm(const Complex16x2Simd& c)
 {
-    _cmplx_union cu(_mm256_mul_pd(c._val2, c._val2));
-    return (cu.comp[0] + cu.comp[1] + cu.comp[2] + cu.comp[3]);
+    complex2 cu(_mm256_mul_pd(c._val2, c._val2));
+    return (cu.f[0] + cu.f[1] + cu.f[2] + cu.f[3]);
 }
 
 } // namespace Qrack
