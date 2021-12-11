@@ -95,7 +95,7 @@ void mul2x2(complex* left, complex* right, complex* out)
     complex2 left0(left[0], left[2]);
     complex2 left1(left[1], left[3]);
 
-    complex2 col = complex2(matrixMul(left0.c2, left1.c2, complex2(right[0], right[2]).c2));
+    complex2 col(matrixMul(left0.c2, left1.c2, complex2(right[0], right[2]).c2));
     out[0] = col.c[0];
     out[2] = col.c[1];
 
