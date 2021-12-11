@@ -39,7 +39,7 @@ unsigned char* cl_alloc(size_t ucharCount)
 
 void cl_free(void* toFree)
 {
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(__CYGWIN__)
     _aligned_free(toFree);
 #else
     free(toFree);
