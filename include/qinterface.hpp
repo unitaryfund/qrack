@@ -11,6 +11,7 @@
 // for details.
 #pragma once
 
+#include "common/parallel_for.hpp"
 #include "common/rdrandwrapper.hpp"
 #include "hamiltonian.hpp"
 
@@ -200,7 +201,7 @@ enum QInterfaceEngine {
  *
  * See README.md for an overview of the algorithms Qrack employs.
  */
-class QInterface {
+class QInterface : public ParallelFor {
 protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
@@ -261,36 +262,7 @@ protected:
 
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
-        bool randomGlobalPhase = true, real1_f norm_thresh = REAL1_EPSILON)
-        : qubitCount(n)
-        , maxQPower(pow2(qubitCount))
-        , rand_distribution(0.0, 1.0)
-        , hardware_rand_generator(NULL)
-        , doNormalize(doNorm)
-        , randGlobalPhase(randomGlobalPhase)
-        , amplitudeFloor(norm_thresh)
-    {
-#if !ENABLE_RDRAND
-        useHardwareRNG = false;
-#endif
-
-        if (useHardwareRNG) {
-            hardware_rand_generator = std::make_shared<RdRandom>();
-#if !ENABLE_RNDFILE
-            if (!(hardware_rand_generator->SupportsRDRAND())) {
-                hardware_rand_generator = NULL;
-            }
-#endif
-        }
-
-        if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
-            rand_generator = std::make_shared<qrack_rand_gen>();
-            randomSeed = (uint32_t)std::time(0);
-            SetRandomSeed(randomSeed);
-        } else {
-            rand_generator = rgp;
-        }
-    }
+        bool randomGlobalPhase = true, real1_f norm_thresh = REAL1_EPSILON);
 
     /** Default constructor, primarily for protected internal use */
     QInterface()

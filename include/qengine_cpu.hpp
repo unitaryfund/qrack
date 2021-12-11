@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include "common/parallel_for.hpp"
 #include "qengine.hpp"
 #include "statevector.hpp"
 
@@ -33,7 +32,7 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 /**
  * General purpose QEngineCPU implementation
  */
-class QEngineCPU : virtual public QEngine, public ParallelFor {
+class QEngineCPU : virtual public QEngine {
 protected:
     StateVectorPtr stateVec;
     bool isSparse;

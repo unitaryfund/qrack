@@ -22,7 +22,6 @@
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #include "common/dispatchqueue.hpp"
 #endif
-#include "common/parallel_for.hpp"
 #include "mpsshard.hpp"
 
 namespace Qrack {
@@ -30,7 +29,7 @@ namespace Qrack {
 class QBinaryDecisionTree;
 typedef std::shared_ptr<QBinaryDecisionTree> QBinaryDecisionTreePtr;
 
-class QBinaryDecisionTree : virtual public QInterface, public ParallelFor {
+class QBinaryDecisionTree : virtual public QInterface {
 protected:
     std::vector<QInterfaceEngine> engines;
     int devID;

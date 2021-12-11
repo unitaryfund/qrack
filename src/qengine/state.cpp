@@ -53,8 +53,6 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     pStridePow = PSTRIDEPOW;
 #endif
 
-    SetConcurrency(std::thread::hardware_concurrency());
-
     stateVec = AllocStateVec(maxQPowerOcl);
     stateVec->clear();
 

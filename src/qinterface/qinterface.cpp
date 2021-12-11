@@ -13,8 +13,43 @@
 #include "qinterface.hpp"
 
 #include <algorithm>
+#include <thread>
 
 namespace Qrack {
+
+QInterface::QInterface(
+    bitLenInt n, qrack_rand_gen_ptr rgp, bool doNorm, bool useHardwareRNG, bool randomGlobalPhase, real1_f norm_thresh)
+    : qubitCount(n)
+    , maxQPower(pow2(qubitCount))
+    , rand_distribution(0.0, 1.0)
+    , hardware_rand_generator(NULL)
+    , doNormalize(doNorm)
+    , randGlobalPhase(randomGlobalPhase)
+    , amplitudeFloor(norm_thresh)
+{
+#if !ENABLE_RDRAND
+    useHardwareRNG = false;
+#endif
+
+    if (useHardwareRNG) {
+        hardware_rand_generator = std::make_shared<RdRandom>();
+#if !ENABLE_RNDFILE
+        if (!(hardware_rand_generator->SupportsRDRAND())) {
+            hardware_rand_generator = NULL;
+        }
+#endif
+    }
+
+    if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
+        rand_generator = std::make_shared<qrack_rand_gen>();
+        randomSeed = (uint32_t)std::time(0);
+        SetRandomSeed(randomSeed);
+    } else {
+        rand_generator = rgp;
+    }
+
+    SetConcurrency(std::thread::hardware_concurrency());
+}
 
 /// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
 void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
@@ -455,7 +490,7 @@ void QInterface::MultiShotMeasureMask(
         maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
     }
 
-    for (unsigned int shot = 0; shot < shots; shot++) {
+    par_for(0, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
         real1 maskProb = (real1)Rand();
         real1* bound = std::upper_bound(maskProbsArray.get(), maskProbsArray.get() + maskMaxQPower, maskProb);
         size_t dist = bound - maskProbsArray.get();
@@ -469,7 +504,7 @@ void QInterface::MultiShotMeasureMask(
         }
 
         shotsArray[shot] = dist;
-    }
+    });
 }
 
 bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol)
