@@ -56,26 +56,39 @@ void cl_free(void* toFree)
 }
 
 // See https://stackoverflow.com/questions/1505675/power-of-an-integer-in-c
-#define _INTPOW(type, fn)                                                                                              \
-    type fn(bitCapInt base, bitCapInt power)                                                                           \
-    {                                                                                                                  \
-        if (power == 0U) {                                                                                             \
-            return ONE_BCI;                                                                                            \
-        }                                                                                                              \
-        if (power == ONE_BCI) {                                                                                        \
-            return base;                                                                                               \
-        }                                                                                                              \
-                                                                                                                       \
-        type tmp = fn(base, power >> 1U);                                                                              \
-        if (power & 1U) {                                                                                              \
-            return base * tmp * tmp;                                                                                   \
-        }                                                                                                              \
-                                                                                                                       \
-        return tmp * tmp;                                                                                              \
+bitCapInt intPow(bitCapInt base, bitCapInt power)
+{
+    if (power == 0U) {
+        return ONE_BCI;
+    }
+    if (power == ONE_BCI) {
+        return base;
     }
 
-_INTPOW(bitCapInt, intPow)
-_INTPOW(bitCapIntOcl, intPowOcl)
+    bitCapInt tmp = intPow(base, power >> 1U);
+    if (power & 1U) {
+        return base * tmp * tmp;
+    }
+
+    return tmp * tmp;
+}
+
+bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
+{
+    if (power == 0U) {
+        return ONE_BCI;
+    }
+    if (power == ONE_BCI) {
+        return base;
+    }
+
+    bitCapIntOcl tmp = intPowOcl(base, power >> 1U);
+    if (power & 1U) {
+        return base * tmp * tmp;
+    }
+
+    return tmp * tmp;
+}
 
 #if ENABLE_COMPLEX_X2
 void mul2x2(complex* left, complex* right, complex* out)
