@@ -2399,7 +2399,16 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
-        const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots);
+        const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots);
+    /**
+     * Statistical measure of masked permutation probability (returned as array)
+     *
+     * Same `Qrack::MultiShotMeasureMask()`, except the shots are returned as an array.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual void MultiShotMeasureMask(
+        const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
 
     /**
      * Set individual bit to pure |0> (false) or |1> (true) state

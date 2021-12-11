@@ -273,7 +273,7 @@ real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& l
 }
 
 std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
-    const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
+    const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
 {
     if (!shots) {
         return std::map<bitCapInt, int>();
@@ -373,6 +373,103 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     }
 
     return results;
+}
+
+void QInterface::MultiShotMeasureMask(
+    const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray)
+{
+    if (!shots) {
+        return;
+    }
+
+    std::vector<bitCapInt> maskMap(qPowerCount);
+    for (bitLenInt i = 0; i < qPowerCount; i++) {
+        maskMap[i] = qPowers[i];
+    }
+
+    bitCapInt maskMaxQPower = pow2(qPowerCount);
+
+    if ((shots == 1U) && (qPowerCount == qubitCount)) {
+        real1 maskProb = (real1)Rand();
+        real1 cumulativeProb = ZERO_R1;
+        for (bitCapIntOcl j = 0U; j < maskMaxQPower; j++) {
+            cumulativeProb += ProbAll(j);
+            if (cumulativeProb >= maskProb) {
+                bitCapIntOcl maskPerm = 0;
+                for (bitLenInt i = 0; i < qPowerCount; i++) {
+                    if (j & maskMap[i]) {
+                        maskPerm |= pow2Ocl(i);
+                    }
+                }
+                shotsArray[0] = maskPerm;
+                break;
+            }
+        }
+        return;
+    }
+
+    std::unique_ptr<real1[]> maskProbsArray(new real1[(bitCapIntOcl)maskMaxQPower]());
+    for (bitCapIntOcl j = 0; j < maxQPower; j++) {
+        bitCapIntOcl maskPerm = 0;
+        for (bitLenInt i = 0; i < qPowerCount; i++) {
+            if (j & maskMap[i]) {
+                maskPerm |= pow2Ocl(i);
+            }
+        }
+        maskProbsArray[maskPerm] += ProbAll(j);
+    }
+
+    if (shots == 1U) {
+        real1 maskProb = (real1)Rand();
+        real1 cumulativeProb = ZERO_R1;
+        for (bitCapIntOcl j = 0U; j < maskMaxQPower; j++) {
+            cumulativeProb += maskProbsArray[j];
+            if (cumulativeProb >= maskProb) {
+                shotsArray[0] = j;
+                break;
+            }
+        }
+        return;
+    }
+
+    bitCapIntOcl singlePerm = (maskProbsArray[0] > FP_NORM_EPSILON) ? 0U : maskMaxQPower;
+    bitCapIntOcl j;
+    for (j = 1U; j < maskMaxQPower; j++) {
+        if (maskProbsArray[j] > REAL1_EPSILON) {
+            if (singlePerm == maskMaxQPower) {
+                singlePerm = j;
+            } else {
+                break;
+            }
+        }
+
+        maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
+    }
+
+    if ((j == maskMaxQPower) && (singlePerm < maskMaxQPower)) {
+        std::fill(shotsArray, shotsArray + shots, singlePerm);
+        return;
+    }
+
+    for (; j < maskMaxQPower; j++) {
+        maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
+    }
+
+    for (unsigned int shot = 0; shot < shots; shot++) {
+        real1 maskProb = (real1)Rand();
+        real1* bound = std::upper_bound(maskProbsArray.get(), maskProbsArray.get() + maskMaxQPower, maskProb);
+        size_t dist = bound - maskProbsArray.get();
+        if (dist >= maskMaxQPower) {
+            bound--;
+        }
+        if (maskProb > 0) {
+            while (dist && maskProbsArray[dist - 1U] == maskProb) {
+                dist--;
+            }
+        }
+
+        shotsArray[shot] = dist;
+    }
 }
 
 bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol)

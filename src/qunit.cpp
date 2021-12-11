@@ -1679,8 +1679,7 @@ bitCapInt QUnit::MAll()
     return toRet;
 }
 
-std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
-    const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
+std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
 {
     if (!shots) {
         return std::map<bitCapInt, int>();
@@ -1820,6 +1819,42 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(
     }
 
     return combinedResults;
+}
+
+void QUnit::MultiShotMeasureMask(const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray)
+{
+    if (!shots) {
+        return;
+    }
+
+    ToPermBasisProb();
+
+    if (shards[0].unit && (shards[0].GetQubitCount() == qubitCount)) {
+        std::unique_ptr<bitCapInt[]> mappedIndices(new bitCapInt[qPowerCount]);
+        for (bitLenInt i = 0; i < qPowerCount; i++) {
+            for (bitLenInt j = 0; j < qubitCount; j++) {
+                if (qPowers[i] == pow2(j)) {
+                    mappedIndices[i] = pow2(shards[j].mapped);
+                    break;
+                }
+            }
+        }
+        shards[0].unit->MultiShotMeasureMask(mappedIndices.get(), qPowerCount, shots, shotsArray);
+        return;
+    }
+
+    std::map<bitCapInt, int> results = MultiShotMeasureMask(qPowers, qPowerCount, shots);
+
+    size_t j = 0;
+    std::map<bitCapInt, int>::iterator it = results.begin();
+    while (it != results.end() && (j < shots)) {
+        for (int i = 0; i < it->second; i++) {
+            shotsArray[j] = (unsigned)it->first;
+            j++;
+        }
+
+        it++;
+    }
 }
 
 /// Set register bits to given permutation
