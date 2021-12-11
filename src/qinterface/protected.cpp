@@ -90,6 +90,7 @@ bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
     return tmp * tmp;
 }
 
+#if ENABLE_COMPLEX_X2
 void mul2x2(complex* left, complex* right, complex* out)
 {
     complex2 left0(left[0], left[2]);
@@ -103,6 +104,15 @@ void mul2x2(complex* left, complex* right, complex* out)
     out[1] = col.c[0];
     out[3] = col.c[1];
 }
+#else
+void mul2x2(complex* left, complex* right, complex* out)
+{
+    out[0] = (left[0] * right[0]) + (left[1] * right[2]);
+    out[1] = (left[0] * right[1]) + (left[1] * right[3]);
+    out[2] = (left[2] * right[0]) + (left[3] * right[2]);
+    out[3] = (left[2] * right[1]) + (left[3] * right[3]);
+}
+#endif
 
 void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
 {
