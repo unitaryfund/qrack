@@ -15,10 +15,8 @@
 #if ENABLE_COMPLEX_X2
 #if FPPOW == 5
 #include "common/complex8x2simd.hpp"
-#define complex2 Complex8x2Simd
 #elif FPPOW == 6
 #include "common/complex16x2simd.hpp"
-#define complex2 Complex16x2Simd
 #endif
 #endif
 
@@ -182,45 +180,33 @@ void QEngineCPU::GetProbs(real1* outputProbs)
 
 #if ENABLE_COMPLEX_X2
 
-union ComplexUnion {
-    complex2 cmplx2;
-    complex cmplx[2];
-
-    inline ComplexUnion(){};
-    inline ComplexUnion(const complex& cmplx0, const complex& cmplx1)
-    {
-        cmplx[0] = cmplx0;
-        cmplx[1] = cmplx1;
-    }
-};
-
 #define NORM_THRESH_KERNEL(o1, o2, fn)                                                                                 \
     [&](const bitCapIntOcl& lcv, const unsigned& cpu) {                                                                \
-        ComplexUnion qubit(stateVec->read(lcv + o1), stateVec->read(lcv + o2));                                        \
-        qubit.cmplx2 = fn;                                                                                             \
+        complex2 qubit(stateVec->read(lcv + o1), stateVec->read(lcv + o2));                                            \
+        qubit.c2 = fn;                                                                                                 \
                                                                                                                        \
-        real1 dotMulRes = norm(qubit.cmplx[0]);                                                                        \
+        real1 dotMulRes = norm(qubit.c[0]);                                                                            \
         if (dotMulRes < norm_thresh) {                                                                                 \
-            qubit.cmplx[0] = ZERO_CMPLX;                                                                               \
+            qubit.c[0] = ZERO_CMPLX;                                                                                   \
         } else {                                                                                                       \
             rngNrm[cpu] += dotMulRes;                                                                                  \
         }                                                                                                              \
                                                                                                                        \
-        dotMulRes = norm(qubit.cmplx[1]);                                                                              \
+        dotMulRes = norm(qubit.c[1]);                                                                                  \
         if (dotMulRes < norm_thresh) {                                                                                 \
-            qubit.cmplx[1] = ZERO_CMPLX;                                                                               \
+            qubit.c[1] = ZERO_CMPLX;                                                                                   \
         } else {                                                                                                       \
             rngNrm[cpu] += dotMulRes;                                                                                  \
         }                                                                                                              \
-        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);                                \
+        stateVec->write2(lcv + offset1, qubit.c[0], lcv + offset2, qubit.c[1]);                                        \
     }
 
 #define NORM_CALC_KERNEL(o1, o2, fn)                                                                                   \
     [&](const bitCapIntOcl& lcv, const unsigned& cpu) {                                                                \
-        ComplexUnion qubit(stateVec->read(lcv + o1), stateVec->read(lcv + o2));                                        \
-        qubit.cmplx2 = fn;                                                                                             \
-        rngNrm[cpu] += norm(qubit.cmplx2);                                                                             \
-        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);                                \
+        complex2 qubit(stateVec->read(lcv + o1), stateVec->read(lcv + o2));                                            \
+        qubit.c2 = fn;                                                                                                 \
+        rngNrm[cpu] += norm(qubit.c2);                                                                                 \
+        stateVec->write2(lcv + offset1, qubit.c[0], lcv + offset2, qubit.c[1]);                                        \
     };
 
 void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* matrix, const bitLenInt bitCount,
@@ -251,77 +237,73 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             const real1_f norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
             const unsigned numCores = GetConcurrencyLevel();
 
-            const ComplexUnion mtrxCol1(mtrx[0], mtrx[2]);
-            const ComplexUnion mtrxCol2(mtrx[1], mtrx[3]);
+            const complex2 mtrxCol1(mtrx[0], mtrx[2]);
+            const complex2 mtrxCol2(mtrx[1], mtrx[3]);
 
-            ComplexUnion mtrxPhaseT;
+            complex2 mtrxPhaseT;
             if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
-                mtrxPhaseT = ComplexUnion(mtrx[0], mtrx[3]);
+                mtrxPhaseT = complex2(mtrx[0], mtrx[3]);
             } else {
-                mtrxPhaseT = ComplexUnion(mtrx[1], mtrx[2]);
+                mtrxPhaseT = complex2(mtrx[1], mtrx[2]);
             }
-            const ComplexUnion mtrxPhase = mtrxPhaseT;
+            const complex2 mtrxPhase = mtrxPhaseT;
 
             std::unique_ptr<real1[]> rngNrm(new real1[numCores]());
             ParallelFunc fn;
             if (!doCalcNorm) {
                 if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
                     fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                        ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
-                        qubit.cmplx2 = mtrxPhase.cmplx2 * qubit.cmplx2;
-                        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+                        complex2 qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+                        qubit.c2 = mtrxPhase.c2 * qubit.c2;
+                        stateVec->write2(lcv + offset1, qubit.c[0], lcv + offset2, qubit.c[1]);
                     };
                 } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
                     fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                        ComplexUnion qubit(stateVec->read(lcv + offset2), stateVec->read(lcv + offset1));
-                        qubit.cmplx2 = mtrxPhase.cmplx2 * qubit.cmplx2;
-                        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+                        complex2 qubit(stateVec->read(lcv + offset2), stateVec->read(lcv + offset1));
+                        qubit.c2 = mtrxPhase.c2 * qubit.c2;
+                        stateVec->write2(lcv + offset1, qubit.c[0], lcv + offset2, qubit.c[1]);
                     };
                 } else {
                     fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                        ComplexUnion qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
-                        qubit.cmplx2 = matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2);
-                        stateVec->write2(lcv + offset1, qubit.cmplx[0], lcv + offset2, qubit.cmplx[1]);
+                        complex2 qubit(stateVec->read(lcv + offset1), stateVec->read(lcv + offset2));
+                        qubit.c2 = matrixMul(mtrxCol1.c2, mtrxCol2.c2, qubit.c2);
+                        stateVec->write2(lcv + offset1, qubit.c[0], lcv + offset2, qubit.c[1]);
                     };
                 }
             } else if (norm_thresh > ZERO_R1) {
                 if (abs(ONE_R1 - nrm) > REAL1_EPSILON) {
                     if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
-                        fn = NORM_THRESH_KERNEL(offset1, offset2, nrm * mtrxPhase.cmplx2 * qubit.cmplx2);
+                        fn = NORM_THRESH_KERNEL(offset1, offset2, nrm * mtrxPhase.c2 * qubit.c2);
                     } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
-                        fn = NORM_THRESH_KERNEL(offset2, offset1, nrm * mtrxPhase.cmplx2 * qubit.cmplx2);
+                        fn = NORM_THRESH_KERNEL(offset2, offset1, nrm * mtrxPhase.c2 * qubit.c2);
                     } else {
-                        fn = NORM_THRESH_KERNEL(
-                            offset1, offset2, matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2));
+                        fn = NORM_THRESH_KERNEL(offset1, offset2, matrixMul(nrm, mtrxCol1.c2, mtrxCol2.c2, qubit.c2));
                     }
                 } else {
                     if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
-                        fn = NORM_THRESH_KERNEL(offset1, offset2, mtrxPhase.cmplx2 * qubit.cmplx2);
+                        fn = NORM_THRESH_KERNEL(offset1, offset2, mtrxPhase.c2 * qubit.c2);
                     } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
-                        fn = NORM_THRESH_KERNEL(offset2, offset1, nrm * mtrxPhase.cmplx2 * qubit.cmplx2);
+                        fn = NORM_THRESH_KERNEL(offset2, offset1, nrm * mtrxPhase.c2 * qubit.c2);
                     } else {
-                        fn = NORM_THRESH_KERNEL(
-                            offset1, offset2, matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2));
+                        fn = NORM_THRESH_KERNEL(offset1, offset2, matrixMul(mtrxCol1.c2, mtrxCol2.c2, qubit.c2));
                     }
                 }
             } else {
                 if (abs(ONE_R1 - nrm) > REAL1_EPSILON) {
                     if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
-                        fn = NORM_CALC_KERNEL(offset1, offset2, nrm * mtrxPhase.cmplx2 * qubit.cmplx2);
+                        fn = NORM_CALC_KERNEL(offset1, offset2, nrm * mtrxPhase.c2 * qubit.c2);
                     } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
-                        fn = NORM_CALC_KERNEL(offset2, offset1, nrm * mtrxPhase.cmplx2 * qubit.cmplx2);
+                        fn = NORM_CALC_KERNEL(offset2, offset1, nrm * mtrxPhase.c2 * qubit.c2);
                     } else {
-                        fn = NORM_CALC_KERNEL(
-                            offset1, offset2, matrixMul(nrm, mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2));
+                        fn = NORM_CALC_KERNEL(offset1, offset2, matrixMul(nrm, mtrxCol1.c2, mtrxCol2.c2, qubit.c2));
                     }
                 } else {
                     if ((mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX)) {
-                        fn = NORM_CALC_KERNEL(offset1, offset2, mtrxPhase.cmplx2 * qubit.cmplx2);
+                        fn = NORM_CALC_KERNEL(offset1, offset2, mtrxPhase.c2 * qubit.c2);
                     } else if ((mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX)) {
-                        fn = NORM_CALC_KERNEL(offset2, offset1, mtrxPhase.cmplx2 * qubit.cmplx2);
+                        fn = NORM_CALC_KERNEL(offset2, offset1, mtrxPhase.c2 * qubit.c2);
                     } else {
-                        fn = NORM_CALC_KERNEL(
-                            offset1, offset2, matrixMul(mtrxCol1.cmplx2, mtrxCol2.cmplx2, qubit.cmplx2));
+                        fn = NORM_CALC_KERNEL(offset1, offset2, matrixMul(mtrxCol1.c2, mtrxCol2.c2, qubit.c2));
                     }
                 }
             }
