@@ -42,7 +42,6 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , separabilityThreshold(sep_thresh)
     , thresholdQubits(qubitThreshold)
 {
-    concurrency = std::thread::hardware_concurrency();
     stabilizer = MakeStabilizer(initState);
     amplitudeFloor = REAL1_EPSILON;
 }
@@ -57,7 +56,7 @@ QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
     QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qubitCount, perm, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
         std::vector<int>{}, thresholdQubits, separabilityThreshold);
-    toRet->SetConcurrency(concurrency);
+    toRet->SetConcurrency(GetConcurrencyLevel());
     return toRet;
 }
 

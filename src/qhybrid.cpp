@@ -24,8 +24,6 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     , isSparse(useSparseStateVec)
     , separabilityThreshold(sep_thresh)
 {
-    concurrency = std::thread::hardware_concurrency();
-
     if (qubitThreshold != 0) {
         thresholdQubits = qubitThreshold;
     } else {
@@ -40,7 +38,7 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
         bitLenInt pStridePow = PSTRIDEPOW;
 #endif
 
-        bitLenInt cpuQubits = (concurrency == 1U) ? pStridePow : (log2(concurrency - 1U) + pStridePow + 1U);
+        bitLenInt cpuQubits = (GetConcurrencyLevel() == 1U) ? pStridePow : (log2(GetConcurrencyLevel() - 1U) + pStridePow + 1U);
 
         thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
@@ -55,7 +53,7 @@ QEnginePtr QHybrid::MakeEngine(bool isOpenCL, bitCapInt initState)
         std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QINTERFACE_OPENCL : QINTERFACE_CPU,
             qubitCount, initState, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
             useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
-    toRet->SetConcurrency(concurrency);
+    toRet->SetConcurrency(GetConcurrencyLevel());
     return toRet;
 }
 
@@ -64,7 +62,7 @@ QInterfacePtr QHybrid::Clone()
     QHybridPtr c = std::make_shared<QHybrid>(qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
         useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits,
         separabilityThreshold);
-    c->SetConcurrency(concurrency);
+    c->SetConcurrency(GetConcurrencyLevel());
     c->engine->CopyStateVec(engine);
     return c;
 }

@@ -33,7 +33,6 @@ protected:
     complex phaseFactor;
     bool useRDRAND;
     bool isSparse;
-    uint32_t concurrency;
     bitLenInt thresholdQubits;
     bool isGpu;
     real1_f separabilityThreshold;
@@ -52,8 +51,7 @@ public:
     virtual void SetConcurrency(uint32_t threadCount)
     {
         QInterface::SetConcurrency(threadCount);
-        concurrency = threadCount;
-        engine->SetConcurrency(concurrency);
+        engine->SetConcurrency(GetConcurrencyLevel());
     }
 
     /**

@@ -43,7 +43,6 @@ protected:
     bool useRDRAND;
     bool isSparse;
     real1_f separabilityThreshold;
-    uint32_t concurrency;
     bitLenInt thresholdQubits;
 
     QStabilizerPtr MakeStabilizer(const bitCapInt& perm = 0);
@@ -227,9 +226,8 @@ public:
     virtual void SetConcurrency(uint32_t threadCount)
     {
         QInterface::SetConcurrency(threadCount);
-        concurrency = threadCount;
         if (engine) {
-            SetConcurrency(concurrency);
+            SetConcurrency(GetConcurrencyLevel());
         }
     }
 
