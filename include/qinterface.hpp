@@ -291,7 +291,7 @@ public:
     }
 
     /** Set the number of threads in parallel for loops, per component QEngine */
-    virtual void SetConcurrency(uint32_t threadsPerEngine) {}
+    virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
 
     /** Get the count of bits in this register */
     bitLenInt GetQubitCount() { return qubitCount; }

@@ -136,6 +136,7 @@ public:
 
     virtual void SetConcurrency(uint32_t threadsPerEngine)
     {
+        QInterface::SetConcurrency(threadsPerEngine);
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->SetConcurrency(threadsPerEngine);
         }

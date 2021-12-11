@@ -85,6 +85,7 @@ public:
 
     virtual void SetConcurrency(uint32_t threadsPerEngine)
     {
+        QInterface::SetConcurrency(threadsPerEngine);
         ParallelUnitApply(
             [](QInterfacePtr unit, real1_f unused1, real1_f unused2, int32_t threadsPerEngine) {
                 unit->SetConcurrency(threadsPerEngine);

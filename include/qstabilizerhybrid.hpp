@@ -226,6 +226,7 @@ public:
 
     virtual void SetConcurrency(uint32_t threadCount)
     {
+        QInterface::SetConcurrency(threadCount);
         concurrency = threadCount;
         if (engine) {
             SetConcurrency(concurrency);

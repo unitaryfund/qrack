@@ -52,8 +52,6 @@ public:
 
     virtual ~QEngineCPU() { Dump(); }
 
-    virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
-
     virtual void Finish()
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
