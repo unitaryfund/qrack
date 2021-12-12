@@ -17,8 +17,8 @@ namespace Qrack {
 /// General unitary gate
 void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
-    real1 cos0 = (real1)cos(theta / 2);
-    real1 sin0 = (real1)sin(theta / 2);
+    const real1 cos0 = (real1)cos(theta / 2);
+    const real1 sin0 = (real1)sin(theta / 2);
     const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
         sin0 * complex((real1)cos(phi), (real1)sin(phi)),
         cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
@@ -29,8 +29,8 @@ void QInterface::U(bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 void QInterface::CU(
     const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
-    real1 cos0 = (real1)cos(theta / 2);
-    real1 sin0 = (real1)sin(theta / 2);
+    const real1 cos0 = (real1)cos(theta / 2);
+    const real1 sin0 = (real1)sin(theta / 2);
     const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
         sin0 * complex((real1)cos(phi), (real1)sin(phi)),
         cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
@@ -41,8 +41,8 @@ void QInterface::CU(
 void QInterface::AntiCU(
     const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, real1_f theta, real1_f phi, real1_f lambda)
 {
-    real1 cos0 = (real1)cos(theta / 2);
-    real1 sin0 = (real1)sin(theta / 2);
+    const real1 cos0 = (real1)cos(theta / 2);
+    const real1 sin0 = (real1)sin(theta / 2);
     const complex uGate[4] = { complex(cos0, ZERO_R1), sin0 * complex((real1)(-cos(lambda)), (real1)(-sin(lambda))),
         sin0 * complex((real1)cos(phi), (real1)sin(phi)),
         cos0 * complex((real1)cos(phi + lambda), (real1)sin(phi + lambda)) };
@@ -100,9 +100,9 @@ void QInterface::RT(real1_f radians, bitLenInt qubit)
 /// x axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli x axis
 void QInterface::RX(real1_f radians, bitLenInt qubit)
 {
-    real1 cosine = (real1)cos(radians / 2);
-    real1 sine = (real1)sin(radians / 2);
-    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
+    const real1 cosine = (real1)cos(radians / 2);
+    const real1 sine = (real1)sin(radians / 2);
+    const complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, -sine), complex(ZERO_R1, -sine),
         complex(cosine, ZERO_R1) };
     Mtrx(pauliRX, qubit);
 }
@@ -110,26 +110,26 @@ void QInterface::RX(real1_f radians, bitLenInt qubit)
 /// y axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli y axis
 void QInterface::RY(real1_f radians, bitLenInt qubit)
 {
-    real1 cosine = (real1)cos(radians / 2);
-    real1 sine = (real1)sin(radians / 2);
-    complex pauliRY[4] = { cosine, -sine, sine, cosine };
+    const real1 cosine = (real1)cos(radians / 2);
+    const real1 sine = (real1)sin(radians / 2);
+    const complex pauliRY[4] = { cosine, -sine, sine, cosine };
     Mtrx(pauliRY, qubit);
 }
 
 /// z axis rotation gate - Rotates as e^(-i*\theta/2) around Pauli z axis
 void QInterface::RZ(real1_f radians, bitLenInt qubit)
 {
-    real1 cosine = (real1)cos(radians / 2);
-    real1 sine = (real1)sin(radians / 2);
+    const real1 cosine = (real1)cos(radians / 2);
+    const real1 sine = (real1)sin(radians / 2);
     Phase(complex(cosine, -sine), complex(cosine, sine), qubit);
 }
 
 /// Controlled z axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli z axis
 void QInterface::CRZ(real1_f radians, bitLenInt control, bitLenInt target)
 {
-    real1 cosine = (real1)cos(radians / 2);
-    real1 sine = (real1)sin(radians / 2);
-    bitLenInt controls[1] = { control };
+    const real1 cosine = (real1)cos(radians / 2);
+    const real1 sine = (real1)sin(radians / 2);
+    const bitLenInt controls[1] = { control };
     MCPhase(controls, 1, complex(cosine, -sine), complex(cosine, sine), target);
 }
 
@@ -146,10 +146,10 @@ void QInterface::Exp(
     const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, const complex* matrix2x2, bool antiCtrled)
 {
     complex timesI[4];
-    complex toApply[4];
     for (bitLenInt i = 0; i < 4; i++) {
         timesI[i] = I_CMPLX * matrix2x2[i];
     }
+    complex toApply[4];
     exp2x2(timesI, toApply);
     if (controlLen == 0) {
         Mtrx(toApply, qubit);
@@ -163,50 +163,50 @@ void QInterface::Exp(
 /// Exponentiate Pauli X operator
 void QInterface::ExpX(real1_f radians, bitLenInt qubit)
 {
-    complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
+    const complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
     Invert(phaseFac, phaseFac, qubit);
 }
 
 /// Exponentiate Pauli Y operator
 void QInterface::ExpY(real1_f radians, bitLenInt qubit)
 {
-    complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
+    const complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
     Invert(phaseFac * -I_CMPLX, phaseFac * I_CMPLX, qubit);
 }
 
 /// Exponentiate Pauli Z operator
 void QInterface::ExpZ(real1_f radians, bitLenInt qubit)
 {
-    complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
+    const complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
     Phase(phaseFac, -phaseFac, qubit);
 }
 
 /// Controlled "phase shift gate" - if control bit is true, rotates target bit as e^(-i*\theta/2) around |1> state
 void QInterface::CRT(real1_f radians, bitLenInt control, bitLenInt target)
 {
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
     MCPhase(controls, 1, ONE_CMPLX, complex((real1)cos(radians / 2), (real1)sin(radians / 2)), target);
 }
 
 /// Controlled x axis rotation - if control bit is true, rotates as e^(-i*\theta/2) around Pauli x axis
 void QInterface::CRX(real1_f radians, bitLenInt control, bitLenInt target)
 {
-    real1 cosine = (real1)cos(radians / 2);
-    real1 sine = (real1)sin(radians / 2);
-    complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, sine), complex(ZERO_R1, sine),
+    const real1 cosine = (real1)cos(radians / 2);
+    const real1 sine = (real1)sin(radians / 2);
+    const complex pauliRX[4] = { complex(cosine, ZERO_R1), complex(ZERO_R1, sine), complex(ZERO_R1, sine),
         complex(cosine, ZERO_R1) };
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
     MCMtrx(controls, 1, pauliRX, target);
 }
 
 /// Controlled y axis rotation - if control bit is true, rotates as e^(-i*\theta) around Pauli y axis
 void QInterface::CRY(real1_f radians, bitLenInt control, bitLenInt target)
 {
-    real1 cosine = (real1)cos(radians / 2);
-    real1 sine = (real1)sin(radians / 2);
-    complex pauliRY[4] = { complex(cosine, ZERO_R1), complex(-sine, ZERO_R1), complex(sine, ZERO_R1),
+    const real1 cosine = (real1)cos(radians / 2);
+    const real1 sine = (real1)sin(radians / 2);
+    const complex pauliRY[4] = { complex(cosine, ZERO_R1), complex(-sine, ZERO_R1), complex(sine, ZERO_R1),
         complex(cosine, ZERO_R1) };
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
     MCMtrx(controls, 1, pauliRY, target);
 }
 #endif

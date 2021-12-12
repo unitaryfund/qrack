@@ -33,10 +33,10 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
         return;
     }
 
-    bitCapIntOcl lengthPower = pow2Ocl(length);
-    bitCapIntOcl lengthMask = lengthPower - ONE_BCI;
-    bitCapIntOcl regMask = lengthMask << start;
-    bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ regMask;
+    const bitCapIntOcl lengthPower = pow2Ocl(length);
+    const bitCapIntOcl lengthMask = lengthPower - ONE_BCI;
+    const bitCapIntOcl regMask = lengthMask << start;
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ regMask;
 
     Finish();
 
@@ -44,9 +44,9 @@ void QEngineCPU::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
     stateVec->isReadLocked = false;
 
     ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl otherRes = lcv & otherMask;
-        bitCapIntOcl regInt = (lcv & regMask) >> start;
-        bitCapIntOcl outInt = (regInt >> (length - shift)) | ((regInt << shift) & lengthMask);
+        const bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl regInt = (lcv & regMask) >> start;
+        const bitCapIntOcl outInt = (regInt >> (length - shift)) | ((regInt << shift) & lengthMask);
         nStateVec->write((outInt << start) | otherRes, stateVec->read(lcv));
     };
 
@@ -133,9 +133,9 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         return;
     }
 
-    bitCapIntOcl toAddOcl = (bitCapIntOcl)toAdd;
-    bitCapIntOcl inOutMask = lengthMask << inOutStart;
-    bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ inOutMask;
+    const bitCapIntOcl toAddOcl = (bitCapIntOcl)toAdd;
+    const bitCapIntOcl inOutMask = lengthMask << inOutStart;
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ inOutMask;
 
     Finish();
 
@@ -143,9 +143,9 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     stateVec->isReadLocked = false;
 
     ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl otherRes = lcv & otherMask;
-        bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
-        bitCapIntOcl outInt = (inOutInt + toAddOcl) & lengthMask;
+        const bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
+        const bitCapIntOcl outInt = (inOutInt + toAddOcl) & lengthMask;
         nStateVec->write((outInt << inOutStart) | otherRes, stateVec->read(lcv));
     };
 
@@ -173,8 +173,8 @@ void QEngineCPU::CINC(
         return;
     }
 
-    bitCapIntOcl lengthPower = pow2Ocl(length);
-    bitCapIntOcl lengthMask = lengthPower - ONE_BCI;
+    const bitCapIntOcl lengthPower = pow2Ocl(length);
+    const bitCapIntOcl lengthMask = lengthPower - ONE_BCI;
     toAdd &= lengthMask;
     if (toAdd == 0) {
         return;
@@ -188,9 +188,9 @@ void QEngineCPU::CINC(
     }
     std::sort(controlPowers.get(), controlPowers.get() + controlLen);
 
-    bitCapIntOcl toAddOcl = (bitCapIntOcl)toAdd;
-    bitCapIntOcl inOutMask = lengthMask << inOutStart;
-    bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | controlMask);
+    const bitCapIntOcl toAddOcl = (bitCapIntOcl)toAdd;
+    const bitCapIntOcl inOutMask = lengthMask << inOutStart;
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | controlMask);
 
     Finish();
 
@@ -199,9 +199,9 @@ void QEngineCPU::CINC(
     stateVec->isReadLocked = false;
 
     par_for_mask(0, maxQPowerOcl, controlPowers.get(), controlLen, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl otherRes = lcv & otherMask;
-        bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
-        bitCapIntOcl outInt = (inOutInt + toAddOcl) & lengthMask;
+        const bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
+        const bitCapIntOcl outInt = (inOutInt + toAddOcl) & lengthMask;
         nStateVec->write((outInt << inOutStart) | otherRes | controlMask, stateVec->read(lcv | controlMask));
     });
 
@@ -218,19 +218,17 @@ void QEngineCPU::INCDECC(
         return;
     }
 
-    bitCapIntOcl lengthPower = pow2Ocl(length);
-    bitCapIntOcl lengthMask = lengthPower - ONE_BCI;
+    const bitCapIntOcl lengthPower = pow2Ocl(length);
+    const bitCapIntOcl lengthMask = lengthPower - ONE_BCI;
     toMod &= lengthMask;
     if (toMod == 0) {
         return;
     }
 
-    bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
-    bitCapIntOcl carryMask = pow2Ocl(carryIndex);
-    bitCapIntOcl inOutMask = lengthMask << inOutStart;
-    bitCapIntOcl otherMask = maxQPowerOcl - ONE_BCI;
-
-    otherMask ^= inOutMask | carryMask;
+    const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
+    const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
+    const bitCapIntOcl inOutMask = lengthMask << inOutStart;
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask);
 
     Finish();
 
@@ -239,9 +237,9 @@ void QEngineCPU::INCDECC(
     stateVec->isReadLocked = false;
 
     par_for_skip(0, maxQPowerOcl, pow2Ocl(carryIndex), ONE_BCI, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl otherRes = lcv & otherMask;
-        bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
-        bitCapIntOcl outInt = inOutInt + toModOcl;
+        const bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
+        const bitCapIntOcl outInt = inOutInt + toModOcl;
         bitCapIntOcl outRes;
         if (outInt < lengthPower) {
             outRes = (outInt << inOutStart) | otherRes;
@@ -268,18 +266,18 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
         return;
     }
 
-    bitCapIntOcl lengthPower = pow2Ocl(length);
-    bitCapIntOcl lengthMask = lengthPower - ONE_BCI;
+    const bitCapIntOcl lengthPower = pow2Ocl(length);
+    const bitCapIntOcl lengthMask = lengthPower - ONE_BCI;
     toAdd &= lengthMask;
     if (toAdd == 0) {
         return;
     }
 
-    bitCapIntOcl toAddOcl = (bitCapIntOcl)toAdd;
-    bitCapIntOcl overflowMask = pow2Ocl(overflowIndex);
-    bitCapIntOcl signMask = pow2Ocl(length - ONE_BCI);
-    bitCapIntOcl inOutMask = lengthMask << inOutStart;
-    bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ inOutMask;
+    const bitCapIntOcl toAddOcl = (bitCapIntOcl)toAdd;
+    const bitCapIntOcl overflowMask = pow2Ocl(overflowIndex);
+    const bitCapIntOcl signMask = pow2Ocl(length - ONE_BCI);
+    const bitCapIntOcl inOutMask = lengthMask << inOutStart;
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ inOutMask;
 
     Finish();
 
@@ -288,9 +286,9 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
     stateVec->isReadLocked = false;
 
     ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl otherRes = lcv & otherMask;
-        bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
-        bitCapIntOcl outInt = inOutInt + toAddOcl;
+        const bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
+        const bitCapIntOcl outInt = inOutInt + toAddOcl;
         bitCapIntOcl outRes;
         if (outInt < lengthPower) {
             outRes = (outInt << inOutStart) | otherRes;
@@ -323,20 +321,18 @@ void QEngineCPU::INCDECSC(
         return;
     }
 
-    bitCapIntOcl lengthPower = pow2Ocl(length);
-    bitCapIntOcl lengthMask = lengthPower - ONE_BCI;
+    const bitCapIntOcl lengthPower = pow2Ocl(length);
+    const bitCapIntOcl lengthMask = lengthPower - ONE_BCI;
     toMod &= lengthMask;
     if (toMod == 0) {
         return;
     }
 
-    bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
-    bitCapIntOcl signMask = pow2Ocl(length - ONE_BCI);
-    bitCapIntOcl carryMask = pow2Ocl(carryIndex);
-    bitCapIntOcl otherMask = maxQPowerOcl - ONE_BCI;
-    bitCapIntOcl inOutMask = lengthMask << inOutStart;
-
-    otherMask ^= inOutMask | carryMask;
+    const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
+    const bitCapIntOcl signMask = pow2Ocl(length - ONE_BCI);
+    const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
+    const bitCapIntOcl inOutMask = lengthMask << inOutStart;
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask);
 
     Finish();
 
@@ -345,10 +341,10 @@ void QEngineCPU::INCDECSC(
     stateVec->isReadLocked = false;
 
     par_for_skip(0, maxQPowerOcl, carryMask, ONE_BCI, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl otherRes = lcv & otherMask;
-        bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
-        bitCapIntOcl inInt = toModOcl;
-        bitCapIntOcl outInt = inOutInt + toModOcl;
+        const bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
+        const bitCapIntOcl inInt = toModOcl;
+        const bitCapIntOcl outInt = inOutInt + toModOcl;
         bitCapIntOcl outRes;
         if (outInt < lengthPower) {
             outRes = (outInt << inOutStart) | otherRes;
@@ -374,19 +370,19 @@ void QEngineCPU::INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bi
         return;
     }
 
-    bitCapIntOcl lengthPower = pow2Ocl(length);
-    bitCapIntOcl lengthMask = lengthPower - ONE_BCI;
+    const bitCapIntOcl lengthPower = pow2Ocl(length);
+    const bitCapIntOcl lengthMask = lengthPower - ONE_BCI;
     toMod &= lengthMask;
     if (toMod == 0) {
         return;
     }
 
-    bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
-    bitCapIntOcl overflowMask = pow2Ocl(overflowIndex);
-    bitCapIntOcl signMask = pow2Ocl(length - ONE_BCI);
-    bitCapIntOcl carryMask = pow2Ocl(carryIndex);
-    bitCapIntOcl inOutMask = lengthMask << inOutStart;
-    bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask);
+    const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
+    const bitCapIntOcl overflowMask = pow2Ocl(overflowIndex);
+    const bitCapIntOcl signMask = pow2Ocl(length - ONE_BCI);
+    const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
+    const bitCapIntOcl inOutMask = lengthMask << inOutStart;
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask);
 
     Finish();
 
@@ -395,10 +391,10 @@ void QEngineCPU::INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bi
     stateVec->isReadLocked = false;
 
     par_for_skip(0, maxQPowerOcl, carryMask, ONE_BCI, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl otherRes = lcv & otherMask;
-        bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
-        bitCapIntOcl inInt = toModOcl;
-        bitCapIntOcl outInt = inOutInt + toModOcl;
+        const bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
+        const bitCapIntOcl inInt = toModOcl;
+        const bitCapIntOcl outInt = inOutInt + toModOcl;
         bitCapIntOcl outRes;
         if (outInt < lengthPower) {
             outRes = (outInt << inOutStart) | otherRes;
@@ -420,12 +416,12 @@ void QEngineCPU::MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& to
 {
     CHECK_ZERO_SKIP();
 
-    bitCapIntOcl toMulOcl = (bitCapIntOcl)toMul;
-    bitCapIntOcl lowMask = pow2MaskOcl(length);
-    bitCapIntOcl highMask = lowMask << length;
-    bitCapIntOcl inOutMask = lowMask << inOutStart;
-    bitCapIntOcl carryMask = lowMask << carryStart;
-    bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask);
+    const bitCapIntOcl toMulOcl = (bitCapIntOcl)toMul;
+    const bitCapIntOcl lowMask = pow2MaskOcl(length);
+    const bitCapIntOcl highMask = lowMask << length;
+    const bitCapIntOcl inOutMask = lowMask << inOutStart;
+    const bitCapIntOcl carryMask = lowMask << carryStart;
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask);
 
     Finish();
 
@@ -434,9 +430,9 @@ void QEngineCPU::MULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& to
     stateVec->isReadLocked = false;
 
     par_for_skip(0, maxQPowerOcl, pow2Ocl(carryStart), length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl otherRes = lcv & otherMask;
-        bitCapIntOcl mulInt = ((lcv & inOutMask) >> inOutStart) * toMulOcl;
-        bitCapIntOcl mulRes =
+        const bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl mulInt = ((lcv & inOutMask) >> inOutStart) * toMulOcl;
+        const bitCapIntOcl mulRes =
             ((mulInt & lowMask) << inOutStart) | (((mulInt & highMask) >> length) << carryStart) | otherRes;
         nStateVec->write(outFn(lcv, mulRes), stateVec->read(inFn(lcv, mulRes)));
     });
@@ -478,11 +474,11 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
 {
     CHECK_ZERO_SKIP();
 
-    bitCapIntOcl toMulOcl = (bitCapIntOcl)toMul;
-    bitCapIntOcl lowMask = pow2MaskOcl(length);
-    bitCapIntOcl highMask = lowMask << length;
-    bitCapIntOcl inOutMask = lowMask << inOutStart;
-    bitCapIntOcl carryMask = lowMask << carryStart;
+    const bitCapIntOcl toMulOcl = (bitCapIntOcl)toMul;
+    const bitCapIntOcl lowMask = pow2MaskOcl(length);
+    const bitCapIntOcl highMask = lowMask << length;
+    const bitCapIntOcl inOutMask = lowMask << inOutStart;
+    const bitCapIntOcl carryMask = lowMask << carryStart;
 
     std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
@@ -507,11 +503,11 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
 
     par_for_mask(
         0, maxQPowerOcl, skipPowers.get(), controlLen + length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            bitCapIntOcl otherRes = lcv & otherMask;
-            bitCapIntOcl mulInt = ((lcv & inOutMask) >> inOutStart) * toMulOcl;
-            bitCapIntOcl mulRes = ((mulInt & lowMask) << inOutStart) | (((mulInt & highMask) >> length) << carryStart) |
+            const bitCapIntOcl otherRes = lcv & otherMask;
+            const bitCapIntOcl mulInt = ((lcv & inOutMask) >> inOutStart) * toMulOcl;
+            const bitCapIntOcl mulRes = ((mulInt & lowMask) << inOutStart) | (((mulInt & highMask) >> length) << carryStart) |
                 otherRes | controlMask;
-            bitCapIntOcl origRes = lcv | controlMask;
+            const bitCapIntOcl origRes = lcv | controlMask;
             nStateVec->write(outFn(origRes, mulRes), stateVec->read(inFn(origRes, mulRes)));
 
             nStateVec->write(lcv, stateVec->read(lcv));
@@ -578,11 +574,11 @@ void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLe
 {
     CHECK_ZERO_SKIP();
 
-    bitCapIntOcl modNOcl = (bitCapIntOcl)modN;
-    bitCapIntOcl lowMask = pow2MaskOcl(length);
-    bitCapIntOcl inMask = lowMask << inStart;
-    bitCapIntOcl outMask = lowMask << outStart;
-    bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inMask | outMask);
+    const bitCapIntOcl modNOcl = (bitCapIntOcl)modN;
+    const bitCapIntOcl lowMask = pow2MaskOcl(length);
+    const bitCapIntOcl inMask = lowMask << inStart;
+    const bitCapIntOcl outMask = lowMask << outStart;
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inMask | outMask);
 
     Finish();
 
@@ -591,9 +587,9 @@ void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLe
     stateVec->isReadLocked = false;
 
     par_for_skip(0, maxQPowerOcl, pow2Ocl(outStart), length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl otherRes = lcv & otherMask;
-        bitCapIntOcl inRes = lcv & inMask;
-        bitCapIntOcl outRes = (kernelFn(inRes >> inStart) % modNOcl) << outStart;
+        const bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl inRes = lcv & inMask;
+        const bitCapIntOcl outRes = (kernelFn(inRes >> inStart) % modNOcl) << outStart;
         if (inverse) {
             nStateVec->write(lcv, stateVec->read(inRes | outRes | otherRes));
         } else {
@@ -647,11 +643,11 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
 {
     CHECK_ZERO_SKIP();
 
-    bitCapIntOcl modNOcl = (bitCapIntOcl)modN;
-    bitCapIntOcl lowPower = pow2Ocl(length);
-    bitCapIntOcl lowMask = lowPower - ONE_BCI;
-    bitCapIntOcl inMask = lowMask << inStart;
-    bitCapIntOcl outMask = lowMask << outStart;
+    const bitCapIntOcl modNOcl = (bitCapIntOcl)modN;
+    const bitCapIntOcl lowPower = pow2Ocl(length);
+    const bitCapIntOcl lowMask = lowPower - ONE_BCI;
+    const bitCapIntOcl inMask = lowMask << inStart;
+    const bitCapIntOcl outMask = lowMask << outStart;
 
     std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
@@ -676,9 +672,9 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
 
     par_for_mask(
         0, maxQPowerOcl, skipPowers.get(), controlLen + length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            bitCapIntOcl otherRes = lcv & otherMask;
-            bitCapIntOcl inRes = lcv & inMask;
-            bitCapIntOcl outRes = (kernelFn(inRes >> inStart) % modNOcl) << outStart;
+            const bitCapIntOcl otherRes = lcv & otherMask;
+            const bitCapIntOcl inRes = lcv & inMask;
+            const bitCapIntOcl outRes = (kernelFn(inRes >> inStart) % modNOcl) << outStart;
 
             if (inverse) {
                 nStateVec->write(lcv | controlMask, stateVec->read(inRes | outRes | otherRes | controlMask));
@@ -766,10 +762,9 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         return;
     }
 
-    bitCapIntOcl toAddOcl = (bitCapIntOcl)toAdd;
-    bitCapIntOcl inOutMask = bitRegMaskOcl(inOutStart, length);
-    bitCapIntOcl otherMask = maxQPowerOcl - ONE_BCI;
-    otherMask ^= inOutMask;
+    const bitCapIntOcl toAddOcl = (bitCapIntOcl)toAdd;
+    const bitCapIntOcl inOutMask = bitRegMaskOcl(inOutStart, length);
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ inOutMask;
 
     Finish();
 
@@ -778,9 +773,9 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
     stateVec->isReadLocked = false;
 
     ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl otherRes = lcv & otherMask;
-        bitCapIntOcl partToAdd = toAddOcl;
-        bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
+        const bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl partToAdd = toAddOcl;
+        const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         std::unique_ptr<int8_t[]> nibbles(new int8_t[nibbleCount]);
         bool isValid = true;
         for (int j = 0; j < nibbleCount; j++) {
@@ -834,18 +829,16 @@ void QEngineCPU::INCDECBCDC(
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
 
-    bitCapIntOcl maxPow = intPowOcl(10U, nibbleCount);
+    const bitCapIntOcl maxPow = intPowOcl(10U, nibbleCount);
     toMod %= maxPow;
     if (toMod == 0) {
         return;
     }
 
-    bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
-    bitCapIntOcl inOutMask = bitRegMaskOcl(inOutStart, length);
-    bitCapIntOcl otherMask = maxQPowerOcl - ONE_BCI;
-    bitCapIntOcl carryMask = pow2Ocl(carryIndex);
-
-    otherMask ^= inOutMask | carryMask;
+    const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
+    const bitCapIntOcl inOutMask = bitRegMaskOcl(inOutStart, length);
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask);
+    const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
 
     Finish();
 
@@ -854,9 +847,9 @@ void QEngineCPU::INCDECBCDC(
     stateVec->isReadLocked = false;
 
     par_for_skip(0, maxQPowerOcl, pow2Ocl(carryIndex), ONE_BCI, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl otherRes = lcv & otherMask;
-        bitCapIntOcl partToAdd = toModOcl;
-        bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
+        const bitCapIntOcl otherRes = lcv & otherMask;
+        const bitCapIntOcl partToAdd = toModOcl;
+        const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         int test1, test2;
         int* nibbles = new int[nibbleCount];
         bool isValid = true;
@@ -921,9 +914,9 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
         SetReg(valueStart, valueLength, 0);
     }
 
-    bitLenInt valueBytes = (valueLength + 7U) / 8U;
-    bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
-    bitCapIntOcl skipPower = pow2Ocl(valueStart);
+    const bitLenInt valueBytes = (valueLength + 7U) / 8U;
+    const bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
+    const bitCapIntOcl skipPower = pow2Ocl(valueStart);
 
     Finish();
 
@@ -1013,13 +1006,13 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     // already know the carry is zero).  This bit masks let us quickly
     // distinguish the different values of the input register, output register,
     // carry, and other bits that aren't involved in the operation.
-    bitLenInt valueBytes = (valueLength + 7U) / 8U;
-    bitCapIntOcl lengthPower = pow2Ocl(valueLength);
-    bitCapIntOcl carryMask = pow2Ocl(carryIndex);
-    bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
-    bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
-    bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) & (~(inputMask | outputMask | carryMask));
-    bitCapIntOcl skipPower = pow2Ocl(carryIndex);
+    const bitLenInt valueBytes = (valueLength + 7U) / 8U;
+    const bitCapIntOcl lengthPower = pow2Ocl(valueLength);
+    const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
+    const bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
+    const bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) & (~(inputMask | outputMask | carryMask));
+    const bitCapIntOcl skipPower = pow2Ocl(carryIndex);
 
     ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         // These are qubits that are not directly involved in the
@@ -1125,13 +1118,13 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     // We're going to loop over every eigenstate in the vector, (except, we already know the carry is zero).
     // This bit masks let us quickly distinguish the different values of the input register, output register, carry, and
     // other bits that aren't involved in the operation.
-    bitLenInt valueBytes = (valueLength + 7U) / 8U;
-    bitCapIntOcl lengthPower = pow2Ocl(valueLength);
-    bitCapIntOcl carryMask = pow2Ocl(carryIndex);
-    bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
-    bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
-    bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) & (~(inputMask | outputMask | carryMask));
-    bitCapIntOcl skipPower = pow2Ocl(carryIndex);
+    const bitLenInt valueBytes = (valueLength + 7U) / 8U;
+    const bitCapIntOcl lengthPower = pow2Ocl(valueLength);
+    const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
+    const bitCapIntOcl inputMask = bitRegMaskOcl(indexStart, indexLength);
+    const bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) & (~(inputMask | outputMask | carryMask));
+    const bitCapIntOcl skipPower = pow2Ocl(carryIndex);
 
     ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         // These are qubits that are not directly involved in the
@@ -1220,8 +1213,8 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
     stateVec->isReadLocked = false;
 
     ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-        bitCapIntOcl inputRes = lcv & inputMask;
-        bitCapIntOcl inputInt = inputRes >> start;
+        const bitCapIntOcl inputRes = lcv & inputMask;
+        const bitCapIntOcl inputInt = inputRes >> start;
         bitCapIntOcl outputInt = 0;
         if (bytes == 1) {
             outputInt = values[inputInt];
@@ -1251,10 +1244,10 @@ void QEngineCPU::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt car
 {
     CHECK_ZERO_SKIP();
 
-    bitCapIntOcl input1Mask = pow2Ocl(inputBit1);
-    bitCapIntOcl input2Mask = pow2Ocl(inputBit2);
-    bitCapIntOcl carryInSumOutMask = pow2Ocl(carryInSumOut);
-    bitCapIntOcl carryOutMask = pow2Ocl(carryOut);
+    const bitCapIntOcl input1Mask = pow2Ocl(inputBit1);
+    const bitCapIntOcl input2Mask = pow2Ocl(inputBit2);
+    const bitCapIntOcl carryInSumOutMask = pow2Ocl(carryInSumOut);
+    const bitCapIntOcl carryOutMask = pow2Ocl(carryOut);
 
     bitCapIntOcl qPowers[2] = { carryInSumOutMask, carryOutMask };
     std::sort(qPowers, qPowers + 2);
@@ -1263,13 +1256,13 @@ void QEngineCPU::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt car
 
     par_for_mask(0, maxQPowerOcl, qPowers, 2, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         // Carry-in, sum bit in
-        complex ins0c0 = stateVec->read(lcv);
-        complex ins0c1 = stateVec->read(lcv | carryInSumOutMask);
-        complex ins1c0 = stateVec->read(lcv | carryOutMask);
-        complex ins1c1 = stateVec->read(lcv | carryInSumOutMask | carryOutMask);
+        const complex ins0c0 = stateVec->read(lcv);
+        const complex ins0c1 = stateVec->read(lcv | carryInSumOutMask);
+        const complex ins1c0 = stateVec->read(lcv | carryOutMask);
+        const complex ins1c1 = stateVec->read(lcv | carryInSumOutMask | carryOutMask);
 
-        bool aVal = (lcv & input1Mask) != 0;
-        bool bVal = (lcv & input2Mask) != 0;
+        const bool aVal = (lcv & input1Mask) != 0;
+        const bool bVal = (lcv & input2Mask) != 0;
 
         // Carry-out, sum bit out
         complex outs0c0, outs0c1, outs1c0, outs1c1;
@@ -1319,10 +1312,10 @@ void QEngineCPU::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 {
     CHECK_ZERO_SKIP();
 
-    bitCapIntOcl input1Mask = pow2Ocl(inputBit1);
-    bitCapIntOcl input2Mask = pow2Ocl(inputBit2);
-    bitCapIntOcl carryInSumOutMask = pow2Ocl(carryInSumOut);
-    bitCapIntOcl carryOutMask = pow2Ocl(carryOut);
+    const bitCapIntOcl input1Mask = pow2Ocl(inputBit1);
+    const bitCapIntOcl input2Mask = pow2Ocl(inputBit2);
+    const bitCapIntOcl carryInSumOutMask = pow2Ocl(carryInSumOut);
+    const bitCapIntOcl carryOutMask = pow2Ocl(carryOut);
 
     bitCapIntOcl qPowers[2] = { carryInSumOutMask, carryOutMask };
     std::sort(qPowers, qPowers + 2);
@@ -1331,13 +1324,13 @@ void QEngineCPU::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 
     par_for_mask(0, maxQPowerOcl, qPowers, 2, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         // Carry-in, sum bit out
-        complex outs0c0 = stateVec->read(lcv);
-        complex outs0c1 = stateVec->read(lcv | carryOutMask);
-        complex outs1c0 = stateVec->read(lcv | carryInSumOutMask);
-        complex outs1c1 = stateVec->read(lcv | carryInSumOutMask | carryOutMask);
+        const complex outs0c0 = stateVec->read(lcv);
+        const complex outs0c1 = stateVec->read(lcv | carryOutMask);
+        const complex outs1c0 = stateVec->read(lcv | carryInSumOutMask);
+        const complex outs1c1 = stateVec->read(lcv | carryInSumOutMask | carryOutMask);
 
-        bool aVal = (lcv & input1Mask) != 0;
-        bool bVal = (lcv & input2Mask) != 0;
+        const bool aVal = (lcv & input1Mask) != 0;
+        const bool bVal = (lcv & input2Mask) != 0;
 
         // Carry-out, sum bit in
         complex ins0c0, ins0c1, ins1c0, ins1c1;
@@ -1389,9 +1382,9 @@ void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLen
     CHECK_ZERO_SKIP();
 
     Dispatch(maxQPower, [this, greaterPerm, start, length, flagIndex] {
-        bitCapIntOcl regMask = bitRegMaskOcl(start, length);
-        bitCapIntOcl flagMask = pow2Ocl(flagIndex);
-        bitCapIntOcl greaterPermOcl = (bitCapIntOcl)greaterPerm;
+        const bitCapIntOcl regMask = bitRegMaskOcl(start, length);
+        const bitCapIntOcl flagMask = pow2Ocl(flagIndex);
+        const bitCapIntOcl greaterPermOcl = (bitCapIntOcl)greaterPerm;
 
         par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             if ((((lcv & regMask) >> start) < greaterPermOcl) & ((lcv & flagMask) == flagMask))
@@ -1406,8 +1399,8 @@ void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenI
     CHECK_ZERO_SKIP();
 
     Dispatch(maxQPower, [this, greaterPerm, start, length] {
-        bitCapIntOcl regMask = bitRegMaskOcl(start, length);
-        bitCapIntOcl greaterPermOcl = (bitCapIntOcl)greaterPerm;
+        const bitCapIntOcl regMask = bitRegMaskOcl(start, length);
+        const bitCapIntOcl greaterPermOcl = (bitCapIntOcl)greaterPerm;
 
         par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             if (((lcv & regMask) >> start) < greaterPermOcl)

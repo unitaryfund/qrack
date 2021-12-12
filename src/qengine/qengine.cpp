@@ -75,8 +75,6 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
         NormalizeState();
     }
 
-    complex phase = GetNonunitaryPhase();
-
     std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[length]);
     bitCapInt regMask = 0;
     for (bitCapIntOcl i = 0; i < length; i++) {
@@ -91,8 +89,9 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
     bitCapInt result;
     complex nrm;
 
+    const complex phase = GetNonunitaryPhase();
     if (values != NULL) {
-        result = 0;
+        bitCapInt result = 0;
         for (bitLenInt j = 0; j < length; j++) {
             result |= values[j] ? pow2(bits[j]) : 0;
         }
@@ -165,7 +164,7 @@ void QEngine::Mtrx(const complex* mtrx, bitLenInt qubit)
         return;
     }
 
-    bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
+    const bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
 
     bitCapIntOcl qPowers[1];
     qPowers[0] = pow2Ocl(qubit);
@@ -183,7 +182,7 @@ void QEngine::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const comp
         return;
     }
 
-    bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
+    const bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
 
     ApplyControlled2x2(controls, controlLen, target, mtrx);
     if (doCalcNorm) {
@@ -202,7 +201,7 @@ void QEngine::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const com
         return;
     }
 
-    bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
+    const bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
 
     ApplyAntiControlled2x2(controls, controlLen, target, mtrx);
     if (doCalcNorm) {
@@ -334,7 +333,7 @@ void QEngine::ApplyControlled2x2(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 1U]);
-    bitCapIntOcl targetMask = pow2Ocl(target);
+    const bitCapIntOcl targetMask = pow2Ocl(target);
     bitCapIntOcl fullMask = 0U;
     for (bitLenInt i = 0U; i < controlLen; i++) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
@@ -351,7 +350,7 @@ void QEngine::ApplyAntiControlled2x2(
     const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
 {
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 1U]);
-    bitCapIntOcl targetMask = pow2Ocl(target);
+    const bitCapIntOcl targetMask = pow2Ocl(target);
     for (bitLenInt i = 0U; i < controlLen; i++) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
     }
@@ -425,8 +424,8 @@ void QEngine::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 /// "fSim" gate, (useful in the simulation of particles with fermionic statistics)
 void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
-    real1 cosTheta = (real1)cos(theta);
-    real1 sinTheta = (real1)sin(theta);
+    const real1 cosTheta = (real1)cos(theta);
+    const real1 sinTheta = (real1)sin(theta);
 
     if (cosTheta != ONE_R1) {
         const complex fSimSwap[4] = { complex(cosTheta, ZERO_R1), complex(ZERO_R1, sinTheta),
@@ -448,7 +447,7 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
 
 void QEngine::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray)
 {
-    bitCapIntOcl lengthPower = pow2Ocl(length);
+    const bitCapIntOcl lengthPower = pow2Ocl(length);
     for (bitCapIntOcl lcv = 0; lcv < lengthPower; lcv++) {
         probsArray[lcv] = ProbReg(start, length, lcv);
     }
@@ -470,8 +469,8 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         NormalizeState();
     }
 
-    bitCapIntOcl lengthPower = pow2Ocl(length);
-    bitCapIntOcl regMask = (lengthPower - ONE_BCI) << (bitCapIntOcl)start;
+    const bitCapIntOcl lengthPower = pow2Ocl(length);
+    const bitCapIntOcl regMask = (lengthPower - ONE_BCI) << (bitCapIntOcl)start;
     real1 nrmlzr = ONE_R1;
 
     if (doForce) {
@@ -502,10 +501,9 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         probArray.reset();
     }
 
-    bitCapInt resultPtr = result << (bitCapIntOcl)start;
-    complex nrm = GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr));
-
     if (doApply) {
+        const bitCapInt resultPtr = result << (bitCapIntOcl)start;
+        const complex nrm = GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr));
         ApplyM(regMask, resultPtr, nrm);
     }
 
@@ -516,7 +514,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
 /// Add integer (without sign, with carry)
 void QEngine::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
+    const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
         toAdd++;
@@ -528,7 +526,7 @@ void QEngine::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt 
 /// Subtract integer (without sign, with carry)
 void QEngine::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
+    const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
     } else {
@@ -547,7 +545,7 @@ void QEngine::DECC(bitCapInt toSub, const bitLenInt inOutStart, const bitLenInt 
  */
 void QEngine::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
+    const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
         toAdd++;
@@ -564,7 +562,7 @@ void QEngine::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bit
  */
 void QEngine::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
+    const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
     } else {
@@ -584,7 +582,7 @@ void QEngine::DECSC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bit
 void QEngine::INCSC(
     bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
+    const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
         toAdd++;
@@ -602,7 +600,7 @@ void QEngine::INCSC(
 void QEngine::DECSC(
     bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
+    const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
     } else {
@@ -617,7 +615,7 @@ void QEngine::DECSC(
 /// Add BCD integer (without sign, with carry)
 void QEngine::INCBCDC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
+    const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
         toAdd++;
@@ -629,14 +627,14 @@ void QEngine::INCBCDC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
 /// Subtract BCD integer (without sign, with carry)
 void QEngine::DECBCDC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
-    bool hasCarry = M(carryIndex);
+    const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
     } else {
         toSub++;
     }
 
-    bitCapInt maxVal = intPow(10U, length / 4U);
+    const bitCapInt maxVal = intPow(10U, length / 4U);
     toSub %= maxVal;
     bitCapInt invToSub = maxVal - toSub;
     INCDECBCDC(invToSub, inOutStart, length, carryIndex);

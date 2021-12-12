@@ -691,11 +691,11 @@ void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
 
     cl_int error;
 
-    bool skipNorm = !doNormalize || (runningNorm == ONE_R1);
-    bool isXGate = skipNorm && (special == SPECIAL_2X2::PAULIX);
-    bool isZGate = skipNorm && (special == SPECIAL_2X2::PAULIZ);
-    bool isInvertGate = skipNorm && (special == SPECIAL_2X2::INVERT);
-    bool isPhaseGate = skipNorm && (special == SPECIAL_2X2::PHASE);
+    const bool skipNorm = !doNormalize || (runningNorm == ONE_R1);
+    const bool isXGate = skipNorm && (special == SPECIAL_2X2::PAULIX);
+    const bool isZGate = skipNorm && (special == SPECIAL_2X2::PAULIZ);
+    const bool isInvertGate = skipNorm && (special == SPECIAL_2X2::INVERT);
+    const bool isPhaseGate = skipNorm && (special == SPECIAL_2X2::PHASE);
 
     // Are we going to calculate the normalization factor, on the fly? We can't, if this call doesn't iterate through
     // every single permutation amplitude.
@@ -712,13 +712,13 @@ void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     // Arguments are concatenated into buffers by primitive type, such as integer or complex number.
 
     // Load the integer kernel arguments buffer.
-    bitCapIntOcl maxI = maxQPowerOcl >> bitCount;
+    const bitCapIntOcl maxI = maxQPowerOcl >> bitCount;
     bitCapIntOcl bciArgs[5] = { offset2, offset1, maxI, bitCount, 0 };
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
     // amount of work in this method call instance.
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // In an efficient OpenCL kernel, every single byte loaded comes at a significant execution time premium.
     // We handle single and double bit gates as special cases, for many reasons. Given that we have already separated
@@ -919,8 +919,8 @@ void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
     cl::Event writeArgsEvent;
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs, writeArgsEvent, error);
 
-    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     bool isPhaseParity = (api_call == OCL_API_PHASE_PARITY);
     if (isPhaseParity) {
@@ -990,8 +990,8 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 
     // We have default OpenCL work item counts and group sizes, but we may need to use different values due to the total
     // amount of work in this method call instance.
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Load a buffer with the powers of 2 of each bit index involved in the operation.
     DISPATCH_WRITE(waitVec, *powersBuffer, sizeof(bitCapIntOcl) * (controlLen + mtrxSkipLen), qPowers.get(), error);
@@ -1030,8 +1030,8 @@ void QEngineOCL::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent, error);
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex) * 3, &phaseFacs, writeNormEvent, error);
 
-    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
@@ -1078,8 +1078,8 @@ void QEngineOCL::CUniformParityRZ(
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs, writeArgsEvent, error);
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex) * 2, &phaseFacs, writeNormEvent, error);
 
-    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
@@ -1105,8 +1105,8 @@ void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapIntOcl* bciArgs, complex nrm)
     BufferPtr locCmplxBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(complex));
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->cmplxBuffer), sizeof(complex), &nrm, writeNormEvent, error);
 
-    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
@@ -1175,9 +1175,9 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
 
     SetQubitCount(nQubitCount);
 
-    size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-    bool forceAlloc = !stateVec && ((OclMemDenom * nStateVecSize) > maxMem);
+    const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const bool forceAlloc = !stateVec && ((OclMemDenom * nStateVecSize) > maxMem);
 
     writeArgsEvent.wait();
     wait_refs.clear();
@@ -1321,8 +1321,8 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     bitCapIntOcl largerPower = partPower > remainderPower ? partPower : remainderPower;
 
-    size_t ngc = FixWorkItemCount(largerPower, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(largerPower, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Call the kernel that calculates bit probability and angle, retaining both parts.
     if (destination) {
@@ -1346,10 +1346,10 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         EventVecPtr waitVec2 = ResetWaitEvents();
         DISPATCH_WRITE(waitVec2, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
-        size_t ngc2 = FixWorkItemCount(partPower, nrmGroupCount);
-        size_t ngs2 = FixGroupSize(ngc2, nrmGroupSize);
+        const size_t ngc2 = FixWorkItemCount(partPower, nrmGroupCount);
+        const size_t ngs2 = FixGroupSize(ngc2, nrmGroupSize);
 
-        size_t oNStateVecSize = maxQPowerOcl * sizeof(complex);
+        const size_t oNStateVecSize = maxQPowerOcl * sizeof(complex);
 
         WaitCall(OCL_API_DECOMPOSEAMP, ngc2, ngs2,
             { probBuffer2, angleBuffer2, poolItem->ulongBuffer, destination->stateBuffer });
@@ -1385,10 +1385,10 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     EventVecPtr waitVec3 = ResetWaitEvents();
     DISPATCH_WRITE(waitVec3, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
-    ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
-    ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc3 = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
+    const size_t ngs3 = FixGroupSize(ngc, nrmGroupSize);
 
-    size_t nStateVecSize = maxQPowerOcl * sizeof(complex);
+    const size_t nStateVecSize = maxQPowerOcl * sizeof(complex);
 
     clFinish();
 
@@ -1405,7 +1405,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     SubtractAlloc(sizeof(complex) * oMaxQPower);
 
     // Tell QueueCall to track deallocation:
-    QueueCall(OCL_API_DECOMPOSEAMP, ngc, ngs, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer }, 0,
+    QueueCall(OCL_API_DECOMPOSEAMP, ngc3, ngs3, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer }, 0,
         remainderDiff);
 }
 
@@ -1457,8 +1457,8 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 
     SetQubitCount(nLength);
 
-    size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     AddAlloc(sizeof(complex) * maxQPowerOcl);
     complex* nStateVec = AllocStateVec(maxQPowerOcl);
@@ -1490,8 +1490,8 @@ real1_f QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs, error);
 
     bitCapIntOcl maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, nrmBuffer }, sizeof(real1) * ngs);
 
@@ -1560,8 +1560,8 @@ void QEngineOCL::ProbRegAll(const bitLenInt& start, const bitLenInt& length, rea
     AddAlloc(sizeof(real1) * lengthPower);
     BufferPtr probsBuffer = MakeBuffer(context, CL_MEM_WRITE_ONLY, sizeof(real1) * lengthPower);
 
-    size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     QueueCall(OCL_API_PROBREGALL, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, probsBuffer });
 
@@ -1611,8 +1611,8 @@ real1_f QEngineOCL::ProbMask(const bitCapInt& mask, const bitCapInt& permutation
     skipPowers.reset();
 
     bitCapIntOcl maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     QueueCall(OCL_API_PROBMASK, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, nrmBuffer, qPowersBuffer },
         sizeof(real1) * ngs);
@@ -1690,8 +1690,8 @@ void QEngineOCL::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
         context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * skipLength, skipPowers.get());
     skipPowers.reset();
 
-    size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(lengthPower, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     QueueCall(OCL_API_PROBMASKALL, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, probsBuffer, qPowersBuffer, qSkipPowersBuffer });
@@ -1780,8 +1780,8 @@ real1_f QEngineOCL::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& l
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, length, (bitCapIntOcl)offset, 0, 0, 0, 0, 0, 0, 0 };
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 3, bciArgs, error);
 
-    size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     QueueCall(OCL_API_EXPPERM, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, bitMapBuffer, nrmBuffer },
         sizeof(real1) * ngs);
@@ -1864,8 +1864,8 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_AR
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * BCI_ARG_LEN, bciArgs, error);
 
     bitCapIntOcl maxI = bciArgs[0];
-    size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(maxI, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     std::vector<BufferPtr> oclArgs = { stateBuffer, poolItem->ulongBuffer, nStateBuffer };
 
@@ -2265,8 +2265,8 @@ void QEngineOCL::FullAdx(
     writeArgsEvent.wait();
     wait_refs.clear();
 
-    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer });
 }
@@ -2389,8 +2389,8 @@ void QEngineOCL::xMULx(OCLAPI api_call, bitCapIntOcl* bciArgs, BufferPtr control
     PoolItemPtr poolItem = GetFreePoolItem();
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 10, bciArgs, error);
 
-    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     if (controlBuffer) {
         WaitCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, nStateBuffer, controlBuffer });
@@ -2604,8 +2604,8 @@ void QEngineOCL::PhaseFlipX(OCLAPI api_call, bitCapIntOcl* bciArgs)
     cl::Event writeArgsEvent;
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 5, bciArgs, writeArgsEvent, error);
 
-    size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();
@@ -2761,10 +2761,10 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
-    size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    int partInnerSize = ngc / ngs;
+    const int partInnerSize = ngc / ngs;
 
     AddAlloc(sizeof(complex) * partInnerSize);
     BufferPtr locCmplxBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(complex) * partInnerSize);
@@ -2840,8 +2840,8 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh)
     cl::Event writeBCIArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, writeBCIArgsEvent, error);
 
-    size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
     writeRealArgsEvent.wait();
@@ -2881,8 +2881,8 @@ void QEngineOCL::UpdateRunningNorm(real1_f norm_thresh)
     cl::Event writeBCIArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl), &maxQPowerOcl, writeBCIArgsEvent, error);
 
-    size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
     writeRealArgsEvent.wait();
@@ -2949,8 +2949,8 @@ void QEngineOCL::ClearBuffer(BufferPtr buff, bitCapIntOcl offset, bitCapIntOcl s
     cl::Event writeArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 2, bciArgs, writeArgsEvent, error);
 
-    size_t ngc = FixWorkItemCount(size, nrmGroupCount);
-    size_t ngs = FixGroupSize(ngc, nrmGroupSize);
+    const size_t ngc = FixWorkItemCount(size, nrmGroupCount);
+    const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     // Wait for buffer write from limited lifetime objects
     writeArgsEvent.wait();

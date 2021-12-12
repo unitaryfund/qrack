@@ -23,7 +23,7 @@ namespace Qrack {
 /// Subtract integer (without sign)
 void QInterface::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
 {
-    bitCapInt invToSub = pow2(length) - toSub;
+    const bitCapInt invToSub = pow2(length) - toSub;
     INC(invToSub, inOutStart, length);
 }
 
@@ -34,7 +34,7 @@ void QInterface::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
  */
 void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
 {
-    bitCapInt invToSub = pow2(length) - toSub;
+    const bitCapInt invToSub = pow2(length) - toSub;
     INCS(invToSub, inOutStart, length, overflowIndex);
 }
 
@@ -42,7 +42,7 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
 void QInterface::CDEC(
     bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
-    bitCapInt invToSub = pow2(length) - toSub;
+    const bitCapInt invToSub = pow2(length) - toSub;
     CINC(invToSub, inOutStart, length, controls, controlLen);
 }
 
@@ -50,7 +50,7 @@ void QInterface::CDEC(
 /// Subtract BCD integer (without sign)
 void QInterface::DECBCD(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
 {
-    bitCapInt invToSub = intPow(10U, length / 4U) - toSub;
+    const bitCapInt invToSub = intPow(10U, length / 4U) - toSub;
     INCBCD(invToSub, inOutStart, length);
 }
 #endif
@@ -151,7 +151,7 @@ void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLe
     }
 
     // Otherwise, length > 1.
-    bitLenInt end = length - 1U;
+    const bitLenInt end = length - 1U;
     for (bitLenInt i = 1U; i < end; i++) {
         FullAdd(input1 + i, input2 + i, output + i, output + i + 1);
     }
@@ -171,7 +171,7 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
     }
 
     // Otherwise, length > 1.
-    bitLenInt end = length - 1U;
+    const bitLenInt end = length - 1U;
     IFullAdd(input1 + end, input2 + end, output + end, carry);
     for (bitLenInt i = (end - 1); i > 0; i--) {
         IFullAdd(input1 + i, input2 + i, output + i, output + i + 1);
@@ -194,7 +194,7 @@ void QInterface::CADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt
     }
 
     // Otherwise, length > 1.
-    bitLenInt end = length - 1U;
+    const bitLenInt end = length - 1U;
     for (bitLenInt i = 1; i < end; i++) {
         CFullAdd(controls, controlLen, input1 + i, input2 + i, output + i, output + i + 1);
     }
@@ -215,7 +215,7 @@ void QInterface::CIADC(const bitLenInt* controls, bitLenInt controlLen, bitLenIn
     }
 
     // Otherwise, length > 1.
-    bitLenInt end = length - 1U;
+    const bitLenInt end = length - 1U;
     CIFullAdd(controls, controlLen, input1 + end, input2 + end, output + end, carry);
     for (bitLenInt i = (end - 1); i > 0; i--) {
         CIFullAdd(controls, controlLen, input1 + i, input2 + i, output + i, output + i + 1);

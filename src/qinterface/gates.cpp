@@ -220,70 +220,70 @@ void QInterface::CIT(bitLenInt control, bitLenInt target) { CIPhaseRootN(3U, con
 /// Controlled not
 void QInterface::CNOT(bitLenInt control, bitLenInt target)
 {
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
     MCInvert(controls, 1, ONE_CMPLX, ONE_CMPLX, target);
 }
 
 /// Apply controlled Pauli Y matrix to bit
 void QInterface::CY(bitLenInt control, bitLenInt target)
 {
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
     MCInvert(controls, 1, -I_CMPLX, I_CMPLX, target);
 }
 
 /// Apply doubly-controlled Pauli Z matrix to bit
 void QInterface::CCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    bitLenInt controls[2] = { control1, control2 };
+    const bitLenInt controls[2] = { control1, control2 };
     MCInvert(controls, 2, -I_CMPLX, I_CMPLX, target);
 }
 
 /// "Anti-doubly-controlled Y" - Apply Pauli Y if control bits are both zero, do not apply if either control bit is one.
 void QInterface::AntiCCY(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    bitLenInt controls[2] = { control1, control2 };
+    const bitLenInt controls[2] = { control1, control2 };
     MACInvert(controls, 2, -I_CMPLX, I_CMPLX, target);
 }
 
 /// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
 void QInterface::AntiCY(bitLenInt control, bitLenInt target)
 {
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
     MACInvert(controls, 1, -I_CMPLX, I_CMPLX, target);
 }
 
 /// Apply controlled Pauli Z matrix to bit
 void QInterface::CZ(bitLenInt control, bitLenInt target)
 {
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
     MCPhase(controls, 1, ONE_CMPLX, -ONE_CMPLX, target);
 }
 
 /// Apply doubly-controlled Pauli Z matrix to bit
 void QInterface::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    bitLenInt controls[2] = { control1, control2 };
+    const bitLenInt controls[2] = { control1, control2 };
     MCPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, target);
 }
 
 /// "Anti-doubly-controlled Z" - Apply Pauli Z if control bits are both zero, do not apply if either control bit is one.
 void QInterface::AntiCCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    bitLenInt controls[2] = { control1, control2 };
+    const bitLenInt controls[2] = { control1, control2 };
     MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, target);
 }
 
 /// "Anti-controlled Z" - Apply Pauli Z if control bit is zero, do not apply if control bit is one.
 void QInterface::AntiCZ(bitLenInt control, bitLenInt target)
 {
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
     MACPhase(controls, 1, ONE_CMPLX, -ONE_CMPLX, target);
 }
 
 /// Apply controlled Hadamard matrix to bit
 void QInterface::CH(bitLenInt control, bitLenInt target)
 {
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
     const complex h[4] = { complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(ONE_R1 / SQRT2_R1, ZERO_R1),
         complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(-ONE_R1 / SQRT2_R1, ZERO_R1) };
     MCMtrx(controls, 1, h, target);
@@ -292,7 +292,7 @@ void QInterface::CH(bitLenInt control, bitLenInt target)
 /// Apply (anti-)controlled Hadamard matrix to bit
 void QInterface::AntiCH(bitLenInt control, bitLenInt target)
 {
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
     const complex h[4] = { complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(ONE_R1 / SQRT2_R1, ZERO_R1),
         complex(ONE_R1 / SQRT2_R1, ZERO_R1), complex(-ONE_R1 / SQRT2_R1, ZERO_R1) };
     MACMtrx(controls, 1, h, target);
@@ -301,21 +301,21 @@ void QInterface::AntiCH(bitLenInt control, bitLenInt target)
 /// Doubly-controlled not
 void QInterface::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    bitLenInt controls[2] = { control1, control2 };
+    const bitLenInt controls[2] = { control1, control2 };
     MCInvert(controls, 2, ONE_CMPLX, ONE_CMPLX, target);
 }
 
 /// "Anti-doubly-controlled not" - Apply "not" if control bits are both zero, do not apply if either control bit is one.
 void QInterface::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
 {
-    bitLenInt controls[2] = { control1, control2 };
+    const bitLenInt controls[2] = { control1, control2 };
     MACInvert(controls, 2, ONE_CMPLX, ONE_CMPLX, target);
 }
 
 /// "Anti-controlled not" - Apply "not" if control bit is zero, do not apply if control bit is one.
 void QInterface::AntiCNOT(bitLenInt control, bitLenInt target)
 {
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
     MACInvert(controls, 1, ONE_CMPLX, ONE_CMPLX, target);
 }
 
@@ -330,7 +330,7 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         return;
     }
 
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
 
     if (n == 2) {
         MCPhase(controls, 1, ONE_CMPLX, I_CMPLX, target);
@@ -355,7 +355,7 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target)
         return;
     }
 
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
 
     if (n == 2) {
         MCPhase(controls, 1, ONE_CMPLX, -I_CMPLX, target);
@@ -381,7 +381,7 @@ void QInterface::AntiCPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt targe
         return;
     }
 
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
 
     if (n == 2) {
         MACPhase(controls, 1, ONE_CMPLX, I_CMPLX, target);
@@ -407,7 +407,7 @@ void QInterface::AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt targ
         return;
     }
 
-    bitLenInt controls[1] = { control };
+    const bitLenInt controls[1] = { control };
 
     if (n == 2) {
         MACPhase(controls, 1, ONE_CMPLX, -I_CMPLX, target);
@@ -462,7 +462,7 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         return;
     }
 
-    bitLenInt min1 = length - 1U;
+    const bitLenInt min1 = length - 1U;
     std::unique_ptr<bitLenInt[]> controls(new bitLenInt[min1]);
     for (bitLenInt i = 0; i < min1; i++) {
         controls[i] = start + i;
@@ -628,7 +628,7 @@ void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
         mask = v;
     }
 
-    int end = (int)(qubits.size() - 1);
+    const int end = (int)(qubits.size() - 1);
     for (int i = 0; i < end; i++) {
         CNOT(qubits[i], qubits[i + 1U]);
     }
