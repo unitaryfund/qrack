@@ -48,7 +48,7 @@ QInterface::QInterface(
         rand_generator = rgp;
     }
 
-    SetConcurrency(std::thread::hardware_concurrency());
+    SetConcurrencyLevel(std::thread::hardware_concurrency());
 }
 
 /// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
