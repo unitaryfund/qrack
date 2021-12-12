@@ -125,7 +125,7 @@ void QPager::Init()
         rootEngine = QINTERFACE_HYBRID;
     }
 
-    if ((thresholdQubitsPerPage == 0) && (rootEngine == QINTERFACE_OPENCL)) {
+    if ((thresholdQubitsPerPage == 0) && ((rootEngine == QINTERFACE_OPENCL) || (rootEngine == QINTERFACE_HYBRID))) {
         useHardwareThreshold = true;
         useGpuThreshold = true;
 

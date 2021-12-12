@@ -73,13 +73,21 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , freezeTrySeparate(false)
     , isReactiveSeparate(true)
     , thresholdQubits(qubitThreshold)
-    , pagingThresholdQubits(21)
+    , pagingThresholdQubits(0)
     , separabilityThreshold(sep_thresh)
     , deviceIDs(devList)
 {
 #if ENABLE_ENV_VARS
     if (getenv("QRACK_QUNIT_PAGING_THRESHOLD")) {
         pagingThresholdQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_QUNIT_PAGING_THRESHOLD")));
+#if ENABLE_OPENCL
+    } else if (OCLEngine::Instance()->GetDeviceCount()) {
+        bitLenInt segmentGlobalQb = 0;
+        if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
+            segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
+        }
+        pagingThresholdQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
+#endif
     }
 
     if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
