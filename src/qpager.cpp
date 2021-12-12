@@ -160,7 +160,7 @@ void QPager::Init()
 #endif
 
 #if ENABLE_PTHREAD
-        const unsigned numCores = std::thread::hardware_concurrency();
+        const unsigned numCores = GetConcurrencyLevel();
         minPageQubits = pStridePow + ((numCores == 1U) ? 1U : (log2(numCores - 1U) + 1U));
 #else
         minPageQubits = pStridePow + 1U;
