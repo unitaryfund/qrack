@@ -52,7 +52,7 @@ void QInterface::AntiCU(
 /// Uniformly controlled y axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli y axis for each permutation
 /// "k" of the control bits.
 void QInterface::UniformlyControlledRY(
-    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles)
+    const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const real1* angles)
 {
     bitCapIntOcl permCount = pow2Ocl(controlLen);
     std::unique_ptr<complex[]> pauliRYs(new complex[4U * permCount]);
@@ -73,7 +73,7 @@ void QInterface::UniformlyControlledRY(
 /// Uniformly controlled z axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli z axis for each permutation
 /// "k" of the control bits.
 void QInterface::UniformlyControlledRZ(
-    const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles)
+    const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const real1* angles)
 {
     bitCapIntOcl permCount = pow2Ocl(controlLen);
     std::unique_ptr<complex[]> pauliRZs(new complex[4U * permCount]);

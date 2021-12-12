@@ -162,7 +162,7 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
 }
 
 /// Bit-wise apply measurement gate to a register
-bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply)
+bitCapInt QInterface::ForceM(const bitLenInt* bits, bitLenInt length, const bool* values, bool doApply)
 {
     bitCapInt result = 0;
     if (values == NULL) {
@@ -186,7 +186,7 @@ bitCapInt QInterface::ForceM(const bitLenInt* bits, const bitLenInt& length, con
 }
 
 /// Returns probability of permutation of the register
-real1_f QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
 {
     real1 prob = ONE_R1;
     for (bitLenInt i = 0; i < length; i++) {
@@ -200,7 +200,7 @@ real1_f QInterface::ProbReg(const bitLenInt& start, const bitLenInt& length, con
 }
 
 /// Returns probability of permutation of the mask
-real1_f QInterface::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+real1_f QInterface::ProbMask(bitCapInt mask, bitCapInt permutation)
 {
     real1 prob = ZERO_R1;
     for (bitCapInt lcv = 0; lcv < maxQPower; lcv++) {
@@ -238,7 +238,7 @@ std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr
     return ret;
 }
 
-void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
+void QInterface::ProbMaskAll(bitCapInt mask, real1* probsArray)
 {
     bitCapInt v = mask; // count the number of bits set in v
     bitLenInt length;
@@ -262,7 +262,7 @@ void QInterface::ProbMaskAll(const bitCapInt& mask, real1* probsArray)
     }
 }
 
-void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, real1* probsArray)
+void QInterface::ProbBitsAll(const bitLenInt* bits, bitLenInt length, real1* probsArray)
 {
     if (length == qubitCount) {
         bool isOrdered = true;
@@ -297,7 +297,7 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, rea
     }
 }
 
-real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset)
+real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset)
 {
     if (length == 1U) {
         return Prob(bits[0]);

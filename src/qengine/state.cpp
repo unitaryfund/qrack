@@ -594,9 +594,8 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
     });
 }
 
-void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
-    bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
-    const bitCapInt& mtrxSkipValueMask)
+void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
+    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
 {
     CHECK_ZERO_SKIP();
 
@@ -670,7 +669,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
     }
 }
 
-void QEngineCPU::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
+void QEngineCPU::UniformParityRZ(bitCapInt mask, real1_f angle)
 {
     CHECK_ZERO_SKIP();
 
@@ -699,8 +698,7 @@ void QEngineCPU::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
     });
 }
 
-void QEngineCPU::CUniformParityRZ(
-    const bitLenInt* cControls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
+void QEngineCPU::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
 {
     if (!controlLen) {
         return UniformParityRZ(mask, angle);
@@ -1156,7 +1154,7 @@ real1_f QEngineCPU::ProbAll(bitCapInt fullRegister)
 }
 
 // Returns probability of permutation of the register
-real1_f QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation)
+real1_f QEngineCPU::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
 {
     if (doNormalize) {
         NormalizeState();
@@ -1192,7 +1190,7 @@ real1_f QEngineCPU::ProbReg(const bitLenInt& start, const bitLenInt& length, con
 }
 
 // Returns probability of permutation of the mask
-real1_f QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+real1_f QEngineCPU::ProbMask(bitCapInt mask, bitCapInt permutation)
 {
     if (doNormalize) {
         NormalizeState();
@@ -1236,7 +1234,7 @@ real1_f QEngineCPU::ProbMask(const bitCapInt& mask, const bitCapInt& permutation
     return clampProb(prob);
 }
 
-real1_f QEngineCPU::ProbParity(const bitCapInt& mask)
+real1_f QEngineCPU::ProbParity(bitCapInt mask)
 {
     if (doNormalize) {
         NormalizeState();
@@ -1281,7 +1279,7 @@ real1_f QEngineCPU::ProbParity(const bitCapInt& mask)
     return clampProb(oddChance);
 }
 
-bool QEngineCPU::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
+bool QEngineCPU::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
     if (!stateVec || !mask) {
         return false;

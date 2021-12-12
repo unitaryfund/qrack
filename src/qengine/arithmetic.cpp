@@ -209,8 +209,7 @@ void QEngineCPU::CINC(
 }
 
 /// Add integer (without sign, with carry)
-void QEngineCPU::INCDECC(
-    bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+void QEngineCPU::INCDECC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
     CHECK_ZERO_SKIP();
 
@@ -312,8 +311,7 @@ void QEngineCPU::INCS(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, b
     ResetStateVec(nStateVec);
 }
 
-void QEngineCPU::INCDECSC(
-    bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+void QEngineCPU::INCDECSC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
     CHECK_ZERO_SKIP();
 
@@ -361,8 +359,8 @@ void QEngineCPU::INCDECSC(
     ResetStateVec(nStateVec);
 }
 
-void QEngineCPU::INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
-    const bitLenInt& overflowIndex, const bitLenInt& carryIndex)
+void QEngineCPU::INCDECSC(
+    bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     CHECK_ZERO_SKIP();
 
@@ -774,8 +772,8 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 
     ParallelFunc fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
-        const bitCapIntOcl partToAdd = toAddOcl;
-        const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
+        bitCapIntOcl partToAdd = toAddOcl;
+        bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         std::unique_ptr<int8_t[]> nibbles(new int8_t[nibbleCount]);
         bool isValid = true;
         for (int j = 0; j < nibbleCount; j++) {
@@ -815,8 +813,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
 }
 
 /// Add BCD integer (without sign, with carry)
-void QEngineCPU::INCDECBCDC(
-    bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
+void QEngineCPU::INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
 {
     CHECK_ZERO_SKIP();
 
@@ -837,8 +834,8 @@ void QEngineCPU::INCDECBCDC(
 
     const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
     const bitCapIntOcl inOutMask = bitRegMaskOcl(inOutStart, length);
-    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask);
     const bitCapIntOcl carryMask = pow2Ocl(carryIndex);
+    const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inOutMask | carryMask);
 
     Finish();
 
@@ -848,8 +845,8 @@ void QEngineCPU::INCDECBCDC(
 
     par_for_skip(0, maxQPowerOcl, pow2Ocl(carryIndex), ONE_BCI, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         const bitCapIntOcl otherRes = lcv & otherMask;
-        const bitCapIntOcl partToAdd = toModOcl;
-        const bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
+        bitCapIntOcl partToAdd = toModOcl;
+        bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         int test1, test2;
         int* nibbles = new int[nibbleCount];
         bool isValid = true;
@@ -904,7 +901,7 @@ void QEngineCPU::INCDECBCDC(
 
 /// Set 8 bit register bits based on read from classical memory
 bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-    bitLenInt valueLength, unsigned char* values, bool resetValue)
+    bitLenInt valueLength, const unsigned char* values, bool resetValue)
 {
     if (!stateVec) {
         return 0U;
@@ -972,7 +969,7 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 
 /// Add based on an indexed load from classical memory
 bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-    bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+    bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
 {
     if (!stateVec) {
         return 0U;
@@ -1084,7 +1081,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
 
 /// Subtract based on an indexed load from classical memory
 bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-    bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+    bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
 {
     if (!stateVec) {
         return 0U;
@@ -1199,7 +1196,7 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
 }
 
 /// Transform a length of qubit register via lookup through a hash table.
-void QEngineCPU::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
+void QEngineCPU::Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
 {
     CHECK_ZERO_SKIP();
 

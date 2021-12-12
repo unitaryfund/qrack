@@ -422,9 +422,8 @@ void QInterface::AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt targ
         controls, 1, ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), target);
 }
 
-void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
-    bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
-    const bitCapInt& mtrxSkipValueMask)
+void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
+    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
 {
     for (bitCapInt lcv = 0; lcv < pow2(controlLen); lcv++) {
         bitCapInt index = pushApartBits(lcv, mtrxSkipPowers, mtrxSkipLen) | mtrxSkipValueMask;
@@ -576,8 +575,7 @@ void QInterface::ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     CNOT(qubitIndex1, qubitIndex2);
 }
 
-void QInterface::CSwap(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QInterface::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]());
     std::copy(controls, controls + controlLen, lControls.get());
@@ -592,8 +590,7 @@ void QInterface::CSwap(
     MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, qubit2);
 }
 
-void QInterface::AntiCSwap(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QInterface::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]());
     std::copy(controls, controls + controlLen, lControls.get());

@@ -249,8 +249,7 @@ void QPager::SeparateEngines(bitLenInt thresholdBits, bool noBaseFloor)
     qPages = nQPages;
 }
 
-template <typename Qubit1Fn>
-void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl, const bool& isAnti)
+template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, bool isSqiCtrl, bool isAnti)
 {
     bitLenInt qpp = qubitsPerPage();
 
@@ -326,8 +325,8 @@ void QPager::SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl,
 // This is like the QEngineCPU and QEngineOCL logic for register-like CNOT and CCNOT, just swapping sub-engine indices
 // instead of amplitude indices.
 template <typename Qubit1Fn>
-void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn,
-    const complex* mtrx, const bool& isSqiCtrl, const bool& isIntraCtrled)
+void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, Qubit1Fn fn,
+    const complex* mtrx, bool isSqiCtrl, bool isIntraCtrled)
 {
     const bitLenInt qpp = qubitsPerPage();
     const bitLenInt sqi = qpp - 1U;
@@ -732,7 +731,7 @@ void QPager::Mtrx(const complex* mtrx, bitLenInt target)
     SingleBitGate(target, [mtrx](QEnginePtr engine, bitLenInt lTarget) { engine->Mtrx(mtrx, lTarget); });
 }
 
-void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom, bitLenInt target)
+void QPager::ApplySingleEither(bool isInvert, complex top, complex bottom, bitLenInt target)
 {
     SeparateEngines();
     bitLenInt qpp = qubitsPerPage();
@@ -775,8 +774,8 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
     }
 }
 
-void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* controls, const bitLenInt& controlLen,
-    const bitLenInt& target, const complex* mtrx)
+void QPager::ApplyEitherControlledSingleBit(
+    bool anti, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx)
 {
     if (controlLen == 0) {
         Mtrx(mtrx, target);
@@ -821,9 +820,8 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
     }
 }
 
-void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex,
-    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
-    const bitCapInt& mtrxSkipValueMask)
+void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
+    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
 {
     CombineAndOpControlled(
         [&](QEnginePtr engine) {
@@ -833,20 +831,18 @@ void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, const bitLe
         { qubitIndex }, controls, controlLen);
 }
 
-void QPager::UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
+void QPager::UniformParityRZ(bitCapInt mask, real1_f angle)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->UniformParityRZ(mask, angle); }, { log2(mask) });
 }
 
-void QPager::CUniformParityRZ(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
+void QPager::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
 {
     CombineAndOpControlled([&](QEnginePtr engine) { engine->CUniformParityRZ(controls, controlLen, mask, angle); },
         { log2(mask) }, controls, controlLen);
 }
 
-void QPager::CSwap(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QPager::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controlLen == 0) {
         Swap(qubit1, qubit2);
@@ -860,8 +856,7 @@ void QPager::CSwap(
     CombineAndOpControlled([&](QEnginePtr engine) { engine->CSwap(controls, controlLen, qubit1, qubit2); },
         { qubit1, qubit2 }, controls, controlLen);
 }
-void QPager::AntiCSwap(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QPager::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controlLen == 0) {
         Swap(qubit1, qubit2);
@@ -875,8 +870,7 @@ void QPager::AntiCSwap(
     CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCSwap(controls, controlLen, qubit1, qubit2); },
         { qubit1, qubit2 }, controls, controlLen);
 }
-void QPager::CSqrtSwap(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QPager::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controlLen == 0) {
         SqrtSwap(qubit1, qubit2);
@@ -890,8 +884,7 @@ void QPager::CSqrtSwap(
     CombineAndOpControlled([&](QEnginePtr engine) { engine->CSqrtSwap(controls, controlLen, qubit1, qubit2); },
         { qubit1, qubit2 }, controls, controlLen);
 }
-void QPager::AntiCSqrtSwap(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QPager::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controlLen == 0) {
         SqrtSwap(qubit1, qubit2);
@@ -905,8 +898,7 @@ void QPager::AntiCSqrtSwap(
     CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2); },
         { qubit1, qubit2 }, controls, controlLen);
 }
-void QPager::CISqrtSwap(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QPager::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controlLen == 0) {
         ISqrtSwap(qubit1, qubit2);
@@ -920,8 +912,7 @@ void QPager::CISqrtSwap(
     CombineAndOpControlled([&](QEnginePtr engine) { engine->CISqrtSwap(controls, controlLen, qubit1, qubit2); },
         { qubit1, qubit2 }, controls, controlLen);
 }
-void QPager::AntiCISqrtSwap(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+void QPager::AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controlLen == 0) {
         ISqrtSwap(qubit1, qubit2);
@@ -1216,7 +1207,7 @@ void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitL
 }
 
 bitCapInt QPager::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
-    unsigned char* values, bool ignored)
+    const unsigned char* values, bool ignored)
 {
     CombineAndOp(
         [&](QEnginePtr engine) { engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, true); },
@@ -1227,7 +1218,7 @@ bitCapInt QPager::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLen
 }
 
 bitCapInt QPager::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
-    bitLenInt carryIndex, unsigned char* values)
+    bitLenInt carryIndex, const unsigned char* values)
 {
     CombineAndOp(
         [&](QEnginePtr engine) {
@@ -1239,7 +1230,7 @@ bitCapInt QPager::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLen
     return 0;
 }
 bitCapInt QPager::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
-    bitLenInt carryIndex, unsigned char* values)
+    bitLenInt carryIndex, const unsigned char* values)
 {
     CombineAndOp(
         [&](QEnginePtr engine) {
@@ -1250,7 +1241,7 @@ bitCapInt QPager::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLen
 
     return 0;
 }
-void QPager::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
+void QPager::Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->Hash(start, length, values); },
         { static_cast<bitLenInt>(start + length - 1U) });
@@ -1474,7 +1465,7 @@ real1_f QPager::Prob(bitLenInt qubit)
     return clampProb(oneChance);
 }
 
-real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
+real1_f QPager::ProbMask(bitCapInt mask, bitCapInt permutation)
 {
     CombineEngines(log2(mask));
 
@@ -1485,7 +1476,7 @@ real1_f QPager::ProbMask(const bitCapInt& mask, const bitCapInt& permutation)
     return clampProb(maskChance);
 }
 
-real1_f QPager::ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset)
+real1_f QPager::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset)
 {
     if (length != qubitCount) {
         return QInterface::ExpectationBitsAll(bits, length, offset);

@@ -84,7 +84,7 @@ public:
 
     virtual void FreeStateVec(complex* sv = NULL) { stateVec = NULL; }
 
-    virtual void GetAmplitudePage(complex* pagePtr, const bitCapIntOcl offset, const bitCapIntOcl length)
+    virtual void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
     {
         Finish();
 
@@ -94,7 +94,7 @@ public:
             std::fill(pagePtr, pagePtr + length, ZERO_CMPLX);
         }
     }
-    virtual void SetAmplitudePage(const complex* pagePtr, const bitCapIntOcl offset, const bitCapIntOcl length)
+    virtual void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
     {
         if (!stateVec) {
             ResetStateVec(AllocStateVec(maxQPowerOcl));
@@ -108,7 +108,7 @@ public:
         runningNorm = REAL1_DEFAULT_ARG;
     }
     virtual void SetAmplitudePage(
-        QEnginePtr pageEnginePtr, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset, const bitCapIntOcl length)
+        QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
     {
         QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
         StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
@@ -194,11 +194,11 @@ public:
         runningNorm = src->GetRunningNorm();
     }
 
-    virtual void QueueSetDoNormalize(const bool& doNorm)
+    virtual void QueueSetDoNormalize(bool doNorm)
     {
         Dispatch(1U, [this, doNorm] { doNormalize = doNorm; });
     }
-    virtual void QueueSetRunningNorm(const real1_f& runningNrm)
+    virtual void QueueSetRunningNorm(real1_f runningNrm)
     {
         Dispatch(1U, [this, runningNrm] { runningNorm = runningNrm; });
     }
@@ -261,12 +261,12 @@ public:
     virtual void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
     virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, unsigned char* values, bool resetValue = true);
+        bitLenInt valueLength, const unsigned char* values, bool resetValue = true);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values);
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
-    virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values);
+        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values);
+    virtual void Hash(bitLenInt start, bitLenInt length, const unsigned char* values);
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
 
@@ -280,12 +280,10 @@ public:
      */
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
-    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
-        bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
-        const bitCapInt& mtrxSkipValueMask);
-    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle);
-    virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle);
+    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
+        const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask);
+    virtual void UniformParityRZ(bitCapInt mask, real1_f angle);
+    virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle);
 
     /** @} */
 
@@ -297,10 +295,10 @@ public:
 
     virtual real1_f Prob(bitLenInt qubitIndex);
     virtual real1_f ProbAll(bitCapInt fullRegister);
-    virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
-    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
-    virtual real1_f ProbParity(const bitCapInt& mask);
-    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
+    virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation);
+    virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
+    virtual real1_f ProbParity(bitCapInt mask);
+    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
@@ -333,21 +331,18 @@ protected:
     }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUPtr dest);
-    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, const bitLenInt bitCount,
+    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
 #if ENABLE_ALU
-    virtual void INCDECC(
-        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
+    virtual void INCDECC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCDECSC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
     virtual void INCDECSC(
-        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
-    virtual void INCDECSC(bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length,
-        const bitLenInt& overflowIndex, const bitLenInt& carryIndex);
+        bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
 #if ENABLE_BCD
-    virtual void INCDECBCDC(
-        bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
+    virtual void INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
 #endif
 
     typedef std::function<bitCapIntOcl(const bitCapIntOcl&, const bitCapIntOcl&)> IOFn;

@@ -120,8 +120,8 @@ protected:
 
     template <typename Fn> void ApplySingle(const complex* mtrx, bitLenInt target, Fn leafFunc);
     template <typename Lfn>
-    void ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, bool isAnti, Lfn leafFunc);
+    void ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target,
+        bool isAnti, Lfn leafFunc);
 
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
 
@@ -131,7 +131,7 @@ protected:
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
     }
 
-    void FlushBuffer(const bitLenInt& i)
+    void FlushBuffer(bitLenInt i)
     {
         MpsShardPtr shard = shards[i];
         if (!shard) {
@@ -266,7 +266,7 @@ public:
     virtual real1_f ProbAll(bitCapInt fullRegister);
 
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
-        const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
+        const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
     {
         FlushBuffers();
         QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
@@ -277,13 +277,13 @@ public:
     virtual bitCapInt MAll();
 
     virtual void Mtrx(const complex* mtrx, bitLenInt target);
-    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt target);
-    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt target);
+    virtual void Phase(complex topLeft, complex bottomRight, bitLenInt target);
+    virtual void Invert(complex topRight, complex bottomLeft, bitLenInt target);
     virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
     virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
 
-    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true);
-    virtual real1_f ProbParity(const bitCapInt& mask)
+    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
+    virtual real1_f ProbParity(bitCapInt mask)
     {
         FlushBuffers();
         QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
@@ -294,29 +294,24 @@ public:
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubitIndex1, qubitIndex2); });
     }
-    virtual void CSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->CSqrtSwap(controls, controlLen, qubit1, qubit2); });
     }
-    virtual void AntiCSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2); });
     }
-    virtual void CISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->CISqrtSwap(controls, controlLen, qubit1, qubit2); });
     }
-    virtual void AntiCISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2)
+    virtual void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2); });
     }
 
-    virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle)
+    virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->CUniformParityRZ(controls, controlLen, mask, angle); });
     }
@@ -432,27 +427,27 @@ public:
             [&](QInterfacePtr eng) { eng->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen); });
     }
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, unsigned char* values, bool resetValue = true)
+        bitLenInt valueLength, const unsigned char* values, bool resetValue = true)
     {
         return BitCapIntAsStateVector([&](QInterfacePtr eng) {
             return eng->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
         });
     }
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
     {
         return BitCapIntAsStateVector([&](QInterfacePtr eng) {
             return eng->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         });
     }
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values)
+        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
     {
         return BitCapIntAsStateVector([&](QInterfacePtr eng) {
             return eng->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         });
     }
-    virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values)
+    virtual void Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->Hash(start, length, values); });
     }

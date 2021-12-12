@@ -32,9 +32,9 @@ namespace Qrack {
 // These are utility functions defined in qinterface/protected.cpp:
 unsigned char* cl_alloc(size_t ucharCount);
 void cl_free(void* toFree);
-void mul2x2(complex* left, complex* right, complex* out);
-void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
-void log2x2(complex* matrix2x2, complex* outMatrix2x2);
+void mul2x2(const complex* left, const complex* right, complex* out);
+void exp2x2(const complex* matrix2x2, complex* outMatrix2x2);
+void log2x2(const complex* matrix2x2, complex* outMatrix2x2);
 bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount);
@@ -248,7 +248,7 @@ protected:
         toFree = NULL;
     }
 
-    bool IsIdentity(const complex* mtrx, const bool isControlled);
+    bool IsIdentity(const complex* mtrx, bool isControlled);
 
     complex GetNonunitaryPhase()
     {
@@ -545,13 +545,12 @@ public:
      */
 
     virtual void UniformlyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+        const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const complex* mtrxs)
     {
         UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs, NULL, 0, 0);
     }
-    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
-        bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
-        const bitCapInt& mtrxSkipValueMask);
+    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
+        const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask);
 
     /**
      * To define a Hamiltonian, give a vector of controlled single bit gates ("HamiltonianOp" instances) that are
@@ -573,38 +572,33 @@ public:
     /**
      * Apply a swap with arbitrary control bits.
      */
-    virtual void CSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+    virtual void CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply a swap with arbitrary (anti) control bits.
      */
-    virtual void AntiCSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+    virtual void AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply a square root of swap with arbitrary control bits.
      */
-    virtual void CSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+    virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2) = 0;
 
     /**
      * Apply a square root of swap with arbitrary (anti) control bits.
      */
-    virtual void AntiCSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+    virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2) = 0;
 
     /**
      * Apply an inverse square root of swap with arbitrary control bits.
      */
-    virtual void CISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+    virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2) = 0;
 
     /**
      * Apply an inverse square root of swap with arbitrary (anti) control bits.
      */
     virtual void AntiCISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2) = 0;
+        const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2) = 0;
 
     /**
      * Doubly-controlled NOT gate
@@ -829,12 +823,12 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true) = 0;
+    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true) = 0;
 
     /**
      * Measure (and collapse) parity of the masked set of qubits
      */
-    virtual bool MParity(const bitCapInt& mask) { return ForceMParity(mask, false, false); }
+    virtual bool MParity(bitCapInt mask) { return ForceMParity(mask, false, false); }
 
     /**
      * S gate
@@ -1189,7 +1183,7 @@ public:
      * bits, there are therefore 2^k real components in "angles."
      */
     virtual void UniformlyControlledRY(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
+        const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const real1* angles);
 
     /**
      * Apply a "uniformly controlled" rotation of a bit around the Pauli Z axis. (See
@@ -1202,24 +1196,20 @@ public:
      * bits, there are therefore 2^k real components in "angles."
      */
     virtual void UniformlyControlledRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
+        const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const real1* angles);
 
     /**
      * If the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$. If the target qubit set
      * parity is even, this applies the conjugate, e^{-i angle}.
      */
-    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
-    {
-        CUniformParityRZ(NULL, 0, mask, angle);
-    }
+    virtual void UniformParityRZ(bitCapInt mask, real1_f angle) { CUniformParityRZ(NULL, 0, mask, angle); }
 
     /**
      * If the controls are set and the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$.
      * If the controls are set and the target qubit set parity is even, this applies the conjugate, \f$e^{-i angle}\f$.
      * Otherwise, do nothing if any control is not set.
      */
-    virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle) = 0;
+    virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle) = 0;
 
     /**
      * Phase shift gate
@@ -1379,59 +1369,6 @@ public:
     virtual void CRYDyad(int numerator, int denomPower, bitLenInt control, bitLenInt target);
 
     /**
-<<<<<<< HEAD
-=======
-     * Apply a "uniformly controlled" rotation of a bit around the Pauli Y axis. (See
-     * https://arxiv.org/abs/quant-ph/0312218)
-     *
-     * A different rotation angle is associated with each permutation of the control bits. The first control bit index
-     * in the "controls" array is the least significant bit of the permutation, proceeding to the most significant bit.
-     * "angles" is an array where each subsequent component is rotation angle associated with the next permutation of
-     * the control bits, starting from 0. All combinations of control bits apply one of rotation angles. For k control
-     * bits, there are therefore 2^k real components in "angles."
-     */
-    virtual void UniformlyControlledRY(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
-
-    /**
-     * Apply a "uniformly controlled" rotation of a bit around the Pauli Z axis. (See
-     * https://arxiv.org/abs/quant-ph/0312218)
-     *
-     * A different rotation angle is associated with each permutation of the control bits. The first control bit index
-     * in the "controls" array is the least significant bit of the permutation, proceeding to the most significant bit.
-     * "angles" is an array where each subsequent component is rotation angle associated with the next permutation of
-     * the control bits, starting from 0. All combinations of control bits apply one of rotation angles. For k control
-     * bits, there are therefore 2^k real components in "angles."
-     */
-    virtual void UniformlyControlledRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, bitLenInt qubitIndex, const real1* angles);
-
-    /**
-     * If the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$. If the target qubit set
-     * parity is even, this applies the conjugate, \f$e^{-i angle}\f$.
-     */
-    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle)
-    {
-        CUniformParityRZ(NULL, 0, mask, angle);
-    }
-
-    /**
-     * If the controls are set and the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$.
-     * If the controls are set and the target qubit set parity is even, this applies the conjugate, \f$e^{-i angle}\f$.
-     * Otherwise, do nothing if any control is not set.
-     */
-    virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle) = 0;
-
-    /**
-     * Z axis rotation gate
-     *
-     * Rotates as \f$ e^{-i \theta/2} \f$ around Pauli Z axis.
-     */
-    virtual void RZ(real1_f radians, bitLenInt qubitIndex);
-
-    /**
->>>>>>> main
      * Dyadic fraction Z axis rotation gate
      *
      * Rotates as \f$ \exp\left(i \pi numerator / 2^{denomPower}\right) \f$ around Pauli Z axis.
@@ -2114,7 +2051,7 @@ public:
      * at a time.
      */
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, unsigned char* values, bool resetValue = true) = 0;
+        bitLenInt valueLength, const unsigned char* values, bool resetValue = true) = 0;
 
     /**
      * Add to entangled 8 bit register state with a superposed
@@ -2144,7 +2081,7 @@ public:
      * IndexedLDA().
      */
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
+        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values) = 0;
 
     /**
      * Subtract from an entangled 8 bit register state with a superposed
@@ -2174,13 +2111,13 @@ public:
      * IndexedLDA().
      */
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values) = 0;
+        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values) = 0;
 
     /** Transform a length of qubit register via lookup through a hash table. The hash table must be a one-to-one
      * function, otherwise the behavior of this method is undefined. The value array definition convention is the same
      * as IndexedLDA(). Essentially, this is an IndexedLDA() operation that replaces the index register with the value
      * register, but the lookup table must therefore be one-to-one, for this operation to be unitary, as required. */
-    virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values) = 0;
+    virtual void Hash(bitLenInt start, bitLenInt length, const unsigned char* values) = 0;
 
     /** The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation. */
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex) = 0;
@@ -2253,10 +2190,10 @@ public:
         bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true);
 
     /** Measure bits with indices in array, and return a mask of the results */
-    virtual bitCapInt M(const bitLenInt* bits, const bitLenInt& length) { return ForceM(bits, length, NULL); }
+    virtual bitCapInt M(const bitLenInt* bits, bitLenInt length) { return ForceM(bits, length, NULL); }
 
     /** Measure bits with indices in array, and return a mask of the results */
-    virtual bitCapInt ForceM(const bitLenInt* bits, const bitLenInt& length, const bool* values, bool doApply = true);
+    virtual bitCapInt ForceM(const bitLenInt* bits, bitLenInt length, const bool* values, bool doApply = true);
 
     /** Swap values of two bits in register */
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
@@ -2310,7 +2247,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbReg(const bitLenInt& start, const bitLenInt& length, const bitCapInt& permutation);
+    virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation);
 
     /**
      * Direct measure of masked permutation probability
@@ -2321,7 +2258,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
+    virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
 
     /**
      * Direct measure of masked permutation probability
@@ -2331,7 +2268,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void ProbMaskAll(const bitCapInt& mask, real1* probsArray);
+    virtual void ProbMaskAll(bitCapInt mask, real1* probsArray);
 
     /**
      * Direct measure of listed permutation probability
@@ -2341,7 +2278,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void ProbBitsAll(const bitLenInt* bits, const bitLenInt& length, real1* probsArray);
+    virtual void ProbBitsAll(const bitLenInt* bits, bitLenInt length, real1* probsArray);
 
     /**
      * Get permutation expectation value of bits
@@ -2351,10 +2288,10 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0);
+    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset = 0);
 
     /** Overall probability of any odd permutation of the masked set of bits */
-    virtual real1_f ProbParity(const bitCapInt& mask) = 0;
+    virtual real1_f ProbParity(bitCapInt mask) = 0;
 
     /**
      * Statistical measure of masked permutation probability
@@ -2453,7 +2390,7 @@ public:
      * Returns "true" if current qubit state is identifiably within the Clifford set, or "false" if it is not or cannot
      * be determined.
      */
-    virtual bool isClifford(const bitLenInt& qubit) { return false; };
+    virtual bool isClifford(bitLenInt qubit) { return false; };
 
     /**
      *  Qrack::QUnit types maintain explicit separation of representations of qubits, which reduces memory usage and
@@ -2484,7 +2421,7 @@ public:
      * more-aggresively recover separability of subsystems. It can either hurt or help performance, though it commonly
      * helps.
      */
-    virtual void SetReactiveSeparate(const bool& isAggSep) {}
+    virtual void SetReactiveSeparate(bool isAggSep) {}
     /**
      *  Get reactive separation option
      *
@@ -2502,7 +2439,7 @@ public:
     /**
      *  Set the device index, if more than one device is available.
      */
-    virtual void SetDevice(const int& dID, const bool& forceReInit = false) {}
+    virtual void SetDevice(int dID, bool forceReInit = false) {}
 
     /**
      *  Get the device index. ("-1" is default).

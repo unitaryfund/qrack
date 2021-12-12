@@ -46,12 +46,12 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     amplitudeFloor = REAL1_EPSILON;
 }
 
-QStabilizerPtr QStabilizerHybrid::MakeStabilizer(const bitCapInt& perm)
+QStabilizerPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)
 {
     return std::make_shared<QStabilizer>(qubitCount, perm, useRDRAND, rand_generator);
 }
 
-QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
+QInterfacePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
 {
     QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qubitCount, perm, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
@@ -60,7 +60,7 @@ QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
     return toRet;
 }
 
-void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
+void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
 {
     if (engine) {
         return;
@@ -400,9 +400,9 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     CacheEigenstate(target);
 }
 
-void QStabilizerHybrid::Phase(const complex topLeft, const complex bottomRight, bitLenInt target)
+void QStabilizerHybrid::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 {
-    complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+    const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (shards[target]) {
         Mtrx(mtrx, target);
         return;
@@ -441,9 +441,9 @@ void QStabilizerHybrid::Phase(const complex topLeft, const complex bottomRight, 
     CacheEigenstate(target);
 }
 
-void QStabilizerHybrid::Invert(const complex topRight, const complex bottomLeft, bitLenInt target)
+void QStabilizerHybrid::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 {
-    complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+    const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (shards[target]) {
         Mtrx(mtrx, target);
         return;
@@ -871,7 +871,7 @@ bitCapInt QStabilizerHybrid::MAll()
 }
 
 std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
-    const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots)
+    const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
 {
     if (!shots) {
         return std::map<bitCapInt, int>();

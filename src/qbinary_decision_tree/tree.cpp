@@ -64,7 +64,7 @@ QInterfacePtr QBinaryDecisionTree::MakeStateVector()
         false, devID, hardware_rand_generator != NULL, false, amplitudeFloor);
 }
 
-bool QBinaryDecisionTree::ForceMParity(const bitCapInt& mask, bool result, bool doForce)
+bool QBinaryDecisionTree::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
     SetStateVector();
     bool toRet = stateVecUnit->ForceMParity(mask, result, doForce);
@@ -307,7 +307,7 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
         root.swap(rootClone);
     }
 
-    par_for_qbdt(0, maxI, [&](const bitCapIntOcl i, const int cpu) {
+    par_for_qbdt(0, maxI, [&](const bitCapIntOcl& i, const int& cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         for (bitLenInt j = 0; j < qbCount; j++) {
             if (IS_NORM_0(leaf->scale)) {
@@ -382,7 +382,7 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     bitLenInt j;
     bitCapIntOcl maxI = pow2Ocl(start);
     QBinaryDecisionTreeNodePtr startNode = NULL;
-    par_for_qbdt(0, maxI, [&](const bitCapIntOcl i, const int cpu) {
+    par_for_qbdt(0, maxI, [&](const bitCapIntOcl& i, const int& cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         for (j = 0; j < start; j++) {
             if (IS_NORM_0(leaf->scale)) {
@@ -441,7 +441,7 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
     unsigned numCores = GetConcurrencyLevel();
     std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
 
-    par_for(0, qPower, [&](const bitCapIntOcl i, const int cpu) {
+    par_for(0, qPower, [&](const bitCapIntOcl& i, const int& cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         complex scale = root->scale;
         for (bitLenInt j = 0; j < qubit; j++) {
@@ -525,7 +525,7 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
     bitCapIntOcl qPower = pow2Ocl(qubit);
     root->scale = GetNonunitaryPhase();
 
-    par_for(0, qPower, [&](const bitCapIntOcl i, const int cpu) {
+    par_for(0, qPower, [&](const bitCapIntOcl& i, const int& cpu) {
         QBinaryDecisionTreeNodePtr leaf = root;
         for (bitLenInt j = 0; j < qubit; j++) {
             if (IS_NORM_0(leaf->scale)) {
@@ -607,7 +607,7 @@ void QBinaryDecisionTree::Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTre
     bitCapIntOcl remainderPow = pow2Ocl(remainder);
     bitCapIntOcl maskTarget = (isAnti ? (bitCapIntOcl)0U : (bitCapIntOcl)highControlMask);
 
-    IncrementFunc fn = [&](const bitCapIntOcl i, const int cpu) {
+    IncrementFunc fn = [&](const bitCapIntOcl& i, const int& cpu) {
         size_t bit;
         bool isZero;
 
@@ -687,7 +687,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(const complex* lMtr
     Dispatch(targetPow, [this, mtrx, target, targetPow, leafFunc]() {
         bool isParallel = (pow2Ocl(target) < GetParallelThreshold());
 
-        par_for_qbdt(0, targetPow, [&](const bitCapIntOcl i, const int cpu) {
+        par_for_qbdt(0, targetPow, [&](const bitCapIntOcl& i, const int& cpu) {
             QBinaryDecisionTreeNodePtr leaf = root;
             // Iterate to qubit depth.
             for (bitLenInt j = 0; j < target; j++) {
@@ -798,8 +798,8 @@ void QBinaryDecisionTree::Invert(const complex topRight, const complex bottomLef
 }
 
 template <typename Lfn>
-void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitLenInt* controls,
-    const bitLenInt& controlLen, const bitLenInt& target, bool isAnti, Lfn leafFunc)
+void QBinaryDecisionTree::ApplyControlledSingle(
+    const complex* lMtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti, Lfn leafFunc)
 {
     if (!controlLen) {
         ApplySingle(lMtrx, target, leafFunc);
@@ -854,7 +854,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
         bitCapIntOcl maxLcv = targetPow >> qPowersSorted.size();
         bool isParallel = (maxLcv < GetParallelThreshold());
 
-        par_for_qbdt(0, maxLcv, [&](const bitCapIntOcl lcv, const int cpu) {
+        par_for_qbdt(0, maxLcv, [&](const bitCapIntOcl& lcv, const int& cpu) {
             bitCapIntOcl i = 0U;
             bitCapIntOcl iHigh = lcv;
             bitCapIntOcl iLow;

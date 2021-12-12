@@ -91,10 +91,10 @@ protected:
     void SeparateEngines() { SeparateEngines(baseQubitsPerPage); }
 
     template <typename Qubit1Fn>
-    void SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl = false, const bool& isAnti = false);
+    void SingleBitGate(bitLenInt target, Qubit1Fn fn, bool isSqiCtrl = false, bool isAnti = false);
     template <typename Qubit1Fn>
-    void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, const complex* mtrx,
-        const bool& isSqiCtrl = false, const bool& isIntraCtrled = false);
+    void MetaControlled(bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, Qubit1Fn fn,
+        const complex* mtrx, bool isSqiCtrl = false, bool isIntraCtrled = false);
     template <typename Qubit1Fn>
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
     void MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac);
@@ -102,12 +102,11 @@ protected:
 
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
     template <typename F>
-    void CombineAndOpControlled(
-        F fn, std::vector<bitLenInt> bits, const bitLenInt* controls, const bitLenInt controlLen);
+    void CombineAndOpControlled(F fn, std::vector<bitLenInt> bits, const bitLenInt* controls, bitLenInt controlLen);
 
-    void ApplySingleEither(const bool& isInvert, complex top, complex bottom, bitLenInt target);
-    void ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex* mtrx);
+    void ApplySingleEither(bool isInvert, complex top, complex bottom, bitLenInt target);
+    void ApplyEitherControlledSingleBit(
+        bool anti, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx);
 
     void Init();
 
@@ -192,11 +191,11 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
     virtual void Mtrx(const complex* mtrx, bitLenInt qubitIndex);
-    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
+    virtual void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)
     {
         ApplySingleEither(false, topLeft, bottomRight, qubitIndex);
     }
-    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
+    virtual void Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex)
     {
         ApplySingleEither(true, topRight, bottomLeft, qubitIndex);
     }
@@ -208,25 +207,17 @@ public:
     {
         ApplyEitherControlledSingleBit(true, controls, controlLen, target, mtrx);
     }
-    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
-        bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
-        const bitCapInt& mtrxSkipValueMask);
-    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle);
-    virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle);
+    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
+        const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask);
+    virtual void UniformParityRZ(bitCapInt mask, real1_f angle);
+    virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle);
 
-    virtual void CSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void AntiCSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void CSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void AntiCSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void CISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void AntiCISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+    virtual void CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     virtual void XMask(bitCapInt mask);
     virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
@@ -269,12 +260,12 @@ public:
         const bitLenInt* controls, bitLenInt controlLen);
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, unsigned char* values, bool resetValue = true);
+        bitLenInt valueLength, const unsigned char* values, bool resetValue = true);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
+        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values);
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
-    virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values);
+        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values);
+    virtual void Hash(bitLenInt start, bitLenInt length, const unsigned char* values);
 
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
@@ -287,9 +278,9 @@ public:
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     virtual real1_f Prob(bitLenInt qubitIndex);
-    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
+    virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
     // TODO: QPager not yet used in Q#, but this would need a real implementation:
-    virtual real1_f ProbParity(const bitCapInt& mask)
+    virtual real1_f ProbParity(bitCapInt mask)
     {
         if (!mask) {
             return ZERO_R1;
@@ -298,7 +289,7 @@ public:
         CombineEngines();
         return qPages[0]->ProbParity(mask);
     }
-    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true)
+    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
     {
         if (!mask) {
             return ZERO_R1;
@@ -307,7 +298,7 @@ public:
         CombineEngines();
         return qPages[0]->ForceMParity(mask, result, doForce);
     }
-    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0);
+    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset = 0);
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) {
@@ -333,7 +324,7 @@ public:
 
     virtual QInterfacePtr Clone();
 
-    virtual void SetDevice(const int& dID, const bool& forceReInit = false)
+    virtual void SetDevice(int dID, bool forceReInit = false)
     {
         deviceIDs.clear();
         deviceIDs.push_back(dID);
