@@ -505,8 +505,8 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
         0, maxQPowerOcl, skipPowers.get(), controlLen + length, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             const bitCapIntOcl otherRes = lcv & otherMask;
             const bitCapIntOcl mulInt = ((lcv & inOutMask) >> inOutStart) * toMulOcl;
-            const bitCapIntOcl mulRes = ((mulInt & lowMask) << inOutStart) | (((mulInt & highMask) >> length) << carryStart) |
-                otherRes | controlMask;
+            const bitCapIntOcl mulRes = ((mulInt & lowMask) << inOutStart) |
+                (((mulInt & highMask) >> length) << carryStart) | otherRes | controlMask;
             const bitCapIntOcl origRes = lcv | controlMask;
             nStateVec->write(outFn(origRes, mulRes), stateVec->read(inFn(origRes, mulRes)));
 
