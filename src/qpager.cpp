@@ -1306,8 +1306,8 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
     }
 
     const bitLenInt qpp = qubitsPerPage();
-    qubit2 -= qpp;
     const bitLenInt sqi = qpp - 1U;
+    qubit2 -= qpp;
 
     const bitCapIntOcl qubit2Pow = pow2Ocl(qubit2);
     const bitCapIntOcl qubit2Mask = qubit2Pow - ONE_BCI;
@@ -1362,9 +1362,8 @@ void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    bitLenInt qpp = baseQubitsPerPage;
-    const bool isQubit1Meta = qubit1 >= qpp;
-    const bool isQubit2Meta = qubit2 >= qpp;
+    const bool isQubit1Meta = qubit1 >= baseQubitsPerPage;
+    const bool isQubit2Meta = qubit2 >= baseQubitsPerPage;
     if (isQubit1Meta && isQubit2Meta) {
         SeparateEngines();
         MetaSwap(qubit1, qubit2, false);
@@ -1384,9 +1383,8 @@ void QPager::ISwap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    bitLenInt qpp = baseQubitsPerPage;
-    const bool isQubit1Meta = qubit1 >= qpp;
-    const bool isQubit2Meta = qubit2 >= qpp;
+    const bool isQubit1Meta = qubit1 >= baseQubitsPerPage;
+    const bool isQubit2Meta = qubit2 >= baseQubitsPerPage;
     if (isQubit1Meta && isQubit2Meta) {
         SeparateEngines();
         MetaSwap(qubit1, qubit2, true);
