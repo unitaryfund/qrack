@@ -73,7 +73,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , freezeTrySeparate(false)
     , isReactiveSeparate(true)
     , thresholdQubits(qubitThreshold)
-    , pagingThresholdQubits(26)
+    , pagingThresholdQubits(27)
     , separabilityThreshold(sep_thresh)
     , deviceIDs(devList)
 {
