@@ -447,7 +447,7 @@ void QInterface::MultiShotMeasureMask(
                         maskPerm |= pow2Ocl(i);
                     }
                 }
-                shotsArray[0] = maskPerm;
+                shotsArray[0] = (unsigned)maskPerm;
                 break;
             }
         }
@@ -463,7 +463,7 @@ void QInterface::MultiShotMeasureMask(
         for (bitCapIntOcl j = 0U; j < maskMaxQPower; j++) {
             cumulativeProb += maskProbsArray[j];
             if (cumulativeProb >= maskProb) {
-                shotsArray[0] = j;
+                shotsArray[0] = (unsigned)j;
                 break;
             }
         }
@@ -485,7 +485,7 @@ void QInterface::MultiShotMeasureMask(
     }
 
     if ((j == maskMaxQPower) && (singlePerm < maskMaxQPower)) {
-        std::fill(shotsArray, shotsArray + shots, singlePerm);
+        std::fill(shotsArray, shotsArray + shots, (unsigned)singlePerm);
         return;
     }
 
@@ -506,7 +506,7 @@ void QInterface::MultiShotMeasureMask(
             }
         }
 
-        shotsArray[shot] = dist;
+        shotsArray[shot] = (unsigned)dist;
     });
 }
 
