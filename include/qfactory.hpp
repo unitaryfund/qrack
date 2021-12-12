@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include "qbinary_decision_tree.hpp"
 #include "qengine_cpu.hpp"
 #include "qmaskfusion.hpp"
 #include "qpager.hpp"
@@ -24,6 +23,10 @@
 #include "qunitmulti.hpp"
 #else
 #include "qunit.hpp"
+#endif
+
+#if ENABLE_QBDT
+#include "qbinary_decision_tree.hpp"
 #endif
 
 namespace Qrack {
@@ -39,8 +42,10 @@ QInterfacePtr CreateQuantumInterface(
     switch (engine) {
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+#if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBinaryDecisionTree>(args...);
+#endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(engines, args...);
     case QINTERFACE_MASK_FUSION:
@@ -71,8 +76,10 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
     switch (engine) {
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+#if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBinaryDecisionTree>(args...);
+#endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(engines, args...);
     case QINTERFACE_MASK_FUSION:
@@ -99,8 +106,10 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
     switch (engine) {
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+#if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBinaryDecisionTree>(args...);
+#endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(args...);
     case QINTERFACE_STABILIZER_HYBRID:
@@ -130,8 +139,10 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
     switch (engine) {
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+#if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBinaryDecisionTree>(args...);
+#endif
     case QINTERFACE_QPAGER:
         if (engines.size()) {
             return std::make_shared<QPager>(engines, args...);

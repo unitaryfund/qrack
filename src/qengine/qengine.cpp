@@ -159,7 +159,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, const bitLenInt& length, const 
     return result;
 }
 
-void QEngine::ApplySingleBit(const complex* mtrx, bitLenInt qubit)
+void QEngine::Mtrx(const complex* mtrx, bitLenInt qubit)
 {
     if (IsIdentity(mtrx, false)) {
         return;
@@ -172,11 +172,10 @@ void QEngine::ApplySingleBit(const complex* mtrx, bitLenInt qubit)
     Apply2x2(0, qPowers[0], mtrx, 1, qPowers, doCalcNorm);
 }
 
-void QEngine::ApplyControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+void QEngine::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
     if (controlLen == 0) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
@@ -192,11 +191,10 @@ void QEngine::ApplyControlledSingleBit(
     }
 }
 
-void QEngine::ApplyAntiControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+void QEngine::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
     if (controlLen == 0) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
@@ -445,7 +443,7 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
     }
 
     bitLenInt controls[1] = { qubit1 };
-    ApplyControlledSinglePhase(controls, 1, qubit2, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)));
+    MCPhase(controls, 1, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
 }
 
 void QEngine::ProbRegAll(const bitLenInt& start, const bitLenInt& length, real1* probsArray)
@@ -514,6 +512,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     return result;
 }
 
+#if ENABLE_ALU
 /// Add integer (without sign, with carry)
 void QEngine::INCC(bitCapInt toAdd, const bitLenInt inOutStart, const bitLenInt length, const bitLenInt carryIndex)
 {
@@ -642,6 +641,7 @@ void QEngine::DECBCDC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
     bitCapInt invToSub = maxVal - toSub;
     INCDECBCDC(invToSub, inOutStart, length, carryIndex);
 }
+#endif
 #endif
 
 } // namespace Qrack

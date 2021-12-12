@@ -1,9 +1,11 @@
+#cmakedefine ENABLE_ALU 1
 #cmakedefine ENABLE_BCD 1
 #cmakedefine ENABLE_COMPLEX_X2 1
 #cmakedefine ENABLE_ENV_VARS 1
 #cmakedefine ENABLE_OCL_MEM_GUARDS 1
 #cmakedefine ENABLE_OPENCL 1
 #cmakedefine ENABLE_PTHREAD 1
+#cmakedefine ENABLE_QBDT 1
 #cmakedefine ENABLE_REG_GATES 1
 #cmakedefine ENABLE_ROT_API 1
 #cmakedefine ENABLE_SNUCL 1

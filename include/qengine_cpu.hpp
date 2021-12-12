@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include "common/parallel_for.hpp"
 #include "qengine.hpp"
 #include "statevector.hpp"
 
@@ -33,7 +32,7 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
 /**
  * General purpose QEngineCPU implementation
  */
-class QEngineCPU : virtual public QEngine, public ParallelFor {
+class QEngineCPU : virtual public QEngine {
 protected:
     StateVectorPtr stateVec;
     bool isSparse;
@@ -52,8 +51,6 @@ public:
         real1_f ignored5 = FP_NORM_EPSILON);
 
     virtual ~QEngineCPU() { Dump(); }
-
-    virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
 
     virtual void Finish()
     {
@@ -238,9 +235,10 @@ public:
      */
 
     virtual void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
+#if ENABLE_ALU
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 #if ENABLE_BCD
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
@@ -251,29 +249,17 @@ public:
     virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     virtual void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
     virtual void IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut);
-
-    /** @} */
-
-    /**
-     * \defgroup ExtraOps Extra operations and capabilities
-     *
-     * @{
-     */
-
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true);
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -281,6 +267,19 @@ public:
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values);
+    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
+
+    /** @} */
+#endif
+
+    /**
+     * \defgroup ExtraOps Extra operations and capabilities
+     *
+     * @{
+     */
+
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
         const bitCapInt& mtrxSkipValueMask);
@@ -339,6 +338,7 @@ protected:
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
+#if ENABLE_ALU
     virtual void INCDECC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex);
     virtual void INCDECSC(
@@ -361,5 +361,6 @@ protected:
         const bitLenInt& length, const bool& inverse = false);
     void CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLenInt& inStart, const bitLenInt& outStart,
         const bitLenInt& length, const bitLenInt* controls, const bitLenInt& controlLen, const bool& inverse = false);
+#endif
 };
 } // namespace Qrack

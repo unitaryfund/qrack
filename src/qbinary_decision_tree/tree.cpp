@@ -710,7 +710,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(const complex* lMtr
     });
 }
 
-void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
+void QBinaryDecisionTree::Mtrx(const complex* lMtrx, bitLenInt target)
 {
     complex mtrx[4];
     if (shards[target]) {
@@ -722,17 +722,17 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        ApplySinglePhase(mtrx[0], mtrx[3], target);
+        Phase(mtrx[0], mtrx[3], target);
         return;
     }
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        ApplySingleInvert(mtrx[1], mtrx[2], target);
+        Invert(mtrx[1], mtrx[2], target);
         return;
     }
 
     if (!isFusionFlush) {
         if (stateVecUnit && (qubitCount <= bdtThreshold)) {
-            stateVecUnit->ApplySingleBit(mtrx, target);
+            stateVecUnit->Mtrx(mtrx, target);
             return;
         }
         ResetStateVector();
@@ -746,17 +746,17 @@ void QBinaryDecisionTree::ApplySingleBit(const complex* lMtrx, bitLenInt target)
         });
 }
 
-void QBinaryDecisionTree::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
+void QBinaryDecisionTree::Phase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
     complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (shards[target]) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
     if (qubitCount <= bdtThreshold) {
         SetStateVector();
-        stateVecUnit->ApplySinglePhase(topLeft, bottomRight, target);
+        stateVecUnit->Phase(topLeft, bottomRight, target);
         return;
     }
 
@@ -773,17 +773,17 @@ void QBinaryDecisionTree::ApplySinglePhase(const complex topLeft, const complex 
         });
 }
 
-void QBinaryDecisionTree::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
+void QBinaryDecisionTree::Invert(const complex topRight, const complex bottomLeft, bitLenInt target)
 {
     complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (shards[target]) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
     if (qubitCount <= bdtThreshold) {
         SetStateVector();
-        stateVecUnit->ApplySingleInvert(topRight, bottomLeft, target);
+        stateVecUnit->Invert(topRight, bottomLeft, target);
         return;
     }
 
@@ -909,12 +909,11 @@ void QBinaryDecisionTree::ApplyControlledSingle(const complex* lMtrx, const bitL
     });
 }
 
-void QBinaryDecisionTree::ApplyControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+void QBinaryDecisionTree::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
     if (qubitCount <= bdtThreshold) {
         SetStateVector();
-        stateVecUnit->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+        stateVecUnit->MCMtrx(controls, controlLen, mtrx, target);
         return;
     }
 
@@ -923,12 +922,12 @@ void QBinaryDecisionTree::ApplyControlledSingleBit(
             bool isParallel) { Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, false, isParallel); });
 }
 
-void QBinaryDecisionTree::ApplyAntiControlledSingleBit(
-    const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+void QBinaryDecisionTree::MACMtrx(
+    const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
     if (qubitCount <= bdtThreshold) {
         SetStateVector();
-        stateVecUnit->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+        stateVecUnit->MACMtrx(controls, controlLen, mtrx, target);
         return;
     }
 

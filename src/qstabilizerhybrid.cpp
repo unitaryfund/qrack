@@ -42,7 +42,6 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , separabilityThreshold(sep_thresh)
     , thresholdQubits(qubitThreshold)
 {
-    concurrency = std::thread::hardware_concurrency();
     stabilizer = MakeStabilizer(initState);
     amplitudeFloor = REAL1_EPSILON;
 }
@@ -57,7 +56,7 @@ QInterfacePtr QStabilizerHybrid::MakeEngine(const bitCapInt& perm)
     QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qubitCount, perm, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
         std::vector<int>{}, thresholdQubits, separabilityThreshold);
-    toRet->SetConcurrency(concurrency);
+    toRet->SetConcurrency(GetConcurrencyLevel());
     return toRet;
 }
 
@@ -99,7 +98,7 @@ void QStabilizerHybrid::CacheEigenstate(const bitLenInt& target)
     if (IS_CLIFFORD(shards[target]->gate)) {
         MpsShardPtr shard = shards[target];
         shards[target] = NULL;
-        ApplySingleBit(shard->gate, target);
+        Mtrx(shard->gate, target);
     }
 }
 
@@ -254,7 +253,7 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
         complex phase0 = std::polar(ONE_R1, arg(inputState[0]));
         complex phase1 = std::polar(ONE_R1, arg(inputState[1]));
         complex mtrx[4] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
-        ApplySingleBit(mtrx, 0);
+        Mtrx(mtrx, 0);
 
         return;
     }
@@ -274,7 +273,7 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
     }
 }
 
-void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
+void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
 {
     complex mtrx[4];
     if (shards[target]) {
@@ -286,17 +285,17 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     }
 
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        ApplySinglePhase(mtrx[0], mtrx[3], target);
+        Phase(mtrx[0], mtrx[3], target);
         return;
     }
 
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        ApplySingleInvert(mtrx[1], mtrx[2], target);
+        Invert(mtrx[1], mtrx[2], target);
         return;
     }
 
     if (engine) {
-        engine->ApplySingleBit(mtrx, target);
+        engine->Mtrx(mtrx, target);
         return;
     }
 
@@ -401,16 +400,16 @@ void QStabilizerHybrid::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     CacheEigenstate(target);
 }
 
-void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
+void QStabilizerHybrid::Phase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
     complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (shards[target]) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
     if (engine) {
-        engine->ApplySinglePhase(topLeft, bottomRight, target);
+        engine->Phase(topLeft, bottomRight, target);
         return;
     }
 
@@ -442,16 +441,16 @@ void QStabilizerHybrid::ApplySinglePhase(const complex topLeft, const complex bo
     CacheEigenstate(target);
 }
 
-void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
+void QStabilizerHybrid::Invert(const complex topRight, const complex bottomLeft, bitLenInt target)
 {
     complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (shards[target]) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
     if (engine) {
-        engine->ApplySingleInvert(topRight, bottomLeft, target);
+        engine->Invert(topRight, bottomLeft, target);
         return;
     }
 
@@ -487,16 +486,15 @@ void QStabilizerHybrid::ApplySingleInvert(const complex topRight, const complex 
     CacheEigenstate(target);
 }
 
-void QStabilizerHybrid::ApplyControlledSingleBit(
-    const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& target, const complex* mtrx)
+void QStabilizerHybrid::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        ApplyControlledSinglePhase(lControls, lControlLen, target, mtrx[0], mtrx[3]);
+        MCPhase(lControls, lControlLen, mtrx[0], mtrx[3], target);
         return;
     }
 
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        ApplyControlledSingleInvert(lControls, lControlLen, target, mtrx[1], mtrx[2]);
+        MCInvert(lControls, lControlLen, mtrx[1], mtrx[2], target);
         return;
     }
 
@@ -506,16 +504,16 @@ void QStabilizerHybrid::ApplyControlledSingleBit(
     }
 
     if (!controls.size()) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
     SwitchToEngine();
-    engine->ApplyControlledSingleBit(lControls, lControlLen, target, mtrx);
+    engine->MCMtrx(lControls, lControlLen, mtrx, target);
 }
 
-void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, const bitLenInt& lControlLen,
-    const bitLenInt& target, const complex topLeft, const complex bottomRight)
+void QStabilizerHybrid::MCPhase(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls)) {
@@ -523,7 +521,7 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
     }
 
     if (!controls.size()) {
-        ApplySinglePhase(topLeft, bottomRight, target);
+        Phase(topLeft, bottomRight, target);
         return;
     }
 
@@ -534,7 +532,7 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
     }
 
     if (engine) {
-        engine->ApplyControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
+        engine->MCPhase(lControls, lControlLen, topLeft, bottomRight, target);
         return;
     }
 
@@ -596,11 +594,11 @@ void QStabilizerHybrid::ApplyControlledSinglePhase(const bitLenInt* lControls, c
     }
 
     SwitchToEngine();
-    engine->ApplyControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
+    engine->MCPhase(lControls, lControlLen, topLeft, bottomRight, target);
 }
 
-void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, const bitLenInt& lControlLen,
-    const bitLenInt& target, const complex topRight, const complex bottomLeft)
+void QStabilizerHybrid::MCInvert(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls)) {
@@ -608,7 +606,7 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
     }
 
     if (!controls.size()) {
-        ApplySingleInvert(topRight, bottomLeft, target);
+        Invert(topRight, bottomLeft, target);
         return;
     }
 
@@ -619,7 +617,7 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
     }
 
     if (engine) {
-        engine->ApplyControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
+        engine->MCInvert(lControls, lControlLen, topRight, bottomLeft, target);
         return;
     }
 
@@ -679,19 +677,19 @@ void QStabilizerHybrid::ApplyControlledSingleInvert(const bitLenInt* lControls, 
     }
 
     SwitchToEngine();
-    engine->ApplyControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
+    engine->MCInvert(lControls, lControlLen, topRight, bottomLeft, target);
 }
 
-void QStabilizerHybrid::ApplyAntiControlledSingleBit(
-    const bitLenInt* lControls, const bitLenInt& lControlLen, const bitLenInt& target, const complex* mtrx)
+void QStabilizerHybrid::MACMtrx(
+    const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        ApplyAntiControlledSinglePhase(lControls, lControlLen, target, mtrx[0], mtrx[3]);
+        MACPhase(lControls, lControlLen, mtrx[0], mtrx[3], target);
         return;
     }
 
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        ApplyAntiControlledSingleInvert(lControls, lControlLen, target, mtrx[1], mtrx[2]);
+        MACInvert(lControls, lControlLen, mtrx[1], mtrx[2], target);
         return;
     }
 
@@ -701,16 +699,16 @@ void QStabilizerHybrid::ApplyAntiControlledSingleBit(
     }
 
     if (!controls.size()) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
     SwitchToEngine();
-    engine->ApplyAntiControlledSingleBit(lControls, lControlLen, target, mtrx);
+    engine->MACMtrx(lControls, lControlLen, mtrx, target);
 }
 
-void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControls, const bitLenInt& lControlLen,
-    const bitLenInt& target, const complex topLeft, const complex bottomRight)
+void QStabilizerHybrid::MACPhase(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls, true)) {
@@ -718,7 +716,7 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControl
     }
 
     if (!controls.size()) {
-        ApplySinglePhase(topLeft, bottomRight, target);
+        Phase(topLeft, bottomRight, target);
         return;
     }
 
@@ -729,17 +727,17 @@ void QStabilizerHybrid::ApplyAntiControlledSinglePhase(const bitLenInt* lControl
     }
 
     if (engine) {
-        engine->ApplyAntiControlledSinglePhase(lControls, lControlLen, target, topLeft, bottomRight);
+        engine->MACPhase(lControls, lControlLen, topLeft, bottomRight, target);
         return;
     }
 
     X(controls[0]);
-    ApplyControlledSinglePhase(&(controls[0]), 1U, target, topLeft, bottomRight);
+    MCPhase(&(controls[0]), 1U, topLeft, bottomRight, target);
     X(controls[0]);
 }
 
-void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lControls, const bitLenInt& lControlLen,
-    const bitLenInt& target, const complex topRight, const complex bottomLeft)
+void QStabilizerHybrid::MACInvert(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls, true)) {
@@ -747,7 +745,7 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
     }
 
     if (!controls.size()) {
-        ApplySingleInvert(topRight, bottomLeft, target);
+        Invert(topRight, bottomLeft, target);
         return;
     }
 
@@ -758,12 +756,12 @@ void QStabilizerHybrid::ApplyAntiControlledSingleInvert(const bitLenInt* lContro
     }
 
     if (engine) {
-        engine->ApplyAntiControlledSingleInvert(lControls, lControlLen, target, topRight, bottomLeft);
+        engine->MACInvert(lControls, lControlLen, topRight, bottomLeft, target);
         return;
     }
 
     X(controls[0]);
-    ApplyControlledSingleInvert(&(controls[0]), 1U, target, topRight, bottomLeft);
+    MCInvert(&(controls[0]), 1U, topRight, bottomLeft, target);
     X(controls[0]);
 }
 

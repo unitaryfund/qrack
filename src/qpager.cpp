@@ -393,10 +393,10 @@ void QPager::MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenIn
             doBottom = !IS_NORM_0(bottom);
 
             if (doTop) {
-                engine1->ApplySinglePhase(top, top, 0);
+                engine1->Phase(top, top, 0);
             }
             if (doBottom) {
-                engine2->ApplySinglePhase(bottom, bottom, 0);
+                engine2->Phase(bottom, bottom, 0);
             }
 
             continue;
@@ -720,18 +720,18 @@ void QPager::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 }
 
-void QPager::ApplySingleBit(const complex* mtrx, bitLenInt target)
+void QPager::Mtrx(const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        ApplySinglePhase(mtrx[0], mtrx[3], target);
+        Phase(mtrx[0], mtrx[3], target);
         return;
     } else if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        ApplySingleInvert(mtrx[1], mtrx[2], target);
+        Invert(mtrx[1], mtrx[2], target);
         return;
     }
 
     SeparateEngines();
-    SingleBitGate(target, [mtrx](QEnginePtr engine, bitLenInt lTarget) { engine->ApplySingleBit(mtrx, lTarget); });
+    SingleBitGate(target, [mtrx](QEnginePtr engine, bitLenInt lTarget) { engine->Mtrx(mtrx, lTarget); });
 }
 
 void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom, bitLenInt target)
@@ -741,13 +741,11 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
 
     if (target < qpp) {
         if (isInvert) {
-            SingleBitGate(target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) {
-                engine->ApplySingleInvert(top, bottom, lTarget);
-            });
+            SingleBitGate(
+                target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) { engine->Invert(top, bottom, lTarget); });
         } else {
-            SingleBitGate(target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) {
-                engine->ApplySinglePhase(top, bottom, lTarget);
-            });
+            SingleBitGate(
+                target, [top, bottom](QEnginePtr engine, bitLenInt lTarget) { engine->Phase(top, bottom, lTarget); });
         }
 
         return;
@@ -772,10 +770,10 @@ void QPager::ApplySingleEither(const bool& isInvert, complex top, complex bottom
         }
 
         if (top != ONE_CMPLX) {
-            qPages[j]->ApplySinglePhase(top, top, 0);
+            qPages[j]->Phase(top, top, 0);
         }
         if (bottom != ONE_CMPLX) {
-            qPages[j + targetPow]->ApplySinglePhase(bottom, bottom, 0);
+            qPages[j + targetPow]->Phase(bottom, bottom, 0);
         }
     }
 }
@@ -784,7 +782,7 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
     const bitLenInt& target, const complex* mtrx)
 {
     if (controlLen == 0) {
-        ApplySingleBit(mtrx, target);
+        Mtrx(mtrx, target);
         return;
     }
 
@@ -808,12 +806,12 @@ void QPager::ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* c
     auto sg = [anti, mtrx, intraControls](QEnginePtr engine, bitLenInt lTarget) {
         if (intraControls.size()) {
             if (anti) {
-                engine->ApplyAntiControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
+                engine->MACMtrx(&(intraControls[0]), intraControls.size(), mtrx, lTarget);
             } else {
-                engine->ApplyControlledSingleBit(&(intraControls[0]), intraControls.size(), lTarget, mtrx);
+                engine->MCMtrx(&(intraControls[0]), intraControls.size(), mtrx, lTarget);
             }
         } else {
-            engine->ApplySingleBit(mtrx, lTarget);
+            engine->Mtrx(mtrx, lTarget);
         }
     };
 
@@ -981,9 +979,9 @@ void QPager::PhaseParity(real1_f radians, bitCapInt mask)
         if (intraMask) {
             engine->PhaseParity(v ? -radians : radians, intraMask);
         } else if (v) {
-            engine->ApplySinglePhase(phaseFac, phaseFac, 0U);
+            engine->Phase(phaseFac, phaseFac, 0U);
         } else {
-            engine->ApplySinglePhase(iPhaseFac, iPhaseFac, 0U);
+            engine->Phase(iPhaseFac, iPhaseFac, 0U);
         }
     }
 }
@@ -1066,12 +1064,13 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     return result;
 }
 
+#if ENABLE_ALU
 void QPager::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 {
     CombineAndOp(
         [&](QEnginePtr engine) { engine->INC(toAdd, start, length); }, { static_cast<bitLenInt>(start + length - 1U) });
 }
-void QPager::CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+void QPager::CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
     CombineAndOpControlled([&](QEnginePtr engine) { engine->CINC(toAdd, start, length, controls, controlLen); },
         { static_cast<bitLenInt>(start + length - 1U) }, controls, controlLen);
@@ -1153,8 +1152,8 @@ void QPager::POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLe
     CombineAndOp([&](QEnginePtr engine) { engine->POWModNOut(base, modN, inStart, outStart, length); },
         { static_cast<bitLenInt>(inStart + length - 1U), static_cast<bitLenInt>(outStart + length - 1U) });
 }
-void QPager::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
-    bitLenInt controlLen)
+void QPager::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         MUL(toMul, inOutStart, carryStart, length);
@@ -1166,8 +1165,8 @@ void QPager::CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, b
         { static_cast<bitLenInt>(inOutStart + length - 1U), static_cast<bitLenInt>(carryStart + length - 1U) },
         controls, controlLen);
 }
-void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, bitLenInt* controls,
-    bitLenInt controlLen)
+void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         DIV(toDiv, inOutStart, carryStart, length);
@@ -1180,7 +1179,7 @@ void QPager::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, b
         controls, controlLen);
 }
 void QPager::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         MULModNOut(toMul, modN, inStart, outStart, length);
@@ -1193,7 +1192,7 @@ void QPager::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bit
         controlLen);
 }
 void QPager::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         IMULModNOut(toMul, modN, inStart, outStart, length);
@@ -1206,7 +1205,7 @@ void QPager::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bi
         controlLen);
 }
 void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-    bitLenInt* controls, bitLenInt controlLen)
+    const bitLenInt* controls, bitLenInt controlLen)
 {
     if (!controlLen) {
         POWModNOut(base, modN, inStart, outStart, length);
@@ -1217,17 +1216,6 @@ void QPager::CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitL
         [&](QEnginePtr engine) { engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen); },
         { static_cast<bitLenInt>(inStart + length - 1U), static_cast<bitLenInt>(outStart + length - 1U) }, controls,
         controlLen);
-}
-
-void QPager::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-{
-    CombineAndOp([&](QEnginePtr engine) { engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex); },
-        { static_cast<bitLenInt>(start + length - 1U), flagIndex });
-}
-void QPager::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-{
-    CombineAndOp([&](QEnginePtr engine) { engine->PhaseFlipIfLess(greaterPerm, start, length); },
-        { static_cast<bitLenInt>(start + length - 1U) });
 }
 
 bitCapInt QPager::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
@@ -1271,6 +1259,18 @@ void QPager::Hash(bitLenInt start, bitLenInt length, unsigned char* values)
         { static_cast<bitLenInt>(start + length - 1U) });
 }
 
+void QPager::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex); },
+        { static_cast<bitLenInt>(start + length - 1U), flagIndex });
+}
+void QPager::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+{
+    CombineAndOp([&](QEnginePtr engine) { engine->PhaseFlipIfLess(greaterPerm, start, length); },
+        { static_cast<bitLenInt>(start + length - 1U) });
+}
+#endif
+
 void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
 {
     bitLenInt qpp = qubitsPerPage();
@@ -1297,8 +1297,8 @@ void QPager::MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
             continue;
         }
 
-        qPages[j + qubit1Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
-        qPages[j + qubit2Pow]->ApplySinglePhase(I_CMPLX, I_CMPLX, 0);
+        qPages[j + qubit1Pow]->Phase(I_CMPLX, I_CMPLX, 0);
+        qPages[j + qubit2Pow]->Phase(I_CMPLX, I_CMPLX, 0);
     }
 }
 
@@ -1333,8 +1333,8 @@ void QPager::SemiMetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac)
 
             if (qubit1 == sqi) {
                 if (isIPhaseFac) {
-                    engine1->ApplySinglePhase(ZERO_CMPLX, I_CMPLX, sqi);
-                    engine2->ApplySinglePhase(I_CMPLX, ZERO_CMPLX, sqi);
+                    engine1->Phase(ZERO_CMPLX, I_CMPLX, sqi);
+                    engine2->Phase(I_CMPLX, ZERO_CMPLX, sqi);
                 }
                 return;
             }

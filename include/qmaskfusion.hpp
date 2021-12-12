@@ -346,8 +346,8 @@ public:
     using QInterface::Z;
     virtual void Z(bitLenInt target);
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target)
+    virtual void Mtrx(const complex* mtrx, bitLenInt target);
+    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt target)
     {
         if (IS_SAME(topLeft, bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {
             return;
@@ -368,12 +368,12 @@ public:
 
         if (zxShards[target].isX) {
             zxShards[target].isX = false;
-            engine->ApplySingleInvert(tl, br, target);
+            engine->Invert(tl, br, target);
         } else {
-            engine->ApplySinglePhase(tl, br, target);
+            engine->Phase(tl, br, target);
         }
     }
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target)
+    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt target)
     {
         if (IS_SAME(topRight, bottomLeft) && (randGlobalPhase || IS_SAME(topRight, ONE_CMPLX))) {
             X(target);
@@ -395,45 +395,43 @@ public:
 
         if (zxShards[target].isX) {
             zxShards[target].isX = false;
-            engine->ApplySinglePhase(tr, bl, target);
+            engine->Phase(tr, bl, target);
         } else {
-            engine->ApplySingleInvert(tr, bl, target);
+            engine->Invert(tr, bl, target);
         }
     }
 
-    virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-            ApplyControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+            MCPhase(controls, controlLen, mtrx[0], mtrx[3], target);
             return;
         }
 
         FlushIfBuffered(target) || FlushIfPhaseBlocked(controls, controlLen);
-        engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+        engine->MCMtrx(controls, controlLen, mtrx, target);
     }
-    virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {
         if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-            ApplyAntiControlledSinglePhase(controls, controlLen, target, mtrx[0], mtrx[3]);
+            MACPhase(controls, controlLen, mtrx[0], mtrx[3], target);
             return;
         }
 
         FlushIfBuffered(target) || FlushIfPhaseBlocked(controls, controlLen);
-        engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+        engine->MACMtrx(controls, controlLen, mtrx, target);
     }
-    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight)
+    virtual void MCPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
     {
         FlushIfPhaseBlocked(target) || FlushIfPhaseBlocked(controls, controlLen);
-        engine->ApplyControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
+        engine->MCPhase(controls, controlLen, topLeft, bottomRight, target);
     }
-    virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight)
+    virtual void MACPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
     {
         FlushIfPhaseBlocked(target) || FlushIfPhaseBlocked(controls, controlLen);
-        engine->ApplyAntiControlledSinglePhase(controls, controlLen, target, topLeft, bottomRight);
+        engine->MACPhase(controls, controlLen, topLeft, bottomRight, target);
     }
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
@@ -498,13 +496,14 @@ public:
     }
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) { engine->ApplyM(regMask, result, nrm); }
 
+#if ENABLE_ALU
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
         FlushIfBuffered(start, length);
         engine->INC(toAdd, start, length);
     }
     virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
     {
         FlushIfBuffered(inOutStart, length) || FlushIfPhaseBlocked(controls, controlLen);
         engine->CINC(toAdd, inOutStart, length, controls, controlLen);
@@ -547,50 +546,39 @@ public:
         engine->POWModNOut(base, modN, inStart, outStart, length);
     }
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryStart, length) ||
             FlushIfPhaseBlocked(controls, controlLen);
         engine->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
     }
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryStart, length) ||
             FlushIfPhaseBlocked(controls, controlLen);
         engine->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
     }
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         FlushIfBuffered(inStart, length) || FlushIfBuffered(outStart, length) ||
             FlushIfPhaseBlocked(controls, controlLen);
         engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         FlushIfBuffered(inStart, length) || FlushIfBuffered(outStart, length) ||
             FlushIfPhaseBlocked(controls, controlLen);
         engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         FlushIfBuffered(inStart, length) || FlushIfBuffered(outStart, length) ||
             FlushIfPhaseBlocked(controls, controlLen);
         engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
-    }
-
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-    {
-        FlushIfBuffered(start, length) || FlushIfBuffered(flagIndex);
-        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
-    }
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-    {
-        FlushIfBuffered(start, length);
-        engine->PhaseFlipIfLess(greaterPerm, start, length);
     }
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -618,6 +606,18 @@ public:
         FlushIfBuffered(start, length);
         engine->Hash(start, length, values);
     }
+
+    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+    {
+        FlushIfBuffered(start, length) || FlushIfBuffered(flagIndex);
+        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
+    }
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+    {
+        FlushIfBuffered(start, length);
+        engine->PhaseFlipIfLess(greaterPerm, start, length);
+    }
+#endif
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
@@ -699,7 +699,7 @@ public:
 
     virtual bool TrySeparate(bitLenInt qubit) { return engine->TrySeparate(qubit); }
     virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2) { return engine->TrySeparate(qubit1, qubit2); }
-    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
+    virtual bool TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error_tol)
     {
         return engine->TrySeparate(qubits, length, error_tol);
     }
@@ -745,6 +745,7 @@ protected:
 
     virtual void FreeStateVec(complex* sv = NULL) { engine->FreeStateVec(sv); }
 
+#if ENABLE_ALU
     virtual void INCDECC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
     {
@@ -770,6 +771,7 @@ protected:
         FlushIfBuffered(inOutStart, length) || FlushIfBuffered(carryIndex);
         engine->INCDECBCDC(toMod, inOutStart, length, carryIndex);
     }
+#endif
 #endif
 };
 } // namespace Qrack

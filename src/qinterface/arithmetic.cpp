@@ -12,6 +12,10 @@
 
 #include "qinterface.hpp"
 
+#if !ENABLE_ALU
+#error ALU has not been enabled
+#endif
+
 namespace Qrack {
 
 // Arithmetic:
@@ -36,7 +40,7 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
 
 /// Subtract integer (without sign, with controls)
 void QInterface::CDEC(
-    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
     bitCapInt invToSub = pow2(length) - toSub;
     CINC(invToSub, inOutStart, length, controls, controlLen);
@@ -80,7 +84,7 @@ void QInterface::IFullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt ca
 }
 
 /// Quantum analog of classical "Full Adder" gate
-void QInterface::CFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+void QInterface::CFullAdd(const bitLenInt* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
     bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
@@ -91,22 +95,22 @@ void QInterface::CFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenIn
     // Assume outputBit is in 0 state.
     cBits[controlLen] = inputBit1;
     cBits[controlLen + 1] = inputBit2;
-    ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, ONE_CMPLX, ONE_CMPLX);
+    MCInvert(cBits, controlLen + 2, ONE_CMPLX, ONE_CMPLX, carryOut);
 
-    ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, ONE_CMPLX, ONE_CMPLX);
+    MCInvert(cBits, controlLen + 1, ONE_CMPLX, ONE_CMPLX, inputBit2);
 
     cBits[controlLen] = inputBit2;
     cBits[controlLen + 1] = carryInSumOut;
-    ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, ONE_CMPLX, ONE_CMPLX);
+    MCInvert(cBits, controlLen + 2, ONE_CMPLX, ONE_CMPLX, carryOut);
 
-    ApplyControlledSingleInvert(cBits, controlLen + 1, carryInSumOut, ONE_CMPLX, ONE_CMPLX);
+    MCInvert(cBits, controlLen + 1, ONE_CMPLX, ONE_CMPLX, carryInSumOut);
 
     cBits[controlLen] = inputBit1;
-    ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, ONE_CMPLX, ONE_CMPLX);
+    MCInvert(cBits, controlLen + 1, ONE_CMPLX, ONE_CMPLX, inputBit2);
 }
 
 /// Inverse of FullAdd
-void QInterface::CIFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
+void QInterface::CIFullAdd(const bitLenInt* controlBits, bitLenInt controlLen, bitLenInt inputBit1, bitLenInt inputBit2,
     bitLenInt carryInSumOut, bitLenInt carryOut)
 {
     // See https://quantumcomputing.stackexchange.com/questions/1654/how-do-i-add-11-using-a-quantum-computer
@@ -119,18 +123,18 @@ void QInterface::CIFullAdd(bitLenInt* controlBits, bitLenInt controlLen, bitLenI
 
     // Assume outputBit is in 0 state.
     cBits[controlLen] = inputBit1;
-    ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, ONE_CMPLX, ONE_CMPLX);
+    MCInvert(cBits, controlLen + 1, ONE_CMPLX, ONE_CMPLX, inputBit2);
 
     cBits[controlLen] = inputBit2;
-    ApplyControlledSingleInvert(cBits, controlLen + 1, carryInSumOut, ONE_CMPLX, ONE_CMPLX);
+    MCInvert(cBits, controlLen + 1, ONE_CMPLX, ONE_CMPLX, carryInSumOut);
 
     cBits[controlLen + 1] = carryInSumOut;
-    ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, ONE_CMPLX, ONE_CMPLX);
+    MCInvert(cBits, controlLen + 2, ONE_CMPLX, ONE_CMPLX, carryOut);
 
     cBits[controlLen] = inputBit1;
-    ApplyControlledSingleInvert(cBits, controlLen + 1, inputBit2, ONE_CMPLX, ONE_CMPLX);
+    MCInvert(cBits, controlLen + 1, ONE_CMPLX, ONE_CMPLX, inputBit2);
     cBits[controlLen + 1] = inputBit2;
-    ApplyControlledSingleInvert(cBits, controlLen + 2, carryOut, ONE_CMPLX, ONE_CMPLX);
+    MCInvert(cBits, controlLen + 2, ONE_CMPLX, ONE_CMPLX, carryOut);
 }
 
 void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
@@ -175,8 +179,8 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
     IFullAdd(input1, input2, carry, output);
 }
 
-void QInterface::CADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
-    bitLenInt length, bitLenInt carry)
+void QInterface::CADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+    bitLenInt output, bitLenInt length, bitLenInt carry)
 {
     if (length == 0) {
         return;
@@ -197,8 +201,8 @@ void QInterface::CADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input
     CFullAdd(controls, controlLen, input1 + end, input2 + end, output + end, carry);
 }
 
-void QInterface::CIADC(bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2, bitLenInt output,
-    bitLenInt length, bitLenInt carry)
+void QInterface::CIADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
+    bitLenInt output, bitLenInt length, bitLenInt carry)
 {
     if (length == 0) {
         return;

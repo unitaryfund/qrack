@@ -33,7 +33,6 @@ protected:
     complex phaseFactor;
     bool useRDRAND;
     bool isSparse;
-    uint32_t concurrency;
     bitLenInt thresholdQubits;
     bool isGpu;
     real1_f separabilityThreshold;
@@ -51,8 +50,8 @@ public:
 
     virtual void SetConcurrency(uint32_t threadCount)
     {
-        concurrency = threadCount;
-        engine->SetConcurrency(concurrency);
+        QInterface::SetConcurrency(threadCount);
+        engine->SetConcurrency(GetConcurrencyLevel());
     }
 
     /**
@@ -199,24 +198,22 @@ public:
         engine->SetPermutation(perm, phaseFac);
     }
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex) { engine->ApplySingleBit(mtrx, qubitIndex); }
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
+    virtual void Mtrx(const complex* mtrx, bitLenInt qubitIndex) { engine->Mtrx(mtrx, qubitIndex); }
+    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
     {
-        engine->ApplySinglePhase(topLeft, bottomRight, qubitIndex);
+        engine->Phase(topLeft, bottomRight, qubitIndex);
     }
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
+    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
     {
-        engine->ApplySingleInvert(topRight, bottomLeft, qubitIndex);
+        engine->Invert(topRight, bottomLeft, qubitIndex);
     }
-    virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {
-        engine->ApplyControlledSingleBit(controls, controlLen, target, mtrx);
+        engine->MCMtrx(controls, controlLen, mtrx, target);
     }
-    virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {
-        engine->ApplyAntiControlledSingleBit(controls, controlLen, target, mtrx);
+        engine->MACMtrx(controls, controlLen, mtrx, target);
     }
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
@@ -272,9 +269,10 @@ public:
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
+#if ENABLE_ALU
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { engine->INC(toAdd, start, length); }
     virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
     {
         engine->CINC(toAdd, inOutStart, length, controls, controlLen);
     }
@@ -340,38 +338,29 @@ public:
         engine->POWModNOut(base, modN, inStart, outStart, length);
     }
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         engine->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
     }
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         engine->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
     }
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
-    }
-
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-    {
-        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
-    }
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-    {
-        engine->PhaseFlipIfLess(greaterPerm, start, length);
     }
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -390,6 +379,16 @@ public:
         return engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }
     virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values) { engine->Hash(start, length, values); }
+
+    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+    {
+        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
+    }
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+    {
+        engine->PhaseFlipIfLess(greaterPerm, start, length);
+    }
+#endif
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { engine->Swap(qubitIndex1, qubitIndex2); }
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2) { engine->ISwap(qubitIndex1, qubitIndex2); }
@@ -448,7 +447,7 @@ public:
         engine->SetDevice(dID, forceReInit);
     }
 
-    virtual int64_t GetDeviceID() { return devID; }
+    virtual int64_t GetDevice() { return devID; }
 
     bitCapIntOcl GetMaxSize() { return engine->GetMaxSize(); };
 
@@ -476,6 +475,7 @@ protected:
 
     virtual void FreeStateVec(complex* sv = NULL) { engine->FreeStateVec(sv); }
 
+#if ENABLE_ALU
     virtual void INCDECC(
         bitCapInt toMod, const bitLenInt& inOutStart, const bitLenInt& length, const bitLenInt& carryIndex)
     {
@@ -497,6 +497,7 @@ protected:
     {
         engine->INCDECBCDC(toMod, inOutStart, length, carryIndex);
     }
+#endif
 #endif
 };
 } // namespace Qrack

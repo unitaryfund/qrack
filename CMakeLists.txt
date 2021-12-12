@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.9)
-project (Qrack VERSION 6.2.0 DESCRIPTION "High Performance Quantum Bit Simulation")
+project (Qrack VERSION 7.0.0 DESCRIPTION "High Performance Quantum Bit Simulation")
 
 # Installation commands
 include (GNUInstallDirs)
@@ -17,7 +17,6 @@ include_directories ("include" "include/common")
 add_library (qrack STATIC
     src/common/parallel_for.cpp
     src/common/rdrandwrapper.cpp
-    src/qinterface/arithmetic.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
     src/qinterface/protected.cpp
@@ -27,8 +26,6 @@ add_library (qrack STATIC
     src/qengine/arithmetic.cpp
     src/qengine/state.cpp
     src/qengine/utility.cpp
-    src/qbinary_decision_tree/node.cpp
-    src/qbinary_decision_tree/tree.cpp
     src/qunit.cpp
     src/qpager.cpp
     src/qstabilizer.cpp
@@ -103,6 +100,7 @@ endif (NOT ENABLE_EMIT_LLVM)
 # Included after the library and other modules have been declared
 option (ENABLE_OPENCL "Use OpenCL optimizations" ON)
 option (ENABLE_SNUCL "Use SnuCL framework for clusters" OFF)
+include ("cmake/Alu.cmake")
 include ("cmake/Bcd.cmake")
 include ("cmake/Boost.cmake")
 include ("cmake/Complex_x2.cmake")
@@ -112,6 +110,10 @@ include ("cmake/OclMemGuards.cmake")
 include ("cmake/Pstridepow.cmake")
 include ("cmake/Pure32.cmake")
 include ("cmake/QbCapPow.cmake")
+include ("cmake/Qbdt.cmake")
+include ("cmake/QUnit_CPU_Parallel.cmake")
+include ("cmake/RegGates.cmake")
+include ("cmake/RotApi.cmake")
 include ("cmake/UIntPow.cmake")
 include ("cmake/VM6502Q.cmake")
 if (NOT ENABLE_EMIT_LLVM)
@@ -128,7 +130,11 @@ message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
 message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
 message ("Complex_x2/AVX support is: ${ENABLE_COMPLEX_X2}")
 message ("OpenCL memory guards are: ${ENABLE_OCL_MEM_GUARDS}")
+message ("QBinaryDecisionTree inclusion is: ${ENABLE_QBDT}")
+message ("General ALU API inclusion is: ${ENABLE_ALU}")
 message ("BCD ALU API inclusion is: ${ENABLE_BCD}")
+message ("Extended rotation API inclusion is: ${ENABLE_ROT_API}")
+message ("Register-spanning API inclusion is: ${ENABLE_REG_GATES}")
 message ("Environment variable usage is: ${ENABLE_ENV_VARS}")
 message ("VM6502Q disassembler support is: ${ENABLE_VM6502Q_DEBUG}")
 message ("Compiling libraries to LLVM IR is: ${ENABLE_EMIT_LLVM}")
@@ -145,6 +151,7 @@ else (MSVC)
             set(QRACK_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror -fPIC)
         endif (ENABLE_PTHREAD)
         set(TEST_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror)
+        set_target_properties(qrack PROPERTIES COMPILE_FLAGS "-s USE_BOOST_HEADERS=1" LINK_FLAGS "-s USE_BOOST_HEADERS=1")
     else (EMSCRIPTEN)
         set(QRACK_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror -fPIC)
         set(TEST_COMPILE_OPTS -O3 -std=c++11 -Wall -Werror)

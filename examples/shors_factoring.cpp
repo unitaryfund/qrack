@@ -65,6 +65,9 @@ int main()
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
 
+    const double clockFactor = 1.0 / 1000.0; // Report in ms
+    auto iterClock = std::chrono::high_resolution_clock::now();
+
     bitLenInt qubitCount = ceil(Qrack::log2(toFactor));
 
     // Choose a base at random:
@@ -76,21 +79,29 @@ int main()
     bitCapInt testFactor = gcd(toFactor, base);
     if (testFactor != 1) {
         std::cout << "Chose non- relative prime: " << testFactor << " * " << (toFactor / testFactor) << std::endl;
+        auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - iterClock);
+        std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
         return 0;
     }
 
     // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
     // QEngineCPU.
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, qubitCount * 2, 0);
+    // TODO: This shouldn't be necessary:
+    qReg->Finish();
 
     // This is the period-finding subroutine of Shor's algorithm.
     qReg->H(0, qubitCount);
     qReg->POWModNOut(base, toFactor, 0, qubitCount, qubitCount);
     qReg->IQFT(0, qubitCount);
 
-    bitCapInt y = qReg->MReg(0, qubitCount);
+    bitCapInt y = qReg->MAll() & (pow2(qubitCount) - ONE_BCI);
     if (y == 0) {
         std::cout << "Failed: y = 0 in period estimation subroutine." << std::endl;
+        auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::high_resolution_clock::now() - iterClock);
+        std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
         return 0;
     }
     bitCapInt qubitPower = 1U << qubitCount;
@@ -134,6 +145,9 @@ int main()
     } else {
         std::cout << "Failure: Found " << res1 << " and " << res2 << std::endl;
     }
+    auto tClock =
+        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);
+    std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
 
     return 0;
 }

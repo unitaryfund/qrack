@@ -136,6 +136,7 @@ public:
 
     virtual void SetConcurrency(uint32_t threadsPerEngine)
     {
+        QInterface::SetConcurrency(threadsPerEngine);
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->SetConcurrency(threadsPerEngine);
         }
@@ -190,22 +191,20 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex);
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
+    virtual void Mtrx(const complex* mtrx, bitLenInt qubitIndex);
+    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
     {
         ApplySingleEither(false, topLeft, bottomRight, qubitIndex);
     }
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
+    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
     {
         ApplySingleEither(true, topRight, bottomLeft, qubitIndex);
     }
-    virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {
         ApplyEitherControlledSingleBit(false, controls, controlLen, target, mtrx);
     }
-    virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {
         ApplyEitherControlledSingleBit(true, controls, controlLen, target, mtrx);
     }
@@ -235,9 +234,10 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
+#if ENABLE_ALU
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
     virtual void INCSC(
@@ -258,18 +258,15 @@ public:
     virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     virtual void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
-
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
+        const bitLenInt* controls, bitLenInt controlLen);
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, unsigned char* values, bool resetValue = true);
@@ -278,6 +275,10 @@ public:
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
     virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values);
+
+    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
+#endif
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
@@ -368,7 +369,7 @@ public:
 #endif
     }
 
-    virtual int64_t GetDeviceID() { return qPages[0]->GetDeviceID(); }
+    virtual int64_t GetDevice() { return qPages[0]->GetDevice(); }
 
     bitCapIntOcl GetMaxSize() { return qPages[0]->GetMaxSize(); };
 

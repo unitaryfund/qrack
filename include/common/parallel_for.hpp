@@ -23,8 +23,8 @@ namespace Qrack {
 
 class ParallelFor {
 private:
+    const bitCapIntOcl pStride;
     unsigned numCores;
-    bitCapIntOcl pStride;
 
 public:
     ParallelFor();

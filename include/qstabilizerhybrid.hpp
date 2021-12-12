@@ -43,7 +43,6 @@ protected:
     bool useRDRAND;
     bool isSparse;
     real1_f separabilityThreshold;
-    uint32_t concurrency;
     bitLenInt thresholdQubits;
 
     QStabilizerPtr MakeStabilizer(const bitCapInt& perm = 0);
@@ -130,7 +129,7 @@ protected:
             MpsShardPtr shard = shards[i];
             if (shard) {
                 shards[i] = NULL;
-                ApplySingleBit(shard->gate, i);
+                Mtrx(shard->gate, i);
             }
         }
     }
@@ -226,9 +225,9 @@ public:
 
     virtual void SetConcurrency(uint32_t threadCount)
     {
-        concurrency = threadCount;
+        QInterface::SetConcurrency(threadCount);
         if (engine) {
-            SetConcurrency(concurrency);
+            SetConcurrency(GetConcurrencyLevel());
         }
     }
 
@@ -404,29 +403,19 @@ public:
 
     virtual bitCapInt MAll();
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt target);
-
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt target);
-
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt target);
-
-    virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
-
-    virtual void ApplyControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight);
-
-    virtual void ApplyControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft);
-
-    virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx);
-
-    virtual void ApplyAntiControlledSinglePhase(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topLeft, const complex bottomRight);
-
-    virtual void ApplyAntiControlledSingleInvert(const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex topRight, const complex bottomLeft);
+    virtual void Mtrx(const complex* mtrx, bitLenInt target);
+    virtual void Phase(const complex topLeft, const complex bottomRight, bitLenInt target);
+    virtual void Invert(const complex topRight, const complex bottomLeft, bitLenInt target);
+    virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
+    virtual void MCPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
+    virtual void MCInvert(
+        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
+    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
+    virtual void MACPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
+    virtual void MACInvert(
+        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
         bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
@@ -434,7 +423,7 @@ public:
     {
         // If there are no controls, this is equivalent to the single bit gate.
         if (!controlLen) {
-            ApplySingleBit(mtrxs, qubitIndex);
+            Mtrx(mtrxs, qubitIndex);
             return;
         }
 
@@ -561,13 +550,14 @@ public:
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, const bitLenInt qPowerCount, const unsigned int shots);
 
+#if ENABLE_ALU
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
         SwitchToEngine();
         engine->INC(toAdd, start, length);
     }
     virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen)
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
     {
         SwitchToEngine();
         engine->CINC(toAdd, inOutStart, length, controls, controlLen);
@@ -652,56 +642,34 @@ public:
         engine->POWModNOut(base, modN, inStart, outStart, length);
     }
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         SwitchToEngine();
         engine->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
     }
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         SwitchToEngine();
         engine->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
     }
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         SwitchToEngine();
         engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         SwitchToEngine();
         engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen)
+        const bitLenInt* controls, bitLenInt controlLen)
     {
         SwitchToEngine();
         engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
-    }
-
-    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length)
-    {
-        SwitchToEngine();
-        engine->ZeroPhaseFlip(start, length);
-    }
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-    {
-        SwitchToEngine();
-        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
-    }
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-    {
-        SwitchToEngine();
-        engine->PhaseFlipIfLess(greaterPerm, start, length);
-    }
-    virtual void PhaseFlip()
-    {
-        if (engine) {
-            engine->PhaseFlip();
-        }
     }
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -726,6 +694,30 @@ public:
     {
         SwitchToEngine();
         engine->Hash(start, length, values);
+    }
+
+    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+    {
+        SwitchToEngine();
+        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
+    }
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+    {
+        SwitchToEngine();
+        engine->PhaseFlipIfLess(greaterPerm, start, length);
+    }
+#endif
+
+    virtual void PhaseFlip()
+    {
+        if (engine) {
+            engine->PhaseFlip();
+        }
+    }
+    virtual void ZeroPhaseFlip(bitLenInt start, bitLenInt length)
+    {
+        SwitchToEngine();
+        engine->ZeroPhaseFlip(start, length);
     }
 
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
@@ -902,7 +894,7 @@ public:
 
         return engine->TrySeparate(qubit1, qubit2);
     }
-    virtual bool TrySeparate(bitLenInt* qubits, bitLenInt length, real1_f error_tol)
+    virtual bool TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error_tol)
     {
         if (stabilizer) {
             std::vector<bitLenInt> q(length);

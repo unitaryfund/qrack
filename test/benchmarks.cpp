@@ -279,6 +279,7 @@ TEST_CASE("test_swap_single", "[gates]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->Swap(0, 1); });
 }
 
+#if ENABLE_REG_GATES
 TEST_CASE("test_cnot_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CNOT(0, n / 2, n / 2); });
@@ -339,6 +340,7 @@ TEST_CASE("test_clxor_all", "[gates]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CLXOR(0, 0x0d, 0, n); });
 }
 
+#if ENABLE_ROT_API
 TEST_CASE("test_rt_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->RT(M_PI, 0, n); });
@@ -348,12 +350,25 @@ TEST_CASE("test_crt_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CRT(M_PI, 0, n / 2, n / 2); });
 }
+#endif
+#endif
+
+TEST_CASE("test_m", "[measure]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->M(n - 1); });
+}
+
+TEST_CASE("test_mreg", "[measure]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->MReg(0, n); });
+}
 
 TEST_CASE("test_rol", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ROL(1, 0, n); });
 }
 
+#if ENABLE_ALU
 TEST_CASE("test_inc", "[arithmetic]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INC(1, 0, n); });
@@ -374,14 +389,15 @@ TEST_CASE("test_incsc", "[arithmetic]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INCSC(1, 0, n - 2, n - 2, n - 1); });
 }
 
-TEST_CASE("test_zero_phase_flip", "[phaseflip]")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ZeroPhaseFlip(0, n); });
-}
-
 TEST_CASE("test_c_phase_flip_if_less", "[phaseflip]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CPhaseFlipIfLess(1, 0, n - 1, n - 1); });
+}
+#endif
+
+TEST_CASE("test_zero_phase_flip", "[phaseflip]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ZeroPhaseFlip(0, n); });
 }
 
 TEST_CASE("test_phase_flip", "[phaseflip]")
@@ -389,16 +405,7 @@ TEST_CASE("test_phase_flip", "[phaseflip]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->PhaseFlip(); });
 }
 
-TEST_CASE("test_m", "[measure]")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->M(n - 1); });
-}
-
-TEST_CASE("test_mreg", "[measure]")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->MReg(0, n); });
-}
-
+#if ENABLE_ALU
 void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> fn)
 {
     bitCapIntOcl i, j;
@@ -435,6 +442,7 @@ TEST_CASE("test_sbc_superposition_reg", "[indexed]")
         qftReg->IndexedSBC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
     });
 }
+#endif
 
 TEST_CASE("test_setbit", "[aux]")
 {
@@ -451,6 +459,7 @@ TEST_CASE("test_set_reg", "[aux]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->SetReg(0, n, 1); });
 }
 
+#if ENABLE_ALU
 TEST_CASE("test_grover", "[grover]")
 {
 
@@ -485,6 +494,7 @@ TEST_CASE("test_grover", "[grover]")
         qftReg->MReg(0, n);
     });
 }
+#endif
 
 TEST_CASE("test_qft_ideal_init", "[qft]")
 {
@@ -715,7 +725,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
 
                 // Continuous Z root gates option:
                 // gateRand = 2 * PI_R1 * qReg->Rand();
-                // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                // qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 gateRand = 8 * qReg->Rand();
@@ -853,7 +863,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 
                 // Continuous Z root gates option:
                 // gateRand = 2 * PI_R1 * qReg->Rand();
-                // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                // qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 gateRand = 8 * qReg->Rand();
@@ -1041,7 +1051,7 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
 
                 // Continuous Z root gates option:
                 gateRand = 2 * PI_R1 * qReg->Rand();
-                qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 /*
@@ -1231,7 +1241,7 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
 
                 // Continuous Z root gates option:
                 gateRand = 2 * PI_R1 * qReg->Rand();
-                qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 /*
@@ -1482,7 +1492,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
 
                 // Continuous Z root gates option:
                 gateRand = 2 * PI_R1 * qReg->Rand();
-                qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 /*
@@ -1592,7 +1602,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                             controls[0] = b1;
                             top = std::polar(ONE_R1, (real1)(2 * PI_R1 * qReg->Rand()));
                             bottom = std::conj(top);
-                            qReg->ApplyControlledSinglePhase(controls, 1U, b2, top, bottom);
+                            qReg->MCPhase(controls, 1U, top, bottom, b2);
                         } else {
                             // "Phase" transforms:
                             gateRand = DimCount1Qb * qReg->Rand();
@@ -1612,7 +1622,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                             controls[0] = b1;
                             top = std::polar(ONE_R1, (real1)(2 * PI_R1 * qReg->Rand()));
                             bottom = std::conj(top);
-                            qReg->ApplyAntiControlledSinglePhase(controls, 1U, b2, top, bottom);
+                            qReg->MACPhase(controls, 1U, top, bottom, b2);
                         }
                     }
                 }
@@ -1821,9 +1831,9 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         qReg->H(i);
                     } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                        qReg->ApplySinglePhase(ONE_CMPLX, polar0, i);
+                        qReg->Phase(ONE_CMPLX, polar0, i);
                     } else {
-                        qReg->ApplySingleInvert(ONE_CMPLX, polar0, i);
+                        qReg->Invert(ONE_CMPLX, polar0, i);
                     }
                 }
 
@@ -1858,9 +1868,9 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                         control[0] = b1;
                         polar0 = complex(std::polar(ONE_R1, (real1)(2 * M_PI * qReg->Rand())));
                         if (gateRand < (gateThreshold * ONE_R1 / gateMax)) {
-                            qReg->ApplyControlledSinglePhase(control, 1U, b2, polar0, -polar0);
+                            qReg->MCPhase(control, 1U, polar0, -polar0, b2);
                         } else {
-                            qReg->ApplyControlledSingleInvert(control, 1U, b2, polar0, polar0);
+                            qReg->MCInvert(control, 1U, polar0, polar0, b2);
                         }
                     }
                 }
@@ -2075,7 +2085,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     qReg->ISwap(b1, b2);
                     // "1/6 of CZ" is read to indicate the 6th root.
                     controls[0] = b1;
-                    qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, sixthRoot);
+                    qReg->MCPhase(controls, 1U, ONE_CMPLX, sixthRoot, b2);
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
 
                     // qReg->TrySeparate(b1, b2);

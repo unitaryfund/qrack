@@ -53,8 +53,6 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     pStridePow = PSTRIDEPOW;
 #endif
 
-    SetConcurrency(std::thread::hardware_concurrency());
-
     stateVec = AllocStateVec(maxQPowerOcl);
     stateVec->clear();
 
@@ -562,7 +560,7 @@ void QEngineCPU::PhaseParity(real1_f radians, bitCapInt mask)
 
     if (!(mask & (mask - ONE_BCI))) {
         complex phaseFac = std::polar(ONE_R1, (real1)(radians / 2));
-        ApplySinglePhase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
+        Phase(ONE_CMPLX / phaseFac, phaseFac, log2(mask));
         return;
     }
 
@@ -604,7 +602,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, const b
 
     // If there are no controls, the base case should be the non-controlled single bit gate.
     if (controlLen == 0) {
-        ApplySingleBit(mtrxs + (bitCapIntOcl)(mtrxSkipValueMask * 4U), qubitIndex);
+        Mtrx(mtrxs + (bitCapIntOcl)(mtrxSkipValueMask * 4U), qubitIndex);
         return;
     }
 
@@ -1399,39 +1397,6 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
     }
 
     return ONE_R1 - clampProb(norm(totInner));
-}
-
-/// The 6502 uses its carry flag also as a greater-than/less-than flag, for the CMP operation.
-void QEngineCPU::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-{
-    CHECK_ZERO_SKIP();
-
-    Dispatch(maxQPower, [this, greaterPerm, start, length, flagIndex] {
-        bitCapIntOcl regMask = bitRegMaskOcl(start, length);
-        bitCapIntOcl flagMask = pow2Ocl(flagIndex);
-        bitCapIntOcl greaterPermOcl = (bitCapIntOcl)greaterPerm;
-
-        par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            if ((((lcv & regMask) >> start) < greaterPermOcl) & ((lcv & flagMask) == flagMask))
-                stateVec->write(lcv, -stateVec->read(lcv));
-        });
-    });
-}
-
-/// This is an expedient for an adaptive Grover's search for a function's global minimum.
-void QEngineCPU::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-{
-    CHECK_ZERO_SKIP();
-
-    Dispatch(maxQPower, [this, greaterPerm, start, length] {
-        bitCapIntOcl regMask = bitRegMaskOcl(start, length);
-        bitCapIntOcl greaterPermOcl = (bitCapIntOcl)greaterPerm;
-
-        par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            if (((lcv & regMask) >> start) < greaterPermOcl)
-                stateVec->write(lcv, -stateVec->read(lcv));
-        });
-    });
 }
 
 void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)

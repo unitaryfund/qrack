@@ -86,6 +86,14 @@ CMake on Windows will set up a 32-bit Visual Studio project by default, (if usin
     $ cmake -DCMAKE_GENERATOR_PLATFORM=x64 -DXXD_BIN="C:/Program Files (x86)/Vim/vim82/xxd.exe" -DFPPOW=6 ..
 ```
 
+## WebAssembly (WASM) builds
+
+By nature of its pure C++11 design, Qrack happens to offer excellent compatibility with Emscripten ("WebAssembly") projects. See [the qrack.net repository](https://github.com/vm6502q/qrack.net) for an example and [qrack.net](https://qrack.net) for a live demo. OpenCL GPU operation is not yet available for WASM builds. While CPU multithreading might be possible in WASM, it is advisable that `pthread` usage and linking is disabled for most conventional Web applications, with `-DENABLE_PTHREAD=OFF` and `-DENABLE_QUNIT_CPU_PARALLEL=OFF` in CMake:
+
+```sh
+emcmake cmake -DENABLE_OPENCL=OFF -DENABLE_QUNIT_CPU_PARALLEL=OFF -DENABLE_COMPLEX_X2=OFF -DENABLE_RDRAND=OFF -DUINTPOW=5 -DENABLE_PTHREAD=OFF ..
+```
+
 After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
 
 ## WebAssembly (WASM) builds
@@ -219,13 +227,19 @@ $ cmake -DENABLE_VM6502Q_DEBUG=ON ..
 ```
 Qrack was originally written so that the disassembler of VM6502Q should show the classical expecation value of registers, following Ehrenfest's theorem. However, this incurs significant additional overhead for `QInterface::IndexedLDA()`, `QInterface::IndexedADC()`, and `QInterface::IndexedSBC()`. As such, this behavior in the VM6502Q disassembler is only supported when this CMake flag is specifically enabled. (It is off by default.) These three methods will return 0, if the flag is disabled.
 
-## Turn off BCD arithmetic logic unit operations
+## Turn on/off optional API components
 
 ```sh
-$ cmake -DENABLE_BCD=OFF ..
+$ cmake -DENABLE_BCD=OFF -DENABLE_REG_GATES=OFF -DENABLE_ROT_API=OFF ..
 ```
 
-"BCD" arithmetic ("binary coded decimal") is necessary to support emulation based on the MOS-6502. However, this is an outmoded form of binary arithmetic for most or all conceivable purposes for which one would want a quantum computer. (It stores integers as base 10 digits, in binary.) On by default, turning this option off will slightly reduce binary size by excising BCD ALU operations from the API.
+Prior to the Qrack v7 API, a larger set of convenience methods were included in all builds, which increased the size of the library binary. By default, `ENABLE_REG_GATES`, `ENABLE_ROT_API` and  `ENABLE_BCD` all default to `OFF`.
+
+`ENABLE_REG_GATES` adds various looped-over-width gates to the API, like the lengthwise `CNOT(control, target, length)` method. This method is a convenience wrapper on a loop of `CNOT` operations for `length`, starting from `control` and `target`, to `control + length - 1` and `target + length - 1`. These methods were seen as opportunities for optimization, at a much earlier point, but they have fallen out of internal use, and basically none of them are optimized as special cases, anymore. Disabling `ENABLE_REG_GATES` does **not** remove lengthwise `X(target, length)` and `H(target, length)` methods, as these specific convenience methods are still commonly used in the protected API, for negating or superposing across register width.
+
+`ENABLE_ROT_API` adds many less common **rotation** methods to the API, like dyadic fraction rotations. These never found common use in the protected API, while they add significant size to compiled binaries.
+
+"BCD" arithmetic ("binary coded decimal") is necessary to support emulation based on the MOS-6502. However, this is an outmoded form of binary arithmetic for most or all conceivable purposes for which one would want a quantum computer. (It stores integers as base 10 digits, in binary.) Off by default, turning this option on will slightly increase binary size by including BCD ALU operations from the API, but this is necessary to support the VM6502Q chip-like emulator project.
 
 ## Copyright, License, and Acknowledgements
 
