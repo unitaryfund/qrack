@@ -132,25 +132,12 @@ void QPager::Init()
         // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
         // environment variable.
         thresholdQubitsPerPage = maxPageQubits;
-        bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
-        if (threshTest < thresholdQubitsPerPage) {
-            thresholdQubitsPerPage = threshTest;
-        }
-
-        // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
-        // concurrency.
-        minPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
-        if (thresholdQubitsPerPage < minPageQubits) {
-            thresholdQubitsPerPage = minPageQubits;
-        }
     }
 #endif
 
     if (thresholdQubitsPerPage == 0) {
         useHardwareThreshold = true;
         useGpuThreshold = false;
-
-        thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
 
 #if ENABLE_ENV_VARS
         pStridePow =
@@ -166,9 +153,7 @@ void QPager::Init()
         minPageQubits = pStridePow + 1U;
 #endif
 
-        if (thresholdQubitsPerPage < minPageQubits) {
-            thresholdQubitsPerPage = minPageQubits;
-        }
+        thresholdQubitsPerPage = minPageQubits;
     }
 
     if (deviceIDs.size() == 0) {

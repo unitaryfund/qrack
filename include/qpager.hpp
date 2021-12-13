@@ -53,29 +53,6 @@ protected:
     virtual void SetQubitCount(bitLenInt qb)
     {
         QInterface::SetQubitCount(qb);
-
-        if (useHardwareThreshold) {
-            if (useGpuThreshold) {
-                // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
-                // environment variable.
-                thresholdQubitsPerPage = maxPageQubits;
-                bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
-                if (threshTest < thresholdQubitsPerPage) {
-                    thresholdQubitsPerPage = threshTest;
-                }
-
-                if (thresholdQubitsPerPage < minPageQubits) {
-                    thresholdQubitsPerPage = minPageQubits;
-                }
-            } else {
-                thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
-
-                if (thresholdQubitsPerPage < minPageQubits) {
-                    thresholdQubitsPerPage = minPageQubits;
-                }
-            }
-        }
-
         baseQubitsPerPage = (qubitCount < thresholdQubitsPerPage) ? qubitCount : thresholdQubitsPerPage;
         basePageCount = pow2Ocl(qubitCount - baseQubitsPerPage);
         basePageMaxQPower = pow2Ocl(baseQubitsPerPage);
@@ -346,17 +323,6 @@ public:
         // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
         // environment variable.
         thresholdQubitsPerPage = maxPageQubits;
-        bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
-        if (threshTest < thresholdQubitsPerPage) {
-            thresholdQubitsPerPage = threshTest;
-        }
-
-        // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
-        // concurrency.
-        minPageQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
-        if (thresholdQubitsPerPage < minPageQubits) {
-            thresholdQubitsPerPage = minPageQubits;
-        }
 #endif
     }
 
