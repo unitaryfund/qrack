@@ -94,6 +94,9 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
             unpagedEngines.push_back(engines[i]);
         }
     }
+    if (unpagedEngines.size() == 0U) {
+        unpagedEngines.push_back(QINTERFACE_OPTIMAL_SINGLE_PAGE);
+    }
 
     isPagingSuppressed = canSuppressPaging && (qubitCount < pagingThresholdQubits);
 
