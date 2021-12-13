@@ -131,7 +131,7 @@ void QPager::Init()
 
         // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
         // environment variable.
-        thresholdQubitsPerPage = maxPageQubits - 1U;
+        thresholdQubitsPerPage = maxPageQubits;
     }
 #endif
 
