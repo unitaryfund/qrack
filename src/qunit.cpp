@@ -90,7 +90,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     canSuppressPaging = (engines[0] == QINTERFACE_QPAGER) ||
         ((engines[0] == QINTERFACE_STABILIZER_HYBRID) && ((engines.size() == 1U) || (engines[1] == QINTERFACE_QPAGER)));
     for (unsigned int i = 0; i < engines.size(); i++) {
-        if ((i > 1U) || engines[i] != QINTERFACE_QPAGER) {
+        if (engines[i] != QINTERFACE_QPAGER) {
             unpagedEngines.push_back(engines[i]);
         }
     }
