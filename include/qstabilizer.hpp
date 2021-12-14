@@ -76,7 +76,7 @@ protected:
     void Dispatch(DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
-        if (qubitCount > dispatchThreshold) {
+        if (qubitCount < dispatchThreshold) {
             dispatchQueue.finish();
             fn();
         } else {
