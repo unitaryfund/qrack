@@ -30,17 +30,7 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
         // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
         // concurrency.
         bitLenInt gpuQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
-
-#if ENABLE_ENV_VARS
-        bitLenInt pStridePow =
-            (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
-#else
-        bitLenInt pStridePow = PSTRIDEPOW;
-#endif
-
-        bitLenInt cpuQubits =
-            (GetConcurrencyLevel() == 1U) ? pStridePow : (log2(GetConcurrencyLevel() - 1U) + pStridePow + 1U);
-
+        bitLenInt cpuQubits = (GetParallelThreshold() <= ONE_BCI) ? 0U : (log2(GetParallelThreshold() - ONE_BCI) + 1U);
         thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
 
