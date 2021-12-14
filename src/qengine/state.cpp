@@ -45,6 +45,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
+    , dispatchThreshold(12U)
 {
 #if ENABLE_ENV_VARS
     pStridePow =
@@ -52,6 +53,8 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 #else
     pStridePow = PSTRIDEPOW;
 #endif
+
+    dispatchThreshold = (dispatchThreshold > 2U) ? (pStridePow - 2U) : 0U;
 
     stateVec = AllocStateVec(maxQPowerOcl);
     stateVec->clear();
