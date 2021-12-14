@@ -66,6 +66,7 @@ protected:
     qrack_rand_gen_ptr rand_generator;
     std::uniform_real_distribution<real1_f> rand_distribution;
     std::shared_ptr<RdRandom> hardware_rand_generator;
+    bitLenInt dispatchThreshold;
 
 #if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
@@ -75,7 +76,12 @@ protected:
     void Dispatch(DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.dispatch(fn);
+        if (qubitCount > dispatchThreshold) {
+            dispatchQueue.finish();
+            fn();
+        } else {
+            dispatchQueue.dispatch(fn);
+        }
 #else
         fn();
 #endif

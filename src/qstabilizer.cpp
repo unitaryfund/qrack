@@ -57,6 +57,15 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
         rand_generator = rgp;
     }
 
+#if ENABLE_ENV_VARS
+    bitLenInt pStridePow =
+        (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
+#else
+    bitLenInt pStridePow = PSTRIDEPOW;
+#endif
+
+    dispatchThreshold = (dispatchThreshold > 2U) ? (pStridePow - 2U) : 0U;
+
     SetPermutation(perm);
 }
 
