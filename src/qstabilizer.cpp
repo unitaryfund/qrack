@@ -58,13 +58,11 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
     }
 
 #if ENABLE_ENV_VARS
-    bitLenInt pStridePow =
+    dispatchThreshold =
         (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
 #else
-    bitLenInt pStridePow = PSTRIDEPOW;
+    dispatchThreshold = PSTRIDEPOW;
 #endif
-
-    dispatchThreshold = (dispatchThreshold > 2U) ? (pStridePow - 2U) : 0U;
 
     SetPermutation(perm);
 }
