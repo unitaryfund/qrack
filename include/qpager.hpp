@@ -41,7 +41,6 @@ protected:
     bitLenInt maxPageQubits;
     bitLenInt deviceGlobalQubits;
     bitLenInt thresholdQubitsPerPage;
-    bitLenInt pStridePow;
     bitLenInt baseQubitsPerPage;
     bitCapInt basePageCount;
     bitCapIntOcl basePageMaxQPower;

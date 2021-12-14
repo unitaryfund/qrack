@@ -32,7 +32,6 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
     , minPageQubits(0)
     , deviceGlobalQubits(2)
     , thresholdQubitsPerPage(qubitThreshold)
-    , pStridePow(PSTRIDEPOW)
 {
     if ((engines[0] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
 #if ENABLE_OPENCL
@@ -80,7 +79,6 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
     , maxPageQubits(-1)
     , deviceGlobalQubits(2)
     , thresholdQubitsPerPage(qubitThreshold)
-    , pStridePow(PSTRIDEPOW)
 {
     Init();
     LockEngine(enginePtr);
@@ -140,10 +138,10 @@ void QPager::Init()
         useGpuThreshold = false;
 
 #if ENABLE_ENV_VARS
-        pStridePow =
+        const bitLenInt pStridePow =
             (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
 #else
-        pStridePow = PSTRIDEPOW;
+        const bitLenInt pStridePow = PSTRIDEPOW;
 #endif
 
 #if ENABLE_PTHREAD

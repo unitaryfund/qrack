@@ -47,10 +47,10 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     , isSparse(useSparseStateVec)
 {
 #if ENABLE_ENV_VARS
-    bitLenInt pStridePow =
+    const bitLenInt pStridePow =
         (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
 #else
-    bitLenInt pStridePow = PSTRIDEPOW;
+    const bitLenInt pStridePow = PSTRIDEPOW;
 #endif
 
     dispatchThreshold = (dispatchThreshold > 2U) ? (pStridePow - 2U) : 0U;
