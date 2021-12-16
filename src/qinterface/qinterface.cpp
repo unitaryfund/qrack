@@ -376,8 +376,8 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     }
 
     bitCapIntOcl singlePerm = ((maskProbsArray[0] + FP_NORM_EPSILON) >= ONE_R1) ? 0U : maskMaxQPower;
-    bitCapIntOcl j = maskMaxQPower;
-    if (singlePerm) {
+    bitCapIntOcl j = 0U;
+    if (singlePerm && (maskProbsArray[0] <= FP_NORM_EPSILON)) {
         for (j = 1U; j < maskMaxQPower; j++) {
             if (maskProbsArray[j] > FP_NORM_EPSILON) {
                 if ((maskProbsArray[j] + FP_NORM_EPSILON) >= ONE_R1) {
@@ -472,8 +472,8 @@ void QInterface::MultiShotMeasureMask(
     }
 
     bitCapIntOcl singlePerm = ((maskProbsArray[0] + FP_NORM_EPSILON) >= ONE_R1) ? 0U : maskMaxQPower;
-    bitCapIntOcl j = maskMaxQPower;
-    if (singlePerm) {
+    bitCapIntOcl j = 0U;
+    if (singlePerm && (maskProbsArray[0] <= FP_NORM_EPSILON)) {
         for (j = 1U; j < maskMaxQPower; j++) {
             if (maskProbsArray[j] > FP_NORM_EPSILON) {
                 if ((maskProbsArray[j] + FP_NORM_EPSILON) >= ONE_R1) {
