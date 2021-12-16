@@ -470,7 +470,7 @@ void QInterface::MultiShotMeasureMask(
         return;
     }
 
-    bitCapIntOcl singlePerm = (maskProbsArray[0] > FP_NORM_EPSILON) ? 0U : maskMaxQPower;
+    bitCapIntOcl singlePerm = (maskProbsArray[0] > REAL1_EPSILON) ? 0U : maskMaxQPower;
     bitCapIntOcl j;
     for (j = 1U; j < maskMaxQPower; j++) {
         if (maskProbsArray[j] > REAL1_EPSILON) {
