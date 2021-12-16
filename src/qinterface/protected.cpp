@@ -78,7 +78,7 @@ _INTPOW(bitCapInt, intPow)
 _INTPOW(bitCapIntOcl, intPowOcl)
 
 #if ENABLE_COMPLEX_X2
-void mul2x2(complex* left, complex* right, complex* out)
+void mul2x2(const complex* left, const complex* right, complex* out)
 {
     complex2 left0(left[0], left[2]);
     complex2 left1(left[1], left[3]);
@@ -92,7 +92,7 @@ void mul2x2(complex* left, complex* right, complex* out)
     out[3] = col.c[1];
 }
 #else
-void mul2x2(complex* left, complex* right, complex* out)
+void mul2x2(const complex* left, const complex* right, complex* out)
 {
     out[0] = (left[0] * right[0]) + (left[1] * right[2]);
     out[1] = (left[0] * right[1]) + (left[1] * right[3]);
@@ -101,7 +101,7 @@ void mul2x2(complex* left, complex* right, complex* out)
 }
 #endif
 
-void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
+void _expLog2x2(const complex* matrix2x2, complex* outMatrix2x2, bool isExp)
 {
     // Solve for the eigenvalues and eigenvectors of a 2x2 matrix, diagonalize, exponentiate, return to the original
     // basis, and apply.
@@ -182,9 +182,9 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
     std::copy(expOfGate, expOfGate + 4, outMatrix2x2);
 }
 
-void exp2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, true); }
+void exp2x2(const complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, true); }
 
-void log2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, false); }
+void log2x2(const complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, false); }
 
 /// Check if an addition with overflow sets the flag
 bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower)
