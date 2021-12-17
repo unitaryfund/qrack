@@ -32,9 +32,6 @@ namespace Qrack {
 // These are utility functions defined in qinterface/protected.cpp:
 unsigned char* cl_alloc(size_t ucharCount);
 void cl_free(void* toFree);
-void mul2x2(const complex* left, const complex* right, complex* out);
-void exp2x2(const complex* matrix2x2, complex* outMatrix2x2);
-void log2x2(const complex* matrix2x2, complex* outMatrix2x2);
 bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
 bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount);
