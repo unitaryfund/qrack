@@ -248,21 +248,11 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
     b1->scale /= scale;
 }
 
-#if ENABLE_PTHREAD
+#if ENABLE_PTHREAD && (UINTPOW > 3)
 // TODO: Find some way to abstract this with ParallelFor. (It's a duplicate method.)
 // The reason for this design choice is that the memory per node for "Stride" and "numCores" attributes are on order of
 // all other RAM per node in total. Remember that trees are recursively constructed with exponential scaling, and the
 // memory per node should be thought of as akin to the memory per Schrödinger amplitude.
-#if UINTPOW < 4
-void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
-{
-    const bitCapIntOcl itemCount = end - begin;
-    const bitCapIntOcl maxLcv = begin + itemCount;
-    for (bitCapIntOcl j = begin; j < maxLcv; j++) {
-        j |= fn(j, 0);
-    }
-}
-#else
 void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
 {
     const bitCapIntOcl itemCount = end - begin;
@@ -316,7 +306,6 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
         futures[cpu].get();
     }
 }
-#endif
 #else
 void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
 {
