@@ -72,16 +72,16 @@ void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
         // X eigenstate
         stabilizer->H(target);
 
-        const complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-            complex(-SQRT1_2_R1, ZERO_R1) };
+        const complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+            complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
         toRet = std::make_shared<MpsShard>(mtrx);
     } else if (stabilizer->IsSeparableY(target)) {
         // Y eigenstate
         stabilizer->H(target);
         stabilizer->S(target);
 
-        const complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1), complex(SQRT1_2_R1, ZERO_R1),
-            complex(ZERO_R1, SQRT1_2_R1) };
+        const complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1),
+            complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1) };
         toRet = std::make_shared<MpsShard>(mtrx);
     }
 
