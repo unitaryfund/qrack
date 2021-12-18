@@ -273,7 +273,7 @@ void QStabilizer::seed(const bitLenInt& g)
         }
 
         if (f == 2) {
-            int j = min;
+            const int j = min;
             // Make the seed consistent with the ith equation
             x[elemCount][j] = !x[elemCount][j];
         }
