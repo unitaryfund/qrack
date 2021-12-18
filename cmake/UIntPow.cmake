@@ -6,3 +6,8 @@ endif (UINTPOW LESS 3)
 if (UINTPOW GREATER 6)
     message(FATAL_ERROR "UINTPOW must be no greater than 6, equivalent to \"long\" masks!")
 endif (UINTPOW GREATER 6)
+
+math(EXPR _UINTCAP "1 << ${UINTPOW}")
+if ((_UINTCAP LESS PSTRIDEPOW) OR (_UINTCAP EQUAL PSTRIDEPOW))
+    message(FATAL_ERROR "PSTRIDEPOW must be less than 2-to-the-power-of-UINTPOW, or parallel loops will truncate out of bounds!")
+endif ((_UINTCAP LESS PSTRIDEPOW) OR (_UINTCAP EQUAL PSTRIDEPOW))
