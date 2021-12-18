@@ -50,7 +50,8 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         branches[1]->Prune(depth);
     }
 
-    complex phaseFac = std::polar(ONE_R1, (real1)(IS_NORM_0(b0->scale) ? std::arg(b1->scale) : std::arg(b0->scale)));
+    const complex phaseFac =
+        std::polar(ONE_R1, (real1)(IS_NORM_0(b0->scale) ? std::arg(b1->scale) : std::arg(b0->scale)));
     scale *= phaseFac;
     b0->scale /= phaseFac;
     if (b0 == b1) {
@@ -61,7 +62,7 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
 
     // Now, we try to combine pointers to equivalent branches.
 
-    bitCapIntOcl depthPow = (bitCapIntOcl)ONE_BCI << depth;
+    const bitCapIntOcl depthPow = (bitCapIntOcl)ONE_BCI << depth;
 
     // Combine single elements at bottom of full depth, up to where branches are equal below:
     par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
@@ -220,8 +221,8 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
         b1->ConvertStateVector(depth);
     }
 
-    real1 nrm0 = norm(b0->scale);
-    real1 nrm1 = norm(b1->scale);
+    const real1 nrm0 = norm(b0->scale);
+    const real1 nrm1 = norm(b1->scale);
 
     if ((nrm0 + nrm1) <= FP_NORM_EPSILON) {
         SetZero();
@@ -255,8 +256,8 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
 #if UINTPOW < 4
 void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
 {
-    bitCapIntOcl itemCount = end - begin;
-    bitCapIntOcl maxLcv = begin + itemCount;
+    const bitCapIntOcl itemCount = end - begin;
+    const bitCapIntOcl maxLcv = begin + itemCount;
     for (bitCapIntOcl j = begin; j < maxLcv; j++) {
         j |= fn(j, 0);
     }
@@ -264,7 +265,7 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
 #else
 void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
 {
-    bitCapIntOcl itemCount = end - begin;
+    const bitCapIntOcl itemCount = end - begin;
 
     const bitCapIntOcl Stride = (bitCapIntOcl)(ONE_BCI << (bitCapIntOcl)10U);
     const unsigned numCores = std::thread::hardware_concurrency();
@@ -319,9 +320,8 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
 #else
 void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
 {
-    bitCapIntOcl itemCount = end - begin;
-
-    bitCapIntOcl maxLcv = begin + itemCount;
+    const bitCapIntOcl itemCount = end - begin;
+    const bitCapIntOcl maxLcv = begin + itemCount;
     for (bitCapIntOcl j = begin; j < maxLcv; j++) {
         j |= fn(j, 0);
     }
