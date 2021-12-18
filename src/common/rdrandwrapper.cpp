@@ -218,9 +218,7 @@ real1_f RdRandom::Next()
     }
 
 #if FPPOW > 5
-    if (!getRdRand(&v)) {
-        throw std::runtime_error("Failed to get hardware RNG number.");
-    }
+    v = NextRaw();
 
     for (unsigned i = 0U; i < 32U; i++) {
         part /= 2;
