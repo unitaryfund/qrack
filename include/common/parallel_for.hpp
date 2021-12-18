@@ -31,7 +31,12 @@ public:
 
     virtual ~ParallelFor() {}
 
-    void SetConcurrencyLevel(unsigned num) { numCores = num; }
+    void SetConcurrencyLevel(unsigned num) {
+        numCores = num;
+        if (GetParallelThreshold() < pStride) {
+            throw std::runtime_error("GetParallelThreshold() was truncated! Set your PSTRIDEPOW value lower, depending on hyperthread count.");
+        }
+    }
     unsigned GetConcurrencyLevel() { return numCores; }
     bitCapIntOcl GetStride() { return pStride; }
     bitCapIntOcl GetParallelThreshold() { return pStride * numCores; }
