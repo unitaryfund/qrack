@@ -33,7 +33,7 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
     , x((n << 1U) + 1U, std::vector<bool>(n))
     , z((n << 1U) + 1U, std::vector<bool>(n))
     , r((n << 1U) + 1U)
-    , rand_distribution(ZERO_R1, ONE_R1)
+    , rand_distribution(0, 1)
     , hardware_rand_generator(NULL)
 {
 #if !ENABLE_RDRAND

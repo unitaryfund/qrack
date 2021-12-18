@@ -64,7 +64,7 @@ protected:
 
     uint32_t randomSeed;
     qrack_rand_gen_ptr rand_generator;
-    std::uniform_real_distribution<real1_f> rand_distribution;
+    std::uniform_int_distribution<char> rand_distribution;
     std::shared_ptr<RdRandom> hardware_rand_generator;
     bitLenInt dispatchThreshold;
 
@@ -159,7 +159,7 @@ public:
 
             return (bool)(rawRandBools & pow2Ocl(rawRandBoolsRemaining));
         } else {
-            return rand_distribution(*rand_generator) < (ONE_R1 / 2U);
+            return (bool)rand_distribution(*rand_generator);
         }
     }
 
