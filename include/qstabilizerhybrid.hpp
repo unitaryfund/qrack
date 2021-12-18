@@ -541,6 +541,8 @@ public:
 
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots);
+    virtual void MultiShotMeasureMask(
+        const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
 
 #if ENABLE_ALU
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
