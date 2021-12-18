@@ -85,7 +85,7 @@ protected:
         shards[qubit] = NULL;
         real1_f prob;
 
-        bool isZ1 = stabilizer->M(qubit);
+        const bool isZ1 = stabilizer->M(qubit);
 
         if (isZ1) {
             prob = norm(shard->gate[3]);
@@ -879,7 +879,7 @@ public:
 
             stabilizer->Swap(qubit1 + 1U, qubit2);
 
-            bool toRet = stabilizer->CanDecomposeDispose(qubit1, 2);
+            const bool toRet = stabilizer->CanDecomposeDispose(qubit1, 2);
 
             stabilizer->Swap(qubit1 + 1U, qubit2);
 
@@ -899,7 +899,7 @@ public:
                 Swap(q[0] + i, q[i]);
             }
 
-            bool toRet = stabilizer->CanDecomposeDispose(q[0], length);
+            const bool toRet = stabilizer->CanDecomposeDispose(q[0], length);
 
             for (bitLenInt i = 1; i < length; i++) {
                 Swap(q[0] + i, q[i]);
