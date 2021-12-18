@@ -536,7 +536,7 @@ void QStabilizerHybrid::MCPhase(
         return;
     }
 
-    bitLenInt control = controls[0];
+    const bitLenInt control = controls[0];
     bool didDivert = false;
 
     if (IS_SAME(topLeft, ONE_CMPLX)) {
@@ -621,7 +621,7 @@ void QStabilizerHybrid::MCInvert(
         return;
     }
 
-    bitLenInt control = controls[0];
+    const bitLenInt control = controls[0];
     bool didDivert = false;
 
     if (IS_SAME(topRight, ONE_CMPLX)) {
