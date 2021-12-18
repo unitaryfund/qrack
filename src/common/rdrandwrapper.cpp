@@ -24,7 +24,7 @@
 
 namespace Qrack {
 
-bool getRdRand(unsigned int* pv)
+bool getRdRand(unsigned* pv)
 {
 #if ENABLE_RDRAND
     const int max_rdrand_tries = 10;
@@ -120,7 +120,7 @@ bool _readNextRandDataFile(size_t fileOffset, std::vector<char>& data)
 bool RdRandom::SupportsRDRAND()
 {
 #if ENABLE_RDRAND
-    const unsigned int flag_RDRAND = (1 << 30);
+    const unsigned flag_RDRAND = (1 << 30);
 
 #if _MSC_VER
     int ex[4];
@@ -128,7 +128,7 @@ bool RdRandom::SupportsRDRAND()
 
     return ((ex[2] & flag_RDRAND) == flag_RDRAND);
 #else
-    unsigned int eax, ebx, ecx, edx;
+    unsigned eax, ebx, ecx, edx;
     ecx = 0;
     __get_cpuid(1, &eax, &ebx, &ecx, &edx);
 
@@ -141,7 +141,7 @@ bool RdRandom::SupportsRDRAND()
 }
 
 #if ENABLE_RNDFILE
-real1_f RdRandom::Next()
+unsigned RdRandom::NextRaw()
 {
     if (!didInit) {
         while ((data1.size() - dataOffset) < 4) {
@@ -175,23 +175,38 @@ real1_f RdRandom::Next()
         isPageTwo = !isPageTwo;
     }
 
+    unsigned v = (unsigned)(data1[dataOffset] + 128);
+    dataOffset++;
+
+    return v;
+}
+
+real1_f RdRandom::Next()
+{
     const size_t bytePrecision = sizeof(real1_f);
     real1_f res = ZERO_R1;
     real1_f part = ONE_R1;
     for (unsigned i = 0U; i < bytePrecision; i++) {
         part /= 256;
-        res += part * (data1[dataOffset + i] + 128);
+        res += part * NextRaw();
     }
-    dataOffset += 4;
+
     return res;
 }
 #else
-real1_f RdRandom::Next()
+unsigned RdRandom::NextRaw()
 {
-    unsigned int v;
+    unsigned v;
     if (!getRdRand(&v)) {
         throw std::runtime_error("Failed to get hardware RNG number.");
     }
+
+    return v;
+}
+
+real1_f RdRandom::Next()
+{
+    unsigned v = NextRaw();
 
     real1_f res = ZERO_R1;
     real1_f part = ONE_R1;

@@ -68,6 +68,9 @@ protected:
     std::shared_ptr<RdRandom> hardware_rand_generator;
     bitLenInt dispatchThreshold;
 
+    unsigned rawRandBools = 0;
+    unsigned rawRandBoolsRemaining = 0;
+
 #if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
 #endif
@@ -148,7 +151,13 @@ public:
     bool Rand()
     {
         if (hardware_rand_generator != NULL) {
-            return hardware_rand_generator->Next() < (ONE_R1 / 2U);
+            if (!rawRandBoolsRemaining) {
+                rawRandBools = hardware_rand_generator->NextRaw();
+                rawRandBoolsRemaining = 32;
+            }
+            rawRandBoolsRemaining--;
+
+            return (bool)(rawRandBools & pow2Ocl(rawRandBoolsRemaining));
         } else {
             return rand_distribution(*rand_generator) < (ONE_R1 / 2U);
         }

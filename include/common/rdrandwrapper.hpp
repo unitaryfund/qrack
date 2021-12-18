@@ -31,7 +31,7 @@
 
 namespace Qrack {
 
-bool getRdRand(unsigned int* pv);
+bool getRdRand(unsigned* pv);
 
 class RdRandom {
 public:
@@ -47,6 +47,7 @@ public:
     }
 #endif
     bool SupportsRDRAND();
+    unsigned NextRaw();
     real1_f Next();
 
 #if ENABLE_RNDFILE
