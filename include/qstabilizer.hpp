@@ -94,8 +94,6 @@ protected:
 #endif
     }
 
-    bitCapIntOcl pow2Ocl(const bitLenInt& qubit) { return (bitCapIntOcl)ONE_BCI << qubit; }
-
 public:
     QStabilizer(
         const bitLenInt& n, const bitCapInt& perm = 0, bool useHardwareRNG = true, qrack_rand_gen_ptr rgp = nullptr);
