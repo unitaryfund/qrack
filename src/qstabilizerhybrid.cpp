@@ -802,6 +802,12 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
+    // This check will first try to coax into decomposable form:
+    if (doApply && !stabilizer->CanDecomposeDispose(qubit, 1)) {
+        SwitchToEngine();
+        return engine->ForceM(qubit, result, doForce, doApply);
+    }
+
     if (shards[qubit] && shards[qubit]->IsInvert()) {
         InvertBuffer(qubit);
     }
@@ -824,12 +830,6 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
 
         // Otherwise, buffer will not change the fact that state appears maximally mixed.
         shards[qubit] = NULL;
-    }
-
-    // This check will first try to coax into decomposable form:
-    if (!stabilizer->CanDecomposeDispose(qubit, 1)) {
-        SwitchToEngine();
-        return engine->ForceM(qubit, result, doForce, doApply);
     }
 
     return stabilizer->M(qubit, result, doForce, doApply);
