@@ -175,23 +175,13 @@ unsigned RdRandom::NextRaw()
         isPageTwo = !isPageTwo;
     }
 
-    unsigned v = (unsigned)(data1[dataOffset] + 128);
-    dataOffset++;
-
-    return v;
-}
-
-real1_f RdRandom::Next()
-{
-    const size_t bytePrecision = sizeof(real1_f);
-    real1_f res = ZERO_R1;
-    real1_f part = ONE_R1;
-    for (unsigned i = 0U; i < bytePrecision; i++) {
-        part /= 256;
-        res += part * NextRaw();
+    unsigned v = 0UL;
+    for (int i = 0; i < 4; i++) {
+        v |= ((unsigned char)(data1[dataOffset] + 128)) << (i * bitsInByte);
+        dataOffset++;
     }
 
-    return res;
+    return v;
 }
 #else
 unsigned RdRandom::NextRaw()
@@ -203,6 +193,7 @@ unsigned RdRandom::NextRaw()
 
     return v;
 }
+#endif
 
 real1_f RdRandom::Next()
 {
@@ -230,6 +221,4 @@ real1_f RdRandom::Next()
 
     return res;
 }
-#endif
-
 } // namespace Qrack
