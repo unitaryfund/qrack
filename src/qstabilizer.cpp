@@ -71,9 +71,7 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
 {
     Dump();
 
-    bitLenInt j;
-
-    bitLenInt rowCount = (qubitCount << 1U) + 1U;
+    const bitLenInt rowCount = (qubitCount << 1U) + 1U;
 
     std::fill(r.begin(), r.end(), 0);
 
@@ -84,7 +82,7 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
         if (i < qubitCount) {
             x[i][i] = true;
         } else if (i < (qubitCount << 1U)) {
-            j = i - qubitCount;
+            bitLenInt j = i - qubitCount;
             z[i][j] = true;
         }
     }
@@ -93,7 +91,7 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
         return;
     }
 
-    for (j = 0; j < qubitCount; j++) {
+    for (bitLenInt j = 0; j < qubitCount; j++) {
         if (perm & pow2Ocl(j)) {
             X(j);
         }
@@ -193,13 +191,12 @@ void QStabilizer::rowmult(const bitLenInt& i, const bitLenInt& k)
 bitLenInt QStabilizer::gaussian()
 {
     // For brevity:
-    bitLenInt n = qubitCount;
-    bitLenInt maxLcv = n << 1U;
+    const bitLenInt n = qubitCount;
+    const bitLenInt maxLcv = n << 1U;
     bitLenInt i = n;
-    bitLenInt j;
-    bitLenInt k, k2;
+    bitLenInt k;
 
-    for (j = 0; j < n; j++) {
+    for (bitLenInt j = 0; j < n; j++) {
 
         // Find a generator containing X in jth column
         for (k = i; k < maxLcv; k++) {
@@ -211,7 +208,7 @@ bitLenInt QStabilizer::gaussian()
         if (k < maxLcv) {
             rowswap(i, k);
             rowswap(i - n, k - n);
-            for (k2 = i + 1U; k2 < maxLcv; k2++) {
+            for (bitLenInt k2 = i + 1U; k2 < maxLcv; k2++) {
                 if (x[k2][j]) {
                     // Gaussian elimination step:
                     rowmult(k2, i);
@@ -222,9 +219,9 @@ bitLenInt QStabilizer::gaussian()
         }
     }
 
-    bitLenInt g = i - n;
+    const bitLenInt g = i - n;
 
-    for (j = 0; j < n; j++) {
+    for (bitLenInt j = 0; j < n; j++) {
 
         // Find a generator containing Z in jth column
         for (k = i; k < maxLcv; k++) {
@@ -236,7 +233,7 @@ bitLenInt QStabilizer::gaussian()
         if (k < maxLcv) {
             rowswap(i, k);
             rowswap(i - n, k - n);
-            for (k2 = i + 1U; k2 < maxLcv; k2++) {
+            for (bitLenInt k2 = i + 1U; k2 < maxLcv; k2++) {
                 if (z[k2][j]) {
                     rowmult(k2, i);
                     rowmult(i - n, k2 - n);
@@ -256,9 +253,7 @@ bitLenInt QStabilizer::gaussian()
  */
 void QStabilizer::seed(const bitLenInt& g)
 {
-    bitLenInt elemCount = qubitCount << 1U;
-    int j;
-    int f;
+    const bitLenInt elemCount = qubitCount << 1U;
     int min = 0;
 
     // Wipe the scratch space clean
@@ -267,8 +262,8 @@ void QStabilizer::seed(const bitLenInt& g)
     std::fill(z[elemCount].begin(), z[elemCount].end(), 0);
 
     for (int i = elemCount - 1; i >= (int)(qubitCount + g); i--) {
-        f = r[i];
-        for (j = qubitCount - 1; j >= 0; j--) {
+        int f = r[i];
+        for (int j = qubitCount - 1; j >= 0; j--) {
             if (z[i][j]) {
                 min = j;
                 if (x[elemCount][j]) {
@@ -278,7 +273,7 @@ void QStabilizer::seed(const bitLenInt& g)
         }
 
         if (f == 2) {
-            j = min;
+            int j = min;
             // Make the seed consistent with the ith equation
             x[elemCount][j] = !x[elemCount][j];
         }
@@ -288,11 +283,10 @@ void QStabilizer::seed(const bitLenInt& g)
 /// Helper for setBasisState() and setBasisProb()
 AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
 {
-    bitLenInt elemCount = qubitCount << 1U;
-    bitLenInt j;
+    const bitLenInt elemCount = qubitCount << 1U;
     uint8_t e = r[elemCount];
 
-    for (j = 0; j < qubitCount; j++) {
+    for (bitLenInt j = 0; j < qubitCount; j++) {
         // Pauli operator is "Y"
         if (x[elemCount][j] && z[elemCount][j]) {
             e = (e + 1) & 0x3U;
@@ -308,7 +302,7 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
     }
 
     bitCapIntOcl perm = 0;
-    for (j = 0; j < qubitCount; j++) {
+    for (bitLenInt j = 0; j < qubitCount; j++) {
         if (x[elemCount][j]) {
             perm |= pow2Ocl(j);
         }
@@ -346,16 +340,12 @@ void QStabilizer::GetQuantumState(complex* stateVec)
 {
     Finish();
 
-    bitCapIntOcl t;
-    bitCapIntOcl t2;
-    bitLenInt i;
-
     // log_2 of number of nonzero basis states
-    bitLenInt g = gaussian();
-    bitCapIntOcl permCount = pow2Ocl(g);
-    bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
-    bitLenInt elemCount = qubitCount << 1U;
-    real1_f nrm = sqrt(ONE_R1 / permCount);
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt(ONE_R1 / permCount);
 
     seed(g);
 
@@ -363,9 +353,9 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     std::fill(stateVec, stateVec + pow2Ocl(qubitCount), ZERO_CMPLX);
 
     setBasisState(nrm, stateVec, NULL);
-    for (t = 0; t < permCountMin1; t++) {
-        t2 = t ^ (t + 1);
-        for (i = 0; i < g; i++) {
+    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+        bitCapIntOcl t2 = t ^ (t + 1);
+        for (bitLenInt i = 0; i < g; i++) {
             if (t2 & pow2Ocl(i)) {
                 rowmult(elemCount, qubitCount + i);
             }
@@ -379,16 +369,12 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
 {
     Finish();
 
-    bitCapIntOcl t;
-    bitCapIntOcl t2;
-    bitLenInt i;
-
     // log_2 of number of nonzero basis states
-    bitLenInt g = gaussian();
-    bitCapIntOcl permCount = pow2Ocl(g);
-    bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
-    bitLenInt elemCount = qubitCount << 1U;
-    real1_f nrm = sqrt(ONE_R1 / permCount);
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt(ONE_R1 / permCount);
 
     seed(g);
 
@@ -397,9 +383,9 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
     eng->SetAmplitude(0, ZERO_CMPLX);
 
     setBasisState(nrm, NULL, eng);
-    for (t = 0; t < permCountMin1; t++) {
-        t2 = t ^ (t + 1);
-        for (i = 0; i < g; i++) {
+    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+        bitCapIntOcl t2 = t ^ (t + 1);
+        for (bitLenInt i = 0; i < g; i++) {
             if (t2 & pow2Ocl(i)) {
                 rowmult(elemCount, qubitCount + i);
             }
@@ -415,16 +401,12 @@ void QStabilizer::GetProbs(real1* outputProbs)
 {
     Finish();
 
-    bitCapIntOcl t;
-    bitCapIntOcl t2;
-    bitLenInt i;
-
     // log_2 of number of nonzero basis states
-    bitLenInt g = gaussian();
-    bitCapIntOcl permCount = pow2Ocl(g);
-    bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
-    bitLenInt elemCount = qubitCount << 1U;
-    real1_f nrm = sqrt(ONE_R1 / permCount);
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt(ONE_R1 / permCount);
 
     seed(g);
 
@@ -432,9 +414,9 @@ void QStabilizer::GetProbs(real1* outputProbs)
     std::fill(outputProbs, outputProbs + pow2Ocl(qubitCount), ZERO_R1);
 
     setBasisProb(nrm, outputProbs);
-    for (t = 0; t < permCountMin1; t++) {
-        t2 = t ^ (t + 1);
-        for (i = 0; i < g; i++) {
+    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+        bitCapIntOcl t2 = t ^ (t + 1);
+        for (bitLenInt i = 0; i < g; i++) {
             if (t2 & pow2Ocl(i)) {
                 rowmult(elemCount, qubitCount + i);
             }
@@ -447,7 +429,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
 void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 {
     Dispatch([this, c, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
+        const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (x[i][c]) {
@@ -469,7 +451,7 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 void QStabilizer::H(const bitLenInt& t)
 {
     Dispatch([this, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
+        const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             std::swap(x[i][t], z[i][t]);
@@ -484,7 +466,7 @@ void QStabilizer::H(const bitLenInt& t)
 void QStabilizer::S(const bitLenInt& t)
 {
     Dispatch([this, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
+        const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (x[i][t] && z[i][t]) {
@@ -499,7 +481,7 @@ void QStabilizer::S(const bitLenInt& t)
 void QStabilizer::IS(const bitLenInt& t)
 {
     Dispatch([this, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
+        const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             z[i][t] = z[i][t] ^ x[i][t];
@@ -514,7 +496,7 @@ void QStabilizer::IS(const bitLenInt& t)
 void QStabilizer::Z(const bitLenInt& t)
 {
     Dispatch([this, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
+        const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (x[i][t]) {
@@ -528,7 +510,7 @@ void QStabilizer::Z(const bitLenInt& t)
 void QStabilizer::X(const bitLenInt& t)
 {
     Dispatch([this, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
+        const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (z[i][t]) {
@@ -542,7 +524,7 @@ void QStabilizer::X(const bitLenInt& t)
 void QStabilizer::Y(const bitLenInt& t)
 {
     Dispatch([this, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
+        const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (z[i][t] ^ x[i][t]) {
@@ -556,7 +538,7 @@ void QStabilizer::Y(const bitLenInt& t)
 void QStabilizer::SqrtX(const bitLenInt& t)
 {
     Dispatch([this, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
+        const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             x[i][t] = x[i][t] ^ z[i][t];
@@ -571,7 +553,7 @@ void QStabilizer::SqrtX(const bitLenInt& t)
 void QStabilizer::ISqrtX(const bitLenInt& t)
 {
     Dispatch([this, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
+        const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (x[i][t] && z[i][t]) {
@@ -586,7 +568,7 @@ void QStabilizer::ISqrtX(const bitLenInt& t)
 void QStabilizer::SqrtY(const bitLenInt& t)
 {
     Dispatch([this, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
+        const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             std::swap(x[i][t], z[i][t]);
@@ -601,7 +583,7 @@ void QStabilizer::SqrtY(const bitLenInt& t)
 void QStabilizer::ISqrtY(const bitLenInt& t)
 {
     Dispatch([this, t] {
-        bitLenInt maxLcv = qubitCount << 1U;
+        const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
             if (!x[i][t] && z[i][t]) {
@@ -620,7 +602,7 @@ bool QStabilizer::IsSeparableZ(const bitLenInt& t)
     Finish();
 
     // for brevity
-    bitLenInt n = qubitCount;
+    const bitLenInt n = qubitCount;
 
     // loop over stabilizer generators
     for (bitLenInt p = 0; p < n; p++) {
@@ -639,7 +621,7 @@ bool QStabilizer::IsSeparableZ(const bitLenInt& t)
 bool QStabilizer::IsSeparableX(const bitLenInt& t)
 {
     H(t);
-    bool isSeparable = IsSeparableZ(t);
+    const bool isSeparable = IsSeparableZ(t);
     H(t);
 
     return isSeparable;
@@ -652,7 +634,7 @@ bool QStabilizer::IsSeparableY(const bitLenInt& t)
 {
     H(t);
     S(t);
-    bool isSeparable = IsSeparableZ(t);
+    const bool isSeparable = IsSeparableZ(t);
     IS(t);
     H(t);
 
@@ -701,15 +683,14 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
 
     Finish();
 
-    bitLenInt elemCount = qubitCount << 1U;
+    const bitLenInt elemCount = qubitCount << 1U;
+    // for brevity
+    const bitLenInt n = qubitCount;
 
     // pivot row in stabilizer
     bitLenInt p;
     // pivot row in destabilizer
     bitLenInt m;
-
-    // for brevity
-    bitLenInt n = qubitCount;
 
     // loop over stabilizer generators
     for (p = 0; p < n; p++) {
@@ -780,25 +761,20 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
     Finish();
     toCopy->Finish();
 
-    bitLenInt i, j;
-
-    bitLenInt rowCount = (qubitCount << 1U) + 1U;
-
-    bitLenInt length = toCopy->qubitCount;
-    bitLenInt nQubitCount = qubitCount + length;
-    bitLenInt secondStart = nQubitCount + start;
+    const bitLenInt rowCount = (qubitCount << 1U) + 1U;
+    const bitLenInt length = toCopy->qubitCount;
+    const bitLenInt nQubitCount = qubitCount + length;
+    const bitLenInt secondStart = nQubitCount + start;
     const std::vector<bool> row(length, 0);
 
-    for (i = 0; i < rowCount; i++) {
+    for (bitLenInt i = 0; i < rowCount; i++) {
         x[i].insert(x[i].begin() + start, row.begin(), row.end());
         z[i].insert(z[i].begin() + start, row.begin(), row.end());
     }
 
-    i = qubitCount;
-
     std::vector<std::vector<bool>> xGroup(length, std::vector<bool>(nQubitCount, 0));
     std::vector<std::vector<bool>> zGroup(length, std::vector<bool>(nQubitCount, 0));
-    for (i = 0; i < length; i++) {
+    for (bitLenInt i = 0; i < length; i++) {
         std::copy(toCopy->x[i].begin(), toCopy->x[i].end(), xGroup[i].begin() + start);
         std::copy(toCopy->z[i].begin(), toCopy->z[i].end(), zGroup[i].begin() + start);
     }
@@ -808,8 +784,8 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
 
     std::vector<std::vector<bool>> xGroup2(length, std::vector<bool>(nQubitCount, 0));
     std::vector<std::vector<bool>> zGroup2(length, std::vector<bool>(nQubitCount, 0));
-    for (i = 0; i < length; i++) {
-        j = length + i;
+    for (bitLenInt i = 0; i < length; i++) {
+        bitLenInt j = length + i;
         std::copy(toCopy->x[j].begin(), toCopy->x[j].end(), xGroup2[i].begin() + start);
         std::copy(toCopy->z[j].begin(), toCopy->z[j].end(), zGroup2[i].begin() + start);
     }
@@ -834,36 +810,34 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
     // TODO: Determine whether this is the fundamentally ideal form adjustment.
     gaussian();
 
-    bitLenInt i, j;
-    bitLenInt i2;
-    bitLenInt end = start + length;
+    const bitLenInt end = start + length;
 
-    for (i = 0; i < start; i++) {
-        i2 = i + qubitCount;
-        for (j = start; j < end; j++) {
+    for (bitLenInt i = 0; i < start; i++) {
+        bitLenInt i2 = i + qubitCount;
+        for (bitLenInt j = start; j < end; j++) {
             if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
             }
         }
     }
 
-    for (i = end; i < qubitCount; i++) {
-        i2 = i + qubitCount;
-        for (j = start; j < end; j++) {
+    for (bitLenInt i = end; i < qubitCount; i++) {
+        bitLenInt i2 = i + qubitCount;
+        for (bitLenInt j = start; j < end; j++) {
             if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
             }
         }
     }
 
-    for (i = start; i < end; i++) {
-        i2 = i + qubitCount;
-        for (j = 0; j < start; j++) {
+    for (bitLenInt i = start; i < end; i++) {
+        bitLenInt i2 = i + qubitCount;
+        for (bitLenInt j = 0; j < start; j++) {
             if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
             }
         }
-        for (j = end; j < qubitCount; j++) {
+        for (bitLenInt j = end; j < qubitCount; j++) {
             if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
             }
@@ -888,16 +862,14 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     // outside inter- "dest" cross terms. (Usually, we're "decomposing" the representation of a just-measured single
     // qubit.)
 
-    bitLenInt i, j;
-
-    bitLenInt end = start + length;
-    bitLenInt nQubitCount = qubitCount - length;
-    bitLenInt secondStart = nQubitCount + start;
-    bitLenInt secondEnd = nQubitCount + end;
+    const bitLenInt end = start + length;
+    const bitLenInt nQubitCount = qubitCount - length;
+    const bitLenInt secondStart = nQubitCount + start;
+    const bitLenInt secondEnd = nQubitCount + end;
 
     if (dest) {
-        for (i = 0; i < length; i++) {
-            j = start + i;
+        for (bitLenInt i = 0; i < length; i++) {
+            bitLenInt j = start + i;
             std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[i].begin());
             std::copy(z[j].begin() + start, z[j].begin() + end, dest->z[i].begin());
 
@@ -905,7 +877,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
             std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[(i + length)].begin());
             std::copy(z[j].begin() + start, z[j].begin() + end, dest->z[(i + length)].begin());
         }
-        j = start;
+        bitLenInt j = start;
         std::copy(r.begin() + j, r.begin() + j + length, dest->r.begin());
         j = qubitCount + start;
         std::copy(r.begin() + j, r.begin() + j + length, dest->r.begin() + length);
@@ -920,9 +892,9 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
 
     qubitCount = nQubitCount;
 
-    bitLenInt rowCount = (qubitCount << 1U) + 1U;
+    const bitLenInt rowCount = (qubitCount << 1U) + 1U;
 
-    for (i = 0; i < rowCount; i++) {
+    for (bitLenInt i = 0; i < rowCount; i++) {
         x[i].erase(x[i].begin() + start, x[i].begin() + end);
         z[i].erase(z[i].begin() + start, z[i].begin() + end);
     }
@@ -937,15 +909,14 @@ bool QStabilizer::ApproxCompare(QStabilizerPtr o)
     Finish();
     o->Finish();
 
-    bitLenInt rowCount = (qubitCount << 1U);
-    bitLenInt i, j;
+    const bitLenInt rowCount = (qubitCount << 1U);
 
-    for (i = 0; i < rowCount; i++) {
+    for (bitLenInt i = 0; i < rowCount; i++) {
         if (r[i] != o->r[i]) {
             return false;
         }
 
-        for (j = 0; j < qubitCount; j++) {
+        for (bitLenInt j = 0; j < qubitCount; j++) {
             if (x[i][j] != o->x[i][j]) {
                 return false;
             }
