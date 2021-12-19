@@ -31,7 +31,7 @@ bool getRdRand(unsigned* pv)
     const int max_rdrand_tries = 10;
     for (int i = 0; i < max_rdrand_tries; ++i) {
 #if ENABLE_DEVRAND
-        if (sizeof(unsigned) == getrandom(reinterpret_cast<char*>(&pv), sizeof(unsigned), 0))
+        if (sizeof(unsigned) == getrandom(reinterpret_cast<char*>(pv), sizeof(unsigned), 0))
 #else
         if (_rdrand32_step(pv))
 #endif
