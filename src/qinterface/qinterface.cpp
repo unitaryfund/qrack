@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <thread>
 
-#if __linux__
+#if __linux__ && !__aarch64__ && !__arm__ && !_ARM && !_M_ARM && !_M_ARMT && !__arm
 #include <sys/random.h>
 #endif
 
@@ -46,7 +46,7 @@ QInterface::QInterface(
 
     if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
         rand_generator = std::make_shared<qrack_rand_gen>();
-#if __linux__
+#if __linux__ && !__aarch64__ && !__arm__ && !_ARM && !_M_ARM && !_M_ARMT && !__arm
         // The original author of this code block (Daniel Strano) is NOT a cryptography expert. However, here's the
         // author's justification for preferring /dev/random used to seed Mersenne twister, in this case. We state
         // firstly, our use case is probably more dependent on good statistical randomness than CSPRNG security.
