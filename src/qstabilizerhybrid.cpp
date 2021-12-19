@@ -837,11 +837,13 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
 
 bitCapInt QStabilizerHybrid::MAll()
 {
+    bitCapInt toRet = 0;
     if (stabilizer) {
         for (bitLenInt i = 0; i < qubitCount; i++) {
             if (shards[i] && shards[i]->IsInvert()) {
                 InvertBuffer(i);
             }
+
             if (shards[i]) {
                 if (!shards[i]->IsPhase() && stabilizer->IsSeparableZ(i)) {
                     // Bit was already rotated to Z basis, if separable.
@@ -851,12 +853,7 @@ bitCapInt QStabilizerHybrid::MAll()
                 // Otherwise, buffer will not change the fact that state appears maximally mixed.
                 shards[i] = NULL;
             }
-        }
-    }
 
-    bitCapInt toRet = 0;
-    if (stabilizer) {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
             if (stabilizer->M(i)) {
                 toRet |= pow2(i);
             }
@@ -877,29 +874,30 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
         return std::map<bitCapInt, int>();
     }
 
+    FlushBuffers();
+
     if (engine) {
         return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
 
-    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+    std::vector<bitLenInt> bits(qPowerCount);
+    for (bitLenInt i = 0U; i < qPowerCount; i++) {
+        bits[i] = log2(qPowers[i]);
+    }
 
-    if (shots == 1) {
-        bitCapInt raw = clone->MAll();
+    std::map<bitCapInt, int> results;
+    for (unsigned shot = 0U; shot < shots; shot++) {
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         bitCapInt sample = 0U;
         for (bitLenInt i = 0U; i < qPowerCount; i++) {
-            if (raw & qPowers[i]) {
+            if (clone->M(bits[i])) {
                 sample |= pow2(i);
             }
         }
-        std::map<bitCapInt, int> results;
-        results[sample] = 1U;
-
-        return results;
+        results[sample]++;
     }
 
-    clone->SwitchToEngine();
-
-    return clone->MultiShotMeasureMask(qPowers, qPowerCount, shots);
+    return results;
 }
 
 void QStabilizerHybrid::MultiShotMeasureMask(
@@ -909,27 +907,27 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
+    FlushBuffers();
+
     if (engine) {
         engine->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
         return;
     }
 
-    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+    std::vector<bitLenInt> bits(qPowerCount);
+    for (bitLenInt i = 0U; i < qPowerCount; i++) {
+        bits[i] = log2(qPowers[i]);
+    }
 
-    if (shots == 1) {
-        bitCapInt raw = clone->MAll();
+    for (unsigned shot = 0U; shot < shots; shot++) {
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         bitCapInt sample = 0U;
         for (bitLenInt i = 0U; i < qPowerCount; i++) {
-            if (raw & qPowers[i]) {
+            if (clone->M(bits[i])) {
                 sample |= pow2(i);
             }
         }
-        shotsArray[0] = (unsigned)sample;
-
-        return;
+        shotsArray[shot] = (unsigned)sample;
     }
-
-    clone->SwitchToEngine();
-    clone->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
 }
 } // namespace Qrack

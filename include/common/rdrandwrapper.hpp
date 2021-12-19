@@ -48,6 +48,7 @@ public:
     {
         // Intentionally left blank
     }
+
 private:
     size_t dataOffset;
     size_t fileOffset;
