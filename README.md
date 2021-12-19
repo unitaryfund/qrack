@@ -180,7 +180,7 @@ $ cmake -DENABLE_RDRAND=OFF ..
 Turn off the option to attempt using on-chip hardware random number generation, which is on by default. If the option is on, Qrack might still compile to attempt using hardware random number generation, but fall back to software generation if the RDRAND opcode is not actually available. Some systems' compilers, such as that of the Raspberry Pi 3, do not recognize the compilation flag for enabling RDRAND, in which case this option needs to be turned off.
 
 ```sh
-$ cmake -DENABLE_DEVRAND=ON ..
+$ cmake [-DENABLE_RDRAND=OFF] -DENABLE_DEVRAND=ON ..
 ```
 
 Instead of RDRAND, use Linux `/dev/urandom/` as the Qrack random number source. (The necessary system call will only be available on Linux systems.)
