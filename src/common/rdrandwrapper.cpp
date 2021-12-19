@@ -193,7 +193,7 @@ unsigned RdRandom::NextRaw()
 {
     unsigned v;
     if (!getRdRand(&v)) {
-        throw std::runtime_error("Failed to get hardware RNG number.");
+        throw std::runtime_error("Random number generator failed up to retry limit.");
     }
 
     return v;
