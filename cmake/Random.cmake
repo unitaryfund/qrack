@@ -14,3 +14,11 @@ if (ENABLE_RNDFILE)
 endif (ENABLE_RNDFILE)
 
 message ("RNDFILE is: ${ENABLE_RNDFILE}")
+
+option (ENABLE_DEVRAND "Get random numbers from /dev/urandom" OFF)
+
+if (ENABLE_DEVRAND)
+    target_compile_definitions(qrack PUBLIC ENABLE_DEVRAND=1)
+endif (ENABLE_DEVRAND)
+
+message ("RNG from /dev/urandom is: ${ENABLE_DEVRAND}")

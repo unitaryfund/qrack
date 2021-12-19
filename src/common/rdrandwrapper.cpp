@@ -12,31 +12,36 @@
 
 #include "rdrandwrapper.hpp"
 
-#if ENABLE_RNDFILE
-#include <chrono>
-#include <thread>
-
+#if ENABLE_DEVRAND
+#include <sys/random.h>
+#elif ENABLE_RNDFILE
 #include <algorithm>
+#include <chrono>
 #include <dirent.h>
 #include <fstream>
 #include <sys/types.h>
+#include <thread>
 #endif
 
 namespace Qrack {
 
 bool getRdRand(unsigned* pv)
 {
-#if ENABLE_RDRAND
+#if ENABLE_RDRAND || ENABLE_DEVRAND
     const int max_rdrand_tries = 10;
     for (int i = 0; i < max_rdrand_tries; ++i) {
+#if ENABLE_DEVRAND
+        if (sizeof(unsigned) == getrandom(reinterpret_cast<char*>(&pv), sizeof(unsigned), 0))
+#else
         if (_rdrand32_step(pv))
+#endif
             return true;
     }
 #endif
     return false;
 }
 
-#if ENABLE_RNDFILE
+#if ENABLE_RNDFILE && !ENABLE_DEVRAND
 // From http://www.cplusplus.com/forum/unices/3548/
 std::vector<std::string> _readDirectoryFileNames(const std::string& path)
 {
@@ -119,7 +124,7 @@ bool _readNextRandDataFile(size_t fileOffset, std::vector<char>& data)
 
 bool RdRandom::SupportsRDRAND()
 {
-#if ENABLE_RDRAND
+#if ENABLE_RDRAND && !ENABLE_DEVRAND
     const unsigned flag_RDRAND = (1 << 30);
 
 #if _MSC_VER
@@ -140,7 +145,7 @@ bool RdRandom::SupportsRDRAND()
 #endif
 }
 
-#if ENABLE_RNDFILE
+#if ENABLE_RNDFILE && !ENABLE_DEVRAND
 unsigned RdRandom::NextRaw()
 {
     if (!didInit) {

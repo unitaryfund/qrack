@@ -177,7 +177,7 @@ if (ENABLE_EMIT_LLVM)
     set(QRACK_COMPILE_OPTS ${QRACK_COMPILE_OPTS} -emit-llvm)
 endif (ENABLE_EMIT_LLVM)
 
-include ("cmake/RDRand.cmake")
+include ("cmake/Random.cmake")
 
 configure_file(include/common/config.h.in include/common/config.h @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/common)

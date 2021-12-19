@@ -35,7 +35,7 @@ bool getRdRand(unsigned* pv);
 
 class RdRandom {
 public:
-#if ENABLE_RNDFILE
+#if ENABLE_RNDFILE && !ENABLE_DEVRAND
     RdRandom()
         : didInit(false)
         , isPageTwo(false)
@@ -50,7 +50,7 @@ public:
     unsigned NextRaw();
     real1_f Next();
 
-#if ENABLE_RNDFILE
+#if ENABLE_RNDFILE && !ENABLE_DEVRAND
 private:
     bool didInit = false;
     bool isPageTwo;
