@@ -919,7 +919,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         bits[i] = log2(qPowers[i]);
     }
 
-    for (unsigned shot = 0U; shot < shots; shot++) {
+    par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         bitCapInt sample = 0U;
         for (bitLenInt i = 0U; i < qPowerCount; i++) {
@@ -928,6 +928,6 @@ void QStabilizerHybrid::MultiShotMeasureMask(
             }
         }
         shotsArray[shot] = (unsigned)sample;
-    }
+    });
 }
 } // namespace Qrack
