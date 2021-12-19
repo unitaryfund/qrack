@@ -15,6 +15,10 @@
 #include <algorithm>
 #include <thread>
 
+#if __linux__
+#include <sys/random.h>
+#endif
+
 namespace Qrack {
 
 QInterface::QInterface(
@@ -42,7 +46,19 @@ QInterface::QInterface(
 
     if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
         rand_generator = std::make_shared<qrack_rand_gen>();
+#if __linux__
+        const int max_rdrand_tries = 10;
+        int i;
+        for (i = 0; i < max_rdrand_tries; ++i) {
+            if (sizeof(randomSeed) == getrandom(reinterpret_cast<char*>(&randomSeed), sizeof(randomSeed), GRND_RANDOM))
+                break;
+        }
+        if (i == max_rdrand_tries) {
+            throw std::runtime_error("Failed to seed RNG!");
+        }
+#else
         randomSeed = (uint32_t)std::time(0);
+#endif
         SetRandomSeed(randomSeed);
     } else {
         rand_generator = rgp;
