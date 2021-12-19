@@ -172,7 +172,7 @@ $ cmake -DENABLE_COMPLEX_X2=ON ..
 ```
 Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 for float. On by default, but can be turned off for double accuracy without the AVX requirement, or to completely remove vectorization with single float accuracy.
 
-## On-Chip Hardware Random Number Generation (and other RNG options)
+## Random number generation options (on-chip by default)
 
 ```sh
 $ cmake -DENABLE_RDRAND=OFF ..
