@@ -172,12 +172,18 @@ $ cmake -DENABLE_COMPLEX_X2=ON ..
 ```
 Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 for float. On by default, but can be turned off for double accuracy without the AVX requirement, or to completely remove vectorization with single float accuracy.
 
-## On-Chip Hardware Random Number Generation
+## On-Chip Hardware Random Number Generation (and other RNG options)
 
 ```sh
 $ cmake -DENABLE_RDRAND=OFF ..
 ```
 Turn off the option to attempt using on-chip hardware random number generation, which is on by default. If the option is on, Qrack might still compile to attempt using hardware random number generation, but fall back to software generation if the RDRAND opcode is not actually available. Some systems' compilers, such as that of the Raspberry Pi 3, do not recognize the compilation flag for enabling RDRAND, in which case this option needs to be turned off.
+
+```sh
+$ cmake -DENABLE_DEVRAND=ON ..
+```
+
+Instead of RDRAND, use Linux `/dev/urandom/` as the Qrack random number source. (The necessary system call will only be available on Linux systems.)
 
 ## Pure 32 bit OpenCL kernels (including OpenCL on Raspberry Pi 3)
 
