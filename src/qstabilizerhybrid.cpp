@@ -874,10 +874,14 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
         return std::map<bitCapInt, int>();
     }
 
-    FlushBuffers();
-
     if (engine) {
         return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
+    }
+
+    QStabilizerHybridPtr c = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+    c->FlushBuffers();
+    if (c->engine) {
+        return c->engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
 
     std::vector<bitLenInt> bits(qPowerCount);
@@ -907,10 +911,15 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
-    FlushBuffers();
-
     if (engine) {
         engine->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
+        return;
+    }
+
+    QStabilizerHybridPtr c = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+    c->FlushBuffers();
+    if (c->engine) {
+        c->engine->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
         return;
     }
 
