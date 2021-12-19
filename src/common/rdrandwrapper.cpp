@@ -124,7 +124,7 @@ bool _readNextRandDataFile(size_t fileOffset, std::vector<char>& data)
 
 bool RdRandom::SupportsRDRAND()
 {
-#if ENABLE_RDRAND && !ENABLE_DEVRAND
+#if ENABLE_RDRAND && !ENABLE_DEVRAND && !ENABLE_RNDFILE
     const unsigned flag_RDRAND = (1 << 30);
 
 #if _MSC_VER
