@@ -74,13 +74,7 @@ QInterface::QInterface(
         const int max_rdrand_tries = 10;
         int i;
         for (i = 0; i < max_rdrand_tries; ++i) {
-#if defined(__APPLE__)
-            // Apple doesn't define the same flag for /dev/random, and there might be no difference from the
-            // /dev/urandom device.
-            if (sizeof(randomSeed) == getrandom(reinterpret_cast<char*>(&randomSeed), sizeof(randomSeed), 0))
-#else
             if (sizeof(randomSeed) == getrandom(reinterpret_cast<char*>(&randomSeed), sizeof(randomSeed), GRND_RANDOM))
-#endif
                 break;
         }
         if (i == max_rdrand_tries) {
