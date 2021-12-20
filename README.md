@@ -182,8 +182,12 @@ Turn off the option to attempt using on-chip hardware random number generation, 
 ```sh
 $ cmake [-DENABLE_RDRAND=OFF] -DENABLE_DEVRAND=ON ..
 ```
-
 Instead of RDRAND, use Linux `/dev/urandom/` as the Qrack random number source. (The necessary system call will only be available on Linux systems.)
+
+```sh
+$ cmake -DSEED_DEVRAND=OFF ..
+```
+If pure software pseudo-random number generator is used, it will be seeded from `/dev/random` by default. `-DSEED_DEVRAND=OFF` will use the system clock for Mersenne twister seeding, instead of `/dev/random`.
 
 ## Pure 32 bit OpenCL kernels (including OpenCL on Raspberry Pi 3)
 
