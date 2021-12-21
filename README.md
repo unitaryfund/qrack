@@ -214,7 +214,7 @@ The option to load and save precompiled binaries, and where to load them from, c
 ```cpp
 Qrack::OCLEngine::InitOCL(true, true, Qrack::OCLEngine::GetDefaultBinaryPath());
 ```
-Calling the `OCLEngine::InitOCL()` method directly also ensures that the singleton instance has been created, with the results of the initialization call. The initialization method prototype is as follows:
+To use this method directly, _it needs to be called before any OpenCL simulators are created in the program,_ as initialization happens automatically upon creating any OpenCL simulator instance. Calling the `OCLEngine::InitOCL()` method directly also ensures that the singleton instance has been created, with the results of the initialization call. The initialization method prototype is as follows:
 
 ```cpp
 /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded from the folder path "home".
