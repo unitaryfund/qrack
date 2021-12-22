@@ -198,7 +198,7 @@ Qrack uses an unsigned integer primitive for ubiquitous qubit masking operations
 ## Variable floating point precision
 
 ```sh
-$ cmake [-FPPOW=n] ..
+$ cmake [-DFPPOW=n] ..
 ```
 Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to n^2. By default n=5, for 2^5=32 bit floating point precision. "half" and "double" availability depend on the system, but n=6 for "double" is commonly supported on modern hardware. n=4 for half is supported by GCC on ARM, header-only on x86_64, and by device pragma if available for OpenCL kernels.
 
