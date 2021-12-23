@@ -64,7 +64,11 @@ protected:
 
     uint32_t randomSeed;
     qrack_rand_gen_ptr rand_generator;
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    std::uniform_int_distribution<short> rand_distribution;
+#else
     std::uniform_int_distribution<char> rand_distribution;
+#endif
     std::shared_ptr<RdRandom> hardware_rand_generator;
     bitLenInt dispatchThreshold;
 
