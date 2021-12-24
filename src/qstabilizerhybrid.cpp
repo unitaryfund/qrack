@@ -884,6 +884,8 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
     if (c->engine) {
         return c->engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
+    // Clear clone;
+    c = NULL;
 
     std::vector<bitLenInt> bits(qPowerCount);
     for (bitLenInt i = 0U; i < qPowerCount; i++) {
