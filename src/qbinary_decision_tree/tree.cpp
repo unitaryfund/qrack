@@ -838,8 +838,8 @@ void QBinaryDecisionTree::ApplyControlledSingle(
             root->Branch(target);
         }
 
-        const bool isPhase = !highControlMask && (mtrx[1] == ZERO_CMPLX) && (mtrx[2] == ZERO_CMPLX);
-        const bool isInvert = !highControlMask && (mtrx[0] == ZERO_CMPLX) && (mtrx[3] == ZERO_CMPLX);
+        const bool isPhase = !highControlMask && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]);
+        const bool isInvert = !highControlMask && IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]);
         const bitCapIntOcl maxLcv = targetPow >> qPowersSorted.size();
         const bool isParallel = (maxLcv < GetParallelThreshold());
 
