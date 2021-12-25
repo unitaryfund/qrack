@@ -47,9 +47,11 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
 #if ENABLE_ENV_VARS
     if (getenv("QRACK_BDT_THRESHOLD")) {
         bdtThreshold = (bitLenInt)std::stoi(std::string(getenv("QRACK_BDT_THRESHOLD")));
+    } else {
+        bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
     }
 #else
-    bdtThreshold = PSTRIDEPOW;
+    bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
 #endif
 
 #if ENABLE_PTHREAD

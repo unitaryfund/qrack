@@ -242,6 +242,7 @@ public:
     }
 
     size_t GetMaxAlloc() { return device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>(); }
+    size_t GetGlobalSize() { return device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>(); }
 
     friend class OCLEngine;
 };
