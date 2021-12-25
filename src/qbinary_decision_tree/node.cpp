@@ -195,7 +195,7 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
         b1->Normalize(depth - 1U);
     }
 
-    real1 nrm = (real1)sqrt(norm(b0->scale) + norm(b1->scale));
+    const real1 nrm = (real1)sqrt(norm(b0->scale) + norm(b1->scale));
     b0->scale *= ONE_R1 / nrm;
     if (b0 != b1) {
         b1->scale *= ONE_R1 / nrm;
@@ -261,7 +261,7 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
     const unsigned numCores = std::thread::hardware_concurrency();
 
     if (itemCount < (Stride * numCores)) {
-        bitCapIntOcl maxLcv = begin + itemCount;
+        const bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; j++) {
             j |= fn(j, 0);
         }
@@ -280,11 +280,11 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
                     std::lock_guard<std::mutex> updateLock(updateMutex);
                     i = idx++;
                 }
-                bitCapIntOcl l = i * Stride;
+                const bitCapIntOcl l = i * Stride;
                 if (l >= itemCount) {
                     break;
                 }
-                bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
+                const bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
                 bitCapIntOcl k = 0;
                 for (bitCapIntOcl j = 0; j < maxJ; j++) {
                     k = j + l;
