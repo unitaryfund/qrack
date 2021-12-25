@@ -257,7 +257,7 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
 {
     const bitCapIntOcl itemCount = end - begin;
 
-    const bitCapIntOcl Stride = (bitCapIntOcl)(ONE_BCI << (bitCapIntOcl)10U);
+    const bitCapIntOcl Stride = (bitCapIntOcl)(ONE_BCI << (bitCapIntOcl)14U);
     const unsigned numCores = std::thread::hardware_concurrency();
 
     if (itemCount < (Stride * numCores)) {
@@ -273,7 +273,7 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
     std::mutex updateMutex;
     for (unsigned cpu = 0; cpu != numCores; ++cpu) {
         futures[cpu] = std::async(std::launch::async, [cpu, &idx, &begin, &itemCount, &updateMutex, fn]() {
-            const bitCapIntOcl Stride = (bitCapIntOcl)(ONE_BCI << (bitCapIntOcl)10U);
+            const bitCapIntOcl Stride = (bitCapIntOcl)(ONE_BCI << (bitCapIntOcl)14U);
             for (;;) {
                 bitCapIntOcl i;
                 if (true) {
