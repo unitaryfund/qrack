@@ -50,8 +50,10 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     } else {
         bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
     }
-#else
+#elif ENABLE_OPENCL
     bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
+#else
+    bdtThreshold = PSTRIDEPOW;
 #endif
 
 #if ENABLE_PTHREAD
