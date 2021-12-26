@@ -299,9 +299,7 @@ bitLenInt QBinaryDecisionTree::Compose(QBinaryDecisionTreePtr toCopy, bitLenInt 
     }
 
     ResetStateVector();
-    Finish();
     toCopy->ResetStateVector();
-    toCopy->Finish();
 
     bitLenInt qbCount;
     bitCapIntOcl maxI;
@@ -375,7 +373,6 @@ void QBinaryDecisionTree::DecomposeDispose(bitLenInt start, bitLenInt length, QB
     }
 
     ResetStateVector();
-    Finish();
     if (dest) {
         dest->ResetStateVector();
         dest->DumpBuffers();
@@ -440,9 +437,8 @@ real1_f QBinaryDecisionTree::Prob(bitLenInt qubit)
         return stateVecUnit->Prob(qubit);
     }
 
-    ResetStateVector();
     FlushBuffer(qubit);
-    Finish();
+    ResetStateVector();
 
     bitCapIntOcl qPower = pow2Ocl(qubit);
 
@@ -524,9 +520,8 @@ bool QBinaryDecisionTree::ForceM(bitLenInt qubit, bool result, bool doForce, boo
         return result;
     }
 
-    ResetStateVector();
     FlushBuffer(qubit);
-    Finish();
+    ResetStateVector();
 
     root->scale = GetNonunitaryPhase();
 
@@ -566,9 +561,8 @@ bitCapInt QBinaryDecisionTree::MAll()
         return stateVecUnit->MAll();
     }
 
-    ResetStateVector();
     FlushBuffers();
-    Finish();
+    ResetStateVector();
 
     bitCapInt result = 0;
     QBinaryDecisionTreeNodePtr leaf = root;
