@@ -168,11 +168,11 @@ template <typename Fn> void QBinaryDecisionTree::SetTraversal(Fn setLambda)
 }
 void QBinaryDecisionTree::GetQuantumState(complex* state)
 {
+    FlushBuffers();
     if (stateVecUnit) {
         stateVecUnit->GetQuantumState(state);
         return;
     }
-    FlushBuffers();
     GetTraversal([state](bitCapIntOcl i, complex scale) { state[i] = scale; });
 }
 void QBinaryDecisionTree::GetQuantumState(QInterfacePtr eng)
@@ -181,12 +181,12 @@ void QBinaryDecisionTree::GetQuantumState(QInterfacePtr eng)
 }
 void QBinaryDecisionTree::SetQuantumState(const complex* state)
 {
+    DumpBuffers();
+    Dump();
     if (stateVecUnit) {
         stateVecUnit->SetQuantumState(state);
         return;
     }
-    DumpBuffers();
-    Dump();
     SetTraversal([state](bitCapIntOcl i, QBinaryDecisionTreeNodePtr leaf) { leaf->scale = state[i]; });
 }
 void QBinaryDecisionTree::SetQuantumState(QInterfacePtr eng)
@@ -196,11 +196,11 @@ void QBinaryDecisionTree::SetQuantumState(QInterfacePtr eng)
 }
 void QBinaryDecisionTree::GetProbs(real1* outputProbs)
 {
+    FlushBuffers();
     if (stateVecUnit) {
         stateVecUnit->GetProbs(outputProbs);
         return;
     }
-    FlushBuffers();
     GetTraversal([outputProbs](bitCapIntOcl i, complex scale) { outputProbs[i] = norm(scale); });
 }
 
@@ -731,12 +731,12 @@ void QBinaryDecisionTree::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (stateVecUnit && (qubitCount <= bdtThreshold)) {
+    if (qubitCount <= bdtThreshold) {
+        SetStateVector();
         stateVecUnit->Mtrx(mtrx, target);
         return;
     }
 
-    ResetStateVector();
     shards[target] = std::make_shared<MpsShard>(mtrx);
 }
 
@@ -758,13 +758,7 @@ void QBinaryDecisionTree::Phase(const complex topLeft, const complex bottomRight
         return;
     }
 
-    ApplySingle(
-        mtrx, target, [](QBinaryDecisionTreeNodePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool ignored2) {
-            leaf->Branch();
-            leaf->branches[0]->scale *= mtrx[0];
-            leaf->branches[1]->scale *= mtrx[3];
-            leaf->Prune();
-        });
+    shards[target] = std::make_shared<MpsShard>(mtrx);
 }
 
 void QBinaryDecisionTree::Invert(const complex topRight, const complex bottomLeft, bitLenInt target)
@@ -781,14 +775,7 @@ void QBinaryDecisionTree::Invert(const complex topRight, const complex bottomLef
         return;
     }
 
-    ApplySingle(
-        mtrx, target, [](QBinaryDecisionTreeNodePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool ignored2) {
-            leaf->Branch();
-            leaf->branches[0].swap(leaf->branches[1]);
-            leaf->branches[0]->scale *= mtrx[1];
-            leaf->branches[1]->scale *= mtrx[2];
-            leaf->Prune();
-        });
+    shards[target] = std::make_shared<MpsShard>(mtrx);
 }
 
 template <typename Lfn>
@@ -935,11 +922,34 @@ void QBinaryDecisionTree::FlushBuffer(bitLenInt i)
     shards[i] = NULL;
 
     if (stateVecUnit) {
-        stateVecUnit->Mtrx(shards[i]->gate, i);
+        stateVecUnit->Mtrx(shard->gate, i);
         return;
     }
 
-    ApplySingle(shards[i]->gate, i,
+    if (IS_NORM_0(shard->gate[1]) && IS_NORM_0(shard->gate[2])) {
+        ApplySingle(shard->gate, i,
+            [](QBinaryDecisionTreeNodePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool ignored2) {
+                leaf->Branch();
+                leaf->branches[0]->scale *= mtrx[0];
+                leaf->branches[1]->scale *= mtrx[3];
+                leaf->Prune();
+            });
+        return;
+    }
+
+    if (IS_NORM_0(shard->gate[0]) && IS_NORM_0(shard->gate[3])) {
+        ApplySingle(shard->gate, i,
+            [](QBinaryDecisionTreeNodePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool ignored2) {
+                leaf->Branch();
+                leaf->branches[0].swap(leaf->branches[1]);
+                leaf->branches[0]->scale *= mtrx[1];
+                leaf->branches[1]->scale *= mtrx[2];
+                leaf->Prune();
+            });
+        return;
+    }
+
+    ApplySingle(shard->gate, i,
         [this, i](QBinaryDecisionTreeNodePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool isParallel) {
             Apply2x2OnLeaf(mtrx, leaf, i, 0U, false, isParallel);
         });
