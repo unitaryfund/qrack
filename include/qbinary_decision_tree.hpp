@@ -204,6 +204,10 @@ public:
 
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
+        if (stateVecUnit) {
+            stateVecUnit->NormalizeState(nrm, norm_thresh);
+            return;
+        }
         root->Normalize(qubitCount);
     }
 
