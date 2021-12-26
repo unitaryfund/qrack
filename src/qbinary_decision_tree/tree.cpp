@@ -60,13 +60,21 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
         bdtThreshold = (bitLenInt)std::stoi(std::string(getenv("QRACK_BDT_THRESHOLD")));
     } else {
 #if ENABLE_OPENCL
-        bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
+        if (engines[0] == QINTERFACE_QPAGER) {
+            bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
+        } else {
+            bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+        }
 #else
         bdtThreshold = PSTRIDEPOW;
 #endif
     }
 #elif ENABLE_OPENCL
-    bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
+    if (engines[0] == QINTERFACE_QPAGER) {
+        bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
+    } else {
+        bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+    }
 #else
     bdtThreshold = PSTRIDEPOW;
 #endif
