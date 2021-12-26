@@ -148,6 +148,9 @@ protected:
         }
     }
 
+    bool CheckControlled(
+        const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target, bool isAnti);
+
 public:
     QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -201,6 +204,10 @@ public:
 
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
+        if (stateVecUnit) {
+            stateVecUnit->NormalizeState(nrm, norm_thresh);
+            return;
+        }
         root->Normalize(qubitCount);
     }
 

@@ -190,14 +190,11 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
     }
     QBinaryDecisionTreeNodePtr& b1 = branches[1];
 
-    b0->Normalize(depth - 1U);
-    if (b0 != b1) {
-        b1->Normalize(depth - 1U);
-    }
-
     const real1 nrm = (real1)sqrt(norm(b0->scale) + norm(b1->scale));
+    b0->Normalize(depth - 1U);
     b0->scale *= ONE_R1 / nrm;
     if (b0 != b1) {
+        b1->Normalize(depth - 1U);
         b1->scale *= ONE_R1 / nrm;
     }
 }

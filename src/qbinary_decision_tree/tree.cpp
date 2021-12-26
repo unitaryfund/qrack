@@ -782,11 +782,6 @@ template <typename Lfn>
 void QBinaryDecisionTree::ApplyControlledSingle(
     const complex* lMtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti, Lfn leafFunc)
 {
-    if (!controlLen) {
-        ApplySingle(lMtrx, target, leafFunc);
-        return;
-    }
-
     std::shared_ptr<complex> mtrxS(new complex[4], std::default_delete<complex[]>());
     std::copy(lMtrx, lMtrx + 4, mtrxS.get());
 
@@ -810,13 +805,6 @@ void QBinaryDecisionTree::ApplyControlledSingle(
 
     const bitCapIntOcl targetPow = pow2Ocl(target);
     const bitCapIntOcl maskTarget = (isAnti ? 0U : lowControlMask);
-
-    ResetStateVector();
-
-    FlushBuffer(target);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
-        FlushBuffer(controls[i]);
-    }
 
     Dispatch(targetPow, [this, mtrxS, target, targetPow, qPowersSorted, highControlMask, maskTarget, leafFunc]() {
         complex* mtrx = mtrxS.get();
@@ -887,9 +875,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(
 
 void QBinaryDecisionTree::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
-    if (qubitCount <= bdtThreshold) {
-        SetStateVector();
-        stateVecUnit->MCMtrx(controls, controlLen, mtrx, target);
+    if (CheckControlled(controls, controlLen, mtrx, target, false)) {
         return;
     }
 
@@ -901,15 +887,39 @@ void QBinaryDecisionTree::MCMtrx(const bitLenInt* controls, bitLenInt controlLen
 void QBinaryDecisionTree::MACMtrx(
     const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
-    if (qubitCount <= bdtThreshold) {
-        SetStateVector();
-        stateVecUnit->MACMtrx(controls, controlLen, mtrx, target);
+    if (CheckControlled(controls, controlLen, mtrx, target, true)) {
         return;
     }
 
     ApplyControlledSingle(mtrx, controls, controlLen, target, true,
         [this, target](QBinaryDecisionTreeNodePtr leaf, const complex* mtrx, bitCapIntOcl highControlMask,
             bool isParallel) { Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, true, isParallel); });
+}
+
+bool QBinaryDecisionTree::CheckControlled(
+    const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target, bool isAnti)
+{
+    if (!controlLen) {
+        Mtrx(mtrx, target);
+        return true;
+    }
+
+    FlushBuffer(target);
+    for (bitLenInt i = 0U; i < controlLen; i++) {
+        FlushBuffer(controls[i]);
+    }
+
+    if (qubitCount <= bdtThreshold) {
+        SetStateVector();
+        if (isAnti) {
+            stateVecUnit->MACMtrx(controls, controlLen, mtrx, target);
+        } else {
+            stateVecUnit->MCMtrx(controls, controlLen, mtrx, target);
+        }
+        return true;
+    }
+
+    return false;
 }
 
 void QBinaryDecisionTree::FlushBuffer(bitLenInt i)
