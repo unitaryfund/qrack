@@ -96,16 +96,23 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     }
 #endif
 
-    canSuppressPaging = (engines[0] == QINTERFACE_QPAGER) ||
-        ((engines[0] == QINTERFACE_STABILIZER_HYBRID) && ((engines.size() == 1U) || (engines[1] == QINTERFACE_QPAGER)));
-    for (unsigned int i = 0; i < engines.size(); i++) {
-        if (engines[i] != QINTERFACE_QPAGER) {
-            unpagedEngines.push_back(engines[i]);
-        }
+    if (engines.back() == QINTERFACE_BDT) {
+        engines.push_back(QINTERFACE_QPAGER);
     }
-    if ((engines.back() == QINTERFACE_QPAGER) || (engines.back() == QINTERFACE_STABILIZER_HYBRID) ||
-        (engines.back() == QINTERFACE_BDT)) {
-        unpagedEngines.push_back(QINTERFACE_OPTIMAL_SINGLE_PAGE);
+    if (engines.back() == QINTERFACE_STABILIZER_HYBRID) {
+        engines.push_back(QINTERFACE_QPAGER);
+    }
+    if (engines.back() == QINTERFACE_QPAGER) {
+        engines.push_back(QINTERFACE_OPTIMAL_SINGLE_PAGE);
+    }
+
+    unpagedEngines = engines;
+    if (engines[0] == QINTERFACE_QPAGER) {
+        canSuppressPaging = true;
+        unpagedEngines.erase(unpagedEngines.begin());
+    } else if ((engines[0] == QINTERFACE_STABILIZER_HYBRID) && (engines[1] == QINTERFACE_QPAGER)) {
+        canSuppressPaging = true;
+        unpagedEngines.erase(unpagedEngines.begin() + 1U);
     }
 
     isPagingSuppressed = canSuppressPaging && (qubitCount < pagingThresholdQubits);
