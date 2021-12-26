@@ -29,7 +29,6 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     , devID(deviceId)
     , root(NULL)
     , stateVecUnit(NULL)
-    , bdtThreshold(30)
     , maxQPowerOcl(pow2Ocl(qBitCount))
     , isFusionFlush(false)
     , shards(qBitCount)
@@ -764,13 +763,13 @@ void QBinaryDecisionTree::Phase(const complex topLeft, const complex bottomRight
         return;
     }
 
-    if (qubitCount <= bdtThreshold) {
-        SetStateVector();
-        stateVecUnit->Phase(topLeft, bottomRight, target);
+    if (IS_NORM_0(topLeft - bottomRight) && (randGlobalPhase || IS_NORM_0(ONE_CMPLX - topLeft))) {
         return;
     }
 
-    if (IS_NORM_0(topLeft - bottomRight) && (randGlobalPhase || IS_NORM_0(ONE_CMPLX - topLeft))) {
+    if (qubitCount <= bdtThreshold) {
+        SetStateVector();
+        stateVecUnit->Phase(topLeft, bottomRight, target);
         return;
     }
 
