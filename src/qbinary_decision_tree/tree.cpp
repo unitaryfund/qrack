@@ -30,7 +30,6 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     , root(NULL)
     , stateVecUnit(NULL)
     , maxQPowerOcl(pow2Ocl(qBitCount))
-    , isFusionFlush(false)
     , shards(qBitCount)
 {
     if ((engines[0] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
@@ -737,22 +736,8 @@ void QBinaryDecisionTree::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (!isFusionFlush) {
-        ResetStateVector();
-        shards[target] = std::make_shared<MpsShard>(mtrx);
-        return;
-    }
-
-    if (qubitCount <= bdtThreshold) {
-        SetStateVector();
-        stateVecUnit->Mtrx(mtrx, target);
-        return;
-    }
-
-    ApplySingle(mtrx, target,
-        [this, target](QBinaryDecisionTreeNodePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool isParallel) {
-            Apply2x2OnLeaf(mtrx, leaf, target, 0U, false, isParallel);
-        });
+    ResetStateVector();
+    shards[target] = std::make_shared<MpsShard>(mtrx);
 }
 
 void QBinaryDecisionTree::Phase(const complex topLeft, const complex bottomRight, bitLenInt target)
@@ -938,6 +923,26 @@ void QBinaryDecisionTree::MACMtrx(
     ApplyControlledSingle(mtrx, controls, controlLen, target, true,
         [this, target](QBinaryDecisionTreeNodePtr leaf, const complex* mtrx, bitCapIntOcl highControlMask,
             bool isParallel) { Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, true, isParallel); });
+}
+
+void QBinaryDecisionTree::FlushBuffer(bitLenInt i)
+{
+    MpsShardPtr shard = shards[i];
+    if (!shard) {
+        return;
+    }
+
+    shards[i] = NULL;
+
+    if (stateVecUnit) {
+        stateVecUnit->Mtrx(shards[i]->gate, i);
+        return;
+    }
+
+    ApplySingle(shards[i]->gate, i,
+        [this, i](QBinaryDecisionTreeNodePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool isParallel) {
+            Apply2x2OnLeaf(mtrx, leaf, i, 0U, false, isParallel);
+        });
 }
 
 } // namespace Qrack

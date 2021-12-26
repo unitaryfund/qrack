@@ -41,7 +41,6 @@ protected:
     bitLenInt bdtThreshold;
     bitLenInt dispatchThreshold;
     bitCapIntOcl maxQPowerOcl;
-    bool isFusionFlush;
     std::vector<MpsShardPtr> shards;
 
     virtual void SetQubitCount(bitLenInt qb)
@@ -133,18 +132,7 @@ protected:
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
     }
 
-    void FlushBuffer(bitLenInt i)
-    {
-        MpsShardPtr shard = shards[i];
-        if (!shard) {
-            return;
-        }
-
-        shards[i] = NULL;
-        isFusionFlush = true;
-        Mtrx(shard->gate, i);
-        isFusionFlush = false;
-    }
+    void FlushBuffer(bitLenInt i);
 
     void FlushBuffers()
     {
