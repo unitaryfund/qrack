@@ -139,6 +139,7 @@ protected:
         for (bitLenInt i = 0; i < qubitCount; i++) {
             FlushBuffer(i);
         }
+        Finish();
     }
 
     void DumpBuffers()
@@ -266,6 +267,7 @@ public:
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
     {
         FlushBuffers();
+        Finish();
         QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
         return unit->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
@@ -283,6 +285,7 @@ public:
     virtual real1_f ProbParity(bitCapInt mask)
     {
         FlushBuffers();
+        Finish();
         QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
         return unit->ProbParity(mask);
     }

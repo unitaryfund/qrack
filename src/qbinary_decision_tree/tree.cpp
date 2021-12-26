@@ -121,7 +121,6 @@ void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
 QInterfacePtr QBinaryDecisionTree::Clone()
 {
     FlushBuffers();
-    Finish();
 
     QBinaryDecisionTreePtr copyPtr =
         std::make_shared<QBinaryDecisionTree>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
@@ -222,12 +221,10 @@ real1_f QBinaryDecisionTree::SumSqrDiff(QBinaryDecisionTreePtr toCompare)
         return stateVecUnit->SumSqrDiff(toCompare->stateVecUnit);
     }
 
-    ResetStateVector();
     FlushBuffers();
-    Finish();
-    toCompare->ResetStateVector();
+    ResetStateVector();
     toCompare->FlushBuffers();
-    toCompare->Finish();
+    toCompare->ResetStateVector();
 
     const unsigned numCores = GetConcurrencyLevel();
     std::unique_ptr<complex[]> partInner(new complex[numCores]());
@@ -269,7 +266,6 @@ complex QBinaryDecisionTree::GetAmplitude(bitCapInt perm)
     }
 
     FlushBuffers();
-    Finish();
 
     QBinaryDecisionTreeNodePtr leaf = root;
     complex scale = leaf->scale;
@@ -478,7 +474,6 @@ real1_f QBinaryDecisionTree::ProbAll(bitCapInt fullRegister)
     }
 
     FlushBuffers();
-    Finish();
 
     QBinaryDecisionTreeNodePtr leaf = root;
     complex scale = leaf->scale;
@@ -899,6 +894,7 @@ bool QBinaryDecisionTree::CheckControlled(
     for (bitLenInt i = 0U; i < controlLen; i++) {
         FlushBuffer(controls[i]);
     }
+    Finish();
 
     if (qubitCount <= bdtThreshold) {
         SetStateVector();
