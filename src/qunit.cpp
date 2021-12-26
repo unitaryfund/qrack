@@ -82,6 +82,25 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     }
 #endif
 
+#if ENABLE_OPENCL
+    if ((engines.size() == 1U) && (engines[0] == QINTERFACE_STABILIZER_HYBRID)) {
+        bitLenInt segmentGlobalQb = 0U;
+        if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
+            segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
+        }
+
+        DeviceContextPtr devContext = OCLEngine::Instance()->GetDeviceContextPtr(devID);
+        bitLenInt maxPageQubits = log2(devContext->GetGlobalSize() / sizeof(complex)) - segmentGlobalQb;
+        if (qubitCount > maxPageQubits) {
+            engines.push_back(QINTERFACE_BDT);
+        }
+        maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
+        if (qubitCount > maxPageQubits) {
+            engines.push_back(QINTERFACE_QPAGER);
+        }
+    }
+#endif
+
     SetPermutation(initState);
 }
 

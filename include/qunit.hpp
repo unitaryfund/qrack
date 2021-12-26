@@ -51,7 +51,7 @@ public:
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devIDs = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
-        : QUnit({ QINTERFACE_OPTIMAL_G0_CHILD }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
+        : QUnit({ QINTERFACE_STABILIZER_HYBRID }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
               useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devIDs, qubitThreshold,
               separation_thresh)
     {

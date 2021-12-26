@@ -40,6 +40,19 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
 #endif
 
 #if ENABLE_OPENCL
+    if ((engines.size() == 1U) && (engines[0] == QINTERFACE_MASK_FUSION)) {
+        bitLenInt segmentGlobalQb = 0U;
+        if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
+            segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
+        }
+
+        DeviceContextPtr devContext = OCLEngine::Instance()->GetDeviceContextPtr(devID);
+        bitLenInt maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
+        if (qubitCount > maxPageQubits) {
+            engines.push_back(QINTERFACE_QPAGER);
+        }
+    }
+
     if (!bdtThreshold) {
         for (unsigned i = 0U; i < engines.size(); i++) {
             if (engines[i] == QINTERFACE_QPAGER) {

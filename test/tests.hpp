@@ -44,6 +44,7 @@ extern bool isBinaryOutput;
 extern int benchmarkSamples;
 extern int benchmarkDepth;
 extern std::vector<int> devList;
+extern bool optimal;
 
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
