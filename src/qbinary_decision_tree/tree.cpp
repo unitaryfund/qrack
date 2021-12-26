@@ -29,55 +29,60 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     , devID(deviceId)
     , root(NULL)
     , stateVecUnit(NULL)
+    , bdtThreshold(0)
     , maxQPowerOcl(pow2Ocl(qBitCount))
     , shards(qBitCount)
 {
-    if ((engines[0] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
-#if ENABLE_OPENCL
-        if (!OCLEngine::Instance()->GetDeviceCount()) {
-            engines[0] = QINTERFACE_CPU;
-        }
-#else
-        engines[0] = QINTERFACE_CPU;
-#endif
-    }
-
 #if ENABLE_ENV_VARS
-    if (getenv("QRACK_QUNIT_PAGING_THRESHOLD")) {
-        pagingThresholdQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_QUNIT_PAGING_THRESHOLD")));
-#if ENABLE_OPENCL
-    } else if (OCLEngine::Instance()->GetDeviceCount()) {
-        bitLenInt segmentGlobalQb = 0;
-        if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
-            segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
-        }
-        pagingThresholdQubits = 1U +
-            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
-#endif
-    }
-
     if (getenv("QRACK_BDT_THRESHOLD")) {
         bdtThreshold = (bitLenInt)std::stoi(std::string(getenv("QRACK_BDT_THRESHOLD")));
-    } else {
+    }
+#endif
+
 #if ENABLE_OPENCL
-        if (engines[0] == QINTERFACE_QPAGER) {
-            bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
-        } else {
-            bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+    if (!bdtThreshold) {
+        for (unsigned i = 0U; i < engines.size(); i++) {
+            if (engines[i] == QINTERFACE_QPAGER) {
+                bdtThreshold =
+                    log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
+                break;
+            }
         }
-#else
+    }
+    if (!bdtThreshold) {
+        for (unsigned i = 0U; i < engines.size(); i++) {
+            if ((engines[i] == QINTERFACE_OPENCL) || (engines[i] == QINTERFACE_HYBRID)) {
+                if (OCLEngine::Instance()->GetDeviceCount()) {
+                    bdtThreshold =
+                        log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+                } else {
+                    engines[i] = QINTERFACE_CPU;
+                }
+                break;
+            }
+            if (engines[i] == QINTERFACE_CPU) {
+                bdtThreshold = PSTRIDEPOW;
+                break;
+            }
+        }
+    }
+    if (!bdtThreshold) {
+        if (OCLEngine::Instance()->GetDeviceCount()) {
+            if (engines.back() == QINTERFACE_STABILIZER_HYBRID) {
+                bdtThreshold =
+                    log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
+            } else {
+                bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+            }
+        } else {
+            bdtThreshold = PSTRIDEPOW;
+        }
+    }
+#endif
+
+    if (!bdtThreshold) {
         bdtThreshold = PSTRIDEPOW;
-#endif
     }
-#elif ENABLE_OPENCL
-    if (engines[0] == QINTERFACE_QPAGER) {
-        bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
-    } else {
-        bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-    }
-#else
-    bdtThreshold = PSTRIDEPOW;
-#endif
 
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
@@ -96,17 +101,7 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
 
 QInterfacePtr QBinaryDecisionTree::MakeStateVector()
 {
-    std::vector<QInterfaceEngine> lEngines;
-    for (unsigned int i = 0; i < engines.size(); i++) {
-        if ((qubitCount >= pagingThresholdQubits) || (engines[i] != QINTERFACE_QPAGER)) {
-            lEngines.push_back(engines[i]);
-        }
-    }
-    if (!lEngines.size()) {
-        lEngines.push_back(QINTERFACE_MASK_FUSION);
-    }
-
-    return CreateQuantumInterface(lEngines, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+    return CreateQuantumInterface(engines, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
         false, devID, hardware_rand_generator != NULL, false, amplitudeFloor);
 }
 

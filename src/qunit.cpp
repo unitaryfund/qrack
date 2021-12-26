@@ -103,9 +103,8 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
             unpagedEngines.push_back(engines[i]);
         }
     }
-    if ((engines.back() == QINTERFACE_QPAGER) ||
-        ((engines[0] == QINTERFACE_STABILIZER_HYBRID) &&
-            ((engines.size() == 1U) || ((engines[1] == QINTERFACE_BDT) || (engines.size() == 2U))))) {
+    if ((engines.back() == QINTERFACE_QPAGER) || (engines.back() == QINTERFACE_STABILIZER_HYBRID) ||
+        (engines.back() == QINTERFACE_BDT)) {
         unpagedEngines.push_back(QINTERFACE_OPTIMAL_SINGLE_PAGE);
     }
 
