@@ -73,137 +73,23 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , freezeTrySeparate(false)
     , isReactiveSeparate(true)
     , thresholdQubits(qubitThreshold)
-    , pagingThresholdQubits(0)
     , separabilityThreshold(sep_thresh)
     , deviceIDs(devList)
 {
 #if ENABLE_ENV_VARS
-    if (getenv("QRACK_QUNIT_PAGING_THRESHOLD")) {
-        pagingThresholdQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_QUNIT_PAGING_THRESHOLD")));
-#if ENABLE_OPENCL
-    } else if (OCLEngine::Instance()->GetDeviceCount()) {
-        bitLenInt segmentGlobalQb = 0;
-        if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
-            segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
-        }
-        pagingThresholdQubits = 1U +
-            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
-#endif
-    }
-
     if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
         separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
     }
 #endif
-
-    if (engines.back() == QINTERFACE_BDT) {
-        engines.push_back(QINTERFACE_QPAGER);
-    }
-    if (engines.back() == QINTERFACE_STABILIZER_HYBRID) {
-        engines.push_back(QINTERFACE_QPAGER);
-    }
-    if (engines.back() == QINTERFACE_QPAGER) {
-        engines.push_back(QINTERFACE_OPTIMAL_SINGLE_PAGE);
-    }
-
-    unpagedEngines = engines;
-    if (engines[0] == QINTERFACE_QPAGER) {
-        canSuppressPaging = true;
-        unpagedEngines.erase(unpagedEngines.begin());
-    } else if ((engines[0] == QINTERFACE_STABILIZER_HYBRID) && (engines[1] == QINTERFACE_QPAGER)) {
-        canSuppressPaging = true;
-        unpagedEngines.erase(unpagedEngines.begin() + 1U);
-    }
-
-    isPagingSuppressed = canSuppressPaging && (qubitCount < pagingThresholdQubits);
 
     SetPermutation(initState);
 }
 
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
 {
-    if (canSuppressPaging && isPagingSuppressed) {
-        return CreateQuantumInterface(unpagedEngines, length, perm, rand_generator, phaseFactor, doNormalize,
-            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
-            thresholdQubits, separabilityThreshold);
-    }
-
     return CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
         useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
-}
-
-void QUnit::TurnOnPaging()
-{
-    if (!canSuppressPaging || !isPagingSuppressed) {
-        return;
-    }
-    isPagingSuppressed = false;
-
-    if (engines[0] == QINTERFACE_QPAGER) {
-        std::vector<QInterfaceEngine> tEngines = engines;
-        tEngines.erase(tEngines.begin());
-
-        std::map<QInterfacePtr, QPagerPtr> nEngines;
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            QEnginePtr unit = std::dynamic_pointer_cast<QEngine>(shards[i].unit);
-            if (unit && (nEngines.find(unit) == nEngines.end())) {
-                nEngines[unit] = std::make_shared<QPager>(unit, tEngines, unit->GetQubitCount(), 0, rand_generator,
-                    phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-                    (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
-            }
-        }
-
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            QInterfacePtr unit = shards[i].unit;
-            if (unit) {
-                shards[i].unit = nEngines[unit];
-            }
-        }
-    }
-
-    if (engines[0] == QINTERFACE_STABILIZER_HYBRID) {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            QStabilizerHybridPtr unit = std::dynamic_pointer_cast<QStabilizerHybrid>(shards[i].unit);
-            if (unit) {
-                unit->TurnOnPaging();
-            }
-        }
-    }
-}
-
-void QUnit::TurnOffPaging()
-{
-    if (!canSuppressPaging || isPagingSuppressed) {
-        return;
-    }
-    isPagingSuppressed = true;
-
-    if (engines[0] == QINTERFACE_QPAGER) {
-        std::map<QPagerPtr, QInterfacePtr> nEngines;
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            QPagerPtr unit = std::dynamic_pointer_cast<QPager>(shards[i].unit);
-            if (unit && (nEngines.find(unit) == nEngines.end())) {
-                nEngines[unit] = unit->ReleaseEngine();
-            }
-        }
-
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            QPagerPtr unit = std::dynamic_pointer_cast<QPager>(shards[i].unit);
-            if (unit) {
-                shards[i].unit = nEngines[unit];
-            }
-        }
-    }
-
-    if (engines[0] == QINTERFACE_STABILIZER_HYBRID) {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            QStabilizerHybridPtr unit = std::dynamic_pointer_cast<QStabilizerHybrid>(shards[i].unit);
-            if (unit) {
-                unit->TurnOffPaging();
-            }
-        }
-    }
 }
 
 void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)
@@ -380,8 +266,6 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
     /* Create a clone of the quantum state in toCopy. */
     QUnitPtr clone = std::dynamic_pointer_cast<QUnit>(toCopy->Clone());
 
-    clone->ConvertPaging(qubitCount >= pagingThresholdQubits);
-
     /* Insert the new shards in the middle */
     shards.insert(start, clone->shards);
 
@@ -392,11 +276,6 @@ bitLenInt QUnit::Compose(QUnitPtr toCopy, bitLenInt start)
 
 void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 {
-    // Make sure "dest" and "this" are in compatible states:
-    if (dest) {
-        dest->ConvertPaging(qubitCount >= pagingThresholdQubits);
-    }
-
     for (bitLenInt i = 0; i < length; i++) {
         RevertBasis2Qb(start + i);
     }
@@ -511,10 +390,6 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 
     shards.erase(start, start + length);
     SetQubitCount(qubitCount - length);
-
-    if (dest) {
-        dest->ConvertPaging(dest->qubitCount >= dest->pagingThresholdQubits);
-    }
 }
 
 void QUnit::Decompose(bitLenInt start, QUnitPtr dest) { Detach(start, dest->GetQubitCount(), dest); }

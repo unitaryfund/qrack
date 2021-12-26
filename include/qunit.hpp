@@ -33,35 +33,11 @@ protected:
     bool freezeBasis2Qb;
     bool freezeTrySeparate;
     bool isReactiveSeparate;
-    bool isPagingSuppressed;
-    bool canSuppressPaging;
     bitLenInt thresholdQubits;
-    bitLenInt pagingThresholdQubits;
     real1_f separabilityThreshold;
     std::vector<int> deviceIDs;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
-
-    virtual void TurnOnPaging();
-    virtual void TurnOffPaging();
-    virtual void ConvertPaging(bool isPaging)
-    {
-        if (!canSuppressPaging) {
-            return;
-        }
-
-        if (isPaging) {
-            TurnOnPaging();
-        } else {
-            TurnOffPaging();
-        }
-    }
-
-    virtual void SetQubitCount(bitLenInt qb)
-    {
-        QInterface::SetQubitCount(qb);
-        ConvertPaging(qb >= pagingThresholdQubits);
-    }
 
 public:
     QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
