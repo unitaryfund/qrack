@@ -92,7 +92,7 @@ void QBinaryDecisionTree::SetPermutation(bitCapInt initState, complex phaseFac)
 
     if (qubitCount <= bdtThreshold) {
         root = NULL;
-        if (stateVecUnit == NULL) {
+        if (!stateVecUnit) {
             stateVecUnit = MakeStateVector();
         }
         stateVecUnit->SetPermutation(initState, phaseFac);
@@ -731,8 +731,7 @@ void QBinaryDecisionTree::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (qubitCount <= bdtThreshold) {
-        SetStateVector();
+    if (stateVecUnit && (qubitCount <= bdtThreshold)) {
         stateVecUnit->Mtrx(mtrx, target);
         return;
     }
@@ -752,8 +751,7 @@ void QBinaryDecisionTree::Phase(const complex topLeft, const complex bottomRight
         return;
     }
 
-    if (qubitCount <= bdtThreshold) {
-        SetStateVector();
+    if (stateVecUnit && (qubitCount <= bdtThreshold)) {
         stateVecUnit->Phase(topLeft, bottomRight, target);
         return;
     }
@@ -769,8 +767,7 @@ void QBinaryDecisionTree::Invert(const complex topRight, const complex bottomLef
         return;
     }
 
-    if (qubitCount <= bdtThreshold) {
-        SetStateVector();
+    if (stateVecUnit && (qubitCount <= bdtThreshold)) {
         stateVecUnit->Invert(topRight, bottomLeft, target);
         return;
     }
@@ -928,8 +925,11 @@ void QBinaryDecisionTree::FlushBuffer(bitLenInt i)
     if (!shard) {
         return;
     }
-
     shards[i] = NULL;
+
+    if (qubitCount > bdtThreshold) {
+        ResetStateVector();
+    }
 
     if (stateVecUnit) {
         stateVecUnit->Mtrx(shard->gate, i);
