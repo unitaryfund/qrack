@@ -64,6 +64,15 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     SetConcurrency(std::thread::hardware_concurrency());
 #endif
     SetPermutation(initState);
+
+#if ENABLE_ENV_VARS
+    const bitLenInt pStridePow =
+        (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
+#else
+    const bitLenInt pStridePow = PSTRIDEPOW;
+#endif
+
+    dispatchThreshold = (dispatchThreshold > 2U) ? (pStridePow - 2U) : 0U;
 }
 
 QInterfacePtr QBinaryDecisionTree::MakeStateVector()
@@ -724,13 +733,20 @@ void QBinaryDecisionTree::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
+    if (stateVecUnit && (qubitCount <= bdtThreshold)) {
+        stateVecUnit->Mtrx(mtrx, target);
+        return;
+    }
+
     if (!isFusionFlush) {
-        if (stateVecUnit && (qubitCount <= bdtThreshold)) {
-            stateVecUnit->Mtrx(mtrx, target);
-            return;
-        }
         ResetStateVector();
         shards[target] = std::make_shared<MpsShard>(mtrx);
+        return;
+    }
+
+    if (qubitCount <= bdtThreshold) {
+        SetStateVector();
+        stateVecUnit->Mtrx(mtrx, target);
         return;
     }
 

@@ -39,6 +39,7 @@ protected:
     DispatchQueue dispatchQueue;
 #endif
     bitLenInt bdtThreshold;
+    bitLenInt dispatchThreshold;
     bitCapIntOcl maxQPowerOcl;
     bool isFusionFlush;
     std::vector<MpsShardPtr> shards;
@@ -53,7 +54,8 @@ protected:
     virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
-        if (workItemCount < GetParallelThreshold()) {
+        if ((workItemCount >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) &&
+            (workItemCount < GetParallelThreshold())) {
             dispatchQueue.dispatch(fn);
         } else {
             Finish();
