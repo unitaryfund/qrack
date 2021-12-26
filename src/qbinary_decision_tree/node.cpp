@@ -254,7 +254,7 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
 {
     const bitCapIntOcl itemCount = end - begin;
 
-    const bitCapIntOcl Stride = (bitCapIntOcl)(ONE_BCI << (bitCapIntOcl)14U);
+    const bitCapIntOcl Stride = (bitCapIntOcl)ONE_BCI << (PSTRIDEPOW + 1U);
     const unsigned numCores = std::thread::hardware_concurrency();
 
     if (itemCount < (Stride * numCores)) {

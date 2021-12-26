@@ -232,7 +232,6 @@ public:
             calls[OCL_API_APPLY2X2_SINGLE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
         size_t procElemCount = device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
         size_t maxWorkItems = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
-
         size_t nrmGroupCount = procElemCount * nrmGroupSize;
         if (nrmGroupCount > maxWorkItems) {
             nrmGroupCount = maxWorkItems;
