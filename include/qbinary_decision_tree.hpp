@@ -40,6 +40,7 @@ protected:
 #endif
     bitLenInt bdtThreshold;
     bitLenInt dispatchThreshold;
+    bitLenInt pagingThresholdQubits;
     bitCapIntOcl maxQPowerOcl;
     std::vector<MpsShardPtr> shards;
 
