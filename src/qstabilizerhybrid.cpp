@@ -53,11 +53,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 #endif
 
         DeviceContextPtr devContext = OCLEngine::Instance()->GetDeviceContextPtr(devID);
-        bitLenInt maxPageQubits = log2(devContext->GetGlobalSize() / sizeof(complex)) - segmentGlobalQb;
-        if (qubitCount > maxPageQubits) {
-            engineTypes.push_back(QINTERFACE_BDT);
-        }
-        maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
+        bitLenInt maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
         if (qubitCount > maxPageQubits) {
             engineTypes.push_back(QINTERFACE_QPAGER);
         }
