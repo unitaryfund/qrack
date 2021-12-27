@@ -178,6 +178,12 @@ protected:
     std::map<OCLAPI, cl::Kernel> calls;
     std::map<OCLAPI, std::unique_ptr<std::mutex>> mutexes;
 
+private:
+    const size_t procElemCount = device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+    const size_t maxWorkItems = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+    const size_t maxAlloc = device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+    const size_t globalSize = device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+
 public:
     OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int dev_id, int cntxt_id)
         : platform(p)
@@ -228,10 +234,8 @@ public:
 
     size_t GetPreferredConcurrency()
     {
-        size_t nrmGroupSize =
+        const size_t nrmGroupSize =
             calls[OCL_API_APPLY2X2_SINGLE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
-        size_t procElemCount = device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
-        size_t maxWorkItems = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
         size_t nrmGroupCount = procElemCount * nrmGroupSize;
         if (nrmGroupCount > maxWorkItems) {
             nrmGroupCount = maxWorkItems;
@@ -240,8 +244,10 @@ public:
         return nrmGroupCount;
     }
 
-    size_t GetMaxAlloc() { return device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>(); }
-    size_t GetGlobalSize() { return device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>(); }
+    size_t GetProcElementCount() { return procElemCount; }
+    size_t GetMaxWorkItems() { return maxWorkItems; }
+    size_t GetMaxAlloc() { return maxAlloc; }
+    size_t GetGlobalSize() { return globalSize; }
 
     friend class OCLEngine;
 };

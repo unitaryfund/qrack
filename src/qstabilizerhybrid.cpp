@@ -43,8 +43,29 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , thresholdQubits(qubitThreshold)
     , deviceIDs(devList)
 {
-    stabilizer = MakeStabilizer(initState);
+#if ENABLE_OPENCL
+    if ((engineTypes.size() == 1U) && (engineTypes[0] == QINTERFACE_MASK_FUSION)) {
+        bitLenInt segmentGlobalQb = 0U;
+#if ENABLE_ENV_VARS
+        if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
+            segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
+        }
+#endif
+
+        DeviceContextPtr devContext = OCLEngine::Instance()->GetDeviceContextPtr(devID);
+        bitLenInt maxPageQubits = log2(devContext->GetGlobalSize() / sizeof(complex)) - segmentGlobalQb;
+        if (qubitCount > maxPageQubits) {
+            engineTypes.push_back(QINTERFACE_BDT);
+        }
+        maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
+        if (qubitCount > maxPageQubits) {
+            engineTypes.push_back(QINTERFACE_QPAGER);
+        }
+    }
+#endif
+
     amplitudeFloor = REAL1_EPSILON;
+    stabilizer = MakeStabilizer(initState);
 }
 
 QStabilizerPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)

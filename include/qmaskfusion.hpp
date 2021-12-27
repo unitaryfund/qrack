@@ -183,9 +183,8 @@ public:
               initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId, useHardwareRNG,
               useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
 #else
-        : QMaskFusion({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
-              useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold,
-              separation_thresh)
+        : QMaskFusion({ QINTERFACE_CPU }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem,
+              deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
 #endif
     {
     }

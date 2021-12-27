@@ -88,6 +88,20 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
     int sampleFailureCount;
 
+    std::vector<QInterfaceEngine> engineStack;
+    if (optimal) {
+#if ENABLE_OPENCL
+        engineStack.push_back(
+            (OCLEngine::Instance()->GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+#else
+        engineStack.push_back(QINTERFACE_OPTIMAL);
+#endif
+    } else {
+        engineStack.push_back(testEngineType);
+        engineStack.push_back(testSubEngineType);
+        engineStack.push_back(testSubSubEngineType);
+    }
+
     for (numBits = mnQbts; numBits <= mxQbts; numBits++) {
 
         if (isBinaryOutput) {
@@ -97,9 +111,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             mOutputFile << sizeof(bitCapInt) << " bytes in bitCapInt" << std::endl;
         }
 
-        QInterfacePtr qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType },
-            numBits, 0, rng, CMPLX_DEFAULT_ARG, enable_normalization, true, use_host_dma, device_id,
-            !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+        QInterfacePtr qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG,
+            enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
         avgt = 0.0;
         sampleFailureCount = 0;
         trialClocks.clear();
@@ -140,9 +153,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 // Release before re-alloc:
                 qftReg = NULL;
                 // Re-alloc:
-                qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, numBits, 0,
-                    rng, CMPLX_DEFAULT_ARG, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng,
-                    sparse, REAL1_EPSILON, devList);
+                qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG, enable_normalization,
+                    true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
                 sampleFailureCount++;
                 isTrialSuccessful = false;
