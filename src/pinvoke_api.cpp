@@ -362,7 +362,7 @@ void _darray_to_creal1_array(double* params, bitCapIntOcl componentCount, comple
 extern "C" {
 
 /**
- * (External API) Initialize a simulator ID with "q" qubits and "Schmidt decomposition" ("sd") on/off
+ * (External API) Initialize a simulator ID with "q" qubits and explicit layer options on/off
  */
 MICROSOFT_QUANTUM_DECL unsigned init_count_type(
     _In_ unsigned q, _In_ bool md, _In_ bool sd, _In_ bool sh, _In_ bool bdt, _In_ bool pg, _In_ bool zxf, _In_ bool hy)
@@ -416,6 +416,56 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(
     if (!simulatorType.size()) {
         simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
     }
+
+    QInterfacePtr simulator = q ? CreateQuantumInterface(simulatorType, q, 0, randNumGen) : NULL;
+
+    if (sid == simulators.size()) {
+        simulatorReservations.push_back(true);
+        simulators.push_back(simulator);
+        simulatorTypes.push_back(simulatorType);
+    } else {
+        simulatorReservations[sid] = true;
+        simulators[sid] = simulator;
+        simulatorTypes[sid] = simulatorType;
+    }
+
+    if (!q) {
+        return sid;
+    }
+
+    shards[simulator.get()] = {};
+    for (unsigned i = 0; i < q; i++) {
+        shards[simulator.get()][i] = (bitLenInt)i;
+    }
+
+    return sid;
+}
+
+/**
+ * (External API) Initialize a simulator ID with "q" qubits and implicit default layer options.
+ */
+MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
+{
+    META_LOCK_GUARD()
+
+    unsigned sid = (unsigned)simulators.size();
+
+    for (unsigned i = 0; i < simulators.size(); i++) {
+        if (simulatorReservations[i] == false) {
+            sid = i;
+            simulatorReservations[i] = true;
+            break;
+        }
+    }
+
+    std::vector<QInterfaceEngine> simulatorType;
+
+#if ENABLE_OPENCL
+    simulatorType.push_back(
+        (OCLEngine::Instance()->GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+#else
+    simulatorType.push_back(QINTERFACE_OPTIMAL);
+#endif
 
     QInterfacePtr simulator = q ? CreateQuantumInterface(simulatorType, q, 0, randNumGen) : NULL;
 
