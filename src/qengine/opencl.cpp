@@ -490,8 +490,8 @@ void QEngineOCL::SetDevice(int dID, bool forceReInit)
 
     bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0;
     nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
-    procElemCount = device_context->device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
-    maxWorkItems = device_context->device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+    procElemCount = device_context->GetProcElementCount();
+    maxWorkItems = device_context->GetMaxWorkItems();
 
     // constrain to a power of two
     size_t groupSizePow = ONE_BCI;
@@ -512,8 +512,8 @@ void QEngineOCL::SetDevice(int dID, bool forceReInit)
 
     // If the user wants to not use general host RAM, but we can't allocate enough on the device, fall back to host RAM
     // anyway.
-    maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
-    maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+    maxMem = device_context->GetGlobalSize();
+    maxAlloc = device_context->GetMaxAlloc();
 #if ENABLE_OCL_MEM_GUARDS
     size_t stateVecSize = maxQPowerOcl * sizeof(complex);
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
