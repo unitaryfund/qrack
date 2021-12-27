@@ -44,7 +44,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , deviceIDs(devList)
 {
 #if ENABLE_OPENCL
-    if ((engineTypes.size() == 1U) && (engineTypes[0] == QINTERFACE_MASK_FUSION)) {
+    if ((engineTypes.size() == 1U) && (engineTypes[0] == QINTERFACE_OPTIMAL_BASE)) {
         bitLenInt segmentGlobalQb = 0U;
 #if ENABLE_ENV_VARS
         if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {

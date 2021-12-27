@@ -40,7 +40,7 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
 #endif
 
 #if ENABLE_OPENCL
-    if ((engines.size() == 1U) && (engines[0] == QINTERFACE_MASK_FUSION)) {
+    if ((engines.size() == 1U) && (engines[0] == QINTERFACE_OPTIMAL_BASE)) {
         bitLenInt segmentGlobalQb = 0U;
 #if ENABLE_ENV_VARS
         if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
