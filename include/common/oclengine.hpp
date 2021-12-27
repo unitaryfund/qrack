@@ -291,14 +291,12 @@ public:
             }
             return toRet;
         }
+#endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
         return std::string(getenv("HOMEDRIVE") ? getenv("HOMEDRIVE") : "") +
             std::string(getenv("HOMEPATH") ? getenv("HOMEPATH") : "") + "\\.qrack\\";
 #else
         return std::string(getenv("HOME") ? getenv("HOME") : "") + "/.qrack/";
-#endif
-#else
-        return std::string(".qrack/");
 #endif
     }
     size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
