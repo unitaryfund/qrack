@@ -47,6 +47,13 @@ public:
         // Intentionally left blank
     }
 
+    ~RdRandom()
+    {
+        if (dataFile) {
+            fclose(dataFile);
+        }
+    }
+
 private:
     size_t fileOffset;
     FILE* dataFile;
