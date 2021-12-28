@@ -41,22 +41,16 @@ public:
 
 #if ENABLE_RNDFILE && !ENABLE_DEVRAND
     RdRandom()
-        : dataOffset(0)
-        , fileOffset(0)
-        , didInit(false)
-        , isPageTwo(false)
+        : fileOffset(0)
+        , dataFile(NULL)
     {
         // Intentionally left blank
     }
 
 private:
-    size_t dataOffset;
     size_t fileOffset;
-    bool didInit;
-    bool isPageTwo;
-    std::vector<char> data1;
-    std::vector<char> data2;
-    std::future<void> readFuture;
+    FILE* dataFile;
+    void _readNextRandDataFile();
 #endif
 };
 } // namespace Qrack

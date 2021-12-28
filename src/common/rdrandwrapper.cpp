@@ -90,35 +90,23 @@ std::string _getDefaultRandomNumberFilePath()
 #endif
 }
 
-bool _readNextRandDataFile(size_t fileOffset, std::vector<char>& data)
+void RdRandom::_readNextRandDataFile()
 {
-    std::vector<std::string> fileNames = {};
-
-    fileNames = _readDirectoryFileNames(_getDefaultRandomNumberFilePath());
-    while (fileNames.size() <= fileOffset) {
-        fileNames = _readDirectoryFileNames(_getDefaultRandomNumberFilePath());
-    }
-
-    FILE* dataFile;
-    while (!(dataFile = fopen(fileNames[fileOffset].c_str(), "r"))) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
-
-    fseek(dataFile, 0L, SEEK_END);
-    size_t fSize = ftell(dataFile);
-
-    if (fSize == 0) {
+    if (dataFile) {
         fclose(dataFile);
-        return false;
     }
 
-    rewind(dataFile);
+    std::string path = _getDefaultRandomNumberFilePath();
+    std::vector<std::string> fileNames = _readDirectoryFileNames(path);
+    if (fileNames.size() <= fileOffset) {
+        throw std::runtime_error("Out of RNG files!");
+    }
 
-    data.resize(fSize);
-    fSize = fread(&data[0], sizeof(unsigned char), fSize, dataFile);
-    fclose(dataFile);
+    while (!(dataFile = fopen(fileNames[fileOffset].c_str(), "r"))) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
-    return true;
+    fileOffset++;
 }
 #endif
 
@@ -148,42 +136,22 @@ bool RdRandom::SupportsRDRAND()
 #if ENABLE_RNDFILE && !ENABLE_DEVRAND
 unsigned RdRandom::NextRaw()
 {
-    if (!didInit) {
-        while ((data1.size() - dataOffset) < 4) {
-            if (_readNextRandDataFile(fileOffset, data1)) {
-                fileOffset++;
-                dataOffset = 0;
-            }
+    if (!dataFile) {
+        _readNextRandDataFile();
+    }
+
+    size_t fSize = 0;
+    unsigned char data[4];
+    while (fSize < 4) {
+        fSize = fread(data, sizeof(unsigned char), 4, dataFile);
+        if (fSize < 4) {
+            _readNextRandDataFile();
         }
-        readFuture = std::async(std::launch::async, [&]() {
-            while (!_readNextRandDataFile(fileOffset, data2)) {
-            }
-            fileOffset++;
-        });
-        didInit = true;
-    } else if ((isPageTwo && ((data2.size() - dataOffset) < 4)) || (!isPageTwo && ((data1.size() - dataOffset) < 4))) {
-        readFuture.get();
-        dataOffset = 0;
-        if (isPageTwo) {
-            readFuture = std::async(std::launch::async, [&]() {
-                while (!_readNextRandDataFile(fileOffset, data1)) {
-                }
-                fileOffset++;
-            });
-        } else {
-            readFuture = std::async(std::launch::async, [&]() {
-                while (!_readNextRandDataFile(fileOffset, data2)) {
-                }
-                fileOffset++;
-            });
-        }
-        isPageTwo = !isPageTwo;
     }
 
     unsigned v = 0UL;
     for (int i = 0; i < 4; i++) {
-        v |= ((unsigned char)(data1[dataOffset] + 128)) << (i * bitsInByte);
-        dataOffset++;
+        v |= ((unsigned char)(data[i] + 128)) << (i * bitsInByte);
     }
 
     return v;
