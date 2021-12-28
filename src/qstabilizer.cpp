@@ -35,6 +35,8 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
     , r((n << 1U) + 1U)
     , rand_distribution(0, 1)
     , hardware_rand_generator(NULL)
+    , rawRandBools(0)
+    , rawRandBoolsRemaining(0)
 {
 #if !ENABLE_RDRAND
     useHardwareRNG = false;

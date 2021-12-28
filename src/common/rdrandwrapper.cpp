@@ -136,22 +136,13 @@ bool RdRandom::SupportsRDRAND()
 #if ENABLE_RNDFILE && !ENABLE_DEVRAND
 unsigned RdRandom::NextRaw()
 {
-    if (!dataFile) {
-        _readNextRandDataFile();
-    }
-
     size_t fSize = 0;
-    unsigned char data[4];
-    while (fSize < 4) {
-        fSize = fread(data, sizeof(unsigned char), 4, dataFile);
-        if (fSize < 4) {
+    unsigned v;
+    while (fSize < 1) {
+        fSize = fread(&v, sizeof(unsigned), 1, dataFile);
+        if (fSize < 1) {
             _readNextRandDataFile();
         }
-    }
-
-    unsigned v = 0UL;
-    for (int i = 0; i < 4; i++) {
-        v |= ((unsigned char)(data[i] + 128)) << (i * bitsInByte);
     }
 
     return v;

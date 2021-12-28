@@ -72,8 +72,8 @@ protected:
     std::shared_ptr<RdRandom> hardware_rand_generator;
     bitLenInt dispatchThreshold;
 
-    unsigned rawRandBools = 0;
-    unsigned rawRandBoolsRemaining = 0;
+    unsigned rawRandBools;
+    unsigned rawRandBoolsRemaining;
 
 #if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
@@ -157,7 +157,7 @@ public:
         if (hardware_rand_generator != NULL) {
             if (!rawRandBoolsRemaining) {
                 rawRandBools = hardware_rand_generator->NextRaw();
-                rawRandBoolsRemaining = 32;
+                rawRandBoolsRemaining = 32U;
             }
             rawRandBoolsRemaining--;
 

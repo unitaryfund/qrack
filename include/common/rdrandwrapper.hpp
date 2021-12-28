@@ -44,7 +44,7 @@ public:
         : fileOffset(0)
         , dataFile(NULL)
     {
-        // Intentionally left blank
+        _readNextRandDataFile();
     }
 
     ~RdRandom()
