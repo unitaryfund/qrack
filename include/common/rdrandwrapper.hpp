@@ -14,7 +14,7 @@
 
 #include "qrack_types.hpp"
 
-#if ENABLE_RNDFILE
+#if ENABLE_RNDFILE && !ENABLE_DEVRAND
 #include <future>
 #include <string>
 #include <vector>

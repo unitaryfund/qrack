@@ -71,6 +71,7 @@ std::vector<std::string> _readDirectoryFileNames(const std::string& path)
 
 std::string _getDefaultRandomNumberFilePath()
 {
+#if ENABLE_ENV_VARS
     if (getenv("QRACK_RNG_PATH")) {
         std::string toRet = std::string(getenv("QRACK_RNG_PATH"));
         if ((toRet.back() != '/') && (toRet.back() != '\\')) {
@@ -82,6 +83,7 @@ std::string _getDefaultRandomNumberFilePath()
         }
         return toRet;
     }
+#endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
     return std::string(getenv("HOMEDRIVE") ? getenv("HOMEDRIVE") : "") +
         std::string(getenv("HOMEPATH") ? getenv("HOMEPATH") : "") + "\\.qrack\\rng\\";
