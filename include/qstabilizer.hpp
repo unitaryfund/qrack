@@ -24,14 +24,11 @@
 
 #pragma once
 
-#include "common/qrack_types.hpp"
-#include "common/rdrandwrapper.hpp"
+#include "qinterface.hpp"
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #include "common/dispatchqueue.hpp"
 #endif
-
-#include "qinterface.hpp"
 
 #include <cstdint>
 
@@ -103,7 +100,7 @@ protected:
 
 public:
     QStabilizer(
-        const bitLenInt& n, const bitCapInt& perm = 0, bool useHardwareRNG = true, qrack_rand_gen_ptr rgp = nullptr);
+        const bitLenInt& n, const bitCapInt& perm = 0, bool useHardwareRNG = true, qrack_rand_gen_ptr rgp = NULL);
 
     QStabilizerPtr Clone()
     {
