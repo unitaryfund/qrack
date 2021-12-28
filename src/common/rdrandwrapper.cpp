@@ -46,14 +46,12 @@ bool getRdRand(unsigned* pv)
 std::vector<std::string> _readDirectoryFileNames(const std::string& path)
 {
     std::vector<std::string> result;
-    dirent* de;
-    DIR* dp;
     errno = 0;
-    dp = opendir(path.empty() ? "." : path.c_str());
+    DIR* dp = opendir(path.empty() ? "." : path.c_str());
     if (dp) {
         while (true) {
             errno = 0;
-            de = readdir(dp);
+            dirent* de = readdir(dp);
             if (de == NULL) {
                 break;
             }
@@ -62,9 +60,7 @@ std::vector<std::string> _readDirectoryFileNames(const std::string& path)
             }
         }
         closedir(dp);
-        if (result.size() > 0) {
-            std::sort(result.begin(), result.end());
-        }
+        std::sort(result.begin(), result.end());
     }
     return result;
 }
