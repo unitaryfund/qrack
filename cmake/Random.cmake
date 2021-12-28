@@ -26,9 +26,10 @@ message ("RNDFILE is: ${ENABLE_RNDFILE}")
 
 option (ENABLE_DEVRAND "Get random numbers from /dev/urandom" OFF)
 if (ENABLE_DEVRAND)
-    if (NOT SEED_DEVRAND)
+    CHECK_INCLUDE_FILE_CXX("sys/random.h" ENABLE_DEVRAND)
+    if (NOT ENABLE_DEVRAND)
         message(FATAL_ERROR "Requested RNG from /dev/urandom, but header is not available on this system!")
-    endif (NOT SEED_DEVRAND)
+    endif (NOT ENABLE_DEVRAND)
 
     target_compile_definitions(qrack PUBLIC ENABLE_DEVRAND=1)
 endif (ENABLE_DEVRAND)
