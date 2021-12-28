@@ -88,7 +88,7 @@ std::string _getDefaultRandomNumberFilePath()
 #endif
 }
 
-void RdRandom::_readNextRandDataFile()
+void RandFile::_readNextRandDataFile()
 {
     if (dataFile) {
         fclose(dataFile);
@@ -132,7 +132,7 @@ bool RdRandom::SupportsRDRAND()
 }
 
 #if ENABLE_RNDFILE && !ENABLE_DEVRAND
-unsigned RdRandom::NextRaw()
+unsigned RandFile::NextRaw()
 {
     size_t fSize = 0;
     unsigned v;
@@ -145,6 +145,7 @@ unsigned RdRandom::NextRaw()
 
     return v;
 }
+unsigned RdRandom::NextRaw() { return RandFile::getInstance().NextRaw(); }
 #else
 unsigned RdRandom::NextRaw()
 {

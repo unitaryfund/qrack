@@ -33,31 +33,41 @@ namespace Qrack {
 
 bool getRdRand(unsigned* pv);
 
-class RdRandom {
-public:
-    bool SupportsRDRAND();
-    unsigned NextRaw();
-    real1_f Next();
-
 #if ENABLE_RNDFILE && !ENABLE_DEVRAND
-    RdRandom()
-        : fileOffset(0)
-        , dataFile(NULL)
+// See https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
+class RandFile {
+public:
+    static RandFile& getInstance()
     {
-        _readNextRandDataFile();
+        static RandFile instance;
+        return instance;
     }
 
-    ~RdRandom()
+    unsigned NextRaw();
+
+private:
+    RandFile() { _readNextRandDataFile(); }
+    ~RandFile()
     {
         if (dataFile) {
             fclose(dataFile);
         }
     }
 
-private:
     size_t fileOffset;
     FILE* dataFile;
     void _readNextRandDataFile();
+
+public:
+    RandFile(RandFile const&) = delete;
+    void operator=(RandFile const&) = delete;
+};
 #endif
+
+class RdRandom {
+public:
+    bool SupportsRDRAND();
+    unsigned NextRaw();
+    real1_f Next();
 };
 } // namespace Qrack

@@ -115,6 +115,8 @@ public:
         clone->r = r;
         clone->randomSeed = randomSeed;
 
+        clone->rawRandBoolsRemaining = 0;
+
         return clone;
     }
 
