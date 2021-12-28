@@ -157,7 +157,7 @@ public:
         if (hardware_rand_generator != NULL) {
             if (!rawRandBoolsRemaining) {
                 rawRandBools = hardware_rand_generator->NextRaw();
-                rawRandBoolsRemaining = 32U;
+                rawRandBoolsRemaining = sizeof(rawRandBools) * bitsInByte;
             }
             rawRandBoolsRemaining--;
 

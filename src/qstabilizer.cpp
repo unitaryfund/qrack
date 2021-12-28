@@ -44,7 +44,7 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
 
     if (useHardwareRNG) {
         hardware_rand_generator = std::make_shared<RdRandom>();
-#if !ENABLE_RNDFILE
+#if !ENABLE_RNDFILE && !ENABLE_DEVRAND
         if (!(hardware_rand_generator->SupportsRDRAND())) {
             hardware_rand_generator = NULL;
         }
