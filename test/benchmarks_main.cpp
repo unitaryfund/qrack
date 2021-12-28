@@ -44,7 +44,7 @@ std::vector<int> devList;
 bool optimal = false;
 
 #define SHOW_OCL_BANNER()                                                                                              \
-    if (OCLEngine::Instance()->GetDeviceCount()) {                                                                     \
+    if (OCLEngine::Instance().GetDeviceCount()) {                                                                      \
         CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();                                                       \
     }
 
@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
             // Make sure the context singleton is initialized.
             SHOW_OCL_BANNER();
 
-            DeviceContextPtr device_context = OCLEngine::Instance()->GetDeviceContextPtr(device_id);
+            DeviceContextPtr device_context = OCLEngine::Instance().GetDeviceContextPtr(device_id);
             size_t maxMem = device_context->device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>() / sizeof(complex);
             size_t maxAlloc = device_context->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>() / sizeof(complex);
 

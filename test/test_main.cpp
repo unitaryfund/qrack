@@ -39,7 +39,7 @@ int benchmarkSamples;
 std::vector<int> devList;
 
 #define SHOW_OCL_BANNER()                                                                                              \
-    if (OCLEngine::Instance()->GetDeviceCount()) {                                                                     \
+    if (OCLEngine::Instance().GetDeviceCount()) {                                                                      \
         CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();                                                       \
     }
 

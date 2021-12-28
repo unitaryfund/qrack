@@ -452,7 +452,7 @@ real1_f QEngineOCL::ProbAll(bitCapInt fullRegister)
 
 void QEngineOCL::SetDevice(int dID, bool forceReInit)
 {
-    if (!(OCLEngine::Instance()->GetDeviceCount())) {
+    if (!(OCLEngine::Instance().GetDeviceCount())) {
         FreeAll();
         throw std::runtime_error("Tried to initialize QEngineOCL, but no available OpenCL devices.");
     }
@@ -462,7 +462,7 @@ void QEngineOCL::SetDevice(int dID, bool forceReInit)
     clFinish();
 
     int oldContextId = device_context ? device_context->context_id : 0;
-    device_context = OCLEngine::Instance()->GetDeviceContextPtr(dID);
+    device_context = OCLEngine::Instance().GetDeviceContextPtr(dID);
 
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.

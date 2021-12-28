@@ -380,8 +380,8 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(
     }
 
 #if ENABLE_OPENCL
-    bool isOcl = (OCLEngine::Instance()->GetDeviceCount() > 0);
-    bool isOclMulti = md && (OCLEngine::Instance()->GetDeviceCount() > 1);
+    bool isOcl = (OCLEngine::Instance().GetDeviceCount() > 0);
+    bool isOclMulti = md && (OCLEngine::Instance().GetDeviceCount() > 1);
 #else
     bool isOcl = false;
     bool isOclMulti = false;
@@ -462,7 +462,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 
 #if ENABLE_OPENCL
     simulatorType.push_back(
-        (OCLEngine::Instance()->GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+        (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
 #else
     simulatorType.push_back(QINTERFACE_OPTIMAL);
 #endif

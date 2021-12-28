@@ -91,7 +91,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
         }
 #endif
 
-        DeviceContextPtr devContext = OCLEngine::Instance()->GetDeviceContextPtr(devID);
+        DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
         bitLenInt maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
         if (qubitCount > maxPageQubits) {
             engines.push_back(QINTERFACE_QPAGER);

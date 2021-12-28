@@ -21,7 +21,7 @@
 #include "tests.hpp"
 
 #define SHOW_OCL_BANNER()                                                                                              \
-    if (OCLEngine::Instance()->GetDeviceCount()) {                                                                     \
+    if (OCLEngine::Instance().GetDeviceCount()) {                                                                      \
         CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();                                                       \
     }
 

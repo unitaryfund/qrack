@@ -179,7 +179,7 @@ public:
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
 #if ENABLE_OPENCL
-        : QMaskFusion({ OCLEngine::Instance()->GetDeviceCount() ? QINTERFACE_OPTIMAL_BASE : QINTERFACE_CPU }, qBitCount,
+        : QMaskFusion({ OCLEngine::Instance().GetDeviceCount() ? QINTERFACE_OPTIMAL_BASE : QINTERFACE_CPU }, qBitCount,
               initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId, useHardwareRNG,
               useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
 #else

@@ -48,7 +48,7 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
         }
 #endif
 
-        DeviceContextPtr devContext = OCLEngine::Instance()->GetDeviceContextPtr(devID);
+        DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
         bitLenInt maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
         if (qubitCount > maxPageQubits) {
             engines.push_back(QINTERFACE_QPAGER);
@@ -59,7 +59,7 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
         for (unsigned i = 0U; i < engines.size(); i++) {
             if (engines[i] == QINTERFACE_QPAGER) {
                 bdtThreshold =
-                    log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
+                    log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
                 break;
             }
         }
@@ -67,9 +67,9 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
     if (!bdtThreshold) {
         for (unsigned i = 0U; i < engines.size(); i++) {
             if ((engines[i] == QINTERFACE_OPENCL) || (engines[i] == QINTERFACE_HYBRID)) {
-                if (OCLEngine::Instance()->GetDeviceCount()) {
+                if (OCLEngine::Instance().GetDeviceCount()) {
                     bdtThreshold =
-                        log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+                        log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
                 } else {
                     engines[i] = QINTERFACE_CPU;
                 }
@@ -82,12 +82,12 @@ QBinaryDecisionTree::QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitL
         }
     }
     if (!bdtThreshold) {
-        if (OCLEngine::Instance()->GetDeviceCount()) {
+        if (OCLEngine::Instance().GetDeviceCount()) {
             if (engines.back() == QINTERFACE_STABILIZER_HYBRID) {
                 bdtThreshold =
-                    log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
+                    log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
             } else {
-                bdtThreshold = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+                bdtThreshold = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
             }
         } else {
             bdtThreshold = PSTRIDEPOW;

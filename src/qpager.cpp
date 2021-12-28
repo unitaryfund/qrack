@@ -35,7 +35,7 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
 {
     if ((engines[0] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
 #if ENABLE_OPENCL
-        if (!OCLEngine::Instance()->GetDeviceCount()) {
+        if (!OCLEngine::Instance().GetDeviceCount()) {
             engines[0] = QINTERFACE_CPU;
         }
 #else
@@ -88,7 +88,7 @@ void QPager::Init()
 {
     if ((engines[0] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
 #if ENABLE_OPENCL
-        if (!OCLEngine::Instance()->GetDeviceCount()) {
+        if (!OCLEngine::Instance().GetDeviceCount()) {
             engines[0] = QINTERFACE_CPU;
         }
 #else
@@ -116,7 +116,7 @@ void QPager::Init()
 #if ENABLE_OPENCL
     if (rootEngine != QINTERFACE_CPU) {
         maxPageQubits =
-            log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
+            log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
     }
 
     if ((rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL)) {

@@ -252,31 +252,35 @@ public:
     friend class OCLEngine;
 };
 
+struct InitOClResult {
+    std::vector<DeviceContextPtr> all_dev_contexts;
+    DeviceContextPtr default_dev_context;
+
+    InitOClResult()
+        : all_dev_contexts()
+        , default_dev_context(NULL)
+    {
+        // Intentionally left blank
+    }
+
+    InitOClResult(std::vector<DeviceContextPtr> adc, DeviceContextPtr ddc)
+        : all_dev_contexts(adc)
+        , default_dev_context(ddc)
+    {
+        // Intentionally left blank
+    }
+};
+
 /** "Qrack::OCLEngine" manages the single OpenCL context. */
 class OCLEngine {
 public:
+    // See https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
     /// Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.)
-    static OCLEngine* Instance();
-    /// Get a pointer one of the available OpenCL contexts, by its index in the list of all contexts.
-    DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
-    /// Get the list of all available devices (and their supporting objects).
-    std::vector<DeviceContextPtr> GetDeviceContextPtrVector();
-    /** Set the list of DeviceContextPtr object available for use. If one takes the result of
-     * GetDeviceContextPtrVector(), trims items from it, and sets it with this method, (at initialization, before any
-     * QEngine objects depend on them,) all resources associated with the removed items are freed.
-     */
-    void SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, DeviceContextPtr dcp = nullptr);
-    /// Get the count of devices in the current list.
-    int GetDeviceCount() { return all_device_contexts.size(); }
-    /// Get default device ID.
-    size_t GetDefaultDeviceID() { return default_device_context->device_id; }
-    /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
-    void SetDefaultDeviceContext(DeviceContextPtr dcp);
-    /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded
-    /// from the folder path "home". This returns a Qrack::OCLInitResult object which should be passed to
-    /// SetDeviceContextPtrVector().
-    static void InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
-    /// Get default location for precompiled binaries:
+    static OCLEngine& Instance()
+    {
+        static OCLEngine instance;
+        return instance;
+    }
     static std::string GetDefaultBinaryPath()
     {
 #if ENABLE_ENV_VARS
@@ -299,6 +303,26 @@ public:
         return std::string(getenv("HOME") ? getenv("HOME") : "") + "/.qrack/";
 #endif
     }
+    /// Get a pointer one of the available OpenCL contexts, by its index in the list of all contexts.
+    DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
+    /// Get the list of all available devices (and their supporting objects).
+    std::vector<DeviceContextPtr> GetDeviceContextPtrVector();
+    /** Set the list of DeviceContextPtr object available for use. If one takes the result of
+     * GetDeviceContextPtrVector(), trims items from it, and sets it with this method, (at initialization, before any
+     * QEngine objects depend on them,) all resources associated with the removed items are freed.
+     */
+    void SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, DeviceContextPtr dcp = nullptr);
+    /// Get the count of devices in the current list.
+    int GetDeviceCount() { return all_device_contexts.size(); }
+    /// Get default device ID.
+    size_t GetDefaultDeviceID() { return default_device_context->device_id; }
+    /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
+    void SetDefaultDeviceContext(DeviceContextPtr dcp);
+    /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded
+    /// from the folder path "home". This returns a Qrack::OCLInitResult object which should be passed to
+    /// SetDeviceContextPtrVector().
+    static InitOClResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
+    /// Get default location for precompiled binaries:
     size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
     size_t GetActiveAllocSize(const int& dev)
     {
@@ -347,6 +371,9 @@ public:
         activeAllocSizes[lDev] = 0;
     }
 
+    OCLEngine(OCLEngine const&) = delete;
+    void operator=(OCLEngine const&) = delete;
+
 private:
     static const std::vector<OCLKernelHandle> kernelHandles;
     static const std::string binary_file_prefix;
@@ -358,9 +385,6 @@ private:
     DeviceContextPtr default_device_context;
 
     OCLEngine(); // Private so that it can  not be called
-    OCLEngine(OCLEngine const&); // copy constructor is private
-    OCLEngine& operator=(OCLEngine const& rhs); // assignment operator is private
-    static OCLEngine* m_pInstance;
 
     /// Make the program, from either source or binary
     static cl::Program MakeProgram(bool buildFromSource, cl::Program::Sources sources, std::string path,

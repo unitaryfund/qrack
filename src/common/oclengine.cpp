@@ -154,9 +154,6 @@ void OCLEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, Dev
 
 void OCLEngine::SetDefaultDeviceContext(DeviceContextPtr dcp) { default_device_context = dcp; }
 
-OCLEngine::OCLEngine(OCLEngine const&) {}
-OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
-
 cl::Program OCLEngine::MakeProgram(
     bool buildFromSource, cl::Program::Sources sources, std::string path, std::shared_ptr<OCLDeviceContext> devCntxt)
 {
@@ -245,7 +242,7 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     fclose(clBinFile);
 }
 
-void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string home)
+InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string home)
 {
 
     if (home == "*") {
@@ -265,7 +262,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     if (all_platforms.size() == 0) {
         std::cout << " No platforms found. Check OpenCL installation!\n";
-        return;
+        return InitOClResult();
     }
 
     // get all devices
@@ -287,7 +284,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
     }
     if (all_devices.size() == 0) {
         std::cout << " No devices found. Check OpenCL installation!\n";
-        return;
+        return InitOClResult();
     }
 
     int deviceCount = all_devices.size();
@@ -393,18 +390,14 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         }
     }
 
-    if (!m_pInstance) {
-        m_pInstance = new OCLEngine();
-    }
-    m_pInstance->SetDeviceContextPtrVector(all_dev_contexts, default_dev_context);
-    m_pInstance->activeAllocSizes = std::vector<size_t>(all_dev_contexts.size());
-
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
     std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
     std::cout << "Default device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
     for (int i = 0; i < deviceCount; i++) {
         std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
+
+    return InitOClResult(all_dev_contexts, default_dev_context);
 }
 
 OCLEngine::OCLEngine()
@@ -413,15 +406,10 @@ OCLEngine::OCLEngine()
     if (getenv("QRACK_MAX_ALLOC_MB")) {
         maxActiveAllocSize = 1024 * 1024 * (size_t)std::stoi(std::string(getenv("QRACK_MAX_ALLOC_MB")));
     }
-}
-OCLEngine* OCLEngine::m_pInstance = NULL;
-OCLEngine* OCLEngine::Instance()
-{
-    if (!m_pInstance) {
-        m_pInstance = new OCLEngine();
-        InitOCL(false);
-    }
-    return m_pInstance;
+
+    InitOClResult initResult = InitOCL(false);
+    SetDeviceContextPtrVector(initResult.all_dev_contexts, initResult.default_dev_context);
+    activeAllocSizes = std::vector<size_t>(initResult.all_dev_contexts.size());
 }
 
 } // namespace Qrack

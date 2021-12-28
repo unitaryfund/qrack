@@ -35,7 +35,7 @@ QMaskFusion::QMaskFusion(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
 {
     if ((engTypes[0] == QINTERFACE_HYBRID) || (engTypes[0] == QINTERFACE_OPENCL)) {
 #if ENABLE_OPENCL
-        if (!OCLEngine::Instance()->GetDeviceCount()) {
+        if (!OCLEngine::Instance().GetDeviceCount()) {
             engTypes[0] = QINTERFACE_CPU;
         }
 #else
