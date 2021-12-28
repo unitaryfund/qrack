@@ -161,7 +161,7 @@ public:
             }
             rawRandBoolsRemaining--;
 
-            return (bool)(rawRandBools & pow2Ocl(rawRandBoolsRemaining));
+            return (bool)((rawRandBools >> rawRandBoolsRemaining) & 1U);
         } else {
             return (bool)rand_distribution(*rand_generator);
         }
