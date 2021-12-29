@@ -694,29 +694,8 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
         const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
-            if (x[i][c]) {
-                x[i][t] = !x[i][t];
-            }
-
-            if (x[i][t]) {
-                x[i][c] = !x[i][c];
-            }
-
-            if (x[i][c]) {
-                x[i][t] = !x[i][t];
-            }
-
-            if (z[i][t]) {
-                z[i][c] = !z[i][c];
-            }
-
-            if (z[i][c]) {
-                z[i][t] = !z[i][t];
-            }
-
-            if (z[i][t]) {
-                z[i][c] = !z[i][c];
-            }
+            std::swap(x[i][c], x[i][t]);
+            std::swap(z[i][c], z[i][t]);
         }
     });
 }
