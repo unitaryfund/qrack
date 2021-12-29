@@ -230,12 +230,7 @@ public:
     /// Apply a CZ gate with control and target
     void CZ(const bitLenInt& control, const bitLenInt& target);
     /// Apply a CY gate with control and target
-    void CY(const bitLenInt& control, const bitLenInt& target)
-    {
-        IS(target);
-        CNOT(control, target);
-        S(target);
-    }
+    void CY(const bitLenInt& control, const bitLenInt& target);
 
     void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
