@@ -232,16 +232,7 @@ public:
     /// Apply a CY gate with control and target
     void CY(const bitLenInt& control, const bitLenInt& target);
 
-    void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)
-    {
-        if (qubit1 == qubit2) {
-            return;
-        }
-
-        CNOT(qubit1, qubit2);
-        CNOT(qubit2, qubit1);
-        CNOT(qubit1, qubit2);
-    }
+    void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2);
 
     void ISwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
     {
