@@ -303,6 +303,11 @@ public:
         return std::string(getenv("HOME") ? getenv("HOME") : "") + "/.qrack/";
 #endif
     }
+    /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded
+    /// from the folder path "home". This returns a Qrack::OCLInitResult object which should be passed to
+    /// SetDeviceContextPtrVector().
+    static InitOClResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
+
     /// Get a pointer one of the available OpenCL contexts, by its index in the list of all contexts.
     DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
     /// Get the list of all available devices (and their supporting objects).
@@ -318,10 +323,6 @@ public:
     size_t GetDefaultDeviceID() { return default_device_context->device_id; }
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
-    /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded
-    /// from the folder path "home". This returns a Qrack::OCLInitResult object which should be passed to
-    /// SetDeviceContextPtrVector().
-    static InitOClResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
     /// Get default location for precompiled binaries:
     size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
     size_t GetActiveAllocSize(const int& dev)
@@ -378,6 +379,7 @@ private:
     static const std::vector<OCLKernelHandle> kernelHandles;
     static const std::string binary_file_prefix;
     static const std::string binary_file_ext;
+
     std::vector<size_t> activeAllocSizes;
     size_t maxActiveAllocSize;
     std::mutex allocMutex;

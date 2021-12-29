@@ -45,7 +45,7 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     }
 
     for (size_t i = 0; i < deviceList.size(); i++) {
-        deviceList[i].maxSize = deviceContext[deviceList[i].id]->device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+        deviceList[i].maxSize = deviceContext[deviceList[i].id]->GetMaxAlloc();
     }
 
     if (devList.size() == 0) {
