@@ -636,6 +636,28 @@ void QStabilizer::ISqrtY(const bitLenInt& t)
     });
 }
 
+/// Apply a CZ gate with control and target
+void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
+{
+    Dispatch([this, c, t] {
+        const bitLenInt maxLcv = qubitCount << 1U;
+
+        for (bitLenInt i = 0; i < maxLcv; i++) {
+            if (x[i][t]) {
+                z[i][c] = !z[i][c];
+
+                if (x[i][c] && (z[i][t] == z[i][c])) {
+                    r[i] = (r[i] + 2) & 0x3U;
+                }
+            }
+
+            if (x[i][c]) {
+                z[i][t] = !z[i][t];
+            }
+        }
+    });
+}
+
 /**
  * Returns "true" if target qubit is a Z basis eigenstate
  */

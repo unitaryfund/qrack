@@ -228,12 +228,7 @@ public:
     /// Apply inverse square root of Y gate
     void ISqrtY(const bitLenInt& target);
     /// Apply a CZ gate with control and target
-    void CZ(const bitLenInt& control, const bitLenInt& target)
-    {
-        H(target);
-        CNOT(control, target);
-        H(target);
-    }
+    void CZ(const bitLenInt& control, const bitLenInt& target);
     /// Apply a CY gate with control and target
     void CY(const bitLenInt& control, const bitLenInt& target)
     {
