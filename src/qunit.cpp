@@ -717,31 +717,28 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return TrySeparateClifford(qubit);
     }
 
+    real1_f probX = (ONE_R1 / 2) - ProbBase(qubit);
+    if (!shard.unit) {
+        return true;
+    }
 
-    real1_f prob;
-    real1_f probX = ZERO_R1;
-    real1_f probY = ZERO_R1;
-    real1_f probZ = ZERO_R1;
+    if (!shard.isPauliX && !shard.isPauliY) {
+        ConvertZToX(qubit);
+    } else if (shard.isPauliX) {
+        ConvertXToY(qubit);
+    } else {
+        ConvertYToZ(qubit);
+    }
 
-    for (bitLenInt i = 0; i < 3; i++) {
-        prob = (ONE_R1 / 2) - ProbBase(qubit);
+    real1_f probZ = (ONE_R1 / 2) - ProbBase(qubit);
+    if (!shard.unit) {
+        return true;
+    }
 
-        if (!shard.unit) {
-            return true;
-        }
+    real1_f inclination = acos(ONE_R1 - 2 * probZ);
+    real1_f azimuth = acos((ONE_R1 - 2 * probX) / sin(inclination));
 
-        if (!shard.isPauliX && !shard.isPauliY) {
-            probZ = prob;
-        } else if (shard.isPauliX) {
-            probX = prob;
-        } else {
-            probY = prob;
-        }
-
-        if (i >= 2) {
-            continue;
-        }
-
+    if (std::isnan(inclination) || std::isinf(inclination) || std::isnan(azimuth) || std::isinf(azimuth)) {
         if (!shard.isPauliX && !shard.isPauliY) {
             ConvertZToX(qubit);
         } else if (shard.isPauliX) {
@@ -749,25 +746,21 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         } else {
             ConvertYToZ(qubit);
         }
-    }
 
-    real1_f r = sqrt(probZ * probZ + probX * probX + probY * probY);
-    if ((ONE_R1 / 2 - r) > separabilityThreshold) {
-        return false;
-    }
+        ProbBase(qubit);
 
-    RevertBasis1Qb(qubit);
-
-    real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
-    real1_f azimuth = atan2(probY, probX);
-    if (probX < 0) {
-        azimuth += PI_R1;
+        return !shard.unit;
     }
 
     IAI(qubit, azimuth, inclination);
 
-    prob = (ONE_R1 / 2) - ProbBase(qubit);
-    bool value = prob < 0;
+    real1_f prob = (ONE_R1 / 2) - ProbBase(qubit);
+    if (!shard.unit) {
+        AI(qubit, azimuth, inclination);
+        return true;
+    }
+
+    bool value = prob < ZERO_R1;
     if (value) {
         prob = -prob;
     }
@@ -777,7 +770,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     AI(qubit, azimuth, inclination);
 
-    return !shard.unit;
+    return false;
 }
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)

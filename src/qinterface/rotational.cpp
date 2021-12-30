@@ -63,10 +63,7 @@ void QInterface::AI(bitLenInt target, real1_f azimuth, real1_f inclination)
 }
 
 /// Inverse "Azimuth, Inclination"
-void QInterface::IAI(bitLenInt target, real1_f azimuth, real1_f inclination)
-{
-    AI(target, -azimuth, -inclination);
-}
+void QInterface::IAI(bitLenInt target, real1_f azimuth, real1_f inclination) { AI(target, -azimuth, -inclination); }
 
 /// Uniformly controlled y axis rotation gate - Rotates as e^(-i*\theta_k/2) around Pauli y axis for each permutation
 /// "k" of the control bits.
