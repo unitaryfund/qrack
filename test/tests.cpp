@@ -1512,6 +1512,28 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
     }
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_ai")
+{
+    real1 azimuth = PI_R1 / 4;
+    real1 inclination = PI_R1 / 8;
+
+    real1 probZ = (ONE_R1 / 2) - cos(inclination) / 2;
+    real1 probX = (ONE_R1 / 2) - sin(inclination) * cos(azimuth) / 2;
+
+    qftReg->SetPermutation(0);
+    qftReg->AI(0, azimuth, inclination);
+    real1 testZ = qftReg->Prob(0);
+    qftReg->H(0);
+    real1 testX = qftReg->Prob(0);
+    qftReg->H(0);
+
+    REQUIRE_FLOAT(probZ, testZ);
+    REQUIRE_FLOAT(probX, testX);
+
+    qftReg->IAI(0, azimuth, inclination);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
+}
+
 #if ENABLE_ROT_API
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_crt")
 {
@@ -1731,33 +1753,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_expzdyad")
     qftReg->ExpZDyad(4, 1, 1);
     qftReg->H(1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
-}
-
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_ai")
-{
-    real1 azimuth = PI_R1 / 8;
-    real1 inclination = PI_R1 / 4;
-
-    real1 probZ = (ONE_R1 / 2) - cos(azimuth) / 2;
-    real1 probX = (ONE_R1 / 2) - sin(azimuth) * cos(inclination) / 2;
-    real1 probY = (ONE_R1 / 2) - sin(azimuth) * sin(inclination) / 2;
-
-    qftReg->SetPermutation(0);
-    qftReg->AI(0, azimuth, inclination);
-    real1 testZ = qftReg->Prob(0);
-    qftReg->H(0);
-    real1 testX = qftReg->Prob(0);
-    qftReg->S(0);
-    real1 testY = qftReg->Prob(0);
-    qftReg->IS(0);
-    qftReg->H(0);
-
-    REQUIRE_FLOAT(probZ, testZ);
-    REQUIRE_FLOAT(probX, testX);
-    REQUIRE_FLOAT(probY, testY);
-
-    qftReg->IAI(0, azimuth, inclination);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
 }
 #endif
 
