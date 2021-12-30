@@ -200,4 +200,5 @@ public:
 void mul2x2(const complex* left, const complex* right, complex* out);
 void exp2x2(const complex* matrix2x2, complex* outMatrix2x2);
 void log2x2(const complex* matrix2x2, complex* outMatrix2x2);
+void inv2x2(const complex* matrix2x2, complex* outMatrix2x2);
 } // namespace Qrack
