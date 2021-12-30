@@ -20,7 +20,7 @@ QInterfacePtr QEngineCPU::Clone()
 
     QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(
         CreateQuantumInterface(QINTERFACE_CPU, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-            false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse));
+            false, -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
     if (stateVec) {
         clone->stateVec->copy(stateVec);
     } else {
@@ -31,14 +31,12 @@ QInterfacePtr QEngineCPU::Clone()
 
 real1_f QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
 {
+    const bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
     real1 average = ZERO_R1;
-    real1 prob;
     real1 totProb = ZERO_R1;
-    bitCapIntOcl i, outputInt;
-    bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
-    for (i = 0; i < maxQPower; i++) {
-        outputInt = (i & outputMask) >> valueStart;
-        prob = norm(stateVec->read(i));
+    for (bitCapIntOcl i = 0; i < maxQPower; i++) {
+        bitCapIntOcl outputInt = (i & outputMask) >> valueStart;
+        real1 prob = norm(stateVec->read(i));
         totProb += prob;
         average += prob * outputInt;
     }

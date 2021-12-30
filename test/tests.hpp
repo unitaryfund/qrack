@@ -12,12 +12,12 @@
 
 #pragma once
 
+#include "qfactory.hpp"
+
 #include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <string>
-
-#include "qfactory.hpp"
 
 /* A quick-and-dirty epsilon for clamping floating point values. */
 #define QRACK_TEST_EPSILON 0.9
@@ -44,6 +44,7 @@ extern bool isBinaryOutput;
 extern int benchmarkSamples;
 extern int benchmarkDepth;
 extern std::vector<int> devList;
+extern bool optimal;
 
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
@@ -81,12 +82,10 @@ inline std::ostream& outputProbableResult(std::ostream& os, Qrack::QInterfacePtr
 
     float maxProb = 0;
     bitCapInt maxProbIdx = 0;
-    float totalProb = 0;
 
     // Iterate through all possible values of the bit array
     for (i = 0; i < qftReg->GetMaxQPower(); i++) {
         float prob = (float)qftReg->ProbAll(i);
-        totalProb += prob;
         if (prob > maxProb) {
             maxProb = prob;
             maxProbIdx = i;

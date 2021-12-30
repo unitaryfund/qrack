@@ -10,13 +10,15 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "oclengine.hpp"
+
 #include <algorithm>
 #include <iostream>
 #include <memory>
 
-#include "oclengine.hpp"
-
-#if UINTPOW < 5
+#if UINTPOW < 4
+#include "qheader_uint8cl.hpp"
+#elif UINTPOW < 5
 #include "qheader_uint16cl.hpp"
 #elif UINTPOW < 6
 #include "qheader_uint32cl.hpp"
@@ -34,8 +36,11 @@
 
 #include "qenginecl.hpp"
 
+#if ENABLE_ALU
+#include "qheader_alucl.hpp"
 #if ENABLE_BCD
 #include "qheader_bcdcl.hpp"
+#endif
 #endif
 
 namespace Qrack {
@@ -94,6 +99,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_FORCEMPARITY, "forcemparity"),
     OCLKernelHandle(OCL_API_EXPPERM, "expperm"),
     OCLKernelHandle(OCL_API_ROL, "rol"),
+#if ENABLE_ALU
     OCLKernelHandle(OCL_API_INC, "inc"),
     OCLKernelHandle(OCL_API_CINC, "cinc"),
     OCLKernelHandle(OCL_API_INCDECC, "incdecc"),
@@ -104,18 +110,6 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_INCBCD, "incbcd"),
     OCLKernelHandle(OCL_API_INCDECBCDC, "incdecbcdc"),
 #endif
-    OCLKernelHandle(OCL_API_INDEXEDLDA, "indexedLda"),
-    OCLKernelHandle(OCL_API_INDEXEDADC, "indexedAdc"),
-    OCLKernelHandle(OCL_API_INDEXEDSBC, "indexedSbc"),
-    OCLKernelHandle(OCL_API_HASH, "hash"),
-    OCLKernelHandle(OCL_API_APPROXCOMPARE, "approxcompare"),
-    OCLKernelHandle(OCL_API_NORMALIZE, "nrmlze"),
-    OCLKernelHandle(OCL_API_NORMALIZE_WIDE, "nrmlzewide"),
-    OCLKernelHandle(OCL_API_UPDATENORM, "updatenorm"),
-    OCLKernelHandle(OCL_API_APPLYM, "applym"),
-    OCLKernelHandle(OCL_API_APPLYMREG, "applymreg"),
-    OCLKernelHandle(OCL_API_CPHASEFLIPIFLESS, "cphaseflipifless"),
-    OCLKernelHandle(OCL_API_PHASEFLIPIFLESS, "phaseflipifless"),
     OCLKernelHandle(OCL_API_MUL, "mul"),
     OCLKernelHandle(OCL_API_DIV, "div"),
     OCLKernelHandle(OCL_API_MULMODN_OUT, "mulmodnout"),
@@ -128,6 +122,19 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_CPOWMODN_OUT, "cpowmodnout"),
     OCLKernelHandle(OCL_API_FULLADD, "fulladd"),
     OCLKernelHandle(OCL_API_IFULLADD, "ifulladd"),
+    OCLKernelHandle(OCL_API_INDEXEDLDA, "indexedLda"),
+    OCLKernelHandle(OCL_API_INDEXEDADC, "indexedAdc"),
+    OCLKernelHandle(OCL_API_INDEXEDSBC, "indexedSbc"),
+    OCLKernelHandle(OCL_API_HASH, "hash"),
+    OCLKernelHandle(OCL_API_CPHASEFLIPIFLESS, "cphaseflipifless"),
+    OCLKernelHandle(OCL_API_PHASEFLIPIFLESS, "phaseflipifless"),
+#endif
+    OCLKernelHandle(OCL_API_APPROXCOMPARE, "approxcompare"),
+    OCLKernelHandle(OCL_API_NORMALIZE, "nrmlze"),
+    OCLKernelHandle(OCL_API_NORMALIZE_WIDE, "nrmlzewide"),
+    OCLKernelHandle(OCL_API_UPDATENORM, "updatenorm"),
+    OCLKernelHandle(OCL_API_APPLYM, "applym"),
+    OCLKernelHandle(OCL_API_APPLYMREG, "applymreg"),
     OCLKernelHandle(OCL_API_CLEARBUFFER, "clearbuffer"),
     OCLKernelHandle(OCL_API_SHUFFLEBUFFERS, "shufflebuffers")
 };
@@ -146,9 +153,6 @@ void OCLEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, Dev
 }
 
 void OCLEngine::SetDefaultDeviceContext(DeviceContextPtr dcp) { default_device_context = dcp; }
-
-OCLEngine::OCLEngine(OCLEngine const&) {}
-OCLEngine& OCLEngine::operator=(OCLEngine const& rhs) { return *this; }
 
 cl::Program OCLEngine::MakeProgram(
     bool buildFromSource, cl::Program::Sources sources, std::string path, std::shared_ptr<OCLDeviceContext> devCntxt)
@@ -238,14 +242,12 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     fclose(clBinFile);
 }
 
-void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string home)
+InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string home)
 {
 
     if (home == "*") {
         home = GetDefaultBinaryPath();
     }
-
-    int i;
     // get all platforms (drivers), e.g. NVIDIA
 
     std::vector<cl::Platform> all_platforms;
@@ -260,7 +262,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     if (all_platforms.size() == 0) {
         std::cout << " No platforms found. Check OpenCL installation!\n";
-        return;
+        return InitOClResult();
     }
 
     // get all devices
@@ -282,7 +284,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
     }
     if (all_devices.size() == 0) {
         std::cout << " No devices found. Check OpenCL installation!\n";
-        return;
+        return InitOClResult();
     }
 
     int deviceCount = all_devices.size();
@@ -301,8 +303,9 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     // create the programs that we want to execute on the devices
     cl::Program::Sources sources;
-
-#if UINTPOW < 5
+#if UINTPOW < 4
+    sources.push_back({ (const char*)qheader_uint8_cl, (long unsigned int)qheader_uint8_cl_len });
+#elif UINTPOW < 5
     sources.push_back({ (const char*)qheader_uint16_cl, (long unsigned int)qheader_uint16_cl_len });
 #elif UINTPOW < 6
     sources.push_back({ (const char*)qheader_uint32_cl, (long unsigned int)qheader_uint32_cl_len });
@@ -320,8 +323,11 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
 
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
 
+#if ENABLE_ALU
+    sources.push_back({ (const char*)qheader_alu_cl, (long unsigned int)qheader_alu_cl_len });
 #if ENABLE_BCD
     sources.push_back({ (const char*)qheader_bcd_cl, (long unsigned int)qheader_bcd_cl_len });
+#endif
 #endif
 
     int plat_id = -1;
@@ -345,7 +351,7 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         cl::Program program = MakeProgram(buildFromSource, sources, clBinName, devCntxt);
 
         cl_int buildError =
-            program.build({ all_devices[i] }, "-cl-strict-aliasing -cl-denorms-are-zero -cl-fast-relaxed-math -Werror");
+            program.build({ all_devices[i] }, "-cl-strict-aliasing -cl-denorms-are-zero -cl-fast-relaxed-math");
         if (buildError != CL_SUCCESS) {
             std::cout << "Error building for device #" << i << ": " << buildError << ", "
                       << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(all_devices[i])
@@ -384,18 +390,14 @@ void OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::string hom
         }
     }
 
-    if (!m_pInstance) {
-        m_pInstance = new OCLEngine();
-    }
-    m_pInstance->SetDeviceContextPtrVector(all_dev_contexts, default_dev_context);
-    m_pInstance->activeAllocSizes = std::vector<size_t>(all_dev_contexts.size());
-
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
     std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
     std::cout << "Default device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
-    for (i = 0; i < deviceCount; i++) {
+    for (int i = 0; i < deviceCount; i++) {
         std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
+
+    return InitOClResult(all_dev_contexts, default_dev_context);
 }
 
 OCLEngine::OCLEngine()
@@ -404,15 +406,10 @@ OCLEngine::OCLEngine()
     if (getenv("QRACK_MAX_ALLOC_MB")) {
         maxActiveAllocSize = 1024 * 1024 * (size_t)std::stoi(std::string(getenv("QRACK_MAX_ALLOC_MB")));
     }
-}
-OCLEngine* OCLEngine::m_pInstance = NULL;
-OCLEngine* OCLEngine::Instance()
-{
-    if (!m_pInstance) {
-        m_pInstance = new OCLEngine();
-        InitOCL(false);
-    }
-    return m_pInstance;
+
+    InitOClResult initResult = InitOCL(false);
+    SetDeviceContextPtrVector(initResult.all_dev_contexts, initResult.default_dev_context);
+    activeAllocSizes = std::vector<size_t>(initResult.all_dev_contexts.size());
 }
 
 } // namespace Qrack

@@ -8,12 +8,9 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <thread>
-
-#include "common/oclengine.hpp"
-
 #include "qfactory.hpp"
-#include "qhybrid.hpp"
+
+#include <thread>
 
 namespace Qrack {
 
@@ -27,20 +24,13 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     , isSparse(useSparseStateVec)
     , separabilityThreshold(sep_thresh)
 {
-    concurrency = std::thread::hardware_concurrency();
-
     if (qubitThreshold != 0) {
         thresholdQubits = qubitThreshold;
     } else {
         // Single bit gates act pairwise on amplitudes, so add at least 1 qubit to the log2 of the preferred
         // concurrency.
-        bitLenInt gpuQubits = log2(OCLEngine::Instance()->GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
-
-        bitLenInt pStridePow =
-            getenv("QRACK_PSTRIDEPOW") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW;
-
-        bitLenInt cpuQubits = (concurrency == 1 ? pStridePow : (log2(concurrency - 1) + pStridePow + 1));
-
+        bitLenInt gpuQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+        bitLenInt cpuQubits = (GetParallelThreshold() <= ONE_BCI) ? 0U : (log2(GetParallelThreshold() - ONE_BCI) + 1U);
         thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
 
@@ -54,16 +44,16 @@ QEnginePtr QHybrid::MakeEngine(bool isOpenCL, bitCapInt initState)
         std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QINTERFACE_OPENCL : QINTERFACE_CPU,
             qubitCount, initState, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
             useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
-    toRet->SetConcurrency(concurrency);
+    toRet->SetConcurrency(GetConcurrencyLevel());
     return toRet;
 }
 
 QInterfacePtr QHybrid::Clone()
 {
-    QHybridPtr c = std::dynamic_pointer_cast<QHybrid>(CreateQuantumInterface(QINTERFACE_HYBRID, qubitCount, 0,
-        rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-        (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
-    c->SetConcurrency(concurrency);
+    QHybridPtr c = std::make_shared<QHybrid>(qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
+        useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits,
+        separabilityThreshold);
+    c->SetConcurrency(GetConcurrencyLevel());
     c->engine->CopyStateVec(engine);
     return c;
 }

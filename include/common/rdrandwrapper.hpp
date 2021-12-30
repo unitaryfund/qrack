@@ -12,7 +12,9 @@
 
 #pragma once
 
-#if ENABLE_RNDFILE
+#include "qrack_types.hpp"
+
+#if ENABLE_RNDFILE && !ENABLE_DEVRAND
 #include <future>
 #include <string>
 #include <vector>
@@ -27,37 +29,45 @@
 #include <immintrin.h>
 #endif
 
-#include "qrack_types.hpp"
-
 namespace Qrack {
 
-bool getRdRand(unsigned int* pv);
+bool getRdRand(unsigned* pv);
+
+#if ENABLE_RNDFILE && !ENABLE_DEVRAND
+// See https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
+class RandFile {
+public:
+    static RandFile& getInstance()
+    {
+        static RandFile instance;
+        return instance;
+    }
+
+    unsigned NextRaw();
+
+private:
+    RandFile() { _readNextRandDataFile(); }
+    ~RandFile()
+    {
+        if (dataFile) {
+            fclose(dataFile);
+        }
+    }
+
+    size_t fileOffset;
+    FILE* dataFile;
+    void _readNextRandDataFile();
+
+public:
+    RandFile(RandFile const&) = delete;
+    void operator=(RandFile const&) = delete;
+};
+#endif
 
 class RdRandom {
 public:
-#if ENABLE_RNDFILE
-    RdRandom()
-        : didInit(false)
-        , isPageTwo(false)
-        , data1()
-        , data2()
-        , dataOffset(0)
-        , fileOffset(0)
-    {
-    }
-#endif
     bool SupportsRDRAND();
+    unsigned NextRaw();
     real1_f Next();
-
-#if ENABLE_RNDFILE
-private:
-    bool didInit = false;
-    bool isPageTwo;
-    std::vector<char> data1;
-    std::vector<char> data2;
-    std::future<void> readFuture;
-    size_t dataOffset;
-    size_t fileOffset;
-#endif
 };
 } // namespace Qrack

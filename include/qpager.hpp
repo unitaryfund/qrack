@@ -25,22 +25,22 @@ typedef std::shared_ptr<QPager> QPagerPtr;
 class QPager : public QInterface {
 protected:
     std::vector<QInterfaceEngine> engines;
+    QInterfaceEngine rootEngine;
     int devID;
     complex phaseFactor;
     bool useHostRam;
     bool useRDRAND;
     bool isSparse;
-    real1 runningNorm;
     std::vector<QEnginePtr> qPages;
     std::vector<int> deviceIDs;
 
     bool useHardwareThreshold;
     bool useGpuThreshold;
+    bitLenInt segmentGlobalQb;
     bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
     bitLenInt deviceGlobalQubits;
     bitLenInt thresholdQubitsPerPage;
-    bitLenInt pStridePow;
     bitLenInt baseQubitsPerPage;
     bitCapInt basePageCount;
     bitCapIntOcl basePageMaxQPower;
@@ -52,31 +52,6 @@ protected:
     virtual void SetQubitCount(bitLenInt qb)
     {
         QInterface::SetQubitCount(qb);
-
-        if (useHardwareThreshold) {
-            if (useGpuThreshold) {
-                // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
-                // environment variable.
-
-                thresholdQubitsPerPage = maxPageQubits;
-
-                bitLenInt threshTest = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
-                if (threshTest < thresholdQubitsPerPage) {
-                    thresholdQubitsPerPage = threshTest;
-                }
-
-                if (thresholdQubitsPerPage < minPageQubits) {
-                    thresholdQubitsPerPage = minPageQubits;
-                }
-            } else {
-                thresholdQubitsPerPage = (qubitCount > deviceGlobalQubits) ? (qubitCount - deviceGlobalQubits) : 1U;
-
-                if (thresholdQubitsPerPage < minPageQubits) {
-                    thresholdQubitsPerPage = minPageQubits;
-                }
-            }
-        }
-
         baseQubitsPerPage = (qubitCount < thresholdQubitsPerPage) ? qubitCount : thresholdQubitsPerPage;
         basePageCount = pow2Ocl(qubitCount - baseQubitsPerPage);
         basePageMaxQPower = pow2Ocl(baseQubitsPerPage);
@@ -92,10 +67,10 @@ protected:
     void SeparateEngines() { SeparateEngines(baseQubitsPerPage); }
 
     template <typename Qubit1Fn>
-    void SingleBitGate(bitLenInt target, Qubit1Fn fn, const bool& isSqiCtrl = false, const bool& isAnti = false);
+    void SingleBitGate(bitLenInt target, Qubit1Fn fn, bool isSqiCtrl = false, bool isAnti = false);
     template <typename Qubit1Fn>
-    void MetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn, const complex* mtrx,
-        const bool& isSqiCtrl = false, const bool& isIntraCtrled = false);
+    void MetaControlled(bool anti, const std::vector<bitLenInt>& controls, bitLenInt target, Qubit1Fn fn,
+        const complex* mtrx, bool isSqiCtrl = false, bool isIntraCtrled = false);
     template <typename Qubit1Fn>
     void SemiMetaControlled(bool anti, std::vector<bitLenInt> controls, bitLenInt target, Qubit1Fn fn);
     void MetaSwap(bitLenInt qubit1, bitLenInt qubit2, bool isIPhaseFac);
@@ -103,12 +78,11 @@ protected:
 
     template <typename F> void CombineAndOp(F fn, std::vector<bitLenInt> bits);
     template <typename F>
-    void CombineAndOpControlled(
-        F fn, std::vector<bitLenInt> bits, const bitLenInt* controls, const bitLenInt controlLen);
+    void CombineAndOpControlled(F fn, std::vector<bitLenInt> bits, const bitLenInt* controls, bitLenInt controlLen);
 
-    void ApplySingleEither(const bool& isInvert, complex top, complex bottom, bitLenInt target);
-    void ApplyEitherControlledSingleBit(const bool& anti, const bitLenInt* controls, const bitLenInt& controlLen,
-        const bitLenInt& target, const complex* mtrx);
+    void ApplySingleEither(bool isInvert, complex top, complex bottom, bitLenInt target);
+    void ApplyEitherControlledSingleBit(
+        bool anti, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx);
 
     void Init();
 
@@ -124,8 +98,8 @@ public:
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
-        : QPager({ QINTERFACE_OPTIMAL_SINGLE_PAGE }, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem,
-              deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
+        : QPager({ QINTERFACE_MASK_FUSION }, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem, deviceId,
+              useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
     {
     }
 
@@ -137,6 +111,7 @@ public:
 
     virtual void SetConcurrency(uint32_t threadsPerEngine)
     {
+        QInterface::SetConcurrency(threadsPerEngine);
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->SetConcurrency(threadsPerEngine);
         }
@@ -160,12 +135,17 @@ public:
     virtual complex GetAmplitude(bitCapInt perm)
     {
         bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pageMaxQPower());
-        return qPages[subIndex]->GetAmplitude(perm - (subIndex * pageMaxQPower()));
+        return qPages[subIndex]->GetAmplitude(perm & (pageMaxQPower() - ONE_BCI));
     }
     virtual void SetAmplitude(bitCapInt perm, complex amp)
     {
         bitCapIntOcl subIndex = (bitCapIntOcl)(perm / pageMaxQPower());
-        return qPages[subIndex]->SetAmplitude(perm - (subIndex * pageMaxQPower()), amp);
+        qPages[subIndex]->SetAmplitude(perm & (pageMaxQPower() - ONE_BCI), amp);
+    }
+    real1_f ProbAll(bitCapInt fullRegister)
+    {
+        bitCapIntOcl subIndex = (bitCapIntOcl)(fullRegister / pageMaxQPower());
+        return qPages[subIndex]->ProbAll(fullRegister & (pageMaxQPower() - ONE_BCI));
     }
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
@@ -186,44 +166,34 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
-    virtual void ApplySingleBit(const complex* mtrx, bitLenInt qubitIndex);
-    virtual void ApplySinglePhase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
+    virtual void Mtrx(const complex* mtrx, bitLenInt qubitIndex);
+    virtual void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)
     {
         ApplySingleEither(false, topLeft, bottomRight, qubitIndex);
     }
-    virtual void ApplySingleInvert(const complex topRight, const complex bottomLeft, bitLenInt qubitIndex)
+    virtual void Invert(complex topRight, complex bottomLeft, bitLenInt qubitIndex)
     {
         ApplySingleEither(true, topRight, bottomLeft, qubitIndex);
     }
-    virtual void ApplyControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {
         ApplyEitherControlledSingleBit(false, controls, controlLen, target, mtrx);
     }
-    virtual void ApplyAntiControlledSingleBit(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& target, const complex* mtrx)
+    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {
         ApplyEitherControlledSingleBit(true, controls, controlLen, target, mtrx);
     }
-    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, const bitLenInt& controlLen,
-        bitLenInt qubitIndex, const complex* mtrxs, const bitCapInt* mtrxSkipPowers, const bitLenInt mtrxSkipLen,
-        const bitCapInt& mtrxSkipValueMask);
-    virtual void UniformParityRZ(const bitCapInt& mask, const real1_f& angle);
-    virtual void CUniformParityRZ(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitCapInt& mask, const real1_f& angle);
+    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
+        const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask);
+    virtual void UniformParityRZ(bitCapInt mask, real1_f angle);
+    virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle);
 
-    virtual void CSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void AntiCSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void CSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void AntiCSqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void CISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
-    virtual void AntiCISqrtSwap(
-        const bitLenInt* controls, const bitLenInt& controlLen, const bitLenInt& qubit1, const bitLenInt& qubit2);
+    virtual void CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     virtual void XMask(bitCapInt mask);
     virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
@@ -231,9 +201,10 @@ public:
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
+#if ENABLE_ALU
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt* controls, bitLenInt controlLen);
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
     virtual void INCSC(
@@ -254,26 +225,27 @@ public:
     virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     virtual void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
-        bitLenInt* controls, bitLenInt controlLen);
+        const bitLenInt* controls, bitLenInt controlLen);
+
+    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, const unsigned char* values, bool resetValue = true);
+    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values);
+    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values);
+    virtual void Hash(bitLenInt start, bitLenInt length, const unsigned char* values);
 
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length);
-
-    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, unsigned char* values, bool resetValue = true);
-    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
-    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, unsigned char* values);
-    virtual void Hash(bitLenInt start, bitLenInt length, unsigned char* values);
+#endif
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
@@ -282,10 +254,9 @@ public:
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     virtual real1_f Prob(bitLenInt qubitIndex);
-    virtual real1_f ProbAll(bitCapInt fullRegister);
-    virtual real1_f ProbMask(const bitCapInt& mask, const bitCapInt& permutation);
+    virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
     // TODO: QPager not yet used in Q#, but this would need a real implementation:
-    virtual real1_f ProbParity(const bitCapInt& mask)
+    virtual real1_f ProbParity(bitCapInt mask)
     {
         if (!mask) {
             return ZERO_R1;
@@ -294,7 +265,7 @@ public:
         CombineEngines();
         return qPages[0]->ProbParity(mask);
     }
-    virtual bool ForceMParity(const bitCapInt& mask, bool result, bool doForce = true)
+    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
     {
         if (!mask) {
             return ZERO_R1;
@@ -303,7 +274,7 @@ public:
         CombineEngines();
         return qPages[0]->ForceMParity(mask, result, doForce);
     }
-    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, const bitLenInt& length, const bitCapInt& offset = 0);
+    virtual real1_f ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset = 0);
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) {
@@ -329,7 +300,7 @@ public:
 
     virtual QInterfacePtr Clone();
 
-    virtual void SetDevice(const int& dID, const bool& forceReInit = false)
+    virtual void SetDevice(int dID, bool forceReInit = false)
     {
         deviceIDs.clear();
         deviceIDs.push_back(dID);
@@ -337,9 +308,24 @@ public:
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->SetDevice(dID, forceReInit);
         }
+
+#if ENABLE_OPENCL
+        if (rootEngine != QINTERFACE_CPU) {
+            maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) -
+                segmentGlobalQb;
+        }
+
+        if (!useGpuThreshold) {
+            return;
+        }
+
+        // Limit at the power of 2 less-than-or-equal-to a full max memory allocation segment, or choose with
+        // environment variable.
+        thresholdQubitsPerPage = maxPageQubits;
+#endif
     }
 
-    virtual int GetDeviceID() { return qPages[0]->GetDeviceID(); }
+    virtual int64_t GetDevice() { return qPages[0]->GetDevice(); }
 
     bitCapIntOcl GetMaxSize() { return qPages[0]->GetMaxSize(); };
 

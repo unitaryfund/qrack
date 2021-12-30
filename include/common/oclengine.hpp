@@ -12,6 +12,8 @@
 
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include "config.h"
 
 #if !ENABLE_OPENCL
@@ -87,6 +89,7 @@ enum OCLAPI {
     OCL_API_Z_SINGLE_WIDE,
     OCL_API_PHASE_PARITY,
     OCL_API_ROL,
+#if ENABLE_ALU
     OCL_API_INC,
     OCL_API_CINC,
     OCL_API_INCDECC,
@@ -97,18 +100,6 @@ enum OCLAPI {
     OCL_API_INCBCD,
     OCL_API_INCDECBCDC,
 #endif
-    OCL_API_INDEXEDLDA,
-    OCL_API_INDEXEDADC,
-    OCL_API_INDEXEDSBC,
-    OCL_API_HASH,
-    OCL_API_APPROXCOMPARE,
-    OCL_API_NORMALIZE,
-    OCL_API_NORMALIZE_WIDE,
-    OCL_API_UPDATENORM,
-    OCL_API_APPLYM,
-    OCL_API_APPLYMREG,
-    OCL_API_CPHASEFLIPIFLESS,
-    OCL_API_PHASEFLIPIFLESS,
     OCL_API_MUL,
     OCL_API_DIV,
     OCL_API_MULMODN_OUT,
@@ -121,6 +112,19 @@ enum OCLAPI {
     OCL_API_CPOWMODN_OUT,
     OCL_API_FULLADD,
     OCL_API_IFULLADD,
+    OCL_API_INDEXEDLDA,
+    OCL_API_INDEXEDADC,
+    OCL_API_INDEXEDSBC,
+    OCL_API_HASH,
+    OCL_API_CPHASEFLIPIFLESS,
+    OCL_API_PHASEFLIPIFLESS,
+#endif
+    OCL_API_APPROXCOMPARE,
+    OCL_API_NORMALIZE,
+    OCL_API_NORMALIZE_WIDE,
+    OCL_API_UPDATENORM,
+    OCL_API_APPLYM,
+    OCL_API_APPLYMREG,
     OCL_API_CLEARBUFFER,
     OCL_API_SHUFFLEBUFFERS
 };
@@ -174,6 +178,12 @@ protected:
     std::map<OCLAPI, cl::Kernel> calls;
     std::map<OCLAPI, std::unique_ptr<std::mutex>> mutexes;
 
+private:
+    const size_t procElemCount = device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+    const size_t maxWorkItems = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+    const size_t maxAlloc = device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+    const size_t globalSize = device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+
 public:
     OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int dev_id, int cntxt_id)
         : platform(p)
@@ -224,11 +234,8 @@ public:
 
     size_t GetPreferredConcurrency()
     {
-        size_t nrmGroupSize =
+        const size_t nrmGroupSize =
             calls[OCL_API_APPLY2X2_SINGLE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
-        size_t procElemCount = device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
-        size_t maxWorkItems = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
-
         size_t nrmGroupCount = procElemCount * nrmGroupSize;
         if (nrmGroupCount > maxWorkItems) {
             nrmGroupCount = maxWorkItems;
@@ -237,16 +244,70 @@ public:
         return nrmGroupCount;
     }
 
-    size_t GetMaxAlloc() { return device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>(); }
+    size_t GetProcElementCount() { return procElemCount; }
+    size_t GetMaxWorkItems() { return maxWorkItems; }
+    size_t GetMaxAlloc() { return maxAlloc; }
+    size_t GetGlobalSize() { return globalSize; }
 
     friend class OCLEngine;
+};
+
+struct InitOClResult {
+    std::vector<DeviceContextPtr> all_dev_contexts;
+    DeviceContextPtr default_dev_context;
+
+    InitOClResult()
+        : all_dev_contexts()
+        , default_dev_context(NULL)
+    {
+        // Intentionally left blank
+    }
+
+    InitOClResult(std::vector<DeviceContextPtr> adc, DeviceContextPtr ddc)
+        : all_dev_contexts(adc)
+        , default_dev_context(ddc)
+    {
+        // Intentionally left blank
+    }
 };
 
 /** "Qrack::OCLEngine" manages the single OpenCL context. */
 class OCLEngine {
 public:
+    // See https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
     /// Get a pointer to the Instance of the singleton. (The instance will be instantiated, if it does not exist yet.)
-    static OCLEngine* Instance();
+    static OCLEngine& Instance()
+    {
+        static OCLEngine instance;
+        return instance;
+    }
+    static std::string GetDefaultBinaryPath()
+    {
+#if ENABLE_ENV_VARS
+        if (getenv("QRACK_OCL_PATH")) {
+            std::string toRet = std::string(getenv("QRACK_OCL_PATH"));
+            if ((toRet.back() != '/') && (toRet.back() != '\\')) {
+#if defined(_WIN32) && !defined(__CYGWIN__)
+                toRet += "\\";
+#else
+                toRet += "/";
+#endif
+            }
+            return toRet;
+        }
+#endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
+        return std::string(getenv("HOMEDRIVE") ? getenv("HOMEDRIVE") : "") +
+            std::string(getenv("HOMEPATH") ? getenv("HOMEPATH") : "") + "\\.qrack\\";
+#else
+        return std::string(getenv("HOME") ? getenv("HOME") : "") + "/.qrack/";
+#endif
+    }
+    /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded
+    /// from the folder path "home". This returns a Qrack::OCLInitResult object which should be passed to
+    /// SetDeviceContextPtrVector().
+    static InitOClResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
+
     /// Get a pointer one of the available OpenCL contexts, by its index in the list of all contexts.
     DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
     /// Get the list of all available devices (and their supporting objects).
@@ -259,72 +320,66 @@ public:
     /// Get the count of devices in the current list.
     int GetDeviceCount() { return all_device_contexts.size(); }
     /// Get default device ID.
-    int GetDefaultDeviceID() { return default_device_context->device_id; }
+    size_t GetDefaultDeviceID() { return default_device_context->device_id; }
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
-    /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded
-    /// from the folder path "home". This returns a Qrack::OCLInitResult object which should be passed to
-    /// SetDeviceContextPtrVector().
-    static void InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
     /// Get default location for precompiled binaries:
-    static std::string GetDefaultBinaryPath()
-    {
-        if (getenv("QRACK_OCL_PATH")) {
-            std::string toRet = std::string(getenv("QRACK_OCL_PATH"));
-            if ((toRet.back() != '/') && (toRet.back() != '\\')) {
-#if defined(_WIN32) && !defined(__CYGWIN__)
-                toRet += "\\";
-#else
-                toRet += "/";
-#endif
-            }
-            return toRet;
-        }
-#if defined(_WIN32) && !defined(__CYGWIN__)
-        return std::string(getenv("HOMEDRIVE") ? getenv("HOMEDRIVE") : "") +
-            std::string(getenv("HOMEPATH") ? getenv("HOMEPATH") : "") + "\\.qrack\\";
-#else
-        return std::string(getenv("HOME") ? getenv("HOME") : "") + "/.qrack/";
-#endif
-    }
     size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
-    size_t GetActiveAllocSize(const int& dev) { return activeAllocSizes[dev]; }
+    size_t GetActiveAllocSize(const int& dev)
+    {
+        return (dev < 0) ? activeAllocSizes[GetDefaultDeviceID()] : activeAllocSizes[(size_t)dev];
+    }
     size_t AddToActiveAllocSize(const int& dev, size_t size)
     {
+        if (dev < -1) {
+            throw std::runtime_error("Invalid device selection: " + std::to_string(dev));
+        }
+        size_t lDev = (dev == -1) ? GetDefaultDeviceID() : dev;
+
         if (size == 0) {
-            return activeAllocSizes[dev];
+            return activeAllocSizes[lDev];
         }
 
         std::lock_guard<std::mutex> lock(allocMutex);
-        activeAllocSizes[dev] += size;
+        activeAllocSizes[lDev] += size;
 
-        return activeAllocSizes[dev];
+        return activeAllocSizes[lDev];
     }
     size_t SubtractFromActiveAllocSize(const int& dev, size_t size)
     {
+        if (dev < -1) {
+            throw std::runtime_error("Invalid device selection: " + std::to_string(dev));
+        }
+        int lDev = (dev == -1) ? GetDefaultDeviceID() : dev;
+
         if (size == 0) {
-            return activeAllocSizes[dev];
+            return activeAllocSizes[lDev];
         }
 
         std::lock_guard<std::mutex> lock(allocMutex);
-        if (size < activeAllocSizes[dev]) {
-            activeAllocSizes[dev] -= size;
+        if (size < activeAllocSizes[lDev]) {
+            activeAllocSizes[lDev] -= size;
         } else {
-            activeAllocSizes[dev] = 0;
+            activeAllocSizes[lDev] = 0;
         }
-        return activeAllocSizes[dev];
+        return activeAllocSizes[lDev];
     }
     void ResetActiveAllocSize(const int& dev)
     {
+        int lDev = (dev == -1) ? GetDefaultDeviceID() : dev;
         std::lock_guard<std::mutex> lock(allocMutex);
         // User code should catch std::bad_alloc and reset:
-        activeAllocSizes[dev] = 0;
+        activeAllocSizes[lDev] = 0;
     }
+
+    OCLEngine(OCLEngine const&) = delete;
+    void operator=(OCLEngine const&) = delete;
 
 private:
     static const std::vector<OCLKernelHandle> kernelHandles;
     static const std::string binary_file_prefix;
     static const std::string binary_file_ext;
+
     std::vector<size_t> activeAllocSizes;
     size_t maxActiveAllocSize;
     std::mutex allocMutex;
@@ -332,9 +387,6 @@ private:
     DeviceContextPtr default_device_context;
 
     OCLEngine(); // Private so that it can  not be called
-    OCLEngine(OCLEngine const&); // copy constructor is private
-    OCLEngine& operator=(OCLEngine const& rhs); // assignment operator is private
-    static OCLEngine* m_pInstance;
 
     /// Make the program, from either source or binary
     static cl::Program MakeProgram(bool buildFromSource, cl::Program::Sources sources, std::string path,

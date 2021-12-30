@@ -8,14 +8,13 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include <thread>
+#include "qfactory.hpp"
 
 #if ENABLE_OPENCL
 #include "common/oclengine.hpp"
 #endif
 
-#include "qfactory.hpp"
-#include "qmaskfusion.hpp"
+#include <thread>
 
 namespace Qrack {
 
@@ -36,7 +35,7 @@ QMaskFusion::QMaskFusion(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
 {
     if ((engTypes[0] == QINTERFACE_HYBRID) || (engTypes[0] == QINTERFACE_OPENCL)) {
 #if ENABLE_OPENCL
-        if (!OCLEngine::Instance()->GetDeviceCount()) {
+        if (!OCLEngine::Instance().GetDeviceCount()) {
             engTypes[0] = QINTERFACE_CPU;
         }
 #else
@@ -58,26 +57,21 @@ QInterfacePtr QMaskFusion::Clone()
 {
     FlushBuffers();
 
-    std::vector<QInterfaceEngine> tEngines = engTypes;
-    tEngines.insert(tEngines.begin(), QINTERFACE_MASK_FUSION);
-
-    QMaskFusionPtr c = std::dynamic_pointer_cast<QMaskFusion>(CreateQuantumInterface(tEngines, qubitCount, 0,
-        rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-        (real1_f)amplitudeFloor, devices, thresholdQubits, separabilityThreshold));
+    QMaskFusionPtr c = std::make_shared<QMaskFusion>(engTypes, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, devices, thresholdQubits,
+        separabilityThreshold);
     c->engine = std::dynamic_pointer_cast<QEngine>(engine->Clone());
     return c;
 }
 
 void QMaskFusion::FlushBuffers()
 {
-    bitLenInt i;
-    bitCapInt bitPow;
     bitCapInt zMask = 0U;
     bitCapInt xMask = 0U;
     uint8_t phase = 0U;
-    for (i = 0U; i < qubitCount; i++) {
+    for (bitLenInt i = 0U; i < qubitCount; i++) {
         QMaskFusionShard& shard = zxShards[i];
-        bitPow = pow2(i);
+        bitCapInt bitPow = pow2(i);
         if (shard.isZ) {
             zMask |= bitPow;
         }
@@ -93,13 +87,13 @@ void QMaskFusion::FlushBuffers()
     if (!randGlobalPhase) {
         switch (phase) {
         case 1U:
-            engine->ApplySinglePhase(I_CMPLX, I_CMPLX, 0U);
+            engine->Phase(I_CMPLX, I_CMPLX, 0U);
             break;
         case 2U:
-            engine->ApplySinglePhase(-ONE_CMPLX, -ONE_CMPLX, 0U);
+            engine->Phase(-ONE_CMPLX, -ONE_CMPLX, 0U);
             break;
         case 3U:
-            engine->ApplySinglePhase(-I_CMPLX, -I_CMPLX, 0U);
+            engine->Phase(-I_CMPLX, -I_CMPLX, 0U);
             break;
         default:
             // Identity
@@ -137,7 +131,7 @@ void QMaskFusion::Z(bitLenInt target)
     isCacheEmpty = false;
 }
 
-void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
+void QMaskFusion::Mtrx(const complex* lMtrx, bitLenInt target)
 {
     complex mtrx[4] = { lMtrx[0], lMtrx[1], lMtrx[2], lMtrx[3] };
 
@@ -179,16 +173,16 @@ void QMaskFusion::ApplySingleBit(const complex* lMtrx, bitLenInt target)
     zxShards[target].phase = 0U;
 
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        ApplySinglePhase(mtrx[0], mtrx[3], target);
+        Phase(mtrx[0], mtrx[3], target);
         return;
     }
 
     if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        ApplySingleInvert(mtrx[1], mtrx[2], target);
+        Invert(mtrx[1], mtrx[2], target);
         return;
     }
 
-    engine->ApplySingleBit(mtrx, target);
+    engine->Mtrx(mtrx, target);
 }
 
 } // namespace Qrack

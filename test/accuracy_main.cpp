@@ -10,18 +10,18 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "qfactory.hpp"
+
 #include <iostream>
 #include <random>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "qfactory.hpp"
-
 #define CATCH_CONFIG_RUNNER /* Access to the configuration. */
 #include "tests.hpp"
 
 #define SHOW_OCL_BANNER()                                                                                              \
-    if (OCLEngine::Instance()->GetDeviceCount()) {                                                                     \
+    if (OCLEngine::Instance().GetDeviceCount()) {                                                                      \
         CreateQuantumInterface(QINTERFACE_OPENCL, 1, 0).reset();                                                       \
     }
 
@@ -150,6 +150,6 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType }, 1, 0, rng, complex(ONE_R1, ZERO_R1),
-        enable_normalization, false, true, -1, !disable_hardware_rng);
+    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType }, 1, 0, rng, ONE_CMPLX, enable_normalization,
+        false, true, -1, !disable_hardware_rng);
 }

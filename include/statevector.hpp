@@ -13,29 +13,32 @@
 
 #pragma once
 
+#include "common/parallel_for.hpp"
+#include "common/qrack_types.hpp"
+
 #include <algorithm>
-#include <future>
 #include <mutex>
 #include <set>
 
-#include "common/parallel_for.hpp"
-#include "common/qrack_types.hpp"
+#if ENABLE_PTHREAD
+#include <future>
+#endif
 
 #if ENABLE_UINT128
 #if BOOST_AVAILABLE
 #include <boost/functional/hash.hpp>
 #include <unordered_map>
-#define SparseStateVecMap std::unordered_map<bitCapInt, complex>
+#define SparseStateVecMap std::unordered_map<bitCapIntOcl, complex>
 #else
 #include <map>
-#define SparseStateVecMap std::map<bitCapInt, complex>
+#define SparseStateVecMap std::map<bitCapIntOcl, complex>
 #endif
 #else
 #if QBCAPPOW > 7
 #include <boost/functional/hash.hpp>
 #endif
 #include <unordered_map>
-#define SparseStateVecMap std::unordered_map<bitCapInt, complex>
+#define SparseStateVecMap std::unordered_map<bitCapIntOcl, complex>
 #endif
 
 namespace Qrack {
@@ -47,9 +50,9 @@ public:
 protected:
     static real1_f normHelper(const complex& c) { return norm(c); }
 
-    complex* Alloc(bitCapInt elemCount)
+    complex* Alloc(bitCapIntOcl elemCount)
     {
-        size_t allocSize = sizeof(complex) * (bitCapIntOcl)elemCount;
+        size_t allocSize = sizeof(complex) * elemCount;
         if (allocSize < QRACK_ALIGN_SIZE) {
             allocSize = QRACK_ALIGN_SIZE;
         }
@@ -80,7 +83,7 @@ protected:
     }
 
 public:
-    StateVectorArray(bitCapInt cap)
+    StateVectorArray(bitCapIntOcl cap)
         : StateVector(cap)
     {
         amplitudes = Alloc(capacity);
@@ -88,14 +91,14 @@ public:
 
     virtual ~StateVectorArray() { Free(); }
 
-    complex read(const bitCapInt& i) { return amplitudes[(bitCapIntOcl)i]; };
+    complex read(const bitCapIntOcl& i) { return amplitudes[i]; };
 
-    void write(const bitCapInt& i, const complex& c) { amplitudes[(bitCapIntOcl)i] = c; };
+    void write(const bitCapIntOcl& i, const complex& c) { amplitudes[i] = c; };
 
-    void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
+    void write2(const bitCapIntOcl& i1, const complex& c1, const bitCapIntOcl& i2, const complex& c2)
     {
-        amplitudes[(bitCapIntOcl)i1] = c1;
-        amplitudes[(bitCapIntOcl)i2] = c2;
+        amplitudes[i1] = c1;
+        amplitudes[i2] = c2;
     };
 
     void clear() { std::fill(amplitudes, amplitudes + (bitCapIntOcl)capacity, ZERO_CMPLX); }
@@ -109,54 +112,45 @@ public:
         }
     }
 
-    void copy_in(const complex* copyIn, const bitCapInt offset, const bitCapInt length)
+    void copy_in(const complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
         if (copyIn) {
-            std::copy(copyIn, copyIn + (bitCapIntOcl)length, amplitudes + (bitCapIntOcl)offset);
+            std::copy(copyIn, copyIn + length, amplitudes + offset);
         } else {
-            std::fill(amplitudes, amplitudes + (bitCapIntOcl)length, ZERO_CMPLX);
+            std::fill(amplitudes, amplitudes + length, ZERO_CMPLX);
         }
     }
 
-    void copy_in(StateVectorPtr copyInSv, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    void copy_in(
+        StateVectorPtr copyInSv, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset, const bitCapIntOcl length)
     {
         if (copyInSv) {
-            const complex* copyIn =
-                std::dynamic_pointer_cast<StateVectorArray>(copyInSv)->amplitudes + (bitCapIntOcl)srcOffset;
-            std::copy(copyIn, copyIn + (bitCapIntOcl)length, amplitudes + (bitCapIntOcl)dstOffset);
+            const complex* copyIn = std::dynamic_pointer_cast<StateVectorArray>(copyInSv)->amplitudes + srcOffset;
+            std::copy(copyIn, copyIn + length, amplitudes + dstOffset);
         } else {
-            std::fill(amplitudes + (bitCapIntOcl)dstOffset, amplitudes + (bitCapIntOcl)dstOffset + (bitCapIntOcl)length,
-                ZERO_CMPLX);
+            std::fill(amplitudes + dstOffset, amplitudes + dstOffset + length, ZERO_CMPLX);
         }
     }
 
-    void copy_out(complex* copyOut) { std::copy(amplitudes, amplitudes + (bitCapIntOcl)capacity, copyOut); }
+    void copy_out(complex* copyOut) { std::copy(amplitudes, amplitudes + capacity, copyOut); }
 
-    void copy_out(complex* copyOut, const bitCapInt offset, const bitCapInt length)
+    void copy_out(complex* copyOut, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
-        std::copy(
-            amplitudes + (bitCapIntOcl)offset, amplitudes + (bitCapIntOcl)offset + (bitCapIntOcl)capacity, copyOut);
+        std::copy(amplitudes + offset, amplitudes + offset + capacity, copyOut);
     }
 
     void copy(StateVectorPtr toCopy) { copy(std::dynamic_pointer_cast<StateVectorArray>(toCopy)); }
 
-    void copy(StateVectorArrayPtr toCopy)
-    {
-        std::copy(toCopy->amplitudes, toCopy->amplitudes + (bitCapIntOcl)capacity, amplitudes);
-    }
+    void copy(StateVectorArrayPtr toCopy) { std::copy(toCopy->amplitudes, toCopy->amplitudes + capacity, amplitudes); }
 
     void shuffle(StateVectorPtr svp) { shuffle(std::dynamic_pointer_cast<StateVectorArray>(svp)); }
 
     void shuffle(StateVectorArrayPtr svp)
     {
-        std::swap_ranges(
-            amplitudes + (((bitCapIntOcl)capacity) >> ONE_BCI), amplitudes + (bitCapIntOcl)capacity, svp->amplitudes);
+        std::swap_ranges(amplitudes + (capacity >> ONE_BCI), amplitudes + capacity, svp->amplitudes);
     }
 
-    void get_probs(real1* outArray)
-    {
-        std::transform(amplitudes, amplitudes + (bitCapIntOcl)capacity, outArray, normHelper);
-    }
+    void get_probs(real1* outArray) { std::transform(amplitudes, amplitudes + capacity, outArray, normHelper); }
 
     bool is_sparse() { return false; }
 };
@@ -166,13 +160,13 @@ protected:
     SparseStateVecMap amplitudes;
     std::mutex mtx;
 
-    complex readUnlocked(const bitCapInt& i)
+    complex readUnlocked(const bitCapIntOcl& i)
     {
         auto it = amplitudes.find(i);
         return (it == amplitudes.end()) ? ZERO_CMPLX : it->second;
     }
 
-    complex readLocked(const bitCapInt& i)
+    complex readLocked(const bitCapIntOcl& i)
     {
         mtx.lock();
         auto it = amplitudes.find(i);
@@ -182,15 +176,15 @@ protected:
     }
 
 public:
-    StateVectorSparse(bitCapInt cap)
+    StateVectorSparse(bitCapIntOcl cap)
         : StateVector(cap)
         , amplitudes()
     {
     }
 
-    complex read(const bitCapInt& i) { return isReadLocked ? readLocked(i) : readUnlocked(i); }
+    complex read(const bitCapIntOcl& i) { return isReadLocked ? readLocked(i) : readUnlocked(i); }
 
-    void write(const bitCapInt& i, const complex& c)
+    void write(const bitCapIntOcl& i, const complex& c)
     {
         bool isCSet = (c != ZERO_CMPLX);
 
@@ -213,7 +207,7 @@ public:
         }
     }
 
-    void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2)
+    void write2(const bitCapIntOcl& i1, const complex& c1, const bitCapIntOcl& i2, const complex& c2)
     {
         bool isC1Set = (c1 != ZERO_CMPLX);
         bool isC2Set = (c2 != ZERO_CMPLX);
@@ -254,21 +248,21 @@ public:
         }
 
         mtx.lock();
-        for (bitCapInt i = 0; i < capacity; i++) {
-            if (copyIn[(bitCapIntOcl)i] == ZERO_CMPLX) {
+        for (bitCapIntOcl i = 0; i < capacity; i++) {
+            if (copyIn[i] == ZERO_CMPLX) {
                 amplitudes.erase(i);
             } else {
-                amplitudes[i] = copyIn[(bitCapIntOcl)i];
+                amplitudes[i] = copyIn[i];
             }
         }
         mtx.unlock();
     }
 
-    void copy_in(const complex* copyIn, const bitCapInt offset, const bitCapInt length)
+    void copy_in(const complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
         if (!copyIn) {
             mtx.lock();
-            for (bitCapInt i = 0; i < length; i++) {
+            for (bitCapIntOcl i = 0; i < length; i++) {
                 amplitudes.erase(i);
             }
             mtx.unlock();
@@ -276,34 +270,33 @@ public:
         }
 
         mtx.lock();
-        for (bitCapInt i = 0; i < length; i++) {
-            if (copyIn[(bitCapIntOcl)i] == ZERO_CMPLX) {
+        for (bitCapIntOcl i = 0; i < length; i++) {
+            if (copyIn[i] == ZERO_CMPLX) {
                 amplitudes.erase(i);
             } else {
-                amplitudes[i + offset] = copyIn[(bitCapIntOcl)i];
+                amplitudes[i + offset] = copyIn[i];
             }
         }
         mtx.unlock();
     }
 
-    void copy_in(StateVectorPtr copyInSv, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length)
+    void copy_in(
+        StateVectorPtr copyInSv, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset, const bitCapIntOcl length)
     {
         StateVectorSparsePtr copyIn = std::dynamic_pointer_cast<StateVectorSparse>(copyInSv);
 
         if (!copyIn) {
             mtx.lock();
-            for (bitCapInt i = 0; i < length; i++) {
+            for (bitCapIntOcl i = 0; i < length; i++) {
                 amplitudes.erase(i + srcOffset);
             }
             mtx.unlock();
             return;
         }
 
-        complex amp;
-
         mtx.lock();
-        for (bitCapInt i = 0; i < length; i++) {
-            amp = copyIn->read(i + srcOffset);
+        for (bitCapIntOcl i = 0; i < length; i++) {
+            complex amp = copyIn->read(i + srcOffset);
             if (amp == ZERO_CMPLX) {
                 amplitudes.erase(i + srcOffset);
             } else {
@@ -315,15 +308,15 @@ public:
 
     void copy_out(complex* copyOut)
     {
-        for (bitCapInt i = 0; i < capacity; i++) {
-            copyOut[(bitCapIntOcl)i] = read(i);
+        for (bitCapIntOcl i = 0; i < capacity; i++) {
+            copyOut[i] = read(i);
         }
     }
 
-    void copy_out(complex* copyOut, const bitCapInt offset, const bitCapInt length)
+    void copy_out(complex* copyOut, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
-        for (bitCapInt i = 0; i < length; i++) {
-            copyOut[(bitCapIntOcl)i] = read(i + offset);
+        for (bitCapIntOcl i = 0; i < length; i++) {
+            copyOut[i] = read(i + offset);
         }
     }
 
@@ -340,37 +333,34 @@ public:
 
     void shuffle(StateVectorSparsePtr svp)
     {
-        complex amp;
         size_t halfCap = (size_t)(capacity >> ONE_BCI);
         mtx.lock();
-        for (bitCapInt i = 0; i < halfCap; i++) {
-            amp = svp->read(i);
-            svp->write(i, read(i + (bitCapInt)halfCap));
-            write(i + (bitCapInt)halfCap, amp);
+        for (bitCapIntOcl i = 0; i < halfCap; i++) {
+            complex amp = svp->read(i);
+            svp->write(i, read(i + halfCap));
+            write(i + halfCap, amp);
         }
         mtx.unlock();
     }
 
     void get_probs(real1* outArray)
     {
-        for (bitCapInt i = 0; i < capacity; i++) {
-            outArray[(bitCapIntOcl)i] = norm(read(i));
+        for (bitCapIntOcl i = 0; i < capacity; i++) {
+            outArray[i] = norm(read(i));
         }
     }
 
-    bool is_sparse() { return (amplitudes.size() < (capacity >> ONE_BCI)); }
+    bool is_sparse() { return (amplitudes.size() < (size_t)(capacity >> ONE_BCI)); }
 
-    std::vector<bitCapInt> iterable()
+    std::vector<bitCapIntOcl> iterable()
     {
-        int32_t i, combineCount;
-
-        int32_t threadCount = GetConcurrencyLevel();
-        std::vector<std::vector<bitCapInt>> toRet(threadCount);
-        std::vector<std::vector<bitCapInt>>::iterator toRetIt;
+        int64_t threadCount = GetConcurrencyLevel();
+        std::vector<std::vector<bitCapIntOcl>> toRet(threadCount);
+        std::vector<std::vector<bitCapIntOcl>>::iterator toRetIt;
 
         mtx.lock();
 
-        par_for(0, (bitCapInt)amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
+        par_for(0, amplitudes.size(), [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             auto it = amplitudes.begin();
             std::advance(it, lcv);
             toRet[cpu].push_back(it->first);
@@ -378,7 +368,7 @@ public:
 
         mtx.unlock();
 
-        for (i = (int32_t)(toRet.size() - 1); i >= 0; i--) {
+        for (int64_t i = (int64_t)(toRet.size() - 1); i >= 0; i--) {
             if (toRet[i].size() == 0) {
                 toRetIt = toRet.begin();
                 std::advance(toRetIt, i);
@@ -398,52 +388,56 @@ public:
                 toRet.pop_back();
             }
 
-            combineCount = (int32_t)toRet.size() / 2U;
+            int64_t combineCount = (int64_t)toRet.size() / 2U;
+#if ENABLE_PTHREAD
             std::vector<std::future<void>> futures(combineCount);
-            for (i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
                 futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
                     toRet[i].insert(toRet[i].end(), toRet[i + combineCount].begin(), toRet[i + combineCount].end());
                     toRet[i + combineCount].clear();
                 });
             }
-
-            for (i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
                 futures[i].get();
                 toRet.pop_back();
             }
+#else
+            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
+                toRet[i].insert(toRet[i].end(), toRet[i + combineCount].begin(), toRet[i + combineCount].end());
+                toRet.pop_back();
+            }
+#endif
         }
 
         return toRet[0];
     }
 
     /// Returns empty if iteration should be over full set, otherwise just the iterable elements:
-    std::set<bitCapInt> iterable(
-        const bitCapInt& setMask, const bitCapInt& filterMask = 0, const bitCapInt& filterValues = 0)
+    std::set<bitCapIntOcl> iterable(
+        const bitCapIntOcl& setMask, const bitCapIntOcl& filterMask = 0, const bitCapIntOcl& filterValues = 0)
     {
         if ((filterMask == 0) && (filterValues != 0)) {
             return {};
         }
 
-        int32_t i, combineCount;
-
-        bitCapInt unsetMask = ~setMask;
+        bitCapIntOcl unsetMask = ~setMask;
 
         int32_t threadCount = GetConcurrencyLevel();
-        std::vector<std::set<bitCapInt>> toRet(threadCount);
-        std::vector<std::set<bitCapInt>>::iterator toRetIt;
+        std::vector<std::set<bitCapIntOcl>> toRet(threadCount);
+        std::vector<std::set<bitCapIntOcl>>::iterator toRetIt;
 
         mtx.lock();
 
         if ((filterMask == 0) && (filterValues == 0)) {
-            par_for(0, (bitCapInt)amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
+            par_for(0, amplitudes.size(), [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
                 auto it = amplitudes.begin();
                 std::advance(it, lcv);
                 toRet[cpu].insert(it->first & unsetMask);
             });
         } else {
-            bitCapInt unfilterMask = ~filterMask;
+            bitCapIntOcl unfilterMask = ~filterMask;
 
-            par_for(0, (bitCapInt)amplitudes.size(), [&](const bitCapInt lcv, const int cpu) {
+            par_for(0, amplitudes.size(), [&](const bitCapIntOcl lcv, const unsigned& cpu) {
                 auto it = amplitudes.begin();
                 std::advance(it, lcv);
                 if ((it->first & filterMask) == filterValues) {
@@ -454,7 +448,7 @@ public:
 
         mtx.unlock();
 
-        for (i = (int32_t)(toRet.size() - 1); i >= 0; i--) {
+        for (int64_t i = (int64_t)(toRet.size() - 1); i >= 0; i--) {
             if (toRet[i].size() == 0) {
                 toRetIt = toRet.begin();
                 std::advance(toRetIt, i);
@@ -463,7 +457,6 @@ public:
         }
 
         if (toRet.size() == 0) {
-            mtx.unlock();
             return {};
         }
 
@@ -474,19 +467,26 @@ public:
                 toRet.pop_back();
             }
 
-            combineCount = (int32_t)(toRet.size()) / 2U;
+            int64_t combineCount = (int32_t)(toRet.size()) / 2U;
+#if ENABLE_PTHREAD
             std::vector<std::future<void>> futures(combineCount);
-            for (i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
                 futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
                     toRet[i].insert(toRet[i + combineCount].begin(), toRet[i + combineCount].end());
                     toRet[i + combineCount].clear();
                 });
             }
 
-            for (i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
                 futures[i].get();
                 toRet.pop_back();
             }
+#else
+            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
+                toRet[i].insert(toRet[i + combineCount].begin(), toRet[i + combineCount].end());
+                toRet.pop_back();
+            }
+#endif
         }
 
         return toRet[0];

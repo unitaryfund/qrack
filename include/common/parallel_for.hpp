@@ -12,28 +12,36 @@
 
 #pragma once
 
+/* Needed for bitCapInt typedefs. */
+#include "qrack_types.hpp"
+
 #include <algorithm>
 #include <set>
 #include <vector>
-
-/* Needed for bitCapInt typedefs. */
-#include "qrack_types.hpp"
 
 namespace Qrack {
 
 class ParallelFor {
 private:
-    int32_t numCores;
-    bitCapIntOcl pStride;
+    const bitCapIntOcl pStride;
+    unsigned numCores;
 
 public:
     ParallelFor();
 
     virtual ~ParallelFor() {}
 
-    void SetConcurrencyLevel(int32_t num) { numCores = num; }
-    int32_t GetConcurrencyLevel() { return numCores; }
+    void SetConcurrencyLevel(unsigned num)
+    {
+        numCores = num;
+        if (GetParallelThreshold() < pStride) {
+            throw std::runtime_error("GetParallelThreshold() was truncated! Set your PSTRIDEPOW value lower, depending "
+                                     "on hyperthread count.");
+        }
+    }
+    unsigned GetConcurrencyLevel() { return numCores; }
     bitCapIntOcl GetStride() { return pStride; }
+    bitCapIntOcl GetParallelThreshold() { return pStride * numCores; }
     /*
      * Parallelization routines for spreading work across multiple cores.
      */
@@ -42,10 +50,10 @@ public:
      * Iterate through the permutations a maximum of end-begin times, allowing
      * the caller to control the incrementation offset through 'inc'.
      */
-    void par_for_inc(const bitCapInt begin, const bitCapInt itemCount, IncrementFunc, ParallelFunc fn);
+    void par_for_inc(const bitCapIntOcl begin, const bitCapIntOcl itemCount, IncrementFunc, ParallelFunc fn);
 
     /** Call fn once for every numerical value between begin and end. */
-    void par_for(const bitCapInt begin, const bitCapInt end, ParallelFunc fn);
+    void par_for(const bitCapIntOcl begin, const bitCapIntOcl end, ParallelFunc fn);
 
     /**
      * Skip over the skipPower bits.
@@ -55,28 +63,31 @@ public:
      *     ^     ^     ^     ^     ^     ^     ^     ^ - The second bit is
      *                                                   untouched.
      */
-    void par_for_skip(const bitCapInt begin, const bitCapInt end, const bitCapInt skipPower,
+    void par_for_skip(const bitCapIntOcl begin, const bitCapIntOcl end, const bitCapIntOcl skipPower,
         const bitLenInt skipBitCount, ParallelFunc fn);
 
     /** Skip over the bits listed in maskArray in the same fashion as par_for_skip. */
-    void par_for_mask(
-        const bitCapInt, const bitCapInt, const bitCapInt* maskArray, const bitLenInt maskLen, ParallelFunc fn);
+    void par_for_mask(const bitCapIntOcl, const bitCapIntOcl, const bitCapIntOcl* maskArray, const bitLenInt maskLen,
+        ParallelFunc fn);
 
     /** Iterate over a sparse state vector. */
-    void par_for_set(const std::set<bitCapInt>& sparseSet, ParallelFunc fn);
+    void par_for_set(const std::set<bitCapIntOcl>& sparseSet, ParallelFunc fn);
 
     /** Iterate over a sparse state vector. */
-    void par_for_set(const std::vector<bitCapInt>& sparseSet, ParallelFunc fn);
+    void par_for_set(const std::vector<bitCapIntOcl>& sparseSet, ParallelFunc fn);
 
     /** Iterate over the power set of 2 sparse state vectors. */
-    void par_for_sparse_compose(const std::vector<bitCapInt>& lowSet, const std::vector<bitCapInt>& highSet,
+    void par_for_sparse_compose(const std::vector<bitCapIntOcl>& lowSet, const std::vector<bitCapIntOcl>& highSet,
         const bitLenInt& highStart, ParallelFunc fn);
 
+    /** Iterate over a QBDT tree */
+    void par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn);
+
     /** Calculate the normal for the array, (with flooring). */
-    real1_f par_norm(const bitCapInt maxQPower, const StateVectorPtr stateArray, real1_f norm_thresh = ZERO_R1);
+    real1_f par_norm(const bitCapIntOcl maxQPower, const StateVectorPtr stateArray, real1_f norm_thresh = ZERO_R1);
 
     /** Calculate the normal for the array, (without flooring.) */
-    real1_f par_norm_exact(const bitCapInt maxQPower, const StateVectorPtr stateArray);
+    real1_f par_norm_exact(const bitCapIntOcl maxQPower, const StateVectorPtr stateArray);
 };
 
 } // namespace Qrack

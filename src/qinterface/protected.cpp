@@ -11,8 +11,16 @@
 // for details.
 
 #include "qinterface.hpp"
+
+#if ENABLE_COMPLEX_X2
+#if FPPOW == 5
+#include "common/complex8x2simd.hpp"
+#elif FPPOW == 6
+#include "common/complex16x2simd.hpp"
+#endif
+#endif
+
 #include <algorithm>
-#include <cmath>
 
 namespace Qrack {
 
@@ -40,7 +48,7 @@ unsigned char* cl_alloc(size_t ucharCount)
 
 void cl_free(void* toFree)
 {
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(__CYGWIN__)
     _aligned_free(toFree);
 #else
     free(toFree);
@@ -48,49 +56,52 @@ void cl_free(void* toFree)
 }
 
 // See https://stackoverflow.com/questions/1505675/power-of-an-integer-in-c
-bitCapInt intPow(bitCapInt base, bitCapInt power)
+#define _INTPOW(type, fn)                                                                                              \
+    type fn(type base, type power)                                                                                     \
+    {                                                                                                                  \
+        if (power == 0U) {                                                                                             \
+            return ONE_BCI;                                                                                            \
+        }                                                                                                              \
+        if (power == ONE_BCI) {                                                                                        \
+            return base;                                                                                               \
+        }                                                                                                              \
+                                                                                                                       \
+        type tmp = fn(base, power >> 1U);                                                                              \
+        if (power & 1U) {                                                                                              \
+            return base * tmp * tmp;                                                                                   \
+        }                                                                                                              \
+                                                                                                                       \
+        return tmp * tmp;                                                                                              \
+    }
+
+_INTPOW(bitCapInt, intPow)
+_INTPOW(bitCapIntOcl, intPowOcl)
+
+#if ENABLE_COMPLEX_X2
+void mul2x2(const complex* left, const complex* right, complex* out)
 {
-    if (power == 0U) {
-        return ONE_BCI;
-    }
-    if (power == ONE_BCI) {
-        return base;
-    }
+    complex2 left0(left[0], left[2]);
+    complex2 left1(left[1], left[3]);
 
-    bitCapInt tmp = intPow(base, power / 2);
-    if (power & 1U) {
-        return base * tmp * tmp;
-    }
+    complex2 col(matrixMul(left0.c2, left1.c2, complex2(right[0], right[2]).c2));
+    out[0] = col.c[0];
+    out[2] = col.c[1];
 
-    return tmp * tmp;
+    col = complex2(matrixMul(left0.c2, left1.c2, complex2(right[1], right[3]).c2));
+    out[1] = col.c[0];
+    out[3] = col.c[1];
 }
-
-bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power)
-{
-    if (power == 0U) {
-        return ONE_BCI;
-    }
-    if (power == ONE_BCI) {
-        return base;
-    }
-
-    bitCapIntOcl tmp = intPowOcl(base, power / 2);
-    if (power & 1U) {
-        return base * tmp * tmp;
-    }
-
-    return tmp * tmp;
-}
-
-void mul2x2(complex* left, complex* right, complex* out)
+#else
+void mul2x2(const complex* left, const complex* right, complex* out)
 {
     out[0] = (left[0] * right[0]) + (left[1] * right[2]);
     out[1] = (left[0] * right[1]) + (left[1] * right[3]);
     out[2] = (left[2] * right[0]) + (left[3] * right[2]);
     out[3] = (left[2] * right[1]) + (left[3] * right[3]);
 }
+#endif
 
-void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
+void _expLog2x2(const complex* matrix2x2, complex* outMatrix2x2, bool isExp)
 {
     // Solve for the eigenvalues and eigenvectors of a 2x2 matrix, diagonalize, exponentiate, return to the original
     // basis, and apply.
@@ -121,8 +132,8 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
         jacobian[3] = matrix2x2[3] - eigenvalue2;
 
         expOfGate[0] = eigenvalue1;
-        expOfGate[1] = complex(ZERO_R1, ZERO_R1);
-        expOfGate[2] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[1] = ZERO_CMPLX;
+        expOfGate[2] = ZERO_CMPLX;
         expOfGate[3] = eigenvalue2;
 
         real1 nrm = (real1)std::sqrt(norm(jacobian[0]) + norm(jacobian[2]));
@@ -151,15 +162,15 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
         // Note: For a (2x2) hermitian input gate, this theoretically produces a unitary output transformation.
         expOfGate[0] = ((real1)std::exp(real(expOfGate[0]))) *
             complex((real1)cos(imag(expOfGate[0])), (real1)sin(imag(expOfGate[0])));
-        expOfGate[1] = complex(ZERO_R1, ZERO_R1);
-        expOfGate[2] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[1] = ZERO_CMPLX;
+        expOfGate[2] = ZERO_CMPLX;
         expOfGate[3] = ((real1)std::exp(real(expOfGate[3]))) *
             complex((real1)cos(imag(expOfGate[3])), (real1)sin(imag(expOfGate[3])));
     } else {
         // In this branch, we calculate log(matrix2x2).
         expOfGate[0] = complex((real1)std::log(abs(expOfGate[0])), (real1)arg(expOfGate[0]));
-        expOfGate[1] = complex(ZERO_R1, ZERO_R1);
-        expOfGate[2] = complex(ZERO_R1, ZERO_R1);
+        expOfGate[1] = ZERO_CMPLX;
+        expOfGate[2] = ZERO_CMPLX;
         expOfGate[3] = complex((real1)std::log(abs(expOfGate[3])), (real1)arg(expOfGate[3]));
     }
 
@@ -171,11 +182,11 @@ void _expLog2x2(complex* matrix2x2, complex* outMatrix2x2, bool isExp)
     std::copy(expOfGate, expOfGate + 4, outMatrix2x2);
 }
 
-void exp2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, true); }
+void exp2x2(const complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, true); }
 
-void log2x2(complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, false); }
+void log2x2(const complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix2x2, outMatrix2x2, false); }
 
-void inv2x2(complex* matrix2x2, complex* outMatrix2x2)
+void inv2x2(const complex* matrix2x2, complex* outMatrix2x2)
 {
     complex det = ONE_CMPLX / (matrix2x2[0] * matrix2x2[3] - matrix2x2[1] * matrix2x2[2]);
     outMatrix2x2[0] = det * matrix2x2[3];
@@ -230,12 +241,11 @@ bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, cons
         return perm;
     }
 
-    bitCapInt i, iHigh, iLow;
-    bitCapIntOcl p;
-    iHigh = perm;
+    bitCapInt i;
+    bitCapInt iHigh = perm;
     i = 0;
-    for (p = 0; p < skipPowersCount; p++) {
-        iLow = iHigh & (skipPowers[p] - ONE_BCI);
+    for (bitCapIntOcl p = 0; p < skipPowersCount; p++) {
+        bitCapInt iLow = iHigh & (skipPowers[p] - ONE_BCI);
         i |= iLow;
         iHigh = (iHigh ^ iLow) << ONE_BCI;
     }
@@ -272,14 +282,13 @@ std::ostream& operator<<(std::ostream& left, __uint128_t right)
 {
     // 39 decimal digits in 2^128
     unsigned char digits[39];
-    int i;
-    for (i = 0; i < 39; i++) {
+    for (int i = 0; i < 39; i++) {
         digits[i] = right % 10U;
         right /= 10U;
     }
 
     bool hasFirstDigit = false;
-    for (i = 38; i >= 0; i--) {
+    for (int i = 38; i >= 0; i--) {
         if (hasFirstDigit || (digits[i] > 0)) {
             left << (int)digits[i];
             hasFirstDigit = true;

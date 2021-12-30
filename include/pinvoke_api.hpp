@@ -28,9 +28,9 @@ struct _QrackTimeEvolveOpHeader;
 
 extern "C" {
 // non-quantum
-MICROSOFT_QUANTUM_DECL unsigned init_count_type(
-    _In_ unsigned q, _In_ bool md, _In_ bool sd, _In_ bool sh, _In_ bool zxf, _In_ bool hy);
-MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q) { return init_count_type(q, true, true, true, true, true); }
+MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _In_ bool sd, _In_ bool sh,
+    _In_ bool bdt, _In_ bool pg, _In_ bool zxf, _In_ bool hy);
+MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q);
 MICROSOFT_QUANTUM_DECL unsigned init() { return init_count(0); }
 MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid);
@@ -117,6 +117,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
 
 // measurements
 MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q);
+MICROSOFT_QUANTUM_DECL unsigned MAll(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL unsigned Measure(
     _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_reads_(n) unsigned* q);
 MICROSOFT_QUANTUM_DECL void MeasureShots(
@@ -152,6 +153,7 @@ MICROSOFT_QUANTUM_DECL void CLXNOR(_In_ unsigned sid, _In_ bool ci, _In_ unsigne
 MICROSOFT_QUANTUM_DECL void QFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c);
 MICROSOFT_QUANTUM_DECL void IQFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c);
 
+#if ENABLE_ALU
 MICROSOFT_QUANTUM_DECL void ADD(_In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q);
 MICROSOFT_QUANTUM_DECL void SUB(_In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q);
 MICROSOFT_QUANTUM_DECL void ADDS(_In_ unsigned sid, unsigned a, unsigned s, _In_ unsigned n, _In_reads_(n) unsigned* q);
@@ -189,6 +191,7 @@ MICROSOFT_QUANTUM_DECL void ADC(_In_ unsigned sid, unsigned s, _In_ unsigned ni,
 MICROSOFT_QUANTUM_DECL void SBC(_In_ unsigned sid, unsigned s, _In_ unsigned ni, _In_reads_(ni) unsigned* qi,
     _In_ unsigned nv, _In_reads_(nv) unsigned* qv, unsigned char* t);
 MICROSOFT_QUANTUM_DECL void Hash(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q, unsigned char* t);
+#endif
 
 MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ unsigned sid, _In_ unsigned qi1);
 MICROSOFT_QUANTUM_DECL bool TrySeparate2Qb(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2);

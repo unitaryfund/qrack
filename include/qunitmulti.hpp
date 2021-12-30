@@ -12,13 +12,12 @@
 
 #pragma once
 
-#include <algorithm>
-
 #include "common/oclengine.hpp"
-#include "common/parallel_for.hpp"
 #include "qengine_opencl.hpp"
 #include "qinterface.hpp"
 #include "qunit.hpp"
+
+#include <algorithm>
 
 namespace Qrack {
 
@@ -51,7 +50,7 @@ struct QEngineInfo {
 };
 
 struct DeviceInfo {
-    int id;
+    size_t id;
     bitCapInt maxSize;
 
     bool operator<(const DeviceInfo& other) const { return maxSize < other.maxSize; }
@@ -61,10 +60,10 @@ struct DeviceInfo {
 class QUnitMulti;
 typedef std::shared_ptr<QUnitMulti> QUnitMultiPtr;
 
-class QUnitMulti : public QUnit, public ParallelFor {
+class QUnitMulti : public QUnit {
 
 protected:
-    int defaultDeviceID;
+    size_t defaultDeviceID;
     std::vector<DeviceInfo> deviceList;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
@@ -81,7 +80,7 @@ public:
         bool useHostMem = false, int deviceID = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
-        : QUnitMulti({ QINTERFACE_OPTIMAL_G0_CHILD }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
+        : QUnitMulti({ QINTERFACE_STABILIZER_HYBRID }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
               useHostMem, deviceID, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold,
               separation_thresh)
     {

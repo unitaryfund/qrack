@@ -88,6 +88,34 @@ CMake on Windows will set up a 32-bit Visual Studio project by default, (if usin
 
 After CMake, the project must be built in Visual Studio. Once installed, the `qrack_pinvoke` DLL is compatible with the Qrack Q# runtime fork, to provide `QrackSimulator`.
 
+## WebAssembly (WASM) builds
+
+By nature of its pure C++11 design, Qrack happens to offer excellent compatibility with Emscripten ("WebAssembly") projects. See [the qrack.net repository](https://github.com/vm6502q/qrack.net) for an example and [qrack.net](https://qrack.net) for a live demo. OpenCL GPU operation is not yet available for WASM builds. While CPU multithreading might be possible in WASM, it is advisable that `pthread` usage and linking is disabled for most conventional Web applications, with `-DENABLE_PTHREAD=OFF` in CMake:
+
+```sh
+emcmake cmake -DENABLE_RDRAND=OFF -DENABLE_PTHREAD=OFF -DUINTPOW=5 ..
+```
+
+`-DQBCAPPOW=10` could be added to the above to support high-width stabilizer and Schmidt decomposition cases, with the appropriate build of the Boost headers for the toolchain.
+
+## Compiling to C from WASM
+
+Arbitrary Qrack executables will not all necessarily link, at this time. However, `wasm2c` can generate C code from Qrack executables and modules, and *some* will successfully link.
+
+For example, generate a `.c` module and a `.h` header from your build/examples directory:
+
+```sh
+wasm2c teleport.wasm -o teleport.c
+```
+
+Compile and link it from `wabt`, (though the command below assumes that `wabt` is already in your path).
+
+```sh
+cc -o teleport -Iwabt/wasm2c/ teleport.c wabt/wasm2c/wasm-rt-impl.c -lm
+```
+
+We apologize for providing an example that will not quite work. However, with `emcc` or `cc`, this is the general idea. Once the generated `.c` and `.h` file are syntactically valid, via modification of your original Qrack C++ program, then static linkage must be specified with `-l`, assuming appropriate libraries for static linkage are actually available. (Emscripten is under active development, and we thank its maintainers.)
+
 ## Performing code coverage
 
 ```sh
@@ -111,10 +139,11 @@ Setting the environment variable `QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE` to any v
 
 `QRACK_DEVICE_GLOBAL_QB=n`, alternatively, lets the user also choose the performance "hint" for preferred global qubits per device. By default, n=2, for 2 global qubits or equivalently 4 pages per device. Despite the "hint," `QPager` will allocate fewer pages per OpenCL device for small-enough widths, to keep processing elements better occupied. Also, `QPager` will allocate more qubits than the hint, per device, if the maximum allocation segment is exceeded as specified by `QRACK_SEGMENT_GLOBAL_QB`.
 
-If using `QPager` under the `QUnit` layer, then the environment variable `QRACK_QUNIT_PAGING_THRESHOLD` is the number of qubits in overall width at which `QUnit` will use paging, 21 qubits by default. `QRACK_MAX_PAGING_QB` sets a maximum qubit allocation *only* for instances of `QPager`, allowing `QUnit` simulations to more gracefully attempt greater than "Schrödinger method" simulation maximum widths, while other OpenCL types have automatic memory guards.
+## QBinaryDecisionTree threshold option
+`QBinaryDecisionTree` is a CPU-based optimization layer for reducing the total RAM footprint of high qubit width simulations. When used under the `QUnit` layer, state vector simulations are preferable for low widths, but higher qubit widths can be sometimes be accommodated only with binary decision trees. Hence, Qrack exposes the `QRACK_BDT_THRESHOLD` environment variable. `QUnit` subsystems with the `QBinaryDecisionTree` layer engage binary decision tree methods at any qubit width _greater_ than the (integer) value of this environment variable. (Hence, 0 value engages binary decision trees at _all_ widths, and 30 engages the method at 31 qubits or greater.) By default, binary decision tree methods begin at subsystems of 31 qubits or greater, if the environment variable is not set.
 
 ## Build and environment options for CPU engines
-`QEngineCPU` and `QHybrid` batch work items in groups of 2^`PSTRIDEPOW` before dispatching them to single CPU threads, potentially greatly reducing waiting on mutexes without signficantly hurting utilization and scheduling. The default for this option can be controlled at build time, by passing `-DPSTRIDEPOW=n` to CMake, with "n" being an integer greater than or equal to 0. (The default is n=9, which is approximately optimal on many typical PCs.) This can be overridden at run time by the enviroment variable `QRACK_PSTRIDEPOW=n`. If an environment variable is not defined for this option, the default from CMake build will be used.
+`QEngineCPU` and `QHybrid` batch work items in groups of 2^`PSTRIDEPOW` before dispatching them to single CPU threads, potentially greatly reducing waiting on mutexes without signficantly hurting utilization and scheduling. The default for this option can be controlled at build time, by passing `-DPSTRIDEPOW=n` to CMake, with "n" being an integer greater than or equal to 0. This can be overridden at run time by the enviroment variable `QRACK_PSTRIDEPOW=n`. If an environment variable is not defined for this option, the default from CMake build will be used. (The default is meant to work well across different typical consumer systems, but it might benefit from system-tailored tuning via the environment variable.)
 
 `-DENABLE_QUNIT_CPU_PARALLEL=OFF` disables asynchronous dispatch of `QStabilizerHybrid` and low width `QEngineCPU`/`QHybrid` gates with `std::future`. This option is on by default. Typically, `QUnit` stays safely under maximum thread count limits, but situations arise where async CPU simulation causes `QUnit` to dispatch too many CPU threads for the operating system. This build option can also reduce overall thread usage when Qrack user code operates in a multi-threaded or multi-shell environment. (Linux thread count limits might be smaller than Windows.)
 
@@ -133,12 +162,22 @@ $ cmake -DENABLE_COMPLEX_X2=ON ..
 ```
 Multiply complex numbers two at a time instead of one at a time. Requires AVX for double and SSE 1.0 for float. On by default, but can be turned off for double accuracy without the AVX requirement, or to completely remove vectorization with single float accuracy.
 
-## On-Chip Hardware Random Number Generation
+## Random number generation options (on-chip by default)
 
 ```sh
 $ cmake -DENABLE_RDRAND=OFF ..
 ```
 Turn off the option to attempt using on-chip hardware random number generation, which is on by default. If the option is on, Qrack might still compile to attempt using hardware random number generation, but fall back to software generation if the RDRAND opcode is not actually available. Some systems' compilers, such as that of the Raspberry Pi 3, do not recognize the compilation flag for enabling RDRAND, in which case this option needs to be turned off.
+
+```sh
+$ cmake [-DENABLE_RDRAND=OFF] -DENABLE_DEVRAND=ON ..
+```
+Instead of RDRAND, use Linux `/dev/urandom/` as the Qrack random number source. (The necessary system call will only be available on Linux systems.)
+
+```sh
+$ cmake -DSEED_DEVRAND=OFF ..
+```
+If pure software pseudo-random number generator is used, it will be seeded from `/dev/random` by default. `-DSEED_DEVRAND=OFF` will use the system clock for Mersenne twister seeding, instead of `/dev/random`.
 
 ## Pure 32 bit OpenCL kernels (including OpenCL on Raspberry Pi 3)
 
@@ -157,9 +196,9 @@ Qrack uses an unsigned integer primitive for ubiquitous qubit masking operations
 ## Variable floating point precision
 
 ```sh
-$ cmake [-FPPOW=n] ..
+$ cmake [-DFPPOW=n] ..
 ```
-Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to n^2. By default n=5, for 5^2=32 bit floating point precision. "half" and "double" availability depend on the system, but n=6 for "double" is commonly supported on modern hardware. n=4 for half is supported by GCC on ARM, header-only on x86_64, and by device pragma if available for OpenCL kernels.
+Like for unsigned integer masking types, this sets the floating point accuracy for state vectors to n^2. By default n=5, for 2^5=32 bit floating point precision. "half" and "double" availability depend on the system, but n=6 for "double" is commonly supported on modern hardware. n=4 for half is supported by GCC on ARM, header-only on x86_64, and by device pragma if available for OpenCL kernels.
 
 ## Precompiled OpenCL kernels
 
@@ -173,7 +212,7 @@ The option to load and save precompiled binaries, and where to load them from, c
 ```cpp
 Qrack::OCLEngine::InitOCL(true, true, Qrack::OCLEngine::GetDefaultBinaryPath());
 ```
-Calling the `OCLEngine::InitOCL()` method directly also ensures that the singleton instance has been created, with the results of the initialization call. The initialization method prototype is as follows:
+To use this method directly, _it needs to be called before any OpenCL simulators are created in the program,_ as initialization happens automatically upon creating any OpenCL simulator instance. Calling the `OCLEngine::InitOCL()` method directly also ensures that the singleton instance has been created, with the results of the initialization call. The initialization method prototype is as follows:
 
 ```cpp
 /// Initialize the OCL environment, with the option to save the generated binaries. Binaries will be saved/loaded from the folder path "home".
@@ -188,13 +227,19 @@ $ cmake -DENABLE_VM6502Q_DEBUG=ON ..
 ```
 Qrack was originally written so that the disassembler of VM6502Q should show the classical expecation value of registers, following Ehrenfest's theorem. However, this incurs significant additional overhead for `QInterface::IndexedLDA()`, `QInterface::IndexedADC()`, and `QInterface::IndexedSBC()`. As such, this behavior in the VM6502Q disassembler is only supported when this CMake flag is specifically enabled. (It is off by default.) These three methods will return 0, if the flag is disabled.
 
-## Turn off BCD arithmetic logic unit operations
+## Turn on/off optional API components
 
 ```sh
-$ cmake -DENABLE_BCD=OFF ..
+$ cmake -DENABLE_BCD=OFF -DENABLE_REG_GATES=OFF -DENABLE_ROT_API=OFF ..
 ```
 
-"BCD" arithmetic ("binary coded decimal") is necessary to support emulation based on the MOS-6502. However, this is an outmoded form of binary arithmetic for most or all conceivable purposes for which one would want a quantum computer. (It stores integers as base 10 digits, in binary.) On by default, turning this option off will slightly reduce binary size by excising BCD ALU operations from the API.
+Prior to the Qrack v7 API, a larger set of convenience methods were included in all builds, which increased the size of the library binary. By default, `ENABLE_REG_GATES`, `ENABLE_ROT_API` and  `ENABLE_BCD` all default to `OFF`.
+
+`ENABLE_REG_GATES` adds various looped-over-width gates to the API, like the lengthwise `CNOT(control, target, length)` method. This method is a convenience wrapper on a loop of `CNOT` operations for `length`, starting from `control` and `target`, to `control + length - 1` and `target + length - 1`. These methods were seen as opportunities for optimization, at a much earlier point, but they have fallen out of internal use, and basically none of them are optimized as special cases, anymore. Disabling `ENABLE_REG_GATES` does **not** remove lengthwise `X(target, length)` and `H(target, length)` methods, as these specific convenience methods are still commonly used in the protected API, for negating or superposing across register width.
+
+`ENABLE_ROT_API` adds many less common **rotation** methods to the API, like dyadic fraction rotations. These never found common use in the protected API, while they add significant size to compiled binaries.
+
+"BCD" arithmetic ("binary coded decimal") is necessary to support emulation based on the MOS-6502. However, this is an outmoded form of binary arithmetic for most or all conceivable purposes for which one would want a quantum computer. (It stores integers as base 10 digits, in binary.) Off by default, turning this option on will slightly increase binary size by including BCD ALU operations from the API, but this is necessary to support the VM6502Q chip-like emulator project.
 
 ## Copyright, License, and Acknowledgements
 

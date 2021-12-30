@@ -24,16 +24,13 @@
 
 #pragma once
 
-#include <cstdint>
+#include "qinterface.hpp"
 
-#include "common/qrack_types.hpp"
-#include "common/rdrandwrapper.hpp"
-
-#if ENABLE_QUNIT_CPU_PARALLEL
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #include "common/dispatchqueue.hpp"
 #endif
 
-#include "qinterface.hpp"
+#include <cstdint>
 
 namespace Qrack {
 
@@ -64,8 +61,16 @@ protected:
 
     uint32_t randomSeed;
     qrack_rand_gen_ptr rand_generator;
-    std::uniform_real_distribution<real1_f> rand_distribution;
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    std::uniform_int_distribution<short> rand_distribution;
+#else
+    std::uniform_int_distribution<char> rand_distribution;
+#endif
     std::shared_ptr<RdRandom> hardware_rand_generator;
+    bitLenInt dispatchThreshold;
+
+    unsigned rawRandBools;
+    unsigned rawRandBoolsRemaining;
 
 #if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
@@ -75,7 +80,12 @@ protected:
     void Dispatch(DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.dispatch(fn);
+        if (qubitCount < dispatchThreshold) {
+            dispatchQueue.finish();
+            fn();
+        } else {
+            dispatchQueue.dispatch(fn);
+        }
 #else
         fn();
 #endif
@@ -88,25 +98,22 @@ protected:
 #endif
     }
 
-    bitCapIntOcl pow2Ocl(const bitLenInt& qubit) { return ONE_BCI << (bitCapIntOcl)qubit; }
-
 public:
     QStabilizer(
-        const bitLenInt& n, const bitCapInt& perm = 0, bool useHardwareRNG = true, qrack_rand_gen_ptr rgp = nullptr);
+        const bitLenInt& n, const bitCapInt& perm = 0, bool useHardwareRNG = true, qrack_rand_gen_ptr rgp = NULL);
 
     QStabilizerPtr Clone()
     {
-        QStabilizerPtr clone =
-            std::make_shared<QStabilizer>(qubitCount, 0, hardware_rand_generator != NULL, rand_generator);
-
-        clone->Finish();
         Finish();
 
-        clone->SetRandomSeed(randomSeed);
+        QStabilizerPtr clone =
+            std::make_shared<QStabilizer>(qubitCount, 0, hardware_rand_generator != NULL, rand_generator);
+        clone->Finish();
 
         clone->x = x;
         clone->z = z;
         clone->r = r;
+        clone->randomSeed = randomSeed;
 
         return clone;
     }
@@ -145,9 +152,15 @@ public:
     bool Rand()
     {
         if (hardware_rand_generator != NULL) {
-            return hardware_rand_generator->Next() < (ONE_R1 / 2U);
+            if (!rawRandBoolsRemaining) {
+                rawRandBools = hardware_rand_generator->NextRaw();
+                rawRandBoolsRemaining = sizeof(unsigned) * bitsInByte;
+            }
+            rawRandBoolsRemaining--;
+
+            return (bool)((rawRandBools >> rawRandBoolsRemaining) & 1U);
         } else {
-            return rand_distribution(*rand_generator) < (ONE_R1 / 2U);
+            return (bool)rand_distribution(*rand_generator);
         }
     }
 
@@ -213,30 +226,11 @@ public:
     /// Apply inverse square root of Y gate
     void ISqrtY(const bitLenInt& target);
     /// Apply a CZ gate with control and target
-    void CZ(const bitLenInt& control, const bitLenInt& target)
-    {
-        H(target);
-        CNOT(control, target);
-        H(target);
-    }
+    void CZ(const bitLenInt& control, const bitLenInt& target);
     /// Apply a CY gate with control and target
-    void CY(const bitLenInt& control, const bitLenInt& target)
-    {
-        IS(target);
-        CNOT(control, target);
-        S(target);
-    }
+    void CY(const bitLenInt& control, const bitLenInt& target);
 
-    void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2)
-    {
-        if (qubit1 == qubit2) {
-            return;
-        }
-
-        CNOT(qubit1, qubit2);
-        CNOT(qubit2, qubit1);
-        CNOT(qubit1, qubit2);
-    }
+    void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2);
 
     void ISwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
     {

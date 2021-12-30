@@ -7,16 +7,17 @@
 // for details.
 
 #include "pinvoke_api.hpp"
-#include "hamiltonian.hpp"
 
-// for details.
+// "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
+#include "qfactory.hpp"
+
+#if !(FPPOW < 6 && !ENABLE_COMPLEX_X2)
+#include "hamiltonian.hpp"
+#endif
 
 #include <map>
 #include <mutex>
 #include <vector>
-
-// "qfactory.hpp" pulls in all headers needed to create any type of "Qrack::QInterface."
-#include "qfactory.hpp"
 
 #define META_LOCK_GUARD()                                                                                              \
     const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                    \
@@ -68,8 +69,12 @@ bitLenInt _maxShardQubits = 0;
 bitLenInt MaxShardQubits()
 {
     if (_maxShardQubits == 0) {
+#if ENABLE_ENV_VARS
         _maxShardQubits =
-            getenv("QRACK_MAX_PAGING_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB"))) : -1;
+            (bitLenInt)(getenv("QRACK_MAX_PAGING_QB") ? std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB"))) : -1);
+#else
+        _maxShardQubits = -1;
+#endif
     }
 
     return _maxShardQubits;
@@ -136,17 +141,17 @@ void RHelper(unsigned sid, unsigned b, double phi, unsigned q)
         // However, the underlying QInterface will not execute the gate
         // UNLESS it is specifically "keeping book" for non-measurable phase effects.
         complex phaseFac = exp(complex(ZERO_R1, (real1)(phi / 4)));
-        simulator->ApplySinglePhase(phaseFac, phaseFac, shards[simulator.get()][q]);
+        simulator->Phase(phaseFac, phaseFac, shards[simulator.get()][q]);
         break;
     }
     case PauliX:
-        simulator->RX(phi, shards[simulator.get()][q]);
+        simulator->RX((real1_f)phi, shards[simulator.get()][q]);
         break;
     case PauliY:
-        simulator->RY(phi, shards[simulator.get()][q]);
+        simulator->RY((real1_f)phi, shards[simulator.get()][q]);
         break;
     case PauliZ:
-        simulator->RZ(phi, shards[simulator.get()][q]);
+        simulator->RZ((real1_f)phi, shards[simulator.get()][q]);
         break;
     default:
         break;
@@ -163,7 +168,7 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
 
     if (b == PauliI) {
         complex phaseFac = exp(complex(ZERO_R1, (real1)(phi / 4)));
-        simulator->ApplyControlledSinglePhase(ctrlsArray.get(), n, shards[simulator.get()][q], phaseFac, phaseFac);
+        simulator->MCPhase(ctrlsArray.get(), n, phaseFac, phaseFac, shards[simulator.get()][q]);
         return;
     }
 
@@ -177,18 +182,18 @@ void MCRHelper(unsigned sid, unsigned b, double phi, unsigned n, unsigned* c, un
         pauliR[1] = complex(ZERO_R1, -sine);
         pauliR[2] = complex(ZERO_R1, -sine);
         pauliR[3] = complex(cosine, ZERO_R1);
-        simulator->ApplyControlledSingleBit(ctrlsArray.get(), n, shards[simulator.get()][q], pauliR);
+        simulator->MCMtrx(ctrlsArray.get(), n, pauliR, shards[simulator.get()][q]);
         break;
     case PauliY:
         pauliR[0] = complex(cosine, ZERO_R1);
         pauliR[1] = complex(-sine, ZERO_R1);
         pauliR[2] = complex(sine, ZERO_R1);
         pauliR[3] = complex(cosine, ZERO_R1);
-        simulator->ApplyControlledSingleBit(ctrlsArray.get(), n, shards[simulator.get()][q], pauliR);
+        simulator->MCMtrx(ctrlsArray.get(), n, pauliR, shards[simulator.get()][q]);
         break;
     case PauliZ:
-        simulator->ApplyControlledSinglePhase(
-            ctrlsArray.get(), n, shards[simulator.get()][q], complex(cosine, -sine), complex(cosine, sine));
+        simulator->MCPhase(
+            ctrlsArray.get(), n, complex(cosine, -sine), complex(cosine, sine), shards[simulator.get()][q]);
         break;
     case PauliI:
     default:
@@ -228,14 +233,14 @@ unsigned MapArithmetic(QInterfacePtr simulator, unsigned n, unsigned* q)
     unsigned start = shards[simulator.get()][q[0]];
     std::unique_ptr<bitLenInt[]> bitArray(new bitLenInt[n]);
     for (unsigned i = 0U; i < n; i++) {
-        bitArray.get()[i] = shards[simulator.get()][q[i]];
-        if (start > bitArray.get()[i]) {
-            start = bitArray.get()[i];
+        bitArray[i] = shards[simulator.get()][q[i]];
+        if (start > bitArray[i]) {
+            start = bitArray[i];
         }
     }
     for (unsigned i = 0U; i < n; i++) {
-        simulator->Swap(start + i, bitArray.get()[i]);
-        SwapShardValues(start + i, bitArray.get()[i], shards[simulator.get()]);
+        simulator->Swap(start + i, bitArray[i]);
+        SwapShardValues(start + i, bitArray[i], shards[simulator.get()]);
     }
 
     return start;
@@ -259,14 +264,14 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, unsigned n, unsigne
     std::unique_ptr<bitLenInt[]> bitArray1(new bitLenInt[n]);
     std::unique_ptr<bitLenInt[]> bitArray2(new bitLenInt[n]);
     for (unsigned i = 0; i < n; i++) {
-        bitArray1.get()[i] = shards[simulator.get()][q1[i]];
-        if (start1 > bitArray1.get()[i]) {
-            start1 = bitArray1.get()[i];
+        bitArray1[i] = shards[simulator.get()][q1[i]];
+        if (start1 > bitArray1[i]) {
+            start1 = bitArray1[i];
         }
 
-        bitArray2.get()[i] = shards[simulator.get()][q2[i]];
-        if (start2 > bitArray2.get()[i]) {
-            start2 = bitArray2.get()[i];
+        bitArray2[i] = shards[simulator.get()][q2[i]];
+        if (start2 > bitArray2[i]) {
+            start2 = bitArray2[i];
         }
     }
 
@@ -278,8 +283,8 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, unsigned n, unsigne
     }
 
     for (unsigned i = 0U; i < n; i++) {
-        simulator->Swap(start1 + i, bitArray1.get()[i]);
-        SwapShardValues(start1 + i, bitArray1.get()[i], shards[simulator.get()]);
+        simulator->Swap(start1 + i, bitArray1[i]);
+        SwapShardValues(start1 + i, bitArray1[i], shards[simulator.get()]);
     }
 
     if ((start1 + n) > start2) {
@@ -287,8 +292,8 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, unsigned n, unsigne
     }
 
     for (unsigned i = 0U; i < n; i++) {
-        simulator->Swap(start2 + i, bitArray2.get()[i]);
-        SwapShardValues(start2 + i, bitArray2.get()[i], shards[simulator.get()]);
+        simulator->Swap(start2 + i, bitArray2[i]);
+        SwapShardValues(start2 + i, bitArray2[i], shards[simulator.get()]);
     }
 
     if (isReversed) {
@@ -305,16 +310,16 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsign
     std::unique_ptr<bitLenInt[]> bitArray1(new bitLenInt[n1]);
     std::unique_ptr<bitLenInt[]> bitArray2(new bitLenInt[n2]);
     for (unsigned i = 0; i < n1; i++) {
-        bitArray1.get()[i] = shards[simulator.get()][q1[i]];
-        if (start1 > bitArray1.get()[i]) {
-            start1 = bitArray1.get()[i];
+        bitArray1[i] = shards[simulator.get()][q1[i]];
+        if (start1 > bitArray1[i]) {
+            start1 = bitArray1[i];
         }
     }
 
     for (unsigned i = 0; i < n2; i++) {
-        bitArray2.get()[i] = shards[simulator.get()][q2[i]];
-        if (start2 > bitArray2.get()[i]) {
-            start2 = bitArray2.get()[i];
+        bitArray2[i] = shards[simulator.get()][q2[i]];
+        if (start2 > bitArray2[i]) {
+            start2 = bitArray2[i];
         }
     }
 
@@ -327,8 +332,8 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsign
     }
 
     for (unsigned i = 0U; i < n1; i++) {
-        simulator->Swap(start1 + i, bitArray1.get()[i]);
-        SwapShardValues(start1 + i, bitArray1.get()[i], shards[simulator.get()]);
+        simulator->Swap(start1 + i, bitArray1[i]);
+        SwapShardValues(start1 + i, bitArray1[i], shards[simulator.get()]);
     }
 
     if ((start1 + n1) > start2) {
@@ -336,8 +341,8 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, unsigned n1, unsign
     }
 
     for (unsigned i = 0U; i < n2; i++) {
-        simulator->Swap(start2 + i, bitArray2.get()[i]);
-        SwapShardValues(start2 + i, bitArray2.get()[i], shards[simulator.get()]);
+        simulator->Swap(start2 + i, bitArray2[i]);
+        SwapShardValues(start2 + i, bitArray2[i], shards[simulator.get()]);
     }
 
     if (isReversed) {
@@ -357,10 +362,10 @@ void _darray_to_creal1_array(double* params, bitCapIntOcl componentCount, comple
 extern "C" {
 
 /**
- * (External API) Initialize a simulator ID with "q" qubits and "Schmidt decomposition" ("sd") on/off
+ * (External API) Initialize a simulator ID with "q" qubits and explicit layer options on/off
  */
 MICROSOFT_QUANTUM_DECL unsigned init_count_type(
-    _In_ unsigned q, _In_ bool md, _In_ bool sd, _In_ bool sh, _In_ bool zxf, _In_ bool hy)
+    _In_ unsigned q, _In_ bool md, _In_ bool sd, _In_ bool sh, _In_ bool bdt, _In_ bool pg, _In_ bool zxf, _In_ bool hy)
 {
     META_LOCK_GUARD()
 
@@ -375,8 +380,8 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(
     }
 
 #if ENABLE_OPENCL
-    bool isOcl = (OCLEngine::Instance()->GetDeviceCount() > 0);
-    bool isOclMulti = md && (OCLEngine::Instance()->GetDeviceCount() > 1);
+    bool isOcl = (OCLEngine::Instance().GetDeviceCount() > 0);
+    bool isOclMulti = md && (OCLEngine::Instance().GetDeviceCount() > 1);
 #else
     bool isOcl = false;
     bool isOclMulti = false;
@@ -392,7 +397,11 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(
         simulatorType.push_back(QINTERFACE_STABILIZER_HYBRID);
     }
 
-    if (isOcl) {
+    if (bdt) {
+        simulatorType.push_back(QINTERFACE_BDT);
+    }
+
+    if (pg) {
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
@@ -407,6 +416,56 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(
     if (!simulatorType.size()) {
         simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
     }
+
+    QInterfacePtr simulator = q ? CreateQuantumInterface(simulatorType, q, 0, randNumGen) : NULL;
+
+    if (sid == simulators.size()) {
+        simulatorReservations.push_back(true);
+        simulators.push_back(simulator);
+        simulatorTypes.push_back(simulatorType);
+    } else {
+        simulatorReservations[sid] = true;
+        simulators[sid] = simulator;
+        simulatorTypes[sid] = simulatorType;
+    }
+
+    if (!q) {
+        return sid;
+    }
+
+    shards[simulator.get()] = {};
+    for (unsigned i = 0; i < q; i++) {
+        shards[simulator.get()][i] = (bitLenInt)i;
+    }
+
+    return sid;
+}
+
+/**
+ * (External API) Initialize a simulator ID with "q" qubits and implicit default layer options.
+ */
+MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
+{
+    META_LOCK_GUARD()
+
+    unsigned sid = (unsigned)simulators.size();
+
+    for (unsigned i = 0; i < simulators.size(); i++) {
+        if (simulatorReservations[i] == false) {
+            sid = i;
+            simulatorReservations[i] = true;
+            break;
+        }
+    }
+
+    std::vector<QInterfaceEngine> simulatorType;
+
+#if ENABLE_OPENCL
+    simulatorType.push_back(
+        (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+#else
+    simulatorType.push_back(QINTERFACE_OPTIMAL);
+#endif
 
     QInterfacePtr simulator = q ? CreateQuantumInterface(simulatorType, q, 0, randNumGen) : NULL;
 
@@ -529,7 +588,7 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
     std::unique_ptr<complex[]> wfn(new complex[wfnl]);
     simulator->GetQuantumState(wfn.get());
     for (size_t i = 0; i < wfnl; i++) {
-        if (!callback(i, real(wfn.get()[i]), imag(wfn.get()[i]))) {
+        if (!callback(i, real(wfn[i]), imag(wfn[i]))) {
             break;
         }
     }
@@ -599,7 +658,7 @@ MICROSOFT_QUANTUM_DECL void PhaseParity(
         mask |= pow2(shards[simulator.get()][q[i]]);
     }
 
-    simulator->PhaseParity(lambda, mask);
+    simulator->PhaseParity((real1_f)lambda, mask);
 }
 
 /**
@@ -767,7 +826,7 @@ MICROSOFT_QUANTUM_DECL void U(
     SIMULATOR_LOCK_GUARD(sid)
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->U(shards[simulator.get()][q], theta, phi, lambda);
+    simulator->U(shards[simulator.get()][q], (real1_f)theta, (real1_f)phi, (real1_f)lambda);
 }
 
 /**
@@ -781,7 +840,7 @@ MICROSOFT_QUANTUM_DECL void Mtrx(_In_ unsigned sid, _In_reads_(8) double* m, _In
         complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
 
     QInterfacePtr simulator = simulators[sid];
-    simulator->ApplySingleBit(mtrx, shards[simulator.get()][q]);
+    simulator->Mtrx(mtrx, shards[simulator.get()][q]);
 }
 
 #define MAP_CONTROLS_AND_LOCK(sid, numC)                                                                               \
@@ -789,7 +848,7 @@ MICROSOFT_QUANTUM_DECL void Mtrx(_In_ unsigned sid, _In_reads_(8) double* m, _In
     QInterfacePtr simulator = simulators[sid];                                                                         \
     std::unique_ptr<bitLenInt[]> ctrlsArray(new bitLenInt[numC]);                                                      \
     for (unsigned i = 0; i < numC; i++) {                                                                              \
-        ctrlsArray.get()[i] = shards[simulator.get()][c[i]];                                                           \
+        ctrlsArray[i] = shards[simulator.get()][c[i]];                                                                 \
     }
 
 /**
@@ -798,7 +857,7 @@ MICROSOFT_QUANTUM_DECL void Mtrx(_In_ unsigned sid, _In_reads_(8) double* m, _In
 MICROSOFT_QUANTUM_DECL void MCX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyControlledSingleInvert(ctrlsArray.get(), n, shards[simulator.get()][q], ONE_CMPLX, ONE_CMPLX);
+    simulator->MCInvert(ctrlsArray.get(), n, ONE_CMPLX, ONE_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -807,7 +866,7 @@ MICROSOFT_QUANTUM_DECL void MCX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 MICROSOFT_QUANTUM_DECL void MCY(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyControlledSingleInvert(ctrlsArray.get(), n, shards[simulator.get()][q], -I_CMPLX, I_CMPLX);
+    simulator->MCInvert(ctrlsArray.get(), n, -I_CMPLX, I_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -816,7 +875,7 @@ MICROSOFT_QUANTUM_DECL void MCY(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 MICROSOFT_QUANTUM_DECL void MCZ(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyControlledSinglePhase(ctrlsArray.get(), n, shards[simulator.get()][q], ONE_CMPLX, -ONE_CMPLX);
+    simulator->MCPhase(ctrlsArray.get(), n, ONE_CMPLX, -ONE_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -828,7 +887,7 @@ MICROSOFT_QUANTUM_DECL void MCH(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
         complex(-SQRT1_2_R1, ZERO_R1) };
 
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyControlledSingleBit(ctrlsArray.get(), n, shards[simulator.get()][q], hGate);
+    simulator->MCMtrx(ctrlsArray.get(), n, hGate, shards[simulator.get()][q]);
 }
 
 /**
@@ -837,7 +896,7 @@ MICROSOFT_QUANTUM_DECL void MCH(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 MICROSOFT_QUANTUM_DECL void MCS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyControlledSinglePhase(ctrlsArray.get(), n, shards[simulator.get()][q], ONE_CMPLX, I_CMPLX);
+    simulator->MCPhase(ctrlsArray.get(), n, ONE_CMPLX, I_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -846,8 +905,7 @@ MICROSOFT_QUANTUM_DECL void MCS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 MICROSOFT_QUANTUM_DECL void MCT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyControlledSinglePhase(
-        ctrlsArray.get(), n, shards[simulator.get()][q], ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1));
+    simulator->MCPhase(ctrlsArray.get(), n, ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1), shards[simulator.get()][q]);
 }
 
 /**
@@ -856,7 +914,7 @@ MICROSOFT_QUANTUM_DECL void MCT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
 MICROSOFT_QUANTUM_DECL void MCAdjS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyControlledSinglePhase(ctrlsArray.get(), n, shards[simulator.get()][q], ONE_CMPLX, -I_CMPLX);
+    simulator->MCPhase(ctrlsArray.get(), n, ONE_CMPLX, -I_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -865,8 +923,7 @@ MICROSOFT_QUANTUM_DECL void MCAdjS(_In_ unsigned sid, _In_ unsigned n, _In_reads
 MICROSOFT_QUANTUM_DECL void MCAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyControlledSinglePhase(
-        ctrlsArray.get(), n, shards[simulator.get()][q], ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1));
+    simulator->MCPhase(ctrlsArray.get(), n, ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1), shards[simulator.get()][q]);
 }
 
 /**
@@ -876,7 +933,7 @@ MICROSOFT_QUANTUM_DECL void MCU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n
     _In_ double theta, _In_ double phi, _In_ double lambda)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->CU(ctrlsArray.get(), n, shards[simulator.get()][q], theta, phi, lambda);
+    simulator->CU(ctrlsArray.get(), n, shards[simulator.get()][q], (real1_f)theta, (real1_f)phi, (real1_f)lambda);
 }
 
 /**
@@ -889,7 +946,7 @@ MICROSOFT_QUANTUM_DECL void MCMtrx(
         complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
 
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyControlledSingleBit(ctrlsArray.get(), n, shards[simulator.get()][q], mtrx);
+    simulator->MCMtrx(ctrlsArray.get(), n, mtrx, shards[simulator.get()][q]);
 }
 
 /**
@@ -898,7 +955,7 @@ MICROSOFT_QUANTUM_DECL void MCMtrx(
 MICROSOFT_QUANTUM_DECL void MACX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyAntiControlledSingleInvert(ctrlsArray.get(), n, shards[simulator.get()][q], ONE_CMPLX, ONE_CMPLX);
+    simulator->MACInvert(ctrlsArray.get(), n, ONE_CMPLX, ONE_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -907,7 +964,7 @@ MICROSOFT_QUANTUM_DECL void MACX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
 MICROSOFT_QUANTUM_DECL void MACY(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyAntiControlledSingleInvert(ctrlsArray.get(), n, shards[simulator.get()][q], -I_CMPLX, I_CMPLX);
+    simulator->MACInvert(ctrlsArray.get(), n, -I_CMPLX, I_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -916,7 +973,7 @@ MICROSOFT_QUANTUM_DECL void MACY(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
 MICROSOFT_QUANTUM_DECL void MACZ(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyAntiControlledSinglePhase(ctrlsArray.get(), n, shards[simulator.get()][q], ONE_CMPLX, -ONE_CMPLX);
+    simulator->MACPhase(ctrlsArray.get(), n, ONE_CMPLX, -ONE_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -928,7 +985,7 @@ MICROSOFT_QUANTUM_DECL void MACH(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
         complex(-SQRT1_2_R1, ZERO_R1) };
 
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyAntiControlledSingleBit(ctrlsArray.get(), n, shards[simulator.get()][q], hGate);
+    simulator->MACMtrx(ctrlsArray.get(), n, hGate, shards[simulator.get()][q]);
 }
 
 /**
@@ -937,7 +994,7 @@ MICROSOFT_QUANTUM_DECL void MACH(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
 MICROSOFT_QUANTUM_DECL void MACS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyAntiControlledSinglePhase(ctrlsArray.get(), n, shards[simulator.get()][q], ONE_CMPLX, I_CMPLX);
+    simulator->MACPhase(ctrlsArray.get(), n, ONE_CMPLX, I_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -946,8 +1003,7 @@ MICROSOFT_QUANTUM_DECL void MACS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
 MICROSOFT_QUANTUM_DECL void MACT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyAntiControlledSinglePhase(
-        ctrlsArray.get(), n, shards[simulator.get()][q], ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1));
+    simulator->MACPhase(ctrlsArray.get(), n, ONE_CMPLX, complex(SQRT1_2_R1, SQRT1_2_R1), shards[simulator.get()][q]);
 }
 
 /**
@@ -956,7 +1012,7 @@ MICROSOFT_QUANTUM_DECL void MACT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
 MICROSOFT_QUANTUM_DECL void MACAdjS(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyAntiControlledSinglePhase(ctrlsArray.get(), n, shards[simulator.get()][q], ONE_CMPLX, -I_CMPLX);
+    simulator->MACPhase(ctrlsArray.get(), n, ONE_CMPLX, -I_CMPLX, shards[simulator.get()][q]);
 }
 
 /**
@@ -965,8 +1021,7 @@ MICROSOFT_QUANTUM_DECL void MACAdjS(_In_ unsigned sid, _In_ unsigned n, _In_read
 MICROSOFT_QUANTUM_DECL void MACAdjT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c, _In_ unsigned q)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyAntiControlledSinglePhase(
-        ctrlsArray.get(), n, shards[simulator.get()][q], ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1));
+    simulator->MACPhase(ctrlsArray.get(), n, ONE_CMPLX, complex(SQRT1_2_R1, -SQRT1_2_R1), shards[simulator.get()][q]);
 }
 
 /**
@@ -976,7 +1031,7 @@ MICROSOFT_QUANTUM_DECL void MACU(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
     _In_ double theta, _In_ double phi, _In_ double lambda)
 {
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->AntiCU(ctrlsArray.get(), n, shards[simulator.get()][q], theta, phi, lambda);
+    simulator->AntiCU(ctrlsArray.get(), n, shards[simulator.get()][q], (real1_f)theta, (real1_f)phi, (real1_f)lambda);
 }
 
 /**
@@ -989,7 +1044,7 @@ MICROSOFT_QUANTUM_DECL void MACMtrx(
         complex((real1)m[4], (real1)m[5]), complex((real1)m[6], (real1)m[7]) };
 
     MAP_CONTROLS_AND_LOCK(sid, n)
-    simulator->ApplyAntiControlledSingleBit(ctrlsArray.get(), n, shards[simulator.get()][q], mtrx);
+    simulator->MACMtrx(ctrlsArray.get(), n, mtrx, shards[simulator.get()][q]);
 }
 
 MICROSOFT_QUANTUM_DECL void Multiplex1Mtrx(
@@ -1053,7 +1108,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
         TransformPauliBasis(simulator, n, b, q);
 
         std::size_t mask = make_mask(qVec);
-        simulator->UniformParityRZ((bitCapInt)mask, -phi);
+        simulator->UniformParityRZ((bitCapInt)mask, (real1_f)(-phi));
 
         RevertPauliBasis(simulator, n, b, q);
     }
@@ -1089,7 +1144,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
         TransformPauliBasis(simulator, n, b, q);
 
         std::size_t mask = make_mask(qVec);
-        simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), (bitCapInt)mask, -phi);
+        simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), (bitCapInt)mask, (real1_f)(-phi));
 
         RevertPauliBasis(simulator, n, b, q);
     }
@@ -1104,6 +1159,16 @@ MICROSOFT_QUANTUM_DECL unsigned M(_In_ unsigned sid, _In_ unsigned q)
 
     QInterfacePtr simulator = simulators[sid];
     return simulator->M(shards[simulator.get()][q]) ? 1U : 0U;
+}
+
+/**
+ * (External API) Measure all bits separately in |0>/|1> basis, and return the result in low-to-high order corresponding
+ * with first-to-last in original order of allocation.
+ */
+MICROSOFT_QUANTUM_DECL unsigned MAll(_In_ unsigned sid)
+{
+    SIMULATOR_LOCK_GUARD_INT(sid)
+    return (unsigned)simulators[sid]->MAll();
 }
 
 /**
@@ -1138,23 +1203,10 @@ MICROSOFT_QUANTUM_DECL void MeasureShots(
     QInterfacePtr simulator = simulators[sid];
     std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[n]);
     for (unsigned i = 0; i < n; i++) {
-        qPowers.get()[i] = Qrack::pow2(shards[simulator.get()][q[i]]);
+        qPowers[i] = Qrack::pow2(shards[simulator.get()][q[i]]);
     }
 
-    std::map<bitCapInt, int> result = simulator->MultiShotMeasureMask(qPowers.get(), n, s);
-
-    qPowers.reset();
-
-    size_t j = 0;
-    std::map<bitCapInt, int>::iterator it = result.begin();
-    while (it != result.end() && (j < s)) {
-        for (int i = 0; i < it->second; i++) {
-            m[j] = (unsigned)it->first;
-            j++;
-        }
-
-        it++;
-    }
+    simulator->MultiShotMeasureMask(qPowers.get(), n, s, m);
 }
 
 MICROSOFT_QUANTUM_DECL void SWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2)
@@ -1431,6 +1483,7 @@ MICROSOFT_QUANTUM_DECL void IQFT(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
 #endif
 }
 
+#if ENABLE_ALU
 MICROSOFT_QUANTUM_DECL void ADD(_In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q)
 {
     SIMULATOR_LOCK_GUARD(sid)
@@ -1601,6 +1654,7 @@ MICROSOFT_QUANTUM_DECL void Hash(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
     unsigned start = MapArithmetic(simulator, n, q);
     simulator->Hash(start, n, t);
 }
+#endif
 
 MICROSOFT_QUANTUM_DECL bool TrySeparate1Qb(_In_ unsigned sid, _In_ unsigned qi1)
 {
@@ -1626,7 +1680,7 @@ MICROSOFT_QUANTUM_DECL bool TrySeparateTol(
     QInterfacePtr simulator = simulators[sid];
     std::unique_ptr<bitLenInt[]> bitArray(new bitLenInt[n]);
     for (unsigned i = 0; i < n; i++) {
-        bitArray.get()[i] = shards[simulator.get()][q[i]];
+        bitArray[i] = shards[simulator.get()][q[i]];
     }
 
     return simulator->TrySeparate(bitArray.get(), (bitLenInt)n, (real1_f)tol);

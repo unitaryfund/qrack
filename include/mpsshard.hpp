@@ -17,7 +17,7 @@ struct MpsShard {
         gate[3] = ONE_CMPLX;
     }
 
-    MpsShard(complex* g) { std::copy(g, g + 4, gate); }
+    MpsShard(const complex* g) { std::copy(g, g + 4, gate); }
 
     void Compose(const complex* g)
     {

@@ -10,6 +10,8 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "qfactory.hpp"
+
 #include <atomic>
 #include <chrono>
 #include <iostream>
@@ -19,7 +21,6 @@
 #include <stdlib.h>
 
 #include "catch.hpp"
-#include "qfactory.hpp"
 
 #include "tests.hpp"
 
@@ -47,7 +48,7 @@ double formatTime(double t, bool logNormal)
 
 void RandomInitQubit(QInterfacePtr sim, bitLenInt i)
 {
-    real1_f theta = 2 * M_PI * sim->Rand();
+    real1_f theta = 4 * M_PI * sim->Rand();
     real1_f phi = 2 * M_PI * sim->Rand();
     real1_f lambda = 2 * M_PI * sim->Rand();
 
@@ -87,7 +88,19 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
     int sampleFailureCount;
 
-    QInterfacePtr qftReg = NULL;
+    std::vector<QInterfaceEngine> engineStack;
+    if (optimal) {
+#if ENABLE_OPENCL
+        engineStack.push_back(
+            (OCLEngine::Instance().GetDeviceCount() > 1) ? QINTERFACE_OPTIMAL_MULTI : QINTERFACE_OPTIMAL);
+#else
+        engineStack.push_back(QINTERFACE_OPTIMAL);
+#endif
+    } else {
+        engineStack.push_back(testEngineType);
+        engineStack.push_back(testSubEngineType);
+        engineStack.push_back(testSubSubEngineType);
+    }
 
     for (numBits = mnQbts; numBits <= mxQbts; numBits++) {
 
@@ -98,18 +111,20 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             mOutputFile << sizeof(bitCapInt) << " bytes in bitCapInt" << std::endl;
         }
 
-        qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, numBits, 0, rng,
-            ONE_CMPLX, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse,
-            REAL1_EPSILON, devList);
+        QInterfacePtr qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG,
+            enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
         avgt = 0.0;
         sampleFailureCount = 0;
-
         trialClocks.clear();
 
         for (sample = 0; sample < benchmarkSamples; sample++) {
             if (!qUniverse) {
                 if (resetRandomPerm) {
-                    qftReg->SetPermutation((bitCapIntOcl)(qftReg->Rand() * (bitCapIntOcl)qftReg->GetMaxQPower()));
+                    bitCapInt perm = (bitCapInt)(qftReg->Rand() * (bitCapIntOcl)qftReg->GetMaxQPower());
+                    if (perm >= qftReg->GetMaxQPower()) {
+                        perm = qftReg->GetMaxQPower() - ONE_BCI;
+                    }
+                    qftReg->SetPermutation(perm);
                 } else {
                     qftReg->SetPermutation(0);
                 }
@@ -135,7 +150,12 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 fn(qftReg, numBits);
                 isTrialSuccessful = true;
             } catch (const std::exception& e) {
+                // Release before re-alloc:
                 qftReg = NULL;
+                // Re-alloc:
+                qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG, enable_normalization,
+                    true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+
                 sampleFailureCount++;
                 isTrialSuccessful = false;
             }
@@ -149,7 +169,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
                     std::chrono::high_resolution_clock::now() - iterClock);
                 if (logNormal) {
-                    trialClocks.push_back(log2(tClock.count() * clockFactor));
+                    trialClocks.push_back(Qrack::log2(tClock.count() * clockFactor));
                 } else {
                     trialClocks.push_back(tClock.count() * clockFactor);
                 }
@@ -271,6 +291,7 @@ TEST_CASE("test_swap_single", "[gates]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->Swap(0, 1); });
 }
 
+#if ENABLE_REG_GATES
 TEST_CASE("test_cnot_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CNOT(0, n / 2, n / 2); });
@@ -331,6 +352,7 @@ TEST_CASE("test_clxor_all", "[gates]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CLXOR(0, 0x0d, 0, n); });
 }
 
+#if ENABLE_ROT_API
 TEST_CASE("test_rt_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->RT(M_PI, 0, n); });
@@ -340,12 +362,25 @@ TEST_CASE("test_crt_all", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CRT(M_PI, 0, n / 2, n / 2); });
 }
+#endif
+#endif
+
+TEST_CASE("test_m", "[measure]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->M(n - 1); });
+}
+
+TEST_CASE("test_mreg", "[measure]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->MReg(0, n); });
+}
 
 TEST_CASE("test_rol", "[gates]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ROL(1, 0, n); });
 }
 
+#if ENABLE_ALU
 TEST_CASE("test_inc", "[arithmetic]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INC(1, 0, n); });
@@ -366,14 +401,15 @@ TEST_CASE("test_incsc", "[arithmetic]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INCSC(1, 0, n - 2, n - 2, n - 1); });
 }
 
-TEST_CASE("test_zero_phase_flip", "[phaseflip]")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ZeroPhaseFlip(0, n); });
-}
-
 TEST_CASE("test_c_phase_flip_if_less", "[phaseflip]")
 {
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CPhaseFlipIfLess(1, 0, n - 1, n - 1); });
+}
+#endif
+
+TEST_CASE("test_zero_phase_flip", "[phaseflip]")
+{
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->ZeroPhaseFlip(0, n); });
 }
 
 TEST_CASE("test_phase_flip", "[phaseflip]")
@@ -381,26 +417,17 @@ TEST_CASE("test_phase_flip", "[phaseflip]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->PhaseFlip(); });
 }
 
-TEST_CASE("test_m", "[measure]")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->M(n - 1); });
-}
-
-TEST_CASE("test_mreg", "[measure]")
-{
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->MReg(0, n); });
-}
-
+#if ENABLE_ALU
 void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> fn)
 {
     bitCapIntOcl i, j;
 
-    bitCapIntOcl wordLength = (max_qubits / 16 + 1);
-    bitCapIntOcl indexLength = (1 << (max_qubits / 2));
+    bitCapIntOcl wordLength = (max_qubits / 16U + 1U);
+    bitCapIntOcl indexLength = ((bitCapIntOcl)ONE_BCI << (max_qubits / 2U));
     unsigned char* testPage = new unsigned char[wordLength * indexLength];
     for (j = 0; j < indexLength; j++) {
         for (i = 0; i < wordLength; i++) {
-            testPage[j * wordLength + i] = (j & (0xff << (8 * i))) >> (8 * i);
+            testPage[j * wordLength + i] = (j & (0xff << (8U * i))) >> (8U * i);
         }
     }
     benchmarkLoop([fn, testPage](QInterfacePtr qftReg, bitLenInt n) { fn(qftReg, n, testPage); });
@@ -427,6 +454,7 @@ TEST_CASE("test_sbc_superposition_reg", "[indexed]")
         qftReg->IndexedSBC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
     });
 }
+#endif
 
 TEST_CASE("test_setbit", "[aux]")
 {
@@ -443,6 +471,7 @@ TEST_CASE("test_set_reg", "[aux]")
     benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->SetReg(0, n, 1); });
 }
 
+#if ENABLE_ALU
 TEST_CASE("test_grover", "[grover]")
 {
 
@@ -477,6 +506,7 @@ TEST_CASE("test_grover", "[grover]")
         qftReg->MReg(0, n);
     });
 }
+#endif
 
 TEST_CASE("test_qft_ideal_init", "[qft]")
 {
@@ -707,7 +737,7 @@ TEST_CASE("test_stabilizer_t", "[supreme]")
 
                 // Continuous Z root gates option:
                 // gateRand = 2 * PI_R1 * qReg->Rand();
-                // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                // qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 gateRand = 8 * qReg->Rand();
@@ -845,7 +875,7 @@ TEST_CASE("test_stabilizer_t_cc", "[supreme]")
 
                 // Continuous Z root gates option:
                 // gateRand = 2 * PI_R1 * qReg->Rand();
-                // qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                // qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 gateRand = 8 * qReg->Rand();
@@ -1033,7 +1063,7 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
 
                 // Continuous Z root gates option:
                 gateRand = 2 * PI_R1 * qReg->Rand();
-                qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 /*
@@ -1223,7 +1253,7 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
 
                 // Continuous Z root gates option:
                 gateRand = 2 * PI_R1 * qReg->Rand();
-                qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 /*
@@ -1474,7 +1504,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
 
                 // Continuous Z root gates option:
                 gateRand = 2 * PI_R1 * qReg->Rand();
-                qReg->ApplySinglePhase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 /*
@@ -1584,7 +1614,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                             controls[0] = b1;
                             top = std::polar(ONE_R1, (real1)(2 * PI_R1 * qReg->Rand()));
                             bottom = std::conj(top);
-                            qReg->ApplyControlledSinglePhase(controls, 1U, b2, top, bottom);
+                            qReg->MCPhase(controls, 1U, top, bottom, b2);
                         } else {
                             // "Phase" transforms:
                             gateRand = DimCount1Qb * qReg->Rand();
@@ -1604,7 +1634,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                             controls[0] = b1;
                             top = std::polar(ONE_R1, (real1)(2 * PI_R1 * qReg->Rand()));
                             bottom = std::conj(top);
-                            qReg->ApplyAntiControlledSinglePhase(controls, 1U, b2, top, bottom);
+                            qReg->MACPhase(controls, 1U, top, bottom, b2);
                         }
                     }
                 }
@@ -1631,9 +1661,9 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
             for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
-                    theta = 2 * M_PI * qReg->Rand();
-                    phi = 2 * M_PI * qReg->Rand();
-                    lambda = 2 * M_PI * qReg->Rand();
+                    theta = 2 * PI_R1 * qReg->Rand();
+                    phi = 2 * PI_R1 * qReg->Rand();
+                    lambda = 2 * PI_R1 * qReg->Rand();
 
                     qReg->U(i, theta, phi, lambda);
                 }
@@ -1813,9 +1843,9 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                     if (gateRand < (ONE_R1 / GateCount1Qb)) {
                         qReg->H(i);
                     } else if (gateRand < (2 * ONE_R1 / GateCount1Qb)) {
-                        qReg->ApplySinglePhase(ONE_CMPLX, polar0, i);
+                        qReg->Phase(ONE_CMPLX, polar0, i);
                     } else {
-                        qReg->ApplySingleInvert(ONE_CMPLX, polar0, i);
+                        qReg->Invert(ONE_CMPLX, polar0, i);
                     }
                 }
 
@@ -1850,9 +1880,9 @@ TEST_CASE("test_universal_circuit_analog", "[supreme]")
                         control[0] = b1;
                         polar0 = complex(std::polar(ONE_R1, (real1)(2 * M_PI * qReg->Rand())));
                         if (gateRand < (gateThreshold * ONE_R1 / gateMax)) {
-                            qReg->ApplyControlledSinglePhase(control, 1U, b2, polar0, -polar0);
+                            qReg->MCPhase(control, 1U, polar0, -polar0, b2);
                         } else {
-                            qReg->ApplyControlledSingleInvert(control, 1U, b2, polar0, polar0);
+                            qReg->MCInvert(control, 1U, polar0, polar0, b2);
                         }
                     }
                 }
@@ -2067,7 +2097,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     qReg->ISwap(b1, b2);
                     // "1/6 of CZ" is read to indicate the 6th root.
                     controls[0] = b1;
-                    qReg->ApplyControlledSinglePhase(controls, 1U, b2, ONE_CMPLX, sixthRoot);
+                    qReg->MCPhase(controls, 1U, ONE_CMPLX, sixthRoot, b2);
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
 
                     // qReg->TrySeparate(b1, b2);

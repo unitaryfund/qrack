@@ -12,15 +12,20 @@
 
 #pragma once
 
+#define _USE_MATH_DEFINES
+#include "config.h"
+
 #include <cfloat>
+#include <cmath>
 #include <complex>
 #include <functional>
 #include <memory>
 #include <random>
 
-#include "config.h"
-
-#if UINTPOW < 5
+#if UINTPOW < 4
+#define ONE_BCI ((uint8_t)1U)
+#define bitCapIntOcl uint8_t
+#elif UINTPOW < 5
 #define ONE_BCI ((uint16_t)1U)
 #define bitCapIntOcl uint16_t
 #elif UINTPOW < 6
@@ -56,7 +61,7 @@
 #define bitCapInt __uint128_t
 #endif
 #else
-#define bitsInCap (8U * (1U << QBCAPPOW))
+#define bitsInCap (8U * (((bitLenInt)1U) << QBCAPPOW))
 #include <boost/multiprecision/cpp_int.hpp>
 #define bitCapInt                                                                                                      \
     boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1 << QBCAPPOW, 1 << QBCAPPOW,                 \
@@ -147,8 +152,8 @@ namespace Qrack {
 typedef std::shared_ptr<complex> BitOp;
 
 /** Called once per value between begin and end. */
-typedef std::function<void(const bitCapInt, const int cpu)> ParallelFunc;
-typedef std::function<bitCapInt(const bitCapInt, const int cpu)> IncrementFunc;
+typedef std::function<void(const bitCapIntOcl&, const unsigned& cpu)> ParallelFunc;
+typedef std::function<bitCapIntOcl(const bitCapIntOcl&, const unsigned& cpu)> IncrementFunc;
 
 class StateVector;
 class StateVectorArray;
@@ -164,35 +169,36 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
 // This is a buffer struct that's capable of representing controlled single bit gates and arithmetic, when subclassed.
 class StateVector {
 protected:
-    bitCapInt capacity;
+    bitCapIntOcl capacity;
 
 public:
     bool isReadLocked;
 
-    StateVector(bitCapInt cap)
+    StateVector(bitCapIntOcl cap)
         : capacity(cap)
         , isReadLocked(true)
     {
     }
-    virtual complex read(const bitCapInt& i) = 0;
-    virtual void write(const bitCapInt& i, const complex& c) = 0;
+    virtual complex read(const bitCapIntOcl& i) = 0;
+    virtual void write(const bitCapIntOcl& i, const complex& c) = 0;
     /// Optimized "write" that is only guaranteed to write if either amplitude is nonzero. (Useful for the result of 2x2
     /// tensor slicing.)
-    virtual void write2(const bitCapInt& i1, const complex& c1, const bitCapInt& i2, const complex& c2) = 0;
+    virtual void write2(const bitCapIntOcl& i1, const complex& c1, const bitCapIntOcl& i2, const complex& c2) = 0;
     virtual void clear() = 0;
     virtual void copy_in(const complex* inArray) = 0;
-    virtual void copy_in(const complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
-    virtual void copy_in(
-        StateVectorPtr copyInSv, const bitCapInt srcOffset, const bitCapInt dstOffset, const bitCapInt length) = 0;
+    virtual void copy_in(const complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
+    virtual void copy_in(StateVectorPtr copyInSv, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset,
+        const bitCapIntOcl length) = 0;
     virtual void copy_out(complex* outArray) = 0;
-    virtual void copy_out(complex* copyIn, const bitCapInt offset, const bitCapInt length) = 0;
+    virtual void copy_out(complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length) = 0;
     virtual void copy(StateVectorPtr toCopy) = 0;
     virtual void shuffle(StateVectorPtr svp) = 0;
     virtual void get_probs(real1* outArray) = 0;
     virtual bool is_sparse() = 0;
 };
 
-void mul2x2(complex* left, complex* right, complex* out);
-void exp2x2(complex* matrix2x2, complex* outMatrix2x2);
-void log2x2(complex* matrix2x2, complex* outMatrix2x2);
+void mul2x2(const complex* left, const complex* right, complex* out);
+void exp2x2(const complex* matrix2x2, complex* outMatrix2x2);
+void log2x2(const complex* matrix2x2, complex* outMatrix2x2);
+void inv2x2(const complex* matrix2x2, complex* outMatrix2x2);
 } // namespace Qrack

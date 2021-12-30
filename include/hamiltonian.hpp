@@ -11,10 +11,9 @@
 // for details.
 #pragma once
 
-#include <memory>
-#include <vector>
-
 #include "common/qrack_types.hpp"
+
+#include <vector>
 
 struct _QrackTimeEvolveOpHeader {
     unsigned target;
@@ -108,7 +107,7 @@ struct UniformHamiltonianOp : HamiltonianOp {
 
         uniform = true;
 
-        bitCapIntOcl mtrxTermCount = (ONE_BCI << (bitCapIntOcl)controlLen) * 4U;
+        bitCapIntOcl mtrxTermCount = ((bitCapIntOcl)ONE_BCI << controlLen) * 4U;
         BitOp m(new complex[mtrxTermCount], std::default_delete<complex[]>());
         matrix = std::move(m);
         for (bitCapIntOcl i = 0; i < mtrxTermCount; i++) {

@@ -10,45 +10,48 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#if ENABLE_RNDFILE
-#include <chrono>
-#include <thread>
+#include "rdrandwrapper.hpp"
 
+#if ENABLE_DEVRAND
+#include <sys/random.h>
+#elif ENABLE_RNDFILE
 #include <algorithm>
+#include <chrono>
 #include <dirent.h>
 #include <fstream>
 #include <sys/types.h>
+#include <thread>
 #endif
-
-#include "rdrandwrapper.hpp"
 
 namespace Qrack {
 
-bool getRdRand(unsigned int* pv)
+bool getRdRand(unsigned* pv)
 {
-#if ENABLE_RDRAND
+#if ENABLE_RDRAND || ENABLE_DEVRAND
     const int max_rdrand_tries = 10;
     for (int i = 0; i < max_rdrand_tries; ++i) {
+#if ENABLE_DEVRAND
+        if (sizeof(unsigned) == getrandom(reinterpret_cast<char*>(pv), sizeof(unsigned), 0))
+#else
         if (_rdrand32_step(pv))
+#endif
             return true;
     }
 #endif
     return false;
 }
 
-#if ENABLE_RNDFILE
+#if ENABLE_RNDFILE && !ENABLE_DEVRAND
 // From http://www.cplusplus.com/forum/unices/3548/
 std::vector<std::string> _readDirectoryFileNames(const std::string& path)
 {
     std::vector<std::string> result;
-    dirent* de;
-    DIR* dp;
     errno = 0;
-    dp = opendir(path.empty() ? "." : path.c_str());
+    DIR* dp = opendir(path.empty() ? "." : path.c_str());
     if (dp) {
         while (true) {
             errno = 0;
-            de = readdir(dp);
+            dirent* de = readdir(dp);
             if (de == NULL) {
                 break;
             }
@@ -57,15 +60,14 @@ std::vector<std::string> _readDirectoryFileNames(const std::string& path)
             }
         }
         closedir(dp);
-        if (result.size() > 0) {
-            std::sort(result.begin(), result.end());
-        }
+        std::sort(result.begin(), result.end());
     }
     return result;
 }
 
 std::string _getDefaultRandomNumberFilePath()
 {
+#if ENABLE_ENV_VARS
     if (getenv("QRACK_RNG_PATH")) {
         std::string toRet = std::string(getenv("QRACK_RNG_PATH"));
         if ((toRet.back() != '/') && (toRet.back() != '\\')) {
@@ -77,6 +79,7 @@ std::string _getDefaultRandomNumberFilePath()
         }
         return toRet;
     }
+#endif
 #if defined(_WIN32) && !defined(__CYGWIN__)
     return std::string(getenv("HOMEDRIVE") ? getenv("HOMEDRIVE") : "") +
         std::string(getenv("HOMEPATH") ? getenv("HOMEPATH") : "") + "\\.qrack\\rng\\";
@@ -85,42 +88,30 @@ std::string _getDefaultRandomNumberFilePath()
 #endif
 }
 
-bool _readNextRandDataFile(size_t fileOffset, std::vector<char>& data)
+void RandFile::_readNextRandDataFile()
 {
-    std::vector<std::string> fileNames = {};
-
-    fileNames = _readDirectoryFileNames(_getDefaultRandomNumberFilePath());
-    while (fileNames.size() <= fileOffset) {
-        fileNames = _readDirectoryFileNames(_getDefaultRandomNumberFilePath());
-    }
-
-    FILE* dataFile;
-    while (!(dataFile = fopen(fileNames[fileOffset].c_str(), "r"))) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
-
-    fseek(dataFile, 0L, SEEK_END);
-    size_t fSize = ftell(dataFile);
-
-    if (fSize == 0) {
+    if (dataFile) {
         fclose(dataFile);
-        return false;
     }
 
-    rewind(dataFile);
+    std::string path = _getDefaultRandomNumberFilePath();
+    std::vector<std::string> fileNames = _readDirectoryFileNames(path);
+    if (fileNames.size() <= fileOffset) {
+        throw std::runtime_error("Out of RNG files!");
+    }
 
-    data.resize(fSize);
-    fSize = fread(&data[0], sizeof(unsigned char), fSize, dataFile);
-    fclose(dataFile);
+    while (!(dataFile = fopen(fileNames[fileOffset].c_str(), "r"))) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
-    return true;
+    fileOffset++;
 }
 #endif
 
 bool RdRandom::SupportsRDRAND()
 {
 #if ENABLE_RDRAND
-    const unsigned int flag_RDRAND = (1 << 30);
+    const unsigned flag_RDRAND = (1 << 30);
 
 #if _MSC_VER
     int ex[4];
@@ -128,7 +119,7 @@ bool RdRandom::SupportsRDRAND()
 
     return ((ex[2] & flag_RDRAND) == flag_RDRAND);
 #else
-    unsigned int eax, ebx, ecx, edx;
+    unsigned eax, ebx, ecx, edx;
     ecx = 0;
     __get_cpuid(1, &eax, &ebx, &ecx, &edx);
 
@@ -140,63 +131,57 @@ bool RdRandom::SupportsRDRAND()
 #endif
 }
 
+#if ENABLE_RNDFILE && !ENABLE_DEVRAND
+unsigned RandFile::NextRaw()
+{
+    size_t fSize = 0;
+    unsigned v;
+    while (fSize < 1) {
+        fSize = fread(&v, sizeof(unsigned), 1, dataFile);
+        if (fSize < 1) {
+            _readNextRandDataFile();
+        }
+    }
+
+    return v;
+}
+unsigned RdRandom::NextRaw() { return RandFile::getInstance().NextRaw(); }
+#else
+unsigned RdRandom::NextRaw()
+{
+    unsigned v;
+    if (!getRdRand(&v)) {
+        throw std::runtime_error("Random number generator failed up to retry limit.");
+    }
+
+    return v;
+}
+#endif
+
 real1_f RdRandom::Next()
 {
+    unsigned v = NextRaw();
+
     real1_f res = ZERO_R1;
     real1_f part = ONE_R1;
-#if ENABLE_RNDFILE
-    if (!didInit) {
-        while ((data1.size() - dataOffset) < 4) {
-            if (_readNextRandDataFile(fileOffset, data1)) {
-                fileOffset++;
-                dataOffset = 0;
-            }
-        }
-        readFuture = std::async(std::launch::async, [&]() {
-            while (!_readNextRandDataFile(fileOffset, data2)) {
-            }
-            fileOffset++;
-        });
-        didInit = true;
-    } else if ((isPageTwo && ((data2.size() - dataOffset) < 4)) || (!isPageTwo && ((data1.size() - dataOffset) < 4))) {
-        readFuture.get();
-        dataOffset = 0;
-        if (isPageTwo) {
-            readFuture = std::async(std::launch::async, [&]() {
-                while (!_readNextRandDataFile(fileOffset, data1)) {
-                }
-                fileOffset++;
-            });
-        } else {
-            readFuture = std::async(std::launch::async, [&]() {
-                while (!_readNextRandDataFile(fileOffset, data2)) {
-                }
-                fileOffset++;
-            });
-        }
-        isPageTwo = !isPageTwo;
-    }
-    size_t precision = sizeof(real1_f) - 1U;
-    for (unsigned int i = 0; i < precision; i++) {
-        part /= 256;
-        res += part * (data1[dataOffset + i] + 128);
-    }
-    dataOffset += 4;
-    return res;
-#else
-    unsigned int v;
-    if (!getRdRand(&v)) {
-        throw "Failed to get hardware RNG number.";
-    }
-    v &= 0x7fffffff;
-    for (int i = 0; i < 31; i++) {
+    for (unsigned i = 0U; i < 32U; i++) {
         part /= 2;
-        if (v & (1U << i)) {
+        if ((v >> i) & 1U) {
+            res += part;
+        }
+    }
+
+#if FPPOW > 5
+    v = NextRaw();
+
+    for (unsigned i = 0U; i < 32U; i++) {
+        part /= 2;
+        if ((v >> i) & 1U) {
             res += part;
         }
     }
 #endif
+
     return res;
 }
-
 } // namespace Qrack

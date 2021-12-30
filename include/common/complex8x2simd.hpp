@@ -15,8 +15,11 @@
 #if defined(_WIN32)
 #include <intrin.h>
 #else
+#include <emmintrin.h>
 #include <xmmintrin.h>
 #endif
+
+#include <complex>
 
 namespace Qrack {
 
@@ -71,10 +74,18 @@ struct Complex8x2Simd {
     }
 };
 
-union _cmplx_union {
-    float comp[4];
-    Complex8x2Simd cmplx2;
-    _cmplx_union(const Complex8x2Simd& c2) { cmplx2 = c2; }
+union complex2 {
+    Complex8x2Simd c2;
+    std::complex<float> c[2];
+    float f[4];
+    complex2() {}
+    complex2(const Complex8x2Simd& cm2) { c2 = cm2; }
+    complex2(const std::complex<float>& cm1, const std::complex<float>& cm2)
+    {
+        c[0] = cm1;
+        c[1] = cm2;
+    }
+    inline complex2 operator*(const complex2 rhs) const { return c2 * rhs.c2; }
 };
 
 inline Complex8x2Simd dupeLo(const Complex8x2Simd& cmplx2) { return _mm_shuffle_ps(cmplx2._val2, cmplx2._val2, 68); }
@@ -111,7 +122,7 @@ inline Complex8x2Simd operator*(const float lhs, const Complex8x2Simd& rhs)
 
 inline float norm(const Complex8x2Simd& c)
 {
-    _cmplx_union cu(_mm_mul_ps(c._val2, c._val2));
-    return (cu.comp[0] + cu.comp[1] + cu.comp[2] + cu.comp[3]);
+    complex2 cu(_mm_mul_ps(c._val2, c._val2));
+    return (cu.f[0] + cu.f[1] + cu.f[2] + cu.f[3]);
 }
 } // namespace Qrack
