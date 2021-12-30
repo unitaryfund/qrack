@@ -717,18 +717,18 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return TrySeparateClifford(qubit);
     }
 
+    if (!shard.isPauliX && !shard.isPauliY) {
+        ConvertZToX(qubit);
+    } else if (shard.isPauliY) {
+        RevertBasisY(qubit);
+    }
+
     real1_f probX = (ONE_R1 / 2) - ProbBase(qubit);
     if (!shard.unit) {
         return true;
     }
 
-    if (!shard.isPauliX && !shard.isPauliY) {
-        ConvertZToX(qubit);
-    } else if (shard.isPauliX) {
-        ConvertXToY(qubit);
-    } else {
-        ConvertYToZ(qubit);
-    }
+    RevertBasisX(qubit);
 
     real1_f probZ = (ONE_R1 / 2) - ProbBase(qubit);
     if (!shard.unit) {
@@ -739,14 +739,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     real1_f azimuth = acos((ONE_R1 - 2 * probX) / sin(inclination));
 
     if (std::isnan(inclination) || std::isinf(inclination) || std::isnan(azimuth) || std::isinf(azimuth)) {
-        if (!shard.isPauliX && !shard.isPauliY) {
-            ConvertZToX(qubit);
-        } else if (shard.isPauliX) {
-            ConvertXToY(qubit);
-        } else {
-            ConvertYToZ(qubit);
-        }
-
+        ConvertZToY(qubit);
         ProbBase(qubit);
 
         return !shard.unit;
