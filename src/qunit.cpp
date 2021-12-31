@@ -745,11 +745,11 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return !shard.unit;
     }
 
-    IAI(qubit, azimuth, inclination);
+    shard.unit->IAI(shard.mapped, azimuth, inclination);
 
     real1_f prob = (ONE_R1 / 2) - ProbBase(qubit);
     if (!shard.unit) {
-        AI(qubit, azimuth, inclination);
+        ShardAI(shard, azimuth, inclination);
         return true;
     }
 
@@ -759,9 +759,11 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
     if ((prob < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - prob) <= separabilityThreshold)) {
         SeparateBit(value, qubit);
+        ShardAI(shard, azimuth, inclination);
+        return true;
     }
 
-    AI(qubit, azimuth, inclination);
+    shard.unit->AI(shard.mapped, azimuth, inclination);
 
     return false;
 }

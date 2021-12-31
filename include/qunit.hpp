@@ -373,6 +373,23 @@ protected:
     void ApplyEitherControlled(const bitLenInt* controls, bitLenInt controlLen, const std::vector<bitLenInt>& targets,
         bool anti, CF cfn, F f, bool isPhase = false, bool isInvert = false, bool inCurrentBasis = false);
 
+    void ShardAI(QEngineShard& shard, real1_f azimuth, real1_f inclination)
+    {
+        real1 cosineA = (real1)cos(azimuth);
+        real1 sineA = (real1)sin(azimuth);
+        real1 cosineI = (real1)cos(inclination / 2);
+        real1 sineI = (real1)sin(inclination / 2);
+        complex expA = complex(cosineA, sineA);
+        complex expNegA = complex(cosineA, -sineA);
+        complex mtrx[4] = { cosineI, -expNegA * sineI, expA * sineI, cosineI };
+        const complex Y0 = shard.amp0;
+        shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
+        shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
+        if (doNormalize) {
+            shard.ClampAmps(amplitudeFloor);
+        }
+    }
+
     void TransformX2x2(const complex* mtrxIn, complex* mtrxOut);
     void TransformXInvert(complex topRight, complex bottomLeft, complex* mtrxOut);
     void TransformY2x2(const complex* mtrxIn, complex* mtrxOut);
