@@ -746,6 +746,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
 
     shard.unit->IAI(shard.mapped, azimuth, inclination);
+    shard.isProbDirty = true;
 
     real1_f prob = (ONE_R1 / 2) - ProbBase(qubit);
     if (!shard.unit) {
