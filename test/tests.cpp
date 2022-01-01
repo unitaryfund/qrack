@@ -1514,17 +1514,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ai")
 {
-    real1 azimuth = PI_R1 / 4;
-    real1 inclination = PI_R1 / 8;
+    real1_f azimuth = PI_R1 / 4;
+    real1_f inclination = PI_R1 / 8;
 
-    real1 probZ = (ONE_R1 / 2) - cos(inclination) / 2;
-    real1 probX = (ONE_R1 / 2) - sin(inclination) * cos(azimuth) / 2;
+    real1_f probZ = (ONE_R1 / 2) - cos(inclination) / 2;
+    real1_f probX = (ONE_R1 / 2) - sin(inclination) * cos(azimuth) / 2;
 
     qftReg->SetPermutation(0);
     qftReg->AI(0, azimuth, inclination);
-    real1 testZ = qftReg->Prob(0);
+    real1_f testZ = qftReg->Prob(0);
     qftReg->H(0);
-    real1 testX = qftReg->Prob(0);
+    real1_f testX = qftReg->Prob(0);
     qftReg->H(0);
 
     REQUIRE_FLOAT(probZ, testZ);
