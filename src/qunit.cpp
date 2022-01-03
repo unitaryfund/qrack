@@ -783,7 +783,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     if (value) {
         prob = -prob;
     }
-    if ((ONE_R1 / 2 - prob) <= separabilityThreshold) {
+    if (prob <= separabilityThreshold) {
         SeparateBit(value, qubit);
         ShardAI(shard, azimuth, inclination);
         return true;
