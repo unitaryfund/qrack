@@ -1601,10 +1601,21 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                             if (gateRand < ONE_R1) {
                                 qReg->CH(b1, b2);
                             } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->CS(b1, b2);
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->CS(b1, b2);
+                                } else {
+                                    qReg->CIS(b1, b2);
+                                }
                             } else if (gateRand < (3 * ONE_R1)) {
-                                qReg->CH(b1, b2);
-                                qReg->CS(b1, b2);
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->CH(b1, b2);
+                                    qReg->CS(b1, b2);
+                                } else {
+                                    qReg->CIS(b1, b2);
+                                    qReg->CH(b1, b2);
+                                }
                             }
                             // else - identity
 
@@ -1621,10 +1632,21 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                             if (gateRand < ONE_R1) {
                                 qReg->AntiCH(b1, b2);
                             } else if (gateRand < (2 * ONE_R1)) {
-                                qReg->AntiCIS(b1, b2);
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->AntiCS(b1, b2);
+                                } else {
+                                    qReg->AntiCIS(b1, b2);
+                                }
                             } else if (gateRand < (3 * ONE_R1)) {
-                                qReg->AntiCIS(b1, b2);
-                                qReg->AntiCH(b1, b2);
+                                gateRand = 2 * qReg->Rand();
+                                if (gateRand < ONE_R1) {
+                                    qReg->AntiCH(b1, b2);
+                                    qReg->AntiCS(b1, b2);
+                                } else {
+                                    qReg->AntiCIS(b1, b2);
+                                    qReg->AntiCH(b1, b2);
+                                }
                             }
                             // else - identity
 
