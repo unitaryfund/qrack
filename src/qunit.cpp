@@ -28,7 +28,7 @@
 #include <map>
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_AMP_0(c) (norm(c) <= FP_NORM_EPSILON)
+#define IS_AMP_0(c) (norm(c) <= separabilityThreshold)
 #define IS_0_R1(r) (r == ZERO_R1)
 #define IS_1_R1(r) (r == ONE_R1)
 #define IS_1_CMPLX(c) (norm((c)-ONE_CMPLX) <= FP_NORM_EPSILON)
@@ -1085,9 +1085,9 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
     if (!shard.isProbDirty) {
         real1_f prob = clampProb(norm(shard.amp1));
         if (shard.unit) {
-            if (IS_AMP_0(shard.amp1)) {
+            if (IS_NORM_0(shard.amp1)) {
                 SeparateBit(false, qubit);
-            } else if (IS_AMP_0(shard.amp0)) {
+            } else if (IS_NORM_0(shard.amp0)) {
                 SeparateBit(true, qubit);
             }
         }
@@ -1103,9 +1103,9 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
     shard.amp1 = complex((real1)sqrt(prob), ZERO_R1);
     shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
 
-    if (IS_AMP_0(shard.amp1)) {
+    if (IS_NORM_0(shard.amp1)) {
         SeparateBit(false, qubit);
-    } else if (IS_AMP_0(shard.amp0)) {
+    } else if (IS_NORM_0(shard.amp0)) {
         SeparateBit(true, qubit);
     }
 
