@@ -28,7 +28,7 @@
 #include <map>
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
-#define IS_AMP_0(c) (norm(c) <= separabilityThreshold)
+#define IS_AMP_0(c) (norm(c) <= FP_NORM_EPSILON)
 #define IS_0_R1(r) (r == ZERO_R1)
 #define IS_1_R1(r) (r == ONE_R1)
 #define IS_1_CMPLX(c) (norm((c)-ONE_CMPLX) <= FP_NORM_EPSILON)
@@ -783,7 +783,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     if (value) {
         prob = -prob;
     }
-    if ((prob < (SQRT1_2_R1 / 2)) && ((ONE_R1 / 2 - prob) <= separabilityThreshold)) {
+    if ((ONE_R1 / 2 - prob) <= separabilityThreshold) {
         SeparateBit(value, qubit);
         ShardAI(shard, azimuth, inclination);
         return true;
@@ -1085,11 +1085,6 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
     if (!shard.isProbDirty) {
         real1_f prob = clampProb(norm(shard.amp1));
         if (shard.unit) {
-            if (abs(prob - ONE_R1 / 2) < (SQRT1_2_R1 / 2)) {
-                // Projection on another basis could be higher, so don't separate.
-                return norm(shard.amp1);
-            }
-
             if (IS_AMP_0(shard.amp1)) {
                 SeparateBit(false, qubit);
             } else if (IS_AMP_0(shard.amp0)) {
@@ -1107,11 +1102,6 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
     real1_f prob = unit->Prob(mapped);
     shard.amp1 = complex((real1)sqrt(prob), ZERO_R1);
     shard.amp0 = complex((real1)sqrt(ONE_R1 - prob), ZERO_R1);
-
-    if (abs(prob - ONE_R1 / 2) < (SQRT1_2_R1 / 2)) {
-        // Projection on another basis could be higher, so don't separate.
-        return prob;
-    }
 
     if (IS_AMP_0(shard.amp1)) {
         SeparateBit(false, qubit);
