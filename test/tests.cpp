@@ -1519,16 +1519,21 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ai")
 
     real1_f probZ = (ONE_R1 / 2) - cos(inclination) / 2;
     real1_f probX = (ONE_R1 / 2) - sin(inclination) * cos(azimuth) / 2;
+    real1_f probY = (ONE_R1 / 2) - sin(inclination) * sin(azimuth) / 2;
 
     qftReg->SetPermutation(0);
     qftReg->AI(0, azimuth, inclination);
     real1_f testZ = qftReg->Prob(0);
     qftReg->H(0);
     real1_f testX = qftReg->Prob(0);
+    qftReg->S(0);
+    real1_f testY = qftReg->Prob(0);
+    qftReg->IS(0);
     qftReg->H(0);
 
     REQUIRE_FLOAT(probZ, testZ);
     REQUIRE_FLOAT(probX, testX);
+    REQUIRE_FLOAT(probY, testY);
 
     qftReg->IAI(0, azimuth, inclination);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x00));
