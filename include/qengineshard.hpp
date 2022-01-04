@@ -139,8 +139,10 @@ public:
 
     void MakeDirty()
     {
-        isProbDirty = true;
-        isPhaseDirty = true;
+        if (unit) {
+            isProbDirty = true;
+            isPhaseDirty = true;
+        }
     }
 
     bool ClampAmps(real1_f norm_thresh)
