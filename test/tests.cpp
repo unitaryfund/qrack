@@ -5465,7 +5465,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_19", "[mirror]")
     qftReg->H(0);
     qftReg->H(2);
     qftReg->IT(2);
-    qftReg->CNOT(0, 2);
     qftReg->H(2);
 
     REQUIRE(qftReg->MAll() == 11);
