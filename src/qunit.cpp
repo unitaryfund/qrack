@@ -1337,10 +1337,10 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
         return true;
     }
 
-    real1_f prob = unit->Prob(shard.mapped);
+    const real1_f prob = ONE_R1 / 2 - unit->Prob(shard.mapped);
+    value = prob < ZERO_R1;
     unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
 
-    prob = ONE_R1 / 2 - prob;
     if (!unit->isBinaryDecisionTree() && ((ONE_R1 / 2 - abs(prob)) > FP_NORM_EPSILON)) {
         unit->UpdateRunningNorm();
         if (!doNormalize) {
