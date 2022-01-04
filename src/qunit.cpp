@@ -706,6 +706,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     QEngineShard& shard = shards[qubit];
 
     if (shard.GetQubitCount() == 1U) {
+        ProbBase(qubit);
         return true;
     }
 
