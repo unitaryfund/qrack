@@ -767,19 +767,17 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     const real1_f azimuth = atan2(probY, probX);
 
     shard.unit->IAI(shard.mapped, azimuth, inclination);
-    shard.MakeDirty();
 
-    if (ProbBase(qubit) <= separabilityThreshold) {
-        if (shard.unit) {
-            SeparateBit(false, qubit);
-        }
-        ShardAI(qubit, azimuth, inclination);
-        return true;
+    if (shard.unit->Prob(shard.mapped) > separabilityThreshold) {
+        shard.unit->AI(shard.mapped, azimuth, inclination);
+        return false;
     }
 
-    shard.unit->AI(shard.mapped, azimuth, inclination);
+    shard.MakeDirty();
+    SeparateBit(false, qubit);
+    ShardAI(qubit, azimuth, inclination);
 
-    return false;
+    return true;
 }
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
