@@ -27,8 +27,6 @@
 #include <initializer_list>
 #include <map>
 
-#include <iostream>
-
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_AMP_0(c) (norm(c) <= separabilityThreshold)
 #define IS_0_R1(r) (r == ZERO_R1)
@@ -687,15 +685,17 @@ bool QUnit::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error
 
 bool QUnit::TrySeparate(bitLenInt qubit)
 {
+    if (freezeTrySeparate) {
+        return false;
+    }
+
     QEngineShard& shard = shards[qubit];
 
     if (shard.GetQubitCount() == 1U) {
-        ProbBase(qubit);
+        if (shard.unit) {
+            ProbBase(qubit);
+        }
         return true;
-    }
-
-    if (freezeTrySeparate) {
-        return false;
     }
 
     if (shard.unit && shard.unit->isClifford()) {
@@ -1387,7 +1387,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
     QEngineShard& shard = shards[qubit];
 
     bool result;
-    if (!shard.isProbDirty && (!shard.unit || (!shard.unit->isClifford() && !shard.unit->isBinaryDecisionTree()))) {
+    if (!shard.unit) {
         real1_f prob = norm(shard.amp1);
         if (doForce) {
             result = res;
@@ -1399,7 +1399,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
             result = (Rand() <= prob);
         }
     } else {
-        // Binary decision tree HAS to be collapsed into the right state before Decompose()/Dispose().
+        // ALWAYS collapse unit before Decompose()/Dispose(), for maximum consistency.
         result = shard.unit->ForceM(shard.mapped, res, doForce, doApply);
     }
 
@@ -1464,14 +1464,14 @@ bitCapInt QUnit::MAll()
     }
     for (bitLenInt i = 0; i < qubitCount; i++) {
         QEngineShard& shard = shards[i];
-        shard.ClearInvertPhase();
         shard.DumpPhaseBuffers();
+        shard.ClearInvertPhase();
     }
 
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0; i < shards.size(); i++) {
         QEngineShard shard = shards[i];
-        if (shard.IsInvertControl() && shard.unit && shard.unit->isClifford()) {
+        if (shard.unit && shard.unit->isClifford() && shard.IsInvertControl()) {
             // Clifford might become ket during measurement
             ToPermBasisMeasure(i);
         }
