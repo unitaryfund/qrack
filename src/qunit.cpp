@@ -767,6 +767,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     const real1_f azimuth = atan2(probY, probX);
 
     shard.unit->IAI(shard.mapped, azimuth, inclination);
+    shard.MakeDirty();
 
     if (shard.unit->Prob(shard.mapped) <= separabilityThreshold) {
         SeparateBit(false, qubit);
