@@ -375,6 +375,12 @@ protected:
 
     void ShardAI(bitLenInt qubit, real1_f azimuth, real1_f inclination)
     {
+        QEngineShard& shard = shards[qubit];
+        if (shard.isPhaseDirty || shard.isProbDirty) {
+            shard.MakeDirty();
+            return;
+        }
+
         real1 cosineA = (real1)cos(azimuth);
         real1 sineA = (real1)sin(azimuth);
         real1 cosineI = (real1)cos(inclination / 2);
@@ -383,7 +389,6 @@ protected:
         complex expNegA = complex(cosineA, -sineA);
         complex mtrx[4] = { cosineI, -expNegA * sineI, expA * sineI, cosineI };
 
-        QEngineShard& shard = shards[qubit];
         const complex Y0 = shard.amp0;
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
