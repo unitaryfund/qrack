@@ -763,8 +763,30 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     RevertBasis1Qb(qubit);
 
-    const real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
+    real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
     const real1_f azimuth = atan2(probY, probX);
+    if ((PI_R1 / 2 - inclination) < FP_NORM_EPSILON) {
+        shard.isPauliX = !shard.isPauliX;
+        shard.unit->RZ(azimuth, shard.mapped);
+        if (shard.unit->Prob(shard.mapped) > separabilityThreshold) {
+            shard.unit->RZ(-azimuth, shard.mapped);
+            shard.isPauliX = !shard.isPauliX;
+            return false;
+        }
+
+        SeparateBit(false, qubit);
+
+        const real1 cosine = (real1)cos(-azimuth / 2);
+        const real1 sine = (real1)sin(-azimuth / 2);
+        const complex mtrx[4] = { cosine, -sine, sine, cosine };
+        const complex Y0 = shard.amp0;
+        shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
+        shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
+
+        shard.isPauliX = !shard.isPauliX;
+
+        return true;
+    }
 
     shard.unit->IAI(shard.mapped, azimuth, inclination);
 
@@ -773,7 +795,6 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
-    shard.MakeDirty();
     SeparateBit(false, qubit);
     ShardAI(qubit, azimuth, inclination);
 
