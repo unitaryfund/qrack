@@ -27,6 +27,8 @@
 #include <initializer_list>
 #include <map>
 
+#include <iostream>
+
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_AMP_0(c) (norm(c) <= separabilityThreshold)
 #define IS_0_R1(r) (r == ZERO_R1)
@@ -716,12 +718,6 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     if (shard.unit && shard.unit->isClifford()) {
         return TrySeparateClifford(qubit);
-    }
-
-    if (!shard.isPauliX && !shard.isPauliY) {
-        ConvertZToX(qubit);
-    } else if (shard.isPauliY) {
-        RevertBasisY(qubit);
     }
 
     real1_f prob;
