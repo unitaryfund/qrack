@@ -756,36 +756,26 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
     }
 
-    real1_f r = sqrt(probZ * probZ + probX * probX + probY * probY);
+    const real1_f r = sqrt(probZ * probZ + probX * probX + probY * probY);
     if ((ONE_R1 / 2 - r) > separabilityThreshold) {
-        return false;
-    }
-
-    real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
-    real1_f azimuth = atan2(probY, probX);
-
-    if (std::isnan(inclination) || std::isinf(inclination) || std::isnan(azimuth) || std::isinf(azimuth)) {
         return false;
     }
 
     RevertBasis1Qb(qubit);
 
+    const real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
+    const real1_f azimuth = atan2(probY, probX);
+
     shard.unit->IAI(shard.mapped, azimuth, inclination);
-    shard.isProbDirty = true;
 
-    prob = (ONE_R1 / 2) - ProbBase(qubit);
-    if (!shard.unit) {
-        ShardAI(shard, azimuth, inclination);
-        return true;
-    }
-
-    bool value = prob < ZERO_R1;
+    prob = (ONE_R1 / 2) - shard.Prob();
+    const bool value = prob < ZERO_R1;
     if (value) {
         prob = -prob;
     }
     if ((ONE_R1 / 2 - prob) <= separabilityThreshold) {
         SeparateBit(value, qubit);
-        ShardAI(shard, azimuth, inclination);
+        ShardAI(qubit, azimuth, inclination);
         return true;
     }
 
@@ -1393,8 +1383,10 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
         value = true;
     }
 
+    prob = prob - ONE_R1 / 2;
+
     unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
-    if (!unit->isBinaryDecisionTree() && (((ONE_R1 / 2) - abs((ONE_R1 / 2) - prob)) > FP_NORM_EPSILON)) {
+    if (!unit->isBinaryDecisionTree() && (abs(prob) > FP_NORM_EPSILON)) {
         unit->UpdateRunningNorm();
         if (!doNormalize) {
             unit->NormalizeState();
