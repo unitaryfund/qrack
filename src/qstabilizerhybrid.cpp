@@ -39,12 +39,15 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , useHostRam(useHostMem)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
+    , isDefaultPaging(false)
     , separabilityThreshold(sep_thresh)
     , thresholdQubits(qubitThreshold)
+    , maxPageQubits(-1)
     , deviceIDs(devList)
 {
 #if ENABLE_OPENCL
     if ((engineTypes.size() == 1U) && (engineTypes[0] == QINTERFACE_OPTIMAL_BASE)) {
+        isDefaultPaging = true;
         bitLenInt segmentGlobalQb = 0U;
 #if ENABLE_ENV_VARS
         if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
@@ -53,7 +56,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 #endif
 
         DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-        bitLenInt maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
+        maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
         if (qubitCount > maxPageQubits) {
             engineTypes.push_back(QINTERFACE_QPAGER);
         }
@@ -160,7 +163,8 @@ void QStabilizerHybrid::SwitchToEngine()
 
 void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
 {
-    bitLenInt length = dest->qubitCount;
+    const bitLenInt length = dest->qubitCount;
+    const bitLenInt nQubits = qubitCount - length;
 
     if (length == qubitCount) {
         dest->stabilizer = stabilizer;
@@ -177,10 +181,17 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     }
 
     if (stabilizer && !stabilizer->CanDecomposeDispose(start, length)) {
+        if (isDefaultPaging && (nQubits <= maxPageQubits)) {
+            TurnOffPaging();
+        }
         SwitchToEngine();
     }
 
     if (engine) {
+        if (isDefaultPaging && (nQubits <= maxPageQubits)) {
+            TurnOffPaging();
+            dest->TurnOffPaging();
+        }
         dest->SwitchToEngine();
         engine->Decompose(start, dest->engine);
         SetQubitCount(qubitCount - length);
@@ -195,7 +206,7 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     stabilizer->Decompose(start, dest->stabilizer);
     std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     shards.erase(shards.begin() + start, shards.begin() + start + length);
-    SetQubitCount(qubitCount - length);
+    SetQubitCount(nQubits);
 }
 
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)

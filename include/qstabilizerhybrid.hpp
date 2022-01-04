@@ -42,8 +42,10 @@ protected:
     bool useHostRam;
     bool useRDRAND;
     bool isSparse;
+    bool isDefaultPaging;
     real1_f separabilityThreshold;
     bitLenInt thresholdQubits;
+    bitLenInt maxPageQubits;
     std::vector<int> deviceIDs;
 
     QStabilizerPtr MakeStabilizer(bitCapInt perm = 0);
@@ -270,13 +272,24 @@ public:
     using QInterface::Compose;
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy)
     {
+        const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
         bitLenInt toRet;
+
+        if (isDefaultPaging && (nQubits > maxPageQubits)) {
+            TurnOnPaging();
+        }
 
         if (engine) {
             toCopy->SwitchToEngine();
+            if (nQubits > maxPageQubits) {
+                toCopy->TurnOnPaging();
+            }
             toRet = engine->Compose(toCopy->engine);
         } else if (toCopy->engine) {
             SwitchToEngine();
+            if (nQubits > maxPageQubits) {
+                toCopy->TurnOnPaging();
+            }
             toRet = engine->Compose(toCopy->engine);
         } else {
             toRet = stabilizer->Compose(toCopy->stabilizer);
@@ -284,7 +297,7 @@ public:
 
         shards.insert(shards.end(), toCopy->shards.begin(), toCopy->shards.end());
 
-        SetQubitCount(qubitCount + toCopy->qubitCount);
+        SetQubitCount(nQubits);
 
         return toRet;
     }
@@ -294,12 +307,23 @@ public:
     }
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy, bitLenInt start)
     {
+        const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
         bitLenInt toRet;
 
+        if (isDefaultPaging && (nQubits > maxPageQubits)) {
+            TurnOnPaging();
+        }
+
         if (engine) {
+            if (nQubits > maxPageQubits) {
+                toCopy->TurnOnPaging();
+            }
             toCopy->SwitchToEngine();
             toRet = engine->Compose(toCopy->engine, start);
         } else if (toCopy->engine) {
+            if (nQubits > maxPageQubits) {
+                toCopy->TurnOnPaging();
+            }
             SwitchToEngine();
             toRet = engine->Compose(toCopy->engine, start);
         } else {
@@ -308,7 +332,7 @@ public:
 
         shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
 
-        SetQubitCount(qubitCount + toCopy->qubitCount);
+        SetQubitCount(nQubits);
 
         return toRet;
     }

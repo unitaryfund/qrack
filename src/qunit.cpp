@@ -64,7 +64,6 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , engines(eng)
-    , unpagedEngines()
     , devID(deviceID)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
@@ -81,23 +80,6 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
 #if ENABLE_ENV_VARS
     if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
         separabilityThreshold = (real1_f)std::stof(std::string(getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")));
-    }
-#endif
-
-#if ENABLE_OPENCL
-    if ((engines.size() == 1U) && (engines[0] == QINTERFACE_STABILIZER_HYBRID)) {
-        bitLenInt segmentGlobalQb = 0U;
-#if ENABLE_ENV_VARS
-        if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
-            segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
-        }
-#endif
-
-        DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-        bitLenInt maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
-        if (qubitCount > maxPageQubits) {
-            engines.push_back(QINTERFACE_QPAGER);
-        }
     }
 #endif
 
@@ -1105,16 +1087,7 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
     }
 
     if (!shard.isProbDirty) {
-        real1_f prob = clampProb(norm(shard.amp1));
-        if (shard.unit) {
-            if (IS_NORM_0(shard.amp1)) {
-                SeparateBit(false, qubit);
-            } else if (IS_NORM_0(shard.amp0)) {
-                SeparateBit(true, qubit);
-            }
-        }
-
-        return prob;
+        return clampProb(norm(shard.amp1));
     }
 
     shard.isProbDirty = false;
@@ -1353,8 +1326,6 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
         return false;
     }
 
-    real1_f prob = shard.unit ? shard.unit->Prob(shard.mapped) : shard.Prob();
-
     shard.unit = NULL;
     shard.mapped = 0;
     shard.isProbDirty = false;
@@ -1366,6 +1337,7 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
         return true;
     }
 
+    real1_f prob = unit->Prob(shard.mapped);
     unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
 
     prob = ONE_R1 / 2 - prob;
@@ -1392,15 +1364,13 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
         return true;
     }
 
-    bitLenInt partnerIndex;
-    for (partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
+    for (bitLenInt partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
         QEngineShard& partnerShard = shards[partnerIndex];
         if (unit == partnerShard.unit) {
+            ProbBase(partnerIndex);
             break;
         }
     }
-
-    ProbBase(partnerIndex);
 
     return true;
 }

@@ -22,7 +22,6 @@ typedef std::shared_ptr<QUnit> QUnitPtr;
 class QUnit : public QInterface {
 protected:
     std::vector<QInterfaceEngine> engines;
-    std::vector<QInterfaceEngine> unpagedEngines;
     int devID;
     QEngineShardMap shards;
     complex phaseFactor;
