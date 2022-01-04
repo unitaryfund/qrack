@@ -765,7 +765,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
     const real1_f azimuth = atan2(probY, probX);
-    if ((PI_R1 / 2 - inclination) < FP_NORM_EPSILON) {
+    if ((PI_R1 / 2 - abs(inclination)) < FP_NORM_EPSILON) {
         shard.isPauliX = !shard.isPauliX;
         shard.unit->RZ(azimuth, shard.mapped);
         if (shard.unit->Prob(shard.mapped) > separabilityThreshold) {
