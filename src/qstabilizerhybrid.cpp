@@ -181,19 +181,19 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     }
 
     if (stabilizer && !stabilizer->CanDecomposeDispose(start, length)) {
-        if (isDefaultPaging && (nQubits <= maxPageQubits)) {
-            TurnOffPaging();
-        }
         SwitchToEngine();
     }
 
     if (engine) {
+        if (engineTypes[0] == QINTERFACE_QPAGER) {
+            dest->TurnOnPaging();
+        }
+        dest->SwitchToEngine();
+        engine->Decompose(start, dest->engine);
         if (isDefaultPaging && (nQubits <= maxPageQubits)) {
             TurnOffPaging();
             dest->TurnOffPaging();
         }
-        dest->SwitchToEngine();
-        engine->Decompose(start, dest->engine);
         SetQubitCount(qubitCount - length);
         return;
     }
