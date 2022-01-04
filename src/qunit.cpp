@@ -706,6 +706,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     QEngineShard& shard = shards[qubit];
 
     if (shard.GetQubitCount() == 1U) {
+        ProbBase(qubit);
         return true;
     }
 
@@ -756,42 +757,27 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
     }
 
-    real1_f r = sqrt(probZ * probZ + probX * probX + probY * probY);
+    const real1_f r = sqrt(probZ * probZ + probX * probX + probY * probY);
     if ((ONE_R1 / 2 - r) > separabilityThreshold) {
-        return false;
-    }
-
-    real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
-    real1_f azimuth = atan2(probY, probX);
-
-    if (std::isnan(inclination) || std::isinf(inclination) || std::isnan(azimuth) || std::isinf(azimuth)) {
         return false;
     }
 
     RevertBasis1Qb(qubit);
 
+    const real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
+    const real1_f azimuth = atan2(probY, probX);
+
     shard.unit->IAI(shard.mapped, azimuth, inclination);
-    shard.isProbDirty = true;
 
-    prob = (ONE_R1 / 2) - ProbBase(qubit);
-    if (!shard.unit) {
-        ShardAI(shard, azimuth, inclination);
-        return true;
+    if (shard.unit->Prob(shard.mapped) > separabilityThreshold) {
+        shard.unit->AI(shard.mapped, azimuth, inclination);
+        return false;
     }
 
-    bool value = prob < ZERO_R1;
-    if (value) {
-        prob = -prob;
-    }
-    if ((ONE_R1 / 2 - prob) <= separabilityThreshold) {
-        SeparateBit(value, qubit);
-        ShardAI(shard, azimuth, inclination);
-        return true;
-    }
+    SeparateBit(false, qubit);
+    ShardAI(qubit, azimuth, inclination);
 
-    shard.unit->AI(shard.mapped, azimuth, inclination);
-
-    return false;
+    return true;
 }
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
@@ -1371,7 +1357,7 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
         return false;
     }
 
-    real1_f prob = shard.Prob();
+    real1_f prob = shard.unit ? shard.unit->Prob(shard.mapped) : shard.Prob();
 
     shard.unit = NULL;
     shard.mapped = 0;
@@ -1384,14 +1370,10 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
         return true;
     }
 
-    if (prob <= FP_NORM_EPSILON) {
-        value = false;
-    } else if ((ONE_R1 - prob) <= FP_NORM_EPSILON) {
-        value = true;
-    }
-
     unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
-    if (!unit->isBinaryDecisionTree() && (((ONE_R1 / 2) - abs((ONE_R1 / 2) - prob)) > FP_NORM_EPSILON)) {
+
+    prob = ONE_R1 / 2 - prob;
+    if (!unit->isBinaryDecisionTree() && ((ONE_R1 / 2 - abs(prob)) > FP_NORM_EPSILON)) {
         unit->UpdateRunningNorm();
         if (!doNormalize) {
             unit->NormalizeState();
