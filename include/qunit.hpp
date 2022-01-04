@@ -734,8 +734,6 @@ protected:
     void CommuteH(bitLenInt bitIndex);
 
     void OptimizePairBuffers(bitLenInt control, bitLenInt target, bool anti);
-
-    void CacheSingleQubitShard(bitLenInt target);
 };
 
 } // namespace Qrack

@@ -623,7 +623,7 @@ bool QUnit::TrySeparateClifford(bitLenInt qubit)
     shard.mapped = 0;
     shard.unit = sepUnit;
 
-    CacheSingleQubitShard(qubit);
+    ProbBase(qubit);
 
     return true;
 }
@@ -655,7 +655,7 @@ bool QUnit::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error
             shard.unit = nUnit;
             shard.mapped = 0;
             shard.MakeDirty();
-            CacheSingleQubitShard(qubit);
+            ProbBase(qubit);
 
             if (oUnit->GetQubitCount() == 1U) {
                 return true;
@@ -663,7 +663,7 @@ bool QUnit::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error
 
             for (bitLenInt i = 0; i < qubitCount; i++) {
                 if (shard.unit == oUnit) {
-                    CacheSingleQubitShard(i);
+                    ProbBase(i);
                     break;
                 }
             }
@@ -689,7 +689,7 @@ bool QUnit::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error
     bool toRet = TryDecompose(0, dest, error_tol);
     if (toRet) {
         if (length == 1U) {
-            dest->CacheSingleQubitShard(0);
+            dest->ProbBase(0);
         }
         Compose(dest, 0);
     }
@@ -1068,6 +1068,45 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
 
+    if (shard.unit && (shard.unit->GetQubitCount() == 1U)) {
+        complex amps[2];
+        shard.unit->GetQuantumState(amps);
+
+        if (IS_AMP_0(amps[0] - amps[1])) {
+            shard.isPauliX = true;
+            shard.isPauliY = false;
+            amps[0] = amps[0] / abs(amps[0]);
+            amps[1] = ZERO_CMPLX;
+        } else if (IS_AMP_0(amps[0] + amps[1])) {
+            shard.isPauliX = true;
+            shard.isPauliY = false;
+            amps[1] = amps[0] / abs(amps[0]);
+            amps[0] = ZERO_CMPLX;
+        } else if (IS_AMP_0((I_CMPLX * amps[0]) - amps[1])) {
+            shard.isPauliX = false;
+            shard.isPauliY = true;
+            amps[0] = amps[0] / abs(amps[0]);
+            amps[1] = ZERO_CMPLX;
+        } else if (IS_AMP_0((I_CMPLX * amps[0]) + amps[1])) {
+            shard.isPauliX = false;
+            shard.isPauliY = true;
+            amps[1] = amps[0] / abs(amps[0]);
+            amps[0] = ZERO_CMPLX;
+        }
+
+        shard.amp0 = amps[0];
+        shard.amp1 = amps[1];
+        shard.isProbDirty = false;
+        shard.isPhaseDirty = false;
+        shard.unit = NULL;
+        shard.mapped = 0;
+        if (doNormalize) {
+            shard.ClampAmps(amplitudeFloor);
+        }
+
+        return norm(shard.amp1);
+    }
+
     if (!shard.isProbDirty) {
         real1_f prob = clampProb(norm(shard.amp1));
         if (shard.unit) {
@@ -1096,49 +1135,6 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
     }
 
     return prob;
-}
-
-void QUnit::CacheSingleQubitShard(bitLenInt target)
-{
-    RevertBasis1Qb(target);
-    QEngineShard& shard = shards[target];
-
-    if (!shard.unit) {
-        return;
-    }
-
-    complex amps[2];
-    shard.unit->GetQuantumState(amps);
-    if (IS_AMP_0(amps[0] - amps[1])) {
-        shard.isPauliX = true;
-        shard.isPauliY = false;
-        amps[0] = amps[0] / abs(amps[0]);
-        amps[1] = ZERO_CMPLX;
-    } else if (IS_AMP_0(amps[0] + amps[1])) {
-        shard.isPauliX = true;
-        shard.isPauliY = false;
-        amps[1] = amps[0] / abs(amps[0]);
-        amps[0] = ZERO_CMPLX;
-    } else if (IS_AMP_0((I_CMPLX * amps[0]) - amps[1])) {
-        shard.isPauliX = false;
-        shard.isPauliY = true;
-        amps[0] = amps[0] / abs(amps[0]);
-        amps[1] = ZERO_CMPLX;
-    } else if (IS_AMP_0((I_CMPLX * amps[0]) + amps[1])) {
-        shard.isPauliX = false;
-        shard.isPauliY = true;
-        amps[1] = amps[0] / abs(amps[0]);
-        amps[0] = ZERO_CMPLX;
-    }
-    shard.amp0 = amps[0];
-    shard.amp1 = amps[1];
-    shard.isProbDirty = false;
-    shard.isPhaseDirty = false;
-    shard.unit = NULL;
-    shard.mapped = 0;
-    if (doNormalize) {
-        shard.ClampAmps(amplitudeFloor);
-    }
 }
 
 real1_f QUnit::Prob(bitLenInt qubit)
@@ -1407,7 +1403,7 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
         }
     }
 
-    CacheSingleQubitShard(partnerIndex);
+    ProbBase(qubit);
 
     return true;
 }
