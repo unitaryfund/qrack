@@ -1402,7 +1402,7 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
         }
     }
 
-    ProbBase(qubit);
+    ProbBase(partnerIndex);
 
     return true;
 }
