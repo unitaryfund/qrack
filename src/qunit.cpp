@@ -768,12 +768,12 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     shard.unit->IAI(shard.mapped, azimuth, inclination);
 
-    ProbBase(shard.mapped);
-    if (shard.unit) {
+    if (shard.unit->Prob(shard.mapped) > separabilityThreshold) {
         shard.unit->AI(shard.mapped, azimuth, inclination);
         return false;
     }
 
+    SeparateBit(false, qubit);
     ShardAI(qubit, azimuth, inclination);
 
     return true;
