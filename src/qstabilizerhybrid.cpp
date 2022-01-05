@@ -211,6 +211,8 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
 
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
 {
+    const bitLenInt nQubits = qubitCount - length;
+
     if (length == qubitCount) {
         stabilizer = NULL;
         engine = NULL;
@@ -232,12 +234,18 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
         stabilizer->Dispose(start, length);
     }
 
+    if (isDefaultPaging && (nQubits <= maxPageQubits)) {
+        TurnOffPaging();
+    }
+
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(qubitCount - length);
 }
 
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
+    const bitLenInt nQubits = qubitCount - length;
+
     if (length == qubitCount) {
         stabilizer = NULL;
         engine = NULL;
@@ -257,6 +265,10 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
         engine->Dispose(start, length, disposedPerm);
     } else {
         stabilizer->Dispose(start, length);
+    }
+
+    if (isDefaultPaging && (nQubits <= maxPageQubits)) {
+        TurnOffPaging();
     }
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
