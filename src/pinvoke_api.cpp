@@ -60,6 +60,7 @@ using namespace Qrack;
 
 qrack_rand_gen_ptr randNumGen = std::make_shared<qrack_rand_gen>(time(0));
 std::mutex metaOperationMutex;
+std::vector<int> simulatorErrors;
 std::vector<QInterfacePtr> simulators;
 std::vector<std::vector<QInterfaceEngine>> simulatorTypes;
 std::map<QInterface*, std::mutex> simulatorMutexes;
@@ -417,16 +418,26 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _
         simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
     }
 
-    QInterfacePtr simulator = q ? CreateQuantumInterface(simulatorType, q, 0, randNumGen) : NULL;
+    bool isSuccess = true;
+    QInterfacePtr simulator = NULL;
+    if (q) {
+        try {
+            simulator = CreateQuantumInterface(simulatorType, q, 0, randNumGen);
+        } catch (...) {
+            isSuccess = false;
+        }
+    }
 
     if (sid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
         simulatorTypes.push_back(simulatorType);
+        simulatorErrors.push_back(isSuccess ? 0 : 1);
     } else {
         simulatorReservations[sid] = true;
         simulators[sid] = simulator;
         simulatorTypes[sid] = simulatorType;
+        simulatorErrors[sid] = isSuccess ? 0 : 1;
     }
 
     if (!q) {
@@ -467,16 +478,26 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
     simulatorType.push_back(QINTERFACE_OPTIMAL);
 #endif
 
-    QInterfacePtr simulator = q ? CreateQuantumInterface(simulatorType, q, 0, randNumGen) : NULL;
+    bool isSuccess = true;
+    QInterfacePtr simulator = NULL;
+    if (q) {
+        try {
+            simulator = CreateQuantumInterface(simulatorType, q, 0, randNumGen);
+        } catch (...) {
+            isSuccess = false;
+        }
+    }
 
     if (sid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
         simulatorTypes.push_back(simulatorType);
+        simulatorErrors.push_back(isSuccess ? 0 : 1);
     } else {
         simulatorReservations[sid] = true;
         simulators[sid] = simulator;
         simulatorTypes[sid] = simulatorType;
+        simulatorErrors[sid] = isSuccess ? 0 : 1;
     }
 
     if (!q) {
@@ -508,16 +529,25 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
         }
     }
 
-    QInterfacePtr simulator = simulators[sid]->Clone();
+    bool isSuccess = true;
+    QInterfacePtr simulator;
+    try {
+        simulator = simulators[sid]->Clone();
+    } catch (...) {
+        isSuccess = false;
+    }
+
     if (nsid == simulators.size()) {
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
         simulatorTypes.push_back(simulatorTypes[sid]);
+        simulatorErrors.push_back(isSuccess ? 0 : 1);
         shards[simulator.get()] = {};
     } else {
         simulatorReservations[nsid] = true;
         simulators[nsid] = simulator;
         simulatorTypes[nsid] = simulatorTypes[sid];
+        simulatorErrors[nsid] = isSuccess ? 0 : 1;
     }
 
     shards[simulator.get()] = {};
@@ -538,6 +568,7 @@ MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid)
     shards.erase(simulators[sid].get());
     simulatorMutexes.erase(simulators[sid].get());
     simulators[sid] = NULL;
+    simulatorErrors[sid] = 0;
     simulatorReservations[sid] = false;
 }
 
@@ -548,7 +579,11 @@ MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
-    simulators[sid]->SetRandomSeed(s);
+    try {
+        simulators[sid]->SetRandomSeed(s);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
 }
 
 /**
@@ -558,7 +593,11 @@ MICROSOFT_QUANTUM_DECL void set_concurrency(_In_ unsigned sid, _In_ unsigned p)
 {
     SIMULATOR_LOCK_GUARD(sid)
 
-    simulators[sid]->SetConcurrency(p);
+    try {
+        simulators[sid]->SetConcurrency(p);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
 }
 
 /**
@@ -586,7 +625,11 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
     QInterfacePtr simulator = simulators[sid];
     bitCapIntOcl wfnl = (bitCapIntOcl)simulator->GetMaxQPower();
     std::unique_ptr<complex[]> wfn(new complex[wfnl]);
-    simulator->GetQuantumState(wfn.get());
+    try {
+        simulator->GetQuantumState(wfn.get());
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
     for (size_t i = 0; i < wfnl; i++) {
         if (!callback(i, real(wfn[i]), imag(wfn[i]))) {
             break;
@@ -639,11 +682,17 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
 
     QInterfacePtr simulator = simulators[sid];
 
-    TransformPauliBasis(simulator, n, b, q);
+    double jointProb = (double)REAL1_DEFAULT_ARG;
+    
+    try {
+        TransformPauliBasis(simulator, n, b, q);
 
-    double jointProb = _JointEnsembleProbabilityHelper(simulator, n, b, q, false);
+        jointProb = _JointEnsembleProbabilityHelper(simulator, n, b, q, false);
 
-    RevertPauliBasis(simulator, n, b, q);
+        RevertPauliBasis(simulator, n, b, q);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
 
     return jointProb;
 }
