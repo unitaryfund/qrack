@@ -363,6 +363,11 @@ void _darray_to_creal1_array(double* params, bitCapIntOcl componentCount, comple
 extern "C" {
 
 /**
+ * (External API) Poll after each operation to check whether error occurred.
+ */
+MICROSOFT_QUANTUM_DECL int get_error(_In_ unsigned sid) { return simulatorErrors[sid]; }
+
+/**
  * (External API) Initialize a simulator ID with "q" qubits and explicit layer options on/off
  */
 MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _In_ bool sd, _In_ bool sh,
