@@ -364,8 +364,8 @@ extern "C" {
 /**
  * (External API) Initialize a simulator ID with "q" qubits and explicit layer options on/off
  */
-MICROSOFT_QUANTUM_DECL unsigned init_count_type(
-    _In_ unsigned q, _In_ bool md, _In_ bool sd, _In_ bool sh, _In_ bool bdt, _In_ bool pg, _In_ bool zxf, _In_ bool hy)
+MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _In_ bool sd, _In_ bool sh,
+    _In_ bool bdt, _In_ bool pg, _In_ bool zxf, _In_ bool hy, _In_ bool oc)
 {
     META_LOCK_GUARD()
 
@@ -380,8 +380,8 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(
     }
 
 #if ENABLE_OPENCL
-    bool isOcl = (OCLEngine::Instance().GetDeviceCount() > 0);
-    bool isOclMulti = md && (OCLEngine::Instance().GetDeviceCount() > 1);
+    bool isOcl = oc && (OCLEngine::Instance().GetDeviceCount() > 0);
+    bool isOclMulti = oc && md && (OCLEngine::Instance().GetDeviceCount() > 1);
 #else
     bool isOcl = false;
     bool isOclMulti = false;
@@ -413,7 +413,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(
         simulatorType.push_back(QINTERFACE_HYBRID);
     }
 
-    if (!simulatorType.size()) {
+    if (!simulatorType.size() || !isOcl) {
         simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
     }
 
