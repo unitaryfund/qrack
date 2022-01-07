@@ -148,6 +148,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
             // Run loop body
             try {
                 fn(qftReg, numBits);
+                if (!async_time && qftReg) {
+                    qftReg->Finish();
+                }
                 isTrialSuccessful = true;
             } catch (const std::exception& e) {
                 // Release before re-alloc:
@@ -158,10 +161,6 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
                 sampleFailureCount++;
                 isTrialSuccessful = false;
-            }
-
-            if (!async_time && qftReg) {
-                qftReg->Finish();
             }
 
             // Collect interval data
