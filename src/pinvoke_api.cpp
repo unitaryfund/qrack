@@ -798,6 +798,7 @@ MICROSOFT_QUANTUM_DECL unsigned num_qubits(_In_ unsigned sid)
         return (unsigned)simulators[sid]->GetQubitCount();
     } catch (...) {
         simulatorErrors[sid] = 1;
+        return -1;
     }
 }
 
