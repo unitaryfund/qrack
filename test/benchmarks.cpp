@@ -175,8 +175,18 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 avgt += trialClocks[sample];
             }
 
-            if (async_time && qftReg) {
-                qftReg->Finish();
+            try {
+                if (async_time && qftReg) {
+                    qftReg->Finish();
+                }
+            } catch (const std::exception& e) {
+                // Release before re-alloc:
+                qftReg = NULL;
+                // Re-alloc:
+                qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG, enable_normalization,
+                    true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+
+                sampleFailureCount++;
             }
 
             if (mOutputFileName.compare("")) {
