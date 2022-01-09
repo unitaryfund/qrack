@@ -248,7 +248,7 @@ public:
         }
         engineTypes.erase(engineTypes.begin());
         if (!engineTypes.size()) {
-            engineTypes.push_back(QINTERFACE_OPTIMAL_SINGLE_PAGE);
+            engineTypes.push_back(QINTERFACE_OPTIMAL_BASE);
         }
 
         if (engine) {
