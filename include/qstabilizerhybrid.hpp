@@ -273,23 +273,24 @@ public:
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy)
     {
         const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
+        const bool isPaging = isDefaultPaging && (nQubits > maxPageQubits);
         bitLenInt toRet;
 
-        if (isDefaultPaging && (nQubits > maxPageQubits)) {
+        if (isPaging) {
             TurnOnPaging();
         }
 
         if (engine) {
-            toCopy->SwitchToEngine();
-            if (nQubits > maxPageQubits) {
+            if (isPaging) {
                 toCopy->TurnOnPaging();
             }
+            toCopy->SwitchToEngine();
             toRet = engine->Compose(toCopy->engine);
         } else if (toCopy->engine) {
-            SwitchToEngine();
-            if (nQubits > maxPageQubits) {
+            if (isPaging) {
                 toCopy->TurnOnPaging();
             }
+            SwitchToEngine();
             toRet = engine->Compose(toCopy->engine);
         } else {
             toRet = stabilizer->Compose(toCopy->stabilizer);
@@ -308,20 +309,21 @@ public:
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy, bitLenInt start)
     {
         const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
+        const bool isPaging = isDefaultPaging && (nQubits > maxPageQubits);
         bitLenInt toRet;
 
-        if (isDefaultPaging && (nQubits > maxPageQubits)) {
+        if (isPaging) {
             TurnOnPaging();
         }
 
         if (engine) {
-            if (nQubits > maxPageQubits) {
+            if (isPaging) {
                 toCopy->TurnOnPaging();
             }
             toCopy->SwitchToEngine();
             toRet = engine->Compose(toCopy->engine, start);
         } else if (toCopy->engine) {
-            if (nQubits > maxPageQubits) {
+            if (isPaging) {
                 toCopy->TurnOnPaging();
             }
             SwitchToEngine();

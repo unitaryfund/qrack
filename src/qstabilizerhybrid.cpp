@@ -165,6 +165,7 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
 {
     const bitLenInt length = dest->qubitCount;
     const bitLenInt nQubits = qubitCount - length;
+    const bool isPaging = isDefaultPaging && (nQubits <= maxPageQubits);
 
     if (length == qubitCount) {
         dest->stabilizer = stabilizer;
@@ -190,12 +191,15 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
         }
         dest->SwitchToEngine();
         engine->Decompose(start, dest->engine);
-        if (isDefaultPaging && (nQubits <= maxPageQubits)) {
+        if (isPaging) {
             TurnOffPaging();
-            dest->TurnOffPaging();
         }
         SetQubitCount(qubitCount - length);
         return;
+    }
+
+    if (isPaging) {
+        TurnOffPaging();
     }
 
     if (dest->engine) {
@@ -212,6 +216,7 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
 {
     const bitLenInt nQubits = qubitCount - length;
+    const bool isPaging = isDefaultPaging && (nQubits <= maxPageQubits);
 
     if (length == qubitCount) {
         stabilizer = NULL;
@@ -234,7 +239,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
         stabilizer->Dispose(start, length);
     }
 
-    if (isDefaultPaging && (nQubits <= maxPageQubits)) {
+    if (isPaging) {
         TurnOffPaging();
     }
 
@@ -245,6 +250,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
     const bitLenInt nQubits = qubitCount - length;
+    const bool isPaging = isDefaultPaging && (nQubits <= maxPageQubits);
 
     if (length == qubitCount) {
         stabilizer = NULL;
@@ -267,7 +273,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
         stabilizer->Dispose(start, length);
     }
 
-    if (isDefaultPaging && (nQubits <= maxPageQubits)) {
+    if (isPaging) {
         TurnOffPaging();
     }
 
