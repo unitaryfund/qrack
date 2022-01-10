@@ -139,6 +139,8 @@ Setting the environment variable `QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE` to any v
 
 `QRACK_DEVICE_GLOBAL_QB=n`, alternatively, lets the user also choose the performance "hint" for preferred global qubits per device. By default, n=2, for 2 global qubits or equivalently 4 pages per device. Despite the "hint," `QPager` will allocate fewer pages per OpenCL device for small-enough widths, to keep processing elements better occupied. Also, `QPager` will allocate more qubits than the hint, per device, if the maximum allocation segment is exceeded as specified by `QRACK_SEGMENT_GLOBAL_QB`.
 
+To set a maximum on how many qubits can be allocated on a single `QPager` instance, use the environment variable `QRACK_MAX_PAGING_QB`, for example, `export QRACK_MAX_PAGING_QB=30` to cause `QPager` to throw an exception that can be caught if it is asked to allocate 31 or more qubits. 
+
 ## QBinaryDecisionTree threshold option
 `QBinaryDecisionTree` is a CPU-based optimization layer for reducing the total RAM footprint of high qubit width simulations. When used under the `QUnit` layer, state vector simulations are preferable for low widths, but higher qubit widths can be sometimes be accommodated only with binary decision trees. Hence, Qrack exposes the `QRACK_BDT_THRESHOLD` environment variable. `QUnit` subsystems with the `QBinaryDecisionTree` layer engage binary decision tree methods at any qubit width _greater_ than the (integer) value of this environment variable. (Hence, 0 value engages binary decision trees at _all_ widths, and 30 engages the method at 31 qubits or greater.) By default, binary decision tree methods begin at subsystems of 31 qubits or greater, if the environment variable is not set.
 
