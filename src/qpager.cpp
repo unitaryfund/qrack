@@ -736,10 +736,10 @@ void QPager::ApplySingleEither(bool isInvert, complex top, complex bottom, bitLe
         top = ONE_CMPLX;
     }
 
+    target -= qpp;
     const bitCapIntOcl targetPow = pow2Ocl(target);
     const bitCapIntOcl qMask = targetPow - 1U;
     const bitCapIntOcl maxLCV = (bitCapIntOcl)qPages.size() >> 1U;
-    target -= qpp;
     for (bitCapIntOcl i = 0; i < maxLCV; i++) {
         bitCapIntOcl j = i & qMask;
         j |= (i ^ j) << ONE_BCI;
