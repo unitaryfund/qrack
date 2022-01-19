@@ -69,7 +69,6 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , freezeBasis2Qb(false)
-    , freezeTrySeparate(false)
     , isReactiveSeparate(true)
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
@@ -685,10 +684,6 @@ bool QUnit::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error
 
 bool QUnit::TrySeparate(bitLenInt qubit)
 {
-    if (freezeTrySeparate) {
-        return false;
-    }
-
     QEngineShard& shard = shards[qubit];
 
     if (shard.GetQubitCount() == 1U) {
@@ -778,7 +773,7 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return isShard1Sep && isShard2Sep;
     }
 
-    if (freezeTrySeparate || freezeBasis2Qb) {
+    if (freezeBasis2Qb) {
         return false;
     }
 
@@ -787,131 +782,37 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return false;
     }
 
-    real1_f prob1 = ProbBase(qubit1) - ONE_R1 / 2;
-    real1_f prob2 = ProbBase(qubit2) - ONE_R1 / 2;
-    if ((abs(prob1) > separabilityThreshold) || (abs(prob2) > separabilityThreshold)) {
-        // Not worth attempting further.
-        return false;
-    }
-    real1_f probL2I = (prob1 * prob1) + (prob2 * prob2);
-
-    const bool isApproxSep = (separabilityThreshold > FP_NORM_EPSILON);
-    const bool is2Qubit = (shard1.unit->GetQubitCount() == 2U) && !isApproxSep;
     const bool wasReactiveSeparate = isReactiveSeparate;
     isReactiveSeparate = true;
 
     // Try a maximally disentangling operation, in 3 bases.
-    RevertBasis1Qb(qubit1);
-    RevertBasis1Qb(qubit2);
 
     // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
-    freezeTrySeparate = true;
     CNOT(qubit1, qubit2);
-    shard1.unit->CNOT(shard1.mapped, shard2.mapped);
-    freezeTrySeparate = false;
-
-    isShard1Sep = TrySeparate(qubit1);
-    if (!is2Qubit) {
-        isShard2Sep = TrySeparate(qubit2);
-    }
-    if (isShard1Sep || isShard2Sep) {
+    if (!shard1.unit || !shard2.unit) {
+        CNOT(qubit1, qubit2);
         isReactiveSeparate = wasReactiveSeparate;
-        return isShard1Sep && isShard2Sep;
+        return !shard1.unit && !shard2.unit;
     }
 
-    prob1 = ProbBase(qubit1) - ONE_R1 / 2;
-    prob2 = ProbBase(qubit2) - ONE_R1 / 2;
-    if ((abs(prob1) > separabilityThreshold) || (abs(prob2) > separabilityThreshold)) {
-        // Not worth attempting further.
+    bitLenInt controls[1] = { qubit1 };
+    MCPhase(controls, 1, -I_CMPLX, I_CMPLX, qubit2);
+    if (!shard1.unit || !shard2.unit) {
+        CY(qubit1, qubit2);
         isReactiveSeparate = wasReactiveSeparate;
-        return false;
-    }
-    real1_f probL2X = (prob1 * prob1) + (prob2 * prob2);
-
-    bitLenInt control[1] = { shard1.mapped };
-
-    // Revert first basis and try again, in second basis.
-    RevertBasis1Qb(qubit1);
-    RevertBasis1Qb(qubit2);
-    freezeTrySeparate = true;
-    CNOT(qubit1, qubit2);
-    shard1.unit->MCPhase(control, 1U, -I_CMPLX, I_CMPLX, shard2.mapped);
-    CY(qubit1, qubit2);
-    freezeTrySeparate = false;
-
-    isShard1Sep = TrySeparate(qubit1);
-    if (!is2Qubit) {
-        isShard2Sep = TrySeparate(qubit2);
-    }
-    if (isShard1Sep || isShard2Sep) {
-        isReactiveSeparate = wasReactiveSeparate;
-        return isShard1Sep && isShard2Sep;
+        return !shard1.unit && !shard2.unit;
     }
 
-    prob1 = ProbBase(qubit1) - ONE_R1 / 2;
-    prob2 = ProbBase(qubit2) - ONE_R1 / 2;
-    if ((abs(prob1) > separabilityThreshold) || (abs(prob2) > separabilityThreshold)) {
-        // Not worth attempting further.
-        isReactiveSeparate = wasReactiveSeparate;
-        return false;
-    }
-    real1_f probL2Y = (prob1 * prob1) + (prob2 * prob2);
-
-    // Revert second basis and try again, in third basis.
-    RevertBasis1Qb(qubit1);
-    RevertBasis1Qb(qubit2);
-    freezeTrySeparate = true;
-    CY(qubit1, qubit2);
-    shard1.unit->MCInvert(control, 1U, -I_CMPLX, -I_CMPLX, shard2.mapped);
+    MCInvert(controls, 1, -I_CMPLX, -I_CMPLX, qubit2);
     CZ(qubit1, qubit2);
-    freezeTrySeparate = false;
-
-    isShard1Sep = TrySeparate(qubit1);
-    if (!is2Qubit) {
-        isShard2Sep = TrySeparate(qubit2);
-    }
-    if (!isApproxSep || isShard1Sep || isShard2Sep) {
+    if (!shard1.unit || !shard2.unit) {
         isReactiveSeparate = wasReactiveSeparate;
-        return isShard1Sep && isShard2Sep;
+        return !shard1.unit && !shard2.unit;
     }
-    real1_f probL2Z = (prob1 * prob1) + (prob2 * prob2);
 
     isReactiveSeparate = wasReactiveSeparate;
 
-    // If reactively searching for separability, leave in the state closest to any Bloch sphere poles among Bell basis
-    // states.
-    // Ordered per Pauli enum definition
-    std::vector<real1_f> probL2 = { probL2I, probL2X, probL2Z, probL2Y };
-    Pauli bestBasis = (Pauli)std::distance(probL2.begin(), std::max_element(probL2.begin(), probL2.end()));
-
-    if (bestBasis == PauliZ) {
-        return false;
-    }
-
-    RevertBasis1Qb(qubit1);
-    RevertBasis1Qb(qubit2);
-    freezeTrySeparate = true;
-    CZ(qubit1, qubit2);
-
-    if (isApproxSep) {
-        if (bestBasis == PauliX) {
-            shard1.unit->MCInvert(control, 1U, -ONE_CMPLX, ONE_CMPLX, shard2.mapped);
-            CNOT(qubit1, qubit2);
-        } else if (bestBasis == PauliY) {
-            shard1.unit->MCInvert(control, 1U, I_CMPLX, I_CMPLX, shard2.mapped);
-            CY(qubit1, qubit2);
-        }
-        // else - Identity
-    }
-
-    freezeTrySeparate = false;
-
-    if (isApproxSep) {
-        isShard1Sep = TrySeparate(qubit1);
-        isShard2Sep = TrySeparate(qubit2);
-    }
-
-    return isShard1Sep && isShard2Sep;
+    return false;
 }
 
 void QUnit::OrderContiguous(QInterfacePtr unit)
@@ -2707,7 +2608,7 @@ void QUnit::CH(bitLenInt control, bitLenInt target)
     QInterfacePtr unit = Entangle({ control, target });
     unit->CH(shards[control].mapped, shards[target].mapped);
 
-    if (isReactiveSeparate && !freezeTrySeparate && !freezeBasis2Qb) {
+    if (isReactiveSeparate && !freezeBasis2Qb) {
         TrySeparate(control);
         TrySeparate(target);
     }
@@ -2733,7 +2634,7 @@ void QUnit::AntiCH(bitLenInt control, bitLenInt target)
     QInterfacePtr unit = Entangle({ control, target });
     unit->AntiCH(shards[control].mapped, shards[target].mapped);
 
-    if (isReactiveSeparate && !freezeTrySeparate && !freezeBasis2Qb) {
+    if (isReactiveSeparate && !freezeBasis2Qb) {
         TrySeparate(control);
         TrySeparate(target);
     }
@@ -3495,7 +3396,7 @@ void QUnit::ApplyEitherControlled(const bitLenInt* controls, bitLenInt controlLe
     // target bit in X or Y basis and acting as if Z basis by commutation).
     cfn(unit, controlVec);
 
-    if (!isReactiveSeparate || freezeTrySeparate || freezeBasis2Qb) {
+    if (!isReactiveSeparate || freezeBasis2Qb) {
         return;
     }
 

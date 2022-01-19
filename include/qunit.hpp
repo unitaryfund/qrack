@@ -30,7 +30,6 @@ protected:
     bool useRDRAND;
     bool isSparse;
     bool freezeBasis2Qb;
-    bool freezeTrySeparate;
     bool isReactiveSeparate;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
