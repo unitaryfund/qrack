@@ -742,8 +742,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
     // Permute axes for logical equivalence.
     if (shard.isPauliX) {
-        std::swap(probX, probZ);
-        std::swap(probY, probZ);
+        RevertBasisX(qubit);
     } else if (shard.isPauliY) {
         std::swap(probX, probZ);
         std::swap(probY, probZ);
