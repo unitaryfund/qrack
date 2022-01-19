@@ -745,8 +745,8 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         std::swap(probX, probZ);
         std::swap(probY, probZ);
     } else if (shard.isPauliY) {
-        std::swap(probY, probZ);
         std::swap(probX, probZ);
+        std::swap(probY, probZ);
     }
 
     const real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
