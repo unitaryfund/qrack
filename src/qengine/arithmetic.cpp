@@ -457,7 +457,7 @@ void QEngineCPU::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
 void QEngineCPU::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     if (toDiv == 0) {
-        throw "DIV by zero";
+        throw std::invalid_argument("DIV by zero");
     }
     if (toDiv == ONE_BCI) {
         return;
@@ -556,7 +556,7 @@ void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
     }
 
     if (toDiv == 0) {
-        throw "DIV by zero";
+        throw std::invalid_argument("DIV by zero");
     }
     if (toDiv == ONE_BCI) {
         return;
