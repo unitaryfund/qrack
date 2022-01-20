@@ -3700,7 +3700,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             // NOTE: This case is not actually exposed by the public API. It would only become exposed if
             // "CINCC"/"CDECC" were implemented in the public interface, in which case it would become "trivial" to
             // implement, once the QEngine methods were in place.
-            throw "ERROR: Controlled-with-carry arithmetic is not implemented!";
+            throw std::logic_error("ERROR: Controlled-with-carry arithmetic is not implemented!");
         } else {
             DirtyShardRange(start, length);
             shards[carryIndex].MakeDirty();
