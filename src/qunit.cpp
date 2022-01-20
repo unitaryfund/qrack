@@ -336,7 +336,6 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
                 }
 
                 if (subLen == (origLen - 1U)) {
-                    QEngineShard* pShard = NULL;
                     bitLenInt mapped = shards[decomposedUnits[unit]].mapped;
                     if (mapped == 0) {
                         mapped += subLen;
@@ -344,22 +343,24 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
                         mapped = 0;
                     }
                     for (bitLenInt i = 0; i < shards.size(); i++) {
-                        if ((shards[i].unit == unit) && (shards[i].mapped == mapped)) {
-                            pShard = &shards[i];
-                            break;
+                        if (!((shards[i].unit == unit) && (shards[i].mapped == mapped))) {
+                            continue;
                         }
-                    }
 
-                    complex amps[2];
-                    pShard->unit->GetQuantumState(amps);
-                    pShard->amp0 = amps[0];
-                    pShard->amp1 = amps[1];
-                    pShard->isProbDirty = false;
-                    pShard->isPhaseDirty = false;
-                    pShard->unit = NULL;
-                    pShard->mapped = 0;
-                    if (doNormalize) {
-                        pShard->ClampAmps(amplitudeFloor);
+                        QEngineShard* pShard = &shards[i];
+                        complex amps[2];
+                        pShard->unit->GetQuantumState(amps);
+                        pShard->amp0 = amps[0];
+                        pShard->amp1 = amps[1];
+                        pShard->isProbDirty = false;
+                        pShard->isPhaseDirty = false;
+                        pShard->unit = NULL;
+                        pShard->mapped = 0;
+                        if (doNormalize) {
+                            pShard->ClampAmps(amplitudeFloor);
+                        }
+
+                        break;
                     }
                 }
             }
