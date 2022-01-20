@@ -350,11 +350,6 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
                         }
                     }
 
-                    if (!pShard) {
-                        // This should never happen.
-                        throw std::runtime_error("QUnit::Detach found NULL pShard.");
-                    }
-
                     complex amps[2];
                     pShard->unit->GetQuantumState(amps);
                     pShard->amp0 = amps[0];
