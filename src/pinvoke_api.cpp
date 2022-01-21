@@ -518,6 +518,71 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 }
 
 /**
+ * (External API) Initialize a simulator ID with "q" qubits and implicit default layer options.
+ */
+MICROSOFT_QUANTUM_DECL unsigned init_count_pager(_In_ unsigned q)
+{
+    META_LOCK_GUARD()
+
+    unsigned sid = (unsigned)simulators.size();
+
+    for (unsigned i = 0; i < simulators.size(); i++) {
+        if (simulatorReservations[i] == false) {
+            sid = i;
+            simulatorReservations[i] = true;
+            break;
+        }
+    }
+
+    std::vector<QInterfaceEngine> simulatorType;
+
+    simulatorType.push_back(QINTERFACE_OPTIMAL);
+
+    std::vector<int> deviceList;
+#if ENABLE_OPENCL
+    std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance().GetDeviceContextPtrVector();
+    for (size_t i = 0; i < deviceContext.size(); i++) {
+        deviceList.push_back(i);
+    }
+    const size_t defaultDeviceID = OCLEngine::Instance().GetDefaultDeviceID();
+    std::swap(deviceList[0], deviceList[defaultDeviceID]);
+#endif
+
+    bool isSuccess = true;
+    QInterfacePtr simulator = NULL;
+    if (q) {
+        try {
+            simulator = CreateQuantumInterface(simulatorType, q, 0, randNumGen, CMPLX_DEFAULT_ARG, false, true, false, -1, true, false, REAL1_EPSILON, deviceList, 0, FP_NORM_EPSILON);
+        } catch (...) {
+            isSuccess = false;
+        }
+    }
+
+    if (sid == simulators.size()) {
+        simulatorReservations.push_back(true);
+        simulators.push_back(simulator);
+        simulatorTypes.push_back(simulatorType);
+        simulatorErrors.push_back(isSuccess ? 0 : 1);
+    } else {
+        simulatorReservations[sid] = true;
+        simulators[sid] = simulator;
+        simulatorTypes[sid] = simulatorType;
+        simulatorErrors[sid] = isSuccess ? 0 : 1;
+    }
+
+    if (!q) {
+        return sid;
+    }
+
+    shards[simulator.get()] = {};
+    for (unsigned i = 0; i < q; i++) {
+        shards[simulator.get()][i] = (bitLenInt)i;
+    }
+
+    return sid;
+}
+
+/**
  * (External API) Initialize a simulator ID that clones simulator ID "sid"
  */
 MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
