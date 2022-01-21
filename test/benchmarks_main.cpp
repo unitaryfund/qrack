@@ -152,6 +152,12 @@ int main(int argc, char* argv[])
         session.config().stream() << " (Overridden by hardware generation!)" << std::endl;
     }
 
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_QPAGER_DEVICES")) {
+        session.config().stream() << "QRACK_QPAGER_DEVICES: " << std::string(getenv("QRACK_QPAGER_DEVICES")) << std::endl;
+    }
+#endif
+
     if (!qengine && !qpager && !qunit && !qunit_multi && !qunit_qpager && !qunit_multi_qpager) {
         qunit = true;
         qunit_multi = true;

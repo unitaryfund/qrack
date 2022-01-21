@@ -43,6 +43,21 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
 #endif
     }
 
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_QPAGER_DEVICES")) {
+        std::string devListStr = std::string(getenv("QRACK_QPAGER_DEVICES"));
+        deviceIDs.clear();
+        if (devListStr.compare("") != 0) {
+            std::stringstream devListStr_stream(devListStr);
+            while (devListStr_stream.good()) {
+                std::string substr;
+                getline(devListStr_stream, substr, ',');
+                deviceIDs.push_back(stoi(substr));
+            }
+        }
+    }
+#endif
+
     Init();
 
     initState &= maxQPower - ONE_BCI;
