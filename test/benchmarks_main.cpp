@@ -42,6 +42,7 @@ int benchmarkSamples = 100;
 int benchmarkDepth = 20;
 std::vector<int> devList;
 bool optimal = false;
+bool optimal_single = false;
 
 #define SHOW_OCL_BANNER()                                                                                              \
     if (OCLEngine::Instance().GetDeviceCount()) {                                                                      \
@@ -81,7 +82,8 @@ int main(int argc, char* argv[])
      * Allow specific layers and processor types to be enabled.
      */
     auto cli = session.cli() | Opt(qengine)["--layer-qengine"]("Enable Basic QEngine tests") |
-        Opt(optimal)["--optimal"]("Run just default optimal layer/engine tests") |
+        Opt(optimal)["--optimal"]("Run just default optimal (QUnit or QUnitMulti) layer/engine tests") |
+        Opt(optimal_single)["--optimal-single"]("Run just default optimal (QUnit only) layer/engine tests") |
         Opt(optimal_cpu)["--optimal-cpu"]("Run just default (CPU-only) optimal layer/engine tests") |
         Opt(qpager)["--layer-qpager"]("Enable QPager implementation tests") |
         Opt(qunit)["--layer-qunit"]("Enable QUnit implementation tests") |
@@ -224,7 +226,13 @@ int main(int argc, char* argv[])
     int num_failed = 0;
 
     if (num_failed == 0 && optimal) {
-        session.config().stream() << "############ Default Optimal ############" << std::endl;
+        session.config().stream() << "############ Default Optimal (QUnitMulti/QUnit) ############" << std::endl;
+        num_failed = session.run();
+        return num_failed;
+    }
+
+    if (num_failed == 0 && optimal_single) {
+        session.config().stream() << "############ Default Optimal (QUnit) ############" << std::endl;
         num_failed = session.run();
         return num_failed;
     }

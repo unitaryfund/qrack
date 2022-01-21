@@ -96,6 +96,8 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 #else
         engineStack.push_back(QINTERFACE_OPTIMAL);
 #endif
+    } else if (optimal_single) {
+        engineStack.push_back(QINTERFACE_OPTIMAL);
     } else {
         engineStack.push_back(testEngineType);
         engineStack.push_back(testSubEngineType);

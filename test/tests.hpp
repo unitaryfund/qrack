@@ -45,6 +45,7 @@ extern int benchmarkSamples;
 extern int benchmarkDepth;
 extern std::vector<int> devList;
 extern bool optimal;
+extern bool optimal_single;
 
 /* Declare the stream-to-probability prior to including catch.hpp. */
 namespace Qrack {
