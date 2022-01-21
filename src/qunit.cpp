@@ -40,10 +40,9 @@
 #define CACHED_ZERO_OR_ONE(shard) (CACHED_Z(shard) && (IS_AMP_0(shard.amp0) || IS_AMP_0(shard.amp1)))
 #define CACHED_ZERO(shard) (CACHED_Z(shard) && IS_AMP_0(shard.amp1))
 #define CACHED_ONE(shard) (CACHED_Z(shard) && IS_AMP_0(shard.amp0))
-#define CACHED_X(shard) (shard.isPauliX && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_PLUS_OR_MINUS(shard) (CACHED_X(shard) && (IS_AMP_0(shard.amp0) || IS_AMP_0(shard.amp1)))
 #define CACHED_PLUS(shard) (CACHED_X(shard) && IS_AMP_0(shard.amp1))
-/* "UNSAFE" variants here do not check whether the bit is in |0>/|1> rather than |+>/|-> basis. */
+/* "UNSAFE" variants here do not check whether the bit has cached 2-qubit gates.*/
 #define UNSAFE_CACHED_ZERO_OR_ONE(shard)                                                                               \
     (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && (IS_AMP_0(shard.amp0) || IS_AMP_0(shard.amp1)))
 #define UNSAFE_CACHED_X(shard)                                                                                         \
@@ -54,6 +53,10 @@
 #define ARE_CLIFFORD(shard1, shard2)                                                                                   \
     ((engines[0] == QINTERFACE_STABILIZER_HYBRID) && (shard1.isClifford() || shard2.isClifford()))
 #define BLOCKED_SEPARATE(shard) (shard.unit && shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped))
+#define SWAP_IDENT(shard1, shard2)                                                                                     \
+    (!DIRTY(shard1) && !DIRTY(shard2) && (shard1.isPauliX == shard2.isPauliX) &&                                       \
+        (shard1.isPauliY == shard2.isPauliY) && IS_AMP_0(shard1.amp0 - shard2.amp0) &&                                 \
+        IS_AMP_0(shard1.amp1 - shard2.amp1))
 
 namespace Qrack {
 
@@ -1644,6 +1647,11 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
+    if (SWAP_IDENT(shard1, shard2)) {
+        // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
+        return;
+    }
+
     if (IS_SAME_UNIT(shard1, shard2)) {
         Entangle({ qubit1, qubit2 })->ISwap(shard1.mapped, shard2.mapped);
         shard1.MakeDirty();
@@ -1672,8 +1680,7 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_ZERO_OR_ONE(shard1) && UNSAFE_CACHED_ZERO_OR_ONE(shard2) &&
-        (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+    if (SWAP_IDENT(shard1, shard2)) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         return;
     }
@@ -1698,8 +1705,7 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_ZERO_OR_ONE(shard1) && UNSAFE_CACHED_ZERO_OR_ONE(shard2) &&
-        (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+    if (SWAP_IDENT(shard1, shard2)) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         return;
     }
@@ -1734,8 +1740,7 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (UNSAFE_CACHED_ZERO_OR_ONE(shard1) && UNSAFE_CACHED_ZERO_OR_ONE(shard2) &&
-        (SHARD_STATE(shard1) == SHARD_STATE(shard2))) {
+    if (SWAP_IDENT(shard1, shard2)) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
         if (SHARD_STATE(shard1)) {
             MCPhase(controls, 1, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
