@@ -561,8 +561,9 @@ void QEngineOCL::SetDevice(int dID, bool forceReInit)
                 ResetStateBuffer(MakeStateVecBuffer(NULL));
                 // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a
                 // buffer.
-                clFinish();
-                queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, NULL);
+                EventVecPtr waitVec = ResetWaitEvents();
+                queue.enqueueWriteBuffer(
+                    *stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, stateVec, waitVec.get());
 
                 ResetStateVec(NULL);
             }
@@ -1149,7 +1150,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
         toCopy->NormalizeState();
     }
 
-    // int toCopyDevID = toCopy->GetDeviceID();
     toCopy->SetDevice(deviceID);
 
     PoolItemPtr poolItem = GetFreePoolItem();

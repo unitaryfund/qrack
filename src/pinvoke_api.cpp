@@ -63,6 +63,7 @@ std::mutex metaOperationMutex;
 std::vector<int> simulatorErrors;
 std::vector<QInterfacePtr> simulators;
 std::vector<std::vector<QInterfaceEngine>> simulatorTypes;
+std::vector<bool> simulatorDma;
 std::map<QInterface*, std::mutex> simulatorMutexes;
 std::vector<bool> simulatorReservations;
 std::map<QInterface*, std::map<unsigned, bitLenInt>> shards;
@@ -371,7 +372,7 @@ MICROSOFT_QUANTUM_DECL int get_error(_In_ unsigned sid) { return simulatorErrors
  * (External API) Initialize a simulator ID with "q" qubits and explicit layer options on/off
  */
 MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _In_ bool sd, _In_ bool sh,
-    _In_ bool bdt, _In_ bool pg, _In_ bool zxf, _In_ bool hy, _In_ bool oc)
+    _In_ bool bdt, _In_ bool pg, _In_ bool zxf, _In_ bool hy, _In_ bool oc, _In_ bool dm)
 {
     META_LOCK_GUARD()
 
@@ -427,7 +428,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _
     QInterfacePtr simulator = NULL;
     if (q) {
         try {
-            simulator = CreateQuantumInterface(simulatorType, q, 0, randNumGen);
+            simulator = CreateQuantumInterface(simulatorType, q, 0, randNumGen, CMPLX_DEFAULT_ARG, false, true, dm);
         } catch (...) {
             isSuccess = false;
         }
@@ -437,11 +438,13 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
         simulatorTypes.push_back(simulatorType);
+        simulatorDma.push_back(dm);
         simulatorErrors.push_back(isSuccess ? 0 : 1);
     } else {
         simulatorReservations[sid] = true;
         simulators[sid] = simulator;
         simulatorTypes[sid] = simulatorType;
+        simulatorDma[sid] = dm;
         simulatorErrors[sid] = isSuccess ? 0 : 1;
     }
 
@@ -460,7 +463,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _
 /**
  * (External API) Initialize a simulator ID with "q" qubits and implicit default layer options.
  */
-MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
+MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q, _In_ bool dm)
 {
     META_LOCK_GUARD()
 
@@ -487,7 +490,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
     QInterfacePtr simulator = NULL;
     if (q) {
         try {
-            simulator = CreateQuantumInterface(simulatorType, q, 0, randNumGen);
+            simulator = CreateQuantumInterface(simulatorType, q, 0, randNumGen, CMPLX_DEFAULT_ARG, false, true, dm);
         } catch (...) {
             isSuccess = false;
         }
@@ -497,11 +500,13 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
         simulatorTypes.push_back(simulatorType);
+        simulatorDma.push_back(dm);
         simulatorErrors.push_back(isSuccess ? 0 : 1);
     } else {
         simulatorReservations[sid] = true;
         simulators[sid] = simulator;
         simulatorTypes[sid] = simulatorType;
+        simulatorDma[sid] = dm;
         simulatorErrors[sid] = isSuccess ? 0 : 1;
     }
 
@@ -520,7 +525,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q)
 /**
  * (External API) Initialize a simulator ID with "q" qubits and implicit default layer options.
  */
-MICROSOFT_QUANTUM_DECL unsigned init_count_pager(_In_ unsigned q)
+MICROSOFT_QUANTUM_DECL unsigned init_count_pager(_In_ unsigned q, _In_ bool dm)
 {
     META_LOCK_GUARD()
 
@@ -552,8 +557,8 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_pager(_In_ unsigned q)
     QInterfacePtr simulator = NULL;
     if (q) {
         try {
-            simulator = CreateQuantumInterface(simulatorType, q, 0, randNumGen, CMPLX_DEFAULT_ARG, false, true, false,
-                -1, true, false, REAL1_EPSILON, deviceList, 0, FP_NORM_EPSILON);
+            simulator = CreateQuantumInterface(simulatorType, q, 0, randNumGen, CMPLX_DEFAULT_ARG, false, true, dm, -1,
+                true, false, REAL1_EPSILON, deviceList, 0, FP_NORM_EPSILON);
         } catch (...) {
             isSuccess = false;
         }
@@ -563,11 +568,13 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_pager(_In_ unsigned q)
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
         simulatorTypes.push_back(simulatorType);
+        simulatorDma.push_back(dm);
         simulatorErrors.push_back(isSuccess ? 0 : 1);
     } else {
         simulatorReservations[sid] = true;
         simulators[sid] = simulator;
         simulatorTypes[sid] = simulatorType;
+        simulatorDma[sid] = dm;
         simulatorErrors[sid] = isSuccess ? 0 : 1;
     }
 
@@ -612,12 +619,14 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
         simulatorReservations.push_back(true);
         simulators.push_back(simulator);
         simulatorTypes.push_back(simulatorTypes[sid]);
+        simulatorDma.push_back(simulatorDma[sid]);
         simulatorErrors.push_back(isSuccess ? 0 : 1);
         shards[simulator.get()] = {};
     } else {
         simulatorReservations[nsid] = true;
         simulators[nsid] = simulator;
         simulatorTypes[nsid] = simulatorTypes[sid];
+        simulatorDma[nsid] = simulatorDma[sid];
         simulatorErrors[nsid] = isSuccess ? 0 : 1;
     }
 
@@ -806,7 +815,8 @@ MICROSOFT_QUANTUM_DECL void allocateQubit(_In_ unsigned sid, _In_ unsigned qid)
 {
     META_LOCK_GUARD()
 
-    QInterfacePtr nQubit = CreateQuantumInterface(simulatorTypes[sid], 1, 0, randNumGen);
+    QInterfacePtr nQubit = CreateQuantumInterface(
+        simulatorTypes[sid], 1, 0, randNumGen, CMPLX_DEFAULT_ARG, false, true, simulatorDma[sid]);
 
     if (simulators[sid] == NULL) {
         simulators[sid] = nQubit;
@@ -1608,7 +1618,7 @@ MICROSOFT_QUANTUM_DECL void Compose(_In_ unsigned sid1, _In_ unsigned sid2, unsi
 
 MICROSOFT_QUANTUM_DECL unsigned Decompose(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q)
 {
-    unsigned nSid = init_count(n);
+    unsigned nSid = init_count(n, false);
 
     SIMULATOR_LOCK_GUARD_INT(sid)
 
@@ -1640,6 +1650,7 @@ MICROSOFT_QUANTUM_DECL unsigned Decompose(_In_ unsigned sid, _In_ unsigned n, _I
     }
 
     simulatorTypes[nSid] = simulatorTypes[sid];
+    simulatorDma[nSid] = simulatorDma[sid];
 
     return nSid;
 }
