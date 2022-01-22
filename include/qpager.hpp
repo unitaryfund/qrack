@@ -39,7 +39,6 @@ protected:
     bitLenInt segmentGlobalQb;
     bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
-    bitLenInt deviceGlobalQubits;
     bitLenInt thresholdQubitsPerPage;
     bitLenInt baseQubitsPerPage;
     bitCapInt basePageCount;

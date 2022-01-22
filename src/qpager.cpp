@@ -30,7 +30,6 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
     , deviceIDs(devList)
     , useHardwareThreshold(false)
     , minPageQubits(0)
-    , deviceGlobalQubits(2)
     , thresholdQubitsPerPage(qubitThreshold)
 {
     if ((engines[0] == QINTERFACE_HYBRID) || (engines[0] == QINTERFACE_OPENCL)) {
@@ -92,7 +91,6 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
     , segmentGlobalQb(0)
     , minPageQubits(0)
     , maxPageQubits(-1)
-    , deviceGlobalQubits(2)
     , thresholdQubitsPerPage(qubitThreshold)
 {
     Init();
@@ -112,10 +110,6 @@ void QPager::Init()
     }
 
 #if ENABLE_ENV_VARS
-    if (getenv("QRACK_DEVICE_GLOBAL_QB")) {
-        deviceGlobalQubits = (bitLenInt)std::stoi(std::string(getenv("QRACK_DEVICE_GLOBAL_QB")));
-    }
-
     if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
         segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
     }
