@@ -1743,9 +1743,7 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 
     if (SWAP_IDENT(shard1, shard2)) {
         // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
-        if (SHARD_STATE(shard1)) {
-            MCPhase(controls, 1, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-        }
+        MCPhase(controls, 1, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         return;
     }
 
