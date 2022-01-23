@@ -23,7 +23,7 @@
 
 namespace Qrack {
 
-static const __m128 SIGNMASK = _mm_castsi128_ps(_mm_set_epi32(0, 0x80000000, 0, 0x80000000));
+static const __m128 SIGNMASK = _mm_set_ps(0.0f, -0.0f, 0.0f, -0.0f);
 
 /** SIMD implementation of the float precision complex vector type of 2 complex numbers, only for COMPLEX_X_2 Apply2x2.
  */
