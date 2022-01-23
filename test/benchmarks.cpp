@@ -176,7 +176,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 } else {
                     trialClocks.push_back(tClock.count() * clockFactor);
                 }
-                avgt += trialClocks[sample];
+                avgt += trialClocks.back();
             }
 
             try {
