@@ -15,7 +15,6 @@
 #if defined(_WIN32)
 #include <intrin.h>
 #else
-#include <emmintrin.h>
 #include <xmmintrin.h>
 #endif
 
