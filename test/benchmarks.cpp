@@ -158,12 +158,14 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 // Release before re-alloc:
                 qftReg = NULL;
 
+#if ENABLE_OPENCL
                 // RAII-based alloc tracking might fail, but it's safe to reset like this:
                 const size_t devCount = OCLEngine::Instance().GetDeviceCount();
                 for (size_t devId = 0; devId < devCount; devId++) {
                     OCLEngine::Instance().ResetActiveAllocSize(devId);
                 }
                 // TODO: There's no fundamental reason RAII-based dealloc CAN'T work perfectly, so fix it.
+#endif
 
                 // Re-alloc:
                 qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG, enable_normalization,
