@@ -292,6 +292,14 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
         }
     }
 
+    // Order the subsystem units contiguously. (They might be entangled at random with bits not involed in the
+    // operation.)
+    if (length > 1) {
+        for (auto subunit = subunits.begin(); subunit != subunits.end(); subunit++) {
+            OrderContiguous(subunit->first);
+        }
+    }
+
     // After ordering all subunits contiguously, since the top level mapping is a contiguous array, all subunit sets are
     // also contiguous. From the lowest index bits, they are mapped simply for the length count of bits involved in the
     // entire subunit.
