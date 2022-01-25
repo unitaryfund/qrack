@@ -1195,6 +1195,118 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
     });
 }
 
+TEST_CASE("test_dense", "[supreme]")
+{
+    // Try with environment variable
+    // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
+    // for clamping of single bit states to Pauli basis axes.
+
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+
+    const int GateCountMultiQb = 4;
+
+    benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        real1_f gateRand;
+        bitLenInt gate;
+
+        // The test runs 2 bit gates according to a tiling sequence.
+        // The 1 bit indicates +/- column offset.
+        // The 2 bit indicates +/- row offset.
+        // This is the "ABCDCDAB" pattern, from the Cirq definition of "Sycamore circuits."
+        std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
+
+        // We factor the qubit count into two integers, as close to a perfect square as we can.
+        int colLen = std::sqrt(n);
+        while (((n / colLen) * colLen) != n) {
+            colLen--;
+        }
+        int rowLen = n / colLen;
+
+        for (int d = 0; d < benchmarkDepth; d++) {
+            for (bitLenInt i = 0; i < n; i++) {
+                qReg->U(i, 4 * PI_R1 * qReg->Rand(), 4 * PI_R1 * qReg->Rand(), 4 * PI_R1 * qReg->Rand());
+            }
+
+            gate = gateSequence.front();
+            gateSequence.pop_front();
+            gateSequence.push_back(gate);
+
+            std::vector<bitLenInt> usedBits;
+
+            for (int row = 0; row < rowLen; row++) {
+                for (int col = 0; col < colLen; col++) {
+                    // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
+                    // In this test, the boundaries of the rectangle have no couplers.
+                    // In a perfect square, in the interior bulk, one 2 bit gate is applied for every pair of bits,
+                    // (as many gates as 1/2 the number of bits). (Unless n is a perfect square, the "row length"
+                    // has to be factored into a rectangular shape, and "n" is sometimes prime or factors
+                    // awkwardly.)
+
+                    bitLenInt b1 = row * colLen + col;
+                    if (std::find(usedBits.begin(), usedBits.end(), b1) != usedBits.end()) {
+                        continue;
+                    }
+
+                    bitLenInt tempGate = (row & 1U) ? gate : (gate ^ 3U);
+
+                    int tempRow = row;
+                    int tempCol = col;
+
+                    tempRow += ((tempGate & 2U) ? 1 : -1);
+                    tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
+
+                    bitLenInt b2 = tempRow * colLen + tempCol;
+
+                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                        (std::find(usedBits.begin(), usedBits.end(), b2) != usedBits.end())) {
+                        continue;
+                    }
+
+                    usedBits.push_back(b1);
+                    usedBits.push_back(b2);
+
+                    gateRand = GateCountMultiQb * qReg->Rand();
+
+                    if (gateRand >= (3 * ONE_R1)) {
+                        // 1/4 chance of identity
+                        continue;
+                    }
+
+                    if ((4 * qReg->Rand()) < ONE_R1) {
+                        // In 3 CNOT(a,b) sequence, for example, 1/4 of sequences on average are equivalent to SWAP.
+                        qReg->Swap(b1, b2);
+                        continue;
+                    }
+
+                    if ((qReg->Rand() * 2) < ONE_R1) {
+                        std::swap(b1, b2);
+                    }
+
+                    if ((2 * qReg->Rand()) < ONE_R1) {
+                        if (gateRand < ONE_R1) {
+                            qReg->AntiCNOT(b1, b2);
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            qReg->AntiCY(b1, b2);
+                        } else {
+                            qReg->AntiCZ(b1, b2);
+                        }
+                    } else {
+                        if (gateRand < ONE_R1) {
+                            qReg->CNOT(b1, b2);
+                        } else if (gateRand < (2 * ONE_R1)) {
+                            qReg->CY(b1, b2);
+                        } else {
+                            qReg->CZ(b1, b2);
+                        }
+                    }
+                }
+            }
+        }
+
+        qReg->MAll();
+    });
+}
+
 TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
 {
     // Try with environment variable
