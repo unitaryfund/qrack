@@ -1292,6 +1292,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ry")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_ry_continuous")
+{
+    qftReg->SetReg(0, 8, 0x02);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+    for (int step = 0; step < 60; step++) {
+        qftReg->RY(M_PI / 60, 0);
+        qftReg->RY(M_PI / 60, 1);
+    }
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_rz")
 {
     qftReg->SetReg(0, 8, 1);
