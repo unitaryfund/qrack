@@ -1525,8 +1525,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ai")
 {
-    real1_f azimuth = PI_R1 / 4;
-    real1_f inclination = PI_R1 / 8;
+    real1_f azimuth = 0.9f * PI_R1;
+    real1_f inclination = 0.7f * PI_R1;
 
     real1_f probZ = (ONE_R1 / 2) - cos(inclination) / 2;
     real1_f probX = (ONE_R1 / 2) - sin(inclination) * cos(azimuth) / 2;
@@ -1538,7 +1538,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ai")
     qftReg->H(0);
     real1_f testX = qftReg->Prob(0);
     qftReg->S(0);
+    qftReg->H(0);
     real1_f testY = qftReg->Prob(0);
+    qftReg->H(0);
     qftReg->IS(0);
     qftReg->H(0);
 

@@ -714,6 +714,9 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         } else if (shard.isPauliX) {
             probX = prob;
         } else {
+            shard.unit->H(shard.mapped);
+            prob = (ONE_R1 / 2) - shard.unit->Prob(shard.mapped);
+            shard.unit->H(shard.mapped);
             probY = prob;
         }
 
@@ -735,13 +738,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return false;
     }
 
-    // Permute axes for logical equivalence.
-    if (shard.isPauliX) {
-        RevertBasisX(qubit);
-    } else if (shard.isPauliY) {
-        std::swap(probX, probZ);
-        std::swap(probY, probZ);
-    }
+    RevertBasis1Qb(qubit);
 
     const real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
     const real1_f azimuth = atan2(probY, probX);
