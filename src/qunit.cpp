@@ -698,9 +698,9 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
 
     real1_f prob;
-    real1_f probX = ZERO_R1;
-    real1_f probY = ZERO_R1;
-    real1_f probZ = ZERO_R1;
+    real1_f x = ZERO_R1;
+    real1_f y = ZERO_R1;
+    real1_f z = ZERO_R1;
 
     for (bitLenInt i = 0; i < 3; i++) {
         prob = (ONE_R1 / 2) - ProbBase(qubit);
@@ -710,11 +710,11 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
 
         if (!shard.isPauliX && !shard.isPauliY) {
-            probZ = 2 * prob;
+            z = 2 * ((ONE_R1 / 2) - prob);
         } else if (shard.isPauliX) {
-            probX = 2 * prob;
+            x = 2 * ((ONE_R1 / 2) - prob);
         } else {
-            probY = 2 * prob;
+            y = 2 * ((ONE_R1 / 2) - prob);
         }
 
         if (i >= 2) {
@@ -730,7 +730,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
     }
 
-    const real1_f r = sqrt(probZ * probZ + probX * probX + probY * probY);
+    const real1_f r = sqrt(x * x + y * y + z * z);
     if ((ONE_R1 - r) > separabilityThreshold) {
         return false;
     }
@@ -739,12 +739,12 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     if (shard.isPauliX) {
         RevertBasisX(qubit);
     } else if (shard.isPauliY) {
-        std::swap(probX, probZ);
-        std::swap(probY, probZ);
+        std::swap(x, z);
+        std::swap(y, z);
     }
 
-    const real1_f inclination = atan2(sqrt(probX * probX + probY * probY), probZ);
-    const real1_f azimuth = atan2(probY, probX);
+    const real1_f inclination = atan2(sqrt(x * x + y * y), z);
+    const real1_f azimuth = atan2(y, x);
 
     shard.unit->IAI(shard.mapped, azimuth, inclination);
     prob = shard.unit->Prob(shard.mapped);
