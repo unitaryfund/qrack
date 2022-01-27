@@ -730,11 +730,6 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         }
     }
 
-    const real1_f r = sqrt(probZ * probZ + probX * probX + probY * probY);
-    if ((ONE_R1 - r) > separabilityThreshold) {
-        return false;
-    }
-
     // Permute axes for logical equivalence.
     if (shard.isPauliX) {
         RevertBasisX(qubit);
