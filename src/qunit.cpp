@@ -703,18 +703,18 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     real1_f z = ZERO_R1;
 
     for (bitLenInt i = 0; i < 3; i++) {
-        prob = (ONE_R1 / 2) - ProbBase(qubit);
+        prob = 2 * ((ONE_R1 / 2) - ProbBase(qubit));
 
         if (!shard.unit) {
             return true;
         }
 
         if (!shard.isPauliX && !shard.isPauliY) {
-            z = 2 * ((ONE_R1 / 2) - prob);
+            z = prob;
         } else if (shard.isPauliX) {
-            x = 2 * ((ONE_R1 / 2) - prob);
+            x = prob;
         } else {
-            y = 2 * ((ONE_R1 / 2) - prob);
+            y = prob;
         }
 
         if (i >= 2) {
@@ -731,13 +731,13 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
 
     const real1_f r = sqrt(x * x + y * y + z * z);
-    if ((ONE_R1 - r) > separabilityThreshold) {
+    if (((ONE_R1 - r) > separabilityThreshold) || (r > (ONE_R1 + separabilityThreshold))) {
         return false;
     }
 
     // Permute axes for logical equivalence.
     if (shard.isPauliX) {
-        RevertBasisX(qubit);
+        RevertBasis1Qb(qubit);
     } else if (shard.isPauliY) {
         std::swap(x, z);
         std::swap(y, z);
