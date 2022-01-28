@@ -390,7 +390,6 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _
     bool isOcl = oc && (OCLEngine::Instance().GetDeviceCount() > 0);
     bool isOclMulti = oc && md && (OCLEngine::Instance().GetDeviceCount() > 1);
 #else
-    bool isOcl = false;
     bool isOclMulti = false;
 #endif
 
