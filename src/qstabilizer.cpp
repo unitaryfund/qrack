@@ -106,11 +106,7 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
     dispatchThreshold = PSTRIDEPOW;
 #endif
 
-    for (bitLenInt j = 0; j < qubitCount; j++) {
-        if ((perm >> j) & 1) {
-            X(j);
-        }
-    }
+    SetPermutation(perm);
 }
 
 void QStabilizer::SetPermutation(const bitCapInt& perm)
