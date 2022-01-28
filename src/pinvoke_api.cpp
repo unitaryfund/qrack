@@ -397,9 +397,11 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _
     // Construct backwards, then reverse:
     std::vector<QInterfaceEngine> simulatorType;
 
+#if ENABLE_OPENCL
     if (!hy || !isOcl) {
         simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
     }
+#endif
 
     if (zxf && (!pg || simulatorType.size())) {
         simulatorType.push_back(QINTERFACE_MASK_FUSION);
