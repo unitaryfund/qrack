@@ -157,7 +157,7 @@ void QStabilizerHybrid::SwitchToEngine()
 
     engine = MakeEngine();
     stabilizer->GetQuantumState(engine);
-    stabilizer.reset();
+    stabilizer = NULL;
     FlushBuffers();
 }
 

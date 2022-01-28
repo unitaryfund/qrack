@@ -132,7 +132,7 @@ protected:
             MpsShardPtr shard = shards[i];
             if (shard) {
                 shards[i] = NULL;
-                Mtrx(shard->gate, i);
+                engine->Mtrx(shard->gate, i);
             }
         }
     }

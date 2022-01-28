@@ -113,17 +113,17 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
 {
     Dump();
 
-    const bitLenInt rowCount = (qubitCount << 1U) + 1U;
+    const bitLenInt rowCount = (qubitCount << 1U);
 
     std::fill(r.begin(), r.end(), 0);
 
     for (bitLenInt i = 0; i < rowCount; i++) {
-        std::fill(x[i].begin(), x[i].end(), 0);
-        std::fill(z[i].begin(), z[i].end(), 0);
+        std::fill(x[i].begin(), x[i].end(), false);
+        std::fill(z[i].begin(), z[i].end(), false);
 
         if (i < qubitCount) {
             x[i][i] = true;
-        } else if (i < (qubitCount << 1U)) {
+        } else {
             bitLenInt j = i - qubitCount;
             z[i][j] = true;
         }
@@ -134,7 +134,7 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
     }
 
     for (bitLenInt j = 0; j < qubitCount; j++) {
-        if (perm & pow2Ocl(j)) {
+        if ((perm >> j) & 1) {
             X(j);
         }
     }
@@ -398,7 +398,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1);
         for (bitLenInt i = 0; i < g; i++) {
-            if (t2 & pow2Ocl(i)) {
+            if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
@@ -428,7 +428,7 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1);
         for (bitLenInt i = 0; i < g; i++) {
-            if (t2 & pow2Ocl(i)) {
+            if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
@@ -459,7 +459,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1);
         for (bitLenInt i = 0; i < g; i++) {
-            if (t2 & pow2Ocl(i)) {
+            if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
