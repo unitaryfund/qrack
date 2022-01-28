@@ -357,6 +357,9 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
 void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec, QInterfacePtr eng)
 {
     AmplitudeEntry entry = getBasisAmp(nrm);
+    if (entry.amplitude == ZERO_CMPLX) {
+        return;
+    }
 
     if (stateVec) {
         stateVec[entry.permutation] = entry.amplitude;
