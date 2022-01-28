@@ -394,35 +394,35 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _
     bool isOclMulti = false;
 #endif
 
+    // Construct backwards, then reverse:
     std::vector<QInterfaceEngine> simulatorType;
 
-    if (sd) {
-        simulatorType.push_back(isOclMulti ? QINTERFACE_QUNIT_MULTI : QINTERFACE_QUNIT);
+    if (!hy || !isOcl) {
+        simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
     }
 
-    if (sh) {
-        simulatorType.push_back(QINTERFACE_STABILIZER_HYBRID);
+    if (zxf && (!pg || simulatorType.size())) {
+        simulatorType.push_back(QINTERFACE_MASK_FUSION);
+    }
+
+    if (pg && (bdt || !sh || simulatorType.size())) {
+        simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
     if (bdt) {
         simulatorType.push_back(QINTERFACE_BDT);
     }
 
-    if (pg) {
-        simulatorType.push_back(QINTERFACE_QPAGER);
+    if (sh && (!sd || simulatorType.size())) {
+        simulatorType.push_back(QINTERFACE_STABILIZER_HYBRID);
     }
 
-    if (zxf) {
-        simulatorType.push_back(QINTERFACE_MASK_FUSION);
+    if (sd) {
+        simulatorType.push_back(isOclMulti ? QINTERFACE_QUNIT_MULTI : QINTERFACE_QUNIT);
     }
 
-    if (isOcl && hy) {
-        simulatorType.push_back(QINTERFACE_HYBRID);
-    }
-
-    if (!simulatorType.size() || !isOcl) {
-        simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
-    }
+    // (...then reverse:)
+    std::reverse(simulatorType.begin(), simulatorType.end());
 
     bool isSuccess = true;
     QInterfacePtr simulator = NULL;
