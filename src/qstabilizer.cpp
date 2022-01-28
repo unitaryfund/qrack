@@ -426,7 +426,7 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
 
     setBasisState(nrm, NULL, eng);
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
-        bitCapIntOcl t2 = t ^ (t + 1);
+        bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0; i < g; i++) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -434,8 +434,6 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
         }
         setBasisState(nrm, NULL, eng);
     }
-
-    eng->UpdateRunningNorm();
 }
 
 /// Get all probabilities corresponding to ket notation
