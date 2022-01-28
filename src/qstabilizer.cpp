@@ -106,24 +106,28 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
     dispatchThreshold = PSTRIDEPOW;
 #endif
 
-    SetPermutation(perm);
+    for (bitLenInt j = 0; j < qubitCount; j++) {
+        if ((perm >> j) & 1) {
+            X(j);
+        }
+    }
 }
 
 void QStabilizer::SetPermutation(const bitCapInt& perm)
 {
     Dump();
 
-    const bitLenInt rowCount = (qubitCount << 1U) + 1U;
+    const bitLenInt rowCount = (qubitCount << 1U);
 
     std::fill(r.begin(), r.end(), 0);
 
     for (bitLenInt i = 0; i < rowCount; i++) {
-        std::fill(x[i].begin(), x[i].end(), 0);
-        std::fill(z[i].begin(), z[i].end(), 0);
+        std::fill(x[i].begin(), x[i].end(), false);
+        std::fill(z[i].begin(), z[i].end(), false);
 
         if (i < qubitCount) {
             x[i][i] = true;
-        } else if (i < (qubitCount << 1U)) {
+        } else {
             bitLenInt j = i - qubitCount;
             z[i][j] = true;
         }
@@ -134,7 +138,7 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
     }
 
     for (bitLenInt j = 0; j < qubitCount; j++) {
-        if (perm & pow2Ocl(j)) {
+        if ((perm >> j) & 1) {
             X(j);
         }
     }
