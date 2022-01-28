@@ -402,7 +402,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1);
         for (bitLenInt i = 0; i < g; i++) {
-            if (t2 & pow2Ocl(i)) {
+            if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
@@ -432,7 +432,7 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1);
         for (bitLenInt i = 0; i < g; i++) {
-            if (t2 & pow2Ocl(i)) {
+            if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
@@ -463,7 +463,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1);
         for (bitLenInt i = 0; i < g; i++) {
-            if (t2 & pow2Ocl(i)) {
+            if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
