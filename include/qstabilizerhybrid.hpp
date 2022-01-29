@@ -265,7 +265,7 @@ public:
 
     virtual bool isClifford() { return !engine; }
 
-    virtual bool isClifford(bitLenInt qubit) { return !engine && !(shards[qubit]); };
+    virtual bool isClifford(bitLenInt qubit) { return !engine && !shards[qubit]; };
 
     virtual bool isBinaryDecisionTree() { return engine && engine->isBinaryDecisionTree(); };
 
@@ -406,7 +406,15 @@ public:
             return;
         }
 
-        if (shards[qubit1] || shards[qubit2]) {
+        if (shards[qubit1] && shards[qubit1]->IsInvert()) {
+            InvertBuffer(qubit1);
+        }
+
+        if (shards[qubit2] && shards[qubit2]->IsInvert()) {
+            InvertBuffer(qubit2);
+        }
+
+        if ((shards[qubit1] && !shards[qubit1]->IsPhase()) || (shards[qubit2] && !shards[qubit2]->IsPhase())) {
             FlushBuffers();
         }
 
