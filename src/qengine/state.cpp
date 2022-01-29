@@ -1419,6 +1419,11 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f)
     CHECK_ZERO_SKIP();
 
     real1 nrm = (real1)nrm_f;
+
+    if ((runningNorm == REAL1_DEFAULT_ARG) && (nrm == REAL1_DEFAULT_ARG)) {
+        UpdateRunningNorm();
+    }
+
     real1 norm_thresh = (real1)norm_thresh_f;
 
     Finish();

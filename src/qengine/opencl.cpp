@@ -2799,10 +2799,14 @@ QInterfacePtr QEngineOCL::Clone()
 
 void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh)
 {
+    CHECK_ZERO_SKIP();
+
+    if ((runningNorm == REAL1_DEFAULT_ARG) && (nrm == REAL1_DEFAULT_ARG)) {
+        UpdateRunningNorm();
+    }
+
     // We might have async execution of gates still happening.
     clFinish();
-
-    CHECK_ZERO_SKIP();
 
     cl_int error;
 
