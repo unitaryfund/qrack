@@ -67,9 +67,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 
 complex QEngineCPU::GetAmplitude(bitCapInt perm)
 {
-    if (doNormalize) {
-        NormalizeState();
-    }
+    // WARNING: Does not normalize!
     Finish();
 
     if (!stateVec) {
@@ -81,16 +79,16 @@ complex QEngineCPU::GetAmplitude(bitCapInt perm)
 
 void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
 {
-    if (doNormalize) {
-        NormalizeState();
-    }
+    // WARNING: Does not normalize!
     Finish();
 
     if (!stateVec && !norm(amp)) {
         return;
     }
 
-    runningNorm = REAL1_DEFAULT_ARG;
+    if (runningNorm != REAL1_DEFAULT_ARG) {
+        runningNorm += norm(amp) - norm(stateVec->read(perm));
+    }
 
     if (!stateVec) {
         ResetStateVec(AllocStateVec(maxQPowerOcl));

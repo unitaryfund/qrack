@@ -2639,12 +2639,9 @@ void QEngineOCL::SetQuantumState(const complex* inputState)
 
 complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 {
+    // WARNING: Does not normalize!
     if (!stateBuffer) {
         return ZERO_CMPLX;
-    }
-
-    if (doNormalize) {
-        NormalizeState();
     }
 
     complex amp;
@@ -2658,16 +2655,12 @@ complex QEngineOCL::GetAmplitude(bitCapInt fullRegister)
 
 void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
 {
-    if (doNormalize) {
-        NormalizeState();
-    }
+    // WARNING: Does not normalize!
     clFinish();
 
     if (!stateBuffer && !norm(amp)) {
         return;
     }
-
-    runningNorm = REAL1_DEFAULT_ARG;
 
     if (!stateBuffer) {
         ReinitBuffer();
@@ -2675,6 +2668,10 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
     }
 
     permutationAmp = amp;
+
+    if (runningNorm != REAL1_DEFAULT_ARG) {
+        runningNorm += norm(amp) - norm(permutationAmp);
+    }
 
     EventVecPtr waitVec = ResetWaitEvents();
     device_context->LockWaitEvents();
