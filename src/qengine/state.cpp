@@ -87,7 +87,7 @@ void QEngineCPU::SetAmplitude(bitCapInt perm, complex amp)
     }
 
     if (runningNorm != REAL1_DEFAULT_ARG) {
-        runningNorm += norm(amp) - norm(stateVec->read(perm));
+        runningNorm += norm(amp) - norm(stateVec->read((bitCapIntOcl)perm));
     }
 
     if (!stateVec) {

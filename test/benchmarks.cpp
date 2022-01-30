@@ -181,7 +181,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 if (tClock.count() < 0) {
                     trialClocks.push_back(0);
                 } else if (logNormal) {
-                    trialClocks.push_back(Qrack::log2(tClock.count() * clockFactor));
+                    trialClocks.push_back(std::log2(tClock.count() * clockFactor));
                 } else {
                     trialClocks.push_back(tClock.count() * clockFactor);
                 }

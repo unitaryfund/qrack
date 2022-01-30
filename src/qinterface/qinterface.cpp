@@ -376,7 +376,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         bitMap[i] = log2(qPowers[i]);
     }
 
-    bitCapInt maskMaxQPower = pow2(qPowerCount);
+    bitCapIntOcl maskMaxQPower = pow2Ocl(qPowerCount);
 
     if ((shots == 1U) && (qPowerCount == qubitCount)) {
         real1 maskProb = (real1)Rand();
@@ -474,7 +474,7 @@ void QInterface::MultiShotMeasureMask(
         bitMap[i] = log2(qPowers[i]);
     }
 
-    bitCapInt maskMaxQPower = pow2(qPowerCount);
+    bitCapIntOcl maskMaxQPower = pow2Ocl(qPowerCount);
 
     if ((shots == 1U) && (qPowerCount == qubitCount)) {
         real1 maskProb = (real1)Rand();
