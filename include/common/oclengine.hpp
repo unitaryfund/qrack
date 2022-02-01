@@ -234,9 +234,16 @@ public:
 
     size_t GetPreferredConcurrency()
     {
+        bitCapIntOcl hybridOffset = 7U;
+#if ENABLE_ENV_VARS
+        if (getenv("QRACK_QHYBRID_OFFSET")) {
+            hybridOffset = (bitCapIntOcl)std::stoi(std::string(getenv("QRACK_QHYBRID_OFFSET")));
+        }
+#endif
+
         const size_t nrmGroupSize =
             calls[OCL_API_APPLY2X2_SINGLE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
-        size_t nrmGroupCount = procElemCount * nrmGroupSize;
+        size_t nrmGroupCount = (procElemCount * nrmGroupSize) << hybridOffset;
         if (nrmGroupCount > maxWorkItems) {
             nrmGroupCount = maxWorkItems;
         }
