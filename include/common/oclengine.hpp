@@ -251,7 +251,7 @@ public:
             return preferredConcurrency;
         }
 
-        int hybridOffset = 2U;
+        int hybridOffset = 3U;
 #if ENABLE_ENV_VARS
         if (getenv("QRACK_GPU_OFFSET_QB")) {
             hybridOffset = std::stoi(std::string(getenv("QRACK_GPU_OFFSET_QB")));
