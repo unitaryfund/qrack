@@ -486,12 +486,11 @@ void QEngineOCL::SetDevice(int dID, bool forceReInit)
     context = device_context->context;
     queue = device_context->queue;
 
-    OCLDeviceCall ocl = device_context->Reserve(OCL_API_APPLY2X2_NORM_SINGLE);
-
     bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0;
-    nrmGroupSize = ocl.call.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_context->device);
-    procElemCount = device_context->GetProcElementCount();
+    nrmGroupSize = device_context->GetPreferredSizeMultiple();
     maxWorkItems = device_context->GetMaxWorkItems();
+    preferredConcurrency = device_context->GetPreferredConcurrency();
+    nrmGroupCount = preferredConcurrency;
 
     // constrain to a power of two
     size_t groupSizePow = ONE_BCI;
@@ -500,15 +499,6 @@ void QEngineOCL::SetDevice(int dID, bool forceReInit)
     }
     groupSizePow >>= ONE_BCI;
     nrmGroupSize = groupSizePow;
-    size_t procElemPow = ONE_BCI;
-    while (procElemPow <= procElemCount) {
-        procElemPow <<= ONE_BCI;
-    }
-    procElemPow >>= ONE_BCI;
-    nrmGroupCount = procElemPow * nrmGroupSize * 4U;
-    while (nrmGroupCount > maxWorkItems) {
-        nrmGroupCount >>= ONE_BCI;
-    }
 
     // If the user wants to not use general host RAM, but we can't allocate enough on the device, fall back to host RAM
     // anyway.

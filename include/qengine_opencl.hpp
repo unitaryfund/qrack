@@ -173,7 +173,7 @@ protected:
     size_t maxMem;
     size_t maxAlloc;
     size_t totalOclAllocSize;
-    unsigned int procElemCount;
+    size_t preferredConcurrency;
     bool unlockHostMem;
     cl_map_flags lockSyncFlags;
     bool usingHostRam;

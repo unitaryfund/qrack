@@ -183,6 +183,8 @@ private:
     const size_t maxWorkItems = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
     const size_t maxAlloc = device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
     const size_t globalSize = device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+    size_t preferredSizeMultiple;
+    size_t preferredConcurrency;
 
 public:
     OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int dev_id, int cntxt_id)
@@ -191,6 +193,8 @@ public:
         , context(c)
         , context_id(cntxt_id)
         , device_id(dev_id)
+        , preferredSizeMultiple(0)
+        , preferredConcurrency(0)
     {
         cl_int error;
         queue = cl::CommandQueue(context, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &error);
@@ -232,24 +236,48 @@ public:
         }
     }
 
+    size_t GetPreferredSizeMultiple()
+    {
+        return preferredSizeMultiple
+            ? preferredSizeMultiple
+            : preferredSizeMultiple =
+                  calls[OCL_API_APPLY2X2_NORM_SINGLE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                      device);
+    }
+
     size_t GetPreferredConcurrency()
     {
-        int hybridOffset = 8U;
+        if (preferredConcurrency) {
+            return preferredConcurrency;
+        }
+
+        int hybridOffset = 2U;
 #if ENABLE_ENV_VARS
         if (getenv("QRACK_GPU_OFFSET_QB")) {
             hybridOffset = std::stoi(std::string(getenv("QRACK_GPU_OFFSET_QB")));
         }
 #endif
 
-        const size_t nrmGroupSize =
-            calls[OCL_API_APPLY2X2_SINGLE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
-        size_t toRet = hybridOffset > 0 ? ((procElemCount * nrmGroupSize) << hybridOffset)
-                                        : ((procElemCount * nrmGroupSize) >> hybridOffset);
-        if (toRet < 1U) {
-            toRet = 1U;
+        const size_t nrmGroupSize = GetPreferredSizeMultiple();
+        size_t groupSizePow = 1U;
+        while (groupSizePow <= nrmGroupSize) {
+            groupSizePow <<= 1U;
+        }
+        groupSizePow >>= 1U;
+
+        size_t procElemPow = 1U;
+        while (procElemPow <= procElemCount) {
+            procElemPow <<= 1U;
+        }
+        procElemPow >>= 1U;
+
+        preferredConcurrency = hybridOffset > 0 ? ((procElemPow * groupSizePow) << hybridOffset)
+                                                : ((procElemPow * groupSizePow) >> hybridOffset);
+        if (preferredConcurrency < 1U) {
+            preferredConcurrency = 1U;
         }
 
-        return toRet;
+        return preferredConcurrency;
     }
 
     size_t GetProcElementCount() { return procElemCount; }
