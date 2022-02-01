@@ -24,21 +24,14 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     , isSparse(useSparseStateVec)
     , separabilityThreshold(sep_thresh)
 {
-    bitCapIntOcl hybridOffset = 7U;
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_QHYBRID_OFFSET")) {
-        hybridOffset = (bitCapIntOcl)std::stoi(std::string(getenv("QRACK_QHYBRID_OFFSET")));
-    }
-#endif
-
-    SetStride(GetParallelThreshold() << hybridOffset);
+    SetStride(GetParallelThreshold() << 1U);
 
     if (qubitThreshold != 0) {
         thresholdQubits = qubitThreshold;
     } else {
         bitLenInt gpuQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
-        bitLenInt cpuQubits = (GetParallelThreshold() <= ONE_BCI) ? 0U : (log2(GetParallelThreshold() - ONE_BCI) + 1U);
-        thresholdQubits = gpuQubits > cpuQubits ? gpuQubits : cpuQubits;
+        bitLenInt cpuQubits = (GetParallelThreshold() <= ONE_BCI) ? 0U : (log2(GetParallelThreshold() - ONE_BCI) + 2U);
+        thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
 
     isGpu = (qubitCount >= thresholdQubits);
