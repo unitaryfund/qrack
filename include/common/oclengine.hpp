@@ -234,21 +234,22 @@ public:
 
     size_t GetPreferredConcurrency()
     {
-        size_t hybridOffset = 7U;
+        int hybridOffset = 8U;
 #if ENABLE_ENV_VARS
-        if (getenv("QRACK_QHYBRID_OFFSET")) {
-            hybridOffset = (size_t)std::stoi(std::string(getenv("QRACK_QHYBRID_OFFSET")));
+        if (getenv("QRACK_GPU_OFFSET_QB")) {
+            hybridOffset = std::stoi(std::string(getenv("QRACK_GPU_OFFSET_QB")));
         }
 #endif
 
         const size_t nrmGroupSize =
             calls[OCL_API_APPLY2X2_SINGLE].getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
-        size_t nrmGroupCount = (procElemCount * nrmGroupSize) << hybridOffset;
-        if (nrmGroupCount > maxWorkItems) {
-            nrmGroupCount = maxWorkItems;
+        size_t toRet = hybridOffset > 0 ? ((procElemCount * nrmGroupSize) << hybridOffset)
+                                        : ((procElemCount * nrmGroupSize) >> hybridOffset);
+        if (toRet < 1U) {
+            toRet = 1U;
         }
 
-        return nrmGroupCount;
+        return toRet;
     }
 
     size_t GetProcElementCount() { return procElemCount; }
