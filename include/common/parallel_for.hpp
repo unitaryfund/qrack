@@ -23,13 +23,15 @@ namespace Qrack {
 
 class ParallelFor {
 private:
-    const bitCapIntOcl pStride;
+    bitCapIntOcl pStride;
     unsigned numCores;
 
 public:
     ParallelFor();
 
     virtual ~ParallelFor() {}
+
+    void SetStride(bitCapIntOcl stride) { pStride = stride; }
 
     void SetConcurrencyLevel(unsigned num)
     {

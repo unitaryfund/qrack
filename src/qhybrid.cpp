@@ -24,6 +24,15 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     , isSparse(useSparseStateVec)
     , separabilityThreshold(sep_thresh)
 {
+    bitCapIntOcl hybridOffset = 5U;
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_QHYBRID_OFFSET")) {
+        hybridOffset = (bitCapIntOcl)std::stoi(std::string(getenv("QRACK_PSTRIDEPOW")));
+    }
+#endif
+
+    SetStride(GetParallelThreshold() << hybridOffset);
+
     if (qubitThreshold != 0) {
         thresholdQubits = qubitThreshold;
     } else {
@@ -41,6 +50,7 @@ QEnginePtr QHybrid::MakeEngine(bool isOpenCL, bitCapInt initState)
             qubitCount, initState, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
             useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
     toRet->SetConcurrency(GetConcurrencyLevel());
+    toRet->SetStride(GetParallelThreshold());
     return toRet;
 }
 
