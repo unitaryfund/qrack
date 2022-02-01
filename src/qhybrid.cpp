@@ -38,7 +38,7 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     } else {
         bitLenInt gpuQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
         bitLenInt cpuQubits = (GetParallelThreshold() <= ONE_BCI) ? 0U : (log2(GetParallelThreshold() - ONE_BCI) + 1U);
-        thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
+        thresholdQubits = gpuQubits > cpuQubits ? gpuQubits : cpuQubits;
     }
 
     isGpu = (qubitCount >= thresholdQubits);
