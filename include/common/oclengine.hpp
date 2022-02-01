@@ -234,10 +234,10 @@ public:
 
     size_t GetPreferredConcurrency()
     {
-        bitCapIntOcl hybridOffset = 7U;
+        size_t hybridOffset = 7U;
 #if ENABLE_ENV_VARS
         if (getenv("QRACK_QHYBRID_OFFSET")) {
-            hybridOffset = (bitCapIntOcl)std::stoi(std::string(getenv("QRACK_QHYBRID_OFFSET")));
+            hybridOffset = (size_t)std::stoi(std::string(getenv("QRACK_QHYBRID_OFFSET")));
         }
 #endif
 
