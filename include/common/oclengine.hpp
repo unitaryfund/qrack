@@ -251,28 +251,20 @@ public:
             return preferredConcurrency;
         }
 
-        int hybridOffset = 3U;
+        int hybridOffset = 2U;
 #if ENABLE_ENV_VARS
         if (getenv("QRACK_GPU_OFFSET_QB")) {
             hybridOffset = std::stoi(std::string(getenv("QRACK_GPU_OFFSET_QB")));
         }
 #endif
 
-        const size_t nrmGroupSize = GetPreferredSizeMultiple();
-        size_t groupSizePow = 1U;
-        while (groupSizePow <= nrmGroupSize) {
-            groupSizePow <<= 1U;
+        const size_t pc = procElemCount * GetPreferredSizeMultiple();
+        preferredConcurrency = 1U;
+        while (preferredConcurrency < pc) {
+            preferredConcurrency <<= 1U;
         }
-        groupSizePow >>= 1U;
-
-        size_t procElemPow = 1U;
-        while (procElemPow <= procElemCount) {
-            procElemPow <<= 1U;
-        }
-        procElemPow >>= 1U;
-
-        preferredConcurrency = hybridOffset > 0 ? ((procElemPow * groupSizePow) << hybridOffset)
-                                                : ((procElemPow * groupSizePow) >> hybridOffset);
+        preferredConcurrency = hybridOffset > 0 ? (preferredConcurrency << hybridOffset)
+                                                : (preferredConcurrency >> hybridOffset);
         if (preferredConcurrency < 1U) {
             preferredConcurrency = 1U;
         }
