@@ -167,7 +167,7 @@ void ParallelFor::par_for_mask(const bitCapIntOcl begin, const bitCapIntOcl end,
 void ParallelFor::par_for_inc(
     const bitCapIntOcl begin, const bitCapIntOcl itemCount, IncrementFunc inc, ParallelFunc fn)
 {
-    if (itemCount < GetStride()) {
+    if (itemCount < pStride) {
         const bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; j++) {
             fn(inc(j, 0), 0);
@@ -176,11 +176,15 @@ void ParallelFor::par_for_inc(
     }
 
     const bitCapIntOcl Stride = pStride;
+    unsigned threads = itemCount / pStride;
+    if (threads > numCores) {
+        threads = numCores;
+    }
 
     DECLARE_ATOMIC_BITCAPINT();
     idx = 0;
-    std::vector<std::future<void>> futures(numCores);
-    for (unsigned cpu = 0; cpu != numCores; ++cpu) {
+    std::vector<std::future<void>> futures(threads);
+    for (unsigned cpu = 0; cpu != threads; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(cpu, &idx, &begin, &itemCount, &Stride, inc, fn)
         {
             for (;;) {
@@ -199,7 +203,7 @@ void ParallelFor::par_for_inc(
         });
     }
 
-    for (unsigned cpu = 0; cpu != numCores; ++cpu) {
+    for (unsigned cpu = 0; cpu != threads; ++cpu) {
         futures[cpu].get();
     }
 }
@@ -210,7 +214,7 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
 
     // Empirically, this often works better if we add the "<< ONE_BCI," or factor of 2. We might guess that, on average
     // in general use, about half the full-depth amplitudes are redundant.
-    if (itemCount < (GetStride() << ONE_BCI)) {
+    if (itemCount < (pStride << ONE_BCI)) {
         const bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; j++) {
             j |= fn(j, 0);
@@ -219,11 +223,15 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
     }
 
     const bitCapIntOcl Stride = pStride << ONE_BCI;
+    unsigned threads = itemCount / pStride;
+    if (threads > numCores) {
+        threads = numCores;
+    }
 
     bitCapIntOcl idx = 0;
-    std::vector<std::future<void>> futures(numCores);
+    std::vector<std::future<void>> futures(threads);
     std::mutex updateMutex;
-    for (unsigned cpu = 0; cpu != numCores; ++cpu) {
+    for (unsigned cpu = 0; cpu != threads; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(cpu, &idx, &begin, &itemCount, &Stride, &updateMutex, fn)
         {
             for (;;) {
@@ -254,7 +262,7 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
         });
     }
 
-    for (unsigned cpu = 0; cpu != numCores; ++cpu) {
+    for (unsigned cpu = 0; cpu != threads; ++cpu) {
         futures[cpu].get();
     }
 }
@@ -266,7 +274,7 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
     }
 
     real1_f nrmSqr = ZERO_R1;
-    if (itemCount < GetStride()) {
+    if (itemCount < pStride) {
         for (bitCapIntOcl j = 0; j < itemCount; j++) {
             const real1_f nrm = norm(stateArray->read(j));
             if (nrm >= norm_thresh) {
@@ -278,10 +286,15 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
     }
 
     const bitCapIntOcl Stride = pStride;
+    unsigned threads = itemCount / pStride;
+    if (threads > numCores) {
+        threads = numCores;
+    }
+
     DECLARE_ATOMIC_BITCAPINT();
     idx = 0;
-    std::vector<std::future<real1_f>> futures(numCores);
-    for (unsigned cpu = 0; cpu != numCores; ++cpu) {
+    std::vector<std::future<real1_f>> futures(threads);
+    for (unsigned cpu = 0; cpu != threads; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(&idx, &itemCount, stateArray, &Stride, &norm_thresh)
         {
             real1_f sqrNorm = ZERO_R1;
@@ -305,7 +318,7 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
         });
     }
 
-    for (unsigned cpu = 0; cpu != numCores; ++cpu) {
+    for (unsigned cpu = 0; cpu != threads; ++cpu) {
         nrmSqr += futures[cpu].get();
     }
 
@@ -315,7 +328,7 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
 real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVectorPtr stateArray)
 {
     real1_f nrmSqr = ZERO_R1;
-    if (itemCount < GetStride()) {
+    if (itemCount < pStride) {
         for (bitCapIntOcl j = 0; j < itemCount; j++) {
             nrmSqr += norm(stateArray->read(j));
         }
@@ -324,10 +337,15 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
     }
 
     const bitCapIntOcl Stride = pStride;
+    unsigned threads = itemCount / pStride;
+    if (threads > numCores) {
+        threads = numCores;
+    }
+
     DECLARE_ATOMIC_BITCAPINT();
     idx = 0;
-    std::vector<std::future<real1_f>> futures(numCores);
-    for (unsigned cpu = 0; cpu != numCores; ++cpu) {
+    std::vector<std::future<real1_f>> futures(threads);
+    for (unsigned cpu = 0; cpu != threads; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(&idx, &itemCount, &Stride, stateArray)
         {
             real1_f sqrNorm = ZERO_R1;
@@ -347,7 +365,7 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
         });
     }
 
-    for (unsigned cpu = 0; cpu != numCores; ++cpu) {
+    for (unsigned cpu = 0; cpu != threads; ++cpu) {
         nrmSqr += futures[cpu].get();
     }
 
