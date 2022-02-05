@@ -167,7 +167,7 @@ void ParallelFor::par_for_mask(const bitCapIntOcl begin, const bitCapIntOcl end,
 void ParallelFor::par_for_inc(
     const bitCapIntOcl begin, const bitCapIntOcl itemCount, IncrementFunc inc, ParallelFunc fn)
 {
-    if (itemCount < GetParallelThreshold()) {
+    if (itemCount < GetStride()) {
         const bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; j++) {
             fn(inc(j, 0), 0);
@@ -210,7 +210,7 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
 
     // Empirically, this often works better if we add the "<< ONE_BCI," or factor of 2. We might guess that, on average
     // in general use, about half the full-depth amplitudes are redundant.
-    if (itemCount < (GetParallelThreshold() << ONE_BCI)) {
+    if (itemCount < (GetStride() << ONE_BCI)) {
         const bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; j++) {
             j |= fn(j, 0);
@@ -266,7 +266,7 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
     }
 
     real1_f nrmSqr = ZERO_R1;
-    if (itemCount < GetParallelThreshold()) {
+    if (itemCount < GetStride()) {
         for (bitCapIntOcl j = 0; j < itemCount; j++) {
             const real1_f nrm = norm(stateArray->read(j));
             if (nrm >= norm_thresh) {
@@ -315,7 +315,7 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
 real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVectorPtr stateArray)
 {
     real1_f nrmSqr = ZERO_R1;
-    if (itemCount < GetParallelThreshold()) {
+    if (itemCount < GetStride()) {
         for (bitCapIntOcl j = 0; j < itemCount; j++) {
             nrmSqr += norm(stateArray->read(j));
         }

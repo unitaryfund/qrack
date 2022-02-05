@@ -716,7 +716,7 @@ template <typename Fn> void QBinaryDecisionTree::ApplySingle(const complex* lMtr
     ResetStateVector();
 
     Dispatch(targetPow, [this, mtrx, target, targetPow, leafFunc]() {
-        const bool isParallel = (pow2Ocl(target) < GetParallelThreshold());
+        const bool isParallel = (pow2Ocl(target) < GetStride());
 
         par_for_qbdt(0, targetPow, [&](const bitCapIntOcl& i, const int& cpu) {
             QBinaryDecisionTreeNodePtr leaf = root;
@@ -843,7 +843,7 @@ void QBinaryDecisionTree::ApplyControlledSingle(
         const bool isPhase = !highControlMask && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]);
         const bool isInvert = !highControlMask && IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]);
         const bitCapIntOcl maxLcv = targetPow >> qPowersSorted.size();
-        const bool isParallel = (maxLcv < GetParallelThreshold());
+        const bool isParallel = (maxLcv < GetStride());
 
         par_for_qbdt(0, maxLcv, [&](const bitCapIntOcl& lcv, const int& cpu) {
             bitCapIntOcl i = 0U;

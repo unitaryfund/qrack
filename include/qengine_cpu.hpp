@@ -319,8 +319,7 @@ protected:
     virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn)
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        if ((workItemCount >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) &&
-            (workItemCount < GetParallelThreshold())) {
+        if ((workItemCount >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) && (workItemCount < GetStride())) {
             dispatchQueue.dispatch(fn);
         } else {
             Finish();

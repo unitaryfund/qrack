@@ -263,8 +263,8 @@ public:
         while (preferredConcurrency < pc) {
             preferredConcurrency <<= 1U;
         }
-        preferredConcurrency = hybridOffset > 0 ? (preferredConcurrency << hybridOffset)
-                                                : (preferredConcurrency >> hybridOffset);
+        preferredConcurrency =
+            hybridOffset > 0 ? (preferredConcurrency << hybridOffset) : (preferredConcurrency >> hybridOffset);
         if (preferredConcurrency < 1U) {
             preferredConcurrency = 1U;
         }

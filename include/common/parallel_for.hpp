@@ -23,7 +23,7 @@ namespace Qrack {
 
 class ParallelFor {
 private:
-    bitCapIntOcl pStride;
+    const bitCapIntOcl pStride;
     unsigned numCores;
 
 public:
@@ -31,19 +31,9 @@ public:
 
     virtual ~ParallelFor() {}
 
-    void SetStride(bitCapIntOcl stride) { pStride = stride; }
-
-    void SetConcurrencyLevel(unsigned num)
-    {
-        numCores = num;
-        if (GetParallelThreshold() < pStride) {
-            throw std::runtime_error("GetParallelThreshold() was truncated! Set your PSTRIDEPOW value lower, depending "
-                                     "on hyperthread count.");
-        }
-    }
+    void SetConcurrencyLevel(unsigned num) { numCores = num; }
     unsigned GetConcurrencyLevel() { return numCores; }
     bitCapIntOcl GetStride() { return pStride; }
-    bitCapIntOcl GetParallelThreshold() { return pStride * numCores; }
     /*
      * Parallelization routines for spreading work across multiple cores.
      */
