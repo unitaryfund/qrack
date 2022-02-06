@@ -176,7 +176,7 @@ void ParallelFor::par_for_inc(
     }
 
     const bitCapIntOcl Stride = pStride;
-    unsigned threads = itemCount / pStride;
+    unsigned threads = (unsigned)(itemCount / pStride);
     if (threads > numCores) {
         threads = numCores;
     }
@@ -223,7 +223,7 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
     }
 
     const bitCapIntOcl Stride = pStride << ONE_BCI;
-    unsigned threads = itemCount / pStride;
+    unsigned threads = (unsigned)(itemCount / pStride);
     if (threads > numCores) {
         threads = numCores;
     }
@@ -286,7 +286,7 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
     }
 
     const bitCapIntOcl Stride = pStride;
-    unsigned threads = itemCount / pStride;
+    unsigned threads = (unsigned)(itemCount / pStride);
     if (threads > numCores) {
         threads = numCores;
     }
@@ -337,7 +337,7 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
     }
 
     const bitCapIntOcl Stride = pStride;
-    unsigned threads = itemCount / pStride;
+    unsigned threads = (unsigned)(itemCount / pStride);
     if (threads > numCores) {
         threads = numCores;
     }
