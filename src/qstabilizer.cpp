@@ -497,7 +497,7 @@ void QStabilizer::H(const bitLenInt& t)
         const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
-            std::swap(x[i][t], z[i][t]);
+            std::vector<bool>::swap(x[i][t], z[i][t]);
             if (x[i][t] && z[i][t]) {
                 r[i] = (r[i] + 2) & 0x3U;
             }
@@ -614,7 +614,7 @@ void QStabilizer::SqrtY(const bitLenInt& t)
         const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
-            std::swap(x[i][t], z[i][t]);
+            std::vector<bool>::swap(x[i][t], z[i][t]);
             if (!x[i][t] && z[i][t]) {
                 r[i] = (r[i] + 2) & 0x3U;
             }
@@ -632,7 +632,7 @@ void QStabilizer::ISqrtY(const bitLenInt& t)
             if (!x[i][t] && z[i][t]) {
                 r[i] = (r[i] + 2) & 0x3U;
             }
-            std::swap(x[i][t], z[i][t]);
+            std::vector<bool>::swap(x[i][t], z[i][t]);
         }
     });
 }
@@ -695,8 +695,8 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
         const bitLenInt maxLcv = qubitCount << 1U;
 
         for (bitLenInt i = 0; i < maxLcv; i++) {
-            std::swap(x[i][c], x[i][t]);
-            std::swap(z[i][c], z[i][t]);
+            std::vector<bool>::swap(x[i][c], x[i][t]);
+            std::vector<bool>::swap(z[i][c], z[i][t]);
         }
     });
 }
