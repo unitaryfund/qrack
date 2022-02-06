@@ -426,11 +426,15 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _
     std::reverse(simulatorType.begin(), simulatorType.end());
 
     if (!simulatorType.size()) {
+#if ENABLE_OPENCL
         if (hy && isOcl) {
             simulatorType.push_back(QINTERFACE_HYBRID);
         } else {
             simulatorType.push_back(isOcl ? QINTERFACE_OPENCL : QINTERFACE_CPU);
         }
+#else
+        simulatorType.push_back(QINTERFACE_CPU);
+#endif
     }
 
     bool isSuccess = true;
