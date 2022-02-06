@@ -31,8 +31,6 @@
 
 namespace Qrack {
 
-bool getRdRand(unsigned* pv);
-
 #if ENABLE_RNDFILE && !ENABLE_DEVRAND
 // See https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
 class RandFile {
