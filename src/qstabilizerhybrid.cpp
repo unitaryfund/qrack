@@ -562,6 +562,16 @@ void QStabilizerHybrid::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen
 void QStabilizerHybrid::MCPhase(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
+    if (stabilizer && (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX))) {
+        real1_f prob = Prob(target);
+        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_CMPLX)) {
+            return;
+        }
+        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_CMPLX)) {
+            return;
+        }
+    }
+
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls)) {
         return;
@@ -757,6 +767,16 @@ void QStabilizerHybrid::MACMtrx(
 void QStabilizerHybrid::MACPhase(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
+    if (stabilizer && (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX))) {
+        real1_f prob = Prob(target);
+        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_CMPLX)) {
+            return;
+        }
+        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_CMPLX)) {
+            return;
+        }
+    }
+
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls, true)) {
         return;
