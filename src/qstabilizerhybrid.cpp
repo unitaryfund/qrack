@@ -667,6 +667,17 @@ void QStabilizerHybrid::MCInvert(
         return;
     }
 
+    if (stabilizer && stabilizer->IsSeparableZ(target) && IS_NORM_0(topRight - ONE_CMPLX) &&
+        IS_NORM_0(bottomLeft - ONE_CMPLX)) {
+        H(target);
+        real1_f prob = Prob(target);
+        H(target);
+
+        if (prob == ZERO_R1) {
+            return;
+        }
+    }
+
     if (controls.size() > 1U) {
         SwitchToEngine();
     } else {
@@ -814,6 +825,17 @@ void QStabilizerHybrid::MACInvert(
     if (!controls.size()) {
         Invert(topRight, bottomLeft, target);
         return;
+    }
+
+    if (stabilizer && stabilizer->IsSeparableZ(target) && IS_NORM_0(topRight - ONE_CMPLX) &&
+        IS_NORM_0(bottomLeft - ONE_CMPLX)) {
+        H(target);
+        real1_f prob = Prob(target);
+        H(target);
+
+        if (prob == ZERO_R1) {
+            return;
+        }
     }
 
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
