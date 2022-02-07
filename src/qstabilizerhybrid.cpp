@@ -562,16 +562,6 @@ void QStabilizerHybrid::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen
 void QStabilizerHybrid::MCPhase(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
-    if (stabilizer && (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX))) {
-        real1_f prob = Prob(target);
-        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_CMPLX)) {
-            return;
-        }
-        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_CMPLX)) {
-            return;
-        }
-    }
-
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls)) {
         return;
@@ -580,6 +570,16 @@ void QStabilizerHybrid::MCPhase(
     if (!controls.size()) {
         Phase(topLeft, bottomRight, target);
         return;
+    }
+
+    if (stabilizer && (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX))) {
+        real1_f prob = Prob(target);
+        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_CMPLX)) {
+            return;
+        }
+        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_CMPLX)) {
+            return;
+        }
     }
 
     if (controls.size() > 1U) {
@@ -767,16 +767,6 @@ void QStabilizerHybrid::MACMtrx(
 void QStabilizerHybrid::MACPhase(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
-    if (stabilizer && (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX))) {
-        real1_f prob = Prob(target);
-        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_CMPLX)) {
-            return;
-        }
-        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_CMPLX)) {
-            return;
-        }
-    }
-
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls, true)) {
         return;
@@ -785,6 +775,16 @@ void QStabilizerHybrid::MACPhase(
     if (!controls.size()) {
         Phase(topLeft, bottomRight, target);
         return;
+    }
+
+    if (stabilizer && (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX))) {
+        real1_f prob = Prob(target);
+        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_CMPLX)) {
+            return;
+        }
+        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_CMPLX)) {
+            return;
+        }
     }
 
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topLeft, bottomRight)) {
