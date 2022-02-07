@@ -574,10 +574,10 @@ void QStabilizerHybrid::MCPhase(
 
     if (stabilizer && (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX))) {
         real1_f prob = Prob(target);
-        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_CMPLX)) {
+        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
             return;
         }
-        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_CMPLX)) {
+        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_R1)) {
             return;
         }
     }
@@ -779,10 +779,10 @@ void QStabilizerHybrid::MACPhase(
 
     if (stabilizer && (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX))) {
         real1_f prob = Prob(target);
-        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_CMPLX)) {
+        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
             return;
         }
-        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_CMPLX)) {
+        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_R1)) {
             return;
         }
     }
