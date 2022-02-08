@@ -2697,7 +2697,7 @@ void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
 
 void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 {
-    if (randGlobalPhase || IS_1_R1(topLeft)) {
+    if (randGlobalPhase || IS_1_CMPLX(topLeft)) {
         if (IS_NORM_0(topLeft - bottomRight)) {
             return;
         }
@@ -2722,10 +2722,10 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
     shard.CommutePhase(topLeft, bottomRight);
 
-    if (IS_1_R1(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
+    if (IS_1_CMPLX(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
         Flush0Eigenstate(target);
         return;
-    } else if (IS_1_R1(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
+    } else if (IS_1_CMPLX(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
         Flush1Eigenstate(target);
         return;
     }
@@ -2842,18 +2842,18 @@ void QUnit::MCPhase(
     std::copy(cControls, cControls + controlLen, controls.get());
     QEngineShard& shard = shards[target];
 
-    if (IS_1_R1(bottomRight) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard))) {
+    if (IS_1_CMPLX(bottomRight) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard))) {
         Flush1Eigenstate(target);
         return;
     }
 
-    if (IS_1_R1(topLeft)) {
+    if (IS_1_CMPLX(topLeft)) {
         if (!shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard)) {
             Flush0Eigenstate(target);
             return;
         }
 
-        if (IS_1_R1(-bottomRight)) {
+        if (IS_1_CMPLX(-bottomRight)) {
             if (controlLen == 2U) {
                 CCZ(controls[0], controls[1], target);
                 return;
@@ -2920,7 +2920,7 @@ void QUnit::MCPhase(
 void QUnit::MCInvert(
     const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    if (IS_1_R1(topRight) && IS_1_R1(bottomLeft)) {
+    if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
         if (controlLen == 2U) {
             CCNOT(controls[0], controls[1], target);
             return;
@@ -2931,7 +2931,7 @@ void QUnit::MCInvert(
         }
     }
 
-    if (IS_1_R1(I_CMPLX * topRight) && IS_1_R1(-I_CMPLX * bottomLeft)) {
+    if (IS_1_CMPLX(I_CMPLX * topRight) && IS_1_CMPLX(-I_CMPLX * bottomLeft)) {
         if (controlLen == 2U) {
             CCY(controls[0], controls[1], target);
             return;
@@ -2998,12 +2998,12 @@ void QUnit::MACPhase(
     std::copy(cControls, cControls + controlLen, controls.get());
     QEngineShard& shard = shards[target];
 
-    if (IS_1_R1(topLeft) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard))) {
+    if (IS_1_CMPLX(topLeft) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard))) {
         Flush0Eigenstate(target);
         return;
     }
 
-    if (IS_1_R1(bottomRight)) {
+    if (IS_1_CMPLX(bottomRight)) {
         if (!shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard)) {
             Flush1Eigenstate(target);
             return;
@@ -3064,7 +3064,7 @@ void QUnit::MACPhase(
 void QUnit::MACInvert(
     const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    if (IS_1_R1(topRight) && IS_1_R1(bottomLeft)) {
+    if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
         if (controlLen == 2U) {
             AntiCCNOT(controls[0], controls[1], target);
             return;
@@ -3075,7 +3075,7 @@ void QUnit::MACInvert(
         }
     }
 
-    if (IS_1_R1(I_CMPLX * topRight) && IS_1_R1(-I_CMPLX * bottomLeft)) {
+    if (IS_1_CMPLX(I_CMPLX * topRight) && IS_1_CMPLX(-I_CMPLX * bottomLeft)) {
         if (controlLen == 1U) {
             AntiCY(controls[0], target);
             return;
