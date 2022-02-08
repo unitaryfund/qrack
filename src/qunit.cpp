@@ -1939,15 +1939,6 @@ void QUnit::S(bitLenInt target)
 
     shard.CommutePhase(ONE_CMPLX, I_CMPLX);
 
-    if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
-        if (SHARD_STATE(shard)) {
-            Flush1Eigenstate(target);
-        } else {
-            Flush0Eigenstate(target);
-        }
-        return;
-    }
-
     if (shard.isPauliY) {
         shard.isPauliX = true;
         shard.isPauliY = false;
@@ -1971,15 +1962,6 @@ void QUnit::IS(bitLenInt target)
     QEngineShard& shard = shards[target];
 
     shard.CommutePhase(ONE_CMPLX, -I_CMPLX);
-
-    if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
-        if (SHARD_STATE(shard)) {
-            Flush1Eigenstate(target);
-        } else {
-            Flush0Eigenstate(target);
-        }
-        return;
-    }
 
     if (shard.isPauliY) {
         shard.isPauliX = true;
@@ -2054,15 +2036,6 @@ void QUnit::Z(bitLenInt target)
     QEngineShard& shard = shards[target];
 
     shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
-
-    if (UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
-        if (SHARD_STATE(shard)) {
-            Flush1Eigenstate(target);
-        } else {
-            Flush0Eigenstate(target);
-        }
-        return;
-    }
 
     if (shard.isPauliX || shard.isPauliY) {
         XBase(target);
@@ -2252,11 +2225,7 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
     shard.CommutePhase(topLeft, bottomRight);
 
-    if (IS_1_CMPLX(topLeft) && UNSAFE_CACHED_ZERO(shard)) {
-        Flush0Eigenstate(target);
-        return;
-    } else if (IS_1_CMPLX(bottomRight) && UNSAFE_CACHED_ONE(shard)) {
-        Flush1Eigenstate(target);
+    if ((IS_1_CMPLX(topLeft) && UNSAFE_CACHED_ZERO(shard)) || (IS_1_CMPLX(bottomRight) && UNSAFE_CACHED_ONE(shard))) {
         return;
     }
 
@@ -2366,15 +2335,12 @@ void QUnit::MCPhase(
     }
 
     QEngineShard& shard = shards[target];
-
     if (IS_1_CMPLX(bottomRight) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard))) {
-        Flush1Eigenstate(target);
         return;
     }
 
     if (IS_1_CMPLX(topLeft)) {
         if (!shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard)) {
-            Flush0Eigenstate(target);
             return;
         }
 
@@ -2450,7 +2416,7 @@ void QUnit::MCInvert(
         RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             tShard.AddInversionAngles(&cShard, topRight, bottomLeft);
             OptimizePairBuffers(control, target, false);
 
@@ -2480,15 +2446,12 @@ void QUnit::MACPhase(
     }
 
     QEngineShard& shard = shards[target];
-
     if (IS_1_CMPLX(topLeft) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard))) {
-        Flush0Eigenstate(target);
         return;
     }
 
     if (IS_1_CMPLX(bottomRight)) {
         if (!shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard)) {
-            Flush1Eigenstate(target);
             return;
         }
 
@@ -2564,7 +2527,7 @@ void QUnit::MACInvert(
         RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
+        if (!IS_SAME_UNIT(cShard, tShard)) {
             tShard.AddAntiInversionAngles(&cShard, bottomLeft, topRight);
             OptimizePairBuffers(control, target, true);
 
@@ -2587,18 +2550,18 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
         Invert(mtrx[1], mtrx[2], target);
         return;
     }
-    if ((randGlobalPhase || IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1))) && IS_SAME(mtrx[0], mtrx[1]) &&
+    if ((randGlobalPhase || IS_SAME(mtrx[0], (complex)SQRT1_2_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
         IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
         H(target);
         return;
     }
-    if ((randGlobalPhase || IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1))) && IS_SAME(mtrx[0], mtrx[1]) &&
+    if ((randGlobalPhase || IS_SAME(mtrx[0], (complex)SQRT1_2_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
         IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
         H(target);
         S(target);
         return;
     }
-    if ((randGlobalPhase || IS_SAME(mtrx[0], complex(SQRT1_2_R1, ZERO_R1))) && IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) &&
+    if ((randGlobalPhase || IS_SAME(mtrx[0], (complex)SQRT1_2_R1)) && IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) &&
         IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
         IS(target);
         H(target);
