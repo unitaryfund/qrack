@@ -2844,10 +2844,20 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
         QEngineShard& shard = shards[controls[i]];
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         // This might determine that we can just skip out of the whole gate, in which case we return.
-        if (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && !shard.IsInvertTarget() &&
-            ((!anti && IS_AMP_0(shard.amp1)) || (anti && IS_AMP_0(shard.amp0)))) {
-            /* This gate does nothing, so return without applying anything. */
-            return true;
+        if (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && !shard.IsInvertTarget()) {
+            if (IS_AMP_0(shard.amp1)) {
+                Flush0Eigenstate(controls[i]);
+                if (!anti) {
+                    /* This gate does nothing, so return without applying anything. */
+                    return true;
+                }
+            } else if (IS_AMP_0(shard.amp0)) {
+                Flush1Eigenstate(controls[i]);
+                if (anti) {
+                    /* This gate does nothing, so return without applying anything. */
+                    return true;
+                }
+            }
         }
     }
 
@@ -2860,10 +2870,20 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
         }
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         // This might determine that we can just skip out of the whole gate, in which case we return.
-        if (!shard.isProbDirty && !shard.IsInvertTarget() &&
-            ((!anti && IS_AMP_0(shard.amp1)) || (anti && IS_AMP_0(shard.amp0)))) {
-            /* This gate does nothing, so return without applying anything. */
-            return true;
+        if (!shard.isProbDirty && !shard.IsInvertTarget()) {
+            if (IS_AMP_0(shard.amp1)) {
+                Flush0Eigenstate(controls[i]);
+                if (!anti) {
+                    /* This gate does nothing, so return without applying anything. */
+                    return true;
+                }
+            } else if (IS_AMP_0(shard.amp0)) {
+                Flush1Eigenstate(controls[i]);
+                if (anti) {
+                    /* This gate does nothing, so return without applying anything. */
+                    return true;
+                }
+            }
         }
     }
 
