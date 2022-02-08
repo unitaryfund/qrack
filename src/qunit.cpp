@@ -2557,86 +2557,6 @@ void QUnit::AntiCH(bitLenInt control, bitLenInt target)
     }
 }
 
-void QUnit::CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target)
-{
-    if ((shards[control1].isPauliX || shards[control1].isPauliY) && !shards[target].isPauliX &&
-        !shards[target].isPauliY) {
-        std::swap(control1, target);
-    }
-
-    if ((shards[control2].isPauliX || shards[control2].isPauliY) && !shards[target].isPauliX &&
-        !shards[target].isPauliY) {
-        std::swap(control2, target);
-    }
-
-    QEngineShard& tShard = shards[target];
-    QEngineShard& c1Shard = shards[control1];
-    QEngineShard& c2Shard = shards[control2];
-
-    if (!c1Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_ZERO_OR_ONE(c1Shard)) {
-            if (IS_AMP_0(c1Shard.amp1)) {
-                Flush0Eigenstate(control1);
-                return;
-            }
-            if (IS_AMP_0(c1Shard.amp0)) {
-                Flush1Eigenstate(control1);
-                CZ(control2, target);
-                return;
-            }
-        }
-    }
-
-    if (!c2Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_ZERO_OR_ONE(c2Shard)) {
-            if (IS_AMP_0(c2Shard.amp1)) {
-                Flush0Eigenstate(control2);
-                return;
-            }
-            if (IS_AMP_0(c2Shard.amp0)) {
-                Flush1Eigenstate(control2);
-                CZ(control1, target);
-                return;
-            }
-        }
-    }
-
-    if (!tShard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_ZERO_OR_ONE(tShard)) {
-            if (IS_AMP_0(tShard.amp1)) {
-                Flush0Eigenstate(target);
-                return;
-            }
-            if (IS_AMP_0(tShard.amp0)) {
-                Flush1Eigenstate(target);
-                CZ(control1, control2);
-                return;
-            }
-        }
-    }
-
-    const bitLenInt controls[2] = { control1, control2 };
-
-    ApplyEitherControlled(
-        controls, 2, { target }, false,
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPauliX || shards[target].isPauliY) {
-                if (mappedControls.size() == 2) {
-                    unit->CCNOT(CTRL_2_ARGS);
-                } else {
-                    unit->CNOT(CTRL_1_ARGS);
-                }
-            } else {
-                if (mappedControls.size() == 2) {
-                    unit->CCZ(CTRL_2_ARGS);
-                } else {
-                    unit->CZ(CTRL_1_ARGS);
-                }
-            }
-        },
-        [&]() { Z(target); }, true);
-}
-
 void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (randGlobalPhase || IS_1_CMPLX(topLeft)) {
@@ -2795,15 +2715,9 @@ void QUnit::MCPhase(
             return;
         }
 
-        if (IS_1_CMPLX(-bottomRight)) {
-            if (controlLen == 2U) {
-                CCZ(controls[0], controls[1], target);
-                return;
-            }
-            if (controlLen == 1U) {
-                CZ(controls[0], target);
-                return;
-            }
+        if ((controlLen == 1U) && IS_1_CMPLX(-bottomRight)) {
+            CZ(controls[0], target);
+            return;
         }
 
         if (!shards[target].isPauliX && !shards[target].isPauliY) {
