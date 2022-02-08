@@ -350,7 +350,7 @@ protected:
     bool TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>& output, bool anti);
 
     template <typename CF>
-    void ApplyEitherControlled(std::vector<bitLenInt> controlVec, const std::vector<bitLenInt>& targets, bool anti,
+    void ApplyEitherControlled(std::vector<bitLenInt> controlVec, const std::vector<bitLenInt> targets, bool anti,
         CF cfn, bool isPhase = false, bool isInvert = false);
 
     void ShardAI(bitLenInt qubit, real1_f azimuth, real1_f inclination)

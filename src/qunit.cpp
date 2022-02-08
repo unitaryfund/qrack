@@ -2163,8 +2163,6 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
         bare;                                                                                                          \
         return;                                                                                                        \
     }                                                                                                                  \
-    ToPermBasis(qubit1);                                                                                               \
-    ToPermBasis(qubit2);                                                                                               \
     ApplyEitherControlled(controlVec, { qubit1, qubit2 }, anti,                                                        \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; })
 #define CTRL_GEN_ARGS &(mappedControls[0]), mappedControls.size(), trnsMtrx, shards[target].mapped
@@ -2878,10 +2876,15 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
 }
 
 template <typename CF>
-void QUnit::ApplyEitherControlled(std::vector<bitLenInt> controlVec, const std::vector<bitLenInt>& targets, bool anti,
+void QUnit::ApplyEitherControlled(std::vector<bitLenInt> controlVec, const std::vector<bitLenInt> targets, bool anti,
     CF cfn, bool isPhase, bool isInvert)
 {
     for (bitLenInt i = 0; i < (bitLenInt)targets.size(); i++) {
+        if (targets.size() > 1U) {
+            ToPermBasis(targets[i]);
+            continue;
+        }
+
         if (isPhase) {
             RevertBasis2Qb(targets[i], ONLY_INVERT, ONLY_TARGETS);
         } else {
