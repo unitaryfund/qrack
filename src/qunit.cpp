@@ -2527,10 +2527,6 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
     if (shard.unit) {
         shard.unit->Mtrx(trnsMtrx, shard.mapped);
     }
-    if (DIRTY(shard)) {
-        shard.MakeDirty();
-        return;
-    }
 
     const complex Y0 = shard.amp0;
     shard.amp0 = (trnsMtrx[0] * Y0) + (trnsMtrx[1] * shard.amp1);
