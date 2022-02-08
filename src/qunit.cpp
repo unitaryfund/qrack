@@ -2241,6 +2241,10 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 void QUnit::MCPhase(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
+    if (IS_1_CMPLX(topLeft) && IS_1_CMPLX(bottomRight)) {
+        return;
+    }
+
     std::vector<bitLenInt> controlVec;
     if (TrimControls(lControls, lControlLen, controlVec, false)) {
         return;
@@ -2311,6 +2315,10 @@ void QUnit::MCPhase(
 void QUnit::MACPhase(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
+    if (IS_1_CMPLX(topLeft) && IS_1_CMPLX(bottomRight)) {
+        return;
+    }
+
     std::vector<bitLenInt> controlVec;
     if (TrimControls(lControls, lControlLen, controlVec, true)) {
         return;
