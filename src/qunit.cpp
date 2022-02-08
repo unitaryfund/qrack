@@ -2842,9 +2842,17 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
     // First, no buffer flushing.
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
+        if (shard.isPauliX || shard.isPauliY) {
+            continue;
+        }
+
+        if (shard.isProbDirty && shard.isClifford()) {
+            ProbBase(controls[i]);
+        }
+
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         // This might determine that we can just skip out of the whole gate, in which case we return.
-        if (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && !shard.IsInvertTarget()) {
+        if (!shard.isProbDirty && !shard.IsInvertTarget()) {
             if (IS_AMP_0(shard.amp1)) {
                 Flush0Eigenstate(controls[i]);
                 if (!anti) {
@@ -2863,11 +2871,16 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
 
     // Next, just 1qb buffer flushing.
     for (bitLenInt i = 0; i < controlLen; i++) {
-        RevertBasis1Qb(controls[i]);
         QEngineShard& shard = shards[controls[i]];
+        if (!shard.isPauliX && !shard.isPauliY) {
+            continue;
+        }
+
+        RevertBasis1Qb(controls[i]);
         if (shard.isProbDirty && shard.isClifford()) {
             ProbBase(controls[i]);
         }
+
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         // This might determine that we can just skip out of the whole gate, in which case we return.
         if (!shard.isProbDirty && !shard.IsInvertTarget()) {
@@ -2889,8 +2902,8 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
 
     // Finally, full buffer flushing, (last resort).
     for (bitLenInt i = 0; i < controlLen; i++) {
-        RevertBasis2Qb(controls[i], ONLY_INVERT, ONLY_TARGETS);
         QEngineShard& shard = shards[controls[i]];
+        RevertBasis2Qb(controls[i], ONLY_INVERT, ONLY_TARGETS);
         if (shard.isProbDirty && shard.isClifford()) {
             ProbBase(controls[i]);
         }
