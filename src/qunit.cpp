@@ -2381,7 +2381,8 @@ void QUnit::MCPhase(
         }
 
         if (!shards[target].isPauliX && !shards[target].isPauliY) {
-            for (bitLenInt i = 0; i < controlVec.size(); i++) {
+            const bitLenInt controlLen = (bitLenInt)controlVec.size();
+            for (bitLenInt i = 0; i < controlLen; i++) {
                 QEngineShard& cShard = shards[controlVec[i]];
                 if (cShard.isPauliX || cShard.isPauliY) {
                     std::swap(controlVec[i], target);
@@ -2538,7 +2539,8 @@ void QUnit::MACPhase(
         }
 
         if (!shards[target].isPauliX && !shards[target].isPauliY) {
-            for (bitLenInt i = 0; i < controlVec.size(); i++) {
+            const bitLenInt controlLen = (bitLenInt)controlVec.size();
+            for (bitLenInt i = 0; i < controlLen; i++) {
                 QEngineShard& cShard = shards[controlVec[i]];
                 if (cShard.isPauliX || cShard.isPauliY) {
                     std::swap(controlVec[i], target);
@@ -2837,8 +2839,36 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
     // If the controls start entirely separated from the targets, it's probably worth checking to see if the have
     // total or no probability of altering the targets, such that we can still keep them separate.
 
+    // First, no buffer flushing.
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        QEngineShard& shard = shards[controls[i]];
+        // If the shard's probability is cached, then it's free to check it, so we advance the loop.
+        // This might determine that we can just skip out of the whole gate, in which case we return.
+        if (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && !shard.IsInvertTarget() &&
+            ((!anti && IS_AMP_0(shard.amp1)) || (anti && IS_AMP_0(shard.amp0)))) {
+            /* This gate does nothing, so return without applying anything. */
+            return true;
+        }
+    }
+
+    // Next, just 1qb buffer flushing.
     for (bitLenInt i = 0; i < controlLen; i++) {
         RevertBasis1Qb(controls[i]);
+        QEngineShard& shard = shards[controls[i]];
+        if (shard.isProbDirty && shard.isClifford()) {
+            ProbBase(controls[i]);
+        }
+        // If the shard's probability is cached, then it's free to check it, so we advance the loop.
+        // This might determine that we can just skip out of the whole gate, in which case we return.
+        if (!shard.isProbDirty && !shard.IsInvertTarget() &&
+            ((!anti && IS_AMP_0(shard.amp1)) || (anti && IS_AMP_0(shard.amp0)))) {
+            /* This gate does nothing, so return without applying anything. */
+            return true;
+        }
+    }
+
+    // Finally, full buffer flushing, (last resort).
+    for (bitLenInt i = 0; i < controlLen; i++) {
         RevertBasis2Qb(controls[i], ONLY_INVERT, ONLY_TARGETS);
         QEngineShard& shard = shards[controls[i]];
         if (shard.isProbDirty && shard.isClifford()) {
