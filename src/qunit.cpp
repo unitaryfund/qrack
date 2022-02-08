@@ -2175,9 +2175,6 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
         if (shard.unit) {
             shard.unit->Phase(topLeft, bottomRight, shard.mapped);
         }
-        if (DIRTY(shard)) {
-            shard.isPhaseDirty = true;
-        }
 
         shard.amp0 *= topLeft;
         shard.amp1 *= bottomRight;
@@ -2191,10 +2188,6 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
     if (shard.unit) {
         shard.unit->Mtrx(mtrx, shard.mapped);
-    }
-    if (DIRTY(shard)) {
-        shard.MakeDirty();
-        return;
     }
 
     const complex Y0 = shard.amp0;
@@ -2215,39 +2208,34 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     shard.CommutePhase(bottomLeft, topRight);
     shard.FlipPhaseAnti();
 
-    if (shard.isPauliX || shard.isPauliY) {
-        complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
-        if (shard.isPauliX) {
-            TransformXInvert(topRight, bottomLeft, mtrx);
-        } else {
-            TransformYInvert(topRight, bottomLeft, mtrx);
-        }
-
-        if (shard.unit) {
-            shard.unit->Mtrx(mtrx, shard.mapped);
-        }
-        if (DIRTY(shard)) {
-            shard.MakeDirty();
-            return;
-        }
-
-        const complex Y0 = shard.amp0;
-        shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
-        shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        shard.ClampAmps(amplitudeFloor);
-    } else {
+    if (!shard.isPauliX && !shard.isPauliY) {
         if (shard.unit) {
             shard.unit->Invert(topRight, bottomLeft, shard.mapped);
-        }
-        if (DIRTY(shard)) {
-            shard.isPhaseDirty = true;
         }
 
         const complex tempAmp1 = shard.amp0 * bottomLeft;
         shard.amp0 = shard.amp1 * topRight;
         shard.amp1 = tempAmp1;
         shard.ClampAmps(amplitudeFloor);
+
+        return;
     }
+
+    complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
+    if (shard.isPauliX) {
+        TransformXInvert(topRight, bottomLeft, mtrx);
+    } else {
+        TransformYInvert(topRight, bottomLeft, mtrx);
+    }
+
+    if (shard.unit) {
+        shard.unit->Mtrx(mtrx, shard.mapped);
+    }
+
+    const complex Y0 = shard.amp0;
+    shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
+    shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
+    shard.ClampAmps(amplitudeFloor);
 }
 
 void QUnit::MCPhase(
