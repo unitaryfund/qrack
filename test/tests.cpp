@@ -6204,8 +6204,7 @@ TEST_CASE("test_mirror_circuit_stabilizer", "[mirror]")
                 } else if (multiGate.gate == 11) {
                     testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
                 } else {
-                    bitLenInt controls[2] = { multiGate.b1, multiGate.b2 };
-                    testCase->MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, multiGate.b3);
+                    testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
                 }
             }
         }
@@ -6240,8 +6239,7 @@ TEST_CASE("test_mirror_circuit_stabilizer", "[mirror]")
                 } else if (multiGate.gate == 11) {
                     testCase->AntiCCY(multiGate.b1, multiGate.b2, multiGate.b3);
                 } else {
-                    bitLenInt controls[2] = { multiGate.b1, multiGate.b2 };
-                    testCase->MACPhase(controls, 2, ONE_CMPLX, -ONE_CMPLX, multiGate.b3);
+                    testCase->AntiCCZ(multiGate.b1, multiGate.b2, multiGate.b3);
                 }
             }
 
