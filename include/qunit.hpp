@@ -111,26 +111,6 @@ public:
     virtual void S(bitLenInt target);
     using QInterface::IS;
     virtual void IS(bitLenInt target);
-    using QInterface::CNOT;
-    virtual void CNOT(bitLenInt control, bitLenInt target);
-    using QInterface::AntiCNOT;
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
-    using QInterface::CCNOT;
-    virtual void CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
-    using QInterface::AntiCCNOT;
-    virtual void AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target);
-    using QInterface::CY;
-    virtual void CY(bitLenInt control, bitLenInt target);
-    using QInterface::AntiCY;
-    virtual void AntiCY(bitLenInt control, bitLenInt target);
-    using QInterface::CCY;
-    virtual void CCY(bitLenInt control1, bitLenInt control2, bitLenInt target);
-    using QInterface::CZ;
-    virtual void CZ(bitLenInt control, bitLenInt target);
-    using QInterface::AntiCZ;
-    virtual void AntiCZ(bitLenInt control, bitLenInt target);
-    using QInterface::CCZ;
-    virtual void CCZ(bitLenInt control1, bitLenInt control2, bitLenInt target);
     using QInterface::CH;
     virtual void CH(bitLenInt control, bitLenInt target);
     using QInterface::AntiCH;
@@ -367,9 +347,11 @@ protected:
     };
     void SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenInt low, bitLenInt high);
 
-    template <typename CF, typename F>
-    void ApplyEitherControlled(const bitLenInt* controls, bitLenInt controlLen, const std::vector<bitLenInt>& targets,
-        bool anti, CF cfn, F f, bool isPhase = false, bool isInvert = false, bool inCurrentBasis = false);
+    bool TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>& output, bool anti);
+
+    template <typename CF>
+    void ApplyEitherControlled(std::vector<bitLenInt> controlVec, const std::vector<bitLenInt> targets, bool anti,
+        CF cfn, bool isPhase = false, bool isInvert = false);
 
     void ShardAI(bitLenInt qubit, real1_f azimuth, real1_f inclination)
     {
