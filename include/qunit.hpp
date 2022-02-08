@@ -111,10 +111,6 @@ public:
     virtual void S(bitLenInt target);
     using QInterface::IS;
     virtual void IS(bitLenInt target);
-    using QInterface::CH;
-    virtual void CH(bitLenInt control, bitLenInt target);
-    using QInterface::AntiCH;
-    virtual void AntiCH(bitLenInt control, bitLenInt target);
 
     virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
     virtual void PhaseParity(real1 radians, bitCapInt mask);

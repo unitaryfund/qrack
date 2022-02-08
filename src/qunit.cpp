@@ -2146,58 +2146,6 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
 #define CTRL_P_ARGS &(mappedControls[0]), mappedControls.size(), topLeft, bottomRight, shards[target].mapped
 #define CTRL_I_ARGS &(mappedControls[0]), mappedControls.size(), topRight, bottomLeft, shards[target].mapped
 
-void QUnit::CH(bitLenInt control, bitLenInt target)
-{
-    RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-
-    QEngineShard& cShard = shards[control];
-    if (UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
-        if (SHARD_STATE(cShard)) {
-            H(target);
-        }
-        return;
-    }
-
-    RevertBasisY(target);
-    RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
-    // Should only commute gate with same control and target, if anything:
-    CommuteH(target);
-
-    QInterfacePtr unit = Entangle({ control, target });
-    unit->CH(shards[control].mapped, shards[target].mapped);
-
-    if (isReactiveSeparate && !freezeBasis2Qb) {
-        TrySeparate(control);
-        TrySeparate(target);
-    }
-}
-
-void QUnit::AntiCH(bitLenInt control, bitLenInt target)
-{
-    RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-
-    QEngineShard& cShard = shards[control];
-    if (UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
-        if (!SHARD_STATE(cShard)) {
-            H(target);
-        }
-        return;
-    }
-
-    RevertBasisY(target);
-    RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
-    // Should only commute gate with same control and target, if anything:
-    CommuteH(target);
-
-    QInterfacePtr unit = Entangle({ control, target });
-    unit->AntiCH(shards[control].mapped, shards[target].mapped);
-
-    if (isReactiveSeparate && !freezeBasis2Qb) {
-        TrySeparate(control);
-        TrySeparate(target);
-    }
-}
-
 void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (randGlobalPhase || IS_1_CMPLX(topLeft)) {
@@ -2639,9 +2587,8 @@ void QUnit::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const comple
         return;
     }
 
-    if ((controlVec.size() == 1U) && IS_SAME(mtrx[0], (complex)SQRT1_2_R1) && IS_SAME(mtrx[0], mtrx[1]) &&
-        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
-        CH(controlVec[0], target);
+    if (!controlVec.size()) {
+        Mtrx(mtrx, target);
         return;
     }
 
@@ -2669,9 +2616,8 @@ void QUnit::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const compl
         return;
     }
 
-    if ((controlVec.size() == 1U) && IS_SAME(mtrx[0], (complex)SQRT1_2_R1) && IS_SAME(mtrx[0], mtrx[1]) &&
-        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
-        AntiCH(controlVec[0], target);
+    if (!controlVec.size()) {
+        Mtrx(mtrx, target);
         return;
     }
 
