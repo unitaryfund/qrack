@@ -143,25 +143,21 @@ public:
         isPhaseDirty = true;
     }
 
-    bool ClampAmps(real1_f norm_thresh)
+    void ClampAmps(real1_f norm_thresh)
     {
-        bool didClamp = false;
-        if (norm(amp0) < norm_thresh) {
-            didClamp = true;
+        if (isProbDirty) {
+            return;
+        }
+
+        if (norm(amp0) <= norm_thresh) {
             amp0 = ZERO_R1;
             amp1 /= abs(amp1);
-            if (!isProbDirty) {
-                isPhaseDirty = false;
-            }
-        } else if (norm(amp1) < norm_thresh) {
-            didClamp = true;
+            isPhaseDirty = false;
+        } else if (norm(amp1) <= norm_thresh) {
             amp1 = ZERO_R1;
             amp0 /= abs(amp0);
-            if (!isProbDirty) {
-                isPhaseDirty = false;
-            }
+            isPhaseDirty = false;
         }
-        return didClamp;
     }
     void DumpMultiBit()
     {

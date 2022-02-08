@@ -335,9 +335,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
                     shard.isPhaseDirty = false;
                     shard.unit = NULL;
                     shard.mapped = 0;
-                    if (doNormalize) {
-                        shard.ClampAmps(amplitudeFloor);
-                    }
+                    shard.ClampAmps(amplitudeFloor);
                 }
 
                 if (subLen == (origLen - 1U)) {
@@ -361,9 +359,7 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
                         pShard->isPhaseDirty = false;
                         pShard->unit = NULL;
                         pShard->mapped = 0;
-                        if (doNormalize) {
-                            pShard->ClampAmps(amplitudeFloor);
-                        }
+                        pShard->ClampAmps(amplitudeFloor);
 
                         break;
                     }
@@ -988,9 +984,7 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
         shard.isPhaseDirty = false;
         shard.unit = NULL;
         shard.mapped = 0;
-        if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
-        }
+        shard.ClampAmps(amplitudeFloor);
 
         return norm(shard.amp1);
     }
@@ -2187,9 +2181,7 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
         shard.amp0 *= topLeft;
         shard.amp1 *= bottomRight;
-        if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
-        }
+        shard.ClampAmps(amplitudeFloor);
 
         return;
     }
@@ -2208,9 +2200,7 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
     const complex Y0 = shard.amp0;
     shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
     shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-    if (doNormalize) {
-        shard.ClampAmps(amplitudeFloor);
-    }
+    shard.ClampAmps(amplitudeFloor);
 }
 
 void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
@@ -2244,9 +2234,7 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
         const complex Y0 = shard.amp0;
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
-        }
+        shard.ClampAmps(amplitudeFloor);
     } else {
         if (shard.unit) {
             shard.unit->Invert(topRight, bottomLeft, shard.mapped);
@@ -2258,9 +2246,7 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
         const complex tempAmp1 = shard.amp0 * bottomLeft;
         shard.amp0 = shard.amp1 * topRight;
         shard.amp1 = tempAmp1;
-        if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
-        }
+        shard.ClampAmps(amplitudeFloor);
     }
 }
 
@@ -2561,9 +2547,7 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
     const complex Y0 = shard.amp0;
     shard.amp0 = (trnsMtrx[0] * Y0) + (trnsMtrx[1] * shard.amp1);
     shard.amp1 = (trnsMtrx[2] * Y0) + (trnsMtrx[3] * shard.amp1);
-    if (doNormalize) {
-        shard.ClampAmps(amplitudeFloor);
-    }
+    shard.ClampAmps(amplitudeFloor);
 }
 
 void QUnit::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
