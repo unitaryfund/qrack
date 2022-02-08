@@ -2438,7 +2438,8 @@ void QUnit::MCPhase(
 void QUnit::MCInvert(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
+    const bool isPauliX = IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft);
+    if (isPauliX) {
         QEngineShard& tShard = shards[target];
         if (CACHED_PLUS(tShard)) {
             return;
@@ -2455,10 +2456,11 @@ void QUnit::MCInvert(
         return;
     }
 
+    const bitLenInt control = controlVec[0];
+    QEngineShard& cShard = shards[control];
+    QEngineShard& tShard = shards[target];
+
     if (!freezeBasis2Qb && (controlVec.size() == 1U)) {
-        bitLenInt control = controlVec[0];
-        QEngineShard& cShard = shards[control];
-        QEngineShard& tShard = shards[target];
         if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
             if (SHARD_STATE(cShard)) {
                 Flush1Eigenstate(control);
@@ -2480,6 +2482,25 @@ void QUnit::MCInvert(
 
             return;
         }
+    }
+
+    // We're free to transform gates to any orthonormal basis of the Hilbert space.
+    // For a 2 qubit system, if the control is the lefthand bit, it's easy to verify the following truth table for CNOT:
+    // |++> -> |++>
+    // |+-> -> |-->
+    // |-+> -> |-+>
+    // |--> -> |+->
+    // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
+    // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
+    // alone, by way of the last optional "true" argument in the call.
+    if (isPauliX && (controlVec.size() == 1U) && CACHED_X_OR_Y(cShard) && CACHED_X_OR_Y(tShard)) {
+        RevertBasisY(controlVec[0]);
+        RevertBasisY(target);
+        std::swap(controlVec[0], target);
+        ApplyEitherControlled(
+            controlVec, { target }, false,
+            [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); }, false, true);
+        return;
     }
 
     CTRLED_PHASE_INVERT_WRAP(MCInvert(CTRL_I_ARGS), MCMtrx(CTRL_GEN_ARGS), false, true, topRight, bottomLeft);
@@ -2573,7 +2594,8 @@ void QUnit::MACPhase(
 void QUnit::MACInvert(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
+    const bool isPauliX = IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft);
+    if (isPauliX) {
         QEngineShard& tShard = shards[target];
         if (CACHED_PLUS(tShard)) {
             return;
@@ -2590,10 +2612,11 @@ void QUnit::MACInvert(
         return;
     }
 
+    const bitLenInt control = controlVec[0];
+    QEngineShard& cShard = shards[control];
+    QEngineShard& tShard = shards[target];
+
     if (!freezeBasis2Qb && (controlVec.size() == 1U)) {
-        bitLenInt control = controlVec[0];
-        QEngineShard& cShard = shards[control];
-        QEngineShard& tShard = shards[target];
         if (!cShard.IsInvertTarget() && UNSAFE_CACHED_ZERO_OR_ONE(cShard)) {
             if (SHARD_STATE(cShard)) {
                 Flush1Eigenstate(control);
@@ -2615,6 +2638,27 @@ void QUnit::MACInvert(
 
             return;
         }
+    }
+
+    // We're free to transform gates to any orthonormal basis of the Hilbert space.
+    // For a 2 qubit system, if the control is the lefthand bit, it's easy to verify the following truth table for CNOT:
+    // |++> -> |++>
+    // |+-> -> |-->
+    // |-+> -> |-+>
+    // |--> -> |+->
+    // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
+    // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
+    // alone, by way of the last optional "true" argument in the call.
+    if (isPauliX && (controlVec.size() == 1U) && CACHED_X_OR_Y(cShard) && CACHED_X_OR_Y(tShard)) {
+        RevertBasisY(controlVec[0]);
+        RevertBasisY(target);
+        std::swap(controlVec[0], target);
+        X(target);
+        ApplyEitherControlled(
+            controlVec, { target }, false,
+            [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); }, false, true);
+        X(target);
+        return;
     }
 
     CTRLED_PHASE_INVERT_WRAP(MACInvert(CTRL_I_ARGS), MACMtrx(CTRL_GEN_ARGS), true, true, topRight, bottomLeft);
