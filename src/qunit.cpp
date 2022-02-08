@@ -2298,18 +2298,7 @@ void QUnit::MCPhase(
         }
     }
 
-    ApplyEitherControlled(
-        controlVec, { target }, false,
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPauliX || shards[target].isPauliY) {
-                complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
-                TransformPhase(topLeft, bottomRight, trnsMtrx);
-                unit->MCMtrx(CTRL_GEN_ARGS);
-            } else {
-                unit->MCPhase(CTRL_P_ARGS);
-            }
-        },
-        true);
+    CTRLED_PHASE_INVERT_WRAP(MCPhase(CTRL_P_ARGS), MCMtrx(CTRL_GEN_ARGS), false, false, topLeft, bottomRight);
 }
 
 void QUnit::MACPhase(
@@ -2372,18 +2361,7 @@ void QUnit::MACPhase(
         }
     }
 
-    ApplyEitherControlled(
-        controlVec, { target }, true,
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPauliX || shards[target].isPauliY) {
-                complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
-                TransformPhase(topLeft, bottomRight, trnsMtrx);
-                unit->MACMtrx(CTRL_GEN_ARGS);
-            } else {
-                unit->MACPhase(CTRL_P_ARGS);
-            }
-        },
-        true);
+    CTRLED_PHASE_INVERT_WRAP(MACPhase(CTRL_P_ARGS), MACMtrx(CTRL_GEN_ARGS), true, false, topLeft, bottomRight);
 }
 
 void QUnit::MCInvert(
