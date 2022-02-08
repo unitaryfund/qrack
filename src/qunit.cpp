@@ -2360,11 +2360,9 @@ void QUnit::MCPhase(
         return;
     }
 
-    if (controlVec.size() == 1U) {
-        if (IS_NORM_0(topLeft - bottomRight)) {
-            Phase(ONE_CMPLX, bottomRight, controlVec[0]);
-            return;
-        }
+    if ((controlVec.size() == 1U) && IS_NORM_0(topLeft - bottomRight)) {
+        Phase(ONE_CMPLX, bottomRight, controlVec[0]);
+        return;
     }
 
     QEngineShard& shard = shards[target];
@@ -2476,11 +2474,9 @@ void QUnit::MACPhase(
         return;
     }
 
-    if (controlVec.size() == 1U) {
-        if (IS_NORM_0(topLeft - bottomRight)) {
-            Phase(topLeft, ONE_CMPLX, controlVec[0]);
-            return;
-        }
+    if ((controlVec.size() == 1U) && IS_NORM_0(topLeft - bottomRight)) {
+        Phase(topLeft, ONE_CMPLX, controlVec[0]);
+        return;
     }
 
     QEngineShard& shard = shards[target];
@@ -2680,8 +2676,8 @@ void QUnit::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const comple
         return;
     }
 
-    if (controlVec.size() && (randGlobalPhase || IS_SAME(mtrx[0], (complex)SQRT1_2_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
-        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+    if ((controlVec.size() == 1U) && (randGlobalPhase || IS_SAME(mtrx[0], (complex)SQRT1_2_R1)) &&
+        IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
         CH(controlVec[0], target);
         return;
     }
@@ -2710,8 +2706,8 @@ void QUnit::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const compl
         return;
     }
 
-    if (controlVec.size() && (randGlobalPhase || IS_SAME(mtrx[0], (complex)SQRT1_2_R1)) && IS_SAME(mtrx[0], mtrx[1]) &&
-        IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+    if ((controlVec.size() == 1U) && (randGlobalPhase || IS_SAME(mtrx[0], (complex)SQRT1_2_R1)) &&
+        IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
         AntiCH(controlVec[0], target);
         return;
     }
