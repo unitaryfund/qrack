@@ -2291,138 +2291,6 @@ void QUnit::AntiCNOT(bitLenInt control, bitLenInt target)
         AntiCNOT(CTRL_1_ARGS), MACMtrx(CTRL_GEN_ARGS), X(target), true, true, ONE_CMPLX, ONE_CMPLX);
 }
 
-void QUnit::CCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
-{
-    QEngineShard& tShard = shards[target];
-    if (CACHED_PLUS(tShard)) {
-        return;
-    }
-
-    QEngineShard& c1Shard = shards[control1];
-    QEngineShard& c2Shard = shards[control2];
-
-    if (!c1Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_ZERO_OR_ONE(c1Shard)) {
-            if (IS_AMP_0(c1Shard.amp1)) {
-                Flush0Eigenstate(control1);
-                return;
-            }
-            if (IS_AMP_0(c1Shard.amp0)) {
-                Flush1Eigenstate(control1);
-                CNOT(control2, target);
-                return;
-            }
-        }
-    }
-
-    if (!c2Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_ZERO_OR_ONE(c2Shard)) {
-            if (IS_AMP_0(c2Shard.amp1)) {
-                Flush0Eigenstate(control2);
-                return;
-            }
-            if (IS_AMP_0(c2Shard.amp0)) {
-                Flush1Eigenstate(control2);
-                CNOT(control1, target);
-                return;
-            }
-        }
-    }
-
-    if ((!tShard.IsInvertTarget()) && (UNSAFE_CACHED_X(tShard))) {
-        H(target);
-        CCZ(control1, control2, target);
-        H(target);
-        return;
-    }
-
-    const bitLenInt controls[2] = { control1, control2 };
-
-    ApplyEitherControlled(
-        controls, 2, { target }, false,
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPauliX) {
-                if (mappedControls.size() == 2) {
-                    unit->CCZ(CTRL_2_ARGS);
-                } else {
-                    unit->CZ(CTRL_1_ARGS);
-                }
-            } else if (shards[target].isPauliY) {
-                if (mappedControls.size() == 2) {
-                    unit->CCY(CTRL_2_ARGS);
-                } else {
-                    unit->CY(CTRL_1_ARGS);
-                }
-            } else {
-                if (mappedControls.size() == 2) {
-                    unit->CCNOT(CTRL_2_ARGS);
-                } else {
-                    unit->CNOT(CTRL_1_ARGS);
-                }
-            }
-        },
-        [&]() { X(target); }, false, true);
-}
-
-void QUnit::AntiCCNOT(bitLenInt control1, bitLenInt control2, bitLenInt target)
-{
-    QEngineShard& tShard = shards[target];
-    if (CACHED_PLUS(tShard)) {
-        return;
-    }
-
-    QEngineShard& c1Shard = shards[control1];
-    QEngineShard& c2Shard = shards[control2];
-
-    if (!c1Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_ZERO_OR_ONE(c1Shard)) {
-            if (IS_AMP_0(c1Shard.amp1)) {
-                Flush0Eigenstate(control1);
-                AntiCNOT(control2, target);
-                return;
-            }
-            if (IS_AMP_0(c1Shard.amp0)) {
-                Flush1Eigenstate(control1);
-                return;
-            }
-        }
-    }
-
-    if (!c2Shard.IsInvertTarget()) {
-        if (UNSAFE_CACHED_ZERO_OR_ONE(c2Shard)) {
-            if (IS_AMP_0(c2Shard.amp1)) {
-                Flush0Eigenstate(control2);
-                AntiCNOT(control1, target);
-                return;
-            }
-            if (IS_AMP_0(c2Shard.amp0)) {
-                Flush1Eigenstate(control2);
-                return;
-            }
-        }
-    }
-
-    const bitLenInt controls[2] = { control1, control2 };
-
-    ApplyEitherControlled(
-        controls, 2, { target }, true,
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {
-            if (shards[target].isPauliX) {
-                unit->MACPhase(
-                    &(mappedControls[0]), mappedControls.size(), ONE_CMPLX, -ONE_CMPLX, shards[target].mapped);
-            } else if (shards[target].isPauliY) {
-                unit->MACInvert(&(mappedControls[0]), mappedControls.size(), -I_CMPLX, I_CMPLX, shards[target].mapped);
-            } else {
-                if (mappedControls.size() == 2) {
-                    unit->AntiCCNOT(CTRL_2_ARGS);
-                } else {
-                    unit->AntiCNOT(CTRL_1_ARGS);
-                }
-            }
-        },
-        [&]() { X(target); }, false, true);
-}
-
 void QUnit::CY(bitLenInt control, bitLenInt target)
 {
     QEngineShard& tShard = shards[target];
@@ -2995,12 +2863,12 @@ void QUnit::MCInvert(
     const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
     if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
-        if (controlLen == 2U) {
-            CCNOT(controls[0], controls[1], target);
-            return;
-        }
         if (controlLen == 1U) {
             CNOT(controls[0], target);
+            return;
+        }
+        QEngineShard& tShard = shards[target];
+        if (CACHED_PLUS(tShard)) {
             return;
         }
     }
@@ -3139,12 +3007,12 @@ void QUnit::MACInvert(
     const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
     if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
-        if (controlLen == 2U) {
-            AntiCCNOT(controls[0], controls[1], target);
-            return;
-        }
         if (controlLen == 1U) {
             AntiCNOT(controls[0], target);
+            return;
+        }
+        QEngineShard& tShard = shards[target];
+        if (CACHED_PLUS(tShard)) {
             return;
         }
     }
