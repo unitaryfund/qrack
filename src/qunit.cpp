@@ -2284,9 +2284,8 @@ void QUnit::MCPhase(
         QEngineShard& tShard = shards[target];
 
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, {}, { control });
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL, {}, { control });
 
-        // This is not a Clifford gate, so we buffer for stabilizer:
         if (!IS_SAME_UNIT(cShard, tShard)) {
             tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
             OptimizePairBuffers(control, target, false);
@@ -2307,46 +2306,6 @@ void QUnit::MCPhase(
             }
         },
         true);
-}
-
-void QUnit::MCInvert(
-    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
-{
-    const bool isPauliX = IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft);
-    if (isPauliX) {
-        QEngineShard& tShard = shards[target];
-        if (CACHED_PLUS(tShard)) {
-            return;
-        }
-    }
-
-    std::vector<bitLenInt> controlVec;
-    if (TrimControls(lControls, lControlLen, controlVec, false)) {
-        return;
-    }
-
-    if (!controlVec.size()) {
-        Invert(topRight, bottomLeft, target);
-        return;
-    }
-
-    if (!freezeBasis2Qb && (controlVec.size() == 1U)) {
-        const bitLenInt control = controlVec[0];
-        QEngineShard& cShard = shards[control];
-        QEngineShard& tShard = shards[target];
-
-        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
-
-        if (!IS_SAME_UNIT(cShard, tShard)) {
-            tShard.AddInversionAngles(&cShard, topRight, bottomLeft);
-            OptimizePairBuffers(control, target, false);
-
-            return;
-        }
-    }
-
-    CTRLED_PHASE_INVERT_WRAP(MCInvert(CTRL_I_ARGS), MCMtrx(CTRL_GEN_ARGS), false, true, topRight, bottomLeft);
 }
 
 void QUnit::MACPhase(
@@ -2395,9 +2354,8 @@ void QUnit::MACPhase(
         QEngineShard& tShard = shards[target];
 
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL);
-        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI, {}, { control });
+        RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI, {}, { control });
 
-        // If this is not a Clifford gate, we buffer for stabilizer:
         if (!IS_SAME_UNIT(cShard, tShard)) {
             tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
             OptimizePairBuffers(control, target, true);
@@ -2418,6 +2376,46 @@ void QUnit::MACPhase(
             }
         },
         true);
+}
+
+void QUnit::MCInvert(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
+{
+    const bool isPauliX = IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft);
+    if (isPauliX) {
+        QEngineShard& tShard = shards[target];
+        if (CACHED_PLUS(tShard)) {
+            return;
+        }
+    }
+
+    std::vector<bitLenInt> controlVec;
+    if (TrimControls(lControls, lControlLen, controlVec, false)) {
+        return;
+    }
+
+    if (!controlVec.size()) {
+        Invert(topRight, bottomLeft, target);
+        return;
+    }
+
+    if (!freezeBasis2Qb && (controlVec.size() == 1U)) {
+        const bitLenInt control = controlVec[0];
+        QEngineShard& cShard = shards[control];
+        QEngineShard& tShard = shards[target];
+
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL, {}, { control });
+
+        if (!IS_SAME_UNIT(cShard, tShard)) {
+            tShard.AddInversionAngles(&cShard, topRight, bottomLeft);
+            OptimizePairBuffers(control, target, false);
+
+            return;
+        }
+    }
+
+    CTRLED_PHASE_INVERT_WRAP(MCInvert(CTRL_I_ARGS), MCMtrx(CTRL_GEN_ARGS), false, true, topRight, bottomLeft);
 }
 
 void QUnit::MACInvert(
@@ -2446,8 +2444,8 @@ void QUnit::MACInvert(
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
 
-        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard)) {
             tShard.AddAntiInversionAngles(&cShard, bottomLeft, topRight);
