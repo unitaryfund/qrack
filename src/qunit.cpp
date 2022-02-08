@@ -2156,7 +2156,7 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
         return;                                                                                                        \
     }                                                                                                                  \
     std::vector<bitLenInt> controlVec;                                                                                 \
-    if (TrimControls(controls, controlLen, controlVec, true)) {                                                        \
+    if (TrimControls(controls, controlLen, controlVec, anti)) {                                                        \
         return;                                                                                                        \
     }                                                                                                                  \
     if (!controlVec.size()) {                                                                                          \
