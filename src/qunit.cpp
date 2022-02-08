@@ -31,7 +31,7 @@
 #define IS_AMP_0(c) (norm(c) <= separabilityThreshold)
 #define IS_0_R1(r) (r == ZERO_R1)
 #define IS_1_R1(r) (r == ONE_R1)
-#define IS_1_CMPLX(c) (norm((c)-ONE_CMPLX) <= FP_NORM_EPSILON)
+#define IS_1_CMPLX(c) (norm(ONE_CMPLX - (c)) <= FP_NORM_EPSILON)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard)                                                                                            \
     ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0) ||                                       \
@@ -56,7 +56,7 @@
 #define SWAP_IDENT(shard1, shard2)                                                                                     \
     (!DIRTY(shard1) && !DIRTY(shard2) && (shard1.isPauliX == shard2.isPauliX) &&                                       \
         (shard1.isPauliY == shard2.isPauliY) && IS_AMP_0(shard1.amp0 - shard2.amp0) &&                                 \
-        IS_AMP_0(shard1.amp1 - shard2.amp1))
+        IS_AMP_0(shard1.amp1 - shard2.amp1) && !QUEUED_PHASE(shard1) && !QUEUED_PHASE(shard2))
 
 namespace Qrack {
 
@@ -4140,8 +4140,6 @@ void QUnit::CommuteH(bitLenInt bitIndex)
         return;
     }
 
-    std::map<QEngineShardPtr, bool> isPhaseMap;
-    std::map<QEngineShardPtr, bool> isInvertMap;
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
     for (auto phaseShard = targetOfShards.begin(); phaseShard != targetOfShards.end(); phaseShard++) {
@@ -4152,15 +4150,11 @@ void QUnit::CommuteH(bitLenInt bitIndex)
 
         QEngineShardPtr partner = phaseShard->first;
 
-        const bool isSame = buffer->isInvert && IS_SAME(polarDiff, polarSame);
-        if (isSame) {
-            isPhaseMap[partner] = true;
+        if (IS_OPPOSITE(polarDiff, polarSame)) {
             continue;
         }
 
-        const bool isOpposite = IS_OPPOSITE(polarDiff, polarSame);
-        if (isOpposite) {
-            isInvertMap[partner] = true;
+        if (buffer->isInvert && IS_SAME(polarDiff, polarSame)) {
             continue;
         }
 
@@ -4179,16 +4173,12 @@ void QUnit::CommuteH(bitLenInt bitIndex)
 
         QEngineShardPtr partner = phaseShard->first;
 
-        if (!isInvertMap[partner]) {
-            const bool isSame = buffer->isInvert && IS_SAME(polarDiff, polarSame);
-            if (isSame) {
-                continue;
-            }
+        if (IS_OPPOSITE(polarDiff, polarSame)) {
+            continue;
+        }
 
-            const bool isOpposite = IS_OPPOSITE(polarDiff, polarSame) && !isPhaseMap[partner];
-            if (isOpposite) {
-                continue;
-            }
+        if (buffer->isInvert && IS_SAME(polarDiff, polarSame)) {
+            continue;
         }
 
         const bitLenInt control = FindShardIndex(partner);
@@ -4218,7 +4208,7 @@ void QUnit::OptimizePairBuffers(bitLenInt control, bitLenInt target, bool anti)
                 tShard.RemoveAntiControl(&cShard);
                 return;
             }
-            if (IS_SAME_UNIT(cShard, tShard) || (!isReactiveSeparate && ARE_CLIFFORD(cShard, tShard))) {
+            if (IS_SAME_UNIT(cShard, tShard)) {
                 tShard.RemoveAntiControl(&cShard);
                 ApplyBuffer(buffer, control, target, true);
                 return;
@@ -4228,7 +4218,7 @@ void QUnit::OptimizePairBuffers(bitLenInt control, bitLenInt target, bool anti)
                 tShard.RemoveControl(&cShard);
                 return;
             }
-            if (IS_SAME_UNIT(cShard, tShard) || (!isReactiveSeparate && ARE_CLIFFORD(cShard, tShard))) {
+            if (IS_SAME_UNIT(cShard, tShard)) {
                 tShard.RemoveControl(&cShard);
                 ApplyBuffer(buffer, control, target, false);
                 return;
