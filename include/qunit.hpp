@@ -363,9 +363,7 @@ protected:
         const complex Y0 = shard.amp0;
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
-        }
+        shard.ClampAmps();
     }
 
     void TransformX2x2(const complex* mtrxIn, complex* mtrxOut);
@@ -416,7 +414,7 @@ protected:
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
         if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
+            shard.ClampAmps();
         }
     }
 
@@ -471,7 +469,7 @@ protected:
         shard.amp0 = SQRT1_2_R1 * (shard.amp0 + shard.amp1);
         shard.amp1 = tempAmp1;
         if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
+            shard.ClampAmps();
         }
     }
     virtual void ConvertXToY(bitLenInt i)
@@ -497,7 +495,7 @@ protected:
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
         if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
+            shard.ClampAmps();
         }
     }
     virtual void ConvertYToZ(bitLenInt i)
@@ -522,7 +520,7 @@ protected:
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
         if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
+            shard.ClampAmps();
         }
     }
     virtual void ConvertZToY(bitLenInt i)
@@ -548,7 +546,7 @@ protected:
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
         if (doNormalize) {
-            shard.ClampAmps(amplitudeFloor);
+            shard.ClampAmps();
         }
     }
 
