@@ -37,6 +37,7 @@
     ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0) ||                                       \
         (shard.antiTargetOfShards.size() != 0) || (shard.antiControlsShards.size() != 0))
 #define CACHED_X(shard) (shard.isPauliX && !DIRTY(shard) && !QUEUED_PHASE(shard))
+#define CACHED_X_OR_Y(shard) ((shard.isPauliX || shard.isPauliY) && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_Z(shard) (!shard.isPauliX && !shard.isPauliY && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_ZERO(shard) (CACHED_Z(shard) && IS_AMP_0(shard.amp1))
 #define CACHED_ONE(shard) (CACHED_Z(shard) && IS_AMP_0(shard.amp0))
@@ -2214,7 +2215,9 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
     // Under the Jacobian transformation between these two bases for defining the truth table, the matrix representation
     // is equivalent to the gate with bits flipped. We just let ApplyEitherControlled() know to leave the current basis
     // alone, by way of the last optional "true" argument in the call.
-    if (CACHED_X(cShard) && CACHED_X(tShard)) {
+    if (CACHED_X_OR_Y(cShard) && CACHED_X_OR_Y(tShard)) {
+        RevertBasisY(controls[0]);
+        RevertBasisY(target);
         std::swap(controls[0], target);
         ApplyEitherControlled(
             controls, controlLen, { target }, false,
