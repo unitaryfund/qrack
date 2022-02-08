@@ -2189,6 +2189,19 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
         }
     }
 
+    if (!freezeBasis2Qb) {
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
+        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
+        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
+
+        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
+            tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
+            OptimizePairBuffers(control, target, false);
+
+            return;
+        }
+    }
+
     bitLenInt controls[1] = { control };
     const bitLenInt controlLen = 1;
 
@@ -2208,19 +2221,6 @@ void QUnit::CNOT(bitLenInt control, bitLenInt target)
             [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->CNOT(CTRL_1_ARGS); },
             [&]() { XBase(target); }, false, true, true);
         return;
-    }
-
-    if (!freezeBasis2Qb) {
-        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(target, ONLY_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
-        RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, CTRL_AND_ANTI, {}, { control });
-
-        if (!IS_SAME_UNIT(cShard, tShard) && (isReactiveSeparate || !ARE_CLIFFORD(cShard, tShard))) {
-            tShard.AddInversionAngles(&cShard, ONE_CMPLX, ONE_CMPLX);
-            OptimizePairBuffers(control, target, false);
-
-            return;
-        }
     }
 
     CTRLED_PHASE_INVERT_WRAP(CNOT(CTRL_1_ARGS), MCMtrx(CTRL_GEN_ARGS), X(target), false, true, ONE_CMPLX, ONE_CMPLX);
