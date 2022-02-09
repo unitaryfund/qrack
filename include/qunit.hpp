@@ -270,7 +270,7 @@ protected:
     typedef void (QInterface::*CMULModFn)(bitCapInt toMod, bitCapInt modN, bitLenInt start, bitLenInt carryStart,
         bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
     void INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry,
-        const bitLenInt* controls = NULL, bitLenInt controlLen = 0);
+        std::vector<bitLenInt> controlVec = std::vector<bitLenInt>());
     void INTS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex,
         bool hasCarry);
     void INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex);
@@ -281,14 +281,13 @@ protected:
     std::vector<bitLenInt> CMULEntangle(
         std::vector<bitLenInt> controlVec, bitLenInt start, bitCapInt carryStart, bitLenInt length);
     void CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen);
+        std::vector<bitLenInt> controlVec);
     void xMULModNOut(
         bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length, bool inverse);
     void CxMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen, bool inverse);
     void CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt start, bitLenInt carryStart,
         bitLenInt length, std::vector<bitLenInt> controlVec);
-    bool CArithmeticOptimize(const bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec);
     bool INTCOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt carryIndex);
     bool INTSOptimize(bitCapInt toMod, bitLenInt start, bitLenInt length, bool isAdd, bitLenInt overflowIndex);
     bool INTSCOptimize(
@@ -403,7 +402,7 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.MakeDirty();
+            shard.isProbDirty = true;
             return;
         }
 
@@ -458,7 +457,7 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.MakeDirty();
+            shard.isProbDirty = true;
             return;
         }
 
@@ -483,7 +482,7 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.MakeDirty();
+            shard.isProbDirty = true;
             return;
         }
 
@@ -507,7 +506,7 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.MakeDirty();
+            shard.isProbDirty = true;
             return;
         }
 
@@ -531,7 +530,7 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.MakeDirty();
+            shard.isProbDirty = true;
             return;
         }
 

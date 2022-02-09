@@ -3843,7 +3843,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
     }
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec")
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec", "[travis_xfail]")
 {
     int i;
 

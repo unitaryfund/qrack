@@ -58,6 +58,8 @@
     (!DIRTY(shard1) && !DIRTY(shard2) && (shard1.isPauliX == shard2.isPauliX) &&                                       \
         (shard1.isPauliY == shard2.isPauliY) && IS_AMP_0(shard1.amp0 - shard2.amp0) &&                                 \
         IS_AMP_0(shard1.amp1 - shard2.amp1) && !QUEUED_PHASE(shard1) && !QUEUED_PHASE(shard2))
+#define IS_PHASE_OR_INVERT(mtrx)                                                                                       \
+    ((IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) || (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])))
 
 namespace Qrack {
 
@@ -1949,10 +1951,6 @@ void QUnit::S(bitLenInt target)
         shard.unit->S(shard.mapped);
     }
 
-    if (DIRTY(shard)) {
-        shard.isPhaseDirty = true;
-    }
-
     shard.amp1 = I_CMPLX * shard.amp1;
 }
 
@@ -1977,10 +1975,6 @@ void QUnit::IS(bitLenInt target)
         shard.unit->IS(shard.mapped);
     }
 
-    if (DIRTY(shard)) {
-        shard.isPhaseDirty = true;
-    }
-
     shard.amp1 = -I_CMPLX * shard.amp1;
 }
 
@@ -1990,10 +1984,6 @@ void QUnit::XBase(bitLenInt target)
 
     if (shard.unit) {
         shard.unit->X(shard.mapped);
-    }
-
-    if (DIRTY(shard)) {
-        shard.isPhaseDirty = true;
     }
 
     std::swap(shard.amp0, shard.amp1);
@@ -2007,10 +1997,6 @@ void QUnit::YBase(bitLenInt target)
         shard.unit->Y(shard.mapped);
     }
 
-    if (DIRTY(shard)) {
-        shard.isPhaseDirty = true;
-    }
-
     const complex Y0 = shard.amp0;
     shard.amp0 = -I_CMPLX * shard.amp1;
     shard.amp1 = I_CMPLX * Y0;
@@ -2022,10 +2008,6 @@ void QUnit::ZBase(bitLenInt target)
 
     if (shard.unit) {
         shard.unit->Z(shard.mapped);
-    }
-
-    if (DIRTY(shard)) {
-        shard.isPhaseDirty = true;
     }
 
     shard.amp1 = -shard.amp1;
@@ -2163,10 +2145,6 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
             shard.unit->Phase(topLeft, bottomRight, shard.mapped);
         }
 
-        if (DIRTY(shard)) {
-            shard.isPhaseDirty = true;
-        }
-
         shard.amp0 *= topLeft;
         shard.amp1 *= bottomRight;
 
@@ -2181,8 +2159,7 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
     }
 
     if (DIRTY(shard)) {
-        shard.isProbDirty |= !(IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) && !(IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]));
-        shard.isPhaseDirty = true;
+        shard.isProbDirty |= !IS_PHASE_OR_INVERT(mtrx);
     }
 
     const complex Y0 = shard.amp0;
@@ -2207,10 +2184,6 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
             shard.unit->Invert(topRight, bottomLeft, shard.mapped);
         }
 
-        if (DIRTY(shard)) {
-            shard.isPhaseDirty = true;
-        }
-
         const complex tempAmp1 = bottomLeft * shard.amp0;
         shard.amp0 = topRight * shard.amp1;
         shard.amp1 = tempAmp1;
@@ -2230,8 +2203,7 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     }
 
     if (DIRTY(shard)) {
-        shard.isProbDirty |= !(IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) && !(IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]));
-        shard.isPhaseDirty = true;
+        shard.isProbDirty |= !IS_PHASE_OR_INVERT(mtrx);
     }
 
     const complex Y0 = shard.amp0;
@@ -2461,9 +2433,7 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
     }
 
     if (DIRTY(shard)) {
-        shard.isProbDirty |=
-            !(IS_NORM_0(trnsMtrx[1]) && IS_NORM_0(trnsMtrx[2])) && !(IS_NORM_0(trnsMtrx[0]) && IS_NORM_0(trnsMtrx[3]));
-        shard.isPhaseDirty = true;
+        shard.isProbDirty |= !IS_PHASE_OR_INVERT(trnsMtrx);
     }
 
     const complex Y0 = shard.amp0;
@@ -2719,55 +2689,20 @@ void QUnit::ApplyEitherControlled(
 }
 
 #if ENABLE_ALU
-bool QUnit::CArithmeticOptimize(const bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>* controlVec)
-{
-    if (!controlLen) {
-        return false;
-    }
-
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        // If any control has a cached zero probability, this gate will do nothing, and we can avoid basically all
-        // overhead.
-        if (CACHED_ZERO(shards[controls[i]])) {
-            return true;
-        }
-    }
-
-    controlVec->resize(controlLen);
-    std::copy(controls, controls + controlLen, controlVec->begin());
-    bitLenInt controlIndex = 0;
-
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        real1_f prob = Prob(controls[i]);
-        if (IS_0_R1(prob)) {
-            // If any control has zero probability, this gate will do nothing.
-            return true;
-        } else if (IS_1_R1(prob)) {
-            // If any control has full probability, we can avoid entangling it.
-            controlVec->erase(controlVec->begin() + controlIndex);
-        } else {
-            controlIndex++;
-        }
-    }
-
-    return false;
-}
-
 void QUnit::CINC(bitCapInt toMod, bitLenInt start, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
-    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
-        // We've determined we can skip the entire gate.
+    if (TrimControls(controls, controlLen, controlVec, false)) {
         return;
     }
 
-    // All cached classical control bits have been removed from controlVec.
-    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlVec.size()]);
-    std::copy(controlVec.begin(), controlVec.end(), lControls.get());
-    DirtyShardIndexVector(controlVec);
+    if (!controlVec.size()) {
+        INC(toMod, start, length);
+        return;
+    }
 
-    INT(toMod, start, length, 0xFF, false, lControls.get(), controlVec.size());
+    INT(toMod, start, length, 0xFF, false, controlVec);
 }
 
 void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -2855,7 +2790,7 @@ bool QUnit::INTSCOptimize(
 }
 
 void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry,
-    const bitLenInt* controls, bitLenInt controlLen)
+    std::vector<bitLenInt> controlVec)
 {
     // Keep the bits separate, if cheap to do so:
     toMod &= pow2Mask(length);
@@ -2868,8 +2803,14 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
         return;
     }
 
+    // All cached classical control bits have been removed from controlVec.
+    const bitLenInt controlLen = controlVec.size();
+    std::unique_ptr<bitLenInt[]> controls(new bitLenInt[controlLen]);
+    std::copy(controlVec.begin(), controlVec.end(), controls.get());
+    DirtyShardIndexVector(controlVec);
+
     std::vector<bitLenInt> allBits(controlLen + 1U);
-    std::copy(controls, controls + controlLen, allBits.begin());
+    std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
     std::sort(allBits.begin(), allBits.begin() + controlLen);
 
     std::vector<bitLenInt*> ebits(allBits.size());
@@ -2899,13 +2840,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             const bool inReg = SHARD_STATE(shards[start]);
             int total = (toAdd ? 1 : 0) + (inReg ? 1 : 0) + (carry ? 1 : 0);
             if (inReg != (total & 1)) {
-                if (controlLen == 1U) {
-                    CNOT(controls[0], start);
-                } else if (controlLen) {
-                    MCInvert(controls, controlLen, ONE_CMPLX, ONE_CMPLX, start);
-                } else {
-                    X(start);
-                }
+                MCInvert(controls.get(), controlLen, ONE_CMPLX, ONE_CMPLX, start);
             }
             carry = (total > 1);
 
@@ -2990,13 +2925,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     if (!toMod && !length) {
         // We were able to avoid entangling the carry.
         if (hasCarry && carry) {
-            if (controlLen == 1U) {
-                CNOT(controls[0], carryIndex);
-            } else if (controlLen) {
-                MCInvert(controls, controlLen, ONE_CMPLX, ONE_CMPLX, carryIndex);
-            } else {
-                X(carryIndex);
-            }
+            MCInvert(controls.get(), controlLen, ONE_CMPLX, ONE_CMPLX, carryIndex);
         }
         return;
     }
@@ -3368,15 +3297,8 @@ QInterfacePtr QUnit::CMULEntangle(std::vector<bitLenInt> controlVec, bitLenInt s
 }
 
 void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
-    const bitLenInt* controls, bitLenInt controlLen)
+    std::vector<bitLenInt> controlVec)
 {
-    // Try to optimize away the whole gate, or as many controls as is opportune.
-    std::vector<bitLenInt> controlVec;
-    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
-        // We've determined we can skip the entire operation:
-        return;
-    }
-
     // Otherwise, we have to "dirty" the register.
     std::vector<bitLenInt> controlsMapped;
     QInterfacePtr unit = CMULEntangle(controlVec, start, carryStart, length, &controlsMapped);
@@ -3402,23 +3324,35 @@ void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt st
 void QUnit::CMUL(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
     bitLenInt controlLen)
 {
-    if (!controlLen) {
+    // Try to optimize away the whole gate, or as many controls as is opportune.
+    std::vector<bitLenInt> controlVec;
+    if (TrimControls(controls, controlLen, controlVec, false)) {
+        return;
+    }
+
+    if (!controlVec.size()) {
         MUL(toMod, start, carryStart, length);
         return;
     }
 
-    CMULx(&QInterface::CMUL, toMod, start, carryStart, length, controls, controlLen);
+    CMULx(&QInterface::CMUL, toMod, start, carryStart, length, controlVec);
 }
 
 void QUnit::CDIV(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
     bitLenInt controlLen)
 {
-    if (!controlLen) {
+    // Try to optimize away the whole gate, or as many controls as is opportune.
+    std::vector<bitLenInt> controlVec;
+    if (TrimControls(controls, controlLen, controlVec, false)) {
+        return;
+    }
+
+    if (!controlVec.size()) {
         DIV(toMod, start, carryStart, length);
         return;
     }
 
-    CMULx(&QInterface::CDIV, toMod, start, carryStart, length, controls, controlLen);
+    CMULx(&QInterface::CDIV, toMod, start, carryStart, length, controlVec);
 }
 
 void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
@@ -3426,8 +3360,7 @@ void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bit
 {
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
-    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
-        // We've determined we can skip the entire operation:
+    if (TrimControls(controls, controlLen, controlVec, false)) {
         return;
     }
 
@@ -3502,8 +3435,7 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
 
     // Try to optimize away the whole gate, or as many controls as is opportune.
     std::vector<bitLenInt> controlVec;
-    if (CArithmeticOptimize(controls, controlLen, &controlVec)) {
-        // We've determined we can skip the entire operation:
+    if (TrimControls(controls, controlLen, controlVec, false)) {
         return;
     }
 
