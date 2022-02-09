@@ -2593,29 +2593,27 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
     // First, no buffer flushing.
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
-        if (shard.isPauliX || shard.isPauliY) {
+
+        if (shard.isPauliX || shard.isPauliY || shard.IsInvertTarget()) {
             continue;
         }
 
-        if (shard.isProbDirty && shard.isClifford()) {
-            ProbBase(controls[i]);
-        }
+        ProbBase(controls[i]);
 
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         // This might determine that we can just skip out of the whole gate, in which case we return.
-        if (!shard.isProbDirty && !shard.IsInvertTarget()) {
-            if (IS_AMP_0(shard.amp1)) {
-                Flush0Eigenstate(controls[i]);
-                if (!anti) {
-                    /* This gate does nothing, so return without applying anything. */
-                    return true;
-                }
-            } else if (IS_AMP_0(shard.amp0)) {
-                Flush1Eigenstate(controls[i]);
-                if (anti) {
-                    /* This gate does nothing, so return without applying anything. */
-                    return true;
-                }
+
+        if (IS_AMP_0(shard.amp1)) {
+            Flush0Eigenstate(controls[i]);
+            if (!anti) {
+                /* This gate does nothing, so return without applying anything. */
+                return true;
+            }
+        } else if (IS_AMP_0(shard.amp0)) {
+            Flush1Eigenstate(controls[i]);
+            if (anti) {
+                /* This gate does nothing, so return without applying anything. */
+                return true;
             }
         }
     }
@@ -2628,25 +2626,26 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
         }
 
         RevertBasis1Qb(controls[i]);
-        if (shard.isProbDirty && shard.isClifford()) {
-            ProbBase(controls[i]);
+
+        if (shard.IsInvertTarget()) {
+            continue;
         }
+
+        ProbBase(controls[i]);
 
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         // This might determine that we can just skip out of the whole gate, in which case we return.
-        if (!shard.isProbDirty && !shard.IsInvertTarget()) {
-            if (IS_AMP_0(shard.amp1)) {
-                Flush0Eigenstate(controls[i]);
-                if (!anti) {
-                    /* This gate does nothing, so return without applying anything. */
-                    return true;
-                }
-            } else if (IS_AMP_0(shard.amp0)) {
-                Flush1Eigenstate(controls[i]);
-                if (anti) {
-                    /* This gate does nothing, so return without applying anything. */
-                    return true;
-                }
+        if (IS_AMP_0(shard.amp1)) {
+            Flush0Eigenstate(controls[i]);
+            if (!anti) {
+                /* This gate does nothing, so return without applying anything. */
+                return true;
+            }
+        } else if (IS_AMP_0(shard.amp0)) {
+            Flush1Eigenstate(controls[i]);
+            if (anti) {
+                /* This gate does nothing, so return without applying anything. */
+                return true;
             }
         }
     }
@@ -2655,30 +2654,26 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
         RevertBasis2Qb(controls[i], ONLY_INVERT, ONLY_TARGETS);
-        if (shard.isProbDirty && shard.isClifford()) {
-            ProbBase(controls[i]);
-        }
+        ProbBase(controls[i]);
         // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         bool isEigenstate = false;
-        if (!shard.isProbDirty) {
-            // This might determine that we can just skip out of the whole gate, in which case we return.
-            if (IS_AMP_0(shard.amp1)) {
-                Flush0Eigenstate(controls[i]);
-                if (!anti) {
-                    /* This gate does nothing, so return without applying anything. */
-                    return true;
-                }
-                /* This control has 100% chance to "fire," so don't entangle it. */
-                isEigenstate = true;
-            } else if (IS_AMP_0(shard.amp0)) {
-                Flush1Eigenstate(controls[i]);
-                if (anti) {
-                    /* This gate does nothing, so return without applying anything. */
-                    return true;
-                }
-                /* This control has 100% chance to "fire," so don't entangle it. */
-                isEigenstate = true;
+        // This might determine that we can just skip out of the whole gate, in which case we return.
+        if (IS_AMP_0(shard.amp1)) {
+            Flush0Eigenstate(controls[i]);
+            if (!anti) {
+                /* This gate does nothing, so return without applying anything. */
+                return true;
             }
+            /* This control has 100% chance to "fire," so don't entangle it. */
+            isEigenstate = true;
+        } else if (IS_AMP_0(shard.amp0)) {
+            Flush1Eigenstate(controls[i]);
+            if (anti) {
+                /* This gate does nothing, so return without applying anything. */
+                return true;
+            }
+            /* This control has 100% chance to "fire," so don't entangle it. */
+            isEigenstate = true;
         }
 
         if (!isEigenstate) {

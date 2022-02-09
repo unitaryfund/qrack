@@ -5821,6 +5821,67 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_23", "[mirror]")
     REQUIRE(qftReg->MAll() == 0);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_24", "[mirror]")
+{
+    qftReg = MakeEngine(6);
+    qftReg->SetPermutation(48);
+
+    qftReg->H(1);
+    qftReg->H(2);
+    qftReg->H(4);
+    qftReg->CNOT(2, 4);
+    qftReg->CZ(1, 5);
+    qftReg->H(2);
+    qftReg->H(4);
+    qftReg->T(5);
+    qftReg->CNOT(4, 5);
+    qftReg->CZ(1, 2);
+    qftReg->H(3);
+    qftReg->H(1);
+    qftReg->T(2);
+    qftReg->T(5);
+    qftReg->CCNOT(1, 0, 2);
+    qftReg->X(4);
+    qftReg->X(1);
+    qftReg->X(2);
+    qftReg->H(0);
+    qftReg->T(3);
+    qftReg->CCNOT(0, 3, 4);
+    qftReg->CNOT(1, 2);
+    qftReg->X(1);
+    qftReg->H(5);
+    qftReg->CZ(5, 1);
+    qftReg->CZ(0, 2);
+    qftReg->CZ(0, 2);
+    qftReg->CZ(5, 1);
+    qftReg->H(5);
+    qftReg->X(1);
+    qftReg->CNOT(1, 2);
+    qftReg->CCNOT(0, 3, 4);
+    qftReg->IT(3);
+    qftReg->H(0);
+    qftReg->X(2);
+    qftReg->X(1);
+    qftReg->X(4);
+    qftReg->CCNOT(1, 0, 2);
+    qftReg->IT(5);
+    qftReg->IT(2);
+    qftReg->H(1);
+    qftReg->H(3);
+    qftReg->CZ(1, 2);
+    qftReg->CNOT(4, 5);
+    qftReg->IT(5);
+    qftReg->H(4);
+    qftReg->H(2);
+    qftReg->CZ(1, 5);
+    qftReg->CNOT(2, 4);
+    qftReg->H(4);
+    qftReg->H(2);
+    qftReg->H(1);
+
+    REQUIRE(qftReg->MAll() == 48);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
