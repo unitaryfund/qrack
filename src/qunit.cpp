@@ -2287,6 +2287,7 @@ void QUnit::MCPhase(
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
 
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL, {}, { control });
 
@@ -2350,6 +2351,7 @@ void QUnit::MACPhase(
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
 
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL);
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI, {}, { control });
 
@@ -2390,6 +2392,7 @@ void QUnit::MCInvert(
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
 
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL, {}, { control });
 
@@ -2430,6 +2433,7 @@ void QUnit::MACInvert(
         QEngineShard& cShard = shards[control];
         QEngineShard& tShard = shards[target];
 
+        RevertBasis2Qb(control, ONLY_INVERT, ONLY_TARGETS, CTRL_AND_ANTI);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL);
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI, {}, { control });
 
