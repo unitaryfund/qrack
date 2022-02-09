@@ -1949,6 +1949,10 @@ void QUnit::S(bitLenInt target)
         shard.unit->S(shard.mapped);
     }
 
+    if (DIRTY(shard)) {
+        shard.isPhaseDirty = true;
+    }
+
     shard.amp1 = I_CMPLX * shard.amp1;
 }
 
@@ -1973,6 +1977,10 @@ void QUnit::IS(bitLenInt target)
         shard.unit->IS(shard.mapped);
     }
 
+    if (DIRTY(shard)) {
+        shard.isPhaseDirty = true;
+    }
+
     shard.amp1 = -I_CMPLX * shard.amp1;
 }
 
@@ -1982,6 +1990,10 @@ void QUnit::XBase(bitLenInt target)
 
     if (shard.unit) {
         shard.unit->X(shard.mapped);
+    }
+
+    if (DIRTY(shard)) {
+        shard.isPhaseDirty = true;
     }
 
     std::swap(shard.amp0, shard.amp1);
@@ -1995,6 +2007,10 @@ void QUnit::YBase(bitLenInt target)
         shard.unit->Y(shard.mapped);
     }
 
+    if (DIRTY(shard)) {
+        shard.isPhaseDirty = true;
+    }
+
     const complex Y0 = shard.amp0;
     shard.amp0 = -I_CMPLX * shard.amp1;
     shard.amp1 = I_CMPLX * Y0;
@@ -2006,6 +2022,10 @@ void QUnit::ZBase(bitLenInt target)
 
     if (shard.unit) {
         shard.unit->Z(shard.mapped);
+    }
+
+    if (DIRTY(shard)) {
+        shard.isPhaseDirty = true;
     }
 
     shard.amp1 = -shard.amp1;
@@ -2144,8 +2164,7 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
         }
 
         if (DIRTY(shard)) {
-            shard.MakeDirty();
-            return;
+            shard.isPhaseDirty = true;
         }
 
         shard.amp0 *= topLeft;
@@ -2162,8 +2181,8 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
     }
 
     if (DIRTY(shard)) {
-        shard.MakeDirty();
-        return;
+        shard.isProbDirty |= !(IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) && !(IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]));
+        shard.isPhaseDirty = true;
     }
 
     const complex Y0 = shard.amp0;
@@ -2189,8 +2208,7 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
         }
 
         if (DIRTY(shard)) {
-            shard.MakeDirty();
-            return;
+            shard.isPhaseDirty = true;
         }
 
         const complex tempAmp1 = bottomLeft * shard.amp0;
@@ -2212,8 +2230,8 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     }
 
     if (DIRTY(shard)) {
-        shard.MakeDirty();
-        return;
+        shard.isProbDirty |= !(IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) && !(IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]));
+        shard.isPhaseDirty = true;
     }
 
     const complex Y0 = shard.amp0;
@@ -2443,8 +2461,9 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
     }
 
     if (DIRTY(shard)) {
-        shard.MakeDirty();
-        return;
+        shard.isProbDirty |=
+            !(IS_NORM_0(trnsMtrx[1]) && IS_NORM_0(trnsMtrx[2])) && !(IS_NORM_0(trnsMtrx[0]) && IS_NORM_0(trnsMtrx[3]));
+        shard.isPhaseDirty = true;
     }
 
     const complex Y0 = shard.amp0;
