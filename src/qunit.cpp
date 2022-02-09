@@ -49,6 +49,7 @@
     (!shard.isProbDirty && shard.isPauliX && !shard.isPauliY && (IS_AMP_0(shard.amp0) || IS_AMP_0(shard.amp1)))
 #define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_AMP_0(shard.amp0))
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_AMP_0(shard.amp1))
+#define UNSAFE_CACHED_PLUS(shard) (!shard.isProbDirty && shard.isPauliX && !shard.isPauliY && IS_AMP_0(shard.amp0))
 #define IS_SAME_UNIT(shard1, shard2) (shard1.unit && (shard1.unit == shard2.unit))
 #define ARE_CLIFFORD(shard1, shard2)                                                                                   \
     ((engines[0] == QINTERFACE_STABILIZER_HYBRID) && (shard1.isClifford() || shard2.isClifford()))
@@ -2010,34 +2011,6 @@ void QUnit::ZBase(bitLenInt target)
     shard.amp1 = -shard.amp1;
 }
 
-void QUnit::X(bitLenInt target)
-{
-    QEngineShard& shard = shards[target];
-
-    shard.FlipPhaseAnti();
-
-    if (shard.isPauliY) {
-        YBase(target);
-    } else if (shard.isPauliX) {
-        ZBase(target);
-    } else {
-        XBase(target);
-    }
-}
-
-void QUnit::Z(bitLenInt target)
-{
-    QEngineShard& shard = shards[target];
-
-    shard.CommutePhase(ONE_CMPLX, -ONE_CMPLX);
-
-    if (shard.isPauliX || shard.isPauliY) {
-        XBase(target);
-    } else {
-        ZBase(target);
-    }
-}
-
 void QUnit::TransformX2x2(const complex* mtrxIn, complex* mtrxOut)
 {
     mtrxOut[0] = (real1)(ONE_R1 / 2) * (complex)(mtrxIn[0] + mtrxIn[1] + mtrxIn[2] + mtrxIn[3]);
@@ -2078,23 +2051,22 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
     mtrxOut[3] = mtrxOut[0];
 }
 
-#define CTRLED_GEN_WRAP(ctrld, anti)                                                                                   \
-    ApplyEitherControlled(                                                                                             \
-        controlVec, { target }, anti, [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                 \
-            complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                                  \
-            if (shards[target].isPauliX) {                                                                             \
-                TransformX2x2(mtrx, trnsMtrx);                                                                         \
-            } else if (shards[target].isPauliY) {                                                                      \
-                TransformY2x2(mtrx, trnsMtrx);                                                                         \
-            } else {                                                                                                   \
-                std::copy(mtrx, mtrx + 4, trnsMtrx);                                                                   \
-            }                                                                                                          \
-            unit->ctrld;                                                                                               \
-        });
+#define CTRLED_GEN_WRAP(ctrld)                                                                                         \
+    ApplyEitherControlled(controlVec, { target }, [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {     \
+        complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                                      \
+        if (shards[target].isPauliX) {                                                                                 \
+            TransformX2x2(mtrx, trnsMtrx);                                                                             \
+        } else if (shards[target].isPauliY) {                                                                          \
+            TransformY2x2(mtrx, trnsMtrx);                                                                             \
+        } else {                                                                                                       \
+            std::copy(mtrx, mtrx + 4, trnsMtrx);                                                                       \
+        }                                                                                                              \
+        unit->ctrld;                                                                                                   \
+    });
 
-#define CTRLED_PHASE_INVERT_WRAP(ctrld, ctrldgen, anti, isInvert, top, bottom)                                         \
+#define CTRLED_PHASE_INVERT_WRAP(ctrld, ctrldgen, isInvert, top, bottom)                                               \
     ApplyEitherControlled(                                                                                             \
-        controlVec, { target }, anti,                                                                                  \
+        controlVec, { target },                                                                                        \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
             if (shards[target].isPauliX) {                                                                             \
                 complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                              \
@@ -2130,7 +2102,7 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
         bare;                                                                                                          \
         return;                                                                                                        \
     }                                                                                                                  \
-    ApplyEitherControlled(controlVec, { qubit1, qubit2 }, anti,                                                        \
+    ApplyEitherControlled(controlVec, { qubit1, qubit2 },                                                              \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; })
 #define CTRL_GEN_ARGS &(mappedControls[0]), mappedControls.size(), trnsMtrx, shards[target].mapped
 #define CTRL_ARGS &(mappedControls[0]), mappedControls.size(), mtrx, shards[target].mapped
@@ -2144,11 +2116,6 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (randGlobalPhase || IS_1_CMPLX(topLeft)) {
         if (IS_NORM_0(topLeft - bottomRight)) {
-            return;
-        }
-
-        if (IS_NORM_0(topLeft + bottomRight)) {
-            Z(target);
             return;
         }
 
@@ -2197,15 +2164,14 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
 void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 {
-    if (IS_NORM_0(topRight - bottomLeft) && (randGlobalPhase || IS_1_CMPLX(topRight))) {
-        X(target);
-        return;
-    }
-
     QEngineShard& shard = shards[target];
 
     shard.FlipPhaseAnti();
     shard.CommutePhase(topRight, bottomLeft);
+
+    if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft) && UNSAFE_CACHED_PLUS(shard)) {
+        return;
+    }
 
     if (!shard.isPauliX && !shard.isPauliY) {
         if (shard.unit) {
@@ -2253,31 +2219,12 @@ void QUnit::MCPhase(
         return;
     }
 
-    if ((controlVec.size() == 1U) && IS_NORM_0(topLeft - bottomRight)) {
-        Phase(ONE_CMPLX, bottomRight, controlVec[0]);
+    QEngineShard& shard = shards[target];
+    if (IS_1_CMPLX(topLeft) && !shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard)) {
         return;
     }
-
-    QEngineShard& shard = shards[target];
     if (IS_1_CMPLX(bottomRight) && !shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard)) {
         return;
-    }
-
-    if (IS_1_CMPLX(topLeft)) {
-        if (!shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard)) {
-            return;
-        }
-
-        if (!shards[target].isPauliX && !shards[target].isPauliY) {
-            const bitLenInt controlLen = (bitLenInt)controlVec.size();
-            for (bitLenInt i = 0; i < controlLen; i++) {
-                QEngineShard& cShard = shards[controlVec[i]];
-                if (cShard.isPauliX || cShard.isPauliY) {
-                    std::swap(controlVec[i], target);
-                    break;
-                }
-            }
-        }
     }
 
     if (!freezeBasis2Qb && (controlVec.size() == 1U)) {
@@ -2297,7 +2244,7 @@ void QUnit::MCPhase(
         }
     }
 
-    CTRLED_PHASE_INVERT_WRAP(MCPhase(CTRL_P_ARGS), MCMtrx(CTRL_GEN_ARGS), false, false, topLeft, bottomRight);
+    CTRLED_PHASE_INVERT_WRAP(MCPhase(CTRL_P_ARGS), MCMtrx(CTRL_GEN_ARGS), false, topLeft, bottomRight);
 }
 
 void QUnit::MACPhase(
@@ -2326,22 +2273,8 @@ void QUnit::MACPhase(
     if (IS_1_CMPLX(topLeft) && !shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard)) {
         return;
     }
-
-    if (IS_1_CMPLX(bottomRight)) {
-        if (!shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard)) {
-            return;
-        }
-
-        if (!shards[target].isPauliX && !shards[target].isPauliY) {
-            const bitLenInt controlLen = (bitLenInt)controlVec.size();
-            for (bitLenInt i = 0; i < controlLen; i++) {
-                QEngineShard& cShard = shards[controlVec[i]];
-                if (cShard.isPauliX || cShard.isPauliY) {
-                    std::swap(controlVec[i], target);
-                    break;
-                }
-            }
-        }
+    if (IS_1_CMPLX(bottomRight) && !shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard)) {
+        return;
     }
 
     if (!freezeBasis2Qb && (controlVec.size() == 1U)) {
@@ -2361,14 +2294,13 @@ void QUnit::MACPhase(
         }
     }
 
-    CTRLED_PHASE_INVERT_WRAP(MACPhase(CTRL_P_ARGS), MACMtrx(CTRL_GEN_ARGS), true, false, topLeft, bottomRight);
+    CTRLED_PHASE_INVERT_WRAP(MACPhase(CTRL_P_ARGS), MACMtrx(CTRL_GEN_ARGS), false, topLeft, bottomRight);
 }
 
 void QUnit::MCInvert(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    const bool isPauliX = IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft);
-    if (isPauliX) {
+    if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
         QEngineShard& tShard = shards[target];
         if (CACHED_PLUS(tShard)) {
             return;
@@ -2402,14 +2334,13 @@ void QUnit::MCInvert(
         }
     }
 
-    CTRLED_PHASE_INVERT_WRAP(MCInvert(CTRL_I_ARGS), MCMtrx(CTRL_GEN_ARGS), false, true, topRight, bottomLeft);
+    CTRLED_PHASE_INVERT_WRAP(MCInvert(CTRL_I_ARGS), MCMtrx(CTRL_GEN_ARGS), true, topRight, bottomLeft);
 }
 
 void QUnit::MACInvert(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    const bool isPauliX = IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft);
-    if (isPauliX) {
+    if (IS_1_CMPLX(topRight) && IS_1_CMPLX(bottomLeft)) {
         QEngineShard& tShard = shards[target];
         if (CACHED_PLUS(tShard)) {
             return;
@@ -2443,7 +2374,7 @@ void QUnit::MACInvert(
         }
     }
 
-    CTRLED_PHASE_INVERT_WRAP(MACInvert(CTRL_I_ARGS), MACMtrx(CTRL_GEN_ARGS), true, true, topRight, bottomLeft);
+    CTRLED_PHASE_INVERT_WRAP(MACInvert(CTRL_I_ARGS), MACMtrx(CTRL_GEN_ARGS), true, topRight, bottomLeft);
 }
 
 void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
@@ -2499,10 +2430,6 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
 
 void QUnit::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
-    if (IsIdentity(mtrx, true)) {
-        return;
-    }
-
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         MCPhase(controls, controlLen, mtrx[0], mtrx[3], target);
         return;
@@ -2523,15 +2450,11 @@ void QUnit::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const comple
         return;
     }
 
-    CTRLED_GEN_WRAP(MCMtrx(CTRL_GEN_ARGS), false);
+    CTRLED_GEN_WRAP(MCMtrx(CTRL_GEN_ARGS));
 }
 
 void QUnit::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
-    if (IsIdentity(mtrx, true)) {
-        return;
-    }
-
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         MACPhase(controls, controlLen, mtrx[0], mtrx[3], target);
         return;
@@ -2552,7 +2475,7 @@ void QUnit::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const compl
         return;
     }
 
-    CTRLED_GEN_WRAP(MACMtrx(CTRL_GEN_ARGS), true);
+    CTRLED_GEN_WRAP(MACMtrx(CTRL_GEN_ARGS));
 }
 
 void QUnit::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
@@ -2600,9 +2523,7 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
 
         ProbBase(controls[i]);
 
-        // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         // This might determine that we can just skip out of the whole gate, in which case we return.
-
         if (IS_AMP_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
             if (!anti) {
@@ -2621,10 +2542,10 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
     // Next, just 1qb buffer flushing.
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
+
         if (!shard.isPauliX && !shard.isPauliY) {
             continue;
         }
-
         RevertBasis1Qb(controls[i]);
 
         if (shard.IsInvertTarget()) {
@@ -2633,7 +2554,6 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
 
         ProbBase(controls[i]);
 
-        // If the shard's probability is cached, then it's free to check it, so we advance the loop.
         // This might determine that we can just skip out of the whole gate, in which case we return.
         if (IS_AMP_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
@@ -2653,9 +2573,11 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
     // Finally, full buffer flushing, (last resort).
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
+
         RevertBasis2Qb(controls[i], ONLY_INVERT, ONLY_TARGETS);
+
         ProbBase(controls[i]);
-        // If the shard's probability is cached, then it's free to check it, so we advance the loop.
+
         bool isEigenstate = false;
         // This might determine that we can just skip out of the whole gate, in which case we return.
         if (IS_AMP_0(shard.amp1)) {
@@ -2685,8 +2607,8 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
 }
 
 template <typename CF>
-void QUnit::ApplyEitherControlled(std::vector<bitLenInt> controlVec, const std::vector<bitLenInt> targets, bool anti,
-    CF cfn, bool isPhase, bool isInvert)
+void QUnit::ApplyEitherControlled(
+    std::vector<bitLenInt> controlVec, const std::vector<bitLenInt> targets, CF cfn, bool isPhase, bool isInvert)
 {
     for (bitLenInt i = 0; i < (bitLenInt)targets.size(); i++) {
         if (targets.size() > 1U) {
