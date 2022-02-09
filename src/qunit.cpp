@@ -2476,6 +2476,8 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
+    RevertBasis2Qb(target);
+
     complex trnsMtrx[4];
     if (shard.isPauliY) {
         TransformY2x2(mtrx, trnsMtrx);
@@ -2484,30 +2486,6 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
     } else {
         std::copy(mtrx, mtrx + 4, trnsMtrx);
     }
-
-    if (IS_NORM_0(trnsMtrx[1]) && IS_NORM_0(trnsMtrx[2])) {
-        const bool wasPauliX = shard.isPauliX;
-        const bool wasPauliY = shard.isPauliY;
-        shard.isPauliX = false;
-        shard.isPauliY = false;
-        Phase(trnsMtrx[0], trnsMtrx[3], target);
-        shard.isPauliX = wasPauliX;
-        shard.isPauliY = wasPauliY;
-        return;
-    }
-
-    if (IS_NORM_0(trnsMtrx[0]) && IS_NORM_0(trnsMtrx[3])) {
-        const bool wasPauliX = shard.isPauliX;
-        const bool wasPauliY = shard.isPauliY;
-        shard.isPauliX = false;
-        shard.isPauliY = false;
-        Invert(trnsMtrx[1], trnsMtrx[2], target);
-        shard.isPauliX = wasPauliX;
-        shard.isPauliY = wasPauliY;
-        return;
-    }
-
-    RevertBasis2Qb(target);
 
     if (shard.unit) {
         shard.unit->Mtrx(trnsMtrx, shard.mapped);
