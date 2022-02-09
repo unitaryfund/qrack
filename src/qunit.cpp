@@ -2143,6 +2143,11 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
             shard.unit->Phase(topLeft, bottomRight, shard.mapped);
         }
 
+        if (DIRTY(shard)) {
+            shard.MakeDirty();
+            return;
+        }
+
         shard.amp0 *= topLeft;
         shard.amp1 *= bottomRight;
 
@@ -2154,6 +2159,11 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
     if (shard.unit) {
         shard.unit->Mtrx(mtrx, shard.mapped);
+    }
+
+    if (DIRTY(shard)) {
+        shard.MakeDirty();
+        return;
     }
 
     const complex Y0 = shard.amp0;
@@ -2178,6 +2188,11 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
             shard.unit->Invert(topRight, bottomLeft, shard.mapped);
         }
 
+        if (DIRTY(shard)) {
+            shard.MakeDirty();
+            return;
+        }
+
         const complex tempAmp1 = bottomLeft * shard.amp0;
         shard.amp0 = topRight * shard.amp1;
         shard.amp1 = tempAmp1;
@@ -2194,6 +2209,11 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 
     if (shard.unit) {
         shard.unit->Mtrx(mtrx, shard.mapped);
+    }
+
+    if (DIRTY(shard)) {
+        shard.MakeDirty();
+        return;
     }
 
     const complex Y0 = shard.amp0;
@@ -2420,6 +2440,11 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
 
     if (shard.unit) {
         shard.unit->Mtrx(trnsMtrx, shard.mapped);
+    }
+
+    if (DIRTY(shard)) {
+        shard.MakeDirty();
+        return;
     }
 
     const complex Y0 = shard.amp0;

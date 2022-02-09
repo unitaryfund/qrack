@@ -356,6 +356,7 @@ protected:
         complex mtrx[4] = { cosineI, -expNegA * sineI, expA * sineI, cosineI };
 
         QEngineShard& shard = shards[qubit];
+
         const complex Y0 = shard.amp0;
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
@@ -400,6 +401,7 @@ protected:
         if (shard.unit) {
             shard.unit->Mtrx(mtrx, shard.mapped);
         }
+
         if (shard.isPhaseDirty || shard.isProbDirty) {
             shard.MakeDirty();
             return;
@@ -409,9 +411,7 @@ protected:
 
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        if (doNormalize) {
-            shard.ClampAmps();
-        }
+        shard.ClampAmps();
     }
 
     void RevertBasis1Qb(bitLenInt i)
@@ -456,6 +456,7 @@ protected:
         if (shard.unit) {
             shard.unit->H(shard.mapped);
         }
+
         if (shard.isPhaseDirty || shard.isProbDirty) {
             shard.MakeDirty();
             return;
@@ -464,9 +465,7 @@ protected:
         complex tempAmp1 = SQRT1_2_R1 * (shard.amp0 - shard.amp1);
         shard.amp0 = SQRT1_2_R1 * (shard.amp0 + shard.amp1);
         shard.amp1 = tempAmp1;
-        if (doNormalize) {
-            shard.ClampAmps();
-        }
+        shard.ClampAmps();
     }
     virtual void ConvertXToY(bitLenInt i)
     {
@@ -482,6 +481,7 @@ protected:
         if (shard.unit) {
             shard.unit->Mtrx(mtrx, shard.mapped);
         }
+
         if (shard.isPhaseDirty || shard.isProbDirty) {
             shard.MakeDirty();
             return;
@@ -490,9 +490,7 @@ protected:
         complex Y0 = shard.amp0;
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        if (doNormalize) {
-            shard.ClampAmps();
-        }
+        shard.ClampAmps();
     }
     virtual void ConvertYToZ(bitLenInt i)
     {
@@ -507,6 +505,7 @@ protected:
         if (shard.unit) {
             shard.unit->Mtrx(mtrx, shard.mapped);
         }
+
         if (shard.isPhaseDirty || shard.isProbDirty) {
             shard.MakeDirty();
             return;
@@ -515,9 +514,7 @@ protected:
         complex Y0 = shard.amp0;
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        if (doNormalize) {
-            shard.ClampAmps();
-        }
+        shard.ClampAmps();
     }
     virtual void ConvertZToY(bitLenInt i)
     {
@@ -541,9 +538,7 @@ protected:
         complex Y0 = shard.amp0;
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        if (doNormalize) {
-            shard.ClampAmps();
-        }
+        shard.ClampAmps();
     }
 
     enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
