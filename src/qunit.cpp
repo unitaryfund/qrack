@@ -2178,7 +2178,6 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
         shard.amp0 *= topLeft;
         shard.amp1 *= bottomRight;
-        shard.ClampAmps();
 
         return;
     }
@@ -2205,18 +2204,17 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 
     QEngineShard& shard = shards[target];
 
-    shard.CommutePhase(bottomLeft, topRight);
     shard.FlipPhaseAnti();
+    shard.CommutePhase(topRight, bottomLeft);
 
     if (!shard.isPauliX && !shard.isPauliY) {
         if (shard.unit) {
             shard.unit->Invert(topRight, bottomLeft, shard.mapped);
         }
 
-        const complex tempAmp1 = shard.amp0 * bottomLeft;
-        shard.amp0 = shard.amp1 * topRight;
+        const complex tempAmp1 = bottomLeft * shard.amp0;
+        shard.amp0 = topRight * shard.amp1;
         shard.amp1 = tempAmp1;
-        shard.ClampAmps();
 
         return;
     }
@@ -2261,7 +2259,7 @@ void QUnit::MCPhase(
     }
 
     QEngineShard& shard = shards[target];
-    if (IS_1_CMPLX(bottomRight) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard))) {
+    if (IS_1_CMPLX(bottomRight) && !shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard)) {
         return;
     }
 
@@ -2325,7 +2323,7 @@ void QUnit::MACPhase(
     }
 
     QEngineShard& shard = shards[target];
-    if (IS_1_CMPLX(topLeft) && (!shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard))) {
+    if (IS_1_CMPLX(topLeft) && !shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard)) {
         return;
     }
 
@@ -2478,10 +2476,7 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    RevertBasis2Qb(target);
-
     complex trnsMtrx[4];
-
     if (shard.isPauliY) {
         TransformY2x2(mtrx, trnsMtrx);
     } else if (shard.isPauliX) {
@@ -2511,6 +2506,8 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
         shard.isPauliY = wasPauliY;
         return;
     }
+
+    RevertBasis2Qb(target);
 
     if (shard.unit) {
         shard.unit->Mtrx(trnsMtrx, shard.mapped);
@@ -4125,10 +4122,6 @@ void QUnit::CommuteH(bitLenInt bitIndex)
     }
 
     RevertBasis2Qb(bitIndex, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, {}, {}, false, true);
-
-    if (!QUEUED_PHASE(shard)) {
-        return;
-    }
 
     ShardToPhaseMap targetOfShards = shard.targetOfShards;
 
