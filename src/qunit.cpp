@@ -2527,7 +2527,20 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
     // If the controls start entirely separated from the targets, it's probably worth checking to see if the have
     // total or no probability of altering the targets, such that we can still keep them separate.
 
-    // First, no buffer flushing.
+    if (!controlLen) {
+        // (If we were passed 0 controls, the target functions as a gate without controls.)
+        return false;
+    }
+
+    // First, no probability checks or buffer flushing.
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        QEngineShard& shard = shards[controls[i]];
+        if ((anti && CACHED_ONE(shard)) || (!anti && CACHED_ZERO(shard))) {
+            return true;
+        }
+    }
+
+    // Next, probability checks, but no buffer flushing.
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
 
