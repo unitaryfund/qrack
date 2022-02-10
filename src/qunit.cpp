@@ -2124,10 +2124,6 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
     shard.CommutePhase(topLeft, bottomRight);
 
-    if ((IS_1_CMPLX(topLeft) && UNSAFE_CACHED_ZERO(shard)) || (IS_1_CMPLX(bottomRight) && UNSAFE_CACHED_ONE(shard))) {
-        return;
-    }
-
     if (!shard.isPauliX && !shard.isPauliY) {
         if (shard.unit) {
             shard.unit->Phase(topLeft, bottomRight, shard.mapped);
@@ -2167,6 +2163,11 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     if (!shard.isPauliX && !shard.isPauliY) {
         if (shard.unit) {
             shard.unit->Invert(topRight, bottomLeft, shard.mapped);
+        }
+
+        if (DIRTY(shard)) {
+            shard.isProbDirty = true;
+            return;
         }
 
         const complex tempAmp1 = bottomLeft * shard.amp0;
@@ -2215,11 +2216,8 @@ void QUnit::MCPhase(
         return;
     }
 
-    QEngineShard& shard = shards[target];
-    if (IS_1_CMPLX(topLeft) && !shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard)) {
-        return;
-    }
-    if (IS_1_CMPLX(bottomRight) && !shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard)) {
+    if ((controlVec.size() == 1U) && IS_NORM_0(topLeft - bottomRight)) {
+        Phase(ONE_CMPLX, bottomRight, controlVec[0]);
         return;
     }
 
@@ -2262,14 +2260,6 @@ void QUnit::MACPhase(
 
     if ((controlVec.size() == 1U) && IS_NORM_0(topLeft - bottomRight)) {
         Phase(topLeft, ONE_CMPLX, controlVec[0]);
-        return;
-    }
-
-    QEngineShard& shard = shards[target];
-    if (IS_1_CMPLX(topLeft) && !shard.IsInvertTarget() && UNSAFE_CACHED_ZERO(shard)) {
-        return;
-    }
-    if (IS_1_CMPLX(bottomRight) && !shard.IsInvertTarget() && UNSAFE_CACHED_ONE(shard)) {
         return;
     }
 
