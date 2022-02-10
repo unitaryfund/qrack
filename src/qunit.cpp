@@ -2096,9 +2096,6 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
         controlVec, { qubit1, qubit2 },                                                                                \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, false)
 #define CTRL_GEN_ARGS &(mappedControls[0]), mappedControls.size(), trnsMtrx, shards[target].mapped
-#define CTRL_ARGS &(mappedControls[0]), mappedControls.size(), mtrx, shards[target].mapped
-#define CTRL_1_ARGS mappedControls[0], shards[target].mapped
-#define CTRL_2_ARGS mappedControls[0], mappedControls[1], shards[target].mapped
 #define CTRL_S_ARGS &(mappedControls[0]), mappedControls.size(), shards[qubit1].mapped, shards[qubit2].mapped
 #define CTRL_P_ARGS &(mappedControls[0]), mappedControls.size(), topLeft, bottomRight, shards[target].mapped
 #define CTRL_I_ARGS &(mappedControls[0]), mappedControls.size(), topRight, bottomLeft, shards[target].mapped
