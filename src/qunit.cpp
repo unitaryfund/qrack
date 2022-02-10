@@ -58,8 +58,6 @@
     (!DIRTY(shard1) && !DIRTY(shard2) && (shard1.isPauliX == shard2.isPauliX) &&                                       \
         (shard1.isPauliY == shard2.isPauliY) && IS_AMP_0(shard1.amp0 - shard2.amp0) &&                                 \
         IS_AMP_0(shard1.amp1 - shard2.amp1) && !QUEUED_PHASE(shard1) && !QUEUED_PHASE(shard2))
-#define IS_PHASE_OR_INVERT(mtrx)                                                                                       \
-    ((IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) || (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])))
 
 namespace Qrack {
 
@@ -1212,7 +1210,7 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
     QInterfacePtr unit = shard.unit;
     bitLenInt mapped = shard.mapped;
 
-    if (unit->isClifford() && !unit->TrySeparate(mapped)) {
+    if (unit && unit->isClifford() && !unit->TrySeparate(mapped)) {
         // This conditional coaxes the unit into separable form, so this should never actually happen.
         return false;
     }
@@ -2040,17 +2038,20 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
 }
 
 #define CTRLED_GEN_WRAP(ctrld)                                                                                         \
-    ApplyEitherControlled(controlVec, { target }, [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {     \
-        complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                                      \
-        if (shards[target].isPauliX) {                                                                                 \
-            TransformX2x2(mtrx, trnsMtrx);                                                                             \
-        } else if (shards[target].isPauliY) {                                                                          \
-            TransformY2x2(mtrx, trnsMtrx);                                                                             \
-        } else {                                                                                                       \
-            std::copy(mtrx, mtrx + 4, trnsMtrx);                                                                       \
-        }                                                                                                              \
-        unit->ctrld;                                                                                                   \
-    });
+    ApplyEitherControlled(                                                                                             \
+        controlVec, { target },                                                                                        \
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
+            complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                                  \
+            if (shards[target].isPauliX) {                                                                             \
+                TransformX2x2(mtrx, trnsMtrx);                                                                         \
+            } else if (shards[target].isPauliY) {                                                                      \
+                TransformY2x2(mtrx, trnsMtrx);                                                                         \
+            } else {                                                                                                   \
+                std::copy(mtrx, mtrx + 4, trnsMtrx);                                                                   \
+            }                                                                                                          \
+            unit->ctrld;                                                                                               \
+        },                                                                                                             \
+        false);
 
 #define CTRLED_PHASE_INVERT_WRAP(ctrld, ctrldgen, isInvert, top, bottom)                                               \
     ApplyEitherControlled(                                                                                             \
@@ -2076,7 +2077,7 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
                 unit->ctrld;                                                                                           \
             }                                                                                                          \
         },                                                                                                             \
-        !isInvert, isInvert);
+        !isInvert);
 
 #define CTRLED_SWAP_WRAP(ctrld, bare, anti)                                                                            \
     if (qubit1 == qubit2) {                                                                                            \
@@ -2090,8 +2091,9 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
         bare;                                                                                                          \
         return;                                                                                                        \
     }                                                                                                                  \
-    ApplyEitherControlled(controlVec, { qubit1, qubit2 },                                                              \
-        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; })
+    ApplyEitherControlled(                                                                                             \
+        controlVec, { qubit1, qubit2 },                                                                                \
+        [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) { unit->ctrld; }, false)
 #define CTRL_GEN_ARGS &(mappedControls[0]), mappedControls.size(), trnsMtrx, shards[target].mapped
 #define CTRL_ARGS &(mappedControls[0]), mappedControls.size(), mtrx, shards[target].mapped
 #define CTRL_1_ARGS mappedControls[0], shards[target].mapped
@@ -2145,13 +2147,14 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
     }
 
     if (DIRTY(shard)) {
-        shard.isProbDirty |= !IS_PHASE_OR_INVERT(mtrx);
+        shard.MakeDirty();
+        return;
     }
 
     const complex Y0 = shard.amp0;
     shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
     shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-    shard.ClampAmps();
+    ClampShard(target);
 }
 
 void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
@@ -2189,13 +2192,14 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     }
 
     if (DIRTY(shard)) {
-        shard.isProbDirty |= !IS_PHASE_OR_INVERT(mtrx);
+        shard.MakeDirty();
+        return;
     }
 
     const complex Y0 = shard.amp0;
     shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
     shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-    shard.ClampAmps();
+    ClampShard(target);
 }
 
 void QUnit::MCPhase(
@@ -2419,13 +2423,14 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
     }
 
     if (DIRTY(shard)) {
-        shard.isProbDirty |= !IS_PHASE_OR_INVERT(trnsMtrx);
+        shard.MakeDirty();
+        return;
     }
 
     const complex Y0 = shard.amp0;
     shard.amp0 = (trnsMtrx[0] * Y0) + (trnsMtrx[1] * shard.amp1);
     shard.amp1 = (trnsMtrx[2] * Y0) + (trnsMtrx[3] * shard.amp1);
-    shard.ClampAmps();
+    ClampShard(target);
 }
 
 void QUnit::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
@@ -2622,8 +2627,10 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
 
 template <typename CF>
 void QUnit::ApplyEitherControlled(
-    std::vector<bitLenInt> controlVec, const std::vector<bitLenInt> targets, CF cfn, bool isPhase, bool isInvert)
+    std::vector<bitLenInt> controlVec, const std::vector<bitLenInt> targets, CF cfn, bool isPhase)
 {
+    // If we've made it this far, we have to form the entangled representation and apply the gate.
+
     for (bitLenInt i = 0; i < (bitLenInt)targets.size(); i++) {
         if (targets.size() > 1U) {
             ToPermBasis(targets[i]);
@@ -2637,11 +2644,6 @@ void QUnit::ApplyEitherControlled(
         }
     }
 
-    // TODO: If controls that survive the "first order" check above start out entangled,
-    // then it might be worth checking whether there is any intra-unit chance of control bits
-    // being conditionally all 0 or all 1, in any unit, due to entanglement.
-
-    // If we've made it this far, we have to form the entangled representation and apply the gate.
     std::vector<bitLenInt> allBits(controlVec.size() + targets.size());
     std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
     std::copy(targets.begin(), targets.end(), allBits.begin() + controlVec.size());
@@ -2661,8 +2663,7 @@ void QUnit::ApplyEitherControlled(
     }
     for (bitLenInt i = 0; i < (bitLenInt)targets.size(); i++) {
         QEngineShard& shard = shards[targets[i]];
-        shard.isProbDirty |= !isPhase || shard.isPauliX || shard.isPauliY;
-        shard.isPhaseDirty = true;
+        shard.MakeDirty();
     }
 
     // This is the original method with the maximum number of non-entangled controls excised, (potentially leaving a

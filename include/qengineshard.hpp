@@ -143,21 +143,27 @@ public:
         isPhaseDirty = true;
     }
 
-    void ClampAmps()
+    bool ClampAmps()
     {
         if (isProbDirty) {
-            return;
+            return false;
         }
 
         if (norm(amp0) <= FP_NORM_EPSILON) {
             amp0 = ZERO_R1;
             amp1 /= abs(amp1);
             isPhaseDirty = false;
-        } else if (norm(amp1) <= FP_NORM_EPSILON) {
+            return true;
+        }
+
+        if (norm(amp1) <= FP_NORM_EPSILON) {
             amp1 = ZERO_R1;
             amp0 /= abs(amp0);
             isPhaseDirty = false;
+            return true;
         }
+
+        return false;
     }
     void DumpMultiBit()
     {

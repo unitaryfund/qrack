@@ -340,8 +340,22 @@ protected:
     bool TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::vector<bitLenInt>& output, bool anti);
 
     template <typename CF>
-    void ApplyEitherControlled(std::vector<bitLenInt> controlVec, const std::vector<bitLenInt> targets, CF cfn,
-        bool isPhase = false, bool isInvert = false);
+    void ApplyEitherControlled(
+        std::vector<bitLenInt> controlVec, const std::vector<bitLenInt> targets, CF cfn, bool isPhase);
+
+    void ClampShard(bitLenInt qubit)
+    {
+        QEngineShard& shard = shards[qubit];
+        if (!shard.ClampAmps() || !shard.unit) {
+            return;
+        }
+
+        if (IS_NORM_0(shard.amp1)) {
+            SeparateBit(false, qubit);
+        } else if (IS_NORM_0(shard.amp0)) {
+            SeparateBit(true, qubit);
+        }
+    }
 
     void ShardAI(bitLenInt qubit, real1_f azimuth, real1_f inclination)
     {
@@ -358,7 +372,7 @@ protected:
         const complex Y0 = shard.amp0;
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        shard.ClampAmps();
+        ClampShard(qubit);
     }
 
     void TransformX2x2(const complex* mtrxIn, complex* mtrxOut);
@@ -401,7 +415,7 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.isProbDirty = true;
+            shard.MakeDirty();
             return;
         }
 
@@ -409,7 +423,7 @@ protected:
 
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        shard.ClampAmps();
+        ClampShard(i);
     }
 
     void RevertBasis1Qb(bitLenInt i)
@@ -456,14 +470,14 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.isProbDirty = true;
+            shard.MakeDirty();
             return;
         }
 
         complex tempAmp1 = SQRT1_2_R1 * (shard.amp0 - shard.amp1);
         shard.amp0 = SQRT1_2_R1 * (shard.amp0 + shard.amp1);
         shard.amp1 = tempAmp1;
-        shard.ClampAmps();
+        ClampShard(i);
     }
     virtual void ConvertXToY(bitLenInt i)
     {
@@ -481,14 +495,14 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.isProbDirty = true;
+            shard.MakeDirty();
             return;
         }
 
         complex Y0 = shard.amp0;
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        shard.ClampAmps();
+        ClampShard(i);
     }
     virtual void ConvertYToZ(bitLenInt i)
     {
@@ -505,14 +519,14 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.isProbDirty = true;
+            shard.MakeDirty();
             return;
         }
 
         complex Y0 = shard.amp0;
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        shard.ClampAmps();
+        ClampShard(i);
     }
     virtual void ConvertZToY(bitLenInt i)
     {
@@ -529,14 +543,14 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.isProbDirty = true;
+            shard.MakeDirty();
             return;
         }
 
         complex Y0 = shard.amp0;
         shard.amp0 = (mtrx[0] * Y0) + (mtrx[1] * shard.amp1);
         shard.amp1 = (mtrx[2] * Y0) + (mtrx[3] * shard.amp1);
-        shard.ClampAmps();
+        ClampShard(i);
     }
 
     enum RevertExclusivity { INVERT_AND_PHASE = 0, ONLY_INVERT = 1, ONLY_PHASE = 2 };
