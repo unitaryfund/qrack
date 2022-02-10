@@ -3718,7 +3718,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
 {
-    int i;
 
     qftReg->SetPermutation(1);
     qftReg->CINC(1, 0, 8, NULL, 0);
@@ -3728,7 +3727,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
 
     qftReg->SetPermutation(250);
 
-    for (i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++) {
         // Turn control on
         qftReg->X(controls[0]);
 
@@ -3749,12 +3748,6 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
             REQUIRE_THAT(qftReg, HasProbability(0, 8, i - 5));
         }
     }
-
-    qftReg->SetPermutation(255);
-    qftReg->H(8);
-    qftReg->CINC(1, 0, 8, controls, 1);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(255));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(256));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")

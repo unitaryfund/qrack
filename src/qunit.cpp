@@ -941,7 +941,6 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
     QEngineShard& shard = shards[qubit];
 
     if (shard.unit && (shard.unit->GetQubitCount() == 1U)) {
-        RevertBasis1Qb(qubit);
         complex amps[2];
         shard.unit->GetQuantumState(amps);
 
@@ -1254,6 +1253,7 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
     for (bitLenInt partnerIndex = 0; partnerIndex < qubitCount; partnerIndex++) {
         QEngineShard& partnerShard = shards[partnerIndex];
         if (unit == partnerShard.unit) {
+            RevertBasis1Qb(partnerIndex);
             ProbBase(partnerIndex);
             break;
         }
