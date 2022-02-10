@@ -1970,6 +1970,11 @@ void QUnit::XBase(bitLenInt target)
         shard.unit->X(shard.mapped);
     }
 
+    if (DIRTY(shard)) {
+        shard.isProbDirty = true;
+        return;
+    }
+
     std::swap(shard.amp0, shard.amp1);
 }
 
@@ -1979,6 +1984,11 @@ void QUnit::YBase(bitLenInt target)
 
     if (shard.unit) {
         shard.unit->Y(shard.mapped);
+    }
+
+    if (DIRTY(shard)) {
+        shard.isProbDirty = true;
+        return;
     }
 
     const complex Y0 = shard.amp0;
