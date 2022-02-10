@@ -58,6 +58,7 @@
     (!DIRTY(shard1) && !DIRTY(shard2) && (shard1.isPauliX == shard2.isPauliX) &&                                       \
         (shard1.isPauliY == shard2.isPauliY) && IS_AMP_0(shard1.amp0 - shard2.amp0) &&                                 \
         IS_AMP_0(shard1.amp1 - shard2.amp1) && !QUEUED_PHASE(shard1) && !QUEUED_PHASE(shard2))
+#define IS_PHASE(mtrx) (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]))
 
 namespace Qrack {
 
@@ -2147,7 +2148,7 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
     }
 
     if (DIRTY(shard)) {
-        shard.MakeDirty();
+        shard.isProbDirty &= !IS_PHASE(mtrx);
         return;
     }
 
@@ -2192,7 +2193,7 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     }
 
     if (DIRTY(shard)) {
-        shard.MakeDirty();
+        shard.isProbDirty &= !IS_PHASE(mtrx);
         return;
     }
 
@@ -2423,7 +2424,7 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
     }
 
     if (DIRTY(shard)) {
-        shard.MakeDirty();
+        shard.isProbDirty &= !IS_PHASE(trnsMtrx);
         return;
     }
 
