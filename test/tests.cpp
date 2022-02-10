@@ -5875,6 +5875,29 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_24", "[mirror]")
     REQUIRE(qftReg->MAll() == 48);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_25", "[mirror]")
+{
+    qftReg = MakeEngine(2);
+    qftReg->SetPermutation(2);
+
+    qftReg->H(0);
+    qftReg->IT(0);
+    qftReg->IS(0);
+    qftReg->AntiCNOT(0, 1);
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->X(1);
+    qftReg->X(1);
+    qftReg->H(1);
+    qftReg->H(0);
+    qftReg->AntiCNOT(0, 1);
+    qftReg->S(0);
+    qftReg->T(0);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 2);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
