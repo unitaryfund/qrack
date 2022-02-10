@@ -2145,7 +2145,6 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
     if (DIRTY(shard)) {
         shard.isProbDirty |= !IS_PHASE_OR_INVERT(mtrx);
-        return;
     }
 
     const complex Y0 = shard.amp0;
@@ -2186,7 +2185,6 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 
     if (DIRTY(shard)) {
         shard.isProbDirty |= !IS_PHASE_OR_INVERT(mtrx);
-        return;
     }
 
     const complex Y0 = shard.amp0;
@@ -2406,7 +2404,6 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
 
     if (DIRTY(shard)) {
         shard.isProbDirty |= !IS_PHASE_OR_INVERT(trnsMtrx);
-        return;
     }
 
     const complex Y0 = shard.amp0;
