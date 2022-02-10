@@ -312,8 +312,7 @@ protected:
 
     virtual QInterfacePtr CloneBody(QUnitPtr copyPtr);
 
-    virtual bool CheckBitPermutation(bitLenInt qubitIndex, bool inCurrentBasis = false);
-    virtual bool CheckBitsPermutation(bitLenInt start, bitLenInt length, bool inCurrentBasis = false);
+    virtual bool CheckBitsPermutation(bitLenInt start, bitLenInt length = 1);
     virtual bitCapInt GetCachedPermutation(bitLenInt start, bitLenInt length);
     virtual bitCapInt GetCachedPermutation(const bitLenInt* bitArray, bitLenInt length);
     virtual bool CheckBitsPlus(bitLenInt qubitIndex, bitLenInt length);

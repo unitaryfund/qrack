@@ -881,35 +881,21 @@ void QUnit::SortUnit(QInterfacePtr unit, std::vector<QSortEntry>& bits, bitLenIn
     }
 }
 
-/// Check if the qubit at "qubitIndex" has a cached probability indicating that it is in a permutation basis eigenstate,
-/// for optimization.
-bool QUnit::CheckBitPermutation(bitLenInt qubitIndex, bool inCurrentBasis)
-{
-    if (!inCurrentBasis) {
-        ToPermBasisProb(qubitIndex);
-    }
-    QEngineShard& shard = shards[qubitIndex];
-
-    return UNSAFE_CACHED_ZERO_OR_ONE(shard);
-}
-
 /// Check if all qubits in the range have cached probabilities indicating that they are in permutation basis
 /// eigenstates, for optimization.
-bool QUnit::CheckBitsPermutation(bitLenInt start, bitLenInt length, bool inCurrentBasis)
+bool QUnit::CheckBitsPermutation(bitLenInt start, bitLenInt length)
 {
     // Certain optimizations become obvious, if all bits in a range are in permutation basis eigenstates.
     // Then, operations can often be treated as classical, instead of quantum.
 
-    if (!inCurrentBasis) {
-        ToPermBasisProb(start, length);
-    }
-
+    ToPermBasisProb(start, length);
     for (bitLenInt i = 0; i < length; i++) {
         QEngineShard& shard = shards[start + i];
         if (!UNSAFE_CACHED_ZERO_OR_ONE(shard)) {
             return false;
         }
     }
+
     return true;
 }
 
@@ -1762,7 +1748,7 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt co
     std::vector<bitCapInt> skipPowers;
     bitCapInt skipValueMask = 0;
     for (bitLenInt i = 0; i < controlLen; i++) {
-        if (!CheckBitPermutation(controls[i])) {
+        if (!CheckBitsPermutation(controls[i])) {
             trimmedControls.push_back(controls[i]);
         } else {
             skipPowers.push_back(pow2(i));
@@ -2536,6 +2522,7 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
         if ((anti && CACHED_ONE(shard)) || (!anti && CACHED_ZERO(shard))) {
+            // This gate does nothing, so return without applying anything.
             return true;
         }
     }
@@ -2554,13 +2541,13 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
         if (IS_AMP_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
             if (!anti) {
-                /* This gate does nothing, so return without applying anything. */
+                // This gate does nothing, so return without applying anything.
                 return true;
             }
         } else if (IS_AMP_0(shard.amp0)) {
             Flush1Eigenstate(controls[i]);
             if (anti) {
-                /* This gate does nothing, so return without applying anything. */
+                // This gate does nothing, so return without applying anything.
                 return true;
             }
         }
@@ -2585,13 +2572,13 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
         if (IS_AMP_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
             if (!anti) {
-                /* This gate does nothing, so return without applying anything. */
+                // This gate does nothing, so return without applying anything.
                 return true;
             }
         } else if (IS_AMP_0(shard.amp0)) {
             Flush1Eigenstate(controls[i]);
             if (anti) {
-                /* This gate does nothing, so return without applying anything. */
+                // This gate does nothing, so return without applying anything.
                 return true;
             }
         }
@@ -2610,18 +2597,18 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
         if (IS_AMP_0(shard.amp1)) {
             Flush0Eigenstate(controls[i]);
             if (!anti) {
-                /* This gate does nothing, so return without applying anything. */
+                // This gate does nothing, so return without applying anything.
                 return true;
             }
-            /* This control has 100% chance to "fire," so don't entangle it. */
+            // This control has 100% chance to "fire," so don't entangle it.
             isEigenstate = true;
         } else if (IS_AMP_0(shard.amp0)) {
             Flush1Eigenstate(controls[i]);
             if (anti) {
-                /* This gate does nothing, so return without applying anything. */
+                // This gate does nothing, so return without applying anything.
                 return true;
             }
-            /* This control has 100% chance to "fire," so don't entangle it. */
+            // This control has 100% chance to "fire," so don't entangle it.
             isEigenstate = true;
         }
 
@@ -2849,7 +2836,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
             continue;
         }
 
-        if (CheckBitPermutation(start)) {
+        if (CheckBitsPermutation(start)) {
             const bool inReg = SHARD_STATE(shards[start]);
             int total = (toAdd ? 1 : 0) + (inReg ? 1 : 0) + (carry ? 1 : 0);
             if (inReg != (total & 1)) {
@@ -2894,7 +2881,7 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
                 partMod |= toMod & bitMask;
 
                 partStart = start + partLength - ONE_BCI;
-                if (!CheckBitPermutation(partStart)) {
+                if (!CheckBitsPermutation(partStart)) {
                     // If the quantum bit at this position is superposed, then we can't determine that the carry
                     // won't be superposed. Advance the loop.
                     continue;
@@ -3009,7 +2996,7 @@ void QUnit::INTS(
     }
 
     const bitLenInt signBit = start + length - 1U;
-    const bool knewFlagSet = CheckBitPermutation(overflowIndex);
+    const bool knewFlagSet = CheckBitsPermutation(overflowIndex);
     const bool flagSet = SHARD_STATE(shards[overflowIndex]);
 
     if (knewFlagSet && !flagSet) {
@@ -3019,7 +3006,7 @@ void QUnit::INTS(
     }
 
     const bool addendNeg = (toMod & pow2(length - 1U)) != 0;
-    const bool knewSign = CheckBitPermutation(signBit);
+    const bool knewSign = CheckBitsPermutation(signBit);
     const bool quantumNeg = SHARD_STATE(shards[signBit]);
 
     if (knewSign && (addendNeg != quantumNeg)) {
