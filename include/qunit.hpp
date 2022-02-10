@@ -415,7 +415,7 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.MakeDirty();
+            shard.isProbDirty = true;
             return;
         }
 
@@ -470,7 +470,7 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.MakeDirty();
+            shard.isProbDirty = true;
             return;
         }
 
@@ -495,7 +495,7 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.MakeDirty();
+            shard.isProbDirty = true;
             return;
         }
 
@@ -519,7 +519,7 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.MakeDirty();
+            shard.isProbDirty = true;
             return;
         }
 
@@ -543,7 +543,7 @@ protected:
         }
 
         if (shard.isPhaseDirty || shard.isProbDirty) {
-            shard.MakeDirty();
+            shard.isProbDirty = true;
             return;
         }
 
@@ -679,9 +679,9 @@ protected:
             return;
         }
 
-        if (norm(shard.amp1) <= REAL1_EPSILON) {
+        if (norm(shard.amp1) <= FP_NORM_EPSILON) {
             shard.unit = MakeEngine(1, 0);
-        } else if (norm(shard.amp0) <= REAL1_EPSILON) {
+        } else if (norm(shard.amp0) <= FP_NORM_EPSILON) {
             shard.unit = MakeEngine(1, 1);
         } else {
             complex bitState[2] = { shard.amp0, shard.amp1 };

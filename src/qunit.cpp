@@ -2606,17 +2606,18 @@ void QUnit::ApplyEitherControlled(
 {
     // If we've made it this far, we have to form the entangled representation and apply the gate.
 
-    for (bitLenInt i = 0; i < (bitLenInt)targets.size(); i++) {
-        if (targets.size() > 1U) {
-            ToPermBasis(targets[i]);
-            continue;
-        }
+    for (bitLenInt i = 0; i < (bitLenInt)controlVec.size(); i++) {
+        ToPermBasisProb(controlVec[i]);
+    }
 
-        if (isPhase) {
-            RevertBasis2Qb(targets[i], ONLY_INVERT, ONLY_TARGETS);
-        } else {
-            RevertBasis2Qb(targets[i]);
+    if (targets.size() > 1U) {
+        for (bitLenInt i = 0; i < (bitLenInt)targets.size(); i++) {
+            ToPermBasis(targets[i]);
         }
+    } else if (isPhase) {
+        RevertBasis2Qb(targets[0], ONLY_INVERT, ONLY_TARGETS);
+    } else {
+        RevertBasis2Qb(targets[0]);
     }
 
     std::vector<bitLenInt> allBits(controlVec.size() + targets.size());
@@ -2638,7 +2639,8 @@ void QUnit::ApplyEitherControlled(
     }
     for (bitLenInt i = 0; i < (bitLenInt)targets.size(); i++) {
         QEngineShard& shard = shards[targets[i]];
-        shard.MakeDirty();
+        shard.isPhaseDirty = true;
+        shard.isProbDirty |= shard.isPauliX || shard.isPauliY || !isPhase;
     }
 
     // This is the original method with the maximum number of non-entangled controls excised, (potentially leaving a
