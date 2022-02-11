@@ -221,7 +221,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 } else {
                     mOutputFile << Catch::getResultCapture().getCurrentTestName() << "," << (int)numBits << ",";
                     if (isTrialSuccessful) {
-                        mOutputFile << (uint64_t)result << std::endl;
+                        mOutputFile << result << std::endl;
                     } else {
                         mOutputFile << "-1" << std::endl;
                     }
