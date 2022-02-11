@@ -209,15 +209,22 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                     true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
 
                 sampleFailureCount++;
+                isTrialSuccessful = false;
             }
 
             if (mOutputFileName.compare("")) {
                 bitCapInt result = qftReg->MReg(0, numBits);
                 if (isBinaryOutput) {
-                    mOutputFile.write(reinterpret_cast<char*>(&result), sizeof(bitCapInt));
+                    if (isTrialSuccessful) {
+                        mOutputFile.write(reinterpret_cast<char*>(&result), sizeof(bitCapInt));
+                    }
                 } else {
-                    mOutputFile << Catch::getResultCapture().getCurrentTestName() << "," << (int)numBits << ","
-                                << (uint64_t)result << std::endl;
+                    mOutputFile << Catch::getResultCapture().getCurrentTestName() << "," << (int)numBits << ",";
+                    if (isTrialSuccessful) {
+                        mOutputFile << (uint64_t)result << std::endl;
+                    } else {
+                        mOutputFile << "-1" << std::endl;
+                    }
                 }
             }
         }
