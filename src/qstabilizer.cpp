@@ -776,6 +776,9 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& t)
         return 3;
     }
 
+    IS(t);
+    H(t);
+
     return 0;
 }
 
