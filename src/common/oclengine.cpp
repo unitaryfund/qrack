@@ -392,7 +392,7 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
 
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
     std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
-    std::cout << "Default device: " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
+    std::cout << "Default device: #" << dev << ", " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
     for (int i = 0; i < deviceCount; i++) {
         std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
