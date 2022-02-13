@@ -40,6 +40,7 @@ std::ofstream mOutputFile;
 bool isBinaryOutput = false;
 int benchmarkSamples = 100;
 int benchmarkDepth = 20;
+int benchmarkMaxMagic = -1;
 std::vector<int> devList;
 bool optimal = false;
 bool optimal_single = false;
@@ -127,6 +128,8 @@ int main(int argc, char* argv[])
         Opt(benchmarkDepth, "depth")["--benchmark-depth"](
             "depth of randomly constructed circuits, when applicable, with 1 round of single qubit and 1 round of "
             "multi-qubit gates being 1 unit of depth (default: 20)") |
+        Opt(benchmarkMaxMagic, "magic")["--benchmark-max-magic"](
+            "max number of t/tadj gates in semi-Clifford tests (default: [defined per test case])") |
         Opt(devListStr, "devices")["--devices"](
             "list of devices, for QPager (default is solely default OpenCL device)");
 

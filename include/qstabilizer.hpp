@@ -48,7 +48,7 @@ struct AmplitudeEntry {
 class QStabilizer;
 typedef std::shared_ptr<QStabilizer> QStabilizerPtr;
 
-class QStabilizer {
+class QStabilizer : public ParallelFor {
 protected:
     // # of qubits
     bitLenInt qubitCount;
@@ -79,12 +79,13 @@ protected:
     typedef std::function<void(void)> DispatchFn;
     void Dispatch(DispatchFn fn)
     {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        if (qubitCount < dispatchThreshold) {
-            dispatchQueue.finish();
-            fn();
-        } else {
+        const bitCapInt workItemCount = qubitCount << 2U;
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        if ((workItemCount >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) && (workItemCount < GetStride())) {
             dispatchQueue.dispatch(fn);
+        } else {
+            Finish();
+            fn();
         }
 #else
         fn();
@@ -96,6 +97,11 @@ protected:
 #if ENABLE_QUNIT_CPU_PARALLEL
         dispatchQueue.dump();
 #endif
+    }
+
+    void ParFor(ParallelFunc fn)
+    {
+        Dispatch([this, fn] { par_for(0, qubitCount << 1U, fn); });
     }
 
 public:

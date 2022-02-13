@@ -1208,14 +1208,17 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
     // QRACK_QUNIT_SEPARABILITY_THRESHOLD=0.1464466
     // for clamping of single bit states to Pauli basis axes.
 
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    std::cout << "(max quantum \"magic\": " << benchmarkMaxMagic << ")";
 
     const int DimCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
+        const int tMax = (benchmarkMaxMagic > 0) ? benchmarkMaxMagic : (n + 2);
         real1_f gateRand;
         bitLenInt gate;
+        int tCount = 0;
 
         // The test runs 2 bit gates according to a tiling sequence.
         // The 1 bit indicates +/- column offset.
@@ -1274,12 +1277,15 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
                     }
                 }
 
-                gateRand = (n + 2) * benchmarkDepth * qReg->Rand();
-                if (gateRand < ONE_R1) {
-                    if ((2 * qReg->Rand()) < ONE_R1) {
-                        qReg->T(i);
-                    } else {
-                        qReg->IT(i);
+                if (tCount < tMax) {
+                    gateRand = n * benchmarkDepth * qReg->Rand();
+                    if (gateRand < ONE_R1) {
+                        if ((2 * qReg->Rand()) < ONE_R1) {
+                            qReg->T(i);
+                        } else {
+                            qReg->IT(i);
+                        }
+                        tCount++;
                     }
                 }
             }
