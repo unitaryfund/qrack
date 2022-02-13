@@ -41,6 +41,7 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
     , hardware_rand_generator(NULL)
     , rawRandBools(0)
     , rawRandBoolsRemaining(0)
+    , dispatchQueues((n < std::thread::hardware_concurrency()) ? std::thread::hardware_concurrency() : n)
 {
 #if !ENABLE_RDRAND && !ENABLE_RNDFILE && !ENABLE_DEVRAND
     useHardwareRNG = false;
@@ -105,8 +106,6 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
 #else
     dispatchThreshold = PSTRIDEPOW;
 #endif
-
-    SetConcurrencyLevel(std::thread::hardware_concurrency());
 
     SetPermutation(perm);
 }
@@ -473,7 +472,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
 /// Apply a CNOT gate with control and target
 void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         if (x[i][c]) {
             x[i][t] = !x[i][t];
         }
@@ -488,135 +487,10 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
     });
 }
 
-/// Apply a Hadamard gate to target
-void QStabilizer::H(const bitLenInt& t)
-{
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
-        std::vector<bool>::swap(x[i][t], z[i][t]);
-        if (x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
-        }
-    });
-}
-
-/// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
-void QStabilizer::S(const bitLenInt& t)
-{
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
-        if (x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
-        }
-        z[i][t] = z[i][t] ^ x[i][t];
-    });
-}
-
-/// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
-void QStabilizer::IS(const bitLenInt& t)
-{
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
-        z[i][t] = z[i][t] ^ x[i][t];
-        if (x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
-        }
-    });
-}
-
-/// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
-void QStabilizer::Z(const bitLenInt& t)
-{
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
-        if (x[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
-        }
-    });
-}
-
-/// Apply an X (or NOT) gate to target
-void QStabilizer::X(const bitLenInt& t)
-{
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
-        if (z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
-        }
-    });
-}
-
-/// Apply a Pauli Y gate to target
-void QStabilizer::Y(const bitLenInt& t)
-{
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
-        if (z[i][t] ^ x[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
-        }
-    });
-}
-
-/// Apply square root of X gate
-void QStabilizer::SqrtX(const bitLenInt& t)
-{
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
-        x[i][t] = x[i][t] ^ z[i][t];
-        if (x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
-        }
-    });
-}
-
-/// Apply inverse square root of X gate
-void QStabilizer::ISqrtX(const bitLenInt& t)
-{
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
-        if (x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
-        }
-        x[i][t] = x[i][t] ^ z[i][t];
-    });
-}
-
-/// Apply square root of Y gate
-void QStabilizer::SqrtY(const bitLenInt& t)
-{
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
-        std::vector<bool>::swap(x[i][t], z[i][t]);
-        if (!x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
-        }
-    });
-}
-
-/// Apply inverse square root of Y gate
-void QStabilizer::ISqrtY(const bitLenInt& t)
-{
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
-        if (!x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
-        }
-        std::vector<bool>::swap(x[i][t], z[i][t]);
-    });
-}
-
-/// Apply a CZ gate with control and target
-void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
-{
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
-        if (x[i][t]) {
-            z[i][c] = !z[i][c];
-
-            if (x[i][c] && (z[i][t] == z[i][c])) {
-                r[i] = (r[i] + 2) & 0x3U;
-            }
-        }
-
-        if (x[i][c]) {
-            z[i][t] = !z[i][t];
-        }
-    });
-}
-
 /// Apply a CY gate with control and target
 void QStabilizer::CY(const bitLenInt& c, const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         z[i][t] = z[i][t] ^ x[i][t];
 
         if (x[i][c]) {
@@ -635,13 +509,138 @@ void QStabilizer::CY(const bitLenInt& c, const bitLenInt& t)
     });
 }
 
+/// Apply a CZ gate with control and target
+void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
+{
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        if (x[i][t]) {
+            z[i][c] = !z[i][c];
+
+            if (x[i][c] && (z[i][t] == z[i][c])) {
+                r[i] = (r[i] + 2) & 0x3U;
+            }
+        }
+
+        if (x[i][c]) {
+            z[i][t] = !z[i][t];
+        }
+    });
+}
+
+/// Apply a Hadamard gate to target
+void QStabilizer::H(const bitLenInt& t)
+{
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        std::vector<bool>::swap(x[i][t], z[i][t]);
+        if (x[i][t] && z[i][t]) {
+            r[i] = (r[i] + 2) & 0x3U;
+        }
+    });
+}
+
+/// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
+void QStabilizer::S(const bitLenInt& t)
+{
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        if (x[i][t] && z[i][t]) {
+            r[i] = (r[i] + 2) & 0x3U;
+        }
+        z[i][t] = z[i][t] ^ x[i][t];
+    });
+}
+
+/// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
+void QStabilizer::IS(const bitLenInt& t)
+{
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        z[i][t] = z[i][t] ^ x[i][t];
+        if (x[i][t] && z[i][t]) {
+            r[i] = (r[i] + 2) & 0x3U;
+        }
+    });
+}
+
+/// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
+void QStabilizer::Z(const bitLenInt& t)
+{
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        if (x[i][t]) {
+            r[i] = (r[i] + 2) & 0x3U;
+        }
+    });
+}
+
+/// Apply an X (or NOT) gate to target
+void QStabilizer::X(const bitLenInt& t)
+{
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        if (z[i][t]) {
+            r[i] = (r[i] + 2) & 0x3U;
+        }
+    });
+}
+
+/// Apply a Pauli Y gate to target
+void QStabilizer::Y(const bitLenInt& t)
+{
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        if (z[i][t] ^ x[i][t]) {
+            r[i] = (r[i] + 2) & 0x3U;
+        }
+    });
+}
+
+/// Apply square root of X gate
+void QStabilizer::SqrtX(const bitLenInt& t)
+{
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        x[i][t] = x[i][t] ^ z[i][t];
+        if (x[i][t] && z[i][t]) {
+            r[i] = (r[i] + 2) & 0x3U;
+        }
+    });
+}
+
+/// Apply inverse square root of X gate
+void QStabilizer::ISqrtX(const bitLenInt& t)
+{
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        if (x[i][t] && z[i][t]) {
+            r[i] = (r[i] + 2) & 0x3U;
+        }
+        x[i][t] = x[i][t] ^ z[i][t];
+    });
+}
+
+/// Apply square root of Y gate
+void QStabilizer::SqrtY(const bitLenInt& t)
+{
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        std::vector<bool>::swap(x[i][t], z[i][t]);
+        if (!x[i][t] && z[i][t]) {
+            r[i] = (r[i] + 2) & 0x3U;
+        }
+    });
+}
+
+/// Apply inverse square root of Y gate
+void QStabilizer::ISqrtY(const bitLenInt& t)
+{
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        if (!x[i][t] && z[i][t]) {
+            r[i] = (r[i] + 2) & 0x3U;
+        }
+        std::vector<bool>::swap(x[i][t], z[i][t]);
+    });
+}
+
 void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
 {
     if (c == t) {
         return;
     }
 
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         std::vector<bool>::swap(x[i][c], x[i][t]);
         std::vector<bool>::swap(z[i][c], z[i][t]);
     });

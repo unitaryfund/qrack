@@ -48,7 +48,7 @@ struct AmplitudeEntry {
 class QStabilizer;
 typedef std::shared_ptr<QStabilizer> QStabilizerPtr;
 
-class QStabilizer : public ParallelFor {
+class QStabilizer {
 protected:
     // # of qubits
     bitLenInt qubitCount;
@@ -73,16 +73,16 @@ protected:
     unsigned rawRandBoolsRemaining;
 
 #if ENABLE_QUNIT_CPU_PARALLEL
-    DispatchQueue dispatchQueue;
+    std::vector<DispatchQueue> dispatchQueues;
 #endif
 
     typedef std::function<void(void)> DispatchFn;
-    void Dispatch(DispatchFn fn)
+    void Dispatch(bitLenInt i, DispatchFn fn)
     {
         const bitCapInt workItemCount = qubitCount << 2U;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        if ((workItemCount >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) && (workItemCount < GetStride())) {
-            dispatchQueue.dispatch(fn);
+        if (workItemCount >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) {
+            dispatchQueues[i % dispatchQueues.size()].dispatch(fn);
         } else {
             Finish();
             fn();
@@ -95,13 +95,20 @@ protected:
     void Dump()
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.dump();
+        for (bitLenInt i = 0; i < dispatchQueues.size(); i++) {
+            dispatchQueues[i].dump();
+        }
 #endif
     }
 
-    void ParFor(ParallelFunc fn)
+    void ParFor(bitLenInt i, ParallelFunc fn)
     {
-        Dispatch([this, fn] { par_for(0, qubitCount << 1U, fn); });
+        Dispatch(i, [this, i, fn] {
+            const bitLenInt maxLcv = qubitCount << 1U;
+            for (bitLenInt j = 0; j < maxLcv; j++) {
+                fn(j, i % dispatchQueues.size());
+            }
+        });
     }
 
 public:
@@ -129,17 +136,22 @@ public:
     void Finish()
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.finish();
+        for (bitLenInt i = 0; i < dispatchQueues.size(); i++) {
+            dispatchQueues[i].finish();
+        }
 #endif
     }
 
     bool isFinished()
     {
 #if ENABLE_QUNIT_CPU_PARALLEL
-        return dispatchQueue.isFinished();
-#else
-        return true;
+        for (bitLenInt i = 0; i < dispatchQueues.size(); i++) {
+            if (!dispatchQueues[i].isFinished()) {
+                return false;
+            }
+        }
 #endif
+        return true;
     }
 
     bitLenInt GetQubitCount() { return qubitCount; }
@@ -211,6 +223,10 @@ protected:
 public:
     /// Apply a CNOT gate with control and target
     void CNOT(const bitLenInt& control, const bitLenInt& target);
+    /// Apply a CY gate with control and target
+    void CY(const bitLenInt& control, const bitLenInt& target);
+    /// Apply a CZ gate with control and target
+    void CZ(const bitLenInt& control, const bitLenInt& target);
     /// Apply a Hadamard gate to target
     void H(const bitLenInt& target);
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
@@ -231,10 +247,6 @@ public:
     void SqrtY(const bitLenInt& target);
     /// Apply inverse square root of Y gate
     void ISqrtY(const bitLenInt& target);
-    /// Apply a CZ gate with control and target
-    void CZ(const bitLenInt& control, const bitLenInt& target);
-    /// Apply a CY gate with control and target
-    void CY(const bitLenInt& control, const bitLenInt& target);
 
     void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2);
 
