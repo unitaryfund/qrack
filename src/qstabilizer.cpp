@@ -640,10 +640,14 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
         return;
     }
 
-    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
-        std::vector<bool>::swap(x[i][c], x[i][t]);
-        std::vector<bool>::swap(z[i][c], z[i][t]);
-    });
+    // ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+    //     std::vector<bool>::swap(x[i][c], x[i][t]);
+    //     std::vector<bool>::swap(z[i][c], z[i][t]);
+    // });
+
+    CNOT(c, t);
+    CNOT(t, c);
+    CNOT(c, t);
 }
 
 /**
