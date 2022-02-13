@@ -210,8 +210,6 @@ public:
 
     virtual ~QEngineOCL() { FreeAll(); }
 
-    virtual bool IsOpenCL() { return true; }
-
     virtual void FreeAll()
     {
         ZeroAmplitudes();

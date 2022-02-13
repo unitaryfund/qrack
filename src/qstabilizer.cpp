@@ -430,8 +430,7 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
     eng->SetAmplitude(0, ZERO_CMPLX);
 
     setBasisState(nrm, NULL, eng);
-
-    ParallelFunc fn = [&](const bitCapIntOcl& t, const unsigned& cpu) {
+    par_for(0, permCountMin1, [&](const bitCapIntOcl& t, const unsigned& cpu) {
         bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0; i < g; i++) {
             if ((t2 >> i) & 1U) {
@@ -439,15 +438,7 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
             }
         }
         setBasisState(nrm, NULL, eng);
-    };
-
-    if (eng->IsOpenCL()) {
-        for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
-            fn(t, 0);
-        }
-    } else {
-        par_for(0, permCountMin1, fn);
-    }
+    });
 }
 
 /// Get all probabilities corresponding to ket notation

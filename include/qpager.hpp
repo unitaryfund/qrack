@@ -108,8 +108,6 @@ public:
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
         bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
 
-    virtual bool IsOpenCL() { return qPages[0]->IsOpenCL(); }
-
     virtual void SetConcurrency(uint32_t threadsPerEngine)
     {
         QInterface::SetConcurrency(threadsPerEngine);

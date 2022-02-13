@@ -208,8 +208,6 @@ public:
     {
     }
 
-    virtual bool IsOpenCL() { return engine && engine->IsOpenCL(); }
-
     virtual void Finish()
     {
         if (stabilizer) {
