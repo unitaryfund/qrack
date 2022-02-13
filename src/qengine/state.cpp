@@ -52,8 +52,8 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 #else
     const bitLenInt pStridePow = PSTRIDEPOW;
 #endif
-
-    dispatchThreshold = (pStridePow > 3U) ? (pStridePow - 3U) : 0U;
+    const bitLenInt minStridePow = (bitLenInt)pow2Ocl(log2(GetConcurrencyLevel()));
+    dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
 
     stateVec = AllocStateVec(maxQPowerOcl);
     stateVec->clear();
