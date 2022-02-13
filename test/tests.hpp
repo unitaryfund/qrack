@@ -44,6 +44,7 @@ extern bool isBinaryOutput;
 extern int benchmarkSamples;
 extern int benchmarkDepth;
 extern int benchmarkMaxMagic;
+extern int timeout;
 extern std::vector<int> devList;
 extern bool optimal;
 extern bool optimal_single;

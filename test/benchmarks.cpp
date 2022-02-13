@@ -1058,6 +1058,8 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
         }
         int rowLen = n / colLen;
 
+        auto iterClock = std::chrono::high_resolution_clock::now();
+
         for (int d = 0; d < benchmarkDepth; d++) {
             for (bitLenInt i = 0; i < n; i++) {
                 // "Phase" transforms:
@@ -1120,6 +1122,14 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
                 }
                 // else - identity
                 */
+
+                if (timeout >= 0) {
+                    auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+                        std::chrono::high_resolution_clock::now() - iterClock);
+                    if ((tClock.count() * clockFactor) > timeout) {
+                        throw std::runtime_error("Timeout");
+                    }
+                }
             }
 
             gate = gateSequence.front();
@@ -1194,6 +1204,14 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
                             qReg->CZ(b1, b2);
                         }
                     }
+
+                    if (timeout >= 0) {
+                        auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+                            std::chrono::high_resolution_clock::now() - iterClock);
+                        if ((tClock.count() * clockFactor) > timeout) {
+                            throw std::runtime_error("Timeout");
+                        }
+                    }
                 }
             }
         }
@@ -1232,6 +1250,8 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
             colLen--;
         }
         int rowLen = n / colLen;
+
+        auto iterClock = std::chrono::high_resolution_clock::now();
 
         for (int d = 0; d < benchmarkDepth; d++) {
             for (bitLenInt i = 0; i < n; i++) {
@@ -1288,6 +1308,14 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
                         tCount++;
                     }
                 }
+
+                if (timeout >= 0) {
+                    auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+                        std::chrono::high_resolution_clock::now() - iterClock);
+                    if ((tClock.count() * clockFactor) > timeout) {
+                        throw std::runtime_error("Timeout");
+                    }
+                }
             }
 
             gate = gateSequence.front();
@@ -1360,6 +1388,14 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
                             qReg->CY(b1, b2);
                         } else {
                             qReg->CZ(b1, b2);
+                        }
+                    }
+
+                    if (timeout >= 0) {
+                        auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+                            std::chrono::high_resolution_clock::now() - iterClock);
+                        if ((tClock.count() * clockFactor) > timeout) {
+                            throw std::runtime_error("Timeout");
                         }
                     }
                 }
