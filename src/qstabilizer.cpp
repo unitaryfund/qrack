@@ -640,14 +640,24 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
         return;
     }
 
-    // ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
-    //     std::vector<bool>::swap(x[i][c], x[i][t]);
-    //     std::vector<bool>::swap(z[i][c], z[i][t]);
-    // });
+    const bitCapInt maxLcv = qubitCount << 1U;
 
-    CNOT(c, t);
-    CNOT(t, c);
-    CNOT(c, t);
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+    if (maxLcv >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) {
+        CNOT(c, t);
+        CNOT(t, c);
+        CNOT(c, t);
+
+        return;
+    }
+#endif
+
+    dispatchQueues[c % dispatchQueues.size()].finish();
+    dispatchQueues[t % dispatchQueues.size()].finish();
+    for (bitLenInt i = 0; i < maxLcv; i++) {
+        std::vector<bool>::swap(x[i][c], x[i][t]);
+        std::vector<bool>::swap(z[i][c], z[i][t]);
+    }
 }
 
 /**
