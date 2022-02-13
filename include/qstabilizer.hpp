@@ -80,17 +80,7 @@ protected:
     typedef std::function<void(void)> DispatchFn;
     void Dispatch(bitLenInt i, DispatchFn fn)
     {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        const bitCapInt workItemCount = qubitCount << 1U;
-        if (workItemCount >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) {
-            dispatchQueues[i % dispatchQueues.size()].dispatch(fn);
-        } else {
-            Finish();
-            fn();
-        }
-#else
         fn();
-#endif
     }
 
     void Dump()
