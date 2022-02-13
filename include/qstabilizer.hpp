@@ -26,6 +26,10 @@
 
 #include "qinterface.hpp"
 
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+#include "common/dispatchqueue.hpp"
+#endif
+
 #include <cstdint>
 
 namespace Qrack {
@@ -68,11 +72,32 @@ protected:
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
 
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+    DispatchQueue dispatchQueue;
+#endif
+
+    void Dump()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        dispatchQueue.dump();
+#endif
+    }
+
     typedef std::function<void(const bitLenInt&)> StabilizerParallelFunc;
     typedef std::function<void(void)> DispatchFn;
-    void Dispatch(DispatchFn fn) { fn(); }
-
-    void Dump() {}
+    void Dispatch(DispatchFn fn)
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        if (qubitCount >= dispatchThreshold) {
+            dispatchQueue.dispatch(fn);
+        } else {
+            Finish();
+            fn();
+        }
+#else
+        fn();
+#endif
+    }
 
     void ParFor(StabilizerParallelFunc fn)
     {
@@ -106,9 +131,21 @@ public:
 
     virtual ~QStabilizer() { Dump(); }
 
-    void Finish() {}
+    void Finish()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        dispatchQueue.finish();
+#endif
+    };
 
-    bool isFinished() { return true; }
+    bool isFinished()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        return dispatchQueue.isFinished();
+#else
+        return true;
+#endif
+    }
 
     bitLenInt GetQubitCount() { return qubitCount; }
 
