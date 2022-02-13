@@ -400,7 +400,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     std::fill(stateVec, stateVec + pow2Ocl(qubitCount), ZERO_CMPLX);
 
     setBasisState(nrm, stateVec, NULL);
-    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+    par_for(0, permCountMin1, [&](const bitCapIntOcl& t, const unsigned& cpu) {
         bitCapIntOcl t2 = t ^ (t + 1);
         for (bitLenInt i = 0; i < g; i++) {
             if ((t2 >> i) & 1U) {
@@ -408,7 +408,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
             }
         }
         setBasisState(nrm, stateVec, NULL);
-    }
+    });
 }
 
 /// Convert the state to ket notation (warning: could be huge!)
@@ -430,7 +430,7 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
     eng->SetAmplitude(0, ZERO_CMPLX);
 
     setBasisState(nrm, NULL, eng);
-    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+    par_for(0, permCountMin1, [&](const bitCapIntOcl& t, const unsigned& cpu) {
         bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0; i < g; i++) {
             if ((t2 >> i) & 1U) {
@@ -438,7 +438,7 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
             }
         }
         setBasisState(nrm, NULL, eng);
-    }
+    });
 }
 
 /// Get all probabilities corresponding to ket notation
@@ -459,7 +459,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
     std::fill(outputProbs, outputProbs + pow2Ocl(qubitCount), ZERO_R1);
 
     setBasisProb(nrm, outputProbs);
-    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+    par_for(0, permCountMin1, [&](const bitCapIntOcl& t, const unsigned& cpu) {
         bitCapIntOcl t2 = t ^ (t + 1);
         for (bitLenInt i = 0; i < g; i++) {
             if ((t2 >> i) & 1U) {
@@ -467,7 +467,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
             }
         }
         setBasisProb(nrm, outputProbs);
-    }
+    });
 }
 
 /// Apply a CNOT gate with control and target
