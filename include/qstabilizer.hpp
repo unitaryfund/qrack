@@ -68,17 +68,18 @@ protected:
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
 
+    typedef std::function<void(const bitLenInt&)> StabilizerParallelFunc;
     typedef std::function<void(void)> DispatchFn;
     void Dispatch(DispatchFn fn) { fn(); }
 
     void Dump() {}
 
-    void ParFor(ParallelFunc fn)
+    void ParFor(StabilizerParallelFunc fn)
     {
         Dispatch([this, fn] {
             const bitLenInt maxLcv = qubitCount << 1U;
             for (bitLenInt i = 0; i < maxLcv; i++) {
-                fn(i, 0);
+                fn(i);
             }
         });
     }

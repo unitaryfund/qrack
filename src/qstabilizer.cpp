@@ -471,7 +471,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
 /// Apply a CNOT gate with control and target
 void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         if (x[i][c]) {
             x[i][t] = !x[i][t];
         }
@@ -489,7 +489,7 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 /// Apply a CY gate with control and target
 void QStabilizer::CY(const bitLenInt& c, const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         z[i][t] = z[i][t] ^ x[i][t];
 
         if (x[i][c]) {
@@ -511,7 +511,7 @@ void QStabilizer::CY(const bitLenInt& c, const bitLenInt& t)
 /// Apply a CZ gate with control and target
 void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         if (x[i][t]) {
             z[i][c] = !z[i][c];
 
@@ -532,7 +532,7 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
         return;
     }
 
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         std::vector<bool>::swap(x[i][c], x[i][t]);
         std::vector<bool>::swap(z[i][c], z[i][t]);
     });
@@ -541,7 +541,7 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
 /// Apply a Hadamard gate to target
 void QStabilizer::H(const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         std::vector<bool>::swap(x[i][t], z[i][t]);
         if (x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
@@ -552,7 +552,7 @@ void QStabilizer::H(const bitLenInt& t)
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
 void QStabilizer::S(const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         if (x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
         }
@@ -563,7 +563,7 @@ void QStabilizer::S(const bitLenInt& t)
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
 void QStabilizer::IS(const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         z[i][t] = z[i][t] ^ x[i][t];
         if (x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
@@ -574,7 +574,7 @@ void QStabilizer::IS(const bitLenInt& t)
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
 void QStabilizer::Z(const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         if (x[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
         }
@@ -584,7 +584,7 @@ void QStabilizer::Z(const bitLenInt& t)
 /// Apply an X (or NOT) gate to target
 void QStabilizer::X(const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         if (z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
         }
@@ -594,7 +594,7 @@ void QStabilizer::X(const bitLenInt& t)
 /// Apply a Pauli Y gate to target
 void QStabilizer::Y(const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         if (z[i][t] ^ x[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
         }
@@ -604,7 +604,7 @@ void QStabilizer::Y(const bitLenInt& t)
 /// Apply square root of X gate
 void QStabilizer::SqrtX(const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         x[i][t] = x[i][t] ^ z[i][t];
         if (x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
@@ -615,7 +615,7 @@ void QStabilizer::SqrtX(const bitLenInt& t)
 /// Apply inverse square root of X gate
 void QStabilizer::ISqrtX(const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         if (x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
         }
@@ -626,7 +626,7 @@ void QStabilizer::ISqrtX(const bitLenInt& t)
 /// Apply square root of Y gate
 void QStabilizer::SqrtY(const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         std::vector<bool>::swap(x[i][t], z[i][t]);
         if (!x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
@@ -637,7 +637,7 @@ void QStabilizer::SqrtY(const bitLenInt& t)
 /// Apply inverse square root of Y gate
 void QStabilizer::ISqrtY(const bitLenInt& t)
 {
-    ParFor([&](const bitCapIntOcl& i, const unsigned& cpu) {
+    ParFor([&](const bitLenInt& i) {
         if (!x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
         }
