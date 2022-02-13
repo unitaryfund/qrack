@@ -478,10 +478,10 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 
         if (z[i][t]) {
             z[i][c] = !z[i][c];
-        }
 
-        if (x[i][c] && z[i][t] && (x[i][t] == z[i][c])) {
-            r[i] = (r[i] + 2) & 0x3U;
+            if (x[i][c] && (x[i][t] == z[i][c])) {
+                r[i] = (r[i] + 2) & 0x3U;
+            }
         }
     });
 }
