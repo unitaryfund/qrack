@@ -100,11 +100,14 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
     }
 
 #if ENABLE_ENV_VARS
-    dispatchThreshold =
+    const bitLenInt pStridePow =
         (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
 #else
-    dispatchThreshold = PSTRIDEPOW;
+    const bitLenInt pStridePow = PSTRIDEPOW;
 #endif
+
+    // TODO: This is set 1 higher than QEngineCPU's constructor, but the default logic should be unified.
+    dispatchThreshold = (pStridePow > 4U) ? (pStridePow - 4U) : 0U;
 
     SetPermutation(perm);
 }
