@@ -472,6 +472,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
 /// Apply a CNOT gate with control and target
 void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 {
+    dispatchQueues[c % dispatchQueues.size()].finish();
     ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         if (x[i][c]) {
             x[i][t] = !x[i][t];
@@ -490,6 +491,7 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 /// Apply a CY gate with control and target
 void QStabilizer::CY(const bitLenInt& c, const bitLenInt& t)
 {
+    dispatchQueues[c % dispatchQueues.size()].finish();
     ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         z[i][t] = z[i][t] ^ x[i][t];
 
@@ -512,6 +514,7 @@ void QStabilizer::CY(const bitLenInt& c, const bitLenInt& t)
 /// Apply a CZ gate with control and target
 void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
 {
+    dispatchQueues[c % dispatchQueues.size()].finish();
     ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         if (x[i][t]) {
             z[i][c] = !z[i][c];
@@ -640,24 +643,11 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
         return;
     }
 
-    const bitCapInt maxLcv = qubitCount << 1U;
-
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    if (maxLcv >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) {
-        CNOT(c, t);
-        CNOT(t, c);
-        CNOT(c, t);
-
-        return;
-    }
-#endif
-
     dispatchQueues[c % dispatchQueues.size()].finish();
-    dispatchQueues[t % dispatchQueues.size()].finish();
-    for (bitLenInt i = 0; i < maxLcv; i++) {
+    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         std::vector<bool>::swap(x[i][c], x[i][t]);
         std::vector<bool>::swap(z[i][c], z[i][t]);
-    }
+    });
 }
 
 /**
