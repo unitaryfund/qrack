@@ -26,10 +26,6 @@
 
 #include "qinterface.hpp"
 
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-#include "common/dispatchqueue.hpp"
-#endif
-
 #include <cstdint>
 
 namespace Qrack {
@@ -72,32 +68,17 @@ protected:
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
 
-#if ENABLE_QUNIT_CPU_PARALLEL
-    std::vector<DispatchQueue> dispatchQueues;
-    std::vector<std::mutex> bitMutexes;
-#endif
-
     typedef std::function<void(void)> DispatchFn;
-    void Dispatch(bitLenInt i, DispatchFn fn)
-    {
-        fn();
-    }
+    void Dispatch(DispatchFn fn) { fn(); }
 
-    void Dump()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        for (bitLenInt i = 0; i < dispatchQueues.size(); i++) {
-            dispatchQueues[i].dump();
-        }
-#endif
-    }
+    void Dump() {}
 
-    void ParFor(bitLenInt i, ParallelFunc fn)
+    void ParFor(ParallelFunc fn)
     {
-        Dispatch(i, [this, i, fn] {
+        Dispatch([this, fn] {
             const bitLenInt maxLcv = qubitCount << 1U;
-            for (bitLenInt j = 0; j < maxLcv; j++) {
-                fn(j, i % dispatchQueues.size());
+            for (bitLenInt i = 0; i < maxLcv; i++) {
+                fn(i, 0);
             }
         });
     }
@@ -124,26 +105,9 @@ public:
 
     virtual ~QStabilizer() { Dump(); }
 
-    void Finish()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        for (bitLenInt i = 0; i < dispatchQueues.size(); i++) {
-            dispatchQueues[i].finish();
-        }
-#endif
-    }
+    void Finish() {}
 
-    bool isFinished()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        for (bitLenInt i = 0; i < dispatchQueues.size(); i++) {
-            if (!dispatchQueues[i].isFinished()) {
-                return false;
-            }
-        }
-#endif
-        return true;
-    }
+    bool isFinished() { return true; }
 
     bitLenInt GetQubitCount() { return qubitCount; }
 
