@@ -42,6 +42,7 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
     , rawRandBools(0)
     , rawRandBoolsRemaining(0)
     , dispatchQueues(std::thread::hardware_concurrency())
+    , bitMutexes(std::thread::hardware_concurrency())
 {
 #if !ENABLE_RDRAND && !ENABLE_RNDFILE && !ENABLE_DEVRAND
     useHardwareRNG = false;
@@ -479,6 +480,7 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
         }
 
         if (z[i][t]) {
+            std::lock_guard<std::mutex> lock(bitMutexes[c % bitMutexes.size()]);
             z[i][c] = !z[i][c];
         }
 
@@ -504,6 +506,7 @@ void QStabilizer::CY(const bitLenInt& c, const bitLenInt& t)
                 r[i] = (r[i] + 2) & 0x3U;
             }
 
+            std::lock_guard<std::mutex> lock(bitMutexes[c % bitMutexes.size()]);
             z[i][c] = !z[i][c];
         }
 
@@ -517,7 +520,10 @@ void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
     dispatchQueues[c % dispatchQueues.size()].finish();
     ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         if (x[i][t]) {
-            z[i][c] = !z[i][c];
+            if (true) {
+                std::lock_guard<std::mutex> lock(bitMutexes[c % bitMutexes.size()]);
+                z[i][c] = !z[i][c];
+            }
 
             if (x[i][c] && (z[i][t] == z[i][c])) {
                 r[i] = (r[i] + 2) & 0x3U;
@@ -643,11 +649,24 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
         return;
     }
 
+    const bitCapInt maxLcv = qubitCount << 1U;
+
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+    if (maxLcv >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) {
+        CNOT(c, t);
+        CNOT(t, c);
+        CNOT(c, t);
+
+        return;
+    }
+#endif
+
     dispatchQueues[c % dispatchQueues.size()].finish();
-    ParFor(t, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+    dispatchQueues[t % dispatchQueues.size()].finish();
+    for (bitLenInt i = 0; i < maxLcv; i++) {
         std::vector<bool>::swap(x[i][c], x[i][t]);
         std::vector<bool>::swap(z[i][c], z[i][t]);
-    });
+    }
 }
 
 /**

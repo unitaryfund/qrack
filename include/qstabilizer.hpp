@@ -74,6 +74,7 @@ protected:
 
 #if ENABLE_QUNIT_CPU_PARALLEL
     std::vector<DispatchQueue> dispatchQueues;
+    std::vector<std::mutex> bitMutexes;
 #endif
 
     typedef std::function<void(void)> DispatchFn;
