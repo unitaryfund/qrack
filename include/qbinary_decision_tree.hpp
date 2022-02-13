@@ -170,6 +170,8 @@ public:
     {
     }
 
+    virtual bool IsOpenCL() { return stateVecUnit && stateVecUnit->IsOpenCL(); }
+
     virtual bool isBinaryDecisionTree() { return true; };
 
     virtual void Finish()

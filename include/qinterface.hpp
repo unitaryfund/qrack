@@ -262,6 +262,8 @@ public:
         // Virtual destructor for inheritance
     }
 
+    virtual bool IsOpenCL() { return false; }
+
     virtual void SetRandomSeed(uint32_t seed)
     {
         if (rand_generator != NULL) {
