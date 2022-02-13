@@ -42,7 +42,7 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
     , rawRandBools(0)
     , rawRandBoolsRemaining(0)
     , dispatchQueues(std::thread::hardware_concurrency())
-    , bitMutexes(std::thread::hardware_concurrency())
+    , bitMutexes(n)
 {
 #if !ENABLE_RDRAND && !ENABLE_RNDFILE && !ENABLE_DEVRAND
     useHardwareRNG = false;
@@ -873,6 +873,8 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
 
     qubitCount = nQubitCount;
 
+    bitMutexes = std::vector<std::mutex>(qubitCount);
+
     return start;
 }
 
@@ -976,6 +978,8 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
         x[i].erase(x[i].begin() + start, x[i].begin() + end);
         z[i].erase(z[i].begin() + start, z[i].begin() + end);
     }
+
+    bitMutexes = std::vector<std::mutex>(qubitCount);
 }
 
 bool QStabilizer::ApproxCompare(QStabilizerPtr o)
