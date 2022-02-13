@@ -106,6 +106,8 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
     dispatchThreshold = PSTRIDEPOW;
 #endif
 
+    SetConcurrencyLevel(std::thread::hardware_concurrency());
+
     SetPermutation(perm);
 }
 
