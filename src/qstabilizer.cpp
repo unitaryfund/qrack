@@ -41,7 +41,7 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
     , hardware_rand_generator(NULL)
     , rawRandBools(0)
     , rawRandBoolsRemaining(0)
-    , dispatchQueues((n < std::thread::hardware_concurrency()) ? std::thread::hardware_concurrency() : n)
+    , dispatchQueues(std::thread::hardware_concurrency())
 {
 #if !ENABLE_RDRAND && !ENABLE_RNDFILE && !ENABLE_DEVRAND
     useHardwareRNG = false;
@@ -655,7 +655,7 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
  */
 bool QStabilizer::IsSeparableZ(const bitLenInt& t)
 {
-    Finish();
+    dispatchQueues[t % dispatchQueues.size()].finish();
 
     // for brevity
     const bitLenInt n = qubitCount;
@@ -740,7 +740,7 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
         return result;
     }
 
-    Finish();
+    dispatchQueues[t % dispatchQueues.size()].finish();
 
     const bitLenInt elemCount = qubitCount << 1U;
     // for brevity
