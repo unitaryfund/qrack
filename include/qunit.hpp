@@ -430,13 +430,11 @@ protected:
     {
         QEngineShard& shard = shards[i];
 
-        if (shard.unit && shard.isPauliY) {
+        if (shard.isPauliY) {
             ConvertYToZ(i);
-            return;
+        } else {
+            RevertBasisX(i);
         }
-
-        RevertBasisY(i);
-        RevertBasisX(i);
     }
 
     void RevertBasisToX1Qb(bitLenInt i)
