@@ -1227,13 +1227,17 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
     // for clamping of single bit states to Pauli basis axes.
 
     std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
-    std::cout << "(max quantum \"magic\": " << benchmarkMaxMagic << ")";
+    if (benchmarkMaxMagic >= 0) {
+        std::cout << "(max quantum \"magic\": " << benchmarkMaxMagic << ")";
+    } else {
+        std::cout << "(max quantum \"magic\": default, no celing\")";
+    }
 
     const int DimCount1Qb = 4;
     const int GateCountMultiQb = 4;
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
-        const int tMax = (benchmarkMaxMagic > 0) ? benchmarkMaxMagic : (n + 2);
+        const int tMax = (benchmarkMaxMagic >= 0) ? benchmarkMaxMagic : (n + 2);
         real1_f gateRand;
         bitLenInt gate;
         int tCount = 0;
@@ -1298,7 +1302,7 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
                 }
 
                 if (tCount < tMax) {
-                    gateRand = n * benchmarkDepth * qReg->Rand();
+                    gateRand = n * benchmarkDepth * qReg->Rand() / (n + 2);
                     if (gateRand < ONE_R1) {
                         if ((2 * qReg->Rand()) < ONE_R1) {
                             qReg->T(i);
