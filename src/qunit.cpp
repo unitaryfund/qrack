@@ -36,27 +36,27 @@
 #define QUEUED_PHASE(shard)                                                                                            \
     ((shard.targetOfShards.size() != 0) || (shard.controlsShards.size() != 0) ||                                       \
         (shard.antiTargetOfShards.size() != 0) || (shard.antiControlsShards.size() != 0))
-#define CACHED_X(shard) (shard.isPauliX && !DIRTY(shard) && !QUEUED_PHASE(shard))
-#define CACHED_X_OR_Y(shard) ((shard.isPauliX || shard.isPauliY) && !DIRTY(shard) && !QUEUED_PHASE(shard))
-#define CACHED_Z(shard) (!shard.isPauliX && !shard.isPauliY && !DIRTY(shard) && !QUEUED_PHASE(shard))
+#define CACHED_X(shard) ((shard.pauliBasis == PauliX) && !DIRTY(shard) && !QUEUED_PHASE(shard))
+#define CACHED_X_OR_Y(shard) ((shard.pauliBasis != PauliZ) && !DIRTY(shard) && !QUEUED_PHASE(shard))
+#define CACHED_Z(shard) ((shard.pauliBasis == PauliZ) && !DIRTY(shard) && !QUEUED_PHASE(shard))
 #define CACHED_ZERO(shard) (CACHED_Z(shard) && IS_AMP_0(shard.amp1))
 #define CACHED_ONE(shard) (CACHED_Z(shard) && IS_AMP_0(shard.amp0))
 #define CACHED_PLUS(shard) (CACHED_X(shard) && IS_AMP_0(shard.amp1))
 /* "UNSAFE" variants here do not check whether the bit has cached 2-qubit gates.*/
 #define UNSAFE_CACHED_ZERO_OR_ONE(shard)                                                                               \
-    (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && (IS_AMP_0(shard.amp0) || IS_AMP_0(shard.amp1)))
+    (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && (IS_AMP_0(shard.amp0) || IS_AMP_0(shard.amp1)))
 #define UNSAFE_CACHED_X(shard)                                                                                         \
-    (!shard.isProbDirty && shard.isPauliX && !shard.isPauliY && (IS_AMP_0(shard.amp0) || IS_AMP_0(shard.amp1)))
-#define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_AMP_0(shard.amp0))
-#define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && !shard.isPauliX && !shard.isPauliY && IS_AMP_0(shard.amp1))
+    (!shard.isProbDirty && (shard.pauliBasis == PauliX) && (IS_AMP_0(shard.amp0) || IS_AMP_0(shard.amp1)))
+#define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && IS_AMP_0(shard.amp0))
+#define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && IS_AMP_0(shard.amp1))
 #define IS_SAME_UNIT(shard1, shard2) (shard1.unit && (shard1.unit == shard2.unit))
 #define ARE_CLIFFORD(shard1, shard2)                                                                                   \
     ((engines[0] == QINTERFACE_STABILIZER_HYBRID) && (shard1.isClifford() || shard2.isClifford()))
 #define BLOCKED_SEPARATE(shard) (shard.unit && shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped))
 #define SWAP_IDENT(shard1, shard2)                                                                                     \
-    (!DIRTY(shard1) && !DIRTY(shard2) && (shard1.isPauliX == shard2.isPauliX) &&                                       \
-        (shard1.isPauliY == shard2.isPauliY) && IS_AMP_0(shard1.amp0 - shard2.amp0) &&                                 \
-        IS_AMP_0(shard1.amp1 - shard2.amp1) && !QUEUED_PHASE(shard1) && !QUEUED_PHASE(shard2))
+    (!DIRTY(shard1) && !DIRTY(shard2) && (shard1.pauliBasis == shard2.pauliBasis) &&                                   \
+        IS_AMP_0(shard1.amp0 - shard2.amp0) && IS_AMP_0(shard1.amp1 - shard2.amp1) && !QUEUED_PHASE(shard1) &&         \
+        !QUEUED_PHASE(shard2))
 #define IS_PHASE_OR_INVERT(mtrx)                                                                                       \
     ((IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) || (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])))
 
@@ -119,26 +119,21 @@ void QUnit::SetQuantumState(const complex* inputState)
         shard.isPhaseDirty = false;
         shard.amp0 = inputState[0];
         shard.amp1 = inputState[1];
-        shard.isPauliX = false;
-        shard.isPauliY = false;
+        shard.pauliBasis = PauliZ;
         if (IS_AMP_0(shard.amp0 - shard.amp1)) {
-            shard.isPauliX = true;
-            shard.isPauliY = false;
+            shard.pauliBasis = PauliX;
             shard.amp0 = shard.amp0 / abs(shard.amp0);
             shard.amp1 = ZERO_R1;
         } else if (IS_AMP_0(shard.amp0 + shard.amp1)) {
-            shard.isPauliX = true;
-            shard.isPauliY = false;
+            shard.pauliBasis = PauliX;
             shard.amp1 = shard.amp0 / abs(shard.amp0);
             shard.amp0 = ZERO_R1;
         } else if (IS_AMP_0((I_CMPLX * inputState[0]) - inputState[1])) {
-            shard.isPauliX = false;
-            shard.isPauliY = true;
+            shard.pauliBasis = PauliY;
             shard.amp0 = shard.amp0 / abs(shard.amp0);
             shard.amp1 = ZERO_R1;
         } else if (IS_AMP_0((I_CMPLX * inputState[0]) + inputState[1])) {
-            shard.isPauliX = false;
-            shard.isPauliY = true;
+            shard.pauliBasis = PauliY;
             shard.amp1 = shard.amp0 / abs(shard.amp0);
             shard.amp0 = ZERO_R1;
         }
@@ -708,9 +703,9 @@ bool QUnit::TrySeparate(bitLenInt qubit)
             return true;
         }
 
-        if (!shard.isPauliX && !shard.isPauliY) {
+        if (shard.pauliBasis == PauliZ) {
             z = prob;
-        } else if (shard.isPauliX) {
+        } else if (shard.pauliBasis == PauliX) {
             x = prob;
         } else {
             y = prob;
@@ -720,9 +715,9 @@ bool QUnit::TrySeparate(bitLenInt qubit)
             continue;
         }
 
-        if (!shard.isPauliX && !shard.isPauliY) {
+        if (shard.pauliBasis == PauliZ) {
             ConvertZToX(qubit);
-        } else if (shard.isPauliX) {
+        } else if (shard.pauliBasis == PauliX) {
             ConvertXToY(qubit);
         } else {
             ConvertYToZ(qubit);
@@ -735,9 +730,9 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
 
     // Permute axes for logical equivalence.
-    if (shard.isPauliX) {
+    if (shard.pauliBasis == PauliX) {
         RevertBasis1Qb(qubit);
-    } else if (shard.isPauliY) {
+    } else if (shard.pauliBasis == PauliY) {
         std::swap(x, z);
         std::swap(y, z);
     }
@@ -945,23 +940,19 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
         shard.unit->GetQuantumState(amps);
 
         if (IS_AMP_0(amps[0] - amps[1])) {
-            shard.isPauliX = true;
-            shard.isPauliY = false;
+            shard.pauliBasis = PauliX;
             amps[0] = amps[0] / abs(amps[0]);
             amps[1] = ZERO_CMPLX;
         } else if (IS_AMP_0(amps[0] + amps[1])) {
-            shard.isPauliX = true;
-            shard.isPauliY = false;
+            shard.pauliBasis = PauliX;
             amps[1] = amps[0] / abs(amps[0]);
             amps[0] = ZERO_CMPLX;
         } else if (IS_AMP_0((I_CMPLX * amps[0]) - amps[1])) {
-            shard.isPauliX = false;
-            shard.isPauliY = true;
+            shard.pauliBasis = PauliY;
             amps[0] = amps[0] / abs(amps[0]);
             amps[1] = ZERO_CMPLX;
         } else if (IS_AMP_0((I_CMPLX * amps[0]) + amps[1])) {
-            shard.isPauliX = false;
-            shard.isPauliY = true;
+            shard.pauliBasis = PauliY;
             amps[1] = amps[0] / abs(amps[0]);
             amps[0] = ZERO_CMPLX;
         }
@@ -1049,8 +1040,7 @@ real1_f QUnit::ProbParity(bitCapInt mask)
     for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
         QEngineShard& shard = shards[qIndices[i]];
         if (!(shard.unit)) {
-            nOddChance =
-                (shard.isPauliX || shard.isPauliY) ? norm(SQRT1_2_R1 * (shard.amp0 - shard.amp1)) : shard.Prob();
+            nOddChance = (shard.pauliBasis != PauliZ) ? norm(SQRT1_2_R1 * (shard.amp0 - shard.amp1)) : shard.Prob();
             oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
             continue;
         }
@@ -1912,7 +1902,7 @@ void QUnit::H(bitLenInt target)
     CommuteH(target);
 
     QEngineShard& shard = shards[target];
-    shard.isPauliX = !shard.isPauliX;
+    shard.pauliBasis = (shard.pauliBasis == PauliZ) ? PauliX : PauliZ;
 }
 
 void QUnit::S(bitLenInt target)
@@ -1921,14 +1911,14 @@ void QUnit::S(bitLenInt target)
 
     shard.CommutePhase(ONE_CMPLX, I_CMPLX);
 
-    if (shard.isPauliY) {
-        shard.isPauliX = true;
-        shard.isPauliY = false;
+    if (shard.pauliBasis == PauliY) {
+        shard.pauliBasis = PauliX;
         XBase(target);
         return;
-    } else if (shard.isPauliX) {
-        shard.isPauliX = false;
-        shard.isPauliY = true;
+    }
+
+    if (shard.pauliBasis == PauliX) {
+        shard.pauliBasis = PauliY;
         return;
     }
 
@@ -1945,13 +1935,13 @@ void QUnit::IS(bitLenInt target)
 
     shard.CommutePhase(ONE_CMPLX, -I_CMPLX);
 
-    if (shard.isPauliY) {
-        shard.isPauliX = true;
-        shard.isPauliY = false;
+    if (shard.pauliBasis == PauliY) {
+        shard.pauliBasis = PauliX;
         return;
-    } else if (shard.isPauliX) {
-        shard.isPauliX = false;
-        shard.isPauliY = true;
+    }
+
+    if (shard.pauliBasis == PauliX) {
+        shard.pauliBasis = PauliY;
         XBase(target);
         return;
     }
@@ -2043,9 +2033,9 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
         controlVec, { target },                                                                                        \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
             complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                                  \
-            if (shards[target].isPauliX) {                                                                             \
+            if (shards[target].pauliBasis == PauliX) {                                                                 \
                 TransformX2x2(mtrx, trnsMtrx);                                                                         \
-            } else if (shards[target].isPauliY) {                                                                      \
+            } else if (shards[target].pauliBasis == PauliY) {                                                          \
                 TransformY2x2(mtrx, trnsMtrx);                                                                         \
             } else {                                                                                                   \
                 std::copy(mtrx, mtrx + 4, trnsMtrx);                                                                   \
@@ -2058,7 +2048,7 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
     ApplyEitherControlled(                                                                                             \
         controlVec, { target },                                                                                        \
         [&](QInterfacePtr unit, std::vector<bitLenInt> mappedControls) {                                               \
-            if (shards[target].isPauliX) {                                                                             \
+            if (shards[target].pauliBasis == PauliX) {                                                                 \
                 complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                              \
                 if (isInvert) {                                                                                        \
                     TransformXInvert(top, bottom, trnsMtrx);                                                           \
@@ -2066,7 +2056,7 @@ void QUnit::TransformPhase(complex topLeft, complex bottomRight, complex* mtrxOu
                     TransformPhase(top, bottom, trnsMtrx);                                                             \
                 }                                                                                                      \
                 unit->ctrldgen;                                                                                        \
-            } else if (shards[target].isPauliY) {                                                                      \
+            } else if (shards[target].pauliBasis == PauliY) {                                                          \
                 complex trnsMtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };                              \
                 if (isInvert) {                                                                                        \
                     TransformYInvert(top, bottom, trnsMtrx);                                                           \
@@ -2122,7 +2112,7 @@ void QUnit::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 
     shard.CommutePhase(topLeft, bottomRight);
 
-    if (!shard.isPauliX && !shard.isPauliY) {
+    if (shard.pauliBasis == PauliZ) {
         if (shard.unit) {
             shard.unit->Phase(topLeft, bottomRight, shard.mapped);
         }
@@ -2157,7 +2147,7 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     shard.FlipPhaseAnti();
     shard.CommutePhase(topRight, bottomLeft);
 
-    if (!shard.isPauliX && !shard.isPauliY) {
+    if (shard.pauliBasis == PauliZ) {
         if (shard.unit) {
             shard.unit->Invert(topRight, bottomLeft, shard.mapped);
         }
@@ -2170,7 +2160,7 @@ void QUnit::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     }
 
     complex mtrx[4] = { ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX, ZERO_CMPLX };
-    if (shard.isPauliX) {
+    if (shard.pauliBasis == PauliX) {
         TransformXInvert(topRight, bottomLeft, mtrx);
     } else {
         TransformYInvert(topRight, bottomLeft, mtrx);
@@ -2387,9 +2377,9 @@ void QUnit::Mtrx(const complex* mtrx, bitLenInt target)
     RevertBasis2Qb(target);
 
     complex trnsMtrx[4];
-    if (shard.isPauliY) {
+    if (shard.pauliBasis == PauliY) {
         TransformY2x2(mtrx, trnsMtrx);
-    } else if (shard.isPauliX) {
+    } else if (shard.pauliBasis == PauliX) {
         TransformX2x2(mtrx, trnsMtrx);
     } else {
         std::copy(mtrx, mtrx + 4, trnsMtrx);
@@ -2512,7 +2502,7 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
 
-        if (shard.isPauliX || shard.isPauliY || shard.IsInvertTarget()) {
+        if ((shard.pauliBasis != PauliZ) || shard.IsInvertTarget()) {
             continue;
         }
 
@@ -2538,7 +2528,7 @@ bool QUnit::TrimControls(const bitLenInt* controls, bitLenInt controlLen, std::v
     for (bitLenInt i = 0; i < controlLen; i++) {
         QEngineShard& shard = shards[controls[i]];
 
-        if ((!shard.isPauliX && !shard.isPauliY) || shard.IsInvertTarget()) {
+        if ((shard.pauliBasis == PauliZ) || shard.IsInvertTarget()) {
             continue;
         }
         RevertBasis1Qb(controls[i]);
@@ -2637,7 +2627,7 @@ void QUnit::ApplyEitherControlled(
     for (bitLenInt i = 0; i < (bitLenInt)targets.size(); i++) {
         QEngineShard& shard = shards[targets[i]];
         shard.isPhaseDirty = true;
-        shard.isProbDirty |= shard.isPauliX || shard.isPauliY || !isPhase;
+        shard.isProbDirty |= (shard.pauliBasis != PauliZ) || !isPhase;
     }
 
     // This is the original method with the maximum number of non-entangled controls excised, (potentially leaving a
@@ -4073,9 +4063,9 @@ void QUnit::OptimizePairBuffers(bitLenInt control, bitLenInt target, bool anti)
 
     const bool isInvert = buffer->isInvert;
     if (isInvert) {
-        if (tShard.isPauliY) {
+        if (tShard.pauliBasis == PauliY) {
             YBase(target);
-        } else if (tShard.isPauliX) {
+        } else if (tShard.pauliBasis == PauliX) {
             ZBase(target);
         } else {
             XBase(target);

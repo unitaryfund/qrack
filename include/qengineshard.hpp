@@ -64,8 +64,7 @@ public:
     bool isPhaseDirty;
     complex amp0;
     complex amp1;
-    bool isPauliX;
-    bool isPauliY;
+    Pauli pauliBasis;
     // Shards which this shard controls
     ShardToPhaseMap controlsShards;
     // Shards which this shard (anti-)controls
@@ -92,8 +91,7 @@ public:
         , isPhaseDirty(false)
         , amp0(ONE_CMPLX)
         , amp1(ZERO_CMPLX)
-        , isPauliX(false)
-        , isPauliY(false)
+        , pauliBasis(PauliZ)
         , controlsShards()
         , antiControlsShards()
         , targetOfShards()
@@ -107,8 +105,7 @@ public:
         , mapped(0)
         , isProbDirty(false)
         , isPhaseDirty(false)
-        , isPauliX(false)
-        , isPauliY(false)
+        , pauliBasis(PauliZ)
         , controlsShards()
         , antiControlsShards()
         , targetOfShards()
@@ -127,8 +124,7 @@ public:
         , isPhaseDirty(true)
         , amp0(ONE_CMPLX)
         , amp1(ZERO_CMPLX)
-        , isPauliX(false)
-        , isPauliY(false)
+        , pauliBasis(PauliZ)
         , controlsShards()
         , antiControlsShards()
         , targetOfShards()

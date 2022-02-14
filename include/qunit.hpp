@@ -384,7 +384,7 @@ protected:
     void RevertBasisX(bitLenInt i)
     {
         QEngineShard& shard = shards[i];
-        if (!shard.isPauliX) {
+        if (shard.pauliBasis != PauliX) {
             // Recursive call that should be blocked,
             // or already in target basis.
             return;
@@ -397,14 +397,13 @@ protected:
     {
         QEngineShard& shard = shards[i];
 
-        if (!shard.isPauliY) {
+        if (shard.pauliBasis != PauliY) {
             // Recursive call that should be blocked,
             // or already in target basis.
             return;
         }
 
-        shard.isPauliX = true;
-        shard.isPauliY = false;
+        shard.pauliBasis = PauliX;
 
         const complex mtrx[4] = { ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX),
             ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX), ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX),
@@ -430,7 +429,7 @@ protected:
     {
         QEngineShard& shard = shards[i];
 
-        if (shard.isPauliY) {
+        if (shard.pauliBasis == PauliY) {
             ConvertYToZ(i);
         } else {
             RevertBasisX(i);
@@ -440,9 +439,9 @@ protected:
     void RevertBasisToX1Qb(bitLenInt i)
     {
         QEngineShard& shard = shards[i];
-        if (!shard.isPauliX && !shard.isPauliY) {
+        if (shard.pauliBasis == PauliZ) {
             ConvertZToX(i);
-        } else if (shard.isPauliY) {
+        } else if (shard.pauliBasis == PauliY) {
             RevertBasisY(i);
         }
     }
@@ -450,9 +449,9 @@ protected:
     void RevertBasisToY1Qb(bitLenInt i)
     {
         QEngineShard& shard = shards[i];
-        if (!shard.isPauliX && !shard.isPauliY) {
+        if (shard.pauliBasis == PauliZ) {
             ConvertZToY(i);
-        } else if (shard.isPauliX) {
+        } else if (shard.pauliBasis == PauliX) {
             ConvertXToY(i);
         }
     }
@@ -461,7 +460,8 @@ protected:
     {
         QEngineShard& shard = shards[i];
 
-        shard.isPauliX = !shard.isPauliX;
+        // WARNING: Might be called when shard is in either Z or X basis
+        shard.pauliBasis = (shard.pauliBasis == PauliX) ? PauliZ : PauliX;
 
         if (shard.unit) {
             shard.unit->H(shard.mapped);
@@ -481,8 +481,7 @@ protected:
     {
         QEngineShard& shard = shards[i];
 
-        shard.isPauliX = false;
-        shard.isPauliY = true;
+        shard.pauliBasis = PauliY;
 
         const complex mtrx[4] = { ((real1)(ONE_R1 / 2)) * (ONE_CMPLX - I_CMPLX),
             ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX), ((real1)(ONE_R1 / 2)) * (ONE_CMPLX + I_CMPLX),
@@ -506,8 +505,7 @@ protected:
     {
         QEngineShard& shard = shards[i];
 
-        shard.isPauliY = false;
-        shard.isPauliX = false;
+        shard.pauliBasis = PauliZ;
 
         const complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
             complex(ZERO_R1, SQRT1_2_R1), complex(ZERO_R1, -SQRT1_2_R1) };
@@ -530,8 +528,7 @@ protected:
     {
         QEngineShard& shard = shards[i];
 
-        shard.isPauliY = true;
-        shard.isPauliX = false;
+        shard.pauliBasis = PauliY;
 
         const complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1),
             complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1) };
