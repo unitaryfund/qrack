@@ -255,8 +255,6 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
     const bitCapIntOcl itemCount = end - begin;
 
     const bitCapIntOcl Stride = (bitCapIntOcl)ONE_BCI << PSTRIDEPOW;
-    const unsigned numCores = std::thread::hardware_concurrency();
-
     if (itemCount < Stride) {
         const bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; j++) {
@@ -265,6 +263,7 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
         return;
     }
 
+    const unsigned numCores = std::thread::hardware_concurrency();
     unsigned threads = (unsigned)(itemCount / Stride);
     if (threads > numCores) {
         threads = numCores;
