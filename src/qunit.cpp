@@ -3597,14 +3597,14 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 }
 #endif
 
-bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1_f param1, real1_f param2, int32_t param3)
+bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1_f param1, real1_f param2, real1_f param3, int32_t param4)
 {
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0; i < shards.size(); i++) {
         QInterfacePtr toFind = shards[i].unit;
         if (toFind && (find(units.begin(), units.end(), toFind) == units.end())) {
             units.push_back(toFind);
-            if (!fn(toFind, param1, param2, param3)) {
+            if (!fn(toFind, param1, param2, param3, param4)) {
                 return false;
             }
         }
@@ -3616,26 +3616,26 @@ bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1_f param1, real1_f param2,
 void QUnit::UpdateRunningNorm(real1_f norm_thresh)
 {
     ParallelUnitApply(
-        [](QInterfacePtr unit, real1_f norm_thresh, real1_f unused2, int32_t unused3) {
+        [](QInterfacePtr unit, real1_f norm_thresh, real1_f unused2, real1_f unused3, int32_t unused4) {
             unit->UpdateRunningNorm(norm_thresh);
             return true;
         },
         norm_thresh);
 }
 
-void QUnit::NormalizeState(real1_f nrm, real1_f norm_thresh)
+void QUnit::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)
 {
     ParallelUnitApply(
-        [](QInterfacePtr unit, real1_f nrm, real1_f norm_thresh, int32_t unused) {
-            unit->NormalizeState(nrm, norm_thresh);
+        [](QInterfacePtr unit, real1_f nrm, real1_f norm_thresh, real1_f phaseArg, int32_t unused) {
+            unit->NormalizeState(nrm, norm_thresh, phaseArg);
             return true;
         },
-        nrm, norm_thresh);
+        nrm, norm_thresh, phaseArg);
 }
 
 void QUnit::Finish()
 {
-    ParallelUnitApply([](QInterfacePtr unit, real1_f unused1, real1_f unused2, int32_t unused3) {
+    ParallelUnitApply([](QInterfacePtr unit, real1_f unused1, real1_f unused2, real1_f unused3, int32_t unused4) {
         unit->Finish();
         return true;
     });
@@ -3643,19 +3643,19 @@ void QUnit::Finish()
 
 bool QUnit::isFinished()
 {
-    return ParallelUnitApply(
-        [](QInterfacePtr unit, real1_f unused1, real1_f unused2, int32_t unused3) { return unit->isFinished(); });
+    return ParallelUnitApply([](QInterfacePtr unit, real1_f unused1, real1_f unused2, real1_f unused3,
+                                 int32_t unused4) { return unit->isFinished(); });
 }
 
 void QUnit::SetDevice(int dID, bool forceReInit)
 {
     devID = dID;
     ParallelUnitApply(
-        [](QInterfacePtr unit, real1_f unused1, real1_f forceReInit, int32_t dID) {
+        [](QInterfacePtr unit, real1_f unused1, real1_f forceReInit, real1_f unused2, int32_t dID) {
             unit->SetDevice(dID, (forceReInit > 0.5));
             return true;
         },
-        ZERO_R1, forceReInit ? ONE_R1 : ZERO_R1, dID);
+        ZERO_R1, forceReInit ? ONE_R1 : ZERO_R1, ZERO_R1, dID);
 }
 
 real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)

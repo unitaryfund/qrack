@@ -988,33 +988,33 @@ void kernel expperm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclP
     }
 }
 
-void kernel nrmlze(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant real1* args_ptr)
+void kernel nrmlze(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* args_ptr)
 {
     const bitCapIntOcl Nthreads = get_global_size(0);
     const bitCapIntOcl maxI = bitCapIntOclPtr[0];
-    const real1 norm_thresh = args_ptr[0];
-    const real1 nrm = args_ptr[1];
+    const real1 norm_thresh = args_ptr[0].x;
+    const cmplx nrm = args_ptr[1];
 
     for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
         cmplx amp = stateVec[lcv];
         if (dot(amp, amp) < norm_thresh) {
             amp = (cmplx)(ZERO_R1, ZERO_R1);
         }
-        stateVec[lcv] = nrm * amp;
+        stateVec[lcv] = zmul(nrm, amp);
     }
 }
 
-void kernel nrmlzewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant real1* args_ptr)
+void kernel nrmlzewide(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant cmplx* args_ptr)
 {
     const bitCapIntOcl lcv = ID;
-    const real1 norm_thresh = args_ptr[0];
-    const real1 nrm = args_ptr[1];
+    const real1 norm_thresh = args_ptr[0].x;
+    const cmplx nrm = args_ptr[1];
 
     cmplx amp = stateVec[lcv];
     if (dot(amp, amp) < norm_thresh) {
         amp = (cmplx)(ZERO_R1, ZERO_R1);
     }
-    stateVec[lcv] = nrm * amp;
+    stateVec[lcv] = zmul(nrm, amp);
 }
 
 void kernel updatenorm(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, constant real1* args_ptr,

@@ -203,10 +203,11 @@ public:
         // Intentionally left blank.
     }
 
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    virtual void NormalizeState(
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
     {
         if (stateVecUnit) {
-            stateVecUnit->NormalizeState(nrm, norm_thresh);
+            stateVecUnit->NormalizeState(nrm, norm_thresh, phaseArg);
             return;
         }
         root->Normalize(qubitCount);

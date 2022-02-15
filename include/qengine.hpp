@@ -150,8 +150,6 @@ public:
 #endif
 #endif
 
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
-
     // TODO: Assess whether it's acceptable for these to be public on QEngine
     // protected:
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;

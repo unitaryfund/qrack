@@ -2352,7 +2352,8 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
+    virtual void NormalizeState(
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1) = 0;
 
     /**
      * If asynchronous work is still running, block until it finishes. Note that this is never necessary to get correct,
@@ -2447,22 +2448,20 @@ public:
     /**
      *  Get phase of lowest permutation nonzero amplitude.
      */
-    virtual complex FirstNonzeroPhase()
+    virtual real1_f FirstNonzeroPhase()
     {
         complex amp;
-        real1 ampNorm;
         bitCapInt perm = 0;
         do {
             amp = GetAmplitude(perm);
-            ampNorm = norm(amp);
             perm++;
-        } while ((ampNorm < FP_NORM_EPSILON) && (perm < maxQPower));
+        } while ((norm(amp) <= FP_NORM_EPSILON) && (perm < maxQPower));
 
         if (perm >= maxQPower) {
-            return ZERO_CMPLX;
+            return ZERO_R1;
         }
 
-        return amp / ampNorm;
+        return (real1_f)std::arg(amp);
     }
 
     /** @} */

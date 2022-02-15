@@ -866,10 +866,11 @@ public:
         }
     }
 
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    virtual void NormalizeState(
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
     {
         if (engine) {
-            engine->NormalizeState(nrm, norm_thresh);
+            engine->NormalizeState(nrm, norm_thresh, phaseArg);
         }
     }
 
