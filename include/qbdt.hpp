@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "qbinary_decision_tree_node.hpp"
+#include "qbdt_node.hpp"
 #include "qinterface.hpp"
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
@@ -26,14 +26,14 @@
 
 namespace Qrack {
 
-class QBinaryDecisionTree;
-typedef std::shared_ptr<QBinaryDecisionTree> QBinaryDecisionTreePtr;
+class QBdt;
+typedef std::shared_ptr<QBdt> QBdtPtr;
 
-class QBinaryDecisionTree : virtual public QInterface {
+class QBdt : virtual public QInterface {
 protected:
     std::vector<QInterfaceEngine> engines;
     int devID;
-    QBinaryDecisionTreeNodePtr root;
+    QBdtNodePtr root;
     QInterfacePtr stateVecUnit;
 #if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
@@ -114,10 +114,10 @@ protected:
         return toRet;
     }
 
-    void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest);
+    void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
-    void Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth,
-        bitCapInt highControlMask, bool isAnti, bool isParallel);
+    void Apply2x2OnLeaf(const complex* mtrx, QBdtNodePtr leaf, bitLenInt depth, bitCapInt highControlMask, bool isAnti,
+        bool isParallel);
 
     template <typename Fn> void ApplySingle(const complex* mtrx, bitLenInt target, Fn leafFunc);
     template <typename Lfn>
@@ -153,20 +153,19 @@ protected:
         const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target, bool isAnti);
 
 public:
-    QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
+    QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {},
         bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
 
-    QBinaryDecisionTree(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
+    QBdt(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
-        : QBinaryDecisionTree({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm,
-              randomGlobalPhase, useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, ignored,
-              qubitThreshold, separation_thresh)
+        : QBdt({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem,
+              deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold, separation_thresh)
     {
     }
 
@@ -215,9 +214,9 @@ public:
 
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
-        return SumSqrDiff(std::dynamic_pointer_cast<QBinaryDecisionTree>(toCompare));
+        return SumSqrDiff(std::dynamic_pointer_cast<QBdt>(toCompare));
     }
-    virtual real1_f SumSqrDiff(QBinaryDecisionTreePtr toCompare);
+    virtual real1_f SumSqrDiff(QBdtPtr toCompare);
 
     virtual void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG);
 
@@ -236,15 +235,15 @@ public:
     }
 
     using QInterface::Compose;
-    virtual bitLenInt Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QBdtPtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
-        return Compose(std::dynamic_pointer_cast<QBinaryDecisionTree>(toCopy), start);
+        return Compose(std::dynamic_pointer_cast<QBdt>(toCopy), start);
     }
 
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
-        DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBinaryDecisionTree>(dest));
+        DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));
     }
     virtual void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
 

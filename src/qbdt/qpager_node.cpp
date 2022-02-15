@@ -14,7 +14,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include "qbinary_decision_tree_node.hpp"
+#include "qbdt_qpager_node.hpp"
 
 #if ENABLE_PTHREAD
 #include <future>
@@ -25,7 +25,7 @@
 
 namespace Qrack {
 
-void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
+void QBdtNode::Prune(bitLenInt depth)
 {
     if (!depth) {
         return;
@@ -37,11 +37,11 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
         return;
     }
 
-    QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    QBdtNodePtr& b0 = branches[0];
     if (!b0) {
         return;
     }
-    QBinaryDecisionTreeNodePtr& b1 = branches[1];
+    QBdtNodePtr& b1 = branches[1];
 
     // Prune recursively to depth.
     depth--;
@@ -66,8 +66,8 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
 
     // Combine single elements at bottom of full depth, up to where branches are equal below:
     par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
-        QBinaryDecisionTreeNodePtr leaf0 = b0;
-        QBinaryDecisionTreeNodePtr leaf1 = b1;
+        QBdtNodePtr leaf0 = b0;
+        QBdtNodePtr leaf1 = b1;
 
         complex scale0 = b0->scale;
         complex scale1 = b1->scale;
@@ -105,8 +105,8 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
 
     // Combine all elements at top of depth, as my 2 direct descendent branches:
     par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
-        QBinaryDecisionTreeNodePtr leaf0 = b0;
-        QBinaryDecisionTreeNodePtr leaf1 = b1;
+        QBdtNodePtr leaf0 = b0;
+        QBdtNodePtr leaf1 = b1;
 
         complex scale0 = b0->scale;
         complex scale1 = b1->scale;
@@ -148,7 +148,7 @@ void QBinaryDecisionTreeNode::Prune(bitLenInt depth)
     }
 }
 
-void QBinaryDecisionTreeNode::Branch(bitLenInt depth, bool isZeroBranch)
+void QBdtNode::Branch(bitLenInt depth, bool isZeroBranch)
 {
     if (!depth) {
         return;
@@ -158,12 +158,12 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth, bool isZeroBranch)
         return;
     }
 
-    QBinaryDecisionTreeNodePtr& b0 = branches[0];
-    QBinaryDecisionTreeNodePtr& b1 = branches[1];
+    QBdtNodePtr& b0 = branches[0];
+    QBdtNodePtr& b1 = branches[1];
 
     if (!b0) {
-        b0 = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);
-        b1 = std::make_shared<QBinaryDecisionTreeNode>(SQRT1_2_R1);
+        b0 = std::make_shared<QBdtNode>(SQRT1_2_R1);
+        b1 = std::make_shared<QBdtNode>(SQRT1_2_R1);
     } else {
         // Split all clones.
         b0 = b0->ShallowClone();
@@ -174,7 +174,7 @@ void QBinaryDecisionTreeNode::Branch(bitLenInt depth, bool isZeroBranch)
     b1->Branch(depth - 1U, isZeroBranch);
 }
 
-void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
+void QBdtNode::Normalize(bitLenInt depth)
 {
     if (!depth) {
         return;
@@ -184,11 +184,11 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
         return;
     }
 
-    QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    QBdtNodePtr& b0 = branches[0];
     if (!b0) {
         return;
     }
-    QBinaryDecisionTreeNodePtr& b1 = branches[1];
+    QBdtNodePtr& b1 = branches[1];
 
     const real1 nrm = (real1)sqrt(norm(b0->scale) + norm(b1->scale));
     b0->Normalize(depth - 1U);
@@ -199,17 +199,17 @@ void QBinaryDecisionTreeNode::Normalize(bitLenInt depth)
     }
 }
 
-void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
+void QBdtNode::ConvertStateVector(bitLenInt depth)
 {
     if (!depth) {
         return;
     }
 
-    QBinaryDecisionTreeNodePtr& b0 = branches[0];
+    QBdtNodePtr& b0 = branches[0];
     if (!b0) {
         return;
     }
-    QBinaryDecisionTreeNodePtr& b1 = branches[1];
+    QBdtNodePtr& b1 = branches[1];
 
     // Depth-first
     depth--;
@@ -250,7 +250,7 @@ void QBinaryDecisionTreeNode::ConvertStateVector(bitLenInt depth)
 // The reason for this design choice is that the memory per node for "Stride" and "numCores" attributes are on order of
 // all other RAM per node in total. Remember that trees are recursively constructed with exponential scaling, and the
 // memory per node should be thought of as akin to the memory per Schrödinger amplitude.
-void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
+void QBdtNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
 {
     const bitCapIntOcl itemCount = end - begin;
 
@@ -308,7 +308,7 @@ void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCa
     }
 }
 #else
-void QBinaryDecisionTreeNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
+void QBdtNode::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
 {
     const bitCapIntOcl itemCount = end - begin;
     const bitCapIntOcl maxLcv = begin + itemCount;

@@ -16,60 +16,54 @@
 
 #pragma once
 
-#include "common/qrack_types.hpp"
+#include "qbdt_node_interface.hpp"
 
 namespace Qrack {
 
-struct QBinaryDecisionTreeNode;
-typedef std::shared_ptr<QBinaryDecisionTreeNode> QBinaryDecisionTreeNodePtr;
+class QBdtNode;
+typedef std::shared_ptr<QBdtNode> QBdtNodePtr;
 
-struct QBinaryDecisionTreeNode {
-    complex scale;
-    QBinaryDecisionTreeNodePtr branches[2];
+class QBdtNode : public QBdtNodeInterface {
+public:
+    QBdtNodePtr branches[2];
 
-    QBinaryDecisionTreeNode()
-        : scale(ONE_CMPLX)
+    QBdtNode()
+        : QBdtNodeInterface()
     {
         branches[0] = NULL;
         branches[1] = NULL;
     }
 
-    QBinaryDecisionTreeNode(complex scl)
-        : scale(scl)
+    QBdtNode(complex scl)
+        : QBdtNodeInterface(scl)
     {
         branches[0] = NULL;
         branches[1] = NULL;
     }
 
-    QBinaryDecisionTreeNodePtr ShallowClone()
+    virtual QBdtNodeInterfacePtr ShallowClone()
     {
-        QBinaryDecisionTreeNodePtr toRet = std::make_shared<QBinaryDecisionTreeNode>(scale);
+        QBdtNodePtr toRet = std::make_shared<QBdtNode>(scale);
         toRet->branches[0] = branches[0];
         toRet->branches[1] = branches[1];
 
         return toRet;
     }
 
-    void SetZero()
+    virtual void SetZero()
     {
-        scale = ZERO_CMPLX;
+        QBdtNodeInterface::SetZero();
         branches[0] = NULL;
         branches[1] = NULL;
     }
 
-    void Branch(bitLenInt depth = 1U, bool isZeroBranch = false);
+    virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false);
 
-    void Prune(bitLenInt depth = 1U);
+    virtual void Prune(bitLenInt depth = 1U);
 
-    void Normalize(bitLenInt depth);
+    virtual void Normalize(bitLenInt depth);
 
-    void ConvertStateVector(bitLenInt depth);
-
-    void CorrectPhase();
-
-    size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
-
-    void par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn);
+    virtual void ConvertStateVector(bitLenInt depth);
 };
 
 } // namespace Qrack
