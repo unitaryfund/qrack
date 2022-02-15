@@ -962,6 +962,9 @@ bool QStabilizer::ApproxCompare(QStabilizerPtr o)
     o->Finish();
     Finish();
 
+    o->gaussian();
+    gaussian();
+
     const bitLenInt rowCount = (qubitCount << 1U);
 
     for (bitLenInt i = 0; i < rowCount; i++) {
