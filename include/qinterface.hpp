@@ -2444,6 +2444,27 @@ public:
      */
     bitCapIntOcl GetMaxSize() { return pow2Ocl(sizeof(bitCapInt) * 8); };
 
+    /**
+     *  Get phase of lowest permutation nonzero amplitude.
+     */
+    virtual complex FirstNonzeroPhase()
+    {
+        complex amp;
+        real1 ampNorm;
+        bitCapInt perm = 0;
+        do {
+            amp = GetAmplitude(perm);
+            ampNorm = norm(amp);
+            perm++;
+        } while ((ampNorm < FP_NORM_EPSILON) && (perm < maxQPower));
+
+        if (perm >= maxQPower) {
+            return ZERO_CMPLX;
+        }
+
+        return amp / ampNorm;
+    }
+
     /** @} */
 };
 } // namespace Qrack
