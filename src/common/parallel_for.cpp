@@ -214,7 +214,7 @@ void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end,
 
     // Empirically, this often works better if we add the "<< ONE_BCI," or factor of 2. We might guess that, on average
     // in general use, about half the full-depth amplitudes are redundant.
-    if (itemCount < (pStride << ONE_BCI)) {
+    if (itemCount < pStride) {
         const bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; j++) {
             j |= fn(j, 0);
