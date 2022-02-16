@@ -98,7 +98,7 @@ void QBdtNode::Prune(bitLenInt depth)
         }
 
         // WARNING: Mutates loop control variable!
-        return (ONE_BCI << (bitCapIntOcl)(depth - j)) - ONE_BCI;
+        return (bitCapIntOcl)((ONE_BCI << (bitCapIntOcl)(depth - j)) - ONE_BCI);
     });
 
     bool isSameAtTop = true;
@@ -139,7 +139,7 @@ void QBdtNode::Prune(bitLenInt depth)
         }
 
         // WARNING: Mutates loop control variable!
-        return (ONE_BCI << (bitCapIntOcl)(depth - j)) - ONE_BCI;
+        return (bitCapIntOcl)((ONE_BCI << (bitCapIntOcl)(depth - j)) - ONE_BCI);
     });
 
     // The branches terminate equal, within depth.
