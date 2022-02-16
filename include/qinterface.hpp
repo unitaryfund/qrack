@@ -2466,5 +2466,24 @@ public:
     }
 
     /** @} */
+
+    /**
+     * \defgroup QbdtFunc Quantum binary decision tree method overloads
+     *
+     * @{
+     */
+
+    virtual QBdtNodeInterfacePtr ShallowClone()
+    {
+        QBdtNodeInterfacePtr toRet = std::make_shared<QBdtNodeInterface>(scale);
+        toRet->branches[0] = branches[0];
+        toRet->branches[1] = branches[1];
+
+        return toRet;
+    }
+
+    virtual void Normalize(bitLenInt ignored) { NormalizeState(); };
+
+    /** @} */
 };
 } // namespace Qrack

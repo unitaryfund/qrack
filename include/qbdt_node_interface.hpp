@@ -62,13 +62,25 @@ public:
         return toRet;
     }
 
-    virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false) {}
+    virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false)
+    {
+        throw std::out_of_range("Qbdt Branch() call past non-abstract floor, not implemented");
+    }
 
-    virtual void Prune(bitLenInt depth = 1U) {}
+    virtual void Prune(bitLenInt depth = 1U)
+    {
+        throw std::out_of_range("Qbdt Prune() call past non-abstract floor, not implemented");
+    }
 
-    virtual void Normalize(bitLenInt depth){};
+    virtual void Normalize(bitLenInt depth)
+    {
+        throw std::out_of_range("Qbdt Normalize() call past non-abstract floor, not implemented");
+    };
 
-    virtual void ConvertStateVector(bitLenInt depth){};
+    virtual void ConvertStateVector(bitLenInt depth)
+    {
+        throw std::out_of_range("Qbdt ConvertStateVector() call past non-abstract floor, not implemented");
+    };
 };
 
 } // namespace Qrack
