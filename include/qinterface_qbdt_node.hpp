@@ -16,39 +16,40 @@
 
 #pragma once
 
-#include "qbinary_decision_tree_node_interface.hpp"
+#include "qbdt_node_interface.hpp"
+#include "qinterface.hpp"
 
 namespace Qrack {
 
-class QPagerNode;
-typedef std::shared_ptr<QPagerNode> QPagerNodePtr;
+class QInterfaceQbdtNode;
+typedef std::shared_ptr<QInterfaceQbdtNode> QInterfaceQbdtNodePtr;
 
-class QPagerNode : QBdtNodeInterface {
+class QInterfaceQbdtNode : public QBdtNodeInterface {
 public:
     QInterfacePtr base;
 
-    QPagerNode()
+    QInterfaceQbdtNode()
         : QBdtNodeInterface()
         , base(NULL)
     {
         // Intentionally left blank
     }
 
-    QPagerNode(complex scl)
+    QInterfaceQbdtNode(complex scl)
         : QBdtNodeInterface(scl)
         , base(NULL)
     {
         // Intentionally left blank
     }
 
-    QPagerNode(complex scl, QInterfacePtr b)
+    QInterfaceQbdtNode(complex scl, QInterfacePtr b)
         : QBdtNodeInterface(scl)
         , base(b)
     {
         // Intentionally left blank
     }
 
-    QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QPagerNode>(scale, base); }
+    QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QInterfaceQbdtNode>(scale, base); }
 
     virtual void SetZero()
     {

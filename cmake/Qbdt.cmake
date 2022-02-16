@@ -5,5 +5,6 @@ if (ENABLE_QBDT)
         src/qbdt/node_interface.cpp
         src/qbdt/node.cpp
         src/qbdt/tree.cpp
+        src/qbdt/qinterface_node.cpp
         )
 endif (ENABLE_QBDT)
