@@ -31,16 +31,6 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , maxQPowerOcl(pow2Ocl(qBitCount))
     , shards(qBitCount)
 {
-#if ENABLE_ENV_VARS
-    const bitLenInt pStridePow =
-        (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
-#else
-    const bitLenInt pStridePow = PSTRIDEPOW;
-#endif
-    const unsigned numCores = GetConcurrencyLevel();
-    const bitLenInt minStridePow = (numCores > 1U) ? (bitLenInt)pow2Ocl(log2(numCores - 1U)) : 0U;
-    dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
-
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
 #endif
@@ -103,7 +93,7 @@ template <typename Fn> void QBdt::GetTraversal(Fn getLambda)
 {
     Finish();
 
-    par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+    for (bitCapIntOcl i = 0; i < maxQPowerOcl; i++) {
         QBdtNodeInterfacePtr leaf = root;
         complex scale = leaf->scale;
         for (bitLenInt j = 0; j < qubitCount; j++) {
@@ -114,20 +104,20 @@ template <typename Fn> void QBdt::GetTraversal(Fn getLambda)
             scale *= leaf->scale;
         }
         getLambda((bitCapIntOcl)i, scale);
-    });
+    }
 }
 template <typename Fn> void QBdt::SetTraversal(Fn setLambda)
 {
     root = std::make_shared<QBdtNode>();
 
-    par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+    for (bitCapIntOcl i = 0; i < maxQPowerOcl; i++) {
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0; j < qubitCount; j++) {
             leaf->Branch();
             leaf = leaf->branches[SelectBit(i, j)];
         }
         setLambda((bitCapIntOcl)i, leaf);
-    });
+    }
 
     root->ConvertStateVector(qubitCount);
     root->Prune(qubitCount);
@@ -173,34 +163,34 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
     FlushBuffers();
     toCompare->FlushBuffers();
 
-    const unsigned numCores = GetConcurrencyLevel();
-    std::unique_ptr<complex[]> partInner(new complex[numCores]());
-
-    par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+    complex projection = ZERO_CMPLX;
+    for (bitCapIntOcl i = 0; i < maxQPowerOcl; i++) {
         QBdtNodeInterfacePtr leaf1 = root;
         QBdtNodeInterfacePtr leaf2 = toCompare->root;
         complex scale1 = leaf1->scale;
         complex scale2 = leaf2->scale;
-        for (bitLenInt j = 0; j < qubitCount; j++) {
+        bitLenInt j;
+        for (j = 0; j < qubitCount; j++) {
             if (IS_NORM_0(scale1)) {
-                return;
+                break;
             }
             leaf1 = leaf1->branches[SelectBit(i, j)];
             scale1 *= leaf1->scale;
         }
-        for (bitLenInt j = 0; j < qubitCount; j++) {
+        if (j < qubitCount) {
+            continue;
+        }
+        for (j = 0; j < qubitCount; j++) {
             if (IS_NORM_0(scale2)) {
-                return;
+                break;
             }
             leaf2 = leaf2->branches[SelectBit(i, j)];
             scale2 *= leaf2->scale;
         }
-        partInner[cpu] += conj(scale2) * scale1;
-    });
-
-    complex projection = ZERO_CMPLX;
-    for (unsigned i = 0; i < numCores; i++) {
-        projection += partInner[i];
+        if (j < qubitCount) {
+            continue;
+        }
+        projection += conj(scale2) * scale1;
     }
 
     return ONE_R1 - clampProb(norm(projection));
@@ -348,30 +338,23 @@ real1_f QBdt::Prob(bitLenInt qubit)
 
     bitCapIntOcl qPower = pow2Ocl(qubit);
 
-    const unsigned numCores = GetConcurrencyLevel();
-    std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
-
-    par_for(0, qPower, [&](const bitCapIntOcl& i, const int& cpu) {
+    real1 oneChance = ZERO_R1;
+    for (bitCapIntOcl i = 0; i < qPower; i++) {
         QBdtNodeInterfacePtr leaf = root;
         complex scale = root->scale;
         for (bitLenInt j = 0; j < qubit; j++) {
             if (IS_NORM_0(scale)) {
-                return;
+                break;
             }
             leaf = leaf->branches[SelectBit(i, j)];
             scale *= leaf->scale;
         }
 
         if (IS_NORM_0(scale)) {
-            return;
+            continue;
         }
 
-        oneChanceBuff[cpu] += norm(scale * leaf->branches[1]->scale);
-    });
-
-    real1 oneChance = ZERO_R1;
-    for (unsigned i = 0; i < numCores; i++) {
-        oneChance += oneChanceBuff[i];
+        oneChance += norm(scale * leaf->branches[1]->scale);
     }
 
     return clampProb(oneChance);
@@ -420,18 +403,19 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
     root->scale = GetNonunitaryPhase();
 
-    par_for(0, pow2Ocl(qubit), [&](const bitCapIntOcl& i, const int& cpu) {
+    const bitCapIntOcl maxLcv = pow2Ocl(qubit);
+    for (bitCapIntOcl i = 0; i < maxLcv; i++) {
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0; j < qubit; j++) {
             if (IS_NORM_0(leaf->scale)) {
-                return;
+                break;
             }
             leaf->Branch();
             leaf = leaf->branches[SelectBit(i, j)];
         }
 
         if (IS_NORM_0(leaf->scale)) {
-            return;
+            continue;
         }
         leaf->Branch();
 
@@ -442,7 +426,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
             leaf->branches[0]->scale /= abs(leaf->branches[0]->scale);
             leaf->branches[1]->SetZero();
         }
-    });
+    }
 
     root->Prune(qubit + 1U);
 
@@ -547,12 +531,8 @@ void QBdt::Apply2x2OnLeaf(const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLen
     };
 
     const bitCapIntOcl remainderPow = pow2Ocl(remainder);
-    if (isParallel) {
-        par_for_qbdt(0, remainderPow, fn);
-    } else {
-        for (bitCapIntOcl i = 0; i < remainderPow; i++) {
-            i |= fn(i, 0);
-        }
+    for (bitCapIntOcl i = 0; i < remainderPow; i++) {
+        i |= fn(i, 0);
     }
 
     b0->ConvertStateVector(remainder);

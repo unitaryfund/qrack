@@ -16,13 +16,9 @@
 
 #pragma once
 
+#include "mpsshard.hpp"
 #include "qbdt_node.hpp"
 #include "qinterface.hpp"
-
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-#include "common/dispatchqueue.hpp"
-#endif
-#include "mpsshard.hpp"
 
 namespace Qrack {
 
@@ -35,10 +31,6 @@ protected:
     int devID;
     QBdtNodeInterfacePtr root;
     QInterfacePtr stateVecUnit;
-#if ENABLE_QUNIT_CPU_PARALLEL
-    DispatchQueue dispatchQueue;
-#endif
-    bitLenInt dispatchThreshold;
     bitCapIntOcl maxQPowerOcl;
     std::vector<MpsShardPtr> shards;
 
@@ -49,19 +41,7 @@ protected:
     }
 
     typedef std::function<void(void)> DispatchFn;
-    virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn)
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        if ((workItemCount >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) && (workItemCount < GetStride())) {
-            dispatchQueue.dispatch(fn);
-        } else {
-            Finish();
-            fn();
-        }
-#else
-        fn();
-#endif
-    }
+    virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn) { fn(); }
 
     QInterfacePtr MakeStateVector();
 
@@ -173,29 +153,14 @@ public:
 
     virtual void Finish()
     {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.finish();
-#endif
         if (stateVecUnit) {
             stateVecUnit->Finish();
         }
     };
 
-    virtual bool isFinished()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        return dispatchQueue.isFinished() && (!stateVecUnit || stateVecUnit->isFinished());
-#else
-        return !stateVecUnit || stateVecUnit->isFinished();
-#endif
-    }
+    virtual bool isFinished() { return !stateVecUnit || stateVecUnit->isFinished(); }
 
-    virtual void Dump()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.dump();
-#endif
-    }
+    virtual void Dump() {}
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
@@ -282,6 +247,10 @@ public:
         return unit->ProbParity(mask);
     }
 
+    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
+    {
+        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->Swap(qubit1, qubit2); });
+    }
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubitIndex1, qubitIndex2); });
