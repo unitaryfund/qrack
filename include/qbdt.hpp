@@ -38,7 +38,6 @@ protected:
 #if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
 #endif
-    bitLenInt bdtThreshold;
     bitLenInt dispatchThreshold;
     bitLenInt pagingThresholdQubits;
     bitCapIntOcl maxQPowerOcl;
@@ -104,12 +103,14 @@ protected:
     {
         SetStateVector();
         operation(stateVecUnit);
+        ResetStateVector();
     }
 
     template <typename Fn> bitCapInt BitCapIntAsStateVector(Fn operation)
     {
         SetStateVector();
         bitCapInt toRet = operation(stateVecUnit);
+        ResetStateVector();
 
         return toRet;
     }
@@ -249,14 +250,6 @@ public:
 
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
-        if (stateVecUnit && ((qubitCount - length) <= bdtThreshold)) {
-            stateVecUnit->Dispose(start, length, disposedPerm);
-            shards.erase(shards.begin() + start, shards.begin() + start + length);
-            SetQubitCount(qubitCount - length);
-
-            return;
-        }
-
         DecomposeDispose(start, length, NULL);
     }
 

@@ -28,16 +28,9 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , devID(deviceId)
     , root(NULL)
     , stateVecUnit(NULL)
-    , bdtThreshold(0)
     , maxQPowerOcl(pow2Ocl(qBitCount))
     , shards(qBitCount)
 {
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_BDT_THRESHOLD")) {
-        bdtThreshold = (bitLenInt)std::stoi(std::string(getenv("QRACK_BDT_THRESHOLD")));
-    }
-#endif
-
 #if ENABLE_OPENCL
     if ((engines.size() == 1U) && (engines[0] == QINTERFACE_OPTIMAL_BASE)) {
         bitLenInt segmentGlobalQb = 0U;
@@ -53,50 +46,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
             engines.push_back(QINTERFACE_QPAGER);
         }
     }
-
-    if (!bdtThreshold) {
-        for (unsigned i = 0U; i < engines.size(); i++) {
-            if (engines[i] == QINTERFACE_QPAGER) {
-                bdtThreshold =
-                    log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
-                break;
-            }
-        }
-    }
-    if (!bdtThreshold) {
-        for (unsigned i = 0U; i < engines.size(); i++) {
-            if ((engines[i] == QINTERFACE_OPENCL) || (engines[i] == QINTERFACE_HYBRID)) {
-                if (OCLEngine::Instance().GetDeviceCount()) {
-                    bdtThreshold =
-                        log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-                } else {
-                    engines[i] = QINTERFACE_CPU;
-                }
-                break;
-            }
-            if (engines[i] == QINTERFACE_CPU) {
-                bdtThreshold = PSTRIDEPOW;
-                break;
-            }
-        }
-    }
-    if (!bdtThreshold) {
-        if (OCLEngine::Instance().GetDeviceCount()) {
-            if (engines.back() == QINTERFACE_STABILIZER_HYBRID) {
-                bdtThreshold =
-                    log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetGlobalSize() / sizeof(complex));
-            } else {
-                bdtThreshold = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
-            }
-        } else {
-            bdtThreshold = PSTRIDEPOW;
-        }
-    }
 #endif
-
-    if (!bdtThreshold) {
-        bdtThreshold = PSTRIDEPOW;
-    }
 
 #if ENABLE_ENV_VARS
     const bitLenInt pStridePow =
@@ -122,22 +72,16 @@ QInterfacePtr QBdt::MakeStateVector()
 bool QBdt::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
     SetStateVector();
-    return stateVecUnit->ForceMParity(mask, result, doForce);
+    bool toRet = stateVecUnit->ForceMParity(mask, result, doForce);
+    ResetStateVector();
+
+    return toRet;
 }
 
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 {
     DumpBuffers();
     Dump();
-
-    if (qubitCount <= bdtThreshold) {
-        root = NULL;
-        if (!stateVecUnit) {
-            stateVecUnit = MakeStateVector();
-        }
-        stateVecUnit->SetPermutation(initState, phaseFac);
-        return;
-    }
 
     if (phaseFac == CMPLX_DEFAULT_ARG) {
         if (randGlobalPhase) {
@@ -207,10 +151,6 @@ template <typename Fn> void QBdt::SetTraversal(Fn setLambda)
 void QBdt::GetQuantumState(complex* state)
 {
     FlushBuffers();
-    if (stateVecUnit) {
-        stateVecUnit->GetQuantumState(state);
-        return;
-    }
     GetTraversal([state](bitCapIntOcl i, complex scale) { state[i] = scale; });
 }
 void QBdt::GetQuantumState(QInterfacePtr eng)
@@ -221,10 +161,6 @@ void QBdt::SetQuantumState(const complex* state)
 {
     DumpBuffers();
     Dump();
-    if (stateVecUnit) {
-        stateVecUnit->SetQuantumState(state);
-        return;
-    }
     SetTraversal([state](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) { leaf->scale = state[i]; });
 }
 void QBdt::SetQuantumState(QInterfacePtr eng)
@@ -235,10 +171,6 @@ void QBdt::SetQuantumState(QInterfacePtr eng)
 void QBdt::GetProbs(real1* outputProbs)
 {
     FlushBuffers();
-    if (stateVecUnit) {
-        stateVecUnit->GetProbs(outputProbs);
-        return;
-    }
     GetTraversal([outputProbs](bitCapIntOcl i, complex scale) { outputProbs[i] = norm(scale); });
 }
 
@@ -254,16 +186,8 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
         return ONE_R1;
     }
 
-    if (qubitCount <= bdtThreshold) {
-        SetStateVector();
-        toCompare->SetStateVector();
-        return stateVecUnit->SumSqrDiff(toCompare->stateVecUnit);
-    }
-
     FlushBuffers();
-    ResetStateVector();
     toCompare->FlushBuffers();
-    toCompare->ResetStateVector();
 
     const unsigned numCores = GetConcurrencyLevel();
     std::unique_ptr<complex[]> partInner(new complex[numCores]());
@@ -300,10 +224,6 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
 
 complex QBdt::GetAmplitude(bitCapInt perm)
 {
-    if (stateVecUnit) {
-        return stateVecUnit->GetAmplitude(perm);
-    }
-
     FlushBuffers();
 
     QBdtNodeInterfacePtr leaf = root;
@@ -321,20 +241,9 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
-    if ((qubitCount + toCopy->qubitCount) <= bdtThreshold) {
-        SetStateVector();
-        toCopy->SetStateVector();
-        shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
-        SetQubitCount(qubitCount + toCopy->qubitCount);
-        return stateVecUnit->Compose(toCopy->stateVecUnit, start);
-    }
-
     if (start && (start != qubitCount)) {
         return QInterface::Compose(toCopy, start);
     }
-
-    ResetStateVector();
-    toCopy->ResetStateVector();
 
     bitLenInt qbCount;
     bitCapIntOcl maxI;
@@ -375,20 +284,6 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 }
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
-    if (stateVecUnit && ((qubitCount - length) <= bdtThreshold)) {
-        if (dest) {
-            dest->SetStateVector();
-            stateVecUnit->Decompose(start, dest->stateVecUnit);
-            std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
-        } else {
-            stateVecUnit->Dispose(start, length);
-        }
-        shards.erase(shards.begin() + start, shards.begin() + start + length);
-        SetQubitCount(qubitCount - length);
-
-        return;
-    }
-
     const bitLenInt end = start + length;
 
     if (start && (end < qubitCount)) {
@@ -407,9 +302,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         return;
     }
 
-    ResetStateVector();
     if (dest) {
-        dest->ResetStateVector();
         dest->DumpBuffers();
         dest->Dump();
     }
@@ -467,13 +360,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 
 real1_f QBdt::Prob(bitLenInt qubit)
 {
-    if (qubitCount <= bdtThreshold) {
-        SetStateVector();
-        return stateVecUnit->Prob(qubit);
-    }
-
     FlushBuffer(qubit);
-    ResetStateVector();
 
     bitCapIntOcl qPower = pow2Ocl(qubit);
 
@@ -508,10 +395,6 @@ real1_f QBdt::Prob(bitLenInt qubit)
 
 real1_f QBdt::ProbAll(bitCapInt fullRegister)
 {
-    if (stateVecUnit) {
-        return stateVecUnit->ProbAll(fullRegister);
-    }
-
     FlushBuffers();
 
     QBdtNodeInterfacePtr leaf = root;
@@ -529,11 +412,6 @@ real1_f QBdt::ProbAll(bitCapInt fullRegister)
 
 bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
-    if (qubitCount <= bdtThreshold) {
-        SetStateVector();
-        return stateVecUnit->ForceM(qubit, result, doForce, doApply);
-    }
-
     if (doForce) {
         if (doApply) {
             ExecuteAsStateVector([&](QInterfacePtr eng) { eng->ForceM(qubit, result, true, doApply); });
@@ -555,7 +433,6 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     }
 
     FlushBuffer(qubit);
-    ResetStateVector();
 
     root->scale = GetNonunitaryPhase();
 
@@ -590,13 +467,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
 bitCapInt QBdt::MAll()
 {
-    if (qubitCount <= bdtThreshold) {
-        SetStateVector();
-        return stateVecUnit->MAll();
-    }
-
     FlushBuffers();
-    ResetStateVector();
 
     bitCapInt result = 0;
     QBdtNodeInterfacePtr leaf = root;
@@ -711,8 +582,6 @@ template <typename Fn> void QBdt::ApplySingle(const complex* lMtrx, bitLenInt ta
     std::shared_ptr<complex> mtrx(new complex[4], std::default_delete<complex[]>());
     std::copy(lMtrx, lMtrx + 4U, mtrx.get());
 
-    ResetStateVector();
-
     Dispatch(targetPow, [this, mtrx, target, targetPow, leafFunc]() {
         const bool isParallel = (pow2Ocl(target) < GetStride());
 
@@ -759,11 +628,6 @@ void QBdt::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (stateVecUnit && (qubitCount <= bdtThreshold)) {
-        stateVecUnit->Mtrx(mtrx, target);
-        return;
-    }
-
     shards[target] = std::make_shared<MpsShard>(mtrx);
 }
 
@@ -779,11 +643,6 @@ void QBdt::Phase(const complex topLeft, const complex bottomRight, bitLenInt tar
         return;
     }
 
-    if (stateVecUnit && (qubitCount <= bdtThreshold)) {
-        stateVecUnit->Phase(topLeft, bottomRight, target);
-        return;
-    }
-
     shards[target] = std::make_shared<MpsShard>(mtrx);
 }
 
@@ -792,11 +651,6 @@ void QBdt::Invert(const complex topRight, const complex bottomLeft, bitLenInt ta
     const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
     if (shards[target]) {
         Mtrx(mtrx, target);
-        return;
-    }
-
-    if (stateVecUnit && (qubitCount <= bdtThreshold)) {
-        stateVecUnit->Invert(topRight, bottomLeft, target);
         return;
     }
 
@@ -936,16 +790,6 @@ bool QBdt::CheckControlled(
     }
     Finish();
 
-    if (qubitCount <= bdtThreshold) {
-        SetStateVector();
-        if (isAnti) {
-            stateVecUnit->MACMtrx(controls, controlLen, mtrx, target);
-        } else {
-            stateVecUnit->MCMtrx(controls, controlLen, mtrx, target);
-        }
-        return true;
-    }
-
     return false;
 }
 
@@ -956,15 +800,6 @@ void QBdt::FlushBuffer(bitLenInt i)
         return;
     }
     shards[i] = NULL;
-
-    if (qubitCount > bdtThreshold) {
-        ResetStateVector();
-    }
-
-    if (stateVecUnit) {
-        stateVecUnit->Mtrx(shard->gate, i);
-        return;
-    }
 
     if (IS_NORM_0(shard->gate[1]) && IS_NORM_0(shard->gate[2])) {
         ApplySingle(
