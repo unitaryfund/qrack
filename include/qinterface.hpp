@@ -2473,14 +2473,7 @@ public:
      * @{
      */
 
-    virtual QBdtNodeInterfacePtr ShallowClone()
-    {
-        QBdtNodeInterfacePtr toRet = std::make_shared<QBdtNodeInterface>(scale);
-        toRet->branches[0] = branches[0];
-        toRet->branches[1] = branches[1];
-
-        return toRet;
-    }
+    virtual QBdtNodeInterfacePtr ShallowClone() { return Clone(); }
 
     virtual void Normalize(bitLenInt ignored) { NormalizeState(); };
 
