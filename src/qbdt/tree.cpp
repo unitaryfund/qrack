@@ -31,23 +31,6 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , maxQPowerOcl(pow2Ocl(qBitCount))
     , shards(qBitCount)
 {
-#if ENABLE_OPENCL
-    if ((engines.size() == 1U) && (engines[0] == QINTERFACE_OPTIMAL_BASE)) {
-        bitLenInt segmentGlobalQb = 0U;
-#if ENABLE_ENV_VARS
-        if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
-            segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
-        }
-#endif
-
-        DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-        bitLenInt maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
-        if (qubitCount > maxPageQubits) {
-            engines.push_back(QINTERFACE_QPAGER);
-        }
-    }
-#endif
-
 #if ENABLE_ENV_VARS
     const bitLenInt pStridePow =
         (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
