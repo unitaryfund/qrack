@@ -247,10 +247,6 @@ public:
         return unit->ProbParity(mask);
     }
 
-    virtual void Swap(bitLenInt qubit1, bitLenInt qubit2)
-    {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->Swap(qubit1, qubit2); });
-    }
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubitIndex1, qubitIndex2); });
