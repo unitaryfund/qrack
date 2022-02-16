@@ -627,7 +627,12 @@ void QBdt::Phase(const complex topLeft, const complex bottomRight, bitLenInt tar
         return;
     }
 
-    shards[target] = std::make_shared<MpsShard>(mtrx);
+    ApplySingle(mtrx, target, [](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool ignored2) {
+        leaf->Branch();
+        leaf->branches[0]->scale *= mtrx[0];
+        leaf->branches[1]->scale *= mtrx[3];
+        leaf->Prune();
+    });
 }
 
 void QBdt::Invert(const complex topRight, const complex bottomLeft, bitLenInt target)
@@ -638,7 +643,13 @@ void QBdt::Invert(const complex topRight, const complex bottomLeft, bitLenInt ta
         return;
     }
 
-    shards[target] = std::make_shared<MpsShard>(mtrx);
+    ApplySingle(mtrx, target, [](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool ignored2) {
+        leaf->Branch();
+        leaf->branches[0].swap(leaf->branches[1]);
+        leaf->branches[0]->scale *= mtrx[1];
+        leaf->branches[1]->scale *= mtrx[2];
+        leaf->Prune();
+    });
 }
 
 template <typename Lfn>
