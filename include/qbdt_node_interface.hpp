@@ -53,14 +53,9 @@ public:
         branches[1] = NULL;
     }
 
-    virtual QBdtNodeInterfacePtr ShallowClone()
-    {
-        QBdtNodeInterfacePtr toRet = std::make_shared<QBdtNodeInterface>(scale);
-        toRet->branches[0] = branches[0];
-        toRet->branches[1] = branches[1];
+    virtual QBdtNodeInterfacePtr ShallowClone() = 0;
 
-        return toRet;
-    }
+    virtual bool Equals(QBdtNodeInterfacePtr r) = 0;
 
     virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false)
     {

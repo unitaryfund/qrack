@@ -2479,6 +2479,11 @@ public:
     virtual QBdtNodeInterfacePtr ShallowClone() { return Clone(); }
 
     /**
+     *  This is a QBdt node, so return ApproxCompare(r)
+     */
+    virtual bool Equals(QBdtNodeInterfacePtr r) { return ApproxCompare(std::dynamic_pointer_cast<QInterface>(r)); }
+
+    /**
      *  Call default NormalizeState() for QBdt
      */
     virtual void Normalize(bitLenInt ignored) { NormalizeState(); };

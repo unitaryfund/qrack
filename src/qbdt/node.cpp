@@ -78,7 +78,7 @@ void QBdtNode::Prune(bitLenInt depth)
         for (j = 0; j < depth; j++) {
             bit = SelectBit(i, depth - (j + 1U));
 
-            if (!leaf0 || !leaf1 || (leaf0->branches[bit] == leaf1->branches[bit])) {
+            if (!leaf0 || !leaf1 || (leaf0->branches[bit]->Equals(leaf1->branches[bit]))) {
                 break;
             }
 
@@ -89,7 +89,7 @@ void QBdtNode::Prune(bitLenInt depth)
             leaf1 = leaf1->branches[bit];
         }
 
-        if (!leaf0 || !leaf1 || (leaf0->branches[bit] != leaf1->branches[bit])) {
+        if (!leaf0 || !leaf1 || (!(leaf0->branches[bit]->Equals(leaf1->branches[bit])))) {
             return (bitCapIntOcl)0U;
         }
 
@@ -162,12 +162,12 @@ void QBdtNode::Branch(bitLenInt depth, bool isZeroBranch)
     QBdtNodeInterfacePtr& b1 = branches[1];
 
     if (!b0) {
-        b0 = std::make_shared<QBdtNodeInterface>(SQRT1_2_R1);
-        b1 = std::make_shared<QBdtNodeInterface>(SQRT1_2_R1);
+        b0 = std::make_shared<QBdtNode>(SQRT1_2_R1);
+        b1 = std::make_shared<QBdtNode>(SQRT1_2_R1);
     } else {
         // Split all clones.
-        b0 = std::dynamic_pointer_cast<QBdtNodeInterface>(b0->ShallowClone());
-        b1 = std::dynamic_pointer_cast<QBdtNodeInterface>(b1->ShallowClone());
+        b0 = b0->ShallowClone();
+        b1 = b1->ShallowClone();
     }
 
     b0->Branch(depth - 1U, isZeroBranch);
