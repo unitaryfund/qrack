@@ -14,6 +14,7 @@
 #include "common/parallel_for.hpp"
 #include "common/rdrandwrapper.hpp"
 #include "hamiltonian.hpp"
+#include "qbdt_node_interface.hpp"
 
 #include <ctime>
 #include <map>
@@ -180,7 +181,7 @@ enum QInterfaceEngine {
  *
  * See README.md for an overview of the algorithms Qrack employs.
  */
-class QInterface : public ParallelFor {
+class QInterface : public ParallelFor, public QBdtNodeInterface {
 protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;

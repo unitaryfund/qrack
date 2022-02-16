@@ -37,11 +37,11 @@ void QBdtNode::Prune(bitLenInt depth)
         return;
     }
 
-    QBdtNodePtr& b0 = branches[0];
+    QBdtNodeInterfacePtr& b0 = branches[0];
     if (!b0) {
         return;
     }
-    QBdtNodePtr& b1 = branches[1];
+    QBdtNodeInterfacePtr& b1 = branches[1];
 
     // Prune recursively to depth.
     depth--;
@@ -65,9 +65,9 @@ void QBdtNode::Prune(bitLenInt depth)
     const bitCapIntOcl depthPow = (bitCapIntOcl)ONE_BCI << depth;
 
     // Combine single elements at bottom of full depth, up to where branches are equal below:
-    par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
-        QBdtNodePtr leaf0 = b0;
-        QBdtNodePtr leaf1 = b1;
+    _par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        QBdtNodeInterfacePtr leaf0 = b0;
+        QBdtNodeInterfacePtr leaf1 = b1;
 
         complex scale0 = b0->scale;
         complex scale1 = b1->scale;
@@ -104,9 +104,9 @@ void QBdtNode::Prune(bitLenInt depth)
     bool isSameAtTop = true;
 
     // Combine all elements at top of depth, as my 2 direct descendent branches:
-    par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
-        QBdtNodePtr leaf0 = b0;
-        QBdtNodePtr leaf1 = b1;
+    _par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+        QBdtNodeInterfacePtr leaf0 = b0;
+        QBdtNodeInterfacePtr leaf1 = b1;
 
         complex scale0 = b0->scale;
         complex scale1 = b1->scale;
@@ -158,16 +158,16 @@ void QBdtNode::Branch(bitLenInt depth, bool isZeroBranch)
         return;
     }
 
-    QBdtNodePtr& b0 = branches[0];
-    QBdtNodePtr& b1 = branches[1];
+    QBdtNodeInterfacePtr& b0 = branches[0];
+    QBdtNodeInterfacePtr& b1 = branches[1];
 
     if (!b0) {
-        b0 = std::make_shared<QBdtNode>(SQRT1_2_R1);
-        b1 = std::make_shared<QBdtNode>(SQRT1_2_R1);
+        b0 = std::make_shared<QBdtNodeInterface>(SQRT1_2_R1);
+        b1 = std::make_shared<QBdtNodeInterface>(SQRT1_2_R1);
     } else {
         // Split all clones.
-        b0 = std::dynamic_pointer_cast<QBdtNode>(b0->ShallowClone());
-        b1 = std::dynamic_pointer_cast<QBdtNode>(b1->ShallowClone());
+        b0 = std::dynamic_pointer_cast<QBdtNodeInterface>(b0->ShallowClone());
+        b1 = std::dynamic_pointer_cast<QBdtNodeInterface>(b1->ShallowClone());
     }
 
     b0->Branch(depth - 1U, isZeroBranch);
@@ -184,11 +184,11 @@ void QBdtNode::Normalize(bitLenInt depth)
         return;
     }
 
-    QBdtNodePtr& b0 = branches[0];
+    QBdtNodeInterfacePtr& b0 = branches[0];
     if (!b0) {
         return;
     }
-    QBdtNodePtr& b1 = branches[1];
+    QBdtNodeInterfacePtr& b1 = branches[1];
 
     const real1 nrm = (real1)sqrt(norm(b0->scale) + norm(b1->scale));
     b0->Normalize(depth - 1U);
@@ -205,11 +205,11 @@ void QBdtNode::ConvertStateVector(bitLenInt depth)
         return;
     }
 
-    QBdtNodePtr& b0 = branches[0];
+    QBdtNodeInterfacePtr& b0 = branches[0];
     if (!b0) {
         return;
     }
-    QBdtNodePtr& b1 = branches[1];
+    QBdtNodeInterfacePtr& b1 = branches[1];
 
     // Depth-first
     depth--;

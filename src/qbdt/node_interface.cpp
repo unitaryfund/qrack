@@ -30,7 +30,7 @@ namespace Qrack {
 // The reason for this design choice is that the memory per node for "Stride" and "numCores" attributes are on order of
 // all other RAM per node in total. Remember that trees are recursively constructed with exponential scaling, and the
 // memory per node should be thought of as akin to the memory per Schrödinger amplitude.
-void QBdtNodeInterface::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
+void QBdtNodeInterface::_par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
 {
     const bitCapIntOcl itemCount = end - begin;
 

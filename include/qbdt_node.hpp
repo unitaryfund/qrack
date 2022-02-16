@@ -25,36 +25,16 @@ typedef std::shared_ptr<QBdtNode> QBdtNodePtr;
 
 class QBdtNode : public QBdtNodeInterface {
 public:
-    QBdtNodePtr branches[2];
-
     QBdtNode()
         : QBdtNodeInterface()
     {
-        branches[0] = NULL;
-        branches[1] = NULL;
+        // Intentionally left blank
     }
 
     QBdtNode(complex scl)
         : QBdtNodeInterface(scl)
     {
-        branches[0] = NULL;
-        branches[1] = NULL;
-    }
-
-    virtual QBdtNodeInterfacePtr ShallowClone()
-    {
-        QBdtNodePtr toRet = std::make_shared<QBdtNode>(scale);
-        toRet->branches[0] = branches[0];
-        toRet->branches[1] = branches[1];
-
-        return toRet;
-    }
-
-    virtual void SetZero()
-    {
-        QBdtNodeInterface::SetZero();
-        branches[0] = NULL;
-        branches[1] = NULL;
+        // Intentionally left blank
     }
 
     virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false);

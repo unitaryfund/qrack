@@ -26,34 +26,49 @@ typedef std::shared_ptr<QBdtNodeInterface> QBdtNodeInterfacePtr;
 class QBdtNodeInterface {
 protected:
     size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
-    void par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn);
+    void _par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn);
 
 public:
     complex scale;
+    QBdtNodeInterfacePtr branches[2];
 
     QBdtNodeInterface()
         : scale(ONE_CMPLX)
     {
-        // Intentionally left blank
+        branches[0] = NULL;
+        branches[1] = NULL;
     }
 
     QBdtNodeInterface(complex scl)
         : scale(scl)
     {
-        // Intentionally left blank
+        branches[0] = NULL;
+        branches[1] = NULL;
     }
 
-    virtual QBdtNodeInterfacePtr ShallowClone() = 0;
+    virtual void SetZero()
+    {
+        scale = ZERO_CMPLX;
+        branches[0] = NULL;
+        branches[1] = NULL;
+    }
 
-    virtual void SetZero() { scale = ZERO_CMPLX; }
+    virtual QBdtNodeInterfacePtr ShallowClone()
+    {
+        QBdtNodeInterfacePtr toRet = std::make_shared<QBdtNodeInterface>(scale);
+        toRet->branches[0] = branches[0];
+        toRet->branches[1] = branches[1];
 
-    virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false) = 0;
+        return toRet;
+    }
 
-    virtual void Prune(bitLenInt depth = 1U) = 0;
+    virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false) {}
 
-    virtual void Normalize(bitLenInt depth) = 0;
+    virtual void Prune(bitLenInt depth = 1U) {}
 
-    virtual void ConvertStateVector(bitLenInt depth) = 0;
+    virtual void Normalize(bitLenInt depth){};
+
+    virtual void ConvertStateVector(bitLenInt depth){};
 };
 
 } // namespace Qrack
