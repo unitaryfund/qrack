@@ -2474,17 +2474,17 @@ public:
      */
 
     /**
-     *  This is a QBdt node, so return Clone()
+     *  This is a QBdt node, so return Clone().
      */
     virtual QBdtNodeInterfacePtr ShallowClone() { return Clone(); }
 
     /**
-     *  This is a QBdt node, so return ApproxCompare(r)
+     *  This is a QBdt node, so return ApproxCompare(r).
      */
     virtual bool Equals(QBdtNodeInterfacePtr r) { return ApproxCompare(std::dynamic_pointer_cast<QInterface>(r)); }
 
     /**
-     *  Call default NormalizeState() for QBdt
+     *  This is a QBdt node, so (ignore depth and) call default NormalizeState().
      */
     virtual void Normalize(bitLenInt ignored) { NormalizeState(); };
 
