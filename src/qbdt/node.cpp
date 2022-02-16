@@ -62,15 +62,15 @@ void QBdtNode::Prune(bitLenInt depth)
 
     // Now, we try to combine pointers to equivalent branches.
 
-    const bitCapIntOcl depthPow = (bitCapIntOcl)ONE_BCI << depth;
+    const bitCapIntOcl depthPow = ONE_BCI << (bitCapIntOcl)depth;
 
     // Combine single elements at bottom of full depth, up to where branches are equal below:
     _par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf0 = b0;
         QBdtNodeInterfacePtr leaf1 = b1;
 
-        complex scale0 = b0->scale;
-        complex scale1 = b1->scale;
+        complex scale0 = ONE_CMPLX;
+        complex scale1 = ONE_CMPLX;
 
         size_t bit = 0U;
         bitLenInt j;
@@ -98,7 +98,7 @@ void QBdtNode::Prune(bitLenInt depth)
         }
 
         // WARNING: Mutates loop control variable!
-        return (bitCapIntOcl)(((bitCapIntOcl)ONE_BCI << (depth - j)) - ONE_BCI);
+        return (bitCapIntOcl)((ONE_BCI << (bitCapIntOcl)(depth - j)) - ONE_BCI);
     });
 
     bool isSameAtTop = true;
@@ -139,7 +139,7 @@ void QBdtNode::Prune(bitLenInt depth)
         }
 
         // WARNING: Mutates loop control variable!
-        return (bitCapIntOcl)(((bitCapIntOcl)ONE_BCI << (depth - j)) - ONE_BCI);
+        return (bitCapIntOcl)((ONE_BCI << (bitCapIntOcl)(depth - j)) - ONE_BCI);
     });
 
     // The branches terminate equal, within depth.
