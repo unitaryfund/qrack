@@ -37,16 +37,15 @@ public:
         // Intentionally left blank
     }
 
-    virtual QBdtNodeInterfacePtr ShallowClone()
+    QBdtNode(complex scl, QBdtNodeInterfacePtr* b)
+        : QBdtNodeInterface(scl, b)
     {
-        QBdtNodeInterfacePtr toRet = std::make_shared<QBdtNode>(scale);
-        toRet->branches[0] = branches[0];
-        toRet->branches[1] = branches[1];
-
-        return toRet;
+        // Intentionally left blank
     }
 
-    virtual bool Equals(QBdtNodeInterfacePtr r) { return this == r.get(); }
+    virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtNode>(scale, branches); }
+
+    virtual bool isEqual(QBdtNodeInterfacePtr r) { return this == r.get(); }
 
     virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false);
 

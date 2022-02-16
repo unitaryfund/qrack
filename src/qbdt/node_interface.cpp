@@ -25,6 +25,21 @@
 
 namespace Qrack {
 
+bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs)
+{
+    if (!lhs) {
+        return !rhs;
+    }
+
+    if (!rhs) {
+        return false;
+    }
+
+    return lhs->isEqual(rhs);
+}
+
+bool operator!=(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs) { return !(lhs == rhs); }
+
 #if ENABLE_PTHREAD && (UINTPOW > 3)
 // TODO: Find some way to abstract this with ParallelFor. (It's a duplicate method.)
 // The reason for this design choice is that the memory per node for "Stride" and "numCores" attributes are on order of
@@ -88,7 +103,7 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapIntOcl begin, const bitCapIntO
     }
 }
 #else
-void QBdtNodeInterface::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
+void QBdtNodeInterface::_par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
 {
     const bitCapIntOcl itemCount = end - begin;
     const bitCapIntOcl maxLcv = begin + itemCount;

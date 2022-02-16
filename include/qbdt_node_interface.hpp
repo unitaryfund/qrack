@@ -46,6 +46,13 @@ public:
         branches[1] = NULL;
     }
 
+    QBdtNodeInterface(complex scl, QBdtNodeInterfacePtr* b)
+        : scale(scl)
+    {
+        branches[0] = b[0];
+        branches[1] = b[1];
+    }
+
     virtual void SetZero()
     {
         scale = ZERO_CMPLX;
@@ -55,7 +62,7 @@ public:
 
     virtual QBdtNodeInterfacePtr ShallowClone() = 0;
 
-    virtual bool Equals(QBdtNodeInterfacePtr r) = 0;
+    virtual bool isEqual(QBdtNodeInterfacePtr r) = 0;
 
     virtual void Prune(bitLenInt depth = 1U) {}
 
@@ -65,5 +72,8 @@ public:
 
     virtual void ConvertStateVector(bitLenInt depth) {}
 };
+
+bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);
+bool operator!=(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);
 
 } // namespace Qrack

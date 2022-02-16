@@ -78,8 +78,7 @@ void QBdtNode::Prune(bitLenInt depth)
         for (j = 0; j < depth; j++) {
             bit = SelectBit(i, depth - (j + 1U));
 
-            if (!leaf0 || !leaf1 || (!leaf0->branches[bit] && !leaf1->branches[bit]) ||
-                (leaf0->branches[bit]->Equals(leaf1->branches[bit]))) {
+            if (!leaf0 || !leaf1 || (leaf0->branches[bit] == leaf1->branches[bit])) {
                 break;
             }
 
@@ -90,8 +89,7 @@ void QBdtNode::Prune(bitLenInt depth)
             leaf1 = leaf1->branches[bit];
         }
 
-        if (!leaf0 || !leaf1 ||
-            (leaf0->branches[bit] && leaf1->branches[bit] && !(leaf0->branches[bit]->Equals(leaf1->branches[bit])))) {
+        if (!leaf0 || !leaf1 || (leaf0->branches[bit] != leaf1->branches[bit])) {
             return (bitCapIntOcl)0U;
         }
 
