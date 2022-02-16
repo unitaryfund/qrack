@@ -16,8 +16,6 @@
 
 #include "qfactory.hpp"
 
-#include <mutex>
-
 namespace Qrack {
 
 QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
