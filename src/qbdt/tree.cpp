@@ -37,8 +37,9 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
 #else
     const bitLenInt pStridePow = PSTRIDEPOW;
 #endif
-
-    dispatchThreshold = (dispatchThreshold > 2U) ? (pStridePow - 2U) : 0U;
+    const unsigned numCores = GetConcurrencyLevel();
+    const bitLenInt minStridePow = (numCores > 1U) ? (bitLenInt)pow2Ocl(log2(numCores - 1U)) : 0U;
+    dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
 
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
