@@ -2473,8 +2473,14 @@ public:
      * @{
      */
 
+    /**
+     *  This is a QBdt node, so return Clone()
+     */
     virtual QBdtNodeInterfacePtr ShallowClone() { return Clone(); }
 
+    /**
+     *  Call default NormalizeState() for QBdt
+     */
     virtual void Normalize(bitLenInt ignored) { NormalizeState(); };
 
     /** @} */
