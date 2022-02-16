@@ -33,13 +33,12 @@ class QBdt : virtual public QInterface {
 protected:
     std::vector<QInterfaceEngine> engines;
     int devID;
-    QBdtNodePtr root;
+    QBdtNodeInterfacePtr root;
     QInterfacePtr stateVecUnit;
 #if ENABLE_QUNIT_CPU_PARALLEL
     DispatchQueue dispatchQueue;
 #endif
     bitLenInt dispatchThreshold;
-    bitLenInt pagingThresholdQubits;
     bitCapIntOcl maxQPowerOcl;
     std::vector<MpsShardPtr> shards;
 

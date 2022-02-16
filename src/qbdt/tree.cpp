@@ -93,7 +93,7 @@ QInterfacePtr QBdt::Clone()
     QBdtPtr copyPtr = std::make_shared<QBdt>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
         false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
-    copyPtr->root = root ? std::dynamic_pointer_cast<QBdtNode>(root->ShallowClone()) : NULL;
+    copyPtr->root = root ? root->ShallowClone() : NULL;
     copyPtr->stateVecUnit = stateVecUnit ? stateVecUnit->Clone() : NULL;
 
     return copyPtr;
@@ -232,7 +232,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     bitLenInt qbCount;
     bitCapIntOcl maxI;
 
-    QBdtNodePtr rootClone = std::dynamic_pointer_cast<QBdtNode>(toCopy->root->ShallowClone());
+    QBdtNodeInterfacePtr rootClone = toCopy->root->ShallowClone();
     if (start) {
         qbCount = qubitCount;
         maxI = maxQPowerOcl;
@@ -298,7 +298,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     }
 
     bitCapIntOcl maxI = pow2Ocl(start);
-    QBdtNodePtr startNode = NULL;
+    QBdtNodeInterfacePtr startNode = NULL;
     par_for_qbdt(0, maxI, [&](const bitCapIntOcl& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0; j < start; j++) {
@@ -315,7 +315,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 
         if (!startNode) {
             // Whichever parallel write wins, this works.
-            startNode = std::dynamic_pointer_cast<QBdtNode>(leaf->ShallowClone());
+            startNode = leaf->ShallowClone();
         }
 
         leaf->branches[0] = NULL;
