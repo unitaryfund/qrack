@@ -213,10 +213,6 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
-    if (start && (start != qubitCount)) {
-        return QInterface::Compose(toCopy, start);
-    }
-
     bitLenInt qbCount;
     bitCapIntOcl maxI;
 
@@ -262,13 +258,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         bitLenInt offset = qubitCount - end;
 
         ROL(offset, 0, qubitCount);
-
-        if (dest) {
-            Decompose(qubitCount - length, dest);
-        } else {
-            Dispose(qubitCount - length, length);
-        }
-
+        DecomposeDispose(qubitCount - length, length, dest);
         ROR(offset, 0, qubitCount);
 
         return;
