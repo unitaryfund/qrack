@@ -257,6 +257,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         return QInterface::Compose(toCopy, start);
     }
 
+    // TODO: This might function without error, but it isn't right for the purpose.
     if (attachedQubitCount && start) {
         ROR(start, 0, GetQubitCount());
         Compose(toCopy, 0);
@@ -426,10 +427,10 @@ real1_f QBdt::Prob(bitLenInt qubit)
     FlushBuffer(qubit);
 
     const bitLenInt maxQubit = (qubit < qubitCount) ? qubit : qubitCount;
-    const bitCapIntOcl qPower = pow2Ocl(maxQubit);
+    const bitCapInt qPower = pow2(maxQubit);
 
     real1 oneChance = ZERO_R1;
-    for (bitCapIntOcl i = 0; i < qPower; i++) {
+    for (bitCapInt i = 0; i < qPower; i++) {
         QBdtNodeInterfacePtr leaf = root;
         complex scale = root->scale;
         for (bitLenInt j = 0; j < maxQubit; j++) {
@@ -505,9 +506,9 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     root->scale = GetNonunitaryPhase();
 
     const bitLenInt maxQubit = (qubit < qubitCount) ? qubit : qubitCount;
-    const bitCapIntOcl qPower = pow2Ocl(maxQubit);
+    const bitCapInt qPower = pow2(maxQubit);
 
-    for (bitCapIntOcl i = 0; i < qPower; i++) {
+    for (bitCapInt i = 0; i < qPower; i++) {
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0; j < qubit; j++) {
             if (IS_NORM_0(leaf->scale)) {
@@ -718,6 +719,32 @@ void QBdt::Mtrx(const complex* lMtrx, bitLenInt target)
 
 void QBdt::Phase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
+    if (target >= qubitCount) {
+        const bitCapInt qPower = pow2((target < qubitCount) ? target : qubitCount);
+        std::set<QInterfacePtr> qis;
+        for (bitCapInt i = 0; i < qPower; i++) {
+            QBdtNodeInterfacePtr leaf = root;
+            for (bitLenInt j = 0; j < treeLevelCount; j++) {
+                if (!leaf) {
+                    break;
+                }
+                leaf = leaf->branches[SelectBit(i, j)];
+            }
+
+            if (!leaf) {
+                continue;
+            }
+
+            QInterfacePtr qiLeaf = std::dynamic_pointer_cast<QInterface>(leaf);
+            if (qis.find(qiLeaf) == qis.end()) {
+                qiLeaf->Phase(topLeft, bottomRight, target - qubitCount);
+                qis.insert(qiLeaf);
+            }
+        }
+
+        return;
+    }
+
     const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (shards[target]) {
         Mtrx(mtrx, target);
