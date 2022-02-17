@@ -32,7 +32,6 @@ protected:
     QBdtNodeInterfacePtr root;
     QInterfacePtr stateVecUnit;
     bitCapIntOcl maxQPowerOcl;
-    bool isAttached;
     bitLenInt treeLevelCount;
     bitLenInt attachedQubitCount;
     std::vector<MpsShardPtr> shards;
@@ -41,7 +40,7 @@ protected:
     {
         QInterface::SetQubitCount(qb);
         maxQPowerOcl = (bitCapIntOcl)maxQPower;
-        treeLevelCount = isAttached ? (qubitCount + 1U) : qubitCount;
+        treeLevelCount = attachedQubitCount ? (qubitCount + 1U) : qubitCount;
     }
 
     typedef std::function<void(void)> DispatchFn;
@@ -155,7 +154,9 @@ public:
 
     virtual bool isBinaryDecisionTree() { return true; };
 
-    bitLenInt GetQubitCount() { return qubitCount + attachedQubitCount; }
+    virtual bitLenInt GetQubitCount() { return qubitCount + attachedQubitCount; }
+
+    virtual bitCapInt GetMaxQPower() { return pow2Ocl(qubitCount + attachedQubitCount); }
 
     virtual void Finish()
     {
@@ -217,7 +218,7 @@ public:
     {
         DecomposeDispose(start, length, NULL);
     }
-    virtual void Attach(QInterfacePtr toCopy);
+    virtual void Attach(QEnginePtr toCopy);
 
     virtual real1_f Prob(bitLenInt qubitIndex);
     virtual real1_f ProbAll(bitCapInt fullRegister);

@@ -192,6 +192,7 @@ protected:
     bool doNormalize;
     bool randGlobalPhase;
     real1 amplitudeFloor;
+    real1 runningNorm;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -254,6 +255,7 @@ public:
         , doNormalize(false)
         , randGlobalPhase(true)
         , amplitudeFloor(REAL1_EPSILON)
+        , runningNorm(ONE_R1)
     {
         // Intentionally left blank
     }
@@ -274,10 +276,17 @@ public:
     virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
 
     /** Get the count of bits in this register */
-    bitLenInt GetQubitCount() { return qubitCount; }
+    virtual bitLenInt GetQubitCount() { return qubitCount; }
 
     /** Get the maximum number of basis states, namely \f$ 2^n \f$ for \f$ n \f$ qubits*/
-    bitCapInt GetMaxQPower() { return maxQPower; }
+    virtual bitCapInt GetMaxQPower() { return maxQPower; }
+
+    /** Get in-flight renormalization factor */
+    virtual real1_f GetRunningNorm()
+    {
+        Finish();
+        return runningNorm;
+    }
 
     /** Generate a random real number between 0 and 1 */
     real1_f Rand()
@@ -2489,8 +2498,11 @@ public:
     virtual void ConvertStateVector(bitLenInt depth)
     {
         real1_f phaseArg = FirstNonzeroPhase();
+        UpdateRunningNorm();
+        // TODO: This isn't valid for stabilizer
+        real1_f nrm = GetRunningNorm();
         NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
-        scale *= std::polar(ONE_R1, phaseArg);
+        scale *= std::polar(nrm, phaseArg);
     }
 
     /**
