@@ -1431,7 +1431,7 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f, real1_f ph
     if (nrm < ZERO_R1) {
         nrm = runningNorm;
     }
-    if (!phaseArg && ((nrm <= ZERO_R1) || (nrm == ONE_R1))) {
+    if ((nrm <= ZERO_R1) || (!phaseArg && (nrm == ONE_R1))) {
         return;
     }
 
