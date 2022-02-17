@@ -27,6 +27,8 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , root(NULL)
     , stateVecUnit(NULL)
     , maxQPowerOcl(pow2Ocl(qBitCount))
+    , isAttached(false)
+    , attachedQubitCount(0)
     , shards(qBitCount)
 {
 #if ENABLE_PTHREAD
@@ -257,6 +259,15 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
 void QBdt::Attach(QInterfacePtr toCopy)
 {
+    attachedQubitCount += toCopy->GetQubitCount();
+    treeLevelCount = qubitCount + 1U;
+
+    // if (isAttached) {
+    // TODO: Append at end of existing QInterfacePtr at bottom of tree.
+    // }
+
+    isAttached = true;
+
     par_for_qbdt(0, maxQPowerOcl, [&](const bitCapIntOcl& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0; j < qubitCount; j++) {

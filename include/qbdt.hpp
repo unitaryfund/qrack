@@ -32,12 +32,16 @@ protected:
     QBdtNodeInterfacePtr root;
     QInterfacePtr stateVecUnit;
     bitCapIntOcl maxQPowerOcl;
+    bool isAttached;
+    bitLenInt treeLevelCount;
+    bitLenInt attachedQubitCount;
     std::vector<MpsShardPtr> shards;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
         QInterface::SetQubitCount(qb);
         maxQPowerOcl = (bitCapIntOcl)maxQPower;
+        treeLevelCount = isAttached ? (qubitCount + 1U) : qubitCount;
     }
 
     typedef std::function<void(void)> DispatchFn;
@@ -151,6 +155,8 @@ public:
 
     virtual bool isBinaryDecisionTree() { return true; };
 
+    bitLenInt GetQubitCount() { return qubitCount + attachedQubitCount; }
+
     virtual void Finish()
     {
         if (stateVecUnit) {
@@ -170,11 +176,7 @@ public:
     virtual void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
     {
-        if (stateVecUnit) {
-            stateVecUnit->NormalizeState(nrm, norm_thresh, phaseArg);
-            return;
-        }
-        root->Normalize(qubitCount);
+        root->Normalize(treeLevelCount);
     }
 
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
