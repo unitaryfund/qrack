@@ -1426,14 +1426,21 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f)
     real1 nrm = (real1)nrm_f;
     real1 norm_thresh = (real1)norm_thresh_f;
 
-    Finish();
-
     if (nrm < ZERO_R1) {
+        // runningNorm can be set by OpenCL queue pop, so finish first.
+        Finish();
         nrm = runningNorm;
     }
-    if ((nrm <= ZERO_R1) || (nrm == ONE_R1)) {
+    // We might avoid the clFinish().
+    if (nrm <= FP_NORM_EPSILON) {
+        ZeroAmplitudes();
         return;
     }
+    if (abs(ONE_R1 - nrm) <= FP_NORM_EPSILON) {
+        return;
+    }
+    // We might have async execution of gates still happening.
+    Finish();
 
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;
