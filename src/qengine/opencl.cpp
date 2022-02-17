@@ -2795,17 +2795,19 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseA
         UpdateRunningNorm();
     }
 
-    // We might have async execution of gates still happening.
-    clFinish();
-
     cl_int error;
 
     if (nrm < ZERO_R1) {
+        // runningNorm can be set by OpenCL queue pop, so finish first.
+        clFinish();
         nrm = runningNorm;
     }
-    if ((nrm <= ZERO_R1) || (!phaseArg && (nrm == ONE_R1))) {
+    if ((nrm <= FP_NORM_EPSILON) || (!phaseArg && ((ONE_R1 - nrm) <= FP_NORM_EPSILON))) {
+        // We might avoid the clFinish().
         return;
     }
+    // We might have async execution of gates still happening.
+    clFinish();
 
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;

@@ -1426,14 +1426,14 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f, real1_f ph
     real1 nrm = (real1)nrm_f;
     real1 norm_thresh = (real1)norm_thresh_f;
 
-    Finish();
-
     if (nrm < ZERO_R1) {
+        Finish();
         nrm = runningNorm;
     }
-    if ((nrm <= ZERO_R1) || (!phaseArg && (nrm == ONE_R1))) {
+    if ((nrm <= FP_NORM_EPSILON) || (!phaseArg && ((ONE_R1 - nrm) <= FP_NORM_EPSILON))) {
         return;
     }
+    Finish();
 
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;
