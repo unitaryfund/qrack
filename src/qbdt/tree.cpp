@@ -37,10 +37,10 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     SetPermutation(initState);
 }
 
-QInterfacePtr QBdt::MakeStateVector()
+QInterfacePtr QBdt::MakeStateVector(bitLenInt qbCount, bitCapInt perm)
 {
-    return CreateQuantumInterface(engines, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-        false, devID, hardware_rand_generator != NULL, false, amplitudeFloor);
+    return CreateQuantumInterface(engines, qbCount ? qbCount : qubitCount, perm, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, false, devID, hardware_rand_generator != NULL, false, amplitudeFloor);
 }
 
 bool QBdt::ForceMParity(bitCapInt mask, bool result, bool doForce)
@@ -68,11 +68,18 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 
     root = std::make_shared<QBdtNode>(phaseFac);
     QBdtNodeInterfacePtr leaf = root;
+    QBdtNodeInterfacePtr prevLeaf = NULL;
     for (bitLenInt qubit = 0; qubit < qubitCount; qubit++) {
-        size_t bit = SelectBit(initState, qubit);
+        const size_t bit = SelectBit(initState, qubit);
         leaf->branches[bit] = std::make_shared<QBdtNode>(ONE_CMPLX);
         leaf->branches[bit ^ 1U] = std::make_shared<QBdtNode>(ZERO_CMPLX);
+        prevLeaf = leaf;
         leaf = leaf->branches[bit];
+    }
+
+    if (attachedQubitCount) {
+        const size_t bit = SelectBit(initState, (qubitCount - 1U));
+        prevLeaf->branches[bit] = MakeStateVector(attachedQubitCount, initState >> qubitCount);
     }
 }
 

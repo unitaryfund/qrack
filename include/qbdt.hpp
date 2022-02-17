@@ -47,7 +47,7 @@ protected:
     typedef std::function<void(void)> DispatchFn;
     virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn) { fn(); }
 
-    QInterfacePtr MakeStateVector();
+    QInterfacePtr MakeStateVector(bitLenInt qbCount = 0U, bitCapInt perm = 0U);
 
     QInterfacePtr MakeTempStateVector()
     {
