@@ -16,6 +16,8 @@
 
 #include "qfactory.hpp"
 
+#include <iostream>
+
 namespace Qrack {
 
 QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
@@ -564,6 +566,13 @@ void QBdt::Apply2x2OnLeaf(const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLen
         leaf0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
         leaf1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
 
+        if (IS_NORM_0(leaf0->scale)) {
+            leaf0->SetZero();
+        }
+        if (IS_NORM_0(leaf1->scale)) {
+            leaf1->SetZero();
+        }
+
         return (bitCapIntOcl)0U;
     };
 
@@ -709,7 +718,7 @@ void QBdt::ApplyControlledSingle(
         const bitCapIntOcl maxLcv = targetPow >> qPowersSorted.size();
         const bool isParallel = (maxLcv < GetStride());
 
-        par_for_qbdt(0, maxLcv, [&](const bitCapIntOcl& lcv, const int& cpu) {
+        IncrementFunc fn = [&](const bitCapIntOcl& lcv, const int& cpu) {
             bitCapIntOcl i = 0U;
             bitCapIntOcl iHigh = lcv;
             bitCapIntOcl iLow;
@@ -758,7 +767,11 @@ void QBdt::ApplyControlledSingle(
             }
 
             return (bitCapIntOcl)0U;
-        });
+        };
+
+        for (bitCapIntOcl i = 0; i < maxLcv; i++) {
+            i |= fn(i, 0);
+        }
 
         root->Prune(target);
     });
