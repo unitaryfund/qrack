@@ -213,6 +213,10 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
+    if (start && (start != qubitCount)) {
+        return QInterface::Compose(toCopy, start);
+    }
+
     bitLenInt qbCount;
     bitCapIntOcl maxI;
 
@@ -250,6 +254,33 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
     return start;
 }
+
+void QBdt::Attach(QInterfacePtr toCopy)
+{
+    par_for_qbdt(0, maxQPowerOcl, [&](const bitCapIntOcl& i, const int& cpu) {
+        QBdtNodeInterfacePtr leaf = root;
+        for (bitLenInt j = 0; j < qubitCount; j++) {
+            if (IS_NORM_0(leaf->scale)) {
+                // WARNING: Mutates loop control variable!
+                return (bitCapIntOcl)(pow2Ocl(qubitCount - j) - ONE_BCI);
+            }
+            leaf = leaf->branches[SelectBit(i, qubitCount - (j + 1U))];
+        }
+
+        if (!IS_NORM_0(leaf->scale)) {
+            leaf->branches[0] = toCopy;
+            leaf->branches[1] = toCopy;
+        }
+
+        return (bitCapIntOcl)0U;
+    });
+
+    std::vector<MpsShardPtr> s(toCopy->GetQubitCount());
+    shards.insert(shards.end(), s.begin(), s.end());
+
+    SetQubitCount(qubitCount + toCopy->GetQubitCount());
+}
+
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
     const bitLenInt end = start + length;

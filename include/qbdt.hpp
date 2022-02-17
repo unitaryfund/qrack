@@ -205,7 +205,6 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QBdt>(toCopy), start);
     }
-
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));
@@ -216,6 +215,7 @@ public:
     {
         DecomposeDispose(start, length, NULL);
     }
+    virtual void Attach(QInterfacePtr toCopy);
 
     virtual real1_f Prob(bitLenInt qubitIndex);
     virtual real1_f ProbAll(bitCapInt fullRegister);
