@@ -268,6 +268,18 @@ void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 /// "Circular shift right" - shift bits right, and carry first bits.
 void QInterface::ROR(bitLenInt shift, bitLenInt start, bitLenInt length) { ROL(length - shift, start, length); }
 
+bitLenInt QInterface::Compose(QInterfacePtr toCopy, bitLenInt start)
+{
+    bitLenInt origSize = qubitCount;
+    ROL(origSize - start, 0, origSize);
+
+    bitLenInt result = Compose(toCopy);
+
+    ROR(origSize - start, 0, qubitCount);
+
+    return result;
+}
+
 std::map<QInterfacePtr, bitLenInt> QInterface::Compose(std::vector<QInterfacePtr> toCopy)
 {
     std::map<QInterfacePtr, bitLenInt> ret;
