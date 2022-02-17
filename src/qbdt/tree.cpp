@@ -684,14 +684,14 @@ void QBdt::ApplyControlledSingle(
     bitCapIntOcl lowControlMask = 0U;
     bitLenInt c;
     for (c = 0U; (c < controlLen) && (sortedControls[c] < target); c++) {
-        qPowersSorted.push_back(pow2Ocl(target - (sortedControls[c] + ONE_BCI)));
+        qPowersSorted.push_back(pow2Ocl(target - (sortedControls[c] + 1U)));
         lowControlMask |= qPowersSorted.back();
     }
     std::reverse(qPowersSorted.begin(), qPowersSorted.end());
 
     bitCapIntOcl highControlMask = 0U;
     for (; c < controlLen; c++) {
-        highControlMask |= pow2Ocl(qubitCount - (sortedControls[c] + ONE_BCI));
+        highControlMask |= pow2Ocl(qubitCount - (sortedControls[c] + 1U));
     }
 
     const bitCapIntOcl targetPow = pow2Ocl(target);
