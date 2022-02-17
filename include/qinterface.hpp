@@ -2484,6 +2484,16 @@ public:
     virtual bool isEqual(QBdtNodeInterfacePtr r) { return ApproxCompare(std::dynamic_pointer_cast<QInterface>(r)); }
 
     /**
+     *  This is a QBdt node, so normalize phase convention (by setting |0>-most, nonzero value amplitude phase to 1).
+     */
+    virtual void ConvertStateVector(bitLenInt depth)
+    {
+        real1_f phaseArg = FirstNonzeroPhase();
+        NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
+        scale *= std::polar(ONE_R1, phaseArg);
+    }
+
+    /**
      *  This is a QBdt node, so (ignore depth and) call default NormalizeState().
      */
     virtual void Normalize(bitLenInt ignored) { NormalizeState(); };

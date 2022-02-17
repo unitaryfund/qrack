@@ -64,13 +64,13 @@ public:
 
     virtual bool isEqual(QBdtNodeInterfacePtr r) = 0;
 
+    virtual void ConvertStateVector(bitLenInt depth) = 0;
+
     virtual void Prune(bitLenInt depth = 1U) {}
 
     virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false) {}
 
     virtual void Normalize(bitLenInt depth) {}
-
-    virtual void ConvertStateVector(bitLenInt depth) {}
 };
 
 bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);

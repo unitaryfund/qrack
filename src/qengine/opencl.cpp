@@ -2803,7 +2803,7 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseA
     if (nrm < ZERO_R1) {
         nrm = runningNorm;
     }
-    if ((nrm <= ZERO_R1) || (nrm == ONE_R1)) {
+    if (!phaseArg && ((nrm <= ZERO_R1) || (nrm == ONE_R1))) {
         return;
     }
 
