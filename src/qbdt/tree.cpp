@@ -718,7 +718,7 @@ void QBdt::ApplyControlledSingle(
         const bitCapIntOcl maxLcv = targetPow >> qPowersSorted.size();
         const bool isParallel = (maxLcv < GetStride());
 
-        IncrementFunc fn = [&](const bitCapIntOcl& lcv, const int& cpu) {
+        par_for_qbdt(0, maxLcv, [&](const bitCapIntOcl& lcv, const int& cpu) {
             bitCapIntOcl i = 0U;
             bitCapIntOcl iHigh = lcv;
             bitCapIntOcl iLow;
@@ -767,11 +767,7 @@ void QBdt::ApplyControlledSingle(
             }
 
             return (bitCapIntOcl)0U;
-        };
-
-        for (bitCapIntOcl i = 0; i < maxLcv; i++) {
-            i |= fn(i, 0);
-        }
+        });
 
         root->Prune(target);
     });
