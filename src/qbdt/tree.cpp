@@ -824,8 +824,8 @@ void QBdt::ApplyControlledSingle(
     const bool isKetSwapped =
         (lowControlMask || highControlMask) && (ketControlsSorted.size() > 0) && (target < qubitCount);
     if (isKetSwapped) {
-        QBdtSafeSwap(sortedControls[0], target);
-        std::swap(sortedControls[0], target);
+        QBdtSafeSwap(ketControlsSorted[0], target);
+        std::swap(ketControlsSorted[0], target);
     }
 
     const bitCapIntOcl targetPow = pow2Ocl(target);
