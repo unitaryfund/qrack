@@ -832,7 +832,8 @@ void QBdt::ApplyControlledSingle(
     const bitCapIntOcl maskTarget = (isAnti ? 0U : lowControlMask);
 
     Dispatch(targetPow,
-        [this, mtrxS, target, targetPow, qPowersSorted, highControlMask, maskTarget, ketControlsVec, leafFunc]() {
+        [this, mtrxS, target, targetPow, qPowersSorted, highControlMask, maskTarget, ketControlsVec, isKetSwapped,
+            leafFunc]() {
             complex* mtrx = mtrxS.get();
 
             std::unique_ptr<bitLenInt[]> ketControls = NULL;
@@ -910,12 +911,12 @@ void QBdt::ApplyControlledSingle(
             });
 
             root->Prune(target);
-        });
 
-    // Undo isKetSwapped.
-    if (isKetSwapped) {
-        QBdtSafeSwap(ketControlsVec[0], target);
-    }
+            // Undo isKetSwapped.
+            if (isKetSwapped) {
+                QBdtSafeSwap(ketControlsVec[0], target);
+            }
+        });
 }
 
 void QBdt::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
