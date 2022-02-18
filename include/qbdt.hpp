@@ -100,7 +100,7 @@ protected:
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
     void Apply2x2OnLeaf(const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLenInt depth, bitCapInt highControlMask,
-        bitLenInt* ketControls, bool isAnti, bool isParallel);
+        bool isAnti, bool isParallel);
 
     template <typename Fn> void ApplySingle(const complex* mtrx, bitLenInt target, Fn leafFunc);
     template <typename Lfn>

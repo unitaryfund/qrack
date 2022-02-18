@@ -588,7 +588,7 @@ bitCapInt QBdt::MAll()
 }
 
 void QBdt::Apply2x2OnLeaf(const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLenInt depth, bitCapInt highControlMask,
-    bitLenInt* ketControls, bool isAnti, bool isParallel)
+    bool isAnti, bool isParallel)
 {
     // TODO: Finish pass through for ketControlsSorted to Attach() qubits.
 
@@ -828,19 +828,21 @@ void QBdt::ApplyControlledSingle(
         std::swap(sortedControls[0], target);
     }
 
-    std::shared_ptr<bitLenInt> ketControls = NULL;
-    if (ketControlsSorted.size()) {
-        ketControls =
-            std::shared_ptr<bitLenInt>(new bitLenInt[ketControlsSorted.size()], std::default_delete<bitLenInt[]>());
-        std::copy(ketControlsSorted.begin(), ketControlsSorted.end(), ketControls.get());
-    }
-
     const bitCapIntOcl targetPow = pow2Ocl(target);
     const bitCapIntOcl maskTarget = (isAnti ? 0U : lowControlMask);
 
     Dispatch(targetPow,
-        [this, mtrxS, target, targetPow, qPowersSorted, highControlMask, maskTarget, ketControls, leafFunc]() {
+        [this, mtrxS, target, targetPow, qPowersSorted, highControlMask, maskTarget, ketControlsSorted, leafFunc]() {
             complex* mtrx = mtrxS.get();
+
+            std::unique_ptr<bitLenInt[]> ketControls = NULL;
+            if (ketControlsSorted.size()) {
+                ketControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[ketControlsSorted.size()]);
+                std::copy(ketControlsSorted.begin(), ketControlsSorted.end(), ketControls.get());
+                for (bitLenInt i = 0U; i < ketControlsSorted.size(); i++) {
+                    ketControls[i] -= qubitCount;
+                }
+            }
 
             if (qPowersSorted.size()) {
                 root->Branch(target);
@@ -884,6 +886,11 @@ void QBdt::ApplyControlledSingle(
                     return (bitCapIntOcl)0U;
                 }
 
+                if (target >= qubitCount) {
+                    MCMtrx(ketControls.get(), ketControlsSorted.size(), mtrxS.get(), target - qubitCount);
+                    return (bitCapIntOcl)0U;
+                }
+
                 if (isPhase) {
                     leaf->Branch();
                     leaf->branches[0]->scale *= mtrx[0];
@@ -896,7 +903,7 @@ void QBdt::ApplyControlledSingle(
                     leaf->branches[1]->scale *= mtrx[2];
                     leaf->Prune();
                 } else {
-                    leafFunc(leaf, mtrx, highControlMask, ketControls.get(), isParallel);
+                    leafFunc(leaf, mtrx, highControlMask, isParallel);
                 }
 
                 return (bitCapIntOcl)0U;
@@ -918,9 +925,9 @@ void QBdt::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex
     }
 
     ApplyControlledSingle(mtrx, controls, controlLen, target, false,
-        [this, target](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl highControlMask,
-            bitLenInt* ketControls,
-            bool isParallel) { Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, ketControls, false, isParallel); });
+        [this, target](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl highControlMask, bool isParallel) {
+            Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, false, isParallel);
+        });
 }
 
 void QBdt::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
@@ -930,9 +937,9 @@ void QBdt::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const comple
     }
 
     ApplyControlledSingle(mtrx, controls, controlLen, target, true,
-        [this, target](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl highControlMask,
-            bitLenInt* ketControls,
-            bool isParallel) { Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, ketControls, true, isParallel); });
+        [this, target](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl highControlMask, bool isParallel) {
+            Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, true, isParallel);
+        });
 }
 
 bool QBdt::CheckControlled(
@@ -985,7 +992,7 @@ void QBdt::FlushBuffer(bitLenInt i)
 
     ApplySingle(shard->gate, i,
         [this, i](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool isParallel) {
-            Apply2x2OnLeaf(mtrx, leaf, i, 0U, NULL, false, isParallel);
+            Apply2x2OnLeaf(mtrx, leaf, i, 0U, false, isParallel);
         });
 }
 
