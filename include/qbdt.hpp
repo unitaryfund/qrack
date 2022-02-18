@@ -135,6 +135,19 @@ protected:
     bool CheckControlled(
         const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target, bool isAnti);
 
+    void QBdtSafeSwap(bitLenInt low, bitLenInt high)
+    {
+        // Low qubits are QBdt; high qubits are QEngine.
+        // Target qubit must be in QEngine, if acting with QEngine.
+        CNOT(low, high);
+        H(low);
+        H(high);
+        CNOT(low, high);
+        H(low);
+        H(high);
+        CNOT(low, high);
+    }
+
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
