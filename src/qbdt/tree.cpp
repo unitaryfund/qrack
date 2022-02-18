@@ -429,6 +429,8 @@ real1_f QBdt::Prob(bitLenInt qubit)
     const bitLenInt maxQubit = (qubit < qubitCount) ? qubit : qubitCount;
     const bitCapInt qPower = pow2(maxQubit);
 
+    std::map<QInterfacePtr, real1_f> qiProbs;
+
     real1 oneChance = ZERO_R1;
     for (bitCapInt i = 0; i < qPower; i++) {
         QBdtNodeInterfacePtr leaf = root;
@@ -450,8 +452,11 @@ real1_f QBdt::Prob(bitLenInt qubit)
         } else {
             // Phase effects don't matter, for probability expectation.
             // TODO: Is this right?
-            real1_f ketProb = std::dynamic_pointer_cast<QInterface>(leaf)->Prob(qubit - maxQubit);
-            oneChance += norm(scale * (real1_f)sqrt(ketProb));
+            QInterfacePtr qi = std::dynamic_pointer_cast<QInterface>(leaf);
+            if (qiProbs.find(qi) == qiProbs.end()) {
+                qiProbs[qi] = (real1_f)sqrt(std::dynamic_pointer_cast<QInterface>(leaf)->Prob(qubit - maxQubit));
+            }
+            oneChance += norm(scale * qiProbs[qi]);
         }
     }
 
