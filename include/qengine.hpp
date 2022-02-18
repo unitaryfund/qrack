@@ -194,6 +194,15 @@ public:
      */
 
     /**
+     *  This is a QBdt node, so destroy all qubits.
+     */
+    virtual void SetZero()
+    {
+        QBdtNodeInterface::SetZero();
+        Dispose(0, qubitCount);
+    }
+
+    /**
      *  This is a QBdt node, so return Clone().
      */
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::dynamic_pointer_cast<QEngine>(Clone()); }
@@ -201,7 +210,11 @@ public:
     /**
      *  This is a QBdt node, so return ApproxCompare(r).
      */
-    virtual bool isEqual(QBdtNodeInterfacePtr r) { return ApproxCompare(std::dynamic_pointer_cast<QInterface>(r)); }
+    virtual bool isEqual(QBdtNodeInterfacePtr r)
+    {
+        return IS_NORM_0(scale - r->scale) &&
+            (IS_NORM_0(scale) || ApproxCompare(std::dynamic_pointer_cast<QInterface>(r)));
+    }
 
     /**
      *  This is a QBdt node, so normalize phase convention (by setting |0>-most, nonzero value amplitude phase to 1).

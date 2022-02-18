@@ -135,19 +135,6 @@ protected:
     bool CheckControlled(
         const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target, bool isAnti);
 
-    void QBdtSafeSwap(bitLenInt low, bitLenInt high)
-    {
-        // Low qubits are QBdt; high qubits are QEngine.
-        // Target qubit must be in QEngine, if acting with QEngine.
-        CNOT(low, high);
-        H(high);
-        H(low);
-        CNOT(low, high);
-        H(high);
-        H(low);
-        CNOT(low, high);
-    }
-
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -221,6 +208,8 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QBdt>(toCopy), start);
     }
+    virtual bitLenInt Attach(QEnginePtr toCopy, bitLenInt start);
+    virtual bitLenInt Attach(QEnginePtr toCopy) { return Attach(toCopy, GetQubitCount()); }
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));
@@ -231,7 +220,6 @@ public:
     {
         DecomposeDispose(start, length, NULL);
     }
-    virtual void Attach(QEnginePtr toCopy);
 
     virtual real1_f Prob(bitLenInt qubitIndex);
     virtual real1_f ProbAll(bitCapInt fullRegister);
@@ -263,6 +251,28 @@ public:
         return unit->ProbParity(mask);
     }
 
+    virtual void Swap(bitLenInt low, bitLenInt high)
+    {
+        if (high < low) {
+            std::swap(low, high);
+        }
+
+        CNOT(low, high);
+
+        if ((low < qubitCount) && (qubitCount <= high)) {
+            // Low qubits are QBdt; high qubits are QEngine.
+            // Target qubit must be in QEngine, if acting with QEngine.
+            H(high);
+            H(low);
+            CNOT(low, high);
+            H(high);
+            H(low);
+        } else {
+            CNOT(high, low);
+        }
+
+        CNOT(low, high);
+    }
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubitIndex1, qubitIndex2); });
