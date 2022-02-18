@@ -1292,6 +1292,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         SubtractAlloc(sizeof(complex) * pow2Ocl(qubitCount));
         stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
         stateBuffer = MakeStateVecBuffer(stateVec);
+
         return;
     }
 
