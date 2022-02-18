@@ -30,7 +30,6 @@ QInterface::QInterface(
     , doNormalize(doNorm)
     , randGlobalPhase(randomGlobalPhase)
     , amplitudeFloor(norm_thresh)
-    , runningNorm(ONE_R1)
 {
 #if !ENABLE_RDRAND && !ENABLE_RNDFILE && !ENABLE_DEVRAND
     useHardwareRNG = false;

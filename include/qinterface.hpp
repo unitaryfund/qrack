@@ -14,7 +14,6 @@
 #include "common/parallel_for.hpp"
 #include "common/rdrandwrapper.hpp"
 #include "hamiltonian.hpp"
-#include "qbdt_node_interface.hpp"
 
 #include <ctime>
 #include <map>
@@ -181,7 +180,7 @@ enum QInterfaceEngine {
  *
  * See README.md for an overview of the algorithms Qrack employs.
  */
-class QInterface : public ParallelFor, public QBdtNodeInterface {
+class QInterface : public ParallelFor {
 protected:
     bitLenInt qubitCount;
     bitCapInt maxQPower;
@@ -192,7 +191,6 @@ protected:
     bool doNormalize;
     bool randGlobalPhase;
     real1 amplitudeFloor;
-    real1 runningNorm;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -255,7 +253,6 @@ public:
         , doNormalize(false)
         , randGlobalPhase(true)
         , amplitudeFloor(REAL1_EPSILON)
-        , runningNorm(ONE_R1)
     {
         // Intentionally left blank
     }
@@ -280,13 +277,6 @@ public:
 
     /** Get the maximum number of basis states, namely \f$ 2^n \f$ for \f$ n \f$ qubits*/
     virtual bitCapInt GetMaxQPower() { return maxQPower; }
-
-    /** Get in-flight renormalization factor */
-    virtual real1_f GetRunningNorm()
-    {
-        Finish();
-        return runningNorm;
-    }
 
     /** Generate a random real number between 0 and 1 */
     real1_f Rand()
@@ -2463,42 +2453,6 @@ public:
 
         return (real1_f)std::arg(amp);
     }
-
-    /** @} */
-
-    /**
-     * \defgroup QbdtFunc Quantum binary decision tree method overloads
-     *
-     * @{
-     */
-
-    /**
-     *  This is a QBdt node, so return Clone().
-     */
-    virtual QBdtNodeInterfacePtr ShallowClone() { return Clone(); }
-
-    /**
-     *  This is a QBdt node, so return ApproxCompare(r).
-     */
-    virtual bool isEqual(QBdtNodeInterfacePtr r) { return ApproxCompare(std::dynamic_pointer_cast<QInterface>(r)); }
-
-    /**
-     *  This is a QBdt node, so normalize phase convention (by setting |0>-most, nonzero value amplitude phase to 1).
-     */
-    virtual void ConvertStateVector(bitLenInt depth)
-    {
-        real1_f phaseArg = FirstNonzeroPhase();
-        UpdateRunningNorm();
-        // TODO: This isn't valid for stabilizer
-        real1_f nrm = GetRunningNorm();
-        NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
-        scale *= std::polar(nrm, phaseArg);
-    }
-
-    /**
-     *  This is a QBdt node, so (ignore depth and) call default NormalizeState().
-     */
-    virtual void Normalize(bitLenInt ignored) { NormalizeState(); };
 
     /** @} */
 };

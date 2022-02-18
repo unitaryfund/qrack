@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include "qbdt_node_interface.hpp"
 #include "qinterface.hpp"
 
 #include <algorithm>
@@ -24,12 +25,13 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
 /**
  * Abstract QEngine implementation, for all "Schroedinger method" engines
  */
-class QEngine : public QInterface {
+class QEngine : public QInterface, public QBdtNodeInterface {
 protected:
     bool useHostRam;
     /// The value stored in runningNorm should always be the total probability implied by the norm of all amplitudes,
     /// summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
     bitCapIntOcl maxQPowerOcl;
+    real1 runningNorm;
 
     bool IsPhase(const complex* mtrx) { return IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]); }
 
@@ -47,6 +49,7 @@ public:
         : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
         , useHostRam(useHostMem)
         , maxQPowerOcl(pow2Ocl(qBitCount))
+        , runningNorm(ONE_R1)
     {
         if (qBitCount > (sizeof(bitCapIntOcl) * bitsInByte)) {
             throw std::invalid_argument(
@@ -58,8 +61,16 @@ public:
     QEngine()
         : useHostRam(false)
         , maxQPowerOcl(0)
+        , runningNorm(ONE_R1)
     {
         // Intentionally left blank
+    }
+
+    /** Get in-flight renormalization factor */
+    virtual real1_f GetRunningNorm()
+    {
+        Finish();
+        return runningNorm;
     }
 
     /** Set all amplitudes to 0, and optionally temporarily deallocate state vector RAM */
@@ -175,5 +186,41 @@ public:
     virtual void INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex) = 0;
 #endif
 #endif
+
+    /**
+     * \defgroup QbdtFunc Quantum binary decision tree method overloads
+     *
+     * @{
+     */
+
+    /**
+     *  This is a QBdt node, so return Clone().
+     */
+    virtual QBdtNodeInterfacePtr ShallowClone() { return std::dynamic_pointer_cast<QEngine>(Clone()); }
+
+    /**
+     *  This is a QBdt node, so return ApproxCompare(r).
+     */
+    virtual bool isEqual(QBdtNodeInterfacePtr r) { return ApproxCompare(std::dynamic_pointer_cast<QInterface>(r)); }
+
+    /**
+     *  This is a QBdt node, so normalize phase convention (by setting |0>-most, nonzero value amplitude phase to 1).
+     */
+    virtual void ConvertStateVector(bitLenInt depth)
+    {
+        real1_f phaseArg = FirstNonzeroPhase();
+        UpdateRunningNorm();
+        // TODO: This isn't valid for stabilizer
+        real1_f nrm = GetRunningNorm();
+        NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
+        scale *= std::polar(nrm, phaseArg);
+    }
+
+    /**
+     *  This is a QBdt node, so (ignore depth and) call default NormalizeState().
+     */
+    virtual void Normalize(bitLenInt ignored) { NormalizeState(); };
+
+    /** @} */
 };
 } // namespace Qrack
