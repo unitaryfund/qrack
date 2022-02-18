@@ -696,6 +696,33 @@ template <typename Fn> void QBdt::ApplySingle(const complex* lMtrx, bitLenInt ta
 
 void QBdt::Mtrx(const complex* lMtrx, bitLenInt target)
 {
+    // Attached qubits don't buffer
+    if (target >= qubitCount) {
+        const bitCapInt qPower = pow2((target < qubitCount) ? target : qubitCount);
+        std::set<QInterfacePtr> qis;
+        for (bitCapInt i = 0; i < qPower; i++) {
+            QBdtNodeInterfacePtr leaf = root;
+            for (bitLenInt j = 0; j < treeLevelCount; j++) {
+                if (!leaf) {
+                    break;
+                }
+                leaf = leaf->branches[SelectBit(i, j)];
+            }
+
+            if (!leaf) {
+                continue;
+            }
+
+            QInterfacePtr qiLeaf = std::dynamic_pointer_cast<QInterface>(leaf);
+            if (qis.find(qiLeaf) == qis.end()) {
+                qiLeaf->Mtrx(lMtrx, target - qubitCount);
+                qis.insert(qiLeaf);
+            }
+        }
+
+        return;
+    }
+
     complex mtrx[4];
     if (shards[target]) {
         shards[target]->Compose(lMtrx);
@@ -719,34 +746,8 @@ void QBdt::Mtrx(const complex* lMtrx, bitLenInt target)
 
 void QBdt::Phase(const complex topLeft, const complex bottomRight, bitLenInt target)
 {
-    if (target >= qubitCount) {
-        const bitCapInt qPower = pow2((target < qubitCount) ? target : qubitCount);
-        std::set<QInterfacePtr> qis;
-        for (bitCapInt i = 0; i < qPower; i++) {
-            QBdtNodeInterfacePtr leaf = root;
-            for (bitLenInt j = 0; j < treeLevelCount; j++) {
-                if (!leaf) {
-                    break;
-                }
-                leaf = leaf->branches[SelectBit(i, j)];
-            }
-
-            if (!leaf) {
-                continue;
-            }
-
-            QInterfacePtr qiLeaf = std::dynamic_pointer_cast<QInterface>(leaf);
-            if (qis.find(qiLeaf) == qis.end()) {
-                qiLeaf->Phase(topLeft, bottomRight, target - qubitCount);
-                qis.insert(qiLeaf);
-            }
-        }
-
-        return;
-    }
-
     const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-    if (shards[target]) {
+    if ((target >= qubitCount) || shards[target]) {
         Mtrx(mtrx, target);
         return;
     }
@@ -766,7 +767,7 @@ void QBdt::Phase(const complex topLeft, const complex bottomRight, bitLenInt tar
 void QBdt::Invert(const complex topRight, const complex bottomLeft, bitLenInt target)
 {
     const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    if (shards[target]) {
+    if ((target >= qubitCount) || shards[target]) {
         Mtrx(mtrx, target);
         return;
     }
