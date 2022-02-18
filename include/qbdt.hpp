@@ -32,6 +32,7 @@ protected:
     QBdtNodeInterfacePtr root;
     QInterfacePtr stateVecUnit;
     bitCapIntOcl maxQPowerOcl;
+    bitCapIntOcl treeLevelPowerOcl;
     bitLenInt treeLevelCount;
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
@@ -43,16 +44,21 @@ protected:
         maxQPowerOcl = (bitCapIntOcl)maxQPower;
         bdtQubitCount = qubitCount - attachedQubitCount;
         treeLevelCount = attachedQubitCount ? (bdtQubitCount + 1U) : bdtQubitCount;
+        treeLevelPowerOcl = pow2Ocl(treeLevelCount);
     }
 
     typedef std::function<void(void)> DispatchFn;
     virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn) { fn(); }
 
-    QInterfacePtr MakeStateVector(bitLenInt qbCount = 0U, bitCapInt perm = 0U);
+    QInterfacePtr MakeStateVector(bitLenInt qbCount, bitCapInt perm = 0U);
+    QEnginePtr MakeQEngine(bitLenInt qbCount, bitCapInt perm = 0U)
+    {
+        return std::dynamic_pointer_cast<QEngine>(MakeStateVector(qbCount, perm));
+    }
 
     QInterfacePtr MakeTempStateVector()
     {
-        QInterfacePtr copyPtr = MakeStateVector();
+        QInterfacePtr copyPtr = MakeStateVector(qubitCount);
         Finish();
         GetQuantumState(copyPtr);
 
@@ -67,7 +73,7 @@ protected:
 
         FlushBuffers();
         Finish();
-        stateVecUnit = MakeStateVector();
+        stateVecUnit = MakeStateVector(qubitCount);
         GetQuantumState(stateVecUnit);
         root = NULL;
     }

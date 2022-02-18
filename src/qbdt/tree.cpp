@@ -78,9 +78,8 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 
     if (attachedQubitCount) {
         const size_t bit = SelectBit(initState, bdtQubitCount);
-        leaf->branches[bit] =
-            std::dynamic_pointer_cast<QEngine>(MakeStateVector(attachedQubitCount, initState >> bdtQubitCount));
-        leaf->branches[bit ^ 1U] = std::dynamic_pointer_cast<QEngine>(MakeStateVector(0, 0));
+        leaf->branches[bit] = MakeQEngine(attachedQubitCount, initState >> bdtQubitCount);
+        leaf->branches[bit ^ 1U] = MakeQEngine(0);
         leaf->branches[bit ^ 1U]->SetZero();
     }
 }
@@ -251,17 +250,12 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
-    if (!attachedQubitCount && start && (start != qubitCount)) {
-        return QInterface::Compose(toCopy, start);
+    if (attachedQubitCount) {
+        throw std::runtime_error("Compose() once attached is not implemented!");
     }
 
-    // TODO: This might function without error, but it isn't right for the purpose.
-    if (attachedQubitCount && start) {
-        ROR(start, 0, qubitCount);
-        Compose(toCopy, 0);
-        ROL(start, 0, qubitCount);
-
-        return start;
+    if (start && (start != qubitCount)) {
+        return QInterface::Compose(toCopy, start);
     }
 
     bitLenInt qbCount;
@@ -307,7 +301,7 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy, bitLenInt start)
     if (start != qubitCount) {
         const bitLenInt origSize = qubitCount;
         ROL(origSize - start, 0, origSize);
-        bitLenInt result = Compose(toCopy, qubitCount);
+        bitLenInt result = Attach(toCopy, qubitCount);
         ROR(origSize - start, 0, qubitCount);
 
         return result;
@@ -318,7 +312,7 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy, bitLenInt start)
     treeLevelCount = bdtQubitCount + 1U;
 
     if (isAttached) {
-        par_for_qbdt(0, maxQPowerOcl, [&](const bitCapIntOcl& i, const int& cpu) {
+        par_for_qbdt(0, treeLevelPowerOcl, [&](const bitCapIntOcl& i, const int& cpu) {
             QBdtNodeInterfacePtr leaf = root;
             for (bitLenInt j = 0; j < treeLevelCount; j++) {
                 if (IS_NORM_0(leaf->scale)) {
@@ -338,19 +332,30 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy, bitLenInt start)
         return start;
     }
 
-    par_for_qbdt(0, maxQPowerOcl, [&](const bitCapIntOcl& i, const int& cpu) {
+    const bitLenInt maxQubits = qubitCount - 1U;
+    par_for_qbdt(0, pow2Ocl(maxQubits), [&](const bitCapIntOcl& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf = root;
-        for (bitLenInt j = 0; j < qubitCount; j++) {
+        for (bitLenInt j = 0; j < maxQubits; j++) {
             if (IS_NORM_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
-                return (bitCapIntOcl)(pow2Ocl(qubitCount - j) - ONE_BCI);
+                return (bitCapIntOcl)(pow2Ocl(maxQubits - j) - ONE_BCI);
             }
-            leaf = leaf->branches[SelectBit(i, qubitCount - (j + 1U))];
+            leaf = leaf->branches[SelectBit(i, maxQubits - (j + 1U))];
         }
 
-        if (!IS_NORM_0(leaf->scale)) {
-            leaf->branches[0] = toCopy;
-            leaf->branches[1] = toCopy;
+        if (IS_NORM_0(leaf->scale)) {
+            return (bitCapIntOcl)0U;
+        }
+
+        for (size_t i = 0; i < 2; i++) {
+            const complex scale = leaf->branches[i]->scale;
+            if (IS_NORM_0(scale)) {
+                leaf->branches[i] = MakeQEngine(0);
+                leaf->branches[i]->SetZero();
+            } else {
+                leaf->branches[i] = std::dynamic_pointer_cast<QEngine>(toCopy->Clone());
+                leaf->branches[i]->scale = scale;
+            }
         }
 
         return (bitCapIntOcl)0U;
@@ -361,6 +366,10 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy, bitLenInt start)
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
+    if (attachedQubitCount) {
+        throw std::runtime_error("Decompose() once attached is not implemented!");
+    }
+
     const bitLenInt end = start + length;
     if ((attachedQubitCount && start) || (!attachedQubitCount && start && (end < qubitCount))) {
         ROR(start, 0, GetQubitCount());
