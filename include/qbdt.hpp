@@ -140,11 +140,11 @@ protected:
         // Low qubits are QBdt; high qubits are QEngine.
         // Target qubit must be in QEngine, if acting with QEngine.
         CNOT(low, high);
-        H(low);
         H(high);
+        H(low);
         CNOT(low, high);
-        H(low);
         H(high);
+        H(low);
         CNOT(low, high);
     }
 
