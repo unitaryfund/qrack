@@ -34,13 +34,15 @@ protected:
     bitCapIntOcl maxQPowerOcl;
     bitLenInt treeLevelCount;
     bitLenInt attachedQubitCount;
+    bitLenInt bdtQubitCount;
     std::vector<MpsShardPtr> shards;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
         QInterface::SetQubitCount(qb);
         maxQPowerOcl = (bitCapIntOcl)maxQPower;
-        treeLevelCount = attachedQubitCount ? (qubitCount + 1U) : qubitCount;
+        bdtQubitCount = qubitCount - attachedQubitCount;
+        treeLevelCount = attachedQubitCount ? (bdtQubitCount + 1U) : bdtQubitCount;
     }
 
     typedef std::function<void(void)> DispatchFn;
@@ -119,7 +121,7 @@ protected:
 
     void FlushBuffers()
     {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0; i < bdtQubitCount; i++) {
             FlushBuffer(i);
         }
         Finish();
@@ -127,7 +129,7 @@ protected:
 
     void DumpBuffers()
     {
-        for (bitLenInt i = 0U; i < qubitCount; i++) {
+        for (bitLenInt i = 0U; i < bdtQubitCount; i++) {
             shards[i] = NULL;
         }
     }
@@ -153,10 +155,6 @@ public:
     }
 
     virtual bool isBinaryDecisionTree() { return true; };
-
-    virtual bitLenInt GetQubitCount() { return qubitCount + attachedQubitCount; }
-
-    virtual bitCapInt GetMaxQPower() { return pow2Ocl(qubitCount + attachedQubitCount); }
 
     virtual void Finish()
     {
@@ -209,7 +207,7 @@ public:
         return Compose(std::dynamic_pointer_cast<QBdt>(toCopy), start);
     }
     virtual bitLenInt Attach(QEnginePtr toCopy, bitLenInt start);
-    virtual bitLenInt Attach(QEnginePtr toCopy) { return Attach(toCopy, GetQubitCount()); }
+    virtual bitLenInt Attach(QEnginePtr toCopy) { return Attach(toCopy, qubitCount); }
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));
@@ -259,7 +257,7 @@ public:
 
         CNOT(low, high);
 
-        if ((low < qubitCount) && (qubitCount <= high)) {
+        if ((low < bdtQubitCount) && (bdtQubitCount <= high)) {
             // Low qubits are QBdt; high qubits are QEngine.
             // Target qubit must be in QEngine, if acting with QEngine.
             H(high);
