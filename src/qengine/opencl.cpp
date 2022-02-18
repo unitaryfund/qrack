@@ -89,7 +89,9 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
 {
     InitOCL(devID);
     clFinish();
-    SetPermutation(initState, phaseFac);
+    if (qubitCount) {
+        SetPermutation(initState, phaseFac);
+    }
 }
 
 void QEngineOCL::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
@@ -1124,6 +1126,25 @@ void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
 
 void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy)
 {
+    if (!qubitCount) {
+        SetQubitCount(toCopy->qubitCount);
+        if (toCopy->stateBuffer) {
+            stateVec = AllocStateVec(toCopy->maxQPowerOcl);
+            stateBuffer = MakeStateVecBuffer(stateVec);
+
+            cl::Event copyEvent;
+            const cl_int error = queue.enqueueCopyBuffer(
+                *(toCopy->stateBuffer), *stateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl, NULL, &copyEvent);
+            if (error != CL_SUCCESS) {
+                FreeAll();
+                throw std::runtime_error("Failed to enqueue buffer copy, error code: " + std::to_string(error));
+            }
+            copyEvent.wait();
+        }
+
+        return;
+    }
+
     if (!stateBuffer || !toCopy->stateBuffer) {
         // Compose will have a wider but 0 stateVec
         ZeroAmplitudes();
@@ -1258,30 +1279,30 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         destination->SetDevice(deviceID);
     }
 
-    if (length == qubitCount) {
+    const bitLenInt nLength = qubitCount - length;
+
+    if (!nLength) {
         if (destination != NULL) {
             destination->ResetStateVec(stateVec);
             destination->stateBuffer = stateBuffer;
             stateVec = NULL;
         }
+        SetQubitCount(0);
         // This will be cleared by the destructor:
-        SubtractAlloc(sizeof(complex) * (pow2Ocl(qubitCount) - 2U));
-        ResetStateVec(AllocStateVec(2));
+        SubtractAlloc(sizeof(complex) * pow2Ocl(qubitCount));
+        stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
         stateBuffer = MakeStateVecBuffer(stateVec);
-        SetQubitCount(1);
         return;
     }
 
     cl_int error;
 
-    bitLenInt nLength = qubitCount - length;
-
-    bitCapIntOcl partPower = pow2Ocl(length);
-    bitCapIntOcl remainderPower = pow2Ocl(nLength);
-    bitCapIntOcl oMaxQPower = maxQPowerOcl;
+    const bitCapIntOcl partPower = pow2Ocl(length);
+    const bitCapIntOcl remainderPower = pow2Ocl(nLength);
+    const bitCapIntOcl oMaxQPower = maxQPowerOcl;
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { partPower, remainderPower, start, length, 0, 0, 0, 0, 0, 0 };
 
-    size_t remainderDiff = 2 * sizeof(real1) * remainderPower;
+    const size_t remainderDiff = 2 * sizeof(real1) * remainderPower;
     AddAlloc(remainderDiff);
 
     // The "remainder" bits will always be maintained.
@@ -1292,7 +1313,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     // The removed "part" is only necessary for Decompose.
     BufferPtr probBuffer2, angleBuffer2;
-    size_t partDiff = 2 * sizeof(real1) * partPower;
+    const size_t partDiff = 2 * sizeof(real1) * partPower;
     if (destination) {
         AddAlloc(2 * sizeof(real1) * partPower);
         probBuffer2 = MakeBuffer(context, CL_MEM_READ_WRITE, sizeof(real1) * partPower);
@@ -1306,7 +1327,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs, error);
 
-    bitCapIntOcl largerPower = partPower > remainderPower ? partPower : remainderPower;
+    const bitCapIntOcl largerPower = partPower > remainderPower ? partPower : remainderPower;
 
     const size_t ngc = FixWorkItemCount(largerPower, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
@@ -2889,7 +2910,7 @@ void QEngineOCL::UpdateRunningNorm(real1_f norm_thresh)
 complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
 {
     // If we're not using host ram, there's no reason to allocate.
-    if (!doForceAlloc && !stateVec) {
+    if (!elemCount || (!doForceAlloc && !stateVec)) {
         return NULL;
     }
 
@@ -2912,6 +2933,10 @@ complex* QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
 
 BufferPtr QEngineOCL::MakeStateVecBuffer(complex* nStateVec)
 {
+    if (!maxQPowerOcl) {
+        return NULL;
+    }
+
     if (nStateVec) {
         return MakeBuffer(context, CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, sizeof(complex) * maxQPowerOcl, nStateVec);
     } else {

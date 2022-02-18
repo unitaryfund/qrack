@@ -57,6 +57,9 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
 
     stateVec = AllocStateVec(maxQPowerOcl);
+    if (!qubitCount) {
+        return;
+    }
     stateVec->clear();
 
     if (phaseFac == CMPLX_DEFAULT_ARG) {
@@ -749,6 +752,16 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     bitLenInt result = qubitCount;
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
 
+    if (!qubitCount) {
+        if (toCopy->stateVec) {
+            stateVec = AllocStateVec(toCopy->maxQPowerOcl);
+            stateVec->copy(toCopy->stateVec);
+        }
+        SetQubitCount(toCopy->qubitCount);
+
+        return 0;
+    }
+
     if (!stateVec || !toCopy->stateVec) {
         // Compose will have a wider but 0 stateVec
         ZeroAmplitudes();
@@ -797,6 +810,11 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
  */
 bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
 {
+    if (!qubitCount) {
+        Compose(toCopy);
+        return 0;
+    }
+
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
 
     if (!stateVec || !toCopy->stateVec) {
@@ -911,15 +929,17 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     const bitLenInt nLength = qubitCount - length;
 
     if (!stateVec) {
-        if (nLength == 0) {
-            SetQubitCount(1);
-        } else {
-            SetQubitCount(nLength);
-        }
+        SetQubitCount(nLength);
         if (destination) {
             destination->ZeroAmplitudes();
         }
         return;
+    }
+
+    if (!nLength) {
+        destination->stateVec = stateVec;
+        stateVec = NULL;
+        SetQubitCount(0);
     }
 
     if (destination && !destination->stateVec) {
@@ -1054,11 +1074,7 @@ void QEngineCPU::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     const bitLenInt nLength = qubitCount - length;
 
     if (!stateVec) {
-        if (nLength == 0) {
-            SetQubitCount(1);
-        } else {
-            SetQubitCount(nLength);
-        }
+        SetQubitCount(nLength);
         return;
     }
 
