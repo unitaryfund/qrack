@@ -799,9 +799,13 @@ void QBdt::ApplyControlledSingle(
     std::sort(sortedControls.begin(), sortedControls.end());
 
     std::vector<bitCapIntOcl> qPowersSorted;
+    std::vector<bitLenInt> ketControlsSorted;
     bitCapIntOcl lowControlMask = 0U;
     bitLenInt c;
     for (c = 0U; (c < controlLen) && (sortedControls[c] < target); c++) {
+        if (sortedControls[c] > qubitCount) {
+            ketControlsSorted.push_back(sortedControls[c]);
+        }
         qPowersSorted.push_back(pow2Ocl(target - (sortedControls[c] + 1U)));
         lowControlMask |= qPowersSorted.back();
     }
@@ -809,8 +813,23 @@ void QBdt::ApplyControlledSingle(
 
     bitCapIntOcl highControlMask = 0U;
     for (; c < controlLen; c++) {
+        if (sortedControls[c] > qubitCount) {
+            ketControlsSorted.push_back(sortedControls[c]);
+        }
         highControlMask |= pow2Ocl(qubitCount - (sortedControls[c] + 1U));
     }
+
+    bool isKetSwapped = (ketControlsSorted.size() > 0) && (target < qubitCount);
+    if (isKetSwapped) {
+        QBdtSafeSwap(ketControlsSorted[0], target);
+        std::swap(ketControlsSorted[0], target);
+    }
+
+    bitCapIntOcl ketControlMask = 0U;
+    for (bitLenInt i = 0; i < ketControlsSorted.size(); i++) {
+        ketControlMask |= pow2Ocl(ketControlsSorted[i]);
+    }
+    // TODO: Finish pass through for ketControlMask to Attach() qubits.
 
     const bitCapIntOcl targetPow = pow2Ocl(target);
     const bitCapIntOcl maskTarget = (isAnti ? 0U : lowControlMask);
