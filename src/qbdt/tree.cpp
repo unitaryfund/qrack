@@ -801,12 +801,12 @@ void QBdt::ApplyControlledSingle(
     std::sort(sortedControls.begin(), sortedControls.end());
 
     std::vector<bitCapIntOcl> qPowersSorted;
-    std::vector<bitLenInt> ketControlsSorted;
+    std::vector<bitLenInt> ketControlsVec;
     bitCapIntOcl lowControlMask = 0U;
     bitLenInt c;
     for (c = 0U; (c < controlLen) && (sortedControls[c] < target); c++) {
         if (sortedControls[c] > qubitCount) {
-            ketControlsSorted.push_back(sortedControls[c]);
+            ketControlsVec.push_back(sortedControls[c]);
         }
         qPowersSorted.push_back(pow2Ocl(target - (sortedControls[c] + 1U)));
         lowControlMask |= qPowersSorted.back();
@@ -816,30 +816,30 @@ void QBdt::ApplyControlledSingle(
     bitCapIntOcl highControlMask = 0U;
     for (; c < controlLen; c++) {
         if (sortedControls[c] > qubitCount) {
-            ketControlsSorted.push_back(sortedControls[c]);
+            ketControlsVec.push_back(sortedControls[c]);
         }
         highControlMask |= pow2Ocl(qubitCount - (sortedControls[c] + 1U));
     }
 
     const bool isKetSwapped =
-        (lowControlMask || highControlMask) && (ketControlsSorted.size() > 0) && (target < qubitCount);
+        (lowControlMask || highControlMask) && (ketControlsVec.size() > 0) && (target < qubitCount);
     if (isKetSwapped) {
-        QBdtSafeSwap(target, ketControlsSorted[0]);
-        std::swap(target, ketControlsSorted[0]);
+        QBdtSafeSwap(target, ketControlsVec[0]);
+        std::swap(target, ketControlsVec[0]);
     }
 
     const bitCapIntOcl targetPow = pow2Ocl(target);
     const bitCapIntOcl maskTarget = (isAnti ? 0U : lowControlMask);
 
     Dispatch(targetPow,
-        [this, mtrxS, target, targetPow, qPowersSorted, highControlMask, maskTarget, ketControlsSorted, leafFunc]() {
+        [this, mtrxS, target, targetPow, qPowersSorted, highControlMask, maskTarget, ketControlsVec, leafFunc]() {
             complex* mtrx = mtrxS.get();
 
             std::unique_ptr<bitLenInt[]> ketControls = NULL;
-            if (ketControlsSorted.size()) {
-                ketControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[ketControlsSorted.size()]);
-                std::copy(ketControlsSorted.begin(), ketControlsSorted.end(), ketControls.get());
-                for (bitLenInt i = 0U; i < ketControlsSorted.size(); i++) {
+            if (ketControlsVec.size()) {
+                ketControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[ketControlsVec.size()]);
+                std::copy(ketControlsVec.begin(), ketControlsVec.end(), ketControls.get());
+                for (bitLenInt i = 0U; i < ketControlsVec.size(); i++) {
                     ketControls[i] -= qubitCount;
                 }
             }
@@ -887,7 +887,7 @@ void QBdt::ApplyControlledSingle(
                 }
 
                 if (target >= qubitCount) {
-                    MCMtrx(ketControls.get(), ketControlsSorted.size(), mtrxS.get(), target - qubitCount);
+                    MCMtrx(ketControls.get(), ketControlsVec.size(), mtrxS.get(), target - qubitCount);
                     return (bitCapIntOcl)0U;
                 }
 
@@ -914,7 +914,7 @@ void QBdt::ApplyControlledSingle(
 
     // Undo isKetSwapped.
     if (isKetSwapped) {
-        QBdtSafeSwap(sortedControls[0], target);
+        QBdtSafeSwap(ketControlsVec[0], target);
     }
 }
 
