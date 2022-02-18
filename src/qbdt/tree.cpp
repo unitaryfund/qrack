@@ -588,8 +588,10 @@ bitCapInt QBdt::MAll()
 }
 
 void QBdt::Apply2x2OnLeaf(const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLenInt depth, bitCapInt highControlMask,
-    bool isAnti, bool isParallel)
+    bitLenInt* ketControls, bool isAnti, bool isParallel)
 {
+    // TODO: Finish pass through for ketControlsSorted to Attach() qubits.
+
     const bitLenInt remainder = qubitCount - (depth + 1);
     leaf->Branch();
 
@@ -825,76 +827,83 @@ void QBdt::ApplyControlledSingle(
         QBdtSafeSwap(sortedControls[0], target);
         std::swap(sortedControls[0], target);
     }
-    // TODO: Finish pass through for ketControlsSorted to Attach() qubits.
+
+    std::shared_ptr<bitLenInt> ketControls = NULL;
+    if (ketControlsSorted.size()) {
+        ketControls =
+            std::shared_ptr<bitLenInt>(new bitLenInt[ketControlsSorted.size()], std::default_delete<bitLenInt[]>());
+        std::copy(ketControlsSorted.begin(), ketControlsSorted.end(), ketControls.get());
+    }
 
     const bitCapIntOcl targetPow = pow2Ocl(target);
     const bitCapIntOcl maskTarget = (isAnti ? 0U : lowControlMask);
 
-    Dispatch(targetPow, [this, mtrxS, target, targetPow, qPowersSorted, highControlMask, maskTarget, leafFunc]() {
-        complex* mtrx = mtrxS.get();
+    Dispatch(targetPow,
+        [this, mtrxS, target, targetPow, qPowersSorted, highControlMask, maskTarget, ketControls, leafFunc]() {
+            complex* mtrx = mtrxS.get();
 
-        if (qPowersSorted.size()) {
-            root->Branch(target);
-        }
-
-        const bool isPhase = !highControlMask && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]);
-        const bool isInvert = !highControlMask && IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]);
-        const bitCapIntOcl maxLcv = targetPow >> qPowersSorted.size();
-        const bool isParallel = (maxLcv < GetStride());
-
-        par_for_qbdt(0, maxLcv, [&](const bitCapIntOcl& lcv, const int& cpu) {
-            bitCapIntOcl i = 0U;
-            bitCapIntOcl iHigh = lcv;
-            bitCapIntOcl iLow;
-            int p;
-            for (p = 0; p < (int)qPowersSorted.size(); p++) {
-                iLow = iHigh & (qPowersSorted[p] - ONE_BCI);
-                i |= iLow;
-                iHigh = (iHigh ^ iLow) << ONE_BCI;
+            if (qPowersSorted.size()) {
+                root->Branch(target);
             }
-            i |= iHigh | maskTarget;
 
-            QBdtNodeInterfacePtr leaf = root;
-            // Iterate to qubit depth.
-            for (bitLenInt j = 0; j < target; j++) {
-                if (IS_NORM_0(leaf->scale)) {
-                    // WARNING: Mutates loop control variable!
-                    i = pow2Ocl(target - j) - ONE_BCI;
-                    for (p = (int)(qPowersSorted.size() - 1U); p >= 0; p--) {
-                        i = (bitCapIntOcl)RemovePower(i, qPowersSorted[p]);
+            const bool isPhase = !highControlMask && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]);
+            const bool isInvert = !highControlMask && IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]);
+            const bitCapIntOcl maxLcv = targetPow >> qPowersSorted.size();
+            const bool isParallel = (maxLcv < GetStride());
+
+            par_for_qbdt(0, maxLcv, [&](const bitCapIntOcl& lcv, const int& cpu) {
+                bitCapIntOcl i = 0U;
+                bitCapIntOcl iHigh = lcv;
+                bitCapIntOcl iLow;
+                int p;
+                for (p = 0; p < (int)qPowersSorted.size(); p++) {
+                    iLow = iHigh & (qPowersSorted[p] - ONE_BCI);
+                    i |= iLow;
+                    iHigh = (iHigh ^ iLow) << ONE_BCI;
+                }
+                i |= iHigh | maskTarget;
+
+                QBdtNodeInterfacePtr leaf = root;
+                // Iterate to qubit depth.
+                for (bitLenInt j = 0; j < target; j++) {
+                    if (IS_NORM_0(leaf->scale)) {
+                        // WARNING: Mutates loop control variable!
+                        i = pow2Ocl(target - j) - ONE_BCI;
+                        for (p = (int)(qPowersSorted.size() - 1U); p >= 0; p--) {
+                            i = (bitCapIntOcl)RemovePower(i, qPowersSorted[p]);
+                        }
+                        return i;
                     }
-                    return i;
+                    if (!qPowersSorted.size()) {
+                        leaf->Branch();
+                    }
+                    leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
                 }
-                if (!qPowersSorted.size()) {
+
+                if (IS_NORM_0(leaf->scale)) {
+                    return (bitCapIntOcl)0U;
+                }
+
+                if (isPhase) {
                     leaf->Branch();
+                    leaf->branches[0]->scale *= mtrx[0];
+                    leaf->branches[1]->scale *= mtrx[3];
+                    leaf->Prune();
+                } else if (isInvert) {
+                    leaf->Branch();
+                    leaf->branches[0].swap(leaf->branches[1]);
+                    leaf->branches[0]->scale *= mtrx[1];
+                    leaf->branches[1]->scale *= mtrx[2];
+                    leaf->Prune();
+                } else {
+                    leafFunc(leaf, mtrx, highControlMask, ketControls.get(), isParallel);
                 }
-                leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
-            }
 
-            if (IS_NORM_0(leaf->scale)) {
                 return (bitCapIntOcl)0U;
-            }
+            });
 
-            if (isPhase) {
-                leaf->Branch();
-                leaf->branches[0]->scale *= mtrx[0];
-                leaf->branches[1]->scale *= mtrx[3];
-                leaf->Prune();
-            } else if (isInvert) {
-                leaf->Branch();
-                leaf->branches[0].swap(leaf->branches[1]);
-                leaf->branches[0]->scale *= mtrx[1];
-                leaf->branches[1]->scale *= mtrx[2];
-                leaf->Prune();
-            } else {
-                leafFunc(leaf, mtrx, highControlMask, isParallel);
-            }
-
-            return (bitCapIntOcl)0U;
+            root->Prune(target);
         });
-
-        root->Prune(target);
-    });
 
     // Undo isKetSwapped.
     if (isKetSwapped) {
@@ -909,9 +918,9 @@ void QBdt::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex
     }
 
     ApplyControlledSingle(mtrx, controls, controlLen, target, false,
-        [this, target](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl highControlMask, bool isParallel) {
-            Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, false, isParallel);
-        });
+        [this, target](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl highControlMask,
+            bitLenInt* ketControls,
+            bool isParallel) { Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, ketControls, false, isParallel); });
 }
 
 void QBdt::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
@@ -921,9 +930,9 @@ void QBdt::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const comple
     }
 
     ApplyControlledSingle(mtrx, controls, controlLen, target, true,
-        [this, target](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl highControlMask, bool isParallel) {
-            Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, true, isParallel);
-        });
+        [this, target](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl highControlMask,
+            bitLenInt* ketControls,
+            bool isParallel) { Apply2x2OnLeaf(mtrx, leaf, target, highControlMask, ketControls, true, isParallel); });
 }
 
 bool QBdt::CheckControlled(
@@ -976,7 +985,7 @@ void QBdt::FlushBuffer(bitLenInt i)
 
     ApplySingle(shard->gate, i,
         [this, i](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool isParallel) {
-            Apply2x2OnLeaf(mtrx, leaf, i, 0U, false, isParallel);
+            Apply2x2OnLeaf(mtrx, leaf, i, 0U, NULL, false, isParallel);
         });
 }
 
