@@ -937,7 +937,9 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
     }
 
     if (!nLength) {
-        destination->stateVec = stateVec;
+        if (destination) {
+            destination->stateVec = stateVec;
+        }
         stateVec = NULL;
         SetQubitCount(0);
     }
