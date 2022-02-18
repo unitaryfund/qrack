@@ -59,6 +59,10 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
 
     Init();
 
+    if (!qubitCount) {
+        return;
+    }
+
     initState &= maxQPower - ONE_BCI;
     bitCapIntOcl pagePerm = 0;
     for (bitCapIntOcl i = 0; i < basePageCount; i++) {

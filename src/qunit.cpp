@@ -85,7 +85,9 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     }
 #endif
 
-    SetPermutation(initState);
+    if (qubitCount) {
+        SetPermutation(initState);
+    }
 }
 
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
