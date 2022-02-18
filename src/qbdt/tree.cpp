@@ -819,17 +819,13 @@ void QBdt::ApplyControlledSingle(
         highControlMask |= pow2Ocl(qubitCount - (sortedControls[c] + 1U));
     }
 
-    const bool isKetSwapped = (ketControlsSorted.size() > 0) && (target < qubitCount);
+    const bool isKetSwapped =
+        (lowControlMask || highControlMask) && (ketControlsSorted.size() > 0) && (target < qubitCount);
     if (isKetSwapped) {
         QBdtSafeSwap(sortedControls[0], target);
         std::swap(sortedControls[0], target);
     }
-
-    bitCapIntOcl ketControlMask = 0U;
-    for (bitLenInt i = 0; i < ketControlsSorted.size(); i++) {
-        ketControlMask |= pow2Ocl(ketControlsSorted[i]);
-    }
-    // TODO: Finish pass through for ketControlMask to Attach() qubits.
+    // TODO: Finish pass through for ketControlsSorted to Attach() qubits.
 
     const bitCapIntOcl targetPow = pow2Ocl(target);
     const bitCapIntOcl maskTarget = (isAnti ? 0U : lowControlMask);
@@ -899,6 +895,11 @@ void QBdt::ApplyControlledSingle(
 
         root->Prune(target);
     });
+
+    // Undo isKetSwapped.
+    if (isKetSwapped) {
+        QBdtSafeSwap(sortedControls[0], target);
+    }
 }
 
 void QBdt::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
