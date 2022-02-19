@@ -43,9 +43,6 @@ protected:
         bdtQubitCount = qubitCount - attachedQubitCount;
     }
 
-    typedef std::function<void(void)> DispatchFn;
-    virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn) { fn(); }
-
     QInterfacePtr MakeStateVector(bitLenInt qbCount, bitCapInt perm = 0U);
     QBdtQInterfaceNodePtr MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
 
@@ -100,8 +97,8 @@ protected:
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
-    void Apply2x2OnLeaf(const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLenInt depth, bitCapInt highControlMask,
-        bool isAnti, bool isParallel);
+    void Apply2x2OnLeaf(
+        const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLenInt depth, bitCapInt highControlMask, bool isAnti);
 
     template <typename Fn> void ApplySingle(const complex* mtrx, bitLenInt target, Fn leafFunc);
     template <typename Lfn>
@@ -135,6 +132,25 @@ protected:
 
     bool CheckControlled(
         const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target, bool isAnti);
+
+    void SafeSwap(bitLenInt low, bitLenInt high)
+    {
+        if (high < low) {
+            std::swap(low, high);
+        }
+
+        CNOT(low, high);
+
+        // Low qubits are QBdt; high qubits are QInterface.
+        // Target qubit must be in QInterface, if acting with QInterface.
+        H(high);
+        H(low);
+        CNOT(low, high);
+        H(high);
+        H(low);
+
+        CNOT(low, high);
+    }
 
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -266,21 +282,11 @@ public:
             std::swap(low, high);
         }
 
-        CNOT(low, high);
-
-        if ((low < bdtQubitCount) && (high >= bdtQubitCount)) {
-            // Low qubits are QBdt; high qubits are QInterface.
-            // Target qubit must be in QInterface, if acting with QInterface.
-            H(high);
-            H(low);
-            CNOT(low, high);
-            H(high);
-            H(low);
+        if (bdtQubitCount < high) {
+            QInterface::Swap(low, high);
         } else {
-            CNOT(high, low);
+            SafeSwap(low, high);
         }
-
-        CNOT(low, high);
     }
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
