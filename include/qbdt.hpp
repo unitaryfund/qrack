@@ -125,6 +125,22 @@ protected:
         }
     }
 
+    virtual void SafeCZ(bitLenInt control, bitLenInt target, bool anti)
+    {
+        if (control < target) {
+            const bitLenInt controls[1] = { control };
+            const complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+            ApplyControlledSingle(mtrx, controls, 1U, target, anti);
+        } else {
+            // Our control qubits must act low-on-high
+            const bitLenInt controls[1] = { target };
+            const complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+            H(target);
+            ApplyControlledSingle(mtrx, controls, 1U, control, anti);
+            H(target);
+        }
+    }
+
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -239,6 +255,8 @@ public:
 
     virtual void CNOT(bitLenInt control, bitLenInt target) { SafeCNOT(control, target, false); }
     virtual void AntiCNOT(bitLenInt control, bitLenInt target) { SafeCNOT(control, target, true); }
+    virtual void CZ(bitLenInt control, bitLenInt target) { SafeCZ(control, target, false); }
+    virtual void AntiCZ(bitLenInt control, bitLenInt target) { SafeCZ(control, target, true); }
 
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     virtual real1_f ProbParity(bitCapInt mask)

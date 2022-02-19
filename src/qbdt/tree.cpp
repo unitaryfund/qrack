@@ -751,8 +751,11 @@ void QBdt::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex
         return;
     }
 
-    if ((controlLen == 1U) && IS_NORM_0(mtrx[0]) && IS_NORM_0(ONE_CMPLX - mtrx[1]) && IS_NORM_0(ONE_CMPLX - mtrx[2]) &&
-        IS_NORM_0(mtrx[3])) {
+    if ((controlLen == 1U) && IS_NORM_0(ONE_CMPLX - mtrx[0]) && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]) &&
+        IS_NORM_0(ONE_CMPLX + mtrx[3])) {
+        CZ(controls[0], target);
+    } else if ((controlLen == 1U) && IS_NORM_0(mtrx[0]) && IS_NORM_0(ONE_CMPLX - mtrx[1]) &&
+        IS_NORM_0(ONE_CMPLX - mtrx[2]) && IS_NORM_0(mtrx[3])) {
         CNOT(controls[0], target);
     } else {
         ApplyControlledSingle(mtrx, controls, controlLen, target, false);
@@ -766,8 +769,11 @@ void QBdt::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const comple
         return;
     }
 
-    if ((controlLen == 1U) && IS_NORM_0(mtrx[0]) && IS_NORM_0(ONE_CMPLX - mtrx[1]) && IS_NORM_0(ONE_CMPLX - mtrx[2]) &&
-        IS_NORM_0(mtrx[3])) {
+    if ((controlLen == 1U) && IS_NORM_0(ONE_CMPLX - mtrx[0]) && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]) &&
+        IS_NORM_0(ONE_CMPLX + mtrx[3])) {
+        AntiCZ(controls[0], target);
+    } else if ((controlLen == 1U) && IS_NORM_0(mtrx[0]) && IS_NORM_0(ONE_CMPLX - mtrx[1]) &&
+        IS_NORM_0(ONE_CMPLX - mtrx[2]) && IS_NORM_0(mtrx[3])) {
         AntiCNOT(controls[0], target);
     } else {
         ApplyControlledSingle(mtrx, controls, controlLen, target, true);
