@@ -108,30 +108,6 @@ protected:
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
     }
 
-    virtual void SafeCNOT(bitLenInt control, bitLenInt target)
-    {
-        if (control < target) {
-            const complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-            const bitLenInt controls[1] = { control };
-            ApplyControlledSingle(mtrx, controls, 1U, target, false);
-            return;
-        }
-
-        H(target);
-        SafeCZ(target, control);
-        H(target);
-    }
-
-    virtual void SafeCZ(bitLenInt control, bitLenInt target)
-    {
-        if (target < control) {
-            std::swap(target, control);
-        }
-        const bitLenInt controls[1] = { control };
-        const complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-        ApplyControlledSingle(mtrx, controls, 1U, target, false);
-    }
-
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -244,8 +220,28 @@ public:
     virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
     virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
 
-    virtual void CNOT(bitLenInt control, bitLenInt target) { SafeCNOT(control, target); }
-    virtual void CZ(bitLenInt control, bitLenInt target) { SafeCZ(control, target); }
+    virtual void CNOT(bitLenInt control, bitLenInt target)
+    {
+        if (control < target) {
+            const complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+            const bitLenInt controls[1] = { control };
+            ApplyControlledSingle(mtrx, controls, 1U, target, false);
+            return;
+        }
+
+        H(target);
+        CZ(target, control);
+        H(target);
+    }
+    virtual void CZ(bitLenInt control, bitLenInt target)
+    {
+        if (target < control) {
+            std::swap(target, control);
+        }
+        const bitLenInt controls[1] = { control };
+        const complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+        ApplyControlledSingle(mtrx, controls, 1U, target, false);
+    }
 
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     virtual real1_f ProbParity(bitCapInt mask)
