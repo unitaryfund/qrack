@@ -213,8 +213,20 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QBdt>(toCopy), start);
     }
-    virtual bitLenInt Attach(QEnginePtr toCopy, bitLenInt start);
-    virtual bitLenInt Attach(QEnginePtr toCopy) { return Attach(toCopy, qubitCount); }
+    virtual bitLenInt Attach(QEnginePtr toCopy, bitLenInt start)
+    {
+        if (start == qubitCount) {
+            return Attach(toCopy);
+        }
+
+        const bitLenInt origSize = qubitCount;
+        ROL(origSize - start, 0, qubitCount);
+        bitLenInt result = Attach(toCopy, qubitCount);
+        ROR(origSize - start, 0, qubitCount);
+
+        return result;
+    }
+    virtual bitLenInt Attach(QEnginePtr toCopy);
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));

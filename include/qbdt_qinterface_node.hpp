@@ -28,6 +28,13 @@ class QBdtQInterfaceNode : public QBdtNodeInterface {
 public:
     QEnginePtr qReg;
 
+    QBdtQInterfaceNode()
+        : QBdtNodeInterface(ZERO_CMPLX)
+        , qReg(NULL)
+    {
+        // Intentionally left blank.
+    }
+
     QBdtQInterfaceNode(complex scl, QEnginePtr q)
         : QBdtNodeInterface(scl)
         , qReg(q)
