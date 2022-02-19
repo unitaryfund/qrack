@@ -834,6 +834,7 @@ void QBdt::ApplyControlledSingle(
         qPowersSorted.push_back(pow2Ocl(target - (sortedControls[c] + 1U)));
         lowControlMask |= qPowersSorted.back();
     }
+    qPowersSorted.resize(qPowersSorted.size() - ketControlsVec.size());
     std::reverse(qPowersSorted.begin(), qPowersSorted.end());
 
     bitCapIntOcl highControlMask = 0U;
@@ -843,8 +844,6 @@ void QBdt::ApplyControlledSingle(
         }
         highControlMask |= pow2Ocl(bdtQubitCount - (sortedControls[c] + 1U));
     }
-
-    qPowersSorted.resize(qPowersSorted.size() - ketControlsVec.size());
 
     const bitLenInt maxQubit = (target < bdtQubitCount) ? target : bdtQubitCount;
     const bitCapIntOcl maxQubitPow = pow2Ocl(maxQubit);
