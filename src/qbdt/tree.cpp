@@ -633,7 +633,7 @@ void QBdt::Apply2x2OnLeaf(const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLen
         return;
     }
 
-    const bitLenInt remainder = bdtQubitCount - (depth + 1);
+    const bitLenInt remainder = bdtQubitCount - (depth + 1U);
     const bitCapIntOcl controlPerm = (isAnti ? (bitCapIntOcl)0U : (bitCapIntOcl)highControlMask);
 
     IncrementFunc fn = [&](const bitCapIntOcl& i, const int& cpu) {
@@ -836,8 +836,7 @@ void QBdt::ApplyControlledSingle(
     std::copy(controls, controls + controlLen, sortedControls.begin());
     std::sort(sortedControls.begin(), sortedControls.end());
 
-    const bool isKetSwapped =
-        sortedControls.size() && (sortedControls.back() >= bdtQubitCount) && (target < bdtQubitCount);
+    const bool isKetSwapped = (bdtQubitCount <= sortedControls.back()) && (target < bdtQubitCount);
     const bitLenInt swappedBit = target;
     if (isKetSwapped) {
         Swap(target, sortedControls.back());
@@ -928,7 +927,7 @@ void QBdt::ApplyControlledSingle(
                     return (bitCapIntOcl)0U;
                 }
 
-                if (target >= bdtQubitCount) {
+                if (bdtQubitCount <= target) {
                     QInterfacePtr qiLeaf = NODE_TO_QINTERFACE(leaf);
                     if (qis.find(qiLeaf) == qis.end()) {
                         qiLeaf->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrxS.get(), target - bdtQubitCount);
