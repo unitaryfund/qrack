@@ -70,6 +70,11 @@ public:
         }
     }
 
+    virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false)
+    {
+        throw std::out_of_range("QBdtQInterfaceNode::Branch() not implemented!");
+    }
+
     virtual void ConvertStateVector(bitLenInt depth)
     {
         throw std::out_of_range(
