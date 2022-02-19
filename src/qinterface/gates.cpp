@@ -522,6 +522,10 @@ void QInterface::ZMask(bitCapInt mask)
 
 void QInterface::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 {
+    if (qubitIndex1 == qubitIndex2) {
+        return;
+    }
+
     CNOT(qubitIndex1, qubitIndex2);
     CNOT(qubitIndex2, qubitIndex1);
     CNOT(qubitIndex1, qubitIndex2);
@@ -529,6 +533,10 @@ void QInterface::Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 
 void QInterface::ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 {
+    if (qubitIndex1 == qubitIndex2) {
+        return;
+    }
+
     S(qubitIndex1);
     S(qubitIndex2);
     H(qubitIndex1);
@@ -539,6 +547,10 @@ void QInterface::ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 
 void QInterface::SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 {
+    if (qubitIndex1 == qubitIndex2) {
+        return;
+    }
+
     // https://quantumcomputing.stackexchange.com/questions/2228/how-to-implement-the-square-root-of-swap-gate-on-the-ibm-q-composer
     CNOT(qubitIndex1, qubitIndex2);
     H(qubitIndex1);
@@ -558,6 +570,10 @@ void QInterface::SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 
 void QInterface::ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 {
+    if (qubitIndex1 == qubitIndex2) {
+        return;
+    }
+
     // https://quantumcomputing.stackexchange.com/questions/2228/how-to-implement-the-square-root-of-swap-gate-on-the-ibm-q-composer
     IS(qubitIndex2);
     S(qubitIndex1);
@@ -577,6 +593,10 @@ void QInterface::ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
 
 void QInterface::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubitIndex1 == qubitIndex2) {
+        return;
+    }
+
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]());
     std::copy(controls, controls + controlLen, lControls.get());
 
@@ -592,6 +612,10 @@ void QInterface::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenIn
 
 void QInterface::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
+    if (qubitIndex1 == qubitIndex2) {
+        return;
+    }
+
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]());
     std::copy(controls, controls + controlLen, lControls.get());
 
