@@ -607,12 +607,34 @@ bitCapInt QBdt::MAll()
 void QBdt::Apply2x2OnLeaf(const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLenInt depth, bitCapInt highControlMask,
     bool isAnti, bool isParallel)
 {
-    const bitLenInt remainder = bdtQubitCount - (depth + 1);
-    const bitCapIntOcl controlPerm = (isAnti ? (bitCapIntOcl)0U : (bitCapIntOcl)highControlMask);
-
     leaf->Branch();
     QBdtNodeInterfacePtr& b0 = leaf->branches[0];
     QBdtNodeInterfacePtr& b1 = leaf->branches[1];
+
+    if (!highControlMask) {
+        const bool isZero0 = IS_NORM_0(b0->scale);
+        const bool isZero1 = IS_NORM_0(b1->scale);
+
+        const complex Y0 = b0->scale;
+        b0->scale = mtrx[0] * Y0 + mtrx[1] * b1->scale;
+        b1->scale = mtrx[2] * Y0 + mtrx[3] * b1->scale;
+
+        if (isZero0 && !IS_NORM_0(b0->scale)) {
+            b0->branches[0] = b1->branches[0];
+            b0->branches[1] = b1->branches[1];
+        }
+        if (isZero1 && !IS_NORM_0(b1->scale)) {
+            b1->branches[0] = b0->branches[0];
+            b1->branches[1] = b0->branches[1];
+        }
+
+        leaf->Prune();
+
+        return;
+    }
+
+    const bitLenInt remainder = bdtQubitCount - (depth + 1);
+    const bitCapIntOcl controlPerm = (isAnti ? (bitCapIntOcl)0U : (bitCapIntOcl)highControlMask);
 
     IncrementFunc fn = [&](const bitCapIntOcl& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf0 = b0;
@@ -1017,25 +1039,7 @@ void QBdt::FlushBuffer(bitLenInt i)
 
     ApplySingle(shard->gate, i,
         [this, i](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool isParallel) {
-            leaf->Branch();
-
-            const bool isZero0 = IS_NORM_0(leaf->branches[0]->scale);
-            const bool isZero1 = IS_NORM_0(leaf->branches[1]->scale);
-
-            const complex Y0 = leaf->branches[0]->scale;
-            leaf->branches[0]->scale = mtrx[0] * Y0 + mtrx[1] * leaf->branches[1]->scale;
-            leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
-
-            if (isZero0 && !IS_NORM_0(leaf->branches[0]->scale)) {
-                leaf->branches[0]->branches[0] = leaf->branches[1]->branches[0];
-                leaf->branches[0]->branches[1] = leaf->branches[1]->branches[1];
-            }
-            if (isZero1 && !IS_NORM_0(leaf->branches[1]->scale)) {
-                leaf->branches[1]->branches[0] = leaf->branches[0]->branches[0];
-                leaf->branches[1]->branches[1] = leaf->branches[0]->branches[1];
-            }
-
-            leaf->Prune();
+            Apply2x2OnLeaf(mtrx, leaf, i, 0U, false, isParallel);
         });
 }
 
