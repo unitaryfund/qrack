@@ -604,37 +604,45 @@ bitCapInt QBdt::MAll()
     return result;
 }
 
-void QBdt::Apply2x2OnLeaf(
-    const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLenInt depth, bitCapInt highControlMask, bool isAnti)
+void QBdt::Apply2x2OnLeaf(const complex* mtrx, QBdtNodeInterfacePtr leaf)
 {
     leaf->Branch();
     QBdtNodeInterfacePtr& b0 = leaf->branches[0];
     QBdtNodeInterfacePtr& b1 = leaf->branches[1];
 
+    const bool isZero0 = IS_NORM_0(b0->scale);
+    const bool isZero1 = IS_NORM_0(b1->scale);
+
+    const complex Y0 = b0->scale;
+    b0->scale = mtrx[0] * Y0 + mtrx[1] * b1->scale;
+    b1->scale = mtrx[2] * Y0 + mtrx[3] * b1->scale;
+
+    if (isZero0 && !IS_NORM_0(b0->scale)) {
+        b0->branches[0] = b1->branches[0];
+        b0->branches[1] = b1->branches[1];
+    }
+    if (isZero1 && !IS_NORM_0(b1->scale)) {
+        b1->branches[0] = b0->branches[0];
+        b1->branches[1] = b0->branches[1];
+    }
+
+    leaf->Prune();
+}
+
+void QBdt::Apply2x2OnLeaf(
+    const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLenInt depth, bitCapInt highControlMask, bool isAnti)
+{
     if (!highControlMask) {
-        const bool isZero0 = IS_NORM_0(b0->scale);
-        const bool isZero1 = IS_NORM_0(b1->scale);
-
-        const complex Y0 = b0->scale;
-        b0->scale = mtrx[0] * Y0 + mtrx[1] * b1->scale;
-        b1->scale = mtrx[2] * Y0 + mtrx[3] * b1->scale;
-
-        if (isZero0 && !IS_NORM_0(b0->scale)) {
-            b0->branches[0] = b1->branches[0];
-            b0->branches[1] = b1->branches[1];
-        }
-        if (isZero1 && !IS_NORM_0(b1->scale)) {
-            b1->branches[0] = b0->branches[0];
-            b1->branches[1] = b0->branches[1];
-        }
-
-        leaf->Prune();
-
+        Apply2x2OnLeaf(mtrx, leaf);
         return;
     }
 
     const bitLenInt remainder = bdtQubitCount - (depth + 1U);
     const bitCapIntOcl controlPerm = (isAnti ? (bitCapIntOcl)0U : (bitCapIntOcl)highControlMask);
+
+    leaf->Branch();
+    QBdtNodeInterfacePtr& b0 = leaf->branches[0];
+    QBdtNodeInterfacePtr& b1 = leaf->branches[1];
 
     IncrementFunc fn = [&](const bitCapIntOcl& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf0 = b0;
@@ -1034,9 +1042,9 @@ void QBdt::FlushBuffer(bitLenInt i)
         return;
     }
 
-    ApplySingle(
-        shard->gate, i, [this](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitLenInt target, bitCapIntOcl ignored) {
-            Apply2x2OnLeaf(mtrx, leaf, target, 0U, false);
+    ApplySingle(shard->gate, i,
+        [this](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitLenInt ignored, bitCapIntOcl ignored2) {
+            Apply2x2OnLeaf(mtrx, leaf);
         });
 }
 

@@ -97,6 +97,7 @@ protected:
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
+    void Apply2x2OnLeaf(const complex* mtrx, QBdtNodeInterfacePtr leaf);
     void Apply2x2OnLeaf(
         const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLenInt depth, bitCapInt highControlMask, bool isAnti);
 
