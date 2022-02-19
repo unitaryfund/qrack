@@ -97,8 +97,7 @@ protected:
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
     void Apply2x2OnLeaf(QBdtNodeInterfacePtr leaf, const complex* mtrx);
-    void ApplyControlledSingle(
-        const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti);
+    void ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target);
 
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
 
@@ -218,14 +217,13 @@ public:
 
     virtual void Mtrx(const complex* mtrx, bitLenInt target);
     virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
-    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
 
     virtual void CNOT(bitLenInt control, bitLenInt target)
     {
         if (control < target) {
             const complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
             const bitLenInt controls[1] = { control };
-            ApplyControlledSingle(mtrx, controls, 1U, target, false);
+            ApplyControlledSingle(mtrx, controls, 1U, target);
             return;
         }
 
@@ -240,7 +238,7 @@ public:
         }
         const bitLenInt controls[1] = { control };
         const complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-        ApplyControlledSingle(mtrx, controls, 1U, target, false);
+        ApplyControlledSingle(mtrx, controls, 1U, target);
     }
 
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
