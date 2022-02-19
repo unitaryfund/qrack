@@ -675,11 +675,11 @@ void QBdt::ApplyControlledSingle(
     for (bitLenInt c = 0U; c < controlLen; c++) {
         if (sortedControls[c] >= bdtQubitCount) {
             ketControlsVec.push_back(sortedControls[c] - bdtQubitCount);
+        } else {
+            qPowersSorted.push_back(pow2Ocl(target - (sortedControls[c] + 1U)));
+            lowControlMask |= qPowersSorted.back();
         }
-        qPowersSorted.push_back(pow2Ocl(target - (sortedControls[c] + 1U)));
-        lowControlMask |= qPowersSorted.back();
     }
-    qPowersSorted.resize(qPowersSorted.size() - ketControlsVec.size());
     std::reverse(qPowersSorted.begin(), qPowersSorted.end());
     std::unique_ptr<bitLenInt[]> ketControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[ketControlsVec.size()]);
     std::copy(ketControlsVec.begin(), ketControlsVec.end(), ketControls.get());
@@ -688,10 +688,6 @@ void QBdt::ApplyControlledSingle(
     const bitCapIntOcl maxQubitPow = pow2Ocl(maxQubit);
     const bitCapIntOcl maxLcv = maxQubitPow >> qPowersSorted.size();
     const bitCapIntOcl controlPerm = (isAnti ? 0U : lowControlMask);
-
-    if (qPowersSorted.size()) {
-        root->Branch(maxQubit);
-    }
 
     std::set<QInterfacePtr> qis;
 
@@ -718,9 +714,7 @@ void QBdt::ApplyControlledSingle(
                 }
                 return i;
             }
-            if (!qPowersSorted.size()) {
-                leaf->Branch();
-            }
+            leaf->Branch();
             leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
         }
 
