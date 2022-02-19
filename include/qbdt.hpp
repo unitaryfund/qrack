@@ -230,7 +230,7 @@ public:
         }
 
         H(target);
-        CZ(target, control);
+        CZ(control, target);
         H(target);
     }
     virtual void CZ(bitLenInt control, bitLenInt target)

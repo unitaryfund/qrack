@@ -661,15 +661,15 @@ void QBdt::ApplyControlledSingle(
     std::copy(controls, controls + controlLen, sortedControls.begin());
     std::sort(sortedControls.begin(), sortedControls.end());
 
-    const bool isKetSwapped = target < sortedControls.back();
+    const bool isSwapped = target < sortedControls.back();
     const bitLenInt swappedBit = target;
-    if (isKetSwapped) {
+    if (isSwapped) {
         Swap(target, sortedControls.back());
         std::swap(target, sortedControls.back());
         std::sort(sortedControls.begin(), sortedControls.end());
     }
 
-    std::vector<bitCapIntOcl> qPowersSorted;
+    const bitLenInt maxQubit = (target < bdtQubitCount) ? target : bdtQubitCount;
     std::vector<bitLenInt> ketControlsVec;
     bitCapIntOcl lowControlMask = 0U;
     for (bitLenInt c = 0U; c < controlLen; c++) {
@@ -677,43 +677,28 @@ void QBdt::ApplyControlledSingle(
         if (control >= bdtQubitCount) {
             ketControlsVec.push_back(control - bdtQubitCount);
         } else {
-            qPowersSorted.push_back(pow2Ocl(target - (control + 1U)));
-            lowControlMask |= qPowersSorted.back();
+            lowControlMask |= pow2Ocl(maxQubit - (control + 1U));
         }
     }
-    std::reverse(qPowersSorted.begin(), qPowersSorted.end());
     std::unique_ptr<bitLenInt[]> ketControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[ketControlsVec.size()]);
     std::copy(ketControlsVec.begin(), ketControlsVec.end(), ketControls.get());
 
-    const bitLenInt maxQubit = (target < bdtQubitCount) ? target : bdtQubitCount;
     const bitCapIntOcl maxQubitPow = pow2Ocl(maxQubit);
-    const bitCapIntOcl maxLcv = maxQubitPow >> qPowersSorted.size();
     const bitCapIntOcl controlPerm = (isAnti ? 0U : lowControlMask);
 
     std::set<QInterfacePtr> qis;
 
-    par_for_qbdt(0, maxLcv, [&](const bitCapIntOcl& lcv, const int& cpu) {
-        bitCapIntOcl i = 0U;
-        bitCapIntOcl iHigh = lcv;
-        bitCapIntOcl iLow;
-        int p;
-        for (p = 0; p < (int)qPowersSorted.size(); p++) {
-            iLow = iHigh & (qPowersSorted[p] - ONE_BCI);
-            i |= iLow;
-            iHigh = (iHigh ^ iLow) << ONE_BCI;
+    par_for_qbdt(0, maxQubitPow, [&](const bitCapIntOcl& i, const int& cpu) {
+        if ((i & lowControlMask) != controlPerm) {
+            return (bitCapIntOcl)(lowControlMask - ONE_BCI);
         }
-        i |= iHigh | controlPerm;
 
         QBdtNodeInterfacePtr leaf = root;
         // Iterate to qubit depth.
         for (bitLenInt j = 0; j < maxQubit; j++) {
             if (IS_NORM_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
-                i = pow2Ocl(maxQubit - j) - ONE_BCI;
-                for (p = (int)(qPowersSorted.size() - 1U); p >= 0; p--) {
-                    i = (bitCapIntOcl)RemovePower(i, qPowersSorted[p]);
-                }
-                return i;
+                return (bitCapIntOcl)(pow2Ocl(maxQubit - j) - ONE_BCI);
             }
             leaf->Branch();
             leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
@@ -738,8 +723,8 @@ void QBdt::ApplyControlledSingle(
 
     root->Prune(maxQubit);
 
-    // Undo isKetSwapped.
-    if (isKetSwapped) {
+    // Undo isSwapped.
+    if (isSwapped) {
         Swap(swappedBit, target);
     }
 }
