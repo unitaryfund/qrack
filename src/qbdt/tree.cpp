@@ -690,7 +690,7 @@ void QBdt::ApplyControlledSingle(
 
     par_for_qbdt(0, maxQubitPow, [&](const bitCapIntOcl& i, const int& cpu) {
         if ((i & lowControlMask) != controlPerm) {
-            return (bitCapIntOcl)(lowControlMask - ONE_BCI);
+            return (bitCapIntOcl)((lowControlMask ^ (i & lowControlMask)) - ONE_BCI);
         }
 
         QBdtNodeInterfacePtr leaf = root;
