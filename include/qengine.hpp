@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include "qbdt_node_interface.hpp"
 #include "qinterface.hpp"
 
 #include <algorithm>
@@ -25,7 +24,7 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
 /**
  * Abstract QEngine implementation, for all "Schroedinger method" engines
  */
-class QEngine : public QInterface, public QBdtNodeInterface {
+class QEngine : public QInterface {
 protected:
     bool useHostRam;
     /// The value stored in runningNorm should always be the total probability implied by the norm of all amplitudes,
@@ -186,54 +185,5 @@ public:
     virtual void INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex) = 0;
 #endif
 #endif
-
-    /**
-     * \defgroup QbdtFunc Quantum binary decision tree method overloads
-     *
-     * @{
-     */
-
-    /**
-     *  This is a QBdt node, so destroy all qubits.
-     */
-    virtual void SetZero()
-    {
-        QBdtNodeInterface::SetZero();
-        Dispose(0, qubitCount);
-    }
-
-    /**
-     *  This is a QBdt node, so return Clone().
-     */
-    virtual QBdtNodeInterfacePtr ShallowClone() { return std::dynamic_pointer_cast<QEngine>(Clone()); }
-
-    /**
-     *  This is a QBdt node, so return ApproxCompare(r).
-     */
-    virtual bool isEqual(QBdtNodeInterfacePtr r)
-    {
-        return IS_NORM_0(scale - r->scale) &&
-            (IS_NORM_0(scale) || ApproxCompare(std::dynamic_pointer_cast<QInterface>(r)));
-    }
-
-    /**
-     *  This is a QBdt node, so normalize phase convention (by setting |0>-most, nonzero value amplitude phase to 1).
-     */
-    virtual void ConvertStateVector(bitLenInt depth)
-    {
-        real1_f phaseArg = FirstNonzeroPhase();
-        UpdateRunningNorm();
-        // TODO: This isn't valid for stabilizer
-        real1_f nrm = GetRunningNorm();
-        NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
-        scale *= std::polar(nrm, phaseArg);
-    }
-
-    /**
-     *  This is a QBdt node, so (ignore depth and) call default NormalizeState().
-     */
-    virtual void Normalize(bitLenInt ignored) { NormalizeState(); };
-
-    /** @} */
 };
 } // namespace Qrack

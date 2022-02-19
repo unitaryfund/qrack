@@ -17,7 +17,7 @@
 #pragma once
 
 #include "mpsshard.hpp"
-#include "qbdt_node.hpp"
+#include "qbdt_qinterface_node.hpp"
 #include "qinterface.hpp"
 
 namespace Qrack {
@@ -51,9 +51,10 @@ protected:
     virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn) { fn(); }
 
     QInterfacePtr MakeStateVector(bitLenInt qbCount, bitCapInt perm = 0U);
-    QEnginePtr MakeQEngine(bitLenInt qbCount, bitCapInt perm = 0U)
+    QBdtQInterfaceNodePtr MakeQEngineNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U)
     {
-        return std::dynamic_pointer_cast<QEngine>(MakeStateVector(qbCount, perm));
+        return std::make_shared<QBdtQInterfaceNode>(
+            scale, std::dynamic_pointer_cast<QEngine>(MakeStateVector(qbCount, perm)));
     }
 
     QInterfacePtr MakeTempStateVector()

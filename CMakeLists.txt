@@ -249,6 +249,7 @@ install (FILES
     include/qbdt.hpp
     include/qbdt_node.hpp
     include/qbdt_node_interface.hpp
+    include/qbdt_qinterface_node.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 

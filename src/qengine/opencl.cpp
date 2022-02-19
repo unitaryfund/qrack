@@ -2796,7 +2796,6 @@ QInterfacePtr QEngineOCL::Clone()
     copyPtr->clFinish();
     clFinish();
     copyPtr->runningNorm = runningNorm;
-    copyPtr->scale = scale;
 
     EventVecPtr waitVec = ResetWaitEvents();
     if (stateBuffer) {

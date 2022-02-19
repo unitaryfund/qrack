@@ -23,7 +23,6 @@ QInterfacePtr QEngineCPU::Clone()
             false, -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
 
     clone->runningNorm = runningNorm;
-    clone->scale = scale;
 
     if (stateVec) {
         clone->stateVec->copy(stateVec);

@@ -52,7 +52,6 @@ QInterfacePtr QHybrid::Clone()
         useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits,
         separabilityThreshold);
     c->runningNorm = runningNorm;
-    c->scale = scale;
     c->SetConcurrency(GetConcurrencyLevel());
     c->engine->CopyStateVec(engine);
     return c;
