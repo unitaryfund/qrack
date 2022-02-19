@@ -73,7 +73,7 @@ public:
     virtual void ConvertStateVector(bitLenInt depth)
     {
         throw std::out_of_range(
-            "QBdtQInterfaceNode::ConvertStateVector() not implemented! (Don't set/get quantum state.)");
+            "QBdtQInterfaceNode::ConvertStateVector() not implemented! (Don't set/get state vector amplitudes.)");
     }
 };
 
