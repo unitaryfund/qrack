@@ -600,15 +600,12 @@ bitCapInt QBdt::MAll()
 void QBdt::Apply2x2OnLeaf(const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLenInt depth, bitCapInt highControlMask,
     bool isAnti, bool isParallel)
 {
-    // TODO: Finish pass through for ketControlsSorted to Attach() qubits.
-
     const bitLenInt remainder = bdtQubitCount - (depth + 1);
-    leaf->Branch();
+    const bitCapIntOcl controlPerm = (isAnti ? (bitCapIntOcl)0U : (bitCapIntOcl)highControlMask);
 
+    leaf->Branch();
     QBdtNodeInterfacePtr& b0 = leaf->branches[0];
     QBdtNodeInterfacePtr& b1 = leaf->branches[1];
-
-    const bitCapIntOcl controlPerm = (isAnti ? (bitCapIntOcl)0U : (bitCapIntOcl)highControlMask);
 
     IncrementFunc fn = [&](const bitCapIntOcl& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf0 = b0;
