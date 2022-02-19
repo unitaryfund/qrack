@@ -820,7 +820,7 @@ void QBdt::ApplyControlledSingle(
     bitCapIntOcl lowControlMask = 0U;
     bitLenInt c;
     for (c = 0U; (c < controlLen) && (sortedControls[c] < target); c++) {
-        if (sortedControls[c] > bdtQubitCount) {
+        if (sortedControls[c] >= bdtQubitCount) {
             ketControlsVec.push_back(sortedControls[c]);
         }
         qPowersSorted.push_back(pow2Ocl(target - (sortedControls[c] + 1U)));
@@ -830,7 +830,7 @@ void QBdt::ApplyControlledSingle(
 
     bitCapIntOcl highControlMask = 0U;
     for (; c < controlLen; c++) {
-        if (sortedControls[c] > bdtQubitCount) {
+        if (sortedControls[c] >= bdtQubitCount) {
             ketControlsVec.push_back(sortedControls[c]);
         }
         highControlMask |= pow2Ocl(bdtQubitCount - (sortedControls[c] + 1U));
