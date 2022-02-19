@@ -212,7 +212,7 @@ void QEngine::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const com
 void QEngine::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controlLen) {
-        Swap(qubit1,  qubit2);
+        Swap(qubit1, qubit2);
         return;
     }
 
@@ -237,7 +237,7 @@ void QEngine::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q
 void QEngine::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controlLen) {
-        Swap(qubit1,  qubit2);
+        Swap(qubit1, qubit2);
         return;
     }
 
@@ -259,7 +259,7 @@ void QEngine::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenI
 void QEngine::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controlLen) {
-        SqrtSwap(qubit1,  qubit2);
+        SqrtSwap(qubit1, qubit2);
         return;
     }
 
@@ -284,7 +284,7 @@ void QEngine::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenI
 void QEngine::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controlLen) {
-        SqrtSwap(qubit1,  qubit2);
+        SqrtSwap(qubit1, qubit2);
         return;
     }
 
@@ -307,7 +307,7 @@ void QEngine::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bit
 void QEngine::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controlLen) {
-        ISqrtSwap(qubit1,  qubit2);
+        ISqrtSwap(qubit1, qubit2);
         return;
     }
 
@@ -333,7 +333,7 @@ void QEngine::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLen
 void QEngine::AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (!controlLen) {
-        ISqrtSwap(qubit1,  qubit2);
+        ISqrtSwap(qubit1, qubit2);
         return;
     }
 
