@@ -674,10 +674,10 @@ void QBdt::ApplyControlledSingle(
     bitCapIntOcl lowControlMask = 0U;
     for (bitLenInt c = 0U; c < controlLen; c++) {
         const bitLenInt control = sortedControls[c];
-        if (control >= bdtQubitCount) {
-            ketControlsVec.push_back(control - bdtQubitCount);
-        } else {
+        if (control < bdtQubitCount) {
             lowControlMask |= pow2Ocl(maxQubit - (control + 1U));
+        } else {
+            ketControlsVec.push_back(control - bdtQubitCount);
         }
     }
     std::unique_ptr<bitLenInt[]> ketControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[ketControlsVec.size()]);
