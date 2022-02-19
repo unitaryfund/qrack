@@ -47,10 +47,7 @@ protected:
     virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn) { fn(); }
 
     QInterfacePtr MakeStateVector(bitLenInt qbCount, bitCapInt perm = 0U);
-    QBdtQInterfaceNodePtr MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U)
-    {
-        return std::make_shared<QBdtQInterfaceNode>(scale, MakeStateVector(qbCount, perm));
-    }
+    QBdtQInterfaceNodePtr MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
 
     QInterfacePtr MakeTempStateVector()
     {

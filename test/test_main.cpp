@@ -403,7 +403,7 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     rng->seed(rngSeed);
 
     qftReg = CreateQuantumInterface({ QINTERFACE_BDT, QINTERFACE_CPU }, 10, 0, rng, ONE_CMPLX, enable_normalization,
-        false, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+        true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
     std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(
         std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface({ QINTERFACE_CPU }, 10, 0, rng, ONE_CMPLX,
             enable_normalization, false, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList)));

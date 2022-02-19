@@ -46,6 +46,13 @@ QInterfacePtr QBdt::MakeStateVector(bitLenInt qbCount, bitCapInt perm)
         false, devID, hardware_rand_generator != NULL, false, amplitudeFloor);
 }
 
+QBdtQInterfaceNodePtr QBdt::MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm)
+{
+    return std::make_shared<QBdtQInterfaceNode>(scale,
+        CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, false, false, devID,
+            hardware_rand_generator != NULL, false, amplitudeFloor));
+}
+
 bool QBdt::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
     SetStateVector();
@@ -1011,7 +1018,25 @@ void QBdt::FlushBuffer(bitLenInt i)
 
     ApplySingle(shard->gate, i,
         [this, i](QBdtNodeInterfacePtr leaf, const complex* mtrx, bitCapIntOcl ignored, bool isParallel) {
-            Apply2x2OnLeaf(mtrx, leaf, i, 0U, false, isParallel);
+            leaf->Branch();
+
+            const bool isZero0 = IS_NORM_0(leaf->branches[0]->scale);
+            const bool isZero1 = IS_NORM_0(leaf->branches[1]->scale);
+
+            const complex Y0 = leaf->branches[0]->scale;
+            leaf->branches[0]->scale = mtrx[0] * Y0 + mtrx[1] * leaf->branches[1]->scale;
+            leaf->branches[1]->scale = mtrx[2] * Y0 + mtrx[3] * leaf->branches[1]->scale;
+
+            if (isZero0 && !IS_NORM_0(leaf->branches[0]->scale)) {
+                leaf->branches[0]->branches[0] = leaf->branches[1]->branches[0];
+                leaf->branches[0]->branches[1] = leaf->branches[1]->branches[1];
+            }
+            if (isZero1 && !IS_NORM_0(leaf->branches[1]->scale)) {
+                leaf->branches[1]->branches[0] = leaf->branches[0]->branches[0];
+                leaf->branches[1]->branches[1] = leaf->branches[0]->branches[1];
+            }
+
+            leaf->Prune();
         });
 }
 
