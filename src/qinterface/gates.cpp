@@ -600,14 +600,14 @@ void QInterface::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenIn
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]());
     std::copy(controls, controls + controlLen, lControls.get());
 
-    lControls[controlLen] = qubit1;
-    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, qubit2);
+    lControls[controlLen] = q1;
+    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
 
-    lControls[controlLen] = qubit2;
-    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, qubit1);
+    lControls[controlLen] = q2;
+    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q1);
 
-    lControls[controlLen] = qubit1;
-    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, qubit2);
+    lControls[controlLen] = q1;
+    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
 }
 
 void QInterface::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
@@ -619,20 +619,20 @@ void QInterface::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitL
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]());
     std::copy(controls, controls + controlLen, lControls.get());
 
-    lControls[controlLen] = qubit1;
-    X(qubit1);
-    MACInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, qubit2);
-    X(qubit1);
+    lControls[controlLen] = q1;
+    X(q1);
+    MACInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+    X(q1);
 
-    lControls[controlLen] = qubit2;
-    X(qubit2);
-    MACInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, qubit1);
-    X(qubit2);
+    lControls[controlLen] = q2;
+    X(q2);
+    MACInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q1);
+    X(q2);
 
-    lControls[controlLen] = qubit1;
-    X(qubit1);
-    MACInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, qubit2);
-    X(qubit1);
+    lControls[controlLen] = q1;
+    X(q1);
+    MACInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+    X(q1);
 }
 
 void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
