@@ -61,7 +61,6 @@ protected:
             return;
         }
 
-        FlushBuffers();
         Finish();
         stateVecUnit = MakeStateVector(qubitCount);
         GetQuantumState(stateVecUnit);
@@ -97,14 +96,9 @@ protected:
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
-    void Apply2x2OnLeaf(const complex* mtrx, QBdtNodeInterfacePtr leaf);
-    void Apply2x2OnLeaf(
-        const complex* mtrx, QBdtNodeInterfacePtr leaf, bitLenInt depth, bitCapInt highControlMask, bool isAnti);
-
-    template <typename Fn> void ApplySingle(const complex* mtrx, bitLenInt target, Fn leafFunc);
-    template <typename Lfn>
-    void ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target,
-        bool isAnti, Lfn leafFunc);
+    void Apply2x2OnLeaf(QBdtNodeInterfacePtr leaf, const complex* mtrx);
+    void ApplyControlledSingle(
+        const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti);
 
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
 
@@ -113,26 +107,6 @@ protected:
         bitCapInt mask = power - ONE_BCI;
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
     }
-
-    void FlushBuffer(bitLenInt i);
-
-    void FlushBuffers()
-    {
-        for (bitLenInt i = 0; i < bdtQubitCount; i++) {
-            FlushBuffer(i);
-        }
-        Finish();
-    }
-
-    void DumpBuffers()
-    {
-        for (bitLenInt i = 0U; i < bdtQubitCount; i++) {
-            shards[i] = NULL;
-        }
-    }
-
-    bool CheckControlled(
-        const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target, bool isAnti);
 
     void SafeSwap(bitLenInt low, bitLenInt high)
     {
@@ -253,7 +227,6 @@ public:
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
     {
-        FlushBuffers();
         Finish();
         QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
         return unit->MultiShotMeasureMask(qPowers, qPowerCount, shots);
@@ -263,15 +236,12 @@ public:
     virtual bitCapInt MAll();
 
     virtual void Mtrx(const complex* mtrx, bitLenInt target);
-    virtual void Phase(complex topLeft, complex bottomRight, bitLenInt target);
-    virtual void Invert(complex topRight, complex bottomLeft, bitLenInt target);
     virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
     virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
 
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     virtual real1_f ProbParity(bitCapInt mask)
     {
-        FlushBuffers();
         Finish();
         QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
         return unit->ProbParity(mask);
