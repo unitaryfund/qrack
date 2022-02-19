@@ -600,6 +600,13 @@ void QBdt::Apply2x2OnLeaf(QBdtNodeInterfacePtr leaf, const complex* mtrx)
         b1->branches[1] = b0->branches[1];
     }
 
+    if (IS_NORM_0(b0->scale)) {
+        b0->SetZero();
+    }
+    if (IS_NORM_0(b1->scale)) {
+        b1->SetZero();
+    }
+
     leaf->Prune();
 }
 
