@@ -32,8 +32,6 @@ protected:
     QBdtNodeInterfacePtr root;
     QInterfacePtr stateVecUnit;
     bitCapIntOcl maxQPowerOcl;
-    bitCapIntOcl treeLevelPowerOcl;
-    bitLenInt treeLevelCount;
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
     std::vector<MpsShardPtr> shards;
@@ -43,8 +41,6 @@ protected:
         QInterface::SetQubitCount(qb);
         maxQPowerOcl = (bitCapIntOcl)maxQPower;
         bdtQubitCount = qubitCount - attachedQubitCount;
-        treeLevelCount = attachedQubitCount ? (bdtQubitCount + 1U) : bdtQubitCount;
-        treeLevelPowerOcl = pow2Ocl(treeLevelCount);
     }
 
     typedef std::function<void(void)> DispatchFn;
@@ -181,7 +177,7 @@ public:
     virtual void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
     {
-        root->Normalize(treeLevelCount);
+        root->Normalize(bdtQubitCount);
     }
 
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
