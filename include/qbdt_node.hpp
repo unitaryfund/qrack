@@ -40,7 +40,9 @@ public:
     QBdtNode(complex scl, QBdtNodeInterfacePtr* b)
         : QBdtNodeInterface(scl, b)
     {
-        // Intentionally left blank
+        if (norm(scale) <= FP_NORM_EPSILON) {
+            SetZero();
+        }
     }
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtNode>(scale, branches); }

@@ -51,10 +51,9 @@ protected:
     virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn) { fn(); }
 
     QInterfacePtr MakeStateVector(bitLenInt qbCount, bitCapInt perm = 0U);
-    QBdtQInterfaceNodePtr MakeQEngineNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U)
+    QBdtQInterfaceNodePtr MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U)
     {
-        return std::make_shared<QBdtQInterfaceNode>(
-            scale, std::dynamic_pointer_cast<QEngine>(MakeStateVector(qbCount, perm)));
+        return std::make_shared<QBdtQInterfaceNode>(scale, MakeStateVector(qbCount, perm));
     }
 
     QInterfacePtr MakeTempStateVector()
@@ -213,7 +212,7 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QBdt>(toCopy), start);
     }
-    virtual bitLenInt Attach(QEnginePtr toCopy, bitLenInt start)
+    virtual bitLenInt Attach(QInterfacePtr toCopy, bitLenInt start)
     {
         if (start == qubitCount) {
             return Attach(toCopy);
@@ -226,7 +225,7 @@ public:
 
         return result;
     }
-    virtual bitLenInt Attach(QEnginePtr toCopy);
+    virtual bitLenInt Attach(QInterfacePtr toCopy);
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));
@@ -277,8 +276,8 @@ public:
         CNOT(low, high);
 
         if ((low < bdtQubitCount) && (high >= bdtQubitCount)) {
-            // Low qubits are QBdt; high qubits are QEngine.
-            // Target qubit must be in QEngine, if acting with QEngine.
+            // Low qubits are QBdt; high qubits are QInterface.
+            // Target qubit must be in QInterface, if acting with QInterface.
             H(high);
             H(low);
             CNOT(low, high);

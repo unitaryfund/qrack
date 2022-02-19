@@ -17,7 +17,7 @@
 #pragma once
 
 #include "qbdt_node_interface.hpp"
-#include "qengine.hpp"
+#include "qinterface.hpp"
 
 namespace Qrack {
 
@@ -26,7 +26,7 @@ typedef std::shared_ptr<QBdtQInterfaceNode> QBdtQInterfaceNodePtr;
 
 class QBdtQInterfaceNode : public QBdtNodeInterface {
 public:
-    QEnginePtr qReg;
+    QInterfacePtr qReg;
 
     QBdtQInterfaceNode()
         : QBdtNodeInterface(ZERO_CMPLX)
@@ -35,7 +35,7 @@ public:
         // Intentionally left blank.
     }
 
-    QBdtQInterfaceNode(complex scl, QEnginePtr q)
+    QBdtQInterfaceNode(complex scl, QInterfacePtr q)
         : QBdtNodeInterface(scl)
         , qReg(q)
     {
@@ -50,7 +50,10 @@ public:
         qReg = NULL;
     }
 
-    virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQInterfaceNode>(scale, qReg); }
+    virtual QBdtNodeInterfacePtr ShallowClone()
+    {
+        return std::make_shared<QBdtQInterfaceNode>(scale, qReg ? qReg->Clone() : NULL);
+    }
 
     virtual bool isEqual(QBdtNodeInterfacePtr r)
     {
@@ -69,22 +72,8 @@ public:
 
     virtual void ConvertStateVector(bitLenInt depth)
     {
-        if (!qReg) {
-            return;
-        }
-
-        // TODO: This isn't valid for stabilizer
-        qReg->UpdateRunningNorm();
-        real1_f nrm = qReg->GetRunningNorm();
-
-        if (nrm <= FP_NORM_EPSILON) {
-            SetZero();
-            return;
-        }
-
-        real1_f phaseArg = qReg->FirstNonzeroPhase();
-        qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
-        scale *= std::polar(nrm, phaseArg);
+        throw std::out_of_range(
+            "QBdtQInterfaceNode::ConvertStateVector() not implemented! (Don't set/get quantum state.)");
     }
 };
 
