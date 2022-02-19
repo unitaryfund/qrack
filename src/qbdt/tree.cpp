@@ -711,7 +711,11 @@ void QBdt::ApplyControlledSingle(
         if (bdtQubitCount <= target) {
             QInterfacePtr qiLeaf = NODE_TO_QINTERFACE(leaf);
             if (qis.find(qiLeaf) == qis.end()) {
-                qiLeaf->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+                if (isAnti) {
+                    qiLeaf->MACMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+                } else {
+                    qiLeaf->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+                }
                 qis.insert(qiLeaf);
             }
         } else {
