@@ -664,7 +664,7 @@ void QBdt::ApplyControlledSingle(
     const bool isKetSwapped = target < sortedControls.back();
     const bitLenInt swappedBit = target;
     if (isKetSwapped) {
-        SafeSwap(target, sortedControls.back());
+        Swap(target, sortedControls.back());
         std::swap(target, sortedControls.back());
         std::sort(sortedControls.begin(), sortedControls.end());
     }
@@ -673,10 +673,11 @@ void QBdt::ApplyControlledSingle(
     std::vector<bitLenInt> ketControlsVec;
     bitCapIntOcl lowControlMask = 0U;
     for (bitLenInt c = 0U; c < controlLen; c++) {
-        if (sortedControls[c] >= bdtQubitCount) {
-            ketControlsVec.push_back(sortedControls[c] - bdtQubitCount);
+        const bitLenInt control = sortedControls[c];
+        if (control >= bdtQubitCount) {
+            ketControlsVec.push_back(control - bdtQubitCount);
         } else {
-            qPowersSorted.push_back(pow2Ocl(target - (sortedControls[c] + 1U)));
+            qPowersSorted.push_back(pow2Ocl(target - (control + 1U)));
             lowControlMask |= qPowersSorted.back();
         }
     }
@@ -739,7 +740,7 @@ void QBdt::ApplyControlledSingle(
 
     // Undo isKetSwapped.
     if (isKetSwapped) {
-        SafeSwap(swappedBit, target);
+        Swap(swappedBit, target);
     }
 }
 
@@ -750,7 +751,15 @@ void QBdt::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex
         return;
     }
 
-    ApplyControlledSingle(mtrx, controls, controlLen, target, false);
+    if ((controlLen == 1U) && IS_NORM_0(ONE_CMPLX - mtrx[0]) && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]) &&
+        IS_NORM_0(ONE_CMPLX + mtrx[3])) {
+        CZ(controls[0], target);
+    } else if ((controlLen == 1U) && IS_NORM_0(mtrx[0]) && IS_NORM_0(ONE_CMPLX - mtrx[1]) &&
+        IS_NORM_0(ONE_CMPLX - mtrx[2]) && IS_NORM_0(mtrx[3])) {
+        CNOT(controls[0], target);
+    } else {
+        ApplyControlledSingle(mtrx, controls, controlLen, target, false);
+    }
 }
 
 void QBdt::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
@@ -760,7 +769,15 @@ void QBdt::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const comple
         return;
     }
 
-    ApplyControlledSingle(mtrx, controls, controlLen, target, true);
+    if ((controlLen == 1U) && IS_NORM_0(ONE_CMPLX - mtrx[0]) && IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]) &&
+        IS_NORM_0(ONE_CMPLX + mtrx[3])) {
+        AntiCZ(controls[0], target);
+    } else if ((controlLen == 1U) && IS_NORM_0(mtrx[0]) && IS_NORM_0(ONE_CMPLX - mtrx[1]) &&
+        IS_NORM_0(ONE_CMPLX - mtrx[2]) && IS_NORM_0(mtrx[3])) {
+        AntiCNOT(controls[0], target);
+    } else {
+        ApplyControlledSingle(mtrx, controls, controlLen, target, true);
+    }
 }
 
 } // namespace Qrack

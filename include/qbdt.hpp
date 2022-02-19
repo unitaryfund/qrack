@@ -108,23 +108,37 @@ protected:
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
     }
 
-    void SafeSwap(bitLenInt low, bitLenInt high)
+    virtual void SafeCNOT(bitLenInt control, bitLenInt target, bool anti)
     {
-        if (high < low) {
-            std::swap(low, high);
+        const complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+        if (control < target) {
+            const bitLenInt controls[1] = { control };
+            ApplyControlledSingle(mtrx, controls, 1U, target, anti);
+        } else {
+            // Our control qubits must act low-on-high
+            const bitLenInt controls[1] = { target };
+            H(control);
+            H(target);
+            ApplyControlledSingle(mtrx, controls, 1U, control, anti);
+            H(control);
+            H(target);
         }
+    }
 
-        CNOT(low, high);
-
-        // Low qubits are QBdt; high qubits are QInterface.
-        // Target qubit must be in QInterface, if acting with QInterface.
-        H(high);
-        H(low);
-        CNOT(low, high);
-        H(high);
-        H(low);
-
-        CNOT(low, high);
+    virtual void SafeCZ(bitLenInt control, bitLenInt target, bool anti)
+    {
+        if (control < target) {
+            const bitLenInt controls[1] = { control };
+            const complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+            ApplyControlledSingle(mtrx, controls, 1U, target, anti);
+        } else {
+            // Our control qubits must act low-on-high
+            const bitLenInt controls[1] = { target };
+            const complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+            H(target);
+            ApplyControlledSingle(mtrx, controls, 1U, control, anti);
+            H(target);
+        }
     }
 
 public:
@@ -239,25 +253,17 @@ public:
     virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
     virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
 
+    virtual void CNOT(bitLenInt control, bitLenInt target) { SafeCNOT(control, target, false); }
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target) { SafeCNOT(control, target, true); }
+    virtual void CZ(bitLenInt control, bitLenInt target) { SafeCZ(control, target, false); }
+    virtual void AntiCZ(bitLenInt control, bitLenInt target) { SafeCZ(control, target, true); }
+
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     virtual real1_f ProbParity(bitCapInt mask)
     {
         Finish();
         QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
         return unit->ProbParity(mask);
-    }
-
-    virtual void Swap(bitLenInt low, bitLenInt high)
-    {
-        if (high < low) {
-            std::swap(low, high);
-        }
-
-        if (bdtQubitCount < high) {
-            QInterface::Swap(low, high);
-        } else {
-            SafeSwap(low, high);
-        }
     }
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
