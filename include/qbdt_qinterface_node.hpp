@@ -32,7 +32,9 @@ public:
         : QBdtNodeInterface(scl)
         , qReg(q)
     {
-        // Intentionally left blank
+        if (norm(scale) <= FP_NORM_EPSILON) {
+            SetZero();
+        }
     }
 
     virtual void SetZero()
@@ -65,9 +67,15 @@ public:
         }
 
         // TODO: This isn't valid for stabilizer
-        real1_f phaseArg = qReg->FirstNonzeroPhase();
         qReg->UpdateRunningNorm();
         real1_f nrm = qReg->GetRunningNorm();
+
+        if (nrm <= FP_NORM_EPSILON) {
+            SetZero();
+            return;
+        }
+
+        real1_f phaseArg = qReg->FirstNonzeroPhase();
         qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
         scale *= std::polar(nrm, phaseArg);
     }

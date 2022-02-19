@@ -17,7 +17,7 @@
 #include "qbdt_node.hpp"
 #include "qfactory.hpp"
 
-#define NODE_TO_QINTERFACE(leaf) std::dynamic_pointer_cast<QBdtQInterfaceNode>(leaf)->qReg
+#define NODE_TO_QENGINE(leaf) std::dynamic_pointer_cast<QBdtQInterfaceNode>(leaf)->qReg
 
 namespace Qrack {
 
@@ -116,7 +116,7 @@ template <typename Fn> void QBdt::GetTraversal(Fn getLambda)
         }
 
         if (!IS_NORM_0(scale) && attachedQubitCount) {
-            scale *= NODE_TO_QINTERFACE(leaf)->GetAmplitude(i >> bdtQubitCount);
+            scale *= NODE_TO_QENGINE(leaf)->GetAmplitude(i >> bdtQubitCount);
         }
 
         getLambda((bitCapIntOcl)i, scale);
@@ -156,7 +156,7 @@ void QBdt::SetQuantumState(const complex* state)
     const bitLenInt qbCount = bdtQubitCount;
     SetTraversal([isAttached, qbCount, state](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
         if (isAttached) {
-            NODE_TO_QINTERFACE(leaf)->SetAmplitude(i >> qbCount, state[i]);
+            NODE_TO_QENGINE(leaf)->SetAmplitude(i >> qbCount, state[i]);
         } else {
             leaf->scale = state[i];
         }
@@ -169,7 +169,7 @@ void QBdt::SetQuantumState(QInterfacePtr eng)
     const bitLenInt qbCount = bdtQubitCount;
     SetTraversal([isAttached, qbCount, eng](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
         if (isAttached) {
-            NODE_TO_QINTERFACE(leaf)->SetAmplitude(i >> qbCount, eng->GetAmplitude(i));
+            NODE_TO_QENGINE(leaf)->SetAmplitude(i >> qbCount, eng->GetAmplitude(i));
         } else {
             leaf->scale = eng->GetAmplitude(i);
         }
@@ -244,7 +244,7 @@ complex QBdt::GetAmplitude(bitCapInt perm)
     }
 
     if (!IS_NORM_0(scale) && attachedQubitCount) {
-        scale *= NODE_TO_QINTERFACE(leaf)->GetAmplitude(perm >> bdtQubitCount);
+        scale *= NODE_TO_QENGINE(leaf)->GetAmplitude(perm >> bdtQubitCount);
     }
 
     return scale;
@@ -321,7 +321,7 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy, bitLenInt start)
             }
 
             if (!IS_NORM_0(leaf->scale)) {
-                NODE_TO_QINTERFACE(leaf)->Compose(toCopy);
+                NODE_TO_QENGINE(leaf)->Compose(toCopy);
             }
 
             return (bitCapIntOcl)0U;
@@ -468,9 +468,9 @@ real1_f QBdt::Prob(bitLenInt qubit)
         if (isKet) {
             // Phase effects don't matter, for probability expectation.
             // TODO: Is this right?
-            QInterfacePtr qi = NODE_TO_QINTERFACE(leaf);
+            QInterfacePtr qi = NODE_TO_QENGINE(leaf);
             if (qiProbs.find(qi) == qiProbs.end()) {
-                qiProbs[qi] = (real1_f)sqrt(NODE_TO_QINTERFACE(leaf)->Prob(qubit - bdtQubitCount));
+                qiProbs[qi] = (real1_f)sqrt(NODE_TO_QENGINE(leaf)->Prob(qubit - bdtQubitCount));
             }
             oneChance += norm(scale * qiProbs[qi]);
 
@@ -498,7 +498,7 @@ real1_f QBdt::ProbAll(bitCapInt perm)
     }
 
     if (!IS_NORM_0(scale) && attachedQubitCount) {
-        scale *= NODE_TO_QINTERFACE(leaf)->GetAmplitude(perm >> bdtQubitCount);
+        scale *= NODE_TO_QENGINE(leaf)->GetAmplitude(perm >> bdtQubitCount);
     }
 
     return clampProb(norm(scale));
@@ -548,7 +548,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         }
 
         if (maxQubit != qubit) {
-            NODE_TO_QINTERFACE(leaf)->ForceM(qubit - maxQubit, result, false, true);
+            NODE_TO_QENGINE(leaf)->ForceM(qubit - maxQubit, result, false, true);
             continue;
         }
 
@@ -587,7 +587,7 @@ bitCapInt QBdt::MAll()
         }
 
         if (i >= bdtQubitCount) {
-            result |= NODE_TO_QINTERFACE(leaf)->MAll() << bdtQubitCount;
+            result |= NODE_TO_QENGINE(leaf)->MAll() << bdtQubitCount;
             continue;
         }
 
@@ -740,7 +740,7 @@ void QBdt::Mtrx(const complex* lMtrx, bitLenInt target)
                 continue;
             }
 
-            QInterfacePtr qiLeaf = NODE_TO_QINTERFACE(leaf);
+            QInterfacePtr qiLeaf = NODE_TO_QENGINE(leaf);
             if (qis.find(qiLeaf) == qis.end()) {
                 qiLeaf->Mtrx(lMtrx, target - bdtQubitCount);
                 qis.insert(qiLeaf);
@@ -850,7 +850,7 @@ void QBdt::ApplyControlledSingle(
 
     qPowersSorted.resize(qPowersSorted.size() - ketControlsVec.size());
 
-    const bitLenInt maxQubit = (target < bdtQubitCount) ? target : bdtQubitCount;
+    const bitLenInt maxQubit = (target < bdtQubitCount) ? target : treeLevelCount;
     const bitCapIntOcl maxQubitPow = pow2Ocl(maxQubit);
     const bitCapIntOcl controlPerm = (isAnti ? 0U : lowControlMask);
 
@@ -862,9 +862,8 @@ void QBdt::ApplyControlledSingle(
             std::unique_ptr<bitLenInt[]> ketControls = NULL;
             if (ketControlsVec.size()) {
                 ketControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[ketControlsVec.size()]);
-                std::copy(ketControlsVec.begin(), ketControlsVec.end(), ketControls.get());
                 for (bitLenInt i = 0U; i < ketControlsVec.size(); i++) {
-                    ketControls[i] -= bdtQubitCount;
+                    ketControls[i] = ketControlsVec[i] - bdtQubitCount;
                 }
             }
 
@@ -911,12 +910,10 @@ void QBdt::ApplyControlledSingle(
                 }
 
                 if (target >= bdtQubitCount) {
-                    NODE_TO_QINTERFACE(leaf)->MCMtrx(
+                    NODE_TO_QENGINE(leaf)->MCMtrx(
                         ketControls.get(), ketControlsVec.size(), mtrxS.get(), target - bdtQubitCount);
                     return (bitCapIntOcl)0U;
-                }
-
-                if (isPhase) {
+                } else if (isPhase) {
                     leaf->Branch();
                     leaf->branches[0]->scale *= mtrx[0];
                     leaf->branches[1]->scale *= mtrx[3];
