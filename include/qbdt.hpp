@@ -264,7 +264,7 @@ public:
 
         CNOT(low, high);
 
-        if ((low < bdtQubitCount) && (bdtQubitCount <= high)) {
+        if ((low < bdtQubitCount) && (high >= bdtQubitCount)) {
             // Low qubits are QBdt; high qubits are QEngine.
             // Target qubit must be in QEngine, if acting with QEngine.
             H(high);

@@ -307,11 +307,7 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy, bitLenInt start)
         return result;
     }
 
-    const bool isAttached = attachedQubitCount;
-    attachedQubitCount += toCopy->GetQubitCount();
-    treeLevelCount = bdtQubitCount + 1U;
-
-    if (isAttached) {
+    if (attachedQubitCount) {
         par_for_qbdt(0, treeLevelPowerOcl, [&](const bitCapIntOcl& i, const int& cpu) {
             QBdtNodeInterfacePtr leaf = root;
             for (bitLenInt j = 0; j < treeLevelCount; j++) {
@@ -328,6 +324,9 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy, bitLenInt start)
 
             return (bitCapIntOcl)0U;
         });
+
+        attachedQubitCount += toCopy->GetQubitCount();
+        SetQubitCount(qubitCount + toCopy->GetQubitCount());
 
         return start;
     }
@@ -360,6 +359,9 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy, bitLenInt start)
 
         return (bitCapIntOcl)0U;
     });
+
+    attachedQubitCount += toCopy->GetQubitCount();
+    SetQubitCount(qubitCount + toCopy->GetQubitCount());
 
     return start;
 }
