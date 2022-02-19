@@ -809,6 +809,7 @@ void QBdt::ApplyControlledSingle(
 
     const bool isKetSwapped =
         sortedControls.size() && (sortedControls.back() >= bdtQubitCount) && (target < bdtQubitCount);
+    const bitLenInt swappedBit = target;
     if (isKetSwapped) {
         Swap(target, sortedControls.back());
         std::swap(target, sortedControls.back());
@@ -844,7 +845,7 @@ void QBdt::ApplyControlledSingle(
 
     Dispatch(maxQubitPow,
         [this, mtrxS, target, maxQubit, maxQubitPow, controlPerm, qPowersSorted, highControlMask, ketControlsVec,
-            isKetSwapped, leafFunc]() {
+            isKetSwapped, swappedBit, leafFunc]() {
             complex* mtrx = mtrxS.get();
 
             std::unique_ptr<bitLenInt[]> ketControls = NULL;
@@ -927,7 +928,7 @@ void QBdt::ApplyControlledSingle(
 
             // Undo isKetSwapped.
             if (isKetSwapped) {
-                Swap(ketControlsVec[0], target);
+                Swap(swappedBit, target);
             }
         });
 }
