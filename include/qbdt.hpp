@@ -108,37 +108,28 @@ protected:
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
     }
 
-    virtual void SafeCNOT(bitLenInt control, bitLenInt target, bool anti)
+    virtual void SafeCNOT(bitLenInt control, bitLenInt target)
     {
-        const complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
         if (control < target) {
+            const complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
             const bitLenInt controls[1] = { control };
-            ApplyControlledSingle(mtrx, controls, 1U, target, anti);
-        } else {
-            // Our control qubits must act low-on-high
-            const bitLenInt controls[1] = { target };
-            H(control);
-            H(target);
-            ApplyControlledSingle(mtrx, controls, 1U, control, anti);
-            H(control);
-            H(target);
+            ApplyControlledSingle(mtrx, controls, 1U, target, false);
+            return;
         }
+
+        H(target);
+        SafeCZ(target, control);
+        H(target);
     }
 
-    virtual void SafeCZ(bitLenInt control, bitLenInt target, bool anti)
+    virtual void SafeCZ(bitLenInt control, bitLenInt target)
     {
-        if (control < target) {
-            const bitLenInt controls[1] = { control };
-            const complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-            ApplyControlledSingle(mtrx, controls, 1U, target, anti);
-        } else {
-            // Our control qubits must act low-on-high
-            const bitLenInt controls[1] = { target };
-            const complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-            H(target);
-            ApplyControlledSingle(mtrx, controls, 1U, control, anti);
-            H(target);
+        if (target < control) {
+            std::swap(target, control);
         }
+        const bitLenInt controls[1] = { control };
+        const complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+        ApplyControlledSingle(mtrx, controls, 1U, target, false);
     }
 
 public:
@@ -253,10 +244,8 @@ public:
     virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
     virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
 
-    virtual void CNOT(bitLenInt control, bitLenInt target) { SafeCNOT(control, target, false); }
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target) { SafeCNOT(control, target, true); }
-    virtual void CZ(bitLenInt control, bitLenInt target) { SafeCZ(control, target, false); }
-    virtual void AntiCZ(bitLenInt control, bitLenInt target) { SafeCZ(control, target, true); }
+    virtual void CNOT(bitLenInt control, bitLenInt target) { SafeCNOT(control, target); }
+    virtual void CZ(bitLenInt control, bitLenInt target) { SafeCZ(control, target); }
 
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     virtual real1_f ProbParity(bitCapInt mask)
