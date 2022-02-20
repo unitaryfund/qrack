@@ -584,6 +584,23 @@ void QBdt::Apply2x2OnLeaf(QBdtNodeInterfacePtr leaf, const complex* mtrx)
     QBdtNodeInterfacePtr& b0 = leaf->branches[0];
     QBdtNodeInterfacePtr& b1 = leaf->branches[1];
 
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        b0->scale *= mtrx[0];
+        b1->scale *= mtrx[3];
+        leaf->Prune();
+
+        return;
+    }
+
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        b0.swap(b1);
+        b0->scale *= mtrx[1];
+        b1->scale *= mtrx[2];
+        leaf->Prune();
+
+        return;
+    }
+
     const bool isZero0 = IS_NORM_0(b0->scale);
     const bool isZero1 = IS_NORM_0(b1->scale);
 
@@ -668,8 +685,6 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls,
     std::unique_ptr<bitLenInt[]> ketControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[ketControlsVec.size()]);
     std::copy(ketControlsVec.begin(), ketControlsVec.end(), ketControls.get());
 
-    std::set<QInterfacePtr> qis;
-
     par_for_qbdt(0, maxQubitPow, [&](const bitCapIntOcl& i, const int& cpu) {
         if ((i & lowControlMask) != lowControlMask) {
             return (bitCapIntOcl)((lowControlMask ^ (i & lowControlMask)) - ONE_BCI);
@@ -692,10 +707,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls,
 
         if (bdtQubitCount <= target) {
             QInterfacePtr qiLeaf = NODE_TO_QINTERFACE(leaf);
-            if (qis.find(qiLeaf) == qis.end()) {
-                qiLeaf->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
-                qis.insert(qiLeaf);
-            }
+            qiLeaf->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
         } else {
             Apply2x2OnLeaf(leaf, mtrx);
         }
