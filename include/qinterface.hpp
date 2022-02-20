@@ -1824,7 +1824,7 @@ public:
     virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
     /** Add integer (without sign) */
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 
     /** Add integer (without sign, with controls) */
     virtual void CINC(
