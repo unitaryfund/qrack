@@ -705,10 +705,10 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
         for (bitLenInt j = 0; j < maxQubit; j++) {
             if (IS_NORM_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
-                return (bitCapIntOcl)(pow2Ocl(target - j) - ONE_BCI);
+                return (bitCapIntOcl)(pow2Ocl(maxQubit - j) - ONE_BCI);
             }
             leaf->Branch();
-            leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
+            leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
         }
 
         if (IS_NORM_0(leaf->scale)) {
