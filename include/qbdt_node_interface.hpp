@@ -65,15 +65,6 @@ public:
         branches[1] = NULL;
     }
 
-    virtual void Prune(bitLenInt depth = 1U)
-    {
-        if (depth && (norm(scale) <= FP_NORM_EPSILON)) {
-            SetZero();
-        }
-    }
-
-    virtual void Normalize(bitLenInt depth) {}
-
     virtual QBdtNodeInterfacePtr ShallowClone() = 0;
 
     virtual bool isEqual(QBdtNodeInterfacePtr r) = 0;
@@ -81,6 +72,10 @@ public:
     virtual void ConvertStateVector(bitLenInt depth) = 0;
 
     virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false) = 0;
+
+    virtual void Prune(bitLenInt depth = 1U) = 0;
+    
+    virtual void Normalize(bitLenInt depth) = 0;
 };
 
 bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);

@@ -70,6 +70,13 @@ public:
         }
     }
 
+    virtual void Prune(bitLenInt depth = 1U)
+    {
+        if (depth && (norm(scale) <= FP_NORM_EPSILON)) {
+            SetZero();
+        }
+    }
+
     virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false)
     {
         throw std::out_of_range("QBdtQInterfaceNode::Branch() not implemented! (Recursion went too deep.)");
