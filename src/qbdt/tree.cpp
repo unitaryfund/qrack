@@ -612,37 +612,13 @@ void QBdt::Apply2x2OnLeaf(QBdtNodeInterfacePtr leaf, const complex* mtrx)
 
 void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
 {
-    if (target < bdtQubitCount) {
-        const bitCapIntOcl targetPow = pow2Ocl(target);
-        par_for_qbdt(0, targetPow, [&](const bitCapIntOcl& i, const int& cpu) {
-            QBdtNodeInterfacePtr leaf = root;
-            // Iterate to qubit depth.
-            for (bitLenInt j = 0; j < target; j++) {
-                if (IS_NORM_0(leaf->scale)) {
-                    // WARNING: Mutates loop control variable!
-                    return (bitCapIntOcl)(pow2Ocl(target - j) - ONE_BCI);
-                }
-                leaf->Branch();
-                leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
-            }
+    const bitCapInt maxQubit = (target < bdtQubitCount) ? target : bdtQubitCount;
+    const bitCapInt qPower = pow2(maxQubit);
 
-            if (!IS_NORM_0(leaf->scale)) {
-                Apply2x2OnLeaf(leaf, mtrx);
-            }
-
-            return (bitCapIntOcl)0U;
-        });
-        root->Prune(target);
-
-        return;
-    }
-
-    std::set<QInterfacePtr> qis;
-    const bitCapInt qPower = pow2((target < bdtQubitCount) ? target : bdtQubitCount);
     par_for_qbdt(0, qPower, [&](const bitCapIntOcl& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         // Iterate to qubit depth.
-        for (bitLenInt j = 0; j < target; j++) {
+        for (bitLenInt j = 0; j < maxQubit; j++) {
             if (IS_NORM_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
                 return (bitCapIntOcl)(pow2Ocl(target - j) - ONE_BCI);
@@ -650,14 +626,13 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
             leaf->Branch();
             leaf = leaf->branches[SelectBit(i, target - (j + 1U))];
         }
-        if (IS_NORM_0(leaf->scale)) {
-            return (bitCapIntOcl)0U;
-        }
 
-        QInterfacePtr qiLeaf = NODE_TO_QINTERFACE(leaf);
-        if (qis.find(qiLeaf) == qis.end()) {
-            qiLeaf->Mtrx(mtrx, target - bdtQubitCount);
-            qis.insert(qiLeaf);
+        if (!IS_NORM_0(leaf->scale)) {
+            if (maxQubit == target) {
+                Apply2x2OnLeaf(leaf, mtrx);
+            } else {
+                NODE_TO_QINTERFACE(leaf)->Mtrx(mtrx, target - bdtQubitCount);
+            }
         }
 
         return (bitCapIntOcl)0U;

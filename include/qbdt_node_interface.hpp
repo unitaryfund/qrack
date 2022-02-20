@@ -49,6 +49,11 @@ public:
     QBdtNodeInterface(complex scl, QBdtNodeInterfacePtr* b)
         : scale(scl)
     {
+        if (norm(scale) <= FP_NORM_EPSILON) {
+            SetZero();
+            return;
+        }
+
         branches[0] = b[0];
         branches[1] = b[1];
     }
