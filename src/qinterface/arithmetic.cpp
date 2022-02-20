@@ -166,6 +166,37 @@ void QInterface::CDEC(
     CINC(invToSub, inOutStart, length, controls, controlLen);
 }
 
+/** Add a classical integer to the register, with sign and without carry. */
+void QInterface::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+{
+    if (!length) {
+        return;
+    }
+
+    const bitLenInt lMin1 = length - 1U;
+    const bool b = (toAdd >> lMin1) & 1U;
+
+    // The overflow index is set if the sign flags START EQUAL and END CHANGED.
+
+    // Set the overflow flag if both flags start equal.
+    if (b) {
+        CNOT(start + lMin1, overflowIndex);
+    } else {
+        AntiCNOT(start + lMin1, overflowIndex);
+    }
+
+    // Perform the addition.
+    INC(toAdd, start, length);
+
+    // Uncompute both cases under the assumption that the sign flag has NOT changed.
+    // (If it has been changed, the attempt to uncompute will net to a bit flip.)
+    if (b) {
+        CNOT(start + lMin1, overflowIndex);
+    } else {
+        AntiCNOT(start + lMin1, overflowIndex);
+    }
+}
+
 /**
  * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
  * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
