@@ -32,15 +32,16 @@ protected:
     QBdtNodeInterfacePtr root;
     QInterfacePtr stateVecUnit;
     bitCapIntOcl maxQPowerOcl;
+    bitCapIntOcl bdtMaxQPowerOcl;
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
-    std::vector<MpsShardPtr> shards;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
         QInterface::SetQubitCount(qb);
         maxQPowerOcl = (bitCapIntOcl)maxQPower;
         bdtQubitCount = qubitCount - attachedQubitCount;
+        bdtMaxQPowerOcl = pow2Ocl(bdtQubitCount);
     }
 
     QInterfacePtr MakeStateVector(bitLenInt qbCount, bitCapInt perm = 0U);
