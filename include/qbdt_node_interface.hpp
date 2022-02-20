@@ -26,7 +26,7 @@ typedef std::shared_ptr<QBdtNodeInterface> QBdtNodeInterfacePtr;
 class QBdtNodeInterface {
 protected:
     size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
-    void _par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn);
+    void _par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn);
 
 public:
     complex scale;
@@ -74,7 +74,7 @@ public:
     virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false) = 0;
 
     virtual void Prune(bitLenInt depth = 1U) = 0;
-    
+
     virtual void Normalize(bitLenInt depth) = 0;
 };
 

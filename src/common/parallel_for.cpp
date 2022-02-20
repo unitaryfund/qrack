@@ -208,11 +208,11 @@ void ParallelFor::par_for_inc(
     }
 }
 
-void ParallelFor::par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
+void ParallelFor::par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn)
 {
-    const bitCapIntOcl itemCount = end - begin;
-    const bitCapIntOcl maxLcv = begin + itemCount;
-    for (bitCapIntOcl j = begin; j < maxLcv; j++) {
+    const bitCapInt itemCount = end - begin;
+    const bitCapInt maxLcv = begin + itemCount;
+    for (bitCapInt j = begin; j < maxLcv; j++) {
         j |= fn(j, 0);
     }
 }

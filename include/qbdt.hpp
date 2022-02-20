@@ -31,17 +31,15 @@ protected:
     int devID;
     QBdtNodeInterfacePtr root;
     QInterfacePtr stateVecUnit;
-    bitCapIntOcl maxQPowerOcl;
-    bitCapIntOcl bdtMaxQPowerOcl;
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
+    bitCapInt bdtMaxQPower;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
         QInterface::SetQubitCount(qb);
-        maxQPowerOcl = (bitCapIntOcl)maxQPower;
         bdtQubitCount = qubitCount - attachedQubitCount;
-        bdtMaxQPowerOcl = pow2Ocl(bdtQubitCount);
+        bdtMaxQPower = pow2(bdtQubitCount);
     }
 
     QInterfacePtr MakeStateVector(bitLenInt qbCount, bitCapInt perm = 0U);

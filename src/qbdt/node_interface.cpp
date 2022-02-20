@@ -40,11 +40,11 @@ bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs
 
 bool operator!=(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs) { return !(lhs == rhs); }
 
-void QBdtNodeInterface::_par_for_qbdt(const bitCapIntOcl begin, const bitCapIntOcl end, IncrementFunc fn)
+void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end, IncrementFunc fn)
 {
-    const bitCapIntOcl itemCount = end - begin;
-    const bitCapIntOcl maxLcv = begin + itemCount;
-    for (bitCapIntOcl j = begin; j < maxLcv; j++) {
+    const bitCapInt itemCount = end - begin;
+    const bitCapInt maxLcv = begin + itemCount;
+    for (bitCapInt j = begin; j < maxLcv; j++) {
         j |= fn(j, 0);
     }
 }
