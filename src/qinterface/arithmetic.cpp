@@ -59,15 +59,34 @@ void QInterface::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
     INC(invToSub, inOutStart, length);
 }
 
-/**
- * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
- * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
- * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
- */
-void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
+void QInterface::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    const bitCapInt invToSub = pow2(length) - toSub;
-    INCS(invToSub, inOutStart, length, overflowIndex);
+    if (!length) {
+        return;
+    }
+
+    const bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    std::unique_ptr<bitLenInt[]> bits(new bitLenInt[length + 1U]);
+    for (bitLenInt i = 0; i < length; i++) {
+        bits[i] = start + i;
+    }
+    bits[length] = carryIndex;
+
+    for (bitLenInt i = 0; i < length; i++) {
+        if (!((toAdd >> i) & 1U)) {
+            continue;
+        }
+        X(start + i);
+        for (bitLenInt j = 0; j < (length - i); j++) {
+            const bitLenInt target = start + (((i + j + 1U) == length) ? carryIndex : ((i + j + 1U) % length));
+            MACInvert(&(bits[i]), j + 1U, ONE_CMPLX, ONE_CMPLX, target);
+        }
+    }
 }
 
 /** Add integer (without sign, with controls) */
@@ -117,6 +136,17 @@ void QInterface::CDEC(
 {
     const bitCapInt invToSub = pow2(length) - toSub;
     CINC(invToSub, inOutStart, length, controls, controlLen);
+}
+
+/**
+ * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
+ * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
+ * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
+ */
+void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
+{
+    const bitCapInt invToSub = pow2(length) - toSub;
+    INCS(invToSub, inOutStart, length, overflowIndex);
 }
 
 #if ENABLE_BCD

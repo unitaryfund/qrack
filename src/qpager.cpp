@@ -1049,11 +1049,6 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 }
 
 #if ENABLE_ALU
-void QPager::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    CombineAndOp([&](QEnginePtr engine) { engine->INCC(toAdd, start, length, carryIndex); },
-        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
-}
 void QPager::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->INCS(toAdd, start, length, overflowIndex); },
