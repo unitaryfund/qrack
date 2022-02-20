@@ -116,6 +116,11 @@ void QInterface::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLen
 void QInterface::CINC(
     bitCapInt toAdd, bitLenInt start, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
 {
+    if (!controlLen) {
+        INC(toAdd, start, length);
+        return;
+    }
+
     if (!length) {
         return;
     }
