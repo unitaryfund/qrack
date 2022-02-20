@@ -3773,13 +3773,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 }
 
-/*
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decs")
 {
     REQUIRE(!isOverflowSub(1, 1, 128, 256));
     REQUIRE(isOverflowSub(1, 128, 128, 256));
     REQUIRE(isOverflowSub(128, 127, 128, 256));
-
 
     int i;
     int start = 0x08;
@@ -3788,12 +3786,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decs")
     for (i = 0; i < 8; i++) {
         qftReg->DECS(9, 0, 8, 9);
         start -= 9;
-        // TODO: This is wrong.
-        // The first operation should produce overflow, which this test does not expect.
         REQUIRE_THAT(qftReg, HasProbability(0, 19, 0xff - i * 9));
     }
 }
-*/
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
 {
