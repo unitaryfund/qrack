@@ -534,32 +534,6 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
 }
 
 #if ENABLE_ALU
-/// Add integer (without sign, with carry)
-void QEngine::INCC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
-{
-    const bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toAdd++;
-    }
-
-    INCDECC(toAdd, inOutStart, length, carryIndex);
-}
-
-/// Subtract integer (without sign, with carry)
-void QEngine::DECC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
-{
-    const bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-    } else {
-        toSub++;
-    }
-
-    bitCapInt invToSub = pow2(length) - toSub;
-    INCDECC(invToSub, inOutStart, length, carryIndex);
-}
-
 /**
  * Add an integer to the register, with sign and with carry. Flip phase on overflow. Because the register length is an
  * arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is

@@ -1064,11 +1064,6 @@ void QPager::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt
     CombineAndOp([&](QEnginePtr engine) { engine->INCSC(toAdd, start, length, carryIndex); },
         { static_cast<bitLenInt>(start + length - 1U), carryIndex });
 }
-void QPager::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    CombineAndOp([&](QEnginePtr engine) { engine->DECC(toSub, start, length, carryIndex); },
-        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
-}
 void QPager::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->DECSC(toSub, start, length, overflowIndex, carryIndex); },

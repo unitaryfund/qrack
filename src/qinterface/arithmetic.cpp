@@ -59,16 +59,10 @@ void QInterface::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
     INC(invToSub, inOutStart, length);
 }
 
-void QInterface::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QInterface::INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     if (!length) {
         return;
-    }
-
-    const bool hasCarry = M(carryIndex);
-    if (hasCarry) {
-        X(carryIndex);
-        toAdd++;
     }
 
     std::unique_ptr<bitLenInt[]> bits(new bitLenInt[length + 1U]);
@@ -87,6 +81,35 @@ void QInterface::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLen
             MACInvert(&(bits[i]), j + 1U, ONE_CMPLX, ONE_CMPLX, target);
         }
     }
+}
+
+void QInterface::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    if (!length) {
+        return;
+    }
+
+    const bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INCDECC(toAdd, start, length, carryIndex);
+}
+
+/// Subtract integer (without sign, with carry)
+void QInterface::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    const bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt invToSub = pow2(length) - toSub;
+    INCDECC(invToSub, start, length, carryIndex);
 }
 
 /** Add integer (without sign, with controls) */

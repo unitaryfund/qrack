@@ -136,8 +136,6 @@ public:
     virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation) = 0;
 
 #if ENABLE_ALU
-    virtual void INCC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
-    virtual void DECC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
     virtual void INCSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
     virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
@@ -166,10 +164,6 @@ public:
     virtual void FreeStateVec(complex* sv = NULL) = 0;
 
 #if ENABLE_ALU
-    /**
-     * Common driver method behind INCC and DECC
-     */
-    virtual void INCDECC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex) = 0;
     /**
      * Common driver method behind INCSC and DECSC (without overflow flag)
      */

@@ -589,11 +589,6 @@ public:
         SwitchToEngine();
         engine->INCSC(toAdd, start, length, carryIndex);
     }
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        SwitchToEngine();
-        engine->DECC(toSub, start, length, carryIndex);
-    }
     virtual void DECSC(
         bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
