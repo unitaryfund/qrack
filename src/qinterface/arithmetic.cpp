@@ -34,9 +34,9 @@ void QInterface::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
         return;
     }
 
-    std::unique_ptr<bitLenInt[]> controls(new bitLenInt[length]);
+    std::unique_ptr<bitLenInt[]> bits(new bitLenInt[length]);
     for (bitLenInt i = 0; i < length; i++) {
-        controls[i] = start + i;
+        bits[i] = start + i;
     }
 
     const bitLenInt lengthMin1 = length - 1U;
@@ -47,7 +47,7 @@ void QInterface::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
         }
         X(start + i);
         for (bitLenInt j = 0; j < (lengthMin1 - i); j++) {
-            MACInvert(&(controls[i]), j + 1U, ONE_CMPLX, ONE_CMPLX, start + ((i + j + 1U) % length));
+            MACInvert(&(bits[i]), j + 1U, ONE_CMPLX, ONE_CMPLX, start + ((i + j + 1U) % length));
         }
     }
 }
@@ -68,6 +68,47 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
 {
     const bitCapInt invToSub = pow2(length) - toSub;
     INCS(invToSub, inOutStart, length, overflowIndex);
+}
+
+/** Add integer (without sign, with controls) */
+void QInterface::CINC(
+    bitCapInt toAdd, bitLenInt start, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+{
+    if (!length) {
+        return;
+    }
+
+    if (length == 1U) {
+        if (toAdd & 1U) {
+            MCInvert(controls, controlLen, ONE_CMPLX, ONE_CMPLX, start);
+        }
+        return;
+    }
+
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        X(controls[0]);
+    }
+
+    const bitLenInt lengthMin1 = length - 1U;
+
+    for (bitLenInt i = 0; i < length; i++) {
+        if (!((toAdd >> i) & 1U)) {
+            continue;
+        }
+        MACInvert(controls, controlLen, ONE_CMPLX, ONE_CMPLX, start + i);
+        for (bitLenInt j = 0; j < (lengthMin1 - i); j++) {
+            std::unique_ptr<bitLenInt[]> bits(new bitLenInt[controlLen + length]);
+            std::copy(controls, controls + controlLen, bits.get());
+            for (bitLenInt k = 0; k < (j + 1U); k++) {
+                bits[controlLen + k] = start + i + k;
+            }
+            MACInvert(bits.get(), controlLen + j + 1U, ONE_CMPLX, ONE_CMPLX, start + ((i + j + 1U) % length));
+        }
+    }
+
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        X(controls[0]);
+    }
 }
 
 /// Subtract integer (without sign, with controls)
