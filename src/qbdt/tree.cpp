@@ -545,7 +545,7 @@ bitCapInt QBdt::MAll()
 {
     bitCapInt result = 0;
     QBdtNodeInterfacePtr leaf = root;
-    for (bitLenInt i = 0; i < qubitCount; i++) {
+    for (bitLenInt i = 0; i < bdtQubitCount; i++) {
         leaf->Branch();
         real1_f oneChance = clampProb(norm(leaf->branches[1]->scale));
         bool bitResult;
@@ -557,21 +557,20 @@ bitCapInt QBdt::MAll()
             bitResult = (Rand() <= oneChance);
         }
 
-        if (i >= bdtQubitCount) {
-            result |= NODE_TO_QINTERFACE(leaf)->MAll() << bdtQubitCount;
-            continue;
-        }
-
         if (bitResult) {
             leaf->branches[0]->SetZero();
-            leaf->branches[1]->scale = GetNonunitaryPhase();
+            leaf->branches[1]->scale = ONE_CMPLX;
             leaf = leaf->branches[1];
             result |= pow2(i);
         } else {
-            leaf->branches[0]->scale = GetNonunitaryPhase();
+            leaf->branches[0]->scale = ONE_CMPLX;
             leaf->branches[1]->SetZero();
             leaf = leaf->branches[0];
         }
+    }
+
+    if (bdtQubitCount < qubitCount) {
+        result |= NODE_TO_QINTERFACE(leaf)->MAll() << bdtQubitCount;
     }
 
     return result;
