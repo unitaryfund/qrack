@@ -729,16 +729,14 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
 
 void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target)
 {
-    std::vector<bitLenInt> sortedControls(controlLen);
-    std::copy(controls, controls + controlLen, sortedControls.begin());
-    std::sort(sortedControls.begin(), sortedControls.end());
+    std::vector<bitLenInt> controlVec(controlLen);
+    std::copy(controls, controls + controlLen, controlVec.begin());
 
-    const bool isSwapped = target < sortedControls.back();
-    const bitLenInt swappedBit = target;
+    std::sort(controlVec.begin(), controlVec.end());
+    const bool isSwapped = target < controlVec.back();
     if (isSwapped) {
-        Swap(target, sortedControls.back());
-        std::swap(target, sortedControls.back());
-        std::sort(sortedControls.begin(), sortedControls.end());
+        Swap(target, controlVec.back());
+        std::swap(target, controlVec.back());
     }
 
     const bitLenInt maxQubit = (target < bdtQubitCount) ? target : bdtQubitCount;
@@ -746,7 +744,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls,
     std::vector<bitLenInt> ketControlsVec;
     bitCapIntOcl lowControlMask = 0U;
     for (bitLenInt c = 0U; c < controlLen; c++) {
-        const bitLenInt control = sortedControls[c];
+        const bitLenInt control = controlVec[c];
         if (control < bdtQubitCount) {
             lowControlMask |= pow2Ocl(maxQubit - (control + 1U));
         } else {
@@ -790,7 +788,8 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls,
 
     // Undo isSwapped.
     if (isSwapped) {
-        Swap(swappedBit, target);
+        Swap(target, controlVec.back());
+        std::swap(target, controlVec.back());
     }
 }
 
