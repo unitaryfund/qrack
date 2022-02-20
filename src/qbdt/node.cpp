@@ -148,19 +148,18 @@ void QBdtNode::Prune(bitLenInt depth)
     }
 }
 
-void QBdtNode::Branch(bitLenInt depth, bool isZeroBranch)
+void QBdtNode::Branch(bitLenInt depth)
 {
     if (!depth) {
         return;
     }
-    if (!isZeroBranch && IS_NORM_0(scale)) {
+    if (IS_NORM_0(scale)) {
         SetZero();
         return;
     }
 
     QBdtNodeInterfacePtr& b0 = branches[0];
     QBdtNodeInterfacePtr& b1 = branches[1];
-
     if (!b0) {
         b0 = std::make_shared<QBdtNode>(SQRT1_2_R1);
         b1 = std::make_shared<QBdtNode>(SQRT1_2_R1);
@@ -170,8 +169,9 @@ void QBdtNode::Branch(bitLenInt depth, bool isZeroBranch)
         b1 = b1->ShallowClone();
     }
 
-    b0->Branch(depth - 1U, isZeroBranch);
-    b1->Branch(depth - 1U, isZeroBranch);
+    depth--;
+    b0->Branch(depth);
+    b1->Branch(depth);
 }
 
 void QBdtNode::Normalize(bitLenInt depth)

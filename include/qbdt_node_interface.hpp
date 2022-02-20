@@ -68,7 +68,7 @@ public:
 
     virtual void Prune(bitLenInt depth = 1U) {}
 
-    virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false) = 0;
+    virtual void Branch(bitLenInt depth = 1U) = 0;
 
     virtual void Normalize(bitLenInt depth) {}
 };
