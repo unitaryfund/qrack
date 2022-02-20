@@ -603,10 +603,8 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
 
     if (IS_NORM_0(SQRT1_2_R1 - mtrx[0]) && IS_NORM_0(mtrx[0] - mtrx[1]) && IS_NORM_0(mtrx[0] - mtrx[2]) &&
         IS_NORM_0(mtrx[0] + mtrx[3])) {
-        const bool isZero0 = IS_NORM_0(b0->scale);
-        const bool isZero1 = IS_NORM_0(b1->scale);
 
-        if (isZero0) {
+        if (IS_NORM_0(b0->scale)) {
             b1->scale *= SQRT1_2_R1;
             b0 = b1->ShallowClone();
             b0->scale *= -ONE_CMPLX;
@@ -615,9 +613,18 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
             return;
         }
 
-        if (isZero1) {
+        if (IS_NORM_0(b1->scale)) {
             b0->scale *= SQRT1_2_R1;
             b1 = b0;
+            leaf->Prune();
+
+            return;
+        }
+
+        if (b0 == b1) {
+            b1 = b1->ShallowClone();
+            b1->SetZero();
+            b0->scale /= SQRT1_2_R1;
             leaf->Prune();
 
             return;
