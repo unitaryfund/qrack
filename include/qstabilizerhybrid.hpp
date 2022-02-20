@@ -573,22 +573,6 @@ public:
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
 
 #if ENABLE_ALU
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
-    {
-        SwitchToEngine();
-        engine->INC(toAdd, start, length);
-    }
-    virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
-    {
-        SwitchToEngine();
-        engine->CINC(toAdd, inOutStart, length, controls, controlLen);
-    }
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        SwitchToEngine();
-        engine->INCC(toAdd, start, length, carryIndex);
-    }
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         SwitchToEngine();
@@ -604,11 +588,6 @@ public:
     {
         SwitchToEngine();
         engine->INCSC(toAdd, start, length, carryIndex);
-    }
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        SwitchToEngine();
-        engine->DECC(toSub, start, length, carryIndex);
     }
     virtual void DECSC(
         bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)

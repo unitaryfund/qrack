@@ -1049,21 +1049,6 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 }
 
 #if ENABLE_ALU
-void QPager::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
-{
-    CombineAndOp(
-        [&](QEnginePtr engine) { engine->INC(toAdd, start, length); }, { static_cast<bitLenInt>(start + length - 1U) });
-}
-void QPager::CINC(bitCapInt toAdd, bitLenInt start, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
-{
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->CINC(toAdd, start, length, controls, controlLen); },
-        { static_cast<bitLenInt>(start + length - 1U) }, controls, controlLen);
-}
-void QPager::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    CombineAndOp([&](QEnginePtr engine) { engine->INCC(toAdd, start, length, carryIndex); },
-        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
-}
 void QPager::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->INCS(toAdd, start, length, overflowIndex); },
@@ -1077,11 +1062,6 @@ void QPager::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt
 void QPager::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->INCSC(toAdd, start, length, carryIndex); },
-        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
-}
-void QPager::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    CombineAndOp([&](QEnginePtr engine) { engine->DECC(toSub, start, length, carryIndex); },
         { static_cast<bitLenInt>(start + length - 1U), carryIndex });
 }
 void QPager::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)

@@ -20,11 +20,150 @@ namespace Qrack {
 
 // Arithmetic:
 
+/** Add integer (without sign) */
+void QInterface::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+{
+    if (!length) {
+        return;
+    }
+
+    if (length == 1U) {
+        if (toAdd & 1U) {
+            X(start);
+        }
+        return;
+    }
+
+    std::unique_ptr<bitLenInt[]> bits(new bitLenInt[length]);
+    for (bitLenInt i = 0; i < length; i++) {
+        bits[i] = start + i;
+    }
+
+    const bitLenInt lengthMin1 = length - 1U;
+
+    for (bitLenInt i = 0; i < length; i++) {
+        if (!((toAdd >> i) & 1U)) {
+            continue;
+        }
+        X(start + i);
+        for (bitLenInt j = 0; j < (lengthMin1 - i); j++) {
+            MACInvert(&(bits[i]), j + 1U, ONE_CMPLX, ONE_CMPLX, start + ((i + j + 1U) % length));
+        }
+    }
+}
+
 /// Subtract integer (without sign)
 void QInterface::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
 {
     const bitCapInt invToSub = pow2(length) - toSub;
     INC(invToSub, inOutStart, length);
+}
+
+void QInterface::INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    if (!length) {
+        return;
+    }
+
+    std::unique_ptr<bitLenInt[]> bits(new bitLenInt[length + 1U]);
+    for (bitLenInt i = 0; i < length; i++) {
+        bits[i] = start + i;
+    }
+    bits[length] = carryIndex;
+
+    for (bitLenInt i = 0; i < length; i++) {
+        if (!((toAdd >> i) & 1U)) {
+            continue;
+        }
+        X(start + i);
+        for (bitLenInt j = 0; j < (length - i); j++) {
+            const bitLenInt target = start + (((i + j + 1U) == length) ? carryIndex : ((i + j + 1U) % length));
+            MACInvert(&(bits[i]), j + 1U, ONE_CMPLX, ONE_CMPLX, target);
+        }
+    }
+}
+
+void QInterface::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    if (!length) {
+        return;
+    }
+
+    const bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INCDECC(toAdd, start, length, carryIndex);
+}
+
+/// Subtract integer (without sign, with carry)
+void QInterface::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    const bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt invToSub = pow2(length) - toSub;
+    INCDECC(invToSub, start, length, carryIndex);
+}
+
+/** Add integer (without sign, with controls) */
+void QInterface::CINC(
+    bitCapInt toAdd, bitLenInt start, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+{
+    if (!controlLen) {
+        INC(toAdd, start, length);
+        return;
+    }
+
+    if (!length) {
+        return;
+    }
+
+    if (length == 1U) {
+        if (toAdd & 1U) {
+            MCInvert(controls, controlLen, ONE_CMPLX, ONE_CMPLX, start);
+        }
+        return;
+    }
+
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        X(controls[0]);
+    }
+
+    const bitLenInt lengthMin1 = length - 1U;
+
+    for (bitLenInt i = 0; i < length; i++) {
+        if (!((toAdd >> i) & 1U)) {
+            continue;
+        }
+        MACInvert(controls, controlLen, ONE_CMPLX, ONE_CMPLX, start + i);
+        for (bitLenInt j = 0; j < (lengthMin1 - i); j++) {
+            std::unique_ptr<bitLenInt[]> bits(new bitLenInt[controlLen + length]);
+            std::copy(controls, controls + controlLen, bits.get());
+            for (bitLenInt k = 0; k < (j + 1U); k++) {
+                bits[controlLen + k] = start + i + k;
+            }
+            MACInvert(bits.get(), controlLen + j + 1U, ONE_CMPLX, ONE_CMPLX, start + ((i + j + 1U) % length));
+        }
+    }
+
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        X(controls[0]);
+    }
+}
+
+/// Subtract integer (without sign, with controls)
+void QInterface::CDEC(
+    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+{
+    const bitCapInt invToSub = pow2(length) - toSub;
+    CINC(invToSub, inOutStart, length, controls, controlLen);
 }
 
 /**
@@ -36,14 +175,6 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
 {
     const bitCapInt invToSub = pow2(length) - toSub;
     INCS(invToSub, inOutStart, length, overflowIndex);
-}
-
-/// Subtract integer (without sign, with controls)
-void QInterface::CDEC(
-    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
-{
-    const bitCapInt invToSub = pow2(length) - toSub;
-    CINC(invToSub, inOutStart, length, controls, controlLen);
 }
 
 #if ENABLE_BCD

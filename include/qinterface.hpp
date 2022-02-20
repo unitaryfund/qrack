@@ -1823,15 +1823,21 @@ public:
     /** Logical shift right, filling the extra bits with |0> */
     virtual void LSR(bitLenInt shift, bitLenInt start, bitLenInt length);
 
+    /** Common driver method behind INCC and DECC */
+    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+
+    /** Add integer (without sign, with carry) */
+    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+
+    /** Subtract classical integer (without sign, with carry) */
+    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+
     /** Add integer (without sign) */
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 
     /** Add integer (without sign, with controls) */
     virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen) = 0;
-
-    /** Add integer (without sign, with carry) */
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
 
     /** Add a classical integer to the register, with sign and without carry. */
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) = 0;
@@ -1849,9 +1855,6 @@ public:
     /** Subtract classical integer (without sign, with controls) */
     virtual void CDEC(
         bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
-
-    /** Subtract classical integer (without sign, with carry) */
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
 
     /** Subtract a classical integer from the register, with sign and without carry. */
     virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
