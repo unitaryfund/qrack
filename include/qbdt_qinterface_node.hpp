@@ -70,7 +70,7 @@ public:
         }
     }
 
-    virtual void Branch(bitLenInt depth = 1U)
+    virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false)
     {
         throw std::out_of_range("QBdtQInterfaceNode::Branch() not implemented! (Recursion went too deep.)");
     }

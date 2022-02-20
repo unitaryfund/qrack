@@ -148,12 +148,12 @@ void QBdtNode::Prune(bitLenInt depth)
     }
 }
 
-void QBdtNode::Branch(bitLenInt depth)
+void QBdtNode::Branch(bitLenInt depth, bool isZeroBranch)
 {
     if (!depth) {
         return;
     }
-    if (IS_NORM_0(scale)) {
+    if (!isZeroBranch && IS_NORM_0(scale)) {
         SetZero();
         return;
     }

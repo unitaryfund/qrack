@@ -96,7 +96,7 @@ protected:
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
-    void Apply2x2OnLeaf(QBdtNodeInterfacePtr leaf, const complex* mtrx);
+    void Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const complex* mtrx);
     void ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target);
 
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }

@@ -578,7 +578,7 @@ bitCapInt QBdt::MAll()
     return result;
 }
 
-void QBdt::Apply2x2OnLeaf(QBdtNodeInterfacePtr leaf, const complex* mtrx)
+void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const complex* mtrx)
 {
     leaf->Branch();
     QBdtNodeInterfacePtr& b0 = leaf->branches[0];
@@ -601,30 +601,58 @@ void QBdt::Apply2x2OnLeaf(QBdtNodeInterfacePtr leaf, const complex* mtrx)
         return;
     }
 
-    const bool isZero0 = IS_NORM_0(b0->scale);
-    const bool isZero1 = IS_NORM_0(b1->scale);
+    const bitLenInt remainder = qubitCount - (depth + 1);
+    const bitCapIntOcl remainderPow = pow2Ocl(remainder);
 
-    const complex Y0 = b0->scale;
-    b0->scale = mtrx[0] * Y0 + mtrx[1] * b1->scale;
-    b1->scale = mtrx[2] * Y0 + mtrx[3] * b1->scale;
+    par_for_qbdt(0, remainderPow, [&](const bitCapIntOcl& i, const int& cpu) {
+        QBdtNodeInterfacePtr leaf0 = b0;
+        QBdtNodeInterfacePtr leaf1 = b1;
 
-    if (isZero0 && !IS_NORM_0(b0->scale)) {
-        b0->branches[0] = b1->branches[0];
-        b0->branches[1] = b1->branches[1];
-    }
-    if (isZero1 && !IS_NORM_0(b1->scale)) {
-        b1->branches[0] = b0->branches[0];
-        b1->branches[1] = b0->branches[1];
-    }
+        complex scale0 = b0->scale;
+        complex scale1 = b1->scale;
 
-    if (IS_NORM_0(b0->scale)) {
-        b0->SetZero();
-    }
-    if (IS_NORM_0(b1->scale)) {
-        b1->SetZero();
-    }
+        // b0 and b1 can't both be 0.
+        bool isZero = false;
 
-    leaf->Prune();
+        bitLenInt j;
+        for (j = 0; j < remainder; j++) {
+            leaf0->Branch(1, true);
+            leaf1->Branch(1, true);
+
+            const size_t bit = SelectBit(i, remainder - (j + 1U));
+
+            leaf0 = leaf0->branches[bit];
+            scale0 *= leaf0->scale;
+
+            leaf1 = leaf1->branches[bit];
+            scale1 *= leaf1->scale;
+
+            isZero = IS_NORM_0(scale0) && IS_NORM_0(scale1);
+
+            if (isZero) {
+                break;
+            }
+        }
+
+        if (isZero) {
+            leaf0->SetZero();
+            leaf1->SetZero();
+
+            // WARNING: Mutates loop control variable!
+            return (bitCapIntOcl)(pow2Ocl(remainder - (j + 1U)) - ONE_BCI);
+        }
+
+        const complex Y0 = scale0;
+        const complex Y1 = scale1;
+        leaf0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
+        leaf1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
+
+        return (bitCapIntOcl)0U;
+    });
+
+    b0->ConvertStateVector(remainder);
+    b1->ConvertStateVector(remainder);
+    leaf->Prune(remainder + 1U);
 }
 
 void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
@@ -646,7 +674,7 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
 
         if (!IS_NORM_0(leaf->scale)) {
             if (maxQubit == target) {
-                Apply2x2OnLeaf(leaf, mtrx);
+                Apply2x2OnLeaf(target, leaf, mtrx);
             } else {
                 NODE_TO_QINTERFACE(leaf)->Mtrx(mtrx, target - bdtQubitCount);
             }
@@ -709,7 +737,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls,
             QInterfacePtr qiLeaf = NODE_TO_QINTERFACE(leaf);
             qiLeaf->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
         } else {
-            Apply2x2OnLeaf(leaf, mtrx);
+            Apply2x2OnLeaf(target, leaf, mtrx);
         }
 
         return (bitCapIntOcl)0U;
