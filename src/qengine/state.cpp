@@ -1048,11 +1048,8 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
         partStateAngle.reset();
     }
 
-    if (nLength == 0) {
-        SetQubitCount(1);
-    } else {
-        SetQubitCount(nLength);
-    }
+    SetQubitCount(nLength);
+
     ResetStateVec(AllocStateVec(maxQPowerOcl));
 
     par_for(0, remainderPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
