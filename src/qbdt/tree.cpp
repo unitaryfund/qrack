@@ -621,13 +621,22 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
             return;
         }
 
-        if (b0 == b1) {
-            b1 = b1->ShallowClone();
-            b1->SetZero();
-            b0->scale /= SQRT1_2_R1;
-            leaf->Prune();
+        if ((b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1])) {
+            if (IS_NORM_0(b0->scale - b1->scale)) {
+                b0->scale /= SQRT1_2_R1;
+                b1->SetZero();
+                leaf->Prune();
 
-            return;
+                return;
+            }
+
+            if (IS_NORM_0(b0->scale + b1->scale)) {
+                b0->SetZero();
+                b1->scale /= SQRT1_2_R1;
+                leaf->Prune();
+
+                return;
+            }
         }
     }
 
