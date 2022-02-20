@@ -573,11 +573,6 @@ public:
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
 
 #if ENABLE_ALU
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
-    {
-        SwitchToEngine();
-        engine->INC(toAdd, start, length);
-    }
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
     {

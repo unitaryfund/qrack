@@ -201,7 +201,6 @@ public:
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
 #if ENABLE_ALU
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
     virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);

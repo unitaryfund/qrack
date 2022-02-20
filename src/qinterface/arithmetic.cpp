@@ -20,6 +20,38 @@ namespace Qrack {
 
 // Arithmetic:
 
+/** Add integer (without sign) */
+void QInterface::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+{
+    if (!length) {
+        return;
+    }
+
+    if (length == 1U) {
+        if (toAdd & 1U) {
+            X(start);
+        }
+        return;
+    }
+
+    std::unique_ptr<bitLenInt[]> controls(new bitLenInt[length]);
+    for (bitLenInt i = 0; i < length; i++) {
+        controls[i] = start + i;
+    }
+
+    const bitLenInt lengthMin1 = length - 1U;
+
+    for (bitLenInt i = 0; i < length; i++) {
+        if (!((toAdd >> i) & 1U)) {
+            continue;
+        }
+        X(start + i);
+        for (bitLenInt j = 0; j < (lengthMin1 - i); j++) {
+            MACInvert(&(controls[i]), j + 1U, ONE_CMPLX, ONE_CMPLX, start + ((i + j + 1U) % length));
+        }
+    }
+}
+
 /// Subtract integer (without sign)
 void QInterface::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
 {
