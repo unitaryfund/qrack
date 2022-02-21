@@ -219,6 +219,15 @@ public:
 
     virtual bool isFinished() { return (!stabilizer || stabilizer->isFinished()) && (!engine || engine->isFinished()); }
 
+    virtual void Dump()
+    {
+        if (stabilizer) {
+            stabilizer->Dump();
+        } else {
+            engine->Dump();
+        }
+    }
+
     virtual void SetConcurrency(uint32_t threadCount)
     {
         QInterface::SetConcurrency(threadCount);

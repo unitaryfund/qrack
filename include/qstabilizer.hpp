@@ -76,13 +76,6 @@ protected:
     DispatchQueue dispatchQueue;
 #endif
 
-    void Dump()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-        dispatchQueue.dump();
-#endif
-    }
-
     typedef std::function<void(const bitLenInt&)> StabilizerParallelFunc;
     typedef std::function<void(void)> DispatchFn;
     void Dispatch(DispatchFn fn)
@@ -144,6 +137,13 @@ public:
         return dispatchQueue.isFinished();
 #else
         return true;
+#endif
+    }
+
+    void Dump()
+    {
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+        dispatchQueue.dump();
 #endif
     }
 
