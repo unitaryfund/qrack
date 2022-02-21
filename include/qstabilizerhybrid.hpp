@@ -578,16 +578,16 @@ public:
         SwitchToEngine();
         engine->INCS(toAdd, start, length, overflowIndex);
     }
-    virtual void INCSC(
+    virtual void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
         SwitchToEngine();
-        engine->INCSC(toAdd, start, length, overflowIndex, carryIndex);
+        engine->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
     }
-    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    virtual void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         SwitchToEngine();
-        engine->INCSC(toAdd, start, length, carryIndex);
+        engine->INCDECSC(toAdd, start, length, carryIndex);
     }
 #if ENABLE_BCD
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
@@ -595,15 +595,10 @@ public:
         SwitchToEngine();
         engine->INCBCD(toAdd, start, length);
     }
-    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    virtual void INCDECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         SwitchToEngine();
-        engine->INCBCDC(toAdd, start, length, carryIndex);
-    }
-    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        SwitchToEngine();
-        engine->DECBCDC(toSub, start, length, carryIndex);
+        engine->INCDECBCDC(toAdd, start, length, carryIndex);
     }
 #endif
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)

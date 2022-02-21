@@ -178,6 +178,41 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
 }
 
 /**
+ * Add an integer to the register, with sign and with carry. If the overflow is set, flip phase on overflow. Because the
+ * register length is an arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the
+ * integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate
+ * position before the cast.
+ */
+void QInterface::INCSC(
+    bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+{
+    const bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INCDECSC(toAdd, inOutStart, length, overflowIndex, carryIndex);
+}
+
+/**
+ * Add an integer to the register, with sign and with carry. Flip phase on overflow. Because the register length is an
+ * arbitrary number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is
+ * specified as cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the
+ * cast.
+ */
+void QInterface::INCSC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+{
+    const bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INCDECSC(toAdd, inOutStart, length, carryIndex);
+}
+
+/**
  * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
  * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
  * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
@@ -193,9 +228,15 @@ void QInterface::DECSC(
     }
 
     bitCapInt invToSub = pow2(length) - toSub;
-    INCSC(invToSub, start, length, overflowIndex, carryIndex);
+    INCDECSC(invToSub, start, length, overflowIndex, carryIndex);
 }
 
+/**
+ * Subtract an integer from the register, with sign and with carry. If the overflow is set, flip phase on overflow.
+ * Because the register length is an arbitrary number of bits, the sign bit position on the integer to add is variable.
+ * Hence, the integer to add is specified as cast to an unsigned format, with the sign bit assumed to be set at the
+ * appropriate position before the cast.
+ */
 void QInterface::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     const bool hasCarry = M(carryIndex);
@@ -206,7 +247,7 @@ void QInterface::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLe
     }
 
     bitCapInt invToSub = pow2(length) - toSub;
-    INCSC(invToSub, start, length, carryIndex);
+    INCDECSC(invToSub, start, length, carryIndex);
 }
 
 #if ENABLE_BCD
@@ -215,6 +256,34 @@ void QInterface::DECBCD(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
 {
     const bitCapInt invToSub = intPow(10U, length / 4U) - toSub;
     INCBCD(invToSub, inOutStart, length);
+}
+
+/// Add BCD integer (without sign, with carry)
+void QInterface::INCBCDC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+{
+    const bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+        toAdd++;
+    }
+
+    INCDECBCDC(toAdd, inOutStart, length, carryIndex);
+}
+
+/// Subtract BCD integer (without sign, with carry)
+void QInterface::DECBCDC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+{
+    const bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    const bitCapInt maxVal = intPow(10U, length / 4U);
+    toSub %= maxVal;
+    bitCapInt invToSub = maxVal - toSub;
+    INCDECBCDC(invToSub, inOutStart, length, carryIndex);
 }
 #endif
 

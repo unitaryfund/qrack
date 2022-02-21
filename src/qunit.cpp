@@ -3003,50 +3003,15 @@ void QUnit::INCS(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt o
     INTS(toMod, start, length, overflowIndex, 0xFF, false);
 }
 
-void QUnit::INCSC(
+void QUnit::INCDECSC(
     bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
-    if (M(carryIndex)) {
-        X(carryIndex);
-        toAdd++;
-    }
-
     INTS(toAdd, inOutStart, length, overflowIndex, carryIndex, true);
 }
 
-void QUnit::DECSC(
-    bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+void QUnit::INCDECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    if (M(carryIndex)) {
-        X(carryIndex);
-    } else {
-        toSub++;
-    }
-
-    bitCapInt invToSub = pow2(length) - toSub;
-    INTS(invToSub, inOutStart, length, overflowIndex, carryIndex, true);
-}
-
-void QUnit::INCSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    // The phase effect of the overflow is undetectable, if this check passes:
-    if (INTCOptimize(toMod, start, length, true, carryIndex)) {
-        return;
-    }
-
-    // Otherwise, form the potentially entangled representation:
     INCx(&QInterface::INCSC, toMod, start, length, carryIndex);
-}
-
-void QUnit::DECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    // The phase effect of the overflow is undetectable, if this check passes:
-    if (INTCOptimize(toMod, start, length, false, carryIndex)) {
-        return;
-    }
-
-    // Otherwise, form the potentially entangled representation:
-    INCx(&QInterface::DECSC, toMod, start, length, carryIndex);
 }
 
 #if ENABLE_BCD

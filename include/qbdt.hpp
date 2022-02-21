@@ -283,27 +283,24 @@ public:
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCS(toAdd, start, length, overflowIndex); });
     }
-    virtual void INCSC(
+    virtual void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCSC(toAdd, start, length, overflowIndex, carryIndex); });
+        ExecuteAsStateVector(
+            [&](QInterfacePtr eng) { eng->INCDECSC(toAdd, start, length, overflowIndex, carryIndex); });
     }
-    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    virtual void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCSC(toAdd, start, length, carryIndex); });
+        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCDECSC(toAdd, start, length, carryIndex); });
     }
 #if ENABLE_BCD
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCBCD(toAdd, start, length); });
     }
-    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    virtual void INCDECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCBCDC(toAdd, start, length, carryIndex); });
-    }
-    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->DECBCDC(toSub, start, length, carryIndex); });
+        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCDECBCDC(toAdd, start, length, carryIndex); });
     }
 #endif
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)

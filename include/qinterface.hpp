@@ -1844,10 +1844,10 @@ public:
 
     /** Add a classical integer to the register, with sign and with carry. */
     virtual void INCSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) = 0;
+        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
 
     /** Add a classical integer to the register, with sign and with (phase-based) carry. */
-    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Subtract classical integer (without sign) */
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
@@ -1866,18 +1866,33 @@ public:
     /** Subtract a classical integer from the register, with sign and with carry. */
     virtual void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
+    /**
+     * Common driver method behind INCSC and DECSC (without overflow flag)
+     */
+    virtual void INCDECSC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex) = 0;
+    /**
+     * Common driver method behind INCSC and DECSC (with overflow flag)
+     */
+    virtual void INCDECSC(
+        bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) = 0;
+
 #if ENABLE_BCD
     /** Add classical BCD integer (without sign) */
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length) = 0;
 
     /** Add classical BCD integer (without sign, with carry) */
-    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
     /** Subtract BCD integer (without sign) */
     virtual void DECBCD(bitCapInt toSub, bitLenInt start, bitLenInt length);
 
     /** Subtract BCD integer (without sign, with carry) */
-    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+
+    /**
+     * Common driver method behind INCSC and DECSC (without overflow flag)
+     */
+    virtual void INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex) = 0;
 #endif
 
     /** Multiply by integer */
