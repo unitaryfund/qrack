@@ -292,15 +292,6 @@ public:
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCSC(toAdd, start, length, carryIndex); });
     }
-    virtual void DECSC(
-        bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
-    {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->DECSC(toSub, start, length, overflowIndex, carryIndex); });
-    }
-    virtual void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->DECSC(toSub, start, length, carryIndex); });
-    }
 #if ENABLE_BCD
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
