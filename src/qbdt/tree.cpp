@@ -506,7 +506,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
     for (bitCapInt i = 0; i < qPower; i++) {
         QBdtNodeInterfacePtr leaf = root;
-        for (bitLenInt j = 0; j < qubit; j++) {
+        for (bitLenInt j = 0; j < maxQubit; j++) {
             if (IS_NORM_0(leaf->scale)) {
                 break;
             }
@@ -569,7 +569,6 @@ bitCapInt QBdt::MAll()
 
     if (bdtQubitCount < qubitCount) {
         // Theoretically, there's only 1 copy of this leaf left, so no need to branch.
-        // leaf->Branch();
         result |= NODE_TO_QINTERFACE(leaf)->MAll() << bdtQubitCount;
     }
 
@@ -578,12 +577,14 @@ bitCapInt QBdt::MAll()
 
 void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const complex* mtrx)
 {
+    leaf->Branch();
     QBdtNodeInterfacePtr& b0 = leaf->branches[0];
     QBdtNodeInterfacePtr& b1 = leaf->branches[1];
 
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         b0->scale *= mtrx[0];
         b1->scale *= mtrx[3];
+        leaf->Prune();
 
         return;
     }
@@ -592,6 +593,7 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
         b0.swap(b1);
         b0->scale *= mtrx[1];
         b1->scale *= mtrx[2];
+        leaf->Prune();
 
         return;
     }
@@ -614,6 +616,7 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
         const complex Y1 = b1->scale;
         b0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
         b1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
+        leaf->Prune();
 
         return;
     }
@@ -668,9 +671,8 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
     });
 
     b0->ConvertStateVector(remainder);
-    b0->Prune(remainder);
     b1->ConvertStateVector(remainder);
-    b1->Prune(remainder);
+    leaf->Prune(remainder + 1U);
 }
 
 void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
@@ -695,9 +697,8 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
             return (bitCapInt)0U;
         }
 
-        leaf->Branch();
-
         if (isKet) {
+            leaf->Branch();
             NODE_TO_QINTERFACE(leaf)->Mtrx(mtrx, target - bdtQubitCount);
         } else {
             Apply2x2OnLeaf(target, leaf, mtrx);
@@ -757,9 +758,8 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls,
             return (bitCapInt)0U;
         }
 
-        leaf->Branch();
-
         if (isKet) {
+            leaf->Branch();
             QInterfacePtr qiLeaf = NODE_TO_QINTERFACE(leaf);
             qiLeaf->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
         } else {
