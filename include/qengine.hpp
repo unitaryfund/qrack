@@ -136,8 +136,6 @@ public:
     virtual void ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray);
     virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation) = 0;
 
-    // TODO: Assess whether it's acceptable for these to be public on QEngine
-    // protected:
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;
 
     virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
