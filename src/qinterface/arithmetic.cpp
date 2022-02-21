@@ -177,6 +177,37 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, b
     INCS(invToSub, inOutStart, length, overflowIndex);
 }
 
+/**
+ * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
+ * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
+ * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
+ */
+void QInterface::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+{
+    const bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt invToSub = pow2(length) - toSub;
+    INCSC(invToSub, start, length, overflowIndex, carryIndex);
+}
+
+void QInterface::DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+{
+    const bool hasCarry = M(carryIndex);
+    if (hasCarry) {
+        X(carryIndex);
+    } else {
+        toSub++;
+    }
+
+    bitCapInt invToSub = pow2(length) - toSub;
+    INCSC(invToSub, start, length, carryIndex);
+}
+
 #if ENABLE_BCD
 /// Subtract BCD integer (without sign)
 void QInterface::DECBCD(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)

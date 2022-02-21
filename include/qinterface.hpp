@@ -1861,10 +1861,10 @@ public:
 
     /** Subtract a classical integer from the register, with sign and with carry. */
     virtual void DECSC(
-        bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) = 0;
+        bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
 
     /** Subtract a classical integer from the register, with sign and with carry. */
-    virtual void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex) = 0;
+    virtual void DECSC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 
 #if ENABLE_BCD
     /** Add classical BCD integer (without sign) */
