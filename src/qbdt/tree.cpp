@@ -584,7 +584,6 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
         b0->scale *= mtrx[0];
         b1->scale *= mtrx[3];
-        leaf->Prune();
 
         return;
     }
@@ -593,9 +592,25 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
         b0.swap(b1);
         b0->scale *= mtrx[1];
         b1->scale *= mtrx[2];
-        leaf->Prune();
 
         return;
+    }
+
+    if (IS_NORM_0(ONE_CMPLX - mtrx[0]) && IS_NORM_0(mtrx[0] - mtrx[1]) && IS_NORM_0(mtrx[0] - mtrx[2]) &&
+        IS_NORM_0(mtrx[0] + mtrx[3])) {
+        if (IS_NORM_0(b1->scale)) {
+            b0->scale *= SQRT1_2_R1;
+            b1 = b0->ShallowClone();
+
+            return;
+        }
+        if (IS_NORM_0(b0->scale)) {
+            b1->scale *= SQRT1_2_R1;
+            b0 = b1->ShallowClone();
+            b1->scale *= -ONE_CMPLX;
+
+            return;
+        }
     }
 
     const bitLenInt remainder = bdtQubitCount - (depth + 1);
@@ -648,8 +663,9 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
     });
 
     b0->ConvertStateVector(remainder);
+    b0->Prune(remainder);
     b1->ConvertStateVector(remainder);
-    leaf->Prune(remainder + 1U);
+    b1->Prune(remainder);
 }
 
 void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
