@@ -1054,14 +1054,14 @@ void QPager::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt 
     CombineAndOp([&](QEnginePtr engine) { engine->INCS(toAdd, start, length, overflowIndex); },
         { static_cast<bitLenInt>(start + length - 1U), overflowIndex });
 }
-void QPager::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+void QPager::INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
 {
-    CombineAndOp([&](QEnginePtr engine) { engine->INCSC(toAdd, start, length, overflowIndex, carryIndex); },
+    CombineAndOp([&](QEnginePtr engine) { engine->INCDECSC(toAdd, start, length, overflowIndex, carryIndex); },
         { static_cast<bitLenInt>(start + length - 1U), overflowIndex, carryIndex });
 }
-void QPager::INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QPager::INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    CombineAndOp([&](QEnginePtr engine) { engine->INCSC(toAdd, start, length, carryIndex); },
+    CombineAndOp([&](QEnginePtr engine) { engine->INCDECSC(toAdd, start, length, carryIndex); },
         { static_cast<bitLenInt>(start + length - 1U), carryIndex });
 }
 #if ENABLE_BCD
@@ -1070,14 +1070,9 @@ void QPager::INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     CombineAndOp([&](QEnginePtr engine) { engine->INCBCD(toAdd, start, length); },
         { static_cast<bitLenInt>(start + length - 1U) });
 }
-void QPager::INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QPager::INCDECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    CombineAndOp([&](QEnginePtr engine) { engine->INCBCDC(toAdd, start, length, carryIndex); },
-        { static_cast<bitLenInt>(start + length - 1U), carryIndex });
-}
-void QPager::DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    CombineAndOp([&](QEnginePtr engine) { engine->DECBCDC(toSub, start, length, carryIndex); },
+    CombineAndOp([&](QEnginePtr engine) { engine->INCDECBCDC(toAdd, start, length, carryIndex); },
         { static_cast<bitLenInt>(start + length - 1U), carryIndex });
 }
 #endif

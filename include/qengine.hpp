@@ -135,19 +135,6 @@ public:
     virtual void ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray);
     virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation) = 0;
 
-#if ENABLE_ALU
-    virtual void INCSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
-    virtual void DECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void DECSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
-#if ENABLE_BCD
-    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
-#endif
-#endif
-
     virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
     // TODO: Assess whether it's acceptable for these to be public on QEngine
@@ -162,23 +149,5 @@ public:
         const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, const complex* mtrx);
 
     virtual void FreeStateVec(complex* sv = NULL) = 0;
-
-#if ENABLE_ALU
-    /**
-     * Common driver method behind INCSC and DECSC (without overflow flag)
-     */
-    virtual void INCDECSC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex) = 0;
-    /**
-     * Common driver method behind INCSC and DECSC (with overflow flag)
-     */
-    virtual void INCDECSC(
-        bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex) = 0;
-#if ENABLE_BCD
-    /**
-     * Common driver method behind INCSC and DECSC (without overflow flag)
-     */
-    virtual void INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex) = 0;
-#endif
-#endif
 };
 } // namespace Qrack

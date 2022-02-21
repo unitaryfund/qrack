@@ -16,60 +16,38 @@
 
 #pragma once
 
-#include "qbinary_decision_tree_node.hpp"
-#include "qinterface.hpp"
-
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-#include "common/dispatchqueue.hpp"
-#endif
 #include "mpsshard.hpp"
+#include "qbdt_qinterface_node.hpp"
+#include "qinterface.hpp"
 
 namespace Qrack {
 
-class QBinaryDecisionTree;
-typedef std::shared_ptr<QBinaryDecisionTree> QBinaryDecisionTreePtr;
+class QBdt;
+typedef std::shared_ptr<QBdt> QBdtPtr;
 
-class QBinaryDecisionTree : virtual public QInterface {
+class QBdt : virtual public QInterface {
 protected:
     std::vector<QInterfaceEngine> engines;
     int devID;
-    QBinaryDecisionTreeNodePtr root;
+    QBdtNodeInterfacePtr root;
     QInterfacePtr stateVecUnit;
-#if ENABLE_QUNIT_CPU_PARALLEL
-    DispatchQueue dispatchQueue;
-#endif
-    bitLenInt bdtThreshold;
-    bitLenInt dispatchThreshold;
-    bitLenInt pagingThresholdQubits;
-    bitCapIntOcl maxQPowerOcl;
-    std::vector<MpsShardPtr> shards;
+    bitLenInt attachedQubitCount;
+    bitLenInt bdtQubitCount;
+    bitCapInt bdtMaxQPower;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
         QInterface::SetQubitCount(qb);
-        maxQPowerOcl = (bitCapIntOcl)maxQPower;
+        bdtQubitCount = qubitCount - attachedQubitCount;
+        bdtMaxQPower = pow2(bdtQubitCount);
     }
 
-    typedef std::function<void(void)> DispatchFn;
-    virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn)
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        if ((workItemCount >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) && (workItemCount < GetStride())) {
-            dispatchQueue.dispatch(fn);
-        } else {
-            Finish();
-            fn();
-        }
-#else
-        fn();
-#endif
-    }
-
-    QInterfacePtr MakeStateVector();
+    QInterfacePtr MakeStateVector(bitLenInt qbCount, bitCapInt perm = 0U);
+    QBdtQInterfaceNodePtr MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
 
     QInterfacePtr MakeTempStateVector()
     {
-        QInterfacePtr copyPtr = MakeStateVector();
+        QInterfacePtr copyPtr = MakeStateVector(qubitCount);
         Finish();
         GetQuantumState(copyPtr);
 
@@ -82,9 +60,8 @@ protected:
             return;
         }
 
-        FlushBuffers();
         Finish();
-        stateVecUnit = MakeStateVector();
+        stateVecUnit = MakeStateVector(qubitCount);
         GetQuantumState(stateVecUnit);
         root = NULL;
     }
@@ -104,25 +81,22 @@ protected:
     {
         SetStateVector();
         operation(stateVecUnit);
+        ResetStateVector();
     }
 
     template <typename Fn> bitCapInt BitCapIntAsStateVector(Fn operation)
     {
         SetStateVector();
         bitCapInt toRet = operation(stateVecUnit);
+        ResetStateVector();
 
         return toRet;
     }
 
-    void DecomposeDispose(bitLenInt start, bitLenInt length, QBinaryDecisionTreePtr dest);
+    void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
-    void Apply2x2OnLeaf(const complex* mtrx, QBinaryDecisionTreeNodePtr leaf, bitLenInt depth,
-        bitCapInt highControlMask, bool isAnti, bool isParallel);
-
-    template <typename Fn> void ApplySingle(const complex* mtrx, bitLenInt target, Fn leafFunc);
-    template <typename Lfn>
-    void ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target,
-        bool isAnti, Lfn leafFunc);
+    void Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const complex* mtrx);
+    void ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target);
 
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
 
@@ -132,41 +106,20 @@ protected:
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
     }
 
-    void FlushBuffer(bitLenInt i);
-
-    void FlushBuffers()
-    {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            FlushBuffer(i);
-        }
-        Finish();
-    }
-
-    void DumpBuffers()
-    {
-        for (bitLenInt i = 0U; i < qubitCount; i++) {
-            shards[i] = NULL;
-        }
-    }
-
-    bool CheckControlled(
-        const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target, bool isAnti);
-
 public:
-    QBinaryDecisionTree(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
+    QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {},
         bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
 
-    QBinaryDecisionTree(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
+    QBdt(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON)
-        : QBinaryDecisionTree({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm,
-              randomGlobalPhase, useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, ignored,
-              qubitThreshold, separation_thresh)
+        : QBdt({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem,
+              deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold, separation_thresh)
     {
     }
 
@@ -174,49 +127,31 @@ public:
 
     virtual void Finish()
     {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.finish();
-#endif
         if (stateVecUnit) {
             stateVecUnit->Finish();
         }
     };
 
-    virtual bool isFinished()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        return dispatchQueue.isFinished() && (!stateVecUnit || stateVecUnit->isFinished());
-#else
-        return !stateVecUnit || stateVecUnit->isFinished();
-#endif
-    }
+    virtual bool isFinished() { return !stateVecUnit || stateVecUnit->isFinished(); }
 
-    virtual void Dump()
-    {
-#if ENABLE_QUNIT_CPU_PARALLEL
-        dispatchQueue.dump();
-#endif
-    }
+    virtual void Dump() {}
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         // Intentionally left blank.
     }
 
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    virtual void NormalizeState(
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
     {
-        if (stateVecUnit) {
-            stateVecUnit->NormalizeState(nrm, norm_thresh);
-            return;
-        }
-        root->Normalize(qubitCount);
+        root->Normalize(bdtQubitCount);
     }
 
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
-        return SumSqrDiff(std::dynamic_pointer_cast<QBinaryDecisionTree>(toCompare));
+        return SumSqrDiff(std::dynamic_pointer_cast<QBdt>(toCompare));
     }
-    virtual real1_f SumSqrDiff(QBinaryDecisionTreePtr toCompare);
+    virtual real1_f SumSqrDiff(QBdtPtr toCompare);
 
     virtual void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG);
 
@@ -235,28 +170,33 @@ public:
     }
 
     using QInterface::Compose;
-    virtual bitLenInt Compose(QBinaryDecisionTreePtr toCopy, bitLenInt start);
+    virtual bitLenInt Compose(QBdtPtr toCopy, bitLenInt start);
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
-        return Compose(std::dynamic_pointer_cast<QBinaryDecisionTree>(toCopy), start);
+        return Compose(std::dynamic_pointer_cast<QBdt>(toCopy), start);
     }
+    virtual bitLenInt Attach(QInterfacePtr toCopy, bitLenInt start)
+    {
+        if (start == qubitCount) {
+            return Attach(toCopy);
+        }
 
+        const bitLenInt origSize = qubitCount;
+        ROL(origSize - start, 0, qubitCount);
+        bitLenInt result = Attach(toCopy, qubitCount);
+        ROR(origSize - start, 0, qubitCount);
+
+        return result;
+    }
+    virtual bitLenInt Attach(QInterfacePtr toCopy);
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
-        DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBinaryDecisionTree>(dest));
+        DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));
     }
     virtual void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
 
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
-        if (stateVecUnit && ((qubitCount - length) <= bdtThreshold)) {
-            stateVecUnit->Dispose(start, length, disposedPerm);
-            shards.erase(shards.begin() + start, shards.begin() + start + length);
-            SetQubitCount(qubitCount - length);
-
-            return;
-        }
-
         DecomposeDispose(start, length, NULL);
     }
 
@@ -266,7 +206,6 @@ public:
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
     {
-        FlushBuffers();
         Finish();
         QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
         return unit->MultiShotMeasureMask(qPowers, qPowerCount, shots);
@@ -276,20 +215,38 @@ public:
     virtual bitCapInt MAll();
 
     virtual void Mtrx(const complex* mtrx, bitLenInt target);
-    virtual void Phase(complex topLeft, complex bottomRight, bitLenInt target);
-    virtual void Invert(complex topRight, complex bottomLeft, bitLenInt target);
     virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
-    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
+
+    virtual void CNOT(bitLenInt control, bitLenInt target)
+    {
+        if (control < target) {
+            const complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+            const bitLenInt controls[1] = { control };
+            ApplyControlledSingle(mtrx, controls, 1U, target);
+            return;
+        }
+
+        H(target);
+        CZ(control, target);
+        H(target);
+    }
+    virtual void CZ(bitLenInt control, bitLenInt target)
+    {
+        if (target < control) {
+            std::swap(target, control);
+        }
+        const bitLenInt controls[1] = { control };
+        const complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
+        ApplyControlledSingle(mtrx, controls, 1U, target);
+    }
 
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     virtual real1_f ProbParity(bitCapInt mask)
     {
-        FlushBuffers();
         Finish();
         QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
         return unit->ProbParity(mask);
     }
-
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubitIndex1, qubitIndex2); });
@@ -322,19 +279,6 @@ public:
     }
 
 #if ENABLE_ALU
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
-    {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INC(toAdd, start, length); });
-    }
-    virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
-    {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->CINC(toAdd, inOutStart, length, controls, controlLen); });
-    }
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCC(toAdd, start, length, carryIndex); });
-    }
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCS(toAdd, start, length, overflowIndex); });
@@ -342,16 +286,15 @@ public:
     virtual void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
-        ExecuteAsStateVector(
-            [&](QInterfacePtr eng) { eng->INCDECSC(toAdd, start, length, overflowIndex, carryIndex); });
+        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCDECSC(toAdd, start, length, overflowIndex, carryIndex); });
     }
     virtual void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCDECSC(toAdd, start, length, carryIndex); });
     }
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    virtual void INCSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->DECC(toSub, start, length, carryIndex); });
+        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCSC(toAdd, start, length, carryIndex); });
     }
 #if ENABLE_BCD
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
@@ -360,7 +303,7 @@ public:
     }
     virtual void INCDECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCDECBCDC(toAdd, start, length, carryIndex); });
+        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCBCDC(toAdd, start, length, carryIndex); });
     }
 #endif
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
