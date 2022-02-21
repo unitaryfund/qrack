@@ -2377,6 +2377,12 @@ public:
     virtual bool isFinished() { return true; };
 
     /**
+     * If asynchronous work is still running, let the simulator know that it can be aborted. Note that this method is
+     * typically used internally where appropriate, such that user code typically does not call Dump().
+     */
+    virtual void Dump(){};
+
+    /**
      * Returns "true" if current state representation is definitely a binary decision tree, "false" if it is definitely
      * not, or "true" if it cannot be determined.
      */

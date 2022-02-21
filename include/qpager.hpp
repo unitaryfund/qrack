@@ -288,6 +288,13 @@ public:
         return true;
     };
 
+    virtual void Dump()
+    {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            qPages[i]->Dump();
+        }
+    };
+
     virtual QInterfacePtr Clone();
 
     virtual void SetDevice(int dID, bool forceReInit = false)

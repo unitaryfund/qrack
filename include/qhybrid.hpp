@@ -432,6 +432,8 @@ public:
 
     virtual bool isFinished() { return engine->isFinished(); }
 
+    virtual void Dump() { engine->Dump(); }
+
     virtual QInterfacePtr Clone();
 
     virtual void SetDevice(int dID, bool forceReInit = false)
