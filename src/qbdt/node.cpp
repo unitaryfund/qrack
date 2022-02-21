@@ -46,7 +46,7 @@ void QBdtNode::Prune(bitLenInt depth)
     // Prune recursively to depth.
     depth--;
     branches[0]->Prune(depth);
-    if (b0 != b1) {
+    if (b0.get() != b1.get()) {
         branches[1]->Prune(depth);
     }
 
@@ -54,96 +54,40 @@ void QBdtNode::Prune(bitLenInt depth)
         std::polar(ONE_R1, (real1)(IS_NORM_0(b0->scale) ? std::arg(b1->scale) : std::arg(b0->scale)));
     scale *= phaseFac;
     b0->scale /= phaseFac;
-    if (b0 == b1) {
-        // Combining branches is the only other thing we try, below.
+    if (b0.get() == b1.get()) {
+        // Phase factor already applied, and branches point to same object.
         return;
     }
     b1->scale /= phaseFac;
 
     // Now, we try to combine pointers to equivalent branches.
-
-    const bitCapIntOcl depthPow = ONE_BCI << (bitCapIntOcl)depth;
-
+    const bitCapIntOcl depthPow = (bitCapIntOcl)ONE_BCI << depth;
     // Combine single elements at bottom of full depth, up to where branches are equal below:
     _par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf0 = b0;
         QBdtNodeInterfacePtr leaf1 = b1;
 
-        complex scale0 = ONE_CMPLX;
-        complex scale1 = ONE_CMPLX;
+        for (bitLenInt j = 0; j < depth; j++) {
+            size_t bit = SelectBit(i, depth - (j + 1U));
 
-        size_t bit = 0U;
-        bitLenInt j;
-
-        for (j = 0; j < depth; j++) {
-            bit = SelectBit(i, depth - (j + 1U));
-
-            if (!leaf0 || !leaf1 || (leaf0->branches[bit] == leaf1->branches[bit])) {
+            if (!leaf0 || !leaf1) {
                 break;
             }
 
-            scale0 = leaf0->scale;
-            leaf0 = leaf0->branches[bit];
+            if (leaf0->branches[bit] == leaf1->branches[bit]) {
+                leaf0->branches[bit] = leaf1->branches[bit];
+                // WARNING: Mutates loop control variable!
+                return (bitCapIntOcl)(((bitCapIntOcl)ONE_BCI << (depth - j)) - ONE_BCI);
+            }
 
-            scale1 = leaf1->scale;
+            leaf0 = leaf0->branches[bit];
             leaf1 = leaf1->branches[bit];
         }
 
-        if (!leaf0 || !leaf1 || (leaf0->branches[bit] != leaf1->branches[bit])) {
-            return (bitCapIntOcl)0U;
-        }
-
-        if (IS_NORM_0(scale0 - scale1)) {
-            leaf1->branches[bit] = leaf0->branches[bit];
-        }
-
-        // WARNING: Mutates loop control variable!
-        return (bitCapIntOcl)((ONE_BCI << (bitCapIntOcl)(depth - j)) - ONE_BCI);
+        return (bitCapIntOcl)0U;
     });
 
-    bool isSameAtTop = true;
-
-    // Combine all elements at top of depth, as my 2 direct descendent branches:
-    _par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
-        QBdtNodeInterfacePtr leaf0 = b0;
-        QBdtNodeInterfacePtr leaf1 = b1;
-
-        complex scale0 = b0->scale;
-        complex scale1 = b1->scale;
-
-        size_t bit = 0U;
-        bitLenInt j;
-
-        for (j = 0; j < depth; j++) {
-            bit = SelectBit(i, depth - (j + 1U));
-
-            if (leaf0) {
-                scale0 *= leaf0->scale;
-                leaf0 = leaf0->branches[bit];
-            }
-
-            if (leaf1) {
-                scale1 *= leaf1->scale;
-                leaf1 = leaf1->branches[bit];
-            }
-
-            if (leaf0 == leaf1) {
-                break;
-            }
-        }
-
-        if ((leaf0 != leaf1) || !IS_NORM_0(scale0 - scale1)) {
-            // We can't combine our immediate children within depth.
-            isSameAtTop = false;
-            return depthPow;
-        }
-
-        // WARNING: Mutates loop control variable!
-        return (bitCapIntOcl)((ONE_BCI << (bitCapIntOcl)(depth - j)) - ONE_BCI);
-    });
-
-    // The branches terminate equal, within depth.
-    if (isSameAtTop) {
+    if (b0 == b1) {
         b1 = b0;
     }
 }
@@ -193,7 +137,7 @@ void QBdtNode::Normalize(bitLenInt depth)
     const real1 nrm = (real1)sqrt(norm(b0->scale) + norm(b1->scale));
     b0->Normalize(depth - 1U);
     b0->scale *= ONE_R1 / nrm;
-    if (b0 != b1) {
+    if (b0.get() != b1.get()) {
         b1->Normalize(depth - 1U);
         b1->scale *= ONE_R1 / nrm;
     }
@@ -214,7 +158,7 @@ void QBdtNode::ConvertStateVector(bitLenInt depth)
     // Depth-first
     depth--;
     b0->ConvertStateVector(depth);
-    if (b0 != b1) {
+    if (b0.get() != b1.get()) {
         b1->ConvertStateVector(depth);
     }
 

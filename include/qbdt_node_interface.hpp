@@ -65,9 +65,14 @@ public:
         branches[1] = NULL;
     }
 
-    virtual QBdtNodeInterfacePtr ShallowClone() = 0;
+    virtual bool isEqual(QBdtNodeInterfacePtr r)
+    {
+        return (this == r.get()) ||
+            ((norm(scale - r->scale) <= FP_NORM_EPSILON) && (branches[0] == r->branches[0]) &&
+                (branches[1] == r->branches[1]));
+    }
 
-    virtual bool isEqual(QBdtNodeInterfacePtr r) = 0;
+    virtual QBdtNodeInterfacePtr ShallowClone() = 0;
 
     virtual void ConvertStateVector(bitLenInt depth) = 0;
 

@@ -45,8 +45,6 @@ public:
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtNode>(scale, branches); }
 
-    virtual bool isEqual(QBdtNodeInterfacePtr r) { return this == r.get(); }
-
     virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false);
 
     virtual void Prune(bitLenInt depth = 1U);
