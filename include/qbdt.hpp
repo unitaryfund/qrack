@@ -134,7 +134,12 @@ public:
 
     virtual bool isFinished() { return !stateVecUnit || stateVecUnit->isFinished(); }
 
-    virtual void Dump() {}
+    virtual void Dump()
+    {
+        if (stateVecUnit) {
+            stateVecUnit->Dump();
+        }
+    }
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
