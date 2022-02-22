@@ -622,18 +622,11 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
     }
 
     const bitLenInt remainder = bdtQubitCount - (depth + 1);
-
-    if (!remainder) {
-        const complex Y0 = b0->scale;
-        const complex Y1 = b1->scale;
-        b0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
-        b1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
-        leaf->Prune();
-
-        return;
-    }
-
     const bitCapInt remainderPow = pow2(remainder);
+
+    b0->Branch(remainder, true);
+    b1->Branch(remainder, true);
+
     par_for_qbdt(0, remainderPow, [&](const bitCapInt& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf0 = b0;
         QBdtNodeInterfacePtr leaf1 = b1;
@@ -646,9 +639,6 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
 
         bitLenInt j;
         for (j = 0; j < remainder; j++) {
-            leaf0->Branch(1, true);
-            leaf1->Branch(1, true);
-
             const size_t bit = SelectBit(i, remainder - (j + 1U));
 
             leaf0 = leaf0->branches[bit];
