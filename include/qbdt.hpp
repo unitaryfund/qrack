@@ -221,28 +221,46 @@ public:
 
     virtual void Mtrx(const complex* mtrx, bitLenInt target);
     virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
-
-    virtual void CNOT(bitLenInt control, bitLenInt target)
+    virtual void MCPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
     {
-        if (control < target) {
-            const complex mtrx[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-            const bitLenInt controls[1] = { control };
-            ApplyControlledSingle(mtrx, controls, 1U, target);
+        const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+        if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
+            ApplyControlledSingle(mtrx, controls, controlLen, target);
+            return;
+        }
+
+        std::unique_ptr<bitLenInt[]> lControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[controlLen]);
+        std::copy(controls, controls + controlLen, lControls.get());
+        std::sort(lControls.get(), lControls.get() + controlLen);
+
+        if (target < lControls[controlLen - 1U]) {
+            std::swap(target, lControls[controlLen - 1U]);
+        }
+
+        ApplyControlledSingle(mtrx, lControls.get(), controlLen, target);
+    }
+    virtual void MCInvert(
+        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
+    {
+        const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+        if (!IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
+            ApplyControlledSingle(mtrx, controls, controlLen, target);
+            return;
+        }
+
+        std::vector<bitLenInt> controlVec(controlLen);
+        std::copy(controls, controls + controlLen, controlVec.begin());
+        std::sort(controlVec.begin(), controlVec.end());
+
+        if (controlVec.back() < target) {
+            ApplyControlledSingle(mtrx, controls, controlLen, target);
             return;
         }
 
         H(target);
-        CZ(control, target);
+        MCPhase(controls, controlLen, ONE_CMPLX, -ONE_CMPLX, target);
         H(target);
-    }
-    virtual void CZ(bitLenInt control, bitLenInt target)
-    {
-        if (target < control) {
-            std::swap(target, control);
-        }
-        const bitLenInt controls[1] = { control };
-        const complex mtrx[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-        ApplyControlledSingle(mtrx, controls, 1U, target);
     }
 
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
