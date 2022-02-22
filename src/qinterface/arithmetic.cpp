@@ -166,15 +166,26 @@ void QInterface::CDEC(
     CINC(invToSub, inOutStart, length, controls, controlLen);
 }
 
+/** Add a classical integer to the register, with sign and without carry. */
+void QInterface::INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+{
+    const bitCapInt signMask = pow2(length - 1U);
+    INC(signMask, start, length);
+    INCDECC(toAdd & ~signMask, start, length, overflowIndex);
+    if (!(toAdd & signMask)) {
+        DEC(signMask, start, length);
+    }
+}
+
 /**
  * Subtract an integer from the register, with sign and without carry. Because the register length is an arbitrary
  * number of bits, the sign bit position on the integer to add is variable. Hence, the integer to add is specified as
  * cast to an unsigned format, with the sign bit assumed to be set at the appropriate position before the cast.
  */
-void QInterface::DECS(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex)
+void QInterface::DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
 {
     const bitCapInt invToSub = pow2(length) - toSub;
-    INCS(invToSub, inOutStart, length, overflowIndex);
+    INCS(invToSub, start, length, overflowIndex);
 }
 
 /**

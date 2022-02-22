@@ -582,11 +582,6 @@ public:
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
 
 #if ENABLE_ALU
-    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
-    {
-        SwitchToEngine();
-        engine->INCS(toAdd, start, length, overflowIndex);
-    }
     virtual void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {

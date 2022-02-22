@@ -1840,7 +1840,7 @@ public:
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
 
     /** Add a classical integer to the register, with sign and without carry. */
-    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex) = 0;
+    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
     /** Add a classical integer to the register, with sign and with carry. */
     virtual void INCSC(
