@@ -3549,6 +3549,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ciadc")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 }
 
+int qRand(int high, QInterfacePtr q)
+{
+    int rand = (int)(high * q->Rand());
+    if (rand == high) {
+        return high - 1;
+    }
+    return rand;
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 {
     int i;
@@ -3561,6 +3570,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
         } else {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, i - 5));
         }
+    }
+
+    for (i = 0; i < 16; i++) {
+        int a = qRand(0x100, qftReg);
+        int b = qRand(0x100, qftReg);
+        int c = (a + b) & 0xFF;
+
+        qftReg->SetPermutation(a);
+        qftReg->INC(b, 0, 8);
+        REQUIRE_THAT(qftReg, HasProbability(0, 9, c));
     }
 
     qftReg->SetPermutation(255);
