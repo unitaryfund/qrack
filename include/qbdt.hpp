@@ -302,10 +302,6 @@ public:
     }
 
 #if ENABLE_ALU
-    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
-    {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->INCS(toAdd, start, length, overflowIndex); });
-    }
     virtual void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {

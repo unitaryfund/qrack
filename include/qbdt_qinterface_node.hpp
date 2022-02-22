@@ -65,6 +65,10 @@ public:
 
     virtual void Normalize(bitLenInt depth)
     {
+        if (!depth) {
+            return;
+        }
+
         if (qReg) {
             qReg->NormalizeState();
         }
@@ -72,18 +76,42 @@ public:
 
     virtual void Prune(bitLenInt depth = 1U)
     {
-        if (depth && (norm(scale) <= FP_NORM_EPSILON)) {
-            SetZero();
+        if (!depth) {
+            return;
         }
+
+        if (norm(scale) <= FP_NORM_EPSILON) {
+            SetZero();
+            return;
+        }
+
+        if (!qReg) {
+            return;
+        }
+
+        real1_f phaseArg = qReg->FirstNonzeroPhase();
+        qReg->UpdateRunningNorm();
+        qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
+        scale *= std::polar(ONE_R1, phaseArg);
     }
 
     virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false)
     {
-        throw std::out_of_range("QBdtQInterfaceNode::Branch() not implemented! (Recursion went too deep.)");
+        if (!depth) {
+            return;
+        }
+
+        if (qReg) {
+            qReg = qReg->Clone();
+        }
     }
 
     virtual void ConvertStateVector(bitLenInt depth)
     {
+        if (!depth) {
+            return;
+        }
+
         throw std::out_of_range(
             "QBdtQInterfaceNode::ConvertStateVector() not implemented! (Don't set/get state vector amplitudes.)");
     }
