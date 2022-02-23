@@ -628,6 +628,15 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
         return;
     }
 
+    if (IS_NORM_0(ONE_CMPLX - mtrx[0]) && IS_NORM_0(mtrx[0] - mtrx[1]) && IS_NORM_0(mtrx[0] - mtrx[2]) &&
+        IS_NORM_0(mtrx[0] + mtrx[3]) && (b0 == -b1)) {
+        b0->SetZero();
+        b1->scale /= SQRT1_2_R1;
+        leaf->Prune();
+
+        return;
+    }
+
     const bitLenInt remainder = bdtQubitCount - (depth + 1);
     const bitCapInt remainderPow = pow2(remainder);
 

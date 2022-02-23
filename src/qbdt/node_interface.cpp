@@ -40,6 +40,14 @@ bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs
 
 bool operator!=(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs) { return !(lhs == rhs); }
 
+QBdtNodeInterfacePtr operator-(const QBdtNodeInterfacePtr& t)
+{
+    QBdtNodeInterfacePtr m = t->ShallowClone();
+    m->scale *= -ONE_CMPLX;
+
+    return m;
+}
+
 void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn)
 {
     const bitCapInt itemCount = end - begin;
