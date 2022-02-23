@@ -104,6 +104,11 @@ public:
             return;
         }
 
+        if (!isZeroBranch && (norm(scale) <= FP_NORM_EPSILON)) {
+            SetZero();
+            return;
+        }
+
         if (qReg) {
             qReg = qReg->Clone();
         }
