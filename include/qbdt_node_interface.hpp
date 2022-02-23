@@ -62,9 +62,27 @@ public:
 
     virtual bool isEqual(QBdtNodeInterfacePtr r)
     {
-        return (this == r.get()) ||
-            ((norm(scale - r->scale) <= FP_NORM_EPSILON) && (branches[0] == r->branches[0]) &&
-                (branches[1] == r->branches[1]));
+        if (this == r.get()) {
+            return true;
+        }
+
+        if (norm(scale - r->scale) > FP_NORM_EPSILON) {
+            return false;
+        }
+
+        if (branches[0] != r->branches[0]) {
+            return false;
+        }
+
+        branches[0] = r->branches[0];
+
+        if (branches[1] != r->branches[1]) {
+            return false;
+        }
+
+        branches[1] = r->branches[1];
+
+        return true;
     }
 
     virtual QBdtNodeInterfacePtr ShallowClone() = 0;
