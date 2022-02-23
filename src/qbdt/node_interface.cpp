@@ -59,11 +59,6 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end
 
 void PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
 {
-    if (!depth) {
-        return;
-    }
-    depth--;
-
     const bool isB0Zero = IS_NORM_0(b0->scale);
     const bool isB1Zero = IS_NORM_0(b1->scale);
 
@@ -93,8 +88,7 @@ void PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInte
         return;
     }
 
-    const bool isSame = (b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1]);
-
+    const bool isSame = !depth || ((b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1]));
     if (isSame) {
         b1->branches[0] = b0->branches[0];
         b1->branches[1] = b0->branches[1];
@@ -106,6 +100,7 @@ void PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInte
 
         return;
     }
+    depth--;
 
     b0->Branch();
     b1->Branch();
