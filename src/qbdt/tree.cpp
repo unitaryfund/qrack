@@ -611,7 +611,14 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
         b1->scale = ZERO_CMPLX;
     }
 
-    if (isB0Zero || isB1Zero) {
+    const bool isSame = (b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1]);
+
+    if (isSame) {
+        b1->branches[0] = b0->branches[0];
+        b1->branches[1] = b0->branches[1];
+    }
+
+    if (isB0Zero || isB1Zero || isSame) {
         const complex Y0 = b0->scale;
         const complex Y1 = b1->scale;
         b0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
