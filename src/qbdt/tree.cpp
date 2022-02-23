@@ -662,21 +662,10 @@ void QBdt::Apply2x2OnLeaf(bitLenInt depth, QBdtNodeInterfacePtr leaf, const comp
             return (bitCapInt)(pow2(remainder - (j + 1U)) - ONE_BCI);
         }
 
-        const bool isL0Zero = IS_NORM_0(scale0);
-        const bool isL1Zero = IS_NORM_0(scale1);
-
         const complex Y0 = scale0;
         const complex Y1 = scale1;
         leaf0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
         leaf1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
-
-        if (attachedQubitCount) {
-            if (isL0Zero && !IS_NORM_0(leaf0->scale)) {
-                NODE_TO_QINTERFACE(leaf0) = NODE_TO_QINTERFACE(leaf1);
-            } else if (isL1Zero && !IS_NORM_0(leaf1->scale)) {
-                NODE_TO_QINTERFACE(leaf1) = NODE_TO_QINTERFACE(leaf0);
-            }
-        }
 
         return (bitCapInt)0U;
     });
