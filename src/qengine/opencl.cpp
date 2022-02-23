@@ -2841,7 +2841,8 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseA
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    complex c_args[2] = { (complex)norm_thresh, std::polar((real1)(ONE_R1 / sqrt(nrm)), phaseArg) };
+    complex c_args[2] = { complex((real1)norm_thresh, ZERO_R1),
+        (complex)std::polar((real1_f)(ONE_R1 / sqrt(nrm)), (real1_f)phaseArg) };
     cl::Event writeRealArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->cmplxBuffer), sizeof(complex) * 2, c_args, writeRealArgsEvent, error);
 

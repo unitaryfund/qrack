@@ -1464,7 +1464,8 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f, real1_f ph
     }
 
     nrm = ONE_R1 / std::sqrt(nrm);
-    complex cNrm = std::polar(nrm, phaseArg);
+    complex cNrm = (complex)std::polar((real1_f)nrm, (real1_f)phaseArg);
+    ;
 
     if (norm_thresh <= ZERO_R1) {
         par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {

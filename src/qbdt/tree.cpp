@@ -421,7 +421,7 @@ real1_f QBdt::Prob(bitLenInt qubit)
     const bitLenInt maxQubit = isKet ? bdtQubitCount : qubit;
     const bitCapInt qPower = pow2(maxQubit);
 
-    std::map<QInterfacePtr, real1_f> qiProbs;
+    std::map<QInterfacePtr, real1> qiProbs;
 
     real1 oneChance = ZERO_R1;
     for (bitCapInt i = 0; i < qPower; i++) {
@@ -444,7 +444,7 @@ real1_f QBdt::Prob(bitLenInt qubit)
             // TODO: Is this right?
             QInterfacePtr qi = NODE_TO_QINTERFACE(leaf);
             if (qiProbs.find(qi) == qiProbs.end()) {
-                qiProbs[qi] = (real1_f)sqrt(NODE_TO_QINTERFACE(leaf)->Prob(qubit - bdtQubitCount));
+                qiProbs[qi] = sqrt(NODE_TO_QINTERFACE(leaf)->Prob(qubit - bdtQubitCount));
             }
             oneChance += norm(scale * qiProbs[qi]);
 

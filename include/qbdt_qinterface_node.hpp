@@ -95,7 +95,8 @@ public:
         real1_f phaseArg = qReg->FirstNonzeroPhase();
         qReg->UpdateRunningNorm();
         qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
-        scale *= std::polar(ONE_R1, phaseArg);
+        scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
+        ;
     }
 
     virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false)
