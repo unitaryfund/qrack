@@ -94,6 +94,8 @@ public:
     virtual void Prune(bitLenInt depth = 1U) = 0;
 
     virtual void Normalize(bitLenInt depth) = 0;
+
+    virtual void Apply2x2(const complex* mtrx, bitLenInt depth);
 };
 
 bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);
