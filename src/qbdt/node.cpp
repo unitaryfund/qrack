@@ -63,7 +63,7 @@ void QBdtNode::Prune(bitLenInt depth)
     // Now, we try to combine pointers to equivalent branches.
     const bitCapIntOcl depthPow = (bitCapIntOcl)ONE_BCI << depth;
     // Combine single elements at bottom of full depth, up to where branches are equal below:
-    _par_for_qbdt(0, depthPow, [&](const bitCapIntOcl& i, const unsigned& cpu) {
+    _par_for_qbdt(0, depthPow, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf0 = b0;
         QBdtNodeInterfacePtr leaf1 = b1;
 

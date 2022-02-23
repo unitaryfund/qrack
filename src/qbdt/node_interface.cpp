@@ -40,7 +40,7 @@ bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs
 
 bool operator!=(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs) { return !(lhs == rhs); }
 
-void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end, IncrementFunc fn)
+void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn)
 {
     const bitCapInt itemCount = end - begin;
     const bitCapInt maxLcv = begin + itemCount;
