@@ -99,13 +99,13 @@ public:
         ;
     }
 
-    virtual void Branch(bitLenInt depth = 1U, bool isZeroBranch = false)
+    virtual void Branch(bitLenInt depth = 1U)
     {
         if (!depth) {
             return;
         }
 
-        if (!isZeroBranch && (norm(scale) <= FP_NORM_EPSILON)) {
+        if (norm(scale) <= FP_NORM_EPSILON) {
             SetZero();
             return;
         }

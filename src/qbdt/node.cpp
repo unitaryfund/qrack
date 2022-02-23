@@ -92,12 +92,12 @@ void QBdtNode::Prune(bitLenInt depth)
     }
 }
 
-void QBdtNode::Branch(bitLenInt depth, bool isZeroBranch)
+void QBdtNode::Branch(bitLenInt depth)
 {
     if (!depth) {
         return;
     }
-    if (!isZeroBranch && IS_NORM_0(scale)) {
+    if (IS_NORM_0(scale)) {
         SetZero();
         return;
     }
@@ -114,8 +114,8 @@ void QBdtNode::Branch(bitLenInt depth, bool isZeroBranch)
     }
 
     depth--;
-    b0->Branch(depth, isZeroBranch);
-    b1->Branch(depth, isZeroBranch);
+    b0->Branch(depth);
+    b1->Branch(depth);
 }
 
 void QBdtNode::Normalize(bitLenInt depth)
@@ -146,6 +146,11 @@ void QBdtNode::Normalize(bitLenInt depth)
 void QBdtNode::ConvertStateVector(bitLenInt depth)
 {
     if (!depth) {
+        return;
+    }
+
+    if (IS_NORM_0(scale)) {
+        SetZero();
         return;
     }
 
