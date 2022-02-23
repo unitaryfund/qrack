@@ -51,6 +51,7 @@ QInterfacePtr QHybrid::Clone()
     QHybridPtr c = std::make_shared<QHybrid>(qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
         useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits,
         separabilityThreshold);
+    c->runningNorm = runningNorm;
     c->SetConcurrency(GetConcurrencyLevel());
     c->engine->CopyStateVec(engine);
     return c;

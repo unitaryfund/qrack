@@ -61,11 +61,11 @@ public:
     {
         QInterface::SetConcurrency(threadsPerEngine);
         ParallelUnitApply(
-            [](QInterfacePtr unit, real1_f unused1, real1_f unused2, int32_t threadsPerEngine) {
+            [](QInterfacePtr unit, real1_f unused1, real1_f unused2, real1_f unused3, int32_t threadsPerEngine) {
                 unit->SetConcurrency(threadsPerEngine);
                 return true;
             },
-            ZERO_R1, ZERO_R1, threadsPerEngine);
+            ZERO_R1, ZERO_R1, ZERO_R1, threadsPerEngine);
     }
 
     virtual void SetReactiveSeparate(bool isAggSep) { isReactiveSeparate = isAggSep; }
@@ -230,7 +230,8 @@ public:
 
     virtual real1_f SumSqrDiff(QUnitPtr toCompare);
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_threshold = REAL1_DEFAULT_ARG);
+    virtual void NormalizeState(
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1);
     virtual void Finish();
     virtual bool isFinished();
     virtual void Dump()
@@ -317,8 +318,9 @@ protected:
     virtual QInterfacePtr EntangleInCurrentBasis(
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
-    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1_f param1, real1_f param2, int32_t param3);
-    bool ParallelUnitApply(ParallelUnitFn fn, real1_f param1 = ZERO_R1, real1_f param2 = ZERO_R1, int32_t param3 = 0);
+    typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1_f param1, real1_f param2, real1_f param3, int32_t param4);
+    bool ParallelUnitApply(ParallelUnitFn fn, real1_f param1 = ZERO_R1, real1_f param2 = ZERO_R1,
+        real1_f param3 = ZERO_R1, int32_t param4 = 0);
 
     virtual bool SeparateBit(bool value, bitLenInt qubit);
 

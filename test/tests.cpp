@@ -332,6 +332,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
     qftReg->CNOT(0, 1);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0x00));
+
+    // 2022-02-16 - QBdt fails at the 11-to-12 index, 12th-to-13th bit boundary, and upwards.
+    qftReg->SetPermutation(0x1000);
+    qftReg->CNOT(12, 11);
+    REQUIRE_THAT(qftReg, HasProbability(0x1800));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticnot")

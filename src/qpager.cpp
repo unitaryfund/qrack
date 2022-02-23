@@ -1478,7 +1478,7 @@ void QPager::UpdateRunningNorm(real1_f norm_thresh)
     }
 }
 
-void QPager::NormalizeState(real1_f nrm, real1_f norm_thresh)
+void QPager::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)
 {
     real1_f nmlzr;
     if (nrm == REAL1_DEFAULT_ARG) {
@@ -1491,7 +1491,7 @@ void QPager::NormalizeState(real1_f nrm, real1_f norm_thresh)
     }
 
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-        qPages[i]->NormalizeState(nmlzr, norm_thresh);
+        qPages[i]->NormalizeState(nmlzr, norm_thresh, phaseArg);
     }
 }
 

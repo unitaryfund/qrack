@@ -2809,7 +2809,7 @@ QInterfacePtr QEngineOCL::Clone()
     return copyPtr;
 }
 
-void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh)
+void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)
 {
     CHECK_ZERO_SKIP();
 
@@ -2841,9 +2841,9 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh)
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    real1 r1_args[2] = { (real1)norm_thresh, (real1)(ONE_R1 / sqrt(nrm)) };
+    complex c_args[2] = { (complex)norm_thresh, std::polar((real1)(ONE_R1 / sqrt(nrm)), phaseArg) };
     cl::Event writeRealArgsEvent;
-    DISPATCH_LOC_WRITE(*(poolItem->realBuffer), sizeof(real1) * 2, r1_args, writeRealArgsEvent, error);
+    DISPATCH_LOC_WRITE(*(poolItem->cmplxBuffer), sizeof(complex) * 2, c_args, writeRealArgsEvent, error);
 
     bitCapIntOcl bciArgs[1] = { maxQPowerOcl };
     cl::Event writeBCIArgsEvent;
@@ -2864,7 +2864,7 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh)
         api_call = OCL_API_NORMALIZE;
     }
 
-    QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->realBuffer });
+    QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
     QueueSetRunningNorm(ONE_R1);
 }
 

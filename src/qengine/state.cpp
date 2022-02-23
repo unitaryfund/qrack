@@ -1432,7 +1432,7 @@ void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
     });
 }
 
-void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f)
+void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f, real1_f phaseArg)
 {
     CHECK_ZERO_SKIP();
 
@@ -1464,10 +1464,11 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f)
     }
 
     nrm = ONE_R1 / std::sqrt(nrm);
+    complex cNrm = std::polar(nrm, phaseArg);
 
     if (norm_thresh <= ZERO_R1) {
         par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            complex amp = stateVec->read(lcv) * nrm;
+            complex amp = cNrm * stateVec->read(lcv);
             stateVec->write(lcv, amp);
         });
     } else {
@@ -1476,7 +1477,7 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f)
             if (norm(amp) < norm_thresh) {
                 amp = ZERO_CMPLX;
             }
-            stateVec->write(lcv, nrm * amp);
+            stateVec->write(lcv, cNrm * amp);
         });
     }
 

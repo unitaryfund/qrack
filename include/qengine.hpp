@@ -29,8 +29,8 @@ protected:
     bool useHostRam;
     /// The value stored in runningNorm should always be the total probability implied by the norm of all amplitudes,
     /// summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
-    real1 runningNorm;
     bitCapIntOcl maxQPowerOcl;
+    real1 runningNorm;
 
     bool IsPhase(const complex* mtrx) { return IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]); }
 
@@ -47,8 +47,8 @@ public:
         bool useHostMem = false, bool useHardwareRNG = true, real1_f norm_thresh = REAL1_EPSILON)
         : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
         , useHostRam(useHostMem)
-        , runningNorm(ONE_R1)
         , maxQPowerOcl(pow2Ocl(qBitCount))
+        , runningNorm(ONE_R1)
     {
         if (qBitCount > (sizeof(bitCapIntOcl) * bitsInByte)) {
             throw std::invalid_argument(
@@ -59,12 +59,13 @@ public:
     /** Default constructor, primarily for protected internal use */
     QEngine()
         : useHostRam(false)
-        , runningNorm(ONE_R1)
         , maxQPowerOcl(0)
+        , runningNorm(ONE_R1)
     {
         // Intentionally left blank
     }
 
+    /** Get in-flight renormalization factor */
     virtual real1_f GetRunningNorm()
     {
         Finish();
@@ -134,8 +135,6 @@ public:
     virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation) = 0;
     virtual void ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray);
     virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation) = 0;
-
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
 
     virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength) = 0;
 

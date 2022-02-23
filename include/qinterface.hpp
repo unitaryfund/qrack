@@ -273,10 +273,10 @@ public:
     virtual void SetConcurrency(uint32_t threadsPerEngine) { SetConcurrencyLevel(threadsPerEngine); }
 
     /** Get the count of bits in this register */
-    bitLenInt GetQubitCount() { return qubitCount; }
+    virtual bitLenInt GetQubitCount() { return qubitCount; }
 
     /** Get the maximum number of basis states, namely \f$ 2^n \f$ for \f$ n \f$ qubits*/
-    bitCapInt GetMaxQPower() { return maxQPower; }
+    virtual bitCapInt GetMaxQPower() { return maxQPower; }
 
     /** Generate a random real number between 0 and 1 */
     real1_f Rand()
@@ -2360,7 +2360,8 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG) = 0;
+    virtual void NormalizeState(
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1) = 0;
 
     /**
      * If asynchronous work is still running, block until it finishes. Note that this is never necessary to get correct,
@@ -2457,6 +2458,25 @@ public:
      *  Get maximum number of amplitudes that can be allocated on current device.
      */
     bitCapIntOcl GetMaxSize() { return pow2Ocl(sizeof(bitCapInt) * 8); };
+
+    /**
+     *  Get phase of lowest permutation nonzero amplitude.
+     */
+    virtual real1_f FirstNonzeroPhase()
+    {
+        complex amp;
+        bitCapInt perm = 0;
+        do {
+            amp = GetAmplitude(perm);
+            perm++;
+        } while ((norm(amp) <= FP_NORM_EPSILON) && (perm < maxQPower));
+
+        if (perm >= maxQPower) {
+            return ZERO_R1;
+        }
+
+        return (real1_f)std::arg(amp);
+    }
 
     /** @} */
 };

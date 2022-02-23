@@ -21,6 +21,9 @@ QInterfacePtr QEngineCPU::Clone()
     QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(
         CreateQuantumInterface(QINTERFACE_CPU, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
             false, -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
+
+    clone->runningNorm = runningNorm;
+
     if (stateVec) {
         clone->stateVec->copy(stateVec);
     } else {

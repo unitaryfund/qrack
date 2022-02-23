@@ -428,7 +428,9 @@ public:
     }
     virtual real1_f SumSqrDiff(QEngineOCLPtr toCompare);
 
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void NormalizeState(
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1);
+    ;
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void Finish() { clFinish(); };
     virtual bool isFinished() { return (wait_queue_items.size() == 0); };

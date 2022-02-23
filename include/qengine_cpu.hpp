@@ -299,7 +299,8 @@ public:
     virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
     virtual real1_f ProbParity(bitCapInt mask);
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
-    virtual void NormalizeState(real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    virtual void NormalizeState(
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1);
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
         return SumSqrDiff(std::dynamic_pointer_cast<QEngineCPU>(toCompare));

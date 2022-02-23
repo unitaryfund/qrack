@@ -130,7 +130,7 @@ message ("Parallel QUnit->CPU is: ${ENABLE_QUNIT_CPU_PARALLEL}")
 message ("Pure 32-bit compilation is: ${ENABLE_PURE32}")
 message ("Complex_x2/AVX support is: ${ENABLE_COMPLEX_X2}")
 message ("OpenCL memory guards are: ${ENABLE_OCL_MEM_GUARDS}")
-message ("QBinaryDecisionTree inclusion is: ${ENABLE_QBDT}")
+message ("Quantum Binary decision tree (QBDT) inclusion is: ${ENABLE_QBDT}")
 message ("General ALU API inclusion is: ${ENABLE_ALU}")
 message ("BCD ALU API inclusion is: ${ENABLE_BCD}")
 message ("Extended rotation API inclusion is: ${ENABLE_ROT_API}")
@@ -246,8 +246,10 @@ install (FILES
     include/qmaskfusion.hpp
     include/qstabilizer.hpp
     include/qstabilizerhybrid.hpp
-    include/qbinary_decision_tree.hpp
-    include/qbinary_decision_tree_node.hpp
+    include/qbdt.hpp
+    include/qbdt_node.hpp
+    include/qbdt_node_interface.hpp
+    include/qbdt_qinterface_node.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qrack
     )
 

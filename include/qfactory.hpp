@@ -26,7 +26,7 @@
 #endif
 
 #if ENABLE_QBDT
-#include "qbinary_decision_tree.hpp"
+#include "qbdt.hpp"
 #endif
 
 namespace Qrack {
@@ -44,7 +44,7 @@ QInterfacePtr CreateQuantumInterface(
         return std::make_shared<QEngineCPU>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
-        return std::make_shared<QBinaryDecisionTree>(args...);
+        return std::make_shared<QBdt>(args...);
 #endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(engines, args...);
@@ -78,7 +78,7 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
         return std::make_shared<QEngineCPU>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
-        return std::make_shared<QBinaryDecisionTree>(args...);
+        return std::make_shared<QBdt>(args...);
 #endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(engines, args...);
@@ -108,7 +108,7 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
         return std::make_shared<QEngineCPU>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
-        return std::make_shared<QBinaryDecisionTree>(args...);
+        return std::make_shared<QBdt>(args...);
 #endif
     case QINTERFACE_QPAGER:
         return std::make_shared<QPager>(args...);
@@ -141,7 +141,7 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
         return std::make_shared<QEngineCPU>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
-        return std::make_shared<QBinaryDecisionTree>(args...);
+        return std::make_shared<QBdt>(args...);
 #endif
     case QINTERFACE_QPAGER:
         if (engines.size()) {
