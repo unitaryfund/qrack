@@ -39,9 +39,7 @@ public:
         : QBdtNodeInterface(scl)
         , qReg(q)
     {
-        if (norm(scale) <= FP_NORM_EPSILON) {
-            SetZero();
-        }
+        // Intentionally left blank.
     }
 
     virtual void SetZero()
@@ -66,6 +64,11 @@ public:
     virtual void Normalize(bitLenInt depth)
     {
         if (!depth) {
+            return;
+        }
+
+        if (norm(scale) <= FP_NORM_EPSILON) {
+            SetZero();
             return;
         }
 

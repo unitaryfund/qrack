@@ -333,9 +333,9 @@ bitLenInt QBdt::Attach(QInterfacePtr toCopy)
             return (bitCapInt)0U;
         }
 
-        for (size_t i = 0; i < 2; i++) {
-            const complex scale = leaf->branches[i]->scale;
-            leaf->branches[i] = IS_NORM_0(scale) ? std::make_shared<QBdtQInterfaceNode>()
+        for (size_t j = 0; j < 2; j++) {
+            const complex scale = leaf->branches[j]->scale;
+            leaf->branches[j] = IS_NORM_0(scale) ? std::make_shared<QBdtQInterfaceNode>()
                                                  : std::make_shared<QBdtQInterfaceNode>(scale, toCopyClone);
         }
 
