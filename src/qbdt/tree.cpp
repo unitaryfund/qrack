@@ -243,23 +243,18 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
-    if (attachedQubitCount) {
-        throw std::runtime_error("Compose() once attached is not implemented!");
+    if (attachedQubitCount && (bdtQubitCount < start)) {
+        const bitLenInt origBdtSize = bdtQubitCount;
+        ROR(start - origBdtSize, 0, qubitCount);
+        bitLenInt result = Compose(toCopy, origBdtSize);
+        ROL(start - origBdtSize, 0, qubitCount);
+
+        return result;
     }
 
-    if (start && (start != qubitCount)) {
-        return QInterface::Compose(toCopy, start);
-    }
-
-    QBdtNodeInterfacePtr rootClone = toCopy->root->ShallowClone();
-    bitLenInt depth = bdtQubitCount;
+    bitLenInt depth = start;
     bitLenInt size = toCopy->bdtQubitCount;
-    if (!start) {
-        std::swap(depth, size);
-        root.swap(rootClone);
-    }
-
-    root->InsertAtDepth(rootClone, depth, size);
+    root->InsertAtDepth(toCopy->root->ShallowClone(), depth, size);
 
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
