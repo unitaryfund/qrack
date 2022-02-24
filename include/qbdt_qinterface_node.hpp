@@ -110,6 +110,24 @@ public:
 };
 
 class QBdtQEngineNode : public QBdtQInterfaceNode {
+protected:
+    virtual void PushStateVector(
+        const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
+    {
+        QEnginePtr qReg0 = std::dynamic_pointer_cast<QEngine>(std::dynamic_pointer_cast<QBdtQEngineNode>(b0)->qReg);
+        QEnginePtr qReg1 = std::dynamic_pointer_cast<QEngine>(std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg);
+
+        qReg0->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, std::arg(b0->scale));
+        qReg1->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, std::arg(b1->scale));
+
+        qReg0->ShuffleBuffers(qReg1);
+
+        qReg0->Mtrx(mtrx, qReg0->GetQubitCount() - 1U);
+        qReg1->Mtrx(mtrx, qReg1->GetQubitCount() - 1U);
+
+        qReg0->ShuffleBuffers(qReg1);
+    }
+
 public:
     QBdtQEngineNode()
         : QBdtQInterfaceNode()
@@ -147,7 +165,6 @@ public:
         qReg->UpdateRunningNorm();
         qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
         scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
-        ;
     }
 };
 
