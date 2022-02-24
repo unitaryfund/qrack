@@ -2749,6 +2749,12 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
         return runningNorm;
     }
 
+    if (randGlobalPhase) {
+        real1_f lPhaseArg = FirstNonzeroPhase();
+        real1_f rPhaseArg = toCompare->FirstNonzeroPhase();
+        NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, rPhaseArg - lPhaseArg);
+    }
+
     cl_int error;
 
     toCompare->clFinish();
