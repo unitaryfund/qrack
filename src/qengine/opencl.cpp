@@ -2835,7 +2835,7 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseA
         ZeroAmplitudes();
         return;
     }
-    if (abs(ONE_R1 - nrm) <= FP_NORM_EPSILON) {
+    if ((abs(ONE_R1 - nrm) <= FP_NORM_EPSILON) && ((phaseArg * phaseArg) < FP_NORM_EPSILON)) {
         return;
     }
     // We might have async execution of gates still happening.
