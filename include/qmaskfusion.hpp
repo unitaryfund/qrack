@@ -230,6 +230,7 @@ public:
         oEngine->FlushBuffers();
         engine->ShuffleBuffers(oEngine->engine);
     }
+    virtual QEnginePtr CloneEmpty() { return engine->CloneEmpty(); }
     virtual void QueueSetDoNormalize(bool doNorm) { engine->QueueSetDoNormalize(doNorm); }
     virtual void QueueSetRunningNorm(real1_f runningNrm) { engine->QueueSetRunningNorm(runningNrm); }
     virtual real1_f GetRunningNorm() { return engine->GetRunningNorm(); }

@@ -89,6 +89,8 @@ public:
     /** Swap the high half of this engine with the low half of another. This is necessary for gates which cross
      * sub-engine  boundaries. */
     virtual void ShuffleBuffers(QEnginePtr engine) = 0;
+    /** Clone this QEngine's settings, with a zeroed state vector */
+    virtual QEnginePtr CloneEmpty() = 0;
 
     /** Add an operation to the (OpenCL) queue, to set the value of `doNormalize`, which controls whether to
      * automatically normalize the state. */

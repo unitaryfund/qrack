@@ -194,6 +194,8 @@ public:
         runningNorm = src->GetRunningNorm();
     }
 
+    virtual QEnginePtr CloneEmpty();
+
     virtual void QueueSetDoNormalize(bool doNorm)
     {
         Dispatch(1U, [this, doNorm] { doNormalize = doNorm; });

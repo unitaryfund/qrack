@@ -2796,6 +2796,10 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 
 QInterfacePtr QEngineOCL::Clone()
 {
+    if (stateBuffer) {
+        return CloneEmpty();
+    }
+
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
 
@@ -2804,13 +2808,24 @@ QInterfacePtr QEngineOCL::Clone()
     copyPtr->runningNorm = runningNorm;
 
     EventVecPtr waitVec = ResetWaitEvents();
-    if (stateBuffer) {
-        cl_int error;
-        DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPowerOcl, error);
-    } else {
-        copyPtr->ZeroAmplitudes();
-    }
+    cl_int error;
+    DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPowerOcl, error);
     clFinish();
+
+    return copyPtr;
+}
+
+QEnginePtr QEngineOCL::CloneEmpty()
+{
+    if (stateBuffer) {
+        return CloneEmpty();
+    }
+
+    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(1, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+        useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
+
+    copyPtr->ZeroAmplitudes();
+    copyPtr->SetQubitCount(qubitCount);
 
     return copyPtr;
 }

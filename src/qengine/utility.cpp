@@ -16,6 +16,10 @@ namespace Qrack {
 
 QInterfacePtr QEngineCPU::Clone()
 {
+    if (!stateVec) {
+        return CloneEmpty();
+    }
+
     Finish();
 
     QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(
@@ -23,12 +27,20 @@ QInterfacePtr QEngineCPU::Clone()
             false, -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
 
     clone->runningNorm = runningNorm;
+    clone->stateVec->copy(stateVec);
 
-    if (stateVec) {
-        clone->stateVec->copy(stateVec);
-    } else {
-        clone->ZeroAmplitudes();
-    }
+    return clone;
+}
+
+QEnginePtr QEngineCPU::CloneEmpty()
+{
+    QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(
+        CreateQuantumInterface(QINTERFACE_CPU, 1, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
+            (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
+
+    clone->ZeroAmplitudes();
+    clone->SetQubitCount(qubitCount);
+
     return clone;
 }
 

@@ -112,6 +112,7 @@ public:
         oEngine->SwitchModes(isGpu);
         engine->ShuffleBuffers(oEngine->engine);
     }
+    virtual QEnginePtr CloneEmpty() { return engine->CloneEmpty(); }
     virtual void QueueSetDoNormalize(bool doNorm) { engine->QueueSetDoNormalize(doNorm); }
     virtual void QueueSetRunningNorm(real1_f runningNrm) { engine->QueueSetRunningNorm(runningNrm); }
 

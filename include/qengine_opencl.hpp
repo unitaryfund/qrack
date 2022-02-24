@@ -284,6 +284,7 @@ public:
     virtual void SetAmplitudePage(
         QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length);
     virtual void ShuffleBuffers(QEnginePtr engine);
+    virtual QEnginePtr CloneEmpty();
 
     virtual void QueueSetDoNormalize(bool doNorm) { AddQueueItem(QueueItem(doNorm)); }
     virtual void QueueSetRunningNorm(real1_f runningNrm) { AddQueueItem(QueueItem(runningNrm)); }

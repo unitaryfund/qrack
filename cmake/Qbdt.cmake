@@ -4,6 +4,7 @@ if (ENABLE_QBDT)
     target_sources (qrack PRIVATE
         src/qbdt/node_interface.cpp
         src/qbdt/node.cpp
+        src/qbdt/qinterface_node.cpp
         src/qbdt/tree.cpp
         )
 endif (ENABLE_QBDT)

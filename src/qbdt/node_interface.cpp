@@ -16,13 +16,6 @@
 
 #include "qbdt_node_interface.hpp"
 
-#if ENABLE_PTHREAD
-#include <future>
-#endif
-#include <set>
-
-#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
-
 namespace Qrack {
 
 bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs)
