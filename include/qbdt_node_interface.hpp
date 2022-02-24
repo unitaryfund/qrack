@@ -62,6 +62,10 @@ public:
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
     {
+        if (norm(scale) <= FP_NORM_EPSILON) {
+            return;
+        }
+
         if (depth) {
             depth--;
             if (branches[0]) {
