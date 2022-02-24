@@ -117,8 +117,32 @@ protected:
         QEnginePtr qReg0 = std::dynamic_pointer_cast<QEngine>(std::dynamic_pointer_cast<QBdtQEngineNode>(b0)->qReg);
         QEnginePtr qReg1 = std::dynamic_pointer_cast<QEngine>(std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg);
 
-        qReg0->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, std::arg(b0->scale));
-        qReg1->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, std::arg(b1->scale));
+        const bool is0Zero = IS_NORM_0(b0->scale);
+        const bool is1Zero = IS_NORM_0(b1->scale);
+
+        if (is0Zero && is1Zero) {
+            b0->SetZero();
+            b1->SetZero();
+
+            return;
+        }
+
+        if (is0Zero) {
+            qReg0 = std::dynamic_pointer_cast<QEngine>(std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg->Clone());
+            qReg0->ZeroAmplitudes();
+            std::dynamic_pointer_cast<QBdtQEngineNode>(b0)->qReg = qReg0;
+        } else if (is1Zero) {
+            qReg1 = std::dynamic_pointer_cast<QEngine>(std::dynamic_pointer_cast<QBdtQEngineNode>(b0)->qReg->Clone());
+            qReg1->ZeroAmplitudes();
+            std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg = qReg1;
+        }
+
+        if (!is0Zero) {
+            qReg0->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, std::arg(b0->scale));
+        }
+        if (!is1Zero) {
+            qReg1->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, std::arg(b1->scale));
+        }
 
         qReg0->ShuffleBuffers(qReg1);
 
@@ -166,6 +190,8 @@ public:
         qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
         scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
     }
+
+    virtual void PopStateVector(bitLenInt depth = 1U) { Prune(); }
 };
 
 } // namespace Qrack
