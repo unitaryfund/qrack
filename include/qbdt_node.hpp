@@ -24,6 +24,10 @@ class QBdtNode;
 typedef std::shared_ptr<QBdtNode> QBdtNodePtr;
 
 class QBdtNode : public QBdtNodeInterface {
+protected:
+    virtual void PushStateVector(
+        const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth);
+
 public:
     QBdtNode()
         : QBdtNodeInterface()
@@ -45,13 +49,15 @@ public:
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtNode>(scale, branches); }
 
+    virtual void PopStateVector(bitLenInt depth = 1U);
+
     virtual void Branch(bitLenInt depth = 1U);
 
     virtual void Prune(bitLenInt depth = 1U);
 
     virtual void Normalize(bitLenInt depth);
 
-    virtual void ConvertStateVector(bitLenInt depth);
+    virtual void Apply2x2(const complex* mtrx, bitLenInt depth);
 };
 
 } // namespace Qrack

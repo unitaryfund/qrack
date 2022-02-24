@@ -143,7 +143,7 @@ void QBdtNode::Normalize(bitLenInt depth)
     }
 }
 
-void QBdtNode::ConvertStateVector(bitLenInt depth)
+void QBdtNode::PopStateVector(bitLenInt depth)
 {
     if (!depth) {
         return;
@@ -162,9 +162,9 @@ void QBdtNode::ConvertStateVector(bitLenInt depth)
 
     // Depth-first
     depth--;
-    b0->ConvertStateVector(depth);
+    b0->PopStateVector(depth);
     if (b0.get() != b1.get()) {
-        b1->ConvertStateVector(depth);
+        b1->PopStateVector(depth);
     }
 
     const real1 nrm0 = norm(b0->scale);
@@ -192,5 +192,99 @@ void QBdtNode::ConvertStateVector(bitLenInt depth)
     scale = std::polar((real1)sqrt(nrm0 + nrm1), (real1)std::arg(b0->scale));
     b0->scale /= scale;
     b1->scale /= scale;
+}
+
+void QBdtNode::Apply2x2(const complex* mtrx, bitLenInt depth)
+{
+    if (!depth) {
+        return;
+    }
+
+    Branch();
+    QBdtNodeInterfacePtr& b0 = branches[0];
+    QBdtNodeInterfacePtr& b1 = branches[1];
+
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        b0->scale *= mtrx[0];
+        b1->scale *= mtrx[3];
+        Prune();
+
+        return;
+    }
+
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        b0.swap(b1);
+        b0->scale *= mtrx[1];
+        b1->scale *= mtrx[2];
+        Prune();
+
+        return;
+    }
+
+    PushStateVector(mtrx, b0, b1, depth);
+    Prune(depth);
+}
+
+void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
+{
+    const bool isB0Zero = IS_NORM_0(b0->scale);
+    const bool isB1Zero = IS_NORM_0(b1->scale);
+
+    if (isB0Zero && isB1Zero) {
+        b0->SetZero();
+        b1->SetZero();
+
+        return;
+    }
+
+    if (isB0Zero) {
+        b0 = b1->ShallowClone();
+        b0->scale = ZERO_CMPLX;
+    }
+
+    if (isB1Zero) {
+        b1 = b0->ShallowClone();
+        b1->scale = ZERO_CMPLX;
+    }
+
+    if (isB0Zero || isB1Zero) {
+        const complex Y0 = b0->scale;
+        const complex Y1 = b1->scale;
+        b0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
+        b1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
+
+        return;
+    }
+
+    const bool isSame = !depth || ((b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1]));
+    if (isSame) {
+        b1->branches[0] = b0->branches[0];
+        b1->branches[1] = b0->branches[1];
+
+        const complex Y0 = b0->scale;
+        const complex Y1 = b1->scale;
+        b0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
+        b1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
+
+        return;
+    }
+    depth--;
+
+    b0->Branch();
+    b1->Branch();
+
+    b0->branches[0]->scale *= b0->scale;
+    b0->branches[1]->scale *= b0->scale;
+    b0->scale = SQRT1_2_R1;
+
+    b1->branches[0]->scale *= b1->scale;
+    b1->branches[1]->scale *= b1->scale;
+    b1->scale = SQRT1_2_R1;
+
+    PushStateVector(mtrx, b0->branches[0], b1->branches[0], depth);
+    PushStateVector(mtrx, b0->branches[1], b1->branches[1], depth);
+
+    b0->PopStateVector();
+    b1->PopStateVector();
 }
 } // namespace Qrack

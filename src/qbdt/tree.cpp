@@ -136,7 +136,7 @@ template <typename Fn> void QBdt::SetTraversal(Fn setLambda)
         setLambda((bitCapIntOcl)i, leaf);
     }
 
-    root->ConvertStateVector(bdtQubitCount);
+    root->PopStateVector(bdtQubitCount);
     root->Prune(bdtQubitCount);
 }
 void QBdt::GetQuantumState(complex* state)

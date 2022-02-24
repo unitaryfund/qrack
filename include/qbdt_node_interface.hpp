@@ -25,8 +25,10 @@ typedef std::shared_ptr<QBdtNodeInterface> QBdtNodeInterfacePtr;
 
 class QBdtNodeInterface {
 protected:
-    size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
-    void _par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn);
+    static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
+    static void _par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn);
+    virtual void PushStateVector(
+        const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth) = 0;
 
 public:
     complex scale;
@@ -87,7 +89,7 @@ public:
 
     virtual QBdtNodeInterfacePtr ShallowClone() = 0;
 
-    virtual void ConvertStateVector(bitLenInt depth) = 0;
+    virtual void PopStateVector(bitLenInt depth = 1U) = 0;
 
     virtual void Branch(bitLenInt depth = 1U) = 0;
 
@@ -95,11 +97,10 @@ public:
 
     virtual void Normalize(bitLenInt depth) = 0;
 
-    virtual void Apply2x2(const complex* mtrx, bitLenInt depth);
+    virtual void Apply2x2(const complex* mtrx, bitLenInt depth) = 0;
 };
 
 bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);
 bool operator!=(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);
 QBdtNodeInterfacePtr operator-(const QBdtNodeInterfacePtr& t);
-
 } // namespace Qrack

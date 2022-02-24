@@ -25,6 +25,13 @@ class QBdtQInterfaceNode;
 typedef std::shared_ptr<QBdtQInterfaceNode> QBdtQInterfaceNodePtr;
 
 class QBdtQInterfaceNode : public QBdtNodeInterface {
+protected:
+    virtual void PushStateVector(
+        const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
+    {
+        throw std::out_of_range("QBdtQInterfaceNode::PushStateVector() not implemented!");
+    }
+
 public:
     QInterfacePtr qReg;
 
@@ -115,14 +122,14 @@ public:
         }
     }
 
-    virtual void ConvertStateVector(bitLenInt depth)
+    virtual void PopStateVector(bitLenInt depth = 1U)
     {
-        if (!depth) {
-            return;
-        }
+        throw std::out_of_range("QBdtQInterfaceNode::PopStateVector() not implemented!");
+    }
 
-        throw std::out_of_range(
-            "QBdtQInterfaceNode::ConvertStateVector() not implemented! (Don't set/get state vector amplitudes.)");
+    virtual void Apply2x2(const complex* mtrx, bitLenInt depth)
+    {
+        throw std::out_of_range("QBdtQInterfaceNode::Apply2x2() not implemented!");
     }
 };
 
