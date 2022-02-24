@@ -270,7 +270,7 @@ void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QB
     }
 
     if (!depth) {
-        throw std::out_of_range("QBdtNode::PopStateVector() not implemented at depth=0! (You didn't push to root "
+        throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
                                 "depth, or root depth lacks method implementation.)");
     }
     depth--;
