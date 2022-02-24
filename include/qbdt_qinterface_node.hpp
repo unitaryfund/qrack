@@ -24,6 +24,9 @@ namespace Qrack {
 class QBdtQInterfaceNode;
 typedef std::shared_ptr<QBdtQInterfaceNode> QBdtQInterfaceNodePtr;
 
+class QBdtQEngineNode;
+typedef std::shared_ptr<QBdtQEngineNode> QBdtQEngineNodePtr;
+
 class QBdtQInterfaceNode : public QBdtNodeInterface {
 protected:
     virtual void PushStateVector(
@@ -55,11 +58,6 @@ public:
         qReg = NULL;
     }
 
-    virtual QBdtNodeInterfacePtr ShallowClone()
-    {
-        return std::make_shared<QBdtQInterfaceNode>(scale, qReg ? qReg->Clone() : NULL);
-    }
-
     virtual bool isEqual(QBdtNodeInterfacePtr r)
     {
         return (this == r.get()) ||
@@ -82,28 +80,6 @@ public:
         if (qReg) {
             qReg->NormalizeState();
         }
-    }
-
-    virtual void Prune(bitLenInt depth = 1U)
-    {
-        if (!depth) {
-            return;
-        }
-
-        if (norm(scale) <= FP_NORM_EPSILON) {
-            SetZero();
-            return;
-        }
-
-        if (!qReg) {
-            return;
-        }
-
-        real1_f phaseArg = qReg->FirstNonzeroPhase();
-        qReg->UpdateRunningNorm();
-        qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
-        scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
-        ;
     }
 
     virtual void Branch(bitLenInt depth = 1U)
@@ -130,6 +106,48 @@ public:
     virtual void Apply2x2(const complex* mtrx, bitLenInt depth)
     {
         throw std::out_of_range("QBdtQInterfaceNode::Apply2x2() not implemented!");
+    }
+};
+
+class QBdtQEngineNode : public QBdtQInterfaceNode {
+public:
+    QBdtQEngineNode()
+        : QBdtQInterfaceNode()
+    {
+        // Intentionally left blank.
+    }
+
+    QBdtQEngineNode(complex scl, QInterfacePtr q)
+        : QBdtQInterfaceNode(scl, q)
+    {
+        // Intentionally left blank.
+    }
+
+    virtual QBdtNodeInterfacePtr ShallowClone()
+    {
+        return std::make_shared<QBdtQEngineNode>(scale, qReg ? qReg->Clone() : NULL);
+    }
+
+    virtual void Prune(bitLenInt depth = 1U)
+    {
+        if (!depth) {
+            return;
+        }
+
+        if (norm(scale) <= FP_NORM_EPSILON) {
+            SetZero();
+            return;
+        }
+
+        if (!qReg) {
+            return;
+        }
+
+        real1_f phaseArg = qReg->FirstNonzeroPhase();
+        qReg->UpdateRunningNorm();
+        qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
+        scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
+        ;
     }
 };
 

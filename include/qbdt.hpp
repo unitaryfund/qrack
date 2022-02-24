@@ -43,7 +43,7 @@ protected:
     }
 
     QInterfacePtr MakeStateVector(bitLenInt qbCount, bitCapInt perm = 0U);
-    QBdtQInterfaceNodePtr MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
+    QBdtQEngineNodePtr MakeQEngineNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
 
     QInterfacePtr MakeTempStateVector()
     {
@@ -179,7 +179,7 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QBdt>(toCopy), start);
     }
-    virtual bitLenInt Attach(QInterfacePtr toCopy, bitLenInt start)
+    virtual bitLenInt Attach(QEnginePtr toCopy, bitLenInt start)
     {
         if (start == qubitCount) {
             return Attach(toCopy);
@@ -192,7 +192,7 @@ public:
 
         return result;
     }
-    virtual bitLenInt Attach(QInterfacePtr toCopy);
+    virtual bitLenInt Attach(QEnginePtr toCopy);
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));
