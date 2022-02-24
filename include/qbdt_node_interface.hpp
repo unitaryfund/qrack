@@ -55,6 +55,11 @@ public:
         branches[1] = b[1];
     }
 
+    virtual ~QBdtNodeInterface()
+    {
+        // Intentionally left blank
+    }
+
     virtual void SetZero()
     {
         scale = ZERO_CMPLX;

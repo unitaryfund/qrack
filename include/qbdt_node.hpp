@@ -47,6 +47,11 @@ public:
         // Intentionally left blank
     }
 
+    virtual ~QBdtNode()
+    {
+        // Intentionally left blank
+    }
+
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtNode>(scale, branches); }
 
     virtual void PopStateVector(bitLenInt depth = 1U);

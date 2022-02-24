@@ -67,13 +67,13 @@ protected:
     std::uniform_int_distribution<char> rand_distribution;
 #endif
     std::shared_ptr<RdRandom> hardware_rand_generator;
-    bitLenInt dispatchThreshold;
 
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
 
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     DispatchQueue dispatchQueue;
+    bitLenInt dispatchThreshold;
 #endif
 
     typedef std::function<void(const bitLenInt&)> StabilizerParallelFunc;

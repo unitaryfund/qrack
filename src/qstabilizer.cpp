@@ -99,11 +99,13 @@ QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHard
         rand_generator = rgp;
     }
 
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #if ENABLE_ENV_VARS
     dispatchThreshold =
         (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
 #else
     dispatchThreshold = PSTRIDEPOW;
+#endif
 #endif
 
     SetPermutation(perm);

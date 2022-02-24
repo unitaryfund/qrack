@@ -38,8 +38,8 @@ protected:
     bool isSparse;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     DispatchQueue dispatchQueue;
-#endif
     bitLenInt dispatchThreshold;
+#endif
 
     StateVectorSparsePtr CastStateVecSparse() { return std::dynamic_pointer_cast<StateVectorSparse>(stateVec); }
 
