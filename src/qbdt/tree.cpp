@@ -251,36 +251,15 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         return QInterface::Compose(toCopy, start);
     }
 
-    bitLenInt qbCount;
-    bitCapInt maxI;
-
     QBdtNodeInterfacePtr rootClone = toCopy->root->ShallowClone();
-    if (start) {
-        qbCount = bdtQubitCount;
-        maxI = maxQPower;
-    } else {
-        qbCount = toCopy->bdtQubitCount;
-        maxI = toCopy->maxQPower;
+    bitLenInt depth = bdtQubitCount;
+    bitLenInt size = toCopy->bdtQubitCount;
+    if (!start) {
+        std::swap(depth, size);
         root.swap(rootClone);
     }
 
-    par_for_qbdt(0, maxI, [&](const bitCapInt& i, const int& cpu) {
-        QBdtNodeInterfacePtr leaf = root;
-        for (bitLenInt j = 0; j < qbCount; j++) {
-            if (IS_NORM_0(leaf->scale)) {
-                // WARNING: Mutates loop control variable!
-                return (bitCapInt)(pow2(qbCount - j) - ONE_BCI);
-            }
-            leaf = leaf->branches[SelectBit(i, qbCount - (j + 1U))];
-        }
-
-        if (!IS_NORM_0(leaf->scale)) {
-            leaf->branches[0] = rootClone->branches[0];
-            leaf->branches[1] = rootClone->branches[1];
-        }
-
-        return (bitCapInt)0U;
-    });
+    root->InsertAtDepth(rootClone, depth, size);
 
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
