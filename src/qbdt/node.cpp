@@ -256,7 +256,7 @@ void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QB
         return;
     }
 
-    const bool isSame = !depth || ((b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1]));
+    const bool isSame = ((b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1]));
     if (isSame) {
         b1->branches[0] = b0->branches[0];
         b1->branches[1] = b0->branches[1];
@@ -267,6 +267,11 @@ void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QB
         b1->scale = mtrx[2] * Y0 + mtrx[3] * Y1;
 
         return;
+    }
+
+    if (!depth) {
+        throw std::out_of_range("QBdtNode::PopStateVector() not implemented at depth=0! (You didn't push to root "
+                                "depth, or root depth lacks method implementation.)");
     }
     depth--;
 
