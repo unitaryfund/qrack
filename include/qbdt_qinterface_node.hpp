@@ -144,6 +144,9 @@ protected:
             qReg1->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, std::arg(b1->scale));
         }
 
+        b0->scale = SQRT1_2_R1;
+        b1->scale = SQRT1_2_R1;
+
         qReg0->ShuffleBuffers(qReg1);
 
         qReg0->Mtrx(mtrx, qReg0->GetQubitCount() - 1U);
