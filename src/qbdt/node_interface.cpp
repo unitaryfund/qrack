@@ -60,22 +60,23 @@ void QBdtNodeInterface::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, b
         depth--;
         if (branches[0]) {
             branches[0]->InsertAtDepth(b, depth, size);
-            branches[1]->InsertAtDepth(b, depth, size);
+            if (branches[0].get() != branches[1].get()) {
+                branches[1]->InsertAtDepth(b, depth, size);
+            }
         }
 
         return;
     }
 
-    QBdtNodeInterfacePtr tempBranches[2] = { branches[0], branches[1] };
+    QBdtNodeInterfacePtr c = ShallowClone();
     branches[0] = b->branches[0];
     branches[1] = b->branches[1];
 
-    if (!size || !tempBranches[0]) {
+    if (!size || !c->branches[0]) {
         return;
     }
 
-    branches[0]->InsertAtDepth(tempBranches[0], size, 0);
-    branches[1]->InsertAtDepth(tempBranches[1], size, 0);
+    InsertAtDepth(c, size, 0);
 }
 
 QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
@@ -91,8 +92,11 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
             return NULL;
         }
 
-        QBdtNodeInterfacePtr toRet = branches[0]->RemoveSeparableAtDepth(depth, size);
+        if (branches[0].get() == branches[1].get()) {
+            return branches[0]->RemoveSeparableAtDepth(depth, size);
+        }
 
+        QBdtNodeInterfacePtr toRet = branches[0]->RemoveSeparableAtDepth(depth, size);
         if (toRet) {
             branches[1]->RemoveSeparableAtDepth(depth, size);
         } else {
@@ -105,15 +109,16 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
     QBdtNodeInterfacePtr toRet = ShallowClone();
     toRet->scale /= abs(toRet->scale);
 
-    if (!size || !branches[0]) {
+    if (!size) {
         branches[0] = NULL;
         branches[1] = NULL;
 
         return toRet;
     }
 
-    branches[0] = toRet->branches[0]->RemoveSeparableAtDepth(size, 0);
-    branches[1] = toRet->branches[1]->RemoveSeparableAtDepth(size, 0);
+    QBdtNodeInterfacePtr temp = toRet->RemoveSeparableAtDepth(size, 0);
+    branches[0] = temp->branches[0];
+    branches[1] = temp->branches[1];
 
     return toRet;
 }

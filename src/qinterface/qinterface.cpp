@@ -274,7 +274,7 @@ bitLenInt QInterface::Compose(QInterfacePtr toCopy, bitLenInt start)
     }
 
     const bitLenInt origSize = qubitCount;
-    ROL(origSize - start, 0, origSize);
+    ROL(origSize - start, 0, qubitCount);
     bitLenInt result = Compose(toCopy);
     ROR(origSize - start, 0, qubitCount);
 

@@ -60,6 +60,44 @@ void QBdtQEngineNode::PushStateVector(
     qReg0->ShuffleBuffers(qReg1);
 }
 
+void QBdtQEngineNode::Prune(bitLenInt depth)
+{
+    if (!depth) {
+        return;
+    }
+
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        SetZero();
+        return;
+    }
+
+    if (!qReg) {
+        return;
+    }
+
+    real1_f phaseArg = qReg->FirstNonzeroPhase();
+    qReg->UpdateRunningNorm();
+    qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
+    scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
+}
+
+void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
+{
+    if (!depth || (norm(scale) <= FP_NORM_EPSILON)) {
+        return;
+    }
+    depth--;
+
+    QBdtQEngineNodePtr bEng = std::dynamic_pointer_cast<QBdtQEngineNode>(b);
+
+    if (!qReg) {
+        qReg = bEng->qReg;
+        return;
+    }
+
+    qReg->Compose(bEng->qReg, depth);
+}
+
 QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
 {
     if (!size || !depth || (norm(scale) <= FP_NORM_EPSILON)) {
@@ -80,26 +118,5 @@ QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, bi
     qReg->Decompose(depth, toRet->qReg);
 
     return toRet;
-}
-
-void QBdtQEngineNode::Prune(bitLenInt depth)
-{
-    if (!depth) {
-        return;
-    }
-
-    if (norm(scale) <= FP_NORM_EPSILON) {
-        SetZero();
-        return;
-    }
-
-    if (!qReg) {
-        return;
-    }
-
-    real1_f phaseArg = qReg->FirstNonzeroPhase();
-    qReg->UpdateRunningNorm();
-    qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
-    scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
 }
 } // namespace Qrack

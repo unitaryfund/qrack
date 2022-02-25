@@ -243,18 +243,27 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
-    if (attachedQubitCount && (bdtQubitCount < start)) {
-        const bitLenInt origBdtSize = bdtQubitCount;
-        ROR(start - origBdtSize, 0, qubitCount);
-        bitLenInt result = Compose(toCopy, origBdtSize);
-        ROL(start - origBdtSize, 0, qubitCount);
+    if (attachedQubitCount || toCopy->attachedQubitCount) {
+        if (bdtQubitCount < start) {
+            const bitLenInt origBdtSize = bdtQubitCount;
+            ROR(start - origBdtSize, 0, qubitCount);
+            bitLenInt result = Compose(toCopy, origBdtSize);
+            ROL(start - origBdtSize, 0, qubitCount);
 
-        return result;
+            return result;
+        }
+
+        if (start < bdtQubitCount) {
+            const bitLenInt origBdtSize = bdtQubitCount;
+            ROL(origBdtSize - start, 0, qubitCount);
+            bitLenInt result = Compose(toCopy, origBdtSize);
+            ROR(origBdtSize - start, 0, qubitCount);
+
+            return result;
+        }
     }
 
-    bitLenInt depth = start;
-    bitLenInt size = toCopy->bdtQubitCount;
-    root->InsertAtDepth(toCopy->root->ShallowClone(), depth, size);
+    root->InsertAtDepth(toCopy->root, start, toCopy->bdtQubitCount);
 
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
@@ -324,16 +333,8 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy)
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
-    if (bdtQubitCount < length) {
-        throw std::runtime_error("Decompose() once attached is not implemented for (bdtQubitCount < length)!");
-    }
-
-    if (attachedQubitCount && (bdtQubitCount < (start + length))) {
-        ROR(start, 0, qubitCount);
-        DecomposeDispose(0, length, dest);
-        ROL(start, 0, qubitCount);
-
-        return;
+    if (attachedQubitCount) {
+        throw std::runtime_error("QBdt::Decompose() after Attach() call not yet implemented!");
     }
 
     if (dest) {
