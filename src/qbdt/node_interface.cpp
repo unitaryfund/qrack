@@ -78,4 +78,43 @@ void QBdtNodeInterface::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, b
     branches[1]->InsertAtDepth(tempBranches[1], size, 0);
 }
 
+QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
+{
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        return NULL;
+    }
+
+    if (depth) {
+        depth--;
+
+        if (!branches[0]) {
+            return NULL;
+        }
+
+        QBdtNodeInterfacePtr toRet = branches[0]->RemoveSeparableAtDepth(depth, size);
+
+        if (toRet) {
+            branches[1]->RemoveSeparableAtDepth(depth, size);
+        } else {
+            toRet = branches[1]->RemoveSeparableAtDepth(depth, size);
+        }
+
+        return toRet;
+    }
+
+    QBdtNodeInterfacePtr toRet = ShallowClone();
+    toRet->scale /= abs(toRet->scale);
+
+    if (!size || !branches[0]) {
+        branches[0] = NULL;
+        branches[1] = NULL;
+
+        return toRet;
+    }
+
+    branches[0] = toRet->branches[0]->RemoveSeparableAtDepth(size, 0);
+    branches[1] = toRet->branches[1]->RemoveSeparableAtDepth(size, 0);
+
+    return toRet;
+}
 } // namespace Qrack
