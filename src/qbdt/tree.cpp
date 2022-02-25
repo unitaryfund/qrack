@@ -243,22 +243,27 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
-    if ((attachedQubitCount || toCopy->attachedQubitCount) && (bdtQubitCount < start)) {
-        const bitLenInt origBdtSize = bdtQubitCount;
-        ROR(start - origBdtSize, 0, qubitCount);
-        bitLenInt result = Compose(toCopy, origBdtSize);
-        ROL(start - origBdtSize, 0, qubitCount);
+    if (attachedQubitCount || toCopy->attachedQubitCount) {
+        if (bdtQubitCount < start) {
+            const bitLenInt origBdtSize = bdtQubitCount;
+            ROR(start - origBdtSize, 0, qubitCount);
+            bitLenInt result = Compose(toCopy, origBdtSize);
+            ROL(start - origBdtSize, 0, qubitCount);
 
-        return result;
-    }
+            return result;
+        }
 
-    if (toCopy->attachedQubitCount && (start < bdtQubitCount)) {
-        const bitLenInt origBdtSize = bdtQubitCount;
-        ROL(origBdtSize - start, 0, qubitCount);
-        bitLenInt result = Compose(toCopy, origBdtSize);
-        ROR(origBdtSize - start, 0, qubitCount);
+        if (start < bdtQubitCount) {
+            const bitLenInt origBdtSize = bdtQubitCount;
+            ROL(origBdtSize - start, 0, qubitCount);
+            bitLenInt result = Compose(toCopy, origBdtSize);
+            ROR(origBdtSize - start, 0, qubitCount);
 
-        return result;
+            return result;
+        }
+    } else if (start < qubitCount) {
+        // TODO: It should be possible to insert in the middle of the tree, instead.
+        return QInterface::Compose(toCopy, start);
     }
 
     bitLenInt depth = start;
