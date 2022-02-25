@@ -324,10 +324,6 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy)
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
-    if (bdtQubitCount < length) {
-        throw std::runtime_error("Decompose() once attached is not implemented for (bdtQubitCount < length)!");
-    }
-
     if (start && (attachedQubitCount || ((start + length) != qubitCount))) {
         ROR(start, 0, qubitCount);
         DecomposeDispose(0, length, dest);
@@ -346,7 +342,9 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         length = qubitCount - length;
     }
 
-    bitCapInt maxI = pow2(start);
+    const bool isKet = (length >= bdtQubitCount);
+    const bitLenInt maxQubit = (start < bdtQubitCount) ? start : bdtQubitCount;
+    const bitCapInt maxI = pow2(maxQubit);
     QBdtNodeInterfacePtr startNode = NULL;
     par_for_qbdt(0, maxI, [&](const bitCapInt& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf = root;
@@ -362,7 +360,15 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
             return (bitCapInt)0U;
         }
 
-        if (!startNode) {
+        if (isKet) {
+            if (!startNode) {
+                startNode = std::dynamic_pointer_cast<QBdtQEngineNode>(leaf)->RemoveSeparableAtDepth(
+                    (start - bdtQubitCount) + 1U, length);
+            } else {
+                std::dynamic_pointer_cast<QBdtQEngineNode>(leaf)->RemoveSeparableAtDepth(
+                    (start - bdtQubitCount) + 1U, length);
+            }
+        } else if (!startNode) {
             // Whichever parallel write wins, this works.
             startNode = leaf->ShallowClone();
         }

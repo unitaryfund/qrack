@@ -80,4 +80,30 @@ void QBdtQEngineNode::Prune(bitLenInt depth)
     qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
     scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
 }
+
+QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
+{
+    if (!size || !depth || (norm(scale) <= FP_NORM_EPSILON)) {
+        return NULL;
+    }
+    depth--;
+
+    QBdtQEngineNodePtr toRet = std::dynamic_pointer_cast<QBdtQEngineNode>(ShallowClone());
+    toRet->scale /= abs(toRet->scale);
+
+    if (!qReg) {
+        return toRet;
+    }
+
+    if (size == toRet->qReg->GetQubitCount()) {
+        toRet->qReg = qReg;
+        qReg = NULL;
+    } else {
+        toRet->qReg = std::dynamic_pointer_cast<QEngine>(qReg)->CloneEmpty();
+        std::dynamic_pointer_cast<QEngine>(toRet->qReg)->SetQubitCount(size);
+        qReg->Decompose(depth, toRet->qReg);
+    }
+
+    return toRet;
+}
 } // namespace Qrack

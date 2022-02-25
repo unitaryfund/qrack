@@ -135,6 +135,8 @@ public:
     virtual void PopStateVector(bitLenInt depth = 1U) { Prune(); }
 
     virtual void Prune(bitLenInt depth = 1U);
+
+    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size);
 };
 
 } // namespace Qrack
