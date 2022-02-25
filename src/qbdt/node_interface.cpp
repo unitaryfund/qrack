@@ -50,4 +50,32 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end
     }
 }
 
+void QBdtNodeInterface::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
+{
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        return;
+    }
+
+    if (depth) {
+        depth--;
+        if (branches[0]) {
+            branches[0]->InsertAtDepth(b, depth, size);
+            branches[1]->InsertAtDepth(b, depth, size);
+        }
+
+        return;
+    }
+
+    QBdtNodeInterfacePtr tempBranches[2] = { branches[0], branches[1] };
+    branches[0] = b->branches[0];
+    branches[1] = b->branches[1];
+
+    if (!size || !tempBranches[0]) {
+        return;
+    }
+
+    branches[0]->InsertAtDepth(tempBranches[0], size, 0);
+    branches[1]->InsertAtDepth(tempBranches[1], size, 0);
+}
+
 } // namespace Qrack
