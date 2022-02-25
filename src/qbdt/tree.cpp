@@ -243,7 +243,7 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
-    if (attachedQubitCount || toCopy->attachedQubitCount) {
+    if (attachedQubitCount && toCopy->attachedQubitCount) {
         const bitLenInt midIndex = bdtQubitCount;
         if (start < midIndex) {
             ROL(midIndex - start, 0, qubitCount);
@@ -260,6 +260,23 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
             return result;
         }
+    }
+
+    if (attachedQubitCount && !toCopy->attachedQubitCount && start) {
+        ROR(start, 0, qubitCount);
+        bitLenInt result = Compose(toCopy, 0);
+        ROL(start, 0, qubitCount);
+
+        return result;
+    }
+
+    if (!attachedQubitCount && toCopy->attachedQubitCount && (start < qubitCount)) {
+        const bitLenInt endIndex = bdtQubitCount;
+        ROL(endIndex - start, 0, qubitCount);
+        bitLenInt result = Compose(toCopy, endIndex);
+        ROR(endIndex - start, 0, qubitCount);
+
+        return result;
     }
 
     root->InsertAtDepth(toCopy->root, start, toCopy->qubitCount);
@@ -332,14 +349,12 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy)
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
-    if (attachedQubitCount) {
-        if (start) {
-            ROR(start, 0, qubitCount);
-            DecomposeDispose(0, length, dest);
-            ROL(start, 0, qubitCount);
+    if (attachedQubitCount && start) {
+        ROR(start, 0, qubitCount);
+        DecomposeDispose(0, length, dest);
+        ROL(start, 0, qubitCount);
 
-            return;
-        }
+        return;
     }
 
     if (dest) {
