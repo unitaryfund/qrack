@@ -324,15 +324,14 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy)
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
-    if (attachedQubitCount) {
-        throw std::runtime_error("Decompose() once attached is not implemented!");
+    if (bdtQubitCount < length) {
+        throw std::runtime_error("Decompose() once attached is not implemented for (bdtQubitCount < length)!");
     }
 
-    const bitLenInt end = start + length;
-    if ((attachedQubitCount && start) || (!attachedQubitCount && start && (end < qubitCount))) {
-        ROR(start, 0, GetQubitCount());
+    if (start && (attachedQubitCount || ((start + length) != qubitCount))) {
+        ROR(start, 0, qubitCount);
         DecomposeDispose(0, length, dest);
-        ROL(start, 0, GetQubitCount());
+        ROL(start, 0, qubitCount);
 
         return;
     }
