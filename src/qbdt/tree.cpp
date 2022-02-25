@@ -266,9 +266,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         return QInterface::Compose(toCopy, start);
     }
 
-    bitLenInt depth = start;
-    bitLenInt size = toCopy->bdtQubitCount;
-    root->InsertAtDepth(toCopy->root->ShallowClone(), depth, size);
+    root->InsertAtDepth(toCopy->root->ShallowClone(), start, toCopy->bdtQubitCount);
 
     SetQubitCount(qubitCount + toCopy->qubitCount);
 

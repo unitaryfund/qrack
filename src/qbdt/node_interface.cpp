@@ -66,16 +66,16 @@ void QBdtNodeInterface::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, b
         return;
     }
 
-    QBdtNodeInterfacePtr tempBranches[2] = { branches[0], branches[1] };
+    QBdtNodeInterfacePtr c = ShallowClone();
     branches[0] = b->branches[0];
     branches[1] = b->branches[1];
 
-    if (!size || !tempBranches[0]) {
+    if (!size || !c->branches[0]) {
         return;
     }
 
-    branches[0]->InsertAtDepth(tempBranches[0], size, 0);
-    branches[1]->InsertAtDepth(tempBranches[1], size, 0);
+    branches[0]->InsertAtDepth(c, size, 0);
+    branches[1]->InsertAtDepth(c, size, 0);
 }
 
 } // namespace Qrack
