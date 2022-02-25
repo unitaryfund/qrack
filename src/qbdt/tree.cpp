@@ -328,7 +328,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         throw std::runtime_error("Decompose() once attached is not implemented for (bdtQubitCount < length)!");
     }
 
-    if (start && (attachedQubitCount || ((start + length) != qubitCount))) {
+    if (attachedQubitCount && (bdtQubitCount < (start + length))) {
         ROR(start, 0, qubitCount);
         DecomposeDispose(0, length, dest);
         ROL(start, 0, qubitCount);
@@ -337,52 +337,9 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     }
 
     if (dest) {
-        dest->Dump();
-    }
-
-    const bool isReversed = !start;
-    if (isReversed) {
-        start = length;
-        length = qubitCount - length;
-    }
-
-    bitCapInt maxI = pow2(start);
-    QBdtNodeInterfacePtr startNode = NULL;
-    par_for_qbdt(0, maxI, [&](const bitCapInt& i, const int& cpu) {
-        QBdtNodeInterfacePtr leaf = root;
-        for (bitLenInt j = 0; j < start; j++) {
-            if (IS_NORM_0(leaf->scale)) {
-                // WARNING: Mutates loop control variable!
-                return (bitCapInt)(pow2(start - j) - ONE_BCI);
-            }
-            leaf = leaf->branches[SelectBit(i, start - (j + 1U))];
-        }
-
-        if (IS_NORM_0(leaf->scale)) {
-            return (bitCapInt)0U;
-        }
-
-        if (!startNode) {
-            // Whichever parallel write wins, this works.
-            startNode = leaf->ShallowClone();
-        }
-
-        leaf->branches[0] = NULL;
-        leaf->branches[1] = NULL;
-
-        return (bitCapInt)0U;
-    });
-
-    startNode->scale /= abs(startNode->scale);
-
-    if (isReversed) {
-        start = 0;
-        length = qubitCount - length;
-        root.swap(startNode);
-    }
-
-    if (dest) {
-        dest->root = startNode;
+        dest->root = root->RemoveSeparableAtDepth(start, length);
+    } else {
+        root->RemoveSeparableAtDepth(start, length);
     }
 
     SetQubitCount(qubitCount - length);

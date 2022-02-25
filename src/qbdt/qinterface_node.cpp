@@ -60,6 +60,28 @@ void QBdtQEngineNode::PushStateVector(
     qReg0->ShuffleBuffers(qReg1);
 }
 
+QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
+{
+    if (!size || !depth || (norm(scale) <= FP_NORM_EPSILON)) {
+        return NULL;
+    }
+    depth--;
+
+    QBdtQEngineNodePtr toRet = std::dynamic_pointer_cast<QBdtQEngineNode>(ShallowClone());
+    toRet->scale /= abs(toRet->scale);
+
+    if (!qReg) {
+        return toRet;
+    }
+
+    toRet->qReg = std::dynamic_pointer_cast<QEngine>(qReg)->CloneEmpty();
+    std::dynamic_pointer_cast<QEngine>(toRet->qReg)->SetQubitCount(size);
+
+    qReg->Decompose(depth, toRet->qReg);
+
+    return toRet;
+}
+
 void QBdtQEngineNode::Prune(bitLenInt depth)
 {
     if (!depth) {

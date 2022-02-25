@@ -36,12 +36,6 @@ protected:
 
     bool IsInvert(const complex* mtrx) { return IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]); }
 
-    virtual void SetQubitCount(bitLenInt qb)
-    {
-        QInterface::SetQubitCount(qb);
-        maxQPowerOcl = (bitCapIntOcl)maxQPower;
-    }
-
 public:
     QEngine(bitLenInt qBitCount, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, bool useHardwareRNG = true, real1_f norm_thresh = REAL1_EPSILON)
@@ -63,6 +57,12 @@ public:
         , runningNorm(ONE_R1)
     {
         // Intentionally left blank
+    }
+
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        QInterface::SetQubitCount(qb);
+        maxQPowerOcl = (bitCapIntOcl)maxQPower;
     }
 
     /** Get in-flight renormalization factor */
