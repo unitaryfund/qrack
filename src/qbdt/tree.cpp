@@ -344,6 +344,8 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     }
 
     SetQubitCount(qubitCount - length);
+
+    root->Prune(qubitCount);
 }
 
 real1_f QBdt::Prob(bitLenInt qubit)
