@@ -244,15 +244,6 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
     if (attachedQubitCount || toCopy->attachedQubitCount) {
-        if (bdtQubitCount < start) {
-            const bitLenInt origBdtSize = bdtQubitCount;
-            ROR(start - origBdtSize, 0, qubitCount);
-            bitLenInt result = Compose(toCopy, origBdtSize);
-            ROL(start - origBdtSize, 0, qubitCount);
-
-            return result;
-        }
-
         if (start < bdtQubitCount) {
             const bitLenInt origBdtSize = bdtQubitCount;
             ROL(origBdtSize - start, 0, qubitCount);
@@ -261,9 +252,18 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
             return result;
         }
+
+        if (bdtQubitCount < start) {
+            const bitLenInt origBdtSize = bdtQubitCount;
+            ROR(start - origBdtSize, 0, qubitCount);
+            bitLenInt result = Compose(toCopy, origBdtSize);
+            ROL(start - origBdtSize, 0, qubitCount);
+
+            return result;
+        }
     }
 
-    root->InsertAtDepth(toCopy->root, start, toCopy->bdtQubitCount);
+    root->InsertAtDepth(toCopy->root, start, toCopy->qubitCount);
 
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
