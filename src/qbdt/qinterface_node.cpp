@@ -83,7 +83,7 @@ void QBdtQEngineNode::Prune(bitLenInt depth)
 
 void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
 {
-    if (!size || !depth || (norm(scale) <= FP_NORM_EPSILON)) {
+    if (!depth || (norm(scale) <= FP_NORM_EPSILON)) {
         return;
     }
     depth--;
