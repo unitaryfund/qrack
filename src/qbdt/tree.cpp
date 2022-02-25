@@ -244,27 +244,26 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
     if (attachedQubitCount || toCopy->attachedQubitCount) {
-        if (start < bdtQubitCount) {
-            const bitLenInt origBdtSize = bdtQubitCount;
-            ROL(origBdtSize - start, 0, qubitCount);
-            bitLenInt result = Compose(toCopy, origBdtSize);
-            ROR(origBdtSize - start, 0, qubitCount);
+        const bitLenInt midIndex = bdtQubitCount;
+        if (start < midIndex) {
+            ROL(midIndex - start, 0, qubitCount);
+            bitLenInt result = Compose(toCopy, midIndex);
+            ROR(midIndex - start, 0, qubitCount);
 
             return result;
         }
 
-        if (bdtQubitCount < start) {
-            const bitLenInt origBdtSize = bdtQubitCount;
-            ROR(start - origBdtSize, 0, qubitCount);
-            bitLenInt result = Compose(toCopy, origBdtSize);
-            ROL(start - origBdtSize, 0, qubitCount);
+        if (midIndex < start) {
+            ROR(start - midIndex, 0, qubitCount);
+            bitLenInt result = Compose(toCopy, midIndex);
+            ROL(start - midIndex, 0, qubitCount);
 
             return result;
         }
     }
 
     root->InsertAtDepth(toCopy->root, start, toCopy->qubitCount);
-
+    attachedQubitCount += toCopy->attachedQubitCount;
     SetQubitCount(qubitCount + toCopy->qubitCount);
 
     return start;
@@ -334,7 +333,13 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy)
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
     if (attachedQubitCount) {
-        throw std::runtime_error("QBdt::Decompose() after Attach() call not yet implemented!");
+        if (start) {
+            ROR(start, 0, qubitCount);
+            DecomposeDispose(0, length, dest);
+            ROL(start, 0, qubitCount);
+
+            return;
+        }
     }
 
     if (dest) {
@@ -342,7 +347,9 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     } else {
         root->RemoveSeparableAtDepth(start, length);
     }
-
+    if (bdtQubitCount < length) {
+        attachedQubitCount -= length - bdtQubitCount;
+    }
     SetQubitCount(qubitCount - length);
 
     root->Prune(qubitCount);
