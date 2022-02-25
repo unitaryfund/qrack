@@ -261,9 +261,6 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
             return result;
         }
-    } else if (start < qubitCount) {
-        // TODO: It should be possible to insert in the middle of the tree, instead.
-        return QInterface::Compose(toCopy, start);
     }
 
     root->InsertAtDepth(toCopy->root->ShallowClone(), start, toCopy->bdtQubitCount);
