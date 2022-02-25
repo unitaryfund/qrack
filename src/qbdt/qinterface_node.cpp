@@ -81,6 +81,23 @@ void QBdtQEngineNode::Prune(bitLenInt depth)
     scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
 }
 
+void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
+{
+    if (!size || !depth || (norm(scale) <= FP_NORM_EPSILON)) {
+        return;
+    }
+    depth--;
+
+    QBdtQEngineNodePtr bEng = std::dynamic_pointer_cast<QBdtQEngineNode>(b);
+
+    if (!qReg) {
+        qReg = bEng->qReg;
+        return;
+    }
+
+    qReg->Compose(bEng->qReg, depth);
+}
+
 QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
 {
     if (!size || !depth || (norm(scale) <= FP_NORM_EPSILON)) {
