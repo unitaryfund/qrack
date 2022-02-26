@@ -60,10 +60,30 @@ public:
 
     virtual bool isEqual(QBdtNodeInterfacePtr r)
     {
-        return (this == r.get()) ||
-            ((norm(scale - r->scale) <= FP_NORM_EPSILON) &&
-                ((norm(scale) <= FP_NORM_EPSILON) ||
-                    qReg->ApproxCompare(std::dynamic_pointer_cast<QBdtQInterfaceNode>(r)->qReg)));
+        if (this == r.get()) {
+            return true;
+        }
+
+        if (norm(scale - r->scale) > FP_NORM_EPSILON) {
+            return false;
+        }
+
+        if (norm(scale) <= FP_NORM_EPSILON) {
+            return true;
+        }
+
+        QInterfacePtr rReg = std::dynamic_pointer_cast<QBdtQInterfaceNode>(r)->qReg;
+
+        if (qReg.get() == rReg.get()) {
+            return true;
+        }
+
+        if (qReg->ApproxCompare(rReg)) {
+            qReg = rReg;
+            return true;
+        }
+
+        return false;
     }
 
     virtual void Normalize(bitLenInt depth)
