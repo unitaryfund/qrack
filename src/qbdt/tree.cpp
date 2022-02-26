@@ -253,36 +253,36 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         const bitLenInt midIndex = bdtQubitCount;
         if (start < midIndex) {
             ROL(midIndex - start, 0, qubitCount);
-            bitLenInt result = Compose(toCopy, midIndex);
+            Compose(toCopy, midIndex);
             ROR(midIndex - start, 0, qubitCount);
 
-            return result;
+            return start;
         }
 
         if (midIndex < start) {
             ROR(start - midIndex, 0, qubitCount);
-            bitLenInt result = Compose(toCopy, midIndex);
+            Compose(toCopy, midIndex);
             ROL(start - midIndex, 0, qubitCount);
 
-            return result;
+            return start;
         }
     }
 
     if (attachedQubitCount && !toCopy->attachedQubitCount && start) {
         ROR(start, 0, qubitCount);
-        bitLenInt result = Compose(toCopy, 0);
+        Compose(toCopy, 0);
         ROL(start, 0, qubitCount);
 
-        return result;
+        return start;
     }
 
     if (!attachedQubitCount && toCopy->attachedQubitCount && (start < qubitCount)) {
         const bitLenInt endIndex = bdtQubitCount;
         ROL(endIndex - start, 0, qubitCount);
-        bitLenInt result = Compose(toCopy, endIndex);
+        Compose(toCopy, endIndex);
         ROR(endIndex - start, 0, qubitCount);
 
-        return result;
+        return start;
     }
 
     root->InsertAtDepth(toCopy->root, start, toCopy->qubitCount);
