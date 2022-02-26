@@ -90,7 +90,7 @@ void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bit
     QBdtQEngineNodePtr bEng = std::dynamic_pointer_cast<QBdtQEngineNode>(b);
 
     if (!qReg) {
-        qReg = bEng->qReg;
+        qReg = bEng->qReg->Clone();
         return;
     }
 

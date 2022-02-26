@@ -2810,7 +2810,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
     qftReg->Compose(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 
-    qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 3, 0x00, rng);
+    qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 5, 0x00, rng);
     qftReg->Decompose(0, qftReg2);
     qftReg->Compose(qftReg2, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
