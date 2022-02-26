@@ -74,9 +74,15 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
         }
     }
 
-    const bitLenInt maxQubit = attachedQubitCount ? (bdtQubitCount - 1U) : bdtQubitCount;
+    if (attachedQubitCount && !bdtQubitCount) {
+        root = MakeQEngineNode(phaseFac, attachedQubitCount, initState);
+
+        return;
+    }
+
     root = std::make_shared<QBdtNode>(phaseFac);
     QBdtNodeInterfacePtr leaf = root;
+    const bitLenInt maxQubit = attachedQubitCount ? (bdtQubitCount - 1U) : bdtQubitCount;
     for (bitLenInt qubit = 0; qubit < maxQubit; qubit++) {
         const size_t bit = SelectBit(initState, qubit);
         leaf->branches[bit] = std::make_shared<QBdtNode>(ONE_CMPLX);
