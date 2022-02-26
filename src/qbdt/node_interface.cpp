@@ -50,35 +50,6 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end
     }
 }
 
-void QBdtNodeInterface::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
-{
-    if (norm(scale) <= FP_NORM_EPSILON) {
-        return;
-    }
-
-    if (depth) {
-        depth--;
-        if (branches[0]) {
-            branches[0]->InsertAtDepth(b, depth, size);
-            if (branches[0].get() != branches[1].get()) {
-                branches[1]->InsertAtDepth(b, depth, size);
-            }
-        }
-
-        return;
-    }
-
-    QBdtNodeInterfacePtr c = ShallowClone();
-    branches[0] = b->branches[0];
-    branches[1] = b->branches[1];
-
-    if (!size || !c->branches[0]) {
-        return;
-    }
-
-    InsertAtDepth(c, size, 0);
-}
-
 QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
 {
     if (norm(scale) <= FP_NORM_EPSILON) {

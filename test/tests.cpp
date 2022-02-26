@@ -2802,7 +2802,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
         qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 2, 0x03, rng);
         std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(std::dynamic_pointer_cast<QEngine>(
             CreateQuantumInterface({ testSubEngineType, testSubSubEngineType }, 2, 0x02, rng)));
-        qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng);
+        qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 2, 0x02, rng);
+        std::dynamic_pointer_cast<QBdt>(qftReg2)->Attach(std::dynamic_pointer_cast<QEngine>(
+            CreateQuantumInterface({ testSubEngineType, testSubSubEngineType }, 2, 0x00, rng)));
     } else {
         qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
         qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng);

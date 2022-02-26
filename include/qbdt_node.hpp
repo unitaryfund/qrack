@@ -54,6 +54,8 @@ public:
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtNode>(scale, branches); }
 
+    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size);
+
     virtual void PopStateVector(bitLenInt depth = 1U);
 
     virtual void Branch(bitLenInt depth = 1U);
