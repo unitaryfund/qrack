@@ -83,10 +83,9 @@ void QBdtQEngineNode::Prune(bitLenInt depth)
 
 void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
 {
-    if (!depth || (norm(scale) <= FP_NORM_EPSILON)) {
+    if (norm(scale) <= FP_NORM_EPSILON) {
         return;
     }
-    depth--;
 
     QBdtQEngineNodePtr bEng = std::dynamic_pointer_cast<QBdtQEngineNode>(b);
 
@@ -100,10 +99,9 @@ void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bit
 
 QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
 {
-    if (!size || !depth || (norm(scale) <= FP_NORM_EPSILON)) {
+    if (!size || (norm(scale) <= FP_NORM_EPSILON)) {
         return NULL;
     }
-    depth--;
 
     QBdtQEngineNodePtr toRet = std::dynamic_pointer_cast<QBdtQEngineNode>(ShallowClone());
     toRet->scale /= abs(toRet->scale);
