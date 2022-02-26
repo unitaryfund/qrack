@@ -299,8 +299,6 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt 
         return;
     }
 
-    Branch();
-
     if (!depth) {
         QBdtNodeInterfacePtr c = ShallowClone();
         branches[0] = b->branches[0];
