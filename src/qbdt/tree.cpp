@@ -571,7 +571,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls,
     std::copy(controls, controls + controlLen, controlVec.begin());
 
     std::sort(controlVec.begin(), controlVec.end());
-    const bool isSwapped = target < controlVec.back();
+    const bool isSwapped = (target < controlVec.back()) && (target < bdtQubitCount);
     if (isSwapped) {
         Swap(target, controlVec.back());
         std::swap(target, controlVec.back());
