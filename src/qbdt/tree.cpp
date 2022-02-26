@@ -256,7 +256,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         if (start < midIndex) {
             ROL(midIndex - start, 0, qubitCount);
             bitLenInt result = Compose(toCopy, midIndex);
-            ROR(midIndex - start, 0, qubitCount);
+            Reverse(bdtQubitCount, qubitCount);
 
             return result;
         }
@@ -264,7 +264,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         if (midIndex < start) {
             ROR(start - midIndex, 0, qubitCount);
             bitLenInt result = Compose(toCopy, midIndex);
-            ROL(start - midIndex, 0, qubitCount);
+            Reverse(bdtQubitCount, qubitCount);
 
             return result;
         }
