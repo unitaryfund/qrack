@@ -147,10 +147,7 @@ public:
         // Intentionally left blank.
     }
 
-    virtual QBdtNodeInterfacePtr ShallowClone()
-    {
-        return std::make_shared<QBdtQEngineNode>(scale, qReg ? qReg->Clone() : NULL);
-    }
+    virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQEngineNode>(scale, qReg); }
 
     virtual void PopStateVector(bitLenInt depth = 1U) { Prune(); }
 
