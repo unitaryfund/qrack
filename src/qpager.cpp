@@ -816,17 +816,6 @@ void QPager::ApplyEitherControlledSingleBit(
     }
 }
 
-void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
-    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
-{
-    CombineAndOpControlled(
-        [&](QEnginePtr engine) {
-            engine->UniformlyControlledSingleBit(
-                controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
-        },
-        { qubitIndex }, controls, controlLen);
-}
-
 void QPager::UniformParityRZ(bitCapInt mask, real1_f angle)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->UniformParityRZ(mask, angle); }, { log2(mask) });

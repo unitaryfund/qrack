@@ -182,8 +182,6 @@ public:
     {
         ApplyEitherControlledSingleBit(true, controls, controlLen, target, mtrx);
     }
-    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
-        const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask);
     virtual void UniformParityRZ(bitCapInt mask, real1_f angle);
     virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle);
 

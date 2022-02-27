@@ -454,20 +454,6 @@ public:
     virtual void MACInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
-    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
-        const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
-    {
-        // If there are no controls, this is equivalent to the single bit gate.
-        if (!controlLen) {
-            Mtrx(mtrxs, qubitIndex);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->UniformlyControlledSingleBit(
-            controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
-    }
-
     virtual void UniformParityRZ(bitCapInt mask, real1_f angle)
     {
         SwitchToEngine();

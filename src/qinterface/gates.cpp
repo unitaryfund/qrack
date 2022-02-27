@@ -425,18 +425,21 @@ void QInterface::AntiCIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt targ
 void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
     const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
 {
-    for (bitCapInt lcv = 0; lcv < pow2(controlLen); lcv++) {
-        bitCapInt index = pushApartBits(lcv, mtrxSkipPowers, mtrxSkipLen) | mtrxSkipValueMask;
-        for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
-            if (!((lcv >> bit_pos) & 1)) {
-                X(controls[bit_pos]);
-            }
-        }
-
+    for (bitLenInt bit_pos = 0U; bit_pos < controlLen; bit_pos++) {
+        X(controls[bit_pos]);
+    }
+    const bitCapInt maxI = pow2(controlLen);
+    for (bitCapInt lcv = 0U; lcv < maxI; lcv++) {
+        const bitCapInt index = pushApartBits(lcv, mtrxSkipPowers, mtrxSkipLen) | mtrxSkipValueMask;
         MCMtrx(controls, controlLen, mtrxs + (bitCapIntOcl)(index * 4U), qubitIndex);
 
-        for (bitLenInt bit_pos = 0; bit_pos < controlLen; bit_pos++) {
-            if (!((lcv >> bit_pos) & 1)) {
+        if ((lcv + 1U) == maxI) {
+            continue;
+        }
+
+        const bitCapInt lcvDiff = lcv ^ (lcv + ONE_BCI);
+        for (bitLenInt bit_pos = 0U; bit_pos < controlLen; bit_pos++) {
+            if ((lcvDiff >> bit_pos) & ONE_BCI) {
                 X(controls[bit_pos]);
             }
         }
