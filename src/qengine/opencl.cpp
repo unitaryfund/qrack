@@ -2817,10 +2817,6 @@ QInterfacePtr QEngineOCL::Clone()
 
 QEnginePtr QEngineOCL::CloneEmpty()
 {
-    if (stateBuffer) {
-        return CloneEmpty();
-    }
-
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(1, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
         useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
 
