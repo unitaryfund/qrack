@@ -227,8 +227,6 @@ protected:
         toFree = NULL;
     }
 
-    bool IsIdentity(const complex* mtrx, bool isControlled);
-
     complex GetNonunitaryPhase()
     {
         if (randGlobalPhase) {

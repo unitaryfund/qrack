@@ -45,6 +45,10 @@ void QInterface::SetBit(bitLenInt qubit1, bool value)
 /// Apply a single bit transformation that only effects phase.
 void QInterface::Phase(const complex topLeft, const complex bottomRight, bitLenInt qubitIndex)
 {
+    if ((randGlobalPhase || IS_NORM_0(ONE_CMPLX - topLeft)) && IS_NORM_0(topLeft - bottomRight)) {
+        return;
+    }
+
     const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     Mtrx(mtrx, qubitIndex);
 }
@@ -60,6 +64,10 @@ void QInterface::Invert(const complex topRight, const complex bottomLeft, bitLen
 void QInterface::MCPhase(
     const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
+    if (IS_NORM_0(ONE_CMPLX - topLeft) && IS_NORM_0(ONE_CMPLX - bottomRight)) {
+        return;
+    }
+
     const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     MCMtrx(controls, controlLen, mtrx, target);
 }
@@ -76,6 +84,10 @@ void QInterface::MCInvert(
 void QInterface::MACPhase(
     const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
+    if (IS_NORM_0(ONE_CMPLX - topLeft) && IS_NORM_0(ONE_CMPLX - bottomRight)) {
+        return;
+    }
+
     const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     MACMtrx(controls, controlLen, mtrx, target);
 }

@@ -14,6 +14,29 @@
 
 namespace Qrack {
 
+bool QEngine::IsIdentity(const complex* mtrx, bool isControlled)
+{
+    // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
+    // operator, then we can discard this buffer without applying it.
+    if (!IS_NORM_0(mtrx[1]) || !IS_NORM_0(mtrx[2]) || !IS_SAME(mtrx[0], mtrx[3])) {
+        return false;
+    }
+
+    // Now, we know that mtrx[1] and mtrx[2] are 0 and mtrx[0]==mtrx[3].
+
+    // If the global phase offset has been randomized, we assume that global phase offsets are inconsequential, for
+    // the user's purposes. If the global phase offset has not been randomized, user code might explicitly depend on
+    // the global phase offset.
+
+    if ((isControlled || !randGlobalPhase) && !IS_SAME(ONE_CMPLX, mtrx[0])) {
+        return false;
+    }
+
+    // If we haven't returned false by now, we're buffering an identity operator (exactly or up to an arbitrary global
+    // phase factor).
+    return true;
+}
+
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
 bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
