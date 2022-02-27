@@ -454,6 +454,16 @@ public:
     virtual void MACInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
+    virtual void UniformlyControlledSingleBit(
+        const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const complex* mtrxs)
+    {
+        if (stabilizer) {
+            QInterface::UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs);
+            return;
+        }
+
+        engine->UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs);
+    }
     virtual void UniformParityRZ(bitCapInt mask, real1_f angle)
     {
         SwitchToEngine();
@@ -467,22 +477,38 @@ public:
 
     virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
-        SwitchToEngine();
+        if (stabilizer) {
+            QInterface::CSqrtSwap(controls, controlLen, qubit1, qubit2);
+            return;
+        }
+
         engine->CSqrtSwap(controls, controlLen, qubit1, qubit2);
     }
     virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
-        SwitchToEngine();
+        if (stabilizer) {
+            QInterface::AntiCSqrtSwap(controls, controlLen, qubit1, qubit2);
+            return;
+        }
+
         engine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2);
     }
     virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
-        SwitchToEngine();
+        if (stabilizer) {
+            QInterface::CISqrtSwap(controls, controlLen, qubit1, qubit2);
+            return;
+        }
+
         engine->CISqrtSwap(controls, controlLen, qubit1, qubit2);
     }
     virtual void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
-        SwitchToEngine();
+        if (stabilizer) {
+            QInterface::AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
+            return;
+        }
+
         engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
     }
 
@@ -537,6 +563,33 @@ public:
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
 
 #if ENABLE_ALU
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+    {
+        if (stabilizer) {
+            QInterface::INC(toAdd, start, length);
+            return;
+        }
+
+        engine->INC(toAdd, start, length);
+    }
+    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        if (stabilizer) {
+            QInterface::INCS(toAdd, start, length, overflowIndex);
+            return;
+        }
+
+        engine->INCS(toAdd, start, length, overflowIndex);
+    }
+    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        if (stabilizer) {
+            QInterface::INCDECC(toAdd, start, length, carryIndex);
+            return;
+        }
+
+        engine->INCDECC(toAdd, start, length, carryIndex);
+    }
     virtual void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {

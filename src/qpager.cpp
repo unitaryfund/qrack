@@ -813,63 +813,6 @@ void QPager::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, b
         { log2(mask) }, controls, controlLen);
 }
 
-void QPager::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (controlLen == 0) {
-        SqrtSwap(qubit1, qubit2);
-        return;
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->CSqrtSwap(controls, controlLen, qubit1, qubit2); },
-        { qubit1, qubit2 }, controls, controlLen);
-}
-void QPager::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (controlLen == 0) {
-        SqrtSwap(qubit1, qubit2);
-        return;
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2); },
-        { qubit1, qubit2 }, controls, controlLen);
-}
-void QPager::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (controlLen == 0) {
-        ISqrtSwap(qubit1, qubit2);
-        return;
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->CISqrtSwap(controls, controlLen, qubit1, qubit2); },
-        { qubit1, qubit2 }, controls, controlLen);
-}
-void QPager::AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (controlLen == 0) {
-        ISqrtSwap(qubit1, qubit2);
-        return;
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2); },
-        { qubit1, qubit2 }, controls, controlLen);
-}
-
 void QPager::XMask(bitCapInt mask)
 {
     const bitCapInt pageMask = pageMaxQPower() - ONE_BCI;

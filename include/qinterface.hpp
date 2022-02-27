@@ -551,23 +551,22 @@ public:
     /**
      * Apply a square root of swap with arbitrary control bits.
      */
-    virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2) = 0;
+    virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply a square root of swap with arbitrary (anti) control bits.
      */
-    virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2) = 0;
+    virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply an inverse square root of swap with arbitrary control bits.
      */
-    virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2) = 0;
+    virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply an inverse square root of swap with arbitrary (anti) control bits.
      */
-    virtual void AntiCISqrtSwap(
-        const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2) = 0;
+    virtual void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Doubly-controlled NOT gate

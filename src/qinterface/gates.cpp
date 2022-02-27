@@ -631,6 +631,127 @@ void QInterface::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitL
     }
 }
 
+void QInterface::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+{
+    if (!controlLen) {
+        SqrtSwap(q1, q2);
+        return;
+    }
+
+    if (q1 == q2) {
+        return;
+    }
+
+    // https://quantumcomputing.stackexchange.com/questions/2228/how-to-implement-the-square-root-of-swap-gate-on-the-ibm-q-composer
+    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
+    std::copy(controls, controls + controlLen, lControls.get());
+    lControls[controlLen] = q1;
+
+    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+
+    const complex had[4] = { C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
+    MCMtrx(lControls.get(), controlLen, had, q1);
+
+    const complex it[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::sqrt(-I_CMPLX) };
+    MCMtrx(lControls.get(), controlLen, it, q2);
+
+    const complex t[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::sqrt(I_CMPLX) };
+    MCMtrx(lControls.get(), controlLen, t, q1);
+
+    MCMtrx(lControls.get(), controlLen, had, q2);
+
+    MCMtrx(lControls.get(), controlLen, had, q1);
+
+    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+
+    MCMtrx(lControls.get(), controlLen, had, q1);
+
+    MCMtrx(lControls.get(), controlLen, had, q2);
+
+    MCMtrx(lControls.get(), controlLen, it, q1);
+
+    MCMtrx(lControls.get(), controlLen, had, q1);
+
+    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+
+    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    MCMtrx(lControls.get(), controlLen, is, q1);
+
+    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    MCMtrx(lControls.get(), controlLen, s, q2);
+}
+
+void QInterface::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+{
+    if (q1 == q2) {
+        return;
+    }
+
+    // https://quantumcomputing.stackexchange.com/questions/2228/how-to-implement-the-square-root-of-swap-gate-on-the-ibm-q-composer
+    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
+    std::copy(controls, controls + controlLen, lControls.get());
+    lControls[controlLen] = q1;
+
+    const complex is[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -I_CMPLX };
+    MCMtrx(lControls.get(), controlLen, is, q2);
+
+    const complex s[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, I_CMPLX };
+    MCMtrx(lControls.get(), controlLen, s, q1);
+
+    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+
+    const complex had[4] = { C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
+    MCMtrx(lControls.get(), controlLen, had, q1);
+
+    const complex t[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::sqrt(I_CMPLX) };
+    MCMtrx(lControls.get(), controlLen, t, q1);
+
+    MCMtrx(lControls.get(), controlLen, had, q2);
+
+    MCMtrx(lControls.get(), controlLen, had, q1);
+
+    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+
+    MCMtrx(lControls.get(), controlLen, had, q1);
+
+    MCMtrx(lControls.get(), controlLen, had, q2);
+
+    const complex it[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::sqrt(-I_CMPLX) };
+    MCMtrx(lControls.get(), controlLen, it, q1);
+
+    MCMtrx(lControls.get(), controlLen, t, q2);
+
+    MCMtrx(lControls.get(), controlLen, had, q1);
+
+    MCInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
+}
+
+void QInterface::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+{
+    for (bitLenInt i = 0U; i < controlLen; i++) {
+        X(controls[i]);
+    }
+
+    CSqrtSwap(controls, controlLen, q1, q2);
+
+    for (bitLenInt i = 0U; i < controlLen; i++) {
+        X(controls[i]);
+    }
+}
+
+void QInterface::AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
+{
+    for (bitLenInt i = 0U; i < controlLen; i++) {
+        X(controls[i]);
+    }
+
+    CISqrtSwap(controls, controlLen, q1, q2);
+
+    for (bitLenInt i = 0U; i < controlLen; i++) {
+        X(controls[i]);
+    }
+}
+
 void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
 {
     if (!mask) {
