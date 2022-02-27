@@ -2796,7 +2796,7 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 
 QInterfacePtr QEngineOCL::Clone()
 {
-    if (stateBuffer) {
+    if (!stateBuffer) {
         return CloneEmpty();
     }
 
@@ -2817,8 +2817,12 @@ QInterfacePtr QEngineOCL::Clone()
 
 QEnginePtr QEngineOCL::CloneEmpty()
 {
-    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(1, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-        useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
+    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
+
+    copyPtr->clFinish();
+    clFinish();
+    copyPtr->runningNorm = ZERO_R1;
 
     copyPtr->ZeroAmplitudes();
     copyPtr->SetQubitCount(qubitCount);
