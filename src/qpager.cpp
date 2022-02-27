@@ -537,28 +537,6 @@ bitLenInt QPager::Compose(QPagerPtr toCopy)
     return toRet;
 }
 
-bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
-{
-    if (start == qubitCount) {
-        return Compose(toCopy);
-    }
-
-    if ((qubitCount + toCopy->qubitCount) > maxQubits) {
-        throw std::invalid_argument(
-            "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
-    }
-
-    // TODO: Avoid CombineEngines();
-    CombineEngines();
-    toCopy->CombineEngines();
-
-    qPages[0]->Compose(toCopy->qPages[0]);
-
-    SetQubitCount(qubitCount + toCopy->qubitCount);
-
-    return start;
-}
-
 void QPager::Decompose(bitLenInt start, QPagerPtr dest)
 {
     const bitLenInt length = dest->qubitCount;
