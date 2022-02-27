@@ -2796,16 +2796,17 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 
 QInterfacePtr QEngineOCL::Clone()
 {
-    if (!stateBuffer) {
-        return CloneEmpty();
-    }
-
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
 
     copyPtr->clFinish();
     clFinish();
     copyPtr->runningNorm = runningNorm;
+
+    if (!stateBuffer) {
+        copyPtr->ZeroAmplitudes();
+        return copyPtr;
+    }
 
     EventVecPtr waitVec = ResetWaitEvents();
     cl_int error;
@@ -2825,7 +2826,6 @@ QEnginePtr QEngineOCL::CloneEmpty()
     copyPtr->runningNorm = ZERO_R1;
 
     copyPtr->ZeroAmplitudes();
-    copyPtr->SetQubitCount(qubitCount);
 
     return copyPtr;
 }
