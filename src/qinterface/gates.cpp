@@ -652,10 +652,10 @@ void QInterface::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitL
     const complex had[4] = { C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
     MCMtrx(lControls.get(), controlLen, had, q1);
 
-    const complex it[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::sqrt(-I_CMPLX) };
+    const complex it[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_N_I };
     MCMtrx(lControls.get(), controlLen, it, q2);
 
-    const complex t[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::sqrt(I_CMPLX) };
+    const complex t[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_I };
     MCMtrx(lControls.get(), controlLen, t, q1);
 
     MCMtrx(lControls.get(), controlLen, had, q2);
@@ -703,7 +703,7 @@ void QInterface::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bit
     const complex had[4] = { C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
     MCMtrx(lControls.get(), controlLen, had, q1);
 
-    const complex t[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::sqrt(I_CMPLX) };
+    const complex t[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_I };
     MCMtrx(lControls.get(), controlLen, t, q1);
 
     MCMtrx(lControls.get(), controlLen, had, q2);
@@ -716,7 +716,7 @@ void QInterface::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bit
 
     MCMtrx(lControls.get(), controlLen, had, q2);
 
-    const complex it[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, std::sqrt(-I_CMPLX) };
+    const complex it[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, C_SQRT_N_I };
     MCMtrx(lControls.get(), controlLen, it, q1);
 
     MCMtrx(lControls.get(), controlLen, t, q2);
