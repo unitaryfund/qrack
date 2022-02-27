@@ -813,34 +813,6 @@ void QPager::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, b
         { log2(mask) }, controls, controlLen);
 }
 
-void QPager::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (controlLen == 0) {
-        Swap(qubit1, qubit2);
-        return;
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->CSwap(controls, controlLen, qubit1, qubit2); },
-        { qubit1, qubit2 }, controls, controlLen);
-}
-void QPager::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (controlLen == 0) {
-        Swap(qubit1, qubit2);
-        return;
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCSwap(controls, controlLen, qubit1, qubit2); },
-        { qubit1, qubit2 }, controls, controlLen);
-}
 void QPager::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
 {
     if (controlLen == 0) {

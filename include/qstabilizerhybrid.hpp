@@ -459,43 +459,12 @@ public:
         SwitchToEngine();
         engine->UniformParityRZ(mask, angle);
     }
-
     virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
     {
         SwitchToEngine();
         engine->CUniformParityRZ(controls, controlLen, mask, angle);
     }
 
-    virtual void CSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
-    {
-        std::vector<bitLenInt> controls;
-        if (TrimControls(lControls, lControlLen, controls)) {
-            return;
-        }
-
-        if (!controls.size()) {
-            Swap(qubit1, qubit2);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->CSwap(lControls, lControlLen, qubit1, qubit2);
-    }
-    virtual void AntiCSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
-    {
-        std::vector<bitLenInt> controls;
-        if (TrimControls(lControls, lControlLen, controls, true)) {
-            return;
-        }
-
-        if (!controls.size()) {
-            Swap(qubit1, qubit2);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->AntiCSwap(lControls, lControlLen, qubit1, qubit2);
-    }
     virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         SwitchToEngine();

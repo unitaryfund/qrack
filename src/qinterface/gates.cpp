@@ -596,6 +596,11 @@ void QInterface::ISqrtSwap(bitLenInt q1, bitLenInt q2)
 
 void QInterface::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
 {
+    if (!controlLen) {
+        Swap(q1, q2);
+        return;
+    }
+
     if (q1 == q2) {
         return;
     }
@@ -615,27 +620,15 @@ void QInterface::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenIn
 
 void QInterface::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
 {
-    if (q1 == q2) {
-        return;
+    for (bitLenInt i = 0U; i < controlLen; i++) {
+        X(controls[i]);
     }
 
-    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]());
-    std::copy(controls, controls + controlLen, lControls.get());
+    CSwap(controls, controlLen, q1, q2);
 
-    lControls[controlLen] = q1;
-    X(q1);
-    MACInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
-    X(q1);
-
-    lControls[controlLen] = q2;
-    X(q2);
-    MACInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q1);
-    X(q2);
-
-    lControls[controlLen] = q1;
-    X(q1);
-    MACInvert(lControls.get(), controlLen + 1U, ONE_CMPLX, ONE_CMPLX, q2);
-    X(q1);
+    for (bitLenInt i = 0U; i < controlLen; i++) {
+        X(controls[i]);
+    }
 }
 
 void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
