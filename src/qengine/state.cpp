@@ -58,10 +58,11 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
 #endif
 
-    stateVec = AllocStateVec(maxQPowerOcl);
     if (!qubitCount) {
+        ZeroAmplitudes();
         return;
     }
+    stateVec = AllocStateVec(maxQPowerOcl);
     stateVec->clear();
 
     if (phaseFac == CMPLX_DEFAULT_ARG) {

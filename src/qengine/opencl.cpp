@@ -91,6 +91,8 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     clFinish();
     if (qubitCount) {
         SetPermutation(initState, phaseFac);
+    } else {
+        ZeroAmplitudes();
     }
 }
 
@@ -2818,14 +2820,10 @@ QInterfacePtr QEngineOCL::Clone()
 
 QEnginePtr QEngineOCL::CloneEmpty()
 {
-    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(1U, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(0, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
         useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
 
     copyPtr->clFinish();
-    clFinish();
-    copyPtr->runningNorm = ZERO_R1;
-
-    copyPtr->ZeroAmplitudes();
     copyPtr->SetQubitCount(qubitCount);
 
     return copyPtr;
