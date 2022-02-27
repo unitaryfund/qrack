@@ -566,11 +566,15 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
 
 void QPager::Dispose(bitLenInt start, bitLenInt length)
 {
-    if (start == 0) {
+    if (!start || (start == 1U)) {
         CombineEngines(length + 1U);
     } else {
-        CombineEngines(start + length);
+        ROR(start, 0, qubitCount);
+        Dispose(0, length);
+        ROL(start, 0, qubitCount);
+        return;
     }
+
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         qPages[i]->Dispose(start, length);
     }
@@ -581,11 +585,15 @@ void QPager::Dispose(bitLenInt start, bitLenInt length)
 
 void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
-    if (start == 0) {
+    if (!start || (start == 1U)) {
         CombineEngines(length + 1U);
     } else {
-        CombineEngines(start + length);
+        ROR(start, 0, qubitCount);
+        Dispose(0, length, disposedPerm);
+        ROL(start, 0, qubitCount);
+        return;
     }
+
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         qPages[i]->Dispose(start, length, disposedPerm);
     }
