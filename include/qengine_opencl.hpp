@@ -279,6 +279,15 @@ public:
         runningNorm = src->GetRunningNorm();
     }
 
+    virtual real1_f FirstNonzeroPhase()
+    {
+        if (!stateBuffer) {
+            return ZERO_R1;
+        }
+
+        return QInterface::FirstNonzeroPhase();
+    }
+
     virtual void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
     virtual void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
     virtual void SetAmplitudePage(

@@ -75,6 +75,15 @@ public:
 #endif
     }
 
+    virtual real1_f FirstNonzeroPhase()
+    {
+        if (!stateVec) {
+            return ZERO_R1;
+        }
+
+        return QInterface::FirstNonzeroPhase();
+    }
+
     virtual void ZeroAmplitudes()
     {
         Dump();
