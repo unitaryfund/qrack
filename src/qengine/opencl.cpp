@@ -1128,6 +1128,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
 {
     if (!qubitCount) {
         SetQubitCount(toCopy->qubitCount);
+        toCopy->clFinish();
         if (toCopy->stateBuffer) {
             stateVec = AllocStateVec(toCopy->maxQPowerOcl);
             stateBuffer = MakeStateVecBuffer(stateVec);

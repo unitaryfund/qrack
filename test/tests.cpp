@@ -2797,30 +2797,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose_perm")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
 {
-    QInterfacePtr qftReg2;
-    if (testEngineType == QINTERFACE_BDT) {
-        qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 2, 0x03, rng);
-        std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(std::dynamic_pointer_cast<QEngine>(
-            CreateQuantumInterface({ testSubEngineType, testSubSubEngineType }, 2, 0x02, rng)));
-        qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng);
-    } else {
-        qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
-        qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng);
-    }
+    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
+    QInterfacePtr qftReg2 =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng);
     qftReg->Compose(qftReg2);
-    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
-
-    qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 5, 0x00, rng);
-    qftReg->Decompose(0, qftReg2);
-    qftReg->Compose(qftReg2, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 
     // Try across device/heap allocation case:
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
     qftReg2 = CreateQuantumInterface(
         { testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng, ONE_CMPLX, false, true, true);
-    qftReg2->Compose(qftReg, 0);
-    REQUIRE_THAT(qftReg2, HasProbability(0, 8, 0x2b));
+    qftReg->Compose(qftReg2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_trydecompose")
