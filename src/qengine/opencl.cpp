@@ -1129,8 +1129,10 @@ void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
 void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy)
 {
     if (!qubitCount) {
+        clFinish();
         SetQubitCount(toCopy->qubitCount);
         toCopy->clFinish();
+        runningNorm = toCopy->runningNorm;
         if (toCopy->stateBuffer) {
             stateVec = AllocStateVec(toCopy->maxQPowerOcl);
             stateBuffer = MakeStateVecBuffer(stateVec);
@@ -1145,6 +1147,10 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
             copyEvent.wait();
         }
 
+        return;
+    }
+
+    if (!toCopy->qubitCount) {
         return;
     }
 
@@ -2820,10 +2826,11 @@ QInterfacePtr QEngineOCL::Clone()
 
 QEnginePtr QEngineOCL::CloneEmpty()
 {
-    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(0, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(1, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
         useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
 
     copyPtr->clFinish();
+    copyPtr->ZeroAmplitudes();
     copyPtr->SetQubitCount(qubitCount);
 
     return copyPtr;

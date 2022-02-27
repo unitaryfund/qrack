@@ -756,13 +756,20 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
 
     if (!qubitCount) {
+        Finish();
+        SetQubitCount(toCopy->qubitCount);
+        toCopy->Finish();
+        runningNorm = toCopy->runningNorm;
         if (toCopy->stateVec) {
             stateVec = AllocStateVec(toCopy->maxQPowerOcl);
             stateVec->copy(toCopy->stateVec);
         }
-        SetQubitCount(toCopy->qubitCount);
 
         return 0;
+    }
+
+    if (!toCopy->qubitCount) {
+        return qubitCount;
     }
 
     if (!stateVec || !toCopy->stateVec) {
@@ -816,6 +823,10 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
     if (!qubitCount) {
         Compose(toCopy);
         return 0;
+    }
+
+    if (!toCopy->qubitCount) {
+        return qubitCount;
     }
 
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
