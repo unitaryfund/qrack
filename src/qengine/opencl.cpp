@@ -610,7 +610,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
 
     ClearBuffer(stateBuffer, 0, maxQPowerOcl);
 
-    // If "permutationAmp" amp is in (read-only) use, this method complicates supersedes that application anyway.
+    // If "permutationAmp" amp is in (read-only) use, this method completely supersedes that application anyway.
 
     if (phaseFac == CMPLX_DEFAULT_ARG) {
         permutationAmp = GetNonunitaryPhase();
@@ -2796,17 +2796,16 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 
 QInterfacePtr QEngineOCL::Clone()
 {
+    if (!stateBuffer) {
+        return CloneEmpty();
+    }
+
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
 
     copyPtr->clFinish();
     clFinish();
     copyPtr->runningNorm = runningNorm;
-
-    if (!stateBuffer) {
-        copyPtr->ZeroAmplitudes();
-        return copyPtr;
-    }
 
     EventVecPtr waitVec = ResetWaitEvents();
     cl_int error;
@@ -2818,14 +2817,15 @@ QInterfacePtr QEngineOCL::Clone()
 
 QEnginePtr QEngineOCL::CloneEmpty()
 {
-    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
+    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(1U, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+        useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
 
     copyPtr->clFinish();
     clFinish();
     copyPtr->runningNorm = ZERO_R1;
 
     copyPtr->ZeroAmplitudes();
+    copyPtr->SetQubitCount(qubitCount);
 
     return copyPtr;
 }
