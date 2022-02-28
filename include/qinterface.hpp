@@ -2468,10 +2468,6 @@ public:
             perm++;
         } while ((norm(amp) <= FP_NORM_EPSILON) && (perm < maxQPower));
 
-        if (perm >= maxQPower) {
-            return ZERO_R1;
-        }
-
         return (real1_f)std::arg(amp);
     }
 
