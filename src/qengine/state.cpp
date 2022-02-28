@@ -340,7 +340,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             rngNrm.reset();
             runningNorm = rNrm;
 
-            if (runningNorm == ZERO_R1) {
+            if (runningNorm <= FP_NORM_EPSILON) {
                 ZeroAmplitudes();
             }
         });
@@ -508,7 +508,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             rngNrm.reset();
             runningNorm = rNrm;
 
-            if (runningNorm == ZERO_R1) {
+            if (runningNorm <= FP_NORM_EPSILON) {
                 ZeroAmplitudes();
             }
         });
@@ -1503,7 +1503,7 @@ void QEngineCPU::UpdateRunningNorm(real1_f norm_thresh)
     }
     runningNorm = par_norm(maxQPowerOcl, stateVec, norm_thresh);
 
-    if (runningNorm == ZERO_R1) {
+    if (runningNorm <= FP_NORM_EPSILON) {
         ZeroAmplitudes();
     }
 }
