@@ -316,8 +316,8 @@ public:
      */
     virtual void SetAmplitude(bitCapInt perm, complex amp) = 0;
 
-    /** Set to a specific permutation */
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG) = 0;
+    /** Set to a specific permutation of all qubits */
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     /**
      * Combine another QInterface with this one, after the last bit index of

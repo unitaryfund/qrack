@@ -91,6 +91,17 @@ QInterface::QInterface(
     SetConcurrencyLevel(std::thread::hardware_concurrency());
 }
 
+/// Set to a specific permutation of all qubits
+void QInterface::SetPermutation(bitCapInt perm, complex ignored)
+{
+    const bitCapInt measured = MAll();
+    for (bitLenInt i = 0U; i < qubitCount; i++) {
+        if (((perm ^ measured) >> i) & ONE_BCI) {
+            X(i);
+        }
+    }
+}
+
 /// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
 void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
 {
