@@ -2238,7 +2238,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbAll(bitCapInt fullRegister) = 0;
+    virtual real1_f ProbAll(bitCapInt fullRegister) { return clampProb(norm(GetAmplitude(fullRegister))); }
 
     /**
      * Direct measure of register permutation probability

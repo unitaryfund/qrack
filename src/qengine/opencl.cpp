@@ -436,24 +436,6 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 }
 
-real1_f QEngineOCL::ProbAll(bitCapInt fullRegister)
-{
-    if (doNormalize) {
-        NormalizeState();
-    }
-
-    if (!stateBuffer) {
-        return ZERO_R1;
-    }
-
-    complex amp;
-    EventVecPtr waitVec = ResetWaitEvents();
-    queue.enqueueReadBuffer(
-        *stateBuffer, CL_TRUE, sizeof(complex) * (bitCapIntOcl)fullRegister, sizeof(complex), &amp, waitVec.get());
-    wait_refs.clear();
-    return clampProb(norm(amp));
-}
-
 void QEngineOCL::SetDevice(int dID, bool forceReInit)
 {
     if (!(OCLEngine::Instance().GetDeviceCount())) {

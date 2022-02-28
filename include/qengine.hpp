@@ -136,6 +136,7 @@ public:
     using QInterface::FSim;
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
+    virtual real1_f ProbAll(bitCapInt fullRegister);
     virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation) = 0;
     virtual void ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray);
     virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation) = 0;

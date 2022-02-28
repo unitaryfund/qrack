@@ -1170,21 +1170,6 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
     return clampProb(oneChance);
 }
 
-/// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
-real1_f QEngineCPU::ProbAll(bitCapInt fullRegister)
-{
-    if (doNormalize) {
-        NormalizeState();
-    }
-    Finish();
-
-    if (!stateVec) {
-        return ZERO_R1;
-    }
-
-    return norm(stateVec->read((bitCapIntOcl)fullRegister));
-}
-
 // Returns probability of permutation of the register
 real1_f QEngineCPU::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
 {

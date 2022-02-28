@@ -37,6 +37,16 @@ bool QEngine::IsIdentity(const complex* mtrx, bool isControlled)
     return true;
 }
 
+/// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
+real1_f QEngine::ProbAll(bitCapInt fullRegister)
+{
+    if (doNormalize) {
+        NormalizeState();
+    }
+
+    return clampProb(norm(GetAmplitude(fullRegister)));
+}
+
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
 bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
