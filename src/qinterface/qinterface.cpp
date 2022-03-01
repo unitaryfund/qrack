@@ -188,7 +188,7 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
     // First, single bit operations are better optimized for this special case:
     if (length == 1) {
-        SetBit(start, (value & 1));
+        SetBit(start, (bool)(value & 1));
         return;
     }
 
