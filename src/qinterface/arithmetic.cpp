@@ -382,7 +382,7 @@ void QInterface::CIFullAdd(const bitLenInt* controlBits, bitLenInt controlLen, b
 
 void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
 {
-    if (length == 0) {
+    if (!length) {
         return;
     }
 
@@ -403,7 +403,7 @@ void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLe
 
 void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLenInt length, bitLenInt carry)
 {
-    if (length == 0) {
+    if (!length) {
         return;
     }
 
@@ -425,7 +425,7 @@ void QInterface::IADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitL
 void QInterface::CADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
     bitLenInt output, bitLenInt length, bitLenInt carry)
 {
-    if (length == 0) {
+    if (!length) {
         return;
     }
 
@@ -447,7 +447,7 @@ void QInterface::CADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt
 void QInterface::CIADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt input1, bitLenInt input2,
     bitLenInt output, bitLenInt length, bitLenInt carry)
 {
-    if (length == 0) {
+    if (!length) {
         return;
     }
 

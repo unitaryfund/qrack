@@ -91,16 +91,27 @@ QInterface::QInterface(
     SetConcurrencyLevel(std::thread::hardware_concurrency());
 }
 
+/// Set to a specific permutation of all qubits
+void QInterface::SetPermutation(bitCapInt perm, complex ignored)
+{
+    const bitCapInt measured = MAll();
+    for (bitLenInt i = 0U; i < qubitCount; i++) {
+        if (((perm ^ measured) >> i) & ONE_BCI) {
+            X(i);
+        }
+    }
+}
+
 /// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
 void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
 {
-    if (length == 0) {
+    if (!length) {
         return;
     }
 
-    bitLenInt end = start + (length - 1U);
+    const bitLenInt end = start + (length - 1U);
     for (bitLenInt i = 0; i < length; i++) {
-        bitLenInt hBit = end - i;
+        const bitLenInt hBit = end - i;
         for (bitLenInt j = 0; j < i; j++) {
             bitLenInt c = hBit;
             bitLenInt t = hBit + 1U + j;
@@ -116,14 +127,14 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
 /// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
 void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
 {
-    if (length == 0) {
+    if (!length) {
         return;
     }
 
     for (bitLenInt i = 0; i < length; i++) {
         for (bitLenInt j = 0; j < i; j++) {
-            bitLenInt c = (start + i) - (j + 1U);
-            bitLenInt t = start + i;
+            const bitLenInt c = (start + i) - (j + 1U);
+            const bitLenInt t = start + i;
             CIPhaseRootN(j + 2U, c, t);
             if (trySeparate) {
                 TrySeparate(c, t);
@@ -136,11 +147,11 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
 /// Quantum Fourier Transform - Optimized for going from |0>/|1> to |+>/|-> basis
 void QInterface::QFTR(const bitLenInt* qubits, bitLenInt length, bool trySeparate)
 {
-    if (length == 0) {
+    if (!length) {
         return;
     }
 
-    bitLenInt end = (length - 1U);
+    const bitLenInt end = (length - 1U);
     for (bitLenInt i = 0; i < length; i++) {
         H(qubits[end - i]);
         for (bitLenInt j = 0; j < (bitLenInt)((length - 1U) - i); j++) {
@@ -156,7 +167,7 @@ void QInterface::QFTR(const bitLenInt* qubits, bitLenInt length, bool trySeparat
 /// Inverse Quantum Fourier Transform - Quantum Fourier transform optimized for going from |+>/|-> to |0>/|1> basis
 void QInterface::IQFTR(const bitLenInt* qubits, bitLenInt length, bool trySeparate)
 {
-    if (length == 0) {
+    if (!length) {
         return;
     }
 
@@ -177,15 +188,20 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 {
     // First, single bit operations are better optimized for this special case:
     if (length == 1) {
-        SetBit(start, (value == 1));
-    } else if ((start == 0) && (length == qubitCount)) {
+        SetBit(start, (value & 1));
+        return;
+    }
+
+    if (!start && (length == qubitCount)) {
         SetPermutation(value);
-    } else {
-        bitCapInt regVal = MReg(start, length);
-        for (bitLenInt i = 0; i < length; i++) {
-            bool bitVal = (bitCapIntOcl)bitSlice(i, regVal);
-            if ((bitVal && !bitSlice(i, value)) || (!bitVal && bitSlice(i, value)))
-                X(start + i);
+        return;
+    }
+
+    const bitCapInt regVal = MReg(start, length);
+    for (bitLenInt i = 0; i < length; i++) {
+        const bool bitVal = (bitCapIntOcl)bitSlice(i, regVal);
+        if (bitVal == !bitSlice(i, value)) {
+            X(start + i);
         }
     }
 }
@@ -195,7 +211,7 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
 {
     bitCapInt res = 0;
     for (bitLenInt bit = 0; bit < length; bit++) {
-        bitCapInt power = pow2(bit);
+        const bitCapInt power = pow2(bit);
         res |= ForceM(start + bit, (bool)(power & result), doForce, doApply) ? power : 0;
     }
     return res;
@@ -205,23 +221,27 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
 bitCapInt QInterface::ForceM(const bitLenInt* bits, bitLenInt length, const bool* values, bool doApply)
 {
     bitCapInt result = 0;
-    if (values == NULL) {
-        if (doApply) {
-            for (bitLenInt bit = 0; bit < length; bit++) {
-                result |= M(bits[bit]) ? pow2(bits[bit]) : 0;
-            }
-        } else {
-            std::vector<bitCapInt> qPowers(length);
-            for (bitLenInt bit = 0; bit < length; bit++) {
-                qPowers[bit] = pow2(bits[bit]);
-            }
-            result = MultiShotMeasureMask(&(qPowers[0]), qPowers.size(), 1).begin()->first;
-        }
-    } else {
+
+    if (values) {
         for (bitLenInt bit = 0; bit < length; bit++) {
             result |= ForceM(bits[bit], values[bit], true, doApply) ? pow2(bits[bit]) : 0;
         }
+        return result;
     }
+
+    if (doApply) {
+        for (bitLenInt bit = 0; bit < length; bit++) {
+            result |= M(bits[bit]) ? pow2(bits[bit]) : 0;
+        }
+        return result;
+    }
+
+    std::vector<bitCapInt> qPowers(length);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        qPowers[bit] = pow2(bits[bit]);
+    }
+    result = MultiShotMeasureMask(&(qPowers[0]), qPowers.size(), 1).begin()->first;
+
     return result;
 }
 
@@ -236,6 +256,7 @@ real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
             prob *= (ONE_R1 - Prob(start + i));
         }
     }
+
     return prob;
 }
 
@@ -255,13 +276,19 @@ real1_f QInterface::ProbMask(bitCapInt mask, bitCapInt permutation)
 /// "Circular shift right" - (Uses swap-based algorithm for speed)
 void QInterface::ROL(bitLenInt shift, bitLenInt start, bitLenInt length)
 {
-    shift %= length;
-    if ((length > 0) && (shift > 0)) {
-        bitLenInt end = start + length;
-        Reverse(start, end);
-        Reverse(start, start + shift);
-        Reverse(start + shift, end);
+    if (!length) {
+        return;
     }
+
+    shift %= length;
+    if (!shift) {
+        return;
+    }
+
+    const bitLenInt end = start + length;
+    Reverse(start, end);
+    Reverse(start, start + shift);
+    Reverse(start + shift, end);
 }
 
 /// "Circular shift right" - shift bits right, and carry first bits.
@@ -275,7 +302,7 @@ bitLenInt QInterface::Compose(QInterfacePtr toCopy, bitLenInt start)
 
     const bitLenInt origSize = qubitCount;
     ROL(origSize - start, 0, qubitCount);
-    bitLenInt result = Compose(toCopy);
+    const bitLenInt result = Compose(toCopy);
     ROR(origSize - start, 0, qubitCount);
 
     return result;
@@ -570,7 +597,7 @@ bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error
 {
     Finish();
 
-    bool tempDoNorm = doNormalize;
+    const bool tempDoNorm = doNormalize;
     doNormalize = false;
     QInterfacePtr unitCopy = Clone();
     doNormalize = tempDoNorm;
@@ -578,7 +605,7 @@ bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error
     unitCopy->Decompose(start, dest);
     unitCopy->Compose(dest, start);
 
-    bool didSeparate = ApproxCompare(unitCopy, error_tol);
+    const bool didSeparate = ApproxCompare(unitCopy, error_tol);
 
     if (didSeparate) {
         // The subsystem is separable.
@@ -852,7 +879,7 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
 /// Apply controlled "PhaseRootN" gate to each bit
 void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    if (n == 0) {
+    if (!n) {
         return;
     }
     if (n == 1) {
@@ -868,7 +895,7 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, b
 /// Apply controlled IT gate to each bit
 void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    if (n == 0) {
+    if (!n) {
         return;
     }
     if (n == 1) {

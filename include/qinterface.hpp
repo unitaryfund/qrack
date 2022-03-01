@@ -227,8 +227,6 @@ protected:
         toFree = NULL;
     }
 
-    bool IsIdentity(const complex* mtrx, bool isControlled);
-
     complex GetNonunitaryPhase()
     {
         if (randGlobalPhase) {
@@ -318,8 +316,8 @@ public:
      */
     virtual void SetAmplitude(bitCapInt perm, complex amp) = 0;
 
-    /** Set to a specific permutation */
-    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG) = 0;
+    /** Set to a specific permutation of all qubits */
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     /**
      * Combine another QInterface with this one, after the last bit index of
@@ -551,23 +549,22 @@ public:
     /**
      * Apply a square root of swap with arbitrary control bits.
      */
-    virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2) = 0;
+    virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply a square root of swap with arbitrary (anti) control bits.
      */
-    virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2) = 0;
+    virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply an inverse square root of swap with arbitrary control bits.
      */
-    virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2) = 0;
+    virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Apply an inverse square root of swap with arbitrary (anti) control bits.
      */
-    virtual void AntiCISqrtSwap(
-        const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2) = 0;
+    virtual void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
     /**
      * Doubly-controlled NOT gate
@@ -2241,7 +2238,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbAll(bitCapInt fullRegister) = 0;
+    virtual real1_f ProbAll(bitCapInt fullRegister) { return clampProb(norm(GetAmplitude(fullRegister))); }
 
     /**
      * Direct measure of register permutation probability
@@ -2470,10 +2467,6 @@ public:
             amp = GetAmplitude(perm);
             perm++;
         } while ((norm(amp) <= FP_NORM_EPSILON) && (perm < maxQPower));
-
-        if (perm >= maxQPower) {
-            return ZERO_R1;
-        }
 
         return (real1_f)std::arg(amp);
     }

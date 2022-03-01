@@ -75,6 +75,15 @@ public:
 #endif
     }
 
+    virtual real1_f FirstNonzeroPhase()
+    {
+        if (!stateVec) {
+            return ZERO_R1;
+        }
+
+        return QInterface::FirstNonzeroPhase();
+    }
+
     virtual void ZeroAmplitudes()
     {
         Dump();
@@ -296,7 +305,6 @@ public:
      */
 
     virtual real1_f Prob(bitLenInt qubitIndex);
-    virtual real1_f ProbAll(bitCapInt fullRegister);
     virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation);
     virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
     virtual real1_f ProbParity(bitCapInt mask);

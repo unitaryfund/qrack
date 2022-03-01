@@ -1786,24 +1786,8 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt co
 void QUnit::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
 {
     std::vector<bitLenInt> controls;
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        QEngineShard& shard = shards[cControls[i]];
-
-        if (!CACHED_Z(shard)) {
-            // Control becomes entangled
-            controls.push_back(cControls[i]);
-            continue;
-        }
-
-        if (IS_AMP_0(shard.amp1)) {
-            // Gate does nothing
-            return;
-        }
-
-        if (!IS_AMP_0(shard.amp0)) {
-            // Control becomes entangled
-            controls.push_back(cControls[i]);
-        }
+    if (TrimControls(cControls, controlLen, controls, false)) {
+        return;
     }
 
     bitCapInt nV = mask;

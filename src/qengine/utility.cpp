@@ -35,7 +35,7 @@ QInterfacePtr QEngineCPU::Clone()
 QEnginePtr QEngineCPU::CloneEmpty()
 {
     QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(
-        CreateQuantumInterface(QINTERFACE_CPU, 1, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
+        CreateQuantumInterface(QINTERFACE_CPU, 0, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
             (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
 
     clone->ZeroAmplitudes();

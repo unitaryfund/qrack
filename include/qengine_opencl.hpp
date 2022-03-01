@@ -279,6 +279,15 @@ public:
         runningNorm = src->GetRunningNorm();
     }
 
+    virtual real1_f FirstNonzeroPhase()
+    {
+        if (!stateBuffer) {
+            return ZERO_R1;
+        }
+
+        return QInterface::FirstNonzeroPhase();
+    }
+
     virtual void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
     virtual void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
     virtual void SetAmplitudePage(
@@ -308,7 +317,6 @@ public:
     bitCapIntOcl GetMaxSize() { return maxAlloc / sizeof(complex); };
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
-    virtual real1_f ProbAll(bitCapInt fullRegister);
 
     virtual void UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
         const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask);

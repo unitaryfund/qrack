@@ -52,26 +52,26 @@ void QInterface::AntiCU(
 /// "Azimuth, Inclination"
 void QInterface::AI(bitLenInt target, real1_f azimuth, real1_f inclination)
 {
-    real1 cosineA = (real1)cos(azimuth);
-    real1 sineA = (real1)sin(azimuth);
-    real1 cosineI = (real1)cos(inclination / 2);
-    real1 sineI = (real1)sin(inclination / 2);
-    complex expA = complex(cosineA, sineA);
-    complex expNegA = complex(cosineA, -sineA);
-    complex mtrx[4] = { cosineI, -expNegA * sineI, expA * sineI, cosineI };
+    const real1 cosineA = (real1)cos(azimuth);
+    const real1 sineA = (real1)sin(azimuth);
+    const real1 cosineI = (real1)cos(inclination / 2);
+    const real1 sineI = (real1)sin(inclination / 2);
+    const complex expA = complex(cosineA, sineA);
+    const complex expNegA = complex(cosineA, -sineA);
+    const complex mtrx[4] = { cosineI, -expNegA * sineI, expA * sineI, cosineI };
     Mtrx(mtrx, target);
 }
 
 /// Inverse "Azimuth, Inclination"
 void QInterface::IAI(bitLenInt target, real1_f azimuth, real1_f inclination)
 {
-    real1 cosineA = (real1)cos(azimuth);
-    real1 sineA = (real1)sin(azimuth);
-    real1 cosineI = (real1)cos(inclination / 2);
-    real1 sineI = (real1)sin(inclination / 2);
-    complex expA = complex(cosineA, sineA);
-    complex expNegA = complex(cosineA, -sineA);
-    complex mtrx[4] = { cosineI, -expNegA * sineI, expA * sineI, cosineI };
+    const real1 cosineA = (real1)cos(azimuth);
+    const real1 sineA = (real1)sin(azimuth);
+    const real1 cosineI = (real1)cos(inclination / 2);
+    const real1 sineI = (real1)sin(inclination / 2);
+    const complex expA = complex(cosineA, sineA);
+    const complex expNegA = complex(cosineA, -sineA);
+    const complex mtrx[4] = { cosineI, -expNegA * sineI, expA * sineI, cosineI };
     complex invMtrx[4];
     inv2x2(mtrx, invMtrx);
     Mtrx(invMtrx, target);
@@ -82,12 +82,12 @@ void QInterface::IAI(bitLenInt target, real1_f azimuth, real1_f inclination)
 void QInterface::UniformlyControlledRY(
     const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const real1* angles)
 {
-    bitCapIntOcl permCount = pow2Ocl(controlLen);
+    const bitCapIntOcl permCount = pow2Ocl(controlLen);
     std::unique_ptr<complex[]> pauliRYs(new complex[4U * permCount]);
 
     for (bitCapIntOcl i = 0; i < permCount; i++) {
-        real1 cosine = (real1)cos(angles[i] / 2);
-        real1 sine = (real1)sin(angles[i] / 2);
+        const real1 cosine = (real1)cos(angles[i] / 2);
+        const real1 sine = (real1)sin(angles[i] / 2);
 
         pauliRYs[0U + 4U * i] = complex(cosine, ZERO_R1);
         pauliRYs[1U + 4U * i] = complex(-sine, ZERO_R1);
@@ -103,12 +103,12 @@ void QInterface::UniformlyControlledRY(
 void QInterface::UniformlyControlledRZ(
     const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const real1* angles)
 {
-    bitCapIntOcl permCount = pow2Ocl(controlLen);
+    const bitCapIntOcl permCount = pow2Ocl(controlLen);
     std::unique_ptr<complex[]> pauliRZs(new complex[4U * permCount]);
 
     for (bitCapIntOcl i = 0; i < permCount; i++) {
-        real1 cosine = (real1)cos(angles[i] / 2);
-        real1 sine = (real1)sin(angles[i] / 2);
+        const real1 cosine = (real1)cos(angles[i] / 2);
+        const real1 sine = (real1)sin(angles[i] / 2);
 
         pauliRZs[0U + 4U * i] = complex(cosine, -sine);
         pauliRZs[1U + 4U * i] = ZERO_CMPLX;
@@ -165,7 +165,7 @@ void QInterface::CRZ(real1_f radians, bitLenInt control, bitLenInt target)
 /// Exponentiate identity operator
 void QInterface::Exp(real1_f radians, bitLenInt qubit)
 {
-    complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
+    const complex phaseFac = complex((real1)cos(radians), (real1)sin(radians));
     Phase(phaseFac, phaseFac, qubit);
 }
 

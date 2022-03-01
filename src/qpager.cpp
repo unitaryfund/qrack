@@ -537,28 +537,6 @@ bitLenInt QPager::Compose(QPagerPtr toCopy)
     return toRet;
 }
 
-bitLenInt QPager::Compose(QPagerPtr toCopy, bitLenInt start)
-{
-    if (start == qubitCount) {
-        return Compose(toCopy);
-    }
-
-    if ((qubitCount + toCopy->qubitCount) > maxQubits) {
-        throw std::invalid_argument(
-            "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");
-    }
-
-    // TODO: Avoid CombineEngines();
-    CombineEngines();
-    toCopy->CombineEngines();
-
-    qPages[0]->Compose(toCopy->qPages[0]);
-
-    SetQubitCount(qubitCount + toCopy->qubitCount);
-
-    return start;
-}
-
 void QPager::Decompose(bitLenInt start, QPagerPtr dest)
 {
     const bitLenInt length = dest->qubitCount;
@@ -588,11 +566,15 @@ void QPager::Decompose(bitLenInt start, QPagerPtr dest)
 
 void QPager::Dispose(bitLenInt start, bitLenInt length)
 {
-    if (start == 0) {
+    if (!start || (start == 1U)) {
         CombineEngines(length + 1U);
     } else {
-        CombineEngines(start + length);
+        ROR(start, 0, qubitCount);
+        Dispose(0, length);
+        ROL(start, 0, qubitCount);
+        return;
     }
+
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         qPages[i]->Dispose(start, length);
     }
@@ -603,11 +585,15 @@ void QPager::Dispose(bitLenInt start, bitLenInt length)
 
 void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
-    if (start == 0) {
+    if (!start || (start == 1U)) {
         CombineEngines(length + 1U);
     } else {
-        CombineEngines(start + length);
+        ROR(start, 0, qubitCount);
+        Dispose(0, length, disposedPerm);
+        ROL(start, 0, qubitCount);
+        return;
     }
+
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         qPages[i]->Dispose(start, length, disposedPerm);
     }
@@ -816,17 +802,6 @@ void QPager::ApplyEitherControlledSingleBit(
     }
 }
 
-void QPager::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
-    const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
-{
-    CombineAndOpControlled(
-        [&](QEnginePtr engine) {
-            engine->UniformlyControlledSingleBit(
-                controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
-        },
-        { qubitIndex }, controls, controlLen);
-}
-
 void QPager::UniformParityRZ(bitCapInt mask, real1_f angle)
 {
     CombineAndOp([&](QEnginePtr engine) { engine->UniformParityRZ(mask, angle); }, { log2(mask) });
@@ -836,91 +811,6 @@ void QPager::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, b
 {
     CombineAndOpControlled([&](QEnginePtr engine) { engine->CUniformParityRZ(controls, controlLen, mask, angle); },
         { log2(mask) }, controls, controlLen);
-}
-
-void QPager::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (controlLen == 0) {
-        Swap(qubit1, qubit2);
-        return;
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->CSwap(controls, controlLen, qubit1, qubit2); },
-        { qubit1, qubit2 }, controls, controlLen);
-}
-void QPager::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (controlLen == 0) {
-        Swap(qubit1, qubit2);
-        return;
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCSwap(controls, controlLen, qubit1, qubit2); },
-        { qubit1, qubit2 }, controls, controlLen);
-}
-void QPager::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (controlLen == 0) {
-        SqrtSwap(qubit1, qubit2);
-        return;
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->CSqrtSwap(controls, controlLen, qubit1, qubit2); },
-        { qubit1, qubit2 }, controls, controlLen);
-}
-void QPager::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (controlLen == 0) {
-        SqrtSwap(qubit1, qubit2);
-        return;
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2); },
-        { qubit1, qubit2 }, controls, controlLen);
-}
-void QPager::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (controlLen == 0) {
-        ISqrtSwap(qubit1, qubit2);
-        return;
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->CISqrtSwap(controls, controlLen, qubit1, qubit2); },
-        { qubit1, qubit2 }, controls, controlLen);
-}
-void QPager::AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
-{
-    if (controlLen == 0) {
-        ISqrtSwap(qubit1, qubit2);
-        return;
-    }
-
-    if (qubit1 == qubit2) {
-        return;
-    }
-
-    CombineAndOpControlled([&](QEnginePtr engine) { engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2); },
-        { qubit1, qubit2 }, controls, controlLen);
 }
 
 void QPager::XMask(bitCapInt mask)

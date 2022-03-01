@@ -58,10 +58,11 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
 #endif
 
-    stateVec = AllocStateVec(maxQPowerOcl);
     if (!qubitCount) {
+        ZeroAmplitudes();
         return;
     }
+    stateVec = AllocStateVec(maxQPowerOcl);
     stateVec->clear();
 
     if (phaseFac == CMPLX_DEFAULT_ARG) {
@@ -339,7 +340,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             rngNrm.reset();
             runningNorm = rNrm;
 
-            if (runningNorm == ZERO_R1) {
+            if (runningNorm <= FP_NORM_EPSILON) {
                 ZeroAmplitudes();
             }
         });
@@ -507,7 +508,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             rngNrm.reset();
             runningNorm = rNrm;
 
-            if (runningNorm == ZERO_R1) {
+            if (runningNorm <= FP_NORM_EPSILON) {
                 ZeroAmplitudes();
             }
         });
@@ -755,13 +756,20 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
 
     if (!qubitCount) {
+        Finish();
+        SetQubitCount(toCopy->qubitCount);
+        toCopy->Finish();
+        runningNorm = toCopy->runningNorm;
         if (toCopy->stateVec) {
             stateVec = AllocStateVec(toCopy->maxQPowerOcl);
             stateVec->copy(toCopy->stateVec);
         }
-        SetQubitCount(toCopy->qubitCount);
 
         return 0;
+    }
+
+    if (!toCopy->qubitCount) {
+        return qubitCount;
     }
 
     if (!stateVec || !toCopy->stateVec) {
@@ -815,6 +823,10 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
     if (!qubitCount) {
         Compose(toCopy);
         return 0;
+    }
+
+    if (!toCopy->qubitCount) {
+        return qubitCount;
     }
 
     bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
@@ -1158,21 +1170,6 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
     return clampProb(oneChance);
 }
 
-/// PSEUDO-QUANTUM Direct measure of full register probability to be in permutation state
-real1_f QEngineCPU::ProbAll(bitCapInt fullRegister)
-{
-    if (doNormalize) {
-        NormalizeState();
-    }
-    Finish();
-
-    if (!stateVec) {
-        return ZERO_R1;
-    }
-
-    return norm(stateVec->read((bitCapIntOcl)fullRegister));
-}
-
 // Returns probability of permutation of the register
 real1_f QEngineCPU::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
 {
@@ -1506,7 +1503,7 @@ void QEngineCPU::UpdateRunningNorm(real1_f norm_thresh)
     }
     runningNorm = par_norm(maxQPowerOcl, stateVec, norm_thresh);
 
-    if (runningNorm == ZERO_R1) {
+    if (runningNorm <= FP_NORM_EPSILON) {
         ZeroAmplitudes();
     }
 }

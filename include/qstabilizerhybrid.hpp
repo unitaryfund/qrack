@@ -454,80 +454,61 @@ public:
     virtual void MACInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
-    virtual void UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex,
-        const complex* mtrxs, const bitCapInt* mtrxSkipPowers, bitLenInt mtrxSkipLen, bitCapInt mtrxSkipValueMask)
+    virtual void UniformlyControlledSingleBit(
+        const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const complex* mtrxs)
     {
-        // If there are no controls, this is equivalent to the single bit gate.
-        if (!controlLen) {
-            Mtrx(mtrxs, qubitIndex);
+        if (stabilizer) {
+            QInterface::UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs);
             return;
         }
 
-        SwitchToEngine();
-        engine->UniformlyControlledSingleBit(
-            controls, controlLen, qubitIndex, mtrxs, mtrxSkipPowers, mtrxSkipLen, mtrxSkipValueMask);
+        engine->UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs);
     }
-
     virtual void UniformParityRZ(bitCapInt mask, real1_f angle)
     {
         SwitchToEngine();
         engine->UniformParityRZ(mask, angle);
     }
-
     virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
     {
         SwitchToEngine();
         engine->CUniformParityRZ(controls, controlLen, mask, angle);
     }
 
-    virtual void CSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
-    {
-        std::vector<bitLenInt> controls;
-        if (TrimControls(lControls, lControlLen, controls)) {
-            return;
-        }
-
-        if (!controls.size()) {
-            Swap(qubit1, qubit2);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->CSwap(lControls, lControlLen, qubit1, qubit2);
-    }
-    virtual void AntiCSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
-    {
-        std::vector<bitLenInt> controls;
-        if (TrimControls(lControls, lControlLen, controls, true)) {
-            return;
-        }
-
-        if (!controls.size()) {
-            Swap(qubit1, qubit2);
-            return;
-        }
-
-        SwitchToEngine();
-        engine->AntiCSwap(lControls, lControlLen, qubit1, qubit2);
-    }
     virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
-        SwitchToEngine();
+        if (stabilizer) {
+            QInterface::CSqrtSwap(controls, controlLen, qubit1, qubit2);
+            return;
+        }
+
         engine->CSqrtSwap(controls, controlLen, qubit1, qubit2);
     }
     virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
-        SwitchToEngine();
+        if (stabilizer) {
+            QInterface::AntiCSqrtSwap(controls, controlLen, qubit1, qubit2);
+            return;
+        }
+
         engine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2);
     }
     virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
-        SwitchToEngine();
+        if (stabilizer) {
+            QInterface::CISqrtSwap(controls, controlLen, qubit1, qubit2);
+            return;
+        }
+
         engine->CISqrtSwap(controls, controlLen, qubit1, qubit2);
     }
     virtual void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
-        SwitchToEngine();
+        if (stabilizer) {
+            QInterface::AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
+            return;
+        }
+
         engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
     }
 
@@ -582,6 +563,33 @@ public:
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
 
 #if ENABLE_ALU
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+    {
+        if (stabilizer) {
+            QInterface::INC(toAdd, start, length);
+            return;
+        }
+
+        engine->INC(toAdd, start, length);
+    }
+    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        if (stabilizer) {
+            QInterface::INCS(toAdd, start, length, overflowIndex);
+            return;
+        }
+
+        engine->INCS(toAdd, start, length, overflowIndex);
+    }
+    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        if (stabilizer) {
+            QInterface::INCDECC(toAdd, start, length, carryIndex);
+            return;
+        }
+
+        engine->INCDECC(toAdd, start, length, carryIndex);
+    }
     virtual void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
