@@ -250,8 +250,6 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
     if (attachedQubitCount && toCopy->attachedQubitCount) {
-        // TODO: This ROL/ROR is right for end points, but is it right for the middle?
-
         const bitLenInt midIndex = bdtQubitCount;
         if (start < midIndex) {
             ROL(midIndex - start, 0, qubitCount);
