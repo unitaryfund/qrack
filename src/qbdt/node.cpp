@@ -292,4 +292,59 @@ void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QB
     b0->PopStateVector();
     b1->PopStateVector();
 }
+
+void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
+{
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        return;
+    }
+
+    if (!depth) {
+        QBdtNodeInterfacePtr c = ShallowClone();
+        branches[0] = b->branches[0];
+        branches[1] = b->branches[1];
+
+        if (!size || !c->branches[0]) {
+            return;
+        }
+
+        InsertAtDepth(c, size, 0);
+
+        return;
+    }
+    depth--;
+
+    if (!depth && size) {
+        QBdtNodeInterfacePtr c = branches[0];
+
+        if (norm(branches[0]->scale) > FP_NORM_EPSILON) {
+            branches[0] = std::make_shared<QBdtNode>(branches[0]->scale, b->branches);
+            branches[0]->InsertAtDepth(c, size, 0);
+
+            if (c.get() == branches[1].get()) {
+                branches[1] = branches[0];
+                return;
+            }
+        }
+
+        if (norm(branches[1]->scale) <= FP_NORM_EPSILON) {
+            return;
+        }
+
+        c = branches[1];
+        branches[1] = std::make_shared<QBdtNode>(branches[1]->scale, b->branches);
+        branches[1]->InsertAtDepth(c, size, 0);
+
+        return;
+    }
+
+    if (!branches[0]) {
+        return;
+    }
+
+    branches[0]->InsertAtDepth(b, depth, size);
+    if (branches[0].get() != branches[1].get()) {
+        branches[1]->InsertAtDepth(b, depth, size);
+    }
+}
 } // namespace Qrack
