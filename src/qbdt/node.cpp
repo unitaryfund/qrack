@@ -319,7 +319,6 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt 
 
         if (norm(branches[0]->scale) > FP_NORM_EPSILON) {
             branches[0] = std::make_shared<QBdtNode>(branches[0]->scale, b->branches);
-            branches[0]->Branch();
             branches[0]->InsertAtDepth(c, size, 0);
 
             if (c.get() == branches[1].get()) {
@@ -334,7 +333,6 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt 
 
         c = branches[1];
         branches[1] = std::make_shared<QBdtNode>(branches[1]->scale, b->branches);
-        branches[1]->Branch();
         branches[1]->InsertAtDepth(c, size, 0);
 
         return;
