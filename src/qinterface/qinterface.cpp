@@ -221,23 +221,27 @@ bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt res
 bitCapInt QInterface::ForceM(const bitLenInt* bits, bitLenInt length, const bool* values, bool doApply)
 {
     bitCapInt result = 0;
-    if (!values) {
-        if (doApply) {
-            for (bitLenInt bit = 0; bit < length; bit++) {
-                result |= M(bits[bit]) ? pow2(bits[bit]) : 0;
-            }
-        } else {
-            std::vector<bitCapInt> qPowers(length);
-            for (bitLenInt bit = 0; bit < length; bit++) {
-                qPowers[bit] = pow2(bits[bit]);
-            }
-            result = MultiShotMeasureMask(&(qPowers[0]), qPowers.size(), 1).begin()->first;
-        }
-    } else {
+
+    if (values) {
         for (bitLenInt bit = 0; bit < length; bit++) {
             result |= ForceM(bits[bit], values[bit], true, doApply) ? pow2(bits[bit]) : 0;
         }
+        return result;
     }
+
+    if (doApply) {
+        for (bitLenInt bit = 0; bit < length; bit++) {
+            result |= M(bits[bit]) ? pow2(bits[bit]) : 0;
+        }
+        return result;
+    }
+
+    std::vector<bitCapInt> qPowers(length);
+    for (bitLenInt bit = 0; bit < length; bit++) {
+        qPowers[bit] = pow2(bits[bit]);
+    }
+    result = MultiShotMeasureMask(&(qPowers[0]), qPowers.size(), 1).begin()->first;
+
     return result;
 }
 
@@ -252,6 +256,7 @@ real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
             prob *= (ONE_R1 - Prob(start + i));
         }
     }
+
     return prob;
 }
 
@@ -874,7 +879,7 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
 /// Apply controlled "PhaseRootN" gate to each bit
 void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    if (n == 0) {
+    if (!n) {
         return;
     }
     if (n == 1) {
@@ -890,7 +895,7 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, b
 /// Apply controlled IT gate to each bit
 void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, bitLenInt length)
 {
-    if (n == 0) {
+    if (!n) {
         return;
     }
     if (n == 1) {
