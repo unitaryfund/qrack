@@ -80,8 +80,8 @@ _INTPOW(bitCapIntOcl, intPowOcl)
 #if ENABLE_COMPLEX_X2
 void mul2x2(const complex* left, const complex* right, complex* out)
 {
-    complex2 left0(left[0], left[2]);
-    complex2 left1(left[1], left[3]);
+    const complex2 left0(left[0], left[2]);
+    const complex2 left1(left[1], left[3]);
 
     complex2 col(matrixMul(left0.c2, left1.c2, complex2(right[0], right[2]).c2));
     out[0] = col.c[0];
@@ -107,7 +107,7 @@ void _expLog2x2(const complex* matrix2x2, complex* outMatrix2x2, bool isExp)
     // basis, and apply.
 
     // Diagonal matrices are a special case.
-    bool isDiag = IS_NORM_0(matrix2x2[1]) && IS_NORM_0(matrix2x2[2]);
+    const bool isDiag = IS_NORM_0(matrix2x2[1]) && IS_NORM_0(matrix2x2[2]);
 
     complex expOfGate[4];
     complex jacobian[4];
@@ -188,7 +188,7 @@ void log2x2(const complex* matrix2x2, complex* outMatrix2x2) { _expLog2x2(matrix
 
 void inv2x2(const complex* matrix2x2, complex* outMatrix2x2)
 {
-    complex det = ONE_CMPLX / (matrix2x2[0] * matrix2x2[3] - matrix2x2[1] * matrix2x2[2]);
+    const complex det = ONE_CMPLX / (matrix2x2[0] * matrix2x2[3] - matrix2x2[1] * matrix2x2[2]);
     outMatrix2x2[0] = det * matrix2x2[3];
     outMatrix2x2[1] = det * -matrix2x2[1];
     outMatrix2x2[2] = det * -matrix2x2[2];
@@ -237,13 +237,12 @@ bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMas
 
 bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount)
 {
-    if (skipPowersCount == 0) {
+    if (!skipPowersCount) {
         return perm;
     }
 
-    bitCapInt i;
     bitCapInt iHigh = perm;
-    i = 0;
+    bitCapInt i = 0;
     for (bitCapIntOcl p = 0; p < skipPowersCount; p++) {
         bitCapInt iLow = iHigh & (skipPowers[p] - ONE_BCI);
         i |= iLow;
