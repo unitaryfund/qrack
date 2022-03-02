@@ -224,6 +224,11 @@ public:
     virtual void MCPhase(
         const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
     {
+        if (!controlLen) {
+            Phase(topLeft, bottomRight, target);
+            return;
+        }
+
         const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
         if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
             ApplyControlledSingle(mtrx, controls, controlLen, target);
@@ -243,6 +248,11 @@ public:
     virtual void MCInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
     {
+        if (!controlLen) {
+            Invert(topRight, bottomLeft, target);
+            return;
+        }
+
         const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
         if (!IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
             ApplyControlledSingle(mtrx, controls, controlLen, target);
