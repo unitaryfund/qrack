@@ -18,7 +18,7 @@
 #include "qengine.hpp"
 
 namespace Qrack {
-void QBdtQInterfaceNode::Prune(bitLenInt depth)
+void QBdtQEngineNode::Prune(bitLenInt depth)
 {
     if (!depth) {
         return;
@@ -33,10 +33,12 @@ void QBdtQInterfaceNode::Prune(bitLenInt depth)
         return;
     }
 
+    qReg->UpdateRunningNorm();
     const real1_f phaseArg = qReg->FirstNonzeroPhase();
-    const complex phaseFac = std::polar((real1)ONE_R1, (real1)(-phaseArg));
-    qReg->Phase(phaseFac, phaseFac, 0U);
-    scale /= phaseFac;
+    const real1_f nrm = std::dynamic_pointer_cast<QEngine>(qReg)->GetRunningNorm();
+    qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
+    const complex phaseFac = std::polar((real1)(ONE_R1 / std::sqrt(nrm)), (real1)phaseArg);
+    scale *= phaseFac;
 }
 
 void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
