@@ -58,65 +58,11 @@ public:
         qReg = NULL;
     }
 
-    virtual bool isEqual(QBdtNodeInterfacePtr r)
-    {
-        if (this == r.get()) {
-            return true;
-        }
+    virtual bool isEqual(QBdtNodeInterfacePtr r);
 
-        if (norm(scale - r->scale) > FP_NORM_EPSILON) {
-            return false;
-        }
+    virtual void Normalize(bitLenInt depth);
 
-        if (norm(scale) <= FP_NORM_EPSILON) {
-            return true;
-        }
-
-        QInterfacePtr rReg = std::dynamic_pointer_cast<QBdtQInterfaceNode>(r)->qReg;
-
-        if (qReg.get() == rReg.get()) {
-            return true;
-        }
-
-        if (qReg->ApproxCompare(rReg)) {
-            qReg = rReg;
-            return true;
-        }
-
-        return false;
-    }
-
-    virtual void Normalize(bitLenInt depth)
-    {
-        if (!depth) {
-            return;
-        }
-
-        if (norm(scale) <= FP_NORM_EPSILON) {
-            SetZero();
-            return;
-        }
-
-        if (qReg) {
-            qReg->NormalizeState();
-        }
-    }
-
-    virtual void Branch(bitLenInt depth = 1U)
-    {
-        if (!depth) {
-            return;
-        }
-
-        if (norm(scale) <= FP_NORM_EPSILON) {
-            SetZero();
-            return;
-        }
-
-        if (qReg) {
-            qReg = qReg->Clone();
-        }
-    }
+    virtual void Branch(bitLenInt depth = 1U);
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size);
 

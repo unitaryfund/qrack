@@ -18,6 +18,80 @@
 #include "qengine.hpp"
 
 namespace Qrack {
+bool QBdtQInterfaceNode::isEqual(QBdtNodeInterfacePtr r)
+{
+    if (this == r.get()) {
+        return true;
+    }
+
+    if (norm(scale - r->scale) > FP_NORM_EPSILON) {
+        return false;
+    }
+
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        return true;
+    }
+
+    QInterfacePtr rReg = std::dynamic_pointer_cast<QBdtQInterfaceNode>(r)->qReg;
+
+    if (qReg.get() == rReg.get()) {
+        return true;
+    }
+
+    if (qReg->ApproxCompare(rReg)) {
+        qReg = rReg;
+        return true;
+    }
+
+    return false;
+}
+
+void QBdtQInterfaceNode::Normalize(bitLenInt depth)
+{
+    if (!depth) {
+        return;
+    }
+
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        SetZero();
+        return;
+    }
+
+    if (qReg) {
+        qReg->NormalizeState();
+    }
+}
+
+void QBdtQInterfaceNode::Branch(bitLenInt depth)
+{
+    if (!depth) {
+        return;
+    }
+
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        SetZero();
+        return;
+    }
+
+    if (qReg) {
+        qReg = qReg->Clone();
+    }
+}
+
+void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
+{
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        return;
+    }
+
+    if (depth) {
+        throw std::runtime_error("QBdtQInterfaceNode::InsertAtDepth() not implemented for nonzero depth!");
+    }
+
+    QBdtQInterfaceNodePtr bEng = std::dynamic_pointer_cast<QBdtQInterfaceNode>(b);
+    qReg->Compose(bEng->qReg);
+}
+
 void QBdtQEngineNode::Prune(bitLenInt depth)
 {
     if (!depth) {
@@ -39,20 +113,6 @@ void QBdtQEngineNode::Prune(bitLenInt depth)
     qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
     const complex phaseFac = std::polar((real1)(ONE_R1 / std::sqrt(nrm)), (real1)phaseArg);
     scale *= phaseFac;
-}
-
-void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
-{
-    if (norm(scale) <= FP_NORM_EPSILON) {
-        return;
-    }
-
-    if (depth) {
-        throw std::runtime_error("QBdtQInterfaceNode::InsertAtDepth() not implemented for nonzero depth!");
-    }
-
-    QBdtQInterfaceNodePtr bEng = std::dynamic_pointer_cast<QBdtQInterfaceNode>(b);
-    qReg->Compose(bEng->qReg);
 }
 
 void QBdtQEngineNode::PushStateVector(
