@@ -20,6 +20,8 @@
 #include "qbdt_qinterface_node.hpp"
 #include "qinterface.hpp"
 
+#define NODE_TO_QINTERFACE(leaf) (std::dynamic_pointer_cast<QBdtQInterfaceNode>(leaf)->qReg)
+
 namespace Qrack {
 
 class QBdt;
@@ -30,10 +32,10 @@ protected:
     std::vector<QInterfaceEngine> engines;
     int devID;
     QBdtNodeInterfacePtr root;
-    QInterfacePtr stateVecUnit;
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
     bitCapInt bdtMaxQPower;
+    bool isStateVec;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -42,12 +44,11 @@ protected:
         bdtMaxQPower = pow2(bdtQubitCount);
     }
 
-    QInterfacePtr MakeStateVector(bitLenInt qbCount, bitCapInt perm = 0U);
     QBdtQInterfaceNodePtr MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
 
     QInterfacePtr MakeTempStateVector()
     {
-        QInterfacePtr copyPtr = MakeStateVector(qubitCount);
+        QInterfacePtr copyPtr = NODE_TO_QINTERFACE(MakeQInterfaceNode(ONE_R1, qubitCount));
         Finish();
         GetQuantumState(copyPtr);
 
@@ -56,23 +57,29 @@ protected:
     }
     void SetStateVector()
     {
-        if (stateVecUnit) {
+        if (isStateVec) {
             return;
         }
-
         Finish();
-        stateVecUnit = MakeStateVector(qubitCount);
-        GetQuantumState(stateVecUnit);
-        root = NULL;
+        isStateVec = true;
+
+        QBdtQInterfaceNodePtr nRoot = MakeQInterfaceNode(ONE_R1, qubitCount);
+        GetQuantumState(NODE_TO_QINTERFACE(nRoot));
+        root = nRoot;
+        attachedQubitCount = qubitCount;
     }
     void ResetStateVector()
     {
-        if (!stateVecUnit) {
+        if (!isStateVec) {
             return;
         }
+        Finish();
+        isStateVec = false;
 
-        SetQuantumState(stateVecUnit);
-        stateVecUnit = NULL;
+        QBdtQInterfaceNodePtr oRoot = std::dynamic_pointer_cast<QBdtQInterfaceNode>(root);
+        attachedQubitCount = 0U;
+        SetPermutation(0U);
+        SetQuantumState(NODE_TO_QINTERFACE(oRoot));
     }
 
     template <typename Fn> void GetTraversal(Fn getLambda);
@@ -80,14 +87,14 @@ protected:
     template <typename Fn> void ExecuteAsStateVector(Fn operation)
     {
         SetStateVector();
-        operation(stateVecUnit);
+        operation(NODE_TO_QINTERFACE(root));
         ResetStateVector();
     }
 
     template <typename Fn> bitCapInt BitCapIntAsStateVector(Fn operation)
     {
         SetStateVector();
-        bitCapInt toRet = operation(stateVecUnit);
+        bitCapInt toRet = operation(NODE_TO_QINTERFACE(root));
         ResetStateVector();
 
         return toRet;
@@ -126,17 +133,17 @@ public:
 
     virtual void Finish()
     {
-        if (stateVecUnit) {
-            stateVecUnit->Finish();
+        if (isStateVec) {
+            NODE_TO_QINTERFACE(root)->Finish();
         }
     };
 
-    virtual bool isFinished() { return !stateVecUnit || stateVecUnit->isFinished(); }
+    virtual bool isFinished() { return !isStateVec || NODE_TO_QINTERFACE(root)->isFinished(); }
 
     virtual void Dump()
     {
-        if (stateVecUnit) {
-            stateVecUnit->Dump();
+        if (isStateVec) {
+            NODE_TO_QINTERFACE(root)->Dump();
         }
     }
 
@@ -212,7 +219,7 @@ public:
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
     {
         Finish();
-        QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
+        QInterfacePtr unit = isStateVec ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
         return unit->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
 
@@ -277,7 +284,7 @@ public:
     virtual real1_f ProbParity(bitCapInt mask)
     {
         Finish();
-        QInterfacePtr unit = stateVecUnit ? stateVecUnit : MakeTempStateVector();
+        QInterfacePtr unit = isStateVec ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
         return unit->ProbParity(mask);
     }
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)

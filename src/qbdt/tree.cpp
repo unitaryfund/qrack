@@ -17,8 +17,6 @@
 #include "qbdt_node.hpp"
 #include "qfactory.hpp"
 
-#define NODE_TO_QINTERFACE(leaf) (std::dynamic_pointer_cast<QBdtQInterfaceNode>(leaf)->qReg)
-
 namespace Qrack {
 
 QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
@@ -28,10 +26,10 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , engines(eng)
     , devID(deviceId)
     , root(NULL)
-    , stateVecUnit(NULL)
     , attachedQubitCount(0)
     , bdtQubitCount(qBitCount)
     , bdtMaxQPower(pow2(qBitCount))
+    , isStateVec(false)
 {
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
@@ -39,23 +37,17 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     SetPermutation(initState);
 }
 
-QInterfacePtr QBdt::MakeStateVector(bitLenInt qbCount, bitCapInt perm)
-{
-    return CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-        false, devID, hardware_rand_generator != NULL, false, amplitudeFloor);
-}
-
 QBdtQInterfaceNodePtr QBdt::MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm)
 {
     return std::make_shared<QBdtQInterfaceNode>(scale,
-        CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, false, false, devID,
-            hardware_rand_generator != NULL, false, amplitudeFloor));
+        CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
+            devID, hardware_rand_generator != NULL, false, amplitudeFloor));
 }
 
 bool QBdt::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
     SetStateVector();
-    bool toRet = stateVecUnit->ForceMParity(mask, result, doForce);
+    bool toRet = NODE_TO_QINTERFACE(root)->ForceMParity(mask, result, doForce);
     ResetStateVector();
 
     return toRet;
