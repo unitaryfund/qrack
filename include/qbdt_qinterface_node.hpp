@@ -70,16 +70,9 @@ public:
 
     virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size);
 
-    virtual void PopStateVector(bitLenInt depth = 1U) { Prune(); }
+    virtual void PopStateVector(bitLenInt depth = 1U) {}
 
-    virtual void Prune(bitLenInt depth = 1U)
-    {
-        if (!depth) {
-            return;
-        }
-
-        throw std::out_of_range("QBdtQInterfaceNode::Prune() not implemented past 0 depth!");
-    }
+    virtual void Prune(bitLenInt depth = 1U) {}
 
     virtual void Apply2x2(const complex* mtrx, bitLenInt depth)
     {

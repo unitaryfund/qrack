@@ -88,7 +88,7 @@ void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, 
     }
 
     QBdtQInterfaceNodePtr bEng = std::dynamic_pointer_cast<QBdtQInterfaceNode>(b);
-    qReg->Compose(bEng->qReg);
+    qReg->Compose(bEng->qReg, 0U);
 }
 
 QBdtNodeInterfacePtr QBdtQInterfaceNode::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
