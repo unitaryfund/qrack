@@ -18,6 +18,41 @@
 #include "qengine.hpp"
 
 namespace Qrack {
+void QBdtQInterfaceNode::Prune(bitLenInt depth)
+{
+    if (!depth) {
+        return;
+    }
+
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        SetZero();
+        return;
+    }
+
+    if (!qReg) {
+        return;
+    }
+
+    const real1_f phaseArg = qReg->FirstNonzeroPhase();
+    const complex phaseFac = std::polar((real1)ONE_R1, (real1)(-phaseArg));
+    qReg->Phase(phaseFac, phaseFac, 0U);
+    scale /= phaseFac;
+}
+
+void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
+{
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        return;
+    }
+
+    if (depth) {
+        throw std::runtime_error("QBdtQInterfaceNode::InsertAtDepth() not implemented for nonzero depth!");
+    }
+
+    QBdtQInterfaceNodePtr bEng = std::dynamic_pointer_cast<QBdtQInterfaceNode>(b);
+    qReg->Compose(bEng->qReg);
+}
+
 void QBdtQEngineNode::PushStateVector(
     const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
 {
@@ -58,41 +93,6 @@ void QBdtQEngineNode::PushStateVector(
     qReg1->Mtrx(mtrx, qReg1->GetQubitCount() - 1U);
 
     qReg0->ShuffleBuffers(qReg1);
-}
-
-void QBdtQEngineNode::Prune(bitLenInt depth)
-{
-    if (!depth) {
-        return;
-    }
-
-    if (norm(scale) <= FP_NORM_EPSILON) {
-        SetZero();
-        return;
-    }
-
-    if (!qReg) {
-        return;
-    }
-
-    real1_f phaseArg = qReg->FirstNonzeroPhase();
-    qReg->UpdateRunningNorm();
-    qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
-    scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
-}
-
-void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
-{
-    if (norm(scale) <= FP_NORM_EPSILON) {
-        return;
-    }
-
-    if (depth) {
-        throw std::runtime_error("QBdtQEngineNode::InsertAtDepth() not implemented for nonzero depth!");
-    }
-
-    QBdtQEngineNodePtr bEng = std::dynamic_pointer_cast<QBdtQEngineNode>(b);
-    qReg->Compose(bEng->qReg);
 }
 
 QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)

@@ -118,10 +118,11 @@ public:
         }
     }
 
-    virtual void PopStateVector(bitLenInt depth = 1U)
-    {
-        throw std::out_of_range("QBdtQInterfaceNode::PopStateVector() not implemented!");
-    }
+    virtual void Prune(bitLenInt depth = 1U);
+
+    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size);
+
+    virtual void PopStateVector(bitLenInt depth = 1U) { Prune(); }
 
     virtual void Apply2x2(const complex* mtrx, bitLenInt depth)
     {
@@ -148,12 +149,6 @@ public:
     }
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQEngineNode>(scale, qReg); }
-
-    virtual void PopStateVector(bitLenInt depth = 1U) { Prune(); }
-
-    virtual void Prune(bitLenInt depth = 1U);
-
-    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size);
 
     virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size);
 };
