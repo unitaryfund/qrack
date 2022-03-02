@@ -58,20 +58,69 @@ public:
         qReg = NULL;
     }
 
-    virtual bool isEqual(QBdtNodeInterfacePtr r);
+    virtual bool isEqual(QBdtNodeInterfacePtr r)
+    {
+        if (this == r.get()) {
+            return true;
+        }
 
-    virtual void Normalize(bitLenInt depth);
+        if (norm(scale - r->scale) > FP_NORM_EPSILON) {
+            return false;
+        }
 
-    virtual void Branch(bitLenInt depth = 1U);
+        if (norm(scale) <= FP_NORM_EPSILON) {
+            return true;
+        }
+
+        QInterfacePtr rReg = std::dynamic_pointer_cast<QBdtQInterfaceNode>(r)->qReg;
+
+        if (qReg.get() == rReg.get()) {
+            return true;
+        }
+
+        if (qReg->ApproxCompare(rReg)) {
+            qReg = rReg;
+            return true;
+        }
+
+        return false;
+    }
+
+    virtual void Normalize(bitLenInt depth)
+    {
+        if (!depth) {
+            return;
+        }
+
+        if (norm(scale) <= FP_NORM_EPSILON) {
+            SetZero();
+            return;
+        }
+
+        if (qReg) {
+            qReg->NormalizeState();
+        }
+    }
+
+    virtual void Branch(bitLenInt depth = 1U)
+    {
+        if (!depth) {
+            return;
+        }
+
+        if (norm(scale) <= FP_NORM_EPSILON) {
+            SetZero();
+            return;
+        }
+
+        if (qReg) {
+            qReg = qReg->Clone();
+        }
+    }
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size);
 
     virtual void PopStateVector(bitLenInt depth = 1U) { Prune(); }
-
-    virtual void Prune(bitLenInt depth = 1U)
-    {
-        throw std::out_of_range("QBdtQInterfaceNode::Prune() not implemented!");
-    }
 
     virtual void Apply2x2(const complex* mtrx, bitLenInt depth)
     {
@@ -80,6 +129,10 @@ public:
 };
 
 class QBdtQEngineNode : public QBdtQInterfaceNode {
+protected:
+    virtual void PushStateVector(
+        const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth);
+
 public:
     QBdtQEngineNode()
         : QBdtQInterfaceNode()
@@ -94,6 +147,8 @@ public:
     }
 
     virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQEngineNode>(scale, qReg); }
+
+    virtual void Prune(bitLenInt depth = 1U);
 
     virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size);
 };

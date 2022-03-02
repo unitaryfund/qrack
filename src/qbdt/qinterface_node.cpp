@@ -18,35 +18,7 @@
 #include "qengine.hpp"
 
 namespace Qrack {
-bool QBdtQInterfaceNode::isEqual(QBdtNodeInterfacePtr r)
-{
-    if (this == r.get()) {
-        return true;
-    }
-
-    if (norm(scale - r->scale) > FP_NORM_EPSILON) {
-        return false;
-    }
-
-    if (norm(scale) <= FP_NORM_EPSILON) {
-        return true;
-    }
-
-    QInterfacePtr rReg = std::dynamic_pointer_cast<QBdtQInterfaceNode>(r)->qReg;
-
-    if (qReg.get() == rReg.get()) {
-        return true;
-    }
-
-    if (qReg->ApproxCompare(rReg)) {
-        qReg = rReg;
-        return true;
-    }
-
-    return false;
-}
-
-void QBdtQInterfaceNode::Normalize(bitLenInt depth)
+void QBdtQEngineNode::Prune(bitLenInt depth)
 {
     if (!depth) {
         return;
@@ -57,25 +29,16 @@ void QBdtQInterfaceNode::Normalize(bitLenInt depth)
         return;
     }
 
-    if (qReg) {
-        qReg->NormalizeState();
-    }
-}
-
-void QBdtQInterfaceNode::Branch(bitLenInt depth)
-{
-    if (!depth) {
+    if (!qReg) {
         return;
     }
 
-    if (norm(scale) <= FP_NORM_EPSILON) {
-        SetZero();
-        return;
-    }
-
-    if (qReg) {
-        qReg = qReg->Clone();
-    }
+    qReg->UpdateRunningNorm();
+    const real1_f phaseArg = qReg->FirstNonzeroPhase();
+    const real1_f nrm = std::dynamic_pointer_cast<QEngine>(qReg)->GetRunningNorm();
+    qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
+    const complex phaseFac = std::polar((real1)(ONE_R1 / std::sqrt(nrm)), (real1)phaseArg);
+    scale *= phaseFac;
 }
 
 void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
@@ -90,6 +53,48 @@ void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, 
 
     QBdtQInterfaceNodePtr bEng = std::dynamic_pointer_cast<QBdtQInterfaceNode>(b);
     qReg->Compose(bEng->qReg);
+}
+
+void QBdtQEngineNode::PushStateVector(
+    const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
+{
+    QEnginePtr qReg0 = std::dynamic_pointer_cast<QEngine>(std::dynamic_pointer_cast<QBdtQEngineNode>(b0)->qReg);
+    QEnginePtr qReg1 = std::dynamic_pointer_cast<QEngine>(std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg);
+
+    const bool is0Zero = IS_NORM_0(b0->scale);
+    const bool is1Zero = IS_NORM_0(b1->scale);
+
+    if (is0Zero && is1Zero) {
+        b0->SetZero();
+        b1->SetZero();
+
+        return;
+    }
+
+    if (is0Zero) {
+        qReg0 = std::dynamic_pointer_cast<QEngine>(std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg)->CloneEmpty();
+        std::dynamic_pointer_cast<QBdtQEngineNode>(b0)->qReg = qReg0;
+    } else if (is1Zero) {
+        qReg1 = std::dynamic_pointer_cast<QEngine>(std::dynamic_pointer_cast<QBdtQEngineNode>(b0)->qReg)->CloneEmpty();
+        std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg = qReg1;
+    }
+
+    if (!is0Zero) {
+        qReg0->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, std::arg(b0->scale));
+    }
+    if (!is1Zero) {
+        qReg1->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, std::arg(b1->scale));
+    }
+
+    b0->scale = SQRT1_2_R1;
+    b1->scale = SQRT1_2_R1;
+
+    qReg0->ShuffleBuffers(qReg1);
+
+    qReg0->Mtrx(mtrx, qReg0->GetQubitCount() - 1U);
+    qReg1->Mtrx(mtrx, qReg1->GetQubitCount() - 1U);
+
+    qReg0->ShuffleBuffers(qReg1);
 }
 
 QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
