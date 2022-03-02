@@ -168,11 +168,8 @@ protected:
 
     complex readLocked(const bitCapIntOcl& i)
     {
-        mtx.lock();
-        auto it = amplitudes.find(i);
-        bool isFound = (it != amplitudes.end());
-        mtx.unlock();
-        return isFound ? it->second : ZERO_CMPLX;
+        std::lock_guard<std::mutex> lock(mtx);
+        return readUnlocked(i);
     }
 
 public:
@@ -186,58 +183,59 @@ public:
 
     void write(const bitCapIntOcl& i, const complex& c)
     {
-        bool isCSet = (c != ZERO_CMPLX);
+        const bool isCSet = (c != ZERO_CMPLX);
+        bool isFound;
+        SparseStateVecMap::iterator it;
 
-        mtx.lock();
+        // For lock_guard scope
+        if (true) {
+            std::lock_guard<std::mutex> lock(mtx);
 
-        auto it = amplitudes.find(i);
-        bool isFound = (it != amplitudes.end());
+            it = amplitudes.find(i);
+            isFound = (it != amplitudes.end());
+            if (isCSet != isFound) {
+                if (isCSet) {
+                    amplitudes[i] = c;
+                } else {
+                    amplitudes.erase(it);
+                }
+            }
+        }
+
         if (isCSet == isFound) {
-            mtx.unlock();
             if (isCSet) {
                 it->second = c;
             }
-        } else {
-            if (isCSet) {
-                amplitudes[i] = c;
-            } else {
-                amplitudes.erase(it);
-            }
-            mtx.unlock();
         }
     }
 
     void write2(const bitCapIntOcl& i1, const complex& c1, const bitCapIntOcl& i2, const complex& c2)
     {
-        bool isC1Set = (c1 != ZERO_CMPLX);
-        bool isC2Set = (c2 != ZERO_CMPLX);
+        const bool isC1Set = (c1 != ZERO_CMPLX);
+        const bool isC2Set = (c2 != ZERO_CMPLX);
         if (!(isC1Set || isC2Set)) {
             return;
         }
 
         if (isC1Set && isC2Set) {
-            mtx.lock();
+            std::lock_guard<std::mutex> lock(mtx);
             amplitudes[i1] = c1;
             amplitudes[i2] = c2;
-            mtx.unlock();
         } else if (isC1Set) {
-            mtx.lock();
+            std::lock_guard<std::mutex> lock(mtx);
             amplitudes.erase(i2);
             amplitudes[i1] = c1;
-            mtx.unlock();
         } else {
-            mtx.lock();
+            std::lock_guard<std::mutex> lock(mtx);
             amplitudes.erase(i1);
             amplitudes[i2] = c2;
-            mtx.unlock();
         }
     }
 
     void clear()
     {
-        mtx.lock();
+        std::lock_guard<std::mutex> lock(mtx);
         amplitudes.clear();
-        mtx.unlock();
     }
 
     void copy_in(const complex* copyIn)
@@ -247,7 +245,7 @@ public:
             return;
         }
 
-        mtx.lock();
+        std::lock_guard<std::mutex> lock(mtx);
         for (bitCapIntOcl i = 0; i < capacity; i++) {
             if (copyIn[i] == ZERO_CMPLX) {
                 amplitudes.erase(i);
@@ -255,21 +253,20 @@ public:
                 amplitudes[i] = copyIn[i];
             }
         }
-        mtx.unlock();
     }
 
     void copy_in(const complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
         if (!copyIn) {
-            mtx.lock();
+            std::lock_guard<std::mutex> lock(mtx);
             for (bitCapIntOcl i = 0; i < length; i++) {
                 amplitudes.erase(i);
             }
-            mtx.unlock();
+
             return;
         }
 
-        mtx.lock();
+        std::lock_guard<std::mutex> lock(mtx);
         for (bitCapIntOcl i = 0; i < length; i++) {
             if (copyIn[i] == ZERO_CMPLX) {
                 amplitudes.erase(i);
@@ -277,7 +274,6 @@ public:
                 amplitudes[i + offset] = copyIn[i];
             }
         }
-        mtx.unlock();
     }
 
     void copy_in(
@@ -286,15 +282,15 @@ public:
         StateVectorSparsePtr copyIn = std::dynamic_pointer_cast<StateVectorSparse>(copyInSv);
 
         if (!copyIn) {
-            mtx.lock();
+            std::lock_guard<std::mutex> lock(mtx);
             for (bitCapIntOcl i = 0; i < length; i++) {
                 amplitudes.erase(i + srcOffset);
             }
-            mtx.unlock();
+
             return;
         }
 
-        mtx.lock();
+        std::lock_guard<std::mutex> lock(mtx);
         for (bitCapIntOcl i = 0; i < length; i++) {
             complex amp = copyIn->read(i + srcOffset);
             if (amp == ZERO_CMPLX) {
@@ -303,7 +299,6 @@ public:
                 amplitudes[i + dstOffset] = amp;
             }
         }
-        mtx.unlock();
     }
 
     void copy_out(complex* copyOut)
@@ -324,23 +319,21 @@ public:
 
     void copy(StateVectorSparsePtr toCopy)
     {
-        mtx.lock();
+        std::lock_guard<std::mutex> lock(mtx);
         amplitudes = toCopy->amplitudes;
-        mtx.unlock();
     }
 
     void shuffle(StateVectorPtr svp) { shuffle(std::dynamic_pointer_cast<StateVectorSparse>(svp)); }
 
     void shuffle(StateVectorSparsePtr svp)
     {
-        size_t halfCap = (size_t)(capacity >> ONE_BCI);
-        mtx.lock();
+        const size_t halfCap = (size_t)(capacity >> ONE_BCI);
+        std::lock_guard<std::mutex> lock(mtx);
         for (bitCapIntOcl i = 0; i < halfCap; i++) {
             complex amp = svp->read(i);
             svp->write(i, read(i + halfCap));
             write(i + halfCap, amp);
         }
-        mtx.unlock();
     }
 
     void get_probs(real1* outArray)
@@ -354,19 +347,20 @@ public:
 
     std::vector<bitCapIntOcl> iterable()
     {
-        int64_t threadCount = GetConcurrencyLevel();
+        const int64_t threadCount = GetConcurrencyLevel();
         std::vector<std::vector<bitCapIntOcl>> toRet(threadCount);
         std::vector<std::vector<bitCapIntOcl>>::iterator toRetIt;
 
-        mtx.lock();
+        // For lock_guard scope
+        if (true) {
+            std::lock_guard<std::mutex> lock(mtx);
 
-        par_for(0, amplitudes.size(), [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-            auto it = amplitudes.begin();
-            std::advance(it, lcv);
-            toRet[cpu].push_back(it->first);
-        });
-
-        mtx.unlock();
+            par_for(0, amplitudes.size(), [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+                auto it = amplitudes.begin();
+                std::advance(it, lcv);
+                toRet[cpu].push_back(it->first);
+            });
+        }
 
         for (int64_t i = (int64_t)(toRet.size() - 1); i >= 0; i--) {
             if (toRet[i].size() == 0) {
@@ -376,7 +370,7 @@ public:
             }
         }
 
-        if (toRet.size() == 0) {
+        if (!toRet.size()) {
             return {};
         }
 
@@ -388,7 +382,7 @@ public:
                 toRet.pop_back();
             }
 
-            int64_t combineCount = (int64_t)toRet.size() / 2U;
+            const int64_t combineCount = (int64_t)toRet.size() / 2U;
 #if ENABLE_PTHREAD
             std::vector<std::future<void>> futures(combineCount);
             for (int64_t i = (combineCount - 1U); i >= 0; i--) {
@@ -416,37 +410,37 @@ public:
     std::set<bitCapIntOcl> iterable(
         const bitCapIntOcl& setMask, const bitCapIntOcl& filterMask = 0, const bitCapIntOcl& filterValues = 0)
     {
-        if ((filterMask == 0) && (filterValues != 0)) {
+        if (!filterMask && filterValues) {
             return {};
         }
 
-        bitCapIntOcl unsetMask = ~setMask;
+        const bitCapIntOcl unsetMask = ~setMask;
 
-        int32_t threadCount = GetConcurrencyLevel();
+        const int32_t threadCount = GetConcurrencyLevel();
         std::vector<std::set<bitCapIntOcl>> toRet(threadCount);
         std::vector<std::set<bitCapIntOcl>>::iterator toRetIt;
 
-        mtx.lock();
+        // For lock_guard scope
+        if (true) {
+            std::lock_guard<std::mutex> lock(mtx);
 
-        if ((filterMask == 0) && (filterValues == 0)) {
-            par_for(0, amplitudes.size(), [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
-                auto it = amplitudes.begin();
-                std::advance(it, lcv);
-                toRet[cpu].insert(it->first & unsetMask);
-            });
-        } else {
-            bitCapIntOcl unfilterMask = ~filterMask;
-
-            par_for(0, amplitudes.size(), [&](const bitCapIntOcl lcv, const unsigned& cpu) {
-                auto it = amplitudes.begin();
-                std::advance(it, lcv);
-                if ((it->first & filterMask) == filterValues) {
-                    toRet[cpu].insert(it->first & unsetMask & unfilterMask);
-                }
-            });
+            if (!filterMask && !filterValues) {
+                par_for(0, amplitudes.size(), [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+                    auto it = amplitudes.begin();
+                    std::advance(it, lcv);
+                    toRet[cpu].insert(it->first & unsetMask);
+                });
+            } else {
+                const bitCapIntOcl unfilterMask = ~filterMask;
+                par_for(0, amplitudes.size(), [&](const bitCapIntOcl lcv, const unsigned& cpu) {
+                    auto it = amplitudes.begin();
+                    std::advance(it, lcv);
+                    if ((it->first & filterMask) == filterValues) {
+                        toRet[cpu].insert(it->first & unsetMask & unfilterMask);
+                    }
+                });
+            }
         }
-
-        mtx.unlock();
 
         for (int64_t i = (int64_t)(toRet.size() - 1); i >= 0; i--) {
             if (toRet[i].size() == 0) {
@@ -456,7 +450,7 @@ public:
             }
         }
 
-        if (toRet.size() == 0) {
+        if (!toRet.size()) {
             return {};
         }
 
@@ -467,7 +461,7 @@ public:
                 toRet.pop_back();
             }
 
-            int64_t combineCount = (int32_t)(toRet.size()) / 2U;
+            const int64_t combineCount = (int32_t)(toRet.size()) / 2U;
 #if ENABLE_PTHREAD
             std::vector<std::future<void>> futures(combineCount);
             for (int64_t i = (combineCount - 1U); i >= 0; i--) {
