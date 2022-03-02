@@ -56,9 +56,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
         return NULL;
     }
 
-    if (size) {
-        Branch();
-    }
+    Branch();
 
     if (depth) {
         depth--;

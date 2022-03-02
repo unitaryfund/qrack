@@ -355,8 +355,8 @@ bitLenInt QBdt::Attach(QInterfacePtr toCopy)
 
 QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
 {
-    QBdtPtr dest = std::make_shared<QBdt>(bdtQubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-        false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+    QBdtPtr dest = std::make_shared<QBdt>(bdtQubitCount, length, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
     Decompose(start, dest);
 

@@ -163,8 +163,8 @@ void QStabilizerHybrid::SwitchToEngine()
 
 QInterfacePtr QStabilizerHybrid::Decompose(bitLenInt start, bitLenInt length)
 {
-    QStabilizerHybridPtr dest = std::make_shared<QStabilizerHybrid>(engineTypes, qubitCount, 0, rand_generator,
-        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+    QStabilizerHybridPtr dest = std::make_shared<QStabilizerHybrid>(engineTypes, length, 0, rand_generator, phaseFactor,
+        doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
         std::vector<int>{}, thresholdQubits, separabilityThreshold);
 
     Decompose(start, dest);

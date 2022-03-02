@@ -390,7 +390,7 @@ void QUnit::Decompose(bitLenInt start, QUnitPtr dest) { Detach(start, dest->GetQ
 
 QInterfacePtr QUnit::Decompose(bitLenInt start, bitLenInt length)
 {
-    QUnitPtr dest = std::make_shared<QUnit>(engines, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
+    QUnitPtr dest = std::make_shared<QUnit>(engines, length, 0, rand_generator, phaseFactor, doNormalize,
         randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
 
