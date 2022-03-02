@@ -399,6 +399,11 @@ public:
     virtual void Decompose(bitLenInt start, QInterfacePtr dest) = 0;
 
     /**
+     * Schmidt decompose a length of qubits.
+     */
+    virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length) = 0;
+
+    /**
      * Minimally decompose a set of contiguous bits from the separably composed unit,
      * and discard the separable bits from index "start" for "length."
      *

@@ -15,7 +15,6 @@
 // for details.
 
 #include "qbdt_qinterface_node.hpp"
-#include "qengine.hpp"
 
 namespace Qrack {
 bool QBdtQInterfaceNode::isEqual(QBdtNodeInterfacePtr r)
@@ -92,22 +91,20 @@ void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, 
     qReg->Compose(bEng->qReg);
 }
 
-QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
+QBdtNodeInterfacePtr QBdtQInterfaceNode::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
 {
     if (!size || (norm(scale) <= FP_NORM_EPSILON)) {
         return NULL;
     }
 
-    QBdtQEngineNodePtr toRet = std::dynamic_pointer_cast<QBdtQEngineNode>(ShallowClone());
+    QBdtQInterfaceNodePtr toRet = std::dynamic_pointer_cast<QBdtQInterfaceNode>(ShallowClone());
     toRet->scale /= abs(toRet->scale);
 
     if (!qReg) {
         return toRet;
     }
 
-    toRet->qReg = std::dynamic_pointer_cast<QEngine>(qReg)->CloneEmpty();
-    std::dynamic_pointer_cast<QEngine>(toRet->qReg)->SetQubitCount(size);
-    qReg->Decompose(depth, toRet->qReg);
+    toRet->qReg = qReg->Decompose(depth, size);
 
     return toRet;
 }

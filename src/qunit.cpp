@@ -388,6 +388,17 @@ void QUnit::Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
 
 void QUnit::Decompose(bitLenInt start, QUnitPtr dest) { Detach(start, dest->GetQubitCount(), dest); }
 
+QInterfacePtr QUnit::Decompose(bitLenInt start, bitLenInt length)
+{
+    QUnitPtr dest = std::make_shared<QUnit>(engines, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+        separabilityThreshold);
+
+    Decompose(start, dest);
+
+    return dest;
+}
+
 void QUnit::Dispose(bitLenInt start, bitLenInt length) { Detach(start, length, nullptr); }
 
 // The optimization of this method is redundant with other optimizations in QUnit.

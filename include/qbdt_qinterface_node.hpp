@@ -58,6 +58,8 @@ public:
         qReg = NULL;
     }
 
+    virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQInterfaceNode>(scale, qReg); }
+
     virtual bool isEqual(QBdtNodeInterfacePtr r);
 
     virtual void Normalize(bitLenInt depth);
@@ -65,6 +67,8 @@ public:
     virtual void Branch(bitLenInt depth = 1U);
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size);
+
+    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size);
 
     virtual void PopStateVector(bitLenInt depth = 1U) { Prune(); }
 
@@ -81,25 +85,6 @@ public:
     {
         throw std::out_of_range("QBdtQInterfaceNode::Apply2x2() not implemented!");
     }
-};
-
-class QBdtQEngineNode : public QBdtQInterfaceNode {
-public:
-    QBdtQEngineNode()
-        : QBdtQInterfaceNode()
-    {
-        // Intentionally left blank.
-    }
-
-    QBdtQEngineNode(complex scl, QInterfacePtr q)
-        : QBdtQInterfaceNode(scl, q)
-    {
-        // Intentionally left blank.
-    }
-
-    virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQEngineNode>(scale, qReg); }
-
-    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size);
 };
 
 } // namespace Qrack

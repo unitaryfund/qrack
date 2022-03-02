@@ -566,4 +566,13 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
     return result;
 }
 
+QInterfacePtr QEngine::Decompose(bitLenInt start, bitLenInt length)
+{
+    QEnginePtr dest = CloneEmpty();
+    dest->SetQubitCount(length);
+    Decompose(start, dest);
+
+    return dest;
+}
+
 } // namespace Qrack

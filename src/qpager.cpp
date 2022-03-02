@@ -537,6 +537,16 @@ bitLenInt QPager::Compose(QPagerPtr toCopy)
     return toRet;
 }
 
+QInterfacePtr QPager::Decompose(bitLenInt start, bitLenInt length)
+{
+    QPagerPtr dest = std::make_shared<QPager>(engines, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+
+    Decompose(start, dest);
+
+    return dest;
+}
+
 void QPager::Decompose(bitLenInt start, QPagerPtr dest)
 {
     const bitLenInt length = dest->qubitCount;

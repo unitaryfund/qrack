@@ -157,6 +157,7 @@ public:
         Decompose(start, std::dynamic_pointer_cast<QPager>(dest));
     }
     virtual void Decompose(bitLenInt start, QPagerPtr dest);
+    virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 

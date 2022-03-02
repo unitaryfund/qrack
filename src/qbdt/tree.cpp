@@ -45,9 +45,9 @@ QInterfacePtr QBdt::MakeStateVector(bitLenInt qbCount, bitCapInt perm)
         false, devID, hardware_rand_generator != NULL, false, amplitudeFloor);
 }
 
-QBdtQEngineNodePtr QBdt::MakeQEngineNode(complex scale, bitLenInt qbCount, bitCapInt perm)
+QBdtQInterfaceNodePtr QBdt::MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm)
 {
-    return std::make_shared<QBdtQEngineNode>(scale,
+    return std::make_shared<QBdtQInterfaceNode>(scale,
         CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, false, false, devID,
             hardware_rand_generator != NULL, false, amplitudeFloor));
 }
@@ -75,7 +75,7 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
     }
 
     if (attachedQubitCount && !bdtQubitCount) {
-        root = MakeQEngineNode(phaseFac, attachedQubitCount, initState);
+        root = MakeQInterfaceNode(phaseFac, attachedQubitCount, initState);
 
         return;
     }
@@ -92,8 +92,8 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 
     if (attachedQubitCount) {
         const size_t bit = SelectBit(initState, maxQubit);
-        leaf->branches[bit] = MakeQEngineNode(ONE_CMPLX, attachedQubitCount, initState >> bdtQubitCount);
-        leaf->branches[bit ^ 1U] = std::make_shared<QBdtQEngineNode>();
+        leaf->branches[bit] = MakeQInterfaceNode(ONE_CMPLX, attachedQubitCount, initState >> bdtQubitCount);
+        leaf->branches[bit ^ 1U] = std::make_shared<QBdtQInterfaceNode>();
     }
 }
 
@@ -292,7 +292,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     return start;
 }
 
-bitLenInt QBdt::Attach(QEnginePtr toCopy)
+bitLenInt QBdt::Attach(QInterfacePtr toCopy)
 {
     bitLenInt toRet = qubitCount;
 
@@ -340,8 +340,8 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy)
 
         for (size_t j = 0; j < 2; j++) {
             const complex scale = leaf->branches[j]->scale;
-            leaf->branches[j] = IS_NORM_0(scale) ? std::make_shared<QBdtQEngineNode>()
-                                                 : std::make_shared<QBdtQEngineNode>(scale, toCopyClone);
+            leaf->branches[j] = IS_NORM_0(scale) ? std::make_shared<QBdtQInterfaceNode>()
+                                                 : std::make_shared<QBdtQInterfaceNode>(scale, toCopyClone);
         }
 
         return (bitCapInt)0U;
@@ -351,6 +351,16 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy)
     SetQubitCount(bdtQubitCount + attachedQubitCount);
 
     return toRet;
+}
+
+QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
+{
+    QBdtPtr dest = std::make_shared<QBdt>(bdtQubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+        false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+
+    Decompose(start, dest);
+
+    return dest;
 }
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
