@@ -350,24 +350,25 @@ void CL_CALLBACK _PopQueue(cl_event event, cl_int type, void* user_data)
 
 void QEngineOCL::PopQueue(cl_event event, cl_int type)
 {
-    queue_mutex.lock();
+    // For lock_guard scope
+    if (true) {
+        std::lock_guard<std::mutex> lock(queue_mutex);
 
-    poolItems.front()->probArray = NULL;
-    poolItems.front()->angleArray = NULL;
-    if (poolItems.front()->otherStateVec) {
-        FreeStateVec(poolItems.front()->otherStateVec);
-        poolItems.front()->otherStateVec = NULL;
+        poolItems.front()->probArray = NULL;
+        poolItems.front()->angleArray = NULL;
+        if (poolItems.front()->otherStateVec) {
+            FreeStateVec(poolItems.front()->otherStateVec);
+            poolItems.front()->otherStateVec = NULL;
+        }
+
+        SubtractAlloc(wait_queue_items.front().deallocSize);
+
+        wait_queue_items.pop_front();
+
+        if (poolItems.size() > 1) {
+            rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
+        }
     }
-
-    SubtractAlloc(wait_queue_items.front().deallocSize);
-
-    wait_queue_items.pop_front();
-
-    if (poolItems.size() > 1) {
-        rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
-    }
-
-    queue_mutex.unlock();
 
     DispatchQueue(event, type);
 }
