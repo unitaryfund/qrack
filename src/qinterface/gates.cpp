@@ -458,21 +458,11 @@ void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
     }
 }
 
-void QInterface::PhaseFlip()
-{
-    if (!randGlobalPhase) {
-        Phase(-ONE_CMPLX, -ONE_CMPLX, 0);
-    }
-}
+void QInterface::PhaseFlip() { Phase(-ONE_CMPLX, -ONE_CMPLX, 0); }
 
 void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 {
     if (!length) {
-        return;
-    }
-
-    if (length == 1U) {
-        Phase(-ONE_CMPLX, ONE_CMPLX, start);
         return;
     }
 

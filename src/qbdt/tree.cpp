@@ -561,6 +561,11 @@ bitCapInt QBdt::MAll()
 
 void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
 {
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]) && (randGlobalPhase || IS_NORM_0(ONE_CMPLX - mtrx[0])) &&
+        IS_NORM_0(mtrx[0] - mtrx[3])) {
+        return;
+    }
+
     if (attachedQubitCount == qubitCount) {
         return NODE_TO_QINTERFACE(root)->Mtrx(mtrx, target);
     }

@@ -501,6 +501,11 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length, bool isFor
         ToPermBasis(start, length);
     }
 
+    if (length == 1U) {
+        EndEmulation(start);
+        return shards[start].unit;
+    }
+
     std::vector<bitLenInt> bits(length);
     std::vector<bitLenInt*> ebits(length);
     for (bitLenInt i = 0; i < length; i++) {
@@ -509,7 +514,7 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length, bool isFor
     }
 
     QInterfacePtr toRet = EntangleInCurrentBasis(ebits.begin(), ebits.end());
-    OrderContiguous(shards[start].unit);
+    OrderContiguous(toRet);
     return toRet;
 }
 
@@ -537,7 +542,7 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start1, bitLenInt length1, bitLenIn
     }
 
     QInterfacePtr toRet = EntangleInCurrentBasis(ebits.begin(), ebits.end());
-    OrderContiguous(shards[start1].unit);
+    OrderContiguous(toRet);
     return toRet;
 }
 
@@ -582,7 +587,7 @@ QInterfacePtr QUnit::EntangleRange(
     }
 
     QInterfacePtr toRet = EntangleInCurrentBasis(ebits.begin(), ebits.end());
-    OrderContiguous(shards[start1].unit);
+    OrderContiguous(toRet);
     return toRet;
 }
 
@@ -3510,7 +3515,7 @@ void QUnit::Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
 
 void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
-    if ((engines[0] != QINTERFACE_BDT) && CheckBitsPermutation(start, length)) {
+    if (CheckBitsPermutation(start, length)) {
         const bitCapInt value = GetCachedPermutation(start, length);
         if (value < greaterPerm) {
             PhaseFlip();
@@ -3525,21 +3530,19 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    QInterfacePtr unit = shards[flagIndex].unit;
-    if ((engines[0] != QINTERFACE_BDT) && CheckBitsPermutation(flagIndex, 1)) {
-        const bitCapInt value = GetCachedPermutation(flagIndex, 1);
-        if (value) {
+    if (CheckBitsPermutation(flagIndex, 1)) {
+        if (SHARD_STATE(shards[flagIndex])) {
             PhaseFlipIfLess(greaterPerm, start, length);
         }
 
         return;
     }
 
+    DirtyShardRange(start, length);
+    shards[flagIndex].isPhaseDirty = true;
     EntangleRange(start, length);
     Entangle({ start, flagIndex })
         ->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
-    DirtyShardRange(start, length);
-    shards[flagIndex].isPhaseDirty = true;
 }
 #endif
 
