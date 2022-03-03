@@ -93,7 +93,7 @@ void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, 
 
 QBdtNodeInterfacePtr QBdtQInterfaceNode::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
 {
-    if (!size || (norm(scale) <= REAL1_EPSILON)) {
+    if (!size || (norm(scale) <= FP_NORM_EPSILON)) {
         return NULL;
     }
 
