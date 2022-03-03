@@ -37,6 +37,12 @@ protected:
     bitCapInt bdtMaxQPower;
     bool isStateVec;
 
+    virtual void SetQubitCount(bitLenInt qb, bitLenInt aqb)
+    {
+        attachedQubitCount = aqb;
+        SetQubitCount(qb);
+    }
+
     virtual void SetQubitCount(bitLenInt qb)
     {
         QInterface::SetQubitCount(qb);
@@ -66,7 +72,7 @@ protected:
         QBdtQInterfaceNodePtr nRoot = MakeQInterfaceNode(ONE_R1, qubitCount);
         GetQuantumState(NODE_TO_QINTERFACE(nRoot));
         root = nRoot;
-        attachedQubitCount = qubitCount;
+        SetQubitCount(qubitCount, qubitCount);
     }
     void ResetStateVector()
     {
@@ -77,8 +83,7 @@ protected:
         isStateVec = false;
 
         QBdtQInterfaceNodePtr oRoot = std::dynamic_pointer_cast<QBdtQInterfaceNode>(root);
-        attachedQubitCount = 0U;
-        SetPermutation(0U);
+        SetQubitCount(qubitCount, 0U);
         SetQuantumState(NODE_TO_QINTERFACE(oRoot));
     }
 

@@ -95,8 +95,7 @@ QInterfacePtr QBdt::Clone()
         false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
     copyPtr->root = root ? root->ShallowClone() : NULL;
-    copyPtr->attachedQubitCount = attachedQubitCount;
-    copyPtr->SetQubitCount(qubitCount);
+    copyPtr->SetQubitCount(qubitCount, attachedQubitCount);
 
     return copyPtr;
 }
@@ -278,15 +277,14 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     }
 
     root->InsertAtDepth(toCopy->root, start, toCopy->bdtQubitCount);
-    attachedQubitCount += toCopy->attachedQubitCount;
-    SetQubitCount(qubitCount + toCopy->qubitCount);
+    SetQubitCount(qubitCount + toCopy->qubitCount, attachedQubitCount + toCopy->attachedQubitCount);
 
     return start;
 }
 
 bitLenInt QBdt::Attach(QInterfacePtr toCopy)
 {
-    bitLenInt toRet = qubitCount;
+    const bitLenInt toRet = qubitCount;
 
     if (attachedQubitCount) {
         par_for_qbdt(0, maxQPower, [&](const bitCapInt& i, const int& cpu) {
@@ -306,8 +304,7 @@ bitLenInt QBdt::Attach(QInterfacePtr toCopy)
             return (bitCapInt)0U;
         });
 
-        attachedQubitCount += toCopy->GetQubitCount();
-        SetQubitCount(bdtQubitCount + attachedQubitCount);
+        SetQubitCount(qubitCount + toCopy->GetQubitCount(), attachedQubitCount + toCopy->GetQubitCount());
 
         return toRet;
     }
@@ -339,8 +336,7 @@ bitLenInt QBdt::Attach(QInterfacePtr toCopy)
         return (bitCapInt)0U;
     });
 
-    attachedQubitCount = toCopy->GetQubitCount();
-    SetQubitCount(bdtQubitCount + attachedQubitCount);
+    SetQubitCount(qubitCount + toCopy->GetQubitCount(), toCopy->GetQubitCount());
 
     return toRet;
 }
@@ -373,7 +369,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     if (bdtQubitCount < length) {
         attachedQubitCount -= length - bdtQubitCount;
     }
-    SetQubitCount(qubitCount - length);
+    SetQubitCount(qubitCount - length, attachedQubitCount);
 
     root->Prune(bdtQubitCount);
 }
