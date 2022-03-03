@@ -77,7 +77,7 @@ public:
             return true;
         }
 
-        if (norm(scale - r->scale) > FP_NORM_EPSILON) {
+        if (norm(scale - r->scale) > REAL1_EPSILON) {
             return false;
         }
 
