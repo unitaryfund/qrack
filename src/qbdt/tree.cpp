@@ -47,15 +47,17 @@ QBdtQInterfaceNodePtr QBdt::MakeQInterfaceNode(complex scale, bitLenInt qbCount,
 bool QBdt::ForceMParity(bitCapInt mask, bool result, bool doForce)
 {
     SetStateVector();
-    bool toRet = NODE_TO_QINTERFACE(root)->ForceMParity(mask, result, doForce);
-    ResetStateVector();
-
-    return toRet;
+    return NODE_TO_QINTERFACE(root)->ForceMParity(mask, result, doForce);
 }
 
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 {
     Dump();
+
+    if (isStateVec) {
+        SetQubitCount(qubitCount, 0U);
+        isStateVec = false;
+    }
 
     if (phaseFac == CMPLX_DEFAULT_ARG) {
         if (randGlobalPhase) {
@@ -93,6 +95,8 @@ QInterfacePtr QBdt::Clone()
 {
     QBdtPtr copyPtr = std::make_shared<QBdt>(bdtQubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
         false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+
+    ResetStateVector();
 
     copyPtr->root = root ? root->ShallowClone() : NULL;
     copyPtr->SetQubitCount(qubitCount, attachedQubitCount);
@@ -186,6 +190,9 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
         return ONE_R1;
     }
 
+    ResetStateVector();
+    toCompare->ResetStateVector();
+
     complex projection = ZERO_CMPLX;
     for (bitCapInt i = 0; i < maxQPower; i++) {
         QBdtNodeInterfacePtr leaf1 = root;
@@ -221,6 +228,10 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
 
 complex QBdt::GetAmplitude(bitCapInt perm)
 {
+    if (isStateVec) {
+        return NODE_TO_QINTERFACE(root)->GetAmplitude(perm);
+    }
+
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
     for (bitLenInt j = 0; j < bdtQubitCount; j++) {
@@ -376,6 +387,10 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 
 real1_f QBdt::Prob(bitLenInt qubit)
 {
+    if (isStateVec) {
+        return NODE_TO_QINTERFACE(root)->Prob(qubit);
+    }
+
     const bool isKet = (qubit >= bdtQubitCount);
     const bitLenInt maxQubit = isKet ? bdtQubitCount : qubit;
     const bitCapInt qPower = pow2(maxQubit);
@@ -418,6 +433,10 @@ real1_f QBdt::Prob(bitLenInt qubit)
 
 real1_f QBdt::ProbAll(bitCapInt perm)
 {
+    if (isStateVec) {
+        return NODE_TO_QINTERFACE(root)->ProbAll(perm);
+    }
+
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
     for (bitLenInt j = 0; j < bdtQubitCount; j++) {
@@ -437,6 +456,10 @@ real1_f QBdt::ProbAll(bitCapInt perm)
 
 bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
+    if (isStateVec) {
+        return NODE_TO_QINTERFACE(root)->ForceM(qubit, result, doForce, doApply);
+    }
+
     if (doForce) {
         if (doApply) {
             ExecuteAsStateVector([&](QInterfacePtr eng) { eng->ForceM(qubit, result, true, doApply); });
@@ -500,6 +523,14 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
 bitCapInt QBdt::MAll()
 {
+    if (isStateVec) {
+        const bitCapInt toRet = NODE_TO_QINTERFACE(root)->MAll();
+        SetQubitCount(qubitCount, 0U);
+        SetPermutation(toRet);
+
+        return toRet;
+    }
+
     bitCapInt result = 0;
     QBdtNodeInterfacePtr leaf = root;
     for (bitLenInt i = 0; i < bdtQubitCount; i++) {
@@ -536,6 +567,11 @@ bitCapInt QBdt::MAll()
 
 void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
 {
+    if (isStateVec) {
+        NODE_TO_QINTERFACE(root)->Mtrx(mtrx, target);
+        return;
+    }
+
     const bool isKet = (target >= bdtQubitCount);
     const bitLenInt maxQubit = isKet ? bdtQubitCount : target;
     const bitCapInt qPower = pow2(maxQubit);
@@ -571,6 +607,11 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
 
 void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target)
 {
+    if (isStateVec) {
+        NODE_TO_QINTERFACE(root)->MCMtrx(controls, controlLen, mtrx, target);
+        return;
+    }
+
     std::vector<bitLenInt> controlVec(controlLen);
     std::copy(controls, controls + controlLen, controlVec.begin());
 

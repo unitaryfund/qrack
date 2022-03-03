@@ -93,16 +93,12 @@ protected:
     {
         SetStateVector();
         operation(NODE_TO_QINTERFACE(root));
-        ResetStateVector();
     }
 
     template <typename Fn> bitCapInt BitCapIntAsStateVector(Fn operation)
     {
         SetStateVector();
-        bitCapInt toRet = operation(NODE_TO_QINTERFACE(root));
-        ResetStateVector();
-
-        return toRet;
+        return operation(NODE_TO_QINTERFACE(root));
     }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
