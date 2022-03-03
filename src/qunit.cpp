@@ -501,11 +501,6 @@ QInterfacePtr QUnit::EntangleRange(bitLenInt start, bitLenInt length, bool isFor
         ToPermBasis(start, length);
     }
 
-    if (length == 1) {
-        EndEmulation(start);
-        return shards[start].unit;
-    }
-
     std::vector<bitLenInt> bits(length);
     std::vector<bitLenInt*> ebits(length);
     for (bitLenInt i = 0; i < length; i++) {
@@ -3515,7 +3510,7 @@ void QUnit::Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
 
 void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
 {
-    if (CheckBitsPermutation(start, length)) {
+    if ((engines[0] != QINTERFACE_BDT) && CheckBitsPermutation(start, length)) {
         const bitCapInt value = GetCachedPermutation(start, length);
         if (value < greaterPerm) {
             PhaseFlip();
@@ -3530,7 +3525,8 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
-    if (CheckBitsPermutation(flagIndex, 1)) {
+    QInterfacePtr unit = shards[flagIndex].unit;
+    if ((engines[0] != QINTERFACE_BDT) && CheckBitsPermutation(flagIndex, 1)) {
         const bitCapInt value = GetCachedPermutation(flagIndex, 1);
         if (value) {
             PhaseFlipIfLess(greaterPerm, start, length);
