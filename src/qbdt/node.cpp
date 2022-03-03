@@ -21,7 +21,7 @@
 #endif
 #include <set>
 
-#define IS_NORM_0(c) (norm(c) <= FP_NORM_EPSILON)
+#define IS_NORM_0(c) (norm(c) <= REAL1_EPSILON)
 
 namespace Qrack {
 
@@ -170,19 +170,19 @@ void QBdtNode::PopStateVector(bitLenInt depth)
     const real1 nrm0 = norm(b0->scale);
     const real1 nrm1 = norm(b1->scale);
 
-    if ((nrm0 + nrm1) <= FP_NORM_EPSILON) {
+    if ((nrm0 + nrm1) <= REAL1_EPSILON) {
         SetZero();
         return;
     }
 
-    if (nrm0 <= FP_NORM_EPSILON) {
+    if (nrm0 <= REAL1_EPSILON) {
         scale = b1->scale;
         b0->SetZero();
         b1->scale = ONE_CMPLX;
         return;
     }
 
-    if (nrm1 <= FP_NORM_EPSILON) {
+    if (nrm1 <= REAL1_EPSILON) {
         scale = b0->scale;
         b0->scale = ONE_CMPLX;
         b1->SetZero();
@@ -295,7 +295,7 @@ void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QB
 
 void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
 {
-    if (norm(scale) <= FP_NORM_EPSILON) {
+    if (norm(scale) <= REAL1_EPSILON) {
         return;
     }
 
@@ -317,7 +317,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt 
     if (!depth && size) {
         QBdtNodeInterfacePtr c = branches[0];
 
-        if (norm(branches[0]->scale) > FP_NORM_EPSILON) {
+        if (norm(branches[0]->scale) > REAL1_EPSILON) {
             branches[0] = std::make_shared<QBdtNode>(branches[0]->scale, b->branches);
             branches[0]->InsertAtDepth(c, size, 0);
 
@@ -327,7 +327,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt 
             }
         }
 
-        if (norm(branches[1]->scale) <= FP_NORM_EPSILON) {
+        if (norm(branches[1]->scale) <= REAL1_EPSILON) {
             return;
         }
 

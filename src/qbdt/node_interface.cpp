@@ -52,7 +52,7 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end
 
 QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
 {
-    if (norm(scale) <= FP_NORM_EPSILON) {
+    if (norm(scale) <= REAL1_EPSILON) {
         return NULL;
     }
 
