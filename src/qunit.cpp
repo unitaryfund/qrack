@@ -3530,9 +3530,18 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
 {
+    if (CheckBitsPermutation(flagIndex, 1)) {
+        const bitCapInt value = GetCachedPermutation(flagIndex, 1);
+        if (value) {
+            PhaseFlipIfLess(greaterPerm, start, length);
+        }
+
+        return;
+    }
+
     EntangleRange(start, length);
-    QInterfacePtr unit = Entangle({ start, flagIndex });
-    unit->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
+    Entangle({ start, flagIndex })
+        ->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
     DirtyShardRange(start, length);
     shards[flagIndex].isPhaseDirty = true;
 }
