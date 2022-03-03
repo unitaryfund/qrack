@@ -108,7 +108,7 @@ void QInterface::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLen
         toSub++;
     }
 
-    bitCapInt invToSub = pow2(length) - toSub;
+    const bitCapInt invToSub = pow2(length) - toSub;
     INCDECC(invToSub, start, length, carryIndex);
 }
 
