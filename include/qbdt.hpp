@@ -66,7 +66,6 @@ protected:
         if (isStateVec) {
             return;
         }
-        Finish();
         isStateVec = true;
 
         QBdtQInterfaceNodePtr nRoot = MakeQInterfaceNode(ONE_R1, qubitCount);
@@ -79,7 +78,6 @@ protected:
         if (!isStateVec) {
             return;
         }
-        Finish();
         isStateVec = false;
 
         QBdtQInterfaceNodePtr oRoot = std::dynamic_pointer_cast<QBdtQInterfaceNode>(root);
@@ -132,22 +130,6 @@ public:
     }
 
     virtual bool isBinaryDecisionTree() { return true; };
-
-    virtual void Finish()
-    {
-        if (isStateVec) {
-            NODE_TO_QINTERFACE(root)->Finish();
-        }
-    };
-
-    virtual bool isFinished() { return !isStateVec || NODE_TO_QINTERFACE(root)->isFinished(); }
-
-    virtual void Dump()
-    {
-        if (isStateVec) {
-            NODE_TO_QINTERFACE(root)->Dump();
-        }
-    }
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
@@ -220,7 +202,6 @@ public:
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
     {
-        Finish();
         QInterfacePtr unit = isStateVec ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
         return unit->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
@@ -285,7 +266,6 @@ public:
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     virtual real1_f ProbParity(bitCapInt mask)
     {
-        Finish();
         QInterfacePtr unit = isStateVec ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
         return unit->ProbParity(mask);
     }
