@@ -251,6 +251,9 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
+    ResetStateVector();
+    toCopy->ResetStateVector();
+
     if (attachedQubitCount && toCopy->attachedQubitCount) {
         const bitLenInt midIndex = bdtQubitCount;
         if (start < midIndex) {
@@ -364,6 +367,11 @@ QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
+    ResetStateVector();
+    if (dest) {
+        dest->ResetStateVector();
+    }
+
     if (attachedQubitCount && start) {
         ROR(start, 0, qubitCount);
         DecomposeDispose(0, length, dest);
@@ -567,10 +575,7 @@ bitCapInt QBdt::MAll()
 
 void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
 {
-    if (isStateVec) {
-        NODE_TO_QINTERFACE(root)->Mtrx(mtrx, target);
-        return;
-    }
+    ResetStateVector();
 
     const bool isKet = (target >= bdtQubitCount);
     const bitLenInt maxQubit = isKet ? bdtQubitCount : target;
@@ -607,10 +612,7 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
 
 void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target)
 {
-    if (isStateVec) {
-        NODE_TO_QINTERFACE(root)->MCMtrx(controls, controlLen, mtrx, target);
-        return;
-    }
+    ResetStateVector();
 
     std::vector<bitLenInt> controlVec(controlLen);
     std::copy(controls, controls + controlLen, controlVec.begin());
