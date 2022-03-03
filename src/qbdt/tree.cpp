@@ -451,16 +451,14 @@ real1_f QBdt::ProbAll(bitCapInt perm)
 
 bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
-    if (attachedQubitCount == qubitCount) {
-        return NODE_TO_QINTERFACE(root)->ForceM(qubit, result, doForce, doApply);
-    }
-
     if (doForce) {
         if (doApply) {
             ExecuteAsStateVector([&](QInterfacePtr eng) { eng->ForceM(qubit, result, true, doApply); });
         }
         return result;
     }
+
+    ResetStateVector();
 
     const real1_f oneChance = Prob(qubit);
     if (oneChance >= ONE_R1) {
@@ -494,8 +492,6 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         if (IS_NORM_0(leaf->scale)) {
             continue;
         }
-
-        leaf->Branch();
 
         if (isKet) {
             NODE_TO_QINTERFACE(leaf)->ForceM(qubit - bdtQubitCount, result, false, true);
@@ -574,6 +570,8 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
     const bitLenInt maxQubit = isKet ? bdtQubitCount : target;
     const bitCapInt qPower = pow2(maxQubit);
 
+    std::set<QInterfacePtr> qis;
+
     par_for_qbdt(0, qPower, [&](const bitCapInt& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         // Iterate to qubit depth.
@@ -591,8 +589,11 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
         }
 
         if (isKet) {
-            leaf->Branch();
-            NODE_TO_QINTERFACE(leaf)->Mtrx(mtrx, target - bdtQubitCount);
+            QInterfacePtr qi = NODE_TO_QINTERFACE(leaf);
+            if (qis.find(qi) == qis.end()) {
+                qis.insert(qi);
+                qi->Mtrx(mtrx, target - bdtQubitCount);
+            }
         } else {
             leaf->Apply2x2(mtrx, bdtQubitCount - target);
         }
@@ -634,6 +635,7 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls,
     }
     std::unique_ptr<bitLenInt[]> ketControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[ketControlsVec.size()]);
     std::copy(ketControlsVec.begin(), ketControlsVec.end(), ketControls.get());
+    std::set<QInterfacePtr> qis;
 
     par_for_qbdt(0, qPower, [&](const bitCapInt& i, const int& cpu) {
         if ((i & lowControlMask) != lowControlMask) {
@@ -656,9 +658,11 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls,
         }
 
         if (isKet) {
-            leaf->Branch();
-            QInterfacePtr qiLeaf = NODE_TO_QINTERFACE(leaf);
-            qiLeaf->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+            QInterfacePtr qi = NODE_TO_QINTERFACE(leaf);
+            if (qis.find(qi) == qis.end()) {
+                qis.insert(qi);
+                qi->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+            }
         } else {
             leaf->Apply2x2(mtrx, bdtQubitCount - target);
         }

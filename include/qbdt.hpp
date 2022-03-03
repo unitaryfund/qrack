@@ -388,10 +388,12 @@ public:
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->PhaseFlipIfLess(greaterPerm, start, length); });
+        ResetStateVector();
     }
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex); });
+        ResetStateVector();
     }
 #endif
 };
