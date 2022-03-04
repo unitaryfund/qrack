@@ -1497,9 +1497,6 @@ MICROSOFT_QUANTUM_DECL unsigned Measure(
 
     QInterfacePtr simulator = simulators[sid];
 
-    std::vector<unsigned> bVec;
-    std::vector<unsigned> qVec;
-
     unsigned toRet = -1;
     try {
         TransformPauliBasis(simulator, n, b, q);
