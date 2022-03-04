@@ -243,7 +243,8 @@ complex QUnit::GetAmplitudeOrProb(bitCapInt perm, bool isProb)
         }
     }
 
-    if ((shards[0].GetQubitCount() > 1) && IS_1_R1(norm(result)) && (randGlobalPhase || IS_AMP_0(result - ONE_CMPLX))) {
+    if ((shards[0].GetQubitCount() > 1) && (norm(result) >= (ONE_R1 - FP_NORM_EPSILON)) &&
+        (randGlobalPhase || IS_AMP_0(result - ONE_CMPLX))) {
         SetPermutation(perm);
     }
 
