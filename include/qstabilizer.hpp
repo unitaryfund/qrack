@@ -149,7 +149,7 @@ public:
 
     bitLenInt GetQubitCount() { return qubitCount; }
 
-    bitCapIntOcl GetMaxQPower() { return pow2Ocl(qubitCount); }
+    bitCapInt GetMaxQPower() { return pow2(qubitCount); }
 
     void SetPermutation(const bitCapInt& perm);
 
