@@ -16,6 +16,8 @@
 
 #include "qbdt_qinterface_node.hpp"
 
+#define IS_SAME_AMP(a, b) (norm((a) - (b)) <= (REAL1_EPSILON * REAL1_EPSILON))
+
 namespace Qrack {
 bool QBdtQInterfaceNode::isEqual(QBdtNodeInterfacePtr r)
 {
@@ -23,7 +25,7 @@ bool QBdtQInterfaceNode::isEqual(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    if (abs(scale - r->scale) > REAL1_EPSILON) {
+    if (!IS_SAME_AMP(scale, r->scale)) {
         return false;
     }
 

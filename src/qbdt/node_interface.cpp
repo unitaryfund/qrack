@@ -16,6 +16,8 @@
 
 #include "qbdt_node_interface.hpp"
 
+#define IS_SAME_AMP(a, b) (norm((a) - (b)) <= (REAL1_EPSILON * REAL1_EPSILON))
+
 namespace Qrack {
 
 bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs)
@@ -39,6 +41,31 @@ QBdtNodeInterfacePtr operator-(const QBdtNodeInterfacePtr& t)
     m->scale *= -ONE_CMPLX;
 
     return m;
+}
+
+bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
+{
+    if (this == r.get()) {
+        return true;
+    }
+
+    if (!IS_SAME_AMP(scale, r->scale)) {
+        return false;
+    }
+
+    if (branches[0] != r->branches[0]) {
+        return false;
+    }
+
+    branches[0] = r->branches[0];
+
+    if (branches[1] != r->branches[1]) {
+        return false;
+    }
+
+    branches[1] = r->branches[1];
+
+    return true;
 }
 
 void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn)

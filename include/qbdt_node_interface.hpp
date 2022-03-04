@@ -71,30 +71,7 @@ public:
         branches[1] = NULL;
     }
 
-    virtual bool isEqual(QBdtNodeInterfacePtr r)
-    {
-        if (this == r.get()) {
-            return true;
-        }
-
-        if (abs(scale - r->scale) > REAL1_EPSILON) {
-            return false;
-        }
-
-        if (branches[0] != r->branches[0]) {
-            return false;
-        }
-
-        branches[0] = r->branches[0];
-
-        if (branches[1] != r->branches[1]) {
-            return false;
-        }
-
-        branches[1] = r->branches[1];
-
-        return true;
-    }
+    virtual bool isEqual(QBdtNodeInterfacePtr r);
 
     virtual QBdtNodeInterfacePtr ShallowClone() = 0;
 
