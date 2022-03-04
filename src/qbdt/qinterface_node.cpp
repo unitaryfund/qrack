@@ -23,7 +23,7 @@ bool QBdtQInterfaceNode::isEqual(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    if (norm(scale - r->scale) > REAL1_EPSILON) {
+    if (abs(scale - r->scale) > REAL1_EPSILON) {
         return false;
     }
 
