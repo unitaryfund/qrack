@@ -476,7 +476,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     const bool isKet = (qubit >= bdtQubitCount);
     const bitLenInt maxQubit = isKet ? bdtQubitCount : qubit;
     const bitCapInt qPower = pow2(maxQubit);
-
+    std::set<QInterfacePtr> qis;
     root->scale = GetNonunitaryPhase();
 
     for (bitCapInt i = 0; i < qPower; i++) {
@@ -494,9 +494,15 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         }
 
         if (isKet) {
-            NODE_TO_QINTERFACE(leaf)->ForceM(qubit - bdtQubitCount, result, false, true);
+            QInterfacePtr qi = NODE_TO_QINTERFACE(leaf);
+            if (qis.find(qi) == qis.end()) {
+                qis.insert(qi);
+                qi->ForceM(qubit - bdtQubitCount, result, false, true);
+            }
             continue;
         }
+
+        leaf->Branch();
 
         if (result) {
             leaf->branches[0]->SetZero();
