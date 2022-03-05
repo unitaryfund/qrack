@@ -35,9 +35,8 @@
 
 namespace Qrack {
 
-QStabilizer::QStabilizer(
-    bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, bool useHardwareRNG, bool randomGlobalPhase)
-    : QInterface(n, rgp, false, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
+QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, bool useHardwareRNG)
+    : QInterface(n, rgp, false, useHardwareRNG, true, REAL1_EPSILON)
     , x((n << 1U) + 1U, std::vector<bool>(n))
     , z((n << 1U) + 1U, std::vector<bool>(n))
     , r((n << 1U) + 1U)
@@ -893,8 +892,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
 }
 QInterfacePtr QStabilizer::Decompose(bitLenInt start, bitLenInt length)
 {
-    QStabilizerPtr dest =
-        std::make_shared<QStabilizer>(qubitCount, 0, rand_generator, hardware_rand_generator != NULL, randGlobalPhase);
+    QStabilizerPtr dest = std::make_shared<QStabilizer>(qubitCount, 0, rand_generator, hardware_rand_generator != NULL);
     Decompose(start, dest);
 
     return dest;

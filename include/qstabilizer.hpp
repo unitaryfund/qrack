@@ -117,15 +117,14 @@ protected:
     }
 
 public:
-    QStabilizer(bitLenInt n, bitCapInt perm = 0, qrack_rand_gen_ptr rgp = nullptr, bool useHardwareRNG = true,
-        bool randomGlobalPhase = true);
+    QStabilizer(bitLenInt n, bitCapInt perm = 0, qrack_rand_gen_ptr rgp = nullptr, bool useHardwareRNG = true);
 
     QInterfacePtr Clone()
     {
         Finish();
 
-        QStabilizerPtr clone = std::make_shared<QStabilizer>(
-            qubitCount, 0, rand_generator, hardware_rand_generator != NULL, randGlobalPhase);
+        QStabilizerPtr clone =
+            std::make_shared<QStabilizer>(qubitCount, 0, rand_generator, hardware_rand_generator != NULL);
         clone->Finish();
 
         clone->x = x;
