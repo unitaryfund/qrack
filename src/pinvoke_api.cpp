@@ -1921,7 +1921,7 @@ MICROSOFT_QUANTUM_DECL void ADD(_In_ unsigned sid, unsigned a, _In_ unsigned n, 
 
     try {
         unsigned start = MapArithmetic(simulator, n, q);
-        QALU(simulator)->INC(a, start, n);
+        simulator->INC(a, start, n);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }
@@ -1933,7 +1933,7 @@ MICROSOFT_QUANTUM_DECL void SUB(_In_ unsigned sid, unsigned a, _In_ unsigned n, 
 
     try {
         unsigned start = MapArithmetic(simulator, n, q);
-        QALU(simulator)->DEC(a, start, n);
+        simulator->DEC(a, start, n);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }
@@ -1945,7 +1945,7 @@ MICROSOFT_QUANTUM_DECL void ADDS(_In_ unsigned sid, unsigned a, unsigned s, _In_
 
     try {
         unsigned start = MapArithmetic(simulator, n, q);
-        QALU(simulator)->INCS(a, start, n, shards[simulator.get()][s]);
+        simulator->INCS(a, start, n, shards[simulator.get()][s]);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }
@@ -1957,11 +1957,37 @@ MICROSOFT_QUANTUM_DECL void SUBS(_In_ unsigned sid, unsigned a, unsigned s, _In_
 
     try {
         unsigned start = MapArithmetic(simulator, n, q);
-        QALU(simulator)->DECS(a, start, n, shards[simulator.get()][s]);
+        simulator->DECS(a, start, n, shards[simulator.get()][s]);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }
 }
+
+MICROSOFT_QUANTUM_DECL void MCADD(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
+    _In_ unsigned nq, _In_reads_(nq) unsigned* q)
+{
+    MAP_CONTROLS_AND_LOCK(sid, nc)
+
+    try {
+        unsigned start = MapArithmetic(simulator, nq, q);
+        simulator->CINC(a, start, nq, ctrlsArray.get(), nc);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+MICROSOFT_QUANTUM_DECL void MCSUB(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
+    _In_ unsigned nq, _In_reads_(nq) unsigned* q)
+{
+    MAP_CONTROLS_AND_LOCK(sid, nc)
+
+    try {
+        unsigned start = MapArithmetic(simulator, nq, q);
+        simulator->CDEC(a, start, nq, ctrlsArray.get(), nc);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+
 MICROSOFT_QUANTUM_DECL void MUL(
     _In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
 {
@@ -2028,30 +2054,6 @@ MICROSOFT_QUANTUM_DECL void POWN(
     }
 }
 
-MICROSOFT_QUANTUM_DECL void MCADD(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
-    _In_ unsigned nq, _In_reads_(nq) unsigned* q)
-{
-    MAP_CONTROLS_AND_LOCK(sid, nc)
-
-    try {
-        unsigned start = MapArithmetic(simulator, nq, q);
-        QALU(simulator)->CINC(a, start, nq, ctrlsArray.get(), nc);
-    } catch (...) {
-        simulatorErrors[sid] = 1;
-    }
-}
-MICROSOFT_QUANTUM_DECL void MCSUB(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
-    _In_ unsigned nq, _In_reads_(nq) unsigned* q)
-{
-    MAP_CONTROLS_AND_LOCK(sid, nc)
-
-    try {
-        unsigned start = MapArithmetic(simulator, nq, q);
-        QALU(simulator)->CDEC(a, start, nq, ctrlsArray.get(), nc);
-    } catch (...) {
-        simulatorErrors[sid] = 1;
-    }
-}
 MICROSOFT_QUANTUM_DECL void MCMUL(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
     _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
 {
