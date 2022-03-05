@@ -573,6 +573,10 @@ void QStabilizerHybrid::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen
 void QStabilizerHybrid::MCPhase(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
+    if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
+        return;
+    }
+
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls)) {
         return;
@@ -580,10 +584,6 @@ void QStabilizerHybrid::MCPhase(
 
     if (!controls.size()) {
         Phase(topLeft, bottomRight, target);
-        return;
-    }
-
-    if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
         return;
     }
 
