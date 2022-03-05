@@ -100,6 +100,22 @@ protected:
         });
     }
 
+    bool TrimControls(const bitLenInt* lControls, bitLenInt lControlLen, std::vector<bitLenInt>& output)
+    {
+        for (bitLenInt i = 0; i < lControlLen; i++) {
+            const bitLenInt bit = lControls[i];
+            if (!IsSeparableZ(bit)) {
+                output.push_back(bit);
+                continue;
+            }
+            if (!M(bit)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 public:
     QStabilizer(bitLenInt n, bitCapInt perm = 0, qrack_rand_gen_ptr rgp = nullptr, bool useHardwareRNG = true,
         bool randomGlobalPhase = true);

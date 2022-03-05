@@ -1233,9 +1233,14 @@ void QStabilizer::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen, cons
 }
 
 void QStabilizer::MCPhase(
-    const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
-    if (!controlLen) {
+    std::vector<bitLenInt> controls;
+    if (TrimControls(lControls, lControlLen, controls)) {
+        return;
+    }
+
+    if (!controls.size()) {
         Phase(topLeft, bottomRight, target);
         return;
     }
@@ -1250,7 +1255,7 @@ void QStabilizer::MCPhase(
         }
     }
 
-    if (controlLen > 1U) {
+    if (controls.size() > 1U) {
         throw std::domain_error(
             "QStabilizer::MCPhase() not implemented for non-Clifford/Pauli cases! (Too many controls)");
     }
@@ -1306,14 +1311,19 @@ void QStabilizer::MCPhase(
 }
 
 void QStabilizer::MCInvert(
-    const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    if (!controlLen) {
+    std::vector<bitLenInt> controls;
+    if (TrimControls(lControls, lControlLen, controls)) {
+        return;
+    }
+
+    if (!controls.size()) {
         Invert(topRight, bottomLeft, target);
         return;
     }
 
-    if (controlLen > 1U) {
+    if (controls.size() > 1U) {
         throw std::domain_error(
             "QStabilizer::MCInvert() not implemented for non-Clifford/Pauli cases! (Too many controls)");
     }
