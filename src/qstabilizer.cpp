@@ -1056,20 +1056,113 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     }
 
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
-        H(target);
-        return;
+        if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
+            H(target);
+            return;
+        }
+
+        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
+            Z(target);
+            X(target);
+            Z(target);
+            X(target);
+            H(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
+            S(target);
+            X(target);
+            S(target);
+            X(target);
+            H(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
+            IS(target);
+            X(target);
+            IS(target);
+            X(target);
+            H(target);
+            return;
+        }
     }
 
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         // Equivalent to X before H
-        ISqrtY(target);
-        return;
+        if (randGlobalPhase) {
+            ISqrtY(target);
+            return;
+        }
+
+        if (IS_SAME(SQRT1_2_R1, mtrx[0])) {
+            X(target);
+            H(target);
+            return;
+        }
+
+        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
+            Z(target);
+            X(target);
+            Z(target);
+            H(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
+            S(target);
+            X(target);
+            S(target);
+            H(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
+            IS(target);
+            X(target);
+            IS(target);
+            H(target);
+            return;
+        }
     }
 
     if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         // Equivalent to H before X
-        SqrtY(target);
-        return;
+        if (randGlobalPhase) {
+            SqrtY(target);
+            return;
+        }
+
+        if (IS_SAME(SQRT1_2_R1, mtrx[0])) {
+            H(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
+            H(target);
+            Z(target);
+            X(target);
+            Z(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
+            H(target);
+            S(target);
+            X(target);
+            S(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
+            H(target);
+            IS(target);
+            X(target);
+            IS(target);
+            return;
+        }
     }
 
     if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
@@ -1277,7 +1370,7 @@ void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
         }
     }
 
-    if (IsSeparableZ(target)) {
+    if (randGlobalPhase && IsSeparableZ(target)) {
         // This gate has no effect.
         return;
     }
@@ -1397,7 +1490,7 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
         }
     }
 
-    if (IsSeparableZ(target)) {
+    if (randGlobalPhase && IsSeparableZ(target)) {
         // This gate has no meaningful effect on phase.
         X(target);
         return;
