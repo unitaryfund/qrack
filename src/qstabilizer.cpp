@@ -32,8 +32,9 @@
 
 namespace Qrack {
 
-QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHardwareRNG, qrack_rand_gen_ptr rgp)
-    : qubitCount(n)
+QStabilizer::QStabilizer(
+    bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, bool useHardwareRNG, bool randomGlobalPhase)
+    : QInterface(n, rgp, false, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
     , x((n << 1U) + 1U, std::vector<bool>(n))
     , z((n << 1U) + 1U, std::vector<bool>(n))
     , r((n << 1U) + 1U)
@@ -992,5 +993,328 @@ bool QStabilizer::ApproxCompare(QStabilizerPtr o)
     }
 
     return true;
+}
+
+void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
+{
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        Phase(mtrx[0], mtrx[3], target);
+        return;
+    }
+
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        Invert(mtrx[1], mtrx[2], target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        H(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        // Equivalent to X before H
+        ISqrtY(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        // Equivalent to H before X
+        SqrtY(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        X(target);
+        SqrtY(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        H(target);
+        S(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+        ISqrtY(target);
+        S(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        Y(target);
+        H(target);
+        S(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+        Z(target);
+        H(target);
+        S(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+        IS(target);
+        H(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        IS(target);
+        SqrtY(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+        IS(target);
+        H(target);
+        Y(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        IS(target);
+        H(target);
+        Z(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        SqrtX(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        ISqrtX(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        SqrtX(target);
+        Z(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        Z(target);
+        SqrtX(target);
+        return;
+    }
+
+    throw std::logic_error("QStabilizer::Mtrx() not implemented for non-Clifford/Pauli cases!");
+}
+
+void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
+{
+    if (IS_SAME(topLeft, bottomRight)) {
+        return;
+    }
+
+    if (IS_SAME(topLeft, -bottomRight)) {
+        Z(target);
+        return;
+    }
+
+    if (IS_SAME(topLeft, -I_CMPLX * bottomRight)) {
+        S(target);
+        return;
+    }
+
+    if (IS_SAME(topLeft, I_CMPLX * bottomRight)) {
+        IS(target);
+        return;
+    }
+
+    if (IsSeparableZ(target)) {
+        // This gate has no effect.
+        return;
+    }
+
+    throw std::logic_error("QStabilizer::Phase() not implemented for non-Clifford/Pauli cases!");
+}
+
+void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
+{
+    if (IS_SAME(topRight, bottomLeft)) {
+        X(target);
+        return;
+    }
+
+    if (IS_SAME(topRight, -bottomLeft)) {
+        Y(target);
+        return;
+    }
+
+    if (IS_SAME(topRight, -I_CMPLX * bottomLeft)) {
+        X(target);
+        S(target);
+        return;
+    }
+
+    if (IS_SAME(topRight, I_CMPLX * bottomLeft)) {
+        S(target);
+        X(target);
+        return;
+    }
+
+    if (IsSeparableZ(target)) {
+        // This gate has no meaningful effect on phase.
+        X(target);
+        return;
+    }
+
+    throw std::logic_error("QStabilizer::Invert() not implemented for non-Clifford/Pauli cases!");
+}
+
+void QStabilizer::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
+{
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        MCPhase(lControls, lControlLen, mtrx[0], mtrx[3], target);
+        return;
+    }
+
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        MCInvert(lControls, lControlLen, mtrx[1], mtrx[2], target);
+        return;
+    }
+
+    throw std::logic_error("QStabilizer::MCMtrx() not implemented for non-Clifford/Pauli cases!");
+}
+
+void QStabilizer::MCPhase(
+    const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
+{
+    if (!controlLen) {
+        Phase(topLeft, bottomRight, target);
+        return;
+    }
+
+    if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
+        real1_f prob = Prob(target);
+        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
+            return;
+        }
+        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_R1)) {
+            return;
+        }
+    }
+
+    if (controlLen > 1U) {
+        throw std::logic_error(
+            "QStabilizer::MCPhase() not implemented for non-Clifford/Pauli cases! (Too many controls)");
+    }
+
+    const bitLenInt control = controls[0];
+
+    if (IS_SAME(topLeft, ONE_CMPLX)) {
+        if (IS_SAME(bottomRight, ONE_CMPLX)) {
+            return;
+        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            CZ(control, target);
+            return;
+        }
+    } else if (IS_SAME(topLeft, -ONE_CMPLX)) {
+        if (IS_SAME(bottomRight, ONE_CMPLX)) {
+            CNOT(control, target);
+            CZ(control, target);
+            CNOT(control, target);
+            return;
+        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            CZ(control, target);
+            CNOT(control, target);
+            CZ(control, target);
+            CNOT(control, target);
+            return;
+        }
+    } else if (IS_SAME(topLeft, I_CMPLX)) {
+        if (IS_SAME(bottomRight, I_CMPLX)) {
+            CZ(control, target);
+            CY(control, target);
+            CNOT(control, target);
+            return;
+        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
+            CY(control, target);
+            CNOT(control, target);
+            return;
+        }
+    } else if (IS_SAME(topLeft, -I_CMPLX)) {
+        if (IS_SAME(bottomRight, I_CMPLX)) {
+            CNOT(control, target);
+            CY(control, target);
+            return;
+        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
+            CY(control, target);
+            CZ(control, target);
+            CNOT(control, target);
+            return;
+        }
+    }
+
+    throw std::logic_error(
+        "QStabilizer::MCPhase() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
+}
+
+void QStabilizer::MCInvert(
+    const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
+{
+    if (!controlLen) {
+        Invert(topRight, bottomLeft, target);
+        return;
+    }
+
+    if (controlLen > 1U) {
+        throw std::logic_error(
+            "QStabilizer::MCInvert() not implemented for non-Clifford/Pauli cases! (Too many controls)");
+    }
+
+    const bitLenInt control = controls[0];
+
+    if (IS_SAME(topRight, ONE_CMPLX)) {
+        if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+            CNOT(control, target);
+            return;
+        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            CNOT(control, target);
+            CZ(control, target);
+            return;
+        }
+    } else if (IS_SAME(topRight, -ONE_CMPLX)) {
+        if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+            CZ(control, target);
+            CNOT(control, target);
+            return;
+        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            CZ(control, target);
+            CNOT(control, target);
+            CZ(control, target);
+            return;
+        }
+    } else if (IS_SAME(topRight, I_CMPLX)) {
+        if (IS_SAME(bottomLeft, I_CMPLX)) {
+            CZ(control, target);
+            CY(control, target);
+            return;
+        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            CZ(control, target);
+            CY(control, target);
+            CZ(control, target);
+            return;
+        }
+    } else if (IS_SAME(topRight, -I_CMPLX)) {
+        if (IS_SAME(bottomLeft, I_CMPLX)) {
+            CY(control, target);
+            return;
+        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            CY(control, target);
+            CZ(control, target);
+            return;
+        }
+    }
+
+    throw std::logic_error(
+        "QStabilizer::MCInvert() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
 }
 } // namespace Qrack

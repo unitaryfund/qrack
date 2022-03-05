@@ -50,8 +50,6 @@ typedef std::shared_ptr<QStabilizer> QStabilizerPtr;
 
 class QStabilizer : public QInterface {
 protected:
-    // # of qubits
-    bitLenInt qubitCount;
     // (2n+1)*n matrix for stabilizer/destabilizer x bits (there's one "scratch row" at the bottom)
     std::vector<std::vector<bool>> x;
     // (2n+1)*n matrix for z bits
@@ -103,8 +101,8 @@ protected:
     }
 
 public:
-    QStabilizer(
-        const bitLenInt& n, const bitCapInt& perm = 0, bool useHardwareRNG = true, qrack_rand_gen_ptr rgp = NULL);
+    QStabilizer(bitLenInt n, bitCapInt perm = 0, qrack_rand_gen_ptr rgp = nullptr, bool useHardwareRNG = true,
+        bool randomGlobalPhase = true);
 
     QInterfacePtr Clone()
     {
@@ -307,6 +305,21 @@ public:
     bool CanDecomposeDispose(const bitLenInt start, const bitLenInt length);
 
     bool ApproxCompare(QStabilizerPtr o);
+
+    void NormalizeState(
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
+    {
+        // Intentionally left blank
+    }
+
+    void Mtrx(const complex* mtrx, bitLenInt target);
+    void Phase(complex topLeft, complex bottomRight, bitLenInt target);
+    void Invert(complex topRight, complex bottomLeft, bitLenInt target);
+    void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
+    void MCPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
+    void MCInvert(
+        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
     void SetQuantumState(const complex* inputState)
     {
