@@ -610,7 +610,8 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
     root->Prune(maxQubit + 1U);
 }
 
-void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target)
+void QBdt::ApplyControlledSingle(
+    const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti)
 {
     if (attachedQubitCount == qubitCount) {
         return NODE_TO_QINTERFACE(root)->MCMtrx(controls, controlLen, mtrx, target);
@@ -639,12 +640,13 @@ void QBdt::ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls,
             ketControlsVec.push_back(control - bdtQubitCount);
         }
     }
+    bitCapInt lowControlPerm = isAnti ? 0U : lowControlMask;
     std::unique_ptr<bitLenInt[]> ketControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[ketControlsVec.size()]);
     std::copy(ketControlsVec.begin(), ketControlsVec.end(), ketControls.get());
     std::set<QInterfacePtr> qis;
 
     par_for_qbdt(0, qPower, [&](const bitCapInt& i, const int& cpu) {
-        if ((i & lowControlMask) != lowControlMask) {
+        if ((i & lowControlMask) != lowControlPerm) {
             return (bitCapInt)(lowControlMask - ONE_BCI);
         }
 
@@ -694,8 +696,106 @@ void QBdt::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex
     } else if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
         MCInvert(controls, controlLen, mtrx[1], mtrx[2], target);
     } else {
-        ApplyControlledSingle(mtrx, controls, controlLen, target);
+        ApplyControlledSingle(mtrx, controls, controlLen, target, false);
     }
 }
 
+void QBdt::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
+{
+    if (!controlLen) {
+        Mtrx(mtrx, target);
+    } else if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        MACPhase(controls, controlLen, mtrx[0], mtrx[3], target);
+    } else if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        MACInvert(controls, controlLen, mtrx[1], mtrx[2], target);
+    } else {
+        ApplyControlledSingle(mtrx, controls, controlLen, target, true);
+    }
+}
+
+template <typename Fn> void QBdt::MACWrapper(const bitLenInt* controls, bitLenInt controlLen, Fn fn)
+{
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        X(controls[i]);
+    }
+
+    fn(controls, controlLen);
+
+    for (bitLenInt i = 0; i < controlLen; i++) {
+        X(controls[i]);
+    }
+}
+
+void QBdt::MCPhase(
+    const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
+{
+    if (!controlLen) {
+        Phase(topLeft, bottomRight, target);
+        return;
+    }
+
+    if ((randGlobalPhase || IS_NORM_0(ONE_CMPLX - topLeft)) && IS_NORM_0(topLeft - bottomRight)) {
+        return;
+    }
+
+    const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
+    if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
+        ApplyControlledSingle(mtrx, controls, controlLen, target, false);
+        return;
+    }
+
+    std::unique_ptr<bitLenInt[]> lControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[controlLen]);
+    std::copy(controls, controls + controlLen, lControls.get());
+    std::sort(lControls.get(), lControls.get() + controlLen);
+
+    if (target < lControls[controlLen - 1U]) {
+        std::swap(target, lControls[controlLen - 1U]);
+    }
+
+    ApplyControlledSingle(mtrx, lControls.get(), controlLen, target, false);
+}
+
+void QBdt::MACPhase(
+    const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
+{
+    MACWrapper(controls, controlLen, [this, topLeft, bottomRight, target](const bitLenInt* lc, bitLenInt lcLen) {
+        MCPhase(lc, lcLen, topLeft, bottomRight, target);
+    });
+}
+
+void QBdt::MCInvert(
+    const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
+{
+    if (!controlLen) {
+        Invert(topRight, bottomLeft, target);
+        return;
+    }
+
+    const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
+    if (!IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
+        ApplyControlledSingle(mtrx, controls, controlLen, target, false);
+        return;
+    }
+
+    std::vector<bitLenInt> controlVec(controlLen);
+    std::copy(controls, controls + controlLen, controlVec.begin());
+    std::sort(controlVec.begin(), controlVec.end());
+
+    if (controlVec.back() < target) {
+        ApplyControlledSingle(mtrx, controls, controlLen, target, false);
+        return;
+    }
+
+    H(target);
+    MCPhase(controls, controlLen, ONE_CMPLX, -ONE_CMPLX, target);
+    H(target);
+}
+
+void QBdt::MACInvert(
+    const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
+{
+    MACWrapper(controls, controlLen, [this, topRight, bottomLeft, target](const bitLenInt* lc, bitLenInt lcLen) {
+        MCInvert(lc, lcLen, topRight, bottomLeft, target);
+    });
+}
 } // namespace Qrack

@@ -99,9 +99,12 @@ protected:
         return operation(NODE_TO_QINTERFACE(root));
     }
 
+    template <typename Fn> void MACWrapper(const bitLenInt* controls, bitLenInt controlLen, Fn fn);
+
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
-    void ApplyControlledSingle(const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target);
+    void ApplyControlledSingle(
+        const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti);
 
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
 
@@ -211,61 +214,15 @@ public:
 
     virtual void Mtrx(const complex* mtrx, bitLenInt target);
     virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
+    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
     virtual void MCPhase(
-        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
-    {
-        if (!controlLen) {
-            Phase(topLeft, bottomRight, target);
-            return;
-        }
-
-        if ((randGlobalPhase || IS_NORM_0(ONE_CMPLX - topLeft)) && IS_NORM_0(topLeft - bottomRight)) {
-            return;
-        }
-
-        const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-        if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
-            ApplyControlledSingle(mtrx, controls, controlLen, target);
-            return;
-        }
-
-        std::unique_ptr<bitLenInt[]> lControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[controlLen]);
-        std::copy(controls, controls + controlLen, lControls.get());
-        std::sort(lControls.get(), lControls.get() + controlLen);
-
-        if (target < lControls[controlLen - 1U]) {
-            std::swap(target, lControls[controlLen - 1U]);
-        }
-
-        ApplyControlledSingle(mtrx, lControls.get(), controlLen, target);
-    }
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
+    virtual void MACPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
     virtual void MCInvert(
-        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
-    {
-        if (!controlLen) {
-            Invert(topRight, bottomLeft, target);
-            return;
-        }
-
-        const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-        if (!IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
-            ApplyControlledSingle(mtrx, controls, controlLen, target);
-            return;
-        }
-
-        std::vector<bitLenInt> controlVec(controlLen);
-        std::copy(controls, controls + controlLen, controlVec.begin());
-        std::sort(controlVec.begin(), controlVec.end());
-
-        if (controlVec.back() < target) {
-            ApplyControlledSingle(mtrx, controls, controlLen, target);
-            return;
-        }
-
-        H(target);
-        MCPhase(controls, controlLen, ONE_CMPLX, -ONE_CMPLX, target);
-        H(target);
-    }
+        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
+    virtual void MACInvert(
+        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     virtual real1_f ProbParity(bitCapInt mask)
