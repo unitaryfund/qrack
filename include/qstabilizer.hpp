@@ -311,6 +311,10 @@ public:
     {
         // Intentionally left blank
     }
+    void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        // Intentionally left blank
+    }
 
     void Mtrx(const complex* mtrx, bitLenInt target);
     void Phase(complex topLeft, complex bottomRight, bitLenInt target);
