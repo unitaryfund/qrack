@@ -386,7 +386,12 @@ public:
     virtual void GetProbs(real1* outputProbs);
     virtual complex GetAmplitude(bitCapInt perm)
     {
-        SwitchToEngine();
+        FlushBuffers();
+
+        if (stabilizer) {
+            return stabilizer->GetAmplitude(perm);
+        }
+
         return engine->GetAmplitude(perm);
     }
     virtual void SetAmplitude(bitCapInt perm, complex amp)
