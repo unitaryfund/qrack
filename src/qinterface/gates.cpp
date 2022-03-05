@@ -88,8 +88,9 @@ void QInterface::MACPhase(
         return;
     }
 
-    const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-    MACMtrx(controls, controlLen, mtrx, target);
+    MACWrapper(controls, controlLen, [this, topLeft, bottomRight, target](const bitLenInt* lc, bitLenInt lcLen) {
+        MCPhase(lc, lcLen, topLeft, bottomRight, target);
+    });
 }
 
 /// Apply a single bit transformation that reverses bit probability and might effect phase, with arbitrary
@@ -97,18 +98,20 @@ void QInterface::MACPhase(
 void QInterface::MACInvert(
     const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
-    const complex mtrx[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    MACMtrx(controls, controlLen, mtrx, target);
+    MACWrapper(controls, controlLen, [this, topRight, bottomLeft, target](const bitLenInt* lc, bitLenInt lcLen) {
+        MCInvert(lc, lcLen, topRight, bottomLeft, target);
+    });
 }
 
 void QInterface::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        X(controls[i]);
-    }
-    MCMtrx(controls, controlLen, mtrx, target);
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        X(controls[i]);
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        MACPhase(controls, controlLen, mtrx[0], mtrx[3], target);
+    } else if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        MACInvert(controls, controlLen, mtrx[1], mtrx[2], target);
+    } else {
+        MACWrapper(controls, controlLen,
+            [this, mtrx, target](const bitLenInt* lc, bitLenInt lcLen) { MCMtrx(lc, lcLen, mtrx, target); });
     }
 }
 

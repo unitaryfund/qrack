@@ -713,19 +713,6 @@ void QBdt::MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const comple
     }
 }
 
-template <typename Fn> void QBdt::MACWrapper(const bitLenInt* controls, bitLenInt controlLen, Fn fn)
-{
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        X(controls[i]);
-    }
-
-    fn(controls, controlLen);
-
-    for (bitLenInt i = 0; i < controlLen; i++) {
-        X(controls[i]);
-    }
-}
-
 void QBdt::MCPhase(
     const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
@@ -755,14 +742,6 @@ void QBdt::MCPhase(
     ApplyControlledSingle(mtrx, lControls.get(), controlLen, target, false);
 }
 
-void QBdt::MACPhase(
-    const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target)
-{
-    MACWrapper(controls, controlLen, [this, topLeft, bottomRight, target](const bitLenInt* lc, bitLenInt lcLen) {
-        MCPhase(lc, lcLen, topLeft, bottomRight, target);
-    });
-}
-
 void QBdt::MCInvert(
     const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
@@ -789,13 +768,5 @@ void QBdt::MCInvert(
     H(target);
     MCPhase(controls, controlLen, ONE_CMPLX, -ONE_CMPLX, target);
     H(target);
-}
-
-void QBdt::MACInvert(
-    const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target)
-{
-    MACWrapper(controls, controlLen, [this, topRight, bottomLeft, target](const bitLenInt* lc, bitLenInt lcLen) {
-        MCInvert(lc, lcLen, topRight, bottomLeft, target);
-    });
 }
 } // namespace Qrack

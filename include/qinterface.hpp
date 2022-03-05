@@ -237,6 +237,19 @@ protected:
         }
     }
 
+    template <typename Fn> void MACWrapper(const bitLenInt* controls, bitLenInt controlLen, Fn fn)
+    {
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            X(controls[i]);
+        }
+
+        fn(controls, controlLen);
+
+        for (bitLenInt i = 0; i < controlLen; i++) {
+            X(controls[i]);
+        }
+    }
+
 public:
     QInterface(bitLenInt n, qrack_rand_gen_ptr rgp = nullptr, bool doNorm = false, bool useHardwareRNG = true,
         bool randomGlobalPhase = true, real1_f norm_thresh = REAL1_EPSILON);

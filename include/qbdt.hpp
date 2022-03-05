@@ -99,8 +99,6 @@ protected:
         return operation(NODE_TO_QINTERFACE(root));
     }
 
-    template <typename Fn> void MACWrapper(const bitLenInt* controls, bitLenInt controlLen, Fn fn);
-
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
 
     void ApplyControlledSingle(
@@ -217,11 +215,7 @@ public:
     virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
     virtual void MCPhase(
         const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
-    virtual void MACPhase(
-        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
     virtual void MCInvert(
-        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
-    virtual void MACInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
