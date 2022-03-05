@@ -1174,34 +1174,34 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         }
 
         if (IS_SAME(SQRT1_2_R1, mtrx[0])) {
+            Z(target);
             X(target);
+            Z(target);
             H(target);
             X(target);
             return;
         }
 
         if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            Z(target);
             X(target);
-            Z(target);
             H(target);
             X(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            S(target);
+            IS(target);
             X(target);
-            S(target);
+            IS(target);
             H(target);
             X(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            IS(target);
+            S(target);
             X(target);
-            IS(target);
+            S(target);
             H(target);
             X(target);
             return;
