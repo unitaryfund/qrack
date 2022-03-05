@@ -19,6 +19,7 @@
 #include "mpsshard.hpp"
 #include "qbdt_qinterface_node.hpp"
 #include "qinterface.hpp"
+#include "qparity.hpp"
 
 #if ENABLE_ALU
 #include "qalu.hpp"
@@ -26,6 +27,7 @@
 
 #define NODE_TO_QINTERFACE(leaf) (std::dynamic_pointer_cast<QBdtQInterfaceNode>(leaf)->qReg)
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
+#define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
 
 namespace Qrack {
 
@@ -33,9 +35,9 @@ class QBdt;
 typedef std::shared_ptr<QBdt> QBdtPtr;
 
 #if ENABLE_ALU
-class QBdt : public QAlu, public QInterface {
+class QBdt : public QAlu, public QParity, public QInterface {
 #else
-class QBdt : public QInterface {
+class QBdt : public QParity, public QInterface {
 #endif
 protected:
     std::vector<QInterfaceEngine> engines;
@@ -227,25 +229,26 @@ public:
     virtual void MCInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
-    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
-    virtual real1_f ProbParity(bitCapInt mask)
-    {
-        QInterfacePtr unit = isStateVec ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
-        return unit->ProbParity(mask);
-    }
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubitIndex1, qubitIndex2); });
     }
 
+    virtual real1_f ProbParity(bitCapInt mask)
+    {
+        QInterfacePtr unit = isStateVec ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
+        return QINTERFACE_TO_QPARITY(unit)->ProbParity(mask);
+    }
     virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
     {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->CUniformParityRZ(controls, controlLen, mask, angle); });
+        ExecuteAsStateVector([&](QInterfacePtr eng) {
+            QINTERFACE_TO_QPARITY(eng)->CUniformParityRZ(controls, controlLen, mask, angle);
+        });
     }
-
-    virtual void PhaseParity(real1_f radians, bitCapInt mask)
+    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
     {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->PhaseParity(radians, mask); });
+        SetStateVector();
+        return QINTERFACE_TO_QPARITY(NODE_TO_QINTERFACE(root))->ForceMParity(mask, result, doForce);
     }
 
 #if ENABLE_ALU

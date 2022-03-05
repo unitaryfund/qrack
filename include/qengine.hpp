@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -13,6 +13,7 @@
 #pragma once
 
 #include "qinterface.hpp"
+#include "qparity.hpp"
 
 #if ENABLE_ALU
 #include "qalu.hpp"
@@ -29,9 +30,9 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
  * Abstract QEngine implementation, for all "Schroedinger method" engines
  */
 #if ENABLE_ALU
-class QEngine : public QAlu, public QInterface {
+class QEngine : public QAlu, public QParity, public QInterface {
 #else
-class QEngine : public QInterface {
+class QEngine : public QParity, public QInterface {
 #endif
 protected:
     bool useHostRam;

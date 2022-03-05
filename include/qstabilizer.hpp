@@ -342,16 +342,6 @@ public:
         throw std::domain_error("QStabilizer::SumSqrDiff() not implemented!");
     }
 
-    real1_f ProbParity(bitCapInt mask) { throw std::domain_error("QStabilizer::SumSqrDiff() not implemented!"); }
-    bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
-    {
-        throw std::domain_error("QStabilizer::ForceMParity() not implemented!");
-    }
-    void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
-    {
-        throw std::domain_error("QStabilizer::CUniformParityRZ() not implemented!");
-    }
-
     void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         throw std::domain_error("QStabilizer::FSim() not implemented!");

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -19,6 +19,7 @@
 
 #include "mpsshard.hpp"
 #include "qengine.hpp"
+#include "qparity.hpp"
 #include "qstabilizer.hpp"
 
 #if ENABLE_ALU
@@ -26,6 +27,7 @@
 #endif
 
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
+#define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
 
 namespace Qrack {
 
@@ -37,9 +39,9 @@ typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
  * qubit-count-dependent performance.
  */
 #if ENABLE_ALU
-class QStabilizerHybrid : public QAlu, public QInterface {
+class QStabilizerHybrid : public QAlu, public QParity, public QInterface {
 #else
-class QStabilizerHybrid : public QInterface {
+class QStabilizerHybrid : public QParity, public QInterface {
 #endif
 protected:
     std::vector<QInterfaceEngine> engineTypes;
@@ -475,16 +477,6 @@ public:
 
         engine->UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs);
     }
-    virtual void UniformParityRZ(bitCapInt mask, real1_f angle)
-    {
-        SwitchToEngine();
-        engine->UniformParityRZ(mask, angle);
-    }
-    virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
-    {
-        SwitchToEngine();
-        engine->CUniformParityRZ(controls, controlLen, mask, angle);
-    }
 
     virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
@@ -572,6 +564,45 @@ public:
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots);
     virtual void MultiShotMeasureMask(
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
+
+    virtual real1_f ProbParity(bitCapInt mask)
+    {
+        if (!mask) {
+            return ZERO_R1;
+        }
+
+        if (!(mask & (mask - ONE_BCI))) {
+            return Prob(log2(mask));
+        }
+
+        SwitchToEngine();
+        return QINTERFACE_TO_QPARITY(engine)->ProbParity(mask);
+    }
+    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
+    {
+        // If no bits in mask:
+        if (!mask) {
+            return false;
+        }
+
+        // If only one bit in mask:
+        if (!(mask & (mask - ONE_BCI))) {
+            return ForceM(log2(mask), result, doForce);
+        }
+
+        SwitchToEngine();
+        return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
+    }
+    virtual void UniformParityRZ(bitCapInt mask, real1_f angle)
+    {
+        SwitchToEngine();
+        QINTERFACE_TO_QPARITY(engine)->UniformParityRZ(mask, angle);
+    }
+    virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
+    {
+        SwitchToEngine();
+        QINTERFACE_TO_QPARITY(engine)->CUniformParityRZ(controls, controlLen, mask, angle);
+    }
 
 #if ENABLE_ALU
     virtual bool M(bitLenInt q) { return QInterface::M(q); }
@@ -783,35 +814,6 @@ public:
     {
         SwitchToEngine();
         return engine->ProbMask(mask, permutation);
-    }
-    // TODO: Good opportunity to optimize
-    virtual real1_f ProbParity(bitCapInt mask)
-    {
-        if (!mask) {
-            return ZERO_R1;
-        }
-
-        if (!(mask & (mask - ONE_BCI))) {
-            return Prob(log2(mask));
-        }
-
-        SwitchToEngine();
-        return engine->ProbParity(mask);
-    }
-    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
-    {
-        // If no bits in mask:
-        if (!mask) {
-            return false;
-        }
-
-        // If only one bit in mask:
-        if (!(mask & (mask - ONE_BCI))) {
-            return ForceM(log2(mask), result, doForce);
-        }
-
-        SwitchToEngine();
-        return engine->ForceMParity(mask, result, doForce);
     }
 
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare)

@@ -44,12 +44,6 @@ QBdtQInterfaceNodePtr QBdt::MakeQInterfaceNode(complex scale, bitLenInt qbCount,
             devID, hardware_rand_generator != NULL, false, amplitudeFloor));
 }
 
-bool QBdt::ForceMParity(bitCapInt mask, bool result, bool doForce)
-{
-    SetStateVector();
-    return NODE_TO_QINTERFACE(root)->ForceMParity(mask, result, doForce);
-}
-
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 {
     if (phaseFac == CMPLX_DEFAULT_ARG) {

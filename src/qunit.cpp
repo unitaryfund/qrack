@@ -1023,120 +1023,6 @@ real1_f QUnit::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCa
 
 real1_f QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitudeOrProb(perm, true))); }
 
-real1_f QUnit::ProbParity(bitCapInt mask)
-{
-    // If no bits in mask:
-    if (!mask) {
-        return ZERO_R1;
-    }
-
-    if (!(mask & (mask - ONE_BCI))) {
-        return Prob(log2(mask));
-    }
-
-    bitCapInt nV = mask;
-    std::vector<bitLenInt> qIndices;
-    for (bitCapInt v = mask; v; v = nV) {
-        nV &= (v - ONE_BCI); // clear the least significant bit set
-        qIndices.push_back(log2((v ^ nV) & v));
-
-        RevertBasis2Qb(qIndices.back(), ONLY_INVERT, ONLY_TARGETS);
-
-        QEngineShard& shard = shards[qIndices.back()];
-        if (shard.unit && QUEUED_PHASE(shard)) {
-            RevertBasis1Qb(qIndices.back());
-        }
-    }
-
-    std::map<QInterfacePtr, bitCapInt> units;
-    real1 oddChance = ZERO_R1;
-    real1 nOddChance;
-    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
-        QEngineShard& shard = shards[qIndices[i]];
-        if (!(shard.unit)) {
-            nOddChance = (shard.pauliBasis != PauliZ) ? norm(SQRT1_2_R1 * (shard.amp0 - shard.amp1)) : shard.Prob();
-            oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
-            continue;
-        }
-
-        RevertBasis1Qb(qIndices[i]);
-
-        units[shard.unit] |= pow2(shard.mapped);
-    }
-
-    if (qIndices.size() == 0) {
-        return oddChance;
-    }
-
-    std::map<QInterfacePtr, bitCapInt>::iterator unit;
-    for (unit = units.begin(); unit != units.end(); unit++) {
-        nOddChance = unit->first->ProbParity(unit->second);
-        oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
-    }
-
-    return oddChance;
-}
-
-bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
-{
-    // If no bits in mask:
-    if (!mask) {
-        return false;
-    }
-
-    if (!(mask & (mask - ONE_BCI))) {
-        return ForceM(log2(mask), result, doForce);
-    }
-
-    bitCapInt nV = mask;
-    std::vector<bitLenInt> qIndices;
-    for (bitCapInt v = mask; v; v = nV) {
-        nV &= (v - ONE_BCI); // clear the least significant bit set
-        qIndices.push_back(log2((v ^ nV) & v));
-        ToPermBasisProb(qIndices.back());
-    }
-
-    bool flipResult = false;
-    std::vector<bitLenInt> eIndices;
-    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
-        QEngineShard& shard = shards[qIndices[i]];
-
-        if (UNSAFE_CACHED_ZERO(shard)) {
-            continue;
-        }
-
-        if (UNSAFE_CACHED_ONE(shard)) {
-            flipResult = !flipResult;
-            continue;
-        }
-
-        eIndices.push_back(qIndices[i]);
-    }
-
-    if (eIndices.size() == 0) {
-        return flipResult;
-    }
-
-    if (eIndices.size() == 1U) {
-        return flipResult ^ ForceM(eIndices[0], result ^ flipResult, doForce);
-    }
-
-    QInterfacePtr unit = Entangle(eIndices);
-
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (shards[i].unit == unit) {
-            shards[i].MakeDirty();
-        }
-    }
-
-    bitCapInt mappedMask = 0;
-    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
-        mappedMask |= pow2(shards[eIndices[i]].mapped);
-    }
-
-    return flipResult ^ (unit->ForceMParity(mappedMask, result ^ flipResult, doForce));
-}
-
 void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 {
     // If no bits in mask:
@@ -1208,6 +1094,221 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
     }
 
     unit->PhaseParity(flipResult ? -radians : radians, mappedMask);
+}
+
+real1_f QUnit::ProbParity(bitCapInt mask)
+{
+    // If no bits in mask:
+    if (!mask) {
+        return ZERO_R1;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        return Prob(log2(mask));
+    }
+
+    bitCapInt nV = mask;
+    std::vector<bitLenInt> qIndices;
+    for (bitCapInt v = mask; v; v = nV) {
+        nV &= (v - ONE_BCI); // clear the least significant bit set
+        qIndices.push_back(log2((v ^ nV) & v));
+
+        RevertBasis2Qb(qIndices.back(), ONLY_INVERT, ONLY_TARGETS);
+
+        QEngineShard& shard = shards[qIndices.back()];
+        if (shard.unit && QUEUED_PHASE(shard)) {
+            RevertBasis1Qb(qIndices.back());
+        }
+    }
+
+    std::map<QInterfacePtr, bitCapInt> units;
+    real1 oddChance = ZERO_R1;
+    real1 nOddChance;
+    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
+        QEngineShard& shard = shards[qIndices[i]];
+        if (!(shard.unit)) {
+            nOddChance = (shard.pauliBasis != PauliZ) ? norm(SQRT1_2_R1 * (shard.amp0 - shard.amp1)) : shard.Prob();
+            oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
+            continue;
+        }
+
+        RevertBasis1Qb(qIndices[i]);
+
+        units[shard.unit] |= pow2(shard.mapped);
+    }
+
+    if (qIndices.size() == 0) {
+        return oddChance;
+    }
+
+    std::map<QInterfacePtr, bitCapInt>::iterator unit;
+    for (unit = units.begin(); unit != units.end(); unit++) {
+        nOddChance = std::dynamic_pointer_cast<QParity>(unit->first)->ProbParity(unit->second);
+        oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
+    }
+
+    return oddChance;
+}
+
+bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
+{
+    // If no bits in mask:
+    if (!mask) {
+        return false;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        return ForceM(log2(mask), result, doForce);
+    }
+
+    bitCapInt nV = mask;
+    std::vector<bitLenInt> qIndices;
+    for (bitCapInt v = mask; v; v = nV) {
+        nV &= (v - ONE_BCI); // clear the least significant bit set
+        qIndices.push_back(log2((v ^ nV) & v));
+        ToPermBasisProb(qIndices.back());
+    }
+
+    bool flipResult = false;
+    std::vector<bitLenInt> eIndices;
+    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
+        QEngineShard& shard = shards[qIndices[i]];
+
+        if (UNSAFE_CACHED_ZERO(shard)) {
+            continue;
+        }
+
+        if (UNSAFE_CACHED_ONE(shard)) {
+            flipResult = !flipResult;
+            continue;
+        }
+
+        eIndices.push_back(qIndices[i]);
+    }
+
+    if (eIndices.size() == 0) {
+        return flipResult;
+    }
+
+    if (eIndices.size() == 1U) {
+        return flipResult ^ ForceM(eIndices[0], result ^ flipResult, doForce);
+    }
+
+    QInterfacePtr unit = Entangle(eIndices);
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (shards[i].unit == unit) {
+            shards[i].MakeDirty();
+        }
+    }
+
+    bitCapInt mappedMask = 0;
+    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
+        mappedMask |= pow2(shards[eIndices[i]].mapped);
+    }
+
+    return flipResult ^
+        (std::dynamic_pointer_cast<QParity>(unit)->ForceMParity(mappedMask, result ^ flipResult, doForce));
+}
+
+void QUnit::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
+{
+    std::vector<bitLenInt> controls;
+    if (TrimControls(cControls, controlLen, controls, false)) {
+        return;
+    }
+
+    bitCapInt nV = mask;
+    std::vector<bitLenInt> qIndices;
+    for (bitCapInt v = mask; v; v = nV) {
+        nV &= (v - ONE_BCI); // clear the least significant bit set
+        qIndices.push_back(log2((v ^ nV) & v));
+    }
+
+    bool flipResult = false;
+    std::vector<bitLenInt> eIndices;
+    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
+        ToPermBasis(qIndices[i]);
+        QEngineShard& shard = shards[qIndices[i]];
+
+        if (CACHED_ZERO(shard)) {
+            continue;
+        }
+
+        if (CACHED_ONE(shard)) {
+            flipResult = !flipResult;
+            continue;
+        }
+
+        eIndices.push_back(qIndices[i]);
+    }
+
+    if (eIndices.size() == 0) {
+        real1 cosine = (real1)cos(angle);
+        real1 sine = (real1)sin(angle);
+        complex phaseFac;
+        if (flipResult) {
+            phaseFac = complex(cosine, sine);
+        } else {
+            phaseFac = complex(cosine, -sine);
+        }
+        if (controls.size() == 0) {
+            return Phase(phaseFac, phaseFac, 0);
+        } else {
+            return MCPhase(&(controls[0]), controls.size(), phaseFac, phaseFac, 0);
+        }
+    }
+
+    if (eIndices.size() == 1U) {
+        real1 cosine = (real1)cos(angle);
+        real1 sine = (real1)sin(angle);
+        complex phaseFac, phaseFacAdj;
+        if (flipResult) {
+            phaseFac = complex(cosine, -sine);
+            phaseFacAdj = complex(cosine, sine);
+        } else {
+            phaseFac = complex(cosine, sine);
+            phaseFacAdj = complex(cosine, -sine);
+        }
+        if (controls.size() == 0) {
+            return Phase(phaseFacAdj, phaseFac, eIndices[0]);
+        } else {
+            return MCPhase(&(controls[0]), controls.size(), phaseFacAdj, phaseFac, eIndices[0]);
+        }
+    }
+
+    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
+        shards[eIndices[i]].isPhaseDirty = true;
+    }
+
+    QInterfacePtr unit = Entangle(eIndices);
+
+    bitCapInt mappedMask = 0;
+    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
+        mappedMask |= pow2(shards[eIndices[i]].mapped);
+    }
+
+    if (controls.size() == 0) {
+        std::dynamic_pointer_cast<QParity>(unit)->UniformParityRZ(mappedMask, flipResult ? -angle : angle);
+    } else {
+        std::vector<bitLenInt*> ebits(controls.size());
+        for (bitLenInt i = 0; i < (bitLenInt)controls.size(); i++) {
+            ebits[i] = &controls[i];
+        }
+
+        Entangle(ebits);
+        unit = Entangle({ controls[0], eIndices[0] });
+
+        std::vector<bitLenInt> controlsMapped(controls.size());
+        for (bitLenInt i = 0; i < (bitLenInt)controls.size(); i++) {
+            QEngineShard& cShard = shards[controls[i]];
+            controlsMapped[i] = cShard.mapped;
+            cShard.isPhaseDirty = true;
+        }
+
+        std::dynamic_pointer_cast<QParity>(unit)->CUniformParityRZ(
+            &(controlsMapped[0]), controlsMapped.size(), mappedMask, flipResult ? -angle : angle);
+    }
 }
 
 bool QUnit::SeparateBit(bool value, bitLenInt qubit)
@@ -1793,105 +1894,6 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt co
         &(skipPowers[0]), skipPowers.size(), skipValueMask);
 
     shards[qubitIndex].MakeDirty();
-}
-
-void QUnit::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
-{
-    std::vector<bitLenInt> controls;
-    if (TrimControls(cControls, controlLen, controls, false)) {
-        return;
-    }
-
-    bitCapInt nV = mask;
-    std::vector<bitLenInt> qIndices;
-    for (bitCapInt v = mask; v; v = nV) {
-        nV &= (v - ONE_BCI); // clear the least significant bit set
-        qIndices.push_back(log2((v ^ nV) & v));
-    }
-
-    bool flipResult = false;
-    std::vector<bitLenInt> eIndices;
-    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
-        ToPermBasis(qIndices[i]);
-        QEngineShard& shard = shards[qIndices[i]];
-
-        if (CACHED_ZERO(shard)) {
-            continue;
-        }
-
-        if (CACHED_ONE(shard)) {
-            flipResult = !flipResult;
-            continue;
-        }
-
-        eIndices.push_back(qIndices[i]);
-    }
-
-    if (eIndices.size() == 0) {
-        real1 cosine = (real1)cos(angle);
-        real1 sine = (real1)sin(angle);
-        complex phaseFac;
-        if (flipResult) {
-            phaseFac = complex(cosine, sine);
-        } else {
-            phaseFac = complex(cosine, -sine);
-        }
-        if (controls.size() == 0) {
-            return Phase(phaseFac, phaseFac, 0);
-        } else {
-            return MCPhase(&(controls[0]), controls.size(), phaseFac, phaseFac, 0);
-        }
-    }
-
-    if (eIndices.size() == 1U) {
-        real1 cosine = (real1)cos(angle);
-        real1 sine = (real1)sin(angle);
-        complex phaseFac, phaseFacAdj;
-        if (flipResult) {
-            phaseFac = complex(cosine, -sine);
-            phaseFacAdj = complex(cosine, sine);
-        } else {
-            phaseFac = complex(cosine, sine);
-            phaseFacAdj = complex(cosine, -sine);
-        }
-        if (controls.size() == 0) {
-            return Phase(phaseFacAdj, phaseFac, eIndices[0]);
-        } else {
-            return MCPhase(&(controls[0]), controls.size(), phaseFacAdj, phaseFac, eIndices[0]);
-        }
-    }
-
-    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
-        shards[eIndices[i]].isPhaseDirty = true;
-    }
-
-    QInterfacePtr unit = Entangle(eIndices);
-
-    bitCapInt mappedMask = 0;
-    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
-        mappedMask |= pow2(shards[eIndices[i]].mapped);
-    }
-
-    if (controls.size() == 0) {
-        unit->UniformParityRZ(mappedMask, flipResult ? -angle : angle);
-    } else {
-        std::vector<bitLenInt*> ebits(controls.size());
-        for (bitLenInt i = 0; i < (bitLenInt)controls.size(); i++) {
-            ebits[i] = &controls[i];
-        }
-
-        Entangle(ebits);
-        unit = Entangle({ controls[0], eIndices[0] });
-
-        std::vector<bitLenInt> controlsMapped(controls.size());
-        for (bitLenInt i = 0; i < (bitLenInt)controls.size(); i++) {
-            QEngineShard& cShard = shards[controls[i]];
-            controlsMapped[i] = cShard.mapped;
-            cShard.isPhaseDirty = true;
-        }
-
-        unit->CUniformParityRZ(&(controlsMapped[0]), controlsMapped.size(), mappedMask, flipResult ? -angle : angle);
-    }
 }
 
 void QUnit::H(bitLenInt target)

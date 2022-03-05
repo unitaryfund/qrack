@@ -13,6 +13,7 @@
 #pragma once
 
 #include "qengineshard.hpp"
+#include "qparity.hpp"
 
 #if ENABLE_ALU
 #include "qalu.hpp"
@@ -24,9 +25,9 @@ class QUnit;
 typedef std::shared_ptr<QUnit> QUnitPtr;
 
 #if ENABLE_ALU
-class QUnit : public QAlu, public QInterface {
+class QUnit : public QAlu, public QParity, public QInterface {
 #else
-class QUnit : public QInterface {
+class QUnit : public QParity, public QInterface {
 #endif
 protected:
     std::vector<QInterfaceEngine> engines;

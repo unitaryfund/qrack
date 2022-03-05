@@ -57,6 +57,7 @@
     }
 
 #define QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
+#define QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
 
 using namespace Qrack;
 
@@ -741,6 +742,23 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::si
     return dist(*randNumGen.get());
 }
 
+MICROSOFT_QUANTUM_DECL void PhaseParity(
+    _In_ unsigned sid, _In_ double lambda, _In_ unsigned n, _In_reads_(n) unsigned* q)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
+    bitCapInt mask = 0;
+    for (unsigned i = 0; i < n; i++) {
+        mask |= pow2(shards[simulator.get()][q[i]]);
+    }
+
+    try {
+        simulator->PhaseParity((real1_f)lambda, mask);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+
 double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int* b, unsigned* q, bool doMeasure)
 {
 
@@ -764,7 +782,8 @@ double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int*
         mask |= bit;
     }
 
-    return (double)(doMeasure ? (simulator->MParity(mask) ? ONE_R1 : ZERO_R1) : simulator->ProbParity(mask));
+    return (double)(doMeasure ? (QPARITY(simulator)->MParity(mask) ? ONE_R1 : ZERO_R1)
+                              : QPARITY(simulator)->ProbParity(mask));
 }
 
 /**
@@ -790,23 +809,6 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
     }
 
     return jointProb;
-}
-
-MICROSOFT_QUANTUM_DECL void PhaseParity(
-    _In_ unsigned sid, _In_ double lambda, _In_ unsigned n, _In_reads_(n) unsigned* q)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-    QInterfacePtr simulator = simulators[sid];
-    bitCapInt mask = 0;
-    for (unsigned i = 0; i < n; i++) {
-        mask |= pow2(shards[simulator.get()][q[i]]);
-    }
-
-    try {
-        simulator->PhaseParity((real1_f)lambda, mask);
-    } catch (...) {
-        simulatorErrors[sid] = 1;
-    }
 }
 
 /**
@@ -1409,7 +1411,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
             TransformPauliBasis(simulator, n, b, q);
 
             std::size_t mask = make_mask(qVec);
-            simulator->UniformParityRZ((bitCapInt)mask, (real1_f)(-phi));
+            QPARITY(simulator)->UniformParityRZ((bitCapInt)mask, (real1_f)(-phi));
 
             RevertPauliBasis(simulator, n, b, q);
         }
@@ -1449,7 +1451,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
             TransformPauliBasis(simulator, n, b, q);
 
             std::size_t mask = make_mask(qVec);
-            simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), (bitCapInt)mask, (real1_f)(-phi));
+            QPARITY(simulator)->CUniformParityRZ(&(csVec[0]), csVec.size(), (bitCapInt)mask, (real1_f)(-phi));
 
             RevertPauliBasis(simulator, n, b, q);
         }

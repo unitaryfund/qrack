@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -12,6 +12,7 @@
 #pragma once
 
 #include "qinterface.hpp"
+#include "qparity.hpp"
 
 #if ENABLE_ALU
 #include "qalu.hpp"
@@ -27,9 +28,9 @@ typedef std::shared_ptr<QPager> QPagerPtr;
  * and distribution of a single coherent quantum register across multiple devices.
  */
 #if ENABLE_ALU
-class QPager : public QAlu, public QInterface {
+class QPager : public QAlu, public QParity, public QInterface {
 #else
-class QPager : public QInterface {
+class QPager : public QParity, public QInterface {
 #endif
 protected:
     std::vector<QInterfaceEngine> engines;

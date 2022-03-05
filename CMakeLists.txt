@@ -241,6 +241,7 @@ install (FILES
     include/qengine_opencl.hpp
     include/qinterface.hpp
     include/qalu.hpp
+    include/qparity.hpp
     include/qneuron.hpp
     include/qpager.hpp
     include/qhybrid.hpp

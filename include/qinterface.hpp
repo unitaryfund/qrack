@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -9,6 +9,7 @@
 // Licensed under the GNU Lesser General Public License V3.
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
+
 #pragma once
 
 #include "common/parallel_for.hpp"
@@ -772,19 +773,6 @@ public:
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true) = 0;
 
     /**
-     * Act as if is a measurement of parity of the masked set of qubits was applied, except force the (usually random)
-     * result
-     *
-     * \warning PSEUDO-QUANTUM
-     */
-    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true) = 0;
-
-    /**
-     * Measure (and collapse) parity of the masked set of qubits
-     */
-    virtual bool MParity(bitCapInt mask) { return ForceMParity(mask, false, false); }
-
-    /**
      * S gate
      *
      * Applies a 1/4 phase rotation to the qubit at "qubitIndex."
@@ -825,6 +813,13 @@ public:
      * Applies an inverse 1/(2^N) phase rotation to the qubit at "qubitIndex."
      */
     virtual void IPhaseRootN(bitLenInt n, bitLenInt qubitIndex);
+
+    /**
+     * Parity phase gate
+     *
+     * Applies e^(i*angle) phase factor to all combinations of bits with odd parity, based upon permutations of qubits.
+     */
+    virtual void PhaseParity(real1_f radians, bitCapInt mask);
 
     /**
      * X gate
@@ -874,13 +869,6 @@ public:
      * > 0). The Pauli "Z" operator reverses the phase of |1> and leaves |0> unchanged.
      */
     virtual void ZMask(bitCapInt mask);
-
-    /**
-     * Parity phase gate
-     *
-     * Applies e^(i*angle) phase factor to all combinations of bits with odd parity, based upon permutations of qubits.
-     */
-    virtual void PhaseParity(real1_f radians, bitCapInt mask);
 
     /**
      * Square root of X gate
@@ -1151,19 +1139,6 @@ public:
      */
     virtual void UniformlyControlledRZ(
         const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const real1* angles);
-
-    /**
-     * If the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$. If the target qubit set
-     * parity is even, this applies the conjugate, e^{-i angle}.
-     */
-    virtual void UniformParityRZ(bitCapInt mask, real1_f angle) { CUniformParityRZ(NULL, 0, mask, angle); }
-
-    /**
-     * If the controls are set and the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$.
-     * If the controls are set and the target qubit set parity is even, this applies the conjugate, \f$e^{-i angle}\f$.
-     * Otherwise, do nothing if any control is not set.
-     */
-    virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle) = 0;
 
     /**
      * Phase shift gate
@@ -2047,9 +2022,6 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset = 0);
-
-    /** Overall probability of any odd permutation of the masked set of bits */
-    virtual real1_f ProbParity(bitCapInt mask) = 0;
 
     /**
      * Statistical measure of masked permutation probability

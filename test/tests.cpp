@@ -52,6 +52,7 @@ using namespace Qrack;
 #define C_I_SQRT1_2 complex(ZERO_R1, SQRT1_2_R1)
 
 #define QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
+#define QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
 
 void print_bin(int bits, int d);
 void log(QInterfacePtr p);
@@ -861,7 +862,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_s")
     qftReg->S(0);
     qftReg->IS(0);
     qftReg->Phase(ONE_CMPLX, I_CMPLX, 0);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbParity(1));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(0));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_is")
@@ -2960,55 +2961,55 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_expectationbitsall")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
 {
     qftReg->SetPermutation(0x02);
-    REQUIRE(qftReg->ProbParity(0x7) > 0.99);
+    REQUIRE(QPARITY(qftReg)->ProbParity(0x7) > 0.99);
     qftReg->X(0);
-    REQUIRE(qftReg->ProbParity(0x7) < 0.01);
+    REQUIRE(QPARITY(qftReg)->ProbParity(0x7) < 0.01);
 
     qftReg->SetPermutation(0x0);
     qftReg->H(0);
     qftReg->CNOT(0, 1);
     qftReg->X(0);
-    REQUIRE(qftReg->ProbParity(0x3) > 0.99);
+    REQUIRE(QPARITY(qftReg)->ProbParity(0x3) > 0.99);
 
     qftReg->SetPermutation(0x0);
     qftReg->H(0);
-    REQUIRE_FLOAT(qftReg->ProbParity(0x3), ONE_R1 / 2);
+    REQUIRE_FLOAT(QPARITY(qftReg)->ProbParity(0x3), ONE_R1 / 2);
 
     qftReg->SetPermutation(0x0);
     qftReg->H(1);
-    REQUIRE_FLOAT(qftReg->ProbParity(0x3), ONE_R1 / 2);
+    REQUIRE_FLOAT(QPARITY(qftReg)->ProbParity(0x3), ONE_R1 / 2);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mparity")
 {
     qftReg->SetPermutation(0x0);
     qftReg->H(0);
-    REQUIRE(qftReg->ForceMParity(0x1, true, true));
-    REQUIRE(qftReg->MParity(0x1));
+    REQUIRE(QPARITY(qftReg)->ForceMParity(0x1, true, true));
+    REQUIRE(QPARITY(qftReg)->MParity(0x1));
 
     qftReg->SetPermutation(0x02);
-    REQUIRE(qftReg->MParity(0x7));
+    REQUIRE(QPARITY(qftReg)->MParity(0x7));
     qftReg->X(0);
-    REQUIRE(!(qftReg->MParity(0x7)));
+    REQUIRE(!(QPARITY(qftReg)->MParity(0x7)));
 
     qftReg->SetPermutation(0x0);
     qftReg->H(0);
     qftReg->CNOT(0, 1);
-    REQUIRE(!(qftReg->ForceMParity(0x3, false, true)));
-    REQUIRE(!(qftReg->MParity(0x3)));
+    REQUIRE(!(QPARITY(qftReg)->ForceMParity(0x3, false, true)));
+    REQUIRE(!(QPARITY(qftReg)->MParity(0x3)));
 
     qftReg->SetPermutation(0x0);
     qftReg->H(0);
     qftReg->CNOT(0, 1);
     qftReg->CNOT(1, 2);
-    REQUIRE(!(qftReg->ForceMParity(0x3, false, true)));
+    REQUIRE(!(QPARITY(qftReg)->ForceMParity(0x3, false, true)));
     REQUIRE_THAT(qftReg, HasProbability(0x0));
 
     qftReg->SetPermutation(0x0);
     qftReg->H(0);
     qftReg->CNOT(0, 1);
     qftReg->H(2);
-    REQUIRE(qftReg->ForceMParity(0x7, true, true));
+    REQUIRE(QPARITY(qftReg)->ForceMParity(0x7, true, true));
     REQUIRE_THAT(qftReg, HasProbability(0x4));
 }
 
@@ -3016,26 +3017,26 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniformparityrz")
 {
     qftReg->SetPermutation(0);
     qftReg->H(0);
-    qftReg->UniformParityRZ(1, M_PI_2);
+    QPARITY(qftReg)->UniformParityRZ(1, M_PI_2);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0x1));
 
     qftReg->SetPermutation(0x3);
     qftReg->H(0, 3);
-    qftReg->UniformParityRZ(0x7, M_PI_2);
+    QPARITY(qftReg)->UniformParityRZ(0x7, M_PI_2);
     qftReg->H(0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0x4));
 
     qftReg->SetPermutation(0x1);
     qftReg->H(0, 3);
-    qftReg->UniformParityRZ(0x7, M_PI_2);
-    qftReg->UniformParityRZ(0x7, M_PI_2);
+    QPARITY(qftReg)->UniformParityRZ(0x7, M_PI_2);
+    QPARITY(qftReg)->UniformParityRZ(0x7, M_PI_2);
     qftReg->H(0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0x1));
 
     qftReg->SetPermutation(0x01);
     qftReg->H(0);
-    qftReg->UniformParityRZ(1, M_PI_4);
+    QPARITY(qftReg)->UniformParityRZ(1, M_PI_4);
     qftReg->S(0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0));
@@ -3047,32 +3048,32 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cuniformparityrz")
 
     qftReg->SetPermutation(0);
     qftReg->H(0);
-    qftReg->CUniformParityRZ(controls, 2, 1, M_PI_2);
+    QPARITY(qftReg)->CUniformParityRZ(controls, 2, 1, M_PI_2);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0));
 
     qftReg->SetPermutation(0x18);
     qftReg->H(0);
-    qftReg->CUniformParityRZ(controls, 2, 1, M_PI_2);
+    QPARITY(qftReg)->CUniformParityRZ(controls, 2, 1, M_PI_2);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0x1 | 0x18));
 
     qftReg->SetPermutation(0x3 | 0x18);
     qftReg->H(0, 3);
-    qftReg->CUniformParityRZ(controls, 1, 0x7, M_PI_2);
+    QPARITY(qftReg)->CUniformParityRZ(controls, 1, 0x7, M_PI_2);
     qftReg->H(0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0x4 | 0x18));
 
     qftReg->SetPermutation(0x1 | 0x18);
     qftReg->H(0, 3);
-    qftReg->CUniformParityRZ(controls, 2, 0x7, M_PI_2);
-    qftReg->CUniformParityRZ(controls, 2, 0x7, M_PI_2);
+    QPARITY(qftReg)->CUniformParityRZ(controls, 2, 0x7, M_PI_2);
+    QPARITY(qftReg)->CUniformParityRZ(controls, 2, 0x7, M_PI_2);
     qftReg->H(0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0x1 | 0x18));
 
     qftReg->SetPermutation(0x01 | 0x18);
     qftReg->H(0);
-    qftReg->CUniformParityRZ(controls, 2, 1, M_PI_4);
+    QPARITY(qftReg)->CUniformParityRZ(controls, 2, 1, M_PI_4);
     qftReg->S(0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0x0 | 0x18));
