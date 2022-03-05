@@ -88,12 +88,13 @@ int main()
     // QINTERFACE_OPTIMAL uses the (single-processor) OpenCL engine type, if available. Otherwise, it falls back to
     // QEngineCPU.
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_OPTIMAL, qubitCount * 2, 0);
+    QAluPtr qAlu = std::dynamic_pointer_cast<QAlu>(qReg);
     // TODO: This shouldn't be necessary:
     qReg->Finish();
 
     // This is the period-finding subroutine of Shor's algorithm.
     qReg->H(0, qubitCount);
-    qReg->POWModNOut(base, toFactor, 0, qubitCount, qubitCount);
+    qAlu->POWModNOut(base, toFactor, 0, qubitCount, qubitCount);
     qReg->IQFT(0, qubitCount);
 
     bitCapInt y = qReg->MAll() & (pow2(qubitCount) - ONE_BCI);

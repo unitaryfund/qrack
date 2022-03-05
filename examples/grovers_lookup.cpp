@@ -62,6 +62,7 @@ int main()
 #else
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_CPU, totBits, 0);
 #endif
+    QAluPtr qAlu = std::dynamic_pointer_cast<QAlu>(qReg);
 
     // This array should actually be allocated aligned for best performance, but this will work. We'll talk about
     // alignment for OpenCL in other examples and tutorials.
@@ -73,7 +74,7 @@ int main()
 
     // Our input to the subroutine "oracle" is 8 bits.
     qReg->H(0, indexLength);
-    qReg->IndexedLDA(0, indexLength, indexLength, valueLength, toLoad);
+    qAlu->IndexedLDA(0, indexLength, indexLength, valueLength, toLoad);
 
     // Twelve iterations maximizes the probablity for 256 searched elements, for example.
     // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
@@ -85,13 +86,13 @@ int main()
         TagValue(TARGET_VALUE, qReg, indexLength, valueLength);
 
         qReg->X(carryIndex);
-        qReg->IndexedSBC(0, indexLength, indexLength, valueLength, carryIndex, toLoad);
+        qAlu->IndexedSBC(0, indexLength, indexLength, valueLength, carryIndex, toLoad);
         qReg->X(carryIndex);
         qReg->H(0, indexLength);
         qReg->ZeroPhaseFlip(0, indexLength);
         qReg->H(0, indexLength);
         // qReg->PhaseFlip();
-        qReg->IndexedADC(0, indexLength, indexLength, valueLength, carryIndex, toLoad);
+        qAlu->IndexedADC(0, indexLength, indexLength, valueLength, carryIndex, toLoad);
         std::cout << "\t" << std::setw(2) << i
                   << "> chance of match:" << qReg->ProbAll(TARGET_KEY | (TARGET_VALUE << indexLength)) << std::endl;
     }

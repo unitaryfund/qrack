@@ -43,6 +43,7 @@ int main()
 #else
     QInterfacePtr qReg = CreateQuantumInterface(QINTERFACE_CPU, 20, 0);
 #endif
+    QAluPtr qAlu = std::dynamic_pointer_cast<QAlu>(qReg);
 
     const bitLenInt indexLength = 6;
     const bitLenInt valueLength = 6;
@@ -120,22 +121,22 @@ int main()
         qReg->H(partStart, 2);
 
         // Load lower bound of quadrants:
-        qReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
+        qAlu->IndexedADC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
 
         if (partLength > 0) {
             // In this branch, our quadrant is "degenerate," (we mean, having more than one key/value pair).
 
             // Load upper bound of quadrants:
             qReg->X(2 * valueLength, partLength);
-            qReg->IndexedADC(2 * valueLength, indexLength, valueLength, valueLength - 1, carryIndex, toLoad);
+            qAlu->IndexedADC(2 * valueLength, indexLength, valueLength, valueLength - 1, carryIndex, toLoad);
 
             // This begins the "oracle." Our "oracle" is true if the target can be within the bounds of this quadrant,
             // and false otherwise: Set value bits to borrow from:
             qReg->X(valueLength - 1);
             qReg->X(2 * valueLength - 1);
             // Subtract from the value registers with the bits to borrow from:
-            qReg->DEC(TARGET_VALUE, 0, valueLength);
-            qReg->DEC(TARGET_VALUE, valueLength, valueLength);
+            qAlu->DEC(TARGET_VALUE, 0, valueLength);
+            qAlu->DEC(TARGET_VALUE, valueLength, valueLength);
             // If both are higher, this is not the quadrant, and neither flips the borrow.
             // If both are lower, this is not the quadrant, and both flip the borrow.
             // If one is higher and one is lower, the low register borrow bit is flipped, and high register borrow is
@@ -147,8 +148,8 @@ int main()
             // Reverse everything but the phase flip:
             qReg->CCNOT(valueLength - 1, 2 * valueLength - 1, carryIndex);
             qReg->X(valueLength - 1);
-            qReg->INC(TARGET_VALUE, valueLength, valueLength);
-            qReg->INC(TARGET_VALUE, 0, valueLength);
+            qAlu->INC(TARGET_VALUE, valueLength, valueLength);
+            qAlu->INC(TARGET_VALUE, 0, valueLength);
             qReg->X(2 * valueLength - 1);
             qReg->X(valueLength - 1);
             // This ends the "oracle."
@@ -156,11 +157,11 @@ int main()
             // In this branch, we have one key/value pair in each quadrant, so we can use our usual Grover's oracle.
 
             // We map from input to output.
-            qReg->DEC(TARGET_VALUE, 0, valueLength - 1);
+            qAlu->DEC(TARGET_VALUE, 0, valueLength - 1);
             // Phase flip the target state.
             qReg->ZeroPhaseFlip(0, valueLength - 1);
             // We map back from outputs to inputs.
-            qReg->INC(TARGET_VALUE, 0, valueLength - 1);
+            qAlu->INC(TARGET_VALUE, 0, valueLength - 1);
         }
 
         // Now, we flip the phase of the input state:
@@ -168,10 +169,10 @@ int main()
         // Reverse the operations we used to construct the state:
         qReg->X(carryIndex);
         if (partLength > 0) {
-            qReg->IndexedSBC(2 * valueLength, indexLength, valueLength, valueLength - 1, carryIndex, toLoad);
+            qAlu->IndexedSBC(2 * valueLength, indexLength, valueLength, valueLength - 1, carryIndex, toLoad);
             qReg->X(2 * valueLength, partLength);
         }
-        qReg->IndexedSBC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
+        qAlu->IndexedSBC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
         qReg->X(carryIndex);
         qReg->H(partStart, 2);
 
@@ -228,7 +229,7 @@ int main()
     if (!foundPerm) {
         std::cout << "Value is not in array.";
     } else {
-        qReg->IndexedADC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
+        qAlu->IndexedADC(2 * valueLength, indexLength, 0, valueLength - 1, carryIndex, toLoad);
         // (If we have more than one match, this REQUIRE_THAT needs to instead check that any of the matches are
         // returned. This could be done by only requiring a match to the value register, but we want to show here that
         // the index is correct.)

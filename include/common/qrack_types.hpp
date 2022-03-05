@@ -198,8 +198,52 @@ public:
     virtual bool is_sparse() = 0;
 };
 
+inline bitCapInt pow2(const bitLenInt& p) { return (bitCapInt)ONE_BCI << p; }
+inline bitCapIntOcl pow2Ocl(const bitLenInt& p) { return (bitCapIntOcl)ONE_BCI << p; }
+inline bitCapInt pow2Mask(const bitLenInt& p) { return ((bitCapInt)ONE_BCI << p) - ONE_BCI; }
+inline bitCapIntOcl pow2MaskOcl(const bitLenInt& p) { return ((bitCapIntOcl)ONE_BCI << p) - ONE_BCI; }
+inline bitLenInt log2(bitCapInt n)
+{
+    bitLenInt pow = 0;
+    bitCapInt p = n >> ONE_BCI;
+    while (p != 0) {
+        p >>= ONE_BCI;
+        pow++;
+    }
+    return pow;
+}
+inline bitCapInt bitSlice(const bitLenInt& bit, const bitCapInt& source)
+{
+    return ((bitCapInt)ONE_BCI << bit) & source;
+}
+inline bitCapIntOcl bitSliceOcl(const bitLenInt& bit, const bitCapIntOcl& source)
+{
+    return ((bitCapIntOcl)ONE_BCI << bit) & source;
+}
+inline bitCapInt bitRegMask(const bitLenInt& start, const bitLenInt& length)
+{
+    return (((bitCapInt)ONE_BCI << length) - ONE_BCI) << start;
+}
+inline bitCapIntOcl bitRegMaskOcl(const bitLenInt& start, const bitLenInt& length)
+{
+    return (((bitCapIntOcl)ONE_BCI << length) - ONE_BCI) << start;
+}
+// Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
+inline bool isPowerOfTwo(const bitCapInt& x) { return ((x != 0U) && !(x & (x - ONE_BCI))); }
+
+// These are utility functions defined in qinterface/protected.cpp:
+unsigned char* cl_alloc(size_t ucharCount);
+void cl_free(void* toFree);
 void mul2x2(const complex* left, const complex* right, complex* out);
 void exp2x2(const complex* matrix2x2, complex* outMatrix2x2);
 void log2x2(const complex* matrix2x2, complex* outMatrix2x2);
 void inv2x2(const complex* matrix2x2, complex* outMatrix2x2);
+bool isOverflowAdd(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
+bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMask, const bitCapInt& lengthPower);
+bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount);
+bitCapInt intPow(bitCapInt base, bitCapInt power);
+bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
+#if ENABLE_UINT128
+std::ostream& operator<<(std::ostream& left, __uint128_t right);
+#endif
 } // namespace Qrack

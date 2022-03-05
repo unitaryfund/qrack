@@ -14,12 +14,20 @@
 
 #include "qengineshard.hpp"
 
+#if ENABLE_ALU
+#include "qalu.hpp"
+#endif
+
 namespace Qrack {
 
 class QUnit;
 typedef std::shared_ptr<QUnit> QUnitPtr;
 
+#if ENABLE_ALU
+class QUnit : public QAlu, public QInterface {
+#else
 class QUnit : public QInterface {
+#endif
 protected:
     std::vector<QInterfaceEngine> engines;
     int devID;
@@ -149,11 +157,29 @@ public:
     /** @} */
 
 #if ENABLE_ALU
+    virtual bool M(bitLenInt q) { return QInterface::M(q); }
+    virtual void X(bitLenInt q) { QInterface::X(q); }
+
     /**
      * \defgroup ArithGate Arithmetic and other opcode-like gate implemenations.
      *
      * @{
      */
+
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
+    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        QInterface::DECS(toSub, start, length, overflowIndex);
+    }
+    virtual void CDEC(
+        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    {
+        QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
+    }
+    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        QInterface::INCDECC(toAdd, start, length, carryIndex);
+    }
 
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
     virtual void CINC(
@@ -166,9 +192,8 @@ public:
     virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 #if ENABLE_BCD
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
-    virtual void INCBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
     virtual void DECBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length);
-    virtual void DECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
+    virtual void INCDECBCDC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
 #endif
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
@@ -262,11 +287,11 @@ protected:
     virtual bool TrySeparateClifford(bitLenInt qubit);
 
 #if ENABLE_ALU
-    typedef void (QInterface::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
-    typedef void (QInterface::*INCxxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt, bitLenInt);
-    typedef void (QInterface::*CMULFn)(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
+    typedef void (QAlu::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
+    typedef void (QAlu::*INCxxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt, bitLenInt);
+    typedef void (QAlu::*CMULFn)(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen);
-    typedef void (QInterface::*CMULModFn)(bitCapInt toMod, bitCapInt modN, bitLenInt start, bitLenInt carryStart,
+    typedef void (QAlu::*CMULModFn)(bitCapInt toMod, bitCapInt modN, bitLenInt start, bitLenInt carryStart,
         bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
     void INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex, bool hasCarry,
         std::vector<bitLenInt> controlVec = std::vector<bitLenInt>());

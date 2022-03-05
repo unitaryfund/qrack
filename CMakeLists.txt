@@ -15,11 +15,11 @@ include_directories ("include" "include/common")
 
 # Declare the library
 add_library (qrack STATIC
+    src/common/functions.cpp
     src/common/parallel_for.cpp
     src/common/rdrandwrapper.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
-    src/qinterface/protected.cpp
     src/qinterface/qinterface.cpp
     src/qinterface/rotational.cpp
     src/qengine/qengine.cpp
@@ -240,6 +240,7 @@ install (FILES
     include/qunitmulti.hpp
     include/qengine_opencl.hpp
     include/qinterface.hpp
+    include/qalu.hpp
     include/qneuron.hpp
     include/qpager.hpp
     include/qhybrid.hpp

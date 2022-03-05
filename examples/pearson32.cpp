@@ -7,7 +7,7 @@
 // in superposition. Grover's search could be used to find outputs with desirable
 // qualities, like a satisfied proof-of-work requirement. Such applications could
 // commonly rely on the equivalent of Qrack's "Hash" function, which is demonstrated
-// here. "QInterface::Hash" performs a one-to-one (unitary) transformation of a qubit
+// here. "QAlu::Hash" performs a one-to-one (unitary) transformation of a qubit
 // register as a hash table key into its value.
 //
 // Licensed under the GNU Lesser General Public License V3.
@@ -51,13 +51,15 @@ bitCapInt Pearson(const unsigned char* x, size_t len, const unsigned char* T)
     return result;
 }
 
-void QPearson(size_t len, unsigned char* T, QInterfacePtr qReg)
+void QPearson(size_t len, unsigned char* T, QAluPtr qReg)
 {
     size_t i;
     size_t j;
     size_t k;
     bitLenInt x_index;
     bitLenInt h_index = (len + HASH_SIZE - 1U) * 8;
+
+    QInterfacePtr qi = std::dynamic_pointer_cast<QInterface>(qReg);
 
     for (j = 0; j < HASH_SIZE; ++j) {
         // Change the first byte
@@ -67,7 +69,7 @@ void QPearson(size_t len, unsigned char* T, QInterfacePtr qReg)
             x_index += 8;
             // XOR might collapse the state, as we have defined the API.
             for (k = 0; k < 8; k++) {
-                qReg->XOR(x_index + k, h_index + k, h_index + k);
+                qi->XOR(x_index + k, h_index + k, h_index + k);
             }
             // This is a valid API if the hash table is one-to-one (unitary).
             qReg->Hash(h_index, 8, T);
@@ -84,8 +86,9 @@ int main()
 {
     size_t i;
 
-    QInterfacePtr qReg = CreateQuantumInterface({ QINTERFACE_QUNIT, QINTERFACE_CPU }, 8U * (KEY_SIZE + HASH_SIZE), 0,
+    QInterfacePtr qi = CreateQuantumInterface({ QINTERFACE_QUNIT, QINTERFACE_CPU }, 8U * (KEY_SIZE + HASH_SIZE), 0,
         nullptr, CMPLX_DEFAULT_ARG, true, true, false, -1, true, true);
+    QAluPtr qReg = std::dynamic_pointer_cast<QAlu>(qi);
 
     unsigned char T[TABLE_SIZE];
     for (i = 0; i < TABLE_SIZE; i++) {
@@ -95,34 +98,34 @@ int main()
 
     unsigned char x[KEY_SIZE];
     for (i = 0; i < KEY_SIZE; i++) {
-        x[i] = (int)(256 * qReg->Rand());
+        x[i] = (int)(256 * qi->Rand());
     }
 
     bitCapInt xFull = 0;
     for (i = 0; i < KEY_SIZE; i++) {
         xFull |= ((bitCapInt)x[i]) << (i * 8U);
     }
-    qReg->SetPermutation(xFull);
+    qi->SetPermutation(xFull);
     QPearson(KEY_SIZE, T, qReg);
 
     bitCapInt classicalResult = Pearson(x, KEY_SIZE, T);
-    bitCapInt quantumResult = qReg->MReg(8 * KEY_SIZE, 8 * HASH_SIZE);
+    bitCapInt quantumResult = qi->MReg(8 * KEY_SIZE, 8 * HASH_SIZE);
 
     std::cout << "Classical result: " << (int)classicalResult << std::endl;
     std::cout << "Quantum result:   " << (int)quantumResult << std::endl;
 
-    qReg->SetPermutation(0);
-    qReg->H(0, 8);
+    qi->SetPermutation(0);
+    qi->H(0, 8);
     QPearson(KEY_SIZE, T, qReg);
 
     try {
-        qReg->ForceM(8U * KEY_SIZE, false);
+        qi->ForceM(8U * KEY_SIZE, false);
     } catch (...) {
         std::cout << "Even result:      (failed)" << std::endl;
         return 0;
     }
 
-    bitCapInt quantumKey = qReg->MReg(0, 8U * KEY_SIZE);
-    quantumResult = qReg->MReg(8U * KEY_SIZE, 8U * HASH_SIZE);
+    bitCapInt quantumKey = qi->MReg(0, 8U * KEY_SIZE);
+    quantumResult = qi->MReg(8U * KEY_SIZE, 8U * HASH_SIZE);
     std::cout << "Even result:      (key: " << (int)quantumKey << ", hash: " << (int)quantumResult << ")" << std::endl;
 };

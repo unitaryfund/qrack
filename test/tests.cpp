@@ -51,6 +51,8 @@ using namespace Qrack;
 #define C_SQRT1_2 complex(SQRT1_2_R1, ZERO_R1)
 #define C_I_SQRT1_2 complex(ZERO_R1, SQRT1_2_R1)
 
+#define QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
+
 void print_bin(int bits, int d);
 void log(QInterfacePtr p);
 
@@ -3578,7 +3580,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 
     qftReg->SetPermutation(250);
     for (i = 0; i < 8; i++) {
-        qftReg->INC(1, 0, 8);
+        QALU(qftReg)->INC(1, 0, 8);
         if (i < 5) {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
         } else {
@@ -3592,20 +3594,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
         int c = (a + b) & 0xFF;
 
         qftReg->SetPermutation(a);
-        qftReg->INC(b, 0, 8);
+        QALU(qftReg)->INC(b, 0, 8);
         REQUIRE_THAT(qftReg, HasProbability(0, 9, c));
     }
 
     qftReg->SetPermutation(255);
     qftReg->H(7);
-    qftReg->INC(1, 0, 8);
+    QALU(qftReg)->INC(1, 0, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(128));
 
     qftReg->SetPermutation(255);
     qftReg->H(7);
     qftReg->H(1);
-    qftReg->INC(1, 0, 8);
+    QALU(qftReg)->INC(1, 0, 8);
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(0));
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(126));
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(128));
@@ -3614,25 +3616,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
     qftReg->SetPermutation(0);
     qftReg->H(7);
     qftReg->H(1);
-    qftReg->INC(1, 0, 8);
+    QALU(qftReg)->INC(1, 0, 8);
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(1));
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(3));
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(129));
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(131));
 
     qftReg->SetPermutation(1);
-    qftReg->INC(8, 0, 8);
-    qftReg->DEC(8, 0, 8);
+    QALU(qftReg)->INC(8, 0, 8);
+    QALU(qftReg)->DEC(8, 0, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 
     qftReg->SetPermutation(0);
-    qftReg->INC(3, 0, 2);
-    qftReg->INC(1, 1, 2);
+    QALU(qftReg)->INC(3, 0, 2);
+    QALU(qftReg)->INC(1, 1, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 5));
 
     qftReg->SetPermutation(0);
     qftReg->H(0, 8);
-    qftReg->INC(20, 0, 8);
+    QALU(qftReg)->INC(20, 0, 8);
     qftReg->H(0, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 }
@@ -3647,7 +3649,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
 
     qftReg->SetPermutation(250);
     for (i = 0; i < 8; i++) {
-        qftReg->INCS(1, 0, 8, 9);
+        QALU(qftReg)->INCS(1, 0, 8, 9);
         if (i < 5) {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
         } else {
@@ -3657,19 +3659,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
 
     qftReg->SetPermutation(255);
     qftReg->H(8);
-    qftReg->INCS(1, 0, 8, 8);
+    QALU(qftReg)->INCS(1, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(256));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
 
     qftReg->SetPermutation(0);
     qftReg->H(0);
-    qftReg->INCS(1, 0, 8, 8);
+    QALU(qftReg)->INCS(1, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(2));
 
     qftReg->SetPermutation(256);
     qftReg->H(7);
-    qftReg->INCS(1, 0, 8, 8);
+    QALU(qftReg)->INCS(1, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(257));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(385));
 }
@@ -3680,7 +3682,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
 
     qftReg->SetPermutation(247 + 256);
     for (i = 0; i < 10; i++) {
-        qftReg->INCC(1, 0, 8, 8);
+        QALU(qftReg)->INCC(1, 0, 8, 8);
         if (i < 7) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 249 + i));
         } else if (i == 7) {
@@ -3692,13 +3694,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
 
     qftReg->SetPermutation(255);
     qftReg->H(7);
-    qftReg->INCC(1, 0, 8, 8);
+    QALU(qftReg)->INCC(1, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(256));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(128));
 
     qftReg->SetPermutation(255);
     qftReg->H(7);
-    qftReg->INCC(255, 0, 8, 8);
+    QALU(qftReg)->INCC(255, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(510));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(382));
 }
@@ -3709,7 +3711,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
 
     qftReg->SetPermutation(247 + 256);
     for (i = 0; i < 10; i++) {
-        qftReg->INCSC(1, 0, 8, 9, 8);
+        QALU(qftReg)->INCSC(1, 0, 8, 9, 8);
         if (i < 7) {
             REQUIRE_THAT(qftReg, HasProbability(0, 10, 249 + i));
         } else if (i == 7) {
@@ -3721,7 +3723,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
 
     qftReg->SetPermutation(247 + 256);
     for (i = 0; i < 10; i++) {
-        qftReg->INCSC(1, 0, 8, 8);
+        QALU(qftReg)->INCSC(1, 0, 8, 8);
         if (i < 7) {
             REQUIRE_THAT(qftReg, HasProbability(0, 10, 249 + i));
         } else if (i == 7) {
@@ -3734,7 +3736,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
     qftReg->SetPermutation(0);
     qftReg->H(0);
     qftReg->H(1);
-    qftReg->INCSC(1, 0, 2, 3, 2);
+    QALU(qftReg)->INCSC(1, 0, 2, 3, 2);
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(1));
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(2));
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(3));
@@ -3743,7 +3745,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
     qftReg->SetPermutation(0);
     qftReg->H(0);
     qftReg->H(9);
-    qftReg->INCSC(1, 0, 8, 9, 8);
+    QALU(qftReg)->INCSC(1, 0, 8, 9, 8);
     qftReg->H(9);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(2));
@@ -3753,7 +3755,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
 {
 
     qftReg->SetPermutation(1);
-    qftReg->CINC(1, 0, 8, NULL, 0);
+    QALU(qftReg)->CINC(1, 0, 8, NULL, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 
     bitLenInt controls[1] = { 8 };
@@ -3764,7 +3766,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
         // Turn control on
         qftReg->X(controls[0]);
 
-        qftReg->CINC(1, 0, 8, controls, 1);
+        QALU(qftReg)->CINC(1, 0, 8, controls, 1);
         if (i < 5) {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
         } else {
@@ -3774,7 +3776,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
         // Turn control off
         qftReg->X(controls[0]);
 
-        qftReg->CINC(1, 0, 8, controls, 1);
+        QALU(qftReg)->CINC(1, 0, 8, controls, 1);
         if (i < 5) {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 251 + i));
         } else {
@@ -3789,19 +3791,19 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dec")
     int start = 0x08;
 
     qftReg->SetPermutation(2);
-    qftReg->CDEC(1, 0, 8, NULL, 0);
+    QALU(qftReg)->CDEC(1, 0, 8, NULL, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 
     qftReg->SetPermutation(start);
     for (i = 0; i < 8; i++) {
-        qftReg->DEC(9, 0, 8);
+        QALU(qftReg)->DEC(9, 0, 8);
         start -= 9;
         REQUIRE_THAT(qftReg, HasProbability(0, 19, 0xff - i * 9));
     }
 
     qftReg->SetPermutation(0);
     qftReg->H(0, 8);
-    qftReg->DEC(20, 0, 8);
+    QALU(qftReg)->DEC(20, 0, 8);
     qftReg->H(0, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 }
@@ -3817,7 +3819,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decs")
 
     qftReg->SetPermutation(start);
     for (i = 0; i < 8; i++) {
-        qftReg->DECS(9, 0, 8, 9);
+        QALU(qftReg)->DECS(9, 0, 8, 9);
         start -= 9;
         REQUIRE_THAT(qftReg, HasProbability(0, 19, 0xff - i * 9));
     }
@@ -3829,7 +3831,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decc")
 
     qftReg->SetPermutation(7);
     for (i = 0; i < 10; i++) {
-        qftReg->DECC(1, 0, 8, 8);
+        QALU(qftReg)->DECC(1, 0, 8, 8);
         if (i < 6) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 5 - i + 256));
         } else if (i == 6) {
@@ -3846,7 +3848,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 
     qftReg->SetPermutation(7);
     for (i = 0; i < 10; i++) {
-        qftReg->DECSC(1, 0, 8, 9, 8);
+        QALU(qftReg)->DECSC(1, 0, 8, 9, 8);
         if (i < 6) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 5 - i + 256));
         } else if (i == 6) {
@@ -3858,7 +3860,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decsc")
 
     qftReg->SetPermutation(7);
     for (i = 0; i < 10; i++) {
-        qftReg->DECSC(1, 0, 8, 8);
+        QALU(qftReg)->DECSC(1, 0, 8, 8);
         if (i < 6) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 5 - i + 256));
         } else if (i == 6) {
@@ -3880,13 +3882,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdec", "[travis_xfail]")
         // Turn control on
         qftReg->X(controls[0]);
 
-        qftReg->CDEC(9, 0, 8, controls, 1);
+        QALU(qftReg)->CDEC(9, 0, 8, controls, 1);
         REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
 
         // Turn control off
         qftReg->X(controls[0]);
 
-        qftReg->CDEC(9, 0, 8, controls, 1);
+        QALU(qftReg)->CDEC(9, 0, 8, controls, 1);
         REQUIRE_THAT(qftReg, HasProbability(0, 8, 0xff - i * 9));
     }
 }
@@ -3898,7 +3900,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcd")
 
     qftReg->SetPermutation(0x95);
     for (i = 0; i < 8; i++) {
-        qftReg->INCBCD(1, 0, 8);
+        QALU(qftReg)->INCBCD(1, 0, 8);
         if (i < 4) {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x96 + i));
         } else {
@@ -3913,7 +3915,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incbcdc")
 
     qftReg->SetPermutation(0x095);
     for (i = 0; i < 8; i++) {
-        qftReg->INCBCDC(1, 0, 8, 8);
+        QALU(qftReg)->INCBCDC(1, 0, 8, 8);
         if (i < 4) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x096 + i));
         } else if (i == 4) {
@@ -3930,7 +3932,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcd")
 
     qftReg->SetPermutation(0x94);
     for (i = 0; i < 8; i++) {
-        qftReg->DECBCD(1, 0, 8);
+        QALU(qftReg)->DECBCD(1, 0, 8);
         if (i < 4) {
             REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x93 - i));
         } else {
@@ -3945,7 +3947,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_decbcdc")
 
     qftReg->SetPermutation(0x005);
     for (i = 0; i < 8; i++) {
-        qftReg->DECBCDC(1, 0, 8, 8);
+        QALU(qftReg)->DECBCDC(1, 0, 8, 8);
         if (i < 4) {
             REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x103 - i));
         } else if (i == 4) {
@@ -3962,18 +3964,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mul")
     int i;
 
     qftReg->SetPermutation(5);
-    qftReg->MUL(0, 0, 8, 8);
+    QALU(qftReg)->MUL(0, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0));
 
     qftReg->SetPermutation(7);
-    qftReg->MUL(1, 0, 8, 8);
+    QALU(qftReg)->MUL(1, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 7));
 
     qftReg->SetPermutation(3);
     bitCapInt res = 3;
     for (i = 0; i < 8; i++) {
         qftReg->SetReg(8, 8, 0x00);
-        qftReg->MUL(2, 0, 8, 8);
+        QALU(qftReg)->MUL(2, 0, 8, 8);
         res &= 0xFF;
         res *= 2;
         REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
@@ -3981,7 +3983,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mul")
 
     qftReg->SetPermutation(0);
     qftReg->H(0);
-    qftReg->MUL(8, 0, 8, 8);
+    QALU(qftReg)->MUL(8, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(8));
 }
@@ -3993,14 +3995,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
     qftReg->SetPermutation(256);
     bitCapInt res = 256;
     for (i = 0; i < 8; i++) {
-        qftReg->DIV(2, 0, 8, 8);
+        QALU(qftReg)->DIV(2, 0, 8, 8);
         res /= 2;
         REQUIRE_THAT(qftReg, HasProbability(0, 16, res));
     }
 
     qftReg->SetPermutation(0);
     qftReg->H(3);
-    qftReg->DIV(8, 0, 8, 8);
+    QALU(qftReg)->DIV(8, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1));
 }
@@ -4008,12 +4010,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
 {
     qftReg->SetPermutation(65);
-    qftReg->MULModNOut(5, 256U, 0, 8, 8);
+    QALU(qftReg)->MULModNOut(5, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (69 << 8)));
 
     qftReg->SetPermutation(0);
     qftReg->H(3);
-    qftReg->MULModNOut(2, 256U, 0, 8, 8);
+    QALU(qftReg)->MULModNOut(2, 256U, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(8 | (16 << 8)));
 }
@@ -4021,25 +4023,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_imulmodnout")
 {
     qftReg->SetPermutation(65 | (69 << 8));
-    qftReg->IMULModNOut(5, 256U, 0, 8, 8);
+    QALU(qftReg)->IMULModNOut(5, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_powmodnout")
 {
     qftReg->SetPermutation(6);
-    qftReg->POWModNOut(3, 256U, 0, 8, 8);
+    QALU(qftReg)->POWModNOut(3, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 6 | (217 << 8)));
 
     qftReg->SetPermutation(0);
     qftReg->H(1);
-    qftReg->POWModNOut(2, 256U, 0, 8, 8);
+    QALU(qftReg)->POWModNOut(2, 256U, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1 << 8));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(2 | (4 << 8)));
 
     qftReg->SetPermutation(0);
     qftReg->H(0, 2);
-    qftReg->POWModNOut(2, 256U, 0, 8, 8);
+    QALU(qftReg)->POWModNOut(2, 256U, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(0 | (1 << 8)));
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(1 | (2 << 8)));
     REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(2 | (4 << 8)));
@@ -4053,13 +4055,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
     bitLenInt controls[1] = { 16 };
 
     qftReg->SetPermutation(1);
-    qftReg->CMUL(2, 0, 8, 8, NULL, 0);
+    QALU(qftReg)->CMUL(2, 0, 8, 8, NULL, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 
     qftReg->SetPermutation(3 | (1 << 16));
     bitCapInt res = 3;
     for (i = 0; i < 8; i++) {
-        qftReg->CMUL(2, 0, 8, 8, controls, 1);
+        QALU(qftReg)->CMUL(2, 0, 8, 8, controls, 1);
         if ((i % 2) == 0) {
             res *= 2;
         }
@@ -4076,13 +4078,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cdiv")
     bitLenInt controls[1] = { 16 };
 
     qftReg->SetPermutation(2);
-    qftReg->CDIV(2, 0, 8, 8, NULL, 0);
+    QALU(qftReg)->CDIV(2, 0, 8, 8, NULL, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 1));
 
     qftReg->SetPermutation(256 | (1 << 16));
     bitCapInt res = 256;
     for (i = 0; i < 8; i++) {
-        qftReg->CDIV(2, 0, 8, 8, controls, 1);
+        QALU(qftReg)->CDIV(2, 0, 8, 8, controls, 1);
         if ((i % 2) == 0) {
             res /= 2;
         }
@@ -4096,16 +4098,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout", "[travis_xfail]")
     bitLenInt controls[1] = { 16 };
 
     qftReg->SetPermutation(1);
-    qftReg->CMULModNOut(2, 256U, 0, 8, 8, NULL, 0);
+    QALU(qftReg)->CMULModNOut(2, 256U, 0, 8, 8, NULL, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 1 | (2 << 8)));
 
     qftReg->SetPermutation(3 | (1 << 16));
-    qftReg->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 3 | (9 << 8)));
 
     qftReg->SetPermutation(3);
     qftReg->H(16);
-    qftReg->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(3));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(3 | (9 << 8) | (1 << 16)));
 }
@@ -4115,13 +4117,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cimulmodnout")
     bitLenInt controls[1] = { 16 };
 
     qftReg->SetPermutation(1);
-    qftReg->CMULModNOut(2, 256U, 0, 8, 8, NULL, 0);
-    qftReg->CIMULModNOut(2, 256U, 0, 8, 8, NULL, 0);
+    QALU(qftReg)->CMULModNOut(2, 256U, 0, 8, 8, NULL, 0);
+    QALU(qftReg)->CIMULModNOut(2, 256U, 0, 8, 8, NULL, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 1));
 
     qftReg->SetPermutation(3 | (1 << 16));
-    qftReg->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
-    qftReg->CIMULModNOut(3, 256U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CIMULModNOut(3, 256U, 0, 8, 8, controls, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3 | (1 << 16)));
 }
 
@@ -4130,16 +4132,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout", "[travis_xfail]")
     bitLenInt controls[1] = { 16 };
 
     qftReg->SetPermutation(1);
-    qftReg->CPOWModNOut(2, 256U, 0, 8, 8, NULL, 0);
+    QALU(qftReg)->CPOWModNOut(2, 256U, 0, 8, 8, NULL, 0);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 1 | (2 << 8)));
 
     qftReg->SetPermutation(3 | (1 << 16));
-    qftReg->CPOWModNOut(3, 256U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CPOWModNOut(3, 256U, 0, 8, 8, controls, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 3 | (27 << 8)));
 
     qftReg->SetPermutation(3);
     qftReg->H(16);
-    qftReg->CPOWModNOut(3, 256U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CPOWModNOut(3, 256U, 0, 8, 8, controls, 1);
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(3));
     REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(3 | (27 << 8) | (1 << 16)));
 }
@@ -4149,21 +4151,21 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less", "[travis_xf
     qftReg->SetReg(0, 20, 0x40000);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x40000));
     qftReg->H(19);
-    qftReg->CPhaseFlipIfLess(1, 19, 1, 18);
+    QALU(qftReg)->CPhaseFlipIfLess(1, 19, 1, 18);
     qftReg->H(19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0xC0000));
 
     qftReg->SetReg(0, 20, 0x00);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x00000));
     qftReg->H(19);
-    qftReg->CPhaseFlipIfLess(1, 19, 1, 18);
+    QALU(qftReg)->CPhaseFlipIfLess(1, 19, 1, 18);
     qftReg->H(19);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x00000));
 
     qftReg->SetPermutation(0);
     qftReg->H(19);
     qftReg->H(18);
-    qftReg->CPhaseFlipIfLess(1, 19, 1, 18);
+    QALU(qftReg)->CPhaseFlipIfLess(1, 19, 1, 18);
     qftReg->CZ(19, 18);
     qftReg->H(18);
     qftReg->H(19);
@@ -4181,7 +4183,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg")
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
-    qftReg->IndexedLDA(0, 8, 8, 8, testPage);
+    QALU(qftReg)->IndexedLDA(0, 8, 8, 8, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 0x303));
     cl_free(testPage);
 }
@@ -4199,12 +4201,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg")
         testPage[j] = j;
     }
 
-    qftReg->IndexedLDA(8, 8, 0, 8, testPage);
+    QALU(qftReg)->IndexedLDA(8, 8, 0, 8, testPage);
 
     for (j = 0; j < 256; j++) {
         testPage[j] = 255 - j;
     }
-    qftReg->IndexedADC(8, 8, 0, 8, 16, testPage);
+    QALU(qftReg)->IndexedADC(8, 8, 0, 8, 16, testPage);
     qftReg->H(8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 17, 0xff));
     cl_free(testPage);
@@ -4222,9 +4224,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg")
     for (j = 0; j < 256; j++) {
         testPage[j] = j;
     }
-    qftReg->IndexedLDA(8, 8, 0, 8, testPage);
+    QALU(qftReg)->IndexedLDA(8, 8, 0, 8, testPage);
 
-    qftReg->IndexedSBC(8, 8, 0, 8, 16, testPage);
+    QALU(qftReg)->IndexedSBC(8, 8, 0, 8, 16, testPage);
     qftReg->H(8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 17, 1 << 16));
     cl_free(testPage);
@@ -4242,7 +4244,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_superposition_reg_long")
         testPage[j * 2] = j & 0xff;
         testPage[j * 2 + 1] = (j & 0x100) >> 8;
     }
-    qftReg->IndexedLDA(0, 9, 9, 9, testPage);
+    QALU(qftReg)->IndexedLDA(0, 9, 9, 9, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 17, 0x603));
     cl_free(testPage);
 }
@@ -4261,13 +4263,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_adc_superposition_reg_long_index")
         testPage[j * 2 + 1] = (j & 0x100) >> 8;
     }
 
-    qftReg->IndexedLDA(9, 9, 0, 9, testPage);
+    QALU(qftReg)->IndexedLDA(9, 9, 0, 9, testPage);
 
     for (j = 0; j < 512; j++) {
         testPage[j * 2] = (511 - j) & 0xff;
         testPage[j * 2 + 1] = ((511 - j) & 0x100) >> 8;
     }
-    qftReg->IndexedADC(9, 9, 0, 9, 18, testPage);
+    QALU(qftReg)->IndexedADC(9, 9, 0, 9, 18, testPage);
     REQUIRE_THAT(qftReg, HasProbability(0, 9, 0x1ff));
     cl_free(testPage);
 }
@@ -4285,9 +4287,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_sbc_superposition_reg_long_index")
         testPage[j * 2] = j & 0xff;
         testPage[j * 2 + 1] = (j & 0x100) >> 8;
     }
-    qftReg->IndexedLDA(9, 9, 0, 9, testPage);
+    QALU(qftReg)->IndexedLDA(9, 9, 0, 9, testPage);
 
-    qftReg->IndexedSBC(9, 9, 0, 9, 18, testPage);
+    QALU(qftReg)->IndexedSBC(9, 9, 0, 9, 18, testPage);
     qftReg->H(9, 9);
     REQUIRE_THAT(qftReg, HasProbability(0, 19, 1 << 18));
     cl_free(testPage);
@@ -4308,13 +4310,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_hash")
     }
     std::random_shuffle(testPage, testPage + 256);
 
-    qftReg->Hash(0, 8, testPage);
+    QALU(qftReg)->Hash(0, 8, testPage);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 8, testPage[INPUT_KEY]));
 
     qftReg->SetPermutation(0);
     qftReg->H(0, 8);
-    qftReg->Hash(0, 8, testPage);
+    QALU(qftReg)->Hash(0, 8, testPage);
     qftReg->H(0, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0));
 
@@ -4338,9 +4340,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover")
     // Twelve iterations maximizes the probablity for 256 searched elements.
     for (i = 0; i < 12; i++) {
         // Our "oracle" is true for an input of "100" and false for all other inputs.
-        qftReg->DEC(100, 0, 8);
+        QALU(qftReg)->DEC(100, 0, 8);
         qftReg->ZeroPhaseFlip(0, 8);
-        qftReg->INC(100, 0, 8);
+        QALU(qftReg)->INC(100, 0, 8);
         // This ends the "oracle."
         qftReg->H(0, 8);
         qftReg->ZeroPhaseFlip(0, 8);
@@ -4381,7 +4383,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
     // Our input to the subroutine "oracle" is 8 bits.
     qftReg->SetPermutation(0);
     qftReg->H(valueLength, indexLength);
-    qftReg->IndexedLDA(valueLength, indexLength, 0, valueLength, toLoad);
+    QALU(qftReg)->IndexedLDA(valueLength, indexLength, 0, valueLength, toLoad);
 
     // Twelve iterations maximizes the probablity for 256 searched elements, for example.
     // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
@@ -4389,18 +4391,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_grover_lookup")
 
     for (i = 0; i < optIter; i++) {
         // Our "oracle" is true for an input of "100" and false for all other inputs.
-        qftReg->DEC(TARGET_VALUE, 0, valueLength);
+        QALU(qftReg)->DEC(TARGET_VALUE, 0, valueLength);
         qftReg->ZeroPhaseFlip(0, valueLength);
-        qftReg->INC(TARGET_VALUE, 0, valueLength);
+        QALU(qftReg)->INC(TARGET_VALUE, 0, valueLength);
         // This ends the "oracle."
         qftReg->X(carryIndex);
-        qftReg->IndexedSBC(valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+        QALU(qftReg)->IndexedSBC(valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
         qftReg->X(carryIndex);
         qftReg->H(valueLength, indexLength);
         qftReg->ZeroPhaseFlip(valueLength, indexLength);
         qftReg->H(valueLength, indexLength);
         // qftReg->PhaseFlip();
-        qftReg->IndexedADC(valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
+        QALU(qftReg)->IndexedADC(valueLength, indexLength, 0, valueLength, carryIndex, toLoad);
     }
 
     REQUIRE_THAT(qftReg, HasProbability(0, indexLength + valueLength, TARGET_VALUE | (TARGET_KEY << valueLength)));
@@ -4426,11 +4428,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_fast_grover")
         partStart = length - ((i + 1) * 2);
         qftReg->H(partStart, 2);
         // We map from input to output.
-        qftReg->DEC(TARGET_PROB & (3 << partStart), 0, length);
+        QALU(qftReg)->DEC(TARGET_PROB & (3 << partStart), 0, length);
         // Phase flip the target state.
         qftReg->ZeroPhaseFlip(partStart, 2);
         // We map back from outputs to inputs.
-        qftReg->INC(TARGET_PROB & (3 << partStart), 0, length);
+        QALU(qftReg)->INC(TARGET_PROB & (3 << partStart), 0, length);
         // Phase flip the input state from the previous iteration.
         qftReg->H(partStart, 2);
         qftReg->ZeroPhaseFlip(partStart, 2);
@@ -4454,7 +4456,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_basis_change")
     // Divide qftReg into two registers of 8 bits each
     qftReg->SetPermutation(0);
     qftReg->H(8, 8);
-    qftReg->IndexedLDA(8, 8, 0, 8, toSearch);
+    QALU(qftReg)->IndexedLDA(8, 8, 0, 8, toSearch);
     qftReg->H(8, 8);
 
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 100));

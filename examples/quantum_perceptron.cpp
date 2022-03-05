@@ -64,7 +64,7 @@ int main()
     qReg->Compose(qReg2);
     qReg->SetPermutation(1U << (ControlCount + 1));
     qReg->H(ControlCount + 1, ControlLog);
-    qReg->IndexedLDA(ControlCount + 1, ControlLog, 0, ControlCount, powersOf2);
+    std::dynamic_pointer_cast<QAlu>(qReg)->IndexedLDA(ControlCount + 1, ControlLog, 0, ControlCount, powersOf2);
     qReg->H(ControlCount + 1, ControlLog);
     qReg->Dispose(ControlCount + 1, ControlLog);
 

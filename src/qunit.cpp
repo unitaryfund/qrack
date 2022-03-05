@@ -2676,7 +2676,7 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
 
     EntangleRange(start, length);
     QInterfacePtr unit = Entangle({ start, flagIndex });
-    ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flagIndex].mapped);
+    ((*std::dynamic_pointer_cast<QAlu>(unit)).*fn)(toMod, shards[start].mapped, length, shards[flagIndex].mapped);
 }
 
 void QUnit::INCxx(
@@ -2691,7 +2691,8 @@ void QUnit::INCxx(
     EntangleRange(start, length);
     QInterfacePtr unit = Entangle({ start, flag1Index, flag2Index });
 
-    ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flag1Index].mapped, shards[flag2Index].mapped);
+    ((*std::dynamic_pointer_cast<QAlu>(unit)).*fn)(
+        toMod, shards[start].mapped, length, shards[flag1Index].mapped, shards[flag2Index].mapped);
 }
 
 /// Check if overflow arithmetic can be optimized
@@ -2985,13 +2986,13 @@ void QUnit::INTS(
         if (INTSCOptimize(toMod, start, length, true, carryIndex, overflowIndex)) {
             return;
         }
-        INCxx(&QInterface::INCSC, toMod, start, length, overflowIndex, carryIndex);
+        INCxx(&QAlu::INCSC, toMod, start, length, overflowIndex, carryIndex);
     } else {
         // Keep the bits separate, if cheap to do so:
         if (INTSOptimize(toMod, start, length, true, overflowIndex)) {
             return;
         }
-        INCx(&QInterface::INCS, toMod, start, length, overflowIndex);
+        INCx(&QAlu::INCS, toMod, start, length, overflowIndex);
     }
 }
 
@@ -3008,7 +3009,7 @@ void QUnit::INCDECSC(
 
 void QUnit::INCDECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    INCx(&QInterface::INCSC, toMod, start, length, carryIndex);
+    INCx(&QAlu::INCSC, toMod, start, length, carryIndex);
 }
 
 #if ENABLE_BCD
@@ -3016,26 +3017,20 @@ void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     // BCD variants are low priority for optimization, for the time being.
     DirtyShardRange(start, length);
-    EntangleRange(start, length)->INCBCD(toMod, shards[start].mapped, length);
-}
-
-void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    // BCD variants are low priority for optimization, for the time being.
-    INCx(&QInterface::INCBCDC, toMod, start, length, carryIndex);
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(start, length))->INCBCD(toMod, shards[start].mapped, length);
 }
 
 void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     // BCD variants are low priority for optimization, for the time being.
     DirtyShardRange(start, length);
-    EntangleRange(start, length)->DECBCD(toMod, shards[start].mapped, length);
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(start, length))->DECBCD(toMod, shards[start].mapped, length);
 }
 
-void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::INCDECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     // BCD variants are low priority for optimization, for the time being.
-    INCx(&QInterface::DECBCDC, toMod, start, length, carryIndex);
+    INCx(&QAlu::INCDECBCDC, toMod, start, length, carryIndex);
 }
 #endif
 
@@ -3063,7 +3058,7 @@ void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bit
     DirtyShardRange(carryStart, length);
 
     // Otherwise, form the potentially entangled representation:
-    EntangleRange(inOutStart, length, carryStart, length)
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(inOutStart, length, carryStart, length))
         ->MUL(toMul, shards[inOutStart].mapped, shards[carryStart].mapped, length);
 }
 
@@ -3090,7 +3085,7 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
     DirtyShardRange(carryStart, length);
 
     // Otherwise, form the potentially entangled representation:
-    EntangleRange(inOutStart, length, carryStart, length)
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(inOutStart, length, carryStart, length))
         ->DIV(toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, length);
 }
 
@@ -3150,9 +3145,11 @@ void QUnit::xMULModNOut(
     // Otherwise, form the potentially entangled representation:
     QInterfacePtr unit = EntangleRange(inStart, length, outStart, length);
     if (inverse) {
-        unit->IMULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
+        std::dynamic_pointer_cast<QAlu>(unit)->IMULModNOut(
+            toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
     } else {
-        unit->MULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
+        std::dynamic_pointer_cast<QAlu>(unit)->MULModNOut(
+            toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
     }
 }
 
@@ -3183,7 +3180,7 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
     SetReg(outStart, length, 0);
 
     // Otherwise, form the potentially entangled representation:
-    EntangleRange(inStart, length, outStart, length)
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(inStart, length, outStart, length))
         ->POWModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
     DirtyShardRangePhase(inStart, length);
     DirtyShardRange(outStart, length);
@@ -3230,7 +3227,7 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
     std::vector<bitLenInt> controlsMapped;
     QInterfacePtr unit = CMULEntangle(controlVec, start, carryStart, length, &controlsMapped);
 
-    ((*unit).*fn)(toMod, shards[start].mapped, shards[carryStart].mapped, length,
+    ((*std::dynamic_pointer_cast<QAlu>(unit)).*fn)(toMod, shards[start].mapped, shards[carryStart].mapped, length,
         controlVec.size() ? &(controlsMapped[0]) : NULL, controlVec.size());
 
     DirtyShardRange(start, length);
@@ -3242,7 +3239,7 @@ void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt st
     std::vector<bitLenInt> controlsMapped;
     QInterfacePtr unit = CMULEntangle(controlVec, start, carryStart, length, &controlsMapped);
 
-    ((*unit).*fn)(toMod, modN, shards[start].mapped, shards[carryStart].mapped, length,
+    ((*std::dynamic_pointer_cast<QAlu>(unit)).*fn)(toMod, modN, shards[start].mapped, shards[carryStart].mapped, length,
         controlVec.size() ? &(controlsMapped[0]) : NULL, controlVec.size());
 
     DirtyShardRangePhase(start, length);
@@ -3262,7 +3259,7 @@ void QUnit::CMUL(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenI
         return;
     }
 
-    CMULx(&QInterface::CMUL, toMod, start, carryStart, length, controlVec);
+    CMULx(&QAlu::CMUL, toMod, start, carryStart, length, controlVec);
 }
 
 void QUnit::CDIV(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
@@ -3279,7 +3276,7 @@ void QUnit::CDIV(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenI
         return;
     }
 
-    CMULx(&QInterface::CDIV, toMod, start, carryStart, length, controlVec);
+    CMULx(&QAlu::CDIV, toMod, start, carryStart, length, controlVec);
 }
 
 void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
@@ -3332,9 +3329,9 @@ void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bit
     }
 
     if (inverse) {
-        CMULModx(&QInterface::CIMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
+        CMULModx(&QAlu::CIMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
     } else {
-        CMULModx(&QInterface::CMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
+        CMULModx(&QAlu::CMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
     }
 }
 
@@ -3366,7 +3363,7 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
         return;
     }
 
-    CMULModx(&QInterface::CPOWModNOut, toMod, modN, inStart, outStart, length, controlVec);
+    CMULModx(&QAlu::CPOWModNOut, toMod, modN, inStart, outStart, length, controlVec);
 }
 
 bitCapInt QUnit::GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -3412,8 +3409,9 @@ bitCapInt QUnit::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength);
 
-    const bitCapInt toRet = shards[indexStart].unit->IndexedLDA(
-        shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values, resetValue);
+    const bitCapInt toRet = std::dynamic_pointer_cast<QAlu>(shards[indexStart].unit)
+                                ->IndexedLDA(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
+                                    valueLength, values, resetValue);
 
     DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
@@ -3449,8 +3447,9 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 #endif
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    const bitCapInt toRet = shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength,
-        shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
+    const bitCapInt toRet = std::dynamic_pointer_cast<QAlu>(shards[indexStart].unit)
+                                ->IndexedADC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
+                                    valueLength, shards[carryIndex].mapped, values);
 
     DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
@@ -3487,8 +3486,9 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 #endif
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    const bitCapInt toRet = shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength,
-        shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
+    const bitCapInt toRet = std::dynamic_pointer_cast<QAlu>(shards[indexStart].unit)
+                                ->IndexedSBC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
+                                    valueLength, shards[carryIndex].mapped, values);
 
     DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
@@ -3511,7 +3511,7 @@ void QUnit::Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
     }
 
     DirtyShardRange(start, length);
-    EntangleRange(start, length)->Hash(shards[start].mapped, length, values);
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(start, length))->Hash(shards[start].mapped, length, values);
 }
 
 void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
@@ -3526,7 +3526,8 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
     }
 
     DirtyShardRange(start, length);
-    EntangleRange(start, length)->PhaseFlipIfLess(greaterPerm, shards[start].mapped, length);
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(start, length))
+        ->PhaseFlipIfLess(greaterPerm, shards[start].mapped, length);
 }
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -3542,7 +3543,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     DirtyShardRange(start, length);
     shards[flagIndex].isPhaseDirty = true;
     EntangleRange(start, length);
-    Entangle({ start, flagIndex })
+    std::dynamic_pointer_cast<QAlu>(Entangle({ start, flagIndex }))
         ->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
 }
 #endif

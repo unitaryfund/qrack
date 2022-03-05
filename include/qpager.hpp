@@ -13,6 +13,10 @@
 
 #include "qinterface.hpp"
 
+#if ENABLE_ALU
+#include "qalu.hpp"
+#endif
+
 namespace Qrack {
 
 class QPager;
@@ -22,7 +26,11 @@ typedef std::shared_ptr<QPager> QPagerPtr;
  * A "Qrack::QPager" splits a "Qrack::QEngine" implementation into equal-length "pages." This helps both optimization
  * and distribution of a single coherent quantum register across multiple devices.
  */
+#if ENABLE_ALU
+class QPager : public QAlu, public QInterface {
+#else
 class QPager : public QInterface {
+#endif
 protected:
     std::vector<QInterfaceEngine> engines;
     QInterfaceEngine rootEngine;
@@ -188,6 +196,41 @@ public:
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
 #if ENABLE_ALU
+    virtual bool M(bitLenInt q) { return QInterface::M(q); }
+    virtual void X(bitLenInt q) { QInterface::X(q); }
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { QInterface::INC(toAdd, start, length); }
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
+    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        QInterface::INCC(toAdd, start, length, carryIndex);
+    }
+    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        QInterface::DECC(toSub, start, length, carryIndex);
+    }
+    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        QInterface::INCS(toAdd, start, length, overflowIndex);
+    }
+    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        QInterface::DECS(toSub, start, length, overflowIndex);
+    }
+    virtual void CINC(
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    {
+        QInterface::CINC(toAdd, inOutStart, length, controls, controlLen);
+    }
+    virtual void CDEC(
+        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    {
+        QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
+    }
+    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        QInterface::INCDECC(toAdd, start, length, carryIndex);
+    }
+
     virtual void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
     virtual void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);

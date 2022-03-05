@@ -21,6 +21,12 @@
 #include "qengine.hpp"
 #include "qstabilizer.hpp"
 
+#if ENABLE_ALU
+#include "qalu.hpp"
+#endif
+
+#define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
+
 namespace Qrack {
 
 class QStabilizerHybrid;
@@ -30,7 +36,11 @@ typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
  * A "Qrack::QStabilizerHybrid" internally switched between Qrack::QEngineCPU and Qrack::QEngineOCL to maximize
  * qubit-count-dependent performance.
  */
+#if ENABLE_ALU
+class QStabilizerHybrid : public QAlu, public QInterface {
+#else
 class QStabilizerHybrid : public QInterface {
+#endif
 protected:
     std::vector<QInterfaceEngine> engineTypes;
     QInterfacePtr engine;
@@ -564,6 +574,34 @@ public:
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
 
 #if ENABLE_ALU
+    virtual bool M(bitLenInt q) { return QInterface::M(q); }
+    virtual void X(bitLenInt q) { QInterface::X(q); }
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
+    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        QInterface::DECC(toSub, start, length, carryIndex);
+    }
+    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        QInterface::DECS(toSub, start, length, overflowIndex);
+    }
+    virtual void CDEC(
+        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    {
+        QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
+    }
+
+    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+    {
+        SwitchToEngine();
+        QINTERFACE_TO_QALU(engine)->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
+    }
+    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+    {
+        SwitchToEngine();
+        QINTERFACE_TO_QALU(engine)->PhaseFlipIfLess(greaterPerm, start, length);
+    }
+
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
         if (stabilizer) {
@@ -572,6 +610,16 @@ public:
         }
 
         engine->INC(toAdd, start, length);
+    }
+    virtual void CINC(
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    {
+        if (stabilizer) {
+            QInterface::CINC(toAdd, inOutStart, length, controls, controlLen);
+            return;
+        }
+
+        engine->CINC(toAdd, inOutStart, length, controls, controlLen);
     }
     virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
@@ -595,114 +643,106 @@ public:
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
         SwitchToEngine();
-        engine->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
+        QINTERFACE_TO_QALU(engine)->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
     }
     virtual void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         SwitchToEngine();
-        engine->INCDECSC(toAdd, start, length, carryIndex);
+        QINTERFACE_TO_QALU(engine)->INCDECSC(toAdd, start, length, carryIndex);
     }
 #if ENABLE_BCD
     virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
         SwitchToEngine();
-        engine->INCBCD(toAdd, start, length);
+        QINTERFACE_TO_QALU(engine)->INCBCD(toAdd, start, length);
     }
     virtual void INCDECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         SwitchToEngine();
-        engine->INCDECBCDC(toAdd, start, length, carryIndex);
+        QINTERFACE_TO_QALU(engine)->INCDECBCDC(toAdd, start, length, carryIndex);
     }
 #endif
     virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
         SwitchToEngine();
-        engine->MUL(toMul, inOutStart, carryStart, length);
+        QINTERFACE_TO_QALU(engine)->MUL(toMul, inOutStart, carryStart, length);
     }
     virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
         SwitchToEngine();
-        engine->DIV(toDiv, inOutStart, carryStart, length);
+        QINTERFACE_TO_QALU(engine)->DIV(toDiv, inOutStart, carryStart, length);
     }
     virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         SwitchToEngine();
-        engine->MULModNOut(toMul, modN, inStart, outStart, length);
+        QINTERFACE_TO_QALU(engine)->MULModNOut(toMul, modN, inStart, outStart, length);
     }
     virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         SwitchToEngine();
-        engine->IMULModNOut(toMul, modN, inStart, outStart, length);
+        QINTERFACE_TO_QALU(engine)->IMULModNOut(toMul, modN, inStart, outStart, length);
     }
     virtual void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         SwitchToEngine();
-        engine->POWModNOut(base, modN, inStart, outStart, length);
+        QINTERFACE_TO_QALU(engine)->POWModNOut(base, modN, inStart, outStart, length);
     }
     virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen)
     {
         SwitchToEngine();
-        engine->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
+        QINTERFACE_TO_QALU(engine)->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
     }
     virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen)
     {
         SwitchToEngine();
-        engine->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
+        QINTERFACE_TO_QALU(engine)->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
     }
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen)
     {
         SwitchToEngine();
-        engine->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+        QINTERFACE_TO_QALU(engine)->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen)
     {
         SwitchToEngine();
-        engine->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+        QINTERFACE_TO_QALU(engine)->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
     }
     virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen)
     {
         SwitchToEngine();
-        engine->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
+        QINTERFACE_TO_QALU(engine)->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
     }
 
     virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, const unsigned char* values, bool resetValue = true)
     {
         SwitchToEngine();
-        return engine->IndexedLDA(indexStart, indexLength, valueStart, valueLength, values, resetValue);
+        return QINTERFACE_TO_QALU(engine)->IndexedLDA(
+            indexStart, indexLength, valueStart, valueLength, values, resetValue);
     }
     virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
     {
         SwitchToEngine();
-        return engine->IndexedADC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+        return QINTERFACE_TO_QALU(engine)->IndexedADC(
+            indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }
     virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
     {
         SwitchToEngine();
-        return engine->IndexedSBC(indexStart, indexLength, valueStart, valueLength, carryIndex, values);
+        return QINTERFACE_TO_QALU(engine)->IndexedSBC(
+            indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }
     virtual void Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
     {
         SwitchToEngine();
-        engine->Hash(start, length, values);
-    }
-
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
-    {
-        SwitchToEngine();
-        engine->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
-    }
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
-    {
-        SwitchToEngine();
-        engine->PhaseFlipIfLess(greaterPerm, start, length);
+        QINTERFACE_TO_QALU(engine)->Hash(start, length, values);
     }
 #endif
 
