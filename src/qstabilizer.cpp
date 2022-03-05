@@ -1235,6 +1235,10 @@ void QStabilizer::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen, cons
 void QStabilizer::MCPhase(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
+    if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
+        return;
+    }
+
     std::vector<bitLenInt> controls;
     if (TrimControls(lControls, lControlLen, controls)) {
         return;
