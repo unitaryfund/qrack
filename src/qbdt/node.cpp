@@ -61,7 +61,7 @@ void QBdtNode::Prune(bitLenInt depth)
     b1->scale /= phaseFac;
 
     // Now, we try to combine pointers to equivalent branches.
-    const bitCapIntOcl depthPow = (bitCapIntOcl)ONE_BCI << depth;
+    const bitCapInt depthPow = pow2(depth);
     // Combine single elements at bottom of full depth, up to where branches are equal below:
     _par_for_qbdt(0, depthPow, [&](const bitCapInt& i, const unsigned& cpu) {
         QBdtNodeInterfacePtr leaf0 = b0;
@@ -77,14 +77,14 @@ void QBdtNode::Prune(bitLenInt depth)
             if (leaf0->branches[bit] == leaf1->branches[bit]) {
                 leaf0->branches[bit] = leaf1->branches[bit];
                 // WARNING: Mutates loop control variable!
-                return (bitCapIntOcl)(((bitCapIntOcl)ONE_BCI << (depth - j)) - ONE_BCI);
+                return (bitCapInt)(pow2(depth - j) - ONE_BCI);
             }
 
             leaf0 = leaf0->branches[bit];
             leaf1 = leaf1->branches[bit];
         }
 
-        return (bitCapIntOcl)0U;
+        return (bitCapInt)0U;
     });
 
     if (b0 == b1) {
