@@ -1209,15 +1209,85 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     }
 
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
-        H(target);
-        S(target);
-        return;
+        if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
+            H(target);
+            S(target);
+            return;
+        }
+
+        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
+            H(target);
+            IS(target);
+            X(target);
+            Z(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
+            H(target);
+            Z(target);
+            X(target);
+            S(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
+            H(target);
+            X(target);
+            IS(target);
+            X(target);
+            return;
+        }
     }
 
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
         ISqrtY(target);
         S(target);
         return;
+
+        if (randGlobalPhase) {
+            ISqrtY(target);
+            return;
+        }
+
+        if (IS_SAME(SQRT1_2_R1, mtrx[0])) {
+            X(target);
+            H(target);
+            S(target);
+            return;
+        }
+
+        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
+            // TODO: We can shorten this by at least one gate call.
+            Z(target);
+            X(target);
+            Z(target);
+            H(target);
+            S(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
+            // TODO: We can shorten this by at least one gate call.
+            S(target);
+            X(target);
+            S(target);
+            H(target);
+            S(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
+            // TODO: We can shorten this by at least one gate call.
+            IS(target);
+            X(target);
+            IS(target);
+            H(target);
+            S(target);
+            return;
+        }
     }
 
     if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
