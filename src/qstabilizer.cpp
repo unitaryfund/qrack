@@ -1316,8 +1316,9 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     }
 
     if (IS_SAME(topRight, -bottomLeft)) {
-        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topRight)) {
-            Y(target);
+        if (IS_SAME(ONE_CMPLX, topRight)) {
+            X(target);
+            Z(target);
             return;
         }
 
@@ -1334,10 +1335,8 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
             return;
         }
 
-        if (IS_SAME(-I_CMPLX, topRight)) {
-            IS(target);
-            X(target);
-            S(target);
+        if (randGlobalPhase || IS_SAME(-I_CMPLX, topRight)) {
+            Y(target);
             return;
         }
     }
@@ -1372,8 +1371,8 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 
     if (IS_SAME(topRight, I_CMPLX * bottomLeft)) {
         if (randGlobalPhase || IS_SAME(ONE_CMPLX, topRight)) {
-            S(target);
             X(target);
+            IS(target);
             return;
         }
 
