@@ -732,7 +732,7 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& t)
 /**
  * Measure qubit b
  */
-bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const bool& doApply)
+bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 {
     if (doForce && !doApply) {
         return result;
@@ -1104,7 +1104,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    throw std::logic_error("QStabilizer::Mtrx() not implemented for non-Clifford/Pauli cases!");
+    throw std::domain_error("QStabilizer::Mtrx() not implemented for non-Clifford/Pauli cases!");
 }
 
 void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
@@ -1133,7 +1133,7 @@ void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
         return;
     }
 
-    throw std::logic_error("QStabilizer::Phase() not implemented for non-Clifford/Pauli cases!");
+    throw std::domain_error("QStabilizer::Phase() not implemented for non-Clifford/Pauli cases!");
 }
 
 void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
@@ -1166,7 +1166,7 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
         return;
     }
 
-    throw std::logic_error("QStabilizer::Invert() not implemented for non-Clifford/Pauli cases!");
+    throw std::domain_error("QStabilizer::Invert() not implemented for non-Clifford/Pauli cases!");
 }
 
 void QStabilizer::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
@@ -1181,7 +1181,7 @@ void QStabilizer::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen, cons
         return;
     }
 
-    throw std::logic_error("QStabilizer::MCMtrx() not implemented for non-Clifford/Pauli cases!");
+    throw std::domain_error("QStabilizer::MCMtrx() not implemented for non-Clifford/Pauli cases!");
 }
 
 void QStabilizer::MCPhase(
@@ -1203,7 +1203,7 @@ void QStabilizer::MCPhase(
     }
 
     if (controlLen > 1U) {
-        throw std::logic_error(
+        throw std::domain_error(
             "QStabilizer::MCPhase() not implemented for non-Clifford/Pauli cases! (Too many controls)");
     }
 
@@ -1253,7 +1253,7 @@ void QStabilizer::MCPhase(
         }
     }
 
-    throw std::logic_error(
+    throw std::domain_error(
         "QStabilizer::MCPhase() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
 }
 
@@ -1266,7 +1266,7 @@ void QStabilizer::MCInvert(
     }
 
     if (controlLen > 1U) {
-        throw std::logic_error(
+        throw std::domain_error(
             "QStabilizer::MCInvert() not implemented for non-Clifford/Pauli cases! (Too many controls)");
     }
 
@@ -1314,7 +1314,7 @@ void QStabilizer::MCInvert(
         }
     }
 
-    throw std::logic_error(
+    throw std::domain_error(
         "QStabilizer::MCInvert() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
 }
 } // namespace Qrack

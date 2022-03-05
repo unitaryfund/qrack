@@ -914,7 +914,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         shards[qubit] = NULL;
     }
 
-    return stabilizer->M(qubit, result, doForce, doApply);
+    return stabilizer->ForceM(qubit, result, doForce, doApply);
 }
 
 bitCapInt QStabilizerHybrid::MAll()

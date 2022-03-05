@@ -258,7 +258,7 @@ public:
     /**
      * Measure qubit b
      */
-    bool M(const bitLenInt& t, bool result = false, const bool& doForce = false, const bool& doApply = true);
+    bool ForceM(bitLenInt t, bool result, bool doForce = true, bool doApply = true);
 
     /// Convert the state to ket notation
     void GetQuantumState(complex* stateVec);
