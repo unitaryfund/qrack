@@ -212,6 +212,20 @@ protected:
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
 public:
+    void SetQuantumState(const complex* inputState)
+    {
+        throw std::domain_error("QStabilizer::SetQuantumState() not implemented!");
+    }
+    void SetAmplitude(bitCapInt perm, complex amp)
+    {
+        throw std::domain_error("QStabilizer::SetAmplitude() not implemented!");
+    }
+
+    real1_f SumSqrDiff(QInterfacePtr toCompare)
+    {
+        throw std::domain_error("QStabilizer::SumSqrDiff() not implemented!");
+    }
+
     /// Apply a CNOT gate with control and target
     void CNOT(const bitLenInt& control, const bitLenInt& target);
     /// Apply a CY gate with control and target
@@ -328,24 +342,6 @@ public:
         const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
     void MCInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
-
-    void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
-    {
-        throw std::domain_error("QStabilizer::FSim() not implemented!");
-    }
-
-    void SetQuantumState(const complex* inputState)
-    {
-        throw std::domain_error("QStabilizer::SetQuantumState() not implemented!");
-    }
-    void SetAmplitude(bitCapInt perm, complex amp)
-    {
-        throw std::domain_error("QStabilizer::SetAmplitude() not implemented!");
-    }
-
-    real1_f SumSqrDiff(QInterfacePtr toCompare)
-    {
-        throw std::domain_error("QStabilizer::SumSqrDiff() not implemented!");
-    }
+    void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
 };
 } // namespace Qrack
