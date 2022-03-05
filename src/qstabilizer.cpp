@@ -1288,25 +1288,114 @@ void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 {
     if (IS_SAME(topRight, bottomLeft)) {
-        X(target);
-        return;
+        if (randGlobalPhase || IS_SAME(ONE_R1, topRight)) {
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(-ONE_CMPLX, topRight)) {
+            Z(target);
+            X(target);
+            Z(target);
+            return;
+        }
+
+        if (IS_SAME(I_CMPLX, topRight)) {
+            S(target);
+            X(target);
+            S(target);
+            return;
+        }
+
+        if (IS_SAME(-I_CMPLX, topRight)) {
+            IS(target);
+            X(target);
+            IS(target);
+            return;
+        }
     }
 
     if (IS_SAME(topRight, -bottomLeft)) {
-        Y(target);
-        return;
+        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topRight)) {
+            Y(target);
+            return;
+        }
+
+        if (IS_SAME(-ONE_CMPLX, topRight)) {
+            Z(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(I_CMPLX, topRight)) {
+            S(target);
+            X(target);
+            IS(target);
+            return;
+        }
+
+        if (IS_SAME(-I_CMPLX, topRight)) {
+            IS(target);
+            X(target);
+            S(target);
+            return;
+        }
     }
 
     if (IS_SAME(topRight, -I_CMPLX * bottomLeft)) {
-        X(target);
-        S(target);
-        return;
+        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topRight)) {
+            X(target);
+            S(target);
+            return;
+        }
+
+        if (IS_SAME(-ONE_CMPLX, topRight)) {
+            Z(target);
+            X(target);
+            IS(target);
+            return;
+        }
+
+        if (IS_SAME(I_CMPLX, topRight)) {
+            S(target);
+            X(target);
+            Z(target);
+            return;
+        }
+
+        if (IS_SAME(-I_CMPLX, topRight)) {
+            IS(target);
+            X(target);
+            return;
+        }
     }
 
     if (IS_SAME(topRight, I_CMPLX * bottomLeft)) {
-        S(target);
-        X(target);
-        return;
+        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topRight)) {
+            S(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(-ONE_CMPLX, topRight)) {
+            Z(target);
+            X(target);
+            S(target);
+            return;
+        }
+
+        if (IS_SAME(I_CMPLX, topRight)) {
+            S(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(-I_CMPLX, topRight)) {
+            IS(target);
+            X(target);
+            Z(target);
+            return;
+        }
     }
 
     if (IsSeparableZ(target)) {
