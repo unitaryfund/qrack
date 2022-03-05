@@ -269,6 +269,8 @@ public:
     /// Get all probabilities corresponding to ket notation
     void GetProbs(real1* outputProbs);
 
+    complex GetAmplitude(bitCapInt perm);
+
     /**
      * Returns "true" if target qubit is a Z basis eigenstate
      */
@@ -327,11 +329,15 @@ public:
     void MCInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
+    void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        throw std::domain_error("QStabilizer::FSim() not implemented!");
+    }
+
     void SetQuantumState(const complex* inputState)
     {
         throw std::domain_error("QStabilizer::SetQuantumState() not implemented!");
     }
-    complex GetAmplitude(bitCapInt perm) { throw std::domain_error("QStabilizer::GetAmplitude() not implemented!"); }
     void SetAmplitude(bitCapInt perm, complex amp)
     {
         throw std::domain_error("QStabilizer::SetAmplitude() not implemented!");
@@ -340,11 +346,6 @@ public:
     real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
         throw std::domain_error("QStabilizer::SumSqrDiff() not implemented!");
-    }
-
-    void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
-    {
-        throw std::domain_error("QStabilizer::FSim() not implemented!");
     }
 };
 } // namespace Qrack

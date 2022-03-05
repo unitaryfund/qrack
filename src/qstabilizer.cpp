@@ -471,6 +471,40 @@ void QStabilizer::GetProbs(real1* outputProbs)
     }
 }
 
+/// Convert the state to ket notation (warning: could be huge!)
+complex QStabilizer::GetAmplitude(bitCapInt perm)
+{
+    Finish();
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt(ONE_R1 / permCount);
+
+    seed(g);
+
+    AmplitudeEntry entry = getBasisAmp(nrm);
+    if (entry.permutation == perm) {
+        return entry.amplitude;
+    }
+    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+        bitCapIntOcl t2 = t ^ (t + 1);
+        for (bitLenInt i = 0; i < g; i++) {
+            if ((t2 >> i) & 1U) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        AmplitudeEntry entry = getBasisAmp(nrm);
+        if (entry.permutation == perm) {
+            return entry.amplitude;
+        }
+    }
+
+    return ZERO_R1;
+}
+
 /// Apply a CNOT gate with control and target
 void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 {
