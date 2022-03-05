@@ -323,12 +323,12 @@ public:
 
     void SetQuantumState(const complex* inputState)
     {
-        throw std::logic_error("QStabilizer::SetQuantumState() not implemented!");
+        throw std::domain_error("QStabilizer::SetQuantumState() not implemented!");
     }
-    complex GetAmplitude(bitCapInt perm) { throw std::logic_error("QStabilizer::GetAmplitude() not implemented!"); }
+    complex GetAmplitude(bitCapInt perm) { throw std::domain_error("QStabilizer::GetAmplitude() not implemented!"); }
     void SetAmplitude(bitCapInt perm, complex amp)
     {
-        throw std::logic_error("QStabilizer::SetAmplitude() not implemented!");
+        throw std::domain_error("QStabilizer::SetAmplitude() not implemented!");
     }
 };
 } // namespace Qrack
