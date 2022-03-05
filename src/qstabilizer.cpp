@@ -856,7 +856,8 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
 }
 QInterfacePtr QStabilizer::Decompose(bitLenInt start, bitLenInt length)
 {
-    QStabilizerPtr dest = std::make_shared<QStabilizer>(length, 0, hardware_rand_generator != NULL, rand_generator);
+    QStabilizerPtr dest =
+        std::make_shared<QStabilizer>(qubitCount, 0, rand_generator, hardware_rand_generator != NULL, randGlobalPhase);
     Decompose(start, dest);
 
     return dest;

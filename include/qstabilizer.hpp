@@ -108,8 +108,8 @@ public:
     {
         Finish();
 
-        QStabilizerPtr clone =
-            std::make_shared<QStabilizer>(qubitCount, 0, hardware_rand_generator != NULL, rand_generator);
+        QStabilizerPtr clone = std::make_shared<QStabilizer>(
+            qubitCount, 0, rand_generator, hardware_rand_generator != NULL, randGlobalPhase);
         clone->Finish();
 
         clone->x = x;
@@ -315,7 +315,7 @@ public:
     {
         // Intentionally left blank
     }
-    
+
     real1_f Prob(bitLenInt qubit);
 
     void Mtrx(const complex* mtrx, bitLenInt target);
@@ -335,6 +335,109 @@ public:
     void SetAmplitude(bitCapInt perm, complex amp)
     {
         throw std::domain_error("QStabilizer::SetAmplitude() not implemented!");
+    }
+
+    real1_f SumSqrDiff(QInterfacePtr toCompare)
+    {
+        throw std::domain_error("QStabilizer::SumSqrDiff() not implemented!");
+    }
+
+    real1_f ProbParity(bitCapInt mask) { throw std::domain_error("QStabilizer::SumSqrDiff() not implemented!"); }
+    bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
+    {
+        throw std::domain_error("QStabilizer::ForceMParity() not implemented!");
+    }
+    void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
+    {
+        throw std::domain_error("QStabilizer::CUniformParityRZ() not implemented!");
+    }
+
+    void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        throw std::domain_error("QStabilizer::FSim() not implemented!");
+    }
+
+    void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+    {
+        throw std::domain_error("QStabilizer::PhaseFlipIfLess() not implemented!");
+    }
+    void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+    {
+        throw std::domain_error("QStabilizer::CPhaseFlipIfLess() not implemented!");
+    }
+
+    void INCDECSC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
+    {
+        throw std::domain_error("QStabilizer::INCDECSC() not implemented!");
+    }
+    void INCDECSC(
+        bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+    {
+        throw std::domain_error("QStabilizer::INCDECSC() not implemented!");
+    }
+    void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+    {
+        throw std::domain_error("QStabilizer::MUL() not implemented!");
+    }
+    void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+    {
+        throw std::domain_error("QStabilizer::MUL() not implemented!");
+    }
+    void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    {
+        throw std::domain_error("QStabilizer::MULModNOut() not implemented!");
+    }
+    void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    {
+        throw std::domain_error("QStabilizer::MULModNOut() not implemented!");
+    }
+    void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    {
+        throw std::domain_error("QStabilizer::MULModNOut() not implemented!");
+    }
+    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
+        bitLenInt controlLen)
+    {
+        throw std::domain_error("QStabilizer::CMUL() not implemented!");
+    }
+    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
+        bitLenInt controlLen)
+    {
+        throw std::domain_error("QStabilizer::CDIV() not implemented!");
+    }
+    void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+        const bitLenInt* controls, bitLenInt controlLen)
+    {
+        throw std::domain_error("QStabilizer::CMULModNOut() not implemented!");
+    }
+    void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+        const bitLenInt* controls, bitLenInt controlLen)
+    {
+        throw std::domain_error("QStabilizer::CMULModNOut() not implemented!");
+    }
+    void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+        const bitLenInt* controls, bitLenInt controlLen)
+    {
+        throw std::domain_error("QStabilizer::CPOWModNOut() not implemented!");
+    }
+    bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+        const unsigned char* values, bool resetValue = true)
+    {
+        throw std::domain_error("QStabilizer::IndexedLDA() not implemented!");
+    }
+    bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+        bitLenInt carryIndex, const unsigned char* values)
+    {
+        throw std::domain_error("QStabilizer::IndexedADC() not implemented!");
+    }
+    bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+        bitLenInt carryIndex, const unsigned char* values)
+    {
+        throw std::domain_error("QStabilizer::IndexedSBC() not implemented!");
+    }
+    void Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
+    {
+        throw std::domain_error("QStabilizer::Hash() not implemented!");
     }
 };
 } // namespace Qrack

@@ -69,7 +69,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 
 QStabilizerPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)
 {
-    return std::make_shared<QStabilizer>(qubitCount, perm, useRDRAND, rand_generator);
+    return std::make_shared<QStabilizer>(qubitCount, perm, rand_generator, useRDRAND, randGlobalPhase);
 }
 
 QInterfacePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
