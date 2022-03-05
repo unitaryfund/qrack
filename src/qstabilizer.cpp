@@ -995,6 +995,16 @@ bool QStabilizer::ApproxCompare(QStabilizerPtr o)
     return true;
 }
 
+real1_f QStabilizer::Prob(bitLenInt qubit)
+{
+    if (IsSeparableZ(qubit)) {
+        return M(qubit) ? ONE_R1 : ZERO_R1;
+    }
+
+    // Otherwise, state appears locally maximally mixed.
+    return ONE_R1 / 2;
+}
+
 void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 {
     if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {

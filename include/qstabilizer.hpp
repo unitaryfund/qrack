@@ -315,6 +315,8 @@ public:
     {
         // Intentionally left blank
     }
+    
+    real1_f Prob(bitLenInt qubit);
 
     void Mtrx(const complex* mtrx, bitLenInt target);
     void Phase(complex topLeft, complex bottomRight, bitLenInt target);
