@@ -134,7 +134,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
 
     if (stabilizer) {
         c->engine = NULL;
-        c->stabilizer = stabilizer->Clone();
+        c->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
         for (bitLenInt i = 0; i < qubitCount; i++) {
             if (shards[i]) {
                 c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);

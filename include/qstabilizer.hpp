@@ -48,7 +48,7 @@ struct AmplitudeEntry {
 class QStabilizer;
 typedef std::shared_ptr<QStabilizer> QStabilizerPtr;
 
-class QStabilizer {
+class QStabilizer : public QInterface {
 protected:
     // # of qubits
     bitLenInt qubitCount;
@@ -106,7 +106,7 @@ public:
     QStabilizer(
         const bitLenInt& n, const bitCapInt& perm = 0, bool useHardwareRNG = true, qrack_rand_gen_ptr rgp = NULL);
 
-    QStabilizerPtr Clone()
+    QInterfacePtr Clone()
     {
         Finish();
 
@@ -293,18 +293,29 @@ public:
     uint8_t IsSeparable(const bitLenInt& target);
 
     bitLenInt Compose(QStabilizerPtr toCopy) { return Compose(toCopy, qubitCount); }
-    bitLenInt Compose(QStabilizerPtr toCopy, const bitLenInt start);
-    void Decompose(const bitLenInt& start, QStabilizerPtr destination)
+    bitLenInt Compose(QStabilizerPtr toCopy, bitLenInt start);
+    void Decompose(bitLenInt start, QInterfacePtr dest)
     {
-        DecomposeDispose(start, destination->qubitCount, destination);
+        DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QStabilizer>(dest));
     }
-
-    void Dispose(const bitLenInt& start, const bitLenInt& length)
+    QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
+    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QStabilizerPtr)NULL); }
+    void Dispose(bitLenInt start, bitLenInt length, bitCapInt ignored)
     {
         DecomposeDispose(start, length, (QStabilizerPtr)NULL);
     }
     bool CanDecomposeDispose(const bitLenInt start, const bitLenInt length);
 
     bool ApproxCompare(QStabilizerPtr o);
+
+    void SetQuantumState(const complex* inputState)
+    {
+        throw std::logic_error("QStabilizer::SetQuantumState() not implemented!");
+    }
+    complex GetAmplitude(bitCapInt perm) { throw std::logic_error("QStabilizer::GetAmplitude() not implemented!"); }
+    void SetAmplitude(bitCapInt perm, complex amp)
+    {
+        throw std::logic_error("QStabilizer::SetAmplitude() not implemented!");
+    }
 };
 } // namespace Qrack

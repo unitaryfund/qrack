@@ -808,7 +808,7 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
     return r[elemCount];
 }
 
-bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
+bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
 {
     // We simply insert the (elsewhere initialized and valid) "toCopy" stabilizers and destabilizers in corresponding
     // position, and we set the new padding to 0. This is immediately a valid state, if the two original QStablizer
@@ -852,6 +852,13 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
     qubitCount = nQubitCount;
 
     return start;
+}
+QInterfacePtr QStabilizer::Decompose(bitLenInt start, bitLenInt length)
+{
+    QStabilizerPtr dest = std::make_shared<QStabilizer>(length, 0, hardware_rand_generator != NULL, rand_generator);
+    Decompose(start, dest);
+
+    return dest;
 }
 
 bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt length)
