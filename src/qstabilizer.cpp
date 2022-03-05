@@ -1158,22 +1158,123 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (IS_SAME(topLeft, bottomRight)) {
-        return;
+        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topLeft)) {
+            return;
+        }
+
+        if (IS_SAME(-ONE_CMPLX, topLeft)) {
+            Z(target);
+            X(target);
+            Z(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(I_CMPLX, topLeft)) {
+            S(target);
+            X(target);
+            S(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(-I_CMPLX, topLeft)) {
+            IS(target);
+            X(target);
+            IS(target);
+            X(target);
+            return;
+        }
     }
 
     if (IS_SAME(topLeft, -bottomRight)) {
-        Z(target);
-        return;
+        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topLeft)) {
+            Z(target);
+            return;
+        }
+
+        if (IS_SAME(-ONE_CMPLX, topLeft)) {
+            X(target);
+            Z(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(I_CMPLX, topLeft)) {
+            IS(target);
+            X(target);
+            S(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(-I_CMPLX, topLeft)) {
+            S(target);
+            X(target);
+            IS(target);
+            X(target);
+            return;
+        }
     }
 
     if (IS_SAME(topLeft, -I_CMPLX * bottomRight)) {
-        S(target);
-        return;
+        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topLeft)) {
+            S(target);
+            return;
+        }
+
+        if (IS_SAME(-ONE_CMPLX, topLeft)) {
+            IS(target);
+            X(target);
+            Z(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(I_CMPLX, topLeft)) {
+            Z(target);
+            X(target);
+            S(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(-I_CMPLX, topLeft)) {
+            X(target);
+            IS(target);
+            X(target);
+            return;
+        }
     }
 
     if (IS_SAME(topLeft, I_CMPLX * bottomRight)) {
-        IS(target);
-        return;
+        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topLeft)) {
+            IS(target);
+            return;
+        }
+
+        if (IS_SAME(-ONE_CMPLX, topLeft)) {
+            S(target);
+            X(target);
+            Z(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(I_CMPLX, topLeft)) {
+            X(target);
+            S(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(-I_CMPLX, topLeft)) {
+            Z(target);
+            X(target);
+            IS(target);
+            X(target);
+            return;
+        }
     }
 
     if (IsSeparableZ(target)) {
