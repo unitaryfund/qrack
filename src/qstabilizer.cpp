@@ -40,68 +40,9 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, bo
     , x((n << 1U) + 1U, std::vector<bool>(n))
     , z((n << 1U) + 1U, std::vector<bool>(n))
     , r((n << 1U) + 1U)
-    , rand_distribution(0, 1)
-    , hardware_rand_generator(NULL)
     , rawRandBools(0)
     , rawRandBoolsRemaining(0)
 {
-#if !ENABLE_RDRAND && !ENABLE_RNDFILE && !ENABLE_DEVRAND
-    useHardwareRNG = false;
-#endif
-
-    if (useHardwareRNG) {
-        hardware_rand_generator = std::make_shared<RdRandom>();
-#if !ENABLE_RNDFILE && !ENABLE_DEVRAND
-        if (!(hardware_rand_generator->SupportsRDRAND())) {
-            hardware_rand_generator = NULL;
-        }
-#endif
-    }
-
-    if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
-        rand_generator = std::make_shared<qrack_rand_gen>();
-#if SEED_DEVRAND
-        // The original author of this code block (Daniel Strano) is NOT a cryptography expert. However, here's the
-        // author's justification for preferring /dev/random used to seed Mersenne twister, in this case. We state
-        // firstly, our use case is probably more dependent on good statistical randomness than CSPRNG security.
-        // Casually, we can list a few reasons our design:
-        //
-        // * (As a total guess, if clock manipulation isn't a completely obvious problem,) either of /dev/random or
-        // /dev/urandom is probably both statistically and cryptographically preferable to the system clock, as a
-        // one-time seed.
-        //
-        // * We need VERY LITTLE entropy for this seeding, even though its repeated a few times depending on the
-        // simulation method stack. Tests of 30+ qubits don't run out of random numbers, this way, and there's no
-        // detectable slow-down in Qrack.
-        //
-        // * The blocking behavior of /dev/random (specifically on startup) is GOOD for us, here. We WANT Qrack to block
-        // until the entropy pool is ready on virtual machine and container images that start a Qrack-based application
-        // on boot. (We're not crypotgraphers; we're quantum computer simulator developers and users.)
-        //
-        // * (I have a very basic appreciation for the REFUTATION to historical confusion over the quantity of "entropy"
-        // in the device pools, but...) If our purpose is PHYSICAL REALISM of quantum computer simulation, rather than
-        // cryptography, then we probably should have a tiny preference for higher "true" entropy. Although, even as a
-        // developer in the quantum computing field, I must say that there might be no provable empirical difference
-        // between "true quantum randomness" and "perfect statistical (whether pseudo-)randomness" as ontological
-        // categories, now might there?
-
-        const int max_rdrand_tries = 10;
-        int i;
-        for (i = 0; i < max_rdrand_tries; ++i) {
-            if (sizeof(randomSeed) == getrandom(reinterpret_cast<char*>(&randomSeed), sizeof(randomSeed), GRND_RANDOM))
-                break;
-        }
-        if (i == max_rdrand_tries) {
-            throw std::runtime_error("Failed to seed RNG!");
-        }
-#else
-        randomSeed = (uint32_t)std::time(0);
-#endif
-        SetRandomSeed(randomSeed);
-    } else {
-        rand_generator = rgp;
-    }
-
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #if ENABLE_ENV_VARS
     dispatchThreshold =

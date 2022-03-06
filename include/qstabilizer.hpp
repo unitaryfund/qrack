@@ -57,15 +57,6 @@ protected:
     // Phase bits: 0 for +1, 1 for i, 2 for -1, 3 for -i.  Normally either 0 or 2.
     std::vector<uint8_t> r;
 
-    uint32_t randomSeed;
-    qrack_rand_gen_ptr rand_generator;
-#if defined(_WIN32) && !defined(__CYGWIN__)
-    std::uniform_int_distribution<short> rand_distribution;
-#else
-    std::uniform_int_distribution<char> rand_distribution;
-#endif
-    std::shared_ptr<RdRandom> hardware_rand_generator;
-
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
 
