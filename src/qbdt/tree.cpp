@@ -140,6 +140,11 @@ void QBdt::GetQuantumState(QInterfacePtr eng)
 }
 void QBdt::SetQuantumState(const complex* state)
 {
+    if (attachedQubitCount == qubitCount) {
+        NODE_TO_QINTERFACE(root)->SetQuantumState(state);
+        return;
+    }
+
     const bool isAttached = attachedQubitCount;
     const bitLenInt qbCount = bdtQubitCount;
     SetTraversal([isAttached, qbCount, state](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
