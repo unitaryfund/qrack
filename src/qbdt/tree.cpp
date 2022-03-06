@@ -675,7 +675,13 @@ void QBdt::ApplyControlledSingle(
     const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti)
 {
     if (!bdtQubitCount) {
-        return NODE_TO_QINTERFACE(root)->MCMtrx(controls, controlLen, mtrx, target);
+        if (isAnti) {
+            NODE_TO_QINTERFACE(root)->MACMtrx(controls, controlLen, mtrx, target);
+        } else {
+            NODE_TO_QINTERFACE(root)->MCMtrx(controls, controlLen, mtrx, target);
+        }
+
+        return;
     }
 
     std::vector<bitLenInt> controlVec(controlLen);
@@ -730,7 +736,11 @@ void QBdt::ApplyControlledSingle(
             QInterfacePtr qi = NODE_TO_QINTERFACE(leaf);
             if (qis.find(qi) == qis.end()) {
                 qis.insert(qi);
-                qi->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+                if (isAnti) {
+                    qi->MACMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+                } else {
+                    qi->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+                }
             }
         } else {
             leaf->Apply2x2(mtrx, bdtQubitCount - target);
