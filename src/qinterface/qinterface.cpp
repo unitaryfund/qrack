@@ -29,6 +29,7 @@ QInterface::QInterface(
     , hardware_rand_generator(NULL)
     , doNormalize(doNorm)
     , randGlobalPhase(randomGlobalPhase)
+    , useRDRAND(useHardwareRNG)
     , amplitudeFloor(norm_thresh)
 {
 #if !ENABLE_RDRAND && !ENABLE_RNDFILE && !ENABLE_DEVRAND
@@ -38,7 +39,8 @@ QInterface::QInterface(
     if (useHardwareRNG) {
         hardware_rand_generator = std::make_shared<RdRandom>();
 #if !ENABLE_RNDFILE && !ENABLE_DEVRAND
-        if (!(hardware_rand_generator->SupportsRDRAND())) {
+        useRDRAND = hardware_rand_generator->SupportsRDRAND();
+        if (!useRDRAND) {
             hardware_rand_generator = NULL;
         }
 #endif

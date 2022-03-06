@@ -27,7 +27,6 @@ protected:
     complex phaseFactor;
     bool doNormalize;
     bool useHostRam;
-    bool useRDRAND;
     bool isSparse;
     bool freezeBasis2Qb;
     bool isReactiveSeparate;
