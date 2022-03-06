@@ -26,7 +26,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , engines(eng)
     , devID(deviceId)
     , root(NULL)
-    , attachedQubitCount(0)
+    , attachedQubitCount(0U)
     , bdtQubitCount(qBitCount)
     , bdtMaxQPower(pow2(qBitCount))
 {
@@ -51,10 +51,16 @@ QBdtQInterfaceNodePtr QBdt::MakeStabilizerNode(complex scale, bitLenInt qbCount,
 
 void QBdt::AddQBdtQubit()
 {
-    QBdtPtr qubit = std::make_shared<QBdt>(1U, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
-        (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
-    qubit->ResetStateVector();
-    Compose(qubit, 0);
+    QBdtNodeInterfacePtr nRoot = std::make_shared<QBdtNode>(root->scale);
+    root->scale = ONE_CMPLX;
+    nRoot->branches[0] = root;
+    if (bdtQubitCount) {
+        nRoot->branches[1] = std::make_shared<QBdtNode>(ZERO_CMPLX);
+    } else {
+        nRoot->branches[1] = std::make_shared<QBdtQInterfaceNode>();
+    }
+    root.swap(nRoot);
+    SetQubitCount(qubitCount + 1U, attachedQubitCount);
 }
 
 void QBdt::FallbackMtrx(const complex* mtrx, bitLenInt target)
@@ -395,11 +401,6 @@ QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
-    ResetStateVector();
-    if (dest) {
-        dest->ResetStateVector();
-    }
-
     if (attachedQubitCount && start) {
         ROR(start, 0, qubitCount);
         DecomposeDispose(0, length, dest);
