@@ -274,9 +274,6 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
-    ResetStateVector();
-    toCopy->ResetStateVector();
-
     if (attachedQubitCount && toCopy->attachedQubitCount) {
         const bitLenInt midIndex = bdtQubitCount;
         if (start < midIndex) {
