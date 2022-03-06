@@ -137,6 +137,9 @@ public:
 
     virtual ~QStabilizer() { Dump(); }
 
+    virtual bool isClifford() { return true; };
+    virtual bool isClifford(bitLenInt qubit) { return true; };
+
     void Finish()
     {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
