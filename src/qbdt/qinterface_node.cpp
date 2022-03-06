@@ -21,6 +21,10 @@
 namespace Qrack {
 bool QBdtQInterfaceNode::isEqual(QBdtNodeInterfacePtr r)
 {
+    if (!r) {
+        return false;
+    }
+
     if (this == r.get()) {
         return true;
     }
