@@ -29,8 +29,8 @@
 
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_AMP_0(c) (norm(c) <= separabilityThreshold)
-#define IS_0_R1(r) (r == ZERO_R1)
-#define IS_1_R1(r) (r == ONE_R1)
+#define IS_0_R1(r) (abs(r) <= REAL1_EPSILON)
+#define IS_1_R1(r) (abs(r) <= REAL1_EPSILON)
 #define IS_1_CMPLX(c) (norm(ONE_CMPLX - (c)) <= FP_NORM_EPSILON)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard)                                                                                            \
@@ -1022,120 +1022,6 @@ real1_f QUnit::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCa
 
 real1_f QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitudeOrProb(perm, true))); }
 
-real1_f QUnit::ProbParity(bitCapInt mask)
-{
-    // If no bits in mask:
-    if (!mask) {
-        return ZERO_R1;
-    }
-
-    if (!(mask & (mask - ONE_BCI))) {
-        return Prob(log2(mask));
-    }
-
-    bitCapInt nV = mask;
-    std::vector<bitLenInt> qIndices;
-    for (bitCapInt v = mask; v; v = nV) {
-        nV &= (v - ONE_BCI); // clear the least significant bit set
-        qIndices.push_back(log2((v ^ nV) & v));
-
-        RevertBasis2Qb(qIndices.back(), ONLY_INVERT, ONLY_TARGETS);
-
-        QEngineShard& shard = shards[qIndices.back()];
-        if (shard.unit && QUEUED_PHASE(shard)) {
-            RevertBasis1Qb(qIndices.back());
-        }
-    }
-
-    std::map<QInterfacePtr, bitCapInt> units;
-    real1 oddChance = ZERO_R1;
-    real1 nOddChance;
-    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
-        QEngineShard& shard = shards[qIndices[i]];
-        if (!(shard.unit)) {
-            nOddChance = (shard.pauliBasis != PauliZ) ? norm(SQRT1_2_R1 * (shard.amp0 - shard.amp1)) : shard.Prob();
-            oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
-            continue;
-        }
-
-        RevertBasis1Qb(qIndices[i]);
-
-        units[shard.unit] |= pow2(shard.mapped);
-    }
-
-    if (qIndices.size() == 0) {
-        return oddChance;
-    }
-
-    std::map<QInterfacePtr, bitCapInt>::iterator unit;
-    for (unit = units.begin(); unit != units.end(); unit++) {
-        nOddChance = unit->first->ProbParity(unit->second);
-        oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
-    }
-
-    return oddChance;
-}
-
-bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
-{
-    // If no bits in mask:
-    if (!mask) {
-        return false;
-    }
-
-    if (!(mask & (mask - ONE_BCI))) {
-        return ForceM(log2(mask), result, doForce);
-    }
-
-    bitCapInt nV = mask;
-    std::vector<bitLenInt> qIndices;
-    for (bitCapInt v = mask; v; v = nV) {
-        nV &= (v - ONE_BCI); // clear the least significant bit set
-        qIndices.push_back(log2((v ^ nV) & v));
-        ToPermBasisProb(qIndices.back());
-    }
-
-    bool flipResult = false;
-    std::vector<bitLenInt> eIndices;
-    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
-        QEngineShard& shard = shards[qIndices[i]];
-
-        if (UNSAFE_CACHED_ZERO(shard)) {
-            continue;
-        }
-
-        if (UNSAFE_CACHED_ONE(shard)) {
-            flipResult = !flipResult;
-            continue;
-        }
-
-        eIndices.push_back(qIndices[i]);
-    }
-
-    if (eIndices.size() == 0) {
-        return flipResult;
-    }
-
-    if (eIndices.size() == 1U) {
-        return flipResult ^ ForceM(eIndices[0], result ^ flipResult, doForce);
-    }
-
-    QInterfacePtr unit = Entangle(eIndices);
-
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        if (shards[i].unit == unit) {
-            shards[i].MakeDirty();
-        }
-    }
-
-    bitCapInt mappedMask = 0;
-    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
-        mappedMask |= pow2(shards[eIndices[i]].mapped);
-    }
-
-    return flipResult ^ (unit->ForceMParity(mappedMask, result ^ flipResult, doForce));
-}
-
 void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 {
     // If no bits in mask:
@@ -1207,6 +1093,221 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
     }
 
     unit->PhaseParity(flipResult ? -radians : radians, mappedMask);
+}
+
+real1_f QUnit::ProbParity(bitCapInt mask)
+{
+    // If no bits in mask:
+    if (!mask) {
+        return ZERO_R1;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        return Prob(log2(mask));
+    }
+
+    bitCapInt nV = mask;
+    std::vector<bitLenInt> qIndices;
+    for (bitCapInt v = mask; v; v = nV) {
+        nV &= (v - ONE_BCI); // clear the least significant bit set
+        qIndices.push_back(log2((v ^ nV) & v));
+
+        RevertBasis2Qb(qIndices.back(), ONLY_INVERT, ONLY_TARGETS);
+
+        QEngineShard& shard = shards[qIndices.back()];
+        if (shard.unit && QUEUED_PHASE(shard)) {
+            RevertBasis1Qb(qIndices.back());
+        }
+    }
+
+    std::map<QInterfacePtr, bitCapInt> units;
+    real1 oddChance = ZERO_R1;
+    real1 nOddChance;
+    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
+        QEngineShard& shard = shards[qIndices[i]];
+        if (!(shard.unit)) {
+            nOddChance = (shard.pauliBasis != PauliZ) ? norm(SQRT1_2_R1 * (shard.amp0 - shard.amp1)) : shard.Prob();
+            oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
+            continue;
+        }
+
+        RevertBasis1Qb(qIndices[i]);
+
+        units[shard.unit] |= pow2(shard.mapped);
+    }
+
+    if (qIndices.size() == 0) {
+        return oddChance;
+    }
+
+    std::map<QInterfacePtr, bitCapInt>::iterator unit;
+    for (unit = units.begin(); unit != units.end(); unit++) {
+        nOddChance = std::dynamic_pointer_cast<QParity>(unit->first)->ProbParity(unit->second);
+        oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
+    }
+
+    return oddChance;
+}
+
+bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
+{
+    // If no bits in mask:
+    if (!mask) {
+        return false;
+    }
+
+    if (!(mask & (mask - ONE_BCI))) {
+        return ForceM(log2(mask), result, doForce);
+    }
+
+    bitCapInt nV = mask;
+    std::vector<bitLenInt> qIndices;
+    for (bitCapInt v = mask; v; v = nV) {
+        nV &= (v - ONE_BCI); // clear the least significant bit set
+        qIndices.push_back(log2((v ^ nV) & v));
+        ToPermBasisProb(qIndices.back());
+    }
+
+    bool flipResult = false;
+    std::vector<bitLenInt> eIndices;
+    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
+        QEngineShard& shard = shards[qIndices[i]];
+
+        if (UNSAFE_CACHED_ZERO(shard)) {
+            continue;
+        }
+
+        if (UNSAFE_CACHED_ONE(shard)) {
+            flipResult = !flipResult;
+            continue;
+        }
+
+        eIndices.push_back(qIndices[i]);
+    }
+
+    if (eIndices.size() == 0) {
+        return flipResult;
+    }
+
+    if (eIndices.size() == 1U) {
+        return flipResult ^ ForceM(eIndices[0], result ^ flipResult, doForce);
+    }
+
+    QInterfacePtr unit = Entangle(eIndices);
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        if (shards[i].unit == unit) {
+            shards[i].MakeDirty();
+        }
+    }
+
+    bitCapInt mappedMask = 0;
+    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
+        mappedMask |= pow2(shards[eIndices[i]].mapped);
+    }
+
+    return flipResult ^
+        (std::dynamic_pointer_cast<QParity>(unit)->ForceMParity(mappedMask, result ^ flipResult, doForce));
+}
+
+void QUnit::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
+{
+    std::vector<bitLenInt> controls;
+    if (TrimControls(cControls, controlLen, controls, false)) {
+        return;
+    }
+
+    bitCapInt nV = mask;
+    std::vector<bitLenInt> qIndices;
+    for (bitCapInt v = mask; v; v = nV) {
+        nV &= (v - ONE_BCI); // clear the least significant bit set
+        qIndices.push_back(log2((v ^ nV) & v));
+    }
+
+    bool flipResult = false;
+    std::vector<bitLenInt> eIndices;
+    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
+        ToPermBasis(qIndices[i]);
+        QEngineShard& shard = shards[qIndices[i]];
+
+        if (CACHED_ZERO(shard)) {
+            continue;
+        }
+
+        if (CACHED_ONE(shard)) {
+            flipResult = !flipResult;
+            continue;
+        }
+
+        eIndices.push_back(qIndices[i]);
+    }
+
+    if (eIndices.size() == 0) {
+        real1 cosine = (real1)cos(angle);
+        real1 sine = (real1)sin(angle);
+        complex phaseFac;
+        if (flipResult) {
+            phaseFac = complex(cosine, sine);
+        } else {
+            phaseFac = complex(cosine, -sine);
+        }
+        if (controls.size() == 0) {
+            return Phase(phaseFac, phaseFac, 0);
+        } else {
+            return MCPhase(&(controls[0]), controls.size(), phaseFac, phaseFac, 0);
+        }
+    }
+
+    if (eIndices.size() == 1U) {
+        real1 cosine = (real1)cos(angle);
+        real1 sine = (real1)sin(angle);
+        complex phaseFac, phaseFacAdj;
+        if (flipResult) {
+            phaseFac = complex(cosine, -sine);
+            phaseFacAdj = complex(cosine, sine);
+        } else {
+            phaseFac = complex(cosine, sine);
+            phaseFacAdj = complex(cosine, -sine);
+        }
+        if (controls.size() == 0) {
+            return Phase(phaseFacAdj, phaseFac, eIndices[0]);
+        } else {
+            return MCPhase(&(controls[0]), controls.size(), phaseFacAdj, phaseFac, eIndices[0]);
+        }
+    }
+
+    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
+        shards[eIndices[i]].isPhaseDirty = true;
+    }
+
+    QInterfacePtr unit = Entangle(eIndices);
+
+    bitCapInt mappedMask = 0;
+    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
+        mappedMask |= pow2(shards[eIndices[i]].mapped);
+    }
+
+    if (controls.size() == 0) {
+        std::dynamic_pointer_cast<QParity>(unit)->UniformParityRZ(mappedMask, flipResult ? -angle : angle);
+    } else {
+        std::vector<bitLenInt*> ebits(controls.size());
+        for (bitLenInt i = 0; i < (bitLenInt)controls.size(); i++) {
+            ebits[i] = &controls[i];
+        }
+
+        Entangle(ebits);
+        unit = Entangle({ controls[0], eIndices[0] });
+
+        std::vector<bitLenInt> controlsMapped(controls.size());
+        for (bitLenInt i = 0; i < (bitLenInt)controls.size(); i++) {
+            QEngineShard& cShard = shards[controls[i]];
+            controlsMapped[i] = cShard.mapped;
+            cShard.isPhaseDirty = true;
+        }
+
+        std::dynamic_pointer_cast<QParity>(unit)->CUniformParityRZ(
+            &(controlsMapped[0]), controlsMapped.size(), mappedMask, flipResult ? -angle : angle);
+    }
 }
 
 bool QUnit::SeparateBit(bool value, bitLenInt qubit)
@@ -1792,105 +1893,6 @@ void QUnit::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenInt co
         &(skipPowers[0]), skipPowers.size(), skipValueMask);
 
     shards[qubitIndex].MakeDirty();
-}
-
-void QUnit::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
-{
-    std::vector<bitLenInt> controls;
-    if (TrimControls(cControls, controlLen, controls, false)) {
-        return;
-    }
-
-    bitCapInt nV = mask;
-    std::vector<bitLenInt> qIndices;
-    for (bitCapInt v = mask; v; v = nV) {
-        nV &= (v - ONE_BCI); // clear the least significant bit set
-        qIndices.push_back(log2((v ^ nV) & v));
-    }
-
-    bool flipResult = false;
-    std::vector<bitLenInt> eIndices;
-    for (bitLenInt i = 0; i < (bitLenInt)qIndices.size(); i++) {
-        ToPermBasis(qIndices[i]);
-        QEngineShard& shard = shards[qIndices[i]];
-
-        if (CACHED_ZERO(shard)) {
-            continue;
-        }
-
-        if (CACHED_ONE(shard)) {
-            flipResult = !flipResult;
-            continue;
-        }
-
-        eIndices.push_back(qIndices[i]);
-    }
-
-    if (eIndices.size() == 0) {
-        real1 cosine = (real1)cos(angle);
-        real1 sine = (real1)sin(angle);
-        complex phaseFac;
-        if (flipResult) {
-            phaseFac = complex(cosine, sine);
-        } else {
-            phaseFac = complex(cosine, -sine);
-        }
-        if (controls.size() == 0) {
-            return Phase(phaseFac, phaseFac, 0);
-        } else {
-            return MCPhase(&(controls[0]), controls.size(), phaseFac, phaseFac, 0);
-        }
-    }
-
-    if (eIndices.size() == 1U) {
-        real1 cosine = (real1)cos(angle);
-        real1 sine = (real1)sin(angle);
-        complex phaseFac, phaseFacAdj;
-        if (flipResult) {
-            phaseFac = complex(cosine, -sine);
-            phaseFacAdj = complex(cosine, sine);
-        } else {
-            phaseFac = complex(cosine, sine);
-            phaseFacAdj = complex(cosine, -sine);
-        }
-        if (controls.size() == 0) {
-            return Phase(phaseFacAdj, phaseFac, eIndices[0]);
-        } else {
-            return MCPhase(&(controls[0]), controls.size(), phaseFacAdj, phaseFac, eIndices[0]);
-        }
-    }
-
-    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
-        shards[eIndices[i]].isPhaseDirty = true;
-    }
-
-    QInterfacePtr unit = Entangle(eIndices);
-
-    bitCapInt mappedMask = 0;
-    for (bitLenInt i = 0; i < (bitLenInt)eIndices.size(); i++) {
-        mappedMask |= pow2(shards[eIndices[i]].mapped);
-    }
-
-    if (controls.size() == 0) {
-        unit->UniformParityRZ(mappedMask, flipResult ? -angle : angle);
-    } else {
-        std::vector<bitLenInt*> ebits(controls.size());
-        for (bitLenInt i = 0; i < (bitLenInt)controls.size(); i++) {
-            ebits[i] = &controls[i];
-        }
-
-        Entangle(ebits);
-        unit = Entangle({ controls[0], eIndices[0] });
-
-        std::vector<bitLenInt> controlsMapped(controls.size());
-        for (bitLenInt i = 0; i < (bitLenInt)controls.size(); i++) {
-            QEngineShard& cShard = shards[controls[i]];
-            controlsMapped[i] = cShard.mapped;
-            cShard.isPhaseDirty = true;
-        }
-
-        unit->CUniformParityRZ(&(controlsMapped[0]), controlsMapped.size(), mappedMask, flipResult ? -angle : angle);
-    }
 }
 
 void QUnit::H(bitLenInt target)
@@ -2675,7 +2677,7 @@ void QUnit::INCx(INCxFn fn, bitCapInt toMod, bitLenInt start, bitLenInt length, 
 
     EntangleRange(start, length);
     QInterfacePtr unit = Entangle({ start, flagIndex });
-    ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flagIndex].mapped);
+    ((*std::dynamic_pointer_cast<QAlu>(unit)).*fn)(toMod, shards[start].mapped, length, shards[flagIndex].mapped);
 }
 
 void QUnit::INCxx(
@@ -2690,7 +2692,8 @@ void QUnit::INCxx(
     EntangleRange(start, length);
     QInterfacePtr unit = Entangle({ start, flag1Index, flag2Index });
 
-    ((*unit).*fn)(toMod, shards[start].mapped, length, shards[flag1Index].mapped, shards[flag2Index].mapped);
+    ((*std::dynamic_pointer_cast<QAlu>(unit)).*fn)(
+        toMod, shards[start].mapped, length, shards[flag1Index].mapped, shards[flag2Index].mapped);
 }
 
 /// Check if overflow arithmetic can be optimized
@@ -2984,13 +2987,13 @@ void QUnit::INTS(
         if (INTSCOptimize(toMod, start, length, true, carryIndex, overflowIndex)) {
             return;
         }
-        INCxx(&QInterface::INCSC, toMod, start, length, overflowIndex, carryIndex);
+        INCxx(&QAlu::INCSC, toMod, start, length, overflowIndex, carryIndex);
     } else {
         // Keep the bits separate, if cheap to do so:
         if (INTSOptimize(toMod, start, length, true, overflowIndex)) {
             return;
         }
-        INCx(&QInterface::INCS, toMod, start, length, overflowIndex);
+        INCx(&QAlu::INCS, toMod, start, length, overflowIndex);
     }
 }
 
@@ -3007,7 +3010,7 @@ void QUnit::INCDECSC(
 
 void QUnit::INCDECSC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    INCx(&QInterface::INCSC, toMod, start, length, carryIndex);
+    INCx(&QAlu::INCSC, toMod, start, length, carryIndex);
 }
 
 #if ENABLE_BCD
@@ -3015,26 +3018,20 @@ void QUnit::INCBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     // BCD variants are low priority for optimization, for the time being.
     DirtyShardRange(start, length);
-    EntangleRange(start, length)->INCBCD(toMod, shards[start].mapped, length);
-}
-
-void QUnit::INCBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-{
-    // BCD variants are low priority for optimization, for the time being.
-    INCx(&QInterface::INCBCDC, toMod, start, length, carryIndex);
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(start, length))->INCBCD(toMod, shards[start].mapped, length);
 }
 
 void QUnit::DECBCD(bitCapInt toMod, bitLenInt start, bitLenInt length)
 {
     // BCD variants are low priority for optimization, for the time being.
     DirtyShardRange(start, length);
-    EntangleRange(start, length)->DECBCD(toMod, shards[start].mapped, length);
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(start, length))->DECBCD(toMod, shards[start].mapped, length);
 }
 
-void QUnit::DECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+void QUnit::INCDECBCDC(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
     // BCD variants are low priority for optimization, for the time being.
-    INCx(&QInterface::DECBCDC, toMod, start, length, carryIndex);
+    INCx(&QAlu::INCDECBCDC, toMod, start, length, carryIndex);
 }
 #endif
 
@@ -3062,7 +3059,7 @@ void QUnit::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bit
     DirtyShardRange(carryStart, length);
 
     // Otherwise, form the potentially entangled representation:
-    EntangleRange(inOutStart, length, carryStart, length)
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(inOutStart, length, carryStart, length))
         ->MUL(toMul, shards[inOutStart].mapped, shards[carryStart].mapped, length);
 }
 
@@ -3089,7 +3086,7 @@ void QUnit::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bit
     DirtyShardRange(carryStart, length);
 
     // Otherwise, form the potentially entangled representation:
-    EntangleRange(inOutStart, length, carryStart, length)
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(inOutStart, length, carryStart, length))
         ->DIV(toDiv, shards[inOutStart].mapped, shards[carryStart].mapped, length);
 }
 
@@ -3149,9 +3146,11 @@ void QUnit::xMULModNOut(
     // Otherwise, form the potentially entangled representation:
     QInterfacePtr unit = EntangleRange(inStart, length, outStart, length);
     if (inverse) {
-        unit->IMULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
+        std::dynamic_pointer_cast<QAlu>(unit)->IMULModNOut(
+            toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
     } else {
-        unit->MULModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
+        std::dynamic_pointer_cast<QAlu>(unit)->MULModNOut(
+            toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
     }
 }
 
@@ -3182,7 +3181,7 @@ void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLe
     SetReg(outStart, length, 0);
 
     // Otherwise, form the potentially entangled representation:
-    EntangleRange(inStart, length, outStart, length)
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(inStart, length, outStart, length))
         ->POWModNOut(toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
     DirtyShardRangePhase(inStart, length);
     DirtyShardRange(outStart, length);
@@ -3229,7 +3228,7 @@ void QUnit::CMULx(CMULFn fn, bitCapInt toMod, bitLenInt start, bitLenInt carrySt
     std::vector<bitLenInt> controlsMapped;
     QInterfacePtr unit = CMULEntangle(controlVec, start, carryStart, length, &controlsMapped);
 
-    ((*unit).*fn)(toMod, shards[start].mapped, shards[carryStart].mapped, length,
+    ((*std::dynamic_pointer_cast<QAlu>(unit)).*fn)(toMod, shards[start].mapped, shards[carryStart].mapped, length,
         controlVec.size() ? &(controlsMapped[0]) : NULL, controlVec.size());
 
     DirtyShardRange(start, length);
@@ -3241,7 +3240,7 @@ void QUnit::CMULModx(CMULModFn fn, bitCapInt toMod, bitCapInt modN, bitLenInt st
     std::vector<bitLenInt> controlsMapped;
     QInterfacePtr unit = CMULEntangle(controlVec, start, carryStart, length, &controlsMapped);
 
-    ((*unit).*fn)(toMod, modN, shards[start].mapped, shards[carryStart].mapped, length,
+    ((*std::dynamic_pointer_cast<QAlu>(unit)).*fn)(toMod, modN, shards[start].mapped, shards[carryStart].mapped, length,
         controlVec.size() ? &(controlsMapped[0]) : NULL, controlVec.size());
 
     DirtyShardRangePhase(start, length);
@@ -3261,7 +3260,7 @@ void QUnit::CMUL(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenI
         return;
     }
 
-    CMULx(&QInterface::CMUL, toMod, start, carryStart, length, controlVec);
+    CMULx(&QAlu::CMUL, toMod, start, carryStart, length, controlVec);
 }
 
 void QUnit::CDIV(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
@@ -3278,7 +3277,7 @@ void QUnit::CDIV(bitCapInt toMod, bitLenInt start, bitLenInt carryStart, bitLenI
         return;
     }
 
-    CMULx(&QInterface::CDIV, toMod, start, carryStart, length, controlVec);
+    CMULx(&QAlu::CDIV, toMod, start, carryStart, length, controlVec);
 }
 
 void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
@@ -3331,9 +3330,9 @@ void QUnit::CxMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bit
     }
 
     if (inverse) {
-        CMULModx(&QInterface::CIMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
+        CMULModx(&QAlu::CIMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
     } else {
-        CMULModx(&QInterface::CMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
+        CMULModx(&QAlu::CMULModNOut, toMod, modN, inStart, outStart, length, controlVec);
     }
 }
 
@@ -3365,7 +3364,7 @@ void QUnit::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitL
         return;
     }
 
-    CMULModx(&QInterface::CPOWModNOut, toMod, modN, inStart, outStart, length, controlVec);
+    CMULModx(&QAlu::CPOWModNOut, toMod, modN, inStart, outStart, length, controlVec);
 }
 
 bitCapInt QUnit::GetIndexedEigenstate(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
@@ -3411,8 +3410,9 @@ bitCapInt QUnit::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 
     EntangleRange(indexStart, indexLength, valueStart, valueLength);
 
-    const bitCapInt toRet = shards[indexStart].unit->IndexedLDA(
-        shards[indexStart].mapped, indexLength, shards[valueStart].mapped, valueLength, values, resetValue);
+    const bitCapInt toRet = std::dynamic_pointer_cast<QAlu>(shards[indexStart].unit)
+                                ->IndexedLDA(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
+                                    valueLength, values, resetValue);
 
     DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
@@ -3448,8 +3448,9 @@ bitCapInt QUnit::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 #endif
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    const bitCapInt toRet = shards[indexStart].unit->IndexedADC(shards[indexStart].mapped, indexLength,
-        shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
+    const bitCapInt toRet = std::dynamic_pointer_cast<QAlu>(shards[indexStart].unit)
+                                ->IndexedADC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
+                                    valueLength, shards[carryIndex].mapped, values);
 
     DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
@@ -3486,8 +3487,9 @@ bitCapInt QUnit::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenI
 #endif
     EntangleRange(indexStart, indexLength, valueStart, valueLength, carryIndex, 1);
 
-    const bitCapInt toRet = shards[indexStart].unit->IndexedSBC(shards[indexStart].mapped, indexLength,
-        shards[valueStart].mapped, valueLength, shards[carryIndex].mapped, values);
+    const bitCapInt toRet = std::dynamic_pointer_cast<QAlu>(shards[indexStart].unit)
+                                ->IndexedSBC(shards[indexStart].mapped, indexLength, shards[valueStart].mapped,
+                                    valueLength, shards[carryIndex].mapped, values);
 
     DirtyShardRangePhase(indexStart, indexLength);
     DirtyShardRange(valueStart, valueLength);
@@ -3510,7 +3512,7 @@ void QUnit::Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
     }
 
     DirtyShardRange(start, length);
-    EntangleRange(start, length)->Hash(shards[start].mapped, length, values);
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(start, length))->Hash(shards[start].mapped, length, values);
 }
 
 void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
@@ -3525,7 +3527,8 @@ void QUnit::PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt le
     }
 
     DirtyShardRange(start, length);
-    EntangleRange(start, length)->PhaseFlipIfLess(greaterPerm, shards[start].mapped, length);
+    std::dynamic_pointer_cast<QAlu>(EntangleRange(start, length))
+        ->PhaseFlipIfLess(greaterPerm, shards[start].mapped, length);
 }
 
 void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
@@ -3541,7 +3544,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
     DirtyShardRange(start, length);
     shards[flagIndex].isPhaseDirty = true;
     EntangleRange(start, length);
-    Entangle({ start, flagIndex })
+    std::dynamic_pointer_cast<QAlu>(Entangle({ start, flagIndex }))
         ->CPhaseFlipIfLess(greaterPerm, shards[start].mapped, length, shards[flagIndex].mapped);
 }
 #endif

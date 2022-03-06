@@ -48,10 +48,10 @@ MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ IdCallback callback)
 
 MICROSOFT_QUANTUM_DECL size_t random_choice(_In_ unsigned sid, _In_ size_t n, _In_reads_(n) double* p);
 
-MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
-    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_reads_(n) unsigned* q);
 MICROSOFT_QUANTUM_DECL void PhaseParity(
     _In_ unsigned sid, _In_ double lambda, _In_ unsigned n, _In_reads_(n) unsigned* q);
+MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
+    _In_ unsigned sid, _In_ unsigned n, _In_reads_(n) int* b, _In_reads_(n) unsigned* q);
 
 MICROSOFT_QUANTUM_DECL void ResetAll(_In_ unsigned sid);
 
@@ -160,6 +160,12 @@ MICROSOFT_QUANTUM_DECL void ADD(_In_ unsigned sid, unsigned a, _In_ unsigned n, 
 MICROSOFT_QUANTUM_DECL void SUB(_In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q);
 MICROSOFT_QUANTUM_DECL void ADDS(_In_ unsigned sid, unsigned a, unsigned s, _In_ unsigned n, _In_reads_(n) unsigned* q);
 MICROSOFT_QUANTUM_DECL void SUBS(_In_ unsigned sid, unsigned a, unsigned s, _In_ unsigned n, _In_reads_(n) unsigned* q);
+
+MICROSOFT_QUANTUM_DECL void MCADD(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
+    _In_ unsigned nq, _In_reads_(nq) unsigned* q);
+MICROSOFT_QUANTUM_DECL void MCSUB(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
+    _In_ unsigned nq, _In_reads_(nq) unsigned* q);
+
 MICROSOFT_QUANTUM_DECL void MUL(
     _In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
 MICROSOFT_QUANTUM_DECL void DIV(
@@ -171,10 +177,6 @@ MICROSOFT_QUANTUM_DECL void DIVN(
 MICROSOFT_QUANTUM_DECL void POWN(
     _In_ unsigned sid, unsigned a, unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
 
-MICROSOFT_QUANTUM_DECL void MCADD(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
-    _In_ unsigned nq, _In_reads_(nq) unsigned* q);
-MICROSOFT_QUANTUM_DECL void MCSUB(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
-    _In_ unsigned nq, _In_reads_(nq) unsigned* q);
 MICROSOFT_QUANTUM_DECL void MCMUL(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
     _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o);
 MICROSOFT_QUANTUM_DECL void MCDIV(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,

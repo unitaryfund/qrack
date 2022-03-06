@@ -30,75 +30,19 @@
 #include <sys/random.h>
 #endif
 
+#define IS_0_R1(r) (abs(r) <= REAL1_EPSILON)
+#define IS_1_R1(r) (abs(r) <= REAL1_EPSILON)
+
 namespace Qrack {
 
-QStabilizer::QStabilizer(const bitLenInt& n, const bitCapInt& perm, bool useHardwareRNG, qrack_rand_gen_ptr rgp)
-    : qubitCount(n)
+QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, bool useHardwareRNG)
+    : QInterface(n, rgp, false, useHardwareRNG, true, REAL1_EPSILON)
     , x((n << 1U) + 1U, std::vector<bool>(n))
     , z((n << 1U) + 1U, std::vector<bool>(n))
     , r((n << 1U) + 1U)
-    , rand_distribution(0, 1)
-    , hardware_rand_generator(NULL)
     , rawRandBools(0)
     , rawRandBoolsRemaining(0)
 {
-#if !ENABLE_RDRAND && !ENABLE_RNDFILE && !ENABLE_DEVRAND
-    useHardwareRNG = false;
-#endif
-
-    if (useHardwareRNG) {
-        hardware_rand_generator = std::make_shared<RdRandom>();
-#if !ENABLE_RNDFILE && !ENABLE_DEVRAND
-        if (!(hardware_rand_generator->SupportsRDRAND())) {
-            hardware_rand_generator = NULL;
-        }
-#endif
-    }
-
-    if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
-        rand_generator = std::make_shared<qrack_rand_gen>();
-#if SEED_DEVRAND
-        // The original author of this code block (Daniel Strano) is NOT a cryptography expert. However, here's the
-        // author's justification for preferring /dev/random used to seed Mersenne twister, in this case. We state
-        // firstly, our use case is probably more dependent on good statistical randomness than CSPRNG security.
-        // Casually, we can list a few reasons our design:
-        //
-        // * (As a total guess, if clock manipulation isn't a completely obvious problem,) either of /dev/random or
-        // /dev/urandom is probably both statistically and cryptographically preferable to the system clock, as a
-        // one-time seed.
-        //
-        // * We need VERY LITTLE entropy for this seeding, even though its repeated a few times depending on the
-        // simulation method stack. Tests of 30+ qubits don't run out of random numbers, this way, and there's no
-        // detectable slow-down in Qrack.
-        //
-        // * The blocking behavior of /dev/random (specifically on startup) is GOOD for us, here. We WANT Qrack to block
-        // until the entropy pool is ready on virtual machine and container images that start a Qrack-based application
-        // on boot. (We're not crypotgraphers; we're quantum computer simulator developers and users.)
-        //
-        // * (I have a very basic appreciation for the REFUTATION to historical confusion over the quantity of "entropy"
-        // in the device pools, but...) If our purpose is PHYSICAL REALISM of quantum computer simulation, rather than
-        // cryptography, then we probably should have a tiny preference for higher "true" entropy. Although, even as a
-        // developer in the quantum computing field, I must say that there might be no provable empirical difference
-        // between "true quantum randomness" and "perfect statistical (whether pseudo-)randomness" as ontological
-        // categories, now might there?
-
-        const int max_rdrand_tries = 10;
-        int i;
-        for (i = 0; i < max_rdrand_tries; ++i) {
-            if (sizeof(randomSeed) == getrandom(reinterpret_cast<char*>(&randomSeed), sizeof(randomSeed), GRND_RANDOM))
-                break;
-        }
-        if (i == max_rdrand_tries) {
-            throw std::runtime_error("Failed to seed RNG!");
-        }
-#else
-        randomSeed = (uint32_t)std::time(0);
-#endif
-        SetRandomSeed(randomSeed);
-    } else {
-        rand_generator = rgp;
-    }
-
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #if ENABLE_ENV_VARS
     dispatchThreshold =
@@ -470,6 +414,40 @@ void QStabilizer::GetProbs(real1* outputProbs)
     }
 }
 
+/// Convert the state to ket notation (warning: could be huge!)
+complex QStabilizer::GetAmplitude(bitCapInt perm)
+{
+    Finish();
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt(ONE_R1 / permCount);
+
+    seed(g);
+
+    AmplitudeEntry entry = getBasisAmp(nrm);
+    if (entry.permutation == perm) {
+        return entry.amplitude;
+    }
+    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+        bitCapIntOcl t2 = t ^ (t + 1);
+        for (bitLenInt i = 0; i < g; i++) {
+            if ((t2 >> i) & 1U) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        AmplitudeEntry entry = getBasisAmp(nrm);
+        if (entry.permutation == perm) {
+            return entry.amplitude;
+        }
+    }
+
+    return ZERO_R1;
+}
+
 /// Apply a CNOT gate with control and target
 void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 {
@@ -731,7 +709,7 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& t)
 /**
  * Measure qubit b
  */
-bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const bool& doApply)
+bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 {
     if (doForce && !doApply) {
         return result;
@@ -808,7 +786,7 @@ bool QStabilizer::M(const bitLenInt& t, bool result, const bool& doForce, const 
     return r[elemCount];
 }
 
-bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
+bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
 {
     // We simply insert the (elsewhere initialized and valid) "toCopy" stabilizers and destabilizers in corresponding
     // position, and we set the new padding to 0. This is immediately a valid state, if the two original QStablizer
@@ -852,6 +830,13 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, const bitLenInt start)
     qubitCount = nQubitCount;
 
     return start;
+}
+QInterfacePtr QStabilizer::Decompose(bitLenInt start, bitLenInt length)
+{
+    QStabilizerPtr dest = std::make_shared<QStabilizer>(qubitCount, 0, rand_generator, hardware_rand_generator != NULL);
+    Decompose(start, dest);
+
+    return dest;
 }
 
 bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt length)
@@ -985,5 +970,371 @@ bool QStabilizer::ApproxCompare(QStabilizerPtr o)
     }
 
     return true;
+}
+
+real1_f QStabilizer::Prob(bitLenInt qubit)
+{
+    if (IsSeparableZ(qubit)) {
+        return M(qubit) ? ONE_R1 : ZERO_R1;
+    }
+
+    // Otherwise, state appears locally maximally mixed.
+    return ONE_R1 / 2;
+}
+
+void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
+{
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        Phase(mtrx[0], mtrx[3], target);
+        return;
+    }
+
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        Invert(mtrx[1], mtrx[2], target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        H(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        // Equivalent to X before H
+        ISqrtY(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        // Equivalent to H before X
+        SqrtY(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        X(target);
+        SqrtY(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        H(target);
+        S(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+        ISqrtY(target);
+        S(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        Y(target);
+        H(target);
+        S(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+        Z(target);
+        H(target);
+        S(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+        IS(target);
+        H(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        IS(target);
+        SqrtY(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+        IS(target);
+        H(target);
+        Y(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        IS(target);
+        H(target);
+        Z(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        SqrtX(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        ISqrtX(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        SqrtX(target);
+        Z(target);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+        Z(target);
+        SqrtX(target);
+        return;
+    }
+
+    throw std::domain_error("QStabilizer::Mtrx() not implemented for non-Clifford/Pauli cases!");
+}
+
+void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
+{
+    if (IS_SAME(topLeft, bottomRight)) {
+        return;
+    }
+
+    if (IS_SAME(topLeft, -bottomRight)) {
+        Z(target);
+        return;
+    }
+
+    if (IS_SAME(topLeft, -I_CMPLX * bottomRight)) {
+        S(target);
+        return;
+    }
+
+    if (IS_SAME(topLeft, I_CMPLX * bottomRight)) {
+        IS(target);
+        return;
+    }
+
+    if (IsSeparableZ(target)) {
+        // This gate has no effect.
+        return;
+    }
+
+    throw std::domain_error("QStabilizer::Phase() not implemented for non-Clifford/Pauli cases!");
+}
+
+void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
+{
+    if (IS_SAME(topRight, bottomLeft)) {
+        X(target);
+        return;
+    }
+
+    if (IS_SAME(topRight, -bottomLeft)) {
+        Y(target);
+        return;
+    }
+
+    if (IS_SAME(topRight, -I_CMPLX * bottomLeft)) {
+        X(target);
+        S(target);
+        return;
+    }
+
+    if (IS_SAME(topRight, I_CMPLX * bottomLeft)) {
+        S(target);
+        X(target);
+        return;
+    }
+
+    if (IsSeparableZ(target)) {
+        // This gate has no meaningful effect on phase.
+        X(target);
+        return;
+    }
+
+    throw std::domain_error("QStabilizer::Invert() not implemented for non-Clifford/Pauli cases!");
+}
+
+void QStabilizer::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
+{
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        MCPhase(lControls, lControlLen, mtrx[0], mtrx[3], target);
+        return;
+    }
+
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        MCInvert(lControls, lControlLen, mtrx[1], mtrx[2], target);
+        return;
+    }
+
+    throw std::domain_error("QStabilizer::MCMtrx() not implemented for non-Clifford/Pauli cases!");
+}
+
+void QStabilizer::MCPhase(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
+{
+    if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
+        return;
+    }
+
+    std::vector<bitLenInt> controls;
+    if (TrimControls(lControls, lControlLen, controls)) {
+        return;
+    }
+
+    if (!controls.size()) {
+        Phase(topLeft, bottomRight, target);
+        return;
+    }
+
+    if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
+        real1_f prob = Prob(target);
+        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
+            return;
+        }
+        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_R1)) {
+            return;
+        }
+    }
+
+    if (controls.size() > 1U) {
+        throw std::domain_error(
+            "QStabilizer::MCPhase() not implemented for non-Clifford/Pauli cases! (Too many controls)");
+    }
+
+    const bitLenInt control = controls[0];
+
+    if (IS_SAME(topLeft, ONE_CMPLX)) {
+        if (IS_SAME(bottomRight, ONE_CMPLX)) {
+            return;
+        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            CZ(control, target);
+            return;
+        }
+    } else if (IS_SAME(topLeft, -ONE_CMPLX)) {
+        if (IS_SAME(bottomRight, ONE_CMPLX)) {
+            CNOT(control, target);
+            CZ(control, target);
+            CNOT(control, target);
+            return;
+        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            CZ(control, target);
+            CNOT(control, target);
+            CZ(control, target);
+            CNOT(control, target);
+            return;
+        }
+    } else if (IS_SAME(topLeft, I_CMPLX)) {
+        if (IS_SAME(bottomRight, I_CMPLX)) {
+            CZ(control, target);
+            CY(control, target);
+            CNOT(control, target);
+            return;
+        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
+            CY(control, target);
+            CNOT(control, target);
+            return;
+        }
+    } else if (IS_SAME(topLeft, -I_CMPLX)) {
+        if (IS_SAME(bottomRight, I_CMPLX)) {
+            CNOT(control, target);
+            CY(control, target);
+            return;
+        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
+            CY(control, target);
+            CZ(control, target);
+            CNOT(control, target);
+            return;
+        }
+    }
+
+    throw std::domain_error(
+        "QStabilizer::MCPhase() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
+}
+
+void QStabilizer::MCInvert(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
+{
+    std::vector<bitLenInt> controls;
+    if (TrimControls(lControls, lControlLen, controls)) {
+        return;
+    }
+
+    if (!controls.size()) {
+        Invert(topRight, bottomLeft, target);
+        return;
+    }
+
+    if (controls.size() > 1U) {
+        throw std::domain_error(
+            "QStabilizer::MCInvert() not implemented for non-Clifford/Pauli cases! (Too many controls)");
+    }
+
+    const bitLenInt control = controls[0];
+
+    if (IS_SAME(topRight, ONE_CMPLX)) {
+        if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+            CNOT(control, target);
+            return;
+        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            CNOT(control, target);
+            CZ(control, target);
+            return;
+        }
+    } else if (IS_SAME(topRight, -ONE_CMPLX)) {
+        if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+            CZ(control, target);
+            CNOT(control, target);
+            return;
+        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            CZ(control, target);
+            CNOT(control, target);
+            CZ(control, target);
+            return;
+        }
+    } else if (IS_SAME(topRight, I_CMPLX)) {
+        if (IS_SAME(bottomLeft, I_CMPLX)) {
+            CZ(control, target);
+            CY(control, target);
+            return;
+        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            CZ(control, target);
+            CY(control, target);
+            CZ(control, target);
+            return;
+        }
+    } else if (IS_SAME(topRight, -I_CMPLX)) {
+        if (IS_SAME(bottomLeft, I_CMPLX)) {
+            CY(control, target);
+            return;
+        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            CY(control, target);
+            CZ(control, target);
+            return;
+        }
+    }
+
+    throw std::domain_error(
+        "QStabilizer::MCInvert() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
+}
+
+void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
+{
+    bitLenInt controls[1] = { qubit1 };
+    real1 sinTheta = (real1)sin(theta);
+
+    if (IS_0_R1(sinTheta)) {
+        MCPhase(controls, 1, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        return;
+    }
+
+    if (IS_1_R1(-sinTheta)) {
+        ISwap(qubit1, qubit2);
+        MCPhase(controls, 1, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        return;
+    }
+
+    throw std::domain_error("QStabilizer::FSim() not implemented for non-Clifford/Pauli cases!");
 }
 } // namespace Qrack

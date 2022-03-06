@@ -48,25 +48,14 @@ struct AmplitudeEntry {
 class QStabilizer;
 typedef std::shared_ptr<QStabilizer> QStabilizerPtr;
 
-class QStabilizer {
+class QStabilizer : public QInterface {
 protected:
-    // # of qubits
-    bitLenInt qubitCount;
     // (2n+1)*n matrix for stabilizer/destabilizer x bits (there's one "scratch row" at the bottom)
     std::vector<std::vector<bool>> x;
     // (2n+1)*n matrix for z bits
     std::vector<std::vector<bool>> z;
     // Phase bits: 0 for +1, 1 for i, 2 for -1, 3 for -i.  Normally either 0 or 2.
     std::vector<uint8_t> r;
-
-    uint32_t randomSeed;
-    qrack_rand_gen_ptr rand_generator;
-#if defined(_WIN32) && !defined(__CYGWIN__)
-    std::uniform_int_distribution<short> rand_distribution;
-#else
-    std::uniform_int_distribution<char> rand_distribution;
-#endif
-    std::shared_ptr<RdRandom> hardware_rand_generator;
 
     unsigned rawRandBools;
     unsigned rawRandBoolsRemaining;
@@ -102,16 +91,31 @@ protected:
         });
     }
 
-public:
-    QStabilizer(
-        const bitLenInt& n, const bitCapInt& perm = 0, bool useHardwareRNG = true, qrack_rand_gen_ptr rgp = NULL);
+    bool TrimControls(const bitLenInt* lControls, bitLenInt lControlLen, std::vector<bitLenInt>& output)
+    {
+        for (bitLenInt i = 0; i < lControlLen; i++) {
+            const bitLenInt bit = lControls[i];
+            if (!IsSeparableZ(bit)) {
+                output.push_back(bit);
+                continue;
+            }
+            if (!M(bit)) {
+                return true;
+            }
+        }
 
-    QStabilizerPtr Clone()
+        return false;
+    }
+
+public:
+    QStabilizer(bitLenInt n, bitCapInt perm = 0, qrack_rand_gen_ptr rgp = nullptr, bool useHardwareRNG = true);
+
+    QInterfacePtr Clone()
     {
         Finish();
 
         QStabilizerPtr clone =
-            std::make_shared<QStabilizer>(qubitCount, 0, hardware_rand_generator != NULL, rand_generator);
+            std::make_shared<QStabilizer>(qubitCount, 0, rand_generator, hardware_rand_generator != NULL);
         clone->Finish();
 
         clone->x = x;
@@ -123,6 +127,9 @@ public:
     }
 
     virtual ~QStabilizer() { Dump(); }
+
+    virtual bool isClifford() { return true; };
+    virtual bool isClifford(bitLenInt qubit) { return true; };
 
     void Finish()
     {
@@ -214,6 +221,20 @@ protected:
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
 public:
+    void SetQuantumState(const complex* inputState)
+    {
+        throw std::domain_error("QStabilizer::SetQuantumState() not implemented!");
+    }
+    void SetAmplitude(bitCapInt perm, complex amp)
+    {
+        throw std::domain_error("QStabilizer::SetAmplitude() not implemented!");
+    }
+
+    real1_f SumSqrDiff(QInterfacePtr toCompare)
+    {
+        throw std::domain_error("QStabilizer::SumSqrDiff() not implemented!");
+    }
+
     /// Apply a CNOT gate with control and target
     void CNOT(const bitLenInt& control, const bitLenInt& target);
     /// Apply a CY gate with control and target
@@ -260,7 +281,7 @@ public:
     /**
      * Measure qubit b
      */
-    bool M(const bitLenInt& t, bool result = false, const bool& doForce = false, const bool& doApply = true);
+    bool ForceM(bitLenInt t, bool result, bool doForce = true, bool doApply = true);
 
     /// Convert the state to ket notation
     void GetQuantumState(complex* stateVec);
@@ -270,6 +291,8 @@ public:
 
     /// Get all probabilities corresponding to ket notation
     void GetProbs(real1* outputProbs);
+
+    complex GetAmplitude(bitCapInt perm);
 
     /**
      * Returns "true" if target qubit is a Z basis eigenstate
@@ -293,18 +316,41 @@ public:
     uint8_t IsSeparable(const bitLenInt& target);
 
     bitLenInt Compose(QStabilizerPtr toCopy) { return Compose(toCopy, qubitCount); }
-    bitLenInt Compose(QStabilizerPtr toCopy, const bitLenInt start);
-    void Decompose(const bitLenInt& start, QStabilizerPtr destination)
+    bitLenInt Compose(QStabilizerPtr toCopy, bitLenInt start);
+    void Decompose(bitLenInt start, QInterfacePtr dest)
     {
-        DecomposeDispose(start, destination->qubitCount, destination);
+        DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QStabilizer>(dest));
     }
-
-    void Dispose(const bitLenInt& start, const bitLenInt& length)
+    QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
+    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QStabilizerPtr)NULL); }
+    void Dispose(bitLenInt start, bitLenInt length, bitCapInt ignored)
     {
         DecomposeDispose(start, length, (QStabilizerPtr)NULL);
     }
     bool CanDecomposeDispose(const bitLenInt start, const bitLenInt length);
 
     bool ApproxCompare(QStabilizerPtr o);
+
+    void NormalizeState(
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
+    {
+        // Intentionally left blank
+    }
+    void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        // Intentionally left blank
+    }
+
+    real1_f Prob(bitLenInt qubit);
+
+    void Mtrx(const complex* mtrx, bitLenInt target);
+    void Phase(complex topLeft, complex bottomRight, bitLenInt target);
+    void Invert(complex topRight, complex bottomLeft, bitLenInt target);
+    void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
+    void MCPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
+    void MCInvert(
+        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
+    void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
 };
 } // namespace Qrack

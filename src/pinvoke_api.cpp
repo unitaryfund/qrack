@@ -56,6 +56,9 @@
         return 0U;                                                                                                     \
     }
 
+#define QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
+#define QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
+
 using namespace Qrack;
 
 qrack_rand_gen_ptr randNumGen = std::make_shared<qrack_rand_gen>(time(0));
@@ -739,6 +742,23 @@ MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::si
     return dist(*randNumGen.get());
 }
 
+MICROSOFT_QUANTUM_DECL void PhaseParity(
+    _In_ unsigned sid, _In_ double lambda, _In_ unsigned n, _In_reads_(n) unsigned* q)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
+    bitCapInt mask = 0;
+    for (unsigned i = 0; i < n; i++) {
+        mask |= pow2(shards[simulator.get()][q[i]]);
+    }
+
+    try {
+        simulator->PhaseParity((real1_f)lambda, mask);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+
 double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int* b, unsigned* q, bool doMeasure)
 {
 
@@ -762,7 +782,8 @@ double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, unsigned n, int*
         mask |= bit;
     }
 
-    return (double)(doMeasure ? (simulator->MParity(mask) ? ONE_R1 : ZERO_R1) : simulator->ProbParity(mask));
+    return (double)(doMeasure ? (QPARITY(simulator)->MParity(mask) ? ONE_R1 : ZERO_R1)
+                              : QPARITY(simulator)->ProbParity(mask));
 }
 
 /**
@@ -788,23 +809,6 @@ MICROSOFT_QUANTUM_DECL double JointEnsembleProbability(
     }
 
     return jointProb;
-}
-
-MICROSOFT_QUANTUM_DECL void PhaseParity(
-    _In_ unsigned sid, _In_ double lambda, _In_ unsigned n, _In_reads_(n) unsigned* q)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-    QInterfacePtr simulator = simulators[sid];
-    bitCapInt mask = 0;
-    for (unsigned i = 0; i < n; i++) {
-        mask |= pow2(shards[simulator.get()][q[i]]);
-    }
-
-    try {
-        simulator->PhaseParity((real1_f)lambda, mask);
-    } catch (...) {
-        simulatorErrors[sid] = 1;
-    }
 }
 
 /**
@@ -1407,7 +1411,7 @@ MICROSOFT_QUANTUM_DECL void Exp(
             TransformPauliBasis(simulator, n, b, q);
 
             std::size_t mask = make_mask(qVec);
-            simulator->UniformParityRZ((bitCapInt)mask, (real1_f)(-phi));
+            QPARITY(simulator)->UniformParityRZ((bitCapInt)mask, (real1_f)(-phi));
 
             RevertPauliBasis(simulator, n, b, q);
         }
@@ -1447,7 +1451,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ unsigned sid, _In_ unsigned n, _In_reads_
             TransformPauliBasis(simulator, n, b, q);
 
             std::size_t mask = make_mask(qVec);
-            simulator->CUniformParityRZ(&(csVec[0]), csVec.size(), (bitCapInt)mask, (real1_f)(-phi));
+            QPARITY(simulator)->CUniformParityRZ(&(csVec[0]), csVec.size(), (bitCapInt)mask, (real1_f)(-phi));
 
             RevertPauliBasis(simulator, n, b, q);
         }
@@ -1960,71 +1964,6 @@ MICROSOFT_QUANTUM_DECL void SUBS(_In_ unsigned sid, unsigned a, unsigned s, _In_
         simulatorErrors[sid] = 1;
     }
 }
-MICROSOFT_QUANTUM_DECL void MUL(
-    _In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-    QInterfacePtr simulator = simulators[sid];
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        simulator->MUL(a, starts.start1, starts.start2, n);
-    } catch (...) {
-        simulatorErrors[sid] = 1;
-    }
-}
-MICROSOFT_QUANTUM_DECL void DIV(
-    _In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-    QInterfacePtr simulator = simulators[sid];
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        simulator->DIV(a, starts.start1, starts.start2, n);
-    } catch (...) {
-        simulatorErrors[sid] = 1;
-    }
-}
-MICROSOFT_QUANTUM_DECL void MULN(
-    _In_ unsigned sid, unsigned a, unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-    QInterfacePtr simulator = simulators[sid];
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        simulator->MULModNOut(a, m, starts.start1, starts.start2, n);
-    } catch (...) {
-        simulatorErrors[sid] = 1;
-    }
-}
-MICROSOFT_QUANTUM_DECL void DIVN(
-    _In_ unsigned sid, unsigned a, unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-    QInterfacePtr simulator = simulators[sid];
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        simulator->IMULModNOut(a, m, starts.start1, starts.start2, n);
-    } catch (...) {
-        simulatorErrors[sid] = 1;
-    }
-}
-MICROSOFT_QUANTUM_DECL void POWN(
-    _In_ unsigned sid, unsigned a, unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-    QInterfacePtr simulator = simulators[sid];
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        simulator->POWModNOut(a, m, starts.start1, starts.start2, n);
-    } catch (...) {
-        simulatorErrors[sid] = 1;
-    }
-}
 
 MICROSOFT_QUANTUM_DECL void MCADD(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
     _In_ unsigned nq, _In_reads_(nq) unsigned* q)
@@ -2050,6 +1989,73 @@ MICROSOFT_QUANTUM_DECL void MCSUB(_In_ unsigned sid, unsigned a, _In_ unsigned n
         simulatorErrors[sid] = 1;
     }
 }
+
+MICROSOFT_QUANTUM_DECL void MUL(
+    _In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
+
+    try {
+        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        QALU(simulator)->MUL(a, starts.start1, starts.start2, n);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+MICROSOFT_QUANTUM_DECL void DIV(
+    _In_ unsigned sid, unsigned a, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
+
+    try {
+        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        QALU(simulator)->DIV(a, starts.start1, starts.start2, n);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+MICROSOFT_QUANTUM_DECL void MULN(
+    _In_ unsigned sid, unsigned a, unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
+
+    try {
+        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        QALU(simulator)->MULModNOut(a, m, starts.start1, starts.start2, n);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+MICROSOFT_QUANTUM_DECL void DIVN(
+    _In_ unsigned sid, unsigned a, unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
+
+    try {
+        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        QALU(simulator)->IMULModNOut(a, m, starts.start1, starts.start2, n);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+MICROSOFT_QUANTUM_DECL void POWN(
+    _In_ unsigned sid, unsigned a, unsigned m, _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
+
+    try {
+        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        QALU(simulator)->POWModNOut(a, m, starts.start1, starts.start2, n);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+
 MICROSOFT_QUANTUM_DECL void MCMUL(_In_ unsigned sid, unsigned a, _In_ unsigned nc, _In_reads_(nc) unsigned* c,
     _In_ unsigned n, _In_reads_(n) unsigned* q, _In_reads_(n) unsigned* o)
 {
@@ -2057,7 +2063,7 @@ MICROSOFT_QUANTUM_DECL void MCMUL(_In_ unsigned sid, unsigned a, _In_ unsigned n
 
     try {
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        simulator->CMUL(a, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+        QALU(simulator)->CMUL(a, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }
@@ -2069,7 +2075,7 @@ MICROSOFT_QUANTUM_DECL void MCDIV(_In_ unsigned sid, unsigned a, _In_ unsigned n
 
     try {
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        simulator->CDIV(a, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+        QALU(simulator)->CDIV(a, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }
@@ -2081,7 +2087,7 @@ MICROSOFT_QUANTUM_DECL void MCMULN(_In_ unsigned sid, unsigned a, _In_ unsigned 
 
     try {
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        simulator->CMULModNOut(a, m, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+        QALU(simulator)->CMULModNOut(a, m, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }
@@ -2093,7 +2099,7 @@ MICROSOFT_QUANTUM_DECL void MCDIVN(_In_ unsigned sid, unsigned a, _In_ unsigned 
 
     try {
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        simulator->CIMULModNOut(a, m, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+        QALU(simulator)->CIMULModNOut(a, m, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }
@@ -2105,7 +2111,7 @@ MICROSOFT_QUANTUM_DECL void MCPOWN(_In_ unsigned sid, unsigned a, _In_ unsigned 
 
     try {
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        simulator->CPOWModNOut(a, m, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+        QALU(simulator)->CPOWModNOut(a, m, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }
@@ -2119,7 +2125,7 @@ MICROSOFT_QUANTUM_DECL void LDA(_In_ unsigned sid, _In_ unsigned ni, _In_reads_(
 
     try {
         MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
-        simulator->IndexedLDA(starts.start1, ni, starts.start2, nv, t, true);
+        QALU(simulator)->IndexedLDA(starts.start1, ni, starts.start2, nv, t, true);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }
@@ -2132,7 +2138,7 @@ MICROSOFT_QUANTUM_DECL void ADC(_In_ unsigned sid, unsigned s, _In_ unsigned ni,
 
     try {
         MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
-        simulator->IndexedADC(starts.start1, ni, starts.start2, nv, shards[simulator.get()][s], t);
+        QALU(simulator)->IndexedADC(starts.start1, ni, starts.start2, nv, shards[simulator.get()][s], t);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }
@@ -2145,7 +2151,7 @@ MICROSOFT_QUANTUM_DECL void SBC(_In_ unsigned sid, unsigned s, _In_ unsigned ni,
 
     try {
         MapArithmeticResult2 starts = MapArithmetic3(simulator, ni, qi, nv, qv);
-        simulator->IndexedSBC(starts.start1, ni, starts.start2, nv, shards[simulator.get()][s], t);
+        QALU(simulator)->IndexedSBC(starts.start1, ni, starts.start2, nv, shards[simulator.get()][s], t);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }
@@ -2157,7 +2163,7 @@ MICROSOFT_QUANTUM_DECL void Hash(_In_ unsigned sid, _In_ unsigned n, _In_reads_(
 
     try {
         unsigned start = MapArithmetic(simulator, n, q);
-        simulator->Hash(start, n, t);
+        QALU(simulator)->Hash(start, n, t);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }

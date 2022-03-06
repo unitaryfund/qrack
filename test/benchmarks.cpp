@@ -24,8 +24,6 @@
 
 #include "tests.hpp"
 
-using namespace Qrack;
-
 #define EPSILON 0.001
 #define REQUIRE_FLOAT(A, B)                                                                                            \
     do {                                                                                                               \
@@ -34,6 +32,10 @@ using namespace Qrack;
         REQUIRE(__tmp_a < (__tmp_b + EPSILON));                                                                        \
         REQUIRE(__tmp_b > (__tmp_b - EPSILON));                                                                        \
     } while (0);
+
+#define QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
+
+using namespace Qrack;
 
 const double clockFactor = 1.0 / 1000.0; // Report in ms
 
@@ -421,27 +423,27 @@ TEST_CASE("test_rol", "[gates]")
 #if ENABLE_ALU
 TEST_CASE("test_inc", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INC(1, 0, n); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INC(1, 0, n); });
 }
 
 TEST_CASE("test_incs", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INCS(1, 0, n - 1, n - 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCS(1, 0, n - 1, n - 1); });
 }
 
 TEST_CASE("test_incc", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INCC(1, 0, n - 1, n - 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCC(1, 0, n - 1, n - 1); });
 }
 
 TEST_CASE("test_incsc", "[arithmetic]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->INCSC(1, 0, n - 2, n - 2, n - 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->INCSC(1, 0, n - 2, n - 2, n - 1); });
 }
 
 TEST_CASE("test_c_phase_flip_if_less", "[phaseflip]")
 {
-    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { qftReg->CPhaseFlipIfLess(1, 0, n - 1, n - 1); });
+    benchmarkLoop([](QInterfacePtr qftReg, bitLenInt n) { QALU(qftReg)->CPhaseFlipIfLess(1, 0, n - 1, n - 1); });
 }
 #endif
 
@@ -475,21 +477,21 @@ void benchmarkSuperpose(std::function<void(QInterfacePtr, int, unsigned char*)> 
 TEST_CASE("test_superposition_reg", "[indexed]")
 {
     benchmarkSuperpose([](QInterfacePtr qftReg, bitLenInt n, unsigned char* testPage) {
-        qftReg->IndexedLDA(0, n / 2, n / 2, n / 2, testPage);
+        QALU(qftReg)->IndexedLDA(0, n / 2, n / 2, n / 2, testPage);
     });
 }
 
 TEST_CASE("test_adc_superposition_reg", "[indexed]")
 {
     benchmarkSuperpose([](QInterfacePtr qftReg, bitLenInt n, unsigned char* testPage) {
-        qftReg->IndexedADC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
+        QALU(qftReg)->IndexedADC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
     });
 }
 
 TEST_CASE("test_sbc_superposition_reg", "[indexed]")
 {
     benchmarkSuperpose([](QInterfacePtr qftReg, bitLenInt n, unsigned char* testPage) {
-        qftReg->IndexedSBC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
+        QALU(qftReg)->IndexedSBC(0, (n - 1) / 2, (n - 1) / 2, (n - 1) / 2, (n - 1), testPage);
     });
 }
 #endif
@@ -528,9 +530,9 @@ TEST_CASE("test_grover", "[grover]")
 
         for (i = 0; i < optIter; i++) {
             // Our "oracle" is true for an input of "3" and false for all other inputs.
-            qftReg->DEC(3, 0, n);
+            QALU(qftReg)->DEC(3, 0, n);
             qftReg->ZeroPhaseFlip(0, n);
-            qftReg->INC(3, 0, n);
+            QALU(qftReg)->INC(3, 0, n);
             // This ends the "oracle."
             qftReg->H(0, n);
             qftReg->ZeroPhaseFlip(0, n);

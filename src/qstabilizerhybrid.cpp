@@ -68,7 +68,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 
 QStabilizerPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)
 {
-    return std::make_shared<QStabilizer>(qubitCount, perm, useRDRAND, rand_generator);
+    return std::make_shared<QStabilizer>(qubitCount, perm, rand_generator, useRDRAND);
 }
 
 QInterfacePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
@@ -133,7 +133,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
 
     if (stabilizer) {
         c->engine = NULL;
-        c->stabilizer = stabilizer->Clone();
+        c->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
         for (bitLenInt i = 0; i < qubitCount; i++) {
             if (shards[i]) {
                 c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
@@ -913,7 +913,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         shards[qubit] = NULL;
     }
 
-    return stabilizer->M(qubit, result, doForce, doApply);
+    return stabilizer->ForceM(qubit, result, doForce, doApply);
 }
 
 bitCapInt QStabilizerHybrid::MAll()

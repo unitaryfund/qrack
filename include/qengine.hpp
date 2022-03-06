@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 //
-// (C) Daniel Strano and the Qrack contributors 2017-2021. All rights reserved.
+// (C) Daniel Strano and the Qrack contributors 2017-2022. All rights reserved.
 //
 // This is a multithreaded, universal quantum register simulation, allowing
 // (nonphysical) register cloning and direct measurement of probability and
@@ -13,6 +13,11 @@
 #pragma once
 
 #include "qinterface.hpp"
+#include "qparity.hpp"
+
+#if ENABLE_ALU
+#include "qalu.hpp"
+#endif
 
 #include <algorithm>
 
@@ -24,7 +29,11 @@ typedef std::shared_ptr<QEngine> QEnginePtr;
 /**
  * Abstract QEngine implementation, for all "Schroedinger method" engines
  */
-class QEngine : public QInterface {
+#if ENABLE_ALU
+class QEngine : public QAlu, public QParity, public QInterface {
+#else
+class QEngine : public QParity, public QInterface {
+#endif
 protected:
     bool useHostRam;
     /// The value stored in runningNorm should always be the total probability implied by the norm of all amplitudes,
@@ -124,6 +133,43 @@ public:
     virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
     virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
     virtual void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
+
+#if ENABLE_ALU
+    virtual bool M(bitLenInt q) { return QInterface::M(q); }
+    virtual void X(bitLenInt q) { QInterface::X(q); }
+    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { QInterface::INC(toAdd, start, length); }
+    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
+    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        QInterface::INCC(toAdd, start, length, carryIndex);
+    }
+    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        QInterface::DECC(toSub, start, length, carryIndex);
+    }
+    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        QInterface::INCS(toAdd, start, length, overflowIndex);
+    }
+    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        QInterface::DECS(toSub, start, length, overflowIndex);
+    }
+    virtual void CINC(
+        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    {
+        QInterface::CINC(toAdd, inOutStart, length, controls, controlLen);
+    }
+    virtual void CDEC(
+        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    {
+        QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
+    }
+    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    {
+        QInterface::INCDECC(toAdd, start, length, carryIndex);
+    }
+#endif
 
     using QInterface::Swap;
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
