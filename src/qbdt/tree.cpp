@@ -392,10 +392,6 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 
 real1_f QBdt::Prob(bitLenInt qubit)
 {
-    if (attachedQubitCount == qubitCount) {
-        return NODE_TO_QINTERFACE(root)->Prob(qubit);
-    }
-
     const bool isKet = (qubit >= bdtQubitCount);
     const bitLenInt maxQubit = isKet ? bdtQubitCount : qubit;
     const bitCapInt qPower = pow2(maxQubit);
@@ -420,7 +416,6 @@ real1_f QBdt::Prob(bitLenInt qubit)
 
         if (isKet) {
             // Phase effects don't matter, for probability expectation.
-            // TODO: Is this right?
             QInterfacePtr qi = NODE_TO_QINTERFACE(leaf);
             if (qiProbs.find(qi) == qiProbs.end()) {
                 qiProbs[qi] = sqrt(NODE_TO_QINTERFACE(leaf)->Prob(qubit - bdtQubitCount));
@@ -457,21 +452,12 @@ real1_f QBdt::ProbAll(bitCapInt perm)
 
 bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
-    if (doForce) {
-        if (doApply) {
-            ExecuteAsStateVector([&](QInterfacePtr eng) { eng->ForceM(qubit, result, true, doApply); });
-        }
-        return result;
-    }
-
-    ResetStateVector();
-
     const real1_f oneChance = Prob(qubit);
     if (oneChance >= ONE_R1) {
         result = true;
     } else if (oneChance <= ZERO_R1) {
         result = false;
-    } else {
+    } else if (!doForce) {
         result = (Rand() <= oneChance);
     }
 
@@ -510,12 +496,29 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
         leaf->Branch();
 
+        QBdtNodeInterfacePtr& b0 = leaf->branches[0];
+        QBdtNodeInterfacePtr& b1 = leaf->branches[1];
+
+        if (!b0->branches[0]) {
+            b0->branches[0] = b1->branches[0];
+            b0->branches[1] = b1->branches[1];
+        } else if (!b1->branches[0]) {
+            b1->branches[0] = b0->branches[0];
+            b1->branches[1] = b0->branches[1];
+        }
+
         if (result) {
-            leaf->branches[0]->SetZero();
-            leaf->branches[1]->scale /= abs(leaf->branches[1]->scale);
+            if (IS_NORM_0(b1->scale)) {
+                throw std::runtime_error("ForceM() forced 0 probability!");
+            }
+            b0->SetZero();
+            b1->scale /= abs(b1->scale);
         } else {
-            leaf->branches[0]->scale /= abs(leaf->branches[0]->scale);
-            leaf->branches[1]->SetZero();
+            if (IS_NORM_0(b0->scale)) {
+                throw std::runtime_error("ForceM() forced 0 probability!");
+            }
+            b0->scale /= abs(b0->scale);
+            b1->SetZero();
         }
     }
 
