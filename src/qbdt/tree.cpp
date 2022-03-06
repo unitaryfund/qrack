@@ -618,6 +618,7 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
     const bitCapInt qPower = pow2(maxQubit);
 
     std::set<QInterfacePtr> qis;
+    bool isFail = false;
 
     par_for_qbdt(0, qPower, [&](const bitCapInt& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf = root;
@@ -642,15 +643,9 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
                     qi->Mtrx(mtrx, target - bdtQubitCount);
                     qis.insert(qi);
                 } catch (const std::domain_error&) {
-                    complex iMtrx[4];
-                    inv2x2(mtrx, iMtrx);
-                    std::set<QInterfacePtr>::iterator it = qis.begin();
-                    while (it != qis.end()) {
-                        (*it)->Mtrx(iMtrx, target - bdtQubitCount);
-                        it++;
-                    }
+                    isFail = true;
 
-                    FallbackMtrx(mtrx, target);
+                    return (bitCapInt)(qPower - ONE_BCI);
                 }
             }
         } else {
@@ -660,7 +655,22 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
         return (bitCapInt)0U;
     });
 
+    if (!isFail) {
+        root->Prune(maxQubit + 1U);
+
+        return;
+    }
+
+    complex iMtrx[4];
+    inv2x2(mtrx, iMtrx);
+    std::set<QInterfacePtr>::iterator it = qis.begin();
+    while (it != qis.end()) {
+        (*it)->Mtrx(iMtrx, target - bdtQubitCount);
+        it++;
+    }
     root->Prune(maxQubit + 1U);
+
+    FallbackMtrx(mtrx, target);
 }
 
 void QBdt::ApplyControlledSingle(
