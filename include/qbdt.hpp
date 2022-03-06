@@ -286,7 +286,6 @@ public:
     {
         QInterface::INCDECC(toAdd, start, length, carryIndex);
     }
-
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
     {
         ExecuteAsStateVector(
@@ -300,7 +299,6 @@ public:
         });
         ResetStateVector();
     }
-
     virtual void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {

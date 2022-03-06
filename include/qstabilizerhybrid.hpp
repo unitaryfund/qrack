@@ -52,7 +52,6 @@ protected:
     complex phaseFactor;
     bool doNormalize;
     bool useHostRam;
-    bool useRDRAND;
     bool isSparse;
     bool isDefaultPaging;
     real1_f separabilityThreshold;

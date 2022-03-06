@@ -37,7 +37,6 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
     , useHostRam(useHostMem)
-    , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , isDefaultPaging(false)
     , separabilityThreshold(sep_thresh)

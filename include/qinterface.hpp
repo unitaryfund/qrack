@@ -147,6 +147,7 @@ protected:
     std::shared_ptr<RdRandom> hardware_rand_generator;
     bool doNormalize;
     bool randGlobalPhase;
+    bool useRDRAND;
     real1 amplitudeFloor;
 
     virtual void SetQubitCount(bitLenInt qb)
@@ -220,6 +221,7 @@ public:
         , hardware_rand_generator(NULL)
         , doNormalize(false)
         , randGlobalPhase(true)
+        , useRDRAND(true)
         , amplitudeFloor(REAL1_EPSILON)
     {
         // Intentionally left blank
