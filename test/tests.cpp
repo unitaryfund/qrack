@@ -3122,9 +3122,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_forcem")
     qftReg->SetPermutation(0x0);
     qftReg->H(1);
     qftReg->CNOT(1, 2);
+    qftReg->CNOT(2, 3);
 
     qftReg->ForceMReg(1, 2, 0x3, true);
-    REQUIRE_THAT(qftReg, HasProbability(0x6));
+    REQUIRE_THAT(qftReg, HasProbability(0xE));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_getamplitude")
