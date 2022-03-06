@@ -234,11 +234,6 @@ public:
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->CUniformParityRZ(controls, controlLen, mask, angle); });
     }
 
-    virtual void PhaseParity(real1_f radians, bitCapInt mask)
-    {
-        ExecuteAsStateVector([&](QInterfacePtr eng) { eng->PhaseParity(radians, mask); });
-    }
-
 #if ENABLE_ALU
     virtual void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
