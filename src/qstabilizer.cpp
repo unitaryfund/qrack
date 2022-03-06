@@ -1174,10 +1174,12 @@ void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
         return;
     }
 
-    if (IsSeparableZ(target)) {
-        // This gate has no effect.
-        return;
-    }
+    // TODO: This overhead scales like the square, but extended stabilizer makes it square-exponential.
+    // What's the right layer level for this?
+    // if (IsSeparableZ(target)) {
+    //     // This gate has no effect.
+    //     return;
+    // }
 
     throw std::domain_error("QStabilizer::Phase() not implemented for non-Clifford/Pauli cases!");
 }
@@ -1206,11 +1208,13 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
         return;
     }
 
-    if (IsSeparableZ(target)) {
-        // This gate has no meaningful effect on phase.
-        X(target);
-        return;
-    }
+    // TODO: This overhead scales like the square, but extended stabilizer makes it square-exponential.
+    // What's the right layer level for this?
+    // if (IsSeparableZ(target)) {
+    //     // This gate has no meaningful effect on phase.
+    //     X(target);
+    //     return;
+    // }
 
     throw std::domain_error("QStabilizer::Invert() not implemented for non-Clifford/Pauli cases!");
 }
