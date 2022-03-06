@@ -211,13 +211,6 @@ public:
     virtual real1_f Prob(bitLenInt qubitIndex);
     virtual real1_f ProbAll(bitCapInt fullRegister);
 
-    virtual std::map<bitCapInt, int> MultiShotMeasureMask(
-        const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
-    {
-        QInterfacePtr unit = isStateVec ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
-        return unit->MultiShotMeasureMask(qPowers, qPowerCount, shots);
-    }
-
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt MAll();
 
