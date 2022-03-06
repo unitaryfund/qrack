@@ -232,7 +232,7 @@ public:
         // Virtual destructor for inheritance
     }
 
-    virtual void SetRandomSeed(uint32_t seed)
+    void SetRandomSeed(uint32_t seed)
     {
         if (rand_generator != NULL) {
             rand_generator->seed(seed);
