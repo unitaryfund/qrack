@@ -46,6 +46,10 @@ QBdtQInterfaceNodePtr QBdt::MakeQInterfaceNode(complex scale, bitLenInt qbCount,
 
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 {
+    if (!qubitCount) {
+        return;
+    }
+
     if (phaseFac == CMPLX_DEFAULT_ARG) {
         if (randGlobalPhase) {
             real1_f angle = Rand() * 2 * PI_R1;
@@ -284,6 +288,14 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 bitLenInt QBdt::Attach(QInterfacePtr toCopy)
 {
     const bitLenInt toRet = qubitCount;
+
+    if (!qubitCount) {
+        QInterfacePtr toCopyClone = toCopy->Clone();
+        root = std::make_shared<QBdtQInterfaceNode>(GetNonunitaryPhase(), toCopyClone);
+        SetQubitCount(toCopy->GetQubitCount(), toCopy->GetQubitCount());
+
+        return toRet;
+    }
 
     if (attachedQubitCount) {
         par_for_qbdt(0, maxQPower, [&](const bitCapInt& i, const int& cpu) {
