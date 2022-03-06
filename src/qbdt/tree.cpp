@@ -29,6 +29,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , attachedQubitCount(0)
     , bdtQubitCount(qBitCount)
     , bdtMaxQPower(pow2(qBitCount))
+
 {
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
@@ -41,6 +42,20 @@ QBdtQInterfaceNodePtr QBdt::MakeQInterfaceNode(complex scale, bitLenInt qbCount,
     return std::make_shared<QBdtQInterfaceNode>(scale,
         CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
             devID, hardware_rand_generator != NULL, false, amplitudeFloor));
+}
+
+QBdtQInterfaceNodePtr QBdt::MakeStabilizerNode(complex scale, bitLenInt qbCount, bitCapInt perm)
+{
+    return std::make_shared<QBdtQInterfaceNode>(
+        scale, std::make_shared<QStabilizer>(qbCount, perm, rand_generator, useRDRAND));
+}
+
+void QBdt::AddQBdtQubit()
+{
+    QBdtPtr qubit = std::make_shared<QBdt>(1U, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
+        (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+    qubit->ResetStateVector();
+    Compose(qubit, 0);
 }
 
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
@@ -576,7 +591,17 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
     }
 
     if (!bdtQubitCount) {
-        return NODE_TO_QINTERFACE(root)->Mtrx(mtrx, target);
+        try {
+            NODE_TO_QINTERFACE(root)->Mtrx(mtrx, target);
+        } catch (const std::domain_error&) {
+            AddQBdtQubit();
+            Swap(0, target + 1U);
+            Mtrx(mtrx, 0);
+            Swap(0, target + 1U);
+            Dispose(0U, 1U);
+        }
+
+        return;
     }
 
     const bool isKet = (target >= bdtQubitCount);
