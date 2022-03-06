@@ -59,11 +59,16 @@ void QBdt::AddQBdtQubit()
 
 void QBdt::FallbackMtrx(const complex* mtrx, bitLenInt target)
 {
-    AddQBdtQubit();
+    const bool isAddQubit = !bdtQubitCount;
+    if (isAddQubit) {
+        AddQBdtQubit();
+    }
     Swap(0, target + 1U);
     Mtrx(mtrx, 0);
     Swap(0, target + 1U);
-    Dispose(0U, 1U);
+    if (isAddQubit) {
+        Dispose(0U, 1U);
+    }
 }
 
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
