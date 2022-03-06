@@ -64,6 +64,8 @@ protected:
     QBdtQInterfaceNodePtr MakeStabilizerNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
     void AddQBdtQubit();
 
+    void FallbackMtrx(const complex* mtrx, bitLenInt target);
+
     QInterfacePtr MakeTempStateVector()
     {
         QInterfacePtr copyPtr = NODE_TO_QINTERFACE(MakeQInterfaceNode(ONE_R1, qubitCount));

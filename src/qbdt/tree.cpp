@@ -29,7 +29,6 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , attachedQubitCount(0)
     , bdtQubitCount(qBitCount)
     , bdtMaxQPower(pow2(qBitCount))
-
 {
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
@@ -56,6 +55,15 @@ void QBdt::AddQBdtQubit()
         (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
     qubit->ResetStateVector();
     Compose(qubit, 0);
+}
+
+void QBdt::FallbackMtrx(const complex* mtrx, bitLenInt target)
+{
+    AddQBdtQubit();
+    Swap(0, target + 1U);
+    Mtrx(mtrx, 0);
+    Swap(0, target + 1U);
+    Dispose(0U, 1U);
 }
 
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
@@ -594,11 +602,7 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
         try {
             NODE_TO_QINTERFACE(root)->Mtrx(mtrx, target);
         } catch (const std::domain_error&) {
-            AddQBdtQubit();
-            Swap(0, target + 1U);
-            Mtrx(mtrx, 0);
-            Swap(0, target + 1U);
-            Dispose(0U, 1U);
+            FallbackMtrx(mtrx, target);
         }
 
         return;
@@ -629,8 +633,20 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
         if (isKet) {
             QInterfacePtr qi = NODE_TO_QINTERFACE(leaf);
             if (qis.find(qi) == qis.end()) {
-                qis.insert(qi);
-                qi->Mtrx(mtrx, target - bdtQubitCount);
+                try {
+                    qi->Mtrx(mtrx, target - bdtQubitCount);
+                    qis.insert(qi);
+                } catch (const std::domain_error&) {
+                    complex iMtrx[4];
+                    inv2x2(mtrx, iMtrx);
+                    std::set<QInterfacePtr>::iterator it = qis.begin();
+                    while (it != qis.end()) {
+                        (*it)->Mtrx(iMtrx, target - bdtQubitCount);
+                        it++;
+                    }
+
+                    FallbackMtrx(mtrx, target);
+                }
             }
         } else {
             leaf->Apply2x2(mtrx, bdtQubitCount - target);
