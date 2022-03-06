@@ -499,14 +499,6 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         QBdtNodeInterfacePtr& b0 = leaf->branches[0];
         QBdtNodeInterfacePtr& b1 = leaf->branches[1];
 
-        if (!b0->branches[0]) {
-            b0->branches[0] = b1->branches[0];
-            b0->branches[1] = b1->branches[1];
-        } else if (!b1->branches[0]) {
-            b1->branches[0] = b0->branches[0];
-            b1->branches[1] = b0->branches[1];
-        }
-
         if (result) {
             if (IS_NORM_0(b1->scale)) {
                 throw std::runtime_error("ForceM() forced 0 probability!");
