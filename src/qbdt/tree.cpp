@@ -58,7 +58,7 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
         }
     }
 
-    if (attachedQubitCount == qubitCount) {
+    if (!bdtQubitCount) {
         root = MakeQInterfaceNode(phaseFac, attachedQubitCount, initState);
 
         return;
@@ -140,7 +140,7 @@ void QBdt::GetQuantumState(QInterfacePtr eng)
 }
 void QBdt::SetQuantumState(const complex* state)
 {
-    if (attachedQubitCount == qubitCount) {
+    if (!bdtQubitCount) {
         NODE_TO_QINTERFACE(root)->SetQuantumState(state);
         return;
     }
@@ -522,7 +522,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
 bitCapInt QBdt::MAll()
 {
-    if (attachedQubitCount == qubitCount) {
+    if (!bdtQubitCount) {
         const bitCapInt toRet = NODE_TO_QINTERFACE(root)->MAll();
         SetPermutation(toRet);
 
@@ -570,7 +570,7 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    if (attachedQubitCount == qubitCount) {
+    if (!bdtQubitCount) {
         return NODE_TO_QINTERFACE(root)->Mtrx(mtrx, target);
     }
 
@@ -615,7 +615,7 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
 void QBdt::ApplyControlledSingle(
     const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti)
 {
-    if (attachedQubitCount == qubitCount) {
+    if (!bdtQubitCount) {
         return NODE_TO_QINTERFACE(root)->MCMtrx(controls, controlLen, mtrx, target);
     }
 

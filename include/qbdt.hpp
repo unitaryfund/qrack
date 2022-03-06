@@ -73,7 +73,7 @@ protected:
     }
     void SetStateVector()
     {
-        if (attachedQubitCount == qubitCount) {
+        if (!bdtQubitCount) {
             return;
         }
 
@@ -84,7 +84,7 @@ protected:
     }
     void ResetStateVector()
     {
-        if (attachedQubitCount != qubitCount) {
+        if (bdtQubitCount) {
             return;
         }
 
@@ -226,7 +226,7 @@ public:
 
     virtual real1_f ProbParity(bitCapInt mask)
     {
-        QInterfacePtr unit = (attachedQubitCount == qubitCount) ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
+        QInterfacePtr unit = (!bdtQubitCount) ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
         return QINTERFACE_TO_QPARITY(unit)->ProbParity(mask);
     }
     virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
