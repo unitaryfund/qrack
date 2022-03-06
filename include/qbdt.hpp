@@ -46,7 +46,6 @@ protected:
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
     bitCapInt bdtMaxQPower;
-    bool isStateVec;
 
     virtual void SetQubitCount(bitLenInt qb, bitLenInt aqb)
     {
@@ -74,10 +73,9 @@ protected:
     }
     void SetStateVector()
     {
-        if (isStateVec) {
+        if (attachedQubitCount == qubitCount) {
             return;
         }
-        isStateVec = true;
 
         QBdtQInterfaceNodePtr nRoot = MakeQInterfaceNode(ONE_R1, qubitCount);
         GetQuantumState(NODE_TO_QINTERFACE(nRoot));
@@ -86,10 +84,9 @@ protected:
     }
     void ResetStateVector()
     {
-        if (!isStateVec) {
+        if (attachedQubitCount != qubitCount) {
             return;
         }
-        isStateVec = false;
 
         QBdtQInterfaceNodePtr oRoot = std::dynamic_pointer_cast<QBdtQInterfaceNode>(root);
         SetQubitCount(qubitCount, 0U);
@@ -229,7 +226,7 @@ public:
 
     virtual real1_f ProbParity(bitCapInt mask)
     {
-        QInterfacePtr unit = isStateVec ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
+        QInterfacePtr unit = (attachedQubitCount == qubitCount) ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
         return QINTERFACE_TO_QPARITY(unit)->ProbParity(mask);
     }
     virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)

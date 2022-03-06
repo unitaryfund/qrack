@@ -29,7 +29,6 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , attachedQubitCount(0)
     , bdtQubitCount(qBitCount)
     , bdtMaxQPower(pow2(qBitCount))
-    , isStateVec(false)
 {
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
@@ -59,10 +58,7 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
         }
     }
 
-    if (isStateVec) {
-        SetQubitCount(qubitCount, 0U);
-        isStateVec = false;
-    } else if (attachedQubitCount == qubitCount) {
+    if (attachedQubitCount == qubitCount) {
         root = MakeQInterfaceNode(phaseFac, attachedQubitCount, initState);
 
         return;
