@@ -69,9 +69,18 @@ void QBdt::FallbackMtrx(const complex* mtrx, bitLenInt target)
     if (isAddQubit) {
         AddQBdtQubit();
     }
-    Swap(0, target + 1U);
-    Mtrx(mtrx, 0);
-    Swap(0, target + 1U);
+
+    bitLenInt randQb = bdtQubitCount * Rand();
+    if (randQb >= bdtQubitCount) {
+        randQb = bdtQubitCount - 1U;
+    }
+
+    Swap(randQb, target + 1U);
+
+    Mtrx(mtrx, randQb);
+
+    Swap(randQb, target + 1U);
+
     if (isAddQubit) {
         Dispose(0U, 1U);
     }
