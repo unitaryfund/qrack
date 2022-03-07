@@ -340,7 +340,7 @@ void ParallelFor::par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFu
     const bitCapIntOcl itemCount = end - begin;
 
     // Empirically, this often works better than env var PSTRIDEPOW.
-    const bitCapIntOcl Stride = 1U;
+    const bitCapIntOcl Stride = 16U;
     if (itemCount <= Stride) {
         const bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; j++) {
