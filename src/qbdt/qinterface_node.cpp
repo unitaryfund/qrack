@@ -83,7 +83,7 @@ void QBdtQInterfaceNode::Branch(bitLenInt depth)
     }
 }
 
-void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size)
+void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
 {
     if (norm(scale) <= FP_NORM_EPSILON) {
         return;
@@ -97,7 +97,7 @@ void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, 
     qReg->Compose(bEng->qReg, 0U);
 }
 
-QBdtNodeInterfacePtr QBdtQInterfaceNode::RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size)
+QBdtNodeInterfacePtr QBdtQInterfaceNode::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
 {
     if (!size || (norm(scale) <= FP_NORM_EPSILON)) {
         return NULL;

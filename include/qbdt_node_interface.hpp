@@ -18,6 +18,14 @@
 
 #include "common/qrack_types.hpp"
 
+#if ENABLE_COMPLEX_X2
+#if FPPOW == 5
+#include "common/complex8x2simd.hpp"
+#elif FPPOW == 6
+#include "common/complex16x2simd.hpp"
+#endif
+#endif
+
 namespace Qrack {
 
 class QBdtNodeInterface;
@@ -27,8 +35,13 @@ class QBdtNodeInterface {
 protected:
     static size_t SelectBit(bitCapInt perm, bitLenInt bit) { return (size_t)((perm >> bit) & 1U); }
     static void _par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn);
+#if ENABLE_COMPLEX_X2
+    virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
+        QBdtNodeInterfacePtr& b1, bitLenInt depth) = 0;
+#else
     virtual void PushStateVector(
         const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth) = 0;
+#endif
 
 public:
     complex scale;
@@ -60,9 +73,9 @@ public:
         // Intentionally left blank
     }
 
-    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size) = 0;
+    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size) = 0;
 
-    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size);
+    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size);
 
     virtual void SetZero()
     {
@@ -83,7 +96,11 @@ public:
 
     virtual void Normalize(bitLenInt depth) = 0;
 
+#if ENABLE_COMPLEX_X2
+    virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitLenInt depth) = 0;
+#else
     virtual void Apply2x2(const complex* mtrx, bitLenInt depth) = 0;
+#endif
 };
 
 bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);

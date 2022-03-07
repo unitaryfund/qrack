@@ -627,6 +627,11 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
     std::set<QInterfacePtr> qis;
     bool isFail = false;
 
+#if ENABLE_COMPLEX_X2
+    const complex2 mtrxCol1(mtrx[0], mtrx[2]);
+    const complex2 mtrxCol2(mtrx[1], mtrx[3]);
+#endif
+
     par_for_qbdt(0, qPower, [&](const bitCapInt& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         // Iterate to qubit depth.
@@ -656,7 +661,11 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
                 }
             }
         } else {
+#if ENABLE_COMPLEX_X2
+            leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
+#else
             leaf->Apply2x2(mtrx, bdtQubitCount - target);
+#endif
         }
 
         return (bitCapInt)0U;
@@ -721,6 +730,11 @@ void QBdt::ApplyControlledSingle(
     std::copy(ketControlsVec.begin(), ketControlsVec.end(), ketControls.get());
     std::set<QInterfacePtr> qis;
 
+#if ENABLE_COMPLEX_X2
+    const complex2 mtrxCol1(mtrx[0], mtrx[2]);
+    const complex2 mtrxCol2(mtrx[1], mtrx[3]);
+#endif
+
     par_for_qbdt(0, qPower, [&](const bitCapInt& i, const int& cpu) {
         if ((i & lowControlMask) != lowControlPerm) {
             return (bitCapInt)(lowControlMask - ONE_BCI);
@@ -752,7 +766,11 @@ void QBdt::ApplyControlledSingle(
                 }
             }
         } else {
+#if ENABLE_COMPLEX_X2
+            leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
+#else
             leaf->Apply2x2(mtrx, bdtQubitCount - target);
+#endif
         }
 
         return (bitCapInt)0U;
