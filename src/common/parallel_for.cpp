@@ -340,7 +340,7 @@ void ParallelFor::par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFu
     const bitCapIntOcl itemCount = end - begin;
 
     // Empirically, this often works better than env var PSTRIDEPOW.
-    const bitCapIntOcl Stride = 2U;
+    const bitCapIntOcl Stride = 1U;
     if (itemCount <= Stride) {
         const bitCapIntOcl maxLcv = begin + itemCount;
         for (bitCapIntOcl j = begin; j < maxLcv; j++) {
@@ -354,8 +354,7 @@ void ParallelFor::par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFu
         threads = numCores;
     }
 
-    DECLARE_ATOMIC_BITCAPINT();
-    idx = 0;
+    bitCapIntOcl idx = 0;
     std::vector<std::future<void>> futures(threads);
     std::mutex updateMutex;
     for (unsigned cpu = 0; cpu != threads; ++cpu) {
@@ -363,7 +362,10 @@ void ParallelFor::par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFu
         {
             for (;;) {
                 bitCapIntOcl i;
-                ATOMIC_INC();
+                if (true) {
+                    std::lock_guard<std::mutex> updateLock(updateMutex);
+                    ATOMIC_INC();
+                }
                 const bitCapIntOcl l = i * Stride;
                 if (l >= itemCount) {
                     break;
@@ -374,6 +376,13 @@ void ParallelFor::par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFu
                     k = j + l;
                     k |= fn(begin + k, cpu);
                     j = k - l;
+                }
+                i = k / Stride;
+                if (i > idx) {
+                    std::lock_guard<std::mutex> updateLock(updateMutex);
+                    if (i > idx) {
+                        idx = i;
+                    }
                 }
             }
         });
