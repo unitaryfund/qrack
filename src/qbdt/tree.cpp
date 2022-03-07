@@ -289,6 +289,9 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
+    ResetStateVector();
+    toCopy->ResetStateVector();
+
     if (attachedQubitCount && toCopy->attachedQubitCount) {
         const bitLenInt midIndex = bdtQubitCount;
         if (start < midIndex) {
@@ -410,6 +413,8 @@ QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
+    ResetStateVector();
+
     if (attachedQubitCount && start) {
         ROR(start, 0, qubitCount);
         DecomposeDispose(0, length, dest);
@@ -419,6 +424,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     }
 
     if (dest) {
+        dest->ResetStateVector();
         dest->root = root->RemoveSeparableAtDepth(start, length);
     } else {
         root->RemoveSeparableAtDepth(start, length);
