@@ -6328,19 +6328,26 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
 TEST_CASE("test_mirror_quantum_volume", "[mirror]")
 {
-    std::cout << ">>> 'test_mirror_circuit':" << std::endl;
+    if (testEngineType != QINTERFACE_BDT) {
+        std::cout << ">>> 'test_mirror_quantum_volume': skipped" << std::endl;
+        return;
+    }
+
+    std::cout << ">>> 'test_mirror_quantum_volume':" << std::endl;
 
     const int GateCount1Qb = 8;
     const int GateCountMultiQb = 13;
     const int GateCount2Qb = 7;
 
     const int TRIALS = 100;
-    const int n = 6;
+    const int n = 24;
     const int Depth = n;
+    const int magic = 6U;
 
     std::cout << "Width/Depth (with x2 depth mirror): " << n << std::endl;
+    std::cout << "\"Magic\": " << magic << std::endl;
     std::cout << "Trials: " << TRIALS << std::endl;
-    std::cout << "(Change the width/depth/trials by altering compile-time constants in the test.)" << std::endl;
+    std::cout << "(Change the width/depth/magic/trials by altering compile-time constants in the test.)" << std::endl;
 
     int failureCount = 0;
 
@@ -6352,8 +6359,9 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
 
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase =
-            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
-        testCase->SetReactiveSeparate(true);
+            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, magic, 0);
+        std::dynamic_pointer_cast<QBdt>(testCase)->Attach(
+            std::make_shared<QStabilizer>(n - magic, 0, rng, !disable_hardware_rng));
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
