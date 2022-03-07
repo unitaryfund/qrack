@@ -45,6 +45,10 @@ QBdtNodeInterfacePtr operator-(const QBdtNodeInterfacePtr& t)
 
 bool QBdtNodeInterface::isEqual(QBdtNodeInterfacePtr r)
 {
+    if (!r) {
+        return false;
+    }
+
     if (this == r.get()) {
         return true;
     }
