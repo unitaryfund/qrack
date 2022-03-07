@@ -6340,14 +6340,13 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
     const int GateCount2Qb = 7;
 
     const int TRIALS = 100;
-    const int n = 24;
-    const int Depth = n;
-    const int magic = 6U;
+    const int Depth = benchmarkDepth;
+    const int n = benchmarkDepth;
+    const int magic = (benchmarkMaxMagic < 0) ? (n / 2) : benchmarkMaxMagic;
 
     std::cout << "Width/Depth (with x2 depth mirror): " << n << std::endl;
     std::cout << "\"Magic\": " << magic << std::endl;
     std::cout << "Trials: " << TRIALS << std::endl;
-    std::cout << "(Change the width/depth/magic/trials by altering compile-time constants in the test.)" << std::endl;
 
     int failureCount = 0;
 

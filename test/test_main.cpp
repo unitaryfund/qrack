@@ -35,7 +35,9 @@ bitLenInt max_qubits = 24;
 std::string mOutputFileName;
 std::ofstream mOutputFile;
 bool isBinaryOutput;
-int benchmarkSamples;
+int benchmarkSamples = 100;
+int benchmarkDepth = 20;
+int benchmarkMaxMagic = -1;
 std::vector<int> devList;
 
 #define SHOW_OCL_BANNER()                                                                                              \
@@ -103,7 +105,12 @@ int main(int argc, char* argv[])
                                                "human-readable.)") |
         Opt(sparse)["--sparse"](
             "(For QEngineCPU, under QUnit:) Use a state vector optimized for sparse representation and iteration.") |
-        Opt(benchmarkSamples, "samples")["--benchmark-samples"]("number of samples to collect (default: 100)") |
+        Opt(benchmarkSamples, "samples")["--samples"]("number of samples to collect (default: 100)") |
+        Opt(benchmarkDepth, "depth")["--benchmark-depth"](
+            "depth of randomly constructed circuits, when applicable, with 1 round of single qubit and 1 round of "
+            "multi-qubit gates being 1 unit of depth (default: 20)") |
+        Opt(benchmarkMaxMagic, "magic")["--benchmark-max-magic"](
+            "max number of t/tadj gates in semi-Clifford tests (default: [defined per test case])") |
         Opt(devListStr, "devices")["--devices"](
             "list of devices, for QPager (default is solely default OpenCL device)");
 
