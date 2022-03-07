@@ -338,9 +338,50 @@ void ParallelFor::par_for_inc(
 void ParallelFor::par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn)
 {
     const bitCapIntOcl itemCount = end - begin;
-    const bitCapIntOcl maxLcv = begin + itemCount;
-    for (bitCapIntOcl j = begin; j < maxLcv; j++) {
-        j |= fn(j, 0);
+
+    // Empirically, this often works better if we add the "<< ONE_BCI," or factor of 2. We might guess that, on average
+    // in general use, about half the full-depth amplitudes are redundant.
+    const bitCapIntOcl Stride = pStride << ONE_BCI;
+    if (itemCount < Stride) {
+        const bitCapIntOcl maxLcv = begin + itemCount;
+        for (bitCapIntOcl j = begin; j < maxLcv; j++) {
+            j |= fn(j, 0);
+        }
+        return;
+    }
+
+    unsigned threads = (unsigned)(itemCount / pStride);
+    if (threads > numCores) {
+        threads = numCores;
+    }
+
+    DECLARE_ATOMIC_BITCAPINT();
+    idx = 0;
+    std::vector<std::future<void>> futures(threads);
+    std::mutex updateMutex;
+    for (unsigned cpu = 0; cpu != threads; ++cpu) {
+        futures[cpu] = ATOMIC_ASYNC(cpu, &idx, &begin, &itemCount, &Stride, &updateMutex, fn)
+        {
+            for (;;) {
+                bitCapIntOcl i;
+                ATOMIC_INC();
+                const bitCapIntOcl l = i * Stride;
+                if (l >= itemCount) {
+                    break;
+                }
+                const bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
+                bitCapIntOcl k = 0;
+                for (bitCapIntOcl j = 0; j < maxJ; j++) {
+                    k = j + l;
+                    k |= fn(begin + k, cpu);
+                    j = k - l;
+                }
+            }
+        });
+    }
+
+    for (unsigned cpu = 0; cpu != threads; ++cpu) {
+        futures[cpu].get();
     }
 }
 
