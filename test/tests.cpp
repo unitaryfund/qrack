@@ -6327,6 +6327,11 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
 TEST_CASE("test_mirror_quantum_volume", "[mirror]")
 {
+    if (testEngineType != QINTERFACE_BDT) {
+        std::cout << ">>> 'test_mirror_quantum_volume': skipped" << std::endl;
+        return;
+    }
+
     std::cout << ">>> 'test_mirror_quantum_volume':" << std::endl;
 
     const int GateCount1Qb = 8;
