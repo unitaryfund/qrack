@@ -402,7 +402,6 @@ QInterfaceTestFixture::QInterfaceTestFixture()
     qrack_rand_gen_ptr rng = std::make_shared<qrack_rand_gen>();
     rng->seed(rngSeed);
 
-    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 10, 0, rng, ONE_CMPLX,
+    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 20, 0, rng, ONE_CMPLX,
         enable_normalization, true, false, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
-    std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(std::make_shared<QStabilizer>(10, 0, rng, !disable_hardware_rng));
 }
