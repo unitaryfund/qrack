@@ -5970,7 +5970,8 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase =
-            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 6U, 0);
+            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
+        testCase->SetReactiveSeparate(true);
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
