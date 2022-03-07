@@ -5957,10 +5957,10 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
     const int GateCount1Qb = 8;
     const int GateCountMultiQb = 13;
     const int GateCount2Qb = 7;
-    const int Depth = 12;
+    const int Depth = 6;
 
     const int TRIALS = 100;
-    const int n = 12;
+    const int n = 6;
 
     int d;
     int i;
@@ -5970,9 +5970,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase =
-            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 9U, 0);
-        std::dynamic_pointer_cast<QBdt>(testCase)->Attach(
-            std::make_shared<QStabilizer>(3U, 0, rng, !disable_hardware_rng));
+            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 6U, 0);
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
@@ -6336,7 +6334,7 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
     const int GateCount2Qb = 7;
 
     const int TRIALS = 100;
-    const int n = 6;
+    const int n = 12;
     const int Depth = n;
 
     std::cout << "Width/Depth (with x2 depth mirror): " << n << std::endl;
@@ -6353,8 +6351,9 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
 
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase =
-            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
-        testCase->SetReactiveSeparate(true);
+            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 6U, 0);
+        std::dynamic_pointer_cast<QBdt>(testCase)->Attach(
+            std::make_shared<QStabilizer>(6U, 0, rng, !disable_hardware_rng));
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
