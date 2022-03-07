@@ -5957,10 +5957,10 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
     const int GateCount1Qb = 8;
     const int GateCountMultiQb = 13;
     const int GateCount2Qb = 7;
-    const int Depth = 6;
+    const int Depth = 12;
 
     const int TRIALS = 100;
-    const int n = 6;
+    const int n = 12;
 
     int d;
     int i;
@@ -5970,8 +5970,9 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
 
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase =
-            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, n, 0);
-        testCase->SetReactiveSeparate(true);
+            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 8U, 0);
+        std::dynamic_pointer_cast<QBdt>(testCase)->Attach(
+            std::make_shared<QStabilizer>(4U, 0, rng, !disable_hardware_rng));
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
