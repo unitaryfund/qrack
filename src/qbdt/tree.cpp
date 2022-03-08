@@ -673,12 +673,13 @@ void QBdt::Mtrx(const complex* mtrx, bitLenInt target)
             if (qis.find(qi) == qis.end()) {
                 try {
                     qi->Mtrx(mtrx, target - bdtQubitCount);
-                    qis.insert(qi);
                 } catch (const std::domain_error&) {
                     isFail = true;
 
                     return (bitCapInt)(qPower - ONE_BCI);
                 }
+                leaf->Prune();
+                qis.insert(qi);
             }
         } else {
 #if ENABLE_COMPLEX_X2
@@ -794,6 +795,7 @@ void QBdt::ApplyControlledSingle(
 
                     return (bitCapInt)(qPower - ONE_BCI);
                 }
+                leaf->Prune();
                 qis.insert(qi);
             }
         } else {
