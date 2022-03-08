@@ -6342,7 +6342,7 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
     const int TRIALS = benchmarkSamples;
     const int Depth = benchmarkDepth;
     const int n = benchmarkDepth;
-    const int magic = (benchmarkMaxMagic < 0) ? (n / 2) : benchmarkMaxMagic;
+    const int magic = (benchmarkMaxMagic < 0) ? 3U : benchmarkMaxMagic;
 
     std::cout << "Width/Depth (with x2 depth mirror): " << n << std::endl;
     std::cout << "\"Magic\": " << magic << std::endl;
