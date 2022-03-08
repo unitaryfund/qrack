@@ -227,7 +227,19 @@ protected:
 public:
     void SetQuantumState(const complex* inputState)
     {
-        throw std::domain_error("QStabilizer::SetQuantumState() not implemented!");
+        if (qubitCount > 1U) {
+            throw std::domain_error("QStabilizer::SetQuantumState() not generally implemented!");
+        }
+        
+        SetPermutation(0);
+
+        const real1 prob = (real1)clampProb(norm(inputState[1]));
+        const real1 sqrtProb = sqrt(prob);
+        const real1 sqrt1MinProb = (real1)sqrt(clampProb(ONE_R1 - prob));
+        const complex phase0 = std::polar(ONE_R1, arg(inputState[0]));
+        const complex phase1 = std::polar(ONE_R1, arg(inputState[1]));
+        const complex mtrx[4] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
+        Mtrx(mtrx, 0);
     }
     void SetAmplitude(bitCapInt perm, complex amp)
     {
