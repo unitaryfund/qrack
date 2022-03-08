@@ -253,6 +253,8 @@ public:
     /** Get the maximum number of basis states, namely \f$ 2^n \f$ for \f$ n \f$ qubits*/
     virtual bitCapInt GetMaxQPower() { return maxQPower; }
 
+    virtual bool GetIsArbitraryGlobalPhase() { return randGlobalPhase; }
+
     /** Generate a random real number between 0 and 1 */
     real1_f Rand()
     {

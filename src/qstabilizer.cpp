@@ -38,7 +38,7 @@ namespace Qrack {
 QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, complex ignored, bool doNorm,
     bool randomGlobalPhase, bool ignored2, int ignored3, bool useHardwareRNG, bool ignored4, real1_f ignored5,
     std::vector<int> ignored6, bitLenInt ignored7, real1_f ignored8)
-    : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
+    : QInterface(n, rgp, doNorm, useHardwareRNG, true, REAL1_EPSILON)
     , x((n << 1U) + 1U, BoolVector(n, false))
     , z((n << 1U) + 1U, BoolVector(n, false))
     , r((n << 1U) + 1U)

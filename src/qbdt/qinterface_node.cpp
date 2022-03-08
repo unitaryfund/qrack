@@ -98,6 +98,12 @@ void QBdtQInterfaceNode::Prune(bitLenInt depth)
         return;
     }
 
+    if (qReg->GetIsArbitraryGlobalPhase()) {
+        // WARNING: This is strictly an incorrect setting for an attached QInterface, but some approximation methods
+        // might depend on it.
+        return;
+    }
+
     const real1_f phaseArg = qReg->FirstNonzeroPhase();
     const complex phaseFac = std::polar((real1_f)ONE_R1, (real1_f)-phaseArg);
     qReg->Phase(phaseFac, phaseFac, 0);
