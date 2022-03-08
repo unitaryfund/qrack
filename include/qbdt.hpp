@@ -61,10 +61,10 @@ protected:
     }
 
     QBdtQInterfaceNodePtr MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
-    QBdtQInterfaceNodePtr MakeStabilizerNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
-    void AddQBdtQubit();
 
     void FallbackMtrx(const complex* mtrx, bitLenInt target);
+    void FallbackMCMtrx(
+        const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti);
 
     QInterfacePtr MakeTempStateVector()
     {

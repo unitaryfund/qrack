@@ -675,7 +675,8 @@ MICROSOFT_QUANTUM_DECL unsigned init_qbdt_stabilizer(_In_ unsigned q, _In_ unsig
         try {
             simulator = std::dynamic_pointer_cast<QBdt>(CreateQuantumInterface(simulatorType, q, 0, randNumGen));
             if (sd) {
-                simulator->Attach(CreateQuantumInterface({ QINTERFACE_QUNIT, QINTERFACE_STABILIZER }, c, 0, randNumGen));
+                simulator->Attach(
+                    CreateQuantumInterface({ QINTERFACE_QUNIT, QINTERFACE_STABILIZER }, c, 0, randNumGen));
             } else {
                 simulator->Attach(CreateQuantumInterface({ QINTERFACE_STABILIZER }, c, 0, randNumGen));
             }

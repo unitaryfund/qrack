@@ -230,7 +230,7 @@ public:
         if (qubitCount > 1U) {
             throw std::domain_error("QStabilizer::SetQuantumState() not generally implemented!");
         }
-        
+
         SetPermutation(0);
 
         const real1 prob = (real1)clampProb(norm(inputState[1]));

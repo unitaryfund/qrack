@@ -6360,7 +6360,7 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
         QInterfacePtr testCase =
             CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, magic, 0);
         std::dynamic_pointer_cast<QBdt>(testCase)->Attach(
-            CreateQuantumInterface({ QINTERFACE_QUNIT, QINTERFACE_STABILIZER }, n - magic, 0));
+            CreateQuantumInterface({ QINTERFACE_STABILIZER }, n - magic, 0));
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
