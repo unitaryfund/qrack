@@ -37,8 +37,8 @@ namespace Qrack {
 
 QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, bool useHardwareRNG)
     : QInterface(n, rgp, false, useHardwareRNG, true, REAL1_EPSILON)
-    , x((n << 1U) + 1U)
-    , z((n << 1U) + 1U)
+    , x((n << 1U) + 1U, std::vector<bool>(n))
+    , z((n << 1U) + 1U, std::vector<bool>(n))
     , r((n << 1U) + 1U)
     , rawRandBools(0)
     , rawRandBoolsRemaining(0)
@@ -61,15 +61,11 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
 
     const bitLenInt rowCount = (qubitCount << 1U);
 
-    std::fill(r.begin(), r.end(), 0U);
+    std::fill(r.begin(), r.end(), 0);
 
     for (bitLenInt i = 0; i < rowCount; i++) {
-        // Dealloc, first
-        x[i] = BoolVector();
-        z[i] = BoolVector();
-
-        x[i] = BoolVector(qubitCount, false);
-        z[i] = BoolVector(qubitCount, false);
+        std::fill(x[i].begin(), x[i].end(), false);
+        std::fill(z[i].begin(), z[i].end(), false);
 
         if (i < qubitCount) {
             x[i][i] = true;
@@ -118,8 +114,8 @@ void QStabilizer::rowswap(const bitLenInt& i, const bitLenInt& k)
 void QStabilizer::rowset(const bitLenInt& i, bitLenInt b)
 {
     r[i] = 0;
-    x[i] = BoolVector(qubitCount, false);
-    z[i] = BoolVector(qubitCount, false);
+    std::fill(x[i].begin(), x[i].end(), 0);
+    std::fill(z[i].begin(), z[i].end(), 0);
 
     if (b < qubitCount) {
         z[i][b] = true;
@@ -250,13 +246,8 @@ void QStabilizer::seed(const bitLenInt& g)
 
     // Wipe the scratch space clean
     r[elemCount] = 0;
-
-    // Dealloc, first
-    x[elemCount] = BoolVector();
-    z[elemCount] = BoolVector();
-
-    x[elemCount] = BoolVector(qubitCount, false);
-    z[elemCount] = BoolVector(qubitCount, false);
+    std::fill(x[elemCount].begin(), x[elemCount].end(), 0);
+    std::fill(z[elemCount].begin(), z[elemCount].end(), 0);
 
     for (int i = elemCount - 1; i >= (int)(qubitCount + g); i--) {
         int f = r[i];
@@ -522,8 +513,8 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
     }
 
     ParFor([this, c, t](const bitLenInt& i) {
-        BoolVector::swap(x[i][c], x[i][t]);
-        BoolVector::swap(z[i][c], z[i][t]);
+        std::vector<bool>::swap(x[i][c], x[i][t]);
+        std::vector<bool>::swap(z[i][c], z[i][t]);
     });
 }
 
@@ -531,7 +522,7 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
 void QStabilizer::H(const bitLenInt& t)
 {
     ParFor([this, t](const bitLenInt& i) {
-        BoolVector::swap(x[i][t], z[i][t]);
+        std::vector<bool>::swap(x[i][t], z[i][t]);
         if (x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
         }
@@ -616,7 +607,7 @@ void QStabilizer::ISqrtX(const bitLenInt& t)
 void QStabilizer::SqrtY(const bitLenInt& t)
 {
     ParFor([this, t](const bitLenInt& i) {
-        BoolVector::swap(x[i][t], z[i][t]);
+        std::vector<bool>::swap(x[i][t], z[i][t]);
         if (!x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
         }
@@ -630,7 +621,7 @@ void QStabilizer::ISqrtY(const bitLenInt& t)
         if (!x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
         }
-        BoolVector::swap(x[i][t], z[i][t]);
+        std::vector<bool>::swap(x[i][t], z[i][t]);
     });
 }
 
@@ -808,15 +799,15 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     const bitLenInt length = toCopy->qubitCount;
     const bitLenInt nQubitCount = qubitCount + length;
     const bitLenInt secondStart = nQubitCount + start;
-    const BoolVector row(length, false);
+    const std::vector<bool> row(length, 0);
 
     for (bitLenInt i = 0; i < rowCount; i++) {
         x[i].insert(x[i].begin() + start, row.begin(), row.end());
         z[i].insert(z[i].begin() + start, row.begin(), row.end());
     }
 
-    std::vector<BoolVector> xGroup(length, BoolVector(nQubitCount, false));
-    std::vector<BoolVector> zGroup(length, BoolVector(nQubitCount, false));
+    std::vector<std::vector<bool>> xGroup(length, std::vector<bool>(nQubitCount, 0));
+    std::vector<std::vector<bool>> zGroup(length, std::vector<bool>(nQubitCount, 0));
     for (bitLenInt i = 0; i < length; i++) {
         std::copy(toCopy->x[i].begin(), toCopy->x[i].end(), xGroup[i].begin() + start);
         std::copy(toCopy->z[i].begin(), toCopy->z[i].end(), zGroup[i].begin() + start);
@@ -825,8 +816,8 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     z.insert(z.begin() + start, zGroup.begin(), zGroup.end());
     r.insert(r.begin() + start, toCopy->r.begin(), toCopy->r.begin() + length);
 
-    std::vector<BoolVector> xGroup2(length, BoolVector(nQubitCount, false));
-    std::vector<BoolVector> zGroup2(length, BoolVector(nQubitCount, false));
+    std::vector<std::vector<bool>> xGroup2(length, std::vector<bool>(nQubitCount, 0));
+    std::vector<std::vector<bool>> zGroup2(length, std::vector<bool>(nQubitCount, 0));
     for (bitLenInt i = 0; i < length; i++) {
         bitLenInt j = length + i;
         std::copy(toCopy->x[j].begin(), toCopy->x[j].end(), xGroup2[i].begin() + start);

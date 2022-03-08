@@ -50,11 +50,10 @@ typedef std::shared_ptr<QStabilizer> QStabilizerPtr;
 
 class QStabilizer : public QInterface {
 protected:
-    typedef std::vector<bool> BoolVector;
     // (2n+1)*n matrix for stabilizer/destabilizer x bits (there's one "scratch row" at the bottom)
-    std::vector<BoolVector> x;
+    std::vector<std::vector<bool>> x;
     // (2n+1)*n matrix for z bits
-    std::vector<BoolVector> z;
+    std::vector<std::vector<bool>> z;
     // Phase bits: 0 for +1, 1 for i, 2 for -1, 3 for -i.  Normally either 0 or 2.
     std::vector<uint8_t> r;
 
