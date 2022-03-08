@@ -1010,8 +1010,6 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         return;
     }
 
-    throw std::runtime_error("Nontrivial");
-
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
         H(target);
         return;
