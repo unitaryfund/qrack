@@ -42,6 +42,8 @@ QInterfacePtr CreateQuantumInterface(
     switch (engine) {
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+    case QINTERFACE_STABILIZER:
+        return std::make_shared<QStabilizer>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(args...);
@@ -76,6 +78,8 @@ QInterfacePtr CreateQuantumInterface(QInterfaceEngine engine1, QInterfaceEngine 
     switch (engine) {
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+    case QINTERFACE_STABILIZER:
+        return std::make_shared<QStabilizer>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(args...);
@@ -106,6 +110,8 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(QInterfaceEngine 
     switch (engine) {
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+    case QINTERFACE_STABILIZER:
+        return std::make_shared<QStabilizer>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(args...);
@@ -139,6 +145,8 @@ template <typename... Ts> QInterfacePtr CreateQuantumInterface(std::vector<QInte
     switch (engine) {
     case QINTERFACE_CPU:
         return std::make_shared<QEngineCPU>(args...);
+    case QINTERFACE_STABILIZER:
+        return std::make_shared<QStabilizer>(args...);
 #if ENABLE_QBDT
     case QINTERFACE_BDT:
         return std::make_shared<QBdt>(args...);

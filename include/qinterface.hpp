@@ -80,6 +80,11 @@ enum QInterfaceEngine {
     QINTERFACE_MASK_FUSION,
 
     /**
+     * Create a QStabilizer, limited to Clifford/Pauli operations, but efficient.
+     */
+    QINTERFACE_STABILIZER,
+
+    /**
      * Create a QStabilizerHybrid, switching between a QStabilizer and a QHybrid as efficient.
      */
     QINTERFACE_STABILIZER_HYBRID,

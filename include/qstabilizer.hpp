@@ -109,7 +109,10 @@ protected:
     }
 
 public:
-    QStabilizer(bitLenInt n, bitCapInt perm = 0, qrack_rand_gen_ptr rgp = nullptr, bool useHardwareRNG = true);
+    QStabilizer(bitLenInt n, bitCapInt perm = 0, qrack_rand_gen_ptr rgp = nullptr, complex ignored = CMPLX_DEFAULT_ARG,
+        bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false, int ignored3 = -1,
+        bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
+        std::vector<int> ignored6 = {}, bitLenInt ignored7 = 0, real1_f ignored8 = FP_NORM_EPSILON);
 
     QInterfacePtr Clone()
     {
