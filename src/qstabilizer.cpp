@@ -820,8 +820,8 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
         z[i].insert(z[i].begin() + start, row.begin(), row.end());
     }
 
-    std::vector<BoolVector> xGroup(length, BoolVector(nQubitCount, 0));
-    std::vector<BoolVector> zGroup(length, BoolVector(nQubitCount, 0));
+    std::vector<BoolVector> xGroup(length, BoolVector(nQubitCount, false));
+    std::vector<BoolVector> zGroup(length, BoolVector(nQubitCount, false));
     for (bitLenInt i = 0; i < length; i++) {
         std::copy(toCopy->x[i].begin(), toCopy->x[i].end(), xGroup[i].begin() + start);
         std::copy(toCopy->z[i].begin(), toCopy->z[i].end(), zGroup[i].begin() + start);
@@ -830,8 +830,8 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     z.insert(z.begin() + start, zGroup.begin(), zGroup.end());
     r.insert(r.begin() + start, toCopy->r.begin(), toCopy->r.begin() + length);
 
-    std::vector<BoolVector> xGroup2(length, BoolVector(nQubitCount, 0));
-    std::vector<BoolVector> zGroup2(length, BoolVector(nQubitCount, 0));
+    std::vector<BoolVector> xGroup2(length, BoolVector(nQubitCount, false));
+    std::vector<BoolVector> zGroup2(length, BoolVector(nQubitCount, false));
     for (bitLenInt i = 0; i < length; i++) {
         bitLenInt j = length + i;
         std::copy(toCopy->x[j].begin(), toCopy->x[j].end(), xGroup2[i].begin() + start);
