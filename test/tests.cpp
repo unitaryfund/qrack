@@ -6339,7 +6339,7 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
     const int GateCountMultiQb = 13;
     const int GateCount2Qb = 7;
 
-    const int TRIALS = 100;
+    const int TRIALS = benchmarkSamples;
     const int Depth = benchmarkDepth;
     const int n = benchmarkDepth;
     const int magic = (benchmarkMaxMagic < 0) ? (n / 2) : benchmarkMaxMagic;
