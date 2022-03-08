@@ -413,12 +413,12 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _
         simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
-    if (bdt) {
-        simulatorType.push_back(QINTERFACE_BDT);
-    }
-
     if (sh && (!sd || simulatorType.size())) {
         simulatorType.push_back(QINTERFACE_STABILIZER_HYBRID);
+    }
+
+    if (bdt) {
+        simulatorType.push_back(QINTERFACE_BDT);
     }
 
     if (sd) {
@@ -652,6 +652,63 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
     }
 
     return nsid;
+}
+
+/**
+ * (External API) Initialize a QBdt simulator ID with "q" universal qubits and "c" stabilizer qubits.
+ */
+MICROSOFT_QUANTUM_DECL unsigned init_qbdt_stabilizer(_In_ unsigned q, _In_ unsigned c)
+{
+    META_LOCK_GUARD()
+
+    unsigned sid = (unsigned)simulators.size();
+
+    for (unsigned i = 0; i < simulators.size(); i++) {
+        if (simulatorReservations[i] == false) {
+            sid = i;
+            simulatorReservations[i] = true;
+            break;
+        }
+    }
+
+    const std::vector<QInterfaceEngine> simulatorType({ QINTERFACE_BDT });
+
+    bool isSuccess = true;
+    QBdtPtr simulator = NULL;
+    if (q) {
+        try {
+            simulator = std::dynamic_pointer_cast<QBdt>(
+                CreateQuantumInterface(simulatorType, q, 0, randNumGen, CMPLX_DEFAULT_ARG, false, true));
+            simulator->Attach(std::make_shared<QStabilizer>(c, 0, randNumGen, true));
+        } catch (...) {
+            isSuccess = false;
+        }
+    }
+
+    if (sid == simulators.size()) {
+        simulatorReservations.push_back(true);
+        simulators.push_back(simulator);
+        simulatorTypes.push_back(simulatorType);
+        simulatorHostPointer.push_back(false);
+        simulatorErrors.push_back(isSuccess ? 0 : 1);
+    } else {
+        simulatorReservations[sid] = true;
+        simulators[sid] = simulator;
+        simulatorTypes[sid] = simulatorType;
+        simulatorHostPointer[sid] = false;
+        simulatorErrors[sid] = isSuccess ? 0 : 1;
+    }
+
+    if (!q) {
+        return sid;
+    }
+
+    shards[simulator.get()] = {};
+    for (unsigned i = 0; i < q; i++) {
+        shards[simulator.get()][i] = (bitLenInt)i;
+    }
+
+    return sid;
 }
 
 /**
