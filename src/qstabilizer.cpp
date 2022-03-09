@@ -1248,7 +1248,6 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         }
 
         if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            // TODO: We can shorten this by at least one gate call.
             Z(target);
             X(target);
             Z(target);
@@ -1258,7 +1257,6 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         }
 
         if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            // TODO: We can shorten this by at least one gate call.
             S(target);
             X(target);
             S(target);
@@ -1268,7 +1266,6 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         }
 
         if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            // TODO: We can shorten this by at least one gate call.
             IS(target);
             X(target);
             IS(target);
@@ -1328,50 +1325,36 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     }
 
     if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
-        if (randGlobalPhase) {
+        if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
             Z(target);
-            H(target);
-            S(target);
-            return;
-        }
-
-        if (IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            H(target);
             X(target);
+            H(target);
             IS(target);
             return;
         }
 
         if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            H(target);
-            X(target);
-            S(target);
             X(target);
             Z(target);
-            X(target);
+            H(target);
+            IS(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            Z(target);
+            IS(target);
             X(target);
             S(target);
-            X(target);
-            IS(target);
             H(target);
-            X(target);
             IS(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            Z(target);
+            S(target);
             X(target);
             IS(target);
-            X(target);
-            S(target);
             H(target);
-            X(target);
             IS(target);
             return;
         }
@@ -1445,14 +1428,57 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         }
     }
 
-    // TODO: Finish adding decompositions, below, (whereas these assume global phase offset is arbitrary)
-
     if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
-        IS(target);
-        H(target);
-        Y(target);
-        return;
+        if (randGlobalPhase) {
+            Z(target);
+            H(target);
+            S(target);
+            return;
+        }
+
+        if (IS_SAME(SQRT1_2_R1, mtrx[0])) {
+            H(target);
+            X(target);
+            IS(target);
+            return;
+        }
+
+        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
+            H(target);
+            X(target);
+            S(target);
+            X(target);
+            Z(target);
+            X(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
+            Z(target);
+            X(target);
+            S(target);
+            X(target);
+            IS(target);
+            H(target);
+            X(target);
+            IS(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
+            Z(target);
+            X(target);
+            IS(target);
+            X(target);
+            S(target);
+            H(target);
+            X(target);
+            IS(target);
+            return;
+        }
     }
+    
+    // TODO: Finish adding decompositions, below, (whereas these assume global phase offset is arbitrary)
 
     if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
         IS(target);
