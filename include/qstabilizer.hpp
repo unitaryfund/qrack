@@ -118,8 +118,8 @@ public:
     {
         Finish();
 
-        QStabilizerPtr clone = std::make_shared<QStabilizer>(
-            qubitCount, 0, rand_generator, CMPLX_DEFAULT_ARG, false, true, false, -1, hardware_rand_generator != NULL);
+        QStabilizerPtr clone = std::make_shared<QStabilizer>(qubitCount, 0, rand_generator, CMPLX_DEFAULT_ARG, false,
+            randGlobalPhase, false, -1, hardware_rand_generator != NULL);
         clone->Finish();
 
         clone->x = x;
