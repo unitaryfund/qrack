@@ -6359,8 +6359,11 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase =
             CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, magic, 0, rng);
+        // TODO: Non-arbitrary global phase is not yet implemented for stabilizer, and this introduces error.
+        // Also, global phase checks exist for stabilizer, but they're very costly.
+        // The "true" parameter below will become "false," to fix this, when this is fully implemented.
         std::dynamic_pointer_cast<QBdt>(testCase)->Attach(
-            CreateQuantumInterface({ QINTERFACE_STABILIZER }, n - magic, 0, rng, CMPLX_DEFAULT_ARG, false, false));
+            CreateQuantumInterface({ QINTERFACE_STABILIZER }, n - magic, 0, rng, CMPLX_DEFAULT_ARG, false, true));
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
