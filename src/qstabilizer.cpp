@@ -1434,63 +1434,72 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 
     if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
         if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
+            IS(target);
             H(target);
             X(target);
-            IS(target);
+            Z(target);
             return;
         }
 
         if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
+            IS(target);
             H(target);
             Z(target);
             X(target);
-            S(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
+            IS(target);
             H(target);
             S(target);
             X(target);
+            IS(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
+            IS(target);
             H(target);
             IS(target);
             X(target);
+            S(target);
             return;
         }
     }
 
     if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
         if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
+            S(target);
             H(target);
             X(target);
-            S(target);
+            Z(target);
             return;
         }
 
         if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
+            S(target);
             H(target);
             Z(target);
             X(target);
-            IS(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
+            S(target);
             H(target);
             S(target);
             X(target);
-            Z(target);
+            IS(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
+            S(target);
             H(target);
             IS(target);
             X(target);
+            S(target);
             return;
         }
     }
