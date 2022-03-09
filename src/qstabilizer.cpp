@@ -1442,47 +1442,60 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 
         if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
             H(target);
-            X(target);
-            S(target);
-            X(target);
             Z(target);
             X(target);
+            S(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            Z(target);
-            X(target);
+            H(target);
             S(target);
             X(target);
-            IS(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
             H(target);
+            IS(target);
+            X(target);
+            return;
+        }
+    }
+
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+        if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
+            H(target);
+            X(target);
+            S(target);
+            return;
+        }
+
+        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
+            H(target);
+            Z(target);
             X(target);
             IS(target);
             return;
         }
 
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            Z(target);
-            X(target);
-            IS(target);
-            X(target);
-            S(target);
+        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
             H(target);
+            S(target);
             X(target);
+            Z(target);
+            return;
+        }
+
+        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
+            H(target);
             IS(target);
+            X(target);
             return;
         }
     }
 
     // TODO: Finish adding decompositions, below, (whereas these assume global phase offset is arbitrary)
-
-    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
-        IS(target);
-        H(target);
-        Z(target);
-        return;
-    }
 
     if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         SqrtX(target);
