@@ -252,23 +252,23 @@ public:
     }
 
     /// Apply a CNOT gate with control and target
-    void CNOT(const bitLenInt& control, const bitLenInt& target);
+    virtual void CNOT(bitLenInt control, bitLenInt target);
     /// Apply a CY gate with control and target
-    void CY(const bitLenInt& control, const bitLenInt& target);
+    virtual void CY(bitLenInt control, bitLenInt target);
     /// Apply a CZ gate with control and target
-    void CZ(const bitLenInt& control, const bitLenInt& target);
+    virtual void CZ(bitLenInt control, bitLenInt target);
     /// Apply a Hadamard gate to target
-    void H(const bitLenInt& target);
+    virtual void H(bitLenInt qubitIndex);
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
-    void S(const bitLenInt& target);
+    virtual void S(bitLenInt qubitIndex);
     /// Apply an inverse phase gate (|0>->|0>, |1>->-i|1>, or "S adjoint") to qubit b
-    void IS(const bitLenInt& target);
+    virtual void IS(bitLenInt qubitIndex);
     /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
-    void Z(const bitLenInt& target);
+    virtual void Z(bitLenInt qubitIndex);
     /// Apply an X (or NOT) gate to target
-    void X(const bitLenInt& target);
+    virtual void X(bitLenInt qubitIndex);
     /// Apply a Pauli Y gate to target
-    void Y(const bitLenInt& target);
+    virtual void Y(bitLenInt qubitIndex);
     /// Apply square root of X gate
     void StabilizerSqrtX(const bitLenInt& target);
     /// Apply inverse square root of X gate
@@ -278,39 +278,26 @@ public:
     /// Apply inverse square root of Y gate
     void StabilizerISqrtY(const bitLenInt& target);
 
-    void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2);
-
-    void ISwap(const bitLenInt& qubit1, const bitLenInt& qubit2)
-    {
-        if (qubit1 == qubit2) {
-            return;
-        }
-
-        S(qubit1);
-        S(qubit2);
-        H(qubit1);
-        CNOT(qubit1, qubit2);
-        CNOT(qubit2, qubit1);
-        H(qubit2);
-    }
+    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /**
      * Measure qubit b
      */
-    bool ForceM(bitLenInt t, bool result, bool doForce = true, bool doApply = true);
+    virtual bool ForceM(bitLenInt t, bool result, bool doForce = true, bool doApply = true);
 
-    real1_f FirstNonzeroPhase();
+    virtual real1_f FirstNonzeroPhase();
 
     /// Convert the state to ket notation
-    void GetQuantumState(complex* stateVec);
+    virtual void GetQuantumState(complex* stateVec);
 
     /// Convert the state to ket notation, directly into another QInterface
-    void GetQuantumState(QInterfacePtr eng);
+    virtual void GetQuantumState(QInterfacePtr eng);
 
     /// Get all probabilities corresponding to ket notation
-    void GetProbs(real1* outputProbs);
+    virtual void GetProbs(real1* outputProbs);
 
-    complex GetAmplitude(bitCapInt perm);
+    /// Get a single basis state amplitude
+    virtual complex GetAmplitude(bitCapInt perm);
 
     /**
      * Returns "true" if target qubit is a Z basis eigenstate
@@ -333,42 +320,42 @@ public:
      */
     uint8_t IsSeparable(const bitLenInt& target);
 
-    bitLenInt Compose(QStabilizerPtr toCopy) { return Compose(toCopy, qubitCount); }
-    bitLenInt Compose(QStabilizerPtr toCopy, bitLenInt start);
-    void Decompose(bitLenInt start, QInterfacePtr dest)
+    virtual bitLenInt Compose(QStabilizerPtr toCopy) { return Compose(toCopy, qubitCount); }
+    virtual bitLenInt Compose(QStabilizerPtr toCopy, bitLenInt start);
+    virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QStabilizer>(dest));
     }
-    QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
-    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QStabilizerPtr)NULL); }
-    void Dispose(bitLenInt start, bitLenInt length, bitCapInt ignored)
+    virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
+    virtual void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, (QStabilizerPtr)NULL); }
+    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt ignored)
     {
         DecomposeDispose(start, length, (QStabilizerPtr)NULL);
     }
     bool CanDecomposeDispose(const bitLenInt start, const bitLenInt length);
 
-    bool ApproxCompare(QStabilizerPtr o);
+    virtual bool ApproxCompare(QStabilizerPtr o);
 
-    void NormalizeState(
+    virtual void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
     {
         // Intentionally left blank
     }
-    void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         // Intentionally left blank
     }
 
-    real1_f Prob(bitLenInt qubit);
+    virtual real1_f Prob(bitLenInt qubit);
 
-    void Mtrx(const complex* mtrx, bitLenInt target);
-    void Phase(complex topLeft, complex bottomRight, bitLenInt target);
-    void Invert(complex topRight, complex bottomLeft, bitLenInt target);
-    void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
-    void MCPhase(
+    virtual void Mtrx(const complex* mtrx, bitLenInt target);
+    virtual void Phase(complex topLeft, complex bottomRight, bitLenInt target);
+    virtual void Invert(complex topRight, complex bottomLeft, bitLenInt target);
+    virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
+    virtual void MCPhase(
         const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
-    void MCInvert(
+    virtual void MCInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
-    void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
+    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
 };
 } // namespace Qrack

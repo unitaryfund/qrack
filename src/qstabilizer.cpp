@@ -498,7 +498,7 @@ complex QStabilizer::GetAmplitude(bitCapInt perm)
 }
 
 /// Apply a CNOT gate with control and target
-void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
+void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
 {
     ParFor([this, c, t](const bitLenInt& i) {
         if (x[i][c]) {
@@ -516,7 +516,7 @@ void QStabilizer::CNOT(const bitLenInt& c, const bitLenInt& t)
 }
 
 /// Apply a CY gate with control and target
-void QStabilizer::CY(const bitLenInt& c, const bitLenInt& t)
+void QStabilizer::CY(bitLenInt c, bitLenInt t)
 {
     ParFor([this, c, t](const bitLenInt& i) {
         z[i][t] = z[i][t] ^ x[i][t];
@@ -538,7 +538,7 @@ void QStabilizer::CY(const bitLenInt& c, const bitLenInt& t)
 }
 
 /// Apply a CZ gate with control and target
-void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
+void QStabilizer::CZ(bitLenInt c, bitLenInt t)
 {
     ParFor([this, c, t](const bitLenInt& i) {
         if (x[i][t]) {
@@ -555,7 +555,7 @@ void QStabilizer::CZ(const bitLenInt& c, const bitLenInt& t)
     });
 }
 
-void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
+void QStabilizer::Swap(bitLenInt c, bitLenInt t)
 {
     if (c == t) {
         return;
@@ -568,7 +568,7 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
 }
 
 /// Apply a Hadamard gate to target
-void QStabilizer::H(const bitLenInt& t)
+void QStabilizer::H(bitLenInt t)
 {
     ParFor([this, t](const bitLenInt& i) {
         BoolVector::swap(x[i][t], z[i][t]);
@@ -579,7 +579,7 @@ void QStabilizer::H(const bitLenInt& t)
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
-void QStabilizer::S(const bitLenInt& t)
+void QStabilizer::S(bitLenInt t)
 {
     ParFor([this, t](const bitLenInt& i) {
         if (x[i][t] && z[i][t]) {
@@ -590,7 +590,7 @@ void QStabilizer::S(const bitLenInt& t)
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
-void QStabilizer::IS(const bitLenInt& t)
+void QStabilizer::IS(bitLenInt t)
 {
     ParFor([this, t](const bitLenInt& i) {
         z[i][t] = z[i][t] ^ x[i][t];
@@ -601,7 +601,7 @@ void QStabilizer::IS(const bitLenInt& t)
 }
 
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
-void QStabilizer::Z(const bitLenInt& t)
+void QStabilizer::Z(bitLenInt t)
 {
     ParFor([this, t](const bitLenInt& i) {
         if (x[i][t]) {
@@ -611,7 +611,7 @@ void QStabilizer::Z(const bitLenInt& t)
 }
 
 /// Apply an X (or NOT) gate to target
-void QStabilizer::X(const bitLenInt& t)
+void QStabilizer::X(bitLenInt t)
 {
     ParFor([this, t](const bitLenInt& i) {
         if (z[i][t]) {
@@ -621,7 +621,7 @@ void QStabilizer::X(const bitLenInt& t)
 }
 
 /// Apply a Pauli Y gate to target
-void QStabilizer::Y(const bitLenInt& t)
+void QStabilizer::Y(bitLenInt t)
 {
     ParFor([this, t](const bitLenInt& i) {
         if (z[i][t] ^ x[i][t]) {
@@ -1248,7 +1248,6 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         }
 
         if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            // TODO: We can shorten this by at least one gate call.
             Z(target);
             X(target);
             Z(target);
@@ -1258,7 +1257,6 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         }
 
         if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            // TODO: We can shorten this by at least one gate call.
             S(target);
             X(target);
             S(target);
@@ -1268,7 +1266,6 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         }
 
         if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            // TODO: We can shorten this by at least one gate call.
             IS(target);
             X(target);
             IS(target);
@@ -1288,35 +1285,24 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 
         if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
             H(target);
-            X(target);
-            S(target);
-            X(target);
             Z(target);
             X(target);
+            S(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            Z(target);
-            X(target);
+            H(target);
             S(target);
             X(target);
-            IS(target);
-            H(target);
-            X(target);
-            IS(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            Z(target);
-            X(target);
-            IS(target);
-            X(target);
-            S(target);
             H(target);
-            X(target);
             IS(target);
+            X(target);
+            Z(target);
             return;
         }
     }
@@ -1331,35 +1317,24 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 
         if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
             H(target);
-            X(target);
-            IS(target);
-            X(target);
             Z(target);
             X(target);
+            IS(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            Z(target);
-            X(target);
-            S(target);
-            X(target);
-            IS(target);
             H(target);
-            X(target);
             S(target);
+            X(target);
+            Z(target);
             return;
         }
 
         if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            Z(target);
-            X(target);
+            H(target);
             IS(target);
             X(target);
-            S(target);
-            H(target);
-            X(target);
-            S(target);
             return;
         }
     }
@@ -1372,10 +1347,10 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         }
 
         if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            S(target);
             X(target);
             Z(target);
             X(target);
+            S(target);
             H(target);
             return;
         }
@@ -1389,10 +1364,10 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         }
 
         if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            Z(target);
             X(target);
             IS(target);
             X(target);
+            Z(target);
             H(target);
             return;
         }
