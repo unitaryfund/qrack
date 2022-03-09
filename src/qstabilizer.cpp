@@ -1497,23 +1497,27 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 
     // TODO: Finish adding decompositions, below, (whereas these assume global phase offset is arbitrary)
 
-    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+    if (randGlobalPhase && IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) &&
+        IS_SAME(mtrx[0], mtrx[3])) {
         SqrtX(target);
         return;
     }
 
-    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+    if (randGlobalPhase && IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) &&
+        IS_SAME(mtrx[0], mtrx[3])) {
         ISqrtX(target);
         return;
     }
 
-    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+    if (randGlobalPhase && IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) &&
+        IS_SAME(mtrx[0], -mtrx[3])) {
         SqrtX(target);
         Z(target);
         return;
     }
 
-    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+    if (randGlobalPhase && IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) &&
+        IS_SAME(mtrx[0], -mtrx[3])) {
         Z(target);
         SqrtX(target);
         return;
