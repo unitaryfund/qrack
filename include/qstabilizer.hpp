@@ -270,13 +270,13 @@ public:
     /// Apply a Pauli Y gate to target
     void Y(const bitLenInt& target);
     /// Apply square root of X gate
-    void SqrtX(const bitLenInt& target);
+    void StabilizerSqrtX(const bitLenInt& target);
     /// Apply inverse square root of X gate
-    void ISqrtX(const bitLenInt& target);
+    void StabilizerISqrtX(const bitLenInt& target);
     /// Apply square root of Y gate
-    void SqrtY(const bitLenInt& target);
+    void StabilizerSqrtY(const bitLenInt& target);
     /// Apply inverse square root of Y gate
-    void ISqrtY(const bitLenInt& target);
+    void StabilizerISqrtY(const bitLenInt& target);
 
     void Swap(const bitLenInt& qubit1, const bitLenInt& qubit2);
 

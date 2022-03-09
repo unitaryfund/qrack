@@ -631,7 +631,7 @@ void QStabilizer::Y(const bitLenInt& t)
 }
 
 /// Apply square root of X gate
-void QStabilizer::SqrtX(const bitLenInt& t)
+void QStabilizer::StabilizerSqrtX(const bitLenInt& t)
 {
     ParFor([this, t](const bitLenInt& i) {
         x[i][t] = x[i][t] ^ z[i][t];
@@ -642,7 +642,7 @@ void QStabilizer::SqrtX(const bitLenInt& t)
 }
 
 /// Apply inverse square root of X gate
-void QStabilizer::ISqrtX(const bitLenInt& t)
+void QStabilizer::StabilizerISqrtX(const bitLenInt& t)
 {
     ParFor([this, t](const bitLenInt& i) {
         if (x[i][t] && z[i][t]) {
@@ -653,7 +653,7 @@ void QStabilizer::ISqrtX(const bitLenInt& t)
 }
 
 /// Apply square root of Y gate
-void QStabilizer::SqrtY(const bitLenInt& t)
+void QStabilizer::StabilizerSqrtY(const bitLenInt& t)
 {
     ParFor([this, t](const bitLenInt& i) {
         BoolVector::swap(x[i][t], z[i][t]);
@@ -664,7 +664,7 @@ void QStabilizer::SqrtY(const bitLenInt& t)
 }
 
 /// Apply inverse square root of Y gate
-void QStabilizer::ISqrtY(const bitLenInt& t)
+void QStabilizer::StabilizerISqrtY(const bitLenInt& t)
 {
     ParFor([this, t](const bitLenInt& i) {
         if (!x[i][t] && z[i][t]) {
@@ -1081,7 +1081,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         // Equivalent to X before H
         if (randGlobalPhase) {
-            ISqrtY(target);
+            StabilizerISqrtY(target);
             return;
         }
 
@@ -1119,7 +1119,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         // Equivalent to H before X
         if (randGlobalPhase) {
-            SqrtY(target);
+            StabilizerSqrtY(target);
             return;
         }
 
@@ -1158,7 +1158,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         // Equivalent to X-H-X
         if (randGlobalPhase) {
             X(target);
-            SqrtY(target);
+            StabilizerSqrtY(target);
             return;
         }
 
@@ -1235,7 +1235,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
         if (randGlobalPhase) {
-            ISqrtY(target);
+            StabilizerISqrtY(target);
             S(target);
             return;
         }
@@ -1508,19 +1508,19 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 
     if (randGlobalPhase && IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) &&
         IS_SAME(mtrx[0], mtrx[3])) {
-        SqrtX(target);
+        StabilizerSqrtX(target);
         return;
     }
 
     if (randGlobalPhase && IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) &&
         IS_SAME(mtrx[0], mtrx[3])) {
-        ISqrtX(target);
+        StabilizerISqrtX(target);
         return;
     }
 
     if (randGlobalPhase && IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) &&
         IS_SAME(mtrx[0], -mtrx[3])) {
-        SqrtX(target);
+        StabilizerSqrtX(target);
         Z(target);
         return;
     }
@@ -1528,7 +1528,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     if (randGlobalPhase && IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) &&
         IS_SAME(mtrx[0], -mtrx[3])) {
         Z(target);
-        SqrtX(target);
+        StabilizerSqrtX(target);
         return;
     }
 
