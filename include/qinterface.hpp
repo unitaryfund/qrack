@@ -41,7 +41,7 @@ enum Pauli {
     PauliI = 0,
     /// Pauli X operator. Corresponds to Q# constant "PauliX."
     PauliX = 1,
-    /// SSSPauli Y operator. Corresponds to Q# constant "PauliY."
+    /// Pauli Y operator. Corresponds to Q# constant "PauliY."
     PauliY = 3,
     /// Pauli Z operator. Corresponds to Q# constant "PauliZ."
     PauliZ = 2
