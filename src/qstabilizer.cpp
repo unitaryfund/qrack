@@ -1329,9 +1329,9 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 
     if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
         if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            Z(target);
             H(target);
-            S(target);
+            X(target);
+            IS(target);
             return;
         }
 
