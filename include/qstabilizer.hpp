@@ -299,6 +299,8 @@ public:
      */
     bool ForceM(bitLenInt t, bool result, bool doForce = true, bool doApply = true);
 
+    real1_f FirstNonzeroPhase();
+
     /// Convert the state to ket notation
     void GetQuantumState(complex* stateVec);
 

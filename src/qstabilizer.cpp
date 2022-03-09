@@ -342,6 +342,39 @@ void QStabilizer::setBasisProb(const real1_f& nrm, real1* outputProbs)
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
 #define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
 
+real1_f QStabilizer::FirstNonzeroPhase()
+{
+    Finish();
+
+    // log_2 of number of nonzero basis states
+    const bitLenInt g = gaussian();
+    const bitCapIntOcl permCount = pow2Ocl(g);
+    const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
+    const bitLenInt elemCount = qubitCount << 1U;
+    const real1_f nrm = sqrt(ONE_R1 / permCount);
+
+    seed(g);
+
+    const AmplitudeEntry entry0 = getBasisAmp(nrm);
+    if (entry0.amplitude != ZERO_CMPLX) {
+        return (real1_f)std::arg(entry0.amplitude);
+    }
+    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+        bitCapIntOcl t2 = t ^ (t + 1);
+        for (bitLenInt i = 0; i < g; i++) {
+            if ((t2 >> i) & 1U) {
+                rowmult(elemCount, qubitCount + i);
+            }
+        }
+        const AmplitudeEntry entry = getBasisAmp(nrm);
+        if (entry.amplitude != ZERO_CMPLX) {
+            return (real1_f)std::arg(entry.amplitude);
+        }
+    }
+
+    return ZERO_R1;
+}
+
 /// Convert the state to ket notation (warning: could be huge!)
 void QStabilizer::GetQuantumState(complex* stateVec)
 {
