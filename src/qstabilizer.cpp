@@ -35,74 +35,16 @@
 
 namespace Qrack {
 
-QStabilizer::QStabilizer(
-    bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, bool useHardwareRNG, bool randomGlobalPhase)
-    : QInterface(n, rgp, false, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
-    , x((n << 1U) + 1U, std::vector<bool>(n))
-    , z((n << 1U) + 1U, std::vector<bool>(n))
+QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, complex ignored, bool doNorm,
+    bool randomGlobalPhase, bool ignored2, int ignored3, bool useHardwareRNG, bool ignored4, real1_f ignored5,
+    std::vector<int> ignored6, bitLenInt ignored7, real1_f ignored8)
+    : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
+    , x((n << 1U) + 1U, BoolVector(n, false))
+    , z((n << 1U) + 1U, BoolVector(n, false))
     , r((n << 1U) + 1U)
-    , rand_distribution(0, 1)
-    , hardware_rand_generator(NULL)
     , rawRandBools(0)
     , rawRandBoolsRemaining(0)
 {
-#if !ENABLE_RDRAND && !ENABLE_RNDFILE && !ENABLE_DEVRAND
-    useHardwareRNG = false;
-#endif
-
-    if (useHardwareRNG) {
-        hardware_rand_generator = std::make_shared<RdRandom>();
-#if !ENABLE_RNDFILE && !ENABLE_DEVRAND
-        if (!(hardware_rand_generator->SupportsRDRAND())) {
-            hardware_rand_generator = NULL;
-        }
-#endif
-    }
-
-    if ((rgp == NULL) && (hardware_rand_generator == NULL)) {
-        rand_generator = std::make_shared<qrack_rand_gen>();
-#if SEED_DEVRAND
-        // The original author of this code block (Daniel Strano) is NOT a cryptography expert. However, here's the
-        // author's justification for preferring /dev/random used to seed Mersenne twister, in this case. We state
-        // firstly, our use case is probably more dependent on good statistical randomness than CSPRNG security.
-        // Casually, we can list a few reasons our design:
-        //
-        // * (As a total guess, if clock manipulation isn't a completely obvious problem,) either of /dev/random or
-        // /dev/urandom is probably both statistically and cryptographically preferable to the system clock, as a
-        // one-time seed.
-        //
-        // * We need VERY LITTLE entropy for this seeding, even though its repeated a few times depending on the
-        // simulation method stack. Tests of 30+ qubits don't run out of random numbers, this way, and there's no
-        // detectable slow-down in Qrack.
-        //
-        // * The blocking behavior of /dev/random (specifically on startup) is GOOD for us, here. We WANT Qrack to block
-        // until the entropy pool is ready on virtual machine and container images that start a Qrack-based application
-        // on boot. (We're not crypotgraphers; we're quantum computer simulator developers and users.)
-        //
-        // * (I have a very basic appreciation for the REFUTATION to historical confusion over the quantity of "entropy"
-        // in the device pools, but...) If our purpose is PHYSICAL REALISM of quantum computer simulation, rather than
-        // cryptography, then we probably should have a tiny preference for higher "true" entropy. Although, even as a
-        // developer in the quantum computing field, I must say that there might be no provable empirical difference
-        // between "true quantum randomness" and "perfect statistical (whether pseudo-)randomness" as ontological
-        // categories, now might there?
-
-        const int max_rdrand_tries = 10;
-        int i;
-        for (i = 0; i < max_rdrand_tries; ++i) {
-            if (sizeof(randomSeed) == getrandom(reinterpret_cast<char*>(&randomSeed), sizeof(randomSeed), GRND_RANDOM))
-                break;
-        }
-        if (i == max_rdrand_tries) {
-            throw std::runtime_error("Failed to seed RNG!");
-        }
-#else
-        randomSeed = (uint32_t)std::time(0);
-#endif
-        SetRandomSeed(randomSeed);
-    } else {
-        rand_generator = rgp;
-    }
-
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #if ENABLE_ENV_VARS
     dispatchThreshold =
@@ -124,8 +66,12 @@ void QStabilizer::SetPermutation(const bitCapInt& perm)
     std::fill(r.begin(), r.end(), 0);
 
     for (bitLenInt i = 0; i < rowCount; i++) {
-        std::fill(x[i].begin(), x[i].end(), false);
-        std::fill(z[i].begin(), z[i].end(), false);
+        // Dealloc, first
+        x[i] = BoolVector();
+        z[i] = BoolVector();
+
+        x[i] = BoolVector(qubitCount, false);
+        z[i] = BoolVector(qubitCount, false);
 
         if (i < qubitCount) {
             x[i][i] = true;
@@ -174,8 +120,13 @@ void QStabilizer::rowswap(const bitLenInt& i, const bitLenInt& k)
 void QStabilizer::rowset(const bitLenInt& i, bitLenInt b)
 {
     r[i] = 0;
-    std::fill(x[i].begin(), x[i].end(), 0);
-    std::fill(z[i].begin(), z[i].end(), 0);
+
+    // Dealloc, first
+    x[i] = BoolVector();
+    z[i] = BoolVector();
+
+    x[i] = BoolVector(qubitCount, false);
+    z[i] = BoolVector(qubitCount, false);
 
     if (b < qubitCount) {
         z[i][b] = true;
@@ -306,8 +257,13 @@ void QStabilizer::seed(const bitLenInt& g)
 
     // Wipe the scratch space clean
     r[elemCount] = 0;
-    std::fill(x[elemCount].begin(), x[elemCount].end(), 0);
-    std::fill(z[elemCount].begin(), z[elemCount].end(), 0);
+
+    // Dealloc, first
+    x[elemCount] = BoolVector();
+    z[elemCount] = BoolVector();
+
+    x[elemCount] = BoolVector(qubitCount, false);
+    z[elemCount] = BoolVector(qubitCount, false);
 
     for (int i = elemCount - 1; i >= (int)(qubitCount + g); i--) {
         int f = r[i];
@@ -573,8 +529,8 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
     }
 
     ParFor([this, c, t](const bitLenInt& i) {
-        std::vector<bool>::swap(x[i][c], x[i][t]);
-        std::vector<bool>::swap(z[i][c], z[i][t]);
+        BoolVector::swap(x[i][c], x[i][t]);
+        BoolVector::swap(z[i][c], z[i][t]);
     });
 }
 
@@ -582,7 +538,7 @@ void QStabilizer::Swap(const bitLenInt& c, const bitLenInt& t)
 void QStabilizer::H(const bitLenInt& t)
 {
     ParFor([this, t](const bitLenInt& i) {
-        std::vector<bool>::swap(x[i][t], z[i][t]);
+        BoolVector::swap(x[i][t], z[i][t]);
         if (x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
         }
@@ -667,7 +623,7 @@ void QStabilizer::ISqrtX(const bitLenInt& t)
 void QStabilizer::SqrtY(const bitLenInt& t)
 {
     ParFor([this, t](const bitLenInt& i) {
-        std::vector<bool>::swap(x[i][t], z[i][t]);
+        BoolVector::swap(x[i][t], z[i][t]);
         if (!x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
         }
@@ -681,7 +637,7 @@ void QStabilizer::ISqrtY(const bitLenInt& t)
         if (!x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
         }
-        std::vector<bool>::swap(x[i][t], z[i][t]);
+        BoolVector::swap(x[i][t], z[i][t]);
     });
 }
 
@@ -859,15 +815,15 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     const bitLenInt length = toCopy->qubitCount;
     const bitLenInt nQubitCount = qubitCount + length;
     const bitLenInt secondStart = nQubitCount + start;
-    const std::vector<bool> row(length, 0);
+    const BoolVector row(length, 0);
 
     for (bitLenInt i = 0; i < rowCount; i++) {
         x[i].insert(x[i].begin() + start, row.begin(), row.end());
         z[i].insert(z[i].begin() + start, row.begin(), row.end());
     }
 
-    std::vector<std::vector<bool>> xGroup(length, std::vector<bool>(nQubitCount, 0));
-    std::vector<std::vector<bool>> zGroup(length, std::vector<bool>(nQubitCount, 0));
+    std::vector<BoolVector> xGroup(length, BoolVector(nQubitCount, false));
+    std::vector<BoolVector> zGroup(length, BoolVector(nQubitCount, false));
     for (bitLenInt i = 0; i < length; i++) {
         std::copy(toCopy->x[i].begin(), toCopy->x[i].end(), xGroup[i].begin() + start);
         std::copy(toCopy->z[i].begin(), toCopy->z[i].end(), zGroup[i].begin() + start);
@@ -876,8 +832,8 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     z.insert(z.begin() + start, zGroup.begin(), zGroup.end());
     r.insert(r.begin() + start, toCopy->r.begin(), toCopy->r.begin() + length);
 
-    std::vector<std::vector<bool>> xGroup2(length, std::vector<bool>(nQubitCount, 0));
-    std::vector<std::vector<bool>> zGroup2(length, std::vector<bool>(nQubitCount, 0));
+    std::vector<BoolVector> xGroup2(length, BoolVector(nQubitCount, false));
+    std::vector<BoolVector> zGroup2(length, BoolVector(nQubitCount, false));
     for (bitLenInt i = 0; i < length; i++) {
         bitLenInt j = length + i;
         std::copy(toCopy->x[j].begin(), toCopy->x[j].end(), xGroup2[i].begin() + start);
@@ -893,8 +849,8 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
 }
 QInterfacePtr QStabilizer::Decompose(bitLenInt start, bitLenInt length)
 {
-    QStabilizerPtr dest =
-        std::make_shared<QStabilizer>(qubitCount, 0, rand_generator, hardware_rand_generator != NULL, randGlobalPhase);
+    QStabilizerPtr dest = std::make_shared<QStabilizer>(qubitCount, 0, rand_generator, CMPLX_DEFAULT_ARG, false,
+        randGlobalPhase, false, -1, hardware_rand_generator != NULL);
     Decompose(start, dest);
 
     return dest;
@@ -1243,12 +1199,9 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     }
 
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
-        ISqrtY(target);
-        S(target);
-        return;
-
         if (randGlobalPhase) {
             ISqrtY(target);
+            S(target);
             return;
         }
 

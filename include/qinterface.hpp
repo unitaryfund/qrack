@@ -80,6 +80,11 @@ enum QInterfaceEngine {
     QINTERFACE_MASK_FUSION,
 
     /**
+     * Create a QStabilizer, limited to Clifford/Pauli operations, but efficient.
+     */
+    QINTERFACE_STABILIZER,
+
+    /**
      * Create a QStabilizerHybrid, switching between a QStabilizer and a QHybrid as efficient.
      */
     QINTERFACE_STABILIZER_HYBRID,
@@ -147,6 +152,7 @@ protected:
     std::shared_ptr<RdRandom> hardware_rand_generator;
     bool doNormalize;
     bool randGlobalPhase;
+    bool useRDRAND;
     real1 amplitudeFloor;
 
     virtual void SetQubitCount(bitLenInt qb)
@@ -220,6 +226,7 @@ public:
         , hardware_rand_generator(NULL)
         , doNormalize(false)
         , randGlobalPhase(true)
+        , useRDRAND(true)
         , amplitudeFloor(REAL1_EPSILON)
     {
         // Intentionally left blank
@@ -230,7 +237,7 @@ public:
         // Virtual destructor for inheritance
     }
 
-    virtual void SetRandomSeed(uint32_t seed)
+    void SetRandomSeed(uint32_t seed)
     {
         if (rand_generator != NULL) {
             rand_generator->seed(seed);
@@ -245,6 +252,8 @@ public:
 
     /** Get the maximum number of basis states, namely \f$ 2^n \f$ for \f$ n \f$ qubits*/
     virtual bitCapInt GetMaxQPower() { return maxQPower; }
+
+    virtual bool GetIsArbitraryGlobalPhase() { return randGlobalPhase; }
 
     /** Generate a random real number between 0 and 1 */
     real1_f Rand()

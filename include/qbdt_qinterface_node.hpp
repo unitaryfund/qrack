@@ -29,8 +29,13 @@ typedef std::shared_ptr<QBdtQEngineNode> QBdtQEngineNodePtr;
 
 class QBdtQInterfaceNode : public QBdtNodeInterface {
 protected:
+#if ENABLE_COMPLEX_X2
+    virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
+        QBdtNodeInterfacePtr& b1, bitLenInt depth)
+#else
     virtual void PushStateVector(
         const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
+#endif
     {
         throw std::out_of_range("QBdtQInterfaceNode::PushStateVector() not implemented!");
     }
@@ -66,15 +71,19 @@ public:
 
     virtual void Branch(bitLenInt depth = 1U);
 
-    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, bitLenInt size);
+    virtual void Prune(bitLenInt depth = 1U);
 
-    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, bitLenInt size);
+    virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size);
 
-    virtual void PopStateVector(bitLenInt depth = 1U) {}
+    virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size);
 
-    virtual void Prune(bitLenInt depth = 1U) {}
+    virtual void PopStateVector(bitLenInt depth = 1U) { Prune(); }
 
+#if ENABLE_COMPLEX_X2
+    virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitLenInt depth)
+#else
     virtual void Apply2x2(const complex* mtrx, bitLenInt depth)
+#endif
     {
         throw std::out_of_range("QBdtQInterfaceNode::Apply2x2() not implemented!");
     }

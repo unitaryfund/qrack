@@ -71,7 +71,6 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
     , useHostRam(useHostMem)
-    , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , freezeBasis2Qb(false)
     , isReactiveSeparate(true)

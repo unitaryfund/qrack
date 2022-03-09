@@ -46,7 +46,7 @@ protected:
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
     bitCapInt bdtMaxQPower;
-    bool isStateVec;
+    bool isAttached;
 
     virtual void SetQubitCount(bitLenInt qb, bitLenInt aqb)
     {
@@ -63,6 +63,10 @@ protected:
 
     QBdtQInterfaceNodePtr MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
 
+    void FallbackMtrx(const complex* mtrx, bitLenInt target);
+    void FallbackMCMtrx(
+        const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti);
+
     QInterfacePtr MakeTempStateVector()
     {
         QInterfacePtr copyPtr = NODE_TO_QINTERFACE(MakeQInterfaceNode(ONE_R1, qubitCount));
@@ -74,10 +78,13 @@ protected:
     }
     void SetStateVector()
     {
-        if (isStateVec) {
+        if (!bdtQubitCount) {
             return;
         }
-        isStateVec = true;
+
+        if (isAttached) {
+            throw std::domain_error("QBdt::SetStateVector() not yet implemented, after Attach() call!");
+        }
 
         QBdtQInterfaceNodePtr nRoot = MakeQInterfaceNode(ONE_R1, qubitCount);
         GetQuantumState(NODE_TO_QINTERFACE(nRoot));
@@ -86,10 +93,9 @@ protected:
     }
     void ResetStateVector()
     {
-        if (!isStateVec) {
+        if (bdtQubitCount) {
             return;
         }
-        isStateVec = false;
 
         QBdtQInterfaceNodePtr oRoot = std::dynamic_pointer_cast<QBdtQInterfaceNode>(root);
         SetQubitCount(qubitCount, 0U);
@@ -211,13 +217,6 @@ public:
     virtual real1_f Prob(bitLenInt qubitIndex);
     virtual real1_f ProbAll(bitCapInt fullRegister);
 
-    virtual std::map<bitCapInt, int> MultiShotMeasureMask(
-        const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots)
-    {
-        QInterfacePtr unit = isStateVec ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
-        return unit->MultiShotMeasureMask(qPowers, qPowerCount, shots);
-    }
-
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt MAll();
 
@@ -236,7 +235,7 @@ public:
 
     virtual real1_f ProbParity(bitCapInt mask)
     {
-        QInterfacePtr unit = isStateVec ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
+        QInterfacePtr unit = (!bdtQubitCount) ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
         return QINTERFACE_TO_QPARITY(unit)->ProbParity(mask);
     }
     virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
@@ -286,7 +285,6 @@ public:
     {
         QInterface::INCDECC(toAdd, start, length, carryIndex);
     }
-
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
     {
         ExecuteAsStateVector(
@@ -300,7 +298,6 @@ public:
         });
         ResetStateVector();
     }
-
     virtual void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
