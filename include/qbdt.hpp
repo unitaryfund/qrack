@@ -46,6 +46,7 @@ protected:
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
     bitCapInt bdtMaxQPower;
+    bool isAttached;
 
     virtual void SetQubitCount(bitLenInt qb, bitLenInt aqb)
     {
@@ -79,6 +80,10 @@ protected:
     {
         if (!bdtQubitCount) {
             return;
+        }
+
+        if (isAttached) {
+            throw std::domain_error("QBdt::SetStateVector() not yet implemented, after Attach() call!");
         }
 
         QBdtQInterfaceNodePtr nRoot = MakeQInterfaceNode(ONE_R1, qubitCount);

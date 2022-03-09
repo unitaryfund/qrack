@@ -29,6 +29,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , attachedQubitCount(0U)
     , bdtQubitCount(qBitCount)
     , bdtMaxQPower(pow2(qBitCount))
+    , isAttached(false)
 {
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
@@ -350,6 +351,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
 bitLenInt QBdt::Attach(QInterfacePtr toCopy)
 {
+    isAttached = true;
     const bitLenInt toRet = qubitCount;
 
     if (!qubitCount) {
@@ -445,6 +447,7 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     }
     if (bdtQubitCount < length) {
         attachedQubitCount -= length - bdtQubitCount;
+        throw std::domain_error("QBdt::DecomposeDispose() not yet implemented for Attach() qubits!");
     }
     SetQubitCount(qubitCount - length, attachedQubitCount);
 
