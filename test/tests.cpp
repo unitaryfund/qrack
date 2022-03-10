@@ -6538,9 +6538,9 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
     const real1_f succesRate = ((real1_f)(TRIALS - failureCount)) / TRIALS;
     std::cout << "Success rate: " << (TRIALS - failureCount) << " / " << TRIALS << std::endl;
     if (succesRate >= (2.0f / 3.0f)) {
-        std::cout << "Success! QV >= " << n << std::endl;
+        std::cout << "Success! Mirrored correctly. (This does not check heavy outputs, though.)" << std::endl;
     } else {
-        std::cout << "Failures QV < " << n << std::endl;
+        std::cout << "Failure. Mirrored incorrectly." << n << std::endl;
     }
     REQUIRE(succesRate >= (2.0f / 3.0f));
 }

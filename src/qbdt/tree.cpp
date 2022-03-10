@@ -50,9 +50,14 @@ void QBdt::FallbackMtrx(const complex* mtrx, bitLenInt target)
         throw std::domain_error("QBdt has no universal qubits to fall back to, for FallbackMtrx()!");
     }
 
-    Swap(0, target);
-    Mtrx(mtrx, 0);
-    Swap(0, target);
+    bitLenInt randQb = bdtQubitCount * Rand();
+    if (randQb >= bdtQubitCount) {
+        randQb = bdtQubitCount;
+    }
+
+    Swap(randQb, target);
+    Mtrx(mtrx, randQb);
+    Swap(randQb, target);
 }
 
 void QBdt::FallbackMCMtrx(
@@ -62,18 +67,23 @@ void QBdt::FallbackMCMtrx(
         throw std::domain_error("QBdt doesn't have enough universal qubits to fall back to, for FallbackMCMtrx()!");
     }
 
+    bitLenInt randQb = (bdtQubitCount - controlLen) * Rand();
+    if (randQb >= (bdtQubitCount - controlLen)) {
+        randQb = (bdtQubitCount - controlLen);
+    }
+
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen]);
     for (bitLenInt i = 0U; i < controlLen; i++) {
-        lControls[i] = i;
-        Swap(i, controls[i]);
+        lControls[i] = randQb + i;
+        Swap(randQb + i, controls[i]);
     }
-    Swap(controlLen, target);
+    Swap(randQb + controlLen, target);
 
     ApplyControlledSingle(mtrx, lControls.get(), controlLen, controlLen, isAnti);
 
-    Swap(controlLen, target);
+    Swap(randQb + controlLen, target);
     for (bitLenInt i = 0U; i < controlLen; i++) {
-        Swap(controlLen - (i + 1U), controls[controlLen - (i + 1U)]);
+        Swap(controlLen - (randQb + i + 1U), controls[controlLen - (randQb + i + 1U)]);
     }
 }
 
