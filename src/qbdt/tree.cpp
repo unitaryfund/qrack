@@ -49,9 +49,7 @@ void QBdt::FlushControlled(const bitLenInt* controls, bitLenInt controlLen, bitL
 {
     FlushBuffer(target);
     for (bitLenInt i = 0U; i < controlLen; i++) {
-        if (!shards[controls[i]] || !shards[controls[i]]->IsPhase()) {
-            FlushBuffer(controls[i]);
-        }
+        FlushBuffer(controls[i]);
     }
 }
 
