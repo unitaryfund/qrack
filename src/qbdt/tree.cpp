@@ -171,15 +171,17 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 
 QInterfacePtr QBdt::Clone()
 {
-    FlushBuffers();
-
-    QBdtPtr copyPtr = std::make_shared<QBdt>(bdtQubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+    QBdtPtr copyPtr = std::make_shared<QBdt>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
         false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
     ResetStateVector();
 
     copyPtr->root = root ? root->ShallowClone() : NULL;
     copyPtr->SetQubitCount(qubitCount, attachedQubitCount);
+    copyPtr->isAttached = isAttached;
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        copyPtr->shards[i] = shards[i] ? std::make_shared<MpsShard>(shards[i]->gate) : NULL;
+    }
 
     return copyPtr;
 }
@@ -345,38 +347,14 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     ResetStateVector();
     toCopy->ResetStateVector();
 
-    if (attachedQubitCount && toCopy->attachedQubitCount) {
-        const bitLenInt midIndex = bdtQubitCount;
-        if (start < midIndex) {
-            ROL(midIndex - start, 0, qubitCount);
-            Compose(toCopy, midIndex);
-            ROR(midIndex - start, 0, qubitCount);
-
-            return start;
-        }
-
-        if (midIndex < start) {
-            ROR(start - midIndex, 0, qubitCount);
-            Compose(toCopy, midIndex);
-            ROL(start - midIndex, 0, qubitCount);
-
-            return start;
-        }
+    if (toCopy->attachedQubitCount) {
+        throw std::domain_error("QBdt::Compose() not fully implemented, after Attach()!");
     }
 
-    if (attachedQubitCount && !toCopy->attachedQubitCount && start) {
+    if (attachedQubitCount && start) {
         ROR(start, 0, qubitCount);
         Compose(toCopy, 0);
         ROL(start, 0, qubitCount);
-
-        return start;
-    }
-
-    if (!attachedQubitCount && toCopy->attachedQubitCount && (start < qubitCount)) {
-        const bitLenInt endIndex = qubitCount;
-        ROL(endIndex - start, 0, qubitCount);
-        Compose(toCopy, endIndex);
-        ROR(endIndex - start, 0, qubitCount);
 
         return start;
     }
@@ -473,12 +451,8 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
     ResetStateVector();
 
-    if (attachedQubitCount && start) {
-        ROR(start, 0, qubitCount);
-        DecomposeDispose(0, length, dest);
-        ROL(start, 0, qubitCount);
-
-        return;
+    if (attachedQubitCount) {
+        throw std::domain_error("QBdt::DecomposeDispose() not fully implemented, after Attach()!");
     }
 
     if (dest) {
@@ -486,10 +460,6 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         dest->root = root->RemoveSeparableAtDepth(start, length);
     } else {
         root->RemoveSeparableAtDepth(start, length);
-    }
-    if (bdtQubitCount < length) {
-        attachedQubitCount -= length - bdtQubitCount;
-        throw std::domain_error("QBdt::DecomposeDispose() not yet implemented for Attach() qubits!");
     }
     SetQubitCount(qubitCount - length, attachedQubitCount);
     shards.erase(shards.begin() + start, shards.begin() + start + length);
