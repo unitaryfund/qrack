@@ -5943,28 +5943,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_26", "[mirror]")
 
     qftReg->SetPermutation(3);
 
-    qftReg->H(0);
-    qftReg->H(2);
-    qftReg->AntiCY(2, 0);
-    qftReg->H(0);
     qftReg->H(1);
     qftReg->Y(2);
-    qftReg->CY(2, 0);
     qftReg->Z(0);
     qftReg->S(1);
-    qftReg->H(2);
     qftReg->Swap(2, 1);
     qftReg->Swap(2, 1);
-    qftReg->H(2);
     qftReg->IS(1);
     qftReg->Z(0);
-    qftReg->CY(2, 0);
     qftReg->Y(2);
     qftReg->H(1);
-    qftReg->H(0);
-    qftReg->AntiCY(2, 0);
-    qftReg->H(2);
-    qftReg->H(0);
 
     REQUIRE(qftReg->MAll() == 3);
 }
