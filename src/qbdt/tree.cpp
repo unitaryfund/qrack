@@ -653,12 +653,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
     }
 
     if (!bdtQubitCount) {
-        try {
-            NODE_TO_QINTERFACE(root)->Mtrx(mtrx, target);
-        } catch (const std::domain_error&) {
-            FallbackMtrx(mtrx, target);
-        }
-
+        NODE_TO_QINTERFACE(root)->Mtrx(mtrx, target);
         return;
     }
 
@@ -738,22 +733,16 @@ void QBdt::ApplyControlledSingle(
     FlushControlled(controls, controlLen, target);
 
     if (!bdtQubitCount) {
-        try {
-            if (isAnti) {
-                NODE_TO_QINTERFACE(root)->MACMtrx(controls, controlLen, mtrx, target);
-            } else {
-                NODE_TO_QINTERFACE(root)->MCMtrx(controls, controlLen, mtrx, target);
-            }
-        } catch (const std::domain_error&) {
-            FallbackMCMtrx(mtrx, controls, controlLen, target, isAnti);
+        if (isAnti) {
+            NODE_TO_QINTERFACE(root)->MACMtrx(controls, controlLen, mtrx, target);
+        } else {
+            NODE_TO_QINTERFACE(root)->MCMtrx(controls, controlLen, mtrx, target);
         }
-
         return;
     }
 
     std::vector<bitLenInt> controlVec(controlLen);
     std::copy(controls, controls + controlLen, controlVec.begin());
-
     std::sort(controlVec.begin(), controlVec.end());
     const bool isSwapped = (target < controlVec.back()) && (target < bdtQubitCount);
     if (isSwapped) {
@@ -920,7 +909,7 @@ void QBdt::MCPhase(
         return;
     }
 
-    if ((randGlobalPhase || IS_NORM_0(ONE_CMPLX - topLeft)) && IS_NORM_0(topLeft - bottomRight)) {
+    if (IS_NORM_0(ONE_CMPLX - topLeft) && IS_NORM_0(topLeft - bottomRight)) {
         return;
     }
 
