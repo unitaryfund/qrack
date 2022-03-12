@@ -5941,20 +5941,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_26", "[mirror]")
     std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(std::dynamic_pointer_cast<QStabilizer>(
         CreateQuantumInterface({ QINTERFACE_STABILIZER }, 2U, 0, rng, CMPLX_DEFAULT_ARG, false, false)));
 
-    qftReg->SetPermutation(3);
+    qftReg->SetPermutation(7);
 
     qftReg->H(1);
-    qftReg->Y(2);
     qftReg->Z(0);
     qftReg->S(1);
     qftReg->Swap(2, 1);
     qftReg->Swap(2, 1);
     qftReg->IS(1);
     qftReg->Z(0);
-    qftReg->Y(2);
     qftReg->H(1);
 
-    REQUIRE(qftReg->MAll() == 3);
+    REQUIRE(qftReg->MAll() == 7);
 }
 
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
