@@ -6359,7 +6359,6 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase =
             CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, magic, 0, rng);
-        // TODO: Non-arbitrary global phase is not yet implemented for stabilizer, and this introduces error.
         std::dynamic_pointer_cast<QBdt>(testCase)->Attach(
             CreateQuantumInterface({ QINTERFACE_STABILIZER }, n - magic, 0, rng, CMPLX_DEFAULT_ARG, false, false));
 
@@ -6540,7 +6539,7 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
     if (succesRate >= (2.0f / 3.0f)) {
         std::cout << "Success! Mirrored correctly. (This does not check heavy outputs, though.)" << std::endl;
     } else {
-        std::cout << "Failure. Mirrored incorrectly." << n << std::endl;
+        std::cout << "Failure. Mirrored incorrectly." << std::endl;
     }
     REQUIRE(succesRate >= (2.0f / 3.0f));
 }
