@@ -6350,6 +6350,202 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
     }
 }
 
+TEST_CASE("test_mirror_near_clifford", "[mirror]")
+{
+    if (testEngineType != QINTERFACE_BDT) {
+        std::cout << ">>> 'test_mirror_near_clifford': skipped" << std::endl;
+        return;
+    }
+
+    std::cout << ">>> 'test_mirror_near_clifford':" << std::endl;
+
+    const int GateCount1Qb = 8;
+    const int GateCount2Qb = 7;
+
+    const int TRIALS = benchmarkSamples;
+    const int Depth = benchmarkDepth;
+    const int n = benchmarkDepth;
+    const int magic = (benchmarkMaxMagic < 0) ? 3U : benchmarkMaxMagic;
+
+    std::cout << "Width/Depth (with x2 depth mirror): " << n << std::endl;
+    std::cout << "\"Magic\": " << magic << std::endl;
+    std::cout << "Trials: " << TRIALS << std::endl;
+
+    int failureCount = 0;
+
+    int d;
+    int i;
+    int maxGates;
+
+    int gate;
+
+    for (int trial = 0; trial < TRIALS; trial++) {
+        QInterfacePtr testCase = CreateQuantumInterface({ QINTERFACE_BDT }, magic, 0, rng);
+        std::dynamic_pointer_cast<QBdt>(testCase)->Attach(std::dynamic_pointer_cast<QStabilizer>(
+            CreateQuantumInterface({ QINTERFACE_STABILIZER }, n - magic, 0, rng)));
+
+        std::vector<std::vector<int>> gate1QbRands(Depth);
+        std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
+
+        for (d = 0; d < Depth; d++) {
+            std::vector<int>& layer1QbRands = gate1QbRands[d];
+            for (i = 0; i < n; i++) {
+                if ((n * Depth * testCase->Rand() / (n + 2)) < ONE_R1) {
+                    if ((2 * testCase->Rand()) < ONE_R1) {
+                        gate = (GateCount1Qb - 2);
+                    } else {
+                        gate = (GateCount1Qb - 1);
+                    }
+                } else {
+                    gate = (int)(testCase->Rand() * (GateCount1Qb - 2U));
+                    if (gate >= (GateCount1Qb - 2)) {
+                        gate = (GateCount1Qb - 3);
+                    }
+                    layer1QbRands.push_back(gate);
+                }
+            }
+
+            std::set<bitLenInt> unusedBits;
+            for (i = 0; i < n; i++) {
+                unusedBits.insert(i);
+            }
+
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            while (unusedBits.size() > 1) {
+                MultiQubitGate multiGate;
+                multiGate.b1 = pickRandomBit(testCase, &unusedBits);
+                multiGate.b2 = pickRandomBit(testCase, &unusedBits);
+                multiGate.b3 = 0;
+
+                maxGates = GateCount2Qb;
+
+                gate = (int)(testCase->Rand() * maxGates);
+                if (gate >= maxGates) {
+                    gate = (maxGates - 1U);
+                }
+
+                multiGate.gate = gate;
+
+                if (multiGate.gate >= GateCount2Qb) {
+                    multiGate.b3 = pickRandomBit(testCase, &unusedBits);
+                }
+
+                layerMultiQbRands.push_back(multiGate);
+            }
+        }
+
+        bitCapIntOcl randPerm = testCase->Rand() * (bitCapIntOcl)testCase->GetMaxQPower();
+        if (randPerm >= testCase->GetMaxQPower()) {
+            randPerm = (bitCapIntOcl)testCase->GetMaxQPower() - 1U;
+        }
+        testCase->SetPermutation(randPerm);
+
+        for (d = 0; d < Depth; d++) {
+            std::vector<int>& layer1QbRands = gate1QbRands[d];
+            for (i = 0; i < (int)layer1QbRands.size(); i++) {
+                int gate1Qb = layer1QbRands[i];
+                if (gate1Qb == 0) {
+                    testCase->H(i);
+                } else if (gate1Qb == 1) {
+                    testCase->X(i);
+                } else if (gate1Qb == 2) {
+                    testCase->Y(i);
+                } else if (gate1Qb == 3) {
+                    testCase->Z(i);
+                } else if (gate1Qb == 4) {
+                    testCase->S(i);
+                } else if (gate1Qb == 5) {
+                    testCase->IS(i);
+                } else if (gate1Qb == 6) {
+                    testCase->T(i);
+                } else {
+                    testCase->IT(i);
+                }
+            }
+
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
+                MultiQubitGate multiGate = layerMultiQbRands[i];
+                if (multiGate.gate == 0) {
+                    testCase->Swap(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 1) {
+                    testCase->CNOT(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 2) {
+                    testCase->CY(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 3) {
+                    testCase->CZ(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 4) {
+                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 5) {
+                    testCase->AntiCY(multiGate.b1, multiGate.b2);
+                } else {
+                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
+                }
+            }
+        }
+
+        // Mirror the circuit
+        for (d = Depth - 1U; d >= 0; d--) {
+            std::vector<MultiQubitGate>& layerMultiQbRands = gateMultiQbRands[d];
+            for (i = (layerMultiQbRands.size() - 1U); i >= 0; i--) {
+                MultiQubitGate multiGate = layerMultiQbRands[i];
+                if (multiGate.gate == 0) {
+                    testCase->Swap(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 1) {
+                    testCase->CNOT(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 2) {
+                    testCase->CY(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 3) {
+                    testCase->CZ(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 4) {
+                    testCase->AntiCNOT(multiGate.b1, multiGate.b2);
+                } else if (multiGate.gate == 5) {
+                    testCase->AntiCY(multiGate.b1, multiGate.b2);
+                } else {
+                    testCase->AntiCZ(multiGate.b1, multiGate.b2);
+                }
+            }
+
+            std::vector<int>& layer1QbRands = gate1QbRands[d];
+            for (i = (layer1QbRands.size() - 1U); i >= 0; i--) {
+                int gate1Qb = layer1QbRands[i];
+                if (gate1Qb == 0) {
+                    testCase->H(i);
+                } else if (gate1Qb == 1) {
+                    testCase->X(i);
+                } else if (gate1Qb == 2) {
+                    testCase->Y(i);
+                } else if (gate1Qb == 3) {
+                    testCase->Z(i);
+                } else if (gate1Qb == 4) {
+                    testCase->IS(i);
+                } else if (gate1Qb == 5) {
+                    testCase->S(i);
+                } else if (gate1Qb == 6) {
+                    testCase->IT(i);
+                } else {
+                    testCase->T(i);
+                }
+            }
+        }
+
+        bitCapInt result = testCase->MAll();
+
+        if (result != randPerm) {
+            failureCount++;
+        }
+    }
+
+    const real1_f succesRate = ((real1_f)(TRIALS - failureCount)) / TRIALS;
+    std::cout << "Success rate: " << (TRIALS - failureCount) << " / " << TRIALS << std::endl;
+    if (succesRate >= (2.0f / 3.0f)) {
+        std::cout << "Success! Mirrored correctly. (This does not check heavy outputs, though.)" << std::endl;
+    } else {
+        std::cout << "Failure. Mirrored incorrectly." << std::endl;
+    }
+    REQUIRE(succesRate >= (2.0f / 3.0f));
+}
+
 TEST_CASE("test_mirror_quantum_volume", "[mirror]")
 {
     if (testEngineType != QINTERFACE_BDT) {
