@@ -246,6 +246,12 @@ public:
         throw std::domain_error("QStabilizer::SetAmplitude() not implemented!");
     }
 
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f ignored = TRYDECOMPOSE_EPSILON)
+    {
+        return isEqual(std::dynamic_pointer_cast<QStabilizer>(toCompare));
+    }
+    virtual bool isEqual(QStabilizerPtr toCompare);
+
     real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
         throw std::domain_error("QStabilizer::SumSqrDiff() not implemented!");

@@ -339,6 +339,42 @@ void QStabilizer::setBasisProb(const real1_f& nrm, real1* outputProbs)
     outputProbs[entry.permutation] = norm(entry.amplitude);
 }
 
+bool QStabilizer::isEqual(QStabilizerPtr toCompare)
+{
+    if (!toCompare) {
+        return false;
+    }
+
+    if (qubitCount != toCompare->qubitCount) {
+        return false;
+    }
+
+    if (!qubitCount) {
+        return true;
+    }
+
+    gaussian();
+    toCompare->gaussian();
+
+    const bitLenInt elemCount = qubitCount << 1U;
+
+    for (bitLenInt i = 0; i < elemCount; i++) {
+        if (r[i] != toCompare->r[i]) {
+            return false;
+        }
+        for (bitLenInt j = 0; j < qubitCount; j++) {
+            if (x[i][j] != toCompare->x[i][j]) {
+                return false;
+            }
+            if (z[i][j] != toCompare->z[i][j]) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
 #define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
 
