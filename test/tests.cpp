@@ -2803,11 +2803,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
     QInterfacePtr qftReg2;
     if (testEngineType == QINTERFACE_BDT) {
         qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 2, 0x03, rng);
-        std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(std::dynamic_pointer_cast<QInterface>(
-            CreateQuantumInterface({ testSubEngineType, testSubSubEngineType }, 2, 0x02, rng)));
+        std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(
+            std::dynamic_pointer_cast<QStabilizer>(CreateQuantumInterface({ QINTERFACE_STABILIZER }, 2, 0x02, rng)));
         qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 2, 0x02, rng);
-        std::dynamic_pointer_cast<QBdt>(qftReg2)->Attach(std::dynamic_pointer_cast<QInterface>(
-            CreateQuantumInterface({ testSubEngineType, testSubSubEngineType }, 2, 0x00, rng)));
+        std::dynamic_pointer_cast<QBdt>(qftReg2)->Attach(
+            std::dynamic_pointer_cast<QStabilizer>(CreateQuantumInterface({ QINTERFACE_STABILIZER }, 2, 0x00, rng)));
     } else {
         qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
         qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng);
@@ -6040,9 +6040,9 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
                 } else if (gate1Qb == 4) {
                     testCase->S(i);
                 } else if (gate1Qb == 5) {
-                    testCase->T(i);
-                } else if (gate1Qb == 6) {
                     testCase->IS(i);
+                } else if (gate1Qb == 6) {
+                    testCase->T(i);
                 } else {
                     testCase->IT(i);
                 }
@@ -6129,9 +6129,9 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
                 } else if (gate1Qb == 4) {
                     testCase->IS(i);
                 } else if (gate1Qb == 5) {
-                    testCase->IT(i);
-                } else if (gate1Qb == 6) {
                     testCase->S(i);
+                } else if (gate1Qb == 6) {
+                    testCase->IT(i);
                 } else {
                     testCase->T(i);
                 }
@@ -6161,10 +6161,10 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
                         std::cout << "qftReg->S(" << (int)i << ");" << std::endl;
                         // testCase->S(i);
                     } else if (gate1Qb == 5) {
-                        std::cout << "qftReg->T(" << (int)i << ");" << std::endl;
+                        std::cout << "qftReg->IS(" << (int)i << ");" << std::endl;
                         // testCase->T(i);
                     } else if (gate1Qb == 6) {
-                        std::cout << "qftReg->IS(" << (int)i << ");" << std::endl;
+                        std::cout << "qftReg->T(" << (int)i << ");" << std::endl;
                         // testCase->IS(i);
                     } else {
                         std::cout << "qftReg->IT(" << (int)i << ");" << std::endl;
@@ -6309,10 +6309,10 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
                         std::cout << "qftReg->IS(" << (int)i << ");" << std::endl;
                         // testCase->IS(i);
                     } else if (gate1Qb == 5) {
-                        std::cout << "qftReg->IT(" << (int)i << ");" << std::endl;
+                        std::cout << "qftReg->S(" << (int)i << ");" << std::endl;
                         // testCase->IT(i);
                     } else if (gate1Qb == 6) {
-                        std::cout << "qftReg->S(" << (int)i << ");" << std::endl;
+                        std::cout << "qftReg->IT(" << (int)i << ");" << std::endl;
                         // testCase->S(i);
                     } else {
                         std::cout << "qftReg->T(" << (int)i << ");" << std::endl;
@@ -6357,10 +6357,9 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
     int gate;
 
     for (int trial = 0; trial < TRIALS; trial++) {
-        QInterfacePtr testCase =
-            CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, magic, 0, rng);
-        std::dynamic_pointer_cast<QBdt>(testCase)->Attach(
-            CreateQuantumInterface({ QINTERFACE_STABILIZER }, n - magic, 0, rng, CMPLX_DEFAULT_ARG, false, false));
+        QInterfacePtr testCase = CreateQuantumInterface({ QINTERFACE_BDT }, magic, 0, rng);
+        std::dynamic_pointer_cast<QBdt>(testCase)->Attach(std::dynamic_pointer_cast<QStabilizer>(
+            CreateQuantumInterface({ QINTERFACE_STABILIZER }, n - magic, 0, rng, CMPLX_DEFAULT_ARG, false, false)));
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
@@ -6429,9 +6428,9 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
                 } else if (gate1Qb == 4) {
                     testCase->S(i);
                 } else if (gate1Qb == 5) {
-                    testCase->T(i);
-                } else if (gate1Qb == 6) {
                     testCase->IS(i);
+                } else if (gate1Qb == 6) {
+                    testCase->T(i);
                 } else {
                     testCase->IT(i);
                 }
@@ -6518,9 +6517,9 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
                 } else if (gate1Qb == 4) {
                     testCase->IS(i);
                 } else if (gate1Qb == 5) {
-                    testCase->IT(i);
-                } else if (gate1Qb == 6) {
                     testCase->S(i);
+                } else if (gate1Qb == 6) {
+                    testCase->IT(i);
                 } else {
                     testCase->T(i);
                 }

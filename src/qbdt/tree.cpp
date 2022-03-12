@@ -388,7 +388,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     return start;
 }
 
-bitLenInt QBdt::Attach(QInterfacePtr toCopy)
+bitLenInt QBdt::Attach(QStabilizerPtr toCopy)
 {
     isAttached = true;
     const bitLenInt toRet = qubitCount;
