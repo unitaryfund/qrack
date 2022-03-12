@@ -948,7 +948,7 @@ void QBdt::MCInvert(
     std::copy(controls, controls + controlLen, controlVec.begin());
     std::sort(controlVec.begin(), controlVec.end());
 
-    if (controlVec.back() < target) {
+    if ((controlVec.back() < target) || (target >= bdtQubitCount)) {
         ApplyControlledSingle(mtrx, controls, controlLen, target, false);
         return;
     }
