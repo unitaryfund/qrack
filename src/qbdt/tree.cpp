@@ -909,13 +909,13 @@ void QBdt::MCPhase(
         return;
     }
 
-    if (IS_NORM_0(ONE_CMPLX - topLeft) && IS_NORM_0(ONE_CMPLX - bottomRight)) {
-        return;
-    }
-
     const complex mtrx[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
     if (!IS_NORM_0(ONE_CMPLX - topLeft)) {
         ApplyControlledSingle(mtrx, controls, controlLen, target, false);
+        return;
+    }
+
+    if (IS_NORM_0(ONE_CMPLX - bottomRight)) {
         return;
     }
 
