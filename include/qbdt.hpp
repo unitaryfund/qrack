@@ -18,8 +18,8 @@
 
 #include "mpsshard.hpp"
 #include "qbdt_qinterface_node.hpp"
-#include "qinterface.hpp"
 #include "qparity.hpp"
+#include "qstabilizer.hpp"
 
 #if ENABLE_ALU
 #include "qalu.hpp"
@@ -210,7 +210,7 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QBdt>(toCopy), start);
     }
-    virtual bitLenInt Attach(QInterfacePtr toCopy, bitLenInt start)
+    virtual bitLenInt Attach(QStabilizerPtr toCopy, bitLenInt start)
     {
         if (start == qubitCount) {
             return Attach(toCopy);
@@ -223,7 +223,7 @@ public:
 
         return result;
     }
-    virtual bitLenInt Attach(QInterfacePtr toCopy);
+    virtual bitLenInt Attach(QStabilizerPtr toCopy);
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));
