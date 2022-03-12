@@ -458,8 +458,6 @@ public:
     virtual bitCapInt MAll();
 
     virtual void Mtrx(const complex* mtrx, bitLenInt target);
-    virtual void Phase(complex topLeft, complex bottomRight, bitLenInt target);
-    virtual void Invert(complex topRight, complex bottomLeft, bitLenInt target);
     virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
     virtual void MCPhase(
         const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
