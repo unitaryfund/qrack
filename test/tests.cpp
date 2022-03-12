@@ -6379,6 +6379,7 @@ TEST_CASE("test_mirror_near_clifford", "[mirror]")
 
     int gate;
 
+    real1_f tRate = ZERO_R1;
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase = CreateQuantumInterface({ QINTERFACE_BDT }, magic, 0, rng);
         std::dynamic_pointer_cast<QBdt>(testCase)->Attach(std::dynamic_pointer_cast<QStabilizer>(
@@ -6387,6 +6388,7 @@ TEST_CASE("test_mirror_near_clifford", "[mirror]")
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
 
+        int tGateCount = 0;
         for (d = 0; d < Depth; d++) {
             std::vector<int>& layer1QbRands = gate1QbRands[d];
             for (i = 0; i < n; i++) {
@@ -6396,6 +6398,7 @@ TEST_CASE("test_mirror_near_clifford", "[mirror]")
                     } else {
                         gate = (GateCount1Qb - 1);
                     }
+                    tGateCount++;
                 } else {
                     gate = (int)(testCase->Rand() * (GateCount1Qb - 2U));
                     if (gate >= (GateCount1Qb - 2)) {
@@ -6529,6 +6532,8 @@ TEST_CASE("test_mirror_near_clifford", "[mirror]")
             }
         }
 
+        tRate += ((real1_f)tGateCount) / TRIALS;
+
         bitCapInt result = testCase->MAll();
 
         if (result != randPerm) {
@@ -6543,6 +6548,7 @@ TEST_CASE("test_mirror_near_clifford", "[mirror]")
     } else {
         std::cout << "Failure. Mirrored incorrectly." << std::endl;
     }
+    std::cout << "Average T gates per trial: " << tRate << std::endl;
     REQUIRE(succesRate >= (2.0f / 3.0f));
 }
 
