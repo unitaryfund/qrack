@@ -909,7 +909,7 @@ void QBdt::MCPhase(
         return;
     }
 
-    if (IS_NORM_0(ONE_CMPLX - topLeft) && IS_NORM_0(topLeft - bottomRight)) {
+    if (IS_NORM_0(ONE_CMPLX - topLeft) && IS_NORM_0(ONE_CMPLX - bottomRight)) {
         return;
     }
 
