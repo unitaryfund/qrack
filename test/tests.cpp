@@ -5930,6 +5930,45 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_25", "[mirror]")
     REQUIRE(qftReg->MAll() == 2);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_26", "[mirror]")
+{
+    if (testEngineType != QINTERFACE_BDT) {
+        std::cout << "skipped" << std::endl;
+        return;
+    }
+
+    qftReg = CreateQuantumInterface({ QINTERFACE_BDT }, 1U, 0, rng);
+    std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(std::dynamic_pointer_cast<QStabilizer>(
+        CreateQuantumInterface({ QINTERFACE_STABILIZER }, 2U, 0, rng, CMPLX_DEFAULT_ARG, false, false)));
+
+    qftReg->SetPermutation(3);
+
+    qftReg->H(0);
+    qftReg->H(2);
+    qftReg->AntiCY(2, 0);
+    qftReg->H(0);
+    qftReg->H(1);
+    qftReg->Y(2);
+    qftReg->CY(2, 0);
+    qftReg->Z(0);
+    qftReg->S(1);
+    qftReg->H(2);
+    qftReg->Swap(2, 1);
+    qftReg->Swap(2, 1);
+    qftReg->H(2);
+    qftReg->IS(1);
+    qftReg->Z(0);
+    qftReg->CY(2, 0);
+    qftReg->Y(2);
+    qftReg->H(1);
+    qftReg->H(0);
+    qftReg->AntiCY(2, 0);
+    qftReg->H(2);
+    qftReg->H(0);
+
+    REQUIRE(qftReg->MAll() == 3);
+}
+
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
