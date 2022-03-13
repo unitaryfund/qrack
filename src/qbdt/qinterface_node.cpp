@@ -83,6 +83,32 @@ void QBdtQInterfaceNode::Branch(bitLenInt depth)
     }
 }
 
+void QBdtQInterfaceNode::Prune(bitLenInt depth)
+{
+    if (!depth) {
+        return;
+    }
+
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        SetZero();
+        return;
+    }
+
+    if (!qReg) {
+        return;
+    }
+
+    if (qReg->GetIsArbitraryGlobalPhase()) {
+        throw std::invalid_argument("QBdt attached qubits cannot have arbitrary global phase!");
+    }
+
+    const real1_f phaseArg = qReg->FirstNonzeroPhase();
+    std::cout << "phaseArg=" << phaseArg << std::endl;
+    const complex phaseFac = std::polar((real1_f)ONE_R1, (real1_f)-phaseArg);
+    qReg->Phase(phaseFac, phaseFac, 0);
+    scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
+}
+
 void QBdtQInterfaceNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
 {
     if (norm(scale) <= FP_NORM_EPSILON) {

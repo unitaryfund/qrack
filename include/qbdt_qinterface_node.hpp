@@ -71,13 +71,13 @@ public:
 
     virtual void Branch(bitLenInt depth = 1U);
 
-    virtual void Prune(bitLenInt depth = 1U) {}
+    virtual void Prune(bitLenInt depth = 1U);
 
     virtual void InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size);
 
     virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size);
 
-    virtual void PopStateVector(bitLenInt depth = 1U) {}
+    virtual void PopStateVector(bitLenInt depth = 1U) { Prune(); }
 
 #if ENABLE_COMPLEX_X2
     virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitLenInt depth)

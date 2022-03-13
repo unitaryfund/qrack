@@ -675,7 +675,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_qbdt_stabilizer(_In_ unsigned q, _In_ unsig
         try {
             simulator = std::dynamic_pointer_cast<QBdt>(CreateQuantumInterface(simulatorType, q, 0, randNumGen));
             simulator->Attach(std::dynamic_pointer_cast<QStabilizer>(
-                CreateQuantumInterface({ QINTERFACE_STABILIZER }, c, 0, randNumGen)));
+                CreateQuantumInterface({ QINTERFACE_STABILIZER }, c, 0, randNumGen, CMPLX_DEFAULT_ARG, false, false)));
         } catch (...) {
             isSuccess = false;
         }

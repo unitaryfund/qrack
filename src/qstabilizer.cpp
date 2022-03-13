@@ -42,6 +42,7 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     , x((n << 1U) + 1U, BoolVector(n, false))
     , z((n << 1U) + 1U, BoolVector(n, false))
     , r((n << 1U) + 1U)
+    , phaseOffset(ONE_CMPLX)
     , rawRandBools(0)
     , rawRandBoolsRemaining(0)
 {
@@ -393,7 +394,7 @@ real1_f QStabilizer::FirstNonzeroPhase()
 
     const AmplitudeEntry entry0 = getBasisAmp(nrm);
     if (entry0.amplitude != ZERO_CMPLX) {
-        return (real1_f)std::arg(entry0.amplitude);
+        return (real1_f)std::arg(phaseOffset * entry0.amplitude);
     }
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1);
@@ -404,7 +405,7 @@ real1_f QStabilizer::FirstNonzeroPhase()
         }
         const AmplitudeEntry entry = getBasisAmp(nrm);
         if (entry.amplitude != ZERO_CMPLX) {
-            return (real1_f)std::arg(entry.amplitude);
+            return (real1_f)std::arg(phaseOffset * entry.amplitude);
         }
     }
 
@@ -1081,465 +1082,150 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     }
 
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
-        if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            H(target);
-            return;
+        H(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
         }
-
-        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            Z(target);
-            X(target);
-            Z(target);
-            X(target);
-            H(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            S(target);
-            X(target);
-            S(target);
-            X(target);
-            H(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            IS(target);
-            X(target);
-            IS(target);
-            X(target);
-            H(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         // Equivalent to X before H
-        if (randGlobalPhase) {
-            StabilizerISqrtY(target);
-            return;
+        StabilizerISqrtY(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
         }
-
-        if (IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            X(target);
-            H(target);
-            return;
-        }
-
-        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            Z(target);
-            X(target);
-            Z(target);
-            H(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            S(target);
-            X(target);
-            S(target);
-            H(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            IS(target);
-            X(target);
-            IS(target);
-            H(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         // Equivalent to H before X
-        if (randGlobalPhase) {
-            StabilizerSqrtY(target);
-            return;
+        StabilizerSqrtY(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
         }
-
-        if (IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            H(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            H(target);
-            Z(target);
-            X(target);
-            Z(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            H(target);
-            S(target);
-            X(target);
-            S(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            H(target);
-            IS(target);
-            X(target);
-            IS(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
         // Equivalent to X-H-X
-        if (randGlobalPhase) {
-            X(target);
-            StabilizerSqrtY(target);
-            return;
+        X(target);
+        StabilizerSqrtY(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
         }
-
-        // Reverses sign
-
-        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            X(target);
-            H(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            Z(target);
-            X(target);
-            Z(target);
-            H(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            S(target);
-            X(target);
-            S(target);
-            H(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            IS(target);
-            X(target);
-            IS(target);
-            H(target);
-            X(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
-        if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            H(target);
-            S(target);
-            return;
+        H(target);
+        S(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
         }
-
-        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            H(target);
-            IS(target);
-            X(target);
-            Z(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            H(target);
-            Z(target);
-            X(target);
-            S(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            H(target);
-            X(target);
-            IS(target);
-            X(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
-        if (randGlobalPhase) {
-            StabilizerISqrtY(target);
-            S(target);
-            return;
+        StabilizerISqrtY(target);
+        S(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
         }
-
-        if (IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            X(target);
-            H(target);
-            S(target);
-            return;
-        }
-
-        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            Z(target);
-            X(target);
-            Z(target);
-            H(target);
-            S(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            S(target);
-            X(target);
-            S(target);
-            H(target);
-            S(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            IS(target);
-            X(target);
-            IS(target);
-            H(target);
-            S(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
-        if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            H(target);
-            X(target);
-            IS(target);
-            return;
+        H(target);
+        X(target);
+        IS(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
         }
-
-        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            H(target);
-            Z(target);
-            X(target);
-            S(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            H(target);
-            S(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            H(target);
-            IS(target);
-            X(target);
-            Z(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
-        if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            H(target);
-            X(target);
-            S(target);
-            return;
+        H(target);
+        X(target);
+        S(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
         }
-
-        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            H(target);
-            Z(target);
-            X(target);
-            IS(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            H(target);
-            S(target);
-            X(target);
-            Z(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            H(target);
-            IS(target);
-            X(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
-        if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            IS(target);
-            H(target);
-            return;
+        IS(target);
+        H(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
         }
-
-        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            X(target);
-            Z(target);
-            X(target);
-            S(target);
-            H(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            X(target);
-            S(target);
-            X(target);
-            H(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            X(target);
-            IS(target);
-            X(target);
-            Z(target);
-            H(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
-        if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            S(target);
-            H(target);
-            return;
+        S(target);
+        H(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
         }
-
-        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            IS(target);
-            X(target);
-            Z(target);
-            X(target);
-            H(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            Z(target);
-            X(target);
-            S(target);
-            X(target);
-            H(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            X(target);
-            IS(target);
-            X(target);
-            H(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
-        if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            IS(target);
-            H(target);
-            X(target);
-            Z(target);
-            return;
+        IS(target);
+        H(target);
+        X(target);
+        Z(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
         }
-
-        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            IS(target);
-            H(target);
-            Z(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            IS(target);
-            H(target);
-            S(target);
-            X(target);
-            IS(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            IS(target);
-            H(target);
-            IS(target);
-            X(target);
-            S(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
-        if (randGlobalPhase || IS_SAME(SQRT1_2_R1, mtrx[0])) {
-            S(target);
-            H(target);
-            X(target);
-            Z(target);
-            return;
+        S(target);
+        H(target);
+        X(target);
+        Z(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
         }
-
-        if (IS_SAME(-SQRT1_2_R1, mtrx[0])) {
-            S(target);
-            H(target);
-            Z(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, SQRT1_2_R1), mtrx[0])) {
-            S(target);
-            H(target);
-            S(target);
-            X(target);
-            IS(target);
-            return;
-        }
-
-        if (IS_SAME(complex(ZERO_R1, -SQRT1_2_R1), mtrx[0])) {
-            S(target);
-            H(target);
-            IS(target);
-            X(target);
-            S(target);
-            return;
-        }
-    }
-
-    // TODO: Finish adding decompositions, below, (whereas these assume global phase offset is arbitrary)
-
-    if (randGlobalPhase && IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) &&
-        IS_SAME(mtrx[0], mtrx[3])) {
-        StabilizerSqrtX(target);
         return;
     }
 
-    if (randGlobalPhase && IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) &&
-        IS_SAME(mtrx[0], mtrx[3])) {
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+        StabilizerSqrtX(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        }
+        return;
+    }
+
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         StabilizerISqrtX(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        }
         return;
     }
 
-    if (randGlobalPhase && IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) &&
-        IS_SAME(mtrx[0], -mtrx[3])) {
+    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
         StabilizerSqrtX(target);
         Z(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        }
         return;
     }
 
-    if (randGlobalPhase && IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) &&
-        IS_SAME(mtrx[0], -mtrx[3])) {
+    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
         Z(target);
         StabilizerSqrtX(target);
+        if (!randGlobalPhase) {
+            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        }
         return;
     }
 
@@ -1549,123 +1235,46 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 {
     if (IS_SAME(topLeft, bottomRight)) {
-        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topLeft)) {
-            return;
+        if (!randGlobalPhase) {
+            phaseOffset *= topLeft;
         }
-
-        if (IS_SAME(-ONE_CMPLX, topLeft)) {
-            Z(target);
-            X(target);
-            Z(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(I_CMPLX, topLeft)) {
-            S(target);
-            X(target);
-            S(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(-I_CMPLX, topLeft)) {
-            IS(target);
-            X(target);
-            IS(target);
-            X(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(topLeft, -bottomRight)) {
-        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topLeft)) {
-            Z(target);
-            return;
+        Z(target);
+        if (!randGlobalPhase) {
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= topLeft;
+            } else {
+                phaseOffset *= bottomRight;
+            }
         }
-
-        if (IS_SAME(-ONE_CMPLX, topLeft)) {
-            X(target);
-            Z(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(I_CMPLX, topLeft)) {
-            IS(target);
-            X(target);
-            S(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(-I_CMPLX, topLeft)) {
-            S(target);
-            X(target);
-            IS(target);
-            X(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(topLeft, -I_CMPLX * bottomRight)) {
-        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topLeft)) {
-            S(target);
-            return;
+        S(target);
+        if (!randGlobalPhase) {
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= topLeft;
+            } else {
+                phaseOffset *= bottomRight;
+            }
         }
-
-        if (IS_SAME(-ONE_CMPLX, topLeft)) {
-            IS(target);
-            X(target);
-            Z(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(I_CMPLX, topLeft)) {
-            Z(target);
-            X(target);
-            S(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(-I_CMPLX, topLeft)) {
-            X(target);
-            IS(target);
-            X(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(topLeft, I_CMPLX * bottomRight)) {
-        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topLeft)) {
-            IS(target);
-            return;
+        IS(target);
+        if (!randGlobalPhase) {
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= topLeft;
+            } else {
+                phaseOffset *= bottomRight;
+            }
         }
-
-        if (IS_SAME(-ONE_CMPLX, topLeft)) {
-            S(target);
-            X(target);
-            Z(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(I_CMPLX, topLeft)) {
-            X(target);
-            S(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(-I_CMPLX, topLeft)) {
-            Z(target);
-            X(target);
-            IS(target);
-            X(target);
-            return;
-        }
+        return;
     }
 
     if (randGlobalPhase && IsSeparableZ(target)) {
@@ -1679,113 +1288,54 @@ void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 {
     if (IS_SAME(topRight, bottomLeft)) {
-        if (randGlobalPhase || IS_SAME(ONE_R1, topRight)) {
-            X(target);
-            return;
+        X(target);
+        if (!randGlobalPhase) {
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= topRight;
+            } else {
+                phaseOffset *= bottomLeft;
+            }
         }
-
-        if (IS_SAME(-ONE_CMPLX, topRight)) {
-            Z(target);
-            X(target);
-            Z(target);
-            return;
-        }
-
-        if (IS_SAME(I_CMPLX, topRight)) {
-            S(target);
-            X(target);
-            S(target);
-            return;
-        }
-
-        if (IS_SAME(-I_CMPLX, topRight)) {
-            IS(target);
-            X(target);
-            IS(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(topRight, -bottomLeft)) {
-        if (IS_SAME(ONE_CMPLX, topRight)) {
-            X(target);
-            Z(target);
-            return;
+        X(target);
+        Z(target);
+        if (!randGlobalPhase) {
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= topRight;
+            } else {
+                phaseOffset *= bottomLeft;
+            }
         }
-
-        if (IS_SAME(-ONE_CMPLX, topRight)) {
-            Z(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(I_CMPLX, topRight)) {
-            S(target);
-            X(target);
-            IS(target);
-            return;
-        }
-
-        if (randGlobalPhase || IS_SAME(-I_CMPLX, topRight)) {
-            Y(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(topRight, -I_CMPLX * bottomLeft)) {
-        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topRight)) {
-            X(target);
-            S(target);
-            return;
+        X(target);
+        S(target);
+        if (!randGlobalPhase) {
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= topRight;
+            } else {
+                phaseOffset *= bottomLeft;
+            }
         }
-
-        if (IS_SAME(-ONE_CMPLX, topRight)) {
-            Z(target);
-            X(target);
-            IS(target);
-            return;
-        }
-
-        if (IS_SAME(I_CMPLX, topRight)) {
-            S(target);
-            X(target);
-            Z(target);
-            return;
-        }
-
-        if (IS_SAME(-I_CMPLX, topRight)) {
-            IS(target);
-            X(target);
-            return;
-        }
+        return;
     }
 
     if (IS_SAME(topRight, I_CMPLX * bottomLeft)) {
-        if (randGlobalPhase || IS_SAME(ONE_CMPLX, topRight)) {
-            X(target);
-            IS(target);
-            return;
+        X(target);
+        IS(target);
+        if (!randGlobalPhase) {
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= topRight;
+            } else {
+                phaseOffset *= bottomLeft;
+            }
         }
-
-        if (IS_SAME(-ONE_CMPLX, topRight)) {
-            Z(target);
-            X(target);
-            S(target);
-            return;
-        }
-
-        if (IS_SAME(I_CMPLX, topRight)) {
-            S(target);
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(-I_CMPLX, topRight)) {
-            IS(target);
-            X(target);
-            Z(target);
-            return;
-        }
+        return;
     }
 
     if (randGlobalPhase && IsSeparableZ(target)) {
