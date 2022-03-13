@@ -3562,6 +3562,23 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ciadc")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
 }
 
+TEST_CASE("test_attach")
+{
+    if (testEngineType != QINTERFACE_BDT) {
+        std::cout << ">>> 'test_attach': skipped" << std::endl;
+        return;
+    }
+    std::cout << ">>> 'test_attach':" << std::endl;
+
+    QInterfacePtr qftReg = CreateQuantumInterface({ QINTERFACE_BDT }, 1U, 0, rng);
+    std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(
+        std::dynamic_pointer_cast<QStabilizer>(CreateQuantumInterface({ QINTERFACE_STABILIZER }, 1U, 0, rng)));
+
+    qftReg->SetPermutation(0x1);
+    qftReg->CNOT(0, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0x3));
+}
+
 int qRand(int high, QInterfacePtr q)
 {
     int rand = (int)(high * q->Rand());
@@ -5930,14 +5947,15 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_25", "[mirror]")
     REQUIRE(qftReg->MAll() == 2);
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_26", "[mirror]")
+TEST_CASE("test_mirror_circuit_26", "[mirror]")
 {
     if (testEngineType != QINTERFACE_BDT) {
-        std::cout << "skipped" << std::endl;
+        std::cout << ">>> 'test_mirror_circuit_26': skipped" << std::endl;
         return;
     }
+    std::cout << ">>> 'test_mirror_circuit_26':" << std::endl;
 
-    qftReg = CreateQuantumInterface({ QINTERFACE_BDT }, 1U, 0, rng);
+    QInterfacePtr qftReg = CreateQuantumInterface({ QINTERFACE_BDT }, 1U, 0, rng);
     std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(
         std::dynamic_pointer_cast<QStabilizer>(CreateQuantumInterface({ QINTERFACE_STABILIZER }, 2U, 0, rng)));
 
@@ -6356,7 +6374,6 @@ TEST_CASE("test_mirror_near_clifford", "[mirror]")
         std::cout << ">>> 'test_mirror_near_clifford': skipped" << std::endl;
         return;
     }
-
     std::cout << ">>> 'test_mirror_near_clifford':" << std::endl;
 
     const int GateCount1Qb = 8;
