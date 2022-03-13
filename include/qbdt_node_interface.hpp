@@ -86,6 +86,8 @@ public:
 
     virtual bool isEqual(QBdtNodeInterfacePtr r);
 
+    virtual bool isEqualUnder(QBdtNodeInterfacePtr r);
+
     virtual QBdtNodeInterfacePtr ShallowClone() = 0;
 
     virtual void PopStateVector(bitLenInt depth = 1U) = 0;

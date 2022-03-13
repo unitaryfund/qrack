@@ -67,6 +67,8 @@ public:
 
     virtual bool isEqual(QBdtNodeInterfacePtr r);
 
+    virtual bool isEqualUnder(QBdtNodeInterfacePtr r);
+
     virtual void Normalize(bitLenInt depth);
 
     virtual void Branch(bitLenInt depth = 1U);

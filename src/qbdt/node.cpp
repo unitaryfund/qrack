@@ -313,11 +313,8 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
         return;
     }
 
-    const bool isSame = ((b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1]));
+    const bool isSame = b0->isEqualUnder(b1);
     if (isSame) {
-        b1->branches[0] = b0->branches[0];
-        b1->branches[1] = b0->branches[1];
-
         complex2 qubit(b0->scale, b1->scale);
         qubit.c2 = matrixMul(mtrxCol1.c2, mtrxCol2.c2, qubit.c2);
         b0->scale = qubit.c[0];

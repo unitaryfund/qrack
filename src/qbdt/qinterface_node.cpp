@@ -51,6 +51,34 @@ bool QBdtQInterfaceNode::isEqual(QBdtNodeInterfacePtr r)
     return false;
 }
 
+bool QBdtQInterfaceNode::isEqualUnder(QBdtNodeInterfacePtr r)
+{
+    if (!r) {
+        return false;
+    }
+
+    if (this == r.get()) {
+        return true;
+    }
+
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        return true;
+    }
+
+    QInterfacePtr rReg = std::dynamic_pointer_cast<QBdtQInterfaceNode>(r)->qReg;
+
+    if (qReg.get() == rReg.get()) {
+        return true;
+    }
+
+    if (qReg->ApproxCompare(rReg)) {
+        qReg = rReg;
+        return true;
+    }
+
+    return false;
+}
+
 void QBdtQInterfaceNode::Normalize(bitLenInt depth)
 {
     if (!depth) {
