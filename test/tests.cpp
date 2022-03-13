@@ -3597,16 +3597,30 @@ TEST_CASE("test_attach")
     qftReg->X(0);
     REQUIRE(qftReg->MAll() == 0x2);
 
-    qftReg->SetPermutation(0x1);
+    qftReg->SetPermutation(0);
     qftReg->H(0);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(0));
+    REQUIRE_FLOAT(ZERO_R1, qftReg->Prob(1));
     qftReg->CNOT(0, 1);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(0));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(1));
     qftReg->X(0);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(0));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(1));
     qftReg->CNOT(1, 0);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(0));
+    REQUIRE_FLOAT(ONE_R1, qftReg->Prob(1));
     qftReg->CNOT(1, 0);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(0));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(1));
     qftReg->X(0);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(0));
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(1));
     qftReg->CNOT(0, 1);
+    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(0));
+    REQUIRE_FLOAT(ZERO_R1, qftReg->Prob(1));
     qftReg->H(0);
-    REQUIRE(qftReg->MAll() == 0x1);
+    REQUIRE(qftReg->MAll() == 0);
 }
 
 int qRand(int high, QInterfacePtr q)
