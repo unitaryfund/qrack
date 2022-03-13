@@ -30,7 +30,6 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , bdtQubitCount(qBitCount)
     , bdtMaxQPower(pow2(qBitCount))
     , isAttached(false)
-    , shards(qBitCount)
 {
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
@@ -43,25 +42,6 @@ QBdtQInterfaceNodePtr QBdt::MakeQInterfaceNode(complex scale, bitLenInt qbCount,
     return std::make_shared<QBdtQInterfaceNode>(scale,
         CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
             devID, hardware_rand_generator != NULL, false, amplitudeFloor));
-}
-
-void QBdt::FlushControlled(const bitLenInt* controls, bitLenInt controlLen, bitLenInt target)
-{
-    FlushBuffer(target);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
-        FlushBuffer(controls[i]);
-    }
-}
-
-void QBdt::FlushBuffer(bitLenInt i)
-{
-    MpsShardPtr shard = shards[i];
-    if (!shard) {
-        return;
-    }
-    shards[i] = NULL;
-
-    ApplySingle(shard->gate, i);
 }
 
 void QBdt::FallbackMtrx(const complex* mtrx, bitLenInt target)
@@ -179,17 +159,12 @@ QInterfacePtr QBdt::Clone()
     copyPtr->root = root ? root->ShallowClone() : NULL;
     copyPtr->SetQubitCount(qubitCount, attachedQubitCount);
     copyPtr->isAttached = isAttached;
-    for (bitLenInt i = 0; i < qubitCount; i++) {
-        copyPtr->shards[i] = shards[i] ? std::make_shared<MpsShard>(shards[i]->gate) : NULL;
-    }
 
     return copyPtr;
 }
 
 template <typename Fn> void QBdt::GetTraversal(Fn getLambda)
 {
-    FlushBuffers();
-
     for (bitCapInt i = 0; i < bdtMaxQPower; i++) {
         QBdtNodeInterfacePtr leaf = root;
         complex scale = leaf->scale;
@@ -283,9 +258,7 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
         return ONE_R1;
     }
 
-    FlushBuffers();
     ResetStateVector();
-    toCompare->FlushBuffers();
     toCompare->ResetStateVector();
 
     complex projection = ZERO_CMPLX;
@@ -323,8 +296,6 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
 
 complex QBdt::GetAmplitude(bitCapInt perm)
 {
-    FlushBuffers();
-
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
     for (bitLenInt j = 0; j < bdtQubitCount; j++) {
@@ -361,7 +332,6 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
     root->InsertAtDepth(toCopy->root, start, toCopy->bdtQubitCount);
     SetQubitCount(qubitCount + toCopy->qubitCount, attachedQubitCount + toCopy->attachedQubitCount);
-    shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
 
     return start;
 }
@@ -370,9 +340,6 @@ bitLenInt QBdt::Attach(QStabilizerPtr toCopy)
 {
     isAttached = true;
     const bitLenInt toRet = qubitCount;
-
-    std::vector<MpsShardPtr> nShards(toCopy->GetQubitCount());
-    shards.insert(shards.end(), nShards.begin(), nShards.end());
 
     if (!qubitCount) {
         QInterfacePtr toCopyClone = toCopy->Clone();
@@ -462,15 +429,12 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         root->RemoveSeparableAtDepth(start, length);
     }
     SetQubitCount(qubitCount - length, attachedQubitCount);
-    shards.erase(shards.begin() + start, shards.begin() + start + length);
 
     root->Prune(bdtQubitCount);
 }
 
 real1_f QBdt::Prob(bitLenInt qubit)
 {
-    FlushBuffer(qubit);
-
     const bool isKet = (qubit >= bdtQubitCount);
     const bitLenInt maxQubit = isKet ? bdtQubitCount : qubit;
     const bitCapInt qPower = pow2(maxQubit);
@@ -512,8 +476,6 @@ real1_f QBdt::Prob(bitLenInt qubit)
 
 real1_f QBdt::ProbAll(bitCapInt perm)
 {
-    FlushBuffers();
-
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
     for (bitLenInt j = 0; j < bdtQubitCount; j++) {
@@ -597,8 +559,6 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
 bitCapInt QBdt::MAll()
 {
-    FlushBuffers();
-
     if (!bdtQubitCount) {
         const bitCapInt toRet = NODE_TO_QINTERFACE(root)->MAll();
         SetPermutation(toRet);
@@ -724,8 +684,6 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 void QBdt::ApplyControlledSingle(
     const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti)
 {
-    FlushControlled(controls, controlLen, target);
-
     if (!bdtQubitCount) {
         if (isAnti) {
             NODE_TO_QINTERFACE(root)->MACMtrx(controls, controlLen, mtrx, target);
@@ -848,24 +806,7 @@ void QBdt::ApplyControlledSingle(
     FallbackMCMtrx(mtrx, controls, controlLen, target, isAnti);
 }
 
-void QBdt::Mtrx(const complex* lMtrx, bitLenInt target)
-{
-    complex mtrx[4];
-    if (shards[target]) {
-        shards[target]->Compose(lMtrx);
-        std::copy(shards[target]->gate, shards[target]->gate + 4, mtrx);
-        shards[target] = NULL;
-    } else {
-        std::copy(lMtrx, lMtrx + 4, mtrx);
-    }
-
-    if ((IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) || (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]))) {
-        ApplySingle(mtrx, target);
-        return;
-    }
-
-    shards[target] = std::make_shared<MpsShard>(mtrx);
-}
+void QBdt::Mtrx(const complex* mtrx, bitLenInt target) { ApplySingle(mtrx, target); }
 
 void QBdt::MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
 {

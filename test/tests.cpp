@@ -3582,16 +3582,20 @@ TEST_CASE("test_attach")
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0x3));
 
-    qftReg->SetPermutation(0x1);
+    qftReg->SetPermutation(0x2);
+    qftReg->X(0);
+    qftReg->H(1);
+    qftReg->CNOT(1, 0);
     qftReg->H(0);
-    qftReg->AntiCY(1, 0);
-    qftReg->Z(0);
+    qftReg->H(1);
     qftReg->CNOT(1, 0);
     qftReg->CNOT(1, 0);
-    qftReg->Z(0);
-    qftReg->AntiCY(1, 0);
+    qftReg->H(1);
     qftReg->H(0);
-    REQUIRE(qftReg->MAll() == 1);
+    qftReg->CNOT(1, 0);
+    qftReg->H(1);
+    qftReg->X(0);
+    REQUIRE(qftReg->MAll() == 0x2);
 }
 
 int qRand(int high, QInterfacePtr q)
@@ -6590,7 +6594,6 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
         std::cout << ">>> 'test_mirror_quantum_volume': skipped" << std::endl;
         return;
     }
-
     std::cout << ">>> 'test_mirror_quantum_volume':" << std::endl;
 
     const int GateCount1Qb = 8;

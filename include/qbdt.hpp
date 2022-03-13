@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include "mpsshard.hpp"
 #include "qbdt_qinterface_node.hpp"
 #include "qparity.hpp"
 #include "qstabilizer.hpp"
@@ -47,7 +46,6 @@ protected:
     bitLenInt bdtQubitCount;
     bitCapInt bdtMaxQPower;
     bool isAttached;
-    std::vector<MpsShardPtr> shards;
 
     virtual void SetQubitCount(bitLenInt qb, bitLenInt aqb)
     {
@@ -129,25 +127,6 @@ protected:
         bitCapInt mask = power - ONE_BCI;
         return (perm & mask) | ((perm >> ONE_BCI) & ~mask);
     }
-
-    void FlushBuffer(bitLenInt i);
-
-    void FlushBuffers()
-    {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            FlushBuffer(i);
-        }
-        Finish();
-    }
-
-    void DumpBuffers()
-    {
-        for (bitLenInt i = 0U; i < qubitCount; i++) {
-            shards[i] = NULL;
-        }
-    }
-
-    void FlushControlled(const bitLenInt* controls, bitLenInt controlLen, bitLenInt target);
 
     void ApplySingle(const complex* mtrx, bitLenInt target);
 
