@@ -3597,20 +3597,16 @@ TEST_CASE("test_attach")
     qftReg->X(0);
     REQUIRE(qftReg->MAll() == 0x2);
 
-    qftReg->SetPermutation(0x3);
+    qftReg->SetPermutation(0x1);
     qftReg->H(0);
-    qftReg->X(1);
     qftReg->CNOT(0, 1);
     qftReg->X(0);
-    qftReg->X(1);
     qftReg->CNOT(1, 0);
     qftReg->CNOT(1, 0);
-    qftReg->X(1);
     qftReg->X(0);
     qftReg->CNOT(0, 1);
-    qftReg->X(1);
     qftReg->H(0);
-    REQUIRE(qftReg->MAll() == 0x3);
+    REQUIRE(qftReg->MAll() == 0x1);
 }
 
 int qRand(int high, QInterfacePtr q)
