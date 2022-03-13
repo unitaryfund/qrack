@@ -1084,7 +1084,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
         H(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1093,7 +1097,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         // Equivalent to X before H
         StabilizerISqrtY(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1102,7 +1110,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         // Equivalent to H before X
         StabilizerSqrtY(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1112,7 +1124,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         X(target);
         StabilizerSqrtY(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1121,7 +1137,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         H(target);
         S(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1130,7 +1150,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         StabilizerISqrtY(target);
         S(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1140,7 +1164,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         X(target);
         IS(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1150,7 +1178,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         X(target);
         S(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1159,7 +1191,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         IS(target);
         H(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1168,7 +1204,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         S(target);
         H(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1179,7 +1219,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         X(target);
         Z(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1190,7 +1234,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         X(target);
         Z(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1198,7 +1246,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         StabilizerSqrtX(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1206,7 +1258,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
     if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
         StabilizerISqrtX(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1215,7 +1271,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         StabilizerSqrtX(target);
         Z(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }
@@ -1224,7 +1284,11 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
         Z(target);
         StabilizerSqrtX(target);
         if (!randGlobalPhase) {
-            phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            if (!IsSeparableZ(target) || !M(target)) {
+                phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+            } else {
+                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+            }
         }
         return;
     }

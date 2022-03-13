@@ -103,7 +103,6 @@ void QBdtQInterfaceNode::Prune(bitLenInt depth)
     }
 
     const real1_f phaseArg = qReg->FirstNonzeroPhase();
-    std::cout << "phaseArg=" << phaseArg << std::endl;
     const complex phaseFac = std::polar((real1_f)ONE_R1, (real1_f)-phaseArg);
     qReg->Phase(phaseFac, phaseFac, 0);
     scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
