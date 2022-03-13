@@ -3574,8 +3574,8 @@ TEST_CASE("test_attach")
     std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(
         std::dynamic_pointer_cast<QStabilizer>(CreateQuantumInterface({ QINTERFACE_STABILIZER }, 1U, 0, rng)));
 
-    qftReg->SetPermutation(0x1);
-    qftReg->CNOT(0, 1);
+    qftReg->SetPermutation(0x2);
+    qftReg->CNOT(1, 0);
     REQUIRE_THAT(qftReg, HasProbability(0x3));
 }
 
