@@ -2803,11 +2803,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
     QInterfacePtr qftReg2;
     if (testEngineType == QINTERFACE_BDT) {
         qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 2, 0x03, rng);
-        std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(
-            std::dynamic_pointer_cast<QStabilizer>(CreateQuantumInterface({ QINTERFACE_STABILIZER }, 2, 0x02, rng)));
+        std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(std::dynamic_pointer_cast<QStabilizer>(
+            CreateQuantumInterface({ QINTERFACE_STABILIZER }, 2, 0x02, rng, CMPLX_DEFAULT_ARG, false, false)));
         qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 2, 0x02, rng);
-        std::dynamic_pointer_cast<QBdt>(qftReg2)->Attach(
-            std::dynamic_pointer_cast<QStabilizer>(CreateQuantumInterface({ QINTERFACE_STABILIZER }, 2, 0x00, rng)));
+        std::dynamic_pointer_cast<QBdt>(qftReg2)->Attach(std::dynamic_pointer_cast<QStabilizer>(
+            CreateQuantumInterface({ QINTERFACE_STABILIZER }, 2, 0x00, rng, CMPLX_DEFAULT_ARG, false, false)));
     } else {
         qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
         qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng);
@@ -3560,6 +3560,27 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_ciadc")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
     qftReg->CIADC(control, 1, 0, 1, 2, 0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 2));
+}
+
+TEST_CASE("test_attach")
+{
+    if (testEngineType != QINTERFACE_BDT) {
+        std::cout << ">>> 'test_attach': skipped" << std::endl;
+        return;
+    }
+    std::cout << ">>> 'test_attach':" << std::endl;
+
+    QInterfacePtr qftReg = CreateQuantumInterface({ QINTERFACE_BDT }, 1U, 0, rng);
+    std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(std::dynamic_pointer_cast<QStabilizer>(
+        CreateQuantumInterface({ QINTERFACE_STABILIZER }, 1U, 0, rng, CMPLX_DEFAULT_ARG, false, false)));
+
+    qftReg->SetPermutation(0x2);
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(1, 1, 0x1));
+    qftReg->CZ(1, 0);
+    REQUIRE_THAT(qftReg, HasProbability(1, 1, 0x1));
+    qftReg->H(0);
+    REQUIRE_THAT(qftReg, HasProbability(0x3));
 }
 
 int qRand(int high, QInterfacePtr q)
@@ -5930,16 +5951,17 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_25", "[mirror]")
     REQUIRE(qftReg->MAll() == 2);
 }
 
-TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_26", "[mirror]")
+TEST_CASE("test_mirror_circuit_26", "[mirror]")
 {
     if (testEngineType != QINTERFACE_BDT) {
-        std::cout << "skipped" << std::endl;
+        std::cout << ">>> 'test_mirror_circuit_26': skipped" << std::endl;
         return;
     }
+    std::cout << ">>> 'test_mirror_circuit_26':" << std::endl;
 
-    qftReg = CreateQuantumInterface({ QINTERFACE_BDT }, 1U, 0, rng);
-    std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(
-        std::dynamic_pointer_cast<QStabilizer>(CreateQuantumInterface({ QINTERFACE_STABILIZER }, 2U, 0, rng)));
+    QInterfacePtr qftReg = CreateQuantumInterface({ QINTERFACE_BDT }, 1U, 0, rng);
+    std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(std::dynamic_pointer_cast<QStabilizer>(
+        CreateQuantumInterface({ QINTERFACE_STABILIZER }, 2U, 0, rng, CMPLX_DEFAULT_ARG, false, false)));
 
     qftReg->SetPermutation(7);
 
@@ -6356,7 +6378,6 @@ TEST_CASE("test_mirror_near_clifford", "[mirror]")
         std::cout << ">>> 'test_mirror_near_clifford': skipped" << std::endl;
         return;
     }
-
     std::cout << ">>> 'test_mirror_near_clifford':" << std::endl;
 
     const int GateCount1Qb = 8;
@@ -6383,7 +6404,7 @@ TEST_CASE("test_mirror_near_clifford", "[mirror]")
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase = CreateQuantumInterface({ QINTERFACE_BDT }, magic, 0, rng);
         std::dynamic_pointer_cast<QBdt>(testCase)->Attach(std::dynamic_pointer_cast<QStabilizer>(
-            CreateQuantumInterface({ QINTERFACE_STABILIZER }, n - magic, 0, rng)));
+            CreateQuantumInterface({ QINTERFACE_STABILIZER }, n - magic, 0, rng, CMPLX_DEFAULT_ARG, false, false)));
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);
@@ -6585,7 +6606,7 @@ TEST_CASE("test_mirror_quantum_volume", "[mirror]")
     for (int trial = 0; trial < TRIALS; trial++) {
         QInterfacePtr testCase = CreateQuantumInterface({ QINTERFACE_BDT }, magic, 0, rng);
         std::dynamic_pointer_cast<QBdt>(testCase)->Attach(std::dynamic_pointer_cast<QStabilizer>(
-            CreateQuantumInterface({ QINTERFACE_STABILIZER }, n - magic, 0, rng)));
+            CreateQuantumInterface({ QINTERFACE_STABILIZER }, n - magic, 0, rng, CMPLX_DEFAULT_ARG, false, false)));
 
         std::vector<std::vector<int>> gate1QbRands(Depth);
         std::vector<std::vector<MultiQubitGate>> gateMultiQbRands(Depth);

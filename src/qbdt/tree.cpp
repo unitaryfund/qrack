@@ -549,7 +549,6 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     const bool isKet = (qubit >= bdtQubitCount);
     const bitLenInt maxQubit = isKet ? bdtQubitCount : qubit;
     const bitCapInt qPower = pow2(maxQubit);
-    std::set<QInterfacePtr> qis;
     root->scale = GetNonunitaryPhase();
 
     for (bitCapInt i = 0; i < qPower; i++) {
@@ -566,16 +565,12 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
             continue;
         }
 
+        leaf->Branch();
+
         if (isKet) {
-            QInterfacePtr qi = NODE_TO_QINTERFACE(leaf);
-            if (qis.find(qi) == qis.end()) {
-                qis.insert(qi);
-                qi->ForceM(qubit - bdtQubitCount, result, false, true);
-            }
+            NODE_TO_QINTERFACE(leaf)->ForceM(qubit - bdtQubitCount, result, false, true);
             continue;
         }
-
-        leaf->Branch();
 
         QBdtNodeInterfacePtr& b0 = leaf->branches[0];
         QBdtNodeInterfacePtr& b1 = leaf->branches[1];
@@ -686,18 +681,17 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
         }
 
         if (isKet) {
+            leaf->Branch();
             QInterfacePtr qi = NODE_TO_QINTERFACE(leaf);
-            if (qis.find(qi) == qis.end()) {
-                try {
-                    qi->Mtrx(mtrx, target - bdtQubitCount);
-                } catch (const std::domain_error&) {
-                    isFail = true;
+            try {
+                qi->Mtrx(mtrx, target - bdtQubitCount);
+            } catch (const std::domain_error&) {
+                isFail = true;
 
-                    return (bitCapInt)(qPower - ONE_BCI);
-                }
-                leaf->Prune();
-                qis.insert(qi);
+                return (bitCapInt)(qPower - ONE_BCI);
             }
+            leaf->Prune();
+            qis.insert(qi);
         } else {
 #if ENABLE_COMPLEX_X2
             leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
@@ -795,22 +789,21 @@ void QBdt::ApplyControlledSingle(
         }
 
         if (isKet) {
+            leaf->Branch();
             QInterfacePtr qi = NODE_TO_QINTERFACE(leaf);
-            if (qis.find(qi) == qis.end()) {
-                try {
-                    if (isAnti) {
-                        qi->MACMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
-                    } else {
-                        qi->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
-                    }
-                } catch (const std::domain_error&) {
-                    isFail = true;
-
-                    return (bitCapInt)(qPower - ONE_BCI);
+            try {
+                if (isAnti) {
+                    qi->MACMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+                } else {
+                    qi->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
                 }
-                leaf->Prune();
-                qis.insert(qi);
+            } catch (const std::domain_error&) {
+                isFail = true;
+
+                return (bitCapInt)(qPower - ONE_BCI);
             }
+            leaf->Prune();
+            qis.insert(qi);
         } else {
 #if ENABLE_COMPLEX_X2
             leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
