@@ -1087,7 +1087,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1100,7 +1100,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1113,7 +1113,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1127,7 +1127,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1140,7 +1140,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1153,7 +1153,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1167,7 +1167,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1181,7 +1181,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1194,7 +1194,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1207,7 +1207,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1222,7 +1222,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1237,7 +1237,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1249,7 +1249,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1261,7 +1261,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1274,7 +1274,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
@@ -1287,7 +1287,7 @@ void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
             if (!IsSeparableZ(target) || !M(target)) {
                 phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
             } else {
-                phaseOffset *= mtrx[3] / std::abs(mtrx[3]);
+                phaseOffset *= mtrx[1] / std::abs(mtrx[1]);
             }
         }
         return;
