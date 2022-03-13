@@ -354,6 +354,10 @@ bool QStabilizer::isEqual(QStabilizerPtr toCompare)
         return true;
     }
 
+    if (!randGlobalPhase && !IS_NORM_0(phaseOffset - toCompare->phaseOffset)) {
+        return false;
+    }
+
     gaussian();
     toCompare->gaussian();
 

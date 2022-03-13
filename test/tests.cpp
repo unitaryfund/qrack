@@ -3581,6 +3581,17 @@ TEST_CASE("test_attach")
     REQUIRE_THAT(qftReg, HasProbability(1, 1, 0x1));
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0x3));
+
+    qftReg->SetPermutation(0x1);
+    qftReg->H(0);
+    qftReg->AntiCY(1, 0);
+    qftReg->Z(0);
+    qftReg->CNOT(1, 0);
+    qftReg->CNOT(1, 0);
+    qftReg->Z(0);
+    qftReg->AntiCY(1, 0);
+    qftReg->H(0);
+    REQUIRE(qftReg->MAll() == 1);
 }
 
 int qRand(int high, QInterfacePtr q)
