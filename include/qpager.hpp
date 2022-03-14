@@ -28,8 +28,6 @@ protected:
     QInterfaceEngine rootEngine;
     int devID;
     complex phaseFactor;
-    bool useHostRam;
-    bool useRDRAND;
     bool isSparse;
     std::vector<QEnginePtr> qPages;
     std::vector<int> deviceIDs;
@@ -85,6 +83,27 @@ protected:
 
     void Init();
 
+    virtual void GetSetAmplitudePage(
+        complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    {
+        const bitCapInt pageLength = pageMaxQPower();
+        bitCapIntOcl perm = 0U;
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            if (perm >= (offset + length)) {
+                break;
+            }
+            if ((perm + pageLength) <= offset) {
+                continue;
+            }
+            const bitCapInt partLength = (length < pageLength) ? length : pageLength;
+            if (cPagePtr) {
+                qPages[i]->SetAmplitudePage(cPagePtr, (bitCapIntOcl)(offset - perm), (bitCapIntOcl)partLength);
+            } else {
+                qPages[i]->GetAmplitudePage(pagePtr, (bitCapIntOcl)(offset - perm), (bitCapIntOcl)partLength);
+            }
+        }
+    }
+
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -126,6 +145,109 @@ public:
     {
         qPages.resize(1);
         qPages[0] = eng;
+    }
+
+    virtual void ZeroAmplitudes()
+    {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            qPages[i]->ZeroAmplitudes();
+        }
+    }
+    virtual void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QPager>(src)); }
+    virtual void CopyStateVec(QPagerPtr src)
+    {
+        bitLenInt qpp = qubitsPerPage();
+        src->SeparateEngines(qpp, true);
+        src->CombineEngines(qpp);
+
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            qPages[i]->CopyStateVec(src->qPages[i]);
+        }
+    }
+    virtual bool IsZeroAmplitude()
+    {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            if (!qPages[i]->IsZeroAmplitude()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    virtual void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    {
+        GetSetAmplitudePage(pagePtr, NULL, offset, length);
+    }
+    virtual void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    {
+        GetSetAmplitudePage(NULL, pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
+    {
+        SetAmplitudePage(std::dynamic_pointer_cast<QPager>(pageEnginePtr), srcOffset, dstOffset, length);
+    }
+    virtual void SetAmplitudePage(
+        QPagerPtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
+    {
+        CombineEngines();
+        pageEnginePtr->CombineEngines();
+        qPages[0]->SetAmplitudePage(pageEnginePtr->qPages[0], srcOffset, dstOffset, length);
+    }
+    virtual void ShuffleBuffers(QEnginePtr engine) { ShuffleBuffers(std::dynamic_pointer_cast<QPager>(engine)); }
+    virtual void ShuffleBuffers(QPagerPtr engine)
+    {
+        bitLenInt qpp = qubitsPerPage();
+        bitLenInt tcqpp = engine->qubitsPerPage();
+        engine->SeparateEngines(qpp, true);
+        SeparateEngines(tcqpp, true);
+
+        if (qPages.size() == 1U) {
+            qPages[0]->ShuffleBuffers(engine->qPages[0]);
+            return;
+        }
+
+        for (bitCapIntOcl i = qPages.size() / 2U; i < qPages.size(); i++) {
+            qPages[i].swap(engine->qPages[i]);
+        }
+    }
+    virtual QEnginePtr CloneEmpty();
+    virtual void QueueSetDoNormalize(bool doNorm)
+    {
+        Finish();
+        doNormalize = doNorm;
+    }
+    virtual void QueueSetRunningNorm(real1_f runningNrm)
+    {
+        Finish();
+        runningNorm = runningNrm;
+    }
+    virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
+    {
+        CombineEngines();
+        return qPages[0]->ProbReg(start, length, permutation);
+    }
+    virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
+    {
+        CombineEngines();
+        return qPages[0]->ApplyM(regMask, result, nrm);
+    }
+    virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+    {
+        CombineEngines();
+        return qPages[0]->GetExpectation(valueStart, valueLength);
+    }
+    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
+        const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        CombineEngines();
+        qPages[0]->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
+    }
+
+    virtual void FreeStateVec(complex* sv = NULL)
+    {
+        CombineEngines();
+        qPages[0]->FreeStateVec(sv);
     }
 
     virtual void SetQuantumState(const complex* inputState);

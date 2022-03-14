@@ -36,7 +36,6 @@ protected:
     int devID;
     complex phaseFactor;
     bool doNormalize;
-    bool useHostRam;
     bool isSparse;
     bool isDefaultPaging;
     real1_f separabilityThreshold;

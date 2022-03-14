@@ -20,12 +20,10 @@ namespace Qrack {
 QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
     complex phaseFac, bool ignored, bool ignored2, bool useHostMem, int deviceId, bool useHardwareRNG,
     bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
-    : QInterface(qBitCount, rgp, false, useHardwareRNG, false, norm_thresh)
+    : QEngine(qBitCount, rgp, false, false, useHostMem, useHardwareRNG, norm_thresh)
     , engines(eng)
     , devID(deviceId)
     , phaseFactor(phaseFac)
-    , useHostRam(useHostMem)
-    , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , deviceIDs(devList)
     , useHardwareThreshold(false)
@@ -83,12 +81,10 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
     qrack_rand_gen_ptr rgp, complex phaseFac, bool ignored, bool ignored2, bool useHostMem, int deviceId,
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
-    : QInterface(qBitCount, rgp, false, useHardwareRNG, false, norm_thresh)
+    : QEngine(qBitCount, rgp, false, false, useHostMem, useHardwareRNG, norm_thresh)
     , engines(eng)
     , devID(deviceId)
     , phaseFactor(phaseFac)
-    , useHostRam(useHostMem)
-    , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , deviceIDs(devList)
     , useHardwareThreshold(false)
@@ -1404,6 +1400,20 @@ QInterfacePtr QPager::Clone()
 
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         clone->qPages[i] = std::dynamic_pointer_cast<QEngine>(qPages[i]->Clone());
+    }
+
+    return clone;
+}
+
+QEnginePtr QPager::CloneEmpty()
+{
+    SeparateEngines();
+
+    QPagerPtr clone = std::make_shared<QPager>(engines, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+
+    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+        clone->qPages[i] = qPages[i]->CloneEmpty();
     }
 
     return clone;
