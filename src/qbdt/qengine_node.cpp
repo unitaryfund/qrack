@@ -119,7 +119,6 @@ void QBdtQEngineNode::Prune(bitLenInt depth)
     }
 
     if (!qReg) {
-        SetZero();
         return;
     }
 
@@ -129,7 +128,7 @@ void QBdtQEngineNode::Prune(bitLenInt depth)
 
     const real1_f phaseArg = qReg->FirstNonzeroPhase();
     qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
-    scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
+    scale *= std::polar(ONE_R1, (real1)phaseArg);
 }
 
 void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
@@ -191,8 +190,8 @@ void QBdtQEngineNode::PushSpecial(const complex* mtrx, QBdtNodeInterfacePtr& b1)
         qReg1 = qReg->CloneEmpty();
     }
 
-    qReg0->NormalizeState(norm(scale), REAL1_DEFAULT_ARG, std::arg(scale));
-    qReg1->NormalizeState(norm(b1->scale), REAL1_DEFAULT_ARG, std::arg(b1->scale));
+    qReg0->NormalizeState(ONE_R1 / norm(scale), REAL1_DEFAULT_ARG, std::arg(scale));
+    qReg1->NormalizeState(ONE_R1 / norm(b1->scale), REAL1_DEFAULT_ARG, std::arg(b1->scale));
 
     scale = SQRT1_2_R1;
     b1->scale = SQRT1_2_R1;
