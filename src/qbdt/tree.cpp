@@ -657,15 +657,13 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
                 }
                 qis.insert(qi);
             }
-        } else {
-            if (qns.find(leaf) == qns.end()) {
+        } else if (qns.find(leaf) == qns.end()) {
 #if ENABLE_COMPLEX_X2
-                leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
+            leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
 #else
-                leaf->Apply2x2(mtrx, bdtQubitCount - target);
+            leaf->Apply2x2(mtrx, bdtQubitCount - target);
 #endif
-                qns.insert(leaf);
-            }
+            qns.insert(leaf);
         }
 
         return (bitCapInt)0U;
@@ -773,15 +771,13 @@ void QBdt::ApplyControlledSingle(
                 }
                 qis.insert(qi);
             }
-        } else {
-            if (qns.find(leaf) == qns.end()) {
+        } else if (qns.find(leaf) == qns.end()) {
 #if ENABLE_COMPLEX_X2
-                leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
+            leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
 #else
-                leaf->Apply2x2(mtrx, bdtQubitCount - target);
+            leaf->Apply2x2(mtrx, bdtQubitCount - target);
 #endif
-                qns.insert(leaf);
-            }
+            qns.insert(leaf);
         }
 
         return (bitCapInt)0U;
