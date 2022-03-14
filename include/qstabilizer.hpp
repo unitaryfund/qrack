@@ -346,7 +346,9 @@ public:
     virtual void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
     {
-        // Intentionally left blank
+        if (!randGlobalPhase) {
+            phaseOffset *= std::polar(ONE_R1, (real1)phaseArg);
+        }
     }
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
