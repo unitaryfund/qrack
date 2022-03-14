@@ -552,7 +552,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         }
     }
 
-    root->Prune(maxQubit);
+    root->Prune(maxQubit + 1U);
 
     return result;
 }
@@ -664,7 +664,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
     });
 
     if (!isFail) {
-        root->Prune(maxQubit);
+        root->Prune(maxQubit + 1U);
 
         return;
     }
@@ -676,7 +676,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
         (*it)->Mtrx(iMtrx, target - bdtQubitCount);
         it++;
     }
-    root->Prune(maxQubit);
+    root->Prune(maxQubit + 1U);
 
     FallbackMtrx(mtrx, target);
 }
@@ -774,7 +774,7 @@ void QBdt::ApplyControlledSingle(
     });
 
     if (!isFail) {
-        root->Prune(maxQubit);
+        root->Prune(maxQubit + 1U);
         // Undo isSwapped.
         if (isSwapped) {
             Swap(target, controlVec.back());
@@ -796,7 +796,7 @@ void QBdt::ApplyControlledSingle(
         it++;
     }
 
-    root->Prune(maxQubit);
+    root->Prune(maxQubit + 1U);
     // Undo isSwapped.
     if (isSwapped) {
         Swap(target, controlVec.back());

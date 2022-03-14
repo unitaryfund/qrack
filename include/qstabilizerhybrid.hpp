@@ -596,41 +596,85 @@ public:
         engine->UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs);
     }
 
-    virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    virtual void CSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
-            QInterface::CSqrtSwap(controls, controlLen, qubit1, qubit2);
-            return;
+            std::vector<bitLenInt> controls;
+            if (TrimControls(lControls, lControlLen, controls, false)) {
+                return;
+            }
+            if (!controls.size()) {
+                stabilizer->Swap(qubit1, qubit2);
+                return;
+            }
+            SwitchToEngine();
         }
 
-        engine->CSqrtSwap(controls, controlLen, qubit1, qubit2);
+        engine->CSwap(lControls, lControlLen, qubit1, qubit2);
     }
-    virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    virtual void CSqrtSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
-            QInterface::AntiCSqrtSwap(controls, controlLen, qubit1, qubit2);
-            return;
+            std::vector<bitLenInt> controls;
+            if (TrimControls(lControls, lControlLen, controls, false)) {
+                return;
+            }
+            if (!controls.size()) {
+                QInterface::SqrtSwap(qubit1, qubit2);
+                return;
+            }
+            SwitchToEngine();
         }
 
-        engine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2);
+        engine->CSqrtSwap(lControls, lControlLen, qubit1, qubit2);
     }
-    virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    virtual void AntiCSqrtSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
-            QInterface::CISqrtSwap(controls, controlLen, qubit1, qubit2);
-            return;
+            std::vector<bitLenInt> controls;
+            if (TrimControls(lControls, lControlLen, controls, true)) {
+                return;
+            }
+            if (!controls.size()) {
+                QInterface::SqrtSwap(qubit1, qubit2);
+                return;
+            }
+            SwitchToEngine();
         }
 
-        engine->CISqrtSwap(controls, controlLen, qubit1, qubit2);
+        engine->AntiCSqrtSwap(lControls, lControlLen, qubit1, qubit2);
     }
-    virtual void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    virtual void CISqrtSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
-            QInterface::AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
-            return;
+            std::vector<bitLenInt> controls;
+            if (TrimControls(lControls, lControlLen, controls, false)) {
+                return;
+            }
+            if (!controls.size()) {
+                QInterface::ISqrtSwap(qubit1, qubit2);
+                return;
+            }
+            SwitchToEngine();
         }
 
-        engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
+        engine->CISqrtSwap(lControls, lControlLen, qubit1, qubit2);
+    }
+    virtual void AntiCISqrtSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
+    {
+        if (stabilizer) {
+            std::vector<bitLenInt> controls;
+            if (TrimControls(lControls, lControlLen, controls, true)) {
+                return;
+            }
+            if (!controls.size()) {
+                QInterface::ISqrtSwap(qubit1, qubit2);
+                return;
+            }
+            SwitchToEngine();
+        }
+
+        engine->AntiCISqrtSwap(lControls, lControlLen, qubit1, qubit2);
     }
 
     virtual void XMask(bitCapInt mask)
@@ -1014,12 +1058,17 @@ public:
     virtual void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
     {
-        if (nrm != REAL1_DEFAULT_ARG) {
+        if (abs(nrm) <= FP_NORM_EPSILON) {
+            ZeroAmplitudes();
+            return;
+        }
+
+        if ((nrm > ZERO_R1) && (abs(ONE_R1 - nrm) > FP_NORM_EPSILON)) {
             SwitchToEngine();
         }
 
         if (stabilizer) {
-            NormalizeState(REAL1_DEFAULT_ARG, norm_thresh, phaseArg);
+            stabilizer->NormalizeState(REAL1_DEFAULT_ARG, norm_thresh, phaseArg);
         } else {
             engine->NormalizeState(nrm, norm_thresh, phaseArg);
         }
