@@ -621,6 +621,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
     const bitCapInt qPower = pow2(maxQubit);
 
     std::set<QEnginePtr> qis;
+    std::set<QBdtNodeInterfacePtr> qns;
     bool isFail = false;
 
 #if ENABLE_COMPLEX_X2
@@ -645,23 +646,26 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
         }
 
         if (isKet) {
-            leaf->Branch();
             QEnginePtr qi = NODE_TO_QENGINE(leaf);
-            try {
-                qi->Mtrx(mtrx, target - bdtQubitCount);
-            } catch (const std::domain_error&) {
-                isFail = true;
+            if (qis.find(qi) == qis.end()) {
+                try {
+                    qi->Mtrx(mtrx, target - bdtQubitCount);
+                } catch (const std::domain_error&) {
+                    isFail = true;
 
-                return (bitCapInt)(qPower - ONE_BCI);
+                    return (bitCapInt)(qPower - ONE_BCI);
+                }
+                qis.insert(qi);
             }
-            leaf->Prune();
-            qis.insert(qi);
         } else {
+            if (qns.find(leaf) == qns.end()) {
 #if ENABLE_COMPLEX_X2
-            leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
+                leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
 #else
-            leaf->Apply2x2(mtrx, bdtQubitCount - target);
+                leaf->Apply2x2(mtrx, bdtQubitCount - target);
 #endif
+                qns.insert(leaf);
+            }
         }
 
         return (bitCapInt)0U;
@@ -722,12 +726,15 @@ void QBdt::ApplyControlledSingle(
     bitCapInt lowControlPerm = isAnti ? 0U : lowControlMask;
     std::unique_ptr<bitLenInt[]> ketControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[ketControlsVec.size()]);
     std::copy(ketControlsVec.begin(), ketControlsVec.end(), ketControls.get());
-    std::set<QEnginePtr> qis;
 
 #if ENABLE_COMPLEX_X2
     const complex2 mtrxCol1(mtrx[0], mtrx[2]);
     const complex2 mtrxCol2(mtrx[1], mtrx[3]);
 #endif
+
+    std::set<QEnginePtr> qis;
+    std::set<QBdtNodeInterfacePtr> qns;
+
     bool isFail = false;
 
     par_for_qbdt(0, qPower, [&](const bitCapInt& i, const int& cpu) {
@@ -751,27 +758,30 @@ void QBdt::ApplyControlledSingle(
         }
 
         if (isKet) {
-            leaf->Branch();
             QEnginePtr qi = NODE_TO_QENGINE(leaf);
-            try {
-                if (isAnti) {
-                    qi->MACMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
-                } else {
-                    qi->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
-                }
-            } catch (const std::domain_error&) {
-                isFail = true;
+            if (qis.find(qi) == qis.end()) {
+                try {
+                    if (isAnti) {
+                        qi->MACMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+                    } else {
+                        qi->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+                    }
+                } catch (const std::domain_error&) {
+                    isFail = true;
 
-                return (bitCapInt)(qPower - ONE_BCI);
+                    return (bitCapInt)(qPower - ONE_BCI);
+                }
+                qis.insert(qi);
             }
-            leaf->Prune();
-            qis.insert(qi);
         } else {
+            if (qns.find(leaf) == qns.end()) {
 #if ENABLE_COMPLEX_X2
-            leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
+                leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
 #else
-            leaf->Apply2x2(mtrx, bdtQubitCount - target);
+                leaf->Apply2x2(mtrx, bdtQubitCount - target);
 #endif
+                qns.insert(leaf);
+            }
         }
 
         return (bitCapInt)0U;
