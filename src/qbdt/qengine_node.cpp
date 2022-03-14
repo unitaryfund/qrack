@@ -113,16 +113,13 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
 
 void QBdtQEngineNode::Prune(bitLenInt depth)
 {
-    if (!depth) {
-        return;
-    }
-
     if (norm(scale) <= FP_NORM_EPSILON) {
         SetZero();
         return;
     }
 
     if (!qReg) {
+        SetZero();
         return;
     }
 
@@ -131,8 +128,7 @@ void QBdtQEngineNode::Prune(bitLenInt depth)
     }
 
     const real1_f phaseArg = qReg->FirstNonzeroPhase();
-    const complex phaseFac = std::polar((real1_f)ONE_R1, (real1_f)-phaseArg);
-    qReg->Phase(phaseFac, phaseFac, 0);
+    qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
     scale *= (complex)std::polar((real1_f)ONE_R1, (real1_f)phaseArg);
 }
 
@@ -191,10 +187,8 @@ void QBdtQEngineNode::PushSpecial(const complex* mtrx, QBdtNodeInterfacePtr& b1)
 
     if (is0Zero) {
         qReg0 = std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg->CloneEmpty();
-        qReg = qReg0;
     } else if (is1Zero) {
         qReg1 = qReg->CloneEmpty();
-        std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg = qReg1;
     }
 
     qReg0->NormalizeState(norm(scale), REAL1_DEFAULT_ARG, std::arg(scale));
@@ -209,20 +203,20 @@ void QBdtQEngineNode::PushSpecial(const complex* mtrx, QBdtNodeInterfacePtr& b1)
     qReg1->Mtrx(mtrx, qReg1->GetQubitCount() - 1U);
 
     qReg0->ShuffleBuffers(qReg1);
+
+    qReg = qReg;
+    std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg = qReg1;
 }
 
 void QBdtQEngineNode::PopStateVector(bitLenInt depth)
 {
-    if (!depth) {
-        return;
-    }
-
     if (IS_NORM_0(scale)) {
         SetZero();
         return;
     }
 
     if (!qReg) {
+        SetZero();
         return;
     }
 
