@@ -959,12 +959,12 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 
     ResetStateVec(nStateVec);
 
-    real1 average = ZERO_R1;
+    real1_f average = ZERO_R1;
 #if ENABLE_VM6502Q_DEBUG
     average = GetExpectation(valueStart, valueLength);
 #endif
 
-    return (bitCapInt)(average + (real1)0.5f);
+    return (bitCapInt)(average + (real1_f)0.5f);
 }
 
 /// Add based on an indexed load from classical memory
@@ -1070,13 +1070,13 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     // just calculated.
     ResetStateVec(nStateVec);
 
-    real1 average = ZERO_R1;
+    real1_f average = ZERO_R1;
 #if ENABLE_VM6502Q_DEBUG
     average = GetExpectation(valueStart, valueLength);
 #endif
 
     // Return the expectation value.
-    return (bitCapInt)(average + (real1)0.5f);
+    return (bitCapInt)(average + (real1_f)0.5f);
 }
 
 /// Subtract based on an indexed load from classical memory
@@ -1186,13 +1186,13 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     // just calculated.
     ResetStateVec(nStateVec);
 
-    real1 average = ZERO_R1;
+    real1_f average = ZERO_R1;
 #if ENABLE_VM6502Q_DEBUG
     average = GetExpectation(valueStart, valueLength);
 #endif
 
     // Return the expectation value.
-    return (bitCapInt)(average + (real1)0.5f);
+    return (bitCapInt)(average + (real1_f)0.5f);
 }
 
 /// Transform a length of qubit register via lookup through a hash table.
