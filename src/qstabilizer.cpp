@@ -305,6 +305,9 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
     if (e & 2) {
         amp *= -ONE_CMPLX;
     }
+    if (!randGlobalPhase) {
+        amp *= phaseOffset;
+    }
 
     bitCapIntOcl perm = 0;
     for (bitLenInt j = 0; j < qubitCount; j++) {
@@ -354,7 +357,7 @@ bool QStabilizer::isEqual(QStabilizerPtr toCompare)
         return true;
     }
 
-    if (!randGlobalPhase && !IS_NORM_0(phaseOffset - toCompare->phaseOffset)) {
+    if ((!randGlobalPhase || !toCompare->randGlobalPhase) && !IS_NORM_0(phaseOffset - toCompare->phaseOffset)) {
         return false;
     }
 
@@ -398,7 +401,7 @@ real1_f QStabilizer::FirstNonzeroPhase()
 
     const AmplitudeEntry entry0 = getBasisAmp(nrm);
     if (entry0.amplitude != ZERO_CMPLX) {
-        return (real1_f)std::arg(phaseOffset * entry0.amplitude);
+        return (real1_f)std::arg(entry0.amplitude);
     }
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1);
@@ -409,7 +412,7 @@ real1_f QStabilizer::FirstNonzeroPhase()
         }
         const AmplitudeEntry entry = getBasisAmp(nrm);
         if (entry.amplitude != ZERO_CMPLX) {
-            return (real1_f)std::arg(phaseOffset * entry.amplitude);
+            return (real1_f)std::arg(entry.amplitude);
         }
     }
 

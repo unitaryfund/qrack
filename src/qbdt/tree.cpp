@@ -338,6 +338,10 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
 bitLenInt QBdt::Attach(QEnginePtr toCopy)
 {
+    if (toCopy->GetIsArbitraryGlobalPhase()) {
+        throw std::invalid_argument("QBdt attached qubits cannot have arbitrary global phase!");
+    }
+
     isAttached = true;
     const bitLenInt toRet = qubitCount;
 

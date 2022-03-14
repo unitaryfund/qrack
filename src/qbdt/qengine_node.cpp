@@ -33,7 +33,7 @@ bool QBdtQEngineNode::isEqual(QBdtNodeInterfacePtr r)
         return false;
     }
 
-    if (norm(scale) <= FP_NORM_EPSILON) {
+    if (IS_NORM_0(scale)) {
         return true;
     }
 
@@ -61,7 +61,7 @@ bool QBdtQEngineNode::isEqualUnder(QBdtNodeInterfacePtr r)
         return true;
     }
 
-    if (norm(scale) <= FP_NORM_EPSILON) {
+    if (IS_NORM_0(scale)) {
         return true;
     }
 
@@ -85,12 +85,13 @@ void QBdtQEngineNode::Normalize(bitLenInt depth)
         return;
     }
 
-    if (norm(scale) <= FP_NORM_EPSILON) {
+    if (IS_NORM_0(scale)) {
         SetZero();
         return;
     }
 
     if (qReg) {
+        qReg->UpdateRunningNorm();
         qReg->NormalizeState();
     }
 }
@@ -101,7 +102,7 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
         return;
     }
 
-    if (norm(scale) <= FP_NORM_EPSILON) {
+    if (IS_NORM_0(scale)) {
         SetZero();
         return;
     }
@@ -113,17 +114,9 @@ void QBdtQEngineNode::Branch(bitLenInt depth)
 
 void QBdtQEngineNode::Prune(bitLenInt depth)
 {
-    if (norm(scale) <= FP_NORM_EPSILON) {
+    if (IS_NORM_0(scale)) {
         SetZero();
         return;
-    }
-
-    if (!qReg) {
-        return;
-    }
-
-    if (qReg->GetIsArbitraryGlobalPhase()) {
-        throw std::invalid_argument("QBdt attached qubits cannot have arbitrary global phase!");
     }
 
     const real1_f phaseArg = qReg->FirstNonzeroPhase();
@@ -133,7 +126,7 @@ void QBdtQEngineNode::Prune(bitLenInt depth)
 
 void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitLenInt& size)
 {
-    if (norm(scale) <= FP_NORM_EPSILON) {
+    if (IS_NORM_0(scale)) {
         return;
     }
 
@@ -147,7 +140,7 @@ void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, con
 
 QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
 {
-    if (!size || (norm(scale) <= FP_NORM_EPSILON)) {
+    if (!size || (IS_NORM_0(scale))) {
         return NULL;
     }
 
@@ -203,18 +196,13 @@ void QBdtQEngineNode::PushSpecial(const complex* mtrx, QBdtNodeInterfacePtr& b1)
 
     qReg0->ShuffleBuffers(qReg1);
 
-    qReg = qReg;
+    qReg = qReg0;
     std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg = qReg1;
 }
 
 void QBdtQEngineNode::PopStateVector(bitLenInt depth)
 {
     if (IS_NORM_0(scale)) {
-        SetZero();
-        return;
-    }
-
-    if (!qReg) {
         SetZero();
         return;
     }
