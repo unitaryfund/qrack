@@ -413,11 +413,8 @@ void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QB
         return;
     }
 
-    const bool isSame = ((b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1]));
+    const bool isSame = b0->isEqualUnder(b1);
     if (isSame) {
-        b1->branches[0] = b0->branches[0];
-        b1->branches[1] = b0->branches[1];
-
         const complex Y0 = b0->scale;
         const complex Y1 = b1->scale;
         b0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
@@ -434,6 +431,10 @@ void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QB
 
     b0->Branch();
     b1->Branch();
+
+    if (!b0->branches[0]) {
+        throw std::out_of_range("Debug: In PushStateVector(), branches are QInterfaces nodes");
+    }
 
     b0->branches[0]->scale *= b0->scale;
     b0->branches[1]->scale *= b0->scale;
