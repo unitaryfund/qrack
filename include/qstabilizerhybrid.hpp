@@ -11,20 +11,9 @@
 // for details.
 #pragma once
 
-#include "common/qrack_types.hpp"
-
-#if ENABLE_OPENCL
-#include "common/oclengine.hpp"
-#endif
-
 #include "mpsshard.hpp"
 #include "qengine.hpp"
-#include "qparity.hpp"
 #include "qstabilizer.hpp"
-
-#if ENABLE_ALU
-#include "qalu.hpp"
-#endif
 
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
@@ -35,17 +24,12 @@ class QStabilizerHybrid;
 typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
 
 /**
- * A "Qrack::QStabilizerHybrid" internally switched between Qrack::QEngineCPU and Qrack::QEngineOCL to maximize
- * qubit-count-dependent performance.
+ * A "Qrack::QStabilizerHybrid" internally switched between Qrack::QStabilizer and Qrack::QEngine to maximize performance.
  */
-#if ENABLE_ALU
-class QStabilizerHybrid : public QAlu, public QParity, public QInterface {
-#else
-class QStabilizerHybrid : public QParity, public QInterface {
-#endif
+class QStabilizerHybrid : public QEngine {
 protected:
     std::vector<QInterfaceEngine> engineTypes;
-    QInterfacePtr engine;
+    QEnginePtr engine;
     QStabilizerPtr stabilizer;
     std::vector<MpsShardPtr> shards;
     int devID;
@@ -60,7 +44,7 @@ protected:
     std::vector<int> deviceIDs;
 
     QStabilizerPtr MakeStabilizer(bitCapInt perm = 0);
-    QInterfacePtr MakeEngine(bitCapInt perm = 0);
+    QEnginePtr MakeEngine(bitCapInt perm = 0);
 
     void InvertBuffer(bitLenInt qubit)
     {
@@ -275,6 +259,64 @@ public:
             engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
         }
     }
+    
+    virtual void ZeroAmplitudes() {
+        SwitchToEngine();
+        engine->ZeroAmplitudes();
+    }
+    virtual void CopyStateVec(QEnginePtr src)
+    {
+        CopyStateVec(std::dynamic_pointer_cast<QStabilizerHybrid>(src));
+    }
+    virtual void CopyStateVec(QStabilizerHybridPtr src)
+    {
+        SetPermutation(0);
+    
+        if (src->stabilizer) {
+            stabilizer = std::dynamic_pointer_cast<QStabilizer>(src->stabilizer->Clone());
+            return;
+        }
+        
+        engine = MakeEngine();
+        src->stabilizer->GetQuantumState(engine);
+    }
+    virtual bool IsZeroAmplitude() {
+        if (stabilizer) {
+            return false;
+        }
+        
+        return engine->IsZeroAmplitude();
+    }
+    virtual void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    {
+        SwitchToEngine();
+        engine->GetAmplitudePage(pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    {
+        SwitchToEngine();
+        engine->SetAmplitudePage(pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
+    {
+        SetAmplitudePage(std::dynamic_pointer_cast<QStabilizerHybrid>(pageEnginePtr), srcOffset, dstOffset, length);
+    }
+    virtual void SetAmplitudePage(QStabilizerHybridPtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
+    {
+        SwitchToEngine();
+        pageEnginePtr->SwitchToEngine();
+        engine->SetAmplitudePage(pageEnginePtr->engine, srcOffset, dstOffset, length);
+    }
+    virtual void ShuffleBuffers(QEnginePtr engine)
+    {
+        ShuffleBuffers(std::dynamic_pointer_cast<QStabilizerHybrid>(engine));
+    }
+    virtual void ShuffleBuffers(QStabilizerHybridPtr engine)
+    {
+        SwitchToEngine();
+        engine->SetAmplitudePage(pagePtr, offset, length);
+    }
+    virtual QEnginePtr CloneEmpty() { Clone() };
 
     /**
      * Switches between CPU and GPU used modes. (This will not incur a performance penalty, if the chosen mode matches
@@ -607,23 +649,6 @@ public:
     }
 
 #if ENABLE_ALU
-    virtual bool M(bitLenInt q) { return QInterface::M(q); }
-    virtual void X(bitLenInt q) { QInterface::X(q); }
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        QInterface::DECC(toSub, start, length, carryIndex);
-    }
-    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
-    {
-        QInterface::DECS(toSub, start, length, overflowIndex);
-    }
-    virtual void CDEC(
-        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
-    {
-        QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
-    }
-
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
         SwitchToEngine();
