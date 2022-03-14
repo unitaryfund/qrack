@@ -833,7 +833,7 @@ public:
 
         QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
         QStabilizerHybridPtr thatClone =
-            toCompare->stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
+            toCompare->stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare->Clone()) : NULL;
 
         if (thisClone) {
             thisClone->SwitchToEngine();
@@ -845,7 +845,21 @@ public:
         QInterfacePtr thisEngine = thisClone ? thisClone->engine : engine;
         QInterfacePtr thatEngine = thatClone ? thatClone->engine : toCompare->engine;
 
-        return thisEngine->SumSqrDiff(thatEngine);
+        const real1_f toRet = thisEngine->SumSqrDiff(thatEngine);
+
+        if (toRet > TRYDECOMPOSE_EPSILON) {
+            return toRet;
+        }
+
+        if (!stabilizer && toCompare->stabilizer) {
+            SetPermutation(0);
+            stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
+        } else if (stabilizer && !toCompare->stabilizer) {
+            toCompare->SetPermutation(0);
+            toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
+        }
+
+        return toRet;
     }
 
     virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
@@ -876,7 +890,19 @@ public:
         QInterfacePtr thisEngine = thisClone ? thisClone->engine : engine;
         QInterfacePtr thatEngine = thatClone ? thatClone->engine : toCompare->engine;
 
-        return thisEngine->ApproxCompare(thatEngine, error_tol);
+        if (!thisEngine->ApproxCompare(thatEngine, error_tol)) {
+            return false;
+        }
+
+        if (!stabilizer && toCompare->stabilizer) {
+            SetPermutation(0);
+            stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
+        } else if (stabilizer && !toCompare->stabilizer) {
+            toCompare->SetPermutation(0);
+            toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
+        }
+
+        return true;
     }
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
