@@ -318,7 +318,15 @@ public:
         oEngine->SwitchToEngine();
         engine->ShuffleBuffers(oEngine->engine);
     }
-    virtual QEnginePtr CloneEmpty();
+    virtual QEnginePtr CloneEmpty()
+    {
+        QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
+        if (thisClone) {
+            thisClone->SwitchToEngine();
+        }
+        QEnginePtr thisEngine = thisClone ? thisClone->engine : engine;
+        return thisEngine->CloneEmpty();
+    }
     virtual void QueueSetDoNormalize(bool doNorm)
     {
         if (engine) {
@@ -373,6 +381,15 @@ public:
 
         Finish();
         return engine->GetRunningNorm();
+    }
+
+    virtual real1_f FirstNonzeroPhase()
+    {
+        if (stabilizer) {
+            return stabilizer->FirstNonzeroPhase();
+        }
+
+        return engine->FirstNonzeroPhase();
     }
 
     /**
@@ -997,7 +1014,13 @@ public:
     virtual void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
     {
-        if (engine) {
+        if (nrm != REAL1_DEFAULT_ARG) {
+            SwitchToEngine();
+        }
+
+        if (stabilizer) {
+            NormalizeState(REAL1_DEFAULT_ARG, norm_thresh, phaseArg);
+        } else {
             engine->NormalizeState(nrm, norm_thresh, phaseArg);
         }
     }

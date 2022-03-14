@@ -258,6 +258,17 @@ public:
         return toRet;
     }
 
+    virtual real1_f FirstNonzeroPhase()
+    {
+        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+            if (!qPages[i]->IsZeroAmplitude()) {
+                return qPages[i]->FirstNonzeroPhase();
+            }
+        }
+
+        return ZERO_R1;
+    }
+
     virtual void SetQuantumState(const complex* inputState);
     virtual void GetQuantumState(complex* outputState);
     virtual void GetProbs(real1* outputProbs);
