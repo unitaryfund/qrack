@@ -308,15 +308,15 @@ public:
         pageEnginePtr->SwitchToEngine();
         engine->SetAmplitudePage(pageEnginePtr->engine, srcOffset, dstOffset, length);
     }
-    virtual void ShuffleBuffers(QEnginePtr engine)
+    virtual void ShuffleBuffers(QEnginePtr oEngine)
     {
-        ShuffleBuffers(std::dynamic_pointer_cast<QStabilizerHybrid>(engine));
+        ShuffleBuffers(std::dynamic_pointer_cast<QStabilizerHybrid>(oEngine));
     }
-    virtual void ShuffleBuffers(QStabilizerHybridPtr engine)
+    virtual void ShuffleBuffers(QStabilizerHybridPtr oEngine)
     {
         SwitchToEngine();
-        engine->SwitchToEngine();
-        engine->ShuffleBuffers(engine->engine);
+        oEngine->SwitchToEngine();
+        engine->ShuffleBuffers(oEngine->engine);
     }
     virtual QEnginePtr CloneEmpty();
     virtual void QueueSetDoNormalize(bool doNorm)

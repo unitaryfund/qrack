@@ -16,15 +16,10 @@
 
 #pragma once
 
-#include "qbdt_qinterface_node.hpp"
-#include "qparity.hpp"
-#include "qstabilizer.hpp"
+#include "qbdt_qengine_node.hpp"
+#include "qengine.hpp"
 
-#if ENABLE_ALU
-#include "qalu.hpp"
-#endif
-
-#define NODE_TO_QINTERFACE(leaf) (std::dynamic_pointer_cast<QBdtQInterfaceNode>(leaf)->qReg)
+#define NODE_TO_QENGINE(leaf) (std::dynamic_pointer_cast<QBdtQEngineNode>(leaf)->qReg)
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
 
@@ -60,7 +55,7 @@ protected:
         bdtMaxQPower = pow2(bdtQubitCount);
     }
 
-    QBdtQInterfaceNodePtr MakeQInterfaceNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
+    QBdtQEngineNodePtr MakeQEngineNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
 
     void FallbackMtrx(const complex* mtrx, bitLenInt target);
     void FallbackMCMtrx(
@@ -68,7 +63,7 @@ protected:
 
     QInterfacePtr MakeTempStateVector()
     {
-        QInterfacePtr copyPtr = NODE_TO_QINTERFACE(MakeQInterfaceNode(ONE_R1, qubitCount));
+        QInterfacePtr copyPtr = NODE_TO_QENGINE(MakeQEngineNode(ONE_R1, qubitCount));
         Finish();
         GetQuantumState(copyPtr);
 
@@ -85,8 +80,8 @@ protected:
             throw std::domain_error("QBdt::SetStateVector() not yet implemented, after Attach() call!");
         }
 
-        QBdtQInterfaceNodePtr nRoot = MakeQInterfaceNode(ONE_R1, qubitCount);
-        GetQuantumState(NODE_TO_QINTERFACE(nRoot));
+        QBdtQEngineNodePtr nRoot = MakeQEngineNode(ONE_R1, qubitCount);
+        GetQuantumState(NODE_TO_QENGINE(nRoot));
         root = nRoot;
         SetQubitCount(qubitCount, qubitCount);
     }
@@ -96,9 +91,9 @@ protected:
             return;
         }
 
-        QBdtQInterfaceNodePtr oRoot = std::dynamic_pointer_cast<QBdtQInterfaceNode>(root);
+        QBdtQEngineNodePtr oRoot = std::dynamic_pointer_cast<QBdtQEngineNode>(root);
         SetQubitCount(qubitCount, 0U);
-        SetQuantumState(NODE_TO_QINTERFACE(oRoot));
+        SetQuantumState(NODE_TO_QENGINE(oRoot));
     }
 
     template <typename Fn> void GetTraversal(Fn getLambda);
@@ -106,13 +101,13 @@ protected:
     template <typename Fn> void ExecuteAsStateVector(Fn operation)
     {
         SetStateVector();
-        operation(NODE_TO_QINTERFACE(root));
+        operation(NODE_TO_QENGINE(root));
     }
 
     template <typename Fn> bitCapInt BitCapIntAsStateVector(Fn operation)
     {
         SetStateVector();
-        return operation(NODE_TO_QINTERFACE(root));
+        return operation(NODE_TO_QENGINE(root));
     }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest);
@@ -189,7 +184,7 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QBdt>(toCopy), start);
     }
-    virtual bitLenInt Attach(QStabilizerPtr toCopy, bitLenInt start)
+    virtual bitLenInt Attach(QEnginePtr toCopy, bitLenInt start)
     {
         if (start == qubitCount) {
             return Attach(toCopy);
@@ -202,7 +197,7 @@ public:
 
         return result;
     }
-    virtual bitLenInt Attach(QStabilizerPtr toCopy);
+    virtual bitLenInt Attach(QEnginePtr toCopy);
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));
@@ -236,7 +231,7 @@ public:
 
     virtual real1_f ProbParity(bitCapInt mask)
     {
-        QInterfacePtr unit = (!bdtQubitCount) ? NODE_TO_QINTERFACE(root) : MakeTempStateVector();
+        QInterfacePtr unit = (!bdtQubitCount) ? NODE_TO_QENGINE(root) : MakeTempStateVector();
         return QINTERFACE_TO_QPARITY(unit)->ProbParity(mask);
     }
     virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
@@ -248,7 +243,7 @@ public:
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
     {
         SetStateVector();
-        return QINTERFACE_TO_QPARITY(NODE_TO_QINTERFACE(root))->ForceMParity(mask, result, doForce);
+        return QINTERFACE_TO_QPARITY(NODE_TO_QENGINE(root))->ForceMParity(mask, result, doForce);
     }
 
 #if ENABLE_ALU

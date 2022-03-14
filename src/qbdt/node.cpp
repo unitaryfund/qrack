@@ -333,7 +333,12 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
     b1->Branch();
 
     if (!b0->branches[0]) {
-        throw std::out_of_range("Debug: In PushStateVector(), branches are QInterfaces nodes");
+        b0->PushSpecial(mtrxCol1, mtrxCol2, b1);
+
+        b0->PopStateVector();
+        b1->PopStateVector();
+
+        return;
     }
 
     b0->branches[0]->scale *= b0->scale;
@@ -433,7 +438,12 @@ void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QB
     b1->Branch();
 
     if (!b0->branches[0]) {
-        throw std::out_of_range("Debug: In PushStateVector(), branches are QInterfaces nodes");
+        b0->PushSpecial(mtrx, b1);
+
+        b0->PopStateVector();
+        b1->PopStateVector();
+
+        return;
     }
 
     b0->branches[0]->scale *= b0->scale;
