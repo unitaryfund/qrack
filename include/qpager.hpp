@@ -243,11 +243,19 @@ public:
         CombineEngines();
         qPages[0]->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
     }
-
     virtual void FreeStateVec(complex* sv = NULL)
     {
         CombineEngines();
         qPages[0]->FreeStateVec(sv);
+    }
+    virtual real1_f GetRunningNorm()
+    {
+        real1_f toRet = ZERO_R1;
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            toRet += qPages[i]->GetRunningNorm();
+        }
+
+        return toRet;
     }
 
     virtual void SetQuantumState(const complex* inputState);

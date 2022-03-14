@@ -150,9 +150,10 @@ QInterfacePtr QStabilizerHybrid::Clone()
 
 QEnginePtr QStabilizerHybrid::CloneEmpty()
 {
-    if (stabilizer) {
-        return std::dynamic_pointer_cast<QEngine>(Clone());
-    }
+    // if (stabilizer) {
+    //     return std::dynamic_pointer_cast<QEngine>(Clone());
+    // }
+    SwitchToEngine();
 
     QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(engineTypes, qubitCount, 0, rand_generator,
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,

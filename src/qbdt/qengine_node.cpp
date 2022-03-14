@@ -186,8 +186,6 @@ void QBdtQEngineNode::PushSpecial(const complex* mtrx, QBdtNodeInterfacePtr& b1)
         return;
     }
 
-    throw std::out_of_range("QBdtQEngineNode::PushSpecial() not yet implemented!");
-
     QEnginePtr qReg0 = qReg;
     QEnginePtr qReg1 = std::dynamic_pointer_cast<QBdtQEngineNode>(b1)->qReg;
 
@@ -211,5 +209,33 @@ void QBdtQEngineNode::PushSpecial(const complex* mtrx, QBdtNodeInterfacePtr& b1)
     qReg1->Mtrx(mtrx, qReg1->GetQubitCount() - 1U);
 
     qReg0->ShuffleBuffers(qReg1);
+}
+
+void QBdtQEngineNode::PopStateVector(bitLenInt depth)
+{
+    if (!depth) {
+        return;
+    }
+
+    if (IS_NORM_0(scale)) {
+        SetZero();
+        return;
+    }
+
+    if (!qReg) {
+        return;
+    }
+
+    qReg->UpdateRunningNorm();
+    const real1_f nrm = qReg->GetRunningNorm();
+
+    if (nrm <= FP_NORM_EPSILON) {
+        SetZero();
+        return;
+    }
+
+    const real1_f phaseArg = qReg->FirstNonzeroPhase();
+    qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
+    scale = std::polar((real1)sqrt(nrm), (real1)phaseArg);
 }
 } // namespace Qrack

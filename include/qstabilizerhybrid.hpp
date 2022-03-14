@@ -360,11 +360,19 @@ public:
         SwitchToEngine();
         engine->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
     }
-
     virtual void FreeStateVec(complex* sv = NULL)
     {
         SwitchToEngine();
         engine->FreeStateVec(sv);
+    }
+    virtual real1_f GetRunningNorm()
+    {
+        if (stabilizer) {
+            return (real1_f)ONE_R1;
+        }
+
+        Finish();
+        return engine->GetRunningNorm();
     }
 
     /**
