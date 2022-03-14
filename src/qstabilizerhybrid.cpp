@@ -149,6 +149,26 @@ QInterfacePtr QStabilizerHybrid::Clone()
     return c;
 }
 
+QEnginePtr QStabilizerHybrid::CloneEmpty()
+{
+    if (stabilizer) {
+        return std::dynamic_pointer_cast<QEngine>(Clone());
+    }
+
+    QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(engineTypes, qubitCount, 0, rand_generator,
+        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+        std::vector<int>{}, thresholdQubits, separabilityThreshold);
+
+    Finish();
+    c->Finish();
+
+    // Clone and set engine directly.
+    c->engine = engine->CloneEmpty();
+    c->stabilizer = NULL;
+
+    return c;
+};
+
 void QStabilizerHybrid::SwitchToEngine()
 {
     if (engine) {

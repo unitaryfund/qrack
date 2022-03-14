@@ -24,7 +24,8 @@ class QStabilizerHybrid;
 typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
 
 /**
- * A "Qrack::QStabilizerHybrid" internally switched between Qrack::QStabilizer and Qrack::QEngine to maximize performance.
+ * A "Qrack::QStabilizerHybrid" internally switched between Qrack::QStabilizer and Qrack::QEngine to maximize
+ * performance.
  */
 class QStabilizerHybrid : public QEngine {
 protected:
@@ -240,7 +241,7 @@ public:
 
         if (engine) {
             QPagerPtr nEngine = std::dynamic_pointer_cast<QPager>(MakeEngine());
-            nEngine->LockEngine(std::dynamic_pointer_cast<QEngine>(engine));
+            nEngine->LockEngine(engine);
             engine = nEngine;
         }
     }
@@ -259,32 +260,31 @@ public:
             engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
         }
     }
-    
-    virtual void ZeroAmplitudes() {
+
+    virtual void ZeroAmplitudes()
+    {
         SwitchToEngine();
         engine->ZeroAmplitudes();
     }
-    virtual void CopyStateVec(QEnginePtr src)
-    {
-        CopyStateVec(std::dynamic_pointer_cast<QStabilizerHybrid>(src));
-    }
+    virtual void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QStabilizerHybrid>(src)); }
     virtual void CopyStateVec(QStabilizerHybridPtr src)
     {
         SetPermutation(0);
-    
+
         if (src->stabilizer) {
             stabilizer = std::dynamic_pointer_cast<QStabilizer>(src->stabilizer->Clone());
             return;
         }
-        
+
         engine = MakeEngine();
         src->stabilizer->GetQuantumState(engine);
     }
-    virtual bool IsZeroAmplitude() {
+    virtual bool IsZeroAmplitude()
+    {
         if (stabilizer) {
             return false;
         }
-        
+
         return engine->IsZeroAmplitude();
     }
     virtual void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
@@ -297,11 +297,13 @@ public:
         SwitchToEngine();
         engine->SetAmplitudePage(pagePtr, offset, length);
     }
-    virtual void SetAmplitudePage(QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
     {
         SetAmplitudePage(std::dynamic_pointer_cast<QStabilizerHybrid>(pageEnginePtr), srcOffset, dstOffset, length);
     }
-    virtual void SetAmplitudePage(QStabilizerHybridPtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
+    virtual void SetAmplitudePage(
+        QStabilizerHybridPtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
     {
         SwitchToEngine();
         pageEnginePtr->SwitchToEngine();
@@ -314,9 +316,57 @@ public:
     virtual void ShuffleBuffers(QStabilizerHybridPtr engine)
     {
         SwitchToEngine();
-        engine->SetAmplitudePage(pagePtr, offset, length);
+        engine->SwitchToEngine();
+        engine->ShuffleBuffers(engine->engine);
     }
-    virtual QEnginePtr CloneEmpty() { Clone() };
+    virtual QEnginePtr CloneEmpty();
+    virtual void QueueSetDoNormalize(bool doNorm)
+    {
+        if (engine) {
+            engine->QueueSetDoNormalize(doNorm);
+        }
+    }
+    virtual void QueueSetRunningNorm(real1_f runningNrm)
+    {
+        if (engine) {
+            engine->QueueSetRunningNorm(runningNrm);
+        }
+    }
+    virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
+    {
+        QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
+        if (thisClone) {
+            thisClone->SwitchToEngine();
+        }
+        QInterfacePtr thisEngine = thisClone ? thisClone->engine : engine;
+        return thisEngine->ProbReg(start, length, permutation);
+    }
+    virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
+    {
+        SwitchToEngine();
+        return engine->ApplyM(regMask, result, nrm);
+    }
+    virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+    {
+        QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
+        if (thisClone) {
+            thisClone->SwitchToEngine();
+        }
+        QEnginePtr thisEngine = thisClone ? thisClone->engine : engine;
+        return thisEngine->GetExpectation(valueStart, valueLength);
+    }
+    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
+        const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        SwitchToEngine();
+        engine->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
+    }
+
+    virtual void FreeStateVec(complex* sv = NULL)
+    {
+        SwitchToEngine();
+        engine->FreeStateVec(sv);
+    }
 
     /**
      * Switches between CPU and GPU used modes. (This will not incur a performance penalty, if the chosen mode matches
