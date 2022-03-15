@@ -627,7 +627,6 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
     const bitCapInt qPower = pow2(maxQubit);
 
     std::set<QEnginePtr> qis;
-    std::set<QBdtNodeInterfacePtr> qns;
     bool isFail = false;
 
 #if ENABLE_COMPLEX_X2
@@ -663,13 +662,12 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
                 }
                 qis.insert(qi);
             }
-        } else if (qns.find(leaf) == qns.end()) {
+        } else {
 #if ENABLE_COMPLEX_X2
             leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
 #else
             leaf->Apply2x2(mtrx, bdtQubitCount - target);
 #endif
-            qns.insert(leaf);
         }
 
         return (bitCapInt)0U;
@@ -737,7 +735,6 @@ void QBdt::ApplyControlledSingle(
 #endif
 
     std::set<QEnginePtr> qis;
-    std::set<QBdtNodeInterfacePtr> qns;
 
     bool isFail = false;
 
@@ -776,13 +773,12 @@ void QBdt::ApplyControlledSingle(
                 return (bitCapInt)(qPower - ONE_BCI);
             }
             qis.insert(qi);
-        } else if (qns.find(leaf) == qns.end()) {
+        } else {
 #if ENABLE_COMPLEX_X2
             leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
 #else
             leaf->Apply2x2(mtrx, bdtQubitCount - target);
 #endif
-            qns.insert(leaf);
         }
 
         return (bitCapInt)0U;
