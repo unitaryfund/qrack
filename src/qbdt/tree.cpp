@@ -643,7 +643,6 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
                 // WARNING: Mutates loop control variable!
                 return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
             }
-            leaf->Branch();
             leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
         }
 
