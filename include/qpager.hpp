@@ -86,13 +86,13 @@ protected:
     virtual void GetSetAmplitudePage(
         complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length)
     {
-        const bitCapInt pageLength = pageMaxQPower();
+        const bitCapIntOcl pageLength = (bitCapIntOcl)pageMaxQPower();
         bitCapIntOcl perm = 0U;
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             if (perm >= (offset + length)) {
                 break;
             }
-            if ((perm + pageLength) <= offset) {
+            if ((perm + length) < offset) {
                 continue;
             }
             const bitCapInt partLength = (length < pageLength) ? length : pageLength;
@@ -101,6 +101,7 @@ protected:
             } else {
                 qPages[i]->GetAmplitudePage(pagePtr, (bitCapIntOcl)(offset - perm), (bitCapIntOcl)partLength);
             }
+            perm += pageLength;
         }
     }
 
