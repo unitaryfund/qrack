@@ -2800,18 +2800,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose_perm")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_compose")
 {
-    QInterfacePtr qftReg2;
-    if (testEngineType == QINTERFACE_BDT) {
-        qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 2, 0x03, rng);
-        std::dynamic_pointer_cast<QBdt>(qftReg)->Attach(std::dynamic_pointer_cast<QEngine>(
-            CreateQuantumInterface({ QINTERFACE_STABILIZER_HYBRID }, 2, 0x02, rng, CMPLX_DEFAULT_ARG, false, false)));
-        qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 2, 0x02, rng);
-        std::dynamic_pointer_cast<QBdt>(qftReg2)->Attach(std::dynamic_pointer_cast<QEngine>(
-            CreateQuantumInterface({ QINTERFACE_STABILIZER_HYBRID }, 2, 0x00, rng, CMPLX_DEFAULT_ARG, false, false)));
-    } else {
-        qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
-        qftReg2 = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng);
-    }
+    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x0b, rng);
+    QInterfacePtr qftReg2 =
+        CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 4, 0x02, rng);
     qftReg->Compose(qftReg2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x2b));
 

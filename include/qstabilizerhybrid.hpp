@@ -276,7 +276,7 @@ public:
         }
 
         engine = MakeEngine();
-        src->stabilizer->GetQuantumState(engine);
+        engine->CopyStateVec(src->engine);
     }
     virtual bool IsZeroAmplitude()
     {
