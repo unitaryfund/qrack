@@ -313,11 +313,8 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
         return;
     }
 
-    const bool isSame = ((b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1]));
+    const bool isSame = b0->isEqualUnder(b1);
     if (isSame) {
-        b1->branches[0] = b0->branches[0];
-        b1->branches[1] = b0->branches[1];
-
         complex2 qubit(b0->scale, b1->scale);
         qubit.c2 = matrixMul(mtrxCol1.c2, mtrxCol2.c2, qubit.c2);
         b0->scale = qubit.c[0];
@@ -334,6 +331,15 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
 
     b0->Branch();
     b1->Branch();
+
+    if (!b0->branches[0]) {
+        b0->PushSpecial(mtrxCol1, mtrxCol2, b1);
+
+        b0->PopStateVector();
+        b1->PopStateVector();
+
+        return;
+    }
 
     b0->branches[0]->scale *= b0->scale;
     b0->branches[1]->scale *= b0->scale;
@@ -412,11 +418,8 @@ void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QB
         return;
     }
 
-    const bool isSame = ((b0->branches[0] == b1->branches[0]) && (b0->branches[1] == b1->branches[1]));
+    const bool isSame = b0->isEqualUnder(b1);
     if (isSame) {
-        b1->branches[0] = b0->branches[0];
-        b1->branches[1] = b0->branches[1];
-
         const complex Y0 = b0->scale;
         const complex Y1 = b1->scale;
         b0->scale = mtrx[0] * Y0 + mtrx[1] * Y1;
@@ -433,6 +436,15 @@ void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QB
 
     b0->Branch();
     b1->Branch();
+
+    if (!b0->branches[0]) {
+        b0->PushSpecial(mtrx, b1);
+
+        b0->PopStateVector();
+        b1->PopStateVector();
+
+        return;
+    }
 
     b0->branches[0]->scale *= b0->scale;
     b0->branches[1]->scale *= b0->scale;

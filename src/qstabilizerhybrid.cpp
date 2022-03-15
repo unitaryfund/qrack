@@ -29,14 +29,13 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceId,
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
-    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1)
+    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , engineTypes(eng)
     , engine(NULL)
     , shards(qubitCount)
     , devID(deviceId)
     , phaseFactor(phaseFac)
     , doNormalize(doNorm)
-    , useHostRam(useHostMem)
     , isSparse(useSparseStateVec)
     , isDefaultPaging(false)
     , separabilityThreshold(sep_thresh)
@@ -72,13 +71,13 @@ QStabilizerPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)
         qubitCount, perm, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
 }
 
-QInterfacePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
+QEnginePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
 {
     QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qubitCount, perm, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
         thresholdQubits, separabilityThreshold);
     toRet->SetConcurrency(GetConcurrencyLevel());
-    return toRet;
+    return std::dynamic_pointer_cast<QEngine>(toRet);
 }
 
 void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
@@ -142,7 +141,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
         }
     } else {
         // Clone and set engine directly.
-        c->engine = engine->Clone();
+        c->engine = std::dynamic_pointer_cast<QEngine>(engine->Clone());
         c->stabilizer = NULL;
     }
 

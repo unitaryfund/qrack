@@ -17,17 +17,14 @@
 #pragma once
 
 #include "qbdt_node_interface.hpp"
-#include "qinterface.hpp"
+#include "qengine.hpp"
 
 namespace Qrack {
-
-class QBdtQInterfaceNode;
-typedef std::shared_ptr<QBdtQInterfaceNode> QBdtQInterfaceNodePtr;
 
 class QBdtQEngineNode;
 typedef std::shared_ptr<QBdtQEngineNode> QBdtQEngineNodePtr;
 
-class QBdtQInterfaceNode : public QBdtNodeInterface {
+class QBdtQEngineNode : public QBdtNodeInterface {
 protected:
 #if ENABLE_COMPLEX_X2
     virtual void PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b0,
@@ -37,20 +34,20 @@ protected:
         const complex* mtrx, QBdtNodeInterfacePtr& b0, QBdtNodeInterfacePtr& b1, bitLenInt depth)
 #endif
     {
-        throw std::out_of_range("QBdtQInterfaceNode::PushStateVector() not implemented!");
+        throw std::out_of_range("QBdtQEngineNode::PushStateVector() not implemented!");
     }
 
 public:
-    QInterfacePtr qReg;
+    QEnginePtr qReg;
 
-    QBdtQInterfaceNode()
+    QBdtQEngineNode()
         : QBdtNodeInterface(ZERO_CMPLX)
         , qReg(NULL)
     {
         // Intentionally left blank.
     }
 
-    QBdtQInterfaceNode(complex scl, QInterfacePtr q)
+    QBdtQEngineNode(complex scl, QEnginePtr q)
         : QBdtNodeInterface(scl)
         , qReg(q)
     {
@@ -63,9 +60,11 @@ public:
         qReg = NULL;
     }
 
-    virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQInterfaceNode>(scale, qReg); }
+    virtual QBdtNodeInterfacePtr ShallowClone() { return std::make_shared<QBdtQEngineNode>(scale, qReg); }
 
     virtual bool isEqual(QBdtNodeInterfacePtr r);
+
+    virtual bool isEqualUnder(QBdtNodeInterfacePtr r);
 
     virtual void Normalize(bitLenInt depth);
 
@@ -77,7 +76,7 @@ public:
 
     virtual QBdtNodeInterfacePtr RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size);
 
-    virtual void PopStateVector(bitLenInt depth = 1U) { Prune(); }
+    virtual void PopStateVector(bitLenInt depth = 1U);
 
 #if ENABLE_COMPLEX_X2
     virtual void Apply2x2(const complex2& mtrxCol1, const complex2& mtrxCol2, bitLenInt depth)
@@ -85,8 +84,13 @@ public:
     virtual void Apply2x2(const complex* mtrx, bitLenInt depth)
 #endif
     {
-        throw std::out_of_range("QBdtQInterfaceNode::Apply2x2() not implemented!");
+        throw std::out_of_range("QBdtQEngineNode::Apply2x2() not implemented!");
     }
+#if ENABLE_COMPLEX_X2
+    virtual void PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b1);
+#else
+    virtual void PushSpecial(const complex* mtrx, QBdtNodeInterfacePtr& b1);
+#endif
 };
 
 } // namespace Qrack

@@ -11,20 +11,9 @@
 // for details.
 #pragma once
 
-#include "common/qrack_types.hpp"
-
-#if ENABLE_OPENCL
-#include "common/oclengine.hpp"
-#endif
-
 #include "mpsshard.hpp"
 #include "qengine.hpp"
-#include "qparity.hpp"
 #include "qstabilizer.hpp"
-
-#if ENABLE_ALU
-#include "qalu.hpp"
-#endif
 
 #define QINTERFACE_TO_QALU(qReg) std::dynamic_pointer_cast<QAlu>(qReg)
 #define QINTERFACE_TO_QPARITY(qReg) std::dynamic_pointer_cast<QParity>(qReg)
@@ -35,23 +24,18 @@ class QStabilizerHybrid;
 typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
 
 /**
- * A "Qrack::QStabilizerHybrid" internally switched between Qrack::QEngineCPU and Qrack::QEngineOCL to maximize
- * qubit-count-dependent performance.
+ * A "Qrack::QStabilizerHybrid" internally switched between Qrack::QStabilizer and Qrack::QEngine to maximize
+ * performance.
  */
-#if ENABLE_ALU
-class QStabilizerHybrid : public QAlu, public QParity, public QInterface {
-#else
-class QStabilizerHybrid : public QParity, public QInterface {
-#endif
+class QStabilizerHybrid : public QEngine {
 protected:
     std::vector<QInterfaceEngine> engineTypes;
-    QInterfacePtr engine;
+    QEnginePtr engine;
     QStabilizerPtr stabilizer;
     std::vector<MpsShardPtr> shards;
     int devID;
     complex phaseFactor;
     bool doNormalize;
-    bool useHostRam;
     bool isSparse;
     bool isDefaultPaging;
     real1_f separabilityThreshold;
@@ -60,7 +44,7 @@ protected:
     std::vector<int> deviceIDs;
 
     QStabilizerPtr MakeStabilizer(bitCapInt perm = 0);
-    QInterfacePtr MakeEngine(bitCapInt perm = 0);
+    QEnginePtr MakeEngine(bitCapInt perm = 0);
 
     void InvertBuffer(bitLenInt qubit)
     {
@@ -256,7 +240,7 @@ public:
 
         if (engine) {
             QPagerPtr nEngine = std::dynamic_pointer_cast<QPager>(MakeEngine());
-            nEngine->LockEngine(std::dynamic_pointer_cast<QEngine>(engine));
+            nEngine->LockEngine(engine);
             engine = nEngine;
         }
     }
@@ -274,6 +258,138 @@ public:
         if (engine) {
             engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
         }
+    }
+
+    virtual void ZeroAmplitudes()
+    {
+        SwitchToEngine();
+        engine->ZeroAmplitudes();
+    }
+    virtual void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QStabilizerHybrid>(src)); }
+    virtual void CopyStateVec(QStabilizerHybridPtr src)
+    {
+        SetPermutation(0);
+
+        if (src->stabilizer) {
+            stabilizer = std::dynamic_pointer_cast<QStabilizer>(src->stabilizer->Clone());
+            return;
+        }
+
+        engine = MakeEngine();
+        engine->CopyStateVec(src->engine);
+    }
+    virtual bool IsZeroAmplitude()
+    {
+        if (stabilizer) {
+            return false;
+        }
+
+        return engine->IsZeroAmplitude();
+    }
+    virtual void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    {
+        SwitchToEngine();
+        engine->GetAmplitudePage(pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    {
+        SwitchToEngine();
+        engine->SetAmplitudePage(pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
+    {
+        SetAmplitudePage(std::dynamic_pointer_cast<QStabilizerHybrid>(pageEnginePtr), srcOffset, dstOffset, length);
+    }
+    virtual void SetAmplitudePage(
+        QStabilizerHybridPtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
+    {
+        SwitchToEngine();
+        pageEnginePtr->SwitchToEngine();
+        engine->SetAmplitudePage(pageEnginePtr->engine, srcOffset, dstOffset, length);
+    }
+    virtual void ShuffleBuffers(QEnginePtr oEngine)
+    {
+        ShuffleBuffers(std::dynamic_pointer_cast<QStabilizerHybrid>(oEngine));
+    }
+    virtual void ShuffleBuffers(QStabilizerHybridPtr oEngine)
+    {
+        SwitchToEngine();
+        oEngine->SwitchToEngine();
+        engine->ShuffleBuffers(oEngine->engine);
+    }
+    virtual QEnginePtr CloneEmpty()
+    {
+        QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
+        if (thisClone) {
+            thisClone->SwitchToEngine();
+        }
+        QEnginePtr thisEngine = thisClone ? thisClone->engine : engine;
+        return thisEngine->CloneEmpty();
+    }
+    virtual void QueueSetDoNormalize(bool doNorm)
+    {
+        if (engine) {
+            engine->QueueSetDoNormalize(doNorm);
+        }
+    }
+    virtual void QueueSetRunningNorm(real1_f runningNrm)
+    {
+        if (engine) {
+            engine->QueueSetRunningNorm(runningNrm);
+        }
+    }
+    virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
+    {
+        QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
+        if (thisClone) {
+            thisClone->SwitchToEngine();
+        }
+        QInterfacePtr thisEngine = thisClone ? thisClone->engine : engine;
+        return thisEngine->ProbReg(start, length, permutation);
+    }
+    virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
+    {
+        SwitchToEngine();
+        return engine->ApplyM(regMask, result, nrm);
+    }
+    virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+    {
+        QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
+        if (thisClone) {
+            thisClone->SwitchToEngine();
+        }
+        QEnginePtr thisEngine = thisClone ? thisClone->engine : engine;
+        return thisEngine->GetExpectation(valueStart, valueLength);
+    }
+    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
+        const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        SwitchToEngine();
+        engine->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
+    }
+    virtual void FreeStateVec(complex* sv = NULL)
+    {
+        SwitchToEngine();
+        engine->FreeStateVec(sv);
+    }
+    virtual real1_f GetRunningNorm()
+    {
+        if (stabilizer) {
+            return (real1_f)ONE_R1;
+        }
+
+        Finish();
+        return engine->GetRunningNorm();
+    }
+
+    virtual real1_f FirstNonzeroPhase()
+    {
+        if (stabilizer) {
+            return stabilizer->FirstNonzeroPhase();
+        }
+
+        return engine->FirstNonzeroPhase();
     }
 
     /**
@@ -480,41 +596,85 @@ public:
         engine->UniformlyControlledSingleBit(controls, controlLen, qubitIndex, mtrxs);
     }
 
-    virtual void CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    virtual void CSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
-            QInterface::CSqrtSwap(controls, controlLen, qubit1, qubit2);
-            return;
+            std::vector<bitLenInt> controls;
+            if (TrimControls(lControls, lControlLen, controls, false)) {
+                return;
+            }
+            if (!controls.size()) {
+                stabilizer->Swap(qubit1, qubit2);
+                return;
+            }
+            SwitchToEngine();
         }
 
-        engine->CSqrtSwap(controls, controlLen, qubit1, qubit2);
+        engine->CSwap(lControls, lControlLen, qubit1, qubit2);
     }
-    virtual void AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    virtual void CSqrtSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
-            QInterface::AntiCSqrtSwap(controls, controlLen, qubit1, qubit2);
-            return;
+            std::vector<bitLenInt> controls;
+            if (TrimControls(lControls, lControlLen, controls, false)) {
+                return;
+            }
+            if (!controls.size()) {
+                QInterface::SqrtSwap(qubit1, qubit2);
+                return;
+            }
+            SwitchToEngine();
         }
 
-        engine->AntiCSqrtSwap(controls, controlLen, qubit1, qubit2);
+        engine->CSqrtSwap(lControls, lControlLen, qubit1, qubit2);
     }
-    virtual void CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    virtual void AntiCSqrtSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
-            QInterface::CISqrtSwap(controls, controlLen, qubit1, qubit2);
-            return;
+            std::vector<bitLenInt> controls;
+            if (TrimControls(lControls, lControlLen, controls, true)) {
+                return;
+            }
+            if (!controls.size()) {
+                QInterface::SqrtSwap(qubit1, qubit2);
+                return;
+            }
+            SwitchToEngine();
         }
 
-        engine->CISqrtSwap(controls, controlLen, qubit1, qubit2);
+        engine->AntiCSqrtSwap(lControls, lControlLen, qubit1, qubit2);
     }
-    virtual void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2)
+    virtual void CISqrtSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
     {
         if (stabilizer) {
-            QInterface::AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
-            return;
+            std::vector<bitLenInt> controls;
+            if (TrimControls(lControls, lControlLen, controls, false)) {
+                return;
+            }
+            if (!controls.size()) {
+                QInterface::ISqrtSwap(qubit1, qubit2);
+                return;
+            }
+            SwitchToEngine();
         }
 
-        engine->AntiCISqrtSwap(controls, controlLen, qubit1, qubit2);
+        engine->CISqrtSwap(lControls, lControlLen, qubit1, qubit2);
+    }
+    virtual void AntiCISqrtSwap(const bitLenInt* lControls, bitLenInt lControlLen, bitLenInt qubit1, bitLenInt qubit2)
+    {
+        if (stabilizer) {
+            std::vector<bitLenInt> controls;
+            if (TrimControls(lControls, lControlLen, controls, true)) {
+                return;
+            }
+            if (!controls.size()) {
+                QInterface::ISqrtSwap(qubit1, qubit2);
+                return;
+            }
+            SwitchToEngine();
+        }
+
+        engine->AntiCISqrtSwap(lControls, lControlLen, qubit1, qubit2);
     }
 
     virtual void XMask(bitCapInt mask)
@@ -607,23 +767,6 @@ public:
     }
 
 #if ENABLE_ALU
-    virtual bool M(bitLenInt q) { return QInterface::M(q); }
-    virtual void X(bitLenInt q) { QInterface::X(q); }
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        QInterface::DECC(toSub, start, length, carryIndex);
-    }
-    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
-    {
-        QInterface::DECS(toSub, start, length, overflowIndex);
-    }
-    virtual void CDEC(
-        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
-    {
-        QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
-    }
-
     virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
         SwitchToEngine();
@@ -915,7 +1058,18 @@ public:
     virtual void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
     {
-        if (engine) {
+        if (abs(nrm) <= FP_NORM_EPSILON) {
+            ZeroAmplitudes();
+            return;
+        }
+
+        if ((nrm > ZERO_R1) && (abs(ONE_R1 - nrm) > FP_NORM_EPSILON)) {
+            SwitchToEngine();
+        }
+
+        if (stabilizer) {
+            stabilizer->NormalizeState(REAL1_DEFAULT_ARG, norm_thresh, phaseArg);
+        } else {
             engine->NormalizeState(nrm, norm_thresh, phaseArg);
         }
     }

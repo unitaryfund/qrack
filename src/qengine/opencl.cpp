@@ -2841,7 +2841,7 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseA
         ZeroAmplitudes();
         return;
     }
-    if ((abs(ONE_R1 - nrm) <= FP_NORM_EPSILON) && ((phaseArg * phaseArg) < FP_NORM_EPSILON)) {
+    if ((abs(ONE_R1 - nrm) <= FP_NORM_EPSILON) && ((phaseArg * phaseArg) <= FP_NORM_EPSILON)) {
         return;
     }
     // We might have async execution of gates still happening.
@@ -2850,11 +2850,11 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseA
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;
     }
+    nrm = ONE_R1 / std::sqrt(nrm);
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
-    complex c_args[2] = { complex((real1)norm_thresh, ZERO_R1),
-        (complex)std::polar((real1_f)(ONE_R1 / sqrt(nrm)), (real1_f)phaseArg) };
+    complex c_args[2] = { complex((real1)norm_thresh, ZERO_R1), std::polar(nrm, (real1)phaseArg) };
     cl::Event writeRealArgsEvent;
     DISPATCH_LOC_WRITE(*(poolItem->cmplxBuffer), sizeof(complex) * 2, c_args, writeRealArgsEvent, error);
 

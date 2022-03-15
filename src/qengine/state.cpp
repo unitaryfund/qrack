@@ -1458,7 +1458,7 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f, real1_f ph
         ZeroAmplitudes();
         return;
     }
-    if ((abs(ONE_R1 - nrm) <= FP_NORM_EPSILON) && ((phaseArg * phaseArg) < FP_NORM_EPSILON)) {
+    if ((abs(ONE_R1 - nrm) <= FP_NORM_EPSILON) && ((phaseArg * phaseArg) <= FP_NORM_EPSILON)) {
         return;
     }
     // We might have async execution of gates still happening.
@@ -1467,9 +1467,8 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f, real1_f ph
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;
     }
-
     nrm = ONE_R1 / std::sqrt(nrm);
-    complex cNrm = (complex)std::polar((real1_f)nrm, (real1_f)phaseArg);
+    complex cNrm = std::polar(nrm, (real1)phaseArg);
 
     if (norm_thresh <= ZERO_R1) {
         par_for(0, maxQPowerOcl, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {

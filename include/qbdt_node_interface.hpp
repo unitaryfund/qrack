@@ -86,6 +86,8 @@ public:
 
     virtual bool isEqual(QBdtNodeInterfacePtr r);
 
+    virtual bool isEqualUnder(QBdtNodeInterfacePtr r);
+
     virtual QBdtNodeInterfacePtr ShallowClone() = 0;
 
     virtual void PopStateVector(bitLenInt depth = 1U) = 0;
@@ -101,6 +103,16 @@ public:
 #else
     virtual void Apply2x2(const complex* mtrx, bitLenInt depth) = 0;
 #endif
+
+#if ENABLE_COMPLEX_X2
+    virtual void PushSpecial(const complex2& mtrxCol1, const complex2& mtrxCol2, QBdtNodeInterfacePtr& b1)
+#else
+    virtual void PushSpecial(const complex* mtrx, QBdtNodeInterfacePtr& b1)
+#endif
+    {
+        throw std::out_of_range("QBdtNodeInterface::PushSpecial() not implemented! (You probably called "
+                                "PushStateVector() past terminal depth.)");
+    }
 };
 
 bool operator==(const QBdtNodeInterfacePtr& lhs, const QBdtNodeInterfacePtr& rhs);

@@ -11,12 +11,7 @@
 // for details.
 #pragma once
 
-#include "qinterface.hpp"
-#include "qparity.hpp"
-
-#if ENABLE_ALU
-#include "qalu.hpp"
-#endif
+#include "qengine.hpp"
 
 namespace Qrack {
 
@@ -27,18 +22,12 @@ typedef std::shared_ptr<QPager> QPagerPtr;
  * A "Qrack::QPager" splits a "Qrack::QEngine" implementation into equal-length "pages." This helps both optimization
  * and distribution of a single coherent quantum register across multiple devices.
  */
-#if ENABLE_ALU
-class QPager : public QAlu, public QParity, public QInterface {
-#else
-class QPager : public QParity, public QInterface {
-#endif
+class QPager : public QEngine {
 protected:
     std::vector<QInterfaceEngine> engines;
     QInterfaceEngine rootEngine;
     int devID;
     complex phaseFactor;
-    bool useHostRam;
-    bool useRDRAND;
     bool isSparse;
     std::vector<QEnginePtr> qPages;
     std::vector<int> deviceIDs;
@@ -94,6 +83,28 @@ protected:
 
     void Init();
 
+    virtual void GetSetAmplitudePage(
+        complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    {
+        const bitCapIntOcl pageLength = (bitCapIntOcl)pageMaxQPower();
+        bitCapIntOcl perm = 0U;
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            if (perm >= (offset + length)) {
+                break;
+            }
+            if ((perm + length) < offset) {
+                continue;
+            }
+            const bitCapInt partLength = (length < pageLength) ? length : pageLength;
+            if (cPagePtr) {
+                qPages[i]->SetAmplitudePage(cPagePtr, (bitCapIntOcl)(offset - perm), (bitCapIntOcl)partLength);
+            } else {
+                qPages[i]->GetAmplitudePage(pagePtr, (bitCapIntOcl)(offset - perm), (bitCapIntOcl)partLength);
+            }
+            perm += pageLength;
+        }
+    }
+
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -135,6 +146,128 @@ public:
     {
         qPages.resize(1);
         qPages[0] = eng;
+    }
+
+    virtual void ZeroAmplitudes()
+    {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            qPages[i]->ZeroAmplitudes();
+        }
+    }
+    virtual void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QPager>(src)); }
+    virtual void CopyStateVec(QPagerPtr src)
+    {
+        bitLenInt qpp = qubitsPerPage();
+        src->SeparateEngines(qpp, true);
+        src->CombineEngines(qpp);
+
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            qPages[i]->CopyStateVec(src->qPages[i]);
+        }
+    }
+    virtual bool IsZeroAmplitude()
+    {
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            if (!qPages[i]->IsZeroAmplitude()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    virtual void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    {
+        GetSetAmplitudePage(pagePtr, NULL, offset, length);
+    }
+    virtual void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+    {
+        GetSetAmplitudePage(NULL, pagePtr, offset, length);
+    }
+    virtual void SetAmplitudePage(
+        QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
+    {
+        SetAmplitudePage(std::dynamic_pointer_cast<QPager>(pageEnginePtr), srcOffset, dstOffset, length);
+    }
+    virtual void SetAmplitudePage(
+        QPagerPtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
+    {
+        CombineEngines();
+        pageEnginePtr->CombineEngines();
+        qPages[0]->SetAmplitudePage(pageEnginePtr->qPages[0], srcOffset, dstOffset, length);
+    }
+    virtual void ShuffleBuffers(QEnginePtr engine) { ShuffleBuffers(std::dynamic_pointer_cast<QPager>(engine)); }
+    virtual void ShuffleBuffers(QPagerPtr engine)
+    {
+        bitLenInt qpp = qubitsPerPage();
+        bitLenInt tcqpp = engine->qubitsPerPage();
+        engine->SeparateEngines(qpp, true);
+        SeparateEngines(tcqpp, true);
+
+        if (qPages.size() == 1U) {
+            qPages[0]->ShuffleBuffers(engine->qPages[0]);
+            return;
+        }
+
+        for (bitCapIntOcl i = qPages.size() >> 1U; i < qPages.size(); i++) {
+            qPages[i].swap(engine->qPages[i]);
+        }
+    }
+    virtual QEnginePtr CloneEmpty();
+    virtual void QueueSetDoNormalize(bool doNorm)
+    {
+        Finish();
+        doNormalize = doNorm;
+    }
+    virtual void QueueSetRunningNorm(real1_f runningNrm)
+    {
+        Finish();
+        runningNorm = runningNrm;
+    }
+    virtual real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
+    {
+        CombineEngines();
+        return qPages[0]->ProbReg(start, length, permutation);
+    }
+    virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
+    {
+        CombineEngines();
+        return qPages[0]->ApplyM(regMask, result, nrm);
+    }
+    virtual real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
+    {
+        CombineEngines();
+        return qPages[0]->GetExpectation(valueStart, valueLength);
+    }
+    virtual void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
+        const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    {
+        CombineEngines();
+        qPages[0]->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
+    }
+    virtual void FreeStateVec(complex* sv = NULL)
+    {
+        CombineEngines();
+        qPages[0]->FreeStateVec(sv);
+    }
+    virtual real1_f GetRunningNorm()
+    {
+        real1_f toRet = ZERO_R1;
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            toRet += qPages[i]->GetRunningNorm();
+        }
+
+        return toRet;
+    }
+
+    virtual real1_f FirstNonzeroPhase()
+    {
+        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+            if (!qPages[i]->IsZeroAmplitude()) {
+                return qPages[i]->FirstNonzeroPhase();
+            }
+        }
+
+        return ZERO_R1;
     }
 
     virtual void SetQuantumState(const complex* inputState);
@@ -197,41 +330,6 @@ public:
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
 #if ENABLE_ALU
-    virtual bool M(bitLenInt q) { return QInterface::M(q); }
-    virtual void X(bitLenInt q) { QInterface::X(q); }
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { QInterface::INC(toAdd, start, length); }
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        QInterface::INCC(toAdd, start, length, carryIndex);
-    }
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        QInterface::DECC(toSub, start, length, carryIndex);
-    }
-    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
-    {
-        QInterface::INCS(toAdd, start, length, overflowIndex);
-    }
-    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
-    {
-        QInterface::DECS(toSub, start, length, overflowIndex);
-    }
-    virtual void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
-    {
-        QInterface::CINC(toAdd, inOutStart, length, controls, controlLen);
-    }
-    virtual void CDEC(
-        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
-    {
-        QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
-    }
-    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
-    {
-        QInterface::INCDECC(toAdd, start, length, carryIndex);
-    }
-
     virtual void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex);
     virtual void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex);
