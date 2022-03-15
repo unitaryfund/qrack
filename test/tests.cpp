@@ -315,6 +315,31 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_setconcurrency")
     qftReg->SetConcurrency(1);
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_global_phase")
+{
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType }, 1U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
+    qftReg->Z(0);
+    qftReg->X(0);
+    qftReg->Z(0);
+    qftReg->X(0);
+    REQUIRE_FLOAT(-ONE_R1, real(qftReg->GetAmplitude(0x00)));
+
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType }, 1U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
+    qftReg->S(0);
+    qftReg->X(0);
+    qftReg->S(0);
+    qftReg->X(0);
+    REQUIRE_FLOAT(ONE_R1, imag(qftReg->GetAmplitude(0x00)));
+
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType }, 1U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
+    qftReg->Y(0);
+    qftReg->X(0);
+    REQUIRE_FLOAT(ONE_R1, imag(qftReg->GetAmplitude(0x00)));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
 {
     qftReg->SetPermutation(0x01);

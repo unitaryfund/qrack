@@ -276,14 +276,6 @@ public:
     virtual void X(bitLenInt qubitIndex);
     /// Apply a Pauli Y gate to target
     virtual void Y(bitLenInt qubitIndex);
-    /// Apply square root of X gate
-    void StabilizerSqrtX(const bitLenInt& target);
-    /// Apply inverse square root of X gate
-    void StabilizerISqrtX(const bitLenInt& target);
-    /// Apply square root of Y gate
-    void StabilizerSqrtY(const bitLenInt& target);
-    /// Apply inverse square root of Y gate
-    void StabilizerISqrtY(const bitLenInt& target);
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
