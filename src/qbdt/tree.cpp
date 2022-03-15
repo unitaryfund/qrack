@@ -517,6 +517,8 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     const bitCapInt qPower = pow2(maxQubit);
     root->scale = GetNonunitaryPhase();
 
+    std::set<QEnginePtr> qis;
+
     for (bitCapInt i = 0; i < qPower; i++) {
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0; j < maxQubit; j++) {
@@ -531,12 +533,16 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
             continue;
         }
 
-        leaf->Branch();
-
         if (isKet) {
-            NODE_TO_QENGINE(leaf)->ForceM(qubit - bdtQubitCount, result, false, true);
+            QEnginePtr qi = NODE_TO_QENGINE(leaf);
+            if (qis.find(qi) == qis.end()) {
+                NODE_TO_QENGINE(leaf)->ForceM(qubit - bdtQubitCount, result, false, true);
+                qis.insert(qi);
+            }
             continue;
         }
+
+        leaf->Branch();
 
         QBdtNodeInterfacePtr& b0 = leaf->branches[0];
         QBdtNodeInterfacePtr& b1 = leaf->branches[1];

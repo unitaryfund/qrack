@@ -62,7 +62,7 @@ bool QBdtQEngineNode::isEqualUnder(QBdtNodeInterfacePtr r)
     }
 
     if (IS_NORM_0(scale)) {
-        return true;
+        return IS_NORM_0(r->scale);
     }
 
     QEnginePtr rReg = std::dynamic_pointer_cast<QBdtQEngineNode>(r)->qReg;
