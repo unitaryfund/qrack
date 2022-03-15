@@ -208,7 +208,7 @@ public:
             return;
         }
 
-        for (bitCapIntOcl i = qPages.size() / 2U; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = qPages.size() >> 1U; i < qPages.size(); i++) {
             qPages[i].swap(engine->qPages[i]);
         }
     }
