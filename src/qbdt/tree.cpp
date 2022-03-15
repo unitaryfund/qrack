@@ -762,21 +762,20 @@ void QBdt::ApplyControlledSingle(
         }
 
         if (isKet) {
+            leaf->Branch();
             QEnginePtr qi = NODE_TO_QENGINE(leaf);
-            if (qis.find(qi) == qis.end()) {
-                try {
-                    if (isAnti) {
-                        qi->MACMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
-                    } else {
-                        qi->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
-                    }
-                } catch (const std::domain_error&) {
-                    isFail = true;
-
-                    return (bitCapInt)(qPower - ONE_BCI);
+            try {
+                if (isAnti) {
+                    qi->MACMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+                } else {
+                    qi->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
                 }
-                qis.insert(qi);
+            } catch (const std::domain_error&) {
+                isFail = true;
+
+                return (bitCapInt)(qPower - ONE_BCI);
             }
+            qis.insert(qi);
         } else if (qns.find(leaf) == qns.end()) {
 #if ENABLE_COMPLEX_X2
             leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
