@@ -623,6 +623,9 @@ void QStabilizer::H(bitLenInt t)
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
 void QStabilizer::S(bitLenInt t)
 {
+    if (!randGlobalPhase && IsSeparableZ(t) && M(t)) {
+        phaseOffset *= I_CMPLX;
+    }
     ParFor([this, t](const bitLenInt& i) {
         if (x[i][t] && z[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
@@ -634,6 +637,9 @@ void QStabilizer::S(bitLenInt t)
 /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
 void QStabilizer::IS(bitLenInt t)
 {
+    if (!randGlobalPhase && IsSeparableZ(t) && M(t)) {
+        phaseOffset *= -I_CMPLX;
+    }
     ParFor([this, t](const bitLenInt& i) {
         z[i][t] = z[i][t] ^ x[i][t];
         if (x[i][t] && z[i][t]) {
@@ -642,9 +648,12 @@ void QStabilizer::IS(bitLenInt t)
     });
 }
 
-/// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
+/// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
 void QStabilizer::Z(bitLenInt t)
 {
+    if (!randGlobalPhase && IsSeparableZ(t) && M(t)) {
+        phaseOffset *= -ONE_CMPLX;
+    }
     ParFor([this, t](const bitLenInt& i) {
         if (x[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
@@ -666,6 +675,9 @@ void QStabilizer::X(bitLenInt t)
 void QStabilizer::Y(bitLenInt t)
 {
     // Y is composed as IS, X, S, with overall -i phase
+    if (!randGlobalPhase && IsSeparableZ(t)) {
+        phaseOffset *= M(t) ? -I_CMPLX : I_CMPLX;
+    }
     ParFor([this, t](const bitLenInt& i) {
         if (z[i][t] ^ x[i][t]) {
             r[i] = (r[i] + 2) & 0x3U;
