@@ -651,17 +651,16 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
         }
 
         if (isKet) {
+            leaf->Branch();
             QEnginePtr qi = NODE_TO_QENGINE(leaf);
-            if (qis.find(qi) == qis.end()) {
-                try {
-                    qi->Mtrx(mtrx, target - bdtQubitCount);
-                } catch (const std::domain_error&) {
-                    isFail = true;
+            try {
+                qi->Mtrx(mtrx, target - bdtQubitCount);
+            } catch (const std::domain_error&) {
+                isFail = true;
 
-                    return (bitCapInt)(qPower - ONE_BCI);
-                }
-                qis.insert(qi);
+                return (bitCapInt)(qPower - ONE_BCI);
             }
+            qis.insert(qi);
         } else {
 #if ENABLE_COMPLEX_X2
             leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
