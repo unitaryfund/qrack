@@ -148,6 +148,25 @@ QInterfacePtr QStabilizerHybrid::Clone()
     return c;
 }
 
+QEnginePtr QStabilizerHybrid::CloneEmpty()
+{
+    QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(engineTypes, qubitCount, 0, rand_generator,
+        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+        std::vector<int>{}, thresholdQubits, separabilityThreshold);
+    c->Finish();
+
+    c->stabilizer = NULL;
+    c->engine = std::dynamic_pointer_cast<QEngine>(
+        CreateQuantumInterface(engineTypes, 0, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam,
+            devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold));
+    c->engine->SetConcurrency(GetConcurrencyLevel());
+
+    c->engine->ZeroAmplitudes();
+    c->engine->SetQubitCount(qubitCount);
+
+    return c;
+}
+
 void QStabilizerHybrid::SwitchToEngine()
 {
     if (engine) {

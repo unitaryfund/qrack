@@ -215,8 +215,7 @@ void QBdtQEngineNode::PopStateVector(bitLenInt depth)
         return;
     }
 
-    const real1_f phaseArg = qReg->FirstNonzeroPhase();
-    qReg->NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, -phaseArg);
-    scale = std::polar((real1)sqrt(nrm), (real1)phaseArg);
+    qReg->NormalizeState();
+    scale = std::polar((real1)sqrt(nrm), ZERO_R1);
 }
 } // namespace Qrack

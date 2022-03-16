@@ -89,17 +89,18 @@ protected:
         const bitCapIntOcl pageLength = (bitCapIntOcl)pageMaxQPower();
         bitCapIntOcl perm = 0U;
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            if (perm >= (offset + length)) {
-                break;
-            }
             if ((perm + length) < offset) {
                 continue;
             }
+            if (perm >= (offset + length)) {
+                break;
+            }
+            const bitCapInt partOffset = (perm < offset) ? (offset - perm) : 0U;
             const bitCapInt partLength = (length < pageLength) ? length : pageLength;
             if (cPagePtr) {
-                qPages[i]->SetAmplitudePage(cPagePtr, (bitCapIntOcl)(offset - perm), (bitCapIntOcl)partLength);
+                qPages[i]->SetAmplitudePage(cPagePtr, (bitCapIntOcl)partOffset, (bitCapIntOcl)partLength);
             } else {
-                qPages[i]->GetAmplitudePage(pagePtr, (bitCapIntOcl)(offset - perm), (bitCapIntOcl)partLength);
+                qPages[i]->GetAmplitudePage(pagePtr, (bitCapIntOcl)partOffset, (bitCapIntOcl)partLength);
             }
             perm += pageLength;
         }
@@ -158,8 +159,8 @@ public:
     virtual void CopyStateVec(QPagerPtr src)
     {
         bitLenInt qpp = qubitsPerPage();
-        src->SeparateEngines(qpp, true);
         src->CombineEngines(qpp);
+        src->SeparateEngines(qpp, true);
 
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->CopyStateVec(src->qPages[i]);
@@ -208,8 +209,9 @@ public:
             return;
         }
 
-        for (bitCapIntOcl i = qPages.size() >> 1U; i < qPages.size(); i++) {
-            qPages[i].swap(engine->qPages[i]);
+        const bitCapIntOcl offset = qPages.size() >> 1U;
+        for (bitCapIntOcl i = 0U; i < offset; i++) {
+            qPages[offset + i].swap(engine->qPages[i]);
         }
     }
     virtual QEnginePtr CloneEmpty();

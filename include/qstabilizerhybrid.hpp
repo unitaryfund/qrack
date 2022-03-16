@@ -318,17 +318,10 @@ public:
         oEngine->SwitchToEngine();
         engine->ShuffleBuffers(oEngine->engine);
     }
-    virtual QEnginePtr CloneEmpty()
-    {
-        QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
-        if (thisClone) {
-            thisClone->SwitchToEngine();
-        }
-        QEnginePtr thisEngine = thisClone ? thisClone->engine : engine;
-        return thisEngine->CloneEmpty();
-    }
+    virtual QEnginePtr CloneEmpty();
     virtual void QueueSetDoNormalize(bool doNorm)
     {
+        doNormalize = doNorm;
         if (engine) {
             engine->QueueSetDoNormalize(doNorm);
         }
