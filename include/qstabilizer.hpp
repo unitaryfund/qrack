@@ -126,6 +126,7 @@ public:
         clone->x = x;
         clone->z = z;
         clone->r = r;
+        clone->phaseOffset = phaseOffset;
         clone->randomSeed = randomSeed;
 
         return clone;
@@ -319,7 +320,12 @@ public:
      */
     uint8_t IsSeparable(const bitLenInt& target);
 
+    virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QStabilizer>(toCopy)); }
     virtual bitLenInt Compose(QStabilizerPtr toCopy) { return Compose(toCopy, qubitCount); }
+    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
+    {
+        return Compose(std::dynamic_pointer_cast<QStabilizer>(toCopy), start);
+    }
     virtual bitLenInt Compose(QStabilizerPtr toCopy, bitLenInt start);
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)
     {
