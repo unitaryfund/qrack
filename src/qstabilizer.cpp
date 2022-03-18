@@ -723,11 +723,9 @@ bool QStabilizer::IsSeparableX(const bitLenInt& t)
  */
 bool QStabilizer::IsSeparableY(const bitLenInt& t)
 {
-    H(t);
-    S(t);
-    const bool isSeparable = IsSeparableZ(t);
     IS(t);
-    H(t);
+    const bool isSeparable = IsSeparableX(t);
+    S(t);
 
     return isSeparable;
 }
@@ -745,23 +743,13 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& t)
         return 1;
     }
 
-    H(t);
-
-    if (IsSeparableZ(t)) {
-        H(t);
+    if (IsSeparableX(t)) {
         return 2;
     }
 
-    S(t);
-
-    if (IsSeparableZ(t)) {
-        IS(t);
-        H(t);
+    if (IsSeparableY(t)) {
         return 3;
     }
-
-    IS(t);
-    H(t);
 
     return 0;
 }
@@ -841,6 +829,10 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         if (x[i][t]) {
             rowmult(elemCount, i + n);
         }
+    }
+
+    if (doForce && (result != (bool)r[elemCount])) {
+        throw std::runtime_error("QStabilizer::ForceM() - Forced a measurement with 0 probability!");
     }
 
     return r[elemCount];
