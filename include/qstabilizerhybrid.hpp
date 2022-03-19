@@ -1014,9 +1014,11 @@ public:
         if (!stabilizer && toCompare->stabilizer) {
             SetPermutation(0);
             stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
+            std::copy(toCompare->shards.begin(), toCompare->shards.end(), shards.begin());
         } else if (stabilizer && !toCompare->stabilizer) {
             toCompare->SetPermutation(0);
             toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
+            std::copy(shards.begin(), shards.end(), toCompare->shards.begin());
         }
 
         return toRet;
