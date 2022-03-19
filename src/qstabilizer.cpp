@@ -105,7 +105,7 @@ void QStabilizer::rowcopy(const bitLenInt& i, const bitLenInt& k)
     r[i] = r[k];
 }
 
-/// Swaps row i and row k
+/// Swaps row i and row k - does not change the logical state
 void QStabilizer::rowswap(const bitLenInt& i, const bitLenInt& k)
 {
     if (i == k) {
@@ -172,7 +172,7 @@ uint8_t QStabilizer::clifford(const bitLenInt& i, const bitLenInt& k)
     return e;
 }
 
-/// Left-multiply row i by row k
+/// Left-multiply row i by row k - does not change the logical state
 void QStabilizer::rowmult(const bitLenInt& i, const bitLenInt& k)
 {
     r[i] = clifford(i, k);
@@ -821,6 +821,10 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
     }
 
     if (m >= n) {
+        if (doForce && (result != (bool)r[elemCount])) {
+            throw std::invalid_argument("QStabilizer::ForceM() forced a measurement with 0 probability!");
+        }
+
         return r[elemCount];
     }
 
