@@ -917,7 +917,9 @@ public:
 
     virtual void PhaseFlip()
     {
-        if (engine) {
+        if (stabilizer) {
+            stabilizer->PhaseFlip();
+        } else {
             engine->PhaseFlip();
         }
     }
@@ -929,11 +931,21 @@ public:
 
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
+        if (stabilizer) {
+            QInterface::SqrtSwap(qubitIndex1, qubitIndex2);
+            return;
+        }
+
         SwitchToEngine();
         engine->SqrtSwap(qubitIndex1, qubitIndex2);
     }
     virtual void ISqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
+        if (stabilizer) {
+            QInterface::ISqrtSwap(qubitIndex1, qubitIndex2);
+            return;
+        }
+
         SwitchToEngine();
         engine->ISqrtSwap(qubitIndex1, qubitIndex2);
     }
@@ -943,11 +955,6 @@ public:
         engine->FSim(theta, phi, qubitIndex1, qubitIndex2);
     }
 
-    virtual real1_f ProbAll(bitCapInt fullRegister)
-    {
-        SwitchToEngine();
-        return engine->ProbAll(fullRegister);
-    }
     virtual real1_f ProbMask(bitCapInt mask, bitCapInt permutation)
     {
         SwitchToEngine();
