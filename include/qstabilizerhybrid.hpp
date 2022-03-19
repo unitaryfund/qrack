@@ -968,6 +968,10 @@ public:
 
     virtual real1_f SumSqrDiff(QStabilizerHybridPtr toCompare)
     {
+        if (this == toCompare.get()) {
+            return ZERO_R1;
+        }
+
         // If the qubit counts are unequal, these can't be approximately equal objects.
         if (qubitCount != toCompare->qubitCount) {
             // Max square difference:
@@ -979,8 +983,21 @@ public:
             toCompare->stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare->Clone()) : NULL;
 
         if (thisClone) {
+            thisClone->FlushBuffers();
+        }
+
+        if (thatClone) {
+            thatClone->FlushBuffers();
+        }
+
+        if (thisClone && thisClone->stabilizer && thatClone && thatClone->stabilizer) {
+            return thisClone->stabilizer->SumSqrDiff(thatClone->stabilizer);
+        }
+
+        if (thisClone) {
             thisClone->SwitchToEngine();
         }
+
         if (thatClone) {
             thatClone->SwitchToEngine();
         }
@@ -1003,49 +1020,6 @@ public:
         }
 
         return toRet;
-    }
-
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
-    {
-        return ApproxCompare(std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare), error_tol);
-    }
-
-    virtual bool ApproxCompare(QStabilizerHybridPtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
-    {
-        FlushBuffers();
-        toCompare->FlushBuffers();
-
-        if (stabilizer && toCompare->stabilizer) {
-            return stabilizer->ApproxCompare(toCompare->stabilizer);
-        }
-
-        QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
-        QStabilizerHybridPtr thatClone =
-            toCompare->stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
-
-        if (thisClone) {
-            thisClone->SwitchToEngine();
-        }
-        if (thatClone) {
-            thatClone->SwitchToEngine();
-        }
-
-        QInterfacePtr thisEngine = thisClone ? thisClone->engine : engine;
-        QInterfacePtr thatEngine = thatClone ? thatClone->engine : toCompare->engine;
-
-        if (!thisEngine->ApproxCompare(thatEngine, error_tol)) {
-            return false;
-        }
-
-        if (!stabilizer && toCompare->stabilizer) {
-            SetPermutation(0);
-            stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
-        } else if (stabilizer && !toCompare->stabilizer) {
-            toCompare->SetPermutation(0);
-            toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
-        }
-
-        return true;
     }
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
