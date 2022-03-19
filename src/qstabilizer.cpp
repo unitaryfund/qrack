@@ -384,6 +384,7 @@ bool QStabilizer::isEqual(QStabilizerPtr toCompare)
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
 #define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
 
+/// Get the phase radians of the lowest permutation nonzero amplitude
 real1_f QStabilizer::FirstNonzeroPhase()
 {
     Finish();
@@ -754,9 +755,7 @@ uint8_t QStabilizer::IsSeparable(const bitLenInt& t)
     return 0;
 }
 
-/**
- * Measure qubit b
- */
+/// Measure qubit t
 bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 {
     if (doForce && !doApply) {

@@ -280,11 +280,18 @@ public:
 
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
-    /**
-     * Measure qubit b
-     */
+    /// Measure qubit t
     virtual bool ForceM(bitLenInt t, bool result, bool doForce = true, bool doApply = true);
 
+    /// Measure all qubits
+    virtual bitCapInt MAll()
+    {
+        bitCapInt toRet = QInterface::MAll();
+        SetPermutation(toRet);
+        return toRet;
+    }
+
+    /// Get the phase radians of the lowest permutation nonzero amplitude
     virtual real1_f FirstNonzeroPhase();
 
     /// Convert the state to ket notation
