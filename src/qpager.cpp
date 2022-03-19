@@ -892,7 +892,7 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     }
 
     if (nrmlzr <= ZERO_R1) {
-        throw std::invalid_argument("ERROR: Forced a measurement result with 0 probability");
+        throw std::invalid_argument("QPager::ForceM() forced a measurement result with 0 probability");
     }
 
     if (doApply && (nrmlzr != ONE_BCI)) {

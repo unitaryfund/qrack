@@ -627,14 +627,14 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         return engine->ForceM(qubit, result, doForce, doApply);
     }
 
+    if (shards[qubit] && shards[qubit]->IsInvert()) {
+        InvertBuffer(qubit);
+    }
+
     // This check will first try to coax into decomposable form:
     if (doApply && !stabilizer->CanDecomposeDispose(qubit, 1)) {
         SwitchToEngine();
         return engine->ForceM(qubit, result, doForce, doApply);
-    }
-
-    if (shards[qubit] && shards[qubit]->IsInvert()) {
-        InvertBuffer(qubit);
     }
 
     if (shards[qubit]) {
@@ -642,7 +642,9 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
             if (doForce) {
                 if (doApply) {
                     if (result != stabilizer->M(qubit)) {
-                        stabilizer->X(qubit);
+                        // Sorry to throw, but the requested forced result is definitely invalid.
+                        throw std::invalid_argument(
+                            "QStabilizerHybrid::ForceM() forced a measurement result with 0 probability!");
                     }
                     shards[qubit] = NULL;
                 }

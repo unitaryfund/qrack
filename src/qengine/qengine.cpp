@@ -73,7 +73,7 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     }
 
     if (nrmlzr <= ZERO_R1) {
-        throw "ERROR: Forced a measurement result with 0 probability";
+        throw std::invalid_argument("QEngine::ForceM() forced a measurement result with 0 probability!");
     }
 
     if (doApply && (nrmlzr != ONE_R1)) {

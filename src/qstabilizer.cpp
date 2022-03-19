@@ -832,7 +832,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
     }
 
     if (doForce && (result != (bool)r[elemCount])) {
-        throw std::runtime_error("QStabilizer::ForceM() - Forced a measurement with 0 probability!");
+        throw std::invalid_argument("QStabilizer::ForceM() forced a measurement with 0 probability!");
     }
 
     return r[elemCount];
