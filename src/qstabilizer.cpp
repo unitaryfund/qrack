@@ -341,46 +341,6 @@ void QStabilizer::setBasisProb(const real1_f& nrm, real1* outputProbs)
     outputProbs[entry.permutation] = norm(entry.amplitude);
 }
 
-bool QStabilizer::isEqual(QStabilizerPtr toCompare)
-{
-    if (!toCompare) {
-        return false;
-    }
-
-    if (qubitCount != toCompare->qubitCount) {
-        return false;
-    }
-
-    if (!qubitCount) {
-        return true;
-    }
-
-    if ((!randGlobalPhase || !toCompare->randGlobalPhase) && !IS_NORM_0(phaseOffset - toCompare->phaseOffset)) {
-        return false;
-    }
-
-    gaussian();
-    toCompare->gaussian();
-
-    const bitLenInt elemCount = qubitCount << 1U;
-
-    for (bitLenInt i = 0; i < elemCount; i++) {
-        if (r[i] != toCompare->r[i]) {
-            return false;
-        }
-        for (bitLenInt j = 0; j < qubitCount; j++) {
-            if (x[i][j] != toCompare->x[i][j]) {
-                return false;
-            }
-            if (z[i][j] != toCompare->z[i][j]) {
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
 #define C_SQRT1_2 complex(M_SQRT1_2, ZERO_R1)
 #define C_I_SQRT1_2 complex(ZERO_R1, M_SQRT1_2)
 
@@ -996,44 +956,34 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     }
 }
 
-bool QStabilizer::ApproxCompare(QStabilizerPtr o)
+real1_f QStabilizer::SumSqrDiff(QStabilizerPtr toCompare)
 {
-    if (qubitCount != o->qubitCount) {
-        return false;
+    if (this == toCompare.get()) {
+        return ZERO_R1;
     }
 
-    o->Finish();
+    // If the qubit counts are unequal, these can't be approximately equal objects.
+    if (qubitCount != toCompare->qubitCount) {
+        // Max square difference:
+        return ONE_R1;
+    }
+
+    if (randGlobalPhase) {
+        real1_f lPhaseArg = FirstNonzeroPhase();
+        real1_f rPhaseArg = toCompare->FirstNonzeroPhase();
+        NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, rPhaseArg - lPhaseArg);
+    }
+
+    toCompare->Finish();
     Finish();
 
-    if (gaussian() != o->gaussian()) {
-        // Different number of nonzero amplitudes.
-        return false;
+    const bitCapInt maxQPower = GetMaxQPower();
+    complex proj = ZERO_CMPLX;
+    for (bitCapInt i = 0U; i < maxQPower; i++) {
+        proj += conj(GetAmplitude(i)) * toCompare->GetAmplitude(i);
     }
 
-    if ((!randGlobalPhase || !(o->randGlobalPhase)) && !IS_NORM_0(phaseOffset - o->phaseOffset)) {
-        return false;
-    }
-
-    const bitLenInt rowCount = (qubitCount << 1U);
-
-    // Second half of rows are stabilizer generators.
-    // If all stabilizer generators are equal, these states are equal.
-    for (bitLenInt i = qubitCount; i < rowCount; i++) {
-        if (r[i] != o->r[i]) {
-            return false;
-        }
-
-        for (bitLenInt j = 0; j < qubitCount; j++) {
-            if (x[i][j] != o->x[i][j]) {
-                return false;
-            }
-            if (z[i][j] != o->z[i][j]) {
-                return false;
-            }
-        }
-    }
-
-    return true;
+    return ONE_R1 - clampProb(norm(proj));
 }
 
 real1_f QStabilizer::Prob(bitLenInt qubit)

@@ -248,17 +248,6 @@ public:
         throw std::domain_error("QStabilizer::SetAmplitude() not implemented!");
     }
 
-    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f ignored = TRYDECOMPOSE_EPSILON)
-    {
-        return isEqual(std::dynamic_pointer_cast<QStabilizer>(toCompare));
-    }
-    virtual bool isEqual(QStabilizerPtr toCompare);
-
-    real1_f SumSqrDiff(QInterfacePtr toCompare)
-    {
-        throw std::domain_error("QStabilizer::SumSqrDiff() not implemented!");
-    }
-
     /// Apply a CNOT gate with control and target
     virtual void CNOT(bitLenInt control, bitLenInt target);
     /// Apply a CY gate with control and target
@@ -346,8 +335,6 @@ public:
     }
     bool CanDecomposeDispose(const bitLenInt start, const bitLenInt length);
 
-    virtual bool ApproxCompare(QStabilizerPtr o);
-
     virtual void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
     {
@@ -359,6 +346,12 @@ public:
     {
         // Intentionally left blank
     }
+
+    virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
+    {
+        return SumSqrDiff(std::dynamic_pointer_cast<QStabilizer>(toCompare));
+    }
+    virtual real1_f SumSqrDiff(QStabilizerPtr toCompare);
 
     virtual real1_f Prob(bitLenInt qubit);
 
