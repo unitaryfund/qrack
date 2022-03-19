@@ -1005,12 +1005,20 @@ bool QStabilizer::ApproxCompare(QStabilizerPtr o)
     o->Finish();
     Finish();
 
-    o->gaussian();
-    gaussian();
+    if (gaussian() != o->gaussian()) {
+        // Different number of nonzero amplitudes.
+        return false;
+    }
+
+    if ((!randGlobalPhase || !(o->randGlobalPhase)) && !IS_NORM_0(phaseOffset - o->phaseOffset)) {
+        return false;
+    }
 
     const bitLenInt rowCount = (qubitCount << 1U);
 
-    for (bitLenInt i = 0; i < rowCount; i++) {
+    // Second half of rows are stabilizer generators.
+    // If all stabilizer generators are equal, these states are equal.
+    for (bitLenInt i = qubitCount; i < rowCount; i++) {
         if (r[i] != o->r[i]) {
             return false;
         }
