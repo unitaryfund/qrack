@@ -2711,6 +2711,10 @@ void QEngineOCL::GetProbs(real1* outputProbs) { ProbRegAll(0, qubitCount, output
 
 real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 {
+    if (!toCompare) {
+        return ONE_R1;
+    }
+
     if (this == toCompare.get()) {
         return ZERO_R1;
     }

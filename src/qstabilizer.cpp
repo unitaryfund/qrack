@@ -958,6 +958,10 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
 
 real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscreteBool, real1_f error_tol)
 {
+    if (!toCompare) {
+        return ONE_R1;
+    }
+
     if (this == toCompare.get()) {
         return ZERO_R1;
     }
@@ -966,12 +970,6 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscre
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
         return ONE_R1;
-    }
-
-    if (randGlobalPhase) {
-        real1_f lPhaseArg = FirstNonzeroPhase();
-        real1_f rPhaseArg = toCompare->FirstNonzeroPhase();
-        NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, rPhaseArg - lPhaseArg);
     }
 
     toCompare->Finish();
@@ -983,12 +981,12 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscre
     if (isDiscreteBool) {
         for (bitCapInt i = 0U; i < maxQPower; i++) {
             proj += conj(GetAmplitude(i)) * toCompare->GetAmplitude(i);
-            if ((ONE_R1 - clampProb(norm(proj))) > error_tol) {
-                return ONE_R1;
+            if (clampProb(norm(proj)) >= (ONE_R1 - error_tol)) {
+                return ZERO_R1;
             }
         }
 
-        return ZERO_R1;
+        return ONE_R1;
     }
 
     for (bitCapInt i = 0U; i < maxQPower; i++) {

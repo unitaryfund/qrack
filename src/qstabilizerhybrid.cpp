@@ -771,6 +771,10 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 
 real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
 {
+    if (!toCompare) {
+        return ONE_R1;
+    }
+
     if (this == toCompare.get()) {
         return ZERO_R1;
     }
@@ -812,9 +816,8 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
     QInterfacePtr thisEngine = thisClone ? thisClone->engine : engine;
     QInterfacePtr thatEngine = thatClone ? thatClone->engine : toCompare->engine;
 
-    const real1_f toRet = isDiscreteBool
-        ? (thisClone->stabilizer->ApproxCompare(thatClone->stabilizer, error_tol) ? ZERO_R1 : ONE_R1)
-        : thisEngine->SumSqrDiff(thatEngine);
+    const real1_f toRet = isDiscreteBool ? (thisEngine->ApproxCompare(thatEngine, error_tol) ? ZERO_R1 : ONE_R1)
+                                         : thisEngine->SumSqrDiff(thatEngine);
 
     if (toRet > error_tol) {
         return toRet;

@@ -1352,6 +1352,10 @@ bool QEngineCPU::ForceMParity(bitCapInt mask, bool result, bool doForce)
 
 real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
 {
+    if (!toCompare) {
+        return ONE_R1;
+    }
+
     if (this == toCompare.get()) {
         return ZERO_R1;
     }
