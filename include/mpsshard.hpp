@@ -19,6 +19,8 @@ struct MpsShard {
 
     MpsShard(const complex* g) { std::copy(g, g + 4, gate); }
 
+    MpsShardPtr Clone() { return std::make_shared<MpsShard>(gate); }
+
     void Compose(const complex* g)
     {
         complex o[4];

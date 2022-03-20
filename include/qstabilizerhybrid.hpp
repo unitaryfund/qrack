@@ -425,7 +425,14 @@ public:
             toRet = stabilizer->Compose(toCopy->stabilizer);
         }
 
+        // Resize the shards buffer.
         shards.insert(shards.end(), toCopy->shards.begin(), toCopy->shards.end());
+        // Split the common shared_ptr references, with toCopy.
+        for (bitLenInt i = qubitCount; i < nQubits; i++) {
+            if (shards[i]) {
+                shards[i] = shards[i]->Clone();
+            }
+        }
 
         SetQubitCount(nQubits);
 
@@ -1014,11 +1021,15 @@ public:
         if (!stabilizer && toCompare->stabilizer) {
             SetPermutation(0);
             stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
-            std::copy(toCompare->shards.begin(), toCompare->shards.end(), shards.begin());
+            for (bitLenInt i = 0; i < qubitCount; i++) {
+                shards[i] = toCompare->shards[i] ? toCompare->shards[i]->Clone() : NULL;
+            }
         } else if (stabilizer && !toCompare->stabilizer) {
             toCompare->SetPermutation(0);
             toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
-            std::copy(shards.begin(), shards.end(), toCompare->shards.begin());
+            for (bitLenInt i = 0; i < qubitCount; i++) {
+                toCompare->shards[i] = shards[i] ? shards[i]->Clone() : NULL;
+            }
         }
 
         return toRet;
