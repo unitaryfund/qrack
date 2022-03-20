@@ -819,7 +819,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
     const real1_f toRet = isDiscreteBool ? (thisEngine->ApproxCompare(thatEngine, error_tol) ? ZERO_R1 : ONE_R1)
                                          : thisEngine->SumSqrDiff(thatEngine);
 
-    if (toRet > error_tol) {
+    if (toRet > TRYDECOMPOSE_EPSILON) {
         return toRet;
     }
 

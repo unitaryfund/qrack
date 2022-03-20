@@ -1123,6 +1123,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_approxcompare")
     REQUIRE(!qftReg->ApproxCompare(qftReg2));
     REQUIRE(qftReg->SumSqrDiff(qftReg2) > (ONE_R1 / 10));
 
+    qftReg->SetPermutation(0);
+    qftReg2->SetPermutation(0);
+    qftReg->H(0, 2);
+    qftReg->CCNOT(0, 1, 2);
+    qftReg->CCNOT(0, 1, 2);
+    qftReg->H(0, 2);
+    REQUIRE(qftReg->ApproxCompare(qftReg2));
+
     qftReg->SetPermutation(1);
     qftReg2->SetPermutation(2);
     REQUIRE(!qftReg->ApproxCompare(qftReg2));
