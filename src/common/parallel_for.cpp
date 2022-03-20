@@ -337,59 +337,10 @@ void ParallelFor::par_for_inc(
 
 void ParallelFor::par_for_qbdt(const bitCapInt begin, const bitCapInt end, BdtFunc fn)
 {
-    const bitCapIntOcl itemCount = end - begin;
-
-    // Empirically, this often works better than env var PSTRIDEPOW.
-    const bitCapIntOcl Stride = 16U;
-    if (itemCount <= Stride) {
-        const bitCapIntOcl maxLcv = begin + itemCount;
-        for (bitCapIntOcl j = begin; j < maxLcv; j++) {
-            j |= fn(j, 0);
-        }
-        return;
-    }
-
-    unsigned threads = (unsigned)(itemCount / Stride);
-    if (threads > numCores) {
-        threads = numCores;
-    }
-
-    bitCapIntOcl idx = 0;
-    std::vector<std::future<void>> futures(threads);
-    std::mutex updateMutex;
-    for (unsigned cpu = 0; cpu != threads; ++cpu) {
-        futures[cpu] = ATOMIC_ASYNC(cpu, &idx, &begin, &itemCount, &Stride, &updateMutex, fn)
-        {
-            for (;;) {
-                bitCapIntOcl i;
-                if (true) {
-                    std::lock_guard<std::mutex> updateLock(updateMutex);
-                    ATOMIC_INC();
-                }
-                const bitCapIntOcl l = i * Stride;
-                if (l >= itemCount) {
-                    break;
-                }
-                const bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
-                bitCapIntOcl k = 0;
-                for (bitCapIntOcl j = 0; j < maxJ; j++) {
-                    k = j + l;
-                    k |= fn(begin + k, cpu);
-                    j = k - l;
-                }
-                i = k / Stride;
-                if (i > idx) {
-                    std::lock_guard<std::mutex> updateLock(updateMutex);
-                    if (i > idx) {
-                        idx = i;
-                    }
-                }
-            }
-        });
-    }
-
-    for (unsigned cpu = 0; cpu != threads; ++cpu) {
-        futures[cpu].get();
+    const bitCapInt itemCount = end - begin;
+    const bitCapInt maxLcv = begin + itemCount;
+    for (bitCapInt j = begin; j < maxLcv; j++) {
+        j |= fn(j, 0);
     }
 }
 
