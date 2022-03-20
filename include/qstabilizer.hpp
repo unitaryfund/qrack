@@ -164,7 +164,7 @@ public:
 
     bitCapInt GetMaxQPower() { return pow2(qubitCount); }
 
-    void SetPermutation(const bitCapInt& perm);
+    virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
     void SetRandomSeed(uint32_t seed)
     {
@@ -319,6 +319,7 @@ public:
      */
     uint8_t IsSeparable(const bitLenInt& target);
 
+    using QInterface::Compose;
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QStabilizer>(toCopy)); }
     virtual bitLenInt Compose(QStabilizerPtr toCopy) { return Compose(toCopy, qubitCount); }
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)

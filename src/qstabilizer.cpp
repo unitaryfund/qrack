@@ -58,9 +58,13 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     SetPermutation(perm);
 }
 
-void QStabilizer::SetPermutation(const bitCapInt& perm)
+void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     Dump();
+
+    if (phaseFac != CMPLX_DEFAULT_ARG) {
+        phaseOffset = phaseFac;
+    }
 
     const bitLenInt rowCount = (qubitCount << 1U);
 

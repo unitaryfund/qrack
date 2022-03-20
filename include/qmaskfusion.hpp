@@ -241,7 +241,7 @@ public:
         return engine->ProbReg(start, length, permutation);
     }
 
-    using QInterface::Compose;
+    using QEngine::Compose;
     virtual bitLenInt Compose(QMaskFusionPtr toCopy)
     {
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
@@ -271,6 +271,7 @@ public:
     {
         return TryDecompose(start, std::dynamic_pointer_cast<QMaskFusion>(dest), error_tol);
     }
+    using QEngine::Decompose;
     virtual void Decompose(bitLenInt start, QMaskFusionPtr dest)
     {
         bitLenInt length = dest->GetQubitCount();
@@ -339,11 +340,11 @@ public:
         engine->SetPermutation(perm, phaseFac);
     }
 
-    using QInterface::X;
+    using QEngine::X;
     virtual void X(bitLenInt target);
-    using QInterface::Y;
+    using QEngine::Y;
     virtual void Y(bitLenInt target);
-    using QInterface::Z;
+    using QEngine::Z;
     virtual void Z(bitLenInt target);
 
     virtual void Mtrx(const complex* mtrx, bitLenInt target);

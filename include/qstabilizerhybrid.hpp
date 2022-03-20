@@ -401,7 +401,7 @@ public:
 
     virtual bool isBinaryDecisionTree() { return engine && engine->isBinaryDecisionTree(); };
 
-    using QInterface::Compose;
+    using QEngine::Compose;
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy)
     {
         const bitLenInt nQubits = qubitCount + toCopy->qubitCount;

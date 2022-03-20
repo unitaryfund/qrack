@@ -293,7 +293,7 @@ public:
 
     virtual void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 
-    using QInterface::Compose;
+    using QEngine::Compose;
     virtual bitLenInt Compose(QPagerPtr toCopy);
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QPager>(toCopy)); }
     virtual void Decompose(bitLenInt start, QInterfacePtr dest)

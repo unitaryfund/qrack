@@ -122,7 +122,7 @@ public:
         return engine->ProbReg(start, length, permutation);
     }
 
-    using QInterface::Compose;
+    using QEngine::Compose;
     virtual bitLenInt Compose(QHybridPtr toCopy)
     {
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
