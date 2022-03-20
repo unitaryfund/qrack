@@ -226,6 +226,9 @@ protected:
 
     void DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr toCopy);
 
+    real1_f ApproxCompareHelper(
+        QStabilizerPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
+
 public:
     void SetQuantumState(const complex* inputState)
     {
@@ -349,9 +352,12 @@ public:
 
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
-        return SumSqrDiff(std::dynamic_pointer_cast<QStabilizer>(toCompare));
+        return ApproxCompareHelper(std::dynamic_pointer_cast<QStabilizer>(toCompare), false);
     }
-    virtual real1_f SumSqrDiff(QStabilizerPtr toCompare);
+    virtual bool ApproxCompare(QInterfacePtr toCompare, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    {
+        return error_tol >= ApproxCompareHelper(std::dynamic_pointer_cast<QStabilizer>(toCompare), true, error_tol);
+    }
 
     virtual real1_f Prob(bitLenInt qubit);
 

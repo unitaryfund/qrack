@@ -768,4 +768,72 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         shotsArray[shot] = (unsigned)sample;
     });
 }
+
+real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
+{
+    if (this == toCompare.get()) {
+        return ZERO_R1;
+    }
+
+    // If the qubit counts are unequal, these can't be approximately equal objects.
+    if (qubitCount != toCompare->qubitCount) {
+        // Max square difference:
+        return ONE_R1;
+    }
+
+    QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
+    QStabilizerHybridPtr thatClone =
+        toCompare->stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(toCompare->Clone()) : NULL;
+
+    if (thisClone) {
+        thisClone->FlushBuffers();
+    }
+
+    if (thatClone) {
+        thatClone->FlushBuffers();
+    }
+
+    if (thisClone && thisClone->stabilizer && thatClone && thatClone->stabilizer) {
+        if (isDiscreteBool) {
+            return thisClone->stabilizer->ApproxCompare(thatClone->stabilizer, error_tol) ? ZERO_R1 : ONE_R1;
+        } else {
+            return thisClone->stabilizer->SumSqrDiff(thatClone->stabilizer);
+        }
+    }
+
+    if (thisClone) {
+        thisClone->SwitchToEngine();
+    }
+
+    if (thatClone) {
+        thatClone->SwitchToEngine();
+    }
+
+    QInterfacePtr thisEngine = thisClone ? thisClone->engine : engine;
+    QInterfacePtr thatEngine = thatClone ? thatClone->engine : toCompare->engine;
+
+    const real1_f toRet = isDiscreteBool
+        ? (thisClone->stabilizer->ApproxCompare(thatClone->stabilizer, error_tol) ? ZERO_R1 : ONE_R1)
+        : thisEngine->SumSqrDiff(thatEngine);
+
+    if (toRet > error_tol) {
+        return toRet;
+    }
+
+    if (!stabilizer && toCompare->stabilizer) {
+        SetPermutation(0);
+        stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            shards[i] = toCompare->shards[i] ? toCompare->shards[i]->Clone() : NULL;
+        }
+    } else if (stabilizer && !toCompare->stabilizer) {
+        toCompare->SetPermutation(0);
+        toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            toCompare->shards[i] = shards[i] ? shards[i]->Clone() : NULL;
+        }
+    }
+
+    return toRet;
+}
 } // namespace Qrack

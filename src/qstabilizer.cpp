@@ -956,7 +956,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     }
 }
 
-real1_f QStabilizer::SumSqrDiff(QStabilizerPtr toCompare)
+real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscreteBool, real1_f error_tol)
 {
     if (this == toCompare.get()) {
         return ZERO_R1;
@@ -979,6 +979,18 @@ real1_f QStabilizer::SumSqrDiff(QStabilizerPtr toCompare)
 
     const bitCapInt maxQPower = GetMaxQPower();
     complex proj = ZERO_CMPLX;
+
+    if (isDiscreteBool) {
+        for (bitCapInt i = 0U; i < maxQPower; i++) {
+            proj += conj(GetAmplitude(i)) * toCompare->GetAmplitude(i);
+            if ((ONE_R1 - clampProb(norm(proj))) > error_tol) {
+                return ONE_R1;
+            }
+        }
+
+        return ZERO_R1;
+    }
+
     for (bitCapInt i = 0U; i < maxQPower; i++) {
         proj += conj(GetAmplitude(i)) * toCompare->GetAmplitude(i);
     }
