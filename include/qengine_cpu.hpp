@@ -230,6 +230,7 @@ public:
         return Compose(std::dynamic_pointer_cast<QEngineCPU>(toCopy), start);
     }
 
+    using QEngine::Decompose;
     virtual void Decompose(bitLenInt start, QInterfacePtr dest);
 
     virtual void Dispose(bitLenInt start, bitLenInt length);
