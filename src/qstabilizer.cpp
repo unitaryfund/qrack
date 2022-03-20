@@ -979,14 +979,26 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscre
     complex proj = ZERO_CMPLX;
 
     if (isDiscreteBool) {
+        real1_f potential = ZERO_R1;
+        real1_f oPotential = ZERO_R1;
         for (bitCapInt i = 0U; i < maxQPower; i++) {
-            proj += conj(GetAmplitude(i)) * toCompare->GetAmplitude(i);
-            if (clampProb(norm(proj)) >= (ONE_R1 - error_tol)) {
+            const complex amp = GetAmplitude(i);
+            const complex oAmp = toCompare->GetAmplitude(i);
+
+            potential += norm(amp);
+            oPotential += norm(oAmp);
+            if ((potential - oPotential) > error_tol) {
+                return ONE_R1;
+            }
+
+            proj += conj(amp) * oAmp;
+            const real1_f prob = clampProb(norm(proj));
+            if (error_tol >= (ONE_R1 - prob)) {
                 return ZERO_R1;
             }
         }
 
-        return ONE_R1;
+        return ONE_R1 - clampProb(norm(proj));
     }
 
     for (bitCapInt i = 0U; i < maxQPower; i++) {

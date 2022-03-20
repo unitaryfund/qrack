@@ -1122,6 +1122,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_approxcompare")
     qftReg2->H(2);
     REQUIRE(!qftReg->ApproxCompare(qftReg2));
     REQUIRE(qftReg->SumSqrDiff(qftReg2) > (ONE_R1 / 10));
+
+    qftReg->SetPermutation(1);
+    qftReg2->SetPermutation(2);
+    REQUIRE(!qftReg->ApproxCompare(qftReg2));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_phaseparity")
