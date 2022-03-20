@@ -654,59 +654,6 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid)
     return nsid;
 }
 
-MICROSOFT_QUANTUM_DECL unsigned init_qbdt_stabilizer(_In_ unsigned q, _In_ unsigned c, _In_ bool sd)
-{
-    META_LOCK_GUARD()
-
-    unsigned sid = (unsigned)simulators.size();
-
-    for (unsigned i = 0; i < simulators.size(); i++) {
-        if (simulatorReservations[i] == false) {
-            sid = i;
-            simulatorReservations[i] = true;
-            break;
-        }
-    }
-
-    const std::vector<QInterfaceEngine> simulatorType({ QINTERFACE_BDT });
-    bool isSuccess = true;
-    QBdtPtr simulator;
-    if (q || c) {
-        try {
-            simulator = std::dynamic_pointer_cast<QBdt>(CreateQuantumInterface(simulatorType, q, 0, randNumGen));
-            simulator->Attach(std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(
-                { QINTERFACE_STABILIZER_HYBRID }, c, 0, randNumGen, CMPLX_DEFAULT_ARG, false, false)));
-        } catch (...) {
-            isSuccess = false;
-        }
-    }
-
-    if (sid == simulators.size()) {
-        simulatorReservations.push_back(true);
-        simulators.push_back(simulator);
-        simulatorTypes.push_back(simulatorType);
-        simulatorHostPointer.push_back(false);
-        simulatorErrors.push_back(isSuccess ? 0 : 1);
-    } else {
-        simulatorReservations[sid] = true;
-        simulators[sid] = simulator;
-        simulatorTypes[sid] = simulatorType;
-        simulatorHostPointer[sid] = false;
-        simulatorErrors[sid] = isSuccess ? 0 : 1;
-    }
-
-    if (!q && !c) {
-        return sid;
-    }
-
-    shards[simulator.get()] = {};
-    for (unsigned i = 0; i < q; i++) {
-        shards[simulator.get()][i] = (bitLenInt)i;
-    }
-
-    return sid;
-}
-
 /**
  * (External API) Destroy a simulator (ID will not be reused)
  */

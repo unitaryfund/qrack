@@ -35,7 +35,6 @@ MICROSOFT_QUANTUM_DECL unsigned init_count(_In_ unsigned q, _In_ bool dm);
 MICROSOFT_QUANTUM_DECL unsigned init_count_pager(_In_ unsigned q, _In_ bool dm);
 MICROSOFT_QUANTUM_DECL unsigned init() { return init_count(0, false); }
 MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid);
-MICROSOFT_QUANTUM_DECL unsigned init_qbdt_stabilizer(_In_ unsigned q, _In_ unsigned c, _In_ bool sd);
 MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s);
 MICROSOFT_QUANTUM_DECL void set_concurrency(_In_ unsigned sid, _In_ unsigned p);
