@@ -210,10 +210,6 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
         return;
     }
 
-    if (stabilizer && !stabilizer->CanDecomposeDispose(start, length)) {
-        SwitchToEngine();
-    }
-
     if (engine) {
         if (engineTypes[0] == QINTERFACE_QPAGER) {
             dest->TurnOnPaging();
@@ -258,10 +254,6 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
         return;
     }
 
-    if (stabilizer && !stabilizer->CanDecomposeDispose(start, length)) {
-        SwitchToEngine();
-    }
-
     if (engine) {
         engine->Dispose(start, length);
     } else {
@@ -290,10 +282,6 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
         SetQubitCount(1);
         stabilizer = MakeStabilizer(0);
         return;
-    }
-
-    if (stabilizer && !stabilizer->CanDecomposeDispose(start, length)) {
-        SwitchToEngine();
     }
 
     if (engine) {
@@ -629,12 +617,6 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
 
     if (shards[qubit] && shards[qubit]->IsInvert()) {
         InvertBuffer(qubit);
-    }
-
-    // This check will first try to coax into decomposable form:
-    if (doApply && !stabilizer->CanDecomposeDispose(qubit, 1)) {
-        SwitchToEngine();
-        return engine->ForceM(qubit, result, doForce, doApply);
     }
 
     if (shards[qubit]) {

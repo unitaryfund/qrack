@@ -124,20 +124,19 @@ void QStabilizer::rowswap(const bitLenInt& i, const bitLenInt& k)
 /// Sets row i equal to the bth observable (X_1,...X_n,Z_1,...,Z_n)
 void QStabilizer::rowset(const bitLenInt& i, bitLenInt b)
 {
-    r[i] = 0;
-
     // Dealloc, first
     x[i] = BoolVector();
     z[i] = BoolVector();
 
     x[i] = BoolVector(qubitCount, false);
     z[i] = BoolVector(qubitCount, false);
+    r[i] = 0;
 
     if (b < qubitCount) {
-        z[i][b] = true;
+        x[i][b] = true;
     } else {
         b -= qubitCount;
-        x[i][b] = true;
+        z[i][b] = true;
     }
 }
 
