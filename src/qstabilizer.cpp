@@ -56,6 +56,7 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
 #endif
 
     SetPermutation(perm);
+    seed(0U);
 }
 
 void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
