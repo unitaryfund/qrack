@@ -371,5 +371,33 @@ public:
     virtual void MCInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
+
+    virtual bool TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f ignored)
+    {
+        for (bitLenInt i = 0U; i < length; i++) {
+            Swap(qubits[i], i);
+        }
+
+        const bool toRet = CanDecomposeDispose(0U, 2U);
+
+        for (bitLenInt i = 0U; i < length; i++) {
+            Swap(qubits[i], i);
+        }
+
+        return toRet;
+    }
+    virtual bool TrySeparate(bitLenInt qubit) { return CanDecomposeDispose(qubit, 1U); }
+    virtual bool TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
+    {
+        Swap(qubit1, 0U);
+        Swap(qubit2, 1U);
+
+        const bool toRet = CanDecomposeDispose(0U, 2U);
+
+        Swap(qubit1, 0U);
+        Swap(qubit2, 1U);
+
+        return toRet;
+    }
 };
 } // namespace Qrack
