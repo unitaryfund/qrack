@@ -788,10 +788,6 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         }
     }
 
-    if (m >= n) {
-        throw std::runtime_error("QStabilizer::ForceM() could not find an anti-commuting destabilizer!");
-    }
-
     rowcopy(elemCount, m + n);
     for (bitLenInt i = m + 1U; i < n; i++) {
         if (x[i][t]) {
