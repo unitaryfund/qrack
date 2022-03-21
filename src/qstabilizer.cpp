@@ -919,6 +919,9 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     }
     Finish();
 
+    // We want to have the maximum number of 0 cross terms possible.
+    gaussian();
+
     // We assume that the bits to "decompose" the representation of already have 0 cross-terms in their generators
     // outside inter- "dest" cross terms. (Usually, we're "decomposing" the representation of a just-measured single
     // qubit.)
