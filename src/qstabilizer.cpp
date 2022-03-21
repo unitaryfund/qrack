@@ -769,6 +769,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
                 rowmult(i, p);
             }
         }
+        // (Skip "p" row)
         for (bitLenInt i = p + 1U; i < elemCount; i++) {
             if (x[i][t]) {
                 rowmult(i, p);
@@ -788,18 +789,12 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         }
     }
 
-    if (m >= n) {
-        if (doForce && (result != (bool)r[elemCount])) {
-            throw std::invalid_argument("QStabilizer::ForceM() forced a measurement with 0 probability!");
-        }
-
-        return r[elemCount];
-    }
-
-    rowcopy(elemCount, m + n);
-    for (bitLenInt i = m + 1U; i < n; i++) {
-        if (x[i][t]) {
-            rowmult(elemCount, i + n);
+    if (m < n) {
+        rowcopy(elemCount, m + n);
+        for (bitLenInt i = m + 1U; i < n; i++) {
+            if (x[i][t]) {
+                rowmult(elemCount, i + n);
+            }
         }
     }
 
