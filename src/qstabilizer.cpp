@@ -764,8 +764,13 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 
         r[p + n] = result ? 2U : 0U;
         // Now update the Xbar's and Zbar's that don't commute with Z_b
-        for (bitLenInt i = 0; i < elemCount; i++) {
-            if ((i != p) && x[i][t]) {
+        for (bitLenInt i = 0; i < p; i++) {
+            if (x[i][t]) {
+                rowmult(i, p);
+            }
+        }
+        for (bitLenInt i = p + 1U; i < elemCount; i++) {
+            if (x[i][t]) {
                 rowmult(i, p);
             }
         }
