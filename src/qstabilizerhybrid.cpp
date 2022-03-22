@@ -727,13 +727,6 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
-    QStabilizerHybridPtr c = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-    c->FlushBuffers();
-    if (c->engine) {
-        c->engine->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
-        return;
-    }
-
     std::vector<bitLenInt> bits(qPowerCount);
     for (bitLenInt i = 0U; i < qPowerCount; i++) {
         bits[i] = log2(qPowers[i]);
