@@ -352,6 +352,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_global_phase")
     qftReg->X(0);
     qftReg->Y(0);
     REQUIRE_FLOAT(-ONE_R1, imag(qftReg->GetAmplitude(0x00)));
+
+    qftReg = CreateQuantumInterface(
+        { testEngineType, testSubEngineType, testSubSubEngineType }, 2U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
+    qftReg->X(0);
+    qftReg->X(1);
+    qftReg->CZ(0, 1);
+    REQUIRE_FLOAT(-ONE_R1, real(qftReg->GetAmplitude(0x03)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")

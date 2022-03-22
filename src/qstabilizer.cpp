@@ -56,7 +56,6 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
 #endif
 
     SetPermutation(perm);
-    seed(0U);
 }
 
 void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
@@ -525,6 +524,9 @@ void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
 /// Apply a CY gate with control and target
 void QStabilizer::CY(bitLenInt c, bitLenInt t)
 {
+    if (!randGlobalPhase && IsSeparableZ(c) && M(c) && IsSeparableZ(t)) {
+        phaseOffset *= M(t) ? -I_CMPLX : I_CMPLX;
+    }
     ParFor([this, c, t](const bitLenInt& i) {
         z[i][t] = z[i][t] ^ x[i][t];
 
@@ -547,6 +549,9 @@ void QStabilizer::CY(bitLenInt c, bitLenInt t)
 /// Apply a CZ gate with control and target
 void QStabilizer::CZ(bitLenInt c, bitLenInt t)
 {
+    if (!randGlobalPhase && IsSeparableZ(c) && M(c) && IsSeparableZ(t) && M(t)) {
+        phaseOffset *= -ONE_CMPLX;
+    }
     ParFor([this, c, t](const bitLenInt& i) {
         if (x[i][t]) {
             z[i][c] = !z[i][c];
@@ -787,6 +792,11 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
         if (x[m][t]) {
             break;
         }
+    }
+
+    if (m >= n) {
+        // For example, diagonal permutation state is |0>.
+        return false;
     }
 
     rowcopy(elemCount, m + n);
