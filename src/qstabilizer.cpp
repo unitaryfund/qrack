@@ -521,6 +521,24 @@ void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
     });
 }
 
+/// Apply an (anti-)CNOT gate with control and target
+void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
+{
+    ParFor([this, c, t](const bitLenInt& i) {
+        if (x[i][c]) {
+            x[i][t] = !x[i][t];
+        }
+
+        if (z[i][t]) {
+            z[i][c] = !z[i][c];
+
+            if (!x[i][c] || (x[i][t] != z[i][c])) {
+                r[i] = (r[i] + 2) & 0x3U;
+            }
+        }
+    });
+}
+
 /// Apply a CY gate with control and target
 void QStabilizer::CY(bitLenInt c, bitLenInt t)
 {
@@ -546,6 +564,31 @@ void QStabilizer::CY(bitLenInt c, bitLenInt t)
     });
 }
 
+/// Apply an (anti-)CY gate with control and target
+void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
+{
+    if (!randGlobalPhase && IsSeparableZ(c) && !M(c) && IsSeparableZ(t)) {
+        phaseOffset *= M(t) ? -I_CMPLX : I_CMPLX;
+    }
+    ParFor([this, c, t](const bitLenInt& i) {
+        z[i][t] = z[i][t] ^ x[i][t];
+
+        if (x[i][c]) {
+            x[i][t] = !x[i][t];
+        }
+
+        if (z[i][t]) {
+            if (!x[i][c] || (x[i][t] != z[i][c])) {
+                r[i] = (r[i] + 2) & 0x3U;
+            }
+
+            z[i][c] = !z[i][c];
+        }
+
+        z[i][t] = z[i][t] ^ x[i][t];
+    });
+}
+
 /// Apply a CZ gate with control and target
 void QStabilizer::CZ(bitLenInt c, bitLenInt t)
 {
@@ -557,6 +600,27 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
             z[i][c] = !z[i][c];
 
             if (x[i][c] && (z[i][t] == z[i][c])) {
+                r[i] = (r[i] + 2) & 0x3U;
+            }
+        }
+
+        if (x[i][c]) {
+            z[i][t] = !z[i][t];
+        }
+    });
+}
+
+/// Apply an (anti-)CZ gate with control and target
+void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
+{
+    if (!randGlobalPhase && IsSeparableZ(c) && !M(c) && IsSeparableZ(t) && M(t)) {
+        phaseOffset *= -ONE_CMPLX;
+    }
+    ParFor([this, c, t](const bitLenInt& i) {
+        if (x[i][t]) {
+            z[i][c] = !z[i][c];
+
+            if (!x[i][c] || (z[i][t] != z[i][c])) {
                 r[i] = (r[i] + 2) & 0x3U;
             }
         }
@@ -1257,6 +1321,21 @@ void QStabilizer::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen, cons
     throw std::domain_error("QStabilizer::MCMtrx() not implemented for non-Clifford/Pauli cases!");
 }
 
+void QStabilizer::MACMtrx(const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
+{
+    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
+        MACPhase(lControls, lControlLen, mtrx[0], mtrx[3], target);
+        return;
+    }
+
+    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
+        MACInvert(lControls, lControlLen, mtrx[1], mtrx[2], target);
+        return;
+    }
+
+    throw std::domain_error("QStabilizer::MACMtrx() not implemented for non-Clifford/Pauli cases!");
+}
+
 void QStabilizer::MCPhase(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
@@ -1265,7 +1344,7 @@ void QStabilizer::MCPhase(
     }
 
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, controls)) {
+    if (TrimControls(lControls, lControlLen, false, controls)) {
         return;
     }
 
@@ -1339,11 +1418,93 @@ void QStabilizer::MCPhase(
         "QStabilizer::MCPhase() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
 }
 
+void QStabilizer::MACPhase(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
+{
+    if (IS_NORM_0(topLeft - ONE_CMPLX) && IS_NORM_0(bottomRight - ONE_CMPLX)) {
+        return;
+    }
+
+    std::vector<bitLenInt> controls;
+    if (TrimControls(lControls, lControlLen, true, controls)) {
+        return;
+    }
+
+    if (!controls.size()) {
+        Phase(topLeft, bottomRight, target);
+        return;
+    }
+
+    if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
+        real1_f prob = Prob(target);
+        if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
+            return;
+        }
+        if (IS_NORM_0(bottomRight - ONE_CMPLX) && (prob == ONE_R1)) {
+            return;
+        }
+    }
+
+    if (controls.size() > 1U) {
+        throw std::domain_error(
+            "QStabilizer::MACPhase() not implemented for non-Clifford/Pauli cases! (Too many controls)");
+    }
+
+    const bitLenInt control = controls[0];
+
+    if (IS_SAME(topLeft, ONE_CMPLX)) {
+        if (IS_SAME(bottomRight, ONE_CMPLX)) {
+            return;
+        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            AntiCZ(control, target);
+            return;
+        }
+    } else if (IS_SAME(topLeft, -ONE_CMPLX)) {
+        if (IS_SAME(bottomRight, ONE_CMPLX)) {
+            AntiCNOT(control, target);
+            AntiCZ(control, target);
+            AntiCNOT(control, target);
+            return;
+        } else if (IS_SAME(bottomRight, -ONE_CMPLX)) {
+            AntiCZ(control, target);
+            AntiCNOT(control, target);
+            AntiCZ(control, target);
+            AntiCNOT(control, target);
+            return;
+        }
+    } else if (IS_SAME(topLeft, I_CMPLX)) {
+        if (IS_SAME(bottomRight, I_CMPLX)) {
+            AntiCZ(control, target);
+            AntiCY(control, target);
+            AntiCNOT(control, target);
+            return;
+        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
+            AntiCY(control, target);
+            AntiCNOT(control, target);
+            return;
+        }
+    } else if (IS_SAME(topLeft, -I_CMPLX)) {
+        if (IS_SAME(bottomRight, I_CMPLX)) {
+            AntiCNOT(control, target);
+            AntiCY(control, target);
+            return;
+        } else if (IS_SAME(bottomRight, -I_CMPLX)) {
+            AntiCY(control, target);
+            AntiCZ(control, target);
+            AntiCNOT(control, target);
+            return;
+        }
+    }
+
+    throw std::domain_error(
+        "QStabilizer::MACPhase() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
+}
+
 void QStabilizer::MCInvert(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
 {
     std::vector<bitLenInt> controls;
-    if (TrimControls(lControls, lControlLen, controls)) {
+    if (TrimControls(lControls, lControlLen, false, controls)) {
         return;
     }
 
@@ -1403,6 +1564,72 @@ void QStabilizer::MCInvert(
 
     throw std::domain_error(
         "QStabilizer::MCInvert() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
+}
+
+void QStabilizer::MACInvert(
+    const bitLenInt* lControls, bitLenInt lControlLen, complex topRight, complex bottomLeft, bitLenInt target)
+{
+    std::vector<bitLenInt> controls;
+    if (TrimControls(lControls, lControlLen, true, controls)) {
+        return;
+    }
+
+    if (!controls.size()) {
+        Invert(topRight, bottomLeft, target);
+        return;
+    }
+
+    if (controls.size() > 1U) {
+        throw std::domain_error(
+            "QStabilizer::MACInvert() not implemented for non-Clifford/Pauli cases! (Too many controls)");
+    }
+
+    const bitLenInt control = controls[0];
+
+    if (IS_SAME(topRight, ONE_CMPLX)) {
+        if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+            AntiCNOT(control, target);
+            return;
+        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            AntiCNOT(control, target);
+            AntiCZ(control, target);
+            return;
+        }
+    } else if (IS_SAME(topRight, -ONE_CMPLX)) {
+        if (IS_SAME(bottomLeft, ONE_CMPLX)) {
+            AntiCZ(control, target);
+            AntiCNOT(control, target);
+            return;
+        } else if (IS_SAME(bottomLeft, -ONE_CMPLX)) {
+            AntiCZ(control, target);
+            AntiCNOT(control, target);
+            AntiCZ(control, target);
+            return;
+        }
+    } else if (IS_SAME(topRight, I_CMPLX)) {
+        if (IS_SAME(bottomLeft, I_CMPLX)) {
+            AntiCZ(control, target);
+            AntiCY(control, target);
+            return;
+        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            AntiCZ(control, target);
+            AntiCY(control, target);
+            AntiCZ(control, target);
+            return;
+        }
+    } else if (IS_SAME(topRight, -I_CMPLX)) {
+        if (IS_SAME(bottomLeft, I_CMPLX)) {
+            AntiCY(control, target);
+            return;
+        } else if (IS_SAME(bottomLeft, -I_CMPLX)) {
+            AntiCY(control, target);
+            AntiCZ(control, target);
+            return;
+        }
+    }
+
+    throw std::domain_error(
+        "QStabilizer::MACInvert() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
 }
 
 void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)

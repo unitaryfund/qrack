@@ -93,7 +93,7 @@ protected:
         });
     }
 
-    bool TrimControls(const bitLenInt* lControls, bitLenInt lControlLen, std::vector<bitLenInt>& output)
+    bool TrimControls(const bitLenInt* lControls, bitLenInt lControlLen, bool isAnti, std::vector<bitLenInt>& output)
     {
         for (bitLenInt i = 0; i < lControlLen; i++) {
             const bitLenInt bit = lControls[i];
@@ -101,7 +101,7 @@ protected:
                 output.push_back(bit);
                 continue;
             }
-            if (!M(bit)) {
+            if (isAnti == M(bit)) {
                 return true;
             }
         }
@@ -257,6 +257,12 @@ public:
     virtual void CY(bitLenInt control, bitLenInt target);
     /// Apply a CZ gate with control and target
     virtual void CZ(bitLenInt control, bitLenInt target);
+    /// Apply an (anti-)CNOT gate with control and target
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
+    /// Apply an (anti-)CY gate with control and target
+    virtual void AntiCY(bitLenInt control, bitLenInt target);
+    /// Apply an (anti-)CZ gate with control and target
+    virtual void AntiCZ(bitLenInt control, bitLenInt target);
     /// Apply a Hadamard gate to target
     virtual void H(bitLenInt qubitIndex);
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
@@ -369,6 +375,11 @@ public:
     virtual void MCPhase(
         const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
     virtual void MCInvert(
+        const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
+    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
+    virtual void MACPhase(
+        const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
+    virtual void MACInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
 
