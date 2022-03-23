@@ -521,6 +521,24 @@ void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
     });
 }
 
+/// Apply an (anti-)CNOT gate with control and target
+void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
+{
+    ParFor([this, c, t](const bitLenInt& i) {
+        if (x[i][c]) {
+            x[i][t] = !x[i][t];
+        }
+
+        if (z[i][t]) {
+            z[i][c] = !z[i][c];
+
+            if (!x[i][c] || (x[i][t] != z[i][c])) {
+                r[i] = (r[i] + 2) & 0x3U;
+            }
+        }
+    });
+}
+
 /// Apply a CY gate with control and target
 void QStabilizer::CY(bitLenInt c, bitLenInt t)
 {
@@ -536,6 +554,31 @@ void QStabilizer::CY(bitLenInt c, bitLenInt t)
 
         if (z[i][t]) {
             if (x[i][c] && (x[i][t] == z[i][c])) {
+                r[i] = (r[i] + 2) & 0x3U;
+            }
+
+            z[i][c] = !z[i][c];
+        }
+
+        z[i][t] = z[i][t] ^ x[i][t];
+    });
+}
+
+/// Apply an (anti-)CY gate with control and target
+void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
+{
+    if (!randGlobalPhase && IsSeparableZ(c) && !M(c) && IsSeparableZ(t)) {
+        phaseOffset *= M(t) ? -I_CMPLX : I_CMPLX;
+    }
+    ParFor([this, c, t](const bitLenInt& i) {
+        z[i][t] = z[i][t] ^ x[i][t];
+
+        if (x[i][c]) {
+            x[i][t] = !x[i][t];
+        }
+
+        if (z[i][t]) {
+            if (!x[i][c] || (x[i][t] != z[i][c])) {
                 r[i] = (r[i] + 2) & 0x3U;
             }
 
@@ -567,46 +610,24 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
     });
 }
 
-/// Apply a CNOT gate with control and target
-void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
+/// Apply an (anti-)CZ gate with control and target
+void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
 {
-    ParFor([this, c, t](const bitLenInt& i) {
-        if (x[i][c]) {
-            x[i][t] = !x[i][t];
-        }
-
-        if (z[i][t]) {
-            z[i][c] = !z[i][c];
-
-            if (!z[i][c] && (!x[i][c] || x[i][t])) {
-                r[i] = (r[i] + 2) & 0x3U;
-            }
-        }
-    });
-}
-
-/// Apply a CY gate with control and target
-void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
-{
-    if (!randGlobalPhase && IsSeparableZ(c) && !M(c) && IsSeparableZ(t)) {
-        phaseOffset *= M(t) ? -I_CMPLX : I_CMPLX;
+    if (!randGlobalPhase && IsSeparableZ(c) && !M(c) && IsSeparableZ(t) && M(t)) {
+        phaseOffset *= -ONE_CMPLX;
     }
     ParFor([this, c, t](const bitLenInt& i) {
-        z[i][t] = z[i][t] ^ x[i][t];
+        if (x[i][t]) {
+            z[i][c] = !z[i][c];
 
-        if (x[i][c]) {
-            x[i][t] = !x[i][t];
-        }
-
-        if (z[i][t]) {
-            if (!z[i][c] && (!x[i][c] || x[i][t])) {
+            if (!x[i][c] || (z[i][t] != z[i][c])) {
                 r[i] = (r[i] + 2) & 0x3U;
             }
-
-            z[i][c] = !z[i][c];
         }
 
-        z[i][t] = z[i][t] ^ x[i][t];
+        if (x[i][c]) {
+            z[i][t] = !z[i][t];
+        }
     });
 }
 
@@ -1426,7 +1447,7 @@ void QStabilizer::MACPhase(
 
     if (controls.size() > 1U) {
         throw std::domain_error(
-            "QStabilizer::MCPhase() not implemented for non-Clifford/Pauli cases! (Too many controls)");
+            "QStabilizer::MACPhase() not implemented for non-Clifford/Pauli cases! (Too many controls)");
     }
 
     const bitLenInt control = controls[0];
@@ -1476,7 +1497,7 @@ void QStabilizer::MACPhase(
     }
 
     throw std::domain_error(
-        "QStabilizer::MCPhase() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
+        "QStabilizer::MACPhase() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
 }
 
 void QStabilizer::MCInvert(
@@ -1560,7 +1581,7 @@ void QStabilizer::MACInvert(
 
     if (controls.size() > 1U) {
         throw std::domain_error(
-            "QStabilizer::MCInvert() not implemented for non-Clifford/Pauli cases! (Too many controls)");
+            "QStabilizer::MACInvert() not implemented for non-Clifford/Pauli cases! (Too many controls)");
     }
 
     const bitLenInt control = controls[0];
@@ -1608,7 +1629,7 @@ void QStabilizer::MACInvert(
     }
 
     throw std::domain_error(
-        "QStabilizer::MCInvert() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
+        "QStabilizer::MACInvert() not implemented for non-Clifford/Pauli cases! (Non-Clifford/Pauli target payload)");
 }
 
 void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
