@@ -544,9 +544,21 @@ void QStabilizerHybrid::MACPhase(
         return;
     }
 
-    X(controls[0]);
-    MCPhase(&(controls[0]), 1U, topLeft, bottomRight, target);
-    X(controls[0]);
+    const bitLenInt control = controls[0];
+    std::unique_ptr<bitLenInt[]> ctrls(new bitLenInt[controls.size()]);
+    std::copy(controls.begin(), controls.end(), ctrls.get());
+    try {
+        stabilizer->MACPhase(ctrls.get(), controls.size(), topLeft, bottomRight, target);
+        if (shards[control]) {
+            CacheEigenstate(control);
+        }
+        if (shards[target]) {
+            CacheEigenstate(target);
+        }
+    } catch (const std::domain_error&) {
+        SwitchToEngine();
+        engine->MACPhase(lControls, lControlLen, topLeft, bottomRight, target);
+    }
 }
 
 void QStabilizerHybrid::MACInvert(
@@ -573,9 +585,21 @@ void QStabilizerHybrid::MACInvert(
         return;
     }
 
-    X(controls[0]);
-    MCInvert(&(controls[0]), 1U, topRight, bottomLeft, target);
-    X(controls[0]);
+    const bitLenInt control = controls[0];
+    std::unique_ptr<bitLenInt[]> ctrls(new bitLenInt[controls.size()]);
+    std::copy(controls.begin(), controls.end(), ctrls.get());
+    try {
+        stabilizer->MACInvert(ctrls.get(), controls.size(), topRight, bottomLeft, target);
+        if (shards[control]) {
+            CacheEigenstate(control);
+        }
+        if (shards[target]) {
+            CacheEigenstate(target);
+        }
+    } catch (const std::domain_error&) {
+        SwitchToEngine();
+        engine->MACInvert(lControls, lControlLen, topRight, bottomLeft, target);
+    }
 }
 
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
