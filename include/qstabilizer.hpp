@@ -257,6 +257,13 @@ public:
     virtual void CY(bitLenInt control, bitLenInt target);
     /// Apply a CZ gate with control and target
     virtual void CZ(bitLenInt control, bitLenInt target);
+    /// Apply a CNOT gate with control and target
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
+    // TODO:
+    /// Apply a CY gate with control and target
+    // virtual void AntiCY(bitLenInt control, bitLenInt target);
+    /// Apply a CZ gate with control and target
+    // virtual void AntiCZ(bitLenInt control, bitLenInt target);
     /// Apply a Hadamard gate to target
     virtual void H(bitLenInt qubitIndex);
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b

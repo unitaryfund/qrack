@@ -567,6 +567,20 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
     });
 }
 
+/// Apply a CNOT gate with control and target
+void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
+{
+    ParFor([this, c, t](const bitLenInt& i) {
+        if (x[i][c]) {
+            x[i][t] = !x[i][t];
+        }
+
+        if (z[i][t]) {
+            z[i][c] = !z[i][c];
+        }
+    });
+}
+
 void QStabilizer::Swap(bitLenInt c, bitLenInt t)
 {
     if (c == t) {
