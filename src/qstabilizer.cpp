@@ -577,6 +577,10 @@ void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
 
         if (z[i][t]) {
             z[i][c] = !z[i][c];
+
+            if (!z[i][c] && !(x[i][c] && !x[i][t])) {
+                r[i] = (r[i] + 2) & 0x3U;
+            }
         }
     });
 }
