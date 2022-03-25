@@ -83,7 +83,9 @@ typedef std::complex<__fp16> complex;
 typedef __fp16 real1;
 typedef float real1_f;
 #define ZERO_R1 0.0f
+#define ZERO_R1_F 0.0f
 #define ONE_R1 1.0f
+#define ONE_R1_F 1.0f
 #define PI_R1 ((real1_f)M_PI)
 #define SQRT2_R1 ((real1_f)M_SQRT2)
 #define SQRT1_2_R1 ((real1_f)M_SQRT2)
@@ -97,7 +99,9 @@ typedef std::complex<half_float::half> complex;
 typedef half_float::half real1;
 typedef float real1_f;
 #define ZERO_R1 ((real1)0.0f)
+#define ZERO_R1_F 0.0f
 #define ONE_R1 ((real1)1.0f)
+#define ONE_R1_F 1.0f
 #define PI_R1 ((real1)M_PI)
 #define SQRT2_R1 ((real1)M_SQRT2)
 #define SQRT1_2_R1 ((real1)M_SQRT1_2)
@@ -114,7 +118,9 @@ typedef std::complex<float> complex;
 typedef float real1;
 typedef float real1_f;
 #define ZERO_R1 0.0f
+#define ZERO_R1_F 0.0f
 #define ONE_R1 1.0f
+#define ONE_R1_F 1.0f
 #define PI_R1 ((real1_f)M_PI)
 #define SQRT2_R1 ((real1_f)M_SQRT2)
 #define SQRT1_2_R1 ((real1_f)M_SQRT1_2)
@@ -124,13 +130,15 @@ typedef float real1_f;
 // Minimum representable difference from 1
 #define FP_NORM_EPSILON 1.192092896e-07f
 } // namespace Qrack
-#else
+#elif FPPOW < 7
 namespace Qrack {
 typedef std::complex<double> complex;
 typedef double real1;
 typedef double real1_f;
 #define ZERO_R1 0.0
+#define ZERO_R1_F 0.0
 #define ONE_R1 1.0
+#define ONE_R1_F 1.0
 #define PI_R1 M_PI
 #define SQRT2_R1 M_SQRT2
 #define SQRT1_2_R1 M_SQRT1_2
@@ -139,6 +147,26 @@ typedef double real1_f;
 #define REAL1_EPSILON 2e-65
 // Minimum representable difference from 1
 #define FP_NORM_EPSILON 2.2204460492503131e-16
+} // namespace Qrack
+#else
+#include <boost/multiprecision/float128.hpp>
+#include <quadmath.h>
+namespace Qrack {
+typedef std::complex<boost::multiprecision::float128> complex;
+typedef boost::multiprecision::float128 real1;
+typedef double real1_f;
+#define ZERO_R1 ((real1)0.0)
+#define ZERO_R1_F 0.0
+#define ONE_R1 ((real1)1.0)
+#define ONE_R1_F 1.0
+#define PI_R1 ((real1)M_PI)
+#define SQRT2_R1 ((real1)M_SQRT2)
+#define SQRT1_2_R1 ((real1)M_SQRT1_2)
+#define REAL1_DEFAULT_ARG -999.0
+// Half of the amplitude of 64 maximally superposed qubits in any permutation
+#define REAL1_EPSILON ((real1_f)2e-129)
+// Minimum representable difference from 1
+#define FP_NORM_EPSILON ((real1_f)1.92592994438723585305597794258492732e-34)
 } // namespace Qrack
 #endif
 

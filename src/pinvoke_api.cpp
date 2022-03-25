@@ -727,7 +727,7 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
         simulatorErrors[sid] = 1;
     }
     for (size_t i = 0; i < wfnl; i++) {
-        if (!callback(i, real(wfn[i]), imag(wfn[i]))) {
+        if (!callback(i, (real1_f)real(wfn[i]), (real1_f)imag(wfn[i]))) {
             break;
         }
     }
@@ -2244,7 +2244,7 @@ MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ unsigned sid, _In_ double t, _In_ un
 
     try {
         QInterfacePtr simulator = simulators[sid];
-        simulator->TimeEvolve(h, (real1)t);
+        simulator->TimeEvolve(h, (real1_f)t);
     } catch (...) {
         simulatorErrors[sid] = 1;
     }

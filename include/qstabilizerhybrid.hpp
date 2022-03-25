@@ -86,9 +86,9 @@ protected:
         const bool isZ1 = stabilizer->M(qubit);
 
         if (isZ1) {
-            prob = norm(shard->gate[3]);
+            prob = (real1_f)norm(shard->gate[3]);
         } else {
-            prob = norm(shard->gate[2]);
+            prob = (real1_f)norm(shard->gate[2]);
         }
 
         bool result;
@@ -733,7 +733,7 @@ public:
     virtual real1_f ProbParity(bitCapInt mask)
     {
         if (!mask) {
-            return ZERO_R1;
+            return ZERO_R1_F;
         }
 
         if (!(mask & (mask - ONE_BCI))) {
@@ -989,7 +989,7 @@ public:
     }
 
     virtual void NormalizeState(
-        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
         if (abs(nrm) <= FP_NORM_EPSILON) {
             ZeroAmplitudes();

@@ -163,15 +163,15 @@ protected:
 
     // Compilers have difficulty figuring out types and overloading if the "norm" handle is passed to std::transform. If
     // you need a safe pointer to norm(), try this:
-    static inline real1_f normHelper(complex c) { return norm(c); }
+    static inline real1_f normHelper(complex c) { return (real1_f)norm(c); }
 
     static inline real1_f clampProb(real1_f toClamp)
     {
-        if (toClamp < ZERO_R1) {
-            toClamp = ZERO_R1;
+        if (toClamp < ZERO_R1_F) {
+            toClamp = ZERO_R1_F;
         }
-        if (toClamp > ONE_R1) {
-            toClamp = ONE_R1;
+        if (toClamp > ONE_R1_F) {
+            toClamp = ONE_R1_F;
         }
         return toClamp;
     }
@@ -193,7 +193,7 @@ protected:
     complex GetNonunitaryPhase()
     {
         if (randGlobalPhase) {
-            real1_f angle = Rand() * 2 * PI_R1;
+            real1_f angle = Rand() * 2 * (real1_f)PI_R1;
             return complex((real1)cos(angle), (real1)sin(angle));
         } else {
             return ONE_CMPLX;
@@ -660,7 +660,7 @@ public:
      */
     virtual void IU2(bitLenInt target, real1_f phi, real1_f lambda)
     {
-        U(target, M_PI / 2, -lambda - PI_R1, -phi + PI_R1);
+        U(target, (real1_f)(M_PI / 2), (real1_f)(-lambda - PI_R1), (real1_f)(-phi + PI_R1));
     }
 
     /**
@@ -1982,7 +1982,7 @@ public:
      *
      * \warning PSEUDO-QUANTUM
      */
-    virtual real1_f ProbAll(bitCapInt fullRegister) { return clampProb(norm(GetAmplitude(fullRegister))); }
+    virtual real1_f ProbAll(bitCapInt fullRegister) { return clampProb((real1_f)norm(GetAmplitude(fullRegister))); }
 
     /**
      * Direct measure of register permutation probability
@@ -2099,7 +2099,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual void NormalizeState(
-        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1) = 0;
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F) = 0;
 
     /**
      * If asynchronous work is still running, block until it finishes. Note that this is never necessary to get correct,

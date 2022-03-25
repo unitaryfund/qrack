@@ -59,6 +59,10 @@ if (ENABLE_PTHREAD)
 	endif (NOT ANDROID AND NOT MSVC)
 endif (ENABLE_PTHREAD)
 
+if (FPPOW GREATER 6)
+    set(QRACK_LIBS quadmath)
+endif (FPPOW GREATER 6)
+
 target_link_libraries (qrack_pinvoke ${QRACK_LIBS})
 if (NOT ENABLE_EMIT_LLVM)
     # Declare the unittest executable

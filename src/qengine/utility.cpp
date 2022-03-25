@@ -59,7 +59,7 @@ real1_f QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
         average /= totProb;
     }
 
-    return average;
+    return (real1_f)average;
 }
 
 } // namespace Qrack

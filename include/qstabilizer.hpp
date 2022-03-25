@@ -238,9 +238,9 @@ public:
 
         SetPermutation(0);
 
-        const real1 prob = (real1)clampProb(norm(inputState[1]));
+        const real1 prob = (real1)clampProb((real1_f)norm(inputState[1]));
         const real1 sqrtProb = sqrt(prob);
-        const real1 sqrt1MinProb = (real1)sqrt(clampProb(ONE_R1 - prob));
+        const real1 sqrt1MinProb = (real1)sqrt(clampProb((real1_f)(ONE_R1 - prob)));
         const complex phase0 = std::polar(ONE_R1, arg(inputState[0]));
         const complex phase1 = std::polar(ONE_R1, arg(inputState[1]));
         const complex mtrx[4] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
@@ -346,7 +346,7 @@ public:
     bool CanDecomposeDispose(const bitLenInt start, const bitLenInt length);
 
     virtual void NormalizeState(
-        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
         if (!randGlobalPhase) {
             phaseOffset *= std::polar(ONE_R1, (real1)phaseArg);

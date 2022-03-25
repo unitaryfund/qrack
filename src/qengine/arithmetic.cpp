@@ -959,7 +959,7 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 
     ResetStateVec(nStateVec);
 
-    real1_f average = ZERO_R1;
+    real1_f average = ZERO_R1_F;
 #if ENABLE_VM6502Q_DEBUG
     average = GetExpectation(valueStart, valueLength);
 #endif
@@ -1070,7 +1070,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     // just calculated.
     ResetStateVec(nStateVec);
 
-    real1_f average = ZERO_R1;
+    real1_f average = ZERO_R1_F;
 #if ENABLE_VM6502Q_DEBUG
     average = GetExpectation(valueStart, valueLength);
 #endif
@@ -1186,7 +1186,7 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     // just calculated.
     ResetStateVec(nStateVec);
 
-    real1_f average = ZERO_R1;
+    real1_f average = ZERO_R1_F;
 #if ENABLE_VM6502Q_DEBUG
     average = GetExpectation(valueStart, valueLength);
 #endif

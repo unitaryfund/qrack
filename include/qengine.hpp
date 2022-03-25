@@ -80,7 +80,7 @@ public:
     virtual real1_f GetRunningNorm()
     {
         Finish();
-        return runningNorm;
+        return (real1_f)runningNorm;
     }
 
     /** Set all amplitudes to 0, and optionally temporarily deallocate state vector RAM */
@@ -110,7 +110,7 @@ public:
      * for the next normalization operation. */
     virtual void QueueSetRunningNorm(real1_f runningNrm) = 0;
 
-    virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
+    virtual void ZMask(bitCapInt mask) { PhaseParity((real1_f)PI_R1, mask); }
 
     virtual bool ForceM(bitLenInt qubitIndex, bool result, bool doForce = true, bool doApply = true);
     virtual bitCapInt ForceM(const bitLenInt* bits, bitLenInt length, const bool* values, bool doApply = true);

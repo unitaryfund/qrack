@@ -565,12 +565,12 @@ real1_f QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
 {
     // This interface is potentially parallelizable, but, for now, better performance is probably given by implementing
     // it as a serial loop.
-    real1_f totSum = ZERO_R1;
+    real1 totSum = ZERO_R1;
     for (bitCapIntOcl i = 0; i < maxI; i++) {
         totSum += toSum[i];
     }
 
-    return totSum;
+    return (real1_f)totSum;
 }
 
 void QEngineOCL::InitOCL(int devID) { SetDevice(devID, true); }
@@ -610,7 +610,7 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
         &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
     device_context->UnlockWaitEvents();
 
-    QueueSetRunningNorm(ONE_R1);
+    QueueSetRunningNorm(ONE_R1_F);
 }
 
 /// NOT gate, which is also Pauli x matrix
@@ -867,7 +867,7 @@ void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
     }
 
     if (doApplyNorm) {
-        QueueSetRunningNorm(ONE_R1);
+        QueueSetRunningNorm(ONE_R1_F);
     }
 
     if (!doCalcNorm) {
@@ -1018,7 +1018,7 @@ void QEngineOCL::UniformParityRZ(bitCapInt mask, real1_f angle)
 
     QueueCall((abs(ONE_R1 - runningNorm) <= FP_NORM_EPSILON) ? OCL_API_UNIFORMPARITYRZ : OCL_API_UNIFORMPARITYRZ_NORM,
         ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
-    QueueSetRunningNorm(ONE_R1);
+    QueueSetRunningNorm(ONE_R1_F);
 }
 
 void QEngineOCL::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
@@ -1065,7 +1065,7 @@ void QEngineOCL::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLe
 
     QueueCall(OCL_API_CUNIFORMPARITYRZ, ngc, ngs,
         { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer, controlBuffer });
-    QueueSetRunningNorm(ONE_R1);
+    QueueSetRunningNorm(ONE_R1_F);
 }
 
 void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapIntOcl* bciArgs, complex nrm)
@@ -1091,7 +1091,7 @@ void QEngineOCL::ApplyMx(OCLAPI api_call, bitCapIntOcl* bciArgs, complex nrm)
     wait_refs.clear();
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
-    QueueSetRunningNorm(ONE_R1);
+    QueueSetRunningNorm(ONE_R1_F);
 }
 
 void QEngineOCL::ApplyM(bitCapInt qPower, bool result, complex nrm)
@@ -1482,7 +1482,7 @@ real1_f QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
     }
 
     if (!stateBuffer) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     cl_int error;
@@ -1501,7 +1501,7 @@ real1_f QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
     real1 oneChance;
     WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &oneChance, error);
 
-    return clampProb(oneChance);
+    return clampProb((real1_f)oneChance);
 }
 
 /// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state
@@ -1512,7 +1512,7 @@ real1_f QEngineOCL::Prob(bitLenInt qubit)
     }
 
     if (!stateBuffer) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     bitCapIntOcl qPower = pow2Ocl(qubit);
@@ -1585,7 +1585,7 @@ real1_f QEngineOCL::ProbMask(bitCapInt mask, bitCapInt permutation)
     }
 
     if (!stateBuffer) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     cl_int error;
@@ -1623,7 +1623,7 @@ real1_f QEngineOCL::ProbMask(bitCapInt mask, bitCapInt permutation)
     real1 oneChance;
     WAIT_REAL1_SUM(*nrmBuffer, ngc / ngs, nrmArray, &oneChance, error);
 
-    return clampProb(oneChance);
+    return clampProb((real1_f)oneChance);
 }
 
 void QEngineOCL::ProbMaskAll(bitCapInt mask, real1* probsArray)
@@ -1714,7 +1714,7 @@ real1_f QEngineOCL::ProbParity(bitCapInt mask)
 {
     // If no bits in mask:
     if (!mask) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     // If only one bit in mask:
@@ -1761,7 +1761,7 @@ real1_f QEngineOCL::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, 
     }
 
     if (!stateBuffer || !length) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     if (doNormalize) {
@@ -1812,7 +1812,7 @@ real1_f QEngineOCL::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
         average /= totProb;
     }
 
-    return average;
+    return (real1_f)average;
 }
 
 void QEngineOCL::ArithmeticCall(
@@ -2712,17 +2712,17 @@ void QEngineOCL::GetProbs(real1* outputProbs) { ProbRegAll(0, qubitCount, output
 real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 {
     if (!toCompare) {
-        return ONE_R1;
+        return ONE_R1_F;
     }
 
     if (this == toCompare.get()) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
-        return ONE_R1;
+        return ONE_R1_F;
     }
 
     // Make sure both engines are normalized
@@ -2734,17 +2734,17 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
     }
 
     if (!stateBuffer && !toCompare->stateBuffer) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     if (!stateBuffer) {
         toCompare->UpdateRunningNorm();
-        return toCompare->runningNorm;
+        return (real1_f)(toCompare->runningNorm);
     }
 
     if (!toCompare->stateBuffer) {
         UpdateRunningNorm();
-        return runningNorm;
+        return (real1_f)runningNorm;
     }
 
     if (randGlobalPhase) {
@@ -2789,7 +2789,7 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
         totInner += partInner[i];
     }
 
-    return ONE_R1 - clampProb(norm(totInner));
+    return ONE_R1_F - clampProb((real1_f)norm(totInner));
 }
 
 QInterfacePtr QEngineOCL::Clone()
@@ -2799,7 +2799,7 @@ QInterfacePtr QEngineOCL::Clone()
     }
 
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
+        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
 
     copyPtr->clFinish();
     clFinish();
@@ -2816,7 +2816,7 @@ QInterfacePtr QEngineOCL::Clone()
 QEnginePtr QEngineOCL::CloneEmpty()
 {
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(1, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-        useHostRam, deviceID, hardware_rand_generator != NULL, false, amplitudeFloor);
+        useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
 
     copyPtr->clFinish();
     copyPtr->ZeroAmplitudes();
@@ -2838,7 +2838,7 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseA
     if (nrm < ZERO_R1) {
         // runningNorm can be set by OpenCL queue pop, so finish first.
         clFinish();
-        nrm = runningNorm;
+        nrm = (real1_f)runningNorm;
     }
     // We might avoid the clFinish().
     if (nrm <= FP_NORM_EPSILON) {
@@ -2852,9 +2852,9 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseA
     clFinish();
 
     if (norm_thresh < ZERO_R1) {
-        norm_thresh = amplitudeFloor;
+        norm_thresh = (real1_f)amplitudeFloor;
     }
-    nrm = ONE_R1 / std::sqrt(nrm);
+    nrm = ONE_R1_F / std::sqrt((real1_f)nrm);
 
     PoolItemPtr poolItem = GetFreePoolItem();
 
@@ -2882,20 +2882,20 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseA
     }
 
     QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, poolItem->cmplxBuffer });
-    QueueSetRunningNorm(ONE_R1);
+    QueueSetRunningNorm(ONE_R1_F);
 }
 
 void QEngineOCL::UpdateRunningNorm(real1_f norm_thresh)
 {
     if (!stateBuffer) {
-        runningNorm = ZERO_R1;
+        runningNorm = ZERO_R1_F;
         return;
     }
 
     cl_int error;
 
     if (norm_thresh < ZERO_R1) {
-        norm_thresh = amplitudeFloor;
+        norm_thresh = (real1_f)amplitudeFloor;
     }
 
     PoolItemPtr poolItem = GetFreePoolItem();

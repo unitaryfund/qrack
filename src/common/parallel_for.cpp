@@ -223,10 +223,10 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
         return par_norm_exact(itemCount, stateArray);
     }
 
-    real1_f nrmSqr = ZERO_R1;
+    real1_f nrmSqr = ZERO_R1_F;
     if (itemCount < pStride) {
         for (bitCapIntOcl j = 0; j < itemCount; j++) {
-            const real1_f nrm = norm(stateArray->read(j));
+            const real1_f nrm = (real1_f)norm(stateArray->read(j));
             if (nrm >= norm_thresh) {
                 nrmSqr += nrm;
             }
@@ -247,7 +247,7 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
     for (unsigned cpu = 0; cpu != threads; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(&idx, &itemCount, stateArray, &Stride, &norm_thresh)
         {
-            real1_f sqrNorm = ZERO_R1;
+            real1_f sqrNorm = ZERO_R1_F;
             for (;;) {
                 bitCapIntOcl i;
                 ATOMIC_INC();
@@ -258,7 +258,7 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
                 const bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
                 for (bitCapIntOcl j = 0; j < maxJ; j++) {
                     bitCapIntOcl k = i * Stride + j;
-                    const real1_f nrm = norm(stateArray->read(k));
+                    const real1_f nrm = (real1_f)norm(stateArray->read(k));
                     if (nrm >= norm_thresh) {
                         sqrNorm += nrm;
                     }
@@ -277,10 +277,10 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
 
 real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVectorPtr stateArray)
 {
-    real1_f nrmSqr = ZERO_R1;
+    real1_f nrmSqr = ZERO_R1_F;
     if (itemCount < pStride) {
         for (bitCapIntOcl j = 0; j < itemCount; j++) {
-            nrmSqr += norm(stateArray->read(j));
+            nrmSqr += (real1_f)norm(stateArray->read(j));
         }
 
         return nrmSqr;
@@ -298,7 +298,7 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
     for (unsigned cpu = 0; cpu != threads; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(&idx, &itemCount, &Stride, stateArray)
         {
-            real1_f sqrNorm = ZERO_R1;
+            real1_f sqrNorm = ZERO_R1_F;
             for (;;) {
                 bitCapIntOcl i;
                 ATOMIC_INC();
@@ -308,7 +308,7 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
                 }
                 const bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
                 for (bitCapIntOcl j = 0; j < maxJ; j++) {
-                    sqrNorm += norm(stateArray->read(i * Stride + j));
+                    sqrNorm += (real1_f)norm(stateArray->read(i * Stride + j));
                 }
             }
             return sqrNorm;

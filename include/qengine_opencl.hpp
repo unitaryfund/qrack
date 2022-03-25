@@ -282,7 +282,7 @@ public:
     virtual real1_f FirstNonzeroPhase()
     {
         if (!stateBuffer) {
-            return ZERO_R1;
+            return ZERO_R1_F;
         }
 
         return QInterface::FirstNonzeroPhase();
@@ -439,7 +439,7 @@ public:
     virtual real1_f SumSqrDiff(QEngineOCLPtr toCompare);
 
     virtual void NormalizeState(
-        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1);
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F);
     ;
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void Finish() { clFinish(); };
@@ -561,7 +561,7 @@ protected:
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, SPECIAL_2X2 special,
         real1_f norm_thresh = REAL1_DEFAULT_ARG);
 
-    virtual void BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase = PI_R1);
+    virtual void BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase = (real1_f)PI_R1);
 
     virtual void ApplyM(bitCapInt mask, bool result, complex nrm);
     virtual void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);

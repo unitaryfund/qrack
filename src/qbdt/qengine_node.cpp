@@ -183,8 +183,8 @@ void QBdtQEngineNode::PushSpecial(const complex* mtrx, QBdtNodeInterfacePtr& b1)
         qReg1 = qReg->CloneEmpty();
     }
 
-    qReg0->NormalizeState(ONE_R1 / norm(scale), REAL1_DEFAULT_ARG, std::arg(scale));
-    qReg1->NormalizeState(ONE_R1 / norm(b1->scale), REAL1_DEFAULT_ARG, std::arg(b1->scale));
+    qReg0->NormalizeState((real1_f)(ONE_R1 / norm(scale)), REAL1_DEFAULT_ARG, (real1_f)std::arg(scale));
+    qReg1->NormalizeState((real1_f)(ONE_R1 / norm(b1->scale)), REAL1_DEFAULT_ARG, (real1_f)std::arg(b1->scale));
 
     scale = SQRT1_2_R1;
     b1->scale = SQRT1_2_R1;

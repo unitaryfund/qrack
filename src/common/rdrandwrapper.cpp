@@ -162,8 +162,8 @@ real1_f RdRandom::Next()
 {
     unsigned v = NextRaw();
 
-    real1_f res = ZERO_R1;
-    real1_f part = ONE_R1;
+    real1_f res = ZERO_R1_F;
+    real1_f part = ONE_R1_F;
     for (unsigned i = 0U; i < 32U; i++) {
         part /= 2;
         if ((v >> i) & 1U) {

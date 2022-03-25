@@ -635,7 +635,7 @@ public:
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
         if (zxShards[qubitIndex].isX) {
-            return clampProb(ONE_R1 - engine->Prob(qubitIndex));
+            return clampProb(ONE_R1_F - engine->Prob(qubitIndex));
         }
 
         return engine->Prob(qubitIndex);
@@ -674,7 +674,7 @@ public:
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG) { engine->UpdateRunningNorm(norm_thresh); }
     virtual void NormalizeState(
-        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
         engine->NormalizeState(nrm, norm_thresh, phaseArg);
     }
