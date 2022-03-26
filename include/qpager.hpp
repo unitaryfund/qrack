@@ -111,13 +111,13 @@ public:
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool ignored = false, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
-        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
+        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
     QPager(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool ignored = false, bool useHostMem = false,
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
-        real1_f separation_thresh = FP_NORM_EPSILON)
+        real1_f separation_thresh = FP_NORM_EPSILON_F)
         : QPager({ QINTERFACE_MASK_FUSION }, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem, deviceId,
               useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
     {
@@ -127,7 +127,7 @@ public:
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool ignored2 = false, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
-        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
+        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
     virtual void SetConcurrency(uint32_t threadsPerEngine)
     {
@@ -253,7 +253,7 @@ public:
     }
     virtual real1_f GetRunningNorm()
     {
-        real1_f toRet = ZERO_R1;
+        real1_f toRet = ZERO_R1_F;
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             toRet += qPages[i]->GetRunningNorm();
         }
@@ -269,7 +269,7 @@ public:
             }
         }
 
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     virtual void SetQuantumState(const complex* inputState);
@@ -326,7 +326,7 @@ public:
     virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle);
 
     virtual void XMask(bitCapInt mask);
-    virtual void ZMask(bitCapInt mask) { PhaseParity(PI_R1, mask); }
+    virtual void ZMask(bitCapInt mask) { PhaseParity((real1_f)PI_R1, mask); }
     virtual void PhaseParity(real1_f radians, bitCapInt mask);
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
@@ -379,7 +379,7 @@ public:
     virtual real1_f ProbParity(bitCapInt mask)
     {
         if (!mask) {
-            return ZERO_R1;
+            return ZERO_R1_F;
         }
 
         CombineEngines();
@@ -388,7 +388,7 @@ public:
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
     {
         if (!mask) {
-            return ZERO_R1;
+            return ZERO_R1_F;
         }
 
         CombineEngines();
@@ -398,7 +398,7 @@ public:
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(
-        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1);
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F);
 
     virtual void Finish()
     {

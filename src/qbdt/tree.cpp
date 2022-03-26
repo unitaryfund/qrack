@@ -22,7 +22,7 @@ namespace Qrack {
 QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
     complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceId, bool useHardwareRNG,
     bool useSparseStateVec, real1_f norm_thresh, std::vector<int> ignored, bitLenInt qubitThreshold, real1_f sep_thresh)
-    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
     , engines(eng)
     , devID(deviceId)
     , root(NULL)
@@ -40,8 +40,9 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
 QBdtQEngineNodePtr QBdt::MakeQEngineNode(complex scale, bitLenInt qbCount, bitCapInt perm)
 {
     return std::make_shared<QBdtQEngineNode>(scale,
-        std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX,
-            doNormalize, randGlobalPhase, false, devID, hardware_rand_generator != NULL, false, amplitudeFloor)));
+        std::dynamic_pointer_cast<QEngine>(
+            CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+                false, devID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor)));
 }
 
 void QBdt::FallbackMtrx(const complex* mtrx, bitLenInt target)
@@ -95,7 +96,7 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 
     if (phaseFac == CMPLX_DEFAULT_ARG) {
         if (randGlobalPhase) {
-            real1_f angle = Rand() * 2 * PI_R1;
+            real1_f angle = Rand() * 2 * (real1_f)PI_R1;
             phaseFac = complex((real1)cos(angle), (real1)sin(angle));
         } else {
             phaseFac = ONE_CMPLX;
@@ -249,13 +250,13 @@ void QBdt::GetProbs(real1* outputProbs)
 real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
 {
     if (this == toCompare.get()) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
-        return ONE_R1;
+        return ONE_R1_F;
     }
 
     ResetStateVector();
@@ -291,7 +292,7 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
         projection += conj(scale2) * scale1;
     }
 
-    return ONE_R1 - clampProb(norm(projection));
+    return ONE_R1_F - clampProb((real1_f)norm(projection));
 }
 
 complex QBdt::GetAmplitude(bitCapInt perm)
@@ -475,7 +476,7 @@ real1_f QBdt::Prob(bitLenInt qubit)
         oneChance += norm(scale * leaf->branches[1]->scale);
     }
 
-    return clampProb(oneChance);
+    return clampProb((real1_f)oneChance);
 }
 
 real1_f QBdt::ProbAll(bitCapInt perm)
@@ -494,7 +495,7 @@ real1_f QBdt::ProbAll(bitCapInt perm)
         scale *= NODE_TO_QENGINE(leaf)->GetAmplitude(perm >> bdtQubitCount);
     }
 
-    return clampProb(norm(scale));
+    return clampProb((real1_f)norm(scale));
 }
 
 bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
@@ -580,7 +581,7 @@ bitCapInt QBdt::MAll()
     QBdtNodeInterfacePtr leaf = root;
     for (bitLenInt i = 0; i < bdtQubitCount; i++) {
         leaf->Branch();
-        real1_f oneChance = clampProb(norm(leaf->branches[1]->scale));
+        real1_f oneChance = clampProb((real1_f)norm(leaf->branches[1]->scale));
         bool bitResult;
         if (oneChance >= ONE_R1) {
             bitResult = true;

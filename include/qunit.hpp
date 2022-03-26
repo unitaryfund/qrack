@@ -50,13 +50,13 @@ public:
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devIDs = {},
-        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
+        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
     QUnit(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devIDs = {}, bitLenInt qubitThreshold = 0,
-        real1_f separation_thresh = FP_NORM_EPSILON)
+        real1_f separation_thresh = FP_NORM_EPSILON_F)
         : QUnit({ QINTERFACE_STABILIZER_HYBRID }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
               useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devIDs, qubitThreshold,
               separation_thresh)
@@ -73,7 +73,7 @@ public:
                 unit->SetConcurrency(threadsPerEngine);
                 return true;
             },
-            ZERO_R1, ZERO_R1, ZERO_R1, threadsPerEngine);
+            ZERO_R1_F, ZERO_R1_F, ZERO_R1_F, threadsPerEngine);
     }
 
     virtual void SetReactiveSeparate(bool isAggSep) { isReactiveSeparate = isAggSep; }
@@ -257,7 +257,7 @@ public:
     virtual real1_f SumSqrDiff(QUnitPtr toCompare);
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
     virtual void NormalizeState(
-        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1);
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F);
     virtual void Finish();
     virtual bool isFinished();
     virtual void Dump()
@@ -345,8 +345,8 @@ protected:
         std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
 
     typedef bool (*ParallelUnitFn)(QInterfacePtr unit, real1_f param1, real1_f param2, real1_f param3, int32_t param4);
-    bool ParallelUnitApply(ParallelUnitFn fn, real1_f param1 = ZERO_R1, real1_f param2 = ZERO_R1,
-        real1_f param3 = ZERO_R1, int32_t param4 = 0);
+    bool ParallelUnitApply(ParallelUnitFn fn, real1_f param1 = ZERO_R1_F, real1_f param2 = ZERO_R1_F,
+        real1_f param3 = ZERO_R1_F, int32_t param4 = 0);
 
     virtual bool SeparateBit(bool value, bitLenInt qubit);
 

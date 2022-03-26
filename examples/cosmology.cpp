@@ -17,9 +17,9 @@ using namespace Qrack;
 
 void StatePrep(QInterfacePtr qReg)
 {
-    real1_f theta = 2 * PI_R1 * qReg->Rand();
-    real1_f phi = 2 * PI_R1 * qReg->Rand();
-    real1_f lambda = 2 * PI_R1 * qReg->Rand();
+    real1_f theta = (real1_f)(2 * PI_R1 * qReg->Rand());
+    real1_f phi = (real1_f)(2 * PI_R1 * qReg->Rand());
+    real1_f lambda = (real1_f)(2 * PI_R1 * qReg->Rand());
     qReg->U(0, theta, phi, lambda);
 }
 

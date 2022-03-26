@@ -44,7 +44,7 @@ real1_f QEngine::ProbAll(bitCapInt fullRegister)
         NormalizeState();
     }
 
-    return clampProb(norm(GetAmplitude(fullRegister)));
+    return clampProb((real1_f)norm(GetAmplitude(fullRegister)));
 }
 
 /// PSEUDO-QUANTUM - Acts like a measurement gate, except with a specified forced result.
@@ -78,7 +78,7 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
     if (doApply && (nrmlzr != ONE_R1)) {
         bitCapInt qPower = pow2(qubit);
-        ApplyM(qPower, result, GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr)));
+        ApplyM(qPower, result, GetNonunitaryPhase() / (real1)(std::sqrt((real1_f)nrmlzr)));
     }
 
     return result;
@@ -129,7 +129,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, bitLenInt length, const bool* v
             result |= values[j] ? pow2(bits[j]) : 0;
         }
         nrmlzr = ProbMask(regMask, result);
-        nrm = phase / (real1)(std::sqrt(nrmlzr));
+        nrm = phase / (real1)(std::sqrt((real1_f)nrmlzr));
         if (nrmlzr != ONE_R1) {
             ApplyM(regMask, result, nrm);
         }
@@ -182,7 +182,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, bitLenInt length, const bool* v
 
     qPowers.reset();
 
-    nrm = phase / (real1)(std::sqrt(nrmlzr));
+    nrm = phase / (real1)(std::sqrt((real1_f)nrmlzr));
 
     if (doApply && (nrmlzr != ONE_R1)) {
         ApplyM(regMask, result, nrm);
@@ -537,7 +537,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         ProbRegAll(start, length, probArray.get());
 
         real1_f prob = Rand();
-        real1_f lowerProb = ZERO_R1;
+        real1_f lowerProb = ZERO_R1_F;
         result = lengthPower - ONE_BCI;
 
         /*
@@ -546,7 +546,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
          * vector.
          */
         while ((lowerProb < prob) && (lcv < lengthPower)) {
-            lowerProb += probArray[lcv];
+            lowerProb += (real1_f)probArray[lcv];
             if (probArray[lcv] > ZERO_R1) {
                 nrmlzr = probArray[lcv];
                 result = lcv;
@@ -559,7 +559,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
 
     if (doApply) {
         const bitCapInt resultPtr = result << (bitCapIntOcl)start;
-        const complex nrm = GetNonunitaryPhase() / (real1)(std::sqrt(nrmlzr));
+        const complex nrm = GetNonunitaryPhase() / (real1)(std::sqrt((real1_f)nrmlzr));
         ApplyM(regMask, resultPtr, nrm);
     }
 

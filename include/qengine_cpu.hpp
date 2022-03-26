@@ -48,7 +48,7 @@ public:
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true, bool ignored = false,
         int ignored2 = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored3 = {}, bitLenInt ignored4 = 0,
-        real1_f ignored5 = FP_NORM_EPSILON);
+        real1_f ignored5 = FP_NORM_EPSILON_F);
 
     virtual ~QEngineCPU() { Dump(); }
 
@@ -78,7 +78,7 @@ public:
     virtual real1_f FirstNonzeroPhase()
     {
         if (!stateVec) {
-            return ZERO_R1;
+            return ZERO_R1_F;
         }
 
         return QInterface::FirstNonzeroPhase();
@@ -312,7 +312,7 @@ public:
     virtual real1_f ProbParity(bitCapInt mask);
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     virtual void NormalizeState(
-        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1);
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F);
     virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
         return SumSqrDiff(std::dynamic_pointer_cast<QEngineCPU>(toCompare));

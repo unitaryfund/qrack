@@ -311,9 +311,9 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
             stabilizer = MakeStabilizer(0);
         }
 
-        const real1 prob = (real1)clampProb(norm(inputState[1]));
+        const real1 prob = (real1)clampProb((real1_f)norm(inputState[1]));
         const real1 sqrtProb = sqrt(prob);
-        const real1 sqrt1MinProb = (real1)sqrt(clampProb(ONE_R1 - prob));
+        const real1 sqrt1MinProb = (real1)sqrt(clampProb((real1_f)(ONE_R1 - prob)));
         const complex phase0 = std::polar(ONE_R1, arg(inputState[0]));
         const complex phase1 = std::polar(ONE_R1, arg(inputState[1]));
         const complex mtrx[4] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
@@ -616,21 +616,21 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         // Bit was already rotated to Z basis, if separable.
         if (stabilizer->IsSeparableZ(qubit)) {
             if (stabilizer->M(qubit)) {
-                return norm(shards[qubit]->gate[3]);
+                return (real1_f)norm(shards[qubit]->gate[3]);
             }
-            return norm(shards[qubit]->gate[2]);
+            return (real1_f)norm(shards[qubit]->gate[2]);
         }
 
         // Otherwise, buffer will not change the fact that state appears maximally mixed.
-        return ONE_R1 / 2;
+        return ONE_R1_F / 2;
     }
 
     if (stabilizer->IsSeparableZ(qubit)) {
-        return stabilizer->M(qubit) ? ONE_R1 : ZERO_R1;
+        return stabilizer->M(qubit) ? ONE_R1_F : ZERO_R1_F;
     }
 
     // Otherwise, state appears locally maximally mixed.
-    return ONE_R1 / 2;
+    return ONE_R1_F / 2;
 }
 
 bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
@@ -771,17 +771,17 @@ void QStabilizerHybrid::MultiShotMeasureMask(
 real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
 {
     if (!toCompare) {
-        return ONE_R1;
+        return ONE_R1_F;
     }
 
     if (this == toCompare.get()) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
-        return ONE_R1;
+        return ONE_R1_F;
     }
 
     QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
@@ -798,7 +798,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
 
     if (thisClone && thisClone->stabilizer && thatClone && thatClone->stabilizer) {
         if (isDiscreteBool) {
-            return thisClone->stabilizer->ApproxCompare(thatClone->stabilizer, error_tol) ? ZERO_R1 : ONE_R1;
+            return thisClone->stabilizer->ApproxCompare(thatClone->stabilizer, error_tol) ? ZERO_R1_F : ONE_R1_F;
         } else {
             return thisClone->stabilizer->SumSqrDiff(thatClone->stabilizer);
         }
@@ -815,7 +815,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
     QInterfacePtr thisEngine = thisClone ? thisClone->engine : engine;
     QInterfacePtr thatEngine = thatClone ? thatClone->engine : toCompare->engine;
 
-    const real1_f toRet = isDiscreteBool ? (thisEngine->ApproxCompare(thatEngine, error_tol) ? ZERO_R1 : ONE_R1)
+    const real1_f toRet = isDiscreteBool ? (thisEngine->ApproxCompare(thatEngine, error_tol) ? ZERO_R1_F : ONE_R1_F)
                                          : thisEngine->SumSqrDiff(thatEngine);
 
     if (toRet > TRYDECOMPOSE_EPSILON) {

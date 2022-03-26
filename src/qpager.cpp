@@ -901,7 +901,7 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         std::vector<std::future<void>> futures(qPages.size());
 #endif
         if (qubit < qpp) {
-            const complex nrmFac = GetNonunitaryPhase() / (real1)std::sqrt(nrmlzr);
+            const complex nrmFac = GetNonunitaryPhase() / (real1)std::sqrt((real1_f)nrmlzr);
             const bitCapIntOcl qPower = pow2Ocl(qubit);
             for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
                 QEnginePtr engine = qPages[i];
@@ -919,8 +919,8 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
                 QEnginePtr engine = qPages[i];
                 if (!(i & qPower) == !result) {
 #if ENABLE_PTHREAD
-                    futures[i] =
-                        (std::async(std::launch::async, [engine, nrmlzr]() { engine->NormalizeState(nrmlzr); }));
+                    futures[i] = (std::async(
+                        std::launch::async, [engine, nrmlzr]() { engine->NormalizeState((real1_f)nrmlzr); }));
 #else
                     engine->NormalizeState(nrmlzr);
 #endif
@@ -1314,18 +1314,18 @@ real1_f QPager::Prob(bitLenInt qubit)
     }
 #endif
 
-    return clampProb(oneChance);
+    return clampProb((real1_f)oneChance);
 }
 
 real1_f QPager::ProbMask(bitCapInt mask, bitCapInt permutation)
 {
     CombineEngines(log2(mask));
 
-    real1_f maskChance = ZERO_R1;
+    real1_f maskChance = ZERO_R1_F;
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         maskChance += qPages[i]->ProbMask(mask, permutation);
     }
-    return clampProb(maskChance);
+    return clampProb((real1_f)maskChance);
 }
 
 real1_f QPager::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset)
@@ -1342,7 +1342,7 @@ real1_f QPager::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitC
 
     const bitLenInt qpp = qubitsPerPage();
     const bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();
-    real1_f expectation = ZERO_R1;
+    real1_f expectation = ZERO_R1_F;
     bitCapIntOcl pagePerm = 0;
 #if ENABLE_PTHREAD
     std::vector<std::future<real1_f>> futures(qPages.size());
@@ -1378,7 +1378,7 @@ void QPager::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)
 {
     real1_f nmlzr;
     if (nrm == REAL1_DEFAULT_ARG) {
-        nmlzr = ZERO_R1;
+        nmlzr = ZERO_R1_F;
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             nmlzr += qPages[i]->GetRunningNorm();
         }
@@ -1422,13 +1422,13 @@ QEnginePtr QPager::CloneEmpty()
 real1_f QPager::SumSqrDiff(QPagerPtr toCompare)
 {
     if (this == toCompare.get()) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
-        return ONE_R1;
+        return ONE_R1_F;
     }
 
     SeparateEngines(toCompare->qubitsPerPage());
@@ -1436,7 +1436,7 @@ real1_f QPager::SumSqrDiff(QPagerPtr toCompare)
     CombineEngines(toCompare->qubitsPerPage());
     toCompare->CombineEngines(qubitsPerPage());
 
-    real1_f toRet = ZERO_R1;
+    real1_f toRet = ZERO_R1_F;
 #if ENABLE_PTHREAD
     std::vector<std::future<real1_f>> futures(qPages.size());
 #endif

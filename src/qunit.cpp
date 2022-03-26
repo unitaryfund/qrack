@@ -705,12 +705,12 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     }
 
     real1_f prob;
-    real1_f x = ZERO_R1;
-    real1_f y = ZERO_R1;
-    real1_f z = ZERO_R1;
+    real1_f x = ZERO_R1_F;
+    real1_f y = ZERO_R1_F;
+    real1_f z = ZERO_R1_F;
 
     for (bitLenInt i = 0; i < 3; i++) {
-        prob = 2 * ((ONE_R1 / 2) - ProbBase(qubit));
+        prob = 2 * ((ONE_R1_F / 2) - ProbBase(qubit));
 
         if (!shard.unit) {
             return true;
@@ -978,11 +978,11 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
         shard.mapped = 0;
         shard.ClampAmps();
 
-        return norm(shard.amp1);
+        return (real1_f)norm(shard.amp1);
     }
 
     if (!shard.isProbDirty) {
-        return clampProb(norm(shard.amp1));
+        return clampProb((real1_f)norm(shard.amp1));
     }
 
     shard.isProbDirty = false;
@@ -1020,7 +1020,7 @@ real1_f QUnit::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCa
     return shards[0].unit->ExpectationBitsAll(bits, length, offset);
 }
 
-real1_f QUnit::ProbAll(bitCapInt perm) { return clampProb(norm(GetAmplitudeOrProb(perm, true))); }
+real1_f QUnit::ProbAll(bitCapInt perm) { return clampProb((real1_f)norm(GetAmplitudeOrProb(perm, true))); }
 
 void QUnit::PhaseParity(real1 radians, bitCapInt mask)
 {
@@ -1092,14 +1092,14 @@ void QUnit::PhaseParity(real1 radians, bitCapInt mask)
         mappedMask |= pow2(shards[eIndices[i]].mapped);
     }
 
-    unit->PhaseParity(flipResult ? -radians : radians, mappedMask);
+    unit->PhaseParity((real1_f)(flipResult ? -radians : radians), mappedMask);
 }
 
 real1_f QUnit::ProbParity(bitCapInt mask)
 {
     // If no bits in mask:
     if (!mask) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     if (!(mask & (mask - ONE_BCI))) {
@@ -1137,7 +1137,7 @@ real1_f QUnit::ProbParity(bitCapInt mask)
     }
 
     if (qIndices.size() == 0) {
-        return oddChance;
+        return (real1_f)oddChance;
     }
 
     std::map<QInterfacePtr, bitCapInt>::iterator unit;
@@ -1146,7 +1146,7 @@ real1_f QUnit::ProbParity(bitCapInt mask)
         oddChance = (oddChance * (ONE_R1 - nOddChance)) + ((ONE_R1 - oddChance) * nOddChance);
     }
 
-    return oddChance;
+    return (real1_f)oddChance;
 }
 
 bool QUnit::ForceMParity(bitCapInt mask, bool result, bool doForce)
@@ -1335,7 +1335,7 @@ bool QUnit::SeparateBit(bool value, bitLenInt qubit)
     real1_f prob = unit->Prob(shard.mapped);
     unit->Dispose(mapped, 1, value ? ONE_BCI : 0);
 
-    prob = ONE_R1 / 2 - prob;
+    prob = ONE_R1_F / 2 - prob;
     if (!unit->isBinaryDecisionTree() && ((ONE_R1 / 2 - abs(prob)) > FP_NORM_EPSILON)) {
         unit->UpdateRunningNorm();
         if (!doNormalize) {
@@ -1378,7 +1378,7 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 
     bool result;
     if (!shard.unit) {
-        real1_f prob = norm(shard.amp1);
+        real1_f prob = (real1_f)norm(shard.amp1);
         if (doForce) {
             result = res;
         } else if (prob >= ONE_R1) {
@@ -1482,7 +1482,7 @@ bitCapInt QUnit::MAll()
     for (bitLenInt i = 0; i < qubitCount; i++) {
         QInterfacePtr toFind = shards[i].unit;
         if (!toFind) {
-            real1_f prob = norm(shards[i].amp1);
+            real1_f prob = (real1_f)norm(shards[i].amp1);
             if ((prob >= ONE_R1) || ((prob > ZERO_R1) && (Rand() <= prob))) {
                 shards[i].amp0 = ZERO_CMPLX;
                 shards[i].amp1 = GetNonunitaryPhase();
@@ -1622,7 +1622,7 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const bitCapInt* qPowers, b
     for (bitLenInt i = 0U; i < (bitLenInt)singleBits.size(); i++) {
         index = singleBits[i];
 
-        real1_f prob = clampProb(norm(shards[index].amp1));
+        real1_f prob = clampProb((real1_f)norm(shards[index].amp1));
         if (prob == ZERO_R1) {
             continue;
         }
@@ -3607,19 +3607,19 @@ void QUnit::SetDevice(int dID, bool forceReInit)
             unit->SetDevice(dID, (forceReInit > 0.5));
             return true;
         },
-        ZERO_R1, forceReInit ? ONE_R1 : ZERO_R1, ZERO_R1, dID);
+        ZERO_R1_F, forceReInit ? ONE_R1_F : ZERO_R1_F, ZERO_R1_F, dID);
 }
 
 real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)
 {
     if (this == toCompare.get()) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
-        return ONE_R1;
+        return ONE_R1_F;
     }
 
     if (qubitCount == 1U) {
@@ -3640,17 +3640,17 @@ real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)
             oAmps[1] = toCompare->shards[0].amp1;
         }
 
-        return norm(mAmps[0] - oAmps[0]) + norm(mAmps[1] - oAmps[1]);
+        return (real1_f)(norm(mAmps[0] - oAmps[0]) + norm(mAmps[1] - oAmps[1]));
     }
 
     if (CheckBitsPermutation(0, qubitCount) && toCompare->CheckBitsPermutation(0, qubitCount)) {
         if (GetCachedPermutation((bitLenInt)0, qubitCount) ==
             toCompare->GetCachedPermutation((bitLenInt)0, qubitCount)) {
-            return ZERO_R1;
+            return ZERO_R1_F;
         }
 
         // Necessarily max difference:
-        return ONE_R1;
+        return ONE_R1_F;
     }
 
     QUnitPtr thisCopyShared, thatCopyShared;

@@ -271,24 +271,24 @@ TEST_CASE("test_exp2x2_log2x2")
     complex mtrx2[4];
 
     exp2x2(mtrx1, mtrx2);
-    REQUIRE_FLOAT(real(mtrx2[0]), M_E);
-    REQUIRE_FLOAT(imag(mtrx2[0]), ZERO_R1);
-    REQUIRE_FLOAT(real(mtrx2[1]), ZERO_R1);
-    REQUIRE_FLOAT(imag(mtrx2[1]), ZERO_R1);
-    REQUIRE_FLOAT(real(mtrx2[2]), ZERO_R1);
-    REQUIRE_FLOAT(imag(mtrx2[2]), ZERO_R1);
-    REQUIRE_FLOAT(real(mtrx2[3]), M_E);
-    REQUIRE_FLOAT(imag(mtrx2[3]), ZERO_R1);
+    REQUIRE_FLOAT((real1_f)real(mtrx2[0]), M_E);
+    REQUIRE_FLOAT((real1_f)imag(mtrx2[0]), ZERO_R1_F);
+    REQUIRE_FLOAT((real1_f)real(mtrx2[1]), ZERO_R1_F);
+    REQUIRE_FLOAT((real1_f)imag(mtrx2[1]), ZERO_R1_F);
+    REQUIRE_FLOAT((real1_f)real(mtrx2[2]), ZERO_R1_F);
+    REQUIRE_FLOAT((real1_f)imag(mtrx2[2]), ZERO_R1_F);
+    REQUIRE_FLOAT((real1_f)real(mtrx2[3]), M_E);
+    REQUIRE_FLOAT((real1_f)imag(mtrx2[3]), ZERO_R1_F);
 
     log2x2(mtrx2, mtrx1);
-    REQUIRE_FLOAT(real(mtrx1[0]), ONE_R1);
-    REQUIRE_FLOAT(imag(mtrx1[0]), ZERO_R1);
-    REQUIRE_FLOAT(real(mtrx1[1]), ZERO_R1);
-    REQUIRE_FLOAT(imag(mtrx1[1]), ZERO_R1);
-    REQUIRE_FLOAT(real(mtrx1[2]), ZERO_R1);
-    REQUIRE_FLOAT(imag(mtrx1[2]), ZERO_R1);
-    REQUIRE_FLOAT(real(mtrx1[3]), ONE_R1);
-    REQUIRE_FLOAT(imag(mtrx1[3]), ZERO_R1);
+    REQUIRE_FLOAT((real1_f)real(mtrx1[0]), ONE_R1_F);
+    REQUIRE_FLOAT((real1_f)imag(mtrx1[0]), ZERO_R1_F);
+    REQUIRE_FLOAT((real1_f)real(mtrx1[1]), ZERO_R1_F);
+    REQUIRE_FLOAT((real1_f)imag(mtrx1[1]), ZERO_R1_F);
+    REQUIRE_FLOAT((real1_f)real(mtrx1[2]), ZERO_R1_F);
+    REQUIRE_FLOAT((real1_f)imag(mtrx1[2]), ZERO_R1_F);
+    REQUIRE_FLOAT((real1_f)real(mtrx1[3]), ONE_R1_F);
+    REQUIRE_FLOAT((real1_f)imag(mtrx1[3]), ZERO_R1_F);
 }
 
 #if ENABLE_OPENCL && !ENABLE_SNUCL
@@ -323,7 +323,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_global_phase")
     qftReg->X(0);
     qftReg->Z(0);
     qftReg->X(0);
-    REQUIRE_FLOAT(-ONE_R1, real(qftReg->GetAmplitude(0x00)));
+    REQUIRE_FLOAT(-ONE_R1_F, (real1_f)real(qftReg->GetAmplitude(0x00)));
 
     qftReg = CreateQuantumInterface(
         { testEngineType, testSubEngineType, testSubSubEngineType }, 1U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
@@ -331,7 +331,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_global_phase")
     qftReg->X(0);
     qftReg->S(0);
     qftReg->X(0);
-    REQUIRE_FLOAT(ONE_R1, imag(qftReg->GetAmplitude(0x00)));
+    REQUIRE_FLOAT(ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x00)));
 
     qftReg = CreateQuantumInterface(
         { testEngineType, testSubEngineType, testSubSubEngineType }, 1U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
@@ -339,39 +339,39 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_global_phase")
     qftReg->X(0);
     qftReg->IS(0);
     qftReg->X(0);
-    REQUIRE_FLOAT(-ONE_R1, imag(qftReg->GetAmplitude(0x00)));
+    REQUIRE_FLOAT(-ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x00)));
 
     qftReg = CreateQuantumInterface(
         { testEngineType, testSubEngineType, testSubSubEngineType }, 1U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->Y(0);
     qftReg->X(0);
-    REQUIRE_FLOAT(ONE_R1, imag(qftReg->GetAmplitude(0x00)));
+    REQUIRE_FLOAT(ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x00)));
 
     qftReg = CreateQuantumInterface(
         { testEngineType, testSubEngineType, testSubSubEngineType }, 1U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->X(0);
     qftReg->Y(0);
-    REQUIRE_FLOAT(-ONE_R1, imag(qftReg->GetAmplitude(0x00)));
+    REQUIRE_FLOAT(-ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x00)));
 
     qftReg = CreateQuantumInterface(
         { testEngineType, testSubEngineType, testSubSubEngineType }, 2U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->X(0);
     qftReg->X(1);
     qftReg->CZ(0, 1);
-    REQUIRE_FLOAT(-ONE_R1, real(qftReg->GetAmplitude(0x03)));
+    REQUIRE_FLOAT(-ONE_R1_F, (real1_f)real(qftReg->GetAmplitude(0x03)));
 
     qftReg = CreateQuantumInterface(
         { testEngineType, testSubEngineType, testSubSubEngineType }, 2U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->X(0);
     qftReg->CY(0, 1);
-    REQUIRE_FLOAT(ONE_R1, imag(qftReg->GetAmplitude(0x03)));
+    REQUIRE_FLOAT(ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x03)));
 
     qftReg = CreateQuantumInterface(
         { testEngineType, testSubEngineType, testSubSubEngineType }, 2U, 0, rng, CMPLX_DEFAULT_ARG, false, false);
     qftReg->X(0);
     qftReg->X(1);
     qftReg->CY(0, 1);
-    REQUIRE_FLOAT(-ONE_R1, imag(qftReg->GetAmplitude(0x01)));
+    REQUIRE_FLOAT(-ONE_R1_F, (real1_f)imag(qftReg->GetAmplitude(0x01)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cnot")
@@ -656,35 +656,35 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_anticisqrtswap")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_fsim")
 {
-    real1_f theta = 3 * PI_R1 / 2;
+    real1_f theta = (real1_f)(3 * PI_R1 / 2);
 
     qftReg->SetPermutation(1);
-    qftReg->FSim(theta, ZERO_R1, 0, 1);
+    qftReg->FSim(theta, ZERO_R1_F, 0, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
 
     qftReg->SetPermutation(0);
     qftReg->H(0, 2);
-    qftReg->FSim(theta, ZERO_R1, 0, 1);
-    qftReg->FSim(theta, ZERO_R1, 0, 1);
+    qftReg->FSim(theta, ZERO_R1_F, 0, 1);
+    qftReg->FSim(theta, ZERO_R1_F, 0, 1);
     qftReg->H(0, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 
-    real1_f phi = PI_R1;
+    real1_f phi = (real1_f)PI_R1;
 
     qftReg->SetReg(0, 8, 0x35);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x35));
     qftReg->H(0, 4);
-    qftReg->FSim(ZERO_R1, phi, 4, 0);
-    qftReg->FSim(ZERO_R1, phi, 5, 1);
-    qftReg->FSim(ZERO_R1, phi, 6, 2);
-    qftReg->FSim(ZERO_R1, phi, 7, 3);
+    qftReg->FSim(ZERO_R1_F, phi, 4, 0);
+    qftReg->FSim(ZERO_R1_F, phi, 5, 1);
+    qftReg->FSim(ZERO_R1_F, phi, 6, 2);
+    qftReg->FSim(ZERO_R1_F, phi, 7, 3);
     qftReg->H(0, 4);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x36));
 
     qftReg->SetPermutation(0x03);
     qftReg->H(0);
-    qftReg->FSim(ZERO_R1, phi, 0, 1);
-    qftReg->FSim(ZERO_R1, phi, 0, 1);
+    qftReg->FSim(ZERO_R1_F, phi, 0, 1);
+    qftReg->FSim(ZERO_R1_F, phi, 0, 1);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 }
@@ -921,7 +921,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_s")
     qftReg->S(0);
     qftReg->IS(0);
     qftReg->Phase(ONE_CMPLX, I_CMPLX, 0);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->Prob(0));
+    REQUIRE_FLOAT(ONE_R1_F / 2, qftReg->Prob(0));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_is")
@@ -1161,13 +1161,13 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_phaseparity")
     qftReg->SetPermutation(0x40001);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x40001));
     qftReg->H(18, 2);
-    qftReg->PhaseParity(PI_R1 / 2, pow2Ocl(0) | pow2Ocl(18) | pow2Ocl(19));
-    qftReg->PhaseParity(PI_R1 / 2, pow2Ocl(0) | pow2Ocl(18) | pow2Ocl(19));
+    qftReg->PhaseParity((real1_f)(PI_R1 / 2), pow2Ocl(0) | pow2Ocl(18) | pow2Ocl(19));
+    qftReg->PhaseParity((real1_f)(PI_R1 / 2), pow2Ocl(0) | pow2Ocl(18) | pow2Ocl(19));
     qftReg->H(18, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
     qftReg->H(18, 2);
-    qftReg->PhaseParity(PI_R1 / 2, pow2Ocl(0) | pow2Ocl(18) | pow2Ocl(19));
-    qftReg->PhaseParity(PI_R1 / 2, pow2Ocl(18) | pow2Ocl(19));
+    qftReg->PhaseParity((real1_f)(PI_R1 / 2), pow2Ocl(0) | pow2Ocl(18) | pow2Ocl(19));
+    qftReg->PhaseParity((real1_f)(PI_R1 / 2), pow2Ocl(18) | pow2Ocl(19));
     qftReg->H(18, 2);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 0x80001));
 }
@@ -1625,12 +1625,12 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniform_c_single")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_ai")
 {
-    real1_f azimuth = 0.9f * PI_R1;
-    real1_f inclination = 0.7f * PI_R1;
+    real1_f azimuth = (real1_f)(0.9f * PI_R1);
+    real1_f inclination = (real1_f)(0.7f * PI_R1);
 
-    real1_f probZ = (ONE_R1 / 2) - cos(inclination) / 2;
-    real1_f probX = (ONE_R1 / 2) - sin(inclination) * cos(azimuth) / 2;
-    real1_f probY = (ONE_R1 / 2) - sin(inclination) * sin(azimuth) / 2;
+    real1_f probZ = (ONE_R1_F / 2) - cos(inclination) / 2;
+    real1_f probX = (ONE_R1_F / 2) - sin(inclination) * cos(azimuth) / 2;
+    real1_f probY = (ONE_R1_F / 2) - sin(inclination) * sin(azimuth) / 2;
 
     qftReg->SetPermutation(0);
     qftReg->AI(0, azimuth, inclination);
@@ -2739,7 +2739,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
     for (i = 0; i < 8; i++) {
         qftReg->TrySeparate(i);
         toSep[0] = i;
-        qftReg->TrySeparate(toSep, 1, FP_NORM_EPSILON);
+        qftReg->TrySeparate(toSep, 1, FP_NORM_EPSILON_F);
     }
 
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
@@ -2752,7 +2752,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
     qftReg->TrySeparate(0, 1);
     toSep[0] = 0;
     toSep[1] = 1;
-    qftReg->TrySeparate(toSep, 2, FP_NORM_EPSILON);
+    qftReg->TrySeparate(toSep, 2, FP_NORM_EPSILON_F);
     qftReg->CNOT(0, 1);
     qftReg->Z(0);
     qftReg->H(0);
@@ -3032,8 +3032,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probbitsall")
     qftReg->H(2);
 
     qftReg->ProbBitsAll(bits, 2U, probs1);
-    REQUIRE_FLOAT(probs1[0], 0.5);
-    REQUIRE_FLOAT(probs1[1], 0.5);
+    REQUIRE_FLOAT((real1_f)probs1[0], 0.5);
+    REQUIRE_FLOAT((real1_f)probs1[1], 0.5);
     REQUIRE(probs1[2] < 0.01);
     REQUIRE(probs1[3] < 0.01);
 }
@@ -3043,7 +3043,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_expectationbitsall")
     qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 8, 0, rng);
     bitLenInt bits[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
     qftReg->H(0, 8);
-    REQUIRE_FLOAT(qftReg->ExpectationBitsAll(bits, 8U), 127 + (ONE_R1 / 2))
+    REQUIRE_FLOAT(qftReg->ExpectationBitsAll(bits, 8U), 127 + (ONE_R1_F / 2))
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
@@ -3061,11 +3061,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_probparity")
 
     qftReg->SetPermutation(0x0);
     qftReg->H(0);
-    REQUIRE_FLOAT(QPARITY(qftReg)->ProbParity(0x3), ONE_R1 / 2);
+    REQUIRE_FLOAT(QPARITY(qftReg)->ProbParity(0x3), ONE_R1_F / 2);
 
     qftReg->SetPermutation(0x0);
     qftReg->H(1);
-    REQUIRE_FLOAT(QPARITY(qftReg)->ProbParity(0x3), ONE_R1 / 2);
+    REQUIRE_FLOAT(QPARITY(qftReg)->ProbParity(0x3), ONE_R1_F / 2);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mparity")
@@ -3105,26 +3105,26 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_uniformparityrz")
 {
     qftReg->SetPermutation(0);
     qftReg->H(0);
-    QPARITY(qftReg)->UniformParityRZ(1, M_PI_2);
+    QPARITY(qftReg)->UniformParityRZ(1, (real1_f)M_PI_2);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0x1));
 
     qftReg->SetPermutation(0x3);
     qftReg->H(0, 3);
-    QPARITY(qftReg)->UniformParityRZ(0x7, M_PI_2);
+    QPARITY(qftReg)->UniformParityRZ(0x7, (real1_f)M_PI_2);
     qftReg->H(0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0x4));
 
     qftReg->SetPermutation(0x1);
     qftReg->H(0, 3);
-    QPARITY(qftReg)->UniformParityRZ(0x7, M_PI_2);
-    QPARITY(qftReg)->UniformParityRZ(0x7, M_PI_2);
+    QPARITY(qftReg)->UniformParityRZ(0x7, (real1_f)M_PI_2);
+    QPARITY(qftReg)->UniformParityRZ(0x7, (real1_f)M_PI_2);
     qftReg->H(0, 3);
     REQUIRE_THAT(qftReg, HasProbability(0x1));
 
     qftReg->SetPermutation(0x01);
     qftReg->H(0);
-    QPARITY(qftReg)->UniformParityRZ(1, M_PI_4);
+    QPARITY(qftReg)->UniformParityRZ(1, (real1_f)M_PI_4);
     qftReg->S(0);
     qftReg->H(0);
     REQUIRE_THAT(qftReg, HasProbability(0));
@@ -3230,9 +3230,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getquantumstate")
     qftReg->GetQuantumState(state);
     for (bitCapIntOcl i = 0; i < 16; i++) {
         if (i == 0x0b) {
-            REQUIRE_FLOAT(norm(state[i]), ONE_R1);
+            REQUIRE_FLOAT((real1_f)norm(state[i]), ONE_R1_F);
         } else {
-            REQUIRE_FLOAT(norm(state[i]), ZERO_R1);
+            REQUIRE_FLOAT((real1_f)norm(state[i]), ZERO_R1_F);
         }
     }
     qftReg->SetQuantumState(state);
@@ -3251,9 +3251,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_getprobs")
     qftReg->GetProbs(state);
     for (bitCapIntOcl i = 0; i < 16; i++) {
         if (i == 0x0b) {
-            REQUIRE_FLOAT(state[i], ONE_R1);
+            REQUIRE_FLOAT((real1_f)state[i], ONE_R1_F);
         } else {
-            REQUIRE_FLOAT(state[i], ZERO_R1);
+            REQUIRE_FLOAT((real1_f)state[i], ZERO_R1_F);
         }
     }
 }
@@ -3263,7 +3263,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_normalize")
     qftReg->SetPermutation(0x03);
     qftReg->UpdateRunningNorm();
     qftReg->NormalizeState();
-    REQUIRE_FLOAT(norm(qftReg->GetAmplitude(0x03)), ONE_R1);
+    REQUIRE_FLOAT((real1_f)norm(qftReg->GetAmplitude(0x03)), ONE_R1_F);
 }
 
 #if ENABLE_ALU
@@ -3686,26 +3686,26 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
     qftReg->SetPermutation(255);
     qftReg->H(7);
     QALU(qftReg)->INC(1, 0, 8);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(128));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(0));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(128));
 
     qftReg->SetPermutation(255);
     qftReg->H(7);
     qftReg->H(1);
     QALU(qftReg)->INC(1, 0, 8);
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(0));
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(126));
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(128));
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(254));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(0));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(126));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(128));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(254));
 
     qftReg->SetPermutation(0);
     qftReg->H(7);
     qftReg->H(1);
     QALU(qftReg)->INC(1, 0, 8);
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(1));
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(3));
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(129));
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(131));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(1));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(3));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(129));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(131));
 
     qftReg->SetPermutation(1);
     QALU(qftReg)->INC(8, 0, 8);
@@ -3745,20 +3745,20 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incs")
     qftReg->SetPermutation(255);
     qftReg->H(8);
     QALU(qftReg)->INCS(1, 0, 8, 8);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(256));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(256));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(0));
 
     qftReg->SetPermutation(0);
     qftReg->H(0);
     QALU(qftReg)->INCS(1, 0, 8, 8);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(2));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(1));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(2));
 
     qftReg->SetPermutation(256);
     qftReg->H(7);
     QALU(qftReg)->INCS(1, 0, 8, 8);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(257));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(385));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(257));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(385));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
@@ -3780,14 +3780,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incc")
     qftReg->SetPermutation(255);
     qftReg->H(7);
     QALU(qftReg)->INCC(1, 0, 8, 8);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(256));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(128));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(256));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(128));
 
     qftReg->SetPermutation(255);
     qftReg->H(7);
     QALU(qftReg)->INCC(255, 0, 8, 8);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(510));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(382));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(510));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(382));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
@@ -3822,18 +3822,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_incsc")
     qftReg->H(0);
     qftReg->H(1);
     QALU(qftReg)->INCSC(1, 0, 2, 3, 2);
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(1));
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(2));
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(3));
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(4));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(1));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(2));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(3));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(4));
 
     qftReg->SetPermutation(0);
     qftReg->H(0);
     qftReg->H(9);
     QALU(qftReg)->INCSC(1, 0, 8, 9, 8);
     qftReg->H(9);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(2));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(1));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(2));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cinc", "[travis_xfail]")
@@ -4069,8 +4069,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mul")
     qftReg->SetPermutation(0);
     qftReg->H(0);
     QALU(qftReg)->MUL(8, 0, 8, 8);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(8));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(0));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(8));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
@@ -4088,8 +4088,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_div")
     qftReg->SetPermutation(0);
     qftReg->H(3);
     QALU(qftReg)->DIV(8, 0, 8, 8);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(0));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(1));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
@@ -4101,8 +4101,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
     qftReg->SetPermutation(0);
     qftReg->H(3);
     QALU(qftReg)->MULModNOut(2, 256U, 0, 8, 8);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(0));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(8 | (16 << 8)));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(0));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(8 | (16 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_imulmodnout")
@@ -4121,16 +4121,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_powmodnout")
     qftReg->SetPermutation(0);
     qftReg->H(1);
     QALU(qftReg)->POWModNOut(2, 256U, 0, 8, 8);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(1 << 8));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(2 | (4 << 8)));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(1 << 8));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(2 | (4 << 8)));
 
     qftReg->SetPermutation(0);
     qftReg->H(0, 2);
     QALU(qftReg)->POWModNOut(2, 256U, 0, 8, 8);
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(0 | (1 << 8)));
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(1 | (2 << 8)));
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(2 | (4 << 8)));
-    REQUIRE_FLOAT(ONE_R1 / 4, qftReg->ProbAll(3 | (8 << 8)));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(0 | (1 << 8)));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(1 | (2 << 8)));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(2 | (4 << 8)));
+    REQUIRE_FLOAT(ONE_R1_F / 4, (real1_f)qftReg->ProbAll(3 | (8 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmul")
@@ -4193,8 +4193,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout", "[travis_xfail]")
     qftReg->SetPermutation(3);
     qftReg->H(16);
     QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(3));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(3 | (9 << 8) | (1 << 16)));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3 | (9 << 8) | (1 << 16)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cimulmodnout")
@@ -4227,8 +4227,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout", "[travis_xfail]")
     qftReg->SetPermutation(3);
     qftReg->H(16);
     QALU(qftReg)->CPOWModNOut(3, 256U, 0, 8, 8, controls, 1);
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(3));
-    REQUIRE_FLOAT(ONE_R1 / 2, qftReg->ProbAll(3 | (27 << 8) | (1 << 16)));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3));
+    REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3 | (27 << 8) | (1 << 16)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_c_phase_flip_if_less", "[travis_xfail]")
@@ -4664,10 +4664,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     h[0] = h0;
 
     qftReg->SetPermutation(0);
-    qftReg->TimeEvolve(h, tDiff);
+    qftReg->TimeEvolve(h, (real1_f)tDiff);
 
-    REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
-    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
+    REQUIRE_FLOAT((real1_f)abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
+    REQUIRE_FLOAT((real1_f)abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
 
     bitLenInt controls[1] = { 1 };
     bool controlToggles[1] = { false };
@@ -4682,38 +4682,38 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve")
     // Hamiltonian terms.
 
     qftReg->SetPermutation(2);
-    qftReg->TimeEvolve(h, tDiff);
+    qftReg->TimeEvolve(h, (real1_f)tDiff);
 
-    REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
-    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
+    REQUIRE_FLOAT((real1_f)abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
+    REQUIRE_FLOAT((real1_f)abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
 
     controlToggles[0] = true;
     HamiltonianOpPtr h2 = std::make_shared<HamiltonianOp>(controls, 1, 0, o2neg1, false, controlToggles);
     h[0] = h2;
 
     qftReg->SetPermutation(2);
-    qftReg->TimeEvolve(h, tDiff);
+    qftReg->TimeEvolve(h, (real1_f)tDiff);
 
-    REQUIRE_FLOAT(qftReg->Prob(0), ZERO_R1);
+    REQUIRE_FLOAT(qftReg->Prob(0), ZERO_R1_F);
 
     controlToggles[0] = false;
     HamiltonianOpPtr h3 = std::make_shared<HamiltonianOp>(controls, 1, 0, o2neg1, true, controlToggles);
     h[0] = h3;
 
     qftReg->SetPermutation(2);
-    qftReg->TimeEvolve(h, tDiff);
+    qftReg->TimeEvolve(h, (real1_f)tDiff);
 
-    REQUIRE_FLOAT(qftReg->Prob(0), ZERO_R1);
+    REQUIRE_FLOAT(qftReg->Prob(0), ZERO_R1_F);
 
     controlToggles[0] = true;
     HamiltonianOpPtr h4 = std::make_shared<HamiltonianOp>(controls, 1, 0, o2neg1, true, controlToggles);
     h[0] = h4;
 
     qftReg->SetPermutation(2);
-    qftReg->TimeEvolve(h, tDiff);
+    qftReg->TimeEvolve(h, (real1_f)tDiff);
 
-    REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
-    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
+    REQUIRE_FLOAT((real1_f)abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
+    REQUIRE_FLOAT((real1_f)abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve_uniform")
@@ -4741,10 +4741,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_timeevolve_uniform")
     REQUIRE(h0->uniform);
 
     qftReg->SetPermutation(2);
-    qftReg->TimeEvolve(h, tDiff);
+    qftReg->TimeEvolve(h, (real1_f)tDiff);
 
-    REQUIRE_FLOAT(abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
-    REQUIRE_FLOAT(abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
+    REQUIRE_FLOAT((real1_f)abs(qftReg->Prob(0) - sin(aParam * tDiff) * sin(aParam * tDiff)), 0);
+    REQUIRE_FLOAT((real1_f)abs((ONE_R1 - qftReg->Prob(0)) - cos(aParam * tDiff) * cos(aParam * tDiff)), 0);
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
@@ -4767,8 +4767,8 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_qfusion_controlled")
     for (bitCapInt i = 0; i < 8; i++) {
         a = qftReg->GetAmplitude(i);
         b = qftReg2->GetAmplitude(i);
-        REQUIRE_FLOAT(real(a), real(b));
-        REQUIRE_FLOAT(imag(a), imag(b));
+        REQUIRE_FLOAT((real1_f)real(a), (real1_f)real(b));
+        REQUIRE_FLOAT((real1_f)imag(a), (real1_f)imag(b));
     }
 }
 
@@ -4949,10 +4949,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_h_cnot_rand")
 
     complex state[4];
     qftReg->GetQuantumState(state);
-    REQUIRE_FLOAT(norm(state[0]), ONE_R1 / 2);
-    REQUIRE_FLOAT(norm(state[1]), ZERO_R1);
-    REQUIRE_FLOAT(norm(state[2]), ZERO_R1);
-    REQUIRE_FLOAT(norm(state[3]), ONE_R1 / 2);
+    REQUIRE_FLOAT((real1_f)norm(state[0]), ONE_R1_F / 2);
+    REQUIRE_FLOAT((real1_f)norm(state[1]), ZERO_R1_F);
+    REQUIRE_FLOAT((real1_f)norm(state[2]), ZERO_R1_F);
+    REQUIRE_FLOAT((real1_f)norm(state[3]), ONE_R1_F / 2);
 
     bitCapInt qPowers[2] = { 1, 2 };
     std::map<bitCapInt, int> results = qftReg->MultiShotMeasureMask(qPowers, 2U, 1000);

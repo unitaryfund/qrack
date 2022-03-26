@@ -172,12 +172,12 @@ public:
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
-        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
+        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON_F);
     QMaskFusion(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
-        real1_f separation_thresh = FP_NORM_EPSILON)
+        real1_f separation_thresh = FP_NORM_EPSILON_F)
 #if ENABLE_OPENCL
         : QMaskFusion({ OCLEngine::Instance().GetDeviceCount() ? QINTERFACE_OPTIMAL_BASE : QINTERFACE_CPU }, qBitCount,
               initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId, useHardwareRNG,
@@ -635,7 +635,7 @@ public:
     virtual real1_f Prob(bitLenInt qubitIndex)
     {
         if (zxShards[qubitIndex].isX) {
-            return clampProb(ONE_R1 - engine->Prob(qubitIndex));
+            return clampProb(ONE_R1_F - engine->Prob(qubitIndex));
         }
 
         return engine->Prob(qubitIndex);
@@ -674,7 +674,7 @@ public:
 
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG) { engine->UpdateRunningNorm(norm_thresh); }
     virtual void NormalizeState(
-        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
         engine->NormalizeState(nrm, norm_thresh, phaseArg);
     }

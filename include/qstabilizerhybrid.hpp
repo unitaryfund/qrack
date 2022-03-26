@@ -86,9 +86,9 @@ protected:
         const bool isZ1 = stabilizer->M(qubit);
 
         if (isZ1) {
-            prob = norm(shard->gate[3]);
+            prob = (real1_f)norm(shard->gate[3]);
         } else {
-            prob = norm(shard->gate[2]);
+            prob = (real1_f)norm(shard->gate[2]);
         }
 
         bool result;
@@ -193,13 +193,13 @@ public:
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
         bool randomGlobalPhase = true, bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true,
         bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {},
-        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON);
+        bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
     QStabilizerHybrid(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
-        real1_f separation_thresh = FP_NORM_EPSILON)
+        real1_f separation_thresh = FP_NORM_EPSILON_F)
         : QStabilizerHybrid({ QINTERFACE_OPTIMAL_BASE }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
               useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold,
               separation_thresh)
@@ -733,7 +733,7 @@ public:
     virtual real1_f ProbParity(bitCapInt mask)
     {
         if (!mask) {
-            return ZERO_R1;
+            return ZERO_R1_F;
         }
 
         if (!(mask & (mask - ONE_BCI))) {
@@ -989,7 +989,7 @@ public:
     }
 
     virtual void NormalizeState(
-        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1)
+        real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
         if (abs(nrm) <= FP_NORM_EPSILON) {
             ZeroAmplitudes();

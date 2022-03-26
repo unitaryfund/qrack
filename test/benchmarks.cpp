@@ -1092,8 +1092,8 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
                 //"Position" transforms:
 
                 // Continuous Z root gates option:
-                gateRand = 2 * PI_R1 * qReg->Rand();
-                qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                gateRand = (real1_f)(2 * PI_R1 * qReg->Rand());
+                qReg->Phase(ONE_CMPLX, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 /*
@@ -1441,7 +1441,10 @@ TEST_CASE("test_dense", "[supreme]")
 
         for (int d = 0; d < benchmarkDepth; d++) {
             for (bitLenInt i = 0; i < n; i++) {
-                qReg->U(i, 4 * PI_R1 * qReg->Rand(), 4 * PI_R1 * qReg->Rand(), 4 * PI_R1 * qReg->Rand());
+                const real1_f theta = 4 * (real1_f)PI_R1 * qReg->Rand();
+                const real1_f phi = 4 * (real1_f)PI_R1 * qReg->Rand();
+                const real1_f lambda = 4 * (real1_f)PI_R1 * qReg->Rand();
+                qReg->U(i, (real1_f)theta, (real1_f)phi, (real1_f)lambda);
             }
 
             gate = gateSequence.front();
@@ -1595,8 +1598,8 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
                 // "Position transforms:
 
                 // Continuous Z root gates option:
-                gateRand = 2 * PI_R1 * qReg->Rand();
-                qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                gateRand = (real1_f)(2 * PI_R1 * qReg->Rand());
+                qReg->Phase(ONE_CMPLX, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 /*
@@ -1846,8 +1849,8 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                 // "Position transforms:
 
                 // Continuous Z root gates option:
-                gateRand = 2 * PI_R1 * qReg->Rand();
-                qReg->Phase(ONE_R1, std::polar(ONE_R1, (real1)gateRand), i);
+                gateRand = (real1_f)(2 * PI_R1 * qReg->Rand());
+                qReg->Phase(ONE_CMPLX, std::polar(ONE_R1, (real1)gateRand), i);
 
                 // Discrete Z root gates option:
                 /*
@@ -2026,9 +2029,9 @@ TEST_CASE("test_universal_circuit_continuous", "[supreme]")
             for (d = 0; d < benchmarkDepth; d++) {
 
                 for (i = 0; i < n; i++) {
-                    theta = 2 * PI_R1 * qReg->Rand();
-                    phi = 2 * PI_R1 * qReg->Rand();
-                    lambda = 2 * PI_R1 * qReg->Rand();
+                    theta = (real1_f)(2 * PI_R1 * qReg->Rand());
+                    phi = (real1_f)(2 * PI_R1 * qReg->Rand());
+                    lambda = (real1_f)(2 * PI_R1 * qReg->Rand());
 
                     qReg->U(i, theta, phi, lambda);
                 }
@@ -2747,7 +2750,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     real1_f uniformRandomCount = ITERATIONS / (real1_f)permCount;
     int goldBinResult;
-    real1_f crossEntropy = ZERO_R1;
+    real1_f crossEntropy = ZERO_R1_F;
     for (perm = 0; perm < permCount; perm++) {
         measurementBin = goldStandardResult.find(perm);
         if (measurementBin == goldStandardResult.end()) {
@@ -2757,16 +2760,16 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         }
         crossEntropy += (uniformRandomCount - goldBinResult) * (uniformRandomCount - goldBinResult);
     }
-    if (crossEntropy < ZERO_R1) {
-        crossEntropy = ZERO_R1;
+    if (crossEntropy < ZERO_R1_F) {
+        crossEntropy = ZERO_R1_F;
     }
-    crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
+    crossEntropy = ONE_R1_F - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Gold standard vs. uniform random cross entropy (out of 1.0): " << crossEntropy << std::endl;
 
     std::map<bitCapInt, int> goldStandardResult2 = goldStandard->MultiShotMeasureMask(qPowers, n, ITERATIONS);
 
     int testBinResult;
-    crossEntropy = ZERO_R1;
+    crossEntropy = ZERO_R1_F;
     for (perm = 0; perm < permCount; perm++) {
         measurementBin = goldStandardResult.find(perm);
         if (measurementBin == goldStandardResult.end()) {
@@ -2783,10 +2786,10 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         }
         crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
     }
-    if (crossEntropy < ZERO_R1) {
-        crossEntropy = ZERO_R1;
+    if (crossEntropy < ZERO_R1_F) {
+        crossEntropy = ZERO_R1_F;
     }
-    crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
+    crossEntropy = ONE_R1_F - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Gold standard vs. gold standard cross entropy (out of 1.0): " << crossEntropy << std::endl;
 
     QInterfacePtr testCase = CreateQuantumInterface({ testEngineType, testSubEngineType }, n, 0, rng, ONE_CMPLX,
@@ -2837,7 +2840,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     // faster benchmark. This will not test the effect of the MReg() method.
     // testCaseResult = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
 
-    crossEntropy = ZERO_R1;
+    crossEntropy = ZERO_R1_F;
     for (perm = 0; perm < permCount; perm++) {
         measurementBin = goldStandardResult.find(perm);
         if (measurementBin == goldStandardResult.end()) {
@@ -2854,10 +2857,10 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         }
         crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
     }
-    if (crossEntropy < ZERO_R1) {
-        crossEntropy = ZERO_R1;
+    if (crossEntropy < ZERO_R1_F) {
+        crossEntropy = ZERO_R1_F;
     }
-    crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
+    crossEntropy = ONE_R1_F - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Gold standard vs. test case cross entropy (out of 1.0): " << crossEntropy << std::endl;
 
     std::map<bitCapInt, int> testCaseResult2;
@@ -2895,7 +2898,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
     }
     testCaseResult2 = testCase->MultiShotMeasureMask(qPowers, n, ITERATIONS);
 
-    crossEntropy = ZERO_R1;
+    crossEntropy = ZERO_R1_F;
     for (perm = 0; perm < permCount; perm++) {
         measurementBin = testCaseResult.find(perm);
         if (measurementBin == testCaseResult.end()) {
@@ -2912,9 +2915,9 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
         }
         crossEntropy += (testBinResult - goldBinResult) * (testBinResult - goldBinResult);
     }
-    if (crossEntropy < ZERO_R1) {
-        crossEntropy = ZERO_R1;
+    if (crossEntropy < ZERO_R1_F) {
+        crossEntropy = ZERO_R1_F;
     }
-    crossEntropy = ONE_R1 - sqrt(crossEntropy) / ITERATIONS;
+    crossEntropy = ONE_R1_F - sqrt(crossEntropy) / ITERATIONS;
     std::cout << "Test case vs. (duplicate) test case cross entropy (out of 1.0): " << crossEntropy << std::endl;
 }

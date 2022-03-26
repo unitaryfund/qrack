@@ -667,7 +667,7 @@ public:
     real1_f Prob()
     {
         if (!isProbDirty || !unit) {
-            return norm(amp1);
+            return (real1_f)norm(amp1);
         }
 
         return unit->Prob(mapped);

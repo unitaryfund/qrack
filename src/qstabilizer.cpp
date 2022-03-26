@@ -357,7 +357,7 @@ real1_f QStabilizer::FirstNonzeroPhase()
     const bitCapIntOcl permCount = pow2Ocl(g);
     const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1 / permCount);
+    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
 
     seed(g);
 
@@ -378,7 +378,7 @@ real1_f QStabilizer::FirstNonzeroPhase()
         }
     }
 
-    return ZERO_R1;
+    return ZERO_R1_F;
 }
 
 /// Convert the state to ket notation (warning: could be huge!)
@@ -391,7 +391,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     const bitCapIntOcl permCount = pow2Ocl(g);
     const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1 / permCount);
+    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
 
     seed(g);
 
@@ -420,7 +420,7 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
     const bitCapIntOcl permCount = pow2Ocl(g);
     const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1 / permCount);
+    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
 
     seed(g);
 
@@ -450,7 +450,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
     const bitCapIntOcl permCount = pow2Ocl(g);
     const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1 / permCount);
+    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
 
     seed(g);
 
@@ -479,7 +479,7 @@ complex QStabilizer::GetAmplitude(bitCapInt perm)
     const bitCapIntOcl permCount = pow2Ocl(g);
     const bitCapIntOcl permCountMin1 = permCount - ONE_BCI;
     const bitLenInt elemCount = qubitCount << 1U;
-    const real1_f nrm = sqrt(ONE_R1 / permCount);
+    const real1_f nrm = sqrt((real1_f)(ONE_R1 / permCount));
 
     seed(g);
 
@@ -500,7 +500,7 @@ complex QStabilizer::GetAmplitude(bitCapInt perm)
         }
     }
 
-    return ZERO_R1;
+    return ZERO_CMPLX;
 }
 
 /// Apply a CNOT gate with control and target
@@ -1038,17 +1038,17 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
 real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscreteBool, real1_f error_tol)
 {
     if (!toCompare) {
-        return ONE_R1;
+        return ONE_R1_F;
     }
 
     if (this == toCompare.get()) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
-        return ONE_R1;
+        return ONE_R1_F;
     }
 
     toCompare->Finish();
@@ -1058,43 +1058,43 @@ real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscre
     complex proj = ZERO_CMPLX;
 
     if (isDiscreteBool) {
-        real1_f potential = ZERO_R1;
-        real1_f oPotential = ZERO_R1;
+        real1_f potential = ZERO_R1_F;
+        real1_f oPotential = ZERO_R1_F;
         for (bitCapInt i = 0U; i < maxQPower; i++) {
             const complex amp = GetAmplitude(i);
             const complex oAmp = toCompare->GetAmplitude(i);
 
-            potential += norm(amp);
-            oPotential += norm(oAmp);
+            potential += (real1_f)norm(amp);
+            oPotential += (real1_f)norm(oAmp);
             if ((potential - oPotential) > error_tol) {
-                return ONE_R1;
+                return ONE_R1_F;
             }
 
             proj += conj(amp) * oAmp;
-            const real1_f prob = clampProb(norm(proj));
+            const real1_f prob = clampProb((real1_f)norm(proj));
             if (error_tol >= (ONE_R1 - prob)) {
-                return ZERO_R1;
+                return ZERO_R1_F;
             }
         }
 
-        return ONE_R1 - clampProb(norm(proj));
+        return ONE_R1_F - clampProb((real1_f)norm(proj));
     }
 
     for (bitCapInt i = 0U; i < maxQPower; i++) {
         proj += conj(GetAmplitude(i)) * toCompare->GetAmplitude(i);
     }
 
-    return ONE_R1 - clampProb(norm(proj));
+    return ONE_R1_F - clampProb((real1_f)norm(proj));
 }
 
 real1_f QStabilizer::Prob(bitLenInt qubit)
 {
     if (IsSeparableZ(qubit)) {
-        return M(qubit) ? ONE_R1 : ZERO_R1;
+        return M(qubit) ? ONE_R1_F : ZERO_R1_F;
     }
 
     // Otherwise, state appears locally maximally mixed.
-    return ONE_R1 / 2;
+    return ONE_R1_F / 2;
 }
 
 void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)

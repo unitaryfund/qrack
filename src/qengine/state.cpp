@@ -118,7 +118,7 @@ void QEngineCPU::SetPermutation(bitCapInt perm, complex phaseFac)
     if (phaseFac == CMPLX_DEFAULT_ARG) {
         complex phase;
         if (randGlobalPhase) {
-            real1_f angle = Rand() * 2 * PI_R1;
+            real1_f angle = Rand() * 2 * (real1_f)PI_R1;
             phase = complex((real1)cos(angle), (real1)sin(angle));
         } else {
             phase = ONE_CMPLX;
@@ -417,7 +417,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             const complex mtrx3 = mtrx[3];
             const bitCapIntOcl* qPowersSorted = qPowersSortedS.get();
 
-            const real1_f norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh;
+            const real1 norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : (real1)nrm_thresh;
             const unsigned numCores = GetConcurrencyLevel();
 
             std::unique_ptr<real1[]> rngNrm(new real1[numCores]());
@@ -1055,7 +1055,8 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
         par_for(0, partPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             destination->stateVec->write(lcv,
-                (real1)(std::sqrt(partStateProb[lcv])) * complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv])));
+                (real1)(std::sqrt((real1_f)partStateProb[lcv])) *
+                    complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv])));
         });
 
         partStateProb.reset();
@@ -1068,7 +1069,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     par_for(0, remainderPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         stateVec->write(lcv,
-            (real1)(std::sqrt(remainderStateProb[lcv])) *
+            (real1)(std::sqrt((real1_f)remainderStateProb[lcv])) *
                 complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv])));
     });
 }
@@ -1143,7 +1144,7 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
     Finish();
 
     if (!stateVec) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     const bitCapIntOcl qPower = pow2Ocl(qubit);
@@ -1167,7 +1168,7 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
         oneChance += oneChanceBuff[i];
     }
 
-    return clampProb(oneChance);
+    return clampProb((real1_f)oneChance);
 }
 
 // Returns probability of permutation of the register
@@ -1179,7 +1180,7 @@ real1_f QEngineCPU::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
     Finish();
 
     if (!stateVec) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     const int num_threads = GetConcurrencyLevel();
@@ -1203,7 +1204,7 @@ real1_f QEngineCPU::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
         prob += probs[thrd];
     }
 
-    return clampProb(prob);
+    return clampProb((real1_f)prob);
 }
 
 // Returns probability of permutation of the mask
@@ -1215,7 +1216,7 @@ real1_f QEngineCPU::ProbMask(bitCapInt mask, bitCapInt permutation)
     Finish();
 
     if (!stateVec) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
@@ -1248,7 +1249,7 @@ real1_f QEngineCPU::ProbMask(bitCapInt mask, bitCapInt permutation)
         prob += probs[thrd];
     }
 
-    return clampProb(prob);
+    return clampProb((real1_f)prob);
 }
 
 real1_f QEngineCPU::ProbParity(bitCapInt mask)
@@ -1259,7 +1260,7 @@ real1_f QEngineCPU::ProbParity(bitCapInt mask)
     Finish();
 
     if (!stateVec || !mask) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     real1 oddChance = ZERO_R1;
@@ -1293,7 +1294,7 @@ real1_f QEngineCPU::ProbParity(bitCapInt mask)
         oddChance += oddChanceBuff[i];
     }
 
-    return clampProb(oddChance);
+    return clampProb((real1_f)oddChance);
 }
 
 bool QEngineCPU::ForceMParity(bitCapInt mask, bool result, bool doForce)
@@ -1353,17 +1354,17 @@ bool QEngineCPU::ForceMParity(bitCapInt mask, bool result, bool doForce)
 real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
 {
     if (!toCompare) {
-        return ONE_R1;
+        return ONE_R1_F;
     }
 
     if (this == toCompare.get()) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     // If the qubit counts are unequal, these can't be approximately equal objects.
     if (qubitCount != toCompare->qubitCount) {
         // Max square difference:
-        return ONE_R1;
+        return ONE_R1_F;
     }
 
     // Make sure both engines are normalized
@@ -1378,17 +1379,17 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
     toCompare->Finish();
 
     if (!stateVec && !toCompare->stateVec) {
-        return ZERO_R1;
+        return ZERO_R1_F;
     }
 
     if (!stateVec) {
         toCompare->UpdateRunningNorm();
-        return toCompare->runningNorm;
+        return (real1_f)(toCompare->runningNorm);
     }
 
     if (!toCompare->stateVec) {
         UpdateRunningNorm();
-        return runningNorm;
+        return (real1_f)runningNorm;
     }
 
     if (randGlobalPhase) {
@@ -1415,7 +1416,7 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
         totInner += partInner[i];
     }
 
-    return ONE_R1 - clampProb(norm(totInner));
+    return ONE_R1_F - clampProb((real1_f)norm(totInner));
 }
 
 void QEngineCPU::ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
@@ -1471,7 +1472,7 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f, real1_f ph
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;
     }
-    nrm = ONE_R1 / std::sqrt(nrm);
+    nrm = ONE_R1 / std::sqrt((real1_f)nrm);
     complex cNrm = std::polar(nrm, (real1)phaseArg);
 
     if (norm_thresh <= ZERO_R1) {
@@ -1502,7 +1503,7 @@ void QEngineCPU::UpdateRunningNorm(real1_f norm_thresh)
     }
 
     if (norm_thresh < ZERO_R1) {
-        norm_thresh = amplitudeFloor;
+        norm_thresh = (real1_f)amplitudeFloor;
     }
     runningNorm = par_norm(maxQPowerOcl, stateVec, norm_thresh);
 

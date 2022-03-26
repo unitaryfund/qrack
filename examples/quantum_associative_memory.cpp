@@ -52,7 +52,7 @@ int main()
         for (bitLenInt i = 0; i < OutputCount; i++) {
             qReg->SetPermutation(perm);
             bit = (comp & pow2(i)) != 0;
-            outputLayer[i]->LearnPermutation(bit, eta);
+            outputLayer[i]->LearnPermutation(bit, (real1_f)eta);
         }
     }
 
