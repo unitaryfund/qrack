@@ -1232,7 +1232,7 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
     if (benchmarkMaxMagic >= 0) {
         std::cout << "(max quantum \"magic\": " << benchmarkMaxMagic << ")";
     } else {
-        std::cout << "(max quantum \"magic\": default, no ceiling)";
+        std::cout << "(max quantum \"magic\": default, ceiling equal to qubit count)";
     }
 
     const int DimCount1Qb = 4;
