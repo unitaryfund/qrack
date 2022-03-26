@@ -60,7 +60,7 @@ if (ENABLE_PTHREAD)
 endif (ENABLE_PTHREAD)
 
 if (FPPOW GREATER 6)
-    set(QRACK_LIBS quadmath)
+    set(QRACK_LIBS ${QRACK_LIBS} quadmath)
 endif (FPPOW GREATER 6)
 
 target_link_libraries (qrack_pinvoke ${QRACK_LIBS})
