@@ -16,12 +16,12 @@
 #define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \
     ((IS_REAL_0(std::real(top)) || IS_REAL_0(std::imag(top))) && (IS_SAME(top, bottom) || IS_SAME(top, -bottom)))
 #define IS_CLIFFORD(mtrx)                                                                                              \
-    (IS_SAME(mtrx[0], mtrx[1]) || IS_SAME(mtrx[0], -mtrx[1]) || IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) ||                 \
-        IS_SAME(mtrx[0], -I_CMPLX * mtrx[1])) &&                                                                       \
+    ((IS_SAME(mtrx[0], mtrx[1]) || IS_SAME(mtrx[0], -mtrx[1]) || IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) ||                \
+         IS_SAME(mtrx[0], -I_CMPLX * mtrx[1])) &&                                                                      \
         (IS_SAME(mtrx[0], mtrx[2]) || IS_SAME(mtrx[0], -mtrx[2]) || IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) ||             \
             IS_SAME(mtrx[0], -I_CMPLX * mtrx[2])) &&                                                                   \
         (IS_SAME(mtrx[0], mtrx[3]) || IS_SAME(mtrx[0], -mtrx[3]) || IS_SAME(mtrx[0], I_CMPLX * mtrx[3]) ||             \
-            IS_SAME(mtrx[0], -I_CMPLX * mtrx[3]))
+            IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])))
 #define IS_PHASE(mtrx) (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]))
 #define IS_INVERT(mtrx) (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]))
 
@@ -355,11 +355,8 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (IS_CLIFFORD(mtrx)) {
-        stabilizer->Mtrx(mtrx, target);
-    } else if (randGlobalPhase && IS_PHASE(mtrx) && stabilizer->IsSeparableZ(target)) {
-        stabilizer->Mtrx(mtrx, target);
-    } else if (randGlobalPhase && IS_INVERT(mtrx) && stabilizer->IsSeparableZ(target)) {
+    if (IS_CLIFFORD(mtrx) ||
+        (randGlobalPhase && (IS_PHASE(mtrx) || IS_INVERT(mtrx)) && stabilizer->IsSeparableZ(target))) {
         stabilizer->Mtrx(mtrx, target);
     } else {
         shards[target] = std::make_shared<MpsShard>(mtrx);
