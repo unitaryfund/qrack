@@ -889,7 +889,9 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     const bitLenInt rowCount = (qubitCount << 1U) + 1U;
     const bitLenInt length = toCopy->qubitCount;
     const bitLenInt nQubitCount = qubitCount + length;
+    const bitLenInt endLength = nQubitCount - (start + length);
     const bitLenInt secondStart = nQubitCount + start;
+    const bitLenInt dLen = length << 1U;
     const BoolVector row(length, 0);
 
     for (bitLenInt i = 0; i < rowCount; i++) {
@@ -897,26 +899,27 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
         z[i].insert(z[i].begin() + start, row.begin(), row.end());
     }
 
-    std::vector<BoolVector> xGroup(length, BoolVector(nQubitCount, false));
-    std::vector<BoolVector> zGroup(length, BoolVector(nQubitCount, false));
-    for (bitLenInt i = 0; i < length; i++) {
-        std::copy(toCopy->x[i].begin(), toCopy->x[i].end(), xGroup[i].begin() + start);
-        std::copy(toCopy->z[i].begin(), toCopy->z[i].end(), zGroup[i].begin() + start);
-    }
-    x.insert(x.begin() + start, xGroup.begin(), xGroup.end());
-    z.insert(z.begin() + start, zGroup.begin(), zGroup.end());
+    x.insert(x.begin() + start, toCopy->x.begin(), toCopy->x.begin() + length);
+    z.insert(z.begin() + start, toCopy->z.begin(), toCopy->z.begin() + length);
     r.insert(r.begin() + start, toCopy->r.begin(), toCopy->r.begin() + length);
-
-    std::vector<BoolVector> xGroup2(length, BoolVector(nQubitCount, false));
-    std::vector<BoolVector> zGroup2(length, BoolVector(nQubitCount, false));
     for (bitLenInt i = 0; i < length; i++) {
-        bitLenInt j = length + i;
-        std::copy(toCopy->x[j].begin(), toCopy->x[j].end(), xGroup2[i].begin() + start);
-        std::copy(toCopy->z[j].begin(), toCopy->z[j].end(), zGroup2[i].begin() + start);
+        const bitLenInt offset = start + i;
+        x[offset].insert(x[offset].begin(), start, false);
+        x[offset].insert(x[offset].end(), endLength, false);
+        z[offset].insert(z[offset].begin(), start, false);
+        z[offset].insert(z[offset].end(), endLength, false);
     }
-    x.insert(x.begin() + secondStart, xGroup2.begin(), xGroup2.end());
-    z.insert(z.begin() + secondStart, zGroup2.begin(), zGroup2.end());
-    r.insert(r.begin() + secondStart, toCopy->r.begin() + length, toCopy->r.begin() + (length << 1U));
+
+    x.insert(x.begin() + secondStart, toCopy->x.begin() + length, toCopy->x.begin() + dLen);
+    z.insert(z.begin() + secondStart, toCopy->z.begin() + length, toCopy->z.begin() + dLen);
+    r.insert(r.begin() + secondStart, toCopy->r.begin() + length, toCopy->r.begin() + dLen);
+    for (bitLenInt i = 0; i < length; i++) {
+        const bitLenInt offset = secondStart + i;
+        x[offset].insert(x[offset].begin(), start, false);
+        x[offset].insert(x[offset].end(), endLength, false);
+        z[offset].insert(z[offset].begin(), start, false);
+        z[offset].insert(z[offset].end(), endLength, false);
+    }
 
     qubitCount = nQubitCount;
 
