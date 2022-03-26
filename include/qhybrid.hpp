@@ -42,7 +42,7 @@ public:
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0,
-        real1_f ignored2 = FP_NORM_EPSILON);
+        real1_f ignored2 = FP_NORM_EPSILON_F);
 
     QEnginePtr MakeEngine(bool isOpenCL, bitCapInt initState = 0);
 

@@ -151,6 +151,7 @@ typedef double real1_f;
 #else
 #include <boost/multiprecision/float128.hpp>
 #include <quadmath.h>
+#include <limits>
 namespace Qrack {
 typedef std::complex<boost::multiprecision::float128> complex;
 typedef boost::multiprecision::float128 real1;
@@ -166,7 +167,7 @@ typedef double real1_f;
 // Half of the amplitude of 64 maximally superposed qubits in any permutation
 #define REAL1_EPSILON ((real1_f)2e-129)
 // Minimum representable difference from 1
-#define FP_NORM_EPSILON ((real1_f)1.92592994438723585305597794258492732e-34)
+#define FP_NORM_EPSILON std::numeric_limits<boost::multiprecision::float128>::epsilon()
 } // namespace Qrack
 #endif
 
@@ -174,7 +175,8 @@ typedef double real1_f;
 #define ZERO_CMPLX complex(ZERO_R1, ZERO_R1)
 #define I_CMPLX complex(ZERO_R1, ONE_R1)
 #define CMPLX_DEFAULT_ARG complex(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG)
-#define TRYDECOMPOSE_EPSILON (8 * FP_NORM_EPSILON)
+#define TRYDECOMPOSE_EPSILON ((real1_f)(8 * FP_NORM_EPSILON))
+#define FP_NORM_EPSILON_F ((real1_f)FP_NORM_EPSILON)
 
 namespace Qrack {
 typedef std::shared_ptr<complex> BitOp;
