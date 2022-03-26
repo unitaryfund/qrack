@@ -22,6 +22,8 @@
             IS_SAME(mtrx[0], -I_CMPLX * mtrx[2])) &&                                                                   \
         (IS_SAME(mtrx[0], mtrx[3]) || IS_SAME(mtrx[0], -mtrx[3]) || IS_SAME(mtrx[0], I_CMPLX * mtrx[3]) ||             \
             IS_SAME(mtrx[0], -I_CMPLX * mtrx[3]))
+#define IS_PHASE(mtrx) (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]))
+#define IS_INVERT(mtrx) (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]))
 
 namespace Qrack {
 
@@ -353,9 +355,13 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    try {
+    if (IS_CLIFFORD(mtrx)) {
         stabilizer->Mtrx(mtrx, target);
-    } catch (const std::domain_error&) {
+    } else if (randGlobalPhase && IS_PHASE(mtrx) && stabilizer->IsSeparableZ(target)) {
+        stabilizer->Mtrx(mtrx, target);
+    } else if (randGlobalPhase && IS_INVERT(mtrx) && stabilizer->IsSeparableZ(target)) {
+        stabilizer->Mtrx(mtrx, target);
+    } else {
         shards[target] = std::make_shared<MpsShard>(mtrx);
         CacheEigenstate(target);
     }
@@ -414,7 +420,7 @@ void QStabilizerHybrid::MCPhase(
         }
     }
 
-    if (controls.size() > 1U) {
+    if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topLeft, bottomRight)) {
         SwitchToEngine();
     } else {
         FlushIfBlocked(controls[0], target, true);
@@ -428,17 +434,12 @@ void QStabilizerHybrid::MCPhase(
     const bitLenInt control = controls[0];
     std::unique_ptr<bitLenInt[]> ctrls(new bitLenInt[controls.size()]);
     std::copy(controls.begin(), controls.end(), ctrls.get());
-    try {
-        stabilizer->MCPhase(ctrls.get(), controls.size(), topLeft, bottomRight, target);
-        if (shards[control]) {
-            CacheEigenstate(control);
-        }
-        if (shards[target]) {
-            CacheEigenstate(target);
-        }
-    } catch (const std::domain_error&) {
-        SwitchToEngine();
-        engine->MCPhase(lControls, lControlLen, topLeft, bottomRight, target);
+    stabilizer->MCPhase(ctrls.get(), controls.size(), topLeft, bottomRight, target);
+    if (shards[control]) {
+        CacheEigenstate(control);
+    }
+    if (shards[target]) {
+        CacheEigenstate(target);
     }
 }
 
@@ -455,7 +456,7 @@ void QStabilizerHybrid::MCInvert(
         return;
     }
 
-    if (controls.size() > 1U) {
+    if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
         SwitchToEngine();
     } else {
         FlushIfBlocked(controls[0], target);
@@ -469,17 +470,12 @@ void QStabilizerHybrid::MCInvert(
     const bitLenInt control = controls[0];
     std::unique_ptr<bitLenInt[]> ctrls(new bitLenInt[controls.size()]);
     std::copy(controls.begin(), controls.end(), ctrls.get());
-    try {
-        stabilizer->MCInvert(ctrls.get(), controls.size(), topRight, bottomLeft, target);
-        if (shards[control]) {
-            CacheEigenstate(control);
-        }
-        if (shards[target]) {
-            CacheEigenstate(target);
-        }
-    } catch (const std::domain_error&) {
-        SwitchToEngine();
-        engine->MCInvert(lControls, lControlLen, topRight, bottomLeft, target);
+    stabilizer->MCInvert(ctrls.get(), controls.size(), topRight, bottomLeft, target);
+    if (shards[control]) {
+        CacheEigenstate(control);
+    }
+    if (shards[target]) {
+        CacheEigenstate(target);
     }
 }
 
@@ -547,17 +543,12 @@ void QStabilizerHybrid::MACPhase(
     const bitLenInt control = controls[0];
     std::unique_ptr<bitLenInt[]> ctrls(new bitLenInt[controls.size()]);
     std::copy(controls.begin(), controls.end(), ctrls.get());
-    try {
-        stabilizer->MACPhase(ctrls.get(), controls.size(), topLeft, bottomRight, target);
-        if (shards[control]) {
-            CacheEigenstate(control);
-        }
-        if (shards[target]) {
-            CacheEigenstate(target);
-        }
-    } catch (const std::domain_error&) {
-        SwitchToEngine();
-        engine->MACPhase(lControls, lControlLen, topLeft, bottomRight, target);
+    stabilizer->MACPhase(ctrls.get(), controls.size(), topLeft, bottomRight, target);
+    if (shards[control]) {
+        CacheEigenstate(control);
+    }
+    if (shards[target]) {
+        CacheEigenstate(target);
     }
 }
 
@@ -588,17 +579,12 @@ void QStabilizerHybrid::MACInvert(
     const bitLenInt control = controls[0];
     std::unique_ptr<bitLenInt[]> ctrls(new bitLenInt[controls.size()]);
     std::copy(controls.begin(), controls.end(), ctrls.get());
-    try {
-        stabilizer->MACInvert(ctrls.get(), controls.size(), topRight, bottomLeft, target);
-        if (shards[control]) {
-            CacheEigenstate(control);
-        }
-        if (shards[target]) {
-            CacheEigenstate(target);
-        }
-    } catch (const std::domain_error&) {
-        SwitchToEngine();
-        engine->MACInvert(lControls, lControlLen, topRight, bottomLeft, target);
+    stabilizer->MACInvert(ctrls.get(), controls.size(), topRight, bottomLeft, target);
+    if (shards[control]) {
+        CacheEigenstate(control);
+    }
+    if (shards[target]) {
+        CacheEigenstate(target);
     }
 }
 
