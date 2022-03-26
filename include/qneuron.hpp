@@ -59,7 +59,7 @@ public:
 
     /** Create a new QNeuron which is an exact duplicate of another, including its learned state. */
     QNeuron(const QNeuron& toCopy)
-        : QNeuron(toCopy.qReg, toCopy.inputIndices, toCopy.inputCount, toCopy.outputIndex, toCopy.tolerance)
+        : QNeuron(toCopy.qReg, toCopy.inputIndices, toCopy.inputCount, toCopy.outputIndex, (real1_f)toCopy.tolerance)
     {
         std::copy(toCopy.angles, toCopy.angles + toCopy.inputPower, angles);
     }
@@ -110,19 +110,19 @@ public:
     {
         if (resetInit) {
             qReg->SetBit(outputIndex, false);
-            qReg->RY(PI_R1 / 2, outputIndex);
+            qReg->RY((real1_f)(PI_R1 / 2), outputIndex);
         }
 
         if (inputCount == 0) {
             // If there are no controls, this "neuron" is actually just a bias.
-            qReg->RY(angles[0], outputIndex);
+            qReg->RY((real1_f)(angles[0]), outputIndex);
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
             qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, angles);
         }
         real1_f prob = qReg->Prob(outputIndex);
         if (!expected) {
-            prob = ONE_R1 - prob;
+            prob = ONE_R1_F - prob;
         }
         return prob;
     }
@@ -132,17 +132,17 @@ public:
     {
         if (inputCount == 0) {
             // If there are no controls, this "neuron" is actually just a bias.
-            qReg->RY(-angles[0], outputIndex);
+            qReg->RY((real1_f)(-angles[0]), outputIndex);
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
             real1* reverseAngles = new real1[inputPower];
-            std::transform(angles, angles + inputPower, reverseAngles, [](real1_f r) { return -r; });
+            std::transform(angles, angles + inputPower, reverseAngles, [](real1 r) { return -r; });
             qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, reverseAngles);
             delete[] reverseAngles;
         }
         real1_f prob = qReg->Prob(outputIndex);
         if (!expected) {
-            prob = ONE_R1 - prob;
+            prob = ONE_R1_F - prob;
         }
         return prob;
     }
@@ -220,10 +220,10 @@ protected:
         angles[permOcl] += eta * PI_R1;
         endProb = LearnCycle(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
-            return -ONE_R1;
+            return -ONE_R1_F;
         }
         if (endProb > startProb) {
-            return endProb;
+            return (real1_f)endProb;
         }
 
         // If positive angle increment is not an improvement,
@@ -231,17 +231,17 @@ protected:
         angles[permOcl] -= 2 * eta * PI_R1;
         endProb = LearnCycle(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
-            return -ONE_R1;
+            return -ONE_R1_F;
         }
         if (endProb > startProb) {
-            return endProb;
+            return (real1_f)endProb;
         }
 
         // If neither increment is an improvement,
         // restore the original variational parameter.
         angles[permOcl] = origAngle;
 
-        return startProb;
+        return (real1_f)startProb;
     }
 };
 } // namespace Qrack
