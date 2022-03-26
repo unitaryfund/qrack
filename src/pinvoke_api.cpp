@@ -574,7 +574,7 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_pager(_In_ unsigned q, _In_ bool hp)
     if (q) {
         try {
             simulator = CreateQuantumInterface(simulatorType, q, 0, randNumGen, CMPLX_DEFAULT_ARG, false, true, hp, -1,
-                true, false, REAL1_EPSILON, deviceList, 0, FP_NORM_EPSILON);
+                true, false, REAL1_EPSILON, deviceList, 0, FP_NORM_EPSILON_F);
         } catch (...) {
             isSuccess = false;
         }

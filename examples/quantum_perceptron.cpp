@@ -44,7 +44,7 @@ int main()
         std::cout << "Epoch " << (perm + 1U) << " out of " << ControlPower << std::endl;
         qReg->SetPermutation(perm);
         isPowerOf2 = ((perm != 0) && ((perm & (perm - 1U)) == 0));
-        qPerceptron->LearnPermutation(isPowerOf2, eta);
+        qPerceptron->LearnPermutation(isPowerOf2, (real1_f)eta);
     }
 
     std::cout << "Should be close to 1 for powers of two, and close to 0 for all else..." << std::endl;
