@@ -30,8 +30,10 @@
 #include "qheader_halfcl.hpp"
 #elif FPPOW < 6
 #include "qheader_floatcl.hpp"
-#else
+#elif FPPOW < 6
 #include "qheader_doublecl.hpp"
+#else
+#include "qheader_quadcl.hpp"
 #endif
 
 #include "qenginecl.hpp"
@@ -317,8 +319,10 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
     sources.push_back({ (const char*)qheader_half_cl, (long unsigned int)qheader_half_cl_len });
 #elif FPPOW < 6
     sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
-#else
+#elif FPPOW < 6
     sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
+#else
+    sources.push_back({ (const char*)qheader_quad_cl, (long unsigned int)qheader_quad_cl_len });
 #endif
 
     sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
