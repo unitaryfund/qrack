@@ -96,7 +96,7 @@ By nature of its pure C++11 design, Qrack happens to offer excellent compatibili
 emcmake cmake -DENABLE_RDRAND=OFF -DENABLE_PTHREAD=OFF -DUINTPOW=5 ..
 ```
 
-`-DQBCAPPOW=10` could be added to the above to support high-width stabilizer and Schmidt decomposition cases, with the appropriate build of the Boost headers for the toolchain.
+`-DUINTPOW=5` is optional, but WASM RAM limitations currently preclude >=32 qubits of potentially entangled state vector, so 64 bit ket addressing is not necessary. However, `-DQBCAPPOW=10` could be added to the above to support high-width stabilizer and Schmidt decomposition cases, with the appropriate build of the Boost headers for the toolchain.
 
 ## Compiling to C from WASM
 
