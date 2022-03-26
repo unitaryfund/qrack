@@ -93,7 +93,7 @@ After CMake, the project must be built in Visual Studio. Once installed, the `qr
 By nature of its pure C++11 design, Qrack happens to offer excellent compatibility with Emscripten ("WebAssembly") projects. See [the qrack.net repository](https://github.com/vm6502q/qrack.net) for an example and [qrack.net](https://qrack.net) for a live demo. OpenCL GPU operation is not yet available for WASM builds. While CPU multithreading might be possible in WASM, it is advisable that `pthread` usage and linking is disabled for most conventional Web applications, with `-DENABLE_PTHREAD=OFF` in CMake:
 
 ```sh
-emcmake cmake -DENABLE_RDRAND=OFF -DENABLE_PTHREAD=OFF -DSEED_DEVRAND=OFF .. -DUINTPOW=5
+emcmake cmake -DENABLE_RDRAND=OFF -DENABLE_PTHREAD=OFF -DSEED_DEVRAND=OFF -DUINTPOW=5 ..
 ```
 
 `-DUINTPOW=5` is optional, but WASM RAM limitations currently preclude >=32 qubits of potentially entangled state vector, so 64 bit ket addressing is not necessary. However, `-DQBCAPPOW=10` could be added to the above to support high-width stabilizer and Schmidt decomposition cases, with the appropriate build of the Boost headers for the toolchain.
