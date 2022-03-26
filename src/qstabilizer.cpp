@@ -889,7 +889,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     const bitLenInt rowCount = (qubitCount << 1U) + 1U;
     const bitLenInt length = toCopy->qubitCount;
     const bitLenInt nQubitCount = qubitCount + length;
-    const bitLenInt endLength = nQubitCount - (start + length);
+    const bitLenInt endLength = qubitCount - start;
     const bitLenInt secondStart = nQubitCount + start;
     const bitLenInt dLen = length << 1U;
     const BoolVector row(length, 0);
