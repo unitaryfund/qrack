@@ -119,7 +119,7 @@ void _expLog2x2(const complex* matrix2x2, complex* outMatrix2x2, bool isExp)
         complex trace = matrix2x2[0] + matrix2x2[3];
         complex determinant = (matrix2x2[0] * matrix2x2[3]) - (matrix2x2[1] * matrix2x2[2]);
         complex quadraticRoot = trace * trace - ((real1)4.0f) * determinant;
-        complex qrtf((real1)real(quadraticRoot), (real1)imag(quadraticRoot));
+        std::complex<real1_f> qrtf((real1_f)real(quadraticRoot), (real1_f)imag(quadraticRoot));
         qrtf = sqrt(qrtf);
         quadraticRoot = complex((real1)real(qrtf), (real1)imag(qrtf));
         complex eigenvalue1 = (trace + quadraticRoot) / (real1)2.0f;

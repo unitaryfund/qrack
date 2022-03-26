@@ -1441,9 +1441,9 @@ TEST_CASE("test_dense", "[supreme]")
 
         for (int d = 0; d < benchmarkDepth; d++) {
             for (bitLenInt i = 0; i < n; i++) {
-                const real1 theta = 4 * PI_R1 * qReg->Rand();
-                const real1 phi = 4 * PI_R1 * qReg->Rand();
-                const real1 lambda = 4 * PI_R1 * qReg->Rand();
+                const real1_f theta = 4 * (real1_f)PI_R1 * qReg->Rand();
+                const real1_f phi = 4 * (real1_f)PI_R1 * qReg->Rand();
+                const real1_f lambda = 4 * (real1_f)PI_R1 * qReg->Rand();
                 qReg->U(i, (real1_f)theta, (real1_f)phi, (real1_f)lambda);
             }
 

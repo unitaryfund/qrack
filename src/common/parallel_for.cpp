@@ -223,8 +223,8 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
         return par_norm_exact(itemCount, stateArray);
     }
 
-    real1 nrmSqr = ZERO_R1;
     if (itemCount < pStride) {
+        real1 nrmSqr = ZERO_R1;
         const real1 nrm_thresh = (real1)norm_thresh;
         for (bitCapIntOcl j = 0; j < itemCount; j++) {
             const real1 nrm = norm(stateArray->read(j));
@@ -266,10 +266,11 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
                     }
                 }
             }
-            return sqrNorm;
+            return (real1_f)sqrNorm;
         });
     }
 
+    real1_f nrmSqr = ZERO_R1_F;
     for (unsigned cpu = 0; cpu != threads; ++cpu) {
         nrmSqr += futures[cpu].get();
     }
@@ -279,8 +280,8 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
 
 real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVectorPtr stateArray)
 {
-    real1 nrmSqr = ZERO_R1;
     if (itemCount < pStride) {
+        real1 nrmSqr = ZERO_R1;
         for (bitCapIntOcl j = 0; j < itemCount; j++) {
             nrmSqr += norm(stateArray->read(j));
         }
@@ -300,7 +301,7 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
     for (unsigned cpu = 0; cpu != threads; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(&idx, &itemCount, &Stride, stateArray)
         {
-            real1_f sqrNorm = ZERO_R1_F;
+            real1 sqrNorm = ZERO_R1;
             for (;;) {
                 bitCapIntOcl i;
                 ATOMIC_INC();
@@ -310,13 +311,14 @@ real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVec
                 }
                 const bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
                 for (bitCapIntOcl j = 0; j < maxJ; j++) {
-                    sqrNorm += (real1_f)norm(stateArray->read(i * Stride + j));
+                    sqrNorm += norm(stateArray->read(i * Stride + j));
                 }
             }
-            return sqrNorm;
+            return (real1_f)sqrNorm;
         });
     }
 
+    real1_f nrmSqr = ZERO_R1_F;
     for (unsigned cpu = 0; cpu != threads; ++cpu) {
         nrmSqr += futures[cpu].get();
     }
