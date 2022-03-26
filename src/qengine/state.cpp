@@ -417,7 +417,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             const complex mtrx3 = mtrx[3];
             const bitCapIntOcl* qPowersSorted = qPowersSortedS.get();
 
-            const real1_f norm_thresh = (real1_f)((nrm_thresh < ZERO_R1) ? amplitudeFloor : nrm_thresh);
+            const real1 norm_thresh = (nrm_thresh < ZERO_R1) ? amplitudeFloor : (real1)nrm_thresh;
             const unsigned numCores = GetConcurrencyLevel();
 
             std::unique_ptr<real1[]> rngNrm(new real1[numCores]());

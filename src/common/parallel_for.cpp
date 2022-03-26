@@ -223,16 +223,17 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
         return par_norm_exact(itemCount, stateArray);
     }
 
-    real1_f nrmSqr = ZERO_R1_F;
+    real1 nrmSqr = ZERO_R1;
     if (itemCount < pStride) {
+        const real1 nrm_thresh = (real1)norm_thresh;
         for (bitCapIntOcl j = 0; j < itemCount; j++) {
-            const real1_f nrm = (real1_f)norm(stateArray->read(j));
-            if (nrm >= norm_thresh) {
+            const real1 nrm = norm(stateArray->read(j));
+            if (nrm >= nrm_thresh) {
                 nrmSqr += nrm;
             }
         }
 
-        return nrmSqr;
+        return (real1_f)nrmSqr;
     }
 
     const bitCapIntOcl Stride = pStride;
@@ -247,7 +248,8 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
     for (unsigned cpu = 0; cpu != threads; ++cpu) {
         futures[cpu] = ATOMIC_ASYNC(&idx, &itemCount, stateArray, &Stride, &norm_thresh)
         {
-            real1_f sqrNorm = ZERO_R1_F;
+            const real1 nrm_thresh = (real1)norm_thresh;
+            real1 sqrNorm = ZERO_R1;
             for (;;) {
                 bitCapIntOcl i;
                 ATOMIC_INC();
@@ -258,8 +260,8 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
                 const bitCapIntOcl maxJ = ((l + Stride) < itemCount) ? Stride : (itemCount - l);
                 for (bitCapIntOcl j = 0; j < maxJ; j++) {
                     bitCapIntOcl k = i * Stride + j;
-                    const real1_f nrm = (real1_f)norm(stateArray->read(k));
-                    if (nrm >= norm_thresh) {
+                    const real1 nrm = norm(stateArray->read(k));
+                    if (nrm >= nrm_thresh) {
                         sqrNorm += nrm;
                     }
                 }
@@ -277,13 +279,13 @@ real1_f ParallelFor::par_norm(const bitCapIntOcl itemCount, const StateVectorPtr
 
 real1_f ParallelFor::par_norm_exact(const bitCapIntOcl itemCount, const StateVectorPtr stateArray)
 {
-    real1_f nrmSqr = ZERO_R1_F;
+    real1 nrmSqr = ZERO_R1;
     if (itemCount < pStride) {
         for (bitCapIntOcl j = 0; j < itemCount; j++) {
-            nrmSqr += (real1_f)norm(stateArray->read(j));
+            nrmSqr += norm(stateArray->read(j));
         }
 
-        return nrmSqr;
+        return (real1_f)nrmSqr;
     }
 
     const bitCapIntOcl Stride = pStride;
