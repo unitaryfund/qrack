@@ -15,14 +15,6 @@
 #include "dispatchqueue.hpp"
 
 namespace Qrack {
-
-DispatchQueue::DispatchQueue()
-    : quit_(false)
-    , isFinished_(true)
-    , isStarted_(false)
-{
-}
-
 DispatchQueue::~DispatchQueue()
 {
     std::unique_lock<std::mutex> lock(lock_);

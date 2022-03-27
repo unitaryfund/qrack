@@ -17,8 +17,6 @@
 #include "qinterface.hpp"
 #include "qunit.hpp"
 
-#include <algorithm>
-
 namespace Qrack {
 
 struct QEngineInfo {

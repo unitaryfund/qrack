@@ -16,7 +16,6 @@
 #include "common/rdrandwrapper.hpp"
 #include "hamiltonian.hpp"
 
-#include <ctime>
 #include <map>
 #include <vector>
 
@@ -175,8 +174,6 @@ protected:
         }
         return toClamp;
     }
-
-    template <typename GateFunc> void ControlledLoopFixture(bitLenInt length, GateFunc gate);
 
     void FreeAligned(void* toFree)
     {

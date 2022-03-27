@@ -82,6 +82,132 @@ QEnginePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
     return std::dynamic_pointer_cast<QEngine>(toRet);
 }
 
+void QStabilizerHybrid::InvertBuffer(bitLenInt qubit)
+{
+    complex pauliX[4] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
+    MpsShardPtr pauliShard = std::make_shared<MpsShard>(pauliX);
+    pauliShard->Compose(shards[qubit]->gate);
+    shards[qubit] = pauliShard->IsIdentity() ? NULL : pauliShard;
+    stabilizer->X(qubit);
+}
+
+void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool isPhase)
+{
+    if (engine) {
+        return;
+    }
+
+    if (shards[target] && shards[target]->IsInvert()) {
+        InvertBuffer(target);
+    }
+
+    if (shards[control] && shards[control]->IsInvert()) {
+        InvertBuffer(control);
+    }
+
+    bool isBlocked = (shards[target] && (!isPhase || !shards[target]->IsPhase()));
+    isBlocked |= (shards[control] && !shards[control]->IsPhase());
+
+    if (isBlocked) {
+        SwitchToEngine();
+    }
+}
+
+bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
+{
+    MpsShardPtr shard = shards[qubit];
+    shards[qubit] = NULL;
+    real1_f prob;
+
+    const bool isZ1 = stabilizer->M(qubit);
+
+    if (isZ1) {
+        prob = (real1_f)norm(shard->gate[3]);
+    } else {
+        prob = (real1_f)norm(shard->gate[2]);
+    }
+
+    bool result;
+    if (prob <= ZERO_R1) {
+        result = false;
+    } else if (prob >= ONE_R1) {
+        result = true;
+    } else {
+        result = (Rand() <= prob);
+    }
+
+    if (result != isZ1) {
+        stabilizer->X(qubit);
+    }
+
+    return result;
+}
+
+void QStabilizerHybrid::FlushBuffers()
+{
+    if (stabilizer) {
+        for (bitLenInt i = 0; i < qubitCount; i++) {
+            if (shards[i]) {
+                // This will call FlushBuffers() again after no longer stabilizer.
+                SwitchToEngine();
+                return;
+            }
+        }
+    }
+
+    if (stabilizer) {
+        return;
+    }
+
+    for (bitLenInt i = 0; i < qubitCount; i++) {
+        MpsShardPtr shard = shards[i];
+        if (shard) {
+            shards[i] = NULL;
+            engine->Mtrx(shard->gate, i);
+        }
+    }
+}
+
+bool QStabilizerHybrid::TrimControls(
+    const bitLenInt* lControls, bitLenInt lControlLen, std::vector<bitLenInt>& output, bool anti)
+{
+    if (engine) {
+        output.insert(output.begin(), lControls, lControls + lControlLen);
+        return false;
+    }
+
+    for (bitLenInt i = 0; i < lControlLen; i++) {
+        bitLenInt bit = lControls[i];
+
+        if (!stabilizer->IsSeparableZ(bit)) {
+            output.push_back(bit);
+            continue;
+        }
+
+        if (shards[bit]) {
+            if (shards[bit]->IsInvert()) {
+                if (anti != stabilizer->M(bit)) {
+                    return true;
+                }
+                continue;
+            }
+
+            if (shards[bit]->IsPhase()) {
+                if (anti == stabilizer->M(bit)) {
+                    return true;
+                }
+                continue;
+            }
+
+            output.push_back(bit);
+        } else if (anti == stabilizer->M(bit)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
 {
     if (engine) {
@@ -813,5 +939,80 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
     }
 
     return toRet;
+}
+
+void QStabilizerHybrid::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)
+{
+    if (abs(nrm) <= FP_NORM_EPSILON) {
+        ZeroAmplitudes();
+        return;
+    }
+
+    if ((nrm > ZERO_R1) && (abs(ONE_R1 - nrm) > FP_NORM_EPSILON)) {
+        SwitchToEngine();
+    }
+
+    if (stabilizer) {
+        stabilizer->NormalizeState(REAL1_DEFAULT_ARG, norm_thresh, phaseArg);
+    } else {
+        engine->NormalizeState(nrm, norm_thresh, phaseArg);
+    }
+}
+
+bool QStabilizerHybrid::TrySeparate(bitLenInt qubit)
+{
+    if (qubitCount == 1U) {
+        return true;
+    }
+
+    if (stabilizer) {
+        return stabilizer->CanDecomposeDispose(qubit, 1);
+    }
+
+    return engine->TrySeparate(qubit);
+}
+bool QStabilizerHybrid::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
+{
+    if (qubitCount == 2U) {
+        return true;
+    }
+
+    if (stabilizer) {
+        if (qubit2 < qubit1) {
+            std::swap(qubit1, qubit2);
+        }
+
+        stabilizer->Swap(qubit1 + 1U, qubit2);
+
+        const bool toRet = stabilizer->CanDecomposeDispose(qubit1, 2);
+
+        stabilizer->Swap(qubit1 + 1U, qubit2);
+
+        return toRet;
+    }
+
+    return engine->TrySeparate(qubit1, qubit2);
+}
+bool QStabilizerHybrid::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error_tol)
+{
+    if (stabilizer) {
+        std::vector<bitLenInt> q(length);
+        std::copy(qubits, qubits + length, q.begin());
+        std::sort(q.begin(), q.end());
+
+        for (bitLenInt i = 1; i < length; i++) {
+            Swap(q[0] + i, q[i]);
+        }
+
+        const bool toRet = stabilizer->CanDecomposeDispose(q[0], length);
+
+        for (bitLenInt i = 1; i < length; i++) {
+            Swap(q[0] + i, q[i]);
+        }
+
+        return toRet;
+    }
+
+    return engine->TrySeparate(qubits, length, error_tol);
 }
 } // namespace Qrack

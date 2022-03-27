@@ -12,6 +12,8 @@
 
 #include "qengine.hpp"
 
+#include <algorithm>
+
 namespace Qrack {
 
 bool QEngine::IsIdentity(const complex* mtrx, bool isControlled)

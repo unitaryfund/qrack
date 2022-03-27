@@ -104,31 +104,52 @@ void QMaskFusion::FlushBuffers()
     DumpBuffers();
 }
 
-void QMaskFusion::X(bitLenInt target)
+void QMaskFusion::Phase(complex topLeft, complex bottomRight, bitLenInt target)
 {
-    QMaskFusionShard& shard = zxShards[target];
-    shard.isX = !shard.isX;
-    isCacheEmpty = false;
-}
+    if (IS_SAME(topLeft, bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {
+        return;
+    }
 
-void QMaskFusion::Y(bitLenInt target)
-{
-    Z(target);
-    X(target);
-    QMaskFusionShard& shard = zxShards[target];
-    if (!randGlobalPhase) {
-        shard.phase = (shard.phase + 1U) & 3U;
+    if (IS_SAME(topLeft, -bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {
+        Z(target);
+        return;
+    }
+
+    if (zxShards[target].isZ) {
+        zxShards[target].isZ = false;
+        bottomRight = -bottomRight;
+    }
+
+    if (zxShards[target].isX) {
+        zxShards[target].isX = false;
+        engine->Invert(topLeft, bottomRight, target);
+    } else {
+        engine->Phase(topLeft, bottomRight, target);
     }
 }
-
-void QMaskFusion::Z(bitLenInt target)
+void QMaskFusion::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 {
-    QMaskFusionShard& shard = zxShards[target];
-    if (!randGlobalPhase && shard.isX) {
-        shard.phase = (shard.phase + 2U) & 3U;
+    if (IS_SAME(topRight, bottomLeft) && (randGlobalPhase || IS_SAME(topRight, ONE_CMPLX))) {
+        X(target);
+        return;
     }
-    shard.isZ = !shard.isZ;
-    isCacheEmpty = false;
+
+    if (IS_SAME(topRight, -bottomLeft) && (randGlobalPhase || IS_SAME(topRight, -I_CMPLX))) {
+        Y(target);
+        return;
+    }
+
+    if (zxShards[target].isZ) {
+        zxShards[target].isZ = false;
+        topRight = -topRight;
+    }
+
+    if (zxShards[target].isX) {
+        zxShards[target].isX = false;
+        engine->Phase(topRight, bottomLeft, target);
+    } else {
+        engine->Invert(topRight, bottomLeft, target);
+    }
 }
 
 void QMaskFusion::Mtrx(const complex* lMtrx, bitLenInt target)

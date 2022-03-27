@@ -23,12 +23,10 @@
 #define _USE_MATH_DEFINES
 
 #include <condition_variable>
-#include <cstdint>
 #include <functional>
 #include <future>
 #include <mutex>
 #include <queue>
-#include <vector>
 
 namespace Qrack {
 
@@ -36,7 +34,13 @@ class DispatchQueue {
     typedef std::function<void(void)> fp_t;
 
 public:
-    DispatchQueue();
+    DispatchQueue()
+        : quit_(false)
+        , isFinished_(true)
+        , isStarted_(false)
+    {
+        // Intentionally left blank.
+    }
     ~DispatchQueue();
 
     // dispatch and copy

@@ -341,60 +341,36 @@ public:
     }
 
     using QEngine::X;
-    virtual void X(bitLenInt target);
+    virtual void X(bitLenInt target)
+    {
+        QMaskFusionShard& shard = zxShards[target];
+        shard.isX = !shard.isX;
+        isCacheEmpty = false;
+    }
     using QEngine::Y;
-    virtual void Y(bitLenInt target);
+    virtual void Y(bitLenInt target)
+    {
+        Z(target);
+        X(target);
+        QMaskFusionShard& shard = zxShards[target];
+        if (!randGlobalPhase) {
+            shard.phase = (shard.phase + 1U) & 3U;
+        }
+    }
     using QEngine::Z;
-    virtual void Z(bitLenInt target);
+    virtual void Z(bitLenInt target)
+    {
+        QMaskFusionShard& shard = zxShards[target];
+        if (!randGlobalPhase && shard.isX) {
+            shard.phase = (shard.phase + 2U) & 3U;
+        }
+        shard.isZ = !shard.isZ;
+        isCacheEmpty = false;
+    }
 
     virtual void Mtrx(const complex* mtrx, bitLenInt target);
-    virtual void Phase(complex topLeft, complex bottomRight, bitLenInt target)
-    {
-        if (IS_SAME(topLeft, bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {
-            return;
-        }
-
-        if (IS_SAME(topLeft, -bottomRight) && (randGlobalPhase || IS_SAME(topLeft, ONE_CMPLX))) {
-            Z(target);
-            return;
-        }
-
-        if (zxShards[target].isZ) {
-            zxShards[target].isZ = false;
-            bottomRight = -bottomRight;
-        }
-
-        if (zxShards[target].isX) {
-            zxShards[target].isX = false;
-            engine->Invert(topLeft, bottomRight, target);
-        } else {
-            engine->Phase(topLeft, bottomRight, target);
-        }
-    }
-    virtual void Invert(complex topRight, complex bottomLeft, bitLenInt target)
-    {
-        if (IS_SAME(topRight, bottomLeft) && (randGlobalPhase || IS_SAME(topRight, ONE_CMPLX))) {
-            X(target);
-            return;
-        }
-
-        if (IS_SAME(topRight, -bottomLeft) && (randGlobalPhase || IS_SAME(topRight, -I_CMPLX))) {
-            Y(target);
-            return;
-        }
-
-        if (zxShards[target].isZ) {
-            zxShards[target].isZ = false;
-            topRight = -topRight;
-        }
-
-        if (zxShards[target].isX) {
-            zxShards[target].isX = false;
-            engine->Phase(topRight, bottomLeft, target);
-        } else {
-            engine->Invert(topRight, bottomLeft, target);
-        }
-    }
+    virtual void Phase(complex topLeft, complex bottomRight, bitLenInt target);
+    virtual void Invert(complex topRight, complex bottomLeft, bitLenInt target);
 
     virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {

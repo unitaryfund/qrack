@@ -210,75 +210,7 @@ public:
 
     virtual ~QEngineOCL() { FreeAll(); }
 
-    virtual void FreeAll()
-    {
-        ZeroAmplitudes();
-
-        powersBuffer = NULL;
-        if (nrmArray) {
-            FreeAligned(nrmArray);
-            nrmArray = NULL;
-        }
-
-        SubtractAlloc(totalOclAllocSize);
-    }
-
-    virtual void ZeroAmplitudes()
-    {
-        clDump();
-        runningNorm = ZERO_R1;
-
-        if (!stateBuffer) {
-            return;
-        }
-
-        ResetStateBuffer(NULL);
-        FreeStateVec();
-
-        SubtractAlloc(sizeof(complex) * maxQPowerOcl);
-    }
-
-    virtual void FreeStateVec(complex* sv = NULL)
-    {
-        bool doReset = false;
-        if (sv == NULL) {
-            sv = stateVec;
-            doReset = true;
-        }
-
-        if (sv) {
-#if defined(_WIN32)
-            _aligned_free(sv);
-#else
-            free(sv);
-#endif
-        }
-
-        if (doReset) {
-            stateVec = NULL;
-        }
-    }
-
     virtual bool IsZeroAmplitude() { return !stateBuffer; }
-
-    virtual void CopyStateVec(QEnginePtr src)
-    {
-        if (src->IsZeroAmplitude()) {
-            ZeroAmplitudes();
-            return;
-        }
-
-        if (!stateBuffer) {
-            ReinitBuffer();
-        }
-
-        LockSync(CL_MAP_WRITE);
-        src->GetQuantumState(stateVec);
-        UnlockSync();
-
-        runningNorm = src->GetRunningNorm();
-    }
-
     virtual real1_f FirstNonzeroPhase()
     {
         if (!stateBuffer) {
@@ -287,6 +219,11 @@ public:
 
         return QInterface::FirstNonzeroPhase();
     }
+
+    virtual void FreeAll();
+    virtual void ZeroAmplitudes();
+    virtual void FreeStateVec(complex* sv = NULL);
+    virtual void CopyStateVec(QEnginePtr src);
 
     virtual void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
     virtual void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);

@@ -84,27 +84,7 @@ protected:
     void Init();
 
     virtual void GetSetAmplitudePage(
-        complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length)
-    {
-        const bitCapIntOcl pageLength = (bitCapIntOcl)pageMaxQPower();
-        bitCapIntOcl perm = 0U;
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            if ((perm + length) < offset) {
-                continue;
-            }
-            if (perm >= (offset + length)) {
-                break;
-            }
-            const bitCapInt partOffset = (perm < offset) ? (offset - perm) : 0U;
-            const bitCapInt partLength = (length < pageLength) ? length : pageLength;
-            if (cPagePtr) {
-                qPages[i]->SetAmplitudePage(cPagePtr, (bitCapIntOcl)partOffset, (bitCapIntOcl)partLength);
-            } else {
-                qPages[i]->GetAmplitudePage(pagePtr, (bitCapIntOcl)partOffset, (bitCapIntOcl)partLength);
-            }
-            perm += pageLength;
-        }
-    }
+        complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length);
 
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
@@ -305,7 +285,7 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
-    virtual void Mtrx(const complex* mtrx, bitLenInt qubitIndex);
+    virtual void Mtrx(const complex* mtrx, bitLenInt target);
     virtual void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)
     {
         ApplySingleEither(false, topLeft, bottomRight, qubitIndex);
