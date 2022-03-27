@@ -120,12 +120,6 @@ void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
     }
 
     shards[target] = toRet;
-
-    if (IS_CLIFFORD(shards[target]->gate)) {
-        MpsShardPtr shard = shards[target];
-        shards[target] = NULL;
-        Mtrx(shard->gate, target);
-    }
 }
 
 QInterfacePtr QStabilizerHybrid::Clone()
@@ -345,7 +339,7 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
 
 void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
 {
-    bool wasCached = (bool)shards[target];
+    const bool wasCached = (bool)shards[target];
     complex mtrx[4];
     if (wasCached) {
         shards[target]->Compose(lMtrx);
