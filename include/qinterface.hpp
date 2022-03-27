@@ -16,7 +16,6 @@
 #include "common/rdrandwrapper.hpp"
 #include "hamiltonian.hpp"
 
-#include <ctime>
 #include <map>
 #include <vector>
 

@@ -19,8 +19,6 @@
 #include "qalu.hpp"
 #endif
 
-#include <algorithm>
-
 namespace Qrack {
 
 class QEngine;

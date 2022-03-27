@@ -12,6 +12,8 @@
 
 #include "qengine_opencl.hpp"
 
+#include <algorithm>
+
 namespace Qrack {
 
 // Mask definition for Apply2x2()

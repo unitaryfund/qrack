@@ -17,8 +17,10 @@
 #include <chrono>
 #include <dirent.h>
 #include <fstream>
+#include <string>
 #include <sys/types.h>
 #include <thread>
+#include <vector>
 #endif
 
 namespace Qrack {

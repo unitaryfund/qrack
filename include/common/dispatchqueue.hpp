@@ -23,12 +23,10 @@
 #define _USE_MATH_DEFINES
 
 #include <condition_variable>
-#include <cstdint>
 #include <functional>
 #include <future>
 #include <mutex>
 #include <queue>
-#include <vector>
 
 namespace Qrack {
 

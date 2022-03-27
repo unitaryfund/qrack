@@ -16,10 +16,6 @@
 
 #if ENABLE_DEVRAND
 #include <sys/random.h>
-#elif ENABLE_RNDFILE
-#include <future>
-#include <string>
-#include <vector>
 #endif
 
 #if ENABLE_RDRAND
