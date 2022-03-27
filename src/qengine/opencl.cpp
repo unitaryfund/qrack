@@ -96,6 +96,73 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     }
 }
 
+void QEngineOCL::FreeAll()
+{
+    ZeroAmplitudes();
+
+    powersBuffer = NULL;
+    if (nrmArray) {
+        FreeAligned(nrmArray);
+        nrmArray = NULL;
+    }
+
+    SubtractAlloc(totalOclAllocSize);
+}
+
+void QEngineOCL::ZeroAmplitudes()
+{
+    clDump();
+    runningNorm = ZERO_R1;
+
+    if (!stateBuffer) {
+        return;
+    }
+
+    ResetStateBuffer(NULL);
+    FreeStateVec();
+
+    SubtractAlloc(sizeof(complex) * maxQPowerOcl);
+}
+
+void QEngineOCL::FreeStateVec(complex* sv)
+{
+    bool doReset = false;
+    if (sv == NULL) {
+        sv = stateVec;
+        doReset = true;
+    }
+
+    if (sv) {
+#if defined(_WIN32)
+        _aligned_free(sv);
+#else
+        free(sv);
+#endif
+    }
+
+    if (doReset) {
+        stateVec = NULL;
+    }
+}
+
+void QEngineOCL::CopyStateVec(QEnginePtr src)
+{
+    if (src->IsZeroAmplitude()) {
+        ZeroAmplitudes();
+        return;
+    }
+
+    if (!stateBuffer) {
+        ReinitBuffer();
+    }
+
+    LockSync(CL_MAP_WRITE);
+    src->GetQuantumState(stateVec);
+    UnlockSync();
+
+    runningNorm = src->GetRunningNorm();
+}
+
 void QEngineOCL::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
     if (!stateBuffer) {

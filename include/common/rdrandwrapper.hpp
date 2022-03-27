@@ -14,7 +14,9 @@
 
 #include "qrack_types.hpp"
 
-#if ENABLE_RNDFILE && !ENABLE_DEVRAND
+#if ENABLE_DEVRAND
+#include <sys/random.h>
+#elif ENABLE_RNDFILE
 #include <future>
 #include <string>
 #include <vector>
@@ -41,7 +43,19 @@ public:
         return instance;
     }
 
-    unsigned NextRaw();
+    unsigned NextRaw()
+    {
+        size_t fSize = 0;
+        unsigned v;
+        while (fSize < 1) {
+            fSize = fread(&v, sizeof(unsigned), 1, dataFile);
+            if (fSize < 1) {
+                _readNextRandDataFile();
+            }
+        }
+
+        return v;
+    }
 
 private:
     RandFile() { _readNextRandDataFile(); }
@@ -63,9 +77,86 @@ public:
 #endif
 
 class RdRandom {
+private:
+    bool getRdRand(unsigned* pv)
+    {
+#if ENABLE_RDRAND || ENABLE_DEVRAND
+        const int max_rdrand_tries = 10;
+        for (int i = 0; i < max_rdrand_tries; ++i) {
+#if ENABLE_DEVRAND
+            if (sizeof(unsigned) == getrandom(reinterpret_cast<char*>(pv), sizeof(unsigned), 0))
+#else
+            if (_rdrand32_step(pv))
+#endif
+                return true;
+        }
+#endif
+        return false;
+    }
+
 public:
-    bool SupportsRDRAND();
-    unsigned NextRaw();
-    real1_f Next();
+    bool SupportsRDRAND()
+    {
+#if ENABLE_RDRAND
+        const unsigned flag_RDRAND = (1 << 30);
+
+#if _MSC_VER
+        int ex[4];
+        __cpuid(ex, 1);
+
+        return ((ex[2] & flag_RDRAND) == flag_RDRAND);
+#else
+        unsigned eax, ebx, ecx, edx;
+        ecx = 0;
+        __get_cpuid(1, &eax, &ebx, &ecx, &edx);
+
+        return ((ecx & flag_RDRAND) == flag_RDRAND);
+#endif
+
+#else
+        return false;
+#endif
+    }
+
+#if ENABLE_RNDFILE && !ENABLE_DEVRAND
+    unsigned NextRaw() { return RandFile::getInstance().NextRaw(); }
+#else
+    unsigned NextRaw()
+    {
+        unsigned v;
+        if (!getRdRand(&v)) {
+            throw std::runtime_error("Random number generator failed up to retry limit.");
+        }
+
+        return v;
+    }
+#endif
+
+    real1_f Next()
+    {
+        unsigned v = NextRaw();
+
+        real1_f res = ZERO_R1_F;
+        real1_f part = ONE_R1_F;
+        for (unsigned i = 0U; i < 32U; i++) {
+            part /= 2;
+            if ((v >> i) & 1U) {
+                res += part;
+            }
+        }
+
+#if FPPOW > 5
+        v = NextRaw();
+
+        for (unsigned i = 0U; i < 32U; i++) {
+            part /= 2;
+            if ((v >> i) & 1U) {
+                res += part;
+            }
+        }
+#endif
+
+        return res;
+    }
 };
 } // namespace Qrack

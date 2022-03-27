@@ -58,6 +58,23 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     SetPermutation(perm);
 }
 
+bool QStabilizer::TrimControls(
+    const bitLenInt* lControls, bitLenInt lControlLen, bool isAnti, std::vector<bitLenInt>& output)
+{
+    for (bitLenInt i = 0; i < lControlLen; i++) {
+        const bitLenInt bit = lControls[i];
+        if (!IsSeparableZ(bit)) {
+            output.push_back(bit);
+            continue;
+        }
+        if (isAnti == M(bit)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
 {
     Dump();
@@ -1309,36 +1326,6 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
     throw std::domain_error("QStabilizer::Invert() not implemented for non-Clifford/Pauli cases!");
 }
 
-void QStabilizer::MCMtrx(const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
-{
-    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        MCPhase(lControls, lControlLen, mtrx[0], mtrx[3], target);
-        return;
-    }
-
-    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        MCInvert(lControls, lControlLen, mtrx[1], mtrx[2], target);
-        return;
-    }
-
-    throw std::domain_error("QStabilizer::MCMtrx() not implemented for non-Clifford/Pauli cases!");
-}
-
-void QStabilizer::MACMtrx(const bitLenInt* lControls, bitLenInt lControlLen, const complex* mtrx, bitLenInt target)
-{
-    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        MACPhase(lControls, lControlLen, mtrx[0], mtrx[3], target);
-        return;
-    }
-
-    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        MACInvert(lControls, lControlLen, mtrx[1], mtrx[2], target);
-        return;
-    }
-
-    throw std::domain_error("QStabilizer::MACMtrx() not implemented for non-Clifford/Pauli cases!");
-}
-
 void QStabilizer::MCPhase(
     const bitLenInt* lControls, bitLenInt lControlLen, complex topLeft, complex bottomRight, bitLenInt target)
 {
@@ -1652,5 +1639,20 @@ void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt q
     }
 
     throw std::domain_error("QStabilizer::FSim() not implemented for non-Clifford/Pauli cases!");
+}
+
+bool QStabilizer::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f ignored)
+{
+    for (bitLenInt i = 0U; i < length; i++) {
+        Swap(qubits[i], i);
+    }
+
+    const bool toRet = CanDecomposeDispose(0U, 2U);
+
+    for (bitLenInt i = 0U; i < length; i++) {
+        Swap(qubits[i], i);
+    }
+
+    return toRet;
 }
 } // namespace Qrack

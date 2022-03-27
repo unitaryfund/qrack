@@ -72,6 +72,113 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     }
 }
 
+void QEngineCPU::GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+{
+    Finish();
+
+    if (stateVec) {
+        stateVec->copy_out(pagePtr, offset, length);
+    } else {
+        std::fill(pagePtr, pagePtr + length, ZERO_CMPLX);
+    }
+}
+void QEngineCPU::SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
+{
+    if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPowerOcl));
+        stateVec->clear();
+    }
+
+    Finish();
+
+    stateVec->copy_in(pagePtr, offset, length);
+
+    runningNorm = REAL1_DEFAULT_ARG;
+}
+void QEngineCPU::SetAmplitudePage(
+    QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
+{
+    QEngineCPUPtr pageEngineCpuPtr = std::dynamic_pointer_cast<QEngineCPU>(pageEnginePtr);
+    StateVectorPtr oStateVec = pageEngineCpuPtr->stateVec;
+
+    if (!stateVec && !oStateVec) {
+        return;
+    }
+
+    if (!oStateVec && (length == maxQPower)) {
+        ZeroAmplitudes();
+        return;
+    }
+
+    if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPowerOcl));
+        stateVec->clear();
+    }
+
+    Finish();
+    pageEngineCpuPtr->Finish();
+
+    stateVec->copy_in(oStateVec, srcOffset, dstOffset, length);
+
+    runningNorm = REAL1_DEFAULT_ARG;
+}
+void QEngineCPU::ShuffleBuffers(QEnginePtr engine)
+{
+    QEngineCPUPtr engineCpu = std::dynamic_pointer_cast<QEngineCPU>(engine);
+
+    if (!stateVec && !(engineCpu->stateVec)) {
+        return;
+    }
+
+    if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPowerOcl));
+        stateVec->clear();
+    }
+
+    if (!(engineCpu->stateVec)) {
+        engineCpu->ResetStateVec(engineCpu->AllocStateVec(maxQPowerOcl));
+        engineCpu->stateVec->clear();
+    }
+
+    Finish();
+    engineCpu->Finish();
+
+    stateVec->shuffle(engineCpu->stateVec);
+
+    runningNorm = REAL1_DEFAULT_ARG;
+    engineCpu->runningNorm = REAL1_DEFAULT_ARG;
+}
+void QEngineCPU::CopyStateVec(QEnginePtr src)
+{
+    if (src->IsZeroAmplitude()) {
+        ZeroAmplitudes();
+        return;
+    }
+
+    if (!stateVec) {
+        ResetStateVec(AllocStateVec(maxQPowerOcl));
+    }
+
+    Finish();
+    src->Finish();
+
+    complex* sv;
+    if (isSparse) {
+        sv = new complex[(bitCapIntOcl)maxQPower];
+    } else {
+        sv = std::dynamic_pointer_cast<StateVectorArray>(stateVec)->amplitudes;
+    }
+
+    src->GetQuantumState(sv);
+
+    if (isSparse) {
+        SetQuantumState(sv);
+        delete[] sv;
+    }
+
+    runningNorm = src->GetRunningNorm();
+}
+
 complex QEngineCPU::GetAmplitude(bitCapInt perm)
 {
     // WARNING: Does not normalize!

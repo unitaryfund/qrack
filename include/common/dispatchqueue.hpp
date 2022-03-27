@@ -36,7 +36,13 @@ class DispatchQueue {
     typedef std::function<void(void)> fp_t;
 
 public:
-    DispatchQueue();
+    DispatchQueue()
+        : quit_(false)
+        , isFinished_(true)
+        , isStarted_(false)
+    {
+        // Intentionally left blank.
+    }
     ~DispatchQueue();
 
     // dispatch and copy
