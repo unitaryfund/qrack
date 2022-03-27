@@ -90,21 +90,25 @@ void QStabilizerHybrid::CacheEigenstate(bitLenInt target)
 
     MpsShardPtr toRet = NULL;
     // If in PauliX or PauliY basis, compose gate with conversion from/to PauliZ basis.
-    if (stabilizer->IsSeparableX(target)) {
+    stabilizer->H(target);
+    if (stabilizer->IsSeparableZ(target)) {
         // X eigenstate
-        stabilizer->H(target);
-
         const complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
             complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
         toRet = std::make_shared<MpsShard>(mtrx);
-    } else if (stabilizer->IsSeparableY(target)) {
-        // Y eigenstate
+    } else {
+        stabilizer->H(target);
         stabilizer->IS(target);
         stabilizer->H(target);
-
-        const complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-            complex(ZERO_R1, SQRT1_2_R1), complex(ZERO_R1, -SQRT1_2_R1) };
-        toRet = std::make_shared<MpsShard>(mtrx);
+        if (stabilizer->IsSeparableZ(target)) {
+            // Y eigenstate
+            const complex mtrx[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+                complex(ZERO_R1, SQRT1_2_R1), complex(ZERO_R1, -SQRT1_2_R1) };
+            toRet = std::make_shared<MpsShard>(mtrx);
+        } else {
+            stabilizer->H(target);
+            stabilizer->S(target);
+        }
     }
 
     if (!toRet) {
@@ -341,8 +345,9 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
 
 void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
 {
+    bool wasCached = (bool)shards[target];
     complex mtrx[4];
-    if (shards[target]) {
+    if (wasCached) {
         shards[target]->Compose(lMtrx);
         std::copy(shards[target]->gate, shards[target]->gate + 4, mtrx);
         shards[target] = NULL;
@@ -360,7 +365,9 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         stabilizer->Mtrx(mtrx, target);
     } else {
         shards[target] = std::make_shared<MpsShard>(mtrx);
-        CacheEigenstate(target);
+        if (!wasCached) {
+            CacheEigenstate(target);
+        }
     }
 }
 
