@@ -157,14 +157,10 @@ protected:
 
             if (shards[bit]) {
                 if (shards[bit]->IsInvert()) {
-                    InvertBuffer(bit);
-
-                    if (!shards[bit]) {
-                        if (anti == stabilizer->M(bit)) {
-                            return true;
-                        }
-                        continue;
+                    if (anti != stabilizer->M(bit)) {
+                        return true;
                     }
+                    continue;
                 }
 
                 if (shards[bit]->IsPhase()) {
