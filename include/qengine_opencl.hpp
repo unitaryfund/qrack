@@ -264,10 +264,13 @@ public:
     virtual void QueueSetRunningNorm(real1_f runningNrm) { AddQueueItem(QueueItem(runningNrm)); }
     virtual void AddQueueItem(const QueueItem& item)
     {
-        queue_mutex.lock();
-        bool isBase = (wait_queue_items.size() == 0);
-        wait_queue_items.push_back(item);
-        queue_mutex.unlock();
+        bool isBase;
+        // For lock_guard:
+        if (true) {
+            std::lock_guard<std::mutex> lock(queue_mutex);
+            isBase = (wait_queue_items.size() == 0);
+            wait_queue_items.push_back(item);
+        }
 
         if (isBase) {
             DispatchQueue(NULL, CL_COMPLETE);
