@@ -273,14 +273,14 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
 
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
-    engineOcl->asyncSharedMutex.lock();
     engineOcl->QueueSetRunningNorm(REAL1_DEFAULT_ARG);
+    engineOcl->asyncSharedMutex.lock();
     QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
-    // Waits for asyncSharedMutex
-    engineOcl->AddQueueItem(QueueItem());
     QueueSetRunningNorm(REAL1_DEFAULT_ARG);
     AddQueueItem(QueueItem(&(engineOcl->asyncSharedMutex)));
+    // Waits for asyncSharedMutex
+    engineOcl->AddQueueItem(QueueItem());
 }
 
 void QEngineOCL::LockSync(cl_map_flags flags)
