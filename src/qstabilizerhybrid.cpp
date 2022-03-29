@@ -349,7 +349,7 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
         return;
     }
 
-    if (isPaging) {
+    if (!isPaging) {
         TurnOffPaging();
     }
 
