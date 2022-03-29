@@ -264,9 +264,9 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
         engineOcl->ClearBuffer(engineOcl->stateBuffer, 0, engineOcl->maxQPowerOcl);
     }
 
-    engineOcl->clFinish();
-
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    engineOcl->clFinish();
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -274,10 +274,10 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
     engineOcl->QueueSetRunningNorm(REAL1_DEFAULT_ARG);
+    QueueSetRunningNorm(REAL1_DEFAULT_ARG);
     engineOcl->queue_mutex.lock();
     QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
-    QueueSetRunningNorm(REAL1_DEFAULT_ARG);
     AddQueueItem(QueueItem(&(engineOcl->queue_mutex)));
 }
 
@@ -341,8 +341,6 @@ void QEngineOCL::clDump()
     if (!device_context) {
         return;
     }
-
-    std::lock_guard<std::mutex> lock(queue_mutex);
 
     if (wait_queue_items.size()) {
         device_context->WaitOnAllEvents();

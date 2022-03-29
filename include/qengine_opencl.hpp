@@ -234,6 +234,7 @@ public:
 
     virtual ~QEngineOCL()
     {
+        std::lock_guard<std::mutex> lock(queue_mutex);
         clDump();
         FreeAll();
     }
