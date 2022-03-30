@@ -32,6 +32,19 @@ namespace Qrack {
 
 enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ, INVERT, PHASE };
 
+class bad_alloc : virtual public std::bad_alloc {
+private:
+    std::string m;
+public:
+    bad_alloc(std::string message)
+        : m(message)
+    {
+        // Intentionally left blank.
+    }
+
+    virtual const char* what() const noexcept { return m.c_str(); }
+};
+
 typedef std::shared_ptr<cl::Buffer> BufferPtr;
 
 class QEngineOCL;
@@ -131,9 +144,14 @@ struct PoolItem {
         cl_int error;
         BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
         if (error != CL_SUCCESS) {
-            if ((error == CL_MEM_OBJECT_ALLOCATION_FAILURE) || (error == CL_OUT_OF_HOST_MEMORY) ||
-                (error == CL_INVALID_BUFFER_SIZE)) {
-                throw std::bad_alloc();
+            if (error == CL_MEM_OBJECT_ALLOCATION_FAILURE) {
+                throw bad_alloc("CL_MEM_OBJECT_ALLOCATION_FAILURE in PoolItem::MakeBuffer()");
+            }
+            if (error == CL_OUT_OF_HOST_MEMORY) {
+                throw bad_alloc("CL_OUT_OF_HOST_MEMORY in PoolItem::MakeBuffer()");
+            }
+            if (error == CL_INVALID_BUFFER_SIZE) {
+                throw bad_alloc("CL_INVALID_BUFFER_SIZE in PoolItem::MakeBuffer()");
             }
             throw std::runtime_error("OpenCL error code on buffer allocation attempt: " + std::to_string(error));
         }
@@ -426,7 +444,7 @@ protected:
         if (currentAlloc > OCLEngine::Instance().GetMaxActiveAllocSize()) {
             OCLEngine::Instance().SubtractFromActiveAllocSize(deviceID, size);
             FreeAll();
-            throw std::bad_alloc();
+            throw bad_alloc("VRAM limits exceeded in QEngineOCL::AddAlloc()");
         }
         totalOclAllocSize += size;
     }
@@ -442,9 +460,14 @@ protected:
         BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
         if (error != CL_SUCCESS) {
             FreeAll();
-            if ((error == CL_MEM_OBJECT_ALLOCATION_FAILURE) || (error == CL_OUT_OF_HOST_MEMORY) ||
-                (error == CL_INVALID_BUFFER_SIZE)) {
-                throw std::bad_alloc();
+            if (error == CL_MEM_OBJECT_ALLOCATION_FAILURE) {
+                throw bad_alloc("CL_MEM_OBJECT_ALLOCATION_FAILURE in QEngineOCL::MakeBuffer()");
+            }
+            if (error == CL_OUT_OF_HOST_MEMORY) {
+                throw bad_alloc("CL_OUT_OF_HOST_MEMORY in QEngineOCL::MakeBuffer()");
+            }
+            if (error == CL_INVALID_BUFFER_SIZE) {
+                throw bad_alloc("CL_INVALID_BUFFER_SIZE in QEngineOCL::MakeBuffer()");
             }
             throw std::runtime_error("OpenCL error code on buffer allocation attempt: " + std::to_string(error));
         }

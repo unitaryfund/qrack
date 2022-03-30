@@ -569,7 +569,7 @@ void QEngineOCL::SetDevice(int dID, bool forceReInit)
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > maxAlloc) {
         FreeAll();
-        throw std::bad_alloc();
+        throw bad_alloc("VRAM limits exceeded in QEngineOCL::SetDevice()");
     } else if (useHostRam || ((OclMemDenom * stateVecSize) > maxMem)) {
         usingHostRam = true;
     } else {
@@ -1243,7 +1243,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     maxAlloc = device_context->GetMaxAlloc();
     if (nStateVecSize > maxAlloc) {
         FreeAll();
-        throw std::bad_alloc();
+        throw bad_alloc("VRAM limits exceeded in QEngineOCL::Compose()");
     }
 
     AddAlloc(sizeof(complex) * nMaxQPower);
