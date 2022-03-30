@@ -214,14 +214,11 @@ void QEngineOCL::SetAmplitudePage(
             ZeroAmplitudes();
         } else {
             ClearBuffer(stateBuffer, dstOffset, length);
+            runningNorm = REAL1_DEFAULT_ARG;
         }
-
-        runningNorm = ZERO_R1;
 
         return;
     }
-
-    cl_int error;
 
     if (!stateBuffer) {
         ReinitBuffer();
@@ -233,7 +230,7 @@ void QEngineOCL::SetAmplitudePage(
     EventVecPtr waitVec = ResetWaitEvents();
 
     cl::Event copyEvent;
-    error = queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, sizeof(complex) * srcOffset,
+    cl_int error = queue.enqueueCopyBuffer(*oStateBuffer, *stateBuffer, sizeof(complex) * srcOffset,
         sizeof(complex) * dstOffset, sizeof(complex) * length, waitVec.get(), &copyEvent);
     if (error != CL_SUCCESS) {
         FreeAll();

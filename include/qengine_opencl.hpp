@@ -35,6 +35,7 @@ enum SPECIAL_2X2 { NONE = 0, PAULIX, PAULIZ, INVERT, PHASE };
 class bad_alloc : virtual public std::bad_alloc {
 private:
     std::string m;
+
 public:
     bad_alloc(std::string message)
         : m(message)
