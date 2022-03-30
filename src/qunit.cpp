@@ -1491,10 +1491,6 @@ bitCapInt QUnit::MAll()
                 shards[i].amp0 = GetNonunitaryPhase();
                 shards[i].amp1 = ZERO_CMPLX;
             }
-        } else if (!toFind->isClifford() && !toFind->isBinaryDecisionTree()) {
-            if (M(i)) {
-                toRet |= pow2(i);
-            }
         } else {
             if (std::find(units.begin(), units.end(), toFind) == units.end()) {
                 units.push_back(toFind);
