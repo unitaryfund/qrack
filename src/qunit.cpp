@@ -1415,8 +1415,13 @@ bool QUnit::ForceM(bitLenInt qubit, bool res, bool doForce, bool doApply)
 
     // This is critical: it's the "nonlocal correlation" of "wave function collapse".
     if (shard.unit) {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
-            if ((i != qubit) && shards[i].unit == shard.unit) {
+        for (bitLenInt i = 0; i < qubit; i++) {
+            if (shards[i].unit == shard.unit) {
+                shards[i].MakeDirty();
+            }
+        }
+        for (bitLenInt i = qubit + 1U; i < qubitCount; i++) {
+            if (shards[i].unit == shard.unit) {
                 shards[i].MakeDirty();
             }
         }

@@ -888,51 +888,53 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         throw std::invalid_argument("QPager::ForceM() forced a measurement result with 0 probability");
     }
 
-    if (doApply && (nrmlzr != ONE_BCI)) {
-        const bitLenInt qpp = qubitsPerPage();
+    if (!doApply || ((ONE_R1 - nrmlzr) <= ZERO_R1)) {
+        return result;
+    }
+
+    const bitLenInt qpp = qubitsPerPage();
 #if ENABLE_PTHREAD
-        std::vector<std::future<void>> futures(qPages.size());
+    std::vector<std::future<void>> futures(qPages.size());
 #endif
-        if (qubit < qpp) {
-            const complex nrmFac = GetNonunitaryPhase() / (real1)std::sqrt((real1_f)nrmlzr);
-            const bitCapIntOcl qPower = pow2Ocl(qubit);
-            for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-                QEnginePtr engine = qPages[i];
+    if (qubit < qpp) {
+        const complex nrmFac = GetNonunitaryPhase() / (real1)std::sqrt((real1_f)nrmlzr);
+        const bitCapIntOcl qPower = pow2Ocl(qubit);
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            QEnginePtr engine = qPages[i];
 #if ENABLE_PTHREAD
-                futures[i] = (std::async(std::launch::async,
-                    [engine, qPower, result, nrmFac]() { engine->ApplyM(qPower, result, nrmFac); }));
+            futures[i] = (std::async(
+                std::launch::async, [engine, qPower, result, nrmFac]() { engine->ApplyM(qPower, result, nrmFac); }));
 #else
-                engine->ApplyM(qPower, result, nrmFac);
+            engine->ApplyM(qPower, result, nrmFac);
 #endif
-            }
-        } else {
-            const bitLenInt metaQubit = qubit - qpp;
-            const bitCapIntOcl qPower = pow2Ocl(metaQubit);
-            for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-                QEnginePtr engine = qPages[i];
-                if (!(i & qPower) == !result) {
+        }
+    } else {
+        const bitLenInt metaQubit = qubit - qpp;
+        const bitCapIntOcl qPower = pow2Ocl(metaQubit);
+        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            QEnginePtr engine = qPages[i];
+            if (!(i & qPower) == !result) {
 #if ENABLE_PTHREAD
-                    futures[i] = (std::async(
-                        std::launch::async, [engine, nrmlzr]() { engine->NormalizeState((real1_f)nrmlzr); }));
+                futures[i] =
+                    (std::async(std::launch::async, [engine, nrmlzr]() { engine->NormalizeState((real1_f)nrmlzr); }));
 #else
-                    engine->NormalizeState(nrmlzr);
+                engine->NormalizeState(nrmlzr);
 #endif
-                } else {
+            } else {
 #if ENABLE_PTHREAD
-                    futures[i] = (std::async(std::launch::async, [engine]() { engine->ZeroAmplitudes(); }));
+                futures[i] = (std::async(std::launch::async, [engine]() { engine->ZeroAmplitudes(); }));
 #else
-                    engine->ZeroAmplitudes();
+                engine->ZeroAmplitudes();
 #endif
-                }
             }
         }
+    }
 
 #if ENABLE_PTHREAD
-        for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            futures[i].get();
-        }
-#endif
+    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+        futures[i].get();
     }
+#endif
 
     return result;
 }
