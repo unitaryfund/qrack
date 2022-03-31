@@ -233,6 +233,7 @@ void QPager::CombineEngines(bitLenInt bit)
         QEnginePtr engine = nQPages.back();
         for (bitCapIntOcl j = 0; j < groupSize; j++) {
             engine->SetAmplitudePage(qPages[j + (i * groupSize)], 0, j * pagePower, pagePower);
+            qPages[j + (i * groupSize)] = NULL;
         }
     }
 
@@ -258,6 +259,7 @@ void QPager::SeparateEngines(bitLenInt thresholdBits, bool noBaseFloor)
             nQPages.push_back(MakeEngine(thresholdBits, 0, deviceIDs[(j + (i * pagesPer)) % deviceIDs.size()]));
             nQPages.back()->SetAmplitudePage(qPages[i], j * pageMaxQPower, 0, pageMaxQPower);
         }
+        qPages[i] = NULL;
     }
 
     qPages = nQPages;
