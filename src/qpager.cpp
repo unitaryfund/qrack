@@ -229,15 +229,10 @@ void QPager::CombineEngines(bitLenInt bit)
     std::vector<QEnginePtr> nQPages;
 
     for (bitCapIntOcl i = 0; i < groupCount; i++) {
-        nQPages.push_back(qPages[i]->CloneEmpty());
-        nQPages.back()->SetQubitCount(bit);
-    }
-
-    for (bitCapIntOcl i = 0; i < groupCount; i++) {
-        QEnginePtr engine = nQPages[i];
+        nQPages.push_back(MakeEngine(bit, 0, deviceIDs[i % deviceIDs.size()]));
+        QEnginePtr engine = nQPages.back();
         for (bitCapIntOcl j = 0; j < groupSize; j++) {
             engine->SetAmplitudePage(qPages[j + (i * groupSize)], 0, j * pagePower, pagePower);
-            qPages[j + (i * groupSize)] = NULL;
         }
     }
 
@@ -256,27 +251,13 @@ void QPager::SeparateEngines(bitLenInt thresholdBits, bool noBaseFloor)
 
     const bitCapIntOcl pagesPer = pow2Ocl(qubitCount - thresholdBits) / qPages.size();
     const bitCapIntOcl pageMaxQPower = pow2Ocl(thresholdBits);
-    const bitCapIntOcl totalPages = qPages.size() * pagesPer;
 
     std::vector<QEnginePtr> nQPages;
-    for (bitCapIntOcl i = 0; i < totalPages; i++) {
-        if (qPages.size() >= deviceIDs.size()) {
-            nQPages.push_back(qPages[i % deviceIDs.size()]->CloneEmpty());
-            nQPages.back()->SetQubitCount(thresholdBits);
-        } else if (qPages.size() > i) {
-            nQPages.push_back(qPages[i]->CloneEmpty());
-            nQPages.back()->SetQubitCount(thresholdBits);
-        } else {
-            nQPages.push_back(MakeEngine(thresholdBits, 0, deviceIDs[i % deviceIDs.size()]));
-            nQPages.back()->ZeroAmplitudes();
-        }
-    }
-
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         for (bitCapIntOcl j = 0; j < pagesPer; j++) {
-            nQPages[(j + (i * pagesPer))]->SetAmplitudePage(qPages[i], j * pageMaxQPower, 0, pageMaxQPower);
+            nQPages.push_back(MakeEngine(thresholdBits, 0, deviceIDs[(j + (i * pagesPer)) % deviceIDs.size()]));
+            nQPages.back()->SetAmplitudePage(qPages[i], j * pageMaxQPower, 0, pageMaxQPower);
         }
-        qPages[i] = NULL;
     }
 
     qPages = nQPages;
