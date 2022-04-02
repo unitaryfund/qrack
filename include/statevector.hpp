@@ -62,7 +62,7 @@ protected:
         }
 #if defined(__APPLE__)
         return std::unique_ptr<complex, void (*)(complex*)>(
-            [] {
+            []() {
                 void* toRet;
                 posix_memalign(&toRet, QRACK_ALIGN_SIZE, allocSize);
                 return (complex*)toRet;
