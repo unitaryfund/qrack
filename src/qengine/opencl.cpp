@@ -154,7 +154,10 @@ void QEngineOCL::CopyStateVec(QEnginePtr src)
         return;
     }
 
-    if (!stateBuffer) {
+    if (stateBuffer) {
+        std::lock_guard<std::mutex> lock(queue_mutex);
+        clDump();
+    } else {
         ReinitBuffer();
     }
 

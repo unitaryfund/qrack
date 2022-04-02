@@ -159,23 +159,19 @@ void QEngineCPU::CopyStateVec(QEnginePtr src)
     }
 
     if (stateVec) {
-        Finish();
+        std::lock_guard<std::mutex> lock(asyncSharedMutex);
+        Dump();
     } else {
         ResetStateVec(AllocStateVec(maxQPowerOcl));
     }
 
-    complex* sv;
     if (isSparse) {
-        sv = new complex[(bitCapIntOcl)maxQPower];
+        std::unique_ptr<complex> sv = std::unique_ptr<complex>(new complex[(bitCapIntOcl)maxQPower]);
+        src->GetQuantumState(sv.get());
+        SetQuantumState(sv.get());
     } else {
-        sv = std::dynamic_pointer_cast<StateVectorArray>(stateVec)->amplitudes;
-    }
-
-    src->GetQuantumState(sv);
-
-    if (isSparse) {
-        SetQuantumState(sv);
-        delete[] sv;
+        complex* sv = std::dynamic_pointer_cast<StateVectorArray>(stateVec)->amplitudes;
+        src->GetQuantumState(sv);
     }
 
     runningNorm = src->GetRunningNorm();
