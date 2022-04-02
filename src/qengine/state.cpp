@@ -159,7 +159,6 @@ void QEngineCPU::CopyStateVec(QEnginePtr src)
     }
 
     if (stateVec) {
-        std::lock_guard<std::mutex> lock(asyncSharedMutex);
         Dump();
     } else {
         ResetStateVec(AllocStateVec(maxQPowerOcl));

@@ -155,7 +155,6 @@ void QEngineOCL::CopyStateVec(QEnginePtr src)
     }
 
     if (stateBuffer) {
-        std::lock_guard<std::mutex> lock(queue_mutex);
         clDump();
     } else {
         ReinitBuffer();
@@ -276,10 +275,10 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     cl_int error;
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
-    engineOcl->queue_mutex.lock();
+    engineOcl->asyncSharedMutex.lock();
     QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
-    AddQueueItem(QueueItem(&(engineOcl->queue_mutex)));
+    AddQueueItem(QueueItem(&(engineOcl->asyncSharedMutex)));
 }
 
 void QEngineOCL::LockSync(cl_map_flags flags)
@@ -342,6 +341,9 @@ void QEngineOCL::clDump()
     if (!device_context) {
         return;
     }
+
+    // Make sure that async copy is finished, before we free the state vector.
+    std::lock_guard<std::mutex> lock(asyncSharedMutex);
 
     if (wait_queue_items.size()) {
         device_context->WaitOnAllEvents();

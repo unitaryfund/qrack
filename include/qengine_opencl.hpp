@@ -201,6 +201,7 @@ protected:
     std::vector<EventVecPtr> wait_refs;
     std::list<QueueItem> wait_queue_items;
     std::mutex queue_mutex;
+    std::mutex asyncSharedMutex;
     cl::CommandQueue queue;
     cl::Context context;
     // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of
@@ -254,10 +255,6 @@ public:
     virtual ~QEngineOCL()
     {
         clDump();
-
-        // Make sure that async copy is finished, before we free the state vector.
-        std::lock_guard<std::mutex> lock(queue_mutex);
-
         FreeAll();
     }
 

@@ -51,12 +51,7 @@ public:
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored3 = {}, bitLenInt ignored4 = 0,
         real1_f ignored5 = FP_NORM_EPSILON_F);
 
-    virtual ~QEngineCPU()
-    {
-        Dump();
-        // Make sure that async copy is finished, before we free the state vector.
-        std::lock_guard<std::mutex> lock(asyncSharedMutex);
-    }
+    virtual ~QEngineCPU() { Dump(); }
 
     virtual void Finish()
     {
@@ -76,6 +71,8 @@ public:
 
     virtual void Dump()
     {
+        // Make sure that async copy is finished, before we free the state vector.
+        std::lock_guard<std::mutex> lock(asyncSharedMutex);
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         dispatchQueue.dump();
 #endif
@@ -235,10 +232,6 @@ protected:
     typedef std::function<void(void)> DispatchFn;
     virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn)
     {
-        // Only check if lock can be aquired.
-        if (true) {
-            std::lock_guard<std::mutex> lock(asyncSharedMutex);
-        }
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         if ((workItemCount >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) && (workItemCount < GetStride())) {
             dispatchQueue.dispatch(fn);
