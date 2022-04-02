@@ -234,6 +234,10 @@ protected:
     typedef std::function<void(void)> DispatchFn;
     virtual void Dispatch(bitCapInt workItemCount, DispatchFn fn)
     {
+        // Only check if lock can be aquired.
+        if (true) {
+            std::lock_guard<std::mutex> lock(asyncSharedMutex);
+        }
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         if ((workItemCount >= (bitCapIntOcl)(ONE_BCI << dispatchThreshold)) && (workItemCount < GetStride())) {
             dispatchQueue.dispatch(fn);

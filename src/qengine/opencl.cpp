@@ -249,29 +249,30 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
         return;
     }
 
-    cl_int error;
-
     if (!stateBuffer) {
         ReinitBuffer();
         ClearBuffer(stateBuffer, 0, maxQPowerOcl);
     }
 
-    if (!(engineOcl->stateBuffer)) {
+    QueueSetRunningNorm(REAL1_DEFAULT_ARG);
+
+    if (engineOcl->stateBuffer) {
+        engineOcl->clFinish();
+    } else {
         engineOcl->ReinitBuffer();
         engineOcl->ClearBuffer(engineOcl->stateBuffer, 0, engineOcl->maxQPowerOcl);
     }
 
-    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    engineOcl->runningNorm = REAL1_DEFAULT_ARG;
 
-    engineOcl->clFinish();
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
+    cl_int error;
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
-    engineOcl->QueueSetRunningNorm(REAL1_DEFAULT_ARG);
-    QueueSetRunningNorm(REAL1_DEFAULT_ARG);
     engineOcl->queue_mutex.lock();
     QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
