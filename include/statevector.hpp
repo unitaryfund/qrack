@@ -45,79 +45,78 @@ namespace Qrack {
 
 class StateVectorArray : public StateVector {
 public:
-    complex* amplitudes;
+    std::unique_ptr<complex, void (*)(complex*)> amplitudes;
 
 protected:
     static real1_f normHelper(const complex& c) { return (real1_f)norm(c); }
 
-    complex* Alloc(bitCapIntOcl elemCount)
+    std::unique_ptr<complex, void (*)(complex*)> Alloc(bitCapIntOcl elemCount)
     {
+#if defined(__ANDROID__)
+        return (complex*)malloc(elemCount);
+#else
+        // elemCount is always a power of two, but might be smaller than QRACK_ALIGN_SIZE
         size_t allocSize = sizeof(complex) * elemCount;
         if (allocSize < QRACK_ALIGN_SIZE) {
             allocSize = QRACK_ALIGN_SIZE;
         }
-// elemCount is always a power of two, but might be smaller than QRACK_ALIGN_SIZE
 #if defined(__APPLE__)
-        void* toRet;
-        posix_memalign(&toRet, QRACK_ALIGN_SIZE, allocSize);
-        return (complex*)toRet;
+        return std::unique_ptr<complex, void (*)(complex*)>(
+            [] {
+                void* toRet;
+                posix_memalign(&toRet, QRACK_ALIGN_SIZE, allocSize);
+                return (complex*)toRet;
+            },
+            [](complex* c) { free(c); });
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-        return (complex*)_aligned_malloc(allocSize, QRACK_ALIGN_SIZE);
-#elif defined(__ANDROID__)
-        return (complex*)malloc(allocSize);
+        return std::unique_ptr<complex, void (*)(complex*)>(
+            (complex*)_aligned_malloc(allocSize, QRACK_ALIGN_SIZE), [](complex* c) { _aligned_free(c); });
 #else
-        return (complex*)aligned_alloc(QRACK_ALIGN_SIZE, allocSize);
+        return std::unique_ptr<complex, void (*)(complex*)>(
+            (complex*)aligned_alloc(QRACK_ALIGN_SIZE, allocSize), [](complex* c) { free(c); });
+#endif
 #endif
     }
 
-    virtual void Free()
-    {
-        if (amplitudes) {
-#if defined(_WIN32)
-            _aligned_free(amplitudes);
-#else
-            free(amplitudes);
-#endif
-        }
-        amplitudes = NULL;
-    }
+    virtual void Free() { amplitudes = NULL; }
 
 public:
     StateVectorArray(bitCapIntOcl cap)
         : StateVector(cap)
+        , amplitudes(Alloc(capacity))
     {
-        amplitudes = Alloc(capacity);
+        // Intentionally left blank.
     }
 
     virtual ~StateVectorArray() { Free(); }
 
-    complex read(const bitCapIntOcl& i) { return amplitudes[i]; };
+    complex read(const bitCapIntOcl& i) { return amplitudes.get()[i]; };
 
-    void write(const bitCapIntOcl& i, const complex& c) { amplitudes[i] = c; };
+    void write(const bitCapIntOcl& i, const complex& c) { amplitudes.get()[i] = c; };
 
     void write2(const bitCapIntOcl& i1, const complex& c1, const bitCapIntOcl& i2, const complex& c2)
     {
-        amplitudes[i1] = c1;
-        amplitudes[i2] = c2;
+        amplitudes.get()[i1] = c1;
+        amplitudes.get()[i2] = c2;
     };
 
-    void clear() { std::fill(amplitudes, amplitudes + (bitCapIntOcl)capacity, ZERO_CMPLX); }
+    void clear() { std::fill(amplitudes.get(), amplitudes.get() + (bitCapIntOcl)capacity, ZERO_CMPLX); }
 
     void copy_in(const complex* copyIn)
     {
         if (copyIn) {
-            std::copy(copyIn, copyIn + (bitCapIntOcl)capacity, amplitudes);
+            std::copy(copyIn, copyIn + (bitCapIntOcl)capacity, amplitudes.get());
         } else {
-            std::fill(amplitudes, amplitudes + (bitCapIntOcl)capacity, ZERO_CMPLX);
+            std::fill(amplitudes.get(), amplitudes.get() + (bitCapIntOcl)capacity, ZERO_CMPLX);
         }
     }
 
     void copy_in(const complex* copyIn, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
         if (copyIn) {
-            std::copy(copyIn, copyIn + length, amplitudes + offset);
+            std::copy(copyIn, copyIn + length, amplitudes.get() + offset);
         } else {
-            std::fill(amplitudes, amplitudes + length, ZERO_CMPLX);
+            std::fill(amplitudes.get(), amplitudes.get() + length, ZERO_CMPLX);
         }
     }
 
@@ -125,32 +124,38 @@ public:
         StateVectorPtr copyInSv, const bitCapIntOcl srcOffset, const bitCapIntOcl dstOffset, const bitCapIntOcl length)
     {
         if (copyInSv) {
-            const complex* copyIn = std::dynamic_pointer_cast<StateVectorArray>(copyInSv)->amplitudes + srcOffset;
-            std::copy(copyIn, copyIn + length, amplitudes + dstOffset);
+            const complex* copyIn = std::dynamic_pointer_cast<StateVectorArray>(copyInSv)->amplitudes.get() + srcOffset;
+            std::copy(copyIn, copyIn + length, amplitudes.get() + dstOffset);
         } else {
-            std::fill(amplitudes + dstOffset, amplitudes + dstOffset + length, ZERO_CMPLX);
+            std::fill(amplitudes.get() + dstOffset, amplitudes.get() + dstOffset + length, ZERO_CMPLX);
         }
     }
 
-    void copy_out(complex* copyOut) { std::copy(amplitudes, amplitudes + capacity, copyOut); }
+    void copy_out(complex* copyOut) { std::copy(amplitudes.get(), amplitudes.get() + capacity, copyOut); }
 
     void copy_out(complex* copyOut, const bitCapIntOcl offset, const bitCapIntOcl length)
     {
-        std::copy(amplitudes + offset, amplitudes + offset + capacity, copyOut);
+        std::copy(amplitudes.get() + offset, amplitudes.get() + offset + capacity, copyOut);
     }
 
     void copy(StateVectorPtr toCopy) { copy(std::dynamic_pointer_cast<StateVectorArray>(toCopy)); }
 
-    void copy(StateVectorArrayPtr toCopy) { std::copy(toCopy->amplitudes, toCopy->amplitudes + capacity, amplitudes); }
+    void copy(StateVectorArrayPtr toCopy)
+    {
+        std::copy(toCopy->amplitudes.get(), toCopy->amplitudes.get() + capacity, amplitudes.get());
+    }
 
     void shuffle(StateVectorPtr svp) { shuffle(std::dynamic_pointer_cast<StateVectorArray>(svp)); }
 
     void shuffle(StateVectorArrayPtr svp)
     {
-        std::swap_ranges(amplitudes + (capacity >> ONE_BCI), amplitudes + capacity, svp->amplitudes);
+        std::swap_ranges(amplitudes.get() + (capacity >> ONE_BCI), amplitudes.get() + capacity, svp->amplitudes.get());
     }
 
-    void get_probs(real1* outArray) { std::transform(amplitudes, amplitudes + capacity, outArray, normHelper); }
+    void get_probs(real1* outArray)
+    {
+        std::transform(amplitudes.get(), amplitudes.get() + capacity, outArray, normHelper);
+    }
 
     bool is_sparse() { return false; }
 };

@@ -170,8 +170,7 @@ void QEngineCPU::CopyStateVec(QEnginePtr src)
         src->GetQuantumState(sv.get());
         SetQuantumState(sv.get());
     } else {
-        complex* sv = std::dynamic_pointer_cast<StateVectorArray>(stateVec)->amplitudes;
-        src->GetQuantumState(sv);
+        src->GetQuantumState(std::dynamic_pointer_cast<StateVectorArray>(stateVec)->amplitudes.get());
     }
 
     runningNorm = src->GetRunningNorm();
