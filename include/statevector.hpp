@@ -53,7 +53,7 @@ protected:
     std::unique_ptr<complex, void (*)(complex*)> Alloc(bitCapIntOcl elemCount)
     {
 #if defined(__ANDROID__)
-        return (complex*)malloc(elemCount);
+        return std::unique_ptr<complex, void (*)(complex*)>(new complex[elemCount], [](complex* c) { delete c; });
 #else
         // elemCount is always a power of two, but might be smaller than QRACK_ALIGN_SIZE
         size_t allocSize = sizeof(complex) * elemCount;
