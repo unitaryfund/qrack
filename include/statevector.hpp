@@ -51,7 +51,7 @@ protected:
     static real1_f normHelper(const complex& c) { return (real1_f)norm(c); }
 
 #if defined(__APPLE__)
-    complex* _aligned_state_vec_alloc(bitCapIntOcl elemCount)
+    complex* _aligned_state_vec_alloc(bitCapIntOcl allocSize)
     {
         void* toRet;
         posix_memalign(&toRet, QRACK_ALIGN_SIZE, allocSize);
