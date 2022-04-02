@@ -158,12 +158,11 @@ void QEngineCPU::CopyStateVec(QEnginePtr src)
         return;
     }
 
-    if (!stateVec) {
+    if (stateVec) {
+        Finish();
+    } else {
         ResetStateVec(AllocStateVec(maxQPowerOcl));
     }
-
-    Finish();
-    src->Finish();
 
     complex* sv;
     if (isSparse) {

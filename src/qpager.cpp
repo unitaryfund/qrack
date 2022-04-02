@@ -319,12 +319,12 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
             fn(engine2, sqi);
         }
 
+        engine1->ShuffleBuffers(engine2);
+
         if (doNorm) {
             engine1->QueueSetDoNormalize(false);
             engine2->QueueSetDoNormalize(false);
         }
-
-        engine1->ShuffleBuffers(engine2);
     }
 }
 
@@ -388,30 +388,23 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
 
         QEnginePtr engine1 = qPages[j];
         QEnginePtr engine2 = qPages[j + targetPow];
-        bool doTop, doBottom;
 
         if (isSpecial) {
-            doTop = !IS_NORM_0(top);
-            doBottom = !IS_NORM_0(bottom);
-
-            if (doTop) {
+            if (!IS_NORM_0(ONE_CMPLX - top)) {
                 engine1->Phase(top, top, 0);
             }
-            if (doBottom) {
+            if (!IS_NORM_0(ONE_CMPLX - bottom)) {
                 engine2->Phase(bottom, bottom, 0);
             }
 
             continue;
         }
 
-        doTop = !isSqiCtrl || anti;
-        doBottom = !isSqiCtrl || !anti;
-
         engine1->ShuffleBuffers(engine2);
-        if (doTop) {
+        if (!isSqiCtrl || anti) {
             fn(engine1, sqi);
         }
-        if (doBottom) {
+        if (!isSqiCtrl || !anti) {
             fn(engine2, sqi);
         }
         engine1->ShuffleBuffers(engine2);
