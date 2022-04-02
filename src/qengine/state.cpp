@@ -150,6 +150,8 @@ void QEngineCPU::ShuffleBuffers(QEnginePtr engine)
         stateVec->shuffle(engineCpu->stateVec);
         engineCpu->asyncSharedMutex.unlock();
     });
+    engineCpu->Dispatch(
+        maxQPower >> 1U, [engineCpu] { std::lock_guard<std::mutex> lock(engineCpu->asyncSharedMutex); });
 }
 void QEngineCPU::CopyStateVec(QEnginePtr src)
 {

@@ -62,6 +62,7 @@ struct QueueItem {
     bool isSetDoNorm;
     bool isSetRunningNorm;
     bool isReleaseLock;
+    bool isTryLock;
     bool doNorm;
     real1 runningNorm;
     std::mutex* otherMutex;
@@ -76,6 +77,7 @@ struct QueueItem {
         , isSetDoNorm(false)
         , isSetRunningNorm(false)
         , isReleaseLock(false)
+        , isTryLock(false)
         , doNorm(false)
         , runningNorm(ONE_R1)
         , otherMutex(NULL)
@@ -92,6 +94,7 @@ struct QueueItem {
         , isSetDoNorm(true)
         , isSetRunningNorm(false)
         , isReleaseLock(false)
+        , isTryLock(false)
         , doNorm(doNrm)
         , runningNorm(ONE_R1)
         , otherMutex(NULL)
@@ -108,13 +111,14 @@ struct QueueItem {
         , isSetDoNorm(false)
         , isSetRunningNorm(true)
         , isReleaseLock(false)
+        , isTryLock(false)
         , doNorm(false)
         , runningNorm(runningNrm)
         , otherMutex(NULL)
     {
     }
 
-    QueueItem(std::mutex* oMutex)
+    QueueItem(std::mutex* oMutex, bool isRelease)
         : api_call()
         , workItemCount(0)
         , localGroupSize(0)
@@ -123,7 +127,8 @@ struct QueueItem {
         , localBuffSize(0)
         , isSetDoNorm(true)
         , isSetRunningNorm(false)
-        , isReleaseLock(true)
+        , isReleaseLock(isRelease)
+        , isTryLock(!isRelease)
         , doNorm(false)
         , runningNorm(ONE_R1)
         , otherMutex(oMutex)

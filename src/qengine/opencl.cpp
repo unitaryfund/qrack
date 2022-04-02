@@ -278,7 +278,8 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     engineOcl->asyncSharedMutex.lock();
     QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
-    AddQueueItem(QueueItem(&(engineOcl->asyncSharedMutex)));
+    AddQueueItem(QueueItem(&(engineOcl->asyncSharedMutex), true));
+    engineOcl->AddQueueItem(QueueItem(&(engineOcl->asyncSharedMutex), false));
 }
 
 void QEngineOCL::LockSync(cl_map_flags flags)
@@ -456,12 +457,15 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
 
     QueueItem item = wait_queue_items.front();
 
-    while (item.isSetDoNorm || item.isSetRunningNorm || item.isReleaseLock) {
+    while (item.isSetDoNorm || item.isSetRunningNorm || item.isReleaseLock || item.isTryLock) {
         if (item.isSetDoNorm) {
             doNormalize = item.doNorm;
         }
         if (item.isSetRunningNorm) {
             runningNorm = item.runningNorm;
+        }
+        if (item.isTryLock) {
+            std::lock_guard<std::mutex> lock(*(item.otherMutex));
         }
         if (item.isReleaseLock) {
             item.otherMutex->unlock();
