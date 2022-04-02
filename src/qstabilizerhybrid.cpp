@@ -48,15 +48,9 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 #if ENABLE_OPENCL
     if ((engineTypes.size() == 1U) && (engineTypes[0] == QINTERFACE_OPTIMAL_BASE)) {
         isDefaultPaging = true;
-        bitLenInt segmentGlobalQb = 0U;
-#if ENABLE_ENV_VARS
-        if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
-            segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
-        }
-#endif
 
         DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-        maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
+        maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex));
         if (qubitCount > maxPageQubits) {
             engineTypes.push_back(QINTERFACE_QPAGER);
         }
