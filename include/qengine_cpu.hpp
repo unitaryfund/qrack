@@ -53,8 +53,9 @@ public:
 
     virtual ~QEngineCPU()
     {
-        std::lock_guard<std::mutex> lock(asyncSharedMutex);
         Dump();
+        // Make sure that async copy is finished, before we free the state vector.
+        std::lock_guard<std::mutex> lock(asyncSharedMutex);
     }
 
     virtual void Finish()

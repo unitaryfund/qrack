@@ -253,8 +253,11 @@ public:
 
     virtual ~QEngineOCL()
     {
-        std::lock_guard<std::mutex> lock(queue_mutex);
         clDump();
+
+        // Make sure that async copy is finished, before we free the state vector.
+        std::lock_guard<std::mutex> lock(queue_mutex);
+
         FreeAll();
     }
 
