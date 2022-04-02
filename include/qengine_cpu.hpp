@@ -51,7 +51,11 @@ public:
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored3 = {}, bitLenInt ignored4 = 0,
         real1_f ignored5 = FP_NORM_EPSILON_F);
 
-    virtual ~QEngineCPU() { Dump(); }
+    virtual ~QEngineCPU()
+    {
+        std::lock_guard<std::mutex> lock(asyncSharedMutex);
+        Dump();
+    }
 
     virtual void Finish()
     {
@@ -71,7 +75,6 @@ public:
 
     virtual void Dump()
     {
-        std::lock_guard<std::mutex> lock(asyncSharedMutex);
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         dispatchQueue.dump();
 #endif
