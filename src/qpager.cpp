@@ -892,48 +892,23 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
     }
 
     const bitLenInt qpp = qubitsPerPage();
-#if ENABLE_PTHREAD
-    std::vector<std::future<void>> futures(qPages.size());
-#endif
     if (qubit < qpp) {
         const complex nrmFac = GetNonunitaryPhase() / (real1)std::sqrt((real1_f)nrmlzr);
         const bitCapIntOcl qPower = pow2Ocl(qubit);
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            QEnginePtr engine = qPages[i];
-#if ENABLE_PTHREAD
-            futures[i] = (std::async(
-                std::launch::async, [engine, qPower, result, nrmFac]() { engine->ApplyM(qPower, result, nrmFac); }));
-#else
-            engine->ApplyM(qPower, result, nrmFac);
-#endif
+            qPages[i]->ApplyM(qPower, result, nrmFac);
         }
     } else {
         const bitLenInt metaQubit = qubit - qpp;
         const bitCapIntOcl qPower = pow2Ocl(metaQubit);
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            QEnginePtr engine = qPages[i];
             if (!(i & qPower) == !result) {
-#if ENABLE_PTHREAD
-                futures[i] =
-                    (std::async(std::launch::async, [engine, nrmlzr]() { engine->NormalizeState((real1_f)nrmlzr); }));
-#else
-                engine->NormalizeState(nrmlzr);
-#endif
+                qPages[i]->NormalizeState(nrmlzr);
             } else {
-#if ENABLE_PTHREAD
-                futures[i] = (std::async(std::launch::async, [engine]() { engine->ZeroAmplitudes(); }));
-#else
-                engine->ZeroAmplitudes();
-#endif
+                qPages[i]->ZeroAmplitudes();
             }
         }
     }
-
-#if ENABLE_PTHREAD
-    for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-        futures[i].get();
-    }
-#endif
 
     return result;
 }
