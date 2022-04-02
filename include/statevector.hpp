@@ -50,6 +50,15 @@ public:
 protected:
     static real1_f normHelper(const complex& c) { return (real1_f)norm(c); }
 
+#if defined(__APPLE__)
+    complex* _aligned_state_vec_alloc(bitCapIntOcl elemCount)
+    {
+        void* toRet;
+        posix_memalign(&toRet, QRACK_ALIGN_SIZE, allocSize);
+        return (complex*)toRet;
+    }
+#endif
+
     std::unique_ptr<complex, void (*)(complex*)> Alloc(bitCapIntOcl elemCount)
     {
 #if defined(__ANDROID__)
@@ -62,12 +71,7 @@ protected:
         }
 #if defined(__APPLE__)
         return std::unique_ptr<complex, void (*)(complex*)>(
-            [allocSize]() {
-                void* toRet;
-                posix_memalign(&toRet, QRACK_ALIGN_SIZE, allocSize);
-                return (complex*)toRet;
-            },
-            [](complex* c) { free(c); });
+            _aligned_state_vec_alloc(allocSize), [](complex* c) { free(c); });
 #elif defined(_WIN32) && !defined(__CYGWIN__)
         return std::unique_ptr<complex, void (*)(complex*)>(
             (complex*)_aligned_malloc(allocSize, QRACK_ALIGN_SIZE), [](complex* c) { _aligned_free(c); });
