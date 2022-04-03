@@ -189,7 +189,7 @@ protected:
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
     std::vector<PoolItemPtr> poolItems;
-    real1* nrmArray;
+    std::unique_ptr<real1, void (*)(real1*)> nrmArray;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
     size_t maxWorkItems;
@@ -201,6 +201,15 @@ protected:
     cl_map_flags lockSyncFlags;
     bool usingHostRam;
     complex permutationAmp;
+
+#if defined(__APPLE__)
+    real1* _aligned_nrm_array_alloc(bitCapIntOcl allocSize)
+    {
+        void* toRet;
+        posix_memalign(&toRet, QRACK_ALIGN_SIZE, allocSize);
+        return (complex*)toRet;
+    }
+#endif
 
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by

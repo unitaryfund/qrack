@@ -65,12 +65,12 @@ namespace Qrack {
 
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr, error)                                                               \
     clFinish();                                                                                                        \
-    error = queue.enqueueReadBuffer(buff, CL_TRUE, 0, sizeof(real1) * size, array, NULL, NULL);                        \
+    error = queue.enqueueReadBuffer(buff, CL_TRUE, 0, sizeof(real1) * size, array.get(), NULL, NULL);                  \
     if (error != CL_SUCCESS) {                                                                                         \
         FreeAll();                                                                                                     \
         throw std::runtime_error("Failed to enqueue buffer read, error code: " + std::to_string(error));               \
     }                                                                                                                  \
-    *(sumPtr) = ParSum(array, size);
+    *(sumPtr) = ParSum(array.get(), size);
 
 #define CHECK_ZERO_SKIP()                                                                                              \
     if (!stateBuffer) {                                                                                                \
@@ -84,7 +84,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     , stateVec(NULL)
     , deviceID(devID)
     , wait_refs()
-    , nrmArray(NULL)
+    , nrmArray(NULL, [](real1* r) {})
     , nrmGroupSize(0)
     , totalOclAllocSize(0)
     , unlockHostMem(false)
@@ -103,10 +103,8 @@ void QEngineOCL::FreeAll()
     ZeroAmplitudes();
 
     powersBuffer = NULL;
-    if (nrmArray) {
-        FreeAligned(nrmArray);
-        nrmArray = NULL;
-    }
+    nrmBuffer = NULL;
+    nrmArray = NULL;
 
     SubtractAlloc(totalOclAllocSize);
 }
@@ -579,19 +577,24 @@ void QEngineOCL::SetDevice(int dID, bool forceReInit)
 
     if (didInit && doResize) {
         nrmBuffer = NULL;
-        FreeAligned(nrmArray);
         nrmArray = NULL;
         SubtractAlloc(oldNrmVecAlignSize);
     }
 
     if (!didInit || doResize) {
         AddAlloc(nrmArrayAllocSize);
-#if defined(__APPLE__)
-        posix_memalign((void**)&nrmArray, QRACK_ALIGN_SIZE, nrmArrayAllocSize);
+#if defined(__ANDROID__)
+        nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
+            new real1[nrmArrayAllocSize / sizeof(real1)], [](real1* r) { delete r; });
+#elif defined(__APPLE__)
+        nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
+            _aligned_state_vec_alloc(nrmArrayAllocSize), [](real1* c) { free(c); });
 #elif defined(_WIN32) && !defined(__CYGWIN__)
-        nrmArray = (real1*)_aligned_malloc(nrmArrayAllocSize, QRACK_ALIGN_SIZE);
+        nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
+            (real1*)_aligned_malloc(nrmArrayAllocSize, QRACK_ALIGN_SIZE), [](real1* c) { _aligned_free(c); });
 #else
-        nrmArray = (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmArrayAllocSize);
+        nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
+            (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmArrayAllocSize), [](real1* c) { free(c); });
 #endif
         nrmBuffer = MakeBuffer(context, CL_MEM_READ_WRITE, nrmArrayAllocSize);
     }
