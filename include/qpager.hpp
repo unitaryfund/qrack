@@ -310,8 +310,12 @@ public:
     virtual void PhaseParity(real1_f radians, bitCapInt mask);
 
     virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
-    // Don't use QEngine::ForceMReg.
-    using QInterface::ForceMReg;
+    virtual bitCapInt ForceMReg(
+        bitLenInt start, bitLenInt length, bitCapInt result, bool doForce = true, bool doApply = true)
+    {
+        // Don't use QEngine::ForceMReg().
+        return QInterface::ForceMReg(start, length, result, doForce, doApply);
+    }
 
 #if ENABLE_ALU
     virtual void INCDECSC(
