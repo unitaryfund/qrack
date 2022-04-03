@@ -114,13 +114,14 @@ public:
         if (engineTypes[0] == QINTERFACE_QPAGER) {
             return;
         }
-        engineTypes.insert(engineTypes.begin(), QINTERFACE_QPAGER);
 
         if (engine) {
-            QPagerPtr nEngine = std::dynamic_pointer_cast<QPager>(MakeEngine());
-            nEngine->LockEngine(engine);
-            engine = nEngine;
+            engine = std::make_shared<QPager>(engine, engineTypes, qubitCount, 0U, rand_generator, phaseFactor,
+                doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+                deviceIDs, thresholdQubits, separabilityThreshold);
         }
+
+        engineTypes.insert(engineTypes.begin(), QINTERFACE_QPAGER);
     }
 
     virtual void TurnOffPaging()
