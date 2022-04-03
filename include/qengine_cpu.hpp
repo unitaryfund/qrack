@@ -36,7 +36,6 @@ class QEngineCPU : virtual public QEngine {
 protected:
     StateVectorPtr stateVec;
     bool isSparse;
-    std::mutex asyncSharedMutex;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     DispatchQueue dispatchQueue;
     bitLenInt dispatchThreshold;
@@ -71,8 +70,6 @@ public:
 
     virtual void Dump()
     {
-        // Make sure that async copy is finished, before we free the state vector.
-        std::lock_guard<std::mutex> lock(asyncSharedMutex);
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         dispatchQueue.dump();
 #endif

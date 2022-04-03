@@ -61,8 +61,6 @@ struct QueueItem {
     size_t localBuffSize;
     bool isSetDoNorm;
     bool isSetRunningNorm;
-    bool isReleaseLock;
-    bool isTryLock;
     bool doNorm;
     real1 runningNorm;
     std::mutex* otherMutex;
@@ -76,8 +74,6 @@ struct QueueItem {
         , localBuffSize(lbs)
         , isSetDoNorm(false)
         , isSetRunningNorm(false)
-        , isReleaseLock(false)
-        , isTryLock(false)
         , doNorm(false)
         , runningNorm(ONE_R1)
         , otherMutex(NULL)
@@ -93,8 +89,6 @@ struct QueueItem {
         , localBuffSize(0)
         , isSetDoNorm(true)
         , isSetRunningNorm(false)
-        , isReleaseLock(false)
-        , isTryLock(false)
         , doNorm(doNrm)
         , runningNorm(ONE_R1)
         , otherMutex(NULL)
@@ -110,28 +104,9 @@ struct QueueItem {
         , localBuffSize(0)
         , isSetDoNorm(false)
         , isSetRunningNorm(true)
-        , isReleaseLock(false)
-        , isTryLock(false)
         , doNorm(false)
         , runningNorm(runningNrm)
         , otherMutex(NULL)
-    {
-    }
-
-    QueueItem(std::mutex* oMutex, bool isRelease)
-        : api_call()
-        , workItemCount(0)
-        , localGroupSize(0)
-        , deallocSize(0)
-        , buffers()
-        , localBuffSize(0)
-        , isSetDoNorm(true)
-        , isSetRunningNorm(false)
-        , isReleaseLock(isRelease)
-        , isTryLock(!isRelease)
-        , doNorm(false)
-        , runningNorm(ONE_R1)
-        , otherMutex(oMutex)
     {
     }
 };
@@ -206,7 +181,6 @@ protected:
     std::vector<EventVecPtr> wait_refs;
     std::list<QueueItem> wait_queue_items;
     std::mutex queue_mutex;
-    std::mutex asyncSharedMutex;
     cl::CommandQueue queue;
     cl::Context context;
     // stateBuffer is allocated as a shared_ptr, because it's the only buffer that will be acted on outside of

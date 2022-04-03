@@ -229,12 +229,8 @@ void QPager::CombineEngines(bitLenInt bit)
     std::vector<QEnginePtr> nQPages;
 
     for (bitCapIntOcl i = 0; i < groupCount; i++) {
-        nQPages.push_back(qPages[i]->CloneEmpty());
-        nQPages.back()->SetQubitCount(bit);
-    }
-
-    for (bitCapIntOcl i = 0; i < groupCount; i++) {
-        QEnginePtr engine = nQPages[i];
+        QEnginePtr engine = MakeEngine(bit, 0, deviceIDs[i % deviceIDs.size()]);
+        nQPages.push_back(engine);
         for (bitCapIntOcl j = 0; j < groupSize; j++) {
             engine->SetAmplitudePage(qPages[j + (i * groupSize)], 0, j * pagePower, pagePower);
             qPages[j + (i * groupSize)] = NULL;

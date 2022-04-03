@@ -251,22 +251,6 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
         return;
     }
 
-    if (!stateBuffer) {
-        ReinitBuffer();
-        ClearBuffer(stateBuffer, 0, maxQPowerOcl);
-    }
-
-    QueueSetRunningNorm(REAL1_DEFAULT_ARG);
-
-    if (engineOcl->stateBuffer) {
-        engineOcl->clFinish();
-    } else {
-        engineOcl->ReinitBuffer();
-        engineOcl->ClearBuffer(engineOcl->stateBuffer, 0, engineOcl->maxQPowerOcl);
-    }
-
-    engineOcl->runningNorm = REAL1_DEFAULT_ARG;
-
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -275,11 +259,23 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     cl_int error;
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
-    engineOcl->asyncSharedMutex.lock();
-    QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
+    if (!stateBuffer) {
+        ReinitBuffer();
+        ClearBuffer(stateBuffer, 0, maxQPowerOcl);
+    }
+
+    QueueSetRunningNorm(REAL1_DEFAULT_ARG);
+
+    if (engineOcl->stateBuffer) {
+        engineOcl->ReinitBuffer();
+        engineOcl->ClearBuffer(engineOcl->stateBuffer, 0, engineOcl->maxQPowerOcl);
+    }
+
+    engineOcl->clFinish();
+    engineOcl->runningNorm = REAL1_DEFAULT_ARG;
+
+    WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
-    AddQueueItem(QueueItem(&(engineOcl->asyncSharedMutex), true));
-    engineOcl->AddQueueItem(QueueItem(&(engineOcl->asyncSharedMutex), false));
 }
 
 void QEngineOCL::LockSync(cl_map_flags flags)
@@ -342,9 +338,6 @@ void QEngineOCL::clDump()
     if (!device_context) {
         return;
     }
-
-    // Make sure that async copy is finished, before we free the state vector.
-    std::lock_guard<std::mutex> lock(asyncSharedMutex);
 
     if (wait_queue_items.size()) {
         device_context->WaitOnAllEvents();
@@ -457,18 +450,12 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
 
     QueueItem item = wait_queue_items.front();
 
-    while (item.isSetDoNorm || item.isSetRunningNorm || item.isReleaseLock || item.isTryLock) {
+    while (item.isSetDoNorm || item.isSetRunningNorm) {
         if (item.isSetDoNorm) {
             doNormalize = item.doNorm;
         }
         if (item.isSetRunningNorm) {
             runningNorm = item.runningNorm;
-        }
-        if (item.isTryLock) {
-            std::lock_guard<std::mutex> lock(*(item.otherMutex));
-        }
-        if (item.isReleaseLock) {
-            item.otherMutex->unlock();
         }
 
         wait_queue_items.pop_front();
