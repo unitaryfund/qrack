@@ -203,6 +203,7 @@ void QPager::GetSetAmplitudePage(complex* pagePtr, const complex* cPagePtr, bitC
     }
 }
 
+#if ENABLE_OPENCL
 size_t QPager::GetRequiredSpace(bitCapIntOcl pageQubits)
 {
     const size_t preferredConcurrency = OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency();
@@ -224,6 +225,7 @@ size_t QPager::GetRequiredSpace(bitCapIntOcl pageQubits)
 
     return pow2Ocl(pageQubits) * sizeof(complex) + pow2Ocl(QBCAPPOW) * sizeof(bitCapIntOcl) + nrmArrayAllocSize;
 }
+#endif
 
 void QPager::CombineEngines(bitLenInt bit)
 {
@@ -243,10 +245,11 @@ void QPager::CombineEngines(bitLenInt bit)
 #if ENABLE_OPENCL
     const size_t extraSpace = OCLEngine::Instance().GetDeviceContextPtr(devID)->GetGlobalSize() -
         OCLEngine::Instance().GetActiveAllocSize(devID);
+    const size_t requiredSpace = GetRequiredSpace(bit);
 #else
     const size_t extraSpace = -1;
+    const size_t requiredSpace = 0;
 #endif
-    const size_t requiredSpace = GetRequiredSpace(bit);
 
     if (requiredSpace < extraSpace) {
         for (bitCapIntOcl i = 0; i < groupCount; i++) {
@@ -291,10 +294,11 @@ void QPager::SeparateEngines(bitLenInt thresholdBits, bool noBaseFloor)
 #if ENABLE_OPENCL
     const size_t extraSpace = OCLEngine::Instance().GetDeviceContextPtr(devID)->GetGlobalSize() -
         OCLEngine::Instance().GetActiveAllocSize(devID);
+    const size_t requiredSpace = GetRequiredSpace(qpp);
 #else
     const size_t extraSpace = -1;
+    const size_t requiredSpace = 0;
 #endif
-    const size_t requiredSpace = GetRequiredSpace(qpp);
 
     if (requiredSpace < extraSpace) {
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {

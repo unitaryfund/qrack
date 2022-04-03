@@ -86,7 +86,9 @@ protected:
     virtual void GetSetAmplitudePage(
         complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length);
 
+#if ENABLE_OPENCL
     virtual size_t GetRequiredSpace(bitCapIntOcl pageQubits);
+#endif
 
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
