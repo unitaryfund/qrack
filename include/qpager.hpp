@@ -86,6 +86,8 @@ protected:
     virtual void GetSetAmplitudePage(
         complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length);
 
+    virtual size_t GetRequiredSpace(bitCapIntOcl pageQubits);
+
 public:
     QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
