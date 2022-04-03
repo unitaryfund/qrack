@@ -67,12 +67,14 @@ public:
      */
     virtual void SwitchModes(bool useGpu)
     {
+        QEnginePtr nEngine = NULL;
         if (!isGpu && useGpu) {
-            QEnginePtr nEngine = MakeEngine(true);
-            nEngine->CopyStateVec(engine);
-            engine = nEngine;
+            nEngine = MakeEngine(true);
         } else if (isGpu && !useGpu) {
-            QEnginePtr nEngine = MakeEngine(false);
+            nEngine = MakeEngine(false);
+        }
+
+        if (nEngine) {
             nEngine->CopyStateVec(engine);
             engine = nEngine;
         }
