@@ -40,7 +40,7 @@ protected:
     virtual void SetQubitCount(bitLenInt qb)
     {
         SwitchModes(qb >= thresholdQubits);
-        QInterface::SetQubitCount(qb);
+        QEngine::SetQubitCount(qb);
     }
 
 public:
