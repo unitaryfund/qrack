@@ -37,6 +37,12 @@ protected:
     bool isGpu;
     real1_f separabilityThreshold;
 
+    virtual void SetQubitCount(bitLenInt qb)
+    {
+        SwitchModes(qb >= thresholdQubits);
+        QInterface::SetQubitCount(qb);
+    }
+
 public:
     QHybrid(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
@@ -126,18 +132,16 @@ public:
     virtual bitLenInt Compose(QHybridPtr toCopy)
     {
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
-        SwitchModes(nQubitCount >= thresholdQubits);
-        toCopy->SwitchModes(isGpu);
         SetQubitCount(nQubitCount);
+        toCopy->SwitchModes(isGpu);
         return engine->Compose(toCopy->engine);
     }
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QHybrid>(toCopy)); }
     virtual bitLenInt Compose(QHybridPtr toCopy, bitLenInt start)
     {
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
-        SwitchModes(nQubitCount >= thresholdQubits);
-        toCopy->SwitchModes(isGpu);
         SetQubitCount(nQubitCount);
+        toCopy->SwitchModes(isGpu);
         return engine->Compose(toCopy->engine, start);
     }
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
@@ -156,22 +160,19 @@ public:
     virtual void Decompose(bitLenInt start, QHybridPtr dest)
     {
         bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
-        SwitchModes(nQubitCount >= thresholdQubits);
-        dest->SwitchModes(isGpu);
         SetQubitCount(nQubitCount);
+        dest->SwitchModes(isGpu);
         return engine->Decompose(start, dest->engine);
     }
     virtual void Dispose(bitLenInt start, bitLenInt length)
     {
         bitLenInt nQubitCount = qubitCount - length;
-        SwitchModes(nQubitCount >= thresholdQubits);
         SetQubitCount(nQubitCount);
         return engine->Dispose(start, length);
     }
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
         bitLenInt nQubitCount = qubitCount - length;
-        SwitchModes(nQubitCount >= thresholdQubits);
         SetQubitCount(nQubitCount);
         return engine->Dispose(start, length, disposedPerm);
     }
