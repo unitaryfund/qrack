@@ -344,7 +344,9 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             QEnginePtr engine = qPages[i];
             fn(engine, target);
-            engine->QueueSetDoNormalize(false);
+            if (doNormalize) {
+                engine->QueueSetDoNormalize(false);
+            }
         }
 
         return;
@@ -362,8 +364,6 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
         QEnginePtr engine1 = qPages[j];
         QEnginePtr engine2 = qPages[j + targetPow];
 
-        const bool doNorm = doNormalize;
-
         engine1->ShuffleBuffers(engine2);
 
         if (!isSqiCtrl || isAnti) {
@@ -376,7 +376,7 @@ template <typename Qubit1Fn> void QPager::SingleBitGate(bitLenInt target, Qubit1
 
         engine1->ShuffleBuffers(engine2);
 
-        if (doNorm) {
+        if (doNormalize) {
             engine1->QueueSetDoNormalize(false);
             engine2->QueueSetDoNormalize(false);
         }
