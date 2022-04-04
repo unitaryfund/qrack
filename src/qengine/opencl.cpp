@@ -696,8 +696,7 @@ void QEngineOCL::X(bitLenInt qubit)
 void QEngineOCL::Z(bitLenInt qubit)
 {
     const complex pauliZ[4] = { ONE_CMPLX, ZERO_CMPLX, ZERO_CMPLX, -ONE_CMPLX };
-    bitCapIntOcl qPowers[1];
-    qPowers[0] = pow2Ocl(qubit);
+    const bitCapIntOcl qPowers[1] = { pow2Ocl(qubit) };
     Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PAULIZ);
 }
 
@@ -709,8 +708,7 @@ void QEngineOCL::Invert(complex topRight, complex bottomLeft, bitLenInt qubitInd
     }
 
     const complex pauliX[4] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    bitCapIntOcl qPowers[1];
-    qPowers[0] = pow2Ocl(qubitIndex);
+    const bitCapIntOcl qPowers[1] = { pow2Ocl(qubitIndex) };
     Apply2x2(0U, qPowers[0], pauliX, 1U, qPowers, false, SPECIAL_2X2::INVERT);
 }
 
@@ -728,8 +726,7 @@ void QEngineOCL::Phase(complex topLeft, complex bottomRight, bitLenInt qubitInde
     }
 
     const complex pauliZ[4] = { topLeft, ZERO_CMPLX, ZERO_CMPLX, bottomRight };
-    bitCapIntOcl qPowers[1];
-    qPowers[0] = pow2Ocl(qubitIndex);
+    const bitCapIntOcl qPowers[1] = { pow2Ocl(qubitIndex) };
     Apply2x2(0U, qPowers[0], pauliZ, 1U, qPowers, false, SPECIAL_2X2::PHASE);
 }
 
@@ -971,7 +968,7 @@ void QEngineOCL::BitMask(bitCapIntOcl mask, OCLAPI api_call, real1_f phase)
     const size_t ngc = FixWorkItemCount(bciArgs[0], nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
-    bool isPhaseParity = (api_call == OCL_API_PHASE_PARITY);
+    const bool isPhaseParity = (api_call == OCL_API_PHASE_PARITY);
     if (isPhaseParity) {
         complex phaseFac = std::polar(ONE_R1, (real1)(phase / 2));
         ;
@@ -1022,7 +1019,7 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
     real1 nrm = (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
     DISPATCH_WRITE(waitVec, *nrmInBuffer, sizeof(real1), &nrm, error);
 
-    size_t sizeDiff = sizeof(complex) * 4U * pow2Ocl(controlLen + mtrxSkipLen);
+    const size_t sizeDiff = sizeof(complex) * 4U * pow2Ocl(controlLen + mtrxSkipLen);
     AddAlloc(sizeDiff);
     BufferPtr uniformBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeDiff);
 

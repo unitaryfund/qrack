@@ -264,7 +264,7 @@ void QPager::CombineEngines(bitLenInt bit)
         for (bitCapIntOcl i = 0; i < groupCount; i++) {
             std::unique_ptr<complex> nPage(new complex[pagePower * groupSize]);
             for (bitCapIntOcl j = 0; j < groupSize; j++) {
-                const bitLenInt page = j + (i * groupSize);
+                const bitCapIntOcl page = j + (i * groupSize);
                 qPages[page]->GetAmplitudePage(nPage.get() + j * pagePower, 0, pagePower);
                 qPages[page] = NULL;
             }
@@ -800,10 +800,10 @@ void QPager::ApplySingleEither(bool isInvert, complex top, complex bottom, bitLe
             qPages[j].swap(qPages[j + targetPow]);
         }
 
-        if (top != ONE_CMPLX) {
+        if (!IS_NORM_0(ONE_CMPLX - top)) {
             qPages[j]->Phase(top, top, 0);
         }
-        if (bottom != ONE_CMPLX) {
+        if (!IS_NORM_0(ONE_CMPLX - bottom)) {
             qPages[j + targetPow]->Phase(bottom, bottom, 0);
         }
     }
