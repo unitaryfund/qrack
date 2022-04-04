@@ -505,9 +505,11 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
 
 void QEngine::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray)
 {
-    const bitCapIntOcl lengthPower = pow2Ocl(length);
-    for (bitCapIntOcl lcv = 0; lcv < lengthPower; lcv++) {
-        probsArray[lcv] = ProbReg(start, length, lcv);
+    const bitCapIntOcl lengthMask = pow2Ocl(length) - ONE_BCI;
+    std::fill(probsArray, probsArray + lengthMask + ONE_BCI, ZERO_R1);
+    for (bitCapIntOcl i = 0; i < maxQPower; i++) {
+        bitCapIntOcl reg = (i >> start) & lengthMask;
+        probsArray[reg] += ProbAll(i);
     }
 }
 

@@ -43,8 +43,8 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
         pagePerm += basePageMaxQPower;
         isPermInPage &= (initState < pagePerm);
         if (isPermInPage) {
-            qPages.push_back(MakeEngine(
-                baseQubitsPerPage, initState - (pagePerm - basePageMaxQPower), GetPageDevice(i)));
+            qPages.push_back(
+                MakeEngine(baseQubitsPerPage, initState - (pagePerm - basePageMaxQPower), GetPageDevice(i)));
         } else {
             qPages.push_back(MakeEngine(baseQubitsPerPage, 0, GetPageDevice(i)));
             qPages.back()->ZeroAmplitudes();

@@ -250,13 +250,14 @@ bitCapInt QInterface::ForceM(const bitLenInt* bits, bitLenInt length, const bool
 /// Returns probability of permutation of the register
 real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
 {
-    real1 prob = ONE_R1;
-    for (bitLenInt i = 0; i < length; i++) {
-        if ((permutation >> i) & ONE_BCI) {
-            prob *= Prob(start + i);
-        } else {
-            prob *= (ONE_R1 - Prob(start + i));
-        }
+    const bitCapIntOcl startMask = pow2Ocl(start) - ONE_BCI;
+    const bitCapIntOcl maxLcv = maxQPower >> length;
+    const bitCapIntOcl p = (bitCapIntOcl)permutation;
+    real1 prob = ZERO_R1;
+    for (bitCapIntOcl lcv = 0; lcv < maxLcv; lcv++) {
+        bitCapIntOcl i = lcv & startMask;
+        i |= ((lcv ^ i) | p) << length;
+        prob += ProbAll(i);
     }
 
     return (real1_f)prob;
