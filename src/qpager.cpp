@@ -309,7 +309,7 @@ void QPager::SeparateEngines(bitLenInt thresholdBits, bool noBaseFloor)
             qPages[i] = NULL;
         }
     } else {
-        const bitCapIntOcl qppPowOcl = pow2Ocl(qubitsPerPage());
+        const bitCapIntOcl qppPowOcl = pow2Ocl(qpp);
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             std::unique_ptr<complex> nPage(new complex[qppPowOcl]);
             qPages[i]->GetAmplitudePage(nPage.get(), 0, qppPowOcl);
