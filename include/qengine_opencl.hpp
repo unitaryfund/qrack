@@ -207,7 +207,7 @@ protected:
     {
         void* toRet;
         posix_memalign(&toRet, QRACK_ALIGN_SIZE, allocSize);
-        return (complex*)toRet;
+        return (real1*)toRet;
     }
 #endif
 
