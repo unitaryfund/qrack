@@ -60,7 +60,7 @@ namespace Qrack {
     device_context->UnlockWaitEvents();                                                                                \
     if (error != CL_SUCCESS) {                                                                                         \
         FreeAll();                                                                                                     \
-        throw std::runtime_error("Failed to enqueue buffer read, error code: " + std::to_string(error));               \
+        throw std::runtime_error("Failed to enqueue buffer copy, error code: " + std::to_string(error));               \
     }
 
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr, error)                                                               \
@@ -249,31 +249,32 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
         return;
     }
 
-    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-    EventVecPtr waitVec = ResetWaitEvents();
-    PoolItemPtr poolItem = GetFreePoolItem();
-
     cl_int error;
-    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
     if (!stateBuffer) {
         ReinitBuffer();
         ClearBuffer(stateBuffer, 0, maxQPowerOcl);
     }
 
-    QueueSetRunningNorm(REAL1_DEFAULT_ARG);
-
-    if (engineOcl->stateBuffer) {
+    if (!(engineOcl->stateBuffer)) {
         engineOcl->ReinitBuffer();
         engineOcl->ClearBuffer(engineOcl->stateBuffer, 0, engineOcl->maxQPowerOcl);
     }
 
     engineOcl->clFinish();
-    engineOcl->runningNorm = REAL1_DEFAULT_ARG;
+
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    EventVecPtr waitVec = ResetWaitEvents();
+    PoolItemPtr poolItem = GetFreePoolItem();
+
+    DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
     WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
+
+    runningNorm = REAL1_DEFAULT_ARG;
+    engineOcl->runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineOCL::LockSync(cl_map_flags flags)

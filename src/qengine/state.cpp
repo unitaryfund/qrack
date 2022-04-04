@@ -135,18 +135,18 @@ void QEngineCPU::ShuffleBuffers(QEnginePtr engine)
         stateVec->clear();
     }
 
-    QueueSetRunningNorm(REAL1_DEFAULT_ARG);
-
-    if (engineCpu->stateVec) {
+    if (!(engineCpu->stateVec)) {
         engineCpu->ResetStateVec(engineCpu->AllocStateVec(maxQPowerOcl));
         engineCpu->stateVec->clear();
     }
 
-    engineCpu->Finish();
-    engineCpu->runningNorm = REAL1_DEFAULT_ARG;
-
     Finish();
+    engineCpu->Finish();
+
     stateVec->shuffle(engineCpu->stateVec);
+
+    runningNorm = REAL1_DEFAULT_ARG;
+    engineCpu->runningNorm = REAL1_DEFAULT_ARG;
 }
 void QEngineCPU::CopyStateVec(QEnginePtr src)
 {
