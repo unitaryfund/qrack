@@ -396,6 +396,11 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
         return;
     }
 
+    if (length == 1U) {
+        Phase(-ONE_CMPLX, ONE_CMPLX, start);
+        return;
+    }
+
     const bitLenInt min1 = length - 1U;
     std::unique_ptr<bitLenInt[]> controls(new bitLenInt[min1]);
     for (bitLenInt i = 0; i < min1; i++) {
