@@ -1405,7 +1405,8 @@ QInterfacePtr QPager::Clone()
     SeparateEngines();
 
     QPagerPtr clone = std::make_shared<QPager>(engines, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+        randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor,
+        deviceIDs, thresholdQubitsPerPage);
 
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         clone->qPages[i] = std::dynamic_pointer_cast<QEngine>(qPages[i]->Clone());
@@ -1419,7 +1420,8 @@ QEnginePtr QPager::CloneEmpty()
     SeparateEngines();
 
     QPagerPtr clone = std::make_shared<QPager>(engines, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
-        randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+        randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor,
+        deviceIDs, thresholdQubitsPerPage);
 
     for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
         clone->qPages[i] = qPages[i]->CloneEmpty();
