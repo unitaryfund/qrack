@@ -589,7 +589,7 @@ void QEngineOCL::SetDevice(int dID, bool forceReInit)
             new real1[nrmArrayAllocSize / sizeof(real1)], [](real1* r) { delete r; });
 #elif defined(__APPLE__)
         nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
-            _aligned_state_vec_alloc(nrmArrayAllocSize), [](real1* c) { free(c); });
+            _aligned_nrm_array_alloc(nrmArrayAllocSize), [](real1* c) { free(c); });
 #elif defined(_WIN32) && !defined(__CYGWIN__)
         nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
             (real1*)_aligned_malloc(nrmArrayAllocSize, QRACK_ALIGN_SIZE), [](real1* c) { _aligned_free(c); });
