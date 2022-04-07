@@ -405,12 +405,12 @@ MICROSOFT_QUANTUM_DECL unsigned init_count_type(_In_ unsigned q, _In_ bool md, _
     }
 #endif
 
-    if (zxf && (!pg || simulatorType.size())) {
-        simulatorType.push_back(QINTERFACE_MASK_FUSION);
+    if (pg && !sh && simulatorType.size()) {
+        simulatorType.push_back(QINTERFACE_QPAGER);
     }
 
-    if (pg && (bdt || !sh || simulatorType.size())) {
-        simulatorType.push_back(QINTERFACE_QPAGER);
+    if (zxf) {
+        simulatorType.push_back(QINTERFACE_MASK_FUSION);
     }
 
     if (bdt) {
