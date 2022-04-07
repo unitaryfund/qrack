@@ -50,7 +50,7 @@ public:
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored = {}, bitLenInt qubitThreshold = 0,
         real1_f ignored2 = FP_NORM_EPSILON_F);
 
-    QEnginePtr MakeEngine(bool isOpenCL, bitCapInt initState = 0);
+    QEnginePtr MakeEngine(bool isOpenCL);
 
     virtual bool IsOpencl() { return isGpu; }
 

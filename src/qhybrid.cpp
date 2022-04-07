@@ -33,15 +33,19 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     }
 
     isGpu = (qubitCount >= thresholdQubits);
-    engine = MakeEngine(qubitCount >= thresholdQubits, initState);
+    engine = std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isGpu ? QINTERFACE_OPENCL : QINTERFACE_CPU,
+        qubitCount, initState, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND,
+        isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
 }
 
-QEnginePtr QHybrid::MakeEngine(bool isOpenCL, bitCapInt initState)
+QEnginePtr QHybrid::MakeEngine(bool isOpenCL)
 {
     QEnginePtr toRet =
-        std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QINTERFACE_OPENCL : QINTERFACE_CPU,
-            qubitCount, initState, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID,
-            useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
+        std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QINTERFACE_OPENCL : QINTERFACE_CPU, 0U,
+            0U, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND,
+            isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
+    toRet->ZeroAmplitudes();
+    toRet->SetQubitCount(qubitCount);
     toRet->SetConcurrency(GetConcurrencyLevel());
     return toRet;
 }
