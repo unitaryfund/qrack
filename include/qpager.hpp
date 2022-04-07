@@ -45,6 +45,7 @@ protected:
     bitLenInt maxQubits;
 
     QEnginePtr MakeEngine(bitLenInt length, bitCapInt perm, int deviceId);
+    QEnginePtr MakeZeroEngine(bitLenInt length, int deviceId);
 
     virtual void SetQubitCount(bitLenInt qb)
     {

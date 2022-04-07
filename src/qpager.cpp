@@ -46,8 +46,7 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
             qPages.push_back(
                 MakeEngine(baseQubitsPerPage, initState - (pagePerm - basePageMaxQPower), GetPageDevice(i)));
         } else {
-            qPages.push_back(MakeEngine(baseQubitsPerPage, 0, GetPageDevice(i)));
-            qPages.back()->ZeroAmplitudes();
+            qPages.push_back(MakeZeroEngine(baseQubitsPerPage, GetPageDevice(i)));
         }
     }
 }
@@ -181,6 +180,15 @@ QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapInt perm, int deviceId)
         false, false, useHostRam, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor));
 }
 
+QEnginePtr QPager::MakeZeroEngine(bitLenInt length, int deviceId)
+{
+    QEnginePtr toRet = std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, 0, 0, rand_generator,
+        phaseFactor, false, false, useHostRam, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor));
+    toRet->SetQubitCount(length);
+
+    return toRet;
+}
+
 void QPager::GetSetAmplitudePage(complex* pagePtr, const complex* cPagePtr, bitCapIntOcl offset, bitCapIntOcl length)
 {
     const bitCapIntOcl pageLength = (bitCapIntOcl)pageMaxQPower();
@@ -253,15 +261,46 @@ void QPager::CombineEngines(bitLenInt bit)
 
     if (requiredSpace < extraSpace) {
         for (bitCapIntOcl i = 0; i < groupCount; i++) {
+            bool isZero = true;
+            for (bitCapIntOcl j = 0; j < groupSize; j++) {
+                if (!(qPages[j + (i * groupSize)]->IsZeroAmplitude())) {
+                    isZero = false;
+                    break;
+                }
+            }
+            if (isZero) {
+                nQPages.push_back(MakeZeroEngine(bit, GetPageDevice(i)));
+                for (bitCapIntOcl j = 0; j < groupSize; j++) {
+                    const bitCapIntOcl page = j + (i * groupSize);
+                    qPages[page] = NULL;
+                }
+                continue;
+            }
             QEnginePtr engine = MakeEngine(bit, 0, GetPageDevice(i));
             nQPages.push_back(engine);
             for (bitCapIntOcl j = 0; j < groupSize; j++) {
-                engine->SetAmplitudePage(qPages[j + (i * groupSize)], 0, j * pagePower, pagePower);
-                qPages[j + (i * groupSize)] = NULL;
+                const bitCapIntOcl page = j + (i * groupSize);
+                engine->SetAmplitudePage(qPages[page], 0, j * pagePower, pagePower);
+                qPages[page] = NULL;
             }
         }
     } else {
         for (bitCapIntOcl i = 0; i < groupCount; i++) {
+            bool isZero = true;
+            for (bitCapIntOcl j = 0; j < groupSize; j++) {
+                if (!(qPages[j + (i * groupSize)]->IsZeroAmplitude())) {
+                    isZero = false;
+                    break;
+                }
+            }
+            if (isZero) {
+                nQPages.push_back(MakeZeroEngine(bit, GetPageDevice(i)));
+                for (bitCapIntOcl j = 0; j < groupSize; j++) {
+                    const bitCapIntOcl page = j + (i * groupSize);
+                    qPages[page] = NULL;
+                }
+                continue;
+            }
             std::unique_ptr<complex> nPage(new complex[pagePower * groupSize]);
             for (bitCapIntOcl j = 0; j < groupSize; j++) {
                 const bitCapIntOcl page = j + (i * groupSize);
@@ -302,6 +341,13 @@ void QPager::SeparateEngines(bitLenInt thresholdBits, bool noBaseFloor)
 
     if (requiredSpace < extraSpace) {
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            if (qPages[i]->IsZeroAmplitude()) {
+                for (bitCapIntOcl j = 0; j < pagesPer; j++) {
+                    nQPages.push_back(MakeZeroEngine(thresholdBits, GetPageDevice(i)));
+                }
+                qPages[i] = NULL;
+                continue;
+            }
             for (bitCapIntOcl j = 0; j < pagesPer; j++) {
                 nQPages.push_back(MakeEngine(thresholdBits, 0, GetPageDevice(j + (i * pagesPer))));
                 nQPages.back()->SetAmplitudePage(qPages[i], j * pageMaxQPower, 0, pageMaxQPower);
@@ -311,6 +357,13 @@ void QPager::SeparateEngines(bitLenInt thresholdBits, bool noBaseFloor)
     } else {
         const bitCapIntOcl qppPowOcl = pow2Ocl(qpp);
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
+            if (qPages[i]->IsZeroAmplitude()) {
+                for (bitCapIntOcl j = 0; j < pagesPer; j++) {
+                    nQPages.push_back(MakeZeroEngine(thresholdBits, GetPageDevice(i)));
+                }
+                qPages[i] = NULL;
+                continue;
+            }
             std::unique_ptr<complex> nPage(new complex[qppPowOcl]);
             qPages[i]->GetAmplitudePage(nPage.get(), 0, qppPowOcl);
             qPages[i] = NULL;

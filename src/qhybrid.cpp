@@ -41,10 +41,9 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
 QEnginePtr QHybrid::MakeEngine(bool isOpenCL)
 {
     QEnginePtr toRet =
-        std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QINTERFACE_OPENCL : QINTERFACE_CPU, 0U,
-            0U, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND,
-            isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
-    toRet->ZeroAmplitudes();
+        std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QINTERFACE_OPENCL : QINTERFACE_CPU, 0U, 0U,
+            rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
+            (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
     toRet->SetQubitCount(qubitCount);
     toRet->SetConcurrency(GetConcurrencyLevel());
     return toRet;
