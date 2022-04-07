@@ -86,18 +86,6 @@ void QInterface::IPhaseRootN(bitLenInt n, bitLenInt qubit)
     Phase(ONE_CMPLX, pow(-ONE_CMPLX, (complex)((real1)(-ONE_R1 / (bitCapIntOcl)(pow2(n - 1U))))), qubit);
 }
 
-/// NOT gate, which is also Pauli x matrix
-GATE_1_INVERT(X, ONE_CMPLX, ONE_CMPLX);
-
-/// Apply Pauli Y matrix to bit
-GATE_1_INVERT(Y, -I_CMPLX, I_CMPLX);
-
-/// Apply Pauli Z matrix to bit
-GATE_1_PHASE(Z, ONE_CMPLX, -ONE_CMPLX);
-
-/// Hadamard gate
-GATE_1_BIT(H, C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2);
-
 /// Y-basis transformation gate
 GATE_1_BIT(SH, C_SQRT1_2, C_SQRT1_2, C_I_SQRT1_2, -C_I_SQRT1_2);
 
@@ -128,18 +116,6 @@ GATE_1_BIT(SqrtY, ONE_PLUS_I_DIV_2, -ONE_PLUS_I_DIV_2, ONE_PLUS_I_DIV_2, ONE_PLU
 
 /// Apply Pauli Y matrix to bit
 GATE_1_BIT(ISqrtY, ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2, -ONE_MINUS_I_DIV_2, ONE_MINUS_I_DIV_2);
-
-/// Apply 1/4 phase rotation
-void QInterface::S(bitLenInt qubit) { PhaseRootN(2U, qubit); }
-
-/// Apply inverse 1/4 phase rotation
-void QInterface::IS(bitLenInt qubit) { IPhaseRootN(2U, qubit); }
-
-/// Apply 1/8 phase rotation
-void QInterface::T(bitLenInt qubit) { PhaseRootN(3U, qubit); }
-
-/// Apply inverse 1/8 phase rotation
-void QInterface::IT(bitLenInt qubit) { IPhaseRootN(3U, qubit); }
 
 /// Apply controlled S gate to bit
 void QInterface::CS(bitLenInt control, bitLenInt target) { CPhaseRootN(2U, control, target); }

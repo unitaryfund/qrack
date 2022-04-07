@@ -195,6 +195,21 @@ protected:
 
     template <typename Fn> void MACWrapper(const bitLenInt* controls, bitLenInt controlLen, Fn fn)
     {
+        // 0 controls
+        if (!controlLen) {
+            fn(NULL, 0U);
+            return;
+        }
+
+        // 1 control
+        if (controlLen == 1U) {
+            X(controls[0]);
+            fn(controls, 1U);
+            X(controls[0]);
+            return;
+        }
+
+        // Multiple controls
         bitCapInt xMask = 0U;
         for (bitLenInt i = 0; i < controlLen; i++) {
             xMask |= pow2(controls[i]);
@@ -743,7 +758,12 @@ public:
      *
      * Applies a Hadamard gate on qubit at "qubitIndex."
      */
-    virtual void H(bitLenInt qubitIndex);
+    virtual void H(bitLenInt qubit)
+    {
+        const complex C_SQRT1_2 = complex(SQRT1_2_R1, ZERO_R1);
+        const complex mtrx[4] = { C_SQRT1_2, C_SQRT1_2, C_SQRT1_2, -C_SQRT1_2 };
+        Mtrx(mtrx, qubit);
+    }
 
     /**
      * Square root of Hadamard gate
@@ -827,28 +847,28 @@ public:
      *
      * Applies a 1/4 phase rotation to the qubit at "qubitIndex."
      */
-    virtual void S(bitLenInt qubitIndex);
+    virtual void S(bitLenInt qubit) { PhaseRootN(2U, qubit); }
 
     /**
      * Inverse S gate
      *
      * Applies an inverse 1/4 phase rotation to the qubit at "qubitIndex."
      */
-    virtual void IS(bitLenInt qubitIndex);
+    virtual void IS(bitLenInt qubit) { IPhaseRootN(2U, qubit); }
 
     /**
      * T gate
      *
      * Applies a 1/8 phase rotation to the qubit at "qubitIndex."
      */
-    virtual void T(bitLenInt qubitIndex);
+    virtual void T(bitLenInt qubit) { PhaseRootN(3U, qubit); }
 
     /**
      * Inverse T gate
      *
      * Applies an inverse 1/8 phase rotation to the qubit at "qubitIndex."
      */
-    virtual void IT(bitLenInt qubitIndex);
+    virtual void IT(bitLenInt qubit) { IPhaseRootN(3U, qubit); }
 
     /**
      * "PhaseRootN" gate
@@ -877,7 +897,7 @@ public:
      * Applies the Pauli "X" operator to the qubit at "qubitIndex." The Pauli
      * "X" operator is equivalent to a logical "NOT."
      */
-    virtual void X(bitLenInt qubitIndex);
+    virtual void X(bitLenInt qubit) { Invert(ONE_CMPLX, ONE_CMPLX, qubit); }
 
     /**
      * Masked X gate
@@ -894,7 +914,7 @@ public:
      * "Y" operator is similar to a logical "NOT" with permutation phase.
      * effects.
      */
-    virtual void Y(bitLenInt qubitIndex);
+    virtual void Y(bitLenInt qubit) { Invert(-I_CMPLX, I_CMPLX, qubit); }
 
     /**
      * Masked Y gate
@@ -910,7 +930,7 @@ public:
      * Applies the Pauli "Z" operator to the qubit at "qubitIndex." The Pauli
      * "Z" operator reverses the phase of |1> and leaves |0> unchanged.
      */
-    virtual void Z(bitLenInt qubitIndex);
+    virtual void Z(bitLenInt qubit) { Phase(ONE_CMPLX, -ONE_CMPLX, qubit); }
 
     /**
      * Masked Z gate
