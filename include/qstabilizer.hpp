@@ -176,15 +176,56 @@ public:
 
 protected:
     /// Sets row i equal to row k
-    void rowcopy(const bitLenInt& i, const bitLenInt& k);
-    /// Swaps row i and row k
-    void rowswap(const bitLenInt& i, const bitLenInt& k);
+    void rowcopy(const bitLenInt& i, const bitLenInt& k)
+    {
+        if (i == k) {
+            return;
+        }
+
+        x[i] = x[k];
+        z[i] = z[k];
+        r[i] = r[k];
+    }
+    /// Swaps row i and row k - does not change the logical state
+    void rowswap(const bitLenInt& i, const bitLenInt& k)
+    {
+        if (i == k) {
+            return;
+        }
+
+        std::swap(x[k], x[i]);
+        std::swap(z[k], z[i]);
+        std::swap(r[k], r[i]);
+    }
     /// Sets row i equal to the bth observable (X_1,...X_n,Z_1,...,Z_n)
-    void rowset(const bitLenInt& i, bitLenInt b);
+    void rowset(const bitLenInt& i, bitLenInt b)
+    {
+        // Dealloc, first
+        x[i] = BoolVector();
+        z[i] = BoolVector();
+
+        x[i] = BoolVector(qubitCount, false);
+        z[i] = BoolVector(qubitCount, false);
+        r[i] = 0;
+
+        if (b < qubitCount) {
+            x[i][b] = true;
+        } else {
+            b -= qubitCount;
+            z[i][b] = true;
+        }
+    }
+    /// Left-multiply row i by row k - does not change the logical state
+    void rowmult(const bitLenInt& i, const bitLenInt& k)
+    {
+        r[i] = clifford(i, k);
+        for (bitLenInt j = 0; j < qubitCount; j++) {
+            x[i][j] = x[i][j] ^ x[k][j];
+            z[i][j] = z[i][j] ^ z[k][j];
+        }
+    }
     /// Return the phase (0,1,2,3) when row i is LEFT-multiplied by row k
     uint8_t clifford(const bitLenInt& i, const bitLenInt& k);
-    /// Left-multiply row i by row k
-    void rowmult(const bitLenInt& i, const bitLenInt& k);
 
     /**
      * Do Gaussian elimination to put the stabilizer generators in the following form:
@@ -261,7 +302,7 @@ public:
     virtual void X(bitLenInt qubitIndex);
     /// Apply a Pauli Y gate to target
     virtual void Y(bitLenInt qubitIndex);
-
+    // Swap two bits
     virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /// Measure qubit t
