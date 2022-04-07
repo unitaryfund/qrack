@@ -25,17 +25,27 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     , separabilityThreshold(sep_thresh)
 {
     if (qubitThreshold != 0) {
-        thresholdQubits = qubitThreshold;
+        gpuThresholdQubits = qubitThreshold;
     } else {
         bitLenInt gpuQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
         bitLenInt cpuQubits = (GetStride() <= ONE_BCI) ? 0U : (log2(GetStride() - ONE_BCI) + 1U);
-        thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
+        gpuThresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
     }
 
-    isGpu = (qubitCount >= thresholdQubits);
-    engine = std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isGpu ? QINTERFACE_OPENCL : QINTERFACE_CPU,
-        qubitCount, initState, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND,
-        isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
+    pagerThresholdQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+
+    isGpu = (qubitCount >= gpuThresholdQubits);
+    isPager = (qubitCount > pagerThresholdQubits);
+
+    std::vector<QInterfaceEngine> engines;
+    if (isPager) {
+        engines.push_back(QINTERFACE_QPAGER);
+    }
+    engines.push_back(isGpu ? QINTERFACE_OPENCL : QINTERFACE_CPU);
+
+    engine = std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, qubitCount, initState, rand_generator,
+        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+        std::vector<int>{}, pagerThresholdQubits, separabilityThreshold));
 }
 
 QEnginePtr QHybrid::MakeEngine(bool isOpenCL)
@@ -43,7 +53,7 @@ QEnginePtr QHybrid::MakeEngine(bool isOpenCL)
     QEnginePtr toRet =
         std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QINTERFACE_OPENCL : QINTERFACE_CPU, 0U, 0U,
             rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-            (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits, separabilityThreshold));
+            (real1_f)amplitudeFloor, std::vector<int>{}, pagerThresholdQubits, separabilityThreshold));
     toRet->SetQubitCount(qubitCount);
     toRet->SetConcurrency(GetConcurrencyLevel());
     return toRet;
@@ -52,7 +62,7 @@ QEnginePtr QHybrid::MakeEngine(bool isOpenCL)
 QInterfacePtr QHybrid::Clone()
 {
     QHybridPtr c = std::make_shared<QHybrid>(qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
-        useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, thresholdQubits,
+        useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, gpuThresholdQubits,
         separabilityThreshold);
     c->runningNorm = runningNorm;
     c->SetConcurrency(GetConcurrencyLevel());

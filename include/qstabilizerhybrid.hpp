@@ -109,36 +109,6 @@ public:
         }
     }
 
-    virtual void TurnOnPaging()
-    {
-        if (engineTypes[0] == QINTERFACE_QPAGER) {
-            return;
-        }
-
-        if (engine) {
-            engine = std::make_shared<QPager>(engine, engineTypes, qubitCount, 0U, rand_generator, phaseFactor,
-                doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-                deviceIDs, thresholdQubits, separabilityThreshold);
-        }
-
-        engineTypes.insert(engineTypes.begin(), QINTERFACE_QPAGER);
-    }
-
-    virtual void TurnOffPaging()
-    {
-        if (engineTypes[0] != QINTERFACE_QPAGER) {
-            return;
-        }
-        engineTypes.erase(engineTypes.begin());
-        if (!engineTypes.size()) {
-            engineTypes.push_back(QINTERFACE_OPTIMAL_BASE);
-        }
-
-        if (engine) {
-            engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
-        }
-    }
-
     virtual void ZeroAmplitudes()
     {
         SwitchToEngine();
@@ -281,23 +251,12 @@ public:
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy)
     {
         const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
-        const bool isPaging = isDefaultPaging && (nQubits > maxPageQubits);
         bitLenInt toRet;
 
-        if (isPaging) {
-            TurnOnPaging();
-        }
-
         if (engine) {
-            if (isPaging) {
-                toCopy->TurnOnPaging();
-            }
             toCopy->SwitchToEngine();
             toRet = engine->Compose(toCopy->engine);
         } else if (toCopy->engine) {
-            if (isPaging) {
-                toCopy->TurnOnPaging();
-            }
             SwitchToEngine();
             toRet = engine->Compose(toCopy->engine);
         } else {
@@ -324,23 +283,12 @@ public:
     virtual bitLenInt Compose(QStabilizerHybridPtr toCopy, bitLenInt start)
     {
         const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
-        const bool isPaging = isDefaultPaging && (nQubits > maxPageQubits);
         bitLenInt toRet;
 
-        if (isPaging) {
-            TurnOnPaging();
-        }
-
         if (engine) {
-            if (isPaging) {
-                toCopy->TurnOnPaging();
-            }
             toCopy->SwitchToEngine();
             toRet = engine->Compose(toCopy->engine, start);
         } else if (toCopy->engine) {
-            if (isPaging) {
-                toCopy->TurnOnPaging();
-            }
             SwitchToEngine();
             toRet = engine->Compose(toCopy->engine, start);
         } else {

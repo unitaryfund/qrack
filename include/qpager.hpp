@@ -104,8 +104,14 @@ public:
         int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
         real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
         real1_f separation_thresh = FP_NORM_EPSILON_F)
-        : QPager({ QINTERFACE_MASK_FUSION }, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem, deviceId,
+#if ENABLE_OPENCL
+        : QPager({ OCLEngine::Instance().GetDeviceCount() ? QINTERFACE_OPENCL : QINTERFACE_CPU }, qBitCount, initState,
+              rgp, phaseFac, doNorm, ignored, useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh,
+              devList, qubitThreshold, separation_thresh)
+#else
+        : QPager({ QINTERFACE_CPU }, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem, deviceId,
               useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
+#endif
     {
     }
 

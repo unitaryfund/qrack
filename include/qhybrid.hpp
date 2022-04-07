@@ -33,13 +33,15 @@ protected:
     complex phaseFactor;
     bool useRDRAND;
     bool isSparse;
-    bitLenInt thresholdQubits;
+    bitLenInt gpuThresholdQubits;
+    bitLenInt pagerThresholdQubits;
     bool isGpu;
+    bool isPager;
     real1_f separabilityThreshold;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
-        SwitchModes(qb >= thresholdQubits);
+        SwitchModes(qb >= gpuThresholdQubits, qb > pagerThresholdQubits);
         QEngine::SetQubitCount(qb);
     }
 
@@ -61,11 +63,11 @@ public:
     }
 
     /**
-     * Switches between CPU and GPU used modes. (This will not incur a performance penalty, if the chosen mode matches
+     * Switches between CPU and GPU modes. (This will not incur a performance penalty, if the chosen mode matches
      * the current mode.) Mode switching happens automatically when qubit counts change, but Compose() and Decompose()
      * might leave their destination QInterface parameters in the opposite mode.
      */
-    virtual void SwitchModes(bool useGpu)
+    virtual void SwitchGpuMode(bool useGpu)
     {
         QEnginePtr nEngine = NULL;
         if (!isGpu && useGpu) {
@@ -82,6 +84,36 @@ public:
         isGpu = useGpu;
     }
 
+    /**
+     * Switches between paged and non-paged modes. (This will not incur a performance penalty, if the chosen mode
+     * matches the current mode.) Mode switching happens automatically when qubit counts change, but Compose() and
+     * Decompose() might leave their destination QInterface parameters in the opposite mode.
+     */
+    virtual void SwitchPagerMode(bool usePager)
+    {
+        if (!isPager && usePager) {
+            std::vector<QInterfaceEngine> engines = { isGpu ? QINTERFACE_OPENCL : QINTERFACE_CPU };
+            engine = std::make_shared<QPager>(engine, engines, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
+                randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, 0,
+                separabilityThreshold);
+        } else if (isPager && !usePager) {
+            engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
+        }
+
+        isPager = usePager;
+    }
+
+    virtual void SwitchModes(bool useGpu, bool usePager)
+    {
+        if (!usePager) {
+            SwitchPagerMode(false);
+        }
+        SwitchGpuMode(useGpu);
+        if (usePager) {
+            SwitchPagerMode(true);
+        }
+    }
+
     virtual real1_f GetRunningNorm() { return engine->GetRunningNorm(); }
 
     virtual void ZeroAmplitudes() { engine->ZeroAmplitudes(); }
@@ -91,7 +123,7 @@ public:
     virtual void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QHybrid>(src)); }
     virtual void CopyStateVec(QHybridPtr src)
     {
-        SwitchModes(src->isGpu);
+        SwitchModes(src->isGpu, src->isPager);
         engine->CopyStateVec(src->engine);
     }
 
@@ -106,7 +138,7 @@ public:
     virtual void SetAmplitudePage(
         QHybridPtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
     {
-        pageEnginePtr->SwitchModes(isGpu);
+        pageEnginePtr->SwitchModes(isGpu, isPager);
         engine->SetAmplitudePage(pageEnginePtr->engine, srcOffset, dstOffset, length);
     }
     virtual void SetAmplitudePage(
@@ -117,7 +149,7 @@ public:
     virtual void ShuffleBuffers(QEnginePtr oEngine) { ShuffleBuffers(std::dynamic_pointer_cast<QHybrid>(oEngine)); }
     virtual void ShuffleBuffers(QHybridPtr oEngine)
     {
-        oEngine->SwitchModes(isGpu);
+        oEngine->SwitchModes(isGpu, isPager);
         engine->ShuffleBuffers(oEngine->engine);
     }
     virtual QEnginePtr CloneEmpty() { return engine->CloneEmpty(); }
@@ -135,7 +167,7 @@ public:
     {
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
         SetQubitCount(nQubitCount);
-        toCopy->SwitchModes(isGpu);
+        toCopy->SwitchModes(isGpu, isPager);
         return engine->Compose(toCopy->engine);
     }
     virtual bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QHybrid>(toCopy)); }
@@ -143,7 +175,7 @@ public:
     {
         bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
         SetQubitCount(nQubitCount);
-        toCopy->SwitchModes(isGpu);
+        toCopy->SwitchModes(isGpu, isPager);
         return engine->Compose(toCopy->engine, start);
     }
     virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
@@ -163,7 +195,7 @@ public:
     {
         bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
         SetQubitCount(nQubitCount);
-        dest->SwitchModes(isGpu);
+        dest->SwitchModes(isGpu, isPager);
         return engine->Decompose(start, dest->engine);
     }
     virtual void Dispose(bitLenInt start, bitLenInt length)
@@ -182,13 +214,13 @@ public:
     virtual bool TryDecompose(bitLenInt start, QHybridPtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
-        SwitchModes(nQubitCount >= thresholdQubits);
-        dest->SwitchModes(isGpu);
+        SwitchModes(nQubitCount >= gpuThresholdQubits, nQubitCount > pagerThresholdQubits);
+        dest->SwitchModes(isGpu, isPager);
         bool result = engine->TryDecompose(start, dest->engine, error_tol);
         if (result) {
             SetQubitCount(nQubitCount);
         } else {
-            SwitchModes(qubitCount >= thresholdQubits);
+            SwitchModes(qubitCount >= gpuThresholdQubits, qubitCount > pagerThresholdQubits);
         }
         return result;
     }
@@ -417,7 +449,7 @@ public:
     }
     virtual real1_f SumSqrDiff(QHybridPtr toCompare)
     {
-        toCompare->SwitchModes(isGpu);
+        toCompare->SwitchModes(isGpu, isPager);
         return engine->SumSqrDiff(toCompare->engine);
     }
 
