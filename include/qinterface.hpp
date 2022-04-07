@@ -195,15 +195,14 @@ protected:
 
     template <typename Fn> void MACWrapper(const bitLenInt* controls, bitLenInt controlLen, Fn fn)
     {
+        bitCapInt xMask = 0U;
         for (bitLenInt i = 0; i < controlLen; i++) {
-            X(controls[i]);
+            xMask |= pow2(controls[i]);
         }
 
+        XMask(xMask);
         fn(controls, controlLen);
-
-        for (bitLenInt i = 0; i < controlLen; i++) {
-            X(controls[i]);
-        }
+        XMask(xMask);
     }
 
 public:

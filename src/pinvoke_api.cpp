@@ -1352,6 +1352,53 @@ MICROSOFT_QUANTUM_DECL void Multiplex1Mtrx(
     }
 }
 
+#define MAP_MASK_AND_LOCK(sid, numQ)                                                                                   \
+    SIMULATOR_LOCK_GUARD(sid)                                                                                          \
+    QInterfacePtr simulator = simulators[sid];                                                                         \
+    bitCapInt mask = 0U;                                                                                               \
+    for (unsigned i = 0; i < numQ; i++) {                                                                              \
+        mask |= shards[simulator.get()][q[i]];                                                                         \
+    }
+
+/**
+ * (External API) Multiple "X" Gate
+ */
+MICROSOFT_QUANTUM_DECL void MX(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q)
+{
+    MAP_MASK_AND_LOCK(sid, n)
+    try {
+        simulator->XMask(mask);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+
+/**
+ * (External API) Multiple "Y" Gate
+ */
+MICROSOFT_QUANTUM_DECL void MY(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q)
+{
+    MAP_MASK_AND_LOCK(sid, n)
+    try {
+        simulator->YMask(mask);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+
+/**
+ * (External API) Multiple "Z" Gate
+ */
+MICROSOFT_QUANTUM_DECL void MZ(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* q)
+{
+    MAP_MASK_AND_LOCK(sid, n)
+    try {
+        simulator->ZMask(mask);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+
 /**
  * (External API) Rotation around Pauli axes
  */
