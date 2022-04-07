@@ -63,7 +63,6 @@ struct QueueItem {
     bool isSetRunningNorm;
     bool doNorm;
     real1 runningNorm;
-    std::mutex* otherMutex;
 
     QueueItem(OCLAPI ac, size_t wic, size_t lgs, size_t ds, std::vector<BufferPtr> b, size_t lbs)
         : api_call(ac)
@@ -76,7 +75,6 @@ struct QueueItem {
         , isSetRunningNorm(false)
         , doNorm(false)
         , runningNorm(ONE_R1)
-        , otherMutex(NULL)
     {
     }
 
@@ -91,7 +89,6 @@ struct QueueItem {
         , isSetRunningNorm(false)
         , doNorm(doNrm)
         , runningNorm(ONE_R1)
-        , otherMutex(NULL)
     {
     }
 
@@ -106,7 +103,6 @@ struct QueueItem {
         , isSetRunningNorm(true)
         , doNorm(false)
         , runningNorm(runningNrm)
-        , otherMutex(NULL)
     {
     }
 };
