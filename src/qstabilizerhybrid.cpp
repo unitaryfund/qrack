@@ -299,6 +299,57 @@ void QStabilizerHybrid::SwitchToEngine()
     FlushBuffers();
 }
 
+bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
+{
+    const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
+    bitLenInt toRet;
+
+    if (engine) {
+        toCopy->SwitchToEngine();
+        toRet = engine->Compose(toCopy->engine);
+    } else if (toCopy->engine) {
+        SwitchToEngine();
+        toRet = engine->Compose(toCopy->engine);
+    } else {
+        toRet = stabilizer->Compose(toCopy->stabilizer);
+    }
+
+    // Resize the shards buffer.
+    shards.insert(shards.end(), toCopy->shards.begin(), toCopy->shards.end());
+    // Split the common shared_ptr references, with toCopy.
+    for (bitLenInt i = qubitCount; i < nQubits; i++) {
+        if (shards[i]) {
+            shards[i] = shards[i]->Clone();
+        }
+    }
+
+    SetQubitCount(nQubits);
+
+    return toRet;
+}
+
+bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt start)
+{
+    const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
+    bitLenInt toRet;
+
+    if (engine) {
+        toCopy->SwitchToEngine();
+        toRet = engine->Compose(toCopy->engine, start);
+    } else if (toCopy->engine) {
+        SwitchToEngine();
+        toRet = engine->Compose(toCopy->engine, start);
+    } else {
+        toRet = stabilizer->Compose(toCopy->stabilizer, start);
+    }
+
+    shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
+
+    SetQubitCount(nQubits);
+
+    return toRet;
+}
+
 QInterfacePtr QStabilizerHybrid::Decompose(bitLenInt start, bitLenInt length)
 {
     QStabilizerHybridPtr dest = std::make_shared<QStabilizerHybrid>(engineTypes, length, 0, rand_generator, phaseFactor,
