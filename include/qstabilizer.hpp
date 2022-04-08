@@ -118,7 +118,7 @@ public:
         return clone;
     }
 
-    virtual ~QStabilizer() { Dump(); }
+    ~QStabilizer() { Dump(); }
 
     bool isClifford() { return true; };
     bool isClifford(bitLenInt qubit) { return true; };
