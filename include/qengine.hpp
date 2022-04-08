@@ -39,10 +39,6 @@ protected:
     bitCapIntOcl maxQPowerOcl;
     real1 runningNorm;
 
-    bool IsPhase(const complex* mtrx) { return IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]); }
-
-    bool IsInvert(const complex* mtrx) { return IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]); }
-
     bool IsIdentity(const complex* mtrx, bool isControlled);
 
 public:

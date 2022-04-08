@@ -16,11 +16,14 @@
 
 namespace Qrack {
 
+inline bool IsPhase(const complex* mtrx) { return IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2]); }
+inline bool IsInvert(const complex* mtrx) { return IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3]); }
+
 bool QEngine::IsIdentity(const complex* mtrx, bool isControlled)
 {
     // If the effect of applying the buffer would be (approximately or exactly) that of applying the identity
     // operator, then we can discard this buffer without applying it.
-    if (!IS_NORM_0(mtrx[1]) || !IS_NORM_0(mtrx[2]) || !IS_SAME(mtrx[0], mtrx[3])) {
+    if (!IS_NORM_0(mtrx[0] - mtrx[3]) || !IsPhase(mtrx)) {
         return false;
     }
 
