@@ -1357,7 +1357,7 @@ MICROSOFT_QUANTUM_DECL void Multiplex1Mtrx(
     QInterfacePtr simulator = simulators[sid];                                                                         \
     bitCapInt mask = 0U;                                                                                               \
     for (unsigned i = 0; i < numQ; i++) {                                                                              \
-        mask |= shards[simulator.get()][q[i]];                                                                         \
+        mask |= pow2(shards[simulator.get()][q[i]]);                                                                   \
     }
 
 /**
