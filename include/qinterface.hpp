@@ -625,22 +625,14 @@ public:
      *
      * If the control is set to 1, the target bit is NOT-ed or X-ed.
      */
-    virtual void CNOT(bitLenInt control, bitLenInt target)
-    {
-        const bitLenInt controls[1] = { control };
-        MCInvert(controls, 1, ONE_CMPLX, ONE_CMPLX, target);
-    }
+    virtual void CNOT(bitLenInt control, bitLenInt target);
 
     /**
      * Anti controlled NOT gate
      *
      * If the control is set to 0, the target bit is NOT-ed or X-ed.
      */
-    virtual void AntiCNOT(bitLenInt control, bitLenInt target)
-    {
-        const bitLenInt controls[1] = { control };
-        MACInvert(controls, 1, ONE_CMPLX, ONE_CMPLX, target);
-    }
+    virtual void AntiCNOT(bitLenInt control, bitLenInt target);
 
     /**
      * Controlled Y gate
@@ -648,22 +640,14 @@ public:
      * If the "control" bit is set to 1, then the Pauli "Y" operator is applied
      * to "target."
      */
-    virtual void CY(bitLenInt control, bitLenInt target)
-    {
-        const bitLenInt controls[1] = { control };
-        MCInvert(controls, 1, -I_CMPLX, I_CMPLX, target);
-    }
+    virtual void CY(bitLenInt control, bitLenInt target);
 
     /**
      * Anti controlled Y gate
      *
      * If the control is set to 0, then the Pauli "Y" operator is applied to the target.
      */
-    virtual void AntiCY(bitLenInt control, bitLenInt target)
-    {
-        const bitLenInt controls[1] = { control };
-        MACInvert(controls, 1, -I_CMPLX, I_CMPLX, target);
-    }
+    virtual void AntiCY(bitLenInt control, bitLenInt target);
 
     /**
      * Doubly-Controlled Y gate
@@ -686,22 +670,14 @@ public:
      * If the "control" bit is set to 1, then the Pauli "Z" operator is applied
      * to "target."
      */
-    virtual void CZ(bitLenInt control, bitLenInt target)
-    {
-        const bitLenInt controls[1] = { control };
-        MCPhase(controls, 1, ONE_CMPLX, -ONE_CMPLX, target);
-    }
+    virtual void CZ(bitLenInt control, bitLenInt target);
 
     /**
      * Anti controlled Z gate
      *
      * If the control is set to 0, then the Pauli "Z" operator is applied to the target.
      */
-    virtual void AntiCZ(bitLenInt control, bitLenInt target)
-    {
-        const bitLenInt controls[1] = { control };
-        MACPhase(controls, 1, ONE_CMPLX, -ONE_CMPLX, target);
-    }
+    virtual void AntiCZ(bitLenInt control, bitLenInt target);
 
     /**
      * Doubly-Controlled Z gate
@@ -2023,16 +1999,7 @@ public:
     virtual bitCapInt ForceM(const bitLenInt* bits, bitLenInt length, const bool* values, bool doApply = true);
 
     /** Swap values of two bits in register */
-    virtual void Swap(bitLenInt q1, bitLenInt q2)
-    {
-        if (q1 == q2) {
-            return;
-        }
-
-        CNOT(q1, q2);
-        CNOT(q2, q1);
-        CNOT(q1, q2);
-    }
+    virtual void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /** Swap values of two bits in register, and apply phase factor of i if bits are different */
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);

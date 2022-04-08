@@ -114,6 +114,49 @@ void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
     }
 }
 
+/// Sets row i equal to row k
+void QStabilizer::rowcopy(const bitLenInt& i, const bitLenInt& k)
+{
+    if (i == k) {
+        return;
+    }
+
+    x[i] = x[k];
+    z[i] = z[k];
+    r[i] = r[k];
+}
+
+/// Swaps row i and row k - does not change the logical state
+void QStabilizer::rowswap(const bitLenInt& i, const bitLenInt& k)
+{
+    if (i == k) {
+        return;
+    }
+
+    std::swap(x[k], x[i]);
+    std::swap(z[k], z[i]);
+    std::swap(r[k], r[i]);
+}
+
+/// Sets row i equal to the bth observable (X_1,...X_n,Z_1,...,Z_n)
+void QStabilizer::rowset(const bitLenInt& i, bitLenInt b)
+{
+    // Dealloc, first
+    x[i] = BoolVector();
+    z[i] = BoolVector();
+
+    x[i] = BoolVector(qubitCount, false);
+    z[i] = BoolVector(qubitCount, false);
+    r[i] = 0;
+
+    if (b < qubitCount) {
+        x[i][b] = true;
+    } else {
+        b -= qubitCount;
+        z[i][b] = true;
+    }
+}
+
 /// Return the phase (0,1,2,3) when row i is LEFT-multiplied by row k
 uint8_t QStabilizer::clifford(const bitLenInt& i, const bitLenInt& k)
 {
@@ -147,6 +190,16 @@ uint8_t QStabilizer::clifford(const bitLenInt& i, const bitLenInt& k)
     e = (e + r[i] + r[k]) & 0x3U;
 
     return e;
+}
+
+/// Left-multiply row i by row k - does not change the logical state
+void QStabilizer::rowmult(const bitLenInt& i, const bitLenInt& k)
+{
+    r[i] = clifford(i, k);
+    for (bitLenInt j = 0; j < qubitCount; j++) {
+        x[i][j] = x[i][j] ^ x[k][j];
+        z[i][j] = z[i][j] ^ z[k][j];
+    }
 }
 
 /**
