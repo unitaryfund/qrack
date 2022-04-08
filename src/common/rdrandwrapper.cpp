@@ -12,7 +12,6 @@
 
 #include "rdrandwrapper.hpp"
 
-#if !ENABLE_DEVRAND && ENABLE_RNDFILE
 #include <algorithm>
 #include <chrono>
 #include <dirent.h>
@@ -21,10 +20,8 @@
 #include <sys/types.h>
 #include <thread>
 #include <vector>
-#endif
 
 namespace Qrack {
-#if ENABLE_RNDFILE && !ENABLE_DEVRAND
 // From http://www.cplusplus.com/forum/unices/3548/
 std::vector<std::string> _readDirectoryFileNames(const std::string& path)
 {
@@ -89,5 +86,4 @@ void RandFile::_readNextRandDataFile()
 
     fileOffset++;
 }
-#endif
 } // namespace Qrack

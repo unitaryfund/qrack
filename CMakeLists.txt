@@ -17,7 +17,6 @@ include_directories ("include" "include/common")
 add_library (qrack STATIC
     src/common/functions.cpp
     src/common/parallel_for.cpp
-    src/common/rdrandwrapper.cpp
     src/qinterface/gates.cpp
     src/qinterface/logic.cpp
     src/qinterface/qinterface.cpp

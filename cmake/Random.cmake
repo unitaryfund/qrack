@@ -34,3 +34,9 @@ if (ENABLE_DEVRAND)
     target_compile_definitions(qrack PUBLIC ENABLE_DEVRAND=1)
 endif (ENABLE_DEVRAND)
 message ("All RNG direct from /dev/urandom is: ${ENABLE_DEVRAND}")
+
+if ((NOT ENABLE_DEVRAND) AND ENABLE_RNDFILE)
+    target_sources (qrack PRIVATE
+        src/common/rdrandwrapper.cpp
+        )
+endif ((NOT ENABLE_DEVRAND) AND ENABLE_RNDFILE)
