@@ -41,8 +41,14 @@ protected:
 
     void SetQubitCount(bitLenInt qb)
     {
-        SwitchModes(qb >= gpuThresholdQubits, qb > pagerThresholdQubits);
+        const bool isHigher = qb > qubitCount;
+        if (isHigher) {
+            SwitchModes(qb >= gpuThresholdQubits, qb > pagerThresholdQubits);
+        }
         QEngine::SetQubitCount(qb);
+        if (!isHigher) {
+            SwitchModes(qb >= gpuThresholdQubits, qb > pagerThresholdQubits);
+        }
     }
 
 public:
@@ -163,16 +169,14 @@ public:
     using QEngine::Compose;
     bitLenInt Compose(QHybridPtr toCopy)
     {
-        bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
-        SetQubitCount(nQubitCount);
+        SetQubitCount(qubitCount + toCopy->qubitCount);
         toCopy->SwitchModes(isGpu, isPager);
         return engine->Compose(toCopy->engine);
     }
     bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QHybrid>(toCopy)); }
     bitLenInt Compose(QHybridPtr toCopy, bitLenInt start)
     {
-        bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
-        SetQubitCount(nQubitCount);
+        SetQubitCount(qubitCount + toCopy->qubitCount);
         toCopy->SwitchModes(isGpu, isPager);
         return engine->Compose(toCopy->engine, start);
     }
@@ -188,30 +192,27 @@ public:
     }
     void Decompose(bitLenInt start, QHybridPtr dest)
     {
-        bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
-        SetQubitCount(nQubitCount);
         dest->SwitchModes(isGpu, isPager);
-        return engine->Decompose(start, dest->engine);
+        engine->Decompose(start, dest->engine);
+        SetQubitCount(qubitCount - dest->GetQubitCount());
     }
     void Dispose(bitLenInt start, bitLenInt length)
     {
-        bitLenInt nQubitCount = qubitCount - length;
-        SetQubitCount(nQubitCount);
-        return engine->Dispose(start, length);
+        engine->Dispose(start, length);
+        SetQubitCount(qubitCount - length);
     }
     void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
-        bitLenInt nQubitCount = qubitCount - length;
-        SetQubitCount(nQubitCount);
-        return engine->Dispose(start, length, disposedPerm);
+        engine->Dispose(start, length, disposedPerm);
+        SetQubitCount(qubitCount - length);
     }
 
     bool TryDecompose(bitLenInt start, QHybridPtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
-        bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
+        const bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
         SwitchModes(nQubitCount >= gpuThresholdQubits, nQubitCount > pagerThresholdQubits);
         dest->SwitchModes(isGpu, isPager);
-        bool result = engine->TryDecompose(start, dest->engine, error_tol);
+        const bool result = engine->TryDecompose(start, dest->engine, error_tol);
         if (result) {
             SetQubitCount(nQubitCount);
         } else {

@@ -145,8 +145,7 @@ public:
         SwitchToEngine();
         engine->SetAmplitudePage(pagePtr, offset, length);
     }
-    void SetAmplitudePage(
-        QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
+    void SetAmplitudePage(QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
     {
         SetAmplitudePage(std::dynamic_pointer_cast<QStabilizerHybrid>(pageEnginePtr), srcOffset, dstOffset, length);
     }
@@ -157,10 +156,7 @@ public:
         pageEnginePtr->SwitchToEngine();
         engine->SetAmplitudePage(pageEnginePtr->engine, srcOffset, dstOffset, length);
     }
-    void ShuffleBuffers(QEnginePtr oEngine)
-    {
-        ShuffleBuffers(std::dynamic_pointer_cast<QStabilizerHybrid>(oEngine));
-    }
+    void ShuffleBuffers(QEnginePtr oEngine) { ShuffleBuffers(std::dynamic_pointer_cast<QStabilizerHybrid>(oEngine)); }
     void ShuffleBuffers(QStabilizerHybridPtr oEngine)
     {
         SwitchToEngine();
@@ -249,10 +245,7 @@ public:
 
     using QEngine::Compose;
     bitLenInt Compose(QStabilizerHybridPtr toCopy);
-    bitLenInt Compose(QInterfacePtr toCopy)
-    {
-        return Compose(std::dynamic_pointer_cast<QStabilizerHybrid>(toCopy));
-    }
+    bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QStabilizerHybrid>(toCopy)); }
     bitLenInt Compose(QStabilizerHybridPtr toCopy, bitLenInt start);
     bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
@@ -502,10 +495,8 @@ public:
         }
     }
 
-    std::map<bitCapInt, int> MultiShotMeasureMask(
-        const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots);
-    void MultiShotMeasureMask(
-        const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
+    std::map<bitCapInt, int> MultiShotMeasureMask(const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots);
+    void MultiShotMeasureMask(const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
 
     real1_f ProbParity(bitCapInt mask)
     {
@@ -567,8 +558,7 @@ public:
 
         engine->INC(toAdd, start, length);
     }
-    void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
     {
         if (stabilizer) {
             QInterface::CINC(toAdd, inOutStart, length, controls, controlLen);
@@ -595,8 +585,7 @@ public:
 
         engine->INCDECC(toAdd, start, length, carryIndex);
     }
-    void INCDECSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+    void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
         SwitchToEngine();
         QINTERFACE_TO_QALU(engine)->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
@@ -643,14 +632,14 @@ public:
         SwitchToEngine();
         QINTERFACE_TO_QALU(engine)->POWModNOut(base, modN, inStart, outStart, length);
     }
-    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen)
+    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
+        bitLenInt controlLen)
     {
         SwitchToEngine();
         QINTERFACE_TO_QALU(engine)->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
     }
-    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen)
+    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
+        bitLenInt controlLen)
     {
         SwitchToEngine();
         QINTERFACE_TO_QALU(engine)->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
@@ -674,22 +663,22 @@ public:
         QINTERFACE_TO_QALU(engine)->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
     }
 
-    bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, const unsigned char* values, bool resetValue = true)
+    bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+        const unsigned char* values, bool resetValue = true)
     {
         SwitchToEngine();
         return QINTERFACE_TO_QALU(engine)->IndexedLDA(
             indexStart, indexLength, valueStart, valueLength, values, resetValue);
     }
-    bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
+    bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+        bitLenInt carryIndex, const unsigned char* values)
     {
         SwitchToEngine();
         return QINTERFACE_TO_QALU(engine)->IndexedADC(
             indexStart, indexLength, valueStart, valueLength, carryIndex, values);
     }
-    bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
+    bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+        bitLenInt carryIndex, const unsigned char* values)
     {
         SwitchToEngine();
         return QINTERFACE_TO_QALU(engine)->IndexedSBC(
