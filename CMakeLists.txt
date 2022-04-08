@@ -26,6 +26,7 @@ add_library (qrack STATIC
     src/qengine/arithmetic.cpp
     src/qengine/state.cpp
     src/qengine/utility.cpp
+    src/qengineshard.cpp
     src/qunit.cpp
     src/qpager.cpp
     src/qstabilizer.cpp
