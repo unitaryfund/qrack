@@ -1205,6 +1205,16 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
             stateVec = AllocStateVec(toCopy->maxQPowerOcl);
             stateBuffer = MakeStateVecBuffer(stateVec);
 
+            if (device_context->context_id != toCopy->device_context->context_id) {
+                LockSync(CL_MAP_WRITE);
+                toCopy->LockSync(CL_MAP_READ);
+                std::copy(toCopy->stateVec, toCopy->stateVec + toCopy->maxQPowerOcl, stateVec);
+                toCopy->UnlockSync();
+                UnlockSync();
+
+                return;
+            }
+
             cl::Event copyEvent;
             const cl_int error = queue.enqueueCopyBuffer(
                 *(toCopy->stateBuffer), *stateBuffer, 0, 0, sizeof(complex) * maxQPowerOcl, NULL, &copyEvent);
