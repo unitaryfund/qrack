@@ -227,6 +227,15 @@ void QEngineOCL::SetAmplitudePage(
 
     pageEngineOclPtr->clFinish();
 
+    if (device_context->context_id != pageEngineOclPtr->device_context->context_id) {
+        // Cross-platform - can't automatically migrate buffers.
+        pageEngineOclPtr->LockSync(CL_MAP_READ);
+        SetAmplitudePage(pageEngineOclPtr->stateVec + srcOffset, dstOffset, length);
+        pageEngineOclPtr->UnlockSync();
+
+        return;
+    }
+
     EventVecPtr waitVec = ResetWaitEvents();
 
     cl::Event copyEvent;
