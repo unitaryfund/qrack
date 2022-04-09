@@ -46,7 +46,7 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
 
     engine = std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, qubitCount, initState, rand_generator,
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        std::vector<int>{}, pagerThresholdQubits, separabilityThreshold));
+        deviceIDs, pagerThresholdQubits, separabilityThreshold));
 }
 
 QEnginePtr QHybrid::MakeEngine(bool isOpenCL)
@@ -62,9 +62,9 @@ QEnginePtr QHybrid::MakeEngine(bool isOpenCL)
 
 QInterfacePtr QHybrid::Clone()
 {
-    QHybridPtr c = std::make_shared<QHybrid>(qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
-        useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, std::vector<int>{}, gpuThresholdQubits,
-        separabilityThreshold);
+    QHybridPtr c =
+        std::make_shared<QHybrid>(qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam,
+            devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, gpuThresholdQubits, separabilityThreshold);
     c->runningNorm = runningNorm;
     c->SetConcurrency(GetConcurrencyLevel());
     c->engine->CopyStateVec(engine);
