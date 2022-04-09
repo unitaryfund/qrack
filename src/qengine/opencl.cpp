@@ -258,8 +258,6 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
         return;
     }
 
-    cl_int error;
-
     if (!stateBuffer) {
         ReinitBuffer();
         ClearBuffer(stateBuffer, 0, maxQPowerOcl);
@@ -277,6 +275,7 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
+    cl_int error;
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
     WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
@@ -1186,6 +1185,17 @@ void QEngineOCL::ApplyM(bitCapInt mask, bitCapInt result, complex nrm)
 
 void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy)
 {
+    if (!toCopy->qubitCount) {
+        return;
+    }
+
+    if (!stateBuffer || !toCopy->stateBuffer) {
+        // Compose will have a wider but 0 stateVec
+        ZeroAmplitudes();
+        SetQubitCount(qubitCount + toCopy->qubitCount);
+        return;
+    }
+
     if (!qubitCount) {
         clFinish();
         SetQubitCount(toCopy->qubitCount);
@@ -1208,17 +1218,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
         return;
     }
 
-    if (!toCopy->qubitCount) {
-        return;
-    }
-
-    if (!stateBuffer || !toCopy->stateBuffer) {
-        // Compose will have a wider but 0 stateVec
-        ZeroAmplitudes();
-        SetQubitCount(qubitCount + toCopy->qubitCount);
-        return;
-    }
-
     cl_int error;
 
     if (doNormalize) {
@@ -1227,8 +1226,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     if (toCopy->doNormalize) {
         toCopy->NormalizeState();
     }
-
-    toCopy->SetDevice(deviceID);
 
     PoolItemPtr poolItem = GetFreePoolItem();
     EventVecPtr waitVec = ResetWaitEvents();
@@ -1266,8 +1263,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
-
-    // toCopy->SetDevice(toCopyDevID);
 
     SubtractAlloc(sizeof(complex) * oMaxQPower);
 }
@@ -1330,8 +1325,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     }
 
     if (destination && !destination->stateBuffer) {
-        // Reinitialize stateVec RAM, on this device.
-        destination->SetDevice(deviceID);
+        // Reinitialize stateVec RAM
         destination->SetPermutation(0);
     }
 
@@ -1340,10 +1334,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     }
     if (destination && destination->doNormalize) {
         destination->NormalizeState();
-    }
-
-    if (destination) {
-        destination->SetDevice(deviceID);
     }
 
     const bitLenInt nLength = qubitCount - length;
@@ -2827,8 +2817,6 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
         NormalizeState(REAL1_DEFAULT_ARG, REAL1_DEFAULT_ARG, rPhaseArg - lPhaseArg);
     }
 
-    cl_int error;
-
     toCompare->clFinish();
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -2836,6 +2824,7 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
 
+    cl_int error;
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
