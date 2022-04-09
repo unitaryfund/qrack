@@ -1455,11 +1455,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         }
     }
 
-    // Drop references to state vector, which we're done with.
-    ResetStateVec(NULL);
-    ResetStateBuffer(NULL);
-    SubtractAlloc(sizeof(complex) * oMaxQPower);
-
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
     bciArgs[0] = maxQPowerOcl;
     poolItem = GetFreePoolItem();
@@ -1476,6 +1471,9 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     if (!useHostRam && stateVec && ((OclMemDenom * nStateVecSize) <= maxMem)) {
         FreeStateVec();
     }
+    // Drop references to state vector buffer, which we're done with.
+    ResetStateBuffer(NULL);
+    SubtractAlloc(sizeof(complex) * oMaxQPower);
 
     complex* nStateVec = AllocStateVec(maxQPowerOcl);
     BufferPtr nStateBuffer = MakeStateVecBuffer(nStateVec);
