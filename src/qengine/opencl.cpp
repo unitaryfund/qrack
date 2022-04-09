@@ -1458,6 +1458,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     // Drop references to state vector, which we're done with.
     ResetStateVec(NULL);
     ResetStateBuffer(NULL);
+    SubtractAlloc(sizeof(complex) * oMaxQPower);
 
     // If we either Decompose or Dispose, calculate the state of the bit system that remains.
     bciArgs[0] = maxQPowerOcl;
@@ -1481,8 +1482,6 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
-
-    SubtractAlloc(sizeof(complex) * oMaxQPower);
 
     // Tell QueueCall to track deallocation:
     QueueCall(OCL_API_DECOMPOSEAMP, ngc3, ngs3, { probBuffer1, angleBuffer1, poolItem->ulongBuffer, stateBuffer }, 0,
