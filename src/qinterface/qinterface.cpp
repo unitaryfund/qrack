@@ -251,7 +251,7 @@ bitCapInt QInterface::ForceM(const bitLenInt* bits, bitLenInt length, const bool
 real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
 {
     const bitCapIntOcl startMask = pow2Ocl(start) - ONE_BCI;
-    const bitCapIntOcl maxLcv = maxQPower >> length;
+    const bitCapIntOcl maxLcv = ((bitCapIntOcl)maxQPower) >> length;
     const bitCapIntOcl p = (bitCapIntOcl)permutation;
     real1 prob = ZERO_R1;
     for (bitCapIntOcl lcv = 0; lcv < maxLcv; lcv++) {
