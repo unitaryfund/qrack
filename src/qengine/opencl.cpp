@@ -53,16 +53,6 @@ namespace Qrack {
         throw std::runtime_error("Failed to enqueue buffer write, error code: " + std::to_string(error));              \
     }
 
-#define DISPATCH_COPY(waitVec, buff1, buff2, size, error)                                                              \
-    device_context->LockWaitEvents();                                                                                  \
-    device_context->wait_events->emplace_back();                                                                       \
-    error = queue.enqueueCopyBuffer(buff1, buff2, 0, 0, size, waitVec.get(), &(device_context->wait_events->back()));  \
-    device_context->UnlockWaitEvents();                                                                                \
-    if (error != CL_SUCCESS) {                                                                                         \
-        FreeAll();                                                                                                     \
-        throw std::runtime_error("Failed to enqueue buffer copy, error code: " + std::to_string(error));               \
-    }
-
 #define WAIT_REAL1_SUM(buff, size, array, sumPtr, error)                                                               \
     clFinish();                                                                                                        \
     error = queue.enqueueReadBuffer(buff, CL_TRUE, 0, sizeof(real1) * size, array.get(), NULL, NULL);                  \
@@ -71,6 +61,16 @@ namespace Qrack {
         throw std::runtime_error("Failed to enqueue buffer read, error code: " + std::to_string(error));               \
     }                                                                                                                  \
     *(sumPtr) = ParSum(array.get(), size);
+
+#define DISPATCH_GENERIC(op, message)                                                                                  \
+    device_context->LockWaitEvents();                                                                                  \
+    device_context->wait_events->emplace_back();                                                                       \
+    error = op;                                                                                                        \
+    device_context->UnlockWaitEvents();                                                                                \
+    if (error != CL_SUCCESS) {                                                                                         \
+        FreeAll();                                                                                                     \
+        throw std::runtime_error(message);                                                                             \
+    }
 
 #define CHECK_ZERO_SKIP()                                                                                              \
     if (!stateBuffer) {                                                                                                \
@@ -2867,9 +2867,17 @@ QInterfacePtr QEngineOCL::Clone()
 
     copyPtr->clFinish();
 
-    EventVecPtr waitVec = ResetWaitEvents();
     cl_int error;
-    DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPowerOcl, error);
+    EventVecPtr waitVec = ResetWaitEvents();
+    DISPATCH_GENERIC(queue.enqueueMigrateMemObjects({ *stateBuffer, *(copyPtr->stateBuffer) }, 0, waitVec.get(),
+                         &(device_context->wait_events->back())),
+        "Failed to enqueue buffer migrate, error code: " + std::to_string(error))
+
+    waitVec = ResetWaitEvents();
+    DISPATCH_GENERIC(queue.enqueueCopyBuffer(*stateBuffer, *(copyPtr->stateBuffer), 0, 0,
+        sizeof(complex) * maxQPowerOcl, waitVec.get(), &(device_context->wait_events->back()));
+                     , "Failed to enqueue buffer copy, error code: " + std::to_string(error))
+
     clFinish();
     copyPtr->runningNorm = runningNorm;
 
