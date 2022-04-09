@@ -62,16 +62,6 @@ namespace Qrack {
     }                                                                                                                  \
     *(sumPtr) = ParSum(array.get(), size);
 
-#define DISPATCH_GENERIC(op, message)                                                                                  \
-    device_context->LockWaitEvents();                                                                                  \
-    device_context->wait_events->emplace_back();                                                                       \
-    error = op;                                                                                                        \
-    device_context->UnlockWaitEvents();                                                                                \
-    if (error != CL_SUCCESS) {                                                                                         \
-        FreeAll();                                                                                                     \
-        throw std::runtime_error(message);                                                                             \
-    }
-
 #define CHECK_ZERO_SKIP()                                                                                              \
     if (!stateBuffer) {                                                                                                \
         return;                                                                                                        \
@@ -2874,20 +2864,19 @@ QInterfacePtr QEngineOCL::Clone()
     QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize,
         randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
 
+    cl::Event copyEvent;
+
     copyPtr->clFinish();
-
-    cl_int error;
-    EventVecPtr waitVec = ResetWaitEvents();
-    DISPATCH_GENERIC(queue.enqueueMigrateMemObjects({ *stateBuffer, *(copyPtr->stateBuffer) }, 0, waitVec.get(),
-                         &(device_context->wait_events->back())),
-        "Failed to enqueue buffer migrate, error code: " + std::to_string(error))
-
-    waitVec = ResetWaitEvents();
-    DISPATCH_GENERIC(queue.enqueueCopyBuffer(*stateBuffer, *(copyPtr->stateBuffer), 0, 0,
-        sizeof(complex) * maxQPowerOcl, waitVec.get(), &(device_context->wait_events->back()));
-                     , "Failed to enqueue buffer copy, error code: " + std::to_string(error))
-
     clFinish();
+
+    const cl_int error = queue.enqueueCopyBuffer(
+        *stateBuffer, *(copyPtr->stateBuffer), 0, 0, sizeof(complex) * maxQPowerOcl, NULL, &copyEvent);
+    if (error != CL_SUCCESS) {
+        FreeAll();
+        throw std::runtime_error("Failed to enqueue buffer copy, error code: " + std::to_string(error));
+    }
+    copyEvent.wait();
+
     copyPtr->runningNorm = runningNorm;
 
     return copyPtr;
