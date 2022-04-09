@@ -2870,24 +2870,21 @@ QInterfacePtr QEngineOCL::Clone()
         randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
 
     copyPtr->clFinish();
-    clFinish();
-    copyPtr->runningNorm = runningNorm;
 
     EventVecPtr waitVec = ResetWaitEvents();
     cl_int error;
     DISPATCH_COPY(waitVec, *stateBuffer, *(copyPtr->stateBuffer), sizeof(complex) * maxQPowerOcl, error);
     clFinish();
+    copyPtr->runningNorm = runningNorm;
 
     return copyPtr;
 }
 
 QEnginePtr QEngineOCL::CloneEmpty()
 {
-    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(1, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+    QEngineOCLPtr copyPtr = std::make_shared<QEngineOCL>(0, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
         useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
 
-    copyPtr->clFinish();
-    copyPtr->ZeroAmplitudes();
     copyPtr->SetQubitCount(qubitCount);
 
     return copyPtr;
