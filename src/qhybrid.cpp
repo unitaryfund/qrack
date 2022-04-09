@@ -16,13 +16,14 @@ namespace Qrack {
 
 QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
     bool randomGlobalPhase, bool useHostMem, int deviceId, bool useHardwareRNG, bool useSparseStateVec,
-    real1_f norm_thresh, std::vector<int> ignored, bitLenInt qubitThreshold, real1_f sep_thresh)
+    real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , devID(deviceId)
     , phaseFactor(phaseFac)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , separabilityThreshold(sep_thresh)
+    , deviceIDs(devList)
 {
     if (qubitThreshold != 0) {
         gpuThresholdQubits = qubitThreshold;
@@ -53,7 +54,7 @@ QEnginePtr QHybrid::MakeEngine(bool isOpenCL)
     QEnginePtr toRet =
         std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(isOpenCL ? QINTERFACE_OPENCL : QINTERFACE_CPU, 0U, 0U,
             rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-            (real1_f)amplitudeFloor, std::vector<int>{}, pagerThresholdQubits, separabilityThreshold));
+            (real1_f)amplitudeFloor, deviceIDs, pagerThresholdQubits, separabilityThreshold));
     toRet->SetQubitCount(qubitCount);
     toRet->SetConcurrency(GetConcurrencyLevel());
     return toRet;
