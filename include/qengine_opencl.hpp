@@ -394,7 +394,7 @@ public:
     bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     real1_f ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset = 0);
 
-    void SetDevice(int dID, bool forceReInit = false);
+    void SetDevice(int dID);
     int64_t GetDevice() { return deviceID; }
 
     void SetQuantumState(const complex* inputState);

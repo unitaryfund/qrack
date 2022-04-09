@@ -503,14 +503,14 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     }
 }
 
-void QEngineOCL::SetDevice(int dID, bool forceReInit)
+void QEngineOCL::SetDevice(int dID)
 {
     if (!(OCLEngine::Instance().GetDeviceCount())) {
         FreeAll();
         throw std::runtime_error("Tried to initialize QEngineOCL, but no available OpenCL devices.");
     }
 
-    bool didInit = (nrmArray != NULL);
+    const bool didInit = (nrmArray != NULL);
 
     clFinish();
 
@@ -519,11 +519,7 @@ void QEngineOCL::SetDevice(int dID, bool forceReInit)
 
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
-        if ((!forceReInit) && (oldContextId == device_context->context_id)) {
-            deviceID = dID;
-            context = device_context->context;
-            queue = device_context->queue;
-
+        if (oldContextId == device_context->context_id) {
             return;
         }
 
@@ -644,7 +640,7 @@ real1_f QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
     return (real1_f)totSum;
 }
 
-void QEngineOCL::InitOCL(int devID) { SetDevice(devID, true); }
+void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
 
 void QEngineOCL::ResetStateVec(complex* nStateVec)
 {
