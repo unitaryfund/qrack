@@ -655,6 +655,8 @@ void QEngineOCL::SetDevice(int dID)
                     throw std::runtime_error("Failed to write buffer, error code: " + std::to_string(error));
                 }
                 copyVec.reset();
+            } else {
+                ClearBuffer(stateBuffer, 0, maxQPowerOcl);
             }
         }
     } else {
