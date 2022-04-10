@@ -629,7 +629,9 @@ void QEngineOCL::SetDevice(int dID)
     poolItems.clear();
     poolItems.push_back(std::make_shared<PoolItem>(context));
 
-    AddAlloc(sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
+    if (!didInit) {
+        AddAlloc(sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
+    }
     powersBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
 
     // If this is the same context, then all other buffers are valid.
