@@ -772,11 +772,11 @@ public:
 
     QInterfacePtr Clone();
 
-    void SetDevice(int dID, bool forceReInit = false)
+    void SetDevice(int dID)
     {
         devID = dID;
         if (engine) {
-            engine->SetDevice(dID, forceReInit);
+            engine->SetDevice(dID);
         }
     }
 

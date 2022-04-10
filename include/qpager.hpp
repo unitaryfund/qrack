@@ -416,13 +416,13 @@ public:
 
     QInterfacePtr Clone();
 
-    void SetDevice(int dID, bool forceReInit = false)
+    void SetDevice(int dID)
     {
         deviceIDs.clear();
         deviceIDs.push_back(dID);
 
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
-            qPages[i]->SetDevice(dID, forceReInit);
+            qPages[i]->SetDevice(dID);
         }
 
 #if ENABLE_OPENCL

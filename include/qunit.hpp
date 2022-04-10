@@ -79,7 +79,7 @@ public:
     virtual void SetReactiveSeparate(bool isAggSep) { isReactiveSeparate = isAggSep; }
     virtual bool GetReactiveSeparate() { return isReactiveSeparate; }
 
-    virtual void SetDevice(int dID, bool forceReInit = false);
+    virtual void SetDevice(int dID);
     virtual int64_t GetDevice() { return devID; }
 
     virtual void SetQuantumState(const complex* inputState);

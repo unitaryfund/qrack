@@ -2226,7 +2226,7 @@ public:
     /**
      *  Set the device index, if more than one device is available.
      */
-    virtual void SetDevice(int dID, bool forceReInit = false) {}
+    virtual void SetDevice(int dID) = 0;
 
     /**
      *  Get the device index. ("-1" is default).

@@ -3587,15 +3587,15 @@ bool QUnit::isFinished()
                                  int32_t unused4) { return unit->isFinished(); });
 }
 
-void QUnit::SetDevice(int dID, bool forceReInit)
+void QUnit::SetDevice(int dID)
 {
     devID = dID;
     ParallelUnitApply(
         [](QInterfacePtr unit, real1_f unused1, real1_f forceReInit, real1_f unused2, int32_t dID) {
-            unit->SetDevice(dID, (forceReInit > 0.5));
+            unit->SetDevice(dID);
             return true;
         },
-        ZERO_R1_F, forceReInit ? ONE_R1_F : ZERO_R1_F, ZERO_R1_F, dID);
+        ZERO_R1_F, ZERO_R1_F, ZERO_R1_F, dID);
 }
 
 real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)

@@ -75,6 +75,8 @@ public:
 #endif
     }
 
+    void SetDevice(int dID) {}
+
     real1_f FirstNonzeroPhase()
     {
         if (!stateVec) {

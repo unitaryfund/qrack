@@ -159,6 +159,8 @@ public:
         }
     }
 
+    void SetDevice(int dID) {}
+
     bool Rand()
     {
         if (hardware_rand_generator != NULL) {

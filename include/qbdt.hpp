@@ -145,6 +145,8 @@ public:
 
     virtual bool isBinaryDecisionTree() { return true; };
 
+    virtual void SetDevice(int dID) {}
+
     virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         // Intentionally left blank.

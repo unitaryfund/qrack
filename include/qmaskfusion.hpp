@@ -667,10 +667,10 @@ public:
 
     QInterfacePtr Clone();
 
-    void SetDevice(int dID, bool forceReInit = false)
+    void SetDevice(int dID)
     {
         devID = dID;
-        engine->SetDevice(dID, forceReInit);
+        engine->SetDevice(dID);
     }
 
     int64_t GetDeviceID() { return devID; }
