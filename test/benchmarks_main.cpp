@@ -201,9 +201,14 @@ int main(int argc, char* argv[])
                 continue;
             }
             const unsigned maxI = stoi(tokens[0]);
-            const int id = stoi(tokens[1]);
+            std::vector<int> ids(tokens.size() - 1U);
+            for (unsigned i = 1U; i < tokens.size(); i++) {
+                ids[i - 1U] = stoi(tokens[i]);
+            }
             for (unsigned i = 0U; i < maxI; i++) {
-                devList.push_back(id);
+                for (unsigned j = 0U; j < ids.size(); j++) {
+                    devList.push_back(ids[j]);
+                }
             }
         }
     }
