@@ -187,6 +187,8 @@ int main(int argc, char* argv[])
 
     if (devListStr.compare("") != 0) {
         std::stringstream devListStr_stream(devListStr);
+        // See
+        // https://stackoverflow.com/questions/7621727/split-a-string-into-words-by-multiple-delimiters#answer-58164098
         std::regex re("[.]");
         while (devListStr_stream.good()) {
             std::string term;
