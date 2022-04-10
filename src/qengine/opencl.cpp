@@ -544,27 +544,19 @@ void QEngineOCL::SetDevice(int dID)
 
     int oldContextId = device_context ? device_context->context_id : 0;
     const DeviceContextPtr nDeviceContext = OCLEngine::Instance().GetDeviceContextPtr(dID);
+    const int defDevId = (int)OCLEngine::Instance().GetDefaultDeviceID();
 
     std::unique_ptr<complex[]> copyVec = NULL;
 
-    if (didInit) {
-        // If we're "switching" to the device we already have, don't reinitialize.
-        if (oldContextId == nDeviceContext->context_id) {
-            device_context = nDeviceContext;
-            deviceID = dID;
-            context = device_context->context;
-            queue = device_context->queue;
-
-            return;
-        }
-
-        if (stateBuffer && !stateVec) {
-            // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
-            copyVec = std::unique_ptr<complex[]>(new complex[maxQPowerOcl]);
-            GetQuantumState(copyVec.get());
-        }
-    } else {
+    if (!didInit) {
         AddAlloc(sizeof(complex) * maxQPowerOcl);
+    } else if ((dID == deviceID) || ((dID == -1) && (deviceID == defDevId)) || ((deviceID == -1) && (dID == defDevId))) {
+        // If we're "switching" to the device we already have, don't reinitialize.
+        return;
+    } else if (stateBuffer && !stateVec) {
+        // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
+        copyVec = std::unique_ptr<complex[]>(new complex[maxQPowerOcl]);
+        GetQuantumState(copyVec.get());
     }
 
     device_context = nDeviceContext;
@@ -632,6 +624,11 @@ void QEngineOCL::SetDevice(int dID)
 #endif
     }
     nrmBuffer = MakeBuffer(context, CL_MEM_READ_WRITE, nrmArrayAllocSize);
+
+    // If this is the same context, then all other buffers are valid.
+    if (oldContextId == nDeviceContext->context_id) {
+        return;
+    }
 
     poolItems.clear();
     poolItems.push_back(std::make_shared<PoolItem>(context));
