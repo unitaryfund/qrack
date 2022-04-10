@@ -545,7 +545,7 @@ void QEngineOCL::SetDevice(int dID)
     int oldContextId = device_context ? device_context->context_id : 0;
     const DeviceContextPtr nDeviceContext = OCLEngine::Instance().GetDeviceContextPtr(dID);
 
-    std::unique_ptr<complex[]> copyVec;
+    std::unique_ptr<complex[]> copyVec = NULL;
 
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
@@ -558,7 +558,7 @@ void QEngineOCL::SetDevice(int dID)
             return;
         }
 
-        if (!usingHostRam) {
+        if (stateBuffer && !stateVec) {
             // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
             copyVec = std::unique_ptr<complex[]>(new complex[maxQPowerOcl]);
             GetQuantumState(copyVec.get());
@@ -641,20 +641,21 @@ void QEngineOCL::SetDevice(int dID)
 
     // create buffers on device (allocate space on GPU)
     if (didInit) {
-        if (usingHostRam) {
+        if (stateVec) {
             ResetStateBuffer(MakeStateVecBuffer(stateVec));
         } else {
             ResetStateBuffer(MakeStateVecBuffer(NULL));
-            clFinish();
 
-            const cl_int error =
-                queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, copyVec.get(), NULL);
-            wait_refs.clear();
-            if (error != CL_SUCCESS) {
-                FreeAll();
-                throw std::runtime_error("Failed to write buffer, error code: " + std::to_string(error));
+            if (copyVec) {
+                const cl_int error = queue.enqueueWriteBuffer(
+                    *stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, copyVec.get(), NULL);
+                wait_refs.clear();
+                if (error != CL_SUCCESS) {
+                    FreeAll();
+                    throw std::runtime_error("Failed to write buffer, error code: " + std::to_string(error));
+                }
+                copyVec.reset();
             }
-            copyVec.reset();
         }
     } else {
         // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device
