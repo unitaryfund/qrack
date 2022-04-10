@@ -518,6 +518,10 @@ void QEngineOCL::SetDevice(int dID)
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
         if (oldContextId == device_context->context_id) {
+            deviceID = dID;
+            context = device_context->context;
+            queue = device_context->queue;
+
             return;
         }
 
@@ -570,8 +574,8 @@ void QEngineOCL::SetDevice(int dID)
 
     bool doResize = (nrmGroupCount / nrmGroupSize) != oldNrmVecAlignSize;
 
+    nrmBuffer = NULL;
     if (didInit && doResize) {
-        nrmBuffer = NULL;
         nrmArray = NULL;
         SubtractAlloc(oldNrmVecAlignSize);
     }
@@ -591,8 +595,8 @@ void QEngineOCL::SetDevice(int dID)
         nrmArray = std::unique_ptr<real1, void (*)(real1*)>(
             (real1*)aligned_alloc(QRACK_ALIGN_SIZE, nrmArrayAllocSize), [](real1* c) { free(c); });
 #endif
-        nrmBuffer = MakeBuffer(context, CL_MEM_READ_WRITE, nrmArrayAllocSize);
     }
+    nrmBuffer = MakeBuffer(context, CL_MEM_READ_WRITE, nrmArrayAllocSize);
 
     // create buffers on device (allocate space on GPU)
     if (didInit) {
