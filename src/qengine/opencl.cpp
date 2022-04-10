@@ -263,7 +263,21 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
 
     engineOcl->clFinish();
 
-    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI), 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    const bitCapIntOcl halfMaxQPower = (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI);
+
+    if (device_context->context_id != engineOcl->device_context->context_id) {
+        LockSync(CL_MAP_READ | CL_MAP_WRITE);
+        engineOcl->LockSync(CL_MAP_READ | CL_MAP_WRITE);
+
+        std::swap_ranges(engineOcl->stateVec, engineOcl->stateVec + halfMaxQPower, stateVec + halfMaxQPower);
+
+        engineOcl->UnlockSync();
+        UnlockSync();
+
+        return;
+    }
+
+    bitCapIntOcl bciArgs[BCI_ARG_LEN] = { halfMaxQPower, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -529,11 +543,14 @@ void QEngineOCL::SetDevice(int dID)
     clFinish();
 
     int oldContextId = device_context ? device_context->context_id : 0;
-    device_context = OCLEngine::Instance().GetDeviceContextPtr(dID);
+    const DeviceContextPtr nDeviceContext = OCLEngine::Instance().GetDeviceContextPtr(dID);
+
+    std::unique_ptr<complex[]> copyVec;
 
     if (didInit) {
         // If we're "switching" to the device we already have, don't reinitialize.
-        if (oldContextId == device_context->context_id) {
+        if (oldContextId == nDeviceContext->context_id) {
+            device_context = nDeviceContext;
             deviceID = dID;
             context = device_context->context;
             queue = device_context->queue;
@@ -541,14 +558,16 @@ void QEngineOCL::SetDevice(int dID)
             return;
         }
 
-        if (stateBuffer) {
+        if (!usingHostRam) {
             // This copies the contents of stateBuffer to host memory, to load into a buffer in the new context.
-            LockSync();
+            copyVec = std::unique_ptr<complex[]>(new complex[maxQPowerOcl]);
+            GetQuantumState(copyVec.get());
         }
     } else {
         AddAlloc(sizeof(complex) * maxQPowerOcl);
     }
 
+    device_context = nDeviceContext;
     deviceID = dID;
     context = device_context->context;
     queue = device_context->queue;
@@ -614,23 +633,28 @@ void QEngineOCL::SetDevice(int dID)
     }
     nrmBuffer = MakeBuffer(context, CL_MEM_READ_WRITE, nrmArrayAllocSize);
 
+    poolItems.clear();
+    poolItems.push_back(std::make_shared<PoolItem>(context));
+
+    AddAlloc(sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
+    powersBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
+
     // create buffers on device (allocate space on GPU)
     if (didInit) {
-        if (stateBuffer) {
-            if (usingHostRam) {
-                ResetStateBuffer(MakeStateVecBuffer(stateVec));
-            } else {
-                ResetStateBuffer(MakeStateVecBuffer(NULL));
-                // In this branch, the QEngineOCL was previously allocated, and now we need to copy its memory to a
-                // buffer.
-                EventVecPtr waitVec = ResetWaitEvents();
-                cl_int error;
-                DISPATCH_BLOCK_WRITE(waitVec, *stateBuffer, 0, sizeof(complex) * maxQPowerOcl, stateVec)
+        if (usingHostRam) {
+            ResetStateBuffer(MakeStateVecBuffer(stateVec));
+        } else {
+            ResetStateBuffer(MakeStateVecBuffer(NULL));
+            clFinish();
 
-                ResetStateVec(NULL);
+            const cl_int error =
+                queue.enqueueWriteBuffer(*stateBuffer, CL_TRUE, 0, sizeof(complex) * maxQPowerOcl, copyVec.get(), NULL);
+            wait_refs.clear();
+            if (error != CL_SUCCESS) {
+                FreeAll();
+                throw std::runtime_error("Failed to write buffer, error code: " + std::to_string(error));
             }
-
-            lockSyncFlags = 0;
+            copyVec.reset();
         }
     } else {
         // In this branch, the QEngineOCL is first being initialized, and no data needs to be copied between device
@@ -638,12 +662,6 @@ void QEngineOCL::SetDevice(int dID)
         stateVec = AllocStateVec(maxQPowerOcl, usingHostRam);
         stateBuffer = MakeStateVecBuffer(stateVec);
     }
-
-    poolItems.clear();
-    poolItems.push_back(std::make_shared<PoolItem>(context));
-
-    AddAlloc(sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
-    powersBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
 }
 
 real1_f QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
@@ -1238,8 +1256,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
         return;
     }
 
-    cl_int error;
-
     if (doNormalize) {
         NormalizeState();
     }
@@ -1247,9 +1263,16 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
         toCopy->NormalizeState();
     }
 
+    const bool isMigrate = (device_context->context_id != toCopy->device_context->context_id);
+    const int oDevId = toCopy->deviceID;
+    if (isMigrate) {
+        toCopy->SetDevice(deviceID);
+    }
+
     PoolItemPtr poolItem = GetFreePoolItem();
     EventVecPtr waitVec = ResetWaitEvents();
 
+    cl_int error;
     cl::Event writeArgsEvent;
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 7, bciArgs, writeArgsEvent, error);
 
@@ -1285,6 +1308,10 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     ResetStateBuffer(nStateBuffer);
 
     SubtractAlloc(sizeof(complex) * oMaxQPower);
+
+    if (isMigrate) {
+        toCopy->SetDevice(oDevId);
+    }
 }
 
 bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
@@ -1362,6 +1389,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         if (destination != NULL) {
             destination->ResetStateVec(stateVec);
             destination->stateBuffer = stateBuffer;
+            stateBuffer = NULL;
             stateVec = NULL;
         }
         SetQubitCount(0);
@@ -1373,7 +1401,11 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
         return;
     }
 
-    cl_int error;
+    const bool isMigrate = destination && (device_context->context_id != destination->device_context->context_id);
+    const int oDevId = destination ? destination->deviceID : 0;
+    if (isMigrate) {
+        destination->SetDevice(deviceID);
+    }
 
     const bitCapIntOcl partPower = pow2Ocl(length);
     const bitCapIntOcl remainderPower = pow2Ocl(nLength);
@@ -1402,7 +1434,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
-
+    cl_int error;
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs, error);
 
     const bitCapIntOcl largerPower = partPower > remainderPower ? partPower : remainderPower;
@@ -1462,6 +1494,10 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
             destination->stateBuffer = nSB;
             FreeAligned(destination->stateVec);
             destination->stateVec = NULL;
+        }
+
+        if (isMigrate) {
+            destination->SetDevice(oDevId);
         }
     }
 
@@ -1523,8 +1559,6 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
         return;
     }
 
-    cl_int error;
-
     if (doNormalize) {
         NormalizeState();
     }
@@ -1540,6 +1574,7 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
 
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { remainderPower, length, skipMask, disposedRes, 0, 0, 0, 0, 0, 0 };
 
+    cl_int error;
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs, error);
 
     SetQubitCount(nLength);
@@ -1569,11 +1604,9 @@ real1_f QEngineOCL::Probx(OCLAPI api_call, bitCapIntOcl* bciArgs)
         return ZERO_R1_F;
     }
 
-    cl_int error;
-
     EventVecPtr waitVec = ResetWaitEvents();
     PoolItemPtr poolItem = GetFreePoolItem();
-
+    cl_int error;
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 4, bciArgs, error);
 
     bitCapIntOcl maxI = bciArgs[0];
@@ -2839,6 +2872,12 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
 
     toCompare->clFinish();
 
+    const bool isMigrate = (device_context->context_id != toCompare->device_context->context_id);
+    const int oDevId = toCompare->deviceID;
+    if (isMigrate) {
+        toCompare->SetDevice(deviceID);
+    }
+
     bitCapIntOcl bciArgs[BCI_ARG_LEN] = { maxQPowerOcl, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     EventVecPtr waitVec = ResetWaitEvents();
@@ -2866,6 +2905,10 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
     locCmplxBuffer.reset();
 
     SubtractAlloc(sizeof(complex) * partInnerSize);
+
+    if (isMigrate) {
+        toCompare->SetDevice(oDevId);
+    }
 
     complex totInner = ZERO_CMPLX;
     for (int i = 0; i < partInnerSize; i++) {
