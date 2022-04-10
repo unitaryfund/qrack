@@ -12,14 +12,15 @@
 
 #include "qfactory.hpp"
 
+#define CATCH_CONFIG_RUNNER /* Access to the configuration. */
+#include "tests.hpp"
+
 #include <iostream>
 #include <random>
+#include <regex>
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
-
-#define CATCH_CONFIG_RUNNER /* Access to the configuration. */
-#include "tests.hpp"
 
 using namespace Qrack;
 
@@ -186,10 +187,22 @@ int main(int argc, char* argv[])
 
     if (devListStr.compare("") != 0) {
         std::stringstream devListStr_stream(devListStr);
+        std::regex re("[.]");
         while (devListStr_stream.good()) {
-            std::string substr;
-            getline(devListStr_stream, substr, ',');
-            devList.push_back(stoi(substr));
+            std::string term;
+            getline(devListStr_stream, term, ',');
+            // the '-1' is what makes the regex split (-1 := what was not matched)
+            std::sregex_token_iterator first{ term.begin(), term.end(), re, -1 }, last;
+            std::vector<std::string> tokens{ first, last };
+            if (tokens.size() == 1U) {
+                devList.push_back(stoi(term));
+                continue;
+            }
+            const unsigned maxI = stoi(tokens[0]);
+            const int id = stoi(tokens[1]);
+            for (unsigned i = 0U; i < maxI; i++) {
+                devList.push_back(id);
+            }
         }
     }
 

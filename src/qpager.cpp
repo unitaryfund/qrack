@@ -13,6 +13,7 @@
 #if ENABLE_PTHREAD
 #include <future>
 #endif
+#include <regex>
 #include <string>
 
 namespace Qrack {
@@ -143,10 +144,22 @@ void QPager::Init()
         deviceIDs.clear();
         if (devListStr.compare("") != 0) {
             std::stringstream devListStr_stream(devListStr);
+            std::regex re("[.]");
             while (devListStr_stream.good()) {
-                std::string substr;
-                getline(devListStr_stream, substr, ',');
-                deviceIDs.push_back(stoi(substr));
+                std::string term;
+                getline(devListStr_stream, term, ',');
+                // the '-1' is what makes the regex split (-1 := what was not matched)
+                std::sregex_token_iterator first{ term.begin(), term.end(), re, -1 }, last;
+                std::vector<std::string> tokens{ first, last };
+                if (tokens.size() == 1U) {
+                    deviceIDs.push_back(stoi(term));
+                    continue;
+                }
+                const unsigned maxI = stoi(tokens[0]);
+                const int id = stoi(tokens[1]);
+                for (unsigned i = 0U; i < maxI; i++) {
+                    deviceIDs.push_back(id);
+                }
             }
         }
     }
