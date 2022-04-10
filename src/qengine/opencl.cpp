@@ -550,7 +550,8 @@ void QEngineOCL::SetDevice(int dID)
 
     if (!didInit) {
         AddAlloc(sizeof(complex) * maxQPowerOcl);
-    } else if ((dID == deviceID) || ((dID == -1) && (deviceID == defDevId)) || ((deviceID == -1) && (dID == defDevId))) {
+    } else if ((dID == deviceID) || ((dID == -1) && (deviceID == defDevId)) ||
+        ((deviceID == -1) && (dID == defDevId))) {
         // If we're "switching" to the device we already have, don't reinitialize.
         return;
     } else if (stateBuffer && !stateVec) {
@@ -625,16 +626,16 @@ void QEngineOCL::SetDevice(int dID)
     }
     nrmBuffer = MakeBuffer(context, CL_MEM_READ_WRITE, nrmArrayAllocSize);
 
-    // If this is the same context, then all other buffers are valid.
-    if (oldContextId == nDeviceContext->context_id) {
-        return;
-    }
-
     poolItems.clear();
     poolItems.push_back(std::make_shared<PoolItem>(context));
 
     AddAlloc(sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
     powersBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(bitCapIntOcl) * pow2Ocl(QBCAPPOW));
+
+    // If this is the same context, then all other buffers are valid.
+    if (oldContextId == nDeviceContext->context_id) {
+        return;
+    }
 
     // create buffers on device (allocate space on GPU)
     if (didInit) {
