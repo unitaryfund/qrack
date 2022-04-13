@@ -346,8 +346,8 @@ int main(int argc, char* argv[])
     if (num_failed == 0 && qengine && stabilizer_qpager) {
         testEngineType = QINTERFACE_STABILIZER_HYBRID;
         testSubEngineType = QINTERFACE_QPAGER;
-        testSubSubEngineType = QINTERFACE_HYBRID;
-        session.config().stream() << "############ QStabilizerHybrid -> QPager -> QHybrid ############" << std::endl;
+        testSubSubEngineType = QINTERFACE_OPENCL;
+        session.config().stream() << "############ QStabilizerHybrid -> QPager -> QEngineOCL ############" << std::endl;
         num_failed = session.run();
     }
 #endif
