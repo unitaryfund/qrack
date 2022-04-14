@@ -1854,6 +1854,14 @@ public:
     /** Inverse of multiplication modulo N by integer, (out of place) */
     virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
 
+    /** Controlled multiplication modulo N by integer, (out of place) */
+    virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+        const bitLenInt* controls, bitLenInt controlLen);
+
+    /** Inverse of controlled multiplication modulo N by integer, (out of place) */
+    virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+        const bitLenInt* controls, bitLenInt controlLen);
+
     /**
      * Quantum analog of classical "Full Adder" gate
      *

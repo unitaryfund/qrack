@@ -222,6 +222,44 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     }
 }
 
+/**
+ * Controlled multiplication modulo N by integer, (out of place)
+ */
+void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    const bitLenInt* controls, bitLenInt controlLen)
+{
+    const bitLenInt oLength = log2(modN);
+    if (pow2(oLength) != modN) {
+        throw std::invalid_argument("CMULModNOut decomposition only implemented for mod N powers of 2!");
+    }
+
+    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
+    std::copy(controls, controls + controlLen, lControls.get());
+    for (bitLenInt i = 0; i < length; i++) {
+        lControls[controlLen] = inStart + i;
+        CINC(toMul * pow2(i), outStart, oLength, lControls.get(), controlLen + 1U);
+    }
+}
+
+/**
+ * Inverse of controlled multiplication modulo N by integer, (out of place)
+ */
+void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    const bitLenInt* controls, bitLenInt controlLen)
+{
+    const bitLenInt oLength = log2(modN);
+    if (pow2(oLength) != modN) {
+        throw std::invalid_argument("CIMULModNOut decomposition only implemented for mod N powers of 2!");
+    }
+
+    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
+    std::copy(controls, controls + controlLen, lControls.get());
+    for (bitLenInt i = 0; i < length; i++) {
+        lControls[controlLen] = inStart + i;
+        CDEC(toMul * pow2(i), outStart, oLength, lControls.get(), controlLen + 1U);
+    }
+}
+
 /// Quantum analog of classical "Full Adder" gate
 void QInterface::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
 {
