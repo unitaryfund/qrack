@@ -1848,6 +1848,12 @@ public:
     /** Subtract a classical integer from the register, with sign and without carry. */
     virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex);
 
+    /** Multiplication modulo N by integer, (out of place) */
+    virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+
+    /** Inverse of multiplication modulo N by integer, (out of place) */
+    virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length);
+
     /**
      * Quantum analog of classical "Full Adder" gate
      *

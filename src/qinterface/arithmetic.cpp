@@ -188,6 +188,40 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLen
     INCS(invToSub, start, length, overflowIndex);
 }
 
+/**
+ * Multiplication modulo N by integer, (out of place)
+ */
+void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    const bitLenInt oLength = log2(modN);
+    if (pow2(oLength) != modN) {
+        throw std::invalid_argument("MULModNOut decomposition only implemented for mod N powers of 2!");
+    }
+
+    bitLenInt controls[1];
+    for (bitLenInt i = 0; i < length; i++) {
+        controls[0] = inStart + i;
+        CINC(toMul * pow2(i), outStart, oLength, controls, 1U);
+    }
+}
+
+/**
+ * Inverse of multiplication modulo N by integer, (out of place)
+ */
+void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+{
+    const bitLenInt oLength = log2(modN);
+    if (pow2(oLength) != modN) {
+        throw std::invalid_argument("IMULModNOut decomposition only implemented for mod N powers of 2!");
+    }
+
+    bitLenInt controls[1];
+    for (bitLenInt i = 0; i < length; i++) {
+        controls[0] = inStart + i;
+        CDEC(toMul * pow2(i), outStart, oLength, controls, 1U);
+    }
+}
+
 /// Quantum analog of classical "Full Adder" gate
 void QInterface::FullAdd(bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut)
 {

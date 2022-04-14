@@ -981,7 +981,7 @@ real1_f QUnit::ProbBase(bitLenInt qubit)
         return (real1_f)norm(shard.amp1);
     }
 
-    if (!shard.isProbDirty) {
+    if (!shard.unit || !shard.isProbDirty) {
         return clampProb((real1_f)norm(shard.amp1));
     }
 
@@ -2760,7 +2760,6 @@ void QUnit::INT(bitCapInt toMod, bitLenInt start, bitLenInt length, bitLenInt ca
     const bitLenInt controlLen = controlVec.size();
     std::unique_ptr<bitLenInt[]> controls(new bitLenInt[controlLen]);
     std::copy(controlVec.begin(), controlVec.end(), controls.get());
-    DirtyShardIndexVector(controlVec);
 
     std::vector<bitLenInt> allBits(controlLen + 1U);
     std::copy(controlVec.begin(), controlVec.end(), allBits.begin());
@@ -3140,16 +3139,6 @@ void QUnit::xMULModNOut(
         std::dynamic_pointer_cast<QAlu>(unit)->MULModNOut(
             toMod, modN, shards[inStart].mapped, shards[outStart].mapped, length);
     }
-}
-
-void QUnit::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
-{
-    xMULModNOut(toMod, modN, inStart, outStart, length, false);
-}
-
-void QUnit::IMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
-{
-    xMULModNOut(toMod, modN, inStart, outStart, length, true);
 }
 
 void QUnit::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)

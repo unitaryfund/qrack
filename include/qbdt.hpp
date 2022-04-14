@@ -283,6 +283,14 @@ public:
     {
         QInterface::INCDECC(toAdd, start, length, carryIndex);
     }
+    virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    {
+        QInterface::MULModNOut(toMul, modN, inStart, outStart, length);
+    }
+    virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    {
+        QInterface::IMULModNOut(toMul, modN, inStart, outStart, length);
+    }
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
     {
         ExecuteAsStateVector(
@@ -328,16 +336,6 @@ public:
     {
         ExecuteAsStateVector(
             [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->DIV(toDiv, inOutStart, carryStart, length); });
-    }
-    virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
-    {
-        ExecuteAsStateVector(
-            [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->MULModNOut(toMul, modN, inStart, outStart, length); });
-    }
-    virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
-    {
-        ExecuteAsStateVector(
-            [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->IMULModNOut(toMul, modN, inStart, outStart, length); });
     }
     virtual void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
