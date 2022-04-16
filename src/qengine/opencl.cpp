@@ -263,8 +263,6 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
         engineOcl->ClearBuffer(engineOcl->stateBuffer, 0, engineOcl->maxQPowerOcl);
     }
 
-    engineOcl->clFinish();
-
     const bitCapIntOcl halfMaxQPower = (bitCapIntOcl)(maxQPowerOcl >> ONE_BCI);
 
     if (device_context->context_id != engineOcl->device_context->context_id) {
@@ -287,9 +285,10 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     cl_int error;
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
+    AddQueueItem(QueueItem(engineOcl.get(), true));
     QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
-    engineOcl->AddQueueItem(QueueItem(this));
+    engineOcl->AddQueueItem(QueueItem(this, false));
 
     QueueSetRunningNorm(REAL1_DEFAULT_ARG);
     engineOcl->QueueSetRunningNorm(REAL1_DEFAULT_ARG);
@@ -487,8 +486,12 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
 
     while (item.isSetDoNorm || item.isSetRunningNorm || item.oEngine) {
         if (item.oEngine) {
-            item.oEngine->AsyncShareFinish(stateBuffer);
-            oEngine = NULL;
+            if (item.isLead) {
+                item.oEngine->Finish();
+            } else {
+                item.oEngine->AsyncShareFinish(stateBuffer);
+                oEngine = NULL;
+            }
         }
         if (item.isSetDoNorm) {
             doNormalize = item.doNorm;
