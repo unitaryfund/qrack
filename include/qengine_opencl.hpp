@@ -21,7 +21,6 @@
 #include "common/oclengine.hpp"
 #include "qengine.hpp"
 
-#include <condition_variable>
 #include <list>
 #include <mutex>
 
@@ -63,10 +62,7 @@ struct QueueItem {
     bool isSetDoNorm;
     bool isSetRunningNorm;
     bool doNorm;
-    bool isTryWait;
     real1 runningNorm;
-    std::mutex* oMutex;
-    std::condition_variable* oWait;
 
     QueueItem(OCLAPI ac, size_t wic, size_t lgs, size_t ds, std::vector<BufferPtr> b, size_t lbs)
         : api_call(ac)
@@ -78,10 +74,7 @@ struct QueueItem {
         , isSetDoNorm(false)
         , isSetRunningNorm(false)
         , doNorm(false)
-        , isTryWait(false)
         , runningNorm(ONE_R1)
-        , oMutex(NULL)
-        , oWait(NULL)
     {
     }
 
@@ -95,10 +88,7 @@ struct QueueItem {
         , isSetDoNorm(true)
         , isSetRunningNorm(false)
         , doNorm(doNrm)
-        , isTryWait(false)
         , runningNorm(ONE_R1)
-        , oMutex(NULL)
-        , oWait(NULL)
     {
     }
 
@@ -112,44 +102,7 @@ struct QueueItem {
         , isSetDoNorm(false)
         , isSetRunningNorm(true)
         , doNorm(false)
-        , isTryWait(false)
         , runningNorm(runningNrm)
-        , oMutex(NULL)
-        , oWait(NULL)
-    {
-    }
-
-    QueueItem(std::mutex* om, std::condition_variable* ow)
-        : api_call()
-        , workItemCount(0)
-        , localGroupSize(0)
-        , deallocSize(0)
-        , buffers()
-        , localBuffSize(0)
-        , isSetDoNorm(false)
-        , isSetRunningNorm(true)
-        , doNorm(false)
-        , isTryWait(false)
-        , runningNorm(ONE_R1)
-        , oMutex(om)
-        , oWait(ow)
-    {
-    }
-
-    QueueItem()
-        : api_call()
-        , workItemCount(0)
-        , localGroupSize(0)
-        , deallocSize(0)
-        , buffers()
-        , localBuffSize(0)
-        , isSetDoNorm(false)
-        , isSetRunningNorm(true)
-        , doNorm(false)
-        , isTryWait(true)
-        , runningNorm(ONE_R1)
-        , oMutex(NULL)
-        , oWait(NULL)
     {
     }
 };
@@ -244,8 +197,6 @@ protected:
     cl_map_flags lockSyncFlags;
     bool usingHostRam;
     complex permutationAmp;
-    std::mutex asyncSharedMutex;
-    std::condition_variable asyncSharedWait;
 
 #if defined(__APPLE__)
     real1* _aligned_nrm_array_alloc(bitCapIntOcl allocSize)

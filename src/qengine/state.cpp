@@ -140,19 +140,13 @@ void QEngineCPU::ShuffleBuffers(QEnginePtr engine)
         engineCpu->stateVec->clear();
     }
 
+    Finish();
     engineCpu->Finish();
 
-    Dispatch(maxQPower >> 1U, [this, engineCpu] {
-        stateVec->shuffle(engineCpu->stateVec);
-        runningNorm = REAL1_DEFAULT_ARG;
-        std::lock_guard<std::mutex> lock(engineCpu->asyncSharedMutex);
-        engineCpu->asyncSharedWait.notify_all();
-    });
-    engineCpu->Dispatch(maxQPower >> 1U, [this, engineCpu] {
-        std::unique_lock<std::mutex> lock(engineCpu->asyncSharedMutex);
-        engineCpu->asyncSharedWait.wait(lock);
-        engineCpu->runningNorm = REAL1_DEFAULT_ARG;
-    });
+    stateVec->shuffle(engineCpu->stateVec);
+
+    runningNorm = REAL1_DEFAULT_ARG;
+    engineCpu->runningNorm = REAL1_DEFAULT_ARG;
 }
 void QEngineCPU::CopyStateVec(QEnginePtr src)
 {
