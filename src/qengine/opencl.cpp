@@ -485,20 +485,9 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
 
     QueueItem item = wait_queue_items.front();
 
-    long waitMillis = 1;
     while (item.isSetDoNorm || item.isSetRunningNorm || item.oEngine) {
         if (item.oEngine) {
-            // Spin until the other engine is finished.
-            if (!(item.oEngine->isAsyncShareFinished(stateBuffer))) {
-                // Don't block, but try again.
-                std::this_thread::sleep_for(std::chrono::milliseconds(waitMillis));
-                // Exponential back off
-                waitMillis <<= 1;
-                continue;
-            }
-            // Reset wait interval.
-            waitMillis = 1;
-            // We can release the barrier.
+            item.oEngine->AsyncShareFinish(stateBuffer);
             oEngine = NULL;
         }
         if (item.isSetDoNorm) {
