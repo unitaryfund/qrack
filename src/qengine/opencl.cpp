@@ -13,6 +13,7 @@
 #include "qengine_opencl.hpp"
 
 #include <algorithm>
+#include <thread>
 
 namespace Qrack {
 
@@ -485,15 +486,21 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
     QueueItem item = wait_queue_items.front();
 
     while (item.isSetDoNorm || item.isSetRunningNorm || item.oEngine) {
+        if (item.oEngine) {
+            // Spin until the other engine is finished.
+            if (!(item.oEngine->isAsyncShareFinished(stateBuffer))) {
+                // Don't block, but try again.
+                std::this_thread::sleep_for(std::chrono::milliseconds(4));
+                continue;
+            }
+            // We can release the barrier.
+            oEngine = NULL;
+        }
         if (item.isSetDoNorm) {
             doNormalize = item.doNorm;
         }
         if (item.isSetRunningNorm) {
             runningNorm = item.runningNorm;
-        }
-        if (item.oEngine) {
-            item.oEngine->Finish();
-            oEngine = NULL;
         }
 
         wait_queue_items.pop_front();
