@@ -63,10 +63,8 @@ struct QueueItem {
     bool isSetDoNorm;
     bool isSetRunningNorm;
     bool doNorm;
-    bool isTryWait;
     real1 runningNorm;
-    std::mutex* oMutex;
-    std::condition_variable* oWait;
+    QEngineOCL* oEngine;
 
     QueueItem(OCLAPI ac, size_t wic, size_t lgs, size_t ds, std::vector<BufferPtr> b, size_t lbs)
         : api_call(ac)
@@ -78,10 +76,8 @@ struct QueueItem {
         , isSetDoNorm(false)
         , isSetRunningNorm(false)
         , doNorm(false)
-        , isTryWait(false)
         , runningNorm(ONE_R1)
-        , oMutex(NULL)
-        , oWait(NULL)
+        , oEngine(NULL)
     {
     }
 
@@ -95,10 +91,8 @@ struct QueueItem {
         , isSetDoNorm(true)
         , isSetRunningNorm(false)
         , doNorm(doNrm)
-        , isTryWait(false)
         , runningNorm(ONE_R1)
-        , oMutex(NULL)
-        , oWait(NULL)
+        , oEngine(NULL)
     {
     }
 
@@ -112,14 +106,12 @@ struct QueueItem {
         , isSetDoNorm(false)
         , isSetRunningNorm(true)
         , doNorm(false)
-        , isTryWait(false)
         , runningNorm(runningNrm)
-        , oMutex(NULL)
-        , oWait(NULL)
+        , oEngine(NULL)
     {
     }
 
-    QueueItem(std::mutex* om, std::condition_variable* ow)
+    QueueItem(QEngineOCL* oe)
         : api_call()
         , workItemCount(0)
         , localGroupSize(0)
@@ -129,10 +121,8 @@ struct QueueItem {
         , isSetDoNorm(false)
         , isSetRunningNorm(true)
         , doNorm(false)
-        , isTryWait(false)
         , runningNorm(ONE_R1)
-        , oMutex(om)
-        , oWait(ow)
+        , oEngine(oe)
     {
     }
 
@@ -146,10 +136,8 @@ struct QueueItem {
         , isSetDoNorm(false)
         , isSetRunningNorm(true)
         , doNorm(false)
-        , isTryWait(true)
         , runningNorm(ONE_R1)
-        , oMutex(NULL)
-        , oWait(NULL)
+        , oEngine(NULL)
     {
     }
 };
@@ -244,8 +232,7 @@ protected:
     cl_map_flags lockSyncFlags;
     bool usingHostRam;
     complex permutationAmp;
-    std::mutex asyncSharedMutex;
-    std::condition_variable asyncSharedWait;
+    QEngineOCL* oEngine;
 
 #if defined(__APPLE__)
     real1* _aligned_nrm_array_alloc(bitCapIntOcl allocSize)

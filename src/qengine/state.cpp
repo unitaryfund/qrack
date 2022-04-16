@@ -45,6 +45,7 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
+    , isAsyncShareDone(true)
 {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #if ENABLE_ENV_VARS
@@ -145,12 +146,15 @@ void QEngineCPU::ShuffleBuffers(QEnginePtr engine)
     Dispatch(maxQPower >> 1U, [this, engineCpu] {
         stateVec->shuffle(engineCpu->stateVec);
         runningNorm = REAL1_DEFAULT_ARG;
-        std::lock_guard<std::mutex> lock(engineCpu->asyncSharedMutex);
-        engineCpu->asyncSharedWait.notify_all();
+        std::unique_lock<std::mutex> lock(engineCpu->asyncShareMutex);
+        lock.lock();
+        engineCpu->isAsyncShareDone = true;
+        lock.unlock();
+        engineCpu->asyncShareWait.notify_all();
     });
     engineCpu->Dispatch(maxQPower >> 1U, [this, engineCpu] {
-        std::unique_lock<std::mutex> lock(engineCpu->asyncSharedMutex);
-        engineCpu->asyncSharedWait.wait(lock);
+        std::unique_lock<std::mutex> lock(engineCpu->asyncShareMutex);
+        engineCpu->asyncShareWait.wait(lock, [engineCpu]() { return engineCpu->isAsyncShareDone; });
         engineCpu->runningNorm = REAL1_DEFAULT_ARG;
     });
 }
