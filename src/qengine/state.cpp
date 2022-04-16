@@ -152,7 +152,7 @@ void QEngineCPU::ShuffleBuffers(QEnginePtr engine)
         lock.unlock();
         engineCpu->asyncShareWait.notify_all();
     });
-    engineCpu->Dispatch(maxQPower >> 1U, [this, engineCpu] {
+    engineCpu->Dispatch(maxQPower >> 1U, [engineCpu] {
         std::unique_lock<std::mutex> lock(engineCpu->asyncShareMutex);
         engineCpu->asyncShareWait.wait(lock, [engineCpu]() { return engineCpu->isAsyncShareDone; });
         engineCpu->runningNorm = REAL1_DEFAULT_ARG;
