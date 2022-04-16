@@ -63,7 +63,6 @@ struct QueueItem {
     bool isSetDoNorm;
     bool isSetRunningNorm;
     bool doNorm;
-    bool isLead;
     real1 runningNorm;
     QEngineOCL* oEngine;
 
@@ -77,7 +76,6 @@ struct QueueItem {
         , isSetDoNorm(false)
         , isSetRunningNorm(false)
         , doNorm(false)
-        , isLead(false)
         , runningNorm(ONE_R1)
         , oEngine(NULL)
     {
@@ -93,7 +91,6 @@ struct QueueItem {
         , isSetDoNorm(true)
         , isSetRunningNorm(false)
         , doNorm(doNrm)
-        , isLead(false)
         , runningNorm(ONE_R1)
         , oEngine(NULL)
     {
@@ -109,13 +106,12 @@ struct QueueItem {
         , isSetDoNorm(false)
         , isSetRunningNorm(true)
         , doNorm(false)
-        , isLead(false)
         , runningNorm(runningNrm)
         , oEngine(NULL)
     {
     }
 
-    QueueItem(QEngineOCL* oe, bool isL)
+    QueueItem(QEngineOCL* oe)
         : api_call()
         , workItemCount(0)
         , localGroupSize(0)
@@ -125,9 +121,23 @@ struct QueueItem {
         , isSetDoNorm(false)
         , isSetRunningNorm(true)
         , doNorm(false)
-        , isLead(isL)
         , runningNorm(ONE_R1)
         , oEngine(oe)
+    {
+    }
+
+    QueueItem()
+        : api_call()
+        , workItemCount(0)
+        , localGroupSize(0)
+        , deallocSize(0)
+        , buffers()
+        , localBuffSize(0)
+        , isSetDoNorm(false)
+        , isSetRunningNorm(true)
+        , doNorm(false)
+        , runningNorm(ONE_R1)
+        , oEngine(NULL)
     {
     }
 };
