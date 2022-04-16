@@ -493,11 +493,11 @@ void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
                 // Don't block, but try again.
                 std::this_thread::sleep_for(std::chrono::milliseconds(waitMillis));
                 // Exponential back off
-                waitMillis <<= 1U;
+                waitMillis <<= 1;
                 continue;
             }
             // Reset wait interval.
-            waitMillis = 1U;
+            waitMillis = 1;
             // We can release the barrier.
             oEngine = NULL;
         }
