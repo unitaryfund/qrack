@@ -374,7 +374,7 @@ void QEngineOCL::clDump()
     }
 
     if (oEngine) {
-        oEngine->Finish();
+        oEngine->AsyncShareFinish(stateBuffer);
         oEngine = NULL;
     }
 
