@@ -49,23 +49,21 @@ struct Complex8x2Simd {
     }
     inline Complex8x2Simd operator*(const Complex8x2Simd& other) const
     {
-        return _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(_val2, _val2, 177),
-                              _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(other._val2, other._val2, 245))),
-            _mm_mul_ps(_val2, _mm_shuffle_ps(other._val2, other._val2, 160)));
+        const __m128& oVal2 = other._val2;
+        return _mm_add_ps(
+            _mm_mul_ps(_mm_shuffle_ps(_val2, _val2, 177), _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(oVal2, oVal2, 245))),
+            _mm_mul_ps(_val2, _mm_shuffle_ps(oVal2, oVal2, 160)));
     }
     inline Complex8x2Simd operator*=(const Complex8x2Simd& other)
     {
-        _val2 = _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(_val2, _val2, 177),
-                               _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(other._val2, other._val2, 245))),
-            _mm_mul_ps(_val2, _mm_shuffle_ps(other._val2, other._val2, 160)));
+        const __m128& oVal2 = other._val2;
+        _val2 = _mm_add_ps(
+            _mm_mul_ps(_mm_shuffle_ps(_val2, _val2, 177), _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(oVal2, oVal2, 245))),
+            _mm_mul_ps(_val2, _mm_shuffle_ps(oVal2, oVal2, 160)));
         return _val2;
     }
-    inline Complex8x2Simd operator*(const float rhs) const { return _mm_mul_ps(_val2, _mm_set1_ps(rhs)); }
-    inline Complex8x2Simd operator-() const
-    {
-        __m128 negOne = _mm_set1_ps(-1.0f);
-        return _mm_mul_ps(negOne, _val2);
-    }
+    inline Complex8x2Simd operator*(const float& rhs) const { return _mm_mul_ps(_val2, _mm_set1_ps(rhs)); }
+    inline Complex8x2Simd operator-() const { return _mm_mul_ps(_mm_set1_ps(-1.0f), _val2); }
     inline Complex8x2Simd operator*=(const float& other)
     {
         _val2 = _mm_mul_ps(_val2, _mm_set1_ps(other));
@@ -84,7 +82,7 @@ union complex2 {
         c[0] = cm1;
         c[1] = cm2;
     }
-    inline complex2 operator*(const complex2 rhs) const { return c2 * rhs.c2; }
+    inline complex2 operator*(const complex2& rhs) const { return c2 * rhs.c2; }
 };
 
 inline Complex8x2Simd dupeLo(const Complex8x2Simd& cmplx2) { return _mm_shuffle_ps(cmplx2._val2, cmplx2._val2, 68); }
@@ -92,36 +90,40 @@ inline Complex8x2Simd dupeHi(const Complex8x2Simd& cmplx2) { return _mm_shuffle_
 inline Complex8x2Simd matrixMul(
     const Complex8x2Simd& mtrxCol1, const Complex8x2Simd& mtrxCol2, const Complex8x2Simd& qubit)
 {
-    __m128 dupeLo = _mm_shuffle_ps(qubit._val2, qubit._val2, 68);
-    __m128 dupeHi = _mm_shuffle_ps(qubit._val2, qubit._val2, 238);
-    return _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(mtrxCol1._val2, mtrxCol1._val2, 177),
+    const __m128& col1 = mtrxCol1._val2;
+    const __m128& col2 = mtrxCol2._val2;
+    const __m128 dupeLo = _mm_shuffle_ps(qubit._val2, qubit._val2, 68);
+    const __m128 dupeHi = _mm_shuffle_ps(qubit._val2, qubit._val2, 238);
+    return _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(col1, col1, 177),
                                      _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(dupeLo, dupeLo, 245))),
-                          _mm_mul_ps(mtrxCol1._val2, _mm_shuffle_ps(dupeLo, dupeLo, 160))),
-        _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(mtrxCol2._val2, mtrxCol2._val2, 177),
-                       _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(dupeHi, dupeHi, 245))),
-            _mm_mul_ps(mtrxCol2._val2, _mm_shuffle_ps(dupeHi, dupeHi, 160))));
+                          _mm_mul_ps(col1, _mm_shuffle_ps(dupeLo, dupeLo, 160))),
+        _mm_add_ps(
+            _mm_mul_ps(_mm_shuffle_ps(col2, col2, 177), _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(dupeHi, dupeHi, 245))),
+            _mm_mul_ps(col2, _mm_shuffle_ps(dupeHi, dupeHi, 160))));
 }
 inline Complex8x2Simd matrixMul(
     const float& nrm, const Complex8x2Simd& mtrxCol1, const Complex8x2Simd& mtrxCol2, const Complex8x2Simd& qubit)
 {
-    __m128 dupeLo = _mm_shuffle_ps(qubit._val2, qubit._val2, 68);
-    __m128 dupeHi = _mm_shuffle_ps(qubit._val2, qubit._val2, 238);
+    const __m128& col1 = mtrxCol1._val2;
+    const __m128& col2 = mtrxCol2._val2;
+    const __m128 dupeLo = _mm_shuffle_ps(qubit._val2, qubit._val2, 68);
+    const __m128 dupeHi = _mm_shuffle_ps(qubit._val2, qubit._val2, 238);
     return _mm_mul_ps(_mm_set1_ps(nrm),
-        _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(mtrxCol1._val2, mtrxCol1._val2, 177),
+        _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(col1, col2, 177),
                                   _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(dupeLo, dupeLo, 245))),
                        _mm_mul_ps(mtrxCol1._val2, _mm_shuffle_ps(dupeLo, dupeLo, 160))),
-            _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(mtrxCol2._val2, mtrxCol2._val2, 177),
-                           _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(dupeHi, dupeHi, 245))),
-                _mm_mul_ps(mtrxCol2._val2, _mm_shuffle_ps(dupeHi, dupeHi, 160)))));
+            _mm_add_ps(
+                _mm_mul_ps(_mm_shuffle_ps(col2, col2, 177), _mm_xor_ps(SIGNMASK, _mm_shuffle_ps(dupeHi, dupeHi, 245))),
+                _mm_mul_ps(col2, _mm_shuffle_ps(dupeHi, dupeHi, 160)))));
 }
-inline Complex8x2Simd operator*(const float lhs, const Complex8x2Simd& rhs)
+inline Complex8x2Simd operator*(const float& lhs, const Complex8x2Simd& rhs)
 {
     return _mm_mul_ps(_mm_set1_ps(lhs), rhs._val2);
 }
 
 inline float norm(const Complex8x2Simd& c)
 {
-    complex2 cu(_mm_mul_ps(c._val2, c._val2));
+    const complex2 cu(_mm_mul_ps(c._val2, c._val2));
     return (cu.f[0] + cu.f[1] + cu.f[2] + cu.f[3]);
 }
 } // namespace Qrack

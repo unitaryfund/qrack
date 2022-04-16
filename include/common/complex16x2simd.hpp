@@ -12,8 +12,6 @@
 
 #pragma once
 
-#define ZERO_256D _mm256_set_pd(0, 0, 0, 0)
-
 #if defined(_WIN32)
 #include <intrin.h>
 #else
@@ -23,6 +21,8 @@
 #endif
 
 namespace Qrack {
+
+static const __m256d ZERO_256D = _mm256_set_pd(0, 0, 0, 0);
 
 /** SIMD implementation of the double precision complex vector type of 2 complex numbers, only for AVX Apply2x2. */
 struct Complex16x2Simd {
@@ -59,12 +59,8 @@ struct Complex16x2Simd {
             _mm256_mul_pd(_val2, _mm256_shuffle_pd(other._val2, other._val2, 0)));
         return _val2;
     }
-    inline Complex16x2Simd operator*(const double rhs) const { return _mm256_mul_pd(_val2, _mm256_set1_pd(rhs)); }
-    inline Complex16x2Simd operator-() const
-    {
-        __m256d negOne = _mm256_set1_pd(1.0);
-        return _mm256_mul_pd(negOne, _val2);
-    }
+    inline Complex16x2Simd operator*(const double& rhs) const { return _mm256_mul_pd(_val2, _mm256_set1_pd(rhs)); }
+    inline Complex16x2Simd operator-() const { return _mm256_mul_pd(_mm256_set1_pd(1.0), _val2); }
     inline Complex16x2Simd operator*=(const double& other)
     {
         _val2 = _mm256_mul_pd(_val2, _mm256_set1_pd(other));
@@ -83,7 +79,7 @@ union complex2 {
         c[0] = cm1;
         c[1] = cm2;
     }
-    inline complex2 operator*(const complex2 rhs) const { return c2 * rhs.c2; }
+    inline complex2 operator*(const complex2& rhs) const { return c2 * rhs.c2; }
 };
 
 inline Complex16x2Simd dupeLo(const Complex16x2Simd& cmplx2)
@@ -97,36 +93,40 @@ inline Complex16x2Simd dupeHi(const Complex16x2Simd& cmplx2)
 inline Complex16x2Simd matrixMul(
     const Complex16x2Simd& mtrxCol1, const Complex16x2Simd& mtrxCol2, const Complex16x2Simd& qubit)
 {
-    __m256d dupeLo = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 0);
-    __m256d dupeHi = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 17);
-    return _mm256_add_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol1._val2, mtrxCol1._val2, 5),
+    const __m256d& col1 = mtrxCol1._val2;
+    const __m256d& col2 = mtrxCol2._val2;
+    const __m256d dupeLo = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 0);
+    const __m256d dupeHi = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 17);
+    return _mm256_add_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(col1, col1, 5),
                                            _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeLo), dupeLo, 15)),
-                             _mm256_mul_pd(mtrxCol1._val2, _mm256_shuffle_pd(dupeLo, dupeLo, 0))),
-        _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol2._val2, mtrxCol2._val2, 5),
+                             _mm256_mul_pd(col1, _mm256_shuffle_pd(dupeLo, dupeLo, 0))),
+        _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(col2, col2, 5),
                           _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeHi), dupeHi, 15)),
-            _mm256_mul_pd(mtrxCol2._val2, _mm256_shuffle_pd(dupeHi, dupeHi, 0))));
+            _mm256_mul_pd(col2, _mm256_shuffle_pd(dupeHi, dupeHi, 0))));
 }
 inline Complex16x2Simd matrixMul(
     const double& nrm, const Complex16x2Simd& mtrxCol1, const Complex16x2Simd& mtrxCol2, const Complex16x2Simd& qubit)
 {
-    __m256d dupeLo = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 0);
-    __m256d dupeHi = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 17);
+    const __m256d& col1 = mtrxCol1._val2;
+    const __m256d& col2 = mtrxCol2._val2;
+    const __m256d dupeLo = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 0);
+    const __m256d dupeHi = _mm256_permute2f128_pd(qubit._val2, qubit._val2, 17);
     return _mm256_mul_pd(_mm256_set1_pd(nrm),
-        _mm256_add_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol1._val2, mtrxCol1._val2, 5),
+        _mm256_add_pd(_mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(col1, col1, 5),
                                         _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeLo), dupeLo, 15)),
-                          _mm256_mul_pd(mtrxCol1._val2, _mm256_shuffle_pd(dupeLo, dupeLo, 0))),
-            _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(mtrxCol2._val2, mtrxCol2._val2, 5),
+                          _mm256_mul_pd(col1, _mm256_shuffle_pd(dupeLo, dupeLo, 0))),
+            _mm256_add_pd(_mm256_mul_pd(_mm256_shuffle_pd(col2, col2, 5),
                               _mm256_shuffle_pd(_mm256_sub_pd(ZERO_256D, dupeHi), dupeHi, 15)),
-                _mm256_mul_pd(mtrxCol2._val2, _mm256_shuffle_pd(dupeHi, dupeHi, 0)))));
+                _mm256_mul_pd(col2, _mm256_shuffle_pd(dupeHi, dupeHi, 0)))));
 }
-inline Complex16x2Simd operator*(const double lhs, const Complex16x2Simd& rhs)
+inline Complex16x2Simd operator*(const double& lhs, const Complex16x2Simd& rhs)
 {
     return _mm256_mul_pd(_mm256_set1_pd(lhs), rhs._val2);
 }
 
 inline double norm(const Complex16x2Simd& c)
 {
-    complex2 cu(_mm256_mul_pd(c._val2, c._val2));
+    const complex2 cu(_mm256_mul_pd(c._val2, c._val2));
     return (cu.f[0] + cu.f[1] + cu.f[2] + cu.f[3]);
 }
 
