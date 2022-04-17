@@ -544,6 +544,42 @@ void QEngineOCL::DispatchQueue()
     }
 }
 
+void QEngineOCL::AsyncShareFinish(BufferPtr oStateBuffer)
+{
+    if (!device_context) {
+        return;
+    }
+
+    while (wait_queue_items.size()) {
+        bool isBlocked = false;
+        if (true) {
+            std::lock_guard<std::mutex> lock(queue_mutex);
+            for (std::list<QueueItem>::iterator it = wait_queue_items.begin(); it != wait_queue_items.end(); it++) {
+                if ((it->api_call == OCL_API_SHUFFLEBUFFERS) && (it->buffers[1] == oStateBuffer)) {
+                    isBlocked = true;
+                    break;
+                }
+            }
+        }
+        if (!isBlocked) {
+            break;
+        }
+
+        device_context->WaitOnAllEvents();
+        if (wait_queue_items.size()) {
+            PopQueue();
+        }
+    }
+
+    // Current event might be async sharing.
+    device_context->WaitOnAllEvents();
+    if (wait_queue_items.size()) {
+        PopQueue();
+    } else {
+        wait_refs.clear();
+    }
+}
+
 void QEngineOCL::SetDevice(int dID)
 {
     if (!(OCLEngine::Instance().GetDeviceCount())) {
