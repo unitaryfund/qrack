@@ -313,7 +313,7 @@ public:
         }
 
         if (isBase) {
-            DispatchQueue(NULL, CL_COMPLETE);
+            DispatchQueue();
         }
     }
     void QueueCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
@@ -451,8 +451,8 @@ public:
 
     QInterfacePtr Clone();
 
-    void PopQueue(cl_event event, cl_int type);
-    void DispatchQueue(cl_event event, cl_int type);
+    void PopQueue();
+    void DispatchQueue();
 
 protected:
     void AddAlloc(size_t size)
@@ -494,6 +494,10 @@ protected:
 
     void AsyncShareFinish(BufferPtr oStateBuffer)
     {
+        if (!device_context) {
+            return;
+        }
+
         while (wait_queue_items.size()) {
             bool isBlocked = false;
             if (true) {
@@ -510,12 +514,15 @@ protected:
             }
 
             device_context->WaitOnAllEvents();
-            PopQueue(NULL, CL_COMPLETE);
+            if (wait_queue_items.size()) {
+                PopQueue();
+            }
         }
 
+        // Current event might be async sharing.
         device_context->WaitOnAllEvents();
         if (wait_queue_items.size()) {
-            PopQueue(NULL, CL_COMPLETE);
+            PopQueue();
         } else {
             wait_refs.clear();
         }

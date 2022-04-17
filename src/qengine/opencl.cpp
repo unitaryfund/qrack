@@ -352,7 +352,7 @@ void QEngineOCL::clFinish(bool doHard)
 
     while (wait_queue_items.size() > 1) {
         device_context->WaitOnAllEvents();
-        PopQueue(NULL, CL_COMPLETE);
+        PopQueue();
     }
 
     if (doHard) {
@@ -430,7 +430,7 @@ EventVecPtr QEngineOCL::ResetWaitEvents(bool waitQueue)
     if (waitQueue) {
         while (wait_queue_items.size() > 1) {
             device_context->WaitOnAllEvents();
-            PopQueue(NULL, CL_COMPLETE);
+            PopQueue();
         }
     }
 
@@ -445,12 +445,9 @@ void QEngineOCL::WaitCall(
     clFinish();
 }
 
-void CL_CALLBACK _PopQueue(cl_event event, cl_int type, void* user_data)
-{
-    ((QEngineOCL*)user_data)->PopQueue(event, type);
-}
+void CL_CALLBACK _PopQueue(cl_event event, cl_int type, void* user_data) { ((QEngineOCL*)user_data)->PopQueue(); }
 
-void QEngineOCL::PopQueue(cl_event event, cl_int type)
+void QEngineOCL::PopQueue()
 {
     // For lock_guard scope
     if (true) {
@@ -472,10 +469,10 @@ void QEngineOCL::PopQueue(cl_event event, cl_int type)
         }
     }
 
-    DispatchQueue(event, type);
+    DispatchQueue();
 }
 
-void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
+void QEngineOCL::DispatchQueue()
 {
     QueueItem item;
 
