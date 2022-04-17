@@ -494,7 +494,7 @@ protected:
 
     void AsyncShareFinish(BufferPtr oStateBuffer)
     {
-        while (wait_queue_items.size() > 1) {
+        while (wait_queue_items.size()) {
             bool isBlocked = false;
             if (true) {
                 std::lock_guard<std::mutex> lock(queue_mutex);
@@ -510,9 +510,15 @@ protected:
             }
 
             device_context->WaitOnAllEvents();
+            PopQueue(NULL, CL_COMPLETE);
         }
 
         device_context->WaitOnAllEvents();
+        if (wait_queue_items.size()) {
+            PopQueue(NULL, CL_COMPLETE);
+        } else {
+            wait_refs.clear();
+        }
     }
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
