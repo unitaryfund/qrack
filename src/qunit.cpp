@@ -3478,7 +3478,7 @@ real1_f QUnit::SumSqrDiff(QUnitPtr toCompare)
             mAmps[0] = shards[0].amp0;
             mAmps[1] = shards[0].amp1;
         }
-        if (!toCompare->shards[0].unit) {
+        if (toCompare->shards[0].unit) {
             toCompare->shards[0].unit->GetQuantumState(oAmps);
         } else {
             oAmps[0] = toCompare->shards[0].amp0;
