@@ -557,15 +557,14 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
             fn(engine2, sqi);
         }
         engine1->ShuffleBuffers(engine2);
-    }
 #endif
+    }
 
 #if ENABLE_PTHREAD
-        for (bitCapIntOcl i = 0; i < maxLcv; i++) {
-            futures[i].get();
-        }
-#endif
+    for (bitCapIntOcl i = 0; i < maxLcv; i++) {
+        futures[i].get();
     }
+#endif
 }
 
 // This is called when control bits are "meta-" but the target bit is below the "meta-" threshold, (low enough to

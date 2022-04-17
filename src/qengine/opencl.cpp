@@ -349,13 +349,9 @@ void QEngineOCL::clFinish(bool doHard)
         return;
     }
 
-    std::unique_lock<std::mutex> lock(queue_mutex);
-    lock.lock();
     while (wait_queue_items.size() > 1) {
         device_context->WaitOnAllEvents();
-        lock.unlock();
         PopQueue();
-        lock.lock();
     }
 
     if (doHard) {
