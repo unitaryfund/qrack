@@ -211,7 +211,6 @@ protected:
     cl_map_flags lockSyncFlags;
     bool usingHostRam;
     complex permutationAmp;
-    QEngineOCL* oEngine;
 
 #if defined(__APPLE__)
     real1* _aligned_nrm_array_alloc(bitCapIntOcl allocSize)

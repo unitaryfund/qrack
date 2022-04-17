@@ -87,7 +87,6 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     , nrmGroupSize(0)
     , totalOclAllocSize(0)
     , unlockHostMem(false)
-    , oEngine(NULL)
 {
     InitOCL(devID);
     clFinish();
