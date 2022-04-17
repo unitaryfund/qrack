@@ -517,7 +517,7 @@ protected:
                     PopQueue(NULL, CL_COMPLETE);
                 }
             }
-        } while (isBlocked);
+        } while (wait_queue_items.size() && isBlocked);
     }
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
