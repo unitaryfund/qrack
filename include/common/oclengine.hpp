@@ -42,6 +42,8 @@
 
 namespace Qrack {
 
+typedef std::shared_ptr<cl::Buffer> BufferPtr;
+
 class OCLDeviceCall;
 
 class OCLDeviceContext;
@@ -148,6 +150,7 @@ public:
     // A cl::Kernel is unique object which should always be taken by reference, or the OCLDeviceContext will lose
     // ownership.
     cl::Kernel& call;
+    std::vector<BufferPtr> args;
     OCLDeviceCall(const OCLDeviceCall&);
 
 protected:
