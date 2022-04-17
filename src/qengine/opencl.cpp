@@ -477,31 +477,35 @@ void QEngineOCL::PopQueue(cl_event event, cl_int type)
 
 void QEngineOCL::DispatchQueue(cl_event event, cl_int type)
 {
-    std::lock_guard<std::mutex> lock(queue_mutex);
+    QueueItem item;
 
-    if (wait_queue_items.size() == 0) {
-        return;
-    }
+    if (true) {
+        std::lock_guard<std::mutex> lock(queue_mutex);
 
-    QueueItem item = wait_queue_items.front();
-
-    while (item.isSetDoNorm || item.isSetRunningNorm || item.oEngine) {
-        if (item.oEngine) {
-            item.oEngine->AsyncShareFinish(stateBuffer);
-            oEngine = NULL;
-        }
-        if (item.isSetDoNorm) {
-            doNormalize = item.doNorm;
-        }
-        if (item.isSetRunningNorm) {
-            runningNorm = item.runningNorm;
-        }
-
-        wait_queue_items.pop_front();
         if (wait_queue_items.size() == 0) {
             return;
         }
+
         item = wait_queue_items.front();
+
+        while (item.isSetDoNorm || item.isSetRunningNorm || item.oEngine) {
+            if (item.oEngine) {
+                item.oEngine->AsyncShareFinish(stateBuffer);
+                oEngine = NULL;
+            }
+            if (item.isSetDoNorm) {
+                doNormalize = item.doNorm;
+            }
+            if (item.isSetRunningNorm) {
+                runningNorm = item.runningNorm;
+            }
+
+            wait_queue_items.pop_front();
+            if (wait_queue_items.size() == 0) {
+                return;
+            }
+            item = wait_queue_items.front();
+        }
     }
 
     std::vector<BufferPtr> args = item.buffers;

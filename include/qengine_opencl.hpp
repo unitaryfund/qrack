@@ -510,13 +510,9 @@ protected:
             }
 
             device_context->WaitOnAllEvents();
-            PopQueue(NULL, CL_COMPLETE);
         }
 
         device_context->WaitOnAllEvents();
-        if (!wait_queue_items.size()) {
-            wait_refs.clear();
-        }
     }
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
