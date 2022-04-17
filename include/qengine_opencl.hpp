@@ -494,31 +494,8 @@ protected:
 
     void AsyncShareFinish(BufferPtr oStateBuffer)
     {
-        if (!device_context) {
-            return;
-        }
-
-        while (wait_queue_items.size() > 1) {
-            bool isBlocked = false;
-            if (true) {
-                std::lock_guard<std::mutex> lock(queue_mutex);
-                for (std::list<QueueItem>::iterator it = wait_queue_items.begin(); it != wait_queue_items.end(); it++) {
-                    if ((it->api_call == OCL_API_SHUFFLEBUFFERS) && (it->buffers[1] == oStateBuffer)) {
-                        isBlocked = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!isBlocked) {
-                break;
-            }
-
-            device_context->WaitOnAllEvents();
-            if (wait_queue_items.size()) {
-                PopQueue(NULL, CL_COMPLETE);
-            }
-        }
+        // TODO: This should just wait for sharing to be finished.
+        clFinish();
     }
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
