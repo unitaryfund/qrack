@@ -21,7 +21,6 @@
 #include "common/oclengine.hpp"
 #include "qengine.hpp"
 
-#include <condition_variable>
 #include <list>
 #include <mutex>
 
@@ -64,7 +63,20 @@ struct QueueItem {
     bool isSetRunningNorm;
     bool doNorm;
     real1 runningNorm;
-    QEngineOCL* oEngine;
+
+    QueueItem()
+        : api_call()
+        , workItemCount(0)
+        , localGroupSize(0)
+        , deallocSize(0)
+        , buffers()
+        , localBuffSize(0)
+        , isSetDoNorm(false)
+        , isSetRunningNorm(true)
+        , doNorm(false)
+        , runningNorm(ONE_R1)
+    {
+    }
 
     QueueItem(OCLAPI ac, size_t wic, size_t lgs, size_t ds, std::vector<BufferPtr> b, size_t lbs)
         : api_call(ac)
@@ -77,7 +89,6 @@ struct QueueItem {
         , isSetRunningNorm(false)
         , doNorm(false)
         , runningNorm(ONE_R1)
-        , oEngine(NULL)
     {
     }
 
@@ -92,7 +103,6 @@ struct QueueItem {
         , isSetRunningNorm(false)
         , doNorm(doNrm)
         , runningNorm(ONE_R1)
-        , oEngine(NULL)
     {
     }
 
@@ -107,37 +117,6 @@ struct QueueItem {
         , isSetRunningNorm(true)
         , doNorm(false)
         , runningNorm(runningNrm)
-        , oEngine(NULL)
-    {
-    }
-
-    QueueItem(QEngineOCL* oe)
-        : api_call()
-        , workItemCount(0)
-        , localGroupSize(0)
-        , deallocSize(0)
-        , buffers()
-        , localBuffSize(0)
-        , isSetDoNorm(false)
-        , isSetRunningNorm(true)
-        , doNorm(false)
-        , runningNorm(ONE_R1)
-        , oEngine(oe)
-    {
-    }
-
-    QueueItem()
-        : api_call()
-        , workItemCount(0)
-        , localGroupSize(0)
-        , deallocSize(0)
-        , buffers()
-        , localBuffSize(0)
-        , isSetDoNorm(false)
-        , isSetRunningNorm(true)
-        , doNorm(false)
-        , runningNorm(ONE_R1)
-        , oEngine(NULL)
     {
     }
 };
@@ -491,8 +470,6 @@ protected:
 
         return toRet;
     }
-
-    void AsyncShareFinish(BufferPtr oStateBuffer);
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 

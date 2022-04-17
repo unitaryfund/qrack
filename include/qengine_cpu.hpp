@@ -19,8 +19,6 @@
 #include "common/dispatchqueue.hpp"
 #endif
 
-#include <condition_variable>
-
 namespace Qrack {
 
 class QEngineCPU;
@@ -42,9 +40,6 @@ protected:
     DispatchQueue dispatchQueue;
     bitLenInt dispatchThreshold;
 #endif
-    bool isAsyncShareDone;
-    std::mutex asyncShareMutex;
-    std::condition_variable asyncShareWait;
 
     StateVectorSparsePtr CastStateVecSparse() { return std::dynamic_pointer_cast<StateVectorSparse>(stateVec); }
 
@@ -75,8 +70,6 @@ public:
 
     void Dump()
     {
-        std::unique_lock<std::mutex> lock(asyncShareMutex);
-        asyncShareWait.wait(lock, [this]() { return isAsyncShareDone; });
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
         dispatchQueue.dump();
 #endif

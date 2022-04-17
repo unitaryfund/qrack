@@ -287,12 +287,11 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     cl_int error;
     DISPATCH_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, error);
 
-    QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
+    WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
-    engineOcl->AddQueueItem(QueueItem(this));
 
-    QueueSetRunningNorm(REAL1_DEFAULT_ARG);
-    engineOcl->QueueSetRunningNorm(REAL1_DEFAULT_ARG);
+    runningNorm = REAL1_DEFAULT_ARG;
+    engineOcl->runningNorm = REAL1_DEFAULT_ARG;
 }
 
 void QEngineOCL::LockSync(cl_map_flags flags)
@@ -350,9 +349,13 @@ void QEngineOCL::clFinish(bool doHard)
         return;
     }
 
+    std::unique_lock<std::mutex> lock(queue_mutex);
+    lock.lock();
     while (wait_queue_items.size() > 1) {
         device_context->WaitOnAllEvents();
+        lock.unlock();
         PopQueue();
+        lock.lock();
     }
 
     if (doHard) {
@@ -371,11 +374,6 @@ void QEngineOCL::clDump()
 
     if (wait_queue_items.size()) {
         device_context->WaitOnAllEvents();
-    }
-
-    if (oEngine) {
-        oEngine->AsyncShareFinish(stateBuffer);
-        oEngine = NULL;
     }
 
     wait_queue_items.clear();
@@ -453,20 +451,25 @@ void QEngineOCL::PopQueue()
     if (true) {
         std::lock_guard<std::mutex> lock(queue_mutex);
 
-        poolItems.front()->probArray = NULL;
-        poolItems.front()->angleArray = NULL;
-        if (poolItems.front()->otherStateVec) {
-            FreeStateVec(poolItems.front()->otherStateVec);
-            poolItems.front()->otherStateVec = NULL;
+        if (poolItems.size()) {
+            poolItems.front()->probArray = NULL;
+            poolItems.front()->angleArray = NULL;
+            if (poolItems.front()->otherStateVec) {
+                FreeStateVec(poolItems.front()->otherStateVec);
+                poolItems.front()->otherStateVec = NULL;
+            }
+
+            SubtractAlloc(wait_queue_items.front().deallocSize);
+
+            if (poolItems.size() > 1) {
+                rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
+            }
         }
 
-        SubtractAlloc(wait_queue_items.front().deallocSize);
-
+        if (!wait_queue_items.size()) {
+            return;
+        }
         wait_queue_items.pop_front();
-
-        if (poolItems.size() > 1) {
-            rotate(poolItems.begin(), poolItems.begin() + 1, poolItems.end());
-        }
     }
 
     DispatchQueue();
@@ -485,11 +488,7 @@ void QEngineOCL::DispatchQueue()
 
         item = wait_queue_items.front();
 
-        while (item.isSetDoNorm || item.isSetRunningNorm || item.oEngine) {
-            if (item.oEngine) {
-                item.oEngine->AsyncShareFinish(stateBuffer);
-                oEngine = NULL;
-            }
+        while (item.isSetDoNorm || item.isSetRunningNorm) {
             if (item.isSetDoNorm) {
                 doNormalize = item.doNorm;
             }
@@ -541,42 +540,6 @@ void QEngineOCL::DispatchQueue()
     if (error != CL_SUCCESS) {
         FreeAll();
         throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
-    }
-}
-
-void QEngineOCL::AsyncShareFinish(BufferPtr oStateBuffer)
-{
-    if (!device_context) {
-        return;
-    }
-
-    while (wait_queue_items.size()) {
-        bool isBlocked = false;
-        if (true) {
-            std::lock_guard<std::mutex> lock(queue_mutex);
-            for (std::list<QueueItem>::iterator it = wait_queue_items.begin(); it != wait_queue_items.end(); it++) {
-                if ((it->api_call == OCL_API_SHUFFLEBUFFERS) && (it->buffers[1] == oStateBuffer)) {
-                    isBlocked = true;
-                    break;
-                }
-            }
-        }
-        if (!isBlocked) {
-            break;
-        }
-
-        device_context->WaitOnAllEvents();
-        if (wait_queue_items.size()) {
-            PopQueue();
-        }
-    }
-
-    // Current event might be async sharing.
-    device_context->WaitOnAllEvents();
-    if (wait_queue_items.size()) {
-        PopQueue();
-    } else {
-        wait_refs.clear();
     }
 }
 
