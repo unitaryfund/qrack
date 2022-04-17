@@ -496,10 +496,13 @@ protected:
     {
         while (wait_queue_items.size() > 1) {
             bool isBlocked = false;
-            for (std::list<QueueItem>::iterator it = wait_queue_items.begin(); it != wait_queue_items.end(); it++) {
-                if ((it->api_call == OCL_API_SHUFFLEBUFFERS) && (it->buffers[1] == oStateBuffer)) {
-                    isBlocked = true;
-                    break;
+            if (true) {
+                std::lock_guard<std::mutex> lock(queue_mutex);
+                for (std::list<QueueItem>::iterator it = wait_queue_items.begin(); it != wait_queue_items.end(); it++) {
+                    if ((it->api_call == OCL_API_SHUFFLEBUFFERS) && (it->buffers[1] == oStateBuffer)) {
+                        isBlocked = true;
+                        break;
+                    }
                 }
             }
             if (!isBlocked) {
