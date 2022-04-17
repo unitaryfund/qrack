@@ -87,6 +87,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     , nrmGroupSize(0)
     , totalOclAllocSize(0)
     , unlockHostMem(false)
+    , oEngine(NULL)
 {
     InitOCL(devID);
     clFinish();
@@ -507,11 +508,8 @@ void QEngineOCL::DispatchQueue()
 
     // Load the arguments.
     for (unsigned int i = 0; i < args.size(); i++) {
-        if ((i >= ocl.args.size()) || (ocl.args[i] != args[i])) {
-            ocl.call.setArg(i, *args[i]);
-        }
+        ocl.call.setArg(i, *args[i]);
     }
-    ocl.args = args;
 
     // For all of our kernels, if a local memory buffer is used, there is always only one, as the last argument.
     if (item.localBuffSize) {

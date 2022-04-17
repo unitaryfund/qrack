@@ -46,6 +46,8 @@ public:
     const char* what() const noexcept { return m.c_str(); }
 };
 
+typedef std::shared_ptr<cl::Buffer> BufferPtr;
+
 class QEngineOCL;
 
 typedef std::shared_ptr<QEngineOCL> QEngineOCLPtr;
@@ -209,6 +211,7 @@ protected:
     cl_map_flags lockSyncFlags;
     bool usingHostRam;
     complex permutationAmp;
+    QEngineOCL* oEngine;
 
 #if defined(__APPLE__)
     real1* _aligned_nrm_array_alloc(bitCapIntOcl allocSize)
