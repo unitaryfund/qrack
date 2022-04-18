@@ -720,14 +720,17 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
 
     QInterfacePtr simulator = simulators[sid];
     bitCapIntOcl wfnl = (bitCapIntOcl)simulator->GetMaxQPower();
-    std::unique_ptr<complex[]> wfn(new complex[wfnl]);
-    try {
-        simulator->GetQuantumState(wfn.get());
-    } catch (...) {
-        simulatorErrors[sid] = 1;
-    }
+
     for (size_t i = 0; i < wfnl; i++) {
-        if (!callback(i, (real1_f)real(wfn[i]), (real1_f)imag(wfn[i]))) {
+        complex amp;
+        try {
+            amp = simulator->GetAmplitude(i);
+        } catch (...) {
+            simulatorErrors[sid] = 1;
+            break;
+        }
+
+        if (!callback(i, (real1_f)real(amp), (real1_f)imag(amp))) {
             break;
         }
     }
