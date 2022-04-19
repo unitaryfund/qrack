@@ -712,7 +712,7 @@ MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ IdCallback callback)
 }
 
 /**
- * (External API) "Dump" all IDs from the selected simulator ID into the callback
+ * (External API) "Dump" state vector from the selected simulator ID into the callback
  */
 MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callback)
 {
@@ -730,7 +730,7 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
             break;
         }
 
-        if (!callback(i, (real1_f)real(amp), (real1_f)imag(amp))) {
+        if (!callback(i, (double)real(amp), (double)imag(amp))) {
             break;
         }
     }
