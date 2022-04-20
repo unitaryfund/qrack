@@ -737,6 +737,28 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callbac
 }
 
 /**
+ * (External API) Set state vector for the selected simulator ID.
+ */
+MICROSOFT_QUANTUM_DECL void InKet(_In_ unsigned sid, _In_ real1_f* ket)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->SetQuantumState(reinterpret_cast<complex*>(ket));
+}
+
+/**
+ * (External API) Set state vector for the selected simulator ID.
+ */
+MICROSOFT_QUANTUM_DECL void OutKet(_In_ unsigned sid, _In_ real1_f* ket)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    simulator->GetQuantumState(reinterpret_cast<complex*>(ket));
+}
+
+/**
  * (External API) Select from a distribution of "n" elements according the discrete probabilities in "d."
  */
 MICROSOFT_QUANTUM_DECL std::size_t random_choice(_In_ unsigned sid, _In_ std::size_t n, _In_reads_(n) double* p)

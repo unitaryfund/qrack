@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "common/qrack_types.hpp"
 #include "stddef.h"
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
@@ -38,13 +39,16 @@ MICROSOFT_QUANTUM_DECL unsigned init_clone(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL void destroy(_In_ unsigned sid);
 MICROSOFT_QUANTUM_DECL void seed(_In_ unsigned sid, _In_ unsigned s);
 MICROSOFT_QUANTUM_DECL void set_concurrency(_In_ unsigned sid, _In_ unsigned p);
-MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callback);
 
 // pseudo-quantum
 MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q);
 MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ unsigned sid, _In_ unsigned n, _In_reads_(n) unsigned* c);
 
 MICROSOFT_QUANTUM_DECL void DumpIds(_In_ unsigned sid, _In_ IdCallback callback);
+MICROSOFT_QUANTUM_DECL void Dump(_In_ unsigned sid, _In_ ProbAmpCallback callback);
+
+MICROSOFT_QUANTUM_DECL void InKet(_In_ unsigned sid, _In_ Qrack::real1_f* ket);
+MICROSOFT_QUANTUM_DECL void OutKet(_In_ unsigned sid, _In_ Qrack::real1_f* ket);
 
 MICROSOFT_QUANTUM_DECL size_t random_choice(_In_ unsigned sid, _In_ size_t n, _In_reads_(n) double* p);
 
