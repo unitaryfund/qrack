@@ -164,6 +164,10 @@ int main(int argc, char* argv[])
         session.config().stream() << "QRACK_QPAGER_DEVICES: " << std::string(getenv("QRACK_QPAGER_DEVICES"))
                                   << std::endl;
     }
+    if (getenv("QRACK_QPAGER_DEVICES_HOST_POINTER")) {
+        session.config().stream() << "QRACK_QPAGER_DEVICES_HOST_POINTER: "
+                                  << std::string(getenv("QRACK_QPAGER_DEVICES_HOST_POINTER")) << std::endl;
+    }
 #endif
 
     if (!qengine && !qpager && !qunit && !qunit_multi && !qunit_qpager && !qunit_multi_qpager) {

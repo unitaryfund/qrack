@@ -31,6 +31,7 @@ protected:
     bool isSparse;
     std::vector<QEnginePtr> qPages;
     std::vector<int> deviceIDs;
+    std::vector<bool> devicesHostPointer;
 
     bool useHardwareThreshold;
     bool useGpuThreshold;
@@ -44,7 +45,7 @@ protected:
 
     bitLenInt maxQubits;
 
-    QEnginePtr MakeEngine(bitLenInt length, int deviceId);
+    QEnginePtr MakeEngine(bitLenInt length, bitCapIntOcl pageId);
 
     void SetQubitCount(bitLenInt qb)
     {
@@ -58,6 +59,7 @@ protected:
     bitLenInt pagedQubitCount() { return log2((bitCapInt)qPages.size()); }
     bitLenInt qubitsPerPage() { return log2(pageMaxQPower()); }
     int GetPageDevice(bitCapIntOcl page) { return deviceIDs[page % deviceIDs.size()]; }
+    int GetPageHostPointer(bitCapIntOcl page) { return devicesHostPointer[page % devicesHostPointer.size()]; }
 
     void CombineEngines(bitLenInt thresholdBits);
     void CombineEngines() { CombineEngines(qubitCount); }

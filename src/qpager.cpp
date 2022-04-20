@@ -44,10 +44,10 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
         pagePerm += basePageMaxQPower;
         isPermInPage &= (initState < pagePerm);
         if (isPermInPage) {
-            qPages.push_back(MakeEngine(baseQubitsPerPage, GetPageDevice(i)));
+            qPages.push_back(MakeEngine(baseQubitsPerPage, i));
             qPages.back()->SetPermutation(initState - (pagePerm - basePageMaxQPower));
         } else {
-            qPages.push_back(MakeEngine(baseQubitsPerPage, GetPageDevice(i)));
+            qPages.push_back(MakeEngine(baseQubitsPerPage, i));
         }
     }
 }
@@ -170,6 +170,38 @@ void QPager::Init()
             }
         }
     }
+    if (getenv("QRACK_QPAGER_DEVICES_HOST_POINTER")) {
+        std::string devListStr = std::string(getenv("QRACK_QPAGER_DEVICES_HOST_POINTER"));
+        if (devListStr.compare("") != 0) {
+            std::stringstream devListStr_stream(devListStr);
+            // See
+            // https://stackoverflow.com/questions/7621727/split-a-string-into-words-by-multiple-delimiters#answer-58164098
+            std::regex re("[.]");
+            while (devListStr_stream.good()) {
+                std::string term;
+                getline(devListStr_stream, term, ',');
+                // the '-1' is what makes the regex split (-1 := what was not matched)
+                std::sregex_token_iterator first{ term.begin(), term.end(), re, -1 }, last;
+                std::vector<std::string> tokens{ first, last };
+                if (tokens.size() == 1U) {
+                    devicesHostPointer.push_back((bool)stoi(term));
+                    continue;
+                }
+                const unsigned maxI = stoi(tokens[0]);
+                std::vector<bool> hps(tokens.size() - 1U);
+                for (unsigned i = 1U; i < tokens.size(); i++) {
+                    hps[i - 1U] = (bool)stoi(tokens[i]);
+                }
+                for (unsigned i = 0U; i < maxI; i++) {
+                    for (unsigned j = 0U; j < hps.size(); j++) {
+                        devicesHostPointer.push_back(hps[j]);
+                    }
+                }
+            }
+        }
+    } else {
+        devicesHostPointer.push_back(useHostRam);
+    }
 #endif
 
     if (deviceIDs.size() == 0) {
@@ -194,10 +226,12 @@ void QPager::Init()
     }
 }
 
-QEnginePtr QPager::MakeEngine(bitLenInt length, int deviceId)
+QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapIntOcl pageId)
 {
+    const int deviceId = GetPageDevice(pageId);
+    const bool useHostMem = GetPageHostPointer(pageId);
     QEnginePtr toRet = std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, 0, 0, rand_generator,
-        phaseFactor, false, false, useHostRam, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor));
+        phaseFactor, false, false, useHostMem, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor));
     toRet->SetQubitCount(length);
 
     return toRet;
@@ -275,7 +309,7 @@ void QPager::CombineEngines(bitLenInt bit)
 
     if (requiredSpace < extraSpace) {
         for (bitCapIntOcl i = 0; i < groupCount; i++) {
-            QEnginePtr engine = MakeEngine(bit, GetPageDevice(i));
+            QEnginePtr engine = MakeEngine(bit, i);
             nQPages.push_back(engine);
             for (bitCapIntOcl j = 0; j < groupSize; j++) {
                 const bitCapIntOcl page = j + (i * groupSize);
@@ -293,7 +327,7 @@ void QPager::CombineEngines(bitLenInt bit)
                 }
             }
             if (isZero) {
-                nQPages.push_back(MakeEngine(bit, GetPageDevice(i)));
+                nQPages.push_back(MakeEngine(bit, i));
                 for (bitCapIntOcl j = 0; j < groupSize; j++) {
                     const bitCapIntOcl page = j + (i * groupSize);
                     qPages[page] = NULL;
@@ -306,7 +340,7 @@ void QPager::CombineEngines(bitLenInt bit)
                 qPages[page]->GetAmplitudePage(nPage.get() + j * pagePower, 0, pagePower);
                 qPages[page] = NULL;
             }
-            nQPages.push_back(MakeEngine(bit, GetPageDevice(i)));
+            nQPages.push_back(MakeEngine(bit, i));
             nQPages.back()->SetAmplitudePage(nPage.get(), 0, pagePower * groupSize);
         }
     }
@@ -341,7 +375,7 @@ void QPager::SeparateEngines(bitLenInt thresholdBits, bool noBaseFloor)
     if (requiredSpace < extraSpace) {
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             for (bitCapIntOcl j = 0; j < pagesPer; j++) {
-                nQPages.push_back(MakeEngine(thresholdBits, GetPageDevice(j + (i * pagesPer))));
+                nQPages.push_back(MakeEngine(thresholdBits, j + (i * pagesPer)));
                 nQPages.back()->SetAmplitudePage(qPages[i], j * pageMaxQPower, 0, pageMaxQPower);
             }
             qPages[i] = NULL;
@@ -351,7 +385,7 @@ void QPager::SeparateEngines(bitLenInt thresholdBits, bool noBaseFloor)
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             if (qPages[i]->IsZeroAmplitude()) {
                 for (bitCapIntOcl j = 0; j < pagesPer; j++) {
-                    nQPages.push_back(MakeEngine(thresholdBits, GetPageDevice(i)));
+                    nQPages.push_back(MakeEngine(thresholdBits, i));
                 }
                 qPages[i] = NULL;
                 continue;
@@ -360,7 +394,7 @@ void QPager::SeparateEngines(bitLenInt thresholdBits, bool noBaseFloor)
             qPages[i]->GetAmplitudePage(nPage.get(), 0, qppPowOcl);
             qPages[i] = NULL;
             for (bitCapIntOcl j = 0; j < pagesPer; j++) {
-                nQPages.push_back(MakeEngine(thresholdBits, GetPageDevice(j + (i * pagesPer))));
+                nQPages.push_back(MakeEngine(thresholdBits, j + (i * pagesPer)));
                 nQPages.back()->SetAmplitudePage(nPage.get() + j * pageMaxQPower, 0, pageMaxQPower);
             }
         }
@@ -507,7 +541,7 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
 
     const bitCapIntOcl maxLcv = (bitCapIntOcl)qPages.size() >> (bitCapIntOcl)sortedMasks.size();
 #if ENABLE_PTHREAD
-    std::vector<std::future<void>> futures(maxLcv);
+    std::vector<std::future<void>> futures;
 #endif
     for (bitCapIntOcl i = 0; i < maxLcv; i++) {
         bitCapIntOcl jHi = i;
@@ -538,7 +572,7 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
         }
 
 #if ENABLE_PTHREAD
-        futures[i] = std::async(std::launch::async, [engine1, engine2, fn, sqi, isSqiCtrl, anti]() {
+        futures.push_back(std::async(std::launch::async, [engine1, engine2, fn, sqi, isSqiCtrl, anti]() {
             engine1->ShuffleBuffers(engine2);
             if (!isSqiCtrl || anti) {
                 fn(engine1, sqi);
@@ -547,7 +581,7 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
                 fn(engine2, sqi);
             }
             engine1->ShuffleBuffers(engine2);
-        });
+        }));
 #else
         engine1->ShuffleBuffers(engine2);
         if (!isSqiCtrl || anti) {
@@ -561,7 +595,7 @@ void QPager::MetaControlled(bool anti, const std::vector<bitLenInt>& controls, b
     }
 
 #if ENABLE_PTHREAD
-    for (bitCapIntOcl i = 0; i < maxLcv; i++) {
+    for (bitCapIntOcl i = 0; i < futures.size(); i++) {
         futures[i].get();
     }
 #endif
