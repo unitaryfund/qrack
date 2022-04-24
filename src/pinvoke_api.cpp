@@ -1631,6 +1631,18 @@ MICROSOFT_QUANTUM_DECL void ISWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ uns
     }
 }
 
+MICROSOFT_QUANTUM_DECL void AdjISWAP(_In_ unsigned sid, _In_ unsigned qi1, _In_ unsigned qi2)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    try {
+        simulator->IISwap(shards[simulator.get()][qi1], shards[simulator.get()][qi2]);
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+    }
+}
+
 MICROSOFT_QUANTUM_DECL void FSim(
     _In_ unsigned sid, _In_ double theta, _In_ double phi, _In_ unsigned qi1, _In_ unsigned qi2)
 {
