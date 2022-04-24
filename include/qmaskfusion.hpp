@@ -585,6 +585,11 @@ public:
         FlushIfBuffered(qubitIndex1) || FlushIfBuffered(qubitIndex2);
         engine->ISwap(qubitIndex1, qubitIndex2);
     }
+    void IISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    {
+        FlushIfBuffered(qubitIndex1) || FlushIfBuffered(qubitIndex2);
+        engine->IISwap(qubitIndex1, qubitIndex2);
+    }
     void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         FlushIfBuffered(qubitIndex1) || FlushIfBuffered(qubitIndex2);

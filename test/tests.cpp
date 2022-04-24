@@ -537,6 +537,25 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_iswap")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_Iiswap")
+{
+    qftReg->SetPermutation(1);
+    qftReg->IISwap(0, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x02));
+
+    qftReg->SetPermutation(0);
+    qftReg->H(0, 2);
+    qftReg->IISwap(0, 1);
+    qftReg->IISwap(0, 1);
+    qftReg->H(0, 2);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x03));
+
+    qftReg->SetPermutation(1);
+    qftReg->ISwap(0, 1);
+    qftReg->IISwap(0, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cswap")
 {
     bitLenInt control[1] = { 8 };

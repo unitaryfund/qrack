@@ -1495,8 +1495,11 @@ public:
     /** Bitwise swap */
     virtual void Swap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
-    /** Bitwise swap */
+    /** Bitwise ISwap */
     virtual void ISwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
+
+    /** Bitwise IISwap */
+    virtual void IISwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
 
     /** Bitwise square root of swap */
     virtual void SqrtSwap(bitLenInt start1, bitLenInt start2, bitLenInt length);
@@ -1997,6 +2000,9 @@ public:
 
     /** Swap values of two bits in register, and apply phase factor of i if bits are different */
     virtual void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+
+    /** Inverse ISwap - Swap values of two bits in register, and apply phase factor of -i if bits are different */
+    virtual void IISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /** Square root of Swap gate */
     virtual void SqrtSwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);

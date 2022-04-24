@@ -1710,7 +1710,7 @@ void QUnit::Swap(bitLenInt qubit1, bitLenInt qubit2)
     shards.swap(qubit1, qubit2);
 }
 
-void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
+void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
 {
     if (qubit1 == qubit2) {
         return;
@@ -1725,16 +1725,23 @@ void QUnit::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     }
 
     if (IS_SAME_UNIT(shard1, shard2)) {
-        Entangle({ qubit1, qubit2 })->ISwap(shard1.mapped, shard2.mapped);
+        QInterfacePtr unit = Entangle({ qubit1, qubit2 });
+        if (isInverse) {
+            unit->IISwap(shard1.mapped, shard2.mapped);
+        } else {
+            unit->ISwap(shard1.mapped, shard2.mapped);
+        }
         shard1.MakeDirty();
         shard2.MakeDirty();
         return;
     }
 
+    const complex phaseFac = isInverse ? -I_CMPLX : I_CMPLX;
+
     bitLenInt control[1] = { qubit1 };
-    MCPhase(control, 1U, I_CMPLX, ONE_CMPLX, qubit2);
+    MCPhase(control, 1U, phaseFac, ONE_CMPLX, qubit2);
     control[0] = qubit2;
-    MCPhase(control, 1U, I_CMPLX, ONE_CMPLX, qubit1);
+    MCPhase(control, 1U, phaseFac, ONE_CMPLX, qubit1);
 
     // Simply swap the bit mapping.
     shards.swap(qubit1, qubit2);

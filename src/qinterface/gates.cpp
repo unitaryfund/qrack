@@ -485,6 +485,20 @@ void QInterface::ISwap(bitLenInt q1, bitLenInt q2)
     H(q2);
 }
 
+void QInterface::IISwap(bitLenInt q1, bitLenInt q2)
+{
+    if (q1 == q2) {
+        return;
+    }
+
+    H(q2);
+    CNOT(q2, q1);
+    CNOT(q1, q2);
+    H(q1);
+    IS(q2);
+    IS(q1);
+}
+
 void QInterface::SqrtSwap(bitLenInt q1, bitLenInt q2)
 {
     if (q1 == q2) {

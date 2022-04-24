@@ -243,7 +243,8 @@ public:
 
     virtual void SetReg(bitLenInt start, bitLenInt length, bitCapInt value);
     virtual void Swap(bitLenInt qubit1, bitLenInt qubit2);
-    virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2);
+    virtual void ISwap(bitLenInt qubit1, bitLenInt qubit2) { EitherISwap(qubit1, qubit2, false); }
+    virtual void IISwap(bitLenInt qubit1, bitLenInt qubit2) { EitherISwap(qubit1, qubit2, true); }
     virtual void SqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2);
     virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2);
@@ -297,6 +298,8 @@ protected:
     virtual real1_f ProbBase(bitLenInt qubit);
 
     virtual bool TrySeparateClifford(bitLenInt qubit);
+
+    virtual void EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse);
 
 #if ENABLE_ALU
     typedef void (QAlu::*INCxFn)(bitCapInt, bitLenInt, bitLenInt, bitLenInt);
