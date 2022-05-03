@@ -1093,7 +1093,7 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         const bitCapIntOcl qPower = pow2Ocl(metaQubit);
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             if (!(i & qPower) == !result) {
-                qPages[i]->NormalizeState(nrmlzr);
+                qPages[i]->NormalizeState((real1_f)nrmlzr);
             } else {
                 qPages[i]->ZeroAmplitudes();
             }
