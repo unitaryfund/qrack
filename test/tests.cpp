@@ -6040,7 +6040,7 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mirror_circuit_25", "[mirror]")
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
-    bitLenInt bitRand = qReg->Rand() * unusedBitsPtr->size();
+    bitLenInt bitRand = (bitLenInt)(qReg->Rand() * unusedBitsPtr->size());
     if (bitRand >= unusedBitsPtr->size()) {
         bitRand = unusedBitsPtr->size() - 1U;
     }
@@ -6125,7 +6125,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
             }
         }
 
-        bitCapIntOcl randPerm = testCase->Rand() * (bitCapIntOcl)testCase->GetMaxQPower();
+        bitCapIntOcl randPerm = (bitCapIntOcl)(testCase->Rand() * (bitCapIntOcl)testCase->GetMaxQPower());
         if (randPerm >= testCase->GetMaxQPower()) {
             randPerm = (bitCapIntOcl)testCase->GetMaxQPower() - 1U;
         }

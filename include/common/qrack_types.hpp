@@ -83,6 +83,7 @@ namespace Qrack {
 typedef std::complex<__fp16> complex;
 typedef __fp16 real1;
 typedef float real1_f;
+typedef float real1_s;
 #define ZERO_R1 0.0f
 #define ZERO_R1_F 0.0f
 #define ONE_R1 1.0f
@@ -97,6 +98,7 @@ typedef float real1_f;
 typedef std::complex<half_float::half> complex;
 typedef half_float::half real1;
 typedef float real1_f;
+typedef float real1_s;
 #define ZERO_R1 ((real1)0.0f)
 #define ZERO_R1_F 0.0f
 #define ONE_R1 ((real1)1.0f)
@@ -114,6 +116,7 @@ namespace Qrack {
 typedef std::complex<float> complex;
 typedef float real1;
 typedef float real1_f;
+typedef float real1_s;
 #define ZERO_R1 0.0f
 #define ZERO_R1_F 0.0f
 #define ONE_R1 1.0f
@@ -130,6 +133,7 @@ namespace Qrack {
 typedef std::complex<double> complex;
 typedef double real1;
 typedef double real1_f;
+typedef double real1_s;
 #define ZERO_R1 0.0
 #define ZERO_R1_F 0.0
 #define ONE_R1 1.0
@@ -147,7 +151,8 @@ typedef double real1_f;
 namespace Qrack {
 typedef std::complex<boost::multiprecision::float128> complex;
 typedef boost::multiprecision::float128 real1;
-typedef double real1_f;
+typedef boost::multiprecision::float128 real1_f;
+typedef double real1_s;
 #define ZERO_R1 ((real1)0.0)
 #define ZERO_R1_F 0.0
 #define ONE_R1 ((real1)1.0)

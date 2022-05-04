@@ -143,7 +143,7 @@ protected:
     bitCapInt maxQPower;
     uint32_t randomSeed;
     qrack_rand_gen_ptr rand_generator;
-    std::uniform_real_distribution<real1_f> rand_distribution;
+    std::uniform_real_distribution<real1_s> rand_distribution;
     std::shared_ptr<RdRandom> hardware_rand_generator;
     bool doNormalize;
     bool randGlobalPhase;

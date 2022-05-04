@@ -2003,7 +2003,7 @@ MICROSOFT_QUANTUM_DECL double Prob(_In_ unsigned sid, _In_ unsigned q)
 
     try {
         QInterfacePtr simulator = simulators[sid];
-        return simulator->Prob(shards[simulator.get()][q]);
+        return (double)simulator->Prob(shards[simulator.get()][q]);
     } catch (...) {
         simulatorErrors[sid] = 1;
         return (double)REAL1_DEFAULT_ARG;
@@ -2022,8 +2022,7 @@ MICROSOFT_QUANTUM_DECL double PermutationExpectation(_In_ unsigned sid, _In_ uns
 
     try {
         QInterfacePtr simulator = simulators[sid];
-        double result = simulator->ExpectationBitsAll(q.get(), n);
-        return result;
+        return (double)simulator->ExpectationBitsAll(q.get(), n);
     } catch (...) {
         simulatorErrors[sid] = 1;
         return (double)REAL1_DEFAULT_ARG;

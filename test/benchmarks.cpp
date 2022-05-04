@@ -73,7 +73,7 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
     std::cout << "Slowest (ms), ";
     std::cout << "Failure count" << std::endl;
 
-    std::vector<real1_f> trialClocks;
+    std::vector<double> trialClocks;
     bool isTrialSuccessful = true;
 
     bitLenInt j, numBits;
@@ -522,7 +522,7 @@ TEST_CASE("test_grover", "[grover]")
         int i;
         // Twelve iterations maximizes the probablity for 256 searched elements, for example.
         // For an arbitrary number of qubits, this gives the number of iterations for optimal probability.
-        int optIter = M_PI / (4.0 * asin(1.0 / sqrt((real1_f)pow2(n))));
+        int optIter = M_PI / (4.0 * asin(1.0 / sqrt((real1_s)pow2(n))));
 
         // Our input to the subroutine "oracle" is 8 bits.
         qftReg->SetPermutation(0);
@@ -588,7 +588,7 @@ TEST_CASE("test_qft_superposition_round_trip", "[qft]")
 bitLenInt pickRandomBit(QInterfacePtr qReg, std::set<bitLenInt>* unusedBitsPtr)
 {
     std::set<bitLenInt>::iterator bitIterator = unusedBitsPtr->begin();
-    bitLenInt bitRand = unusedBitsPtr->size() * qReg->Rand();
+    bitLenInt bitRand = (bitLenInt)(unusedBitsPtr->size() * qReg->Rand());
     if (bitRand >= unusedBitsPtr->size()) {
         bitRand = unusedBitsPtr->size() - 1U;
     }
@@ -2721,7 +2721,7 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
                 maxGates = GateCountMultiQb - 1U;
             }
 
-            multiGate.gate = maxGates * goldStandard->Rand();
+            multiGate.gate = (bitLenInt)(maxGates * goldStandard->Rand());
 
             if (multiGate.gate > 2) {
                 multiGate.b3 = pickRandomBit(goldStandard, &unusedBits);

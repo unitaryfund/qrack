@@ -1083,7 +1083,7 @@ bool QPager::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
     const bitLenInt qpp = qubitsPerPage();
     if (qubit < qpp) {
-        const complex nrmFac = GetNonunitaryPhase() / (real1)std::sqrt((real1_f)nrmlzr);
+        const complex nrmFac = GetNonunitaryPhase() / (real1)std::sqrt((real1_s)nrmlzr);
         const bitCapIntOcl qPower = pow2Ocl(qubit);
         for (bitCapIntOcl i = 0; i < qPages.size(); i++) {
             qPages[i]->ApplyM(qPower, result, nrmFac);

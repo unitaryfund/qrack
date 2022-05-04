@@ -2994,7 +2994,7 @@ void QEngineOCL::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseA
     if (norm_thresh < ZERO_R1) {
         norm_thresh = (real1_f)amplitudeFloor;
     }
-    nrm = ONE_R1_F / std::sqrt((real1_f)nrm);
+    nrm = ONE_R1_F / std::sqrt((real1_s)nrm);
 
     PoolItemPtr poolItem = GetFreePoolItem();
 

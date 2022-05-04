@@ -51,7 +51,7 @@ void QBdt::FallbackMtrx(const complex* mtrx, bitLenInt target)
         throw std::domain_error("QBdt has no universal qubits to fall back to, for FallbackMtrx()!");
     }
 
-    bitLenInt randQb = bdtQubitCount * Rand();
+    bitLenInt randQb = (bitLenInt)(bdtQubitCount * Rand());
     if (randQb >= bdtQubitCount) {
         randQb = bdtQubitCount;
     }
@@ -68,7 +68,7 @@ void QBdt::FallbackMCMtrx(
         throw std::domain_error("QBdt doesn't have enough universal qubits to fall back to, for FallbackMCMtrx()!");
     }
 
-    bitLenInt randQb = (bdtQubitCount - controlLen) * Rand();
+    bitLenInt randQb = (bitLenInt)((bdtQubitCount - controlLen) * Rand());
     if (randQb >= (bdtQubitCount - controlLen)) {
         randQb = (bdtQubitCount - controlLen);
     }

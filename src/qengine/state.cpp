@@ -1155,7 +1155,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
         par_for(0, partPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             destination->stateVec->write(lcv,
-                (real1)(std::sqrt((real1_f)partStateProb[lcv])) *
+                (real1)(std::sqrt((real1_s)partStateProb[lcv])) *
                     complex(cos(partStateAngle[lcv]), sin(partStateAngle[lcv])));
         });
 
@@ -1169,7 +1169,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
 
     par_for(0, remainderPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         stateVec->write(lcv,
-            (real1)(std::sqrt((real1_f)remainderStateProb[lcv])) *
+            (real1)(std::sqrt((real1_s)remainderStateProb[lcv])) *
                 complex(cos(remainderStateAngle[lcv]), sin(remainderStateAngle[lcv])));
     });
 }
@@ -1572,7 +1572,7 @@ void QEngineCPU::NormalizeState(real1_f nrm_f, real1_f norm_thresh_f, real1_f ph
     if (norm_thresh < ZERO_R1) {
         norm_thresh = amplitudeFloor;
     }
-    nrm = ONE_R1 / std::sqrt((real1_f)nrm);
+    nrm = ONE_R1 / std::sqrt((real1_s)nrm);
     complex cNrm = std::polar(nrm, (real1)phaseArg);
 
     if (norm_thresh <= ZERO_R1) {
