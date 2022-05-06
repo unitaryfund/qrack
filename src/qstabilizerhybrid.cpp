@@ -866,7 +866,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
 }
 
 void QStabilizerHybrid::MultiShotMeasureMask(
-    const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray)
+    const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned long long* shotsArray)
 {
     if (!shots) {
         return;

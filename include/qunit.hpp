@@ -152,7 +152,7 @@ public:
     virtual std::map<bitCapInt, int> MultiShotMeasureMask(
         const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots);
     virtual void MultiShotMeasureMask(
-        const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
+        const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned long long* shotsArray);
 
     /** @} */
 

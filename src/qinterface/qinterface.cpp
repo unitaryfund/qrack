@@ -505,7 +505,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
 }
 
 void QInterface::MultiShotMeasureMask(
-    const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray)
+    const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned long long* shotsArray)
 {
     if (!shots) {
         return;

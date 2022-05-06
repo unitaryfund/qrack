@@ -1639,7 +1639,8 @@ std::map<bitCapInt, int> QUnit::MultiShotMeasureMask(const bitCapInt* qPowers, b
     return combinedResults;
 }
 
-void QUnit::MultiShotMeasureMask(const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray)
+void QUnit::MultiShotMeasureMask(
+    const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned long long* shotsArray)
 {
     if (!shots) {
         return;

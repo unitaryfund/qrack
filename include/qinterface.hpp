@@ -2117,7 +2117,7 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual void MultiShotMeasureMask(
-        const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned* shotsArray);
+        const bitCapInt* qPowers, bitLenInt qPowerCount, unsigned shots, unsigned long long* shotsArray);
 
     /**
      * Set individual bit to pure |0> (false) or |1> (true) state
