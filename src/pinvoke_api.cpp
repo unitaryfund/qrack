@@ -677,7 +677,7 @@ MICROSOFT_QUANTUM_DECL void seed(_In_ uintq sid, _In_ uintq s)
     SIMULATOR_LOCK_GUARD(sid)
 
     try {
-        simulators[sid]->SetRandomSeed(s);
+        simulators[sid]->SetRandomSeed((unsigned)s);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -692,7 +692,7 @@ MICROSOFT_QUANTUM_DECL void set_concurrency(_In_ uintq sid, _In_ uintq p)
     SIMULATOR_LOCK_GUARD(sid)
 
     try {
-        simulators[sid]->SetConcurrency(p);
+        simulators[sid]->SetConcurrency((unsigned)p);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
@@ -1644,7 +1644,7 @@ MICROSOFT_QUANTUM_DECL void MeasureShots(
     }
 
     try {
-        simulator->MultiShotMeasureMask(qPowers.get(), n, s, m);
+        simulator->MultiShotMeasureMask(qPowers.get(), n, (unsigned)s, m);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
