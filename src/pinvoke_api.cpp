@@ -2308,7 +2308,7 @@ MICROSOFT_QUANTUM_DECL void MCPOWN(_In_ uintq sid, _In_ uintq na, _In_reads_(na)
 
     try {
         bitCapInt aTot = combineA(na, a);
-        bitCapInt mTot = combineA(na, a);
+        bitCapInt mTot = combineA(na, m);
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
         QALU(simulator)->CPOWModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
     } catch (const std::exception& ex) {
