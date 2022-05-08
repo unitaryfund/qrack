@@ -193,10 +193,11 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLen
  */
 void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    const bitLenInt oLength = log2(modN);
-    if (pow2(oLength) != modN) {
+    // See https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2#answer-108360
+    if (modN && (modN & (modN - 1))) {
         throw std::invalid_argument("MULModNOut decomposition only implemented for mod N powers of 2!");
     }
+    const bitLenInt oLength = log2(modN);
 
     bitLenInt controls[1];
     for (bitLenInt i = 0; i < length; i++) {
@@ -210,10 +211,11 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
  */
 void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    const bitLenInt oLength = log2(modN);
-    if (pow2(oLength) != modN) {
+    // See https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2#answer-108360
+    if (modN && (modN & (modN - 1))) {
         throw std::invalid_argument("IMULModNOut decomposition only implemented for mod N powers of 2!");
     }
+    const bitLenInt oLength = log2(modN);
 
     bitLenInt controls[1];
     for (bitLenInt i = 0; i < length; i++) {
