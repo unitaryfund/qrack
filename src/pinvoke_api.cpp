@@ -365,6 +365,19 @@ void _darray_to_creal1_array(double* params, bitCapIntOcl componentCount, comple
     }
 }
 
+bitCapInt combineA(uintq na, const uintq* a)
+{
+    if (na > (bitsInCap / (8U * sizeof(uintq)))) {
+        throw std::invalid_argument("Big integer is too large for bitCapInt!");
+    }
+
+    bitCapInt aTot = 0U;
+    for (uintq i = 0U; i < na; i++) {
+        aTot |= ((bitCapInt)a[i]) << (i * bitsInCap);
+    }
+    return aTot;
+}
+
 extern "C" {
 
 /**
@@ -2061,18 +2074,6 @@ MICROSOFT_QUANTUM_DECL void IQFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uin
 }
 
 #if ENABLE_ALU
-bitCapInt combineA(uintq na, const uintq* a)
-{
-    if (na > (bitsInCap / (8U * sizeof(uintq)))) {
-        throw std::invalid_argument("Big integer is too large for bitCapInt!");
-    }
-
-    bitCapInt aTot = 0U;
-    for (uintq i = 0U; i < na; i++) {
-        aTot |= ((bitCapInt)a[i]) << (i * bitsInCap);
-    }
-    return aTot;
-}
 MICROSOFT_QUANTUM_DECL void ADD(
     _In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq n, _In_reads_(n) uintq* q)
 {
