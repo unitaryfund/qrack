@@ -2061,215 +2061,255 @@ MICROSOFT_QUANTUM_DECL void IQFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uin
 }
 
 #if ENABLE_ALU
-MICROSOFT_QUANTUM_DECL void ADD(_In_ uintq sid, uintq a, _In_ uintq n, _In_reads_(n) uintq* q)
+bitCapInt combineA(uintq na, const uintq* a)
+{
+    if (na > (bitsInCap / (8U * sizeof(uintq)))) {
+        throw std::invalid_argument("Big integer is too large for bitCapInt!");
+    }
+
+    bitCapInt aTot = 0U;
+    for (uintq i = 0U; i < na; i++) {
+        aTot |= ((bitCapInt)a[i]) << (i * bitsInCap);
+    }
+    return aTot;
+}
+MICROSOFT_QUANTUM_DECL void ADD(
+    _In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq n, _In_reads_(n) uintq* q)
 {
     SIMULATOR_LOCK_GUARD(sid)
     QInterfacePtr simulator = simulators[sid];
 
     try {
+        bitCapInt aTot = combineA(na, a);
         uintq start = MapArithmetic(simulator, n, q);
-        simulator->INC(a, start, n);
+        simulator->INC(aTot, start, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
     }
 }
-MICROSOFT_QUANTUM_DECL void SUB(_In_ uintq sid, uintq a, _In_ uintq n, _In_reads_(n) uintq* q)
+MICROSOFT_QUANTUM_DECL void SUB(
+    _In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq n, _In_reads_(n) uintq* q)
 {
     SIMULATOR_LOCK_GUARD(sid)
     QInterfacePtr simulator = simulators[sid];
 
     try {
+        bitCapInt aTot = combineA(na, a);
         uintq start = MapArithmetic(simulator, n, q);
-        simulator->DEC(a, start, n);
+        simulator->DEC(aTot, start, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
     }
 }
-MICROSOFT_QUANTUM_DECL void ADDS(_In_ uintq sid, uintq a, uintq s, _In_ uintq n, _In_reads_(n) uintq* q)
+MICROSOFT_QUANTUM_DECL void ADDS(
+    _In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, uintq s, _In_ uintq n, _In_reads_(n) uintq* q)
 {
     SIMULATOR_LOCK_GUARD(sid)
     QInterfacePtr simulator = simulators[sid];
 
     try {
+        bitCapInt aTot = combineA(na, a);
         uintq start = MapArithmetic(simulator, n, q);
-        simulator->INCS(a, start, n, shards[simulator.get()][s]);
+        simulator->INCS(aTot, start, n, shards[simulator.get()][s]);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
     }
 }
-MICROSOFT_QUANTUM_DECL void SUBS(_In_ uintq sid, uintq a, uintq s, _In_ uintq n, _In_reads_(n) uintq* q)
+MICROSOFT_QUANTUM_DECL void SUBS(
+    _In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, uintq s, _In_ uintq n, _In_reads_(n) uintq* q)
 {
     SIMULATOR_LOCK_GUARD(sid)
     QInterfacePtr simulator = simulators[sid];
 
     try {
+        bitCapInt aTot = combineA(na, a);
         uintq start = MapArithmetic(simulator, n, q);
-        simulator->DECS(a, start, n, shards[simulator.get()][s]);
+        simulator->DECS(aTot, start, n, shards[simulator.get()][s]);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
     }
 }
 
-MICROSOFT_QUANTUM_DECL void MCADD(
-    _In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, _In_ uintq nq, _In_reads_(nq) uintq* q)
+MICROSOFT_QUANTUM_DECL void MCADD(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_ uintq nq, _In_reads_(nq) uintq* q)
 {
     MAP_CONTROLS_AND_LOCK(sid, nc)
 
     try {
+        bitCapInt aTot = combineA(na, a);
         uintq start = MapArithmetic(simulator, nq, q);
-        simulator->CINC(a, start, nq, ctrlsArray.get(), nc);
+        simulator->CINC(aTot, start, nq, ctrlsArray.get(), nc);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
     }
 }
-MICROSOFT_QUANTUM_DECL void MCSUB(
-    _In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, _In_ uintq nq, _In_reads_(nq) uintq* q)
+MICROSOFT_QUANTUM_DECL void MCSUB(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_ uintq nq, _In_reads_(nq) uintq* q)
 {
     MAP_CONTROLS_AND_LOCK(sid, nc)
 
     try {
+        bitCapInt aTot = combineA(na, a);
         uintq start = MapArithmetic(simulator, nq, q);
-        simulator->CDEC(a, start, nq, ctrlsArray.get(), nc);
+        simulator->CDEC(aTot, start, nq, ctrlsArray.get(), nc);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
     }
 }
 
-MICROSOFT_QUANTUM_DECL void MUL(_In_ uintq sid, uintq a, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-    QInterfacePtr simulator = simulators[sid];
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->MUL(a, starts.start1, starts.start2, n);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
-}
-MICROSOFT_QUANTUM_DECL void DIV(_In_ uintq sid, uintq a, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-    QInterfacePtr simulator = simulators[sid];
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->DIV(a, starts.start1, starts.start2, n);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
-}
-MICROSOFT_QUANTUM_DECL void MULN(
-    _In_ uintq sid, uintq a, uintq m, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-    QInterfacePtr simulator = simulators[sid];
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->MULModNOut(a, m, starts.start1, starts.start2, n);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
-}
-MICROSOFT_QUANTUM_DECL void DIVN(
-    _In_ uintq sid, uintq a, uintq m, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-    QInterfacePtr simulator = simulators[sid];
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->IMULModNOut(a, m, starts.start1, starts.start2, n);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
-}
-MICROSOFT_QUANTUM_DECL void POWN(
-    _In_ uintq sid, uintq a, uintq m, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
-{
-    SIMULATOR_LOCK_GUARD(sid)
-    QInterfacePtr simulator = simulators[sid];
-
-    try {
-        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->POWModNOut(a, m, starts.start1, starts.start2, n);
-    } catch (const std::exception& ex) {
-        simulatorErrors[sid] = 1;
-        std::cout << ex.what() << std::endl;
-    }
-}
-
-MICROSOFT_QUANTUM_DECL void MCMUL(_In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, _In_ uintq n,
+MICROSOFT_QUANTUM_DECL void MUL(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq n,
     _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
 {
-    MAP_CONTROLS_AND_LOCK(sid, nc)
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
 
     try {
+        bitCapInt aTot = combineA(na, a);
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->CMUL(a, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+        QALU(simulator)->MUL(aTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
     }
 }
-MICROSOFT_QUANTUM_DECL void MCDIV(_In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, _In_ uintq n,
+MICROSOFT_QUANTUM_DECL void DIV(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq n,
     _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
 {
-    MAP_CONTROLS_AND_LOCK(sid, nc)
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
 
     try {
+        bitCapInt aTot = combineA(na, a);
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->CDIV(a, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+        QALU(simulator)->DIV(aTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
     }
 }
-MICROSOFT_QUANTUM_DECL void MCMULN(_In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, uintq m,
+MICROSOFT_QUANTUM_DECL void MULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_reads_(na) uintq* m,
     _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
 {
-    MAP_CONTROLS_AND_LOCK(sid, nc)
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
 
     try {
+        bitCapInt aTot = combineA(na, a);
+        bitCapInt mTot = combineA(na, m);
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->CMULModNOut(a, m, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+        QALU(simulator)->MULModNOut(aTot, mTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
     }
 }
-MICROSOFT_QUANTUM_DECL void MCDIVN(_In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, uintq m,
+MICROSOFT_QUANTUM_DECL void DIVN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_reads_(na) uintq* m,
     _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
 {
-    MAP_CONTROLS_AND_LOCK(sid, nc)
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
 
     try {
+        bitCapInt aTot = combineA(na, a);
+        bitCapInt mTot = combineA(na, m);
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->CIMULModNOut(a, m, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+        QALU(simulator)->IMULModNOut(aTot, mTot, starts.start1, starts.start2, n);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;
     }
 }
-MICROSOFT_QUANTUM_DECL void MCPOWN(_In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, uintq m,
+MICROSOFT_QUANTUM_DECL void POWN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_reads_(na) uintq* m,
     _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
+{
+    SIMULATOR_LOCK_GUARD(sid)
+    QInterfacePtr simulator = simulators[sid];
+
+    try {
+        bitCapInt aTot = combineA(na, a);
+        bitCapInt mTot = combineA(na, m);
+        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        QALU(simulator)->POWModNOut(aTot, mTot, starts.start1, starts.start2, n);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+
+MICROSOFT_QUANTUM_DECL void MCMUL(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
 {
     MAP_CONTROLS_AND_LOCK(sid, nc)
 
     try {
+        bitCapInt aTot = combineA(na, a);
         MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
-        QALU(simulator)->CPOWModNOut(a, m, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+        QALU(simulator)->CMUL(aTot, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+MICROSOFT_QUANTUM_DECL void MCDIV(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
+{
+    MAP_CONTROLS_AND_LOCK(sid, nc)
+
+    try {
+        bitCapInt aTot = combineA(na, a);
+        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        QALU(simulator)->CDIV(aTot, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+MICROSOFT_QUANTUM_DECL void MCMULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_reads_(na) uintq* m, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
+{
+    MAP_CONTROLS_AND_LOCK(sid, nc)
+
+    try {
+        bitCapInt aTot = combineA(na, a);
+        bitCapInt mTot = combineA(na, m);
+        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        QALU(simulator)->CMULModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+MICROSOFT_QUANTUM_DECL void MCDIVN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_reads_(na) uintq* m, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
+{
+    MAP_CONTROLS_AND_LOCK(sid, nc)
+
+    try {
+        bitCapInt aTot = combineA(na, a);
+        bitCapInt mTot = combineA(na, m);
+        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        QALU(simulator)->CIMULModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
+    } catch (const std::exception& ex) {
+        simulatorErrors[sid] = 1;
+        std::cout << ex.what() << std::endl;
+    }
+}
+MICROSOFT_QUANTUM_DECL void MCPOWN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_reads_(na) uintq* m, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o)
+{
+    MAP_CONTROLS_AND_LOCK(sid, nc)
+
+    try {
+        bitCapInt aTot = combineA(na, a);
+        bitCapInt mTot = combineA(na, a);
+        MapArithmeticResult2 starts = MapArithmetic2(simulator, n, q, o);
+        QALU(simulator)->CPOWModNOut(aTot, mTot, starts.start1, starts.start2, n, ctrlsArray.get(), nc);
     } catch (const std::exception& ex) {
         simulatorErrors[sid] = 1;
         std::cout << ex.what() << std::endl;

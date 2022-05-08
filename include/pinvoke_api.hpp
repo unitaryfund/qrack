@@ -163,35 +163,41 @@ MICROSOFT_QUANTUM_DECL void QFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uint
 MICROSOFT_QUANTUM_DECL void IQFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uintq* c);
 
 #if ENABLE_ALU
-MICROSOFT_QUANTUM_DECL void ADD(_In_ uintq sid, uintq a, _In_ uintq n, _In_reads_(n) uintq* q);
-MICROSOFT_QUANTUM_DECL void SUB(_In_ uintq sid, uintq a, _In_ uintq n, _In_reads_(n) uintq* q);
-MICROSOFT_QUANTUM_DECL void ADDS(_In_ uintq sid, uintq a, uintq s, _In_ uintq n, _In_reads_(n) uintq* q);
-MICROSOFT_QUANTUM_DECL void SUBS(_In_ uintq sid, uintq a, uintq s, _In_ uintq n, _In_reads_(n) uintq* q);
+MICROSOFT_QUANTUM_DECL void ADD(
+    _In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq n, _In_reads_(n) uintq* q);
+MICROSOFT_QUANTUM_DECL void SUB(
+    _In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq n, _In_reads_(n) uintq* q);
+MICROSOFT_QUANTUM_DECL void ADDS(
+    _In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, uintq s, _In_ uintq n, _In_reads_(n) uintq* q);
+MICROSOFT_QUANTUM_DECL void SUBS(
+    _In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, uintq s, _In_ uintq n, _In_reads_(n) uintq* q);
 
-MICROSOFT_QUANTUM_DECL void MCADD(
-    _In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, _In_ uintq nq, _In_reads_(nq) uintq* q);
-MICROSOFT_QUANTUM_DECL void MCSUB(
-    _In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, _In_ uintq nq, _In_reads_(nq) uintq* q);
+MICROSOFT_QUANTUM_DECL void MCADD(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_ uintq nq, _In_reads_(nq) uintq* q);
+MICROSOFT_QUANTUM_DECL void MCSUB(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_ uintq nq, _In_reads_(nq) uintq* q);
 
-MICROSOFT_QUANTUM_DECL void MUL(_In_ uintq sid, uintq a, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
-MICROSOFT_QUANTUM_DECL void DIV(_In_ uintq sid, uintq a, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
-MICROSOFT_QUANTUM_DECL void MULN(
-    _In_ uintq sid, uintq a, uintq m, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
-MICROSOFT_QUANTUM_DECL void DIVN(
-    _In_ uintq sid, uintq a, uintq m, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
-MICROSOFT_QUANTUM_DECL void POWN(
-    _In_ uintq sid, uintq a, uintq m, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
-
-MICROSOFT_QUANTUM_DECL void MCMUL(_In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, _In_ uintq n,
+MICROSOFT_QUANTUM_DECL void MUL(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq n,
     _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
-MICROSOFT_QUANTUM_DECL void MCDIV(_In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, _In_ uintq n,
+MICROSOFT_QUANTUM_DECL void DIV(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq n,
     _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
-MICROSOFT_QUANTUM_DECL void MCMULN(_In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, uintq m,
+MICROSOFT_QUANTUM_DECL void MULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_reads_(na) uintq* m,
     _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
-MICROSOFT_QUANTUM_DECL void MCDIVN(_In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, uintq m,
+MICROSOFT_QUANTUM_DECL void DIVN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_reads_(na) uintq* m,
     _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
-MICROSOFT_QUANTUM_DECL void MCPOWN(_In_ uintq sid, uintq a, _In_ uintq nc, _In_reads_(nc) uintq* c, uintq m,
+MICROSOFT_QUANTUM_DECL void POWN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_reads_(na) uintq* m,
     _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
+
+MICROSOFT_QUANTUM_DECL void MCMUL(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
+MICROSOFT_QUANTUM_DECL void MCDIV(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
+MICROSOFT_QUANTUM_DECL void MCMULN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_reads_(na) uintq* m, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
+MICROSOFT_QUANTUM_DECL void MCDIVN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_reads_(na) uintq* m, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
+MICROSOFT_QUANTUM_DECL void MCPOWN(_In_ uintq sid, _In_ uintq na, _In_reads_(na) uintq* a, _In_ uintq nc,
+    _In_reads_(nc) uintq* c, _In_reads_(na) uintq* m, _In_ uintq n, _In_reads_(n) uintq* q, _In_reads_(n) uintq* o);
 
 MICROSOFT_QUANTUM_DECL void LDA(
     _In_ uintq sid, _In_ uintq ni, _In_reads_(ni) uintq* qi, _In_ uintq nv, _In_reads_(nv) uintq* qv, unsigned char* t);
