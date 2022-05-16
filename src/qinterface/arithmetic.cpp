@@ -52,52 +52,11 @@ void QInterface::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     }
 }
 
-void QInterface::INCN(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitCapInt modN, bitLenInt aux)
-{
-    if (isPowerOfTwo(modN)) {
-        INC(toAdd, start, log2(modN));
-        return;
-    }
-
-    // Based on https://arxiv.org/pdf/quant-ph/0205095.pdf
-    const bitLenInt end = start + length - 1U;
-    std::unique_ptr<bitLenInt[]> control(new bitLenInt[1U]);
-    control[0] = end;
-
-    INC(toAdd, start, length);
-    DEC(modN, start, length);
-    CNOT(end, aux);
-    CINC(modN, start, length, control.get(), 1U);
-    DEC(toAdd, start, length);
-    X(end);
-    CNOT(end, aux);
-    X(end);
-    INC(toAdd, start, length);
-}
-
 /// Subtract integer (without sign)
 void QInterface::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
 {
     const bitCapInt invToSub = pow2(length) - toSub;
     INC(invToSub, start, length);
-}
-
-void QInterface::DECN(bitCapInt toSub, bitLenInt start, bitLenInt length, bitCapInt modN, bitLenInt aux)
-{
-    // Based on https://arxiv.org/pdf/quant-ph/0205095.pdf
-    const bitLenInt end = start + length - 1U;
-    std::unique_ptr<bitLenInt[]> control(new bitLenInt[1U]);
-    control[0] = end;
-
-    DEC(toSub, start, length);
-    X(end);
-    CNOT(end, aux);
-    X(end);
-    INC(toSub, start, length);
-    CDEC(modN, start, length, control.get(), 1U);
-    CNOT(end, aux);
-    INC(modN, start, length);
-    DEC(toSub, start, length);
 }
 
 void QInterface::INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
