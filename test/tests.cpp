@@ -3746,12 +3746,21 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_inc")
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_incn")
 {
     qftReg->SetPermutation(0);
+    qftReg->INCN(100, 0, 8, 60, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 9, 40));
+
+    qftReg->SetPermutation(0);
     qftReg->INCN(100, 0, 8, 64, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 9, 36));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_decn")
 {
+    qftReg->SetPermutation(10);
+    qftReg->INCN(100, 0, 8, 60, 8);
+    qftReg->DECN(100, 0, 8, 60, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 9, 10));
+
     qftReg->SetPermutation(10);
     qftReg->INCN(100, 0, 8, 64, 8);
     qftReg->DECN(100, 0, 8, 64, 8);
