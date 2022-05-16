@@ -54,6 +54,11 @@ void QInterface::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
 
 void QInterface::INCN(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitCapInt modN, bitLenInt aux)
 {
+    if (isPowerOfTwo(modN)) {
+        INC(toAdd, start, log2(modN));
+        return;
+    }
+
     // Based on https://arxiv.org/pdf/quant-ph/0205095.pdf
     const bitLenInt end = start + length - 1U;
     std::unique_ptr<bitLenInt[]> control(new bitLenInt[1U]);
@@ -229,11 +234,7 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLen
  */
 void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    // See https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2#answer-108360
-    if (!modN) {
-        throw std::invalid_argument("MULModNOut cannot be modulo 0!");
-    }
-    if (modN & (modN - 1)) {
+    if (!isPowerOfTwo(modN)) {
         throw std::invalid_argument("MULModNOut decomposition only implemented for mod N powers of 2!");
     }
     const bitLenInt oLength = log2(modN);
@@ -250,11 +251,7 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
  */
 void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    // See https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2#answer-108360
-    if (!modN) {
-        throw std::invalid_argument("IMULModNOut cannot be modulo 0!");
-    }
-    if (modN & (modN - 1)) {
+    if (!isPowerOfTwo(modN)) {
         throw std::invalid_argument("IMULModNOut decomposition only implemented for mod N powers of 2!");
     }
     const bitLenInt oLength = log2(modN);
@@ -273,10 +270,7 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     const bitLenInt* controls, bitLenInt controlLen)
 {
     // See https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2#answer-108360
-    if (!modN) {
-        throw std::invalid_argument("CMULModNOut cannot be modulo 0!");
-    }
-    if (modN & (modN - 1)) {
+    if (!isPowerOfTwo(modN)) {
         throw std::invalid_argument("CMULModNOut decomposition only implemented for mod N powers of 2!");
     }
     const bitLenInt oLength = log2(modN);
@@ -296,10 +290,7 @@ void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
     const bitLenInt* controls, bitLenInt controlLen)
 {
     // See https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2#answer-108360
-    if (!modN) {
-        throw std::invalid_argument("CIMULModNOut cannot be modulo 0!");
-    }
-    if (modN & (modN - 1)) {
+    if (!isPowerOfTwo(modN)) {
         throw std::invalid_argument("CIMULModNOut decomposition only implemented for mod N powers of 2!");
     }
     const bitLenInt oLength = log2(modN);

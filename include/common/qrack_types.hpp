@@ -256,7 +256,7 @@ inline bitCapIntOcl bitRegMaskOcl(const bitLenInt& start, const bitLenInt& lengt
     return (((bitCapIntOcl)ONE_BCI << length) - ONE_BCI) << start;
 }
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
-inline bool isPowerOfTwo(const bitCapInt& x) { return ((x != 0U) && !(x & (x - ONE_BCI))); }
+inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
 
 // These are utility functions defined in qinterface/protected.cpp:
 unsigned char* cl_alloc(size_t ucharCount);
