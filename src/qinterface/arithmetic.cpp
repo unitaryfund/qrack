@@ -52,11 +52,47 @@ void QInterface::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     }
 }
 
+void QInterface::INCN(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitCapInt modN, bitLenInt aux)
+{
+    // Based on https://arxiv.org/pdf/quant-ph/0205095.pdf
+    const bitLenInt end = start + length - 1U;
+    std::unique_ptr<bitLenInt[]> control(new bitLenInt[1U]);
+    control[0] = end;
+
+    INC(toAdd, start, length);
+    DEC(modN, start, length);
+    CNOT(end, aux);
+    CINC(modN, start, length, control.get(), 1U);
+    DEC(toAdd, start, length);
+    X(end);
+    CNOT(end, aux);
+    X(end);
+    INC(toAdd, start, length);
+}
+
 /// Subtract integer (without sign)
-void QInterface::DEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length)
+void QInterface::DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
 {
     const bitCapInt invToSub = pow2(length) - toSub;
-    INC(invToSub, inOutStart, length);
+    INC(invToSub, start, length);
+}
+
+void QInterface::DECN(bitCapInt toSub, bitLenInt start, bitLenInt length, bitCapInt modN, bitLenInt aux)
+{
+    // Based on https://arxiv.org/pdf/quant-ph/0205095.pdf
+    const bitLenInt end = start + length - 1U;
+    std::unique_ptr<bitLenInt[]> control(new bitLenInt[1U]);
+    control[0] = end;
+
+    DEC(toSub, start, length);
+    X(end);
+    CNOT(end, aux);
+    X(end);
+    INC(toSub, start, length);
+    CDEC(modN, start, length, control.get(), 1U);
+    CNOT(end, aux);
+    INC(modN, start, length);
+    DEC(toSub, start, length);
 }
 
 void QInterface::INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
@@ -194,7 +230,10 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLen
 void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     // See https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2#answer-108360
-    if (modN && (modN & (modN - 1))) {
+    if (!modN) {
+        throw std::invalid_argument("MULModNOut cannot be modulo 0!");
+    }
+    if (modN & (modN - 1)) {
         throw std::invalid_argument("MULModNOut decomposition only implemented for mod N powers of 2!");
     }
     const bitLenInt oLength = log2(modN);
@@ -212,7 +251,10 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
 void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
     // See https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2#answer-108360
-    if (modN && (modN & (modN - 1))) {
+    if (!modN) {
+        throw std::invalid_argument("IMULModNOut cannot be modulo 0!");
+    }
+    if (modN & (modN - 1)) {
         throw std::invalid_argument("IMULModNOut decomposition only implemented for mod N powers of 2!");
     }
     const bitLenInt oLength = log2(modN);
@@ -231,7 +273,10 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     const bitLenInt* controls, bitLenInt controlLen)
 {
     // See https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2#answer-108360
-    if (modN && (modN & (modN - 1))) {
+    if (!modN) {
+        throw std::invalid_argument("CMULModNOut cannot be modulo 0!");
+    }
+    if (modN & (modN - 1)) {
         throw std::invalid_argument("CMULModNOut decomposition only implemented for mod N powers of 2!");
     }
     const bitLenInt oLength = log2(modN);
@@ -251,7 +296,10 @@ void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
     const bitLenInt* controls, bitLenInt controlLen)
 {
     // See https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2#answer-108360
-    if (modN && (modN & (modN - 1U))) {
+    if (!modN) {
+        throw std::invalid_argument("CIMULModNOut cannot be modulo 0!");
+    }
+    if (modN & (modN - 1)) {
         throw std::invalid_argument("CIMULModNOut decomposition only implemented for mod N powers of 2!");
     }
     const bitLenInt oLength = log2(modN);

@@ -301,6 +301,10 @@ public:
 
 #if ENABLE_ALU
     void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { engine->INC(toAdd, start, length); }
+    void INCN(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitCapInt n, bitLenInt aux)
+    {
+        engine->INCN(toAdd, start, length, n, aux);
+    }
     void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
     {
         engine->CINC(toAdd, inOutStart, length, controls, controlLen);

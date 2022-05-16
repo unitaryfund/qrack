@@ -1834,6 +1834,9 @@ public:
     /** Add integer (without sign) */
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length);
 
+    /** Add integer, modulo N (without sign) */
+    virtual void INCN(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitCapInt modN, bitLenInt aux);
+
     /** Add integer (without sign, with controls) */
     virtual void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
@@ -1843,6 +1846,9 @@ public:
 
     /** Subtract classical integer (without sign) */
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length);
+
+    /** Subtract classical integer, modulo N (without sign) */
+    virtual void DECN(bitCapInt toSub, bitLenInt start, bitLenInt length, bitCapInt modN, bitLenInt aux);
 
     /** Subtract classical integer (without sign, with controls) */
     virtual void CDEC(
