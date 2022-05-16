@@ -128,6 +128,7 @@ MICROSOFT_QUANTUM_DECL void MCExp(_In_ uintq sid, _In_ uintq n, _In_reads_(n) in
 
 // measurements
 MICROSOFT_QUANTUM_DECL uintq M(_In_ uintq sid, _In_ uintq q);
+MICROSOFT_QUANTUM_DECL uintq ForceM(_In_ uintq sid, _In_ uintq q, _In_ bool r);
 MICROSOFT_QUANTUM_DECL uintq MAll(_In_ uintq sid);
 MICROSOFT_QUANTUM_DECL uintq Measure(_In_ uintq sid, _In_ uintq n, _In_reads_(n) int* b, _In_reads_(n) uintq* q);
 MICROSOFT_QUANTUM_DECL void MeasureShots(

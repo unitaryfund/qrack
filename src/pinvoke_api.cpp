@@ -1605,6 +1605,22 @@ MICROSOFT_QUANTUM_DECL uintq M(_In_ uintq sid, _In_ uintq q)
 }
 
 /**
+ * (External API) PSEUDO-QUANTUM: Post-select bit in |0>/|1> basis
+ */
+MICROSOFT_QUANTUM_DECL uintq ForceM(_In_ uintq sid, _In_ uintq q, _In_ bool r)
+{
+    SIMULATOR_LOCK_GUARD_INT(sid)
+
+    QInterfacePtr simulator = simulators[sid];
+    try {
+        return simulator->ForceM(shards[simulator.get()][q], r) ? 1U : 0U;
+    } catch (...) {
+        simulatorErrors[sid] = 1;
+        return -1;
+    }
+}
+
+/**
  * (External API) Measure all bits separately in |0>/|1> basis, and return the result in low-to-high order corresponding
  * with first-to-last in original order of allocation.
  */
