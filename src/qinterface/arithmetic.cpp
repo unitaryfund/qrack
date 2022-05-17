@@ -195,13 +195,14 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
 {
     const bitLenInt oLength = isPowerOfTwo(modN) ? log2(modN) : (log2(modN) + 1U);
     bitLenInt controls[1];
+
     for (bitLenInt i = 0; i < length; i++) {
         controls[0] = inStart + i;
         bitCapInt partMul = toMul * pow2(i);
-        if (partMul == modN) {
+        partMul %= modN;
+        if (!partMul) {
             continue;
         }
-        partMul %= modN;
         CINC(partMul, outStart, oLength, controls, 1U);
     }
 }
@@ -216,10 +217,10 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     for (bitLenInt i = 0; i < length; i++) {
         controls[0] = inStart + i;
         bitCapInt partMul = toMul * pow2(i);
-        if (partMul == modN) {
+        partMul %= modN;
+        if (!partMul) {
             continue;
         }
-        partMul %= modN;
         CDEC(partMul, outStart, oLength, controls, 1U);
     }
 }
@@ -236,10 +237,10 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     for (bitLenInt i = 0; i < length; i++) {
         lControls[controlLen] = inStart + i;
         bitCapInt partMul = toMul * pow2(i);
-        if (partMul == modN) {
+        partMul %= modN;
+        if (!partMul) {
             continue;
         }
-        partMul %= modN;
         CINC(partMul, outStart, oLength, lControls.get(), controlLen + 1U);
     }
 }
@@ -256,10 +257,10 @@ void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
     for (bitLenInt i = 0; i < length; i++) {
         lControls[controlLen] = inStart + i;
         bitCapInt partMul = toMul * pow2(i);
-        if (partMul == modN) {
+        partMul %= modN;
+        if (!partMul) {
             continue;
         }
-        partMul %= modN;
         CDEC(partMul, outStart, oLength, lControls.get(), controlLen + 1U);
     }
 }
