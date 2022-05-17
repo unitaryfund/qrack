@@ -4222,6 +4222,14 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout", "[travis_xfail]")
     QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3));
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3 | (9 << 8) | (1 << 16)));
+
+    qftReg->SetPermutation(65 | (1 << 16));
+    QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (75 << 8)));
+
+    qftReg->SetPermutation(126 | (1 << 16));
+    QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 126 | (5 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cimulmodnout")
