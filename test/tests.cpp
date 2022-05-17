@@ -4126,6 +4126,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
     qftReg->SetPermutation(65);
     QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (75 << 8)));
+
+    qftReg->SetPermutation(126);
+    QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 126 | (5 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_imulmodnout")
