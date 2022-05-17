@@ -286,9 +286,9 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     lControls[0] = inStart + length - lDiff;
     for (bitCapInt i = 0; i < lDiff; i++) {
         DEC(modN, inStart, length);
-        X(controls[0]);
+        X(lControls[0]);
         CDEC(modN, outStart, oLength, lControls.get(), 1U);
-        X(controls[0]);
+        X(lControls[0]);
     }
     for (bitCapInt i = 0; i < lDiff; i++) {
         INC(modN, inStart, length);
@@ -323,9 +323,9 @@ void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
     lControls[0] = inStart + length - lDiff;
     for (bitCapInt i = 0; i < lDiff; i++) {
         INC(modN, inStart, length);
-        X(controls[0]);
+        X(lControls[0]);
         CINC(modN, outStart, oLength, lControls.get(), 1U);
-        X(controls[0]);
+        X(lControls[0]);
     }
     for (bitCapInt i = 0; i < lDiff; i++) {
         DEC(modN, inStart, length);
