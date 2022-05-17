@@ -575,7 +575,8 @@ void QEngineCPU::ModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitLe
     const bitCapIntOcl modNOcl = (bitCapIntOcl)modN;
     const bitCapIntOcl lowMask = pow2MaskOcl(length);
     const bitCapIntOcl inMask = lowMask << inStart;
-    const bitCapIntOcl outMask = lowMask << outStart;
+    const bitCapIntOcl modMask = (isPowerOfTwo(modN) ? modNOcl : pow2Ocl(log2(modNOcl) + 1U)) - ONE_BCI;
+    const bitCapIntOcl outMask = modMask << outStart;
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inMask | outMask);
 
     Finish();

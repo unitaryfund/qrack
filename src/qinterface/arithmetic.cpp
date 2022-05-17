@@ -228,7 +228,6 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     const bitLenInt* controls, bitLenInt controlLen)
 {
-    // See https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2#answer-108360
     if (!isPowerOfTwo(modN)) {
         throw std::invalid_argument("CMULModNOut decomposition only implemented for mod N powers of 2!");
     }
@@ -248,7 +247,6 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     const bitLenInt* controls, bitLenInt controlLen)
 {
-    // See https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2#answer-108360
     if (!isPowerOfTwo(modN)) {
         throw std::invalid_argument("CIMULModNOut decomposition only implemented for mod N powers of 2!");
     }

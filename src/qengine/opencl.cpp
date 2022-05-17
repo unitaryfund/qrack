@@ -2549,7 +2549,8 @@ void QEngineOCL::MULModx(
 
     const bitCapIntOcl lowMask = pow2MaskOcl(length);
     const bitCapIntOcl inMask = lowMask << (bitCapIntOcl)inStart;
-    const bitCapIntOcl outMask = lowMask << (bitCapIntOcl)outStart;
+    const bitCapIntOcl modMask = (isPowerOfTwo(modN) ? modN : pow2Ocl(log2(modN) + 1U)) - ONE_BCI;
+    const bitCapIntOcl outMask = modMask << (bitCapIntOcl)outStart;
     const bitCapIntOcl skipMask = pow2MaskOcl(outStart);
     const bitCapIntOcl otherMask = (maxQPowerOcl - ONE_BCI) ^ (inMask | outMask);
 
