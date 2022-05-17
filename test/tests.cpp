@@ -4137,6 +4137,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_imulmodnout")
     qftReg->SetPermutation(65 | (69 << 8));
     QALU(qftReg)->IMULModNOut(5, 256U, 0, 8, 8);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65));
+
+    qftReg->SetPermutation(65);
+    QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
+    QALU(qftReg)->IMULModNOut(5, 125U, 0, 8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 65));
+
+    qftReg->SetPermutation(126);
+    QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
+    QALU(qftReg)->IMULModNOut(5, 125U, 0, 8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 126));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_powmodnout")
@@ -4224,11 +4234,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cmulmodnout", "[travis_xfail]")
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(3 | (9 << 8) | (1 << 16)));
 
     qftReg->SetPermutation(65 | (1 << 16));
-    QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
+    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (75 << 8)));
 
     qftReg->SetPermutation(126 | (1 << 16));
-    QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
+    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 16, 126 | (5 << 8)));
 }
 
@@ -4245,6 +4255,16 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_cimulmodnout")
     QALU(qftReg)->CMULModNOut(3, 256U, 0, 8, 8, controls, 1);
     QALU(qftReg)->CIMULModNOut(3, 256U, 0, 8, 8, controls, 1);
     REQUIRE_THAT(qftReg, HasProbability(0, 20, 3 | (1 << 16)));
+
+    qftReg->SetPermutation(65 | (1 << 16));
+    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CIMULModNOut(5, 125U, 0, 8, 8, controls, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 65));
+
+    qftReg->SetPermutation(126 | (1 << 16));
+    QALU(qftReg)->CMULModNOut(5, 125U, 0, 8, 8, controls, 1);
+    QALU(qftReg)->CIMULModNOut(5, 125U, 0, 8, 8, controls, 1);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 126));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_cpowmodnout", "[travis_xfail]")

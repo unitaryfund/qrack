@@ -371,12 +371,16 @@ bitCapInt _combineA(uintq na, const uintq* a)
         throw std::invalid_argument("Big integer is too large for bitCapInt!");
     }
 
+#if QBCAPPOW > 6
     bitCapInt aTot = 0U;
     for (uintq i = 0U; i < na; i++) {
         aTot <<= bitsInCap;
         aTot |= a[na - (i + 1U)];
     }
     return aTot;
+#else
+    return a[0];
+#endif
 }
 
 extern "C" {
