@@ -193,15 +193,16 @@ void QInterface::DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLen
  */
 void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    if (!isPowerOfTwo(modN)) {
-        throw std::invalid_argument("MULModNOut decomposition only implemented for mod N powers of 2!");
-    }
-    const bitLenInt oLength = log2(modN);
-
+    const bitLenInt oLength = isPowerOfTwo(modN) ? log2(modN) : (log2(modN) + 1U);
     bitLenInt controls[1];
     for (bitLenInt i = 0; i < length; i++) {
         controls[0] = inStart + i;
-        CINC(toMul * pow2(i), outStart, oLength, controls, 1U);
+        bitCapInt partMul = toMul * pow2(i);
+        if (partMul == modN) {
+            continue;
+        }
+        partMul %= modN;
+        CINC(partMul, outStart, oLength, controls, 1U);
     }
 }
 
@@ -210,15 +211,16 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
  */
 void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
 {
-    if (!isPowerOfTwo(modN)) {
-        throw std::invalid_argument("IMULModNOut decomposition only implemented for mod N powers of 2!");
-    }
-    const bitLenInt oLength = log2(modN);
-
+    const bitLenInt oLength = isPowerOfTwo(modN) ? log2(modN) : (log2(modN) + 1U);
     bitLenInt controls[1];
     for (bitLenInt i = 0; i < length; i++) {
         controls[0] = inStart + i;
-        CDEC(toMul * pow2(i), outStart, oLength, controls, 1U);
+        bitCapInt partMul = toMul * pow2(i);
+        if (partMul == modN) {
+            continue;
+        }
+        partMul %= modN;
+        CDEC(partMul, outStart, oLength, controls, 1U);
     }
 }
 
@@ -228,16 +230,17 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     const bitLenInt* controls, bitLenInt controlLen)
 {
-    if (!isPowerOfTwo(modN)) {
-        throw std::invalid_argument("CMULModNOut decomposition only implemented for mod N powers of 2!");
-    }
-    const bitLenInt oLength = log2(modN);
-
+    const bitLenInt oLength = isPowerOfTwo(modN) ? log2(modN) : (log2(modN) + 1U);
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
     std::copy(controls, controls + controlLen, lControls.get());
     for (bitLenInt i = 0; i < length; i++) {
         lControls[controlLen] = inStart + i;
-        CINC(toMul * pow2(i), outStart, oLength, lControls.get(), controlLen + 1U);
+        bitCapInt partMul = toMul * pow2(i);
+        if (partMul == modN) {
+            continue;
+        }
+        partMul %= modN;
+        CINC(partMul, outStart, oLength, lControls.get(), controlLen + 1U);
     }
 }
 
@@ -247,16 +250,17 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
     const bitLenInt* controls, bitLenInt controlLen)
 {
-    if (!isPowerOfTwo(modN)) {
-        throw std::invalid_argument("CIMULModNOut decomposition only implemented for mod N powers of 2!");
-    }
-    const bitLenInt oLength = log2(modN);
-
+    const bitLenInt oLength = isPowerOfTwo(modN) ? log2(modN) : (log2(modN) + 1U);
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
     std::copy(controls, controls + controlLen, lControls.get());
     for (bitLenInt i = 0; i < length; i++) {
         lControls[controlLen] = inStart + i;
-        CDEC(toMul * pow2(i), outStart, oLength, lControls.get(), controlLen + 1U);
+        bitCapInt partMul = toMul * pow2(i);
+        if (partMul == modN) {
+            continue;
+        }
+        partMul %= modN;
+        CDEC(partMul, outStart, oLength, lControls.get(), controlLen + 1U);
     }
 }
 
