@@ -374,7 +374,7 @@ bitCapInt _combineA(uintq na, const uintq* a)
     bitCapInt aTot = 0U;
     for (uintq i = 0U; i < na; i++) {
         aTot <<= bitsInCap;
-        aTot |= a[i];
+        aTot |= a[na - (i + 1U)];
     }
     return aTot;
 }
