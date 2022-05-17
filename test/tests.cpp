@@ -4122,6 +4122,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_mulmodnout")
     QALU(qftReg)->MULModNOut(2, 256U, 0, 8, 8);
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(0));
     REQUIRE_FLOAT(ONE_R1_F / 2, (real1_f)qftReg->ProbAll(8 | (16 << 8)));
+
+    qftReg->SetPermutation(65);
+    QALU(qftReg)->MULModNOut(5, 125U, 0, 8, 8);
+    REQUIRE_THAT(qftReg, HasProbability(0, 16, 65 | (75 << 8)));
 }
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_imulmodnout")
