@@ -210,15 +210,16 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
         return;
     }
 
-    const bitLenInt lDiff = (length + 1) - oLength;
-    controls[0] = inStart + length - lDiff;
-    for (bitCapInt i = 0; i < lDiff; i++) {
+    const bitLenInt lDiff = length - oLength;
+    const bitCapInt diffPow = pow2(lDiff);
+    controls[0] = inStart + length - (lDiff + 1U);
+    for (bitCapInt i = 0; i < diffPow; i++) {
         DEC(modN, inStart, length);
         X(controls[0]);
         CDEC(modN, outStart, oLength, controls, 1U);
         X(controls[0]);
     }
-    for (bitCapInt i = 0; i < lDiff; i++) {
+    for (bitCapInt i = 0; i < diffPow; i++) {
         INC(modN, inStart, length);
     }
 }
@@ -245,15 +246,16 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
         return;
     }
 
-    const bitLenInt lDiff = (length + 1) - oLength;
-    controls[0] = inStart + length - lDiff;
-    for (bitCapInt i = 0; i < lDiff; i++) {
+    const bitLenInt lDiff = length - oLength;
+    const bitCapInt diffPow = pow2(lDiff);
+    controls[0] = inStart + length - (lDiff + 1U);
+    for (bitCapInt i = 0; i < diffPow; i++) {
         INC(modN, inStart, length);
         X(controls[0]);
         CINC(modN, outStart, oLength, controls, 1U);
         X(controls[0]);
     }
-    for (bitCapInt i = 0; i < lDiff; i++) {
+    for (bitCapInt i = 0; i < diffPow; i++) {
         DEC(modN, inStart, length);
     }
 }
@@ -282,15 +284,16 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
         return;
     }
 
-    const bitLenInt lDiff = (length + 1) - oLength;
-    lControls[0] = inStart + length - lDiff;
-    for (bitCapInt i = 0; i < lDiff; i++) {
+    const bitLenInt lDiff = length - oLength;
+    const bitCapInt diffPow = pow2(lDiff);
+    lControls[0] = inStart + length - (lDiff + 1U);
+    for (bitCapInt i = 0; i < diffPow; i++) {
         DEC(modN, inStart, length);
         X(lControls[0]);
         CDEC(modN, outStart, oLength, lControls.get(), 1U);
         X(lControls[0]);
     }
-    for (bitCapInt i = 0; i < lDiff; i++) {
+    for (bitCapInt i = 0; i < diffPow; i++) {
         INC(modN, inStart, length);
     }
 }
@@ -319,15 +322,16 @@ void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
         return;
     }
 
-    const bitLenInt lDiff = (length + 1) - oLength;
-    lControls[0] = inStart + length - lDiff;
-    for (bitCapInt i = 0; i < lDiff; i++) {
+    const bitLenInt lDiff = length - oLength;
+    const bitCapInt diffPow = pow2(lDiff);
+    lControls[0] = inStart + length - (lDiff + 1U);
+    for (bitCapInt i = 0; i < diffPow; i++) {
         INC(modN, inStart, length);
         X(lControls[0]);
         CINC(modN, outStart, oLength, lControls.get(), 1U);
         X(lControls[0]);
     }
-    for (bitCapInt i = 0; i < lDiff; i++) {
+    for (bitCapInt i = 0; i < diffPow; i++) {
         DEC(modN, inStart, length);
     }
 }
