@@ -30,7 +30,7 @@
 #define DIRTY(shard) (shard.isPhaseDirty || shard.isProbDirty)
 #define IS_AMP_0(c) (norm(c) <= separabilityThreshold)
 #define IS_0_R1(r) (abs(r) <= REAL1_EPSILON)
-#define IS_1_R1(r) (abs(r) <= REAL1_EPSILON)
+#define IS_1_R1(r) (abs(ONE_R1 - r) <= REAL1_EPSILON)
 #define IS_1_CMPLX(c) (norm(ONE_CMPLX - (c)) <= FP_NORM_EPSILON)
 #define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
 #define QUEUED_PHASE(shard)                                                                                            \
