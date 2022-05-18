@@ -21,7 +21,7 @@ QInterfacePtr QEngineCPU::Clone()
     }
 
     QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(
-        CreateQuantumInterface(QINTERFACE_CPU, qubitCount, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+        CreateQuantumInterface(QINTERFACE_CPU, qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
             false, -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
 
     Finish();
@@ -35,8 +35,8 @@ QInterfacePtr QEngineCPU::Clone()
 QEnginePtr QEngineCPU::CloneEmpty()
 {
     QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(
-        CreateQuantumInterface(QINTERFACE_CPU, 0, 0, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
-            (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
+        CreateQuantumInterface(QINTERFACE_CPU, 0U, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
+            -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
 
     clone->SetQubitCount(qubitCount);
 
@@ -48,7 +48,7 @@ real1_f QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
     const bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
     real1 average = ZERO_R1;
     real1 totProb = ZERO_R1;
-    for (bitCapIntOcl i = 0; i < maxQPower; i++) {
+    for (bitCapIntOcl i = 0U; i < maxQPower; i++) {
         bitCapIntOcl outputInt = (i & outputMask) >> valueStart;
         real1 prob = norm(stateVec->read(i));
         totProb += prob;

@@ -46,7 +46,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , deviceIDs(devList)
 {
 #if ENABLE_OPENCL
-    if ((engineTypes.size() == 1U) && (engineTypes[0] == QINTERFACE_OPTIMAL_BASE)) {
+    if ((engineTypes.size() == 1U) && (engineTypes[0U] == QINTERFACE_OPTIMAL_BASE)) {
         isDefaultPaging = true;
 
         DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
@@ -493,10 +493,10 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     complex mtrx[4];
     if (wasCached) {
         shards[target]->Compose(lMtrx);
-        std::copy(shards[target]->gate, shards[target]->gate + 4, mtrx);
+        std::copy(shards[target]->gate, shards[target]->gate + 4U, mtrx);
         shards[target] = NULL;
     } else {
-        std::copy(lMtrx, lMtrx + 4, mtrx);
+        std::copy(lMtrx, lMtrx + 4U, mtrx);
     }
 
     if (engine) {
@@ -1024,14 +1024,14 @@ bool QStabilizerHybrid::TrySeparate(const bitLenInt* qubits, bitLenInt length, r
         std::copy(qubits, qubits + length, q.begin());
         std::sort(q.begin(), q.end());
 
-        for (bitLenInt i = 1; i < length; i++) {
-            Swap(q[0] + i, q[i]);
+        for (bitLenInt i = 1U; i < length; i++) {
+            Swap(q[0U] + i, q[i]);
         }
 
-        const bool toRet = stabilizer->CanDecomposeDispose(q[0], length);
+        const bool toRet = stabilizer->CanDecomposeDispose(q[0U], length);
 
-        for (bitLenInt i = 1; i < length; i++) {
-            Swap(q[0] + i, q[i]);
+        for (bitLenInt i = 1U; i < length; i++) {
+            Swap(q[0U] + i, q[i]);
         }
 
         return toRet;
