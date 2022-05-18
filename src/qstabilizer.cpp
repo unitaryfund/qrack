@@ -239,7 +239,7 @@ void QStabilizer::seed(const bitLenInt& g)
             if (z[i][j]) {
                 min = j;
                 if (x[elemCount][j]) {
-                    f = (f + 2) & 0x3;
+                    f = (f + 2U) & 0x3;
                 }
             }
         }
@@ -261,7 +261,7 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
     for (bitLenInt j = 0; j < qubitCount; j++) {
         // Pauli operator is "Y"
         if (x[elemCount][j] && z[elemCount][j]) {
-            e = (e + 1) & 0x3U;
+            e = (e + 1U) & 0x3U;
         }
     }
 
@@ -330,7 +330,7 @@ real1_f QStabilizer::FirstNonzeroPhase()
         return (real1_f)std::arg(entry0.amplitude);
     }
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
-        bitCapIntOcl t2 = t ^ (t + 1);
+        bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0; i < g; i++) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -364,7 +364,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
 
     setBasisState(nrm, stateVec, NULL);
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
-        bitCapIntOcl t2 = t ^ (t + 1);
+        bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0; i < g; i++) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -423,7 +423,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
 
     setBasisProb(nrm, outputProbs);
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
-        bitCapIntOcl t2 = t ^ (t + 1);
+        bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0; i < g; i++) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -452,7 +452,7 @@ complex QStabilizer::GetAmplitude(bitCapInt perm)
         return entry.amplitude;
     }
     for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
-        bitCapIntOcl t2 = t ^ (t + 1);
+        bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0; i < g; i++) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -479,7 +479,7 @@ void QStabilizer::CNOT(bitLenInt c, bitLenInt t)
             z[i][c] = !z[i][c];
 
             if (x[i][c] && (x[i][t] == z[i][c])) {
-                r[i] = (r[i] + 2) & 0x3U;
+                r[i] = (r[i] + 2U) & 0x3U;
             }
         }
     });
@@ -497,7 +497,7 @@ void QStabilizer::AntiCNOT(bitLenInt c, bitLenInt t)
             z[i][c] = !z[i][c];
 
             if (!x[i][c] || (x[i][t] != z[i][c])) {
-                r[i] = (r[i] + 2) & 0x3U;
+                r[i] = (r[i] + 2U) & 0x3U;
             }
         }
     });
@@ -518,7 +518,7 @@ void QStabilizer::CY(bitLenInt c, bitLenInt t)
 
         if (z[i][t]) {
             if (x[i][c] && (x[i][t] == z[i][c])) {
-                r[i] = (r[i] + 2) & 0x3U;
+                r[i] = (r[i] + 2U) & 0x3U;
             }
 
             z[i][c] = !z[i][c];
@@ -543,7 +543,7 @@ void QStabilizer::AntiCY(bitLenInt c, bitLenInt t)
 
         if (z[i][t]) {
             if (!x[i][c] || (x[i][t] != z[i][c])) {
-                r[i] = (r[i] + 2) & 0x3U;
+                r[i] = (r[i] + 2U) & 0x3U;
             }
 
             z[i][c] = !z[i][c];
@@ -564,7 +564,7 @@ void QStabilizer::CZ(bitLenInt c, bitLenInt t)
             z[i][c] = !z[i][c];
 
             if (x[i][c] && (z[i][t] == z[i][c])) {
-                r[i] = (r[i] + 2) & 0x3U;
+                r[i] = (r[i] + 2U) & 0x3U;
             }
         }
 
@@ -585,7 +585,7 @@ void QStabilizer::AntiCZ(bitLenInt c, bitLenInt t)
             z[i][c] = !z[i][c];
 
             if (!x[i][c] || (z[i][t] != z[i][c])) {
-                r[i] = (r[i] + 2) & 0x3U;
+                r[i] = (r[i] + 2U) & 0x3U;
             }
         }
 
@@ -613,7 +613,7 @@ void QStabilizer::H(bitLenInt t)
     ParFor([this, t](const bitLenInt& i) {
         BoolVector::swap(x[i][t], z[i][t]);
         if (x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
+            r[i] = (r[i] + 2U) & 0x3U;
         }
     });
 }
@@ -626,7 +626,7 @@ void QStabilizer::S(bitLenInt t)
     }
     ParFor([this, t](const bitLenInt& i) {
         if (x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
+            r[i] = (r[i] + 2U) & 0x3U;
         }
         z[i][t] = z[i][t] ^ x[i][t];
     });
@@ -641,7 +641,7 @@ void QStabilizer::IS(bitLenInt t)
     ParFor([this, t](const bitLenInt& i) {
         z[i][t] = z[i][t] ^ x[i][t];
         if (x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
+            r[i] = (r[i] + 2U) & 0x3U;
         }
     });
 }
@@ -654,7 +654,7 @@ void QStabilizer::Z(bitLenInt t)
     }
     ParFor([this, t](const bitLenInt& i) {
         if (x[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
+            r[i] = (r[i] + 2U) & 0x3U;
         }
     });
 }
@@ -664,7 +664,7 @@ void QStabilizer::X(bitLenInt t)
 {
     ParFor([this, t](const bitLenInt& i) {
         if (z[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
+            r[i] = (r[i] + 2U) & 0x3U;
         }
     });
 }
@@ -678,7 +678,7 @@ void QStabilizer::Y(bitLenInt t)
     }
     ParFor([this, t](const bitLenInt& i) {
         if (z[i][t] ^ x[i][t]) {
-            r[i] = (r[i] + 2) & 0x3U;
+            r[i] = (r[i] + 2U) & 0x3U;
         }
     });
 }
