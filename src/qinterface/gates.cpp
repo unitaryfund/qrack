@@ -403,7 +403,7 @@ void QInterface::ZeroPhaseFlip(bitLenInt start, bitLenInt length)
 
     const bitLenInt min1 = length - 1U;
     std::unique_ptr<bitLenInt[]> controls(new bitLenInt[min1]);
-    for (bitLenInt i = 0; i < min1; i++) {
+    for (bitLenInt i = 0U; i < min1; i++) {
         controls[i] = start + i;
     }
     MACPhase(controls.get(), min1, -ONE_CMPLX, ONE_CMPLX, start + min1);
@@ -442,11 +442,11 @@ void QInterface::YMask(bitCapInt mask)
     }
 
     if (parity == 1) {
-        Phase(I_CMPLX, I_CMPLX, 0);
+        Phase(I_CMPLX, I_CMPLX, 0U);
     } else if (parity == 2) {
         PhaseFlip();
     } else if (parity == 3) {
-        Phase(-I_CMPLX, -I_CMPLX, 0);
+        Phase(-I_CMPLX, -I_CMPLX, 0U);
     }
 }
 
@@ -740,7 +740,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
     // Exponentiation of an arbitrary serial string of gates, each HamiltonianOp component times timeDiff, e^(-i * H *
     // t) as e^(-i * H_(N - 1) * t) * e^(-i * H_(N - 2) * t) * ... e^(-i * H_0 * t)
 
-    for (size_t i = 0; i < h.size(); i++) {
+    for (size_t i = 0U; i < h.size(); i++) {
         HamiltonianOpPtr op = h[i];
         complex* opMtrx = op->matrix.get();
 
@@ -750,12 +750,12 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
         }
         std::unique_ptr<complex[]> mtrx(new complex[maxJ]);
 
-        for (bitCapIntOcl j = 0; j < maxJ; j++) {
+        for (bitCapIntOcl j = 0U; j < maxJ; j++) {
             mtrx[j] = opMtrx[j] * (-timeDiff);
         }
 
         if (op->toggles) {
-            for (bitLenInt j = 0; j < op->controlLen; j++) {
+            for (bitLenInt j = 0U; j < op->controlLen; j++) {
                 if (op->toggles[j]) {
                     X(op->controls[j]);
                 }
@@ -764,7 +764,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
 
         if (op->uniform) {
             std::unique_ptr<complex[]> expMtrx(new complex[maxJ]);
-            for (bitCapIntOcl j = 0; j < pow2(op->controlLen); j++) {
+            for (bitCapIntOcl j = 0U; j < pow2(op->controlLen); j++) {
                 exp2x2(mtrx.get() + (j * 4U), expMtrx.get() + (j * 4U));
             }
             UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx.get());
@@ -782,7 +782,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
         }
 
         if (op->toggles) {
-            for (bitLenInt j = 0; j < op->controlLen; j++) {
+            for (bitLenInt j = 0U; j < op->controlLen; j++) {
                 if (op->toggles[j]) {
                     X(op->controls[j]);
                 }

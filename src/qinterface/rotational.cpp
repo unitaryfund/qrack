@@ -85,7 +85,7 @@ void QInterface::UniformlyControlledRY(
     const bitCapIntOcl permCount = pow2Ocl(controlLen);
     std::unique_ptr<complex[]> pauliRYs(new complex[4U * permCount]);
 
-    for (bitCapIntOcl i = 0; i < permCount; i++) {
+    for (bitCapIntOcl i = 0U; i < permCount; i++) {
         const real1 cosine = (real1)cos(angles[i] / 2);
         const real1 sine = (real1)sin(angles[i] / 2);
 
@@ -106,7 +106,7 @@ void QInterface::UniformlyControlledRZ(
     const bitCapIntOcl permCount = pow2Ocl(controlLen);
     std::unique_ptr<complex[]> pauliRZs(new complex[4U * permCount]);
 
-    for (bitCapIntOcl i = 0; i < permCount; i++) {
+    for (bitCapIntOcl i = 0U; i < permCount; i++) {
         const real1 cosine = (real1)cos(angles[i] / 2);
         const real1 sine = (real1)sin(angles[i] / 2);
 
@@ -173,13 +173,13 @@ void QInterface::Exp(real1_f radians, bitLenInt qubit)
 void QInterface::Exp(
     const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit, const complex* matrix2x2, bool antiCtrled)
 {
-    complex timesI[4];
-    for (bitLenInt i = 0; i < 4; i++) {
+    complex timesI[4U];
+    for (bitLenInt i = 0U; i < 4U; i++) {
         timesI[i] = I_CMPLX * matrix2x2[i];
     }
-    complex toApply[4];
+    complex toApply[4U];
     exp2x2(timesI, toApply);
-    if (controlLen == 0) {
+    if (!controlLen) {
         Mtrx(toApply, qubit);
     } else if (antiCtrled) {
         MACMtrx(controls, controlLen, toApply, qubit);
