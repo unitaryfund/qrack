@@ -502,7 +502,7 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
     const real1 cosTheta = (real1)cos(theta);
     const real1 sinTheta = (real1)sin(theta);
 
-    if (abs(ONE_R1 - cosTheta) <= REAL1_EPSILON) {
+    if (abs(ONE_R1 - cosTheta) > REAL1_EPSILON) {
         const complex fSimSwap[4U] = { complex(cosTheta, ZERO_R1), complex(ZERO_R1, sinTheta),
             complex(ZERO_R1, sinTheta), complex(cosTheta, ZERO_R1) };
         bitCapIntOcl qPowersSorted[2U];
