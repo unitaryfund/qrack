@@ -179,9 +179,7 @@ void QInterface::Exp(
     }
     complex toApply[4U];
     exp2x2(timesI, toApply);
-    if (!controlLen) {
-        Mtrx(toApply, qubit);
-    } else if (antiCtrled) {
+    if (antiCtrled) {
         MACMtrx(controls, controlLen, toApply, qubit);
     } else {
         MCMtrx(controls, controlLen, toApply, qubit);
