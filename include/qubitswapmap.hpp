@@ -27,7 +27,7 @@ public:
     QubitSwapMap(bitLenInt qubitCount)
         : swapMap(qubitCount)
     {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0U; i < qubitCount; i++) {
             swapMap[i] = i;
         }
     }
@@ -42,8 +42,8 @@ public:
 
     bitCapInt map(bitCapInt perm)
     {
-        bitCapInt toRet = 0;
-        for (bitLenInt i = 0; i < size(); i++) {
+        bitCapInt toRet = 0U;
+        for (bitLenInt i = 0U; i < size(); i++) {
             if ((perm >> i) & 1U) {
                 toRet |= (ONE_BCI << swapMap[i]);
             }
@@ -53,8 +53,8 @@ public:
 
     bitCapInt inverseMap(bitCapInt perm)
     {
-        bitCapInt toRet = 0;
-        for (bitLenInt i = 0; i < size(); i++) {
+        bitCapInt toRet = 0U;
+        for (bitLenInt i = 0U; i < size(); i++) {
             if ((perm >> swapMap[i]) & 1U) {
                 toRet |= (ONE_BCI << i);
             }

@@ -45,27 +45,27 @@ protected:
 
 public:
     complex scale;
-    QBdtNodeInterfacePtr branches[2];
+    QBdtNodeInterfacePtr branches[2U];
 
     QBdtNodeInterface()
         : scale(ONE_CMPLX)
     {
-        branches[0] = NULL;
-        branches[1] = NULL;
+        branches[0U] = NULL;
+        branches[1U] = NULL;
     }
 
     QBdtNodeInterface(complex scl)
         : scale(scl)
     {
-        branches[0] = NULL;
-        branches[1] = NULL;
+        branches[0U] = NULL;
+        branches[1U] = NULL;
     }
 
     QBdtNodeInterface(complex scl, QBdtNodeInterfacePtr* b)
         : scale(scl)
     {
-        branches[0] = b[0];
-        branches[1] = b[1];
+        branches[0U] = b[0U];
+        branches[1U] = b[1U];
     }
 
     virtual ~QBdtNodeInterface()
@@ -80,8 +80,8 @@ public:
     virtual void SetZero()
     {
         scale = ZERO_CMPLX;
-        branches[0] = NULL;
-        branches[1] = NULL;
+        branches[0U] = NULL;
+        branches[1U] = NULL;
     }
 
     virtual bool isEqual(QBdtNodeInterfacePtr r);

@@ -18,7 +18,7 @@
 struct _QrackTimeEvolveOpHeader {
     unsigned target;
     unsigned controlLen;
-    unsigned controls[32];
+    unsigned controls[32U];
 };
 
 namespace Qrack {
@@ -36,10 +36,10 @@ struct HamiltonianOp {
     bool uniform;
 
     HamiltonianOp()
-        : targetBit(0)
+        : targetBit(0U)
         , matrix(NULL)
         , controls(NULL)
-        , controlLen(0)
+        , controlLen(0U)
         , anti(false)
         , toggles(NULL)
         , uniform(false)
@@ -50,7 +50,7 @@ struct HamiltonianOp {
         : targetBit(target)
         , matrix(mtrx)
         , controls(NULL)
-        , controlLen(0)
+        , controlLen(0U)
         , anti(false)
         , toggles(NULL)
         , uniform(false)
@@ -101,7 +101,7 @@ struct UniformHamiltonianOp : HamiltonianOp {
 
         controlLen = (bitLenInt)teoh.controlLen;
         controls = new bitLenInt[controlLen];
-        for (bitLenInt i = 0; i < controlLen; i++) {
+        for (bitLenInt i = 0U; i < controlLen; i++) {
             controls[i] = (bitLenInt)teoh.controls[i];
         }
 
@@ -110,7 +110,7 @@ struct UniformHamiltonianOp : HamiltonianOp {
         bitCapIntOcl mtrxTermCount = ((bitCapIntOcl)ONE_BCI << controlLen) * 4U;
         BitOp m(new complex[mtrxTermCount], std::default_delete<complex[]>());
         matrix = std::move(m);
-        for (bitCapIntOcl i = 0; i < mtrxTermCount; i++) {
+        for (bitCapIntOcl i = 0U; i < mtrxTermCount; i++) {
             matrix.get()[i] = complex((real1)mtrx[i * 2U], (real1)mtrx[(i * 2U) + 1U]);
         }
     }

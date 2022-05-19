@@ -41,10 +41,10 @@ protected:
     std::vector<int> deviceIDs;
 
 public:
-    QHybrid(bitLenInt qBitCount, bitCapInt initState = 0, qrack_rand_gen_ptr rgp = nullptr,
+    QHybrid(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0,
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f ignored2 = FP_NORM_EPSILON_F);
 
     void SetQubitCount(bitLenInt qb)
@@ -104,8 +104,8 @@ public:
     {
         if (!isPager && usePager) {
             std::vector<QInterfaceEngine> engines = { isGpu ? QINTERFACE_OPENCL : QINTERFACE_CPU };
-            engine = std::make_shared<QPager>(engine, engines, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
-                randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, 0,
+            engine = std::make_shared<QPager>(engine, engines, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
+                randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, 0U,
                 separabilityThreshold);
         } else if (isPager && !usePager) {
             engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();

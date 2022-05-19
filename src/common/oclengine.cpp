@@ -172,7 +172,7 @@ cl::Program OCLEngine::MakeProgram(
             unsigned long lSizeResult;
 
             std::vector<unsigned char> buffer(lSize);
-            lSizeResult = fread(&buffer[0], sizeof(unsigned char), lSize, clBinFile);
+            lSizeResult = fread(&buffer[0U], sizeof(unsigned char), lSize, clBinFile);
             fclose(clBinFile);
 
             if (lSizeResult != lSize) {
@@ -183,13 +183,13 @@ cl::Program OCLEngine::MakeProgram(
 
 #if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
             program = cl::Program(devCntxt->context, { devCntxt->device },
-                { std::pair<const void*, unsigned long>(&buffer[0], buffer.size()) }, &binaryStatus, &buildError);
+                { std::pair<const void*, unsigned long>(&buffer[0U], buffer.size()) }, &binaryStatus, &buildError);
 #else
             program = cl::Program(devCntxt->context, { devCntxt->device }, { buffer }, &binaryStatus, &buildError);
 #endif
 
-            if ((buildError != CL_SUCCESS) || (binaryStatus[0] != CL_SUCCESS)) {
-                std::cout << "Binary error: " << buildError << ", " << binaryStatus[0] << " (Falling back to JIT.)"
+            if ((buildError != CL_SUCCESS) || (binaryStatus[0U] != CL_SUCCESS)) {
+                std::cout << "Binary error: " << buildError << ", " << binaryStatus[0U] << " (Falling back to JIT.)"
                           << std::endl;
             } else {
                 std::cout << "Loaded binary from: " << path << std::endl;
@@ -209,11 +209,11 @@ cl::Program OCLEngine::MakeProgram(
 void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fileName)
 {
     std::vector<size_t> clBinSizes = program.getInfo<CL_PROGRAM_BINARY_SIZES>();
-    size_t clBinSize = 0;
+    size_t clBinSize = 0U;
     int clBinIndex = 0;
 
-    for (unsigned int i = 0; i < clBinSizes.size(); i++) {
-        if (clBinSizes[i] > 0) {
+    for (unsigned int i = 0U; i < clBinSizes.size(); i++) {
+        if (clBinSizes[i]) {
             clBinSize = clBinSizes[i];
             clBinIndex = i;
             break;
@@ -239,7 +239,7 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
 #else
     std::vector<std::vector<unsigned char>> clBinaries = program.getInfo<CL_PROGRAM_BINARIES>();
     std::vector<unsigned char> clBinary = clBinaries[clBinIndex];
-    fwrite(&clBinary[0], clBinSize, sizeof(unsigned char), clBinFile);
+    fwrite(&clBinary[0U], clBinSize, sizeof(unsigned char), clBinFile);
 #endif
     fclose(clBinFile);
 }
@@ -262,7 +262,7 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
 
     cl::Platform::get(&all_platforms);
 
-    if (all_platforms.size() == 0) {
+    if (!all_platforms.size()) {
         std::cout << " No platforms found. Check OpenCL installation!\n";
         return InitOClResult();
     }
@@ -270,10 +270,10 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
     // get all devices
     std::vector<cl::Platform> devPlatVec;
     std::vector<std::vector<cl::Device>> all_platforms_devices;
-    for (size_t i = 0; i < all_platforms.size(); i++) {
+    for (size_t i = 0U; i < all_platforms.size(); i++) {
         all_platforms_devices.push_back(std::vector<cl::Device>());
         all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &(all_platforms_devices[i]));
-        for (size_t j = 0; j < all_platforms_devices[i].size(); j++) {
+        for (size_t j = 0U; j < all_platforms_devices[i].size(); j++) {
             // VirtualCL seems to break if the assignment constructor of cl::Platform is used here from the original
             // list. Assigning the object from a new query is always fine, though. (They carry the same underlying
             // platform IDs.)
@@ -284,14 +284,14 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         }
         all_devices.insert(all_devices.end(), all_platforms_devices[i].begin(), all_platforms_devices[i].end());
     }
-    if (all_devices.size() == 0) {
+    if (!all_devices.size()) {
         std::cout << " No devices found. Check OpenCL installation!\n";
         return InitOClResult();
     }
 
     int deviceCount = all_devices.size();
 
-    // prefer the last device because that's usually a GPU or accelerator; device[0] is usually the CPU
+    // prefer the last device because that's usually a GPU or accelerator; device[0U] is usually the CPU
     int dev = deviceCount - 1;
     if (getenv("QRACK_OCL_DEFAULT_DEVICE")) {
         dev = std::stoi(std::string(getenv("QRACK_OCL_DEFAULT_DEVICE")));
@@ -345,7 +345,7 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
             all_contexts.push_back(cl::Context(all_platforms_devices[plat_id]));
         }
         std::shared_ptr<OCLDeviceContext> devCntxt = std::make_shared<OCLDeviceContext>(
-            devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1], i, plat_id);
+            devPlatVec[i], all_devices[i], all_contexts[all_contexts.size() - 1U], i, plat_id);
 
         std::string fileName = binary_file_prefix + all_devices[i].getInfo<CL_DEVICE_NAME>() + binary_file_ext;
         std::replace(fileName.begin(), fileName.end(), ' ', '_');
@@ -365,9 +365,9 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
             // use the first device. If the default is the first device, and we can't compile for it, then we don't
             // have any devices that can compile at all, and the environment needs to be fixed by the user.
             if (i == dev) {
-                default_dev_context = all_dev_contexts[0];
-                default_platform = all_platforms[0];
-                default_device = all_devices[0];
+                default_dev_context = all_dev_contexts[0U];
+                default_platform = all_platforms[0U];
+                default_device = all_devices[0U];
             }
 
             continue;
@@ -375,7 +375,7 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
 
         all_dev_contexts.push_back(devCntxt);
 
-        for (unsigned int j = 0; j < kernelHandles.size(); j++) {
+        for (unsigned int j = 0U; j < kernelHandles.size(); j++) {
             all_dev_contexts[i]->calls[kernelHandles[j].oclapi] =
                 cl::Kernel(program, kernelHandles[j].kernelname.c_str());
             all_dev_contexts[i]->mutexes.emplace(kernelHandles[j].oclapi, new std::mutex);
@@ -408,7 +408,7 @@ OCLEngine::OCLEngine()
     : maxActiveAllocSize(-1)
 {
     if (getenv("QRACK_MAX_ALLOC_MB")) {
-        maxActiveAllocSize = 1024 * 1024 * (size_t)std::stoi(std::string(getenv("QRACK_MAX_ALLOC_MB")));
+        maxActiveAllocSize = 1024U * 1024U * (size_t)std::stoi(std::string(getenv("QRACK_MAX_ALLOC_MB")));
     }
 
     InitOClResult initResult = InitOCL(false);

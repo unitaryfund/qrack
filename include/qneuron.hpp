@@ -21,13 +21,13 @@ typedef std::shared_ptr<QNeuron> QNeuronPtr;
 
 class QNeuron {
 private:
-    QInterfacePtr qReg;
-    bitLenInt* inputIndices;
     bitLenInt inputCount;
     bitCapIntOcl inputPower;
     bitLenInt outputIndex;
-    real1* angles;
     real1 tolerance;
+    std::unique_ptr<bitLenInt> inputIndices;
+    std::unique_ptr<real1> angles;
+    QInterfacePtr qReg;
 
 public:
     /** "Quantum neuron" or "quantum perceptron" class that can learn and predict in superposition
@@ -49,55 +49,44 @@ public:
     {
         qReg = reg;
 
-        if (inputCount > 0) {
-            inputIndices = new bitLenInt[inputCount];
-            std::copy(inputIndcs, inputIndcs + inputCount, inputIndices);
+        if (inputCount) {
+            inputIndices = std::unique_ptr<bitLenInt>(new bitLenInt[inputCount]);
+            std::copy(inputIndcs, inputIndcs + inputCount, inputIndices.get());
         }
 
-        angles = new real1[inputPower]();
+        angles = std::unique_ptr<real1>(new real1[inputPower]());
     }
 
     /** Create a new QNeuron which is an exact duplicate of another, including its learned state. */
     QNeuron(const QNeuron& toCopy)
-        : QNeuron(toCopy.qReg, toCopy.inputIndices, toCopy.inputCount, toCopy.outputIndex, (real1_f)toCopy.tolerance)
+        : QNeuron(
+              toCopy.qReg, toCopy.inputIndices.get(), toCopy.inputCount, toCopy.outputIndex, (real1_f)toCopy.tolerance)
     {
-        std::copy(toCopy.angles, toCopy.angles + toCopy.inputPower, angles);
+        std::copy(toCopy.angles.get(), toCopy.angles.get() + toCopy.inputPower, angles.get());
     }
 
     QNeuron& operator=(const QNeuron& toCopy)
     {
         qReg = toCopy.qReg;
-        if (toCopy.inputCount > 0) {
-            if (inputIndices) {
-                delete[] inputIndices;
-            }
-            inputIndices = new bitLenInt[inputCount];
-            std::copy(toCopy.inputIndices, toCopy.inputIndices + inputCount, inputIndices);
+        if (toCopy.inputCount) {
+            inputIndices = NULL;
+            inputIndices = std::unique_ptr<bitLenInt>(new bitLenInt[inputCount]);
+            std::copy(toCopy.inputIndices.get(), toCopy.inputIndices.get() + inputCount, inputIndices.get());
         }
-        if (angles) {
-            delete[] angles;
-        }
-        angles = new real1[inputPower]();
-        std::copy(toCopy.angles, toCopy.angles + toCopy.inputPower, angles);
+        angles = NULL;
+        angles = std::unique_ptr<real1>(new real1[inputPower]());
+        std::copy(toCopy.angles.get(), toCopy.angles.get() + toCopy.inputPower, angles.get());
         outputIndex = toCopy.outputIndex;
         tolerance = toCopy.tolerance;
 
         return *this;
     }
 
-    ~QNeuron()
-    {
-        if (inputCount > 0) {
-            delete[] inputIndices;
-        }
-        delete[] angles;
-    }
-
     /** Set the angles of this QNeuron */
-    void SetAngles(real1* nAngles) { std::copy(nAngles, nAngles + inputPower, angles); }
+    void SetAngles(real1* nAngles) { std::copy(nAngles, nAngles + inputPower, angles.get()); }
 
     /** Get the angles of this QNeuron */
-    void GetAngles(real1* oAngles) { std::copy(angles, angles + inputPower, oAngles); }
+    void GetAngles(real1* oAngles) { std::copy(angles.get(), angles.get() + inputPower, oAngles); }
 
     bitLenInt GetInputCount() { return inputCount; }
 
@@ -113,12 +102,12 @@ public:
             qReg->RY((real1_f)(PI_R1 / 2), outputIndex);
         }
 
-        if (inputCount == 0) {
+        if (!inputCount) {
             // If there are no controls, this "neuron" is actually just a bias.
-            qReg->RY((real1_f)(angles[0]), outputIndex);
+            qReg->RY((real1_f)(angles.get()[0U]), outputIndex);
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
-            qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, angles);
+            qReg->UniformlyControlledRY(inputIndices.get(), inputCount, outputIndex, angles.get());
         }
         real1_f prob = qReg->Prob(outputIndex);
         if (!expected) {
@@ -130,15 +119,14 @@ public:
     /** "Uncompute" the Predict() method */
     real1_f Unpredict(bool expected = true)
     {
-        if (inputCount == 0) {
+        if (!inputCount) {
             // If there are no controls, this "neuron" is actually just a bias.
-            qReg->RY((real1_f)(-angles[0]), outputIndex);
+            qReg->RY((real1_f)(-angles.get()[0U]), outputIndex);
         } else {
             // Otherwise, the action can always be represented as a uniformly controlled gate.
-            real1* reverseAngles = new real1[inputPower];
-            std::transform(angles, angles + inputPower, reverseAngles, [](real1 r) { return -r; });
-            qReg->UniformlyControlledRY(inputIndices, inputCount, outputIndex, reverseAngles);
-            delete[] reverseAngles;
+            std::unique_ptr<real1> reverseAngles = std::unique_ptr<real1>(new real1[inputPower]);
+            std::transform(angles.get(), angles.get() + inputPower, reverseAngles.get(), [](real1 r) { return -r; });
+            qReg->UniformlyControlledRY(inputIndices.get(), inputCount, outputIndex, reverseAngles.get());
         }
         real1_f prob = qReg->Prob(outputIndex);
         if (!expected) {
@@ -170,7 +158,7 @@ public:
             return;
         }
 
-        for (bitCapInt perm = 0; perm < inputPower; perm++) {
+        for (bitCapInt perm = 0U; perm < inputPower; perm++) {
             startProb = LearnInternal(expected, eta, perm, startProb);
             if (0 > startProb) {
                 break;
@@ -195,15 +183,15 @@ public:
             return;
         }
 
-        bitCapInt perm = 0;
-        for (bitLenInt i = 0; i < inputCount; i++) {
-            perm |= qReg->M(inputIndices[i]) ? pow2(i) : 0;
+        bitCapInt perm = 0U;
+        for (bitLenInt i = 0U; i < inputCount; i++) {
+            perm |= qReg->M(inputIndices.get()[i]) ? pow2(i) : 0U;
         }
 
         LearnInternal(expected, eta, perm, startProb);
 
-        for (bitLenInt i = 0; i < inputCount; i++) {
-            qReg->TrySeparate(inputIndices[i]);
+        for (bitLenInt i = 0U; i < inputCount; i++) {
+            qReg->TrySeparate(inputIndices.get()[i]);
         }
     }
 
@@ -214,10 +202,10 @@ protected:
         real1 endProb;
         real1 origAngle;
 
-        origAngle = angles[permOcl];
+        origAngle = angles.get()[permOcl];
 
         // Try positive angle increment:
-        angles[permOcl] += eta * PI_R1;
+        angles.get()[permOcl] += eta * PI_R1;
         endProb = LearnCycle(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1_F;
@@ -228,7 +216,7 @@ protected:
 
         // If positive angle increment is not an improvement,
         // try negative angle increment:
-        angles[permOcl] -= 2 * eta * PI_R1;
+        angles.get()[permOcl] -= 2 * eta * PI_R1;
         endProb = LearnCycle(expected);
         if ((ONE_R1 - endProb) <= tolerance) {
             return -ONE_R1_F;
@@ -239,7 +227,7 @@ protected:
 
         // If neither increment is an improvement,
         // restore the original variational parameter.
-        angles[permOcl] = origAngle;
+        angles.get()[permOcl] = origAngle;
 
         return (real1_f)startProb;
     }

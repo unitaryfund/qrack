@@ -30,7 +30,7 @@ public:
      * If the target qubit set parity is odd, this applies a phase factor of \f$e^{i angle}\f$. If the target qubit set
      * parity is even, this applies the conjugate, e^{-i angle}.
      */
-    virtual void UniformParityRZ(bitCapInt mask, real1_f angle) { CUniformParityRZ(NULL, 0, mask, angle); }
+    virtual void UniformParityRZ(bitCapInt mask, real1_f angle) { CUniformParityRZ(NULL, 0U, mask, angle); }
 
     /** Overall probability of any odd permutation of the masked set of bits */
     virtual real1_f ProbParity(bitCapInt mask) = 0;

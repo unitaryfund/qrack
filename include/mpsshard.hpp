@@ -7,14 +7,14 @@ struct MpsShard;
 typedef std::shared_ptr<MpsShard> MpsShardPtr;
 
 struct MpsShard {
-    complex gate[4];
+    complex gate[4U];
 
     MpsShard()
     {
-        gate[0] = ONE_CMPLX;
-        gate[1] = ZERO_CMPLX;
-        gate[2] = ZERO_CMPLX;
-        gate[3] = ONE_CMPLX;
+        gate[0U] = ONE_CMPLX;
+        gate[1U] = ZERO_CMPLX;
+        gate[2U] = ZERO_CMPLX;
+        gate[3U] = ONE_CMPLX;
     }
 
     MpsShard(const complex* g) { std::copy(g, g + 4, gate); }
@@ -23,33 +23,33 @@ struct MpsShard {
 
     void Compose(const complex* g)
     {
-        complex o[4];
-        std::copy(gate, gate + 4, o);
+        complex o[4U];
+        std::copy(gate, gate + 4U, o);
         mul2x2((complex*)g, o, gate);
     }
 
-    bool IsPhase() { return (norm(gate[1]) <= FP_NORM_EPSILON) && (norm(gate[2]) <= FP_NORM_EPSILON); }
+    bool IsPhase() { return (norm(gate[1U]) <= FP_NORM_EPSILON) && (norm(gate[2U]) <= FP_NORM_EPSILON); }
 
-    bool IsInvert() { return (norm(gate[0]) <= FP_NORM_EPSILON) && (norm(gate[3]) <= FP_NORM_EPSILON); }
+    bool IsInvert() { return (norm(gate[0U]) <= FP_NORM_EPSILON) && (norm(gate[3U]) <= FP_NORM_EPSILON); }
 
-    bool IsIdentity() { return IsPhase() && (norm(gate[0] - gate[3]) <= FP_NORM_EPSILON); }
+    bool IsIdentity() { return IsPhase() && (norm(gate[0U] - gate[3U]) <= FP_NORM_EPSILON); }
 
     bool IsX(bool randGlobalPhase = true)
     {
-        return IsInvert() && (norm(gate[1] - gate[2]) <= FP_NORM_EPSILON) &&
-            (randGlobalPhase || (norm(ONE_CMPLX - gate[1]) <= FP_NORM_EPSILON));
+        return IsInvert() && (norm(gate[1U] - gate[2U]) <= FP_NORM_EPSILON) &&
+            (randGlobalPhase || (norm(ONE_CMPLX - gate[1U]) <= FP_NORM_EPSILON));
     }
 
     bool IsY(bool randGlobalPhase = true)
     {
-        return IsInvert() && (norm(gate[1] + gate[2]) <= FP_NORM_EPSILON) &&
-            (randGlobalPhase || (norm(ONE_CMPLX + gate[1]) <= FP_NORM_EPSILON));
+        return IsInvert() && (norm(gate[1U] + gate[2U]) <= FP_NORM_EPSILON) &&
+            (randGlobalPhase || (norm(ONE_CMPLX + gate[1U]) <= FP_NORM_EPSILON));
     }
 
     bool IsZ(bool randGlobalPhase = true)
     {
-        return IsPhase() && (norm(gate[0] + gate[3]) <= FP_NORM_EPSILON) &&
-            (randGlobalPhase || (norm(ONE_CMPLX - gate[0]) <= FP_NORM_EPSILON));
+        return IsPhase() && (norm(gate[0U] + gate[3U]) <= FP_NORM_EPSILON) &&
+            (randGlobalPhase || (norm(ONE_CMPLX - gate[0U]) <= FP_NORM_EPSILON));
     }
 };
 

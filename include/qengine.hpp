@@ -58,7 +58,7 @@ public:
     /** Default constructor, primarily for protected internal use */
     QEngine()
         : useHostRam(false)
-        , maxQPowerOcl(0)
+        , maxQPowerOcl(0U)
         , runningNorm(ONE_R1)
     {
         // Intentionally left blank
@@ -113,7 +113,7 @@ public:
 
     virtual void ApplyM(bitCapInt qPower, bool result, complex nrm)
     {
-        bitCapInt powerTest = result ? qPower : 0;
+        bitCapInt powerTest = result ? qPower : 0U;
         ApplyM(qPower, powerTest, nrm);
     }
     virtual void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) = 0;

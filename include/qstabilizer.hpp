@@ -96,16 +96,16 @@ protected:
     bool TrimControls(const bitLenInt* lControls, bitLenInt lControlLen, bool isAnti, std::vector<bitLenInt>& output);
 
 public:
-    QStabilizer(bitLenInt n, bitCapInt perm = 0, qrack_rand_gen_ptr rgp = nullptr, complex ignored = CMPLX_DEFAULT_ARG,
+    QStabilizer(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr, complex ignored = CMPLX_DEFAULT_ARG,
         bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false, int ignored3 = -1,
         bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
-        std::vector<int> ignored6 = {}, bitLenInt ignored7 = 0, real1_f ignored8 = FP_NORM_EPSILON_F);
+        std::vector<int> ignored6 = {}, bitLenInt ignored7 = 0U, real1_f ignored8 = FP_NORM_EPSILON_F);
 
     QInterfacePtr Clone()
     {
         Finish();
 
-        QStabilizerPtr clone = std::make_shared<QStabilizer>(qubitCount, 0, rand_generator, CMPLX_DEFAULT_ARG, false,
+        QStabilizerPtr clone = std::make_shared<QStabilizer>(qubitCount, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,
             randGlobalPhase, false, -1, hardware_rand_generator != NULL);
         clone->Finish();
 
@@ -221,7 +221,7 @@ protected:
     void rowmult(const bitLenInt& i, const bitLenInt& k)
     {
         r[i] = clifford(i, k);
-        for (bitLenInt j = 0; j < qubitCount; j++) {
+        for (bitLenInt j = 0U; j < qubitCount; j++) {
             x[i][j] = x[i][j] ^ x[k][j];
             z[i][j] = z[i][j] ^ z[k][j];
         }
@@ -265,15 +265,16 @@ public:
             throw std::domain_error("QStabilizer::SetQuantumState() not generally implemented!");
         }
 
-        SetPermutation(0);
+        SetPermutation(0U);
 
-        const real1 prob = (real1)clampProb((real1_f)norm(inputState[1]));
+        const real1 prob = (real1)clampProb((real1_f)norm(inputState[1U]));
         const real1 sqrtProb = sqrt(prob);
         const real1 sqrt1MinProb = (real1)sqrt(clampProb((real1_f)(ONE_R1 - prob)));
-        const complex phase0 = std::polar(ONE_R1, arg(inputState[0]));
-        const complex phase1 = std::polar(ONE_R1, arg(inputState[1]));
-        const complex mtrx[4] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
-        Mtrx(mtrx, 0);
+        const complex phase0 = std::polar(ONE_R1, arg(inputState[0U]));
+        const complex phase1 = std::polar(ONE_R1, arg(inputState[1U]));
+        const complex mtrx[4U] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1,
+            -sqrt1MinProb * phase1 };
+        Mtrx(mtrx, 0U);
     }
     void SetAmplitude(bitCapInt perm, complex amp)
     {
@@ -410,13 +411,13 @@ public:
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
     void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {
-        if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-            MCPhase(controls, controlLen, mtrx[0], mtrx[3], target);
+        if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
+            MCPhase(controls, controlLen, mtrx[0U], mtrx[3U], target);
             return;
         }
 
-        if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-            MCInvert(controls, controlLen, mtrx[1], mtrx[2], target);
+        if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
+            MCInvert(controls, controlLen, mtrx[1U], mtrx[2U], target);
             return;
         }
 
@@ -424,13 +425,13 @@ public:
     }
     void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target)
     {
-        if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-            MACPhase(controls, controlLen, mtrx[0], mtrx[3], target);
+        if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
+            MACPhase(controls, controlLen, mtrx[0U], mtrx[3U], target);
             return;
         }
 
-        if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-            MACInvert(controls, controlLen, mtrx[1], mtrx[2], target);
+        if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
+            MACInvert(controls, controlLen, mtrx[1U], mtrx[2U], target);
             return;
         }
 
