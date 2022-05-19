@@ -33,13 +33,13 @@ QMaskFusion::QMaskFusion(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
     , separabilityThreshold(sep_thresh)
     , zxShards(qBitCount)
 {
-    if ((engTypes[0] == QINTERFACE_HYBRID) || (engTypes[0] == QINTERFACE_OPENCL)) {
+    if ((engTypes[0U] == QINTERFACE_HYBRID) || (engTypes[0U] == QINTERFACE_OPENCL)) {
 #if ENABLE_OPENCL
         if (!OCLEngine::Instance().GetDeviceCount()) {
-            engTypes[0] = QINTERFACE_CPU;
+            engTypes[0U] = QINTERFACE_CPU;
         }
 #else
-        engTypes[0] = QINTERFACE_CPU;
+        engTypes[0U] = QINTERFACE_CPU;
 #endif
     }
 
@@ -57,7 +57,7 @@ QInterfacePtr QMaskFusion::Clone()
 {
     FlushBuffers();
 
-    QMaskFusionPtr c = std::make_shared<QMaskFusion>(engTypes, qubitCount, 0, rand_generator, phaseFactor, doNormalize,
+    QMaskFusionPtr c = std::make_shared<QMaskFusion>(engTypes, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
         randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, devices, thresholdQubits,
         separabilityThreshold);
     c->engine = std::dynamic_pointer_cast<QEngine>(engine->Clone());
@@ -154,38 +154,38 @@ void QMaskFusion::Invert(complex topRight, complex bottomLeft, bitLenInt target)
 
 void QMaskFusion::Mtrx(const complex* lMtrx, bitLenInt target)
 {
-    complex mtrx[4] = { lMtrx[0], lMtrx[1], lMtrx[2], lMtrx[3] };
+    complex mtrx[4U] = { lMtrx[0U], lMtrx[1U], lMtrx[2U], lMtrx[3U] };
 
     if (zxShards[target].isX) {
         zxShards[target].isX = false;
-        std::swap(mtrx[0], mtrx[1]);
-        std::swap(mtrx[2], mtrx[3]);
+        std::swap(mtrx[0U], mtrx[1U]);
+        std::swap(mtrx[2U], mtrx[3U]);
     }
 
     if (zxShards[target].isZ) {
         zxShards[target].isZ = false;
-        mtrx[1] = -mtrx[1];
-        mtrx[3] = -mtrx[3];
+        mtrx[1U] = -mtrx[1U];
+        mtrx[3U] = -mtrx[3U];
     }
 
     switch (zxShards[target].phase) {
     case 1U:
-        mtrx[0] *= I_CMPLX;
-        mtrx[1] *= I_CMPLX;
-        mtrx[2] *= I_CMPLX;
-        mtrx[3] *= I_CMPLX;
+        mtrx[0U] *= I_CMPLX;
+        mtrx[1U] *= I_CMPLX;
+        mtrx[2U] *= I_CMPLX;
+        mtrx[3U] *= I_CMPLX;
         break;
     case 2U:
-        mtrx[0] *= -ONE_CMPLX;
-        mtrx[1] *= -ONE_CMPLX;
-        mtrx[2] *= -ONE_CMPLX;
-        mtrx[3] *= -ONE_CMPLX;
+        mtrx[0U] *= -ONE_CMPLX;
+        mtrx[1U] *= -ONE_CMPLX;
+        mtrx[2U] *= -ONE_CMPLX;
+        mtrx[3U] *= -ONE_CMPLX;
         break;
     case 3U:
-        mtrx[0] *= -I_CMPLX;
-        mtrx[1] *= -I_CMPLX;
-        mtrx[2] *= -I_CMPLX;
-        mtrx[3] *= -I_CMPLX;
+        mtrx[0U] *= -I_CMPLX;
+        mtrx[1U] *= -I_CMPLX;
+        mtrx[2U] *= -I_CMPLX;
+        mtrx[3U] *= -I_CMPLX;
         break;
     default:
         // Identity
@@ -193,13 +193,13 @@ void QMaskFusion::Mtrx(const complex* lMtrx, bitLenInt target)
     }
     zxShards[target].phase = 0U;
 
-    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        Phase(mtrx[0], mtrx[3], target);
+    if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
+        Phase(mtrx[0U], mtrx[3U], target);
         return;
     }
 
-    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        Invert(mtrx[1], mtrx[2], target);
+    if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
+        Invert(mtrx[1U], mtrx[2U], target);
         return;
     }
 

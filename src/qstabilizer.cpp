@@ -43,8 +43,8 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     , z((n << 1U) + 1U, BoolVector(n, false))
     , r((n << 1U) + 1U)
     , phaseOffset(ONE_CMPLX)
-    , rawRandBools(0)
-    , rawRandBoolsRemaining(0)
+    , rawRandBools(0U)
+    , rawRandBoolsRemaining(0U)
 {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #if ENABLE_ENV_VARS
@@ -61,7 +61,7 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
 bool QStabilizer::TrimControls(
     const bitLenInt* lControls, bitLenInt lControlLen, bool isAnti, std::vector<bitLenInt>& output)
 {
-    for (bitLenInt i = 0; i < lControlLen; i++) {
+    for (bitLenInt i = 0U; i < lControlLen; i++) {
         const bitLenInt bit = lControls[i];
         if (!IsSeparableZ(bit)) {
             output.push_back(bit);
@@ -85,7 +85,7 @@ void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
 
     const bitLenInt rowCount = (qubitCount << 1U);
 
-    std::fill(r.begin(), r.end(), 0);
+    std::fill(r.begin(), r.end(), 0U);
 
     for (bitLenInt i = 0; i < rowCount; i++) {
         // Dealloc, first
@@ -107,8 +107,8 @@ void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
         return;
     }
 
-    for (bitLenInt j = 0; j < qubitCount; j++) {
-        if ((perm >> j) & 1) {
+    for (bitLenInt j = 0U; j < qubitCount; j++) {
+        if ((perm >> j) & 1U) {
             X(j);
         }
     }
@@ -120,7 +120,7 @@ uint8_t QStabilizer::clifford(const bitLenInt& i, const bitLenInt& k)
     // Power to which i is raised
     bitLenInt e = 0U;
 
-    for (bitLenInt j = 0; j < qubitCount; j++) {
+    for (bitLenInt j = 0U; j < qubitCount; j++) {
         // X
         if (x[k][j] && !z[k][j]) {
             // XY=iZ
@@ -163,7 +163,7 @@ bitLenInt QStabilizer::gaussian()
     bitLenInt i = n;
     bitLenInt k;
 
-    for (bitLenInt j = 0; j < n; j++) {
+    for (bitLenInt j = 0U; j < n; j++) {
 
         // Find a generator containing X in jth column
         for (k = i; k < maxLcv; k++) {
@@ -188,7 +188,7 @@ bitLenInt QStabilizer::gaussian()
 
     const bitLenInt g = i - n;
 
-    for (bitLenInt j = 0; j < n; j++) {
+    for (bitLenInt j = 0U; j < n; j++) {
 
         // Find a generator containing Z in jth column
         for (k = i; k < maxLcv; k++) {
@@ -224,7 +224,7 @@ void QStabilizer::seed(const bitLenInt& g)
     int min = 0;
 
     // Wipe the scratch space clean
-    r[elemCount] = 0;
+    r[elemCount] = 0U;
 
     // Dealloc, first
     x[elemCount] = BoolVector();
@@ -239,7 +239,7 @@ void QStabilizer::seed(const bitLenInt& g)
             if (z[i][j]) {
                 min = j;
                 if (x[elemCount][j]) {
-                    f = (f + 2U) & 0x3;
+                    f = (f + 2) & 0x3;
                 }
             }
         }
@@ -258,7 +258,7 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
     const bitLenInt elemCount = qubitCount << 1U;
     uint8_t e = r[elemCount];
 
-    for (bitLenInt j = 0; j < qubitCount; j++) {
+    for (bitLenInt j = 0U; j < qubitCount; j++) {
         // Pauli operator is "Y"
         if (x[elemCount][j] && z[elemCount][j]) {
             e = (e + 1U) & 0x3U;
@@ -266,16 +266,16 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
     }
 
     complex amp((real1)nrm, ZERO_R1);
-    if (e & 1) {
+    if (e & 1U) {
         amp *= I_CMPLX;
     }
-    if (e & 2) {
+    if (e & 2U) {
         amp *= -ONE_CMPLX;
     }
     amp *= phaseOffset;
 
-    bitCapIntOcl perm = 0;
-    for (bitLenInt j = 0; j < qubitCount; j++) {
+    bitCapIntOcl perm = 0U;
+    for (bitLenInt j = 0U; j < qubitCount; j++) {
         if (x[elemCount][j]) {
             perm |= pow2Ocl(j);
         }
@@ -329,9 +329,9 @@ real1_f QStabilizer::FirstNonzeroPhase()
     if (entry0.amplitude != ZERO_CMPLX) {
         return (real1_f)std::arg(entry0.amplitude);
     }
-    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+    for (bitCapIntOcl t = 0U; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1U);
-        for (bitLenInt i = 0; i < g; i++) {
+        for (bitLenInt i = 0U; i < g; i++) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
             }
@@ -363,9 +363,9 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     std::fill(stateVec, stateVec + pow2Ocl(qubitCount), ZERO_CMPLX);
 
     setBasisState(nrm, stateVec, NULL);
-    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+    for (bitCapIntOcl t = 0U; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1U);
-        for (bitLenInt i = 0; i < g; i++) {
+        for (bitLenInt i = 0U; i < g; i++) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
             }
@@ -389,13 +389,13 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
     seed(g);
 
     // init stateVec as all 0 values
-    eng->SetPermutation(0);
-    eng->SetAmplitude(0, ZERO_CMPLX);
+    eng->SetPermutation(0U);
+    eng->SetAmplitude(0U, ZERO_CMPLX);
 
     setBasisState(nrm, NULL, eng);
-    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+    for (bitCapIntOcl t = 0U; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1U);
-        for (bitLenInt i = 0; i < g; i++) {
+        for (bitLenInt i = 0U; i < g; i++) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
             }
@@ -422,9 +422,9 @@ void QStabilizer::GetProbs(real1* outputProbs)
     std::fill(outputProbs, outputProbs + pow2Ocl(qubitCount), ZERO_R1);
 
     setBasisProb(nrm, outputProbs);
-    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+    for (bitCapIntOcl t = 0U; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1U);
-        for (bitLenInt i = 0; i < g; i++) {
+        for (bitLenInt i = 0U; i < g; i++) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
             }
@@ -451,9 +451,9 @@ complex QStabilizer::GetAmplitude(bitCapInt perm)
     if (entry.permutation == perm) {
         return entry.amplitude;
     }
-    for (bitCapIntOcl t = 0; t < permCountMin1; t++) {
+    for (bitCapIntOcl t = 0U; t < permCountMin1; t++) {
         bitCapIntOcl t2 = t ^ (t + 1U);
-        for (bitLenInt i = 0; i < g; i++) {
+        for (bitLenInt i = 0U; i < g; i++) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
             }
@@ -694,7 +694,7 @@ bool QStabilizer::IsSeparableZ(const bitLenInt& t)
     const bitLenInt n = qubitCount;
 
     // loop over stabilizer generators
-    for (bitLenInt p = 0; p < n; p++) {
+    for (bitLenInt p = 0U; p < n; p++) {
         // if a Zbar does NOT commute with Z_b (the operator being measured), then outcome is random
         if (x[p + n][t]) {
             return false;
@@ -738,18 +738,18 @@ bool QStabilizer::IsSeparableY(const bitLenInt& t)
 uint8_t QStabilizer::IsSeparable(const bitLenInt& t)
 {
     if (IsSeparableZ(t)) {
-        return 1;
+        return 1U;
     }
 
     if (IsSeparableX(t)) {
-        return 2;
+        return 2U;
     }
 
     if (IsSeparableY(t)) {
-        return 3;
+        return 3U;
     }
 
-    return 0;
+    return 0U;
 }
 
 /// Measure qubit t
@@ -771,7 +771,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
     bitLenInt m;
 
     // loop over stabilizer generators
-    for (p = 0; p < n; p++) {
+    for (p = 0U; p < n; p++) {
         // if a Zbar does NOT commute with Z_b (the operator being measured), then outcome is random
         if (x[p + n][t]) {
             // The outcome is random
@@ -797,7 +797,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 
         r[p + n] = result ? 2U : 0U;
         // Now update the Xbar's and Zbar's that don't commute with Z_b
-        for (bitLenInt i = 0; i < p; i++) {
+        for (bitLenInt i = 0U; i < p; i++) {
             if (x[i][t]) {
                 rowmult(i, p);
             }
@@ -816,7 +816,7 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 
     // Before, we were checking if stabilizer generators commute with Z_b; now, we're checking destabilizer
     // generators
-    for (m = 0; m < n; m++) {
+    for (m = 0U; m < n; m++) {
         if (x[m][t]) {
             break;
         }
@@ -856,9 +856,9 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     const bitLenInt endLength = qubitCount - start;
     const bitLenInt secondStart = nQubitCount + start;
     const bitLenInt dLen = length << 1U;
-    const BoolVector row(length, 0);
+    const BoolVector row(length, false);
 
-    for (bitLenInt i = 0; i < rowCount; i++) {
+    for (bitLenInt i = 0U; i < rowCount; i++) {
         x[i].insert(x[i].begin() + start, row.begin(), row.end());
         z[i].insert(z[i].begin() + start, row.begin(), row.end());
     }
@@ -866,7 +866,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     x.insert(x.begin() + start, toCopy->x.begin(), toCopy->x.begin() + length);
     z.insert(z.begin() + start, toCopy->z.begin(), toCopy->z.begin() + length);
     r.insert(r.begin() + start, toCopy->r.begin(), toCopy->r.begin() + length);
-    for (bitLenInt i = 0; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; i++) {
         const bitLenInt offset = start + i;
         x[offset].insert(x[offset].begin(), start, false);
         x[offset].insert(x[offset].end(), endLength, false);
@@ -877,7 +877,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
     x.insert(x.begin() + secondStart, toCopy->x.begin() + length, toCopy->x.begin() + dLen);
     z.insert(z.begin() + secondStart, toCopy->z.begin() + length, toCopy->z.begin() + dLen);
     r.insert(r.begin() + secondStart, toCopy->r.begin() + length, toCopy->r.begin() + dLen);
-    for (bitLenInt i = 0; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; i++) {
         const bitLenInt offset = secondStart + i;
         x[offset].insert(x[offset].begin(), start, false);
         x[offset].insert(x[offset].end(), endLength, false);
@@ -891,7 +891,7 @@ bitLenInt QStabilizer::Compose(QStabilizerPtr toCopy, bitLenInt start)
 }
 QInterfacePtr QStabilizer::Decompose(bitLenInt start, bitLenInt length)
 {
-    QStabilizerPtr dest = std::make_shared<QStabilizer>(qubitCount, 0, rand_generator, CMPLX_DEFAULT_ARG, false,
+    QStabilizerPtr dest = std::make_shared<QStabilizer>(qubitCount, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,
         randGlobalPhase, false, -1, hardware_rand_generator != NULL);
     Decompose(start, dest);
 
@@ -911,7 +911,7 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
 
     const bitLenInt end = start + length;
 
-    for (bitLenInt i = 0; i < start; i++) {
+    for (bitLenInt i = 0U; i < start; i++) {
         bitLenInt i2 = i + qubitCount;
         for (bitLenInt j = start; j < end; j++) {
             if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
@@ -931,7 +931,7 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
 
     for (bitLenInt i = start; i < end; i++) {
         bitLenInt i2 = i + qubitCount;
-        for (bitLenInt j = 0; j < start; j++) {
+        for (bitLenInt j = 0U; j < start; j++) {
             if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
             }
@@ -948,7 +948,7 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
 
 void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length, QStabilizerPtr dest)
 {
-    if (length == 0) {
+    if (!length) {
         return;
     }
 
@@ -970,7 +970,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
     const bitLenInt secondEnd = nQubitCount + end;
 
     if (dest) {
-        for (bitLenInt i = 0; i < length; i++) {
+        for (bitLenInt i = 0U; i < length; i++) {
             bitLenInt j = start + i;
             std::copy(x[j].begin() + start, x[j].begin() + end, dest->x[i].begin());
             std::copy(z[j].begin() + start, z[j].begin() + end, dest->z[i].begin());
@@ -996,7 +996,7 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
 
     const bitLenInt rowCount = (qubitCount << 1U) + 1U;
 
-    for (bitLenInt i = 0; i < rowCount; i++) {
+    for (bitLenInt i = 0U; i < rowCount; i++) {
         x[i].erase(x[i].begin() + start, x[i].begin() + end);
         z[i].erase(z[i].begin() + start, z[i].begin() + end);
     }
@@ -1066,136 +1066,147 @@ real1_f QStabilizer::Prob(bitLenInt qubit)
 
 void QStabilizer::Mtrx(const complex* mtrx, bitLenInt target)
 {
-    if (IS_NORM_0(mtrx[1]) && IS_NORM_0(mtrx[2])) {
-        Phase(mtrx[0], mtrx[3], target);
+    if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) {
+        Phase(mtrx[0U], mtrx[3U], target);
         return;
     }
 
-    if (IS_NORM_0(mtrx[0]) && IS_NORM_0(mtrx[3])) {
-        Invert(mtrx[1], mtrx[2], target);
+    if (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])) {
+        Invert(mtrx[1U], mtrx[2U], target);
         return;
     }
 
-    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+    if (IS_SAME(mtrx[0U], mtrx[1U]) && IS_SAME(mtrx[0U], mtrx[2U]) && IS_SAME(mtrx[0U], -mtrx[3U])) {
         H(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+    if (IS_SAME(mtrx[0U], mtrx[1U]) && IS_SAME(mtrx[0U], -mtrx[2U]) && IS_SAME(mtrx[0U], mtrx[3U])) {
         X(target);
         H(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
+    if (IS_SAME(mtrx[0U], -mtrx[1U]) && IS_SAME(mtrx[0U], mtrx[2U]) && IS_SAME(mtrx[0U], mtrx[3U])) {
         H(target);
         X(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+    if (IS_SAME(mtrx[0U], -mtrx[1U]) && IS_SAME(mtrx[0U], -mtrx[2U]) && IS_SAME(mtrx[0U], -mtrx[3U])) {
         X(target);
         H(target);
         X(target);
         // Reverses sign
-        phaseOffset *= -mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= -mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+    if (IS_SAME(mtrx[0U], mtrx[1U]) && IS_SAME(mtrx[0U], -I_CMPLX * mtrx[2U]) &&
+        IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U])) {
         H(target);
         S(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+    if (IS_SAME(mtrx[0U], mtrx[1U]) && IS_SAME(mtrx[0U], I_CMPLX * mtrx[2U]) &&
+        IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U])) {
         H(target);
         IS(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+    if (IS_SAME(mtrx[0U], -mtrx[1U]) && IS_SAME(mtrx[0U], I_CMPLX * mtrx[2U]) &&
+        IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U])) {
         H(target);
         X(target);
         IS(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], -mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+    if (IS_SAME(mtrx[0U], -mtrx[1U]) && IS_SAME(mtrx[0U], -I_CMPLX * mtrx[2U]) &&
+        IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U])) {
         H(target);
         X(target);
         S(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+    if (IS_SAME(mtrx[0U], I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], mtrx[2U]) &&
+        IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U])) {
         IS(target);
         H(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
+    if (IS_SAME(mtrx[0U], -I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], mtrx[2U]) &&
+        IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U])) {
         S(target);
         H(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[3])) {
+    if (IS_SAME(mtrx[0U], -I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], -mtrx[2U]) &&
+        IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U])) {
         IS(target);
-        H(target);
-        X(target);
-        Z(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
-        return;
-    }
-
-    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -mtrx[2]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[3])) {
-        S(target);
         H(target);
         X(target);
         Z(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
-        IS(target);
+    if (IS_SAME(mtrx[0U], I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], -mtrx[2U]) &&
+        IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U])) {
+        S(target);
         H(target);
-        IS(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        X(target);
+        Z(target);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], mtrx[3])) {
-        S(target);
+    if (IS_SAME(mtrx[0U], I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], I_CMPLX * mtrx[2U]) && IS_SAME(mtrx[0U], mtrx[3U])) {
+        IS(target);
         H(target);
-        S(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        IS(target);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], -I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
-        IS(target);
+    if (IS_SAME(mtrx[0U], -I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], -I_CMPLX * mtrx[2U]) &&
+        IS_SAME(mtrx[0U], mtrx[3U])) {
+        S(target);
         H(target);
         S(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
-    if (IS_SAME(mtrx[0], -I_CMPLX * mtrx[1]) && IS_SAME(mtrx[0], I_CMPLX * mtrx[2]) && IS_SAME(mtrx[0], -mtrx[3])) {
+    if (IS_SAME(mtrx[0U], I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], -I_CMPLX * mtrx[2U]) &&
+        IS_SAME(mtrx[0U], -mtrx[3U])) {
+        IS(target);
+        H(target);
+        S(target);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
+        return;
+    }
+
+    if (IS_SAME(mtrx[0U], -I_CMPLX * mtrx[1U]) && IS_SAME(mtrx[0U], I_CMPLX * mtrx[2U]) &&
+        IS_SAME(mtrx[0U], -mtrx[3U])) {
         S(target);
         H(target);
         IS(target);
-        phaseOffset *= mtrx[0] / std::abs(mtrx[0]);
+        phaseOffset *= mtrx[0U] / std::abs(mtrx[0U]);
         return;
     }
 
@@ -1305,7 +1316,7 @@ void QStabilizer::MCPhase(
             "QStabilizer::MCPhase() not implemented for non-Clifford/Pauli cases! (Too many controls)");
     }
 
-    const bitLenInt control = controls[0];
+    const bitLenInt control = controls[0U];
 
     if (IS_SAME(topLeft, ONE_CMPLX)) {
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
@@ -1387,7 +1398,7 @@ void QStabilizer::MACPhase(
             "QStabilizer::MACPhase() not implemented for non-Clifford/Pauli cases! (Too many controls)");
     }
 
-    const bitLenInt control = controls[0];
+    const bitLenInt control = controls[0U];
 
     if (IS_SAME(topLeft, ONE_CMPLX)) {
         if (IS_SAME(bottomRight, ONE_CMPLX)) {
@@ -1455,7 +1466,7 @@ void QStabilizer::MCInvert(
             "QStabilizer::MCInvert() not implemented for non-Clifford/Pauli cases! (Too many controls)");
     }
 
-    const bitLenInt control = controls[0];
+    const bitLenInt control = controls[0U];
 
     if (IS_SAME(topRight, ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
@@ -1521,7 +1532,7 @@ void QStabilizer::MACInvert(
             "QStabilizer::MACInvert() not implemented for non-Clifford/Pauli cases! (Too many controls)");
     }
 
-    const bitLenInt control = controls[0];
+    const bitLenInt control = controls[0U];
 
     if (IS_SAME(topRight, ONE_CMPLX)) {
         if (IS_SAME(bottomLeft, ONE_CMPLX)) {
@@ -1571,17 +1582,17 @@ void QStabilizer::MACInvert(
 
 void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
-    bitLenInt controls[1] = { qubit1 };
+    bitLenInt controls[1U] = { qubit1 };
     real1 sinTheta = (real1)sin(theta);
 
     if (IS_0_R1(sinTheta)) {
-        MCPhase(controls, 1, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        MCPhase(controls, 1U, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         return;
     }
 
     if (IS_1_R1(-sinTheta)) {
         ISwap(qubit1, qubit2);
-        MCPhase(controls, 1, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
+        MCPhase(controls, 1U, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
         return;
     }
 

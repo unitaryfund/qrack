@@ -25,7 +25,7 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     , separabilityThreshold(sep_thresh)
     , deviceIDs(devList)
 {
-    if (qubitThreshold != 0) {
+    if (qubitThreshold) {
         gpuThresholdQubits = qubitThreshold;
     } else {
         bitLenInt gpuQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
@@ -63,7 +63,7 @@ QEnginePtr QHybrid::MakeEngine(bool isOpenCL)
 QInterfacePtr QHybrid::Clone()
 {
     QHybridPtr c =
-        std::make_shared<QHybrid>(qubitCount, 0, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam,
+        std::make_shared<QHybrid>(qubitCount, 0U, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam,
             devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, gpuThresholdQubits, separabilityThreshold);
     c->runningNorm = runningNorm;
     c->SetConcurrency(GetConcurrencyLevel());
