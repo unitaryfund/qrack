@@ -168,8 +168,8 @@ public:
     cl::Platform platform;
     cl::Device device;
     cl::Context context;
-    int context_id;
-    int device_id;
+    int64_t context_id;
+    int64_t device_id;
     cl::CommandQueue queue;
     EventVecPtr wait_events;
 
@@ -187,14 +187,14 @@ private:
     size_t preferredConcurrency;
 
 public:
-    OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int dev_id, int cntxt_id)
+    OCLDeviceContext(cl::Platform& p, cl::Device& d, cl::Context& c, int64_t dev_id, int64_t cntxt_id)
         : platform(p)
         , device(d)
         , context(c)
         , context_id(cntxt_id)
         , device_id(dev_id)
-        , preferredSizeMultiple(0)
-        , preferredConcurrency(0)
+        , preferredSizeMultiple(0U)
+        , preferredConcurrency(0U)
     {
         cl_int error;
         queue = cl::CommandQueue(context, d, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, &error);
