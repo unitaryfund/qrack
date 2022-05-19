@@ -337,7 +337,7 @@ public:
     static InitOClResult InitOCL(bool buildFromSource = false, bool saveBinaries = false, std::string home = "*");
 
     /// Get a pointer one of the available OpenCL contexts, by its index in the list of all contexts.
-    DeviceContextPtr GetDeviceContextPtr(const int& dev = -1);
+    DeviceContextPtr GetDeviceContextPtr(const int64_t& dev = -1);
     /// Get the list of all available devices (and their supporting objects).
     std::vector<DeviceContextPtr> GetDeviceContextPtrVector();
     /** Set the list of DeviceContextPtr object available for use. If one takes the result of
@@ -353,11 +353,11 @@ public:
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
     /// Get default location for precompiled binaries:
     size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
-    size_t GetActiveAllocSize(const int& dev)
+    size_t GetActiveAllocSize(const int64_t& dev)
     {
         return (dev < 0) ? activeAllocSizes[GetDefaultDeviceID()] : activeAllocSizes[(size_t)dev];
     }
-    size_t AddToActiveAllocSize(const int& dev, size_t size)
+    size_t AddToActiveAllocSize(const int64_t& dev, size_t size)
     {
         if (dev < -1) {
             throw std::runtime_error("Invalid device selection: " + std::to_string(dev));
@@ -373,7 +373,7 @@ public:
 
         return activeAllocSizes[lDev];
     }
-    size_t SubtractFromActiveAllocSize(const int& dev, size_t size)
+    size_t SubtractFromActiveAllocSize(const int64_t& dev, size_t size)
     {
         if (dev < -1) {
             throw std::runtime_error("Invalid device selection: " + std::to_string(dev));
@@ -392,7 +392,7 @@ public:
         }
         return activeAllocSizes[lDev];
     }
-    void ResetActiveAllocSize(const int& dev)
+    void ResetActiveAllocSize(const int64_t& dev)
     {
         int lDev = (dev == -1) ? GetDefaultDeviceID() : dev;
         std::lock_guard<std::mutex> lock(allocMutex);
@@ -421,8 +421,6 @@ private:
         std::shared_ptr<OCLDeviceContext> devCntxt);
     /// Save the program binary:
     static void SaveBinary(cl::Program program, std::string path, std::string fileName);
-
-    unsigned long PowerOf2LessThan(unsigned long number);
 };
 
 } // namespace Qrack

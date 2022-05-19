@@ -50,7 +50,7 @@ namespace Qrack {
 /// "Qrack::OCLEngine" manages the single OpenCL context
 
 // Public singleton methods to get pointers to various methods
-DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int& dev)
+DeviceContextPtr OCLEngine::GetDeviceContextPtr(const int64_t& dev)
 {
     if ((dev >= GetDeviceCount()) || (dev < -1)) {
         throw "Invalid OpenCL device selection";
@@ -168,11 +168,9 @@ cl::Program OCLEngine::MakeProgram(
         if (fstat(fileno(clBinFile), &statSize)) {
             std::cout << "Binary error: Invalid file fstat result. (Falling back to JIT.)" << std::endl;
         } else {
-            unsigned long lSize = statSize.st_size;
-            unsigned long lSizeResult;
-
+            size_t lSize = statSize.st_size;
             std::vector<unsigned char> buffer(lSize);
-            lSizeResult = fread(&buffer[0U], sizeof(unsigned char), lSize, clBinFile);
+            size_t lSizeResult = fread(&buffer[0U], sizeof(unsigned char), lSize, clBinFile);
             fclose(clBinFile);
 
             if (lSizeResult != lSize) {
@@ -183,7 +181,7 @@ cl::Program OCLEngine::MakeProgram(
 
 #if defined(__APPLE__) || (defined(_WIN32) && !defined(__CYGWIN__)) || ENABLE_SNUCL
             program = cl::Program(devCntxt->context, { devCntxt->device },
-                { std::pair<const void*, unsigned long>(&buffer[0U], buffer.size()) }, &binaryStatus, &buildError);
+                { std::pair<const void*, size_t>(&buffer[0U], buffer.size()) }, &binaryStatus, &buildError);
 #else
             program = cl::Program(devCntxt->context, { devCntxt->device }, { buffer }, &binaryStatus, &buildError);
 #endif
@@ -210,9 +208,9 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
 {
     std::vector<size_t> clBinSizes = program.getInfo<CL_PROGRAM_BINARY_SIZES>();
     size_t clBinSize = 0U;
-    int clBinIndex = 0;
+    int64_t clBinIndex = 0;
 
-    for (unsigned int i = 0U; i < clBinSizes.size(); i++) {
+    for (size_t i = 0U; i < clBinSizes.size(); i++) {
         if (clBinSizes[i]) {
             clBinSize = clBinSizes[i];
             clBinIndex = i;
@@ -254,7 +252,7 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
 
     std::vector<cl::Platform> all_platforms;
     std::vector<cl::Device> all_devices;
-    std::vector<int> device_platform_id;
+    std::vector<int64_t> device_platform_id;
     cl::Platform default_platform;
     cl::Device default_device;
     std::vector<DeviceContextPtr> all_dev_contexts;
@@ -289,10 +287,9 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         return InitOClResult();
     }
 
-    int deviceCount = all_devices.size();
-
+    int64_t deviceCount = all_devices.size();
     // prefer the last device because that's usually a GPU or accelerator; device[0U] is usually the CPU
-    int dev = deviceCount - 1;
+    int64_t dev = deviceCount - 1;
     if (getenv("QRACK_OCL_DEFAULT_DEVICE")) {
         dev = std::stoi(std::string(getenv("QRACK_OCL_DEFAULT_DEVICE")));
         if ((dev < 0) || (dev > (deviceCount - 1))) {
@@ -334,10 +331,10 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
 #endif
 #endif
 
-    int plat_id = -1;
+    int64_t plat_id = -1;
     std::vector<cl::Context> all_contexts;
     std::vector<std::string> all_filenames;
-    for (int i = 0; i < deviceCount; i++) {
+    for (int64_t i = 0; i < deviceCount; i++) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
         if (device_platform_id[i] != plat_id) {
@@ -397,7 +394,7 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
     std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
     std::cout << "Default device: #" << dev << ", " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
-    for (int i = 0; i < deviceCount; i++) {
+    for (int64_t i = 0; i < deviceCount; i++) {
         std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
 
