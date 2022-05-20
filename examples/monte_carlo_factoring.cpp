@@ -171,6 +171,7 @@ int main()
                     bitCapInt y = 0U;
                     for (unsigned long long i = 0; i < (maxLongLongs - 1U); i++) {
                         y |= ((bitCapInt)(mid_dist(rand_gen))) << (i * 64U);
+
                     }
                     y |= ((bitCapInt)(last_dist(rand_gen))) << ((maxLongLongs - 1U) * 64U);
                     y++;
