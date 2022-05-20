@@ -68,7 +68,7 @@
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
 inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
 
-inline bitLenInt log2(bitCapInt n)
+inline bitLenInt log2(const bitCapInt& n)
 {
     bitLenInt pow = 0;
     bitCapInt p = n >> 1U;
@@ -79,7 +79,7 @@ inline bitLenInt log2(bitCapInt n)
     return pow;
 }
 
-bitCapInt gcd(bitCapInt n1, bitCapInt n2)
+bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
 {
     if (n2 == 0)
         return n1;
