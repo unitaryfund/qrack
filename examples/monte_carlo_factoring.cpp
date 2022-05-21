@@ -168,9 +168,8 @@ int main()
     std::vector<rand_dist> toFactorDist;
     bitCapInt distPart = toFactor - 2U;
     while (distPart) {
-        const uint64_t randRemainder = (uint64_t)(distPart % maxPow);
+        toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart % maxPow)));
         distPart >>= wordSize;
-        toFactorDist.push_back(rand_dist(0U, randRemainder));
     }
     std::reverse(toFactorDist.begin(), toFactorDist.end());
 
@@ -189,7 +188,7 @@ int main()
             for (;;) {
                 for (uint64_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
                     // Choose a base at random, >1 and <toFactor.
-                    // Construct a random number from 2
+                    // Construct a random number
                     bitCapInt base = toFactorDist[0](rand_gen);
                     for (size_t i = 1U; i < toFactorDist.size(); i++) {
                         base <<= wordSize;
@@ -215,26 +214,21 @@ int main()
                     // If we try many times, though, this can be a practically valuable factoring method.
 
                     // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
-                    // y is meant to be close to some number 2^(qubitCount) / r, where "r" is the period.
-                    // const bitCapInt minR = intLog(base, toFactor);
-                    // const bitCapInt maxY = (qubitPower / minR);
-                            
-                    // std::vector<rand_dist> yDist;
-                    // bitCapInt yPart = maxY - 1U;
-                    // while (yPart) {
-                    //     const uint64_t randRemainder = (uint64_t)(yPart % maxPow);
-                    //     yPart >>= wordSize;
-                    //     yDist.push_back(rand_dist(0U, randRemainder));
-                    // }
-                    // std::reverse(yDist.begin(), yDist.end());*/
-
-                    // Construct a random number from 2
-                    bitCapInt y = toFactorDist[0](rand_gen);
-                    for (size_t i = 1U; i < toFactorDist.size(); i++) {
-                        y <<= wordSize;
-                        y |= toFactorDist[i](rand_gen);
+                    const bitCapInt minR = intLog(base, toFactor);
+                    // y is meant to be close to some number c * qubitPower / r, where "r" is the period.
+                    // c is a positive integer or 0, and we don't want the 0 case.
+                    // y is truncated by the number of qubits in the register, at most.
+                    // The maximum value of c before truncation is no higher than r.
+                    // Based on the above, y is between minR and qubitPower.
+                    const bitCapInt yRange = qubitPower - minR;
+                    bitCapInt yPart = yRange;
+                    bitCapInt y = 0;
+                    while (y) {
+                        rand_dist yDist(0, (uint64_t)(yPart % maxPow));
+                        y >>= wordSize;
+                        y |= yDist(rand_gen);
                     }
-                    y++;
+                    y += minR;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
@@ -262,17 +256,17 @@ int main()
                     }
                     const bitCapInt p = r >> 1U;
                     const bitCapInt apowrhalf = uipow(base, p) % toFactor;
-                    const bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
-                    const bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
-                    const bitCapInt fmul = f1 * f2;
-                    bitCapInt res1 = f1;
-                    bitCapInt res2 = f2;
-                    if (((f1 * f2) != toFactor) && ((f1 * f2) > 1U) && ((toFactor / fmul) * fmul == toFactor)) {
-                        res1 = f1 * f2;
-                        res2 = toFactor / (f1 * f2);
+                    bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
+                    bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
+                    bitCapInt fmul = f1 * f2;
+                    while (((f1 * f2) != toFactor) && ((f1 * f2) > 1U) && ((toFactor / fmul) * fmul == toFactor)) {
+                        fmul = f1;
+                        f1 = fmul * f2;
+                        f2 = toFactor / (fmul * f2);
+                        fmul = f1 * f2;
                     }
-                    if (((res1 * res2) == toFactor) && (res1 > 1U) && (res2 > 1U)) {
-                        std::cout << "Success: Found " << res1 << " * " << res2 << " = " << toFactor << std::endl;
+                    if (((f1 * f2) == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+                        std::cout << "Success: Found " << f1 << " * " << f2 << " = " << toFactor << std::endl;
                         auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
                             std::chrono::high_resolution_clock::now() - iterClock);
                         std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
