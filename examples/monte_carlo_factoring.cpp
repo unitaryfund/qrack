@@ -146,7 +146,6 @@ int main()
     auto iterClock = std::chrono::high_resolution_clock::now();
 
     const bitLenInt qubitCount = log2(toFactor) + (!isPowerOfTwo(toFactor) ? 1U : 0U);
-    const unsigned long long qbBitPow = log2(qubitCount);
     const bitCapInt qubitPower = 1U << qubitCount;
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
