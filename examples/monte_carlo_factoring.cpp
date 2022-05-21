@@ -212,10 +212,11 @@ int main()
                     // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
                     // y is meant to be close to some number 2^(qubitCount) / r, where "r" is the period.
                     const bitCapInt minR = intLog(base, toFactor);
-                    bitCapInt minY = (qubitPower / (minR + 1U));
+                    const bitCapInt minY = (qubitPower / (minR + 1U));
                     bitCapInt mllm1 = maxLongLongsMin1;
-                    while (minY >= maxPow) {
-                        minY >>= 64U;
+                    bitCapInt mY = minY
+                    while (mY >= maxPow) {
+                        mY >>= 64U;
                         mllm1--;
                     }
                     std::uniform_int_distribution<unsigned long long> y_dist(
