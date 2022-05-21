@@ -100,6 +100,15 @@ bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
     return result;
 }
 
+// It's fine if this is not exact for the whole bitCapInt domain, so long as it is <= the exact result.
+unsigned long long intLog(bitCapInt base, bitCapInt x)
+{
+    if (x < base) {
+        return 0U;
+    }
+    return (unsigned long long)(log((double)x) / log((double)base));
+}
+
 bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
 {
     if (n2 == 0)
@@ -191,13 +200,24 @@ int main()
                         return;
                     }
 
+                    // This would be where we perform the quantum period finding algorith.
+                    // However, we don't have a quantum computer!
+                    // Instead, we "throw dice" for a guess to the output of the quantum subroutine.
+                    // This guess will usually be wrong, at least for semi-prime inputs.
+                    // If we try many times, though, this can be a practically valuable factoring method.
+
+                    // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
+                    const unsigned long long minY = intLog(base, toFactor);
+                    const bitCapInt mllm1 = (randRemainder > minY) ? maxLongLongsMin1 : (maxLongLongsMin1 - 1U);
+                    std::uniform_int_distribution<unsigned long long> y_dist(0U, randRemainder - minY);
+
                     // (Construct random number, backwards.)
-                    bitCapInt y = (bitCapInt)(last_dist(rand_gen));
-                    for (unsigned long long i = 0U; i < maxLongLongsMin1; i++) {
+                    bitCapInt y = (bitCapInt)(y_dist(rand_gen));
+                    for (unsigned long long i = 0U; i < mllm1; i++) {
                         y <<= 64U;
                         y |= (bitCapInt)(mid_dist(rand_gen));
                     }
-                    y++;
+                    y += 1U + minY;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
