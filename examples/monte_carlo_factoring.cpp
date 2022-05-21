@@ -214,7 +214,7 @@ int main()
                     const bitCapInt minR = intLog(base, toFactor);
                     const bitCapInt minY = (qubitPower / (minR + 1U));
                     bitCapInt mllm1 = maxLongLongsMin1;
-                    bitCapInt mY = minY
+                    bitCapInt mY = minY;
                     while (mY >= maxPow) {
                         mY >>= 64U;
                         mllm1--;
