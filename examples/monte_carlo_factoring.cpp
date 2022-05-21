@@ -151,12 +151,13 @@ int main()
 
             while (true) {
                 for (unsigned long long batchItem = 0; batchItem < BATCH_SIZE; batchItem++) {
-                    // Choose a base at random:
-                    bitCapInt base = 0U;
+                    // Choose a base at random.
+                    // (Construct random number, backwards.)
+                    bitCapInt base = (bitCapInt)(last_dist(rand_gen));
                     for (unsigned long long i = 0; i < maxLongLongsMin1; i++) {
-                        base |= ((bitCapInt)(mid_dist(rand_gen))) << (i * 64U);
+                        base <<= 64U;
+                        base |= (bitCapInt)(mid_dist(rand_gen));
                     }
-                    base |= ((bitCapInt)(last_dist(rand_gen))) << (maxLongLongsMin1 * 64U);
                     base += 2;
 
                     bitCapInt testFactor = gcd(toFactor, base);
@@ -170,11 +171,12 @@ int main()
                         return;
                     }
 
-                    bitCapInt y = 0U;
+                    // (Construct random number, backwards.)
+                    bitCapInt y = (bitCapInt)(last_dist(rand_gen));
                     for (unsigned long long i = 0; i < maxLongLongsMin1; i++) {
-                        y |= ((bitCapInt)(mid_dist(rand_gen))) << (i * 64U);
+                        y <<= 64U;
+                        y |= (bitCapInt)(mid_dist(rand_gen));
                     }
-                    y |= ((bitCapInt)(last_dist(rand_gen))) << (maxLongLongsMin1 * 64U);
                     y++;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
