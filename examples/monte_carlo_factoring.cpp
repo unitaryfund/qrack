@@ -158,7 +158,7 @@ int main()
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
     std::uniform_int_distribution<unsigned long long> mid_dist;
-    std::uniform_int_distribution<unsigned long long> last_dist(0, randRemainder);
+    std::uniform_int_distribution<unsigned long long> last_dist(0U, randRemainder);
 
     const unsigned threads = std::thread::hardware_concurrency();
     std::atomic<bool> isFinished;
@@ -170,11 +170,11 @@ int main()
             const unsigned long long BATCH_SIZE = 1U << 9U;
 
             for (;;) {
-                for (unsigned long long batchItem = 0; batchItem < BATCH_SIZE; batchItem++) {
+                for (unsigned long long batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
                     // Choose a base at random.
                     // (Construct random number, backwards.)
                     bitCapInt base = (bitCapInt)(last_dist(rand_gen));
-                    for (unsigned long long i = 0; i < maxLongLongsMin1; i++) {
+                    for (unsigned long long i = 0U; i < maxLongLongsMin1; i++) {
                         base <<= 64U;
                         base |= (bitCapInt)(mid_dist(rand_gen));
                     }
@@ -193,7 +193,7 @@ int main()
 
                     // (Construct random number, backwards.)
                     bitCapInt y = (bitCapInt)(last_dist(rand_gen));
-                    for (unsigned long long i = 0; i < maxLongLongsMin1; i++) {
+                    for (unsigned long long i = 0U; i < maxLongLongsMin1; i++) {
                         y <<= 64U;
                         y |= (bitCapInt)(mid_dist(rand_gen));
                     }
@@ -225,16 +225,16 @@ int main()
                     }
                     const bitCapInt p = r >> 1U;
                     const bitCapInt apowrhalf = uipow(base, p) % toFactor;
-                    const bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1, toFactor);
-                    const bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1, toFactor);
+                    const bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
+                    const bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
                     const bitCapInt fmul = f1 * f2;
                     bitCapInt res1 = f1;
                     bitCapInt res2 = f2;
-                    if (((f1 * f2) != toFactor) && ((f1 * f2) > 1) && ((toFactor / fmul) * fmul == toFactor)) {
+                    if (((f1 * f2) != toFactor) && ((f1 * f2) > 1U) && ((toFactor / fmul) * fmul == toFactor)) {
                         res1 = f1 * f2;
                         res2 = toFactor / (f1 * f2);
                     }
-                    if (((res1 * res2) == toFactor) && (res1 > 1) && (res2 > 1)) {
+                    if (((res1 * res2) == toFactor) && (res1 > 1U) && (res2 > 1U)) {
                         std::cout << "Success: Found " << res1 << " * " << res2 << " = " << toFactor << std::endl;
                         auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
                             std::chrono::high_resolution_clock::now() - iterClock);
