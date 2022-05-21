@@ -101,12 +101,15 @@ bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
 }
 
 // It's fine if this is not exact for the whole bitCapInt domain, so long as it is <= the exact result.
-unsigned long long intLog(bitCapInt base, bitCapInt x)
+bitCapInt intLog(const bitCapInt& base, const bitCapInt& arg)
 {
-    if (x < base) {
-        return 0U;
+    bitCapInt x = arg;
+    bitCapInt result = 0U;
+    while (x >= base) {
+        x /= base;
+        result++;
     }
-    return (unsigned long long)(log((double)x) / log((double)base));
+    return result;
 }
 
 bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
@@ -160,8 +163,8 @@ int main()
 
     const bitCapInt maxPow = ONE_BCI << 64U;
     const unsigned long long randRemainder =
-        (unsigned long long)((toFactor - 2U) - (((toFactor - 2U) / maxPow) * maxPow));
-    const unsigned long long maxLongLongs = log2(toFactor - 2U) + (!isPowerOfTwo(toFactor - 2U) ? 1U : 0U);
+        (unsigned long long)((toFactor - 3U) - (((toFactor - 3U) / maxPow) * maxPow));
+    const unsigned long long maxLongLongs = log2(toFactor - 3U) + (!isPowerOfTwo(toFactor - 3U) ? 1U : 0U);
     const unsigned long long maxLongLongsMin1 = maxLongLongs - 1U;
 
     std::random_device rand_dev;
@@ -180,7 +183,7 @@ int main()
 
             for (;;) {
                 for (unsigned long long batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
-                    // Choose a base at random.
+                    // Choose a base at random, >1 and <toFactor.
                     // (Construct random number, backwards.)
                     bitCapInt base = (bitCapInt)(last_dist(rand_gen));
                     for (unsigned long long i = 0U; i < maxLongLongsMin1; i++) {
@@ -200,16 +203,23 @@ int main()
                         return;
                     }
 
-                    // This would be where we perform the quantum period finding algorith.
+                    // This would be where we perform the quantum period finding algorithm.
                     // However, we don't have a quantum computer!
                     // Instead, we "throw dice" for a guess to the output of the quantum subroutine.
                     // This guess will usually be wrong, at least for semi-prime inputs.
                     // If we try many times, though, this can be a practically valuable factoring method.
 
                     // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
-                    const unsigned long long minY = intLog(base, toFactor);
-                    const bitCapInt mllm1 = (randRemainder > minY) ? maxLongLongsMin1 : (maxLongLongsMin1 - 1U);
-                    std::uniform_int_distribution<unsigned long long> y_dist(0U, randRemainder - minY);
+                    // y is meant to be close to some number 2^(qubitCount) / r, where "r" is the period.
+                    const bitCapInt minR = intLog(base, toFactor);
+                    bitCapInt minY = (qubitPower / (minR + 1U));
+                    bitCapInt mllm1 = maxLongLongsMin1;
+                    while (minY >= maxPow) {
+                        minY >>= 64U;
+                        mllm1--;
+                    }
+                    std::uniform_int_distribution<unsigned long long> y_dist(
+                        0U, randRemainder - (unsigned long long)minY);
 
                     // (Construct random number, backwards.)
                     bitCapInt y = (bitCapInt)(y_dist(rand_gen));
@@ -274,6 +284,10 @@ int main()
             }
         });
     };
+
+    for (unsigned cpu = 0U; cpu < threads; cpu++) {
+        futures[cpu].get();
+    }
 
     return 0;
 }
