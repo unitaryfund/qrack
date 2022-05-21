@@ -97,7 +97,7 @@ bitCapInt continued_fraction_step(bitCapInt* numerator, bitCapInt* denominator)
     return intPart;
 }
 
-double calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* numerator, bitCapInt* denominator)
+void calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* numerator, bitCapInt* denominator)
 {
     bitCapInt approxNumer = 1;
     bitCapInt approxDenom = denominators.back();
@@ -111,7 +111,7 @@ double calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* n
 
     (*numerator) = approxNumer;
     (*denominator) = approxDenom;
-    return ((double)approxNumer) / ((double)approxDenom);
+    // return ((double)approxNumer) / ((double)approxDenom);
 }
 
 int main()
@@ -126,12 +126,14 @@ int main()
 
     const bitLenInt qubitCount = log2(toFactor) + (!isPowerOfTwo(toFactor) ? 1U : 0U);
     const unsigned long long qbBitPow = log2(qubitCount);
+    const bitCapInt qubitPower = 1U << qubitCount;
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
     const bitCapInt maxPow = ONE_BCI << 64U;
     const unsigned long long randRemainder =
         (unsigned long long)((toFactor - 2U) - (((toFactor - 2U) / maxPow) * maxPow));
     const unsigned long long maxLongLongs = log2(toFactor - 2U) + (!isPowerOfTwo(toFactor - 2U) ? 1U : 0U);
+    const unsigned long long maxLongLongsMin1 = maxLongLongs - 1U;
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
@@ -145,14 +147,16 @@ int main()
     std::vector<std::future<void>> futures(threads);
     for (unsigned cpu = 0U; cpu < threads; cpu++) {
         futures[cpu] = std::async(std::launch::async, [&] {
+            const unsigned long long BATCH_SIZE = 1U << 9U;
+
             while (true) {
-                for (unsigned long long batchItem = 0; batchItem < (1U << 9U); batchItem++) {
+                for (unsigned long long batchItem = 0; batchItem < BATCH_SIZE; batchItem++) {
                     // Choose a base at random:
                     bitCapInt base = 0U;
-                    for (unsigned long long i = 0; i < (maxLongLongs - 1U); i++) {
+                    for (unsigned long long i = 0; i < maxLongLongsMin1; i++) {
                         base |= ((bitCapInt)(mid_dist(rand_gen))) << (i * 64U);
                     }
-                    base |= ((bitCapInt)(last_dist(rand_gen))) << ((maxLongLongs - 1U) * 64U);
+                    base |= ((bitCapInt)(last_dist(rand_gen))) << (maxLongLongsMin1 * 64U);
                     base += 2;
 
                     bitCapInt testFactor = gcd(toFactor, base);
@@ -166,14 +170,11 @@ int main()
                         return;
                     }
 
-                    bitCapInt qubitPower = 1U << qubitCount;
-
                     bitCapInt y = 0U;
-                    for (unsigned long long i = 0; i < (maxLongLongs - 1U); i++) {
+                    for (unsigned long long i = 0; i < maxLongLongsMin1; i++) {
                         y |= ((bitCapInt)(mid_dist(rand_gen))) << (i * 64U);
-
                     }
-                    y |= ((bitCapInt)(last_dist(rand_gen))) << ((maxLongLongs - 1U) * 64U);
+                    y |= ((bitCapInt)(last_dist(rand_gen))) << (maxLongLongsMin1 * 64U);
                     y++;
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
@@ -198,18 +199,18 @@ int main()
 
                     // Try to determine the factors
                     if (r & 1U) {
-                        r *= 2;
+                        r <<= 1U;
                     }
 
+                    const bitCapInt p = r >> 1U;
                     bitCapInt apowrhalf = base;
-                    bitCapInt p = r >> 1U;
                     for (bitCapInt i = 1; i < p; i++) {
                         apowrhalf *= base;
                     }
                     apowrhalf %= toFactor;
-                    bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1, toFactor);
-                    bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1, toFactor);
-                    bitCapInt fmul = f1 * f2;
+                    const bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1, toFactor);
+                    const bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1, toFactor);
+                    const bitCapInt fmul = f1 * f2;
                     bitCapInt res1 = f1;
                     bitCapInt res2 = f2;
                     if (((f1 * f2) != toFactor) && ((f1 * f2) > 1) && ((toFactor / fmul) * fmul == toFactor)) {
