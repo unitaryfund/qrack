@@ -68,7 +68,7 @@
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
 inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
 
-inline bitLenInt log2(const bitCapInt& n)
+bitLenInt log2(const bitCapInt& n)
 {
     bitLenInt pow = 0;
     bitCapInt p = n >> 1U;
@@ -77,6 +77,27 @@ inline bitLenInt log2(const bitCapInt& n)
         pow++;
     }
     return pow;
+}
+
+// Source:
+// https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
+bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
+{
+    bitCapInt result = 1U;
+    bitCapInt b = base;
+    bitCapInt e = exp;
+    for (;;) {
+        if (b & 1U) {
+            result *= b;
+        }
+        e >>= 1U;
+        if (!e) {
+            break;
+        }
+        b *= b;
+    }
+
+    return result;
 }
 
 bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
@@ -99,7 +120,7 @@ bitCapInt continued_fraction_step(bitCapInt* numerator, bitCapInt* denominator)
 
 void calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* numerator, bitCapInt* denominator)
 {
-    bitCapInt approxNumer = 1;
+    bitCapInt approxNumer = 1U;
     bitCapInt approxDenom = denominators.back();
     bitCapInt temp;
 
@@ -149,7 +170,7 @@ int main()
         futures[cpu] = std::async(std::launch::async, [&] {
             const unsigned long long BATCH_SIZE = 1U << 9U;
 
-            while (true) {
+            for (;;) {
                 for (unsigned long long batchItem = 0; batchItem < BATCH_SIZE; batchItem++) {
                     // Choose a base at random.
                     // (Construct random number, backwards.)
@@ -203,13 +224,8 @@ int main()
                     if (r & 1U) {
                         r <<= 1U;
                     }
-
                     const bitCapInt p = r >> 1U;
-                    bitCapInt apowrhalf = base;
-                    for (bitCapInt i = 1; i < p; i++) {
-                        apowrhalf *= base;
-                    }
-                    apowrhalf %= toFactor;
+                    const bitCapInt apowrhalf = uipow(base, p) % toFactor;
                     const bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1, toFactor);
                     const bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1, toFactor);
                     const bitCapInt fmul = f1 * f2;
