@@ -72,11 +72,11 @@
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
 inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
 
-bitLenInt log2(const bitCapInt& n)
+inline bitLenInt log2(const bitCapInt& n)
 {
     bitLenInt pow = 0;
     bitCapInt p = n >> 1U;
-    while (p != 0) {
+    while (p) {
         p >>= 1U;
         pow++;
     }
@@ -85,7 +85,7 @@ bitLenInt log2(const bitCapInt& n)
 
 // Source:
 // https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int#answer-101613
-bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
+inline bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
 {
     bitCapInt result = 1U;
     bitCapInt b = base;
@@ -105,12 +105,10 @@ bitCapInt uipow(const bitCapInt& base, const bitCapInt& exp)
 }
 
 // It's fine if this is not exact for the whole bitCapInt domain, so long as it is <= the exact result.
-bitCapInt intLog(const bitCapInt& base, const bitCapInt& arg)
+inline bitLenInt intLog(const bitCapInt& base, const bitCapInt& arg)
 {
-    bitCapInt x = arg;
-    bitCapInt result = 0U;
-    while (x >= base) {
-        x /= base;
+    bitLenInt result = 0U;
+    for (bitCapInt x = arg; x >= base; x /= base) {
         result++;
     }
     return result;
@@ -118,9 +116,10 @@ bitCapInt intLog(const bitCapInt& base, const bitCapInt& arg)
 
 bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
 {
-    if (n2 == 0)
-        return n1;
-    return gcd(n2, n1 % n2);
+    if (n2) {
+        return gcd(n2, n1 % n2);
+    }
+    return n1;
 }
 
 int main()
@@ -215,7 +214,7 @@ int main()
 
                     // The period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
                     // (Also, toFactor is definitely NOT an exact multiple of base.)
-                    const bitCapInt minR = intLog(base, toFactor) + 1U;
+                    const bitCapInt minR = (bitCapInt)intLog(base, toFactor) + 1U;
                     // It can be shown that the period of this modular exponentiation can be no higher than 1
                     // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
                     const bitCapInt maxR = toFactor - 1U;
