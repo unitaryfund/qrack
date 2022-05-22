@@ -31,6 +31,8 @@
 
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
 #define IS_SEMI_PRIME 1
+// Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
+#define IS_DISTRIBUTED 1
 
 #define ONE_BCI ((bitCapInt)1UL)
 #define bitsInByte 8U
@@ -137,6 +139,8 @@ int main()
     typedef std::uniform_int_distribution<uint64_t> rand_dist;
 
     bitCapInt toFactor;
+    bitCapInt nodeCount = 1U;
+    bitCapInt nodeId = 0U;
 
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
@@ -145,6 +149,21 @@ int main()
 
     const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
+
+#if IS_DISTRIBUTED
+    std::cout << "You can split this work across nodes, without networking!" << std::endl;
+    std::cout << "Number of nodes: ";
+    std::cin >> nodeCount;
+    if (nodeCount > 1U) {
+        do {
+            std::cout << "Which node is this? (0-" << (int)(nodeCount - 1U) << "):";
+            std::cin >> nodeId;
+            if (nodeId >= nodeCount) {
+                std::cout << "Invalid node ID choice!" << std::endl;
+            }
+        } while (nodeId >= nodeCount);
+    }
+#endif
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
@@ -155,88 +174,93 @@ int main()
 
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; cpu++) {
-        futures[cpu] = std::async(std::launch::async, [cpu, toFactor, &iterClock, &rand_gen, &isFinished] {
-            // These constants are semi-redundant, but they're only defined once per thread,
-            // and compilers differ on lambda expression capture of constants.
+        futures[cpu] =
+            std::async(std::launch::async, [cpu, nodeId, nodeCount, toFactor, &iterClock, &rand_gen, &isFinished] {
+                // These constants are semi-redundant, but they're only defined once per thread,
+                // and compilers differ on lambda expression capture of constants.
 
-            const size_t BATCH_SIZE = 1U << 9U;
-            const double clockFactor = 1.0 / 1000.0; // Report in ms
-            const unsigned threads = std::thread::hardware_concurrency();
+                const size_t BATCH_SIZE = 1U << 9U;
+                const double clockFactor = 1.0 / 1000.0; // Report in ms
+                const unsigned threads = std::thread::hardware_concurrency();
 
-            const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
-            const bitCapInt qubitPower = ONE_BCI << qubitCount;
+                const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
+                const bitCapInt qubitPower = ONE_BCI << qubitCount;
 
 #if IS_SEMI_PRIME
-            const bitCapInt fullMin = 1U << ((qubitCount - 1U) / 2 - 1U);
-            const bitCapInt fullMax = fullMin << 1U;
+                const bitCapInt fullMin = 1U << ((qubitCount - 1U) / 2 - 1U);
+                const bitCapInt fullMax = fullMin << 1U;
 #else
-            const bitCapInt fullMin = 2U;
-            const bitCapInt fullMax = (toFactor - 1U);
+                const bitCapInt fullMin = 2U;
+                const bitCapInt fullMax = (toFactor - 1U);
 #endif
-            const bitCapInt partRange = (fullMax - fullMin) / threads;
-            const bitCapInt baseMin = fullMin + partRange * cpu;
-            const bitCapInt baseMax = (cpu == (threads - 1U)) ? fullMax : (baseMin + partRange * (cpu + 1U));
+                const bitCapInt nodeRange = (fullMax - fullMin) / nodeCount;
+                const bitCapInt partRange = nodeRange / threads;
+                const bitCapInt nodeMin = fullMin + nodeRange * nodeId;
+                const bitCapInt baseMin = nodeMin + partRange * cpu;
+                const bitCapInt baseMax = (((cpu + 1U) == threads) && ((nodeId + 1U) == nodeCount))
+                    ? fullMax
+                    : (nodeMin + partRange * (cpu + 1U));
 
-            std::vector<rand_dist> toFactorDist;
+                std::vector<rand_dist> toFactorDist;
 #if QBCAPPOW > 6U
-            const bitLenInt wordSize = 64U;
-            const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
-            bitCapInt distPart = baseMax - baseMin;
-            while (distPart) {
-                toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
-                distPart >>= wordSize;
-            }
-            std::reverse(toFactorDist.begin(), toFactorDist.end());
+                const bitLenInt wordSize = 64U;
+                const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
+                bitCapInt distPart = baseMax - baseMin;
+                while (distPart) {
+                    toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
+                    distPart >>= wordSize;
+                }
+                std::reverse(toFactorDist.begin(), toFactorDist.end());
 #else
             toFactorDist.push_back(rand_dist(baseMin, baseMax));
 #endif
 
-            for (;;) {
-                for (size_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
-                    // Choose a base at random, >1 and <toFactor.
-                    bitCapInt base = toFactorDist[0](rand_gen);
+                for (;;) {
+                    for (size_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
+                        // Choose a base at random, >1 and <toFactor.
+                        bitCapInt base = toFactorDist[0](rand_gen);
 #if QBCAPPOW > 6U
-                    for (size_t i = 1U; i < toFactorDist.size(); i++) {
-                        base <<= wordSize;
-                        base |= toFactorDist[i](rand_gen);
-                    }
-                    base += baseMin;
+                        for (size_t i = 1U; i < toFactorDist.size(); i++) {
+                            base <<= wordSize;
+                            base |= toFactorDist[i](rand_gen);
+                        }
+                        base += baseMin;
 #endif
 
 #if IS_SEMI_PRIME
-                    // We assume there's no particular downside to choosing only odd bases,
-                    // which might be more likely to immediately yield a prime.
-                    base = (base << 1U) | 1U;
+                        // We assume there's no particular downside to choosing only odd bases,
+                        // which might be more likely to immediately yield a prime.
+                        base = (base << 1U) | 1U;
 #endif
 
-                    const bitCapInt testFactor = gcd(toFactor, base);
-                    if (testFactor != 1) {
-                        std::cout << "Chose non-relative prime: " << testFactor << " * " << (toFactor / testFactor)
-                                  << std::endl;
-                        auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
-                            std::chrono::high_resolution_clock::now() - iterClock);
-                        std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
-                        std::cout << "(Waiting to join other threads...)" << std::endl;
-                        return;
-                    }
+                        const bitCapInt testFactor = gcd(toFactor, base);
+                        if (testFactor != 1) {
+                            std::cout << "Chose non-relative prime: " << testFactor << " * " << (toFactor / testFactor)
+                                      << std::endl;
+                            auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+                                std::chrono::high_resolution_clock::now() - iterClock);
+                            std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
+                            std::cout << "(Waiting to join other threads...)" << std::endl;
+                            return;
+                        }
 
-                    // This would be where we perform the quantum period finding algorithm.
-                    // However, we don't have a quantum computer!
-                    // Instead, we "throw dice" for a guess to the output of the quantum subroutine.
-                    // This guess will usually be wrong, at least for semi-prime inputs.
-                    // If we try many times, though, this can be a practically valuable factoring method.
+                        // This would be where we perform the quantum period finding algorithm.
+                        // However, we don't have a quantum computer!
+                        // Instead, we "throw dice" for a guess to the output of the quantum subroutine.
+                        // This guess will usually be wrong, at least for semi-prime inputs.
+                        // If we try many times, though, this can be a practically valuable factoring method.
 
-                    // y is meant to be close to some number c * qubitPower / r, where r is the period.
-                    // c is a positive integer or 0, and we don't want the 0 case.
-                    // y is truncated by the number of qubits in the register, at most.
-                    // The maximum value of c before truncation is no higher than r.
+                        // y is meant to be close to some number c * qubitPower / r, where r is the period.
+                        // c is a positive integer or 0, and we don't want the 0 case.
+                        // y is truncated by the number of qubits in the register, at most.
+                        // The maximum value of c before truncation is no higher than r.
 
-                    // The period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
-                    // (Also, toFactor is definitely NOT an exact multiple of base.)
-                    const bitCapInt minR = (bitCapInt)intLog(base, toFactor) + 1U;
-                    // It can be shown that the period of this modular exponentiation can be no higher than 1
-                    // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
-                    const bitCapInt maxR = toFactor - 1U;
+                        // The period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
+                        // (Also, toFactor is definitely NOT an exact multiple of base.)
+                        const bitCapInt minR = (bitCapInt)intLog(base, toFactor) + 1U;
+                        // It can be shown that the period of this modular exponentiation can be no higher than 1
+                        // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
+                        const bitCapInt maxR = toFactor - 1U;
 
                     // c is basically a harmonic degeneracy factor, and there might be no value in testing
                     // any case except c = 1, without loss of generality.
@@ -248,56 +272,56 @@ int main()
 
                     // So, we guess r, between minR and maxR.
 #if QBCAPPOW > 6U
-                    bitCapInt rPart = maxR - minR;
-                    bitCapInt r = 0U;
-                    while (rPart) {
-                        rand_dist rDist(0U, (uint64_t)(rPart & wordMask));
-                        rPart >>= wordSize;
-                        r <<= wordSize;
-                        r |= rDist(rand_gen);
-                    }
-                    r += minR;
+                        bitCapInt rPart = maxR - minR;
+                        bitCapInt r = 0U;
+                        while (rPart) {
+                            rand_dist rDist(0U, (uint64_t)(rPart & wordMask));
+                            rPart >>= wordSize;
+                            r <<= wordSize;
+                            r |= rDist(rand_gen);
+                        }
+                        r += minR;
 #else
                     rand_dist rDist(minR, maxR);
                     bitCapInt r = rDist(rand_gen);
 #endif
 
-                    // Since our output is r rather than y, we can skip the continued fractions step.
+                        // Since our output is r rather than y, we can skip the continued fractions step.
 
-                    // Try to determine the factors
-                    if (r & 1U) {
-                        r <<= 1U;
+                        // Try to determine the factors
+                        if (r & 1U) {
+                            r <<= 1U;
+                        }
+                        const bitCapInt p = r >> 1U;
+                        const bitCapInt apowrhalf = uipow(base, p) % toFactor;
+                        bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
+                        bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
+                        bitCapInt fmul = f1 * f2;
+                        while ((fmul != toFactor) && (fmul > 1U) && ((toFactor / fmul) * fmul == toFactor)) {
+                            fmul = f1;
+                            f1 = fmul * f2;
+                            f2 = toFactor / (fmul * f2);
+                            fmul = f1 * f2;
+                        }
+                        if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+                            std::cout << "Success: Found " << f1 << " * " << f2 << " = " << toFactor << std::endl;
+                            auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+                                std::chrono::high_resolution_clock::now() - iterClock);
+                            std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
+                            std::cout << "(Waiting to join other threads...)" << std::endl;
+                            isFinished = true;
+                            return;
+                        } // else {
+                          // std::cout << "Failure: Found " << res1 << " and " << res2 << std::endl;
+                        // }
                     }
-                    const bitCapInt p = r >> 1U;
-                    const bitCapInt apowrhalf = uipow(base, p) % toFactor;
-                    bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
-                    bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
-                    bitCapInt fmul = f1 * f2;
-                    while ((fmul != toFactor) && (fmul > 1U) && ((toFactor / fmul) * fmul == toFactor)) {
-                        fmul = f1;
-                        f1 = fmul * f2;
-                        f2 = toFactor / (fmul * f2);
-                        fmul = f1 * f2;
-                    }
-                    if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
-                        std::cout << "Success: Found " << f1 << " * " << f2 << " = " << toFactor << std::endl;
-                        auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
-                            std::chrono::high_resolution_clock::now() - iterClock);
-                        std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
-                        std::cout << "(Waiting to join other threads...)" << std::endl;
-                        isFinished = true;
-                        return;
-                    } // else {
-                      // std::cout << "Failure: Found " << res1 << " and " << res2 << std::endl;
-                    // }
-                }
 
-                // Check if finished, between batches.
-                if (isFinished) {
-                    break;
+                    // Check if finished, between batches.
+                    if (isFinished) {
+                        break;
+                    }
                 }
-            }
-        });
+            });
     };
 
     for (unsigned cpu = 0U; cpu < cpuCount; cpu++) {
