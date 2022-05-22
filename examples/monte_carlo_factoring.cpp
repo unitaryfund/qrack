@@ -188,12 +188,12 @@ int main()
 
 #if IS_SEMI_PRIME
                 const bitCapInt fullMin = 1U << ((qubitCount - 1U) / 2 - 1U);
-                const bitCapInt fullMax = fullMin << 1U;
+                const bitCapInt fullMax = fullMin << 1U - 1U;
 #else
                 const bitCapInt fullMin = 2U;
                 const bitCapInt fullMax = (toFactor - 1U);
 #endif
-                const bitCapInt nodeRange = (fullMax - fullMin) / nodeCount;
+                const bitCapInt nodeRange = (1U + fullMax - fullMin) / nodeCount;
                 const bitCapInt partRange = nodeRange / threads;
                 const bitCapInt nodeMin = fullMin + nodeRange * nodeId;
                 const bitCapInt nodeMax = fullMin + nodeRange * (nodeId + 1U) - 1U;
