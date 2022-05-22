@@ -81,14 +81,12 @@ inline bitLenInt log2(const bitCapInt& n)
 #elif QBCAPPOW < 7
     return (bitLenInt)(64U - __builtin_clzll((unsigned long long)n) - 1U);
 #else
-    unsigned long long nPart = (unsigned long long)(n & 0xFFFFFFFFFFFFFFFF);
-    int nZeroes = __builtin_clzll(nPart);
+    int nZeroes = __builtin_clzll((unsigned long long)(n & 0xFFFFFFFFFFFFFFFF));
     bitLenInt pow = 0U;
     while (nZeroes == 64) {
         pow += 64U;
         n >>= 64U;
-        nPart = (unsigned long long)(n & 0xFFFFFFFFFFFFFFFF);
-        nZeroes = __builtin_clzll(nPart);
+        nZeroes = __builtin_clzll((unsigned long long)(n & 0xFFFFFFFFFFFFFFFF));
     }
     return pow + (64U - nZeroes - 1U);
 #endif
