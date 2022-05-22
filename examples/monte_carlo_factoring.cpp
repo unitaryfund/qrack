@@ -200,7 +200,7 @@ int main()
                 const bitCapInt baseMin = nodeMin + partRange * cpu;
                 const bitCapInt baseMax = (((cpu + 1U) == threads) && ((nodeId + 1U) == nodeCount))
                     ? fullMax
-                    : (((cpu + 1U) == threads) ? nodeMax : nodeMin + partRange * (cpu + 1U));
+                    : (((cpu + 1U) == threads) ? nodeMax : (nodeMin + partRange * (cpu + 1U)));
 
                 std::vector<rand_dist> toFactorDist;
 #if QBCAPPOW > 6U
