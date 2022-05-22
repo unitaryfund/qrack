@@ -75,26 +75,15 @@ inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))
 
 inline bitLenInt log2(const bitCapInt& n)
 {
-#if __GNUC__
+#if __GNUC__ && QBCAPPOW < 7
 // Source: https://stackoverflow.com/questions/11376288/fast-computing-of-log2-for-64-bit-integers#answer-11376759
 #if QBCAPPOW < 6
     return (bitLenInt)(bitsInByte * sizeof(unsigned int) - __builtin_clz((unsigned int)n) - 1U);
-#elif QBCAPPOW < 7
-    return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - __builtin_clzll((unsigned long long)n) - 1U);
 #else
-    const unsigned bitsInWord = bitsInByte * sizeof(unsigned long long);
-    bitCapInt x = n;
-    int nZeroes = __builtin_clzll((unsigned long long)(x & 0xFFFFFFFFFFFFFFFF));
-    bitLenInt pow = 0U;
-    while (nZeroes == bitsInWord) {
-        pow += bitsInWord;
-        x >>= bitsInWord;
-        nZeroes = __builtin_clzll((unsigned long long)(x & 0xFFFFFFFFFFFFFFFF));
-    }
-    return pow + (bitsInWord - nZeroes - 1U);
+    return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - __builtin_clzll((unsigned long long)n) - 1U);
 #endif
 #else
-    bitLenInt pow = 0;
+    bitLenInt pow = 0U;
     bitCapInt p = n >> 1U;
     while (p) {
         p >>= 1U;
