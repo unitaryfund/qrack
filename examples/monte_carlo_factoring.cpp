@@ -30,8 +30,9 @@
 #include <mutex>
 
 #define ONE_BCI ((bitCapInt)1UL)
-// Change QBCAPPOW, if you need more than 2^8 bits of factorized integer, within Boost and system limits.
-#define QBCAPPOW 8U
+// Change QBCAPPOW, if you need more than 2^6 bits of factorized integer, within Boost and system limits.
+// (2^7, only, needs custom std::cout << operator implementation.)
+#define QBCAPPOW 6U
 
 #if QBCAPPOW < 8U
 #define bitLenInt uint8_t
@@ -119,34 +120,6 @@ bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
     return gcd(n2, n1 % n2);
 }
 
-bitCapInt continued_fraction_step(bitCapInt* numerator, bitCapInt* denominator)
-{
-    bitCapInt intPart = (*numerator) / (*denominator);
-    bitCapInt partDenominator = (*numerator) - intPart * (*denominator);
-    bitCapInt partNumerator = (*denominator);
-
-    (*numerator) = partNumerator;
-    (*denominator) = partDenominator;
-    return intPart;
-}
-
-void calc_continued_fraction(std::vector<bitCapInt> denominators, bitCapInt* numerator, bitCapInt* denominator)
-{
-    bitCapInt approxNumer = 1U;
-    bitCapInt approxDenom = denominators.back();
-    bitCapInt temp;
-
-    for (int i = (denominators.size() - 1); i > 0; i--) {
-        temp = denominators[i] * approxDenom + approxNumer;
-        approxNumer = approxDenom;
-        approxDenom = temp;
-    }
-
-    (*numerator) = approxNumer;
-    (*denominator) = approxDenom;
-    // return ((double)approxNumer) / ((double)approxDenom);
-}
-
 int main()
 {
     typedef std::uniform_int_distribution<uint64_t> rand_dist;
@@ -159,19 +132,23 @@ int main()
     const double clockFactor = 1.0 / 1000.0; // Report in ms
     auto iterClock = std::chrono::high_resolution_clock::now();
 
-    const bitLenInt qubitCount = log2(toFactor) + (!isPowerOfTwo(toFactor) ? 1U : 0U);
+    const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
     const bitCapInt qubitPower = ONE_BCI << qubitCount;
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
-    const bitLenInt wordSize = 64U;
-    const bitCapInt maxPow = ONE_BCI << wordSize;
     std::vector<rand_dist> toFactorDist;
+#if QBCAPPOW > 6U
+    const bitLenInt wordSize = 64U;
+    const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
     bitCapInt distPart = toFactor - 3U;
     while (distPart) {
-        toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart % maxPow)));
+        toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
         distPart >>= wordSize;
     }
     std::reverse(toFactorDist.begin(), toFactorDist.end());
+#else
+    toFactorDist.push_back(rand_dist(2U, toFactor - 1U));
+#endif
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
@@ -188,15 +165,16 @@ int main()
             for (;;) {
                 for (size_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
                     // Choose a base at random, >1 and <toFactor.
-                    // Construct a random number
                     bitCapInt base = toFactorDist[0](rand_gen);
+#if QBCAPPOW > 6U
                     for (size_t i = 1U; i < toFactorDist.size(); i++) {
                         base <<= wordSize;
                         base |= toFactorDist[i](rand_gen);
                     }
                     base += 2U;
+#endif
 
-                    bitCapInt testFactor = gcd(toFactor, base);
+                    const bitCapInt testFactor = gcd(toFactor, base);
                     if (testFactor != 1) {
                         std::cout << "Chose non- relative prime: " << testFactor << " * " << (toFactor / testFactor)
                                   << std::endl;
@@ -213,7 +191,7 @@ int main()
                     // This guess will usually be wrong, at least for semi-prime inputs.
                     // If we try many times, though, this can be a practically valuable factoring method.
 
-                    // y is meant to be close to some number c * qubitPower / r, where "r" is the period.
+                    // y is meant to be close to some number c * qubitPower / r, where r is the period.
                     // c is a positive integer or 0, and we don't want the 0 case.
                     // y is truncated by the number of qubits in the register, at most.
                     // The maximum value of c before truncation is no higher than r.
@@ -224,43 +202,31 @@ int main()
                     // than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
                     const bitCapInt maxR = toFactor - 1U;
 
-                    // First, we guess r, between minR and maxR.
-                    bitCapInt rPart = maxR - minR;
-                    bitCapInt rGuess = 0U;
-                    while (rPart) {
-                        rand_dist rDist(0U, (uint64_t)(rPart % maxPow));
-                        rPart >>= wordSize;
-                        rGuess <<= wordSize;
-                        rGuess |= rDist(rand_gen);
-                    }
-                    rGuess += minR;
-
                     // c is basically a harmonic degeneracy factor, and there might be no value in testing
                     // any case except c = 1, without loss of generality.
 
                     // This sets a nonuniform distribution on our y values to test.
                     // y values are close to qubitPower / rGuess, and we midpoint round.
-                    const bitCapInt y = (qubitPower / rGuess) + (((2U * (qubitPower % rGuess)) < rGuess) ? 0U : 1U);
 
-                    // Value is always fractional, so skip first step, by flipping numerator and denominator:
-                    bitCapInt numerator = qubitPower;
-                    bitCapInt denominator = y;
+                    // However, results are better with uniformity over r, rather than y.
 
-                    std::vector<bitCapInt> denominators;
-                    bitCapInt approxNumer;
-                    bitCapInt approxDenom;
-                    do {
-                        denominators.push_back(continued_fraction_step(&numerator, &denominator));
-                        calc_continued_fraction(denominators, &approxNumer, &approxDenom);
-                    } while ((denominator > 0) && (approxDenom < toFactor));
-                    denominators.pop_back();
-
-                    bitCapInt r;
-                    if (denominators.size() == 0) {
-                        r = y;
-                    } else {
-                        calc_continued_fraction(denominators, &approxNumer, &r);
+                    // So, we guess r, between minR and maxR.
+#if QBCAPPOW > 6U
+                    bitCapInt rPart = maxR - minR;
+                    bitCapInt r = 0U;
+                    while (rPart) {
+                        rand_dist rDist(0U, (uint64_t)(rPart & wordMask));
+                        rPart >>= wordSize;
+                        r <<= wordSize;
+                        r |= rDist(rand_gen);
                     }
+                    r += minR;
+#else
+                    rand_dist rDist(minR, maxR);
+                    bitCapInt r = rDist(rand_gen);
+#endif
+
+                    // Since our output is r rather than y, we can skip the continued fractions step.
 
                     // Try to determine the factors
                     if (r & 1U) {
@@ -271,13 +237,13 @@ int main()
                     bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
                     bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
                     bitCapInt fmul = f1 * f2;
-                    while (((f1 * f2) != toFactor) && ((f1 * f2) > 1U) && ((toFactor / fmul) * fmul == toFactor)) {
+                    while ((fmul != toFactor) && (fmul > 1U) && ((toFactor / fmul) * fmul == toFactor)) {
                         fmul = f1;
                         f1 = fmul * f2;
                         f2 = toFactor / (fmul * f2);
                         fmul = f1 * f2;
                     }
-                    if (((f1 * f2) == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+                    if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
                         std::cout << "Success: Found " << f1 << " * " << f2 << " = " << toFactor << std::endl;
                         auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
                             std::chrono::high_resolution_clock::now() - iterClock);
