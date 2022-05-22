@@ -69,10 +69,10 @@
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
 #endif
 
-#define bitsInByte 8
+#define bitsInByte 8U
 #define qrack_rand_gen std::mt19937_64
 #define qrack_rand_gen_ptr std::shared_ptr<qrack_rand_gen>
-#define QRACK_ALIGN_SIZE 64
+#define QRACK_ALIGN_SIZE 64U
 
 #if FPPOW < 5
 #if !defined(__arm__)

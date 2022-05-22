@@ -33,10 +33,10 @@
 #define IS_SEMI_PRIME 1
 
 #define ONE_BCI ((bitCapInt)1UL)
-#define bitsInByte 8
+#define bitsInByte 8U
 // Change QBCAPPOW, if you need more than 2^6 bits of factorized integer, within Boost and system limits.
 // (2^7, only, needs custom std::cout << operator implementation.)
-#define QBCAPPOW 6U
+#define QBCAPPOW 8U
 
 #if QBCAPPOW < 8U
 #define bitLenInt uint8_t
@@ -82,13 +82,14 @@ inline bitLenInt log2(const bitCapInt& n)
 #elif QBCAPPOW < 7
     return (bitLenInt)(bitsInByte * sizeof(unsigned long long) - __builtin_clzll((unsigned long long)n) - 1U);
 #else
-    const size_t bitsInWord = bitsInByte * sizeof(unsigned long long);
-    int nZeroes = __builtin_clzll((unsigned long long)(n & 0xFFFFFFFFFFFFFFFF));
+    const unsigned bitsInWord = bitsInByte * sizeof(unsigned long long);
+    bitCapInt x = n;
+    int nZeroes = __builtin_clzll((unsigned long long)(x & 0xFFFFFFFFFFFFFFFF));
     bitLenInt pow = 0U;
     while (nZeroes == bitsInWord) {
         pow += bitsInWord;
-        n >>= bitsInWord;
-        nZeroes = __builtin_clzll((unsigned long long)(n & 0xFFFFFFFFFFFFFFFF));
+        x >>= bitsInWord;
+        nZeroes = __builtin_clzll((unsigned long long)(x & 0xFFFFFFFFFFFFFFFF));
     }
     return pow + (bitsInWord - nZeroes - 1U);
 #endif
