@@ -151,46 +151,55 @@ int main()
     std::cout << "Number to factor: ";
     std::cin >> toFactor;
 
-    const double clockFactor = 1.0 / 1000.0; // Report in ms
     auto iterClock = std::chrono::high_resolution_clock::now();
 
     const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
-    const bitCapInt qubitPower = ONE_BCI << qubitCount;
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
-
-#if IS_SEMI_PRIME
-    const bitCapInt baseMin = 1U << ((qubitCount - 1U) / 2 - 1U);
-    const bitCapInt baseMax = baseMin << 1U;
-#else
-    const bitCapInt baseMin = 2U;
-    const bitCapInt baseMax = (toFactor - 1U);
-#endif
-
-    std::vector<rand_dist> toFactorDist;
-#if QBCAPPOW > 6U
-    const bitLenInt wordSize = 64U;
-    const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
-    bitCapInt distPart = baseMax - baseMin;
-    while (distPart) {
-        toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
-        distPart >>= wordSize;
-    }
-    std::reverse(toFactorDist.begin(), toFactorDist.end());
-#else
-    toFactorDist.push_back(rand_dist(baseMin, baseMax));
-#endif
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
 
-    const unsigned threads = std::thread::hardware_concurrency();
+    const unsigned cpuCount = std::thread::hardware_concurrency();
     std::atomic<bool> isFinished;
     isFinished = false;
 
-    std::vector<std::future<void>> futures(threads);
-    for (unsigned cpu = 0U; cpu < threads; cpu++) {
-        futures[cpu] = std::async(std::launch::async, [&] {
+    std::vector<std::future<void>> futures(cpuCount);
+    for (unsigned cpu = 0U; cpu < cpuCount; cpu++) {
+        futures[cpu] = std::async(std::launch::async, [cpu, toFactor, &iterClock, &rand_gen, &isFinished] {
+            // These constants are semi-redundant, but they're only defined once per thread,
+            // and compilers differ on lambda expression capture of constants.
+
             const size_t BATCH_SIZE = 1U << 9U;
+            const double clockFactor = 1.0 / 1000.0; // Report in ms
+            const unsigned threads = std::thread::hardware_concurrency();
+
+            const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
+            const bitCapInt qubitPower = ONE_BCI << qubitCount;
+
+#if IS_SEMI_PRIME
+            const bitCapInt fullMin = 1U << ((qubitCount - 1U) / 2 - 1U);
+            const bitCapInt fullMax = fullMin << 1U;
+#else
+            const bitCapInt fullMin = 2U;
+            const bitCapInt fullMax = (toFactor - 1U);
+#endif
+            const bitCapInt partRange = (fullMax - fullMin) / threads;
+            const bitCapInt baseMin = fullMin + partRange * cpu;
+            const bitCapInt baseMax = (cpu == (threads - 1U)) ? fullMax : (baseMin + partRange * (cpu + 1U));
+
+            std::vector<rand_dist> toFactorDist;
+#if QBCAPPOW > 6U
+            const bitLenInt wordSize = 64U;
+            const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
+            bitCapInt distPart = baseMax - baseMin;
+            while (distPart) {
+                toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
+                distPart >>= wordSize;
+            }
+            std::reverse(toFactorDist.begin(), toFactorDist.end());
+#else
+            toFactorDist.push_back(rand_dist(baseMin, baseMax));
+#endif
 
             for (;;) {
                 for (size_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
@@ -301,7 +310,7 @@ int main()
         });
     };
 
-    for (unsigned cpu = 0U; cpu < threads; cpu++) {
+    for (unsigned cpu = 0U; cpu < cpuCount; cpu++) {
         futures[cpu].get();
     }
 
