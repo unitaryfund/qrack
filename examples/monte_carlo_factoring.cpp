@@ -29,6 +29,9 @@
 #include <future>
 #include <mutex>
 
+// Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
+#define IS_SEMI_PRIME 1
+
 #define ONE_BCI ((bitCapInt)1UL)
 // Change QBCAPPOW, if you need more than 2^6 bits of factorized integer, within Boost and system limits.
 // (2^7, only, needs custom std::cout << operator implementation.)
@@ -136,18 +139,26 @@ int main()
     const bitCapInt qubitPower = ONE_BCI << qubitCount;
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
+#if IS_SEMI_PRIME
+    const bitCapInt baseMin = 1U << ((qubitCount + 1U) / 2);
+    const bitCapInt baseMax = baseMin << 1U;
+#else
+    const bitCapInt baseMin = 2U;
+    const bitCapInt baseMax = toFactor - 1U;
+#endif
+
     std::vector<rand_dist> toFactorDist;
 #if QBCAPPOW > 6U
     const bitLenInt wordSize = 64U;
     const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
-    bitCapInt distPart = toFactor - 3U;
+    bitCapInt distPart = baseMax - baseMin;
     while (distPart) {
         toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
         distPart >>= wordSize;
     }
     std::reverse(toFactorDist.begin(), toFactorDist.end());
 #else
-    toFactorDist.push_back(rand_dist(2U, toFactor - 1U));
+    toFactorDist.push_back(rand_dist(baseMin, baseMax));
 #endif
 
     std::random_device rand_dev;
@@ -171,7 +182,7 @@ int main()
                         base <<= wordSize;
                         base |= toFactorDist[i](rand_gen);
                     }
-                    base += 2U;
+                    base += baseMin;
 #endif
 
                     const bitCapInt testFactor = gcd(toFactor, base);
