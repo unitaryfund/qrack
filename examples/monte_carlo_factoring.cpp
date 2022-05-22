@@ -197,9 +197,12 @@ int main()
                     // The maximum value of c before truncation is no higher than r.
 
                     // The period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
-                    const bitCapInt minR = intLog(base, toFactor);
-                    // It can be shown that the period of a modular exponentiation can be no higher than 1 less
-                    // than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
+                    bitCapInt minR = intLog(base, toFactor);
+                    if (uipow(base, minR) < toFactor) {
+                        minR++;
+                    }
+                    // It can be shown that the period of this modular exponentiation can be no higher than 1
+                    // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
                     const bitCapInt maxR = toFactor - 1U;
 
                     // c is basically a harmonic degeneracy factor, and there might be no value in testing
