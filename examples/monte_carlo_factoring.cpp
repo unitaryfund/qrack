@@ -143,8 +143,8 @@ int main()
     const bitCapInt baseMin = 1U << ((qubitCount - 1U) / 2 - 1U);
     const bitCapInt baseMax = baseMin << 1U;
 #else
-    const bitCapInt baseMin = 1U;
-    const bitCapInt baseMax = (toFactor - 1U) >> 1U;
+    const bitCapInt baseMin = 2U;
+    const bitCapInt baseMax = (toFactor - 1U);
 #endif
 
     std::vector<rand_dist> toFactorDist;
@@ -176,8 +176,6 @@ int main()
             for (;;) {
                 for (size_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
                     // Choose a base at random, >1 and <toFactor.
-                    // We assume there's no particular downside to choosing only odd bases,
-                    // which might be more likely to immediately yield a prime.
                     bitCapInt base = toFactorDist[0](rand_gen);
 #if QBCAPPOW > 6U
                     for (size_t i = 1U; i < toFactorDist.size(); i++) {
@@ -186,7 +184,12 @@ int main()
                     }
                     base += baseMin;
 #endif
+
+#if IS_SEMI_PRIME
+                    // We assume there's no particular downside to choosing only odd bases,
+                    // which might be more likely to immediately yield a prime.
                     base = (base << 1U) | 1U;
+#endif
 
                     const bitCapInt testFactor = gcd(toFactor, base);
                     if (testFactor != 1) {
