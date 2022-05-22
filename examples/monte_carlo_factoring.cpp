@@ -30,8 +30,8 @@
 #include <mutex>
 
 #define ONE_BCI ((bitCapInt)1UL)
-// Change QBCAPPOW, if you need more than 2^12 bits of factorized integer, within Boost and system limits.
-#define QBCAPPOW 12U
+// Change QBCAPPOW, if you need more than 2^8 bits of factorized integer, within Boost and system limits.
+#define QBCAPPOW 8U
 
 #if QBCAPPOW < 8U
 #define bitLenInt uint8_t
@@ -166,7 +166,7 @@ int main()
     const bitLenInt wordSize = 64U;
     const bitCapInt maxPow = ONE_BCI << wordSize;
     std::vector<rand_dist> toFactorDist;
-    bitCapInt distPart = toFactor - 2U;
+    bitCapInt distPart = toFactor - 3U;
     while (distPart) {
         toFactorDist.push_back(rand_dist(0U, (uint64_t)(distPart % maxPow)));
         distPart >>= wordSize;
@@ -183,10 +183,10 @@ int main()
     std::vector<std::future<void>> futures(threads);
     for (unsigned cpu = 0U; cpu < threads; cpu++) {
         futures[cpu] = std::async(std::launch::async, [&] {
-            const uint64_t BATCH_SIZE = 1U << 9U;
+            const size_t BATCH_SIZE = 1U << 9U;
 
             for (;;) {
-                for (uint64_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
+                for (size_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
                     // Choose a base at random, >1 and <toFactor.
                     // Construct a random number
                     bitCapInt base = toFactorDist[0](rand_gen);
@@ -213,22 +213,34 @@ int main()
                     // This guess will usually be wrong, at least for semi-prime inputs.
                     // If we try many times, though, this can be a practically valuable factoring method.
 
-                    // Firstly, the period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
-                    const bitCapInt minR = intLog(base, toFactor);
                     // y is meant to be close to some number c * qubitPower / r, where "r" is the period.
                     // c is a positive integer or 0, and we don't want the 0 case.
                     // y is truncated by the number of qubits in the register, at most.
                     // The maximum value of c before truncation is no higher than r.
-                    // Based on the above, y is between minR and qubitPower.
-                    const bitCapInt yRange = qubitPower - minR;
-                    bitCapInt yPart = yRange;
-                    bitCapInt y = 0;
-                    while (y) {
-                        rand_dist yDist(0, (uint64_t)(yPart % maxPow));
-                        y >>= wordSize;
-                        y |= yDist(rand_gen);
+
+                    // The period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
+                    const bitCapInt minR = intLog(base, toFactor);
+                    // It can be shown that the period of a modular exponentiation can be no higher than 1 less
+                    // than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
+                    const bitCapInt maxR = toFactor - 1U;
+
+                    // First, we guess r, between minR and maxR.
+                    bitCapInt rPart = maxR - minR;
+                    bitCapInt rGuess = 0U;
+                    while (rPart) {
+                        rand_dist rDist(0U, (uint64_t)(rPart % maxPow));
+                        rPart >>= wordSize;
+                        rGuess <<= wordSize;
+                        rGuess |= rDist(rand_gen);
                     }
-                    y += minR;
+                    rGuess += minR;
+
+                    // c is basically a harmonic degeneracy factor, and there might be no value in testing
+                    // any case except c = 1, without loss of generality.
+
+                    // This sets a nonuniform distribution on our y values to test.
+                    // y values are close to qubitPower / rGuess, and we midpoint round.
+                    const bitCapInt y = (qubitPower / rGuess) + (((2U * (qubitPower % rGuess)) < rGuess) ? 0U : 1U);
 
                     // Value is always fractional, so skip first step, by flipping numerator and denominator:
                     bitCapInt numerator = qubitPower;
