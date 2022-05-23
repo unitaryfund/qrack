@@ -131,6 +131,37 @@ inline bitLenInt intLog(const bitCapInt& base, const bitCapInt& arg)
     return result;
 }
 
+// Adapted from Gaurav Ahirwar's suggestion on https://www.geeksforgeeks.org/square-root-of-an-integer/
+bitCapInt floorSqrt(const bitCapInt& x)
+{
+    // Base cases
+    if ((x == 0) || (x == 1)) {
+        return x;
+    }
+
+    // Binary search for floor(sqrt(x))
+    bitCapInt start = 1U, end = x >> 1U, ans;
+    while (start <= end) {
+        bitCapInt mid = (start + end) >> 1U;
+
+        // If x is a perfect square
+        bitCapInt sqr = mid * mid;
+        if (sqr == x) {
+            return mid;
+        }
+
+        if (sqr < x) {
+            // Since we need floor, we update answer when mid*mid is smaller than x, and move closer to sqrt(x).
+            start = mid + 1U;
+            ans = mid;
+        } else {
+            // If mid*mid is greater than x
+            end = mid - 1U;
+        }
+    }
+    return ans;
+}
+
 bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
 {
     if (n2) {
@@ -279,7 +310,9 @@ int main()
 
                         // It can be shown that the period of this modular exponentiation can be no higher than 1
                         // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
-                        const bitCapInt maxR = toFactor - 1U;
+                        // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
+                        // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
+                        const bitCapInt maxR = toFactor - floorSqrt(toFactor);
 
                         // c is basically a harmonic degeneracy factor, and there might be no value in testing
                         // any case except c = 1, without loss of generality.
