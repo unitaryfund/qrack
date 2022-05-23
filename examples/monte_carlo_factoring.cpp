@@ -179,7 +179,14 @@ int main()
                 // These constants are semi-redundant, but they're only defined once per thread,
                 // and compilers differ on lambda expression capture of constants.
 
+                // Batching reduces mutex-waiting overhead, on the std::atomic broadcast.
                 const size_t BATCH_SIZE = 1U << 9U;
+
+                // What happens when we reach the practical limit of parallelism on choice of base?
+                // Possible modular exponentiation periods still grow with the size of the input,
+                // but multiple PERIOD_TRIALS control a ratio of base distribution to period coverage.
+                const size_t PERIOD_TRIALS = 1U;
+
                 const double clockFactor = 1.0 / 1000.0; // Report in ms
                 const unsigned threads = std::thread::hardware_concurrency();
 
@@ -212,7 +219,7 @@ int main()
                 }
                 std::reverse(toFactorDist.begin(), toFactorDist.end());
 #else
-            toFactorDist.push_back(rand_dist(baseMin, baseMax));
+                toFactorDist.push_back(rand_dist(baseMin, baseMax));
 #endif
 
                 for (;;) {
@@ -262,58 +269,60 @@ int main()
                         // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
                         const bitCapInt maxR = toFactor - 1U;
 
-                    // c is basically a harmonic degeneracy factor, and there might be no value in testing
-                    // any case except c = 1, without loss of generality.
+                        // c is basically a harmonic degeneracy factor, and there might be no value in testing
+                        // any case except c = 1, without loss of generality.
 
-                    // This sets a nonuniform distribution on our y values to test.
-                    // y values are close to qubitPower / rGuess, and we midpoint round.
+                        // This sets a nonuniform distribution on our y values to test.
+                        // y values are close to qubitPower / rGuess, and we midpoint round.
 
-                    // However, results are better with uniformity over r, rather than y.
+                        // However, results are better with uniformity over r, rather than y.
 
-                    // So, we guess r, between minR and maxR.
+                        // So, we guess r, between minR and maxR.
+                        for (size_t rTrial = 0U; rTrial < PERIOD_TRIALS; rTrial++) {
 #if QBCAPPOW > 6U
-                        bitCapInt rPart = maxR - minR;
-                        bitCapInt r = 0U;
-                        while (rPart) {
-                            rand_dist rDist(0U, (uint64_t)(rPart & wordMask));
-                            rPart >>= wordSize;
-                            r <<= wordSize;
-                            r |= rDist(rand_gen);
-                        }
-                        r += minR;
+                            bitCapInt rPart = maxR - minR;
+                            bitCapInt r = 0U;
+                            while (rPart) {
+                                rand_dist rDist(0U, (uint64_t)(rPart & wordMask));
+                                rPart >>= wordSize;
+                                r <<= wordSize;
+                                r |= rDist(rand_gen);
+                            }
+                            r += minR;
 #else
-                    rand_dist rDist(minR, maxR);
-                    bitCapInt r = rDist(rand_gen);
+                            rand_dist rDist(minR, maxR);
+                            bitCapInt r = rDist(rand_gen);
 #endif
 
-                        // Since our output is r rather than y, we can skip the continued fractions step.
+                            // Since our output is r rather than y, we can skip the continued fractions step.
 
-                        // Try to determine the factors
-                        if (r & 1U) {
-                            r <<= 1U;
+                            // Try to determine the factors
+                            if (r & 1U) {
+                                r <<= 1U;
+                            }
+                            const bitCapInt p = r >> 1U;
+                            const bitCapInt apowrhalf = uipow(base, p) % toFactor;
+                            bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
+                            bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
+                            bitCapInt fmul = f1 * f2;
+                            while ((fmul != toFactor) && (fmul > 1U) && ((toFactor / fmul) * fmul == toFactor)) {
+                                fmul = f1;
+                                f1 = fmul * f2;
+                                f2 = toFactor / (fmul * f2);
+                                fmul = f1 * f2;
+                            }
+                            if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+                                std::cout << "Success: Found " << f1 << " * " << f2 << " = " << toFactor << std::endl;
+                                auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
+                                    std::chrono::high_resolution_clock::now() - iterClock);
+                                std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
+                                std::cout << "(Waiting to join other threads...)" << std::endl;
+                                isFinished = true;
+                                return;
+                            } // else {
+                              // std::cout << "Failure: Found " << res1 << " and " << res2 << std::endl;
+                            // }
                         }
-                        const bitCapInt p = r >> 1U;
-                        const bitCapInt apowrhalf = uipow(base, p) % toFactor;
-                        bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
-                        bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
-                        bitCapInt fmul = f1 * f2;
-                        while ((fmul != toFactor) && (fmul > 1U) && ((toFactor / fmul) * fmul == toFactor)) {
-                            fmul = f1;
-                            f1 = fmul * f2;
-                            f2 = toFactor / (fmul * f2);
-                            fmul = f1 * f2;
-                        }
-                        if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
-                            std::cout << "Success: Found " << f1 << " * " << f2 << " = " << toFactor << std::endl;
-                            auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
-                                std::chrono::high_resolution_clock::now() - iterClock);
-                            std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
-                            std::cout << "(Waiting to join other threads...)" << std::endl;
-                            isFinished = true;
-                            return;
-                        } // else {
-                          // std::cout << "Failure: Found " << res1 << " and " << res2 << std::endl;
-                        // }
                     }
 
                     // Check if finished, between batches.
