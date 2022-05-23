@@ -258,6 +258,26 @@ int main()
                 toFactorDist.push_back(rand_dist(baseMin, baseMax));
 #endif
 
+            // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
+            // const bitCapInt minPhi = floorSqrt(toFactor / 2);
+            // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
+#if IS_SEMI_PRIME
+                // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
+                // The minimum value of this formula, for our input, is (fullMin - 1) * (fullMax - 1).
+                // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
+                const bitCapInt minPhiGen = pow(toFactor / 2, PHI_EXPONENT);
+                const bitCapInt minPhiSemiprime = (fullMin - 1U) * (fullMax - 1U);
+                const bitCapInt minPhi = (minPhiGen < minPhiSemiprime) ? minPhiSemiprime : minPhiGen;
+#else
+                const bitCapInt minPhi = pow(toFactor / 2, PHI_EXPONENT);
+#endif
+
+                // It can be shown that the period of this modular exponentiation can be no higher than 1
+                // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
+                // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
+                // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
+                const bitCapInt maxR = toFactor - floorSqrt(toFactor);
+
                 for (;;) {
                     for (size_t batchItem = 0U; batchItem < BATCH_SIZE; batchItem++) {
                         // Choose a base at random, >1 and <toFactor.
@@ -301,18 +321,9 @@ int main()
                         // The period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
                         // (Also, toFactor is definitely NOT an exact multiple of base.)
                         const bitCapInt logBaseToFactor = (bitCapInt)intLog(base, toFactor) + 1U;
-                        // Euler's Theorem tells us, if gcd(a, n) = 1, then a^\phi(n) = 1 MOD n.
-                        // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
-                        // const bitCapInt minPhi = floorSqrt(toFactor / 2);
-                        // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
-                        const bitCapInt minPhi = pow(toFactor / 2, PHI_EXPONENT);
+                        // Euler's Theorem tells us, if gcd(a, n) = 1, then a^\phi(n) = 1 MOD n,
+                        // where \phi(n) is Euler's totient for n.
                         const bitCapInt minR = (minPhi < logBaseToFactor) ? logBaseToFactor : minPhi;
-
-                        // It can be shown that the period of this modular exponentiation can be no higher than 1
-                        // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
-                        // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
-                        // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
-                        const bitCapInt maxR = toFactor - floorSqrt(toFactor);
 
                         // c is basically a harmonic degeneracy factor, and there might be no value in testing
                         // any case except c = 1, without loss of generality.
