@@ -29,8 +29,10 @@
 #include <future>
 #include <mutex>
 
-// Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
-#define IS_SEMI_PRIME 1
+// Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.*
+// (*Actually, leave it off, as the increase in likelihood of direct-guess seems more than
+// offset by the likelihood of period-guessing.)
+#define IS_SEMI_PRIME 0
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 
