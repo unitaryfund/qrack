@@ -264,10 +264,10 @@ int main()
 #if IS_SEMI_PRIME
                 // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
                 // The minimum value of this formula, for our input, without consideration of actual
-                // primes in the interval, is (fullMin - 1) * ((fullMin + 2) - 1).
+                // primes in the interval, is ((fullMin + 1) - 1) * ((fullMin + 3) - 1).
                 // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
                 const bitCapInt minPhiGen = pow(toFactor / 2, PHI_EXPONENT);
-                const bitCapInt minPhiSemiprime = (fullMin - 1U) * (fullMin + 1U);
+                const bitCapInt minPhiSemiprime = fullMin * (fullMin + 2U);
                 const bitCapInt minPhi = (minPhiGen < minPhiSemiprime) ? minPhiSemiprime : minPhiGen;
 #else
                 const bitCapInt minPhi = pow(toFactor / 2, PHI_EXPONENT);
