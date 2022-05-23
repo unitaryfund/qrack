@@ -40,6 +40,10 @@
 // Change QBCAPPOW, if you need more than 2^6 bits of factorized integer, within Boost and system limits.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 8U
+// For lower limit of Euler's totient, from
+// https://math.stackexchange.com/questions/301837/is-the-euler-phi-function-bounded-below
+// (Approximately log(2)/log(3))
+#define PHI_EXPONENT 0.6309297535714575
 
 #if QBCAPPOW < 8U
 #define bitLenInt uint8_t
@@ -265,7 +269,14 @@ int main()
 
                         // The period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
                         // (Also, toFactor is definitely NOT an exact multiple of base.)
-                        const bitCapInt minR = (bitCapInt)intLog(base, toFactor) + 1U;
+                        const bitCapInt logBaseToFactor = (bitCapInt)intLog(base, toFactor) + 1U;
+                        // Euler's Theorem tells us, if gcd(a, n) = 1, then a^\phi(n) = 1 MOD n.
+                        // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
+                        // const bitCapInt minPhi = floorSqrt(toFactor / 2);
+                        // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
+                        const bitCapInt minPhi = pow(toFactor / 2, PHI_EXPONENT);
+                        const bitCapInt minR = (minPhi < logBaseToFactor) ? logBaseToFactor : minPhi;
+
                         // It can be shown that the period of this modular exponentiation can be no higher than 1
                         // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
                         const bitCapInt maxR = toFactor - 1U;
@@ -294,19 +305,15 @@ int main()
                             rand_dist rDist(minR, maxR);
                             bitCapInt r = rDist(rand_gen);
 #endif
-
                             // Since our output is r rather than y, we can skip the continued fractions step.
 
                             // Try to determine the factors
-                            if (r & 1U) {
-                                r <<= 1U;
-                            }
-                            const bitCapInt p = r >> 1U;
+                            const bitCapInt p = (r & 1U) ? r : (r >> 1U);
                             const bitCapInt apowrhalf = uipow(base, p) % toFactor;
                             bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
                             bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
                             bitCapInt fmul = f1 * f2;
-                            while ((fmul != toFactor) && (fmul > 1U) && ((toFactor / fmul) * fmul == toFactor)) {
+                            while ((fmul != toFactor) && (fmul > 1U) && (((toFactor / fmul) * fmul) == toFactor)) {
                                 fmul = f1;
                                 f1 = fmul * f2;
                                 f2 = toFactor / (fmul * f2);
