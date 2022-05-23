@@ -188,19 +188,18 @@ int main()
 
 #if IS_SEMI_PRIME
                 const bitCapInt fullMin = 1U << ((qubitCount - 1U) / 2 - 1U);
-                const bitCapInt fullMax = fullMin << 1U - 1U;
+                const bitCapInt fullMax = (fullMin << 1U) - 1U;
 #else
                 const bitCapInt fullMin = 2U;
                 const bitCapInt fullMax = (toFactor - 1U);
 #endif
                 const bitCapInt nodeRange = (1U + fullMax - fullMin) / nodeCount;
-                const bitCapInt partRange = nodeRange / threads;
                 const bitCapInt nodeMin = fullMin + nodeRange * nodeId;
-                const bitCapInt nodeMax = fullMin + nodeRange * (nodeId + 1U) - 1U;
-                const bitCapInt baseMin = nodeMin + partRange * cpu;
-                const bitCapInt baseMax = (((cpu + 1U) == threads) && ((nodeId + 1U) == nodeCount))
-                    ? fullMax
-                    : (((cpu + 1U) == threads) ? nodeMax : (nodeMin + partRange * (cpu + 1U) - 1U));
+                const bitCapInt nodeMax =
+                    ((nodeId + 1U) == nodeCount) ? fullMax : (fullMin + nodeRange * (nodeId + 1U) - 1U);
+                const bitCapInt threadRange = (1U + nodeMax - nodeMin) / threads;
+                const bitCapInt baseMin = nodeMin + threadRange * cpu;
+                const bitCapInt baseMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
 
                 std::vector<rand_dist> toFactorDist;
 #if QBCAPPOW > 6U
