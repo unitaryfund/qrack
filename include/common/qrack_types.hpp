@@ -65,7 +65,7 @@
 #define bitsInCap (8U * (((bitLenInt)1U) << QBCAPPOW))
 #include <boost/multiprecision/cpp_int.hpp>
 #define bitCapInt                                                                                                      \
-    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1 << QBCAPPOW, 1 << QBCAPPOW,                 \
+    boost::multiprecision::number<boost::multiprecision::cpp_int_backend<1ULL << QBCAPPOW, 1ULL << QBCAPPOW,           \
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
 #endif
 
