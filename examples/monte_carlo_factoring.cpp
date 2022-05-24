@@ -31,7 +31,7 @@
 
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.*
 // (*Applicability of this optimization might depend on case or bit width.)
-#define IS_SEMI_PRIME 1
+#define IS_RSA_SEMI_PRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 
@@ -229,7 +229,7 @@ int main()
                 const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
                 const bitCapInt qubitPower = ONE_BCI << qubitCount;
 
-#if IS_SEMI_PRIME
+#if IS_RSA_SEMI_PRIME
                 const bitCapInt fullMin = 1U << ((qubitCount - 1U) / 2 - 1U);
                 const bitCapInt fullMax = (fullMin << 1U) - 1U;
 #else
@@ -261,13 +261,13 @@ int main()
             // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
             // const bitCapInt minPhi = floorSqrt(toFactor / 2);
             // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
-#if IS_SEMI_PRIME
+#if IS_RSA_SEMI_PRIME
                 // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
                 // The minimum value of this formula, for our input, without consideration of actual
                 // primes in the interval, is ((fullMin + 1) - 1) * ((fullMin + 3) - 1).
                 // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
                 const bitCapInt minPhiGen = pow(toFactor / 2, PHI_EXPONENT);
-                const bitCapInt minPhiSemiprime = fullMin * (fullMin + 2U);
+                const bitCapInt minPhiSemiprime = fullMin * toFactor / fullMax;
                 const bitCapInt minPhi = (minPhiGen < minPhiSemiprime) ? minPhiSemiprime : minPhiGen;
 #else
                 const bitCapInt minPhi = pow(toFactor / 2, PHI_EXPONENT);
@@ -291,7 +291,7 @@ int main()
                         base += baseMin;
 #endif
 
-#if IS_SEMI_PRIME
+#if IS_RSA_SEMI_PRIME
                         // We assume there's no particular downside to choosing only odd bases,
                         // which might be more likely to immediately yield a prime.
                         base = (base << 1U) | 1U;
