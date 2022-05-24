@@ -259,6 +259,12 @@ int main()
                 toFactorDist.push_back(rand_dist(baseMin, baseMax));
 #endif
 
+                // It can be shown that the period of this modular exponentiation can be no higher than 1
+                // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
+                // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
+                // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
+                const bitCapInt maxR = toFactor - floorSqrt(toFactor);
+
 #if IS_RSA_SEMI_PRIME
                 // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
                 // The minimum value of this formula, for our input, without consideration of actual
@@ -269,21 +275,11 @@ int main()
                     ? fullMax * toFactor / (fullMin + 1U)
                     : ((fullMin + 1U) * toFactor / fullMax);
                 const bitCapInt minPhi = (minPhiGen < minPhiSemiprime) ? minPhiSemiprime : minPhiGen;
-
-                // If n is semiprime, \phi(n) <= (p - 1) * (p + 1), for a maximizing prime, "p."
-                // p is < fullMin + fullRange / 2.
-                const bitCapInt maxR = floorSqrt(fullMin + fullRange / 2U);
 #else
                 // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
                 // const bitCapInt minPhi = floorSqrt(toFactor / 2);
                 // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
                 const bitCapInt minPhi = pow(toFactor / 2, PHI_EXPONENT);
-
-                // It can be shown that the period of this modular exponentiation can be no higher than 1
-                // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
-                // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
-                // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
-                const bitCapInt maxR = toFactor - floorSqrt(toFactor);
 #endif
 
                 for (;;) {
