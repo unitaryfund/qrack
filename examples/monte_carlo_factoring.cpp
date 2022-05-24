@@ -31,8 +31,7 @@
 
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.*
 // (*Applicability of this optimization might depend on case or bit width.)
-// (WARNING: CURRENTLY BROKEN)
-#define IS_RSA_SEMI_PRIME 0
+#define IS_RSA_SEMI_PRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 
@@ -230,14 +229,8 @@ int main()
                 const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
                 const bitCapInt qubitPower = ONE_BCI << qubitCount;
 
-#if IS_RSA_SEMI_PRIME
-                const bitLenInt primeBits = (qubitCount + 1U) >> 2U;
-                const bitCapInt fullMin = 1U << (primeBits - 1U);
-                const bitCapInt fullMax = (1U << primeBits) - 1U;
-#else
                 const bitCapInt fullMin = 2U;
                 const bitCapInt fullMax = (toFactor - 1U);
-#endif
                 const bitCapInt fullRange = fullMax + 1U - fullMin;
                 const bitCapInt nodeRange = fullRange / nodeCount;
                 const bitCapInt nodeMin = fullMin + nodeRange * nodeId;
@@ -248,16 +241,15 @@ int main()
                 const bitCapInt baseMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
 
 #if IS_RSA_SEMI_PRIME
+                const bitLenInt primeBits = (qubitCount + 1U) >> 2U;
+                const bitCapInt minPrime = 1U << (primeBits - 1U);
+                const bitCapInt maxPrime = (1U << primeBits) - 1U;
                 // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
                 // The minimum value of this formula, for our input, without consideration of actual
                 // primes in the interval, is as follows:
                 // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
-                const bitCapInt minPhiGen = floorSqrt(toFactor / 2);
-                const bitCapInt minPhiSemiprime = (toFactor / fullMax - 1U) * (toFactor / fullMax - 1U);
-                const bitCapInt minR = (minPhiGen < minPhiSemiprime) ? minPhiSemiprime : minPhiGen;
-                const bitCapInt maxPhiGen = toFactor - floorSqrt(toFactor);
-                const bitCapInt maxPhiSemiprime = (toFactor / (fullMin + 1U) - 1U) * (toFactor / (fullMin + 1U) - 1U);
-                const bitCapInt maxR = (maxPhiGen < maxPhiSemiprime) ? maxPhiGen : maxPhiSemiprime;
+                const bitCapInt minR = (toFactor / maxPrime - 1U) * (toFactor / maxPrime - 1U);
+                const bitCapInt maxR = (toFactor / (minPrime + 1U)) * (toFactor / (minPrime + 1U));
 #else
                 // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
                 const bitCapInt minR = floorSqrt(toFactor / 2);
@@ -290,6 +282,7 @@ int main()
                 }
                 std::reverse(rDist.begin(), rDist.end());
 #else
+                toFactorDist.push_back(rand_dist(baseMin, baseMax));
                 rDist.push_back(rand_dist(minR, maxR));
 #endif
 
