@@ -247,7 +247,32 @@ int main()
                 const bitCapInt baseMin = nodeMin + threadRange * cpu;
                 const bitCapInt baseMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
 
+#if IS_RSA_SEMI_PRIME
+                // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
+                // The minimum value of this formula, for our input, without consideration of actual
+                // primes in the interval, is as follows:
+                // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
+                const bitCapInt minPhiGen = floorSqrt(toFactor / 2);
+                const bitCapInt minPhiSemiprime = (toFactor / fullMax - 1U) * (toFactor / fullMax - 1U);
+                const bitCapInt minR = (minPhiGen < minPhiSemiprime) ? minPhiSemiprime : minPhiGen;
+                const bitCapInt maxPhiGen = toFactor - floorSqrt(toFactor);
+                const bitCapInt maxPhiSemiprime = (toFactor / (fullMin + 1U) - 1U) * (toFactor / (fullMin + 1U) - 1U);
+                const bitCapInt maxR = (maxPhiGen < maxPhiSemiprime) ? maxPhiGen : maxPhiSemiprime;
+#else
+                // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
+                const bitCapInt minR = floorSqrt(toFactor / 2);
+                // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
+                // const bitCapInt minR = pow(toFactor / 2, PHI_EXPONENT);
+
+                // It can be shown that the period of this modular exponentiation can be no higher than 1
+                // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
+                // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
+                // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
+                const bitCapInt maxR = toFactor - floorSqrt(toFactor);
+#endif
+
                 std::vector<rand_dist> toFactorDist;
+                std::vector<rand_dist> rDist;
 #if QBCAPPOW > 6U
                 const bitLenInt wordSize = 64U;
                 const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
@@ -257,32 +282,15 @@ int main()
                     distPart >>= wordSize;
                 }
                 std::reverse(toFactorDist.begin(), toFactorDist.end());
-#else
-                toFactorDist.push_back(rand_dist(baseMin, baseMax));
-#endif
 
-#if IS_RSA_SEMI_PRIME
-                // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
-                // The minimum value of this formula, for our input, without consideration of actual
-                // primes in the interval, is as follows:
-                // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
-                const bitCapInt minPhiGen = floorSqrt(toFactor / 2);
-                const bitCapInt minPhiSemiprime = (toFactor / fullMax - 1U) * (toFactor / fullMax - 1U);
-                const bitCapInt minPhi = (minPhiGen < minPhiSemiprime) ? minPhiSemiprime : minPhiGen;
-                const bitCapInt maxPhiGen = toFactor - floorSqrt(toFactor);
-                const bitCapInt maxPhiSemiprime = (toFactor / (fullMin + 1U) - 1U) * (toFactor / (fullMin + 1U) - 1U);
-                const bitCapInt maxR = (maxPhiGen < maxPhiSemiprime) ? maxPhiGen : maxPhiSemiprime;
+                distPart = maxR - minR;
+                while (distPart) {
+                    rDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
+                    distPart >>= wordSize;
+                }
+                std::reverse(rDist.begin(), rDist.end());
 #else
-                // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
-                const bitCapInt minPhi = floorSqrt(toFactor / 2);
-                // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
-                // const bitCapInt minPhi = pow(toFactor / 2, PHI_EXPONENT);
-
-                // It can be shown that the period of this modular exponentiation can be no higher than 1
-                // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
-                // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
-                // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
-                const bitCapInt maxR = toFactor - floorSqrt(toFactor);
+                rDist.push_back(rand_dist(minR, maxR));
 #endif
 
                 for (;;) {
@@ -321,10 +329,10 @@ int main()
 
                         // The period of ((base ^ x) MOD toFactor) can't be smaller than log_base(toFactor).
                         // (Also, toFactor is definitely NOT an exact multiple of base.)
-                        const bitCapInt logBaseToFactor = (bitCapInt)intLog(base, toFactor) + 1U;
+                        // const bitCapInt logBaseToFactor = (bitCapInt)intLog(base, toFactor) + 1U;
                         // Euler's Theorem tells us, if gcd(a, n) = 1, then a^\phi(n) = 1 MOD n,
                         // where \phi(n) is Euler's totient for n.
-                        const bitCapInt minR = (minPhi < logBaseToFactor) ? logBaseToFactor : minPhi;
+                        // const bitCapInt minR = (minPhi < logBaseToFactor) ? logBaseToFactor : minPhi;
 
                         // c is basically a harmonic degeneracy factor, and there might be no value in testing
                         // any case except c = 1, without loss of generality.
@@ -336,19 +344,14 @@ int main()
 
                         // So, we guess r, between minR and maxR.
                         for (size_t rTrial = 0U; rTrial < PERIOD_TRIALS; rTrial++) {
+                            // Choose a base at random, >1 and <toFactor.
+                            bitCapInt r = rDist[0](rand_gen);
 #if QBCAPPOW > 6U
-                            bitCapInt rPart = maxR - minR;
-                            bitCapInt r = 0U;
-                            while (rPart) {
-                                rand_dist rDist(0U, (uint64_t)(rPart & wordMask));
-                                rPart >>= wordSize;
+                            for (size_t i = 1U; i < rDist.size(); i++) {
                                 r <<= wordSize;
-                                r |= rDist(rand_gen);
+                                r |= rDist[i](rand_gen);
                             }
                             r += minR;
-#else
-                            rand_dist rDist(minR, maxR);
-                            bitCapInt r = rDist(rand_gen);
 #endif
                             // Since our output is r rather than y, we can skip the continued fractions step.
 
