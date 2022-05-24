@@ -31,7 +31,8 @@
 
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.*
 // (*Applicability of this optimization might depend on case or bit width.)
-#define IS_RSA_SEMI_PRIME 1
+// (WARNING: CURRENTLY BROKEN)
+#define IS_RSA_SEMI_PRIME 0
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 
@@ -230,18 +231,19 @@ int main()
                 const bitCapInt qubitPower = ONE_BCI << qubitCount;
 
 #if IS_RSA_SEMI_PRIME
-                const bitCapInt fullMin = 1U << ((qubitCount - 1U) / 2 - 1U);
-                const bitCapInt fullMax = (fullMin << 1U) - 1U;
+                const bitLenInt primeBits = (qubitCount + 1U) >> 2U;
+                const bitCapInt fullMin = 1U << (primeBits - 1U);
+                const bitCapInt fullMax = (1U << primeBits) - 1U;
 #else
                 const bitCapInt fullMin = 2U;
                 const bitCapInt fullMax = (toFactor - 1U);
 #endif
                 const bitCapInt fullRange = fullMax + 1U - fullMin;
-                const bitCapInt nodeRange = (1U + fullMax - fullMin) / nodeCount;
+                const bitCapInt nodeRange = fullRange / nodeCount;
                 const bitCapInt nodeMin = fullMin + nodeRange * nodeId;
                 const bitCapInt nodeMax =
                     ((nodeId + 1U) == nodeCount) ? fullMax : (fullMin + nodeRange * (nodeId + 1U) - 1U);
-                const bitCapInt threadRange = (1U + nodeMax - nodeMin) / threads;
+                const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
                 const bitCapInt baseMin = nodeMin + threadRange * cpu;
                 const bitCapInt baseMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
 
@@ -293,12 +295,6 @@ int main()
                             base |= toFactorDist[i](rand_gen);
                         }
                         base += baseMin;
-#endif
-
-#if IS_RSA_SEMI_PRIME
-                        // We assume there's no particular downside to choosing only odd bases,
-                        // which might be more likely to immediately yield a prime.
-                        base = (base << 1U) | 1U;
 #endif
 
                         const bitCapInt testFactor = gcd(toFactor, base);
