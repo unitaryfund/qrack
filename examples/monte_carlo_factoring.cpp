@@ -345,9 +345,31 @@ int main()
                             r += baseMin;
 #endif
                             // Since our output is r rather than y, we can skip the continued fractions step.
-
-                            // Try to determine the factors
                             const bitCapInt p = (r & 1U) ? r : (r >> 1U);
+
+#define PRINT_SUCCESS(f1, f2, toFactor)                                                                                \
+    std::cout << "Success: Found " << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                       \
+    auto tClock =                                                                                                      \
+        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);  \
+    std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
+    std::cout << "(Waiting to join other threads...)" << std::endl;
+
+#if IS_RSA_SEMIPRIME
+#define RGUESS p
+#else
+#define RGUESS r
+#endif
+
+                            // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
+                            // we first check if our guess for r is already a factor.
+                            if ((RGUESS > 1U) && (((toFactor / RGUESS) * RGUESS) == toFactor)) {
+                                // Inform the other threads on this node that we've succeeded and are done:
+                                isFinished = true;
+
+                                PRINT_SUCCESS(RGUESS, toFactor / RGUESS, toFactor);
+                                return;
+                            }
+
                             const bitCapInt apowrhalf = uipow(base, p) % toFactor;
                             bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
                             bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
@@ -362,11 +384,7 @@ int main()
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
-                                std::cout << "Success: Found " << f1 << " * " << f2 << " = " << toFactor << std::endl;
-                                auto tClock = std::chrono::duration_cast<std::chrono::microseconds>(
-                                    std::chrono::high_resolution_clock::now() - iterClock);
-                                std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;
-                                std::cout << "(Waiting to join other threads...)" << std::endl;
+                                PRINT_SUCCESS(f1, f2, toFactor);
                                 return;
                             }
                         }
@@ -374,7 +392,7 @@ int main()
 
                     // Check if finished, between batches.
                     if (isFinished) {
-                        break;
+                        return;
                     }
                 }
             });
