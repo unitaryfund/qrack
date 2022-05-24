@@ -236,6 +236,7 @@ int main()
                 const bitCapInt fullMin = 2U;
                 const bitCapInt fullMax = (toFactor - 1U);
 #endif
+                const bitCapInt fullRange = fullMax + 1U - fullMin;
                 const bitCapInt nodeRange = (1U + fullMax - fullMin) / nodeCount;
                 const bitCapInt nodeMin = fullMin + nodeRange * nodeId;
                 const bitCapInt nodeMax =
@@ -267,7 +268,9 @@ int main()
                 // primes in the interval, is ((fullMin + 1) - 1) * ((fullMin + 3) - 1).
                 // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
                 const bitCapInt minPhiGen = pow(toFactor / 2, PHI_EXPONENT);
-                const bitCapInt minPhiSemiprime = fullMin * toFactor / fullMax;
+                const bitCapInt minPhiSemiprime = (toFactor < (fullRange >> 1U))
+                    ? fullMax * toFactor / (fullMin + 1U)
+                    : ((fullMin + 1U) * toFactor / fullMax);
                 const bitCapInt minPhi = (minPhiGen < minPhiSemiprime) ? minPhiSemiprime : minPhiGen;
 #else
                 const bitCapInt minPhi = pow(toFactor / 2, PHI_EXPONENT);
