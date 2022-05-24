@@ -241,15 +241,15 @@ int main()
                 const bitCapInt baseMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
 
 #if IS_RSA_SEMI_PRIME
-                const bitLenInt primeBits = (qubitCount + 1U) >> 2U;
-                const bitCapInt minPrime = 1U << (primeBits - 1U);
+                const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
+                const bitCapInt minPrime = (1U << (primeBits - 1U)) + 1U;
                 const bitCapInt maxPrime = (1U << primeBits) - 1U;
                 // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
                 // The minimum value of this formula, for our input, without consideration of actual
                 // primes in the interval, is as follows:
                 // (See https://www.mobilefish.com/services/rsa_key_generation/rsa_key_generation.php)
                 const bitCapInt minR = (toFactor / maxPrime - 1U) * (toFactor / maxPrime - 1U);
-                const bitCapInt maxR = (toFactor / (minPrime + 1U)) * (toFactor / (minPrime + 1U));
+                const bitCapInt maxR = (toFactor / minPrime - 1U) * (toFactor / minPrime - 1U);
 #else
                 // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
                 const bitCapInt minR = floorSqrt(toFactor / 2);
@@ -265,7 +265,10 @@ int main()
 
                 std::vector<rand_dist> toFactorDist;
                 std::vector<rand_dist> rDist;
-#if QBCAPPOW > 6U
+#if QBCAPPOW < 7U
+                toFactorDist.push_back(rand_dist(baseMin, baseMax));
+                rDist.push_back(rand_dist(minR, maxR));
+#else
                 const bitLenInt wordSize = 64U;
                 const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
                 bitCapInt distPart = baseMax - baseMin;
@@ -281,9 +284,6 @@ int main()
                     distPart >>= wordSize;
                 }
                 std::reverse(rDist.begin(), rDist.end());
-#else
-                toFactorDist.push_back(rand_dist(baseMin, baseMax));
-                rDist.push_back(rand_dist(minR, maxR));
 #endif
 
                 for (;;) {
