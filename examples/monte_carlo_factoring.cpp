@@ -34,12 +34,12 @@
 #define IS_RSA_SEMI_PRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
-
-#define ONE_BCI ((bitCapInt)1UL)
-#define bitsInByte 8U
 // Change QBCAPPOW, if you need more than 2^6 bits of factorized integer, within Boost and system limits.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 8U
+
+#define ONE_BCI ((bitCapInt)1UL)
+#define bitsInByte 8U
 // For lower limit of Euler's totient, from
 // https://math.stackexchange.com/questions/301837/is-the-euler-phi-function-bounded-below
 // (Approximately log(2)/log(3))
@@ -242,8 +242,8 @@ int main()
 
 #if IS_RSA_SEMI_PRIME
                 const bitLenInt primeBits = (qubitCount + 1U) >> 1U;
-                const bitCapInt minPrime = (1U << (primeBits - 1U)) + 1U;
-                const bitCapInt maxPrime = (1U << primeBits) - 1U;
+                const bitCapInt minPrime = (ONE_BCI << (primeBits - 1U)) + 1U;
+                const bitCapInt maxPrime = (ONE_BCI << primeBits) - 1U;
                 // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
                 // The minimum value of this formula, for our input, without consideration of actual
                 // primes in the interval, is as follows:
@@ -252,7 +252,7 @@ int main()
                 const bitCapInt maxR = (toFactor / minPrime - 1U) * (toFactor / minPrime - 1U);
 #else
                 // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
-                const bitCapInt minR = floorSqrt(toFactor / 2);
+                const bitCapInt minR = floorSqrt(toFactor >> 1U);
                 // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
                 // const bitCapInt minR = pow(toFactor / 2, PHI_EXPONENT);
 
