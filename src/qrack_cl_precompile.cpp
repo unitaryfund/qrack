@@ -8,7 +8,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include "qfactory.hpp"
+#include "common/oclengine.hpp"
 
 #include <iostream>
 #include <string>

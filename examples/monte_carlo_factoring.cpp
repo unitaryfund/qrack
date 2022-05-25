@@ -212,12 +212,9 @@ int main()
     isFinished = false;
 
 #if IS_RSA_SEMIPRIME
-    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = {
-        { 16U, { 32771U, 65521U } },
-        { 28U, { 134217757U, 268435399U } },
-        { 32U, { 2147483659U, 4294967291U } },
-        { 64U, { 9223372036854775837U, 1844674407370955143U } }
-    };
+    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 32771U, 65521U } },
+        { 28U, { 134217757U, 268435399U } }, { 32U, { 2147483659U, 4294967291U } },
+        { 64U, { 9223372036854775837U, 1844674407370955143U } } };
 
     // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
     // The minimum value of this formula, for our input, without consideration of actual
@@ -245,8 +242,8 @@ int main()
 
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; cpu++) {
-        futures[cpu] = std::async(
-            std::launch::async, [cpu, nodeId, nodeCount, toFactor, fullMinR, fullMaxR, &iterClock, &rand_gen, &isFinished] {
+        futures[cpu] = std::async(std::launch::async,
+            [cpu, nodeId, nodeCount, toFactor, fullMinR, fullMaxR, &iterClock, &rand_gen, &isFinished] {
                 // These constants are semi-redundant, but they're only defined once per thread,
                 // and compilers differ on lambda expression capture of constants.
 
@@ -264,7 +261,8 @@ int main()
                 const bitCapInt fullRange = fullMaxR + 1U - fullMinR;
                 const bitCapInt nodeRange = fullRange / nodeCount;
                 const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
-                const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
+                const bitCapInt nodeMax =
+                    ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
                 const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
                 const bitCapInt rMin = nodeMin + threadRange * cpu;
                 const bitCapInt rMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
@@ -397,8 +395,7 @@ int main()
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
-                                PRINT_SUCCESS(f1, f2, toFactor,
-                                    "Success (on r difference of squares): Found ");
+                                PRINT_SUCCESS(f1, f2, toFactor, "Success (on r difference of squares): Found ");
                                 return;
                             }
                         }
