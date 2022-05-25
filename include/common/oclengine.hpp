@@ -309,6 +309,7 @@ public:
         static OCLEngine instance;
         return instance;
     }
+    /// Get default location for precompiled binaries:
     static std::string GetDefaultBinaryPath()
     {
 #if ENABLE_ENV_VARS
@@ -351,8 +352,8 @@ public:
     size_t GetDefaultDeviceID() { return default_device_context->device_id; }
     /// Pick a default device, for QEngineOCL instances that don't specify a preferred device.
     void SetDefaultDeviceContext(DeviceContextPtr dcp);
-    /// Get default location for precompiled binaries:
     size_t GetMaxActiveAllocSize() { return maxActiveAllocSize; }
+
     size_t GetActiveAllocSize(const int64_t& dev)
     {
         return (dev < 0) ? activeAllocSizes[GetDefaultDeviceID()] : activeAllocSizes[(size_t)dev];

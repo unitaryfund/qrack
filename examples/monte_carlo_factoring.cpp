@@ -25,17 +25,19 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <algorithm>
 #include <atomic>
 #include <future>
+#include <map>
 #include <mutex>
 
 // Turn this off, if you're not factoring a semi-prime number with equal-bit-width factors.
-#define IS_RSA_SEMI_PRIME 1
+#define IS_RSA_SEMIPRIME 1
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
-#define QBCAPPOW 8U
+#define QBCAPPOW 6U
 
 #define ONE_BCI ((bitCapInt)1UL)
 #define bitsInByte 8U
@@ -209,11 +211,13 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
-#if IS_RSA_SEMI_PRIME
-    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 32771U, 32779U, 65519U, 65521U } },
-        { 28U, { 134217757U, 134217773U, 268435367U, 268435399U } },
-        { 32U, { 2147483659U, 2147483693U, 4294967279U, 4294967291U } },
-        { 64U, { 9223372036854775837U, 9223372036854775907U, 1844674407370955137U, 1844674407370955143U } } };
+#if IS_RSA_SEMIPRIME
+    std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = {
+        { 16U, { 32771U, 65521U } },
+        { 28U, { 134217757U, 268435399U } },
+        { 32U, { 2147483659U, 4294967291U } },
+        { 64U, { 9223372036854775837U, 1844674407370955143U } }
+    };
 
     // If n is semiprime, \phi(n) = (p - 1) * (q - 1), where "p" and "q" are prime.
     // The minimum value of this formula, for our input, without consideration of actual
@@ -223,28 +227,26 @@ int main()
     const bitCapInt fullMin = ONE_BCI << (primeBits - 1U);
     const bitCapInt fullMax = (ONE_BCI << primeBits) - 1U;
     const bitCapInt minPrime = primeDict[primeBits].size() ? primeDict[primeBits][0] : (fullMin + 1U);
-    const bitCapInt minPrime2 = primeDict[primeBits].size() ? primeDict[primeBits][1] : (fullMin + 3U);
-    const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][3] : fullMax;
-    const bitCapInt maxPrime2 = primeDict[primeBits].size() ? primeDict[primeBits][2] : (fullMax - 2U);
-    const bitCapInt minR = (toFactor / maxPrime - 1U) * (toFactor / maxPrime2 - 1U);
-    const bitCapInt maxR = (toFactor / minPrime - 1U) * (toFactor / minPrime2 - 1U);
+    const bitCapInt maxPrime = primeDict[primeBits].size() ? primeDict[primeBits][1] : fullMax;
+    const bitCapInt fullMinR = (minPrime - 1U) * (toFactor / minPrime - 1U);
+    const bitCapInt fullMaxR = (maxPrime - 1U) * (toFactor / maxPrime - 1U);
 #else
     // \phi(n) is Euler's totient for n. A loose lower bound is \phi(n) >= sqrt(n/2).
-    const bitCapInt minR = floorSqrt(toFactor >> 1U);
+    const bitCapInt fullMinR = floorSqrt(toFactor >> 1U);
     // A better bound is \phi(n) >= pow(n / 2, log(2)/log(3))
-    // const bitCapInt minR = pow(toFactor / 2, PHI_EXPONENT);
+    // const bitCapInt fullMinR = pow(toFactor / 2, PHI_EXPONENT);
 
     // It can be shown that the period of this modular exponentiation can be no higher than 1
     // less than the modulus, as in https://www2.math.upenn.edu/~mlazar/math170/notes06-3.pdf.
     // Further, an upper bound on Euler's totient for composite numbers is n - sqrt(n). (See
     // https://math.stackexchange.com/questions/896920/upper-bound-for-eulers-totient-function-on-composite-numbers)
-    const bitCapInt maxR = toFactor - floorSqrt(toFactor);
+    const bitCapInt fullMaxR = toFactor - floorSqrt(toFactor);
 #endif
 
     std::vector<std::future<void>> futures(cpuCount);
     for (unsigned cpu = 0U; cpu < cpuCount; cpu++) {
-        futures[cpu] = std::async(std::launch::async,
-            [cpu, nodeId, nodeCount, toFactor, minR, maxR, &primeDict, &iterClock, &rand_gen, &isFinished] {
+        futures[cpu] = std::async(
+            std::launch::async, [cpu, nodeId, nodeCount, toFactor, fullMinR, fullMaxR, &iterClock, &rand_gen, &isFinished] {
                 // These constants are semi-redundant, but they're only defined once per thread,
                 // and compilers differ on lambda expression capture of constants.
 
@@ -252,30 +254,40 @@ int main()
                 // Batch size is BASE_TRIALS * PERIOD_TRIALS.
 
                 // Number of times to reuse a random base:
-                const size_t BASE_TRIALS = 1U;
+                const size_t BASE_TRIALS = 1U << 9U;
                 // Number of random period guesses per random base:
-                const size_t PERIOD_TRIALS = 1U << 6U;
+                const size_t PERIOD_TRIALS = 1U;
 
                 const double clockFactor = 1.0 / 1000.0; // Report in ms
                 const unsigned threads = std::thread::hardware_concurrency();
 
-                const bitCapInt fullRange = maxR + 1U - minR;
+                const bitCapInt fullRange = fullMaxR + 1U - fullMinR;
                 const bitCapInt nodeRange = fullRange / nodeCount;
-                const bitCapInt nodeMin = minR + nodeRange * nodeId;
-                const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? maxR : (minR + nodeRange * (nodeId + 1U) - 1U);
+                const bitCapInt nodeMin = fullMinR + nodeRange * nodeId;
+                const bitCapInt nodeMax = ((nodeId + 1U) == nodeCount) ? fullMaxR : (fullMinR + nodeRange * (nodeId + 1U) - 1U);
                 const bitCapInt threadRange = (nodeMax + 1U - nodeMin) / threads;
-                const bitCapInt baseMin = nodeMin + threadRange * cpu;
-                const bitCapInt baseMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
+                const bitCapInt rMin = nodeMin + threadRange * cpu;
+                const bitCapInt rMax = ((cpu + 1U) == threads) ? nodeMax : (nodeMin + threadRange * (cpu + 1U) - 1U);
 
+                std::vector<rand_dist> baseDist;
                 std::vector<rand_dist> rDist;
-#if QBCAPPOW < 7U
-                rDist.push_back(rand_dist(baseMin, baseMax));
+#if QBCAPPOW < 6U
+                baseDist.push_back(rand_dist(2U, toFactor - 1U));
+                rDist.push_back(rand_dist(rMin, rMax));
 #else
-                const bitLenInt wordSize = 64U;
-                const bitCapInt wordMask = 0xFFFFFFFFFFFFFFFF;
-                bitCapInt distPart = baseMax - baseMin;
+                const bitLenInt wordSize = 32U;
+                const bitCapInt wordMask = 0xFFFFFFFF;
+
+                bitCapInt distPart = toFactor - 3U;
                 while (distPart) {
-                    rDist.push_back(rand_dist(0U, (uint64_t)(distPart & wordMask)));
+                    baseDist.push_back(rand_dist(0U, (uint32_t)(distPart & wordMask)));
+                    distPart >>= wordSize;
+                }
+                std::reverse(rDist.begin(), rDist.end());
+
+                distPart = rMax - rMin;
+                while (distPart) {
+                    rDist.push_back(rand_dist(0U, (uint32_t)(distPart & wordMask)));
                     distPart >>= wordSize;
                 }
                 std::reverse(rDist.begin(), rDist.end());
@@ -284,13 +296,13 @@ int main()
                 for (;;) {
                     for (size_t batchItem = 0U; batchItem < BASE_TRIALS; batchItem++) {
                         // Choose a base at random, >1 and <toFactor.
-                        bitCapInt base = rDist[0U](rand_gen);
-#if QBCAPPOW > 6U
-                        for (size_t i = 1U; i < rDist.size(); i++) {
+                        bitCapInt base = baseDist[0U](rand_gen);
+#if QBCAPPOW > 5U
+                        for (size_t i = 1U; i < baseDist.size(); i++) {
                             base <<= wordSize;
-                            base |= rDist[i](rand_gen);
+                            base |= baseDist[i](rand_gen);
                         }
-                        base += baseMin;
+                        base += 2U;
 #endif
 
                         const bitCapInt testFactor = gcd(toFactor, base);
@@ -323,7 +335,7 @@ int main()
                         // const bitCapInt logBaseToFactor = (bitCapInt)intLog(base, toFactor) + 1U;
                         // Euler's Theorem tells us, if gcd(a, n) = 1, then a^\phi(n) = 1 MOD n,
                         // where \phi(n) is Euler's totient for n.
-                        // const bitCapInt minR = (minPhi < logBaseToFactor) ? logBaseToFactor : minPhi;
+                        // const bitCapInt fullMinR = (minPhi < logBaseToFactor) ? logBaseToFactor : minPhi;
 
                         // c is basically a harmonic degeneracy factor, and there might be no value in testing
                         // any case except c = 1, without loss of generality.
@@ -333,22 +345,22 @@ int main()
 
                         // However, results are better with uniformity over r, rather than y.
 
-                        // So, we guess r, between minR and maxR.
+                        // So, we guess r, between fullMinR and fullMaxR.
                         for (size_t rTrial = 0U; rTrial < PERIOD_TRIALS; rTrial++) {
                             // Choose a base at random, >1 and <toFactor.
                             bitCapInt r = rDist[0U](rand_gen);
-#if QBCAPPOW > 6U
+#if QBCAPPOW > 5U
                             for (size_t i = 1U; i < rDist.size(); i++) {
                                 r <<= wordSize;
                                 r |= rDist[i](rand_gen);
                             }
-                            r += baseMin;
+                            r += rMin;
 #endif
                             // Since our output is r rather than y, we can skip the continued fractions step.
                             const bitCapInt p = (r & 1U) ? r : (r >> 1U);
 
-#define PRINT_SUCCESS(f1, f2, toFactor)                                                                                \
-    std::cout << "Success: Found " << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                       \
+#define PRINT_SUCCESS(f1, f2, toFactor, message)                                                                       \
+    std::cout << message << (f1) << " * " << (f2) << " = " << (toFactor) << std::endl;                                 \
     auto tClock =                                                                                                      \
         std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - iterClock);  \
     std::cout << "(Time elapsed: " << (tClock.count() * clockFactor) << "ms)" << std::endl;                            \
@@ -362,11 +374,12 @@ int main()
 
                             // As a "classical" optimization, since \phi(toFactor) and factor bounds overlap,
                             // we first check if our guess for r is already a factor.
-                            if ((RGUESS > 1U) && (((toFactor / RGUESS) * RGUESS) == toFactor)) {
+                            if ((RGUESS > 1U) && ((toFactor / RGUESS) * RGUESS) == toFactor) {
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
-                                PRINT_SUCCESS(RGUESS, toFactor / RGUESS, toFactor);
+                                PRINT_SUCCESS(
+                                    RGUESS, toFactor / RGUESS, toFactor, "Success (on r trial division): Found ");
                                 return;
                             }
 
@@ -374,17 +387,18 @@ int main()
                             bitCapInt f1 = (bitCapInt)gcd(apowrhalf + 1U, toFactor);
                             bitCapInt f2 = (bitCapInt)gcd(apowrhalf - 1U, toFactor);
                             bitCapInt fmul = f1 * f2;
-                            while ((fmul != toFactor) && (fmul > 1U) && (((toFactor / fmul) * fmul) == toFactor)) {
+                            while ((fmul > 1U) && (fmul != toFactor) && (((toFactor / fmul) * fmul) == toFactor)) {
                                 fmul = f1;
                                 f1 = fmul * f2;
                                 f2 = toFactor / (fmul * f2);
                                 fmul = f1 * f2;
                             }
-                            if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+                            if ((fmul > 1U) && (fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
                                 // Inform the other threads on this node that we've succeeded and are done:
                                 isFinished = true;
 
-                                PRINT_SUCCESS(f1, f2, toFactor);
+                                PRINT_SUCCESS(f1, f2, toFactor,
+                                    "Success (on r difference of squares): Found ");
                                 return;
                             }
                         }
