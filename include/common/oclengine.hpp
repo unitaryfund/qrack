@@ -418,8 +418,7 @@ private:
     OCLEngine(); // Private so that it can  not be called
 
     /// Make the program, from either source or binary
-    static cl::Program MakeProgram(bool buildFromSource, cl::Program::Sources sources, std::string path,
-        std::shared_ptr<OCLDeviceContext> devCntxt);
+    static cl::Program MakeProgram(bool buildFromSource, std::string path, std::shared_ptr<OCLDeviceContext> devCntxt);
     /// Save the program binary:
     static void SaveBinary(cl::Program program, std::string path, std::string fileName);
 };

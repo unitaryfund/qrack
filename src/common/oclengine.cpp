@@ -156,8 +156,7 @@ void OCLEngine::SetDeviceContextPtrVector(std::vector<DeviceContextPtr> vec, Dev
 
 void OCLEngine::SetDefaultDeviceContext(DeviceContextPtr dcp) { default_device_context = dcp; }
 
-cl::Program OCLEngine::MakeProgram(
-    bool buildFromSource, cl::Program::Sources sources, std::string path, std::shared_ptr<OCLDeviceContext> devCntxt)
+cl::Program OCLEngine::MakeProgram(bool buildFromSource, std::string path, std::shared_ptr<OCLDeviceContext> devCntxt)
 {
     FILE* clBinFile;
     cl::Program program;
@@ -196,10 +195,42 @@ cl::Program OCLEngine::MakeProgram(
     }
 
     // If, either, there are no cached binaries, or binary loading failed, then fall back to JIT.
-    if (buildError != CL_SUCCESS) {
-        program = cl::Program(devCntxt->context, sources);
-        std::cout << "Built JIT." << std::endl;
+    if (buildError == CL_SUCCESS) {
+        return program;
     }
+
+    cl::Program::Sources sources;
+#if UINTPOW < 4
+    sources.push_back({ (const char*)qheader_uint8_cl, (long unsigned int)qheader_uint8_cl_len });
+#elif UINTPOW < 5
+    sources.push_back({ (const char*)qheader_uint16_cl, (long unsigned int)qheader_uint16_cl_len });
+#elif UINTPOW < 6
+    sources.push_back({ (const char*)qheader_uint32_cl, (long unsigned int)qheader_uint32_cl_len });
+#else
+    sources.push_back({ (const char*)qheader_uint64_cl, (long unsigned int)qheader_uint64_cl_len });
+#endif
+
+#if FPPOW < 5
+    sources.push_back({ (const char*)qheader_half_cl, (long unsigned int)qheader_half_cl_len });
+#elif FPPOW < 6
+    sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
+#elif FPPOW < 7
+    sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
+#else
+    sources.push_back({ (const char*)qheader_quad_cl, (long unsigned int)qheader_quad_cl_len });
+#endif
+
+    sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
+
+#if ENABLE_ALU
+    sources.push_back({ (const char*)qheader_alu_cl, (long unsigned int)qheader_alu_cl_len });
+#if ENABLE_BCD
+    sources.push_back({ (const char*)qheader_bcd_cl, (long unsigned int)qheader_bcd_cl_len });
+#endif
+#endif
+
+    program = cl::Program(devCntxt->context, sources);
+    std::cout << "Building JIT." << std::endl;
 
     return program;
 }
@@ -301,36 +332,6 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
     }
 
     // create the programs that we want to execute on the devices
-    cl::Program::Sources sources;
-#if UINTPOW < 4
-    sources.push_back({ (const char*)qheader_uint8_cl, (long unsigned int)qheader_uint8_cl_len });
-#elif UINTPOW < 5
-    sources.push_back({ (const char*)qheader_uint16_cl, (long unsigned int)qheader_uint16_cl_len });
-#elif UINTPOW < 6
-    sources.push_back({ (const char*)qheader_uint32_cl, (long unsigned int)qheader_uint32_cl_len });
-#else
-    sources.push_back({ (const char*)qheader_uint64_cl, (long unsigned int)qheader_uint64_cl_len });
-#endif
-
-#if FPPOW < 5
-    sources.push_back({ (const char*)qheader_half_cl, (long unsigned int)qheader_half_cl_len });
-#elif FPPOW < 6
-    sources.push_back({ (const char*)qheader_float_cl, (long unsigned int)qheader_float_cl_len });
-#elif FPPOW < 7
-    sources.push_back({ (const char*)qheader_double_cl, (long unsigned int)qheader_double_cl_len });
-#else
-    sources.push_back({ (const char*)qheader_quad_cl, (long unsigned int)qheader_quad_cl_len });
-#endif
-
-    sources.push_back({ (const char*)qengine_cl, (long unsigned int)qengine_cl_len });
-
-#if ENABLE_ALU
-    sources.push_back({ (const char*)qheader_alu_cl, (long unsigned int)qheader_alu_cl_len });
-#if ENABLE_BCD
-    sources.push_back({ (const char*)qheader_bcd_cl, (long unsigned int)qheader_bcd_cl_len });
-#endif
-#endif
-
     int64_t plat_id = -1;
     std::vector<cl::Context> all_contexts;
     std::vector<std::string> all_filenames;
@@ -349,7 +350,7 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
         std::string clBinName = home + fileName;
 
         std::cout << "Device #" << i << ", ";
-        cl::Program program = MakeProgram(buildFromSource, sources, clBinName, devCntxt);
+        cl::Program program = MakeProgram(buildFromSource, clBinName, devCntxt);
 
         cl_int buildError =
             program.build({ all_devices[i] }, "-cl-strict-aliasing -cl-denorms-are-zero -cl-fast-relaxed-math");
