@@ -14,7 +14,7 @@
 
 #define _USE_MATH_DEFINES
 
-#include "config.h"
+#include "qrack_types.hpp"
 
 #if !ENABLE_OPENCL
 #error OpenCL has not been enabled
