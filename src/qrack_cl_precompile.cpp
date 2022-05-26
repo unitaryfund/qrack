@@ -8,7 +8,10 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
+#include "config.h"
+#if ENABLE_OPENCL
 #include "common/oclengine.hpp"
+#endif
 
 #include <iostream>
 #include <string>
