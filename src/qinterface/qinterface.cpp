@@ -97,7 +97,7 @@ QInterface::QInterface(
 void QInterface::SetPermutation(bitCapInt perm, complex ignored)
 {
     const bitCapInt measured = MAll();
-    for (bitLenInt i = 0U; i < qubitCount; i++) {
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
         if (((perm ^ measured) >> i) & ONE_BCI) {
             X(i);
         }
@@ -112,9 +112,9 @@ void QInterface::QFT(bitLenInt start, bitLenInt length, bool trySeparate)
     }
 
     const bitLenInt end = start + (length - 1U);
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         const bitLenInt hBit = end - i;
-        for (bitLenInt j = 0U; j < i; j++) {
+        for (bitLenInt j = 0U; j < i; ++j) {
             bitLenInt c = hBit;
             bitLenInt t = hBit + 1U + j;
             CPhaseRootN(j + 2U, c, t);
@@ -133,8 +133,8 @@ void QInterface::IQFT(bitLenInt start, bitLenInt length, bool trySeparate)
         return;
     }
 
-    for (bitLenInt i = 0U; i < length; i++) {
-        for (bitLenInt j = 0U; j < i; j++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
+        for (bitLenInt j = 0U; j < i; ++j) {
             const bitLenInt c = (start + i) - (j + 1U);
             const bitLenInt t = start + i;
             CIPhaseRootN(j + 2U, c, t);
@@ -154,9 +154,9 @@ void QInterface::QFTR(const bitLenInt* qubits, bitLenInt length, bool trySeparat
     }
 
     const bitLenInt end = (length - 1U);
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         H(qubits[end - i]);
-        for (bitLenInt j = 0U; j < (bitLenInt)((length - 1U) - i); j++) {
+        for (bitLenInt j = 0U; j < (bitLenInt)((length - 1U) - i); ++j) {
             CPhaseRootN(j + 2U, qubits[(end - i) - (j + 1U)], qubits[end - i]);
         }
 
@@ -173,8 +173,8 @@ void QInterface::IQFTR(const bitLenInt* qubits, bitLenInt length, bool trySepara
         return;
     }
 
-    for (bitLenInt i = 0U; i < length; i++) {
-        for (bitLenInt j = 0U; j < i; j++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
+        for (bitLenInt j = 0U; j < i; ++j) {
             CIPhaseRootN(j + 2U, qubits[i - (j + 1U)], qubits[i]);
         }
         H(qubits[i]);
@@ -200,7 +200,7 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
     }
 
     const bitCapInt regVal = MReg(start, length);
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         const bool bitVal = (bitCapIntOcl)bitSlice(i, regVal);
         if (bitVal == !bitSlice(i, value)) {
             X(start + i);
@@ -212,7 +212,7 @@ void QInterface::SetReg(bitLenInt start, bitLenInt length, bitCapInt value)
 bitCapInt QInterface::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result, bool doForce, bool doApply)
 {
     bitCapInt res = 0U;
-    for (bitLenInt bit = 0U; bit < length; bit++) {
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
         const bitCapInt power = pow2(bit);
         res |= ForceM(start + bit, (bool)(power & result), doForce, doApply) ? power : 0U;
     }
@@ -225,21 +225,21 @@ bitCapInt QInterface::ForceM(const bitLenInt* bits, bitLenInt length, const bool
     bitCapInt result = 0U;
 
     if (values) {
-        for (bitLenInt bit = 0U; bit < length; bit++) {
+        for (bitLenInt bit = 0U; bit < length; ++bit) {
             result |= ForceM(bits[bit], values[bit], true, doApply) ? pow2(bits[bit]) : 0U;
         }
         return result;
     }
 
     if (doApply) {
-        for (bitLenInt bit = 0U; bit < length; bit++) {
+        for (bitLenInt bit = 0U; bit < length; ++bit) {
             result |= M(bits[bit]) ? pow2(bits[bit]) : 0U;
         }
         return result;
     }
 
     std::vector<bitCapInt> qPowers(length);
-    for (bitLenInt bit = 0U; bit < length; bit++) {
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
         qPowers[bit] = pow2(bits[bit]);
     }
     result = MultiShotMeasureMask(&(qPowers[0]), qPowers.size(), 1).begin()->first;
@@ -254,7 +254,7 @@ real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
     const bitCapIntOcl maxLcv = ((bitCapIntOcl)maxQPower) >> length;
     const bitCapIntOcl p = (bitCapIntOcl)permutation;
     real1 prob = ZERO_R1;
-    for (bitCapIntOcl lcv = 0U; lcv < maxLcv; lcv++) {
+    for (bitCapIntOcl lcv = 0U; lcv < maxLcv; ++lcv) {
         bitCapIntOcl i = lcv & startMask;
         i |= ((lcv ^ i) | p) << length;
         prob += ProbAll(i);
@@ -267,7 +267,7 @@ real1_f QInterface::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
 real1_f QInterface::ProbMask(bitCapInt mask, bitCapInt permutation)
 {
     real1 prob = ZERO_R1;
-    for (bitCapInt lcv = 0U; lcv < maxQPower; lcv++) {
+    for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         if ((lcv & mask) == permutation) {
             prob += ProbAll(lcv);
         }
@@ -327,7 +327,7 @@ void QInterface::ProbMaskAll(bitCapInt mask, real1* probsArray)
     bitCapInt v = mask; // count the number of bits set in v
     bitLenInt length;
     std::vector<bitCapInt> bitPowers;
-    for (length = 0U; v; length++) {
+    for (length = 0U; v; ++length) {
         bitCapInt oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         bitPowers.push_back((v ^ oldV) & oldV);
@@ -335,9 +335,9 @@ void QInterface::ProbMaskAll(bitCapInt mask, real1* probsArray)
 
     std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
 
-    for (bitCapInt lcv = 0U; lcv < maxQPower; lcv++) {
+    for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         bitCapIntOcl retIndex = 0U;
-        for (bitLenInt p = 0U; p < length; p++) {
+        for (bitLenInt p = 0U; p < length; ++p) {
             if (lcv & bitPowers[p]) {
                 retIndex |= pow2Ocl(p);
             }
@@ -350,7 +350,7 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, bitLenInt length, real1* pro
 {
     if (length == qubitCount) {
         bool isOrdered = true;
-        for (bitLenInt i = 0U; i < qubitCount; i++) {
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
             if (bits[i] != i) {
                 isOrdered = false;
                 break;
@@ -366,13 +366,13 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, bitLenInt length, real1* pro
     std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
 
     std::vector<bitCapInt> bitPowers(length);
-    for (bitLenInt p = 0U; p < length; p++) {
+    for (bitLenInt p = 0U; p < length; ++p) {
         bitPowers[p] = pow2(bits[p]);
     }
 
-    for (bitCapInt lcv = 0U; lcv < maxQPower; lcv++) {
+    for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         bitCapIntOcl retIndex = 0U;
-        for (bitLenInt p = 0U; p < length; p++) {
+        for (bitLenInt p = 0U; p < length; ++p) {
             if (lcv & bitPowers[p]) {
                 retIndex |= pow2Ocl(p);
             }
@@ -388,14 +388,14 @@ real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, 
     }
 
     std::vector<bitCapInt> bitPowers(length);
-    for (bitLenInt p = 0U; p < length; p++) {
+    for (bitLenInt p = 0U; p < length; ++p) {
         bitPowers[p] = pow2(bits[p]);
     }
 
     real1_f expectation = 0;
-    for (bitCapInt lcv = 0U; lcv < maxQPower; lcv++) {
+    for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         bitCapInt retIndex = 0U;
-        for (bitLenInt p = 0U; p < length; p++) {
+        for (bitLenInt p = 0U; p < length; ++p) {
             if (lcv & bitPowers[p]) {
                 retIndex |= pow2(p);
             }
@@ -415,7 +415,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
 
     std::unique_ptr<bitLenInt[]> bitMap(new bitLenInt[qPowerCount]);
     std::vector<bitCapInt> maskMap(qPowerCount);
-    for (bitLenInt i = 0U; i < qPowerCount; i++) {
+    for (bitLenInt i = 0U; i < qPowerCount; ++i) {
         maskMap[i] = qPowers[i];
         bitMap[i] = log2(qPowers[i]);
     }
@@ -426,11 +426,11 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         real1 maskProb = (real1)Rand();
         real1 cumulativeProb = ZERO_R1;
         std::map<bitCapInt, int> results;
-        for (bitCapIntOcl j = 0U; j < maskMaxQPower; j++) {
+        for (bitCapIntOcl j = 0U; j < maskMaxQPower; ++j) {
             cumulativeProb += ProbAll(j);
             if (cumulativeProb >= maskProb) {
                 bitCapIntOcl maskPerm = 0U;
-                for (bitLenInt i = 0U; i < qPowerCount; i++) {
+                for (bitLenInt i = 0U; i < qPowerCount; ++i) {
                     if (j & maskMap[i]) {
                         maskPerm |= pow2Ocl(i);
                     }
@@ -449,7 +449,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         real1 maskProb = (real1)Rand();
         real1 cumulativeProb = ZERO_R1;
         std::map<bitCapInt, int> results;
-        for (bitCapIntOcl j = 0U; j < maskMaxQPower; j++) {
+        for (bitCapIntOcl j = 0U; j < maskMaxQPower; ++j) {
             cumulativeProb += maskProbsArray[j];
             if (cumulativeProb >= maskProb) {
                 results[j] = 1U;
@@ -462,7 +462,7 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     bitCapIntOcl singlePerm = ((maskProbsArray[0] + FP_NORM_EPSILON) >= ONE_R1) ? 0U : maskMaxQPower;
     bitCapIntOcl j = 1U;
     if (singlePerm && (maskProbsArray[0] <= FP_NORM_EPSILON)) {
-        for (j = 1U; j < maskMaxQPower; j++) {
+        for (j = 1U; j < maskMaxQPower; ++j) {
             if (maskProbsArray[j] > FP_NORM_EPSILON) {
                 if ((maskProbsArray[j] + FP_NORM_EPSILON) >= ONE_R1) {
                     singlePerm = j;
@@ -480,25 +480,25 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         return results;
     }
 
-    for (; j < maskMaxQPower; j++) {
+    for (; j < maskMaxQPower; ++j) {
         maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
     }
 
     std::map<bitCapInt, int> results;
-    for (unsigned int shot = 0U; shot < shots; shot++) {
+    for (unsigned int shot = 0U; shot < shots; ++shot) {
         real1 maskProb = (real1)Rand();
         real1* bound = std::upper_bound(maskProbsArray.get(), maskProbsArray.get() + maskMaxQPower, maskProb);
         size_t dist = bound - maskProbsArray.get();
         if (dist >= maskMaxQPower) {
-            bound--;
+            --bound;
         }
         if (maskProb > 0) {
             while (dist && maskProbsArray[dist - 1U] == maskProb) {
-                dist--;
+                --dist;
             }
         }
 
-        results[dist]++;
+        ++(results[dist]);
     }
 
     return results;
@@ -513,7 +513,7 @@ void QInterface::MultiShotMeasureMask(
 
     std::unique_ptr<bitLenInt[]> bitMap(new bitLenInt[qPowerCount]);
     std::vector<bitCapInt> maskMap(qPowerCount);
-    for (bitLenInt i = 0U; i < qPowerCount; i++) {
+    for (bitLenInt i = 0U; i < qPowerCount; ++i) {
         maskMap[i] = qPowers[i];
         bitMap[i] = log2(qPowers[i]);
     }
@@ -523,11 +523,11 @@ void QInterface::MultiShotMeasureMask(
     if ((shots == 1U) && (qPowerCount == qubitCount)) {
         real1 maskProb = (real1)Rand();
         real1 cumulativeProb = ZERO_R1;
-        for (bitCapIntOcl j = 0U; j < maskMaxQPower; j++) {
+        for (bitCapIntOcl j = 0U; j < maskMaxQPower; ++j) {
             cumulativeProb += ProbAll(j);
             if (cumulativeProb >= maskProb) {
                 bitCapIntOcl maskPerm = 0U;
-                for (bitLenInt i = 0U; i < qPowerCount; i++) {
+                for (bitLenInt i = 0U; i < qPowerCount; ++i) {
                     if (j & maskMap[i]) {
                         maskPerm |= pow2Ocl(i);
                     }
@@ -545,7 +545,7 @@ void QInterface::MultiShotMeasureMask(
     if (shots == 1U) {
         real1 maskProb = (real1)Rand();
         real1 cumulativeProb = ZERO_R1;
-        for (bitCapIntOcl j = 0U; j < maskMaxQPower; j++) {
+        for (bitCapIntOcl j = 0U; j < maskMaxQPower; ++j) {
             cumulativeProb += maskProbsArray[j];
             if (cumulativeProb >= maskProb) {
                 shotsArray[0] = (unsigned)j;
@@ -558,7 +558,7 @@ void QInterface::MultiShotMeasureMask(
     bitCapIntOcl singlePerm = ((maskProbsArray[0] + FP_NORM_EPSILON) >= ONE_R1) ? 0U : maskMaxQPower;
     bitCapIntOcl j = 1U;
     if (singlePerm && (maskProbsArray[0] <= FP_NORM_EPSILON)) {
-        for (j = 1U; j < maskMaxQPower; j++) {
+        for (j = 1U; j < maskMaxQPower; ++j) {
             if (maskProbsArray[j] > FP_NORM_EPSILON) {
                 if ((maskProbsArray[j] + FP_NORM_EPSILON) >= ONE_R1) {
                     singlePerm = j;
@@ -575,7 +575,7 @@ void QInterface::MultiShotMeasureMask(
         return;
     }
 
-    for (; j < maskMaxQPower; j++) {
+    for (; j < maskMaxQPower; ++j) {
         maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
     }
 
@@ -584,11 +584,11 @@ void QInterface::MultiShotMeasureMask(
         real1* bound = std::upper_bound(maskProbsArray.get(), maskProbsArray.get() + maskMaxQPower, maskProb);
         size_t dist = bound - maskProbsArray.get();
         if (dist >= maskMaxQPower) {
-            bound--;
+            --bound;
         }
         if (maskProb > 0) {
             while (dist && maskProbsArray[dist - 1U] == maskProb) {
-                dist--;
+                --dist;
             }
         }
 
@@ -621,7 +621,7 @@ bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error
 #define REG_GATE_1(gate)                                                                                               \
     void QInterface::gate(bitLenInt start, bitLenInt length)                                                           \
     {                                                                                                                  \
-        for (bitLenInt bit = 0U; bit < length; bit++) {                                                                \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(start + bit);                                                                                         \
         }                                                                                                              \
     }
@@ -637,7 +637,7 @@ REG_GATE_1(X);
 #define REG_GATE_2(gate)                                                                                               \
     void QInterface::gate(bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)                                        \
     {                                                                                                                  \
-        for (bitLenInt bit = 0U; bit < length; bit++) {                                                                \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(qubit1 + bit, qubit2 + bit);                                                                          \
         }                                                                                                              \
     }
@@ -645,7 +645,7 @@ REG_GATE_1(X);
 #define REG_GATE_3(gate)                                                                                               \
     void QInterface::gate(bitLenInt qubit1, bitLenInt qubit2, bitLenInt qubit3, bitLenInt length)                      \
     {                                                                                                                  \
-        for (bitLenInt bit = 0U; bit < length; bit++) {                                                                \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(qubit1 + bit, qubit2 + bit, qubit3 + bit);                                                            \
         }                                                                                                              \
     }
@@ -653,7 +653,7 @@ REG_GATE_1(X);
 #define REG_GATE_3B(gate)                                                                                              \
     void QInterface::gate(bitLenInt qInputStart, bitCapInt classicalInput, bitLenInt outputStart, bitLenInt length)    \
     {                                                                                                                  \
-        for (bitLenInt i = 0U; i < length; i++) {                                                                      \
+        for (bitLenInt i = 0U; i < length; ++i) {                                                                      \
             gate(qInputStart + i, (bitCapIntOcl)bitSlice(i, classicalInput), outputStart + i);                         \
         }                                                                                                              \
     }
@@ -661,7 +661,7 @@ REG_GATE_1(X);
 #define REG_GATE_1R(gate)                                                                                              \
     void QInterface::gate(real1_f radians, bitLenInt start, bitLenInt length)                                          \
     {                                                                                                                  \
-        for (bitLenInt bit = 0U; bit < length; bit++) {                                                                \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(radians, start + bit);                                                                                \
         }                                                                                                              \
     }
@@ -669,7 +669,7 @@ REG_GATE_1(X);
 #define REG_GATE_1D(gate)                                                                                              \
     void QInterface::gate(int numerator, int denominator, bitLenInt start, bitLenInt length)                           \
     {                                                                                                                  \
-        for (bitLenInt bit = 0U; bit < length; bit++) {                                                                \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(numerator, denominator, start + bit);                                                                 \
         }                                                                                                              \
     }
@@ -677,7 +677,7 @@ REG_GATE_1(X);
 #define REG_GATE_C1_1(gate)                                                                                            \
     void QInterface::gate(bitLenInt control, bitLenInt target, bitLenInt length)                                       \
     {                                                                                                                  \
-        for (bitLenInt bit = 0U; bit < length; bit++) {                                                                \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(control + bit, target + bit);                                                                         \
         }                                                                                                              \
     }
@@ -685,7 +685,7 @@ REG_GATE_1(X);
 #define REG_GATE_C2_1(gate)                                                                                            \
     void QInterface::gate(bitLenInt control1, bitLenInt control2, bitLenInt target, bitLenInt length)                  \
     {                                                                                                                  \
-        for (bitLenInt bit = 0U; bit < length; bit++) {                                                                \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(control1 + bit, control2 + bit, target + bit);                                                        \
         }                                                                                                              \
     }
@@ -693,7 +693,7 @@ REG_GATE_1(X);
 #define REG_GATE_C1_1R(gate)                                                                                           \
     void QInterface::gate(real1_f radians, bitLenInt control, bitLenInt target, bitLenInt length)                      \
     {                                                                                                                  \
-        for (bitLenInt bit = 0U; bit < length; bit++) {                                                                \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(radians, control + bit, target + bit);                                                                \
         }                                                                                                              \
     }
@@ -701,7 +701,7 @@ REG_GATE_1(X);
 #define REG_GATE_C1_1D(gate)                                                                                           \
     void QInterface::gate(int numerator, int denominator, bitLenInt control, bitLenInt target, bitLenInt length)       \
     {                                                                                                                  \
-        for (bitLenInt bit = 0U; bit < length; bit++) {                                                                \
+        for (bitLenInt bit = 0U; bit < length; ++bit) {                                                                \
             gate(numerator, denominator, control + bit, target + bit);                                                 \
         }                                                                                                              \
     }
@@ -723,7 +723,7 @@ REG_GATE_2(ISqrtSwap);
 
 void QInterface::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2, bitLenInt length)
 {
-    for (bitLenInt bit = 0U; bit < length; bit++) {
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
         FSim(theta, phi, qubit1 + bit, qubit2 + bit);
     }
 }
@@ -869,7 +869,7 @@ REG_GATE_3B(CLXNOR);
 /// Apply "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
 void QInterface::PhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt bit = 0U; bit < length; bit++) {
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
         PhaseRootN(n, start + bit);
     }
 }
@@ -877,7 +877,7 @@ void QInterface::PhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
 /// Apply inverse "PhaseRootN" gate (1/(2^N) phase rotation) to each bit in "length", starting from bit index "start"
 void QInterface::IPhaseRootN(bitLenInt n, bitLenInt start, bitLenInt length)
 {
-    for (bitLenInt bit = 0U; bit < length; bit++) {
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
         IPhaseRootN(n, start + bit);
     }
 }
@@ -893,7 +893,7 @@ void QInterface::CPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, b
         return;
     }
 
-    for (bitLenInt bit = 0U; bit < length; bit++) {
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
         CPhaseRootN(n, control + bit, target + bit);
     }
 }
@@ -909,14 +909,14 @@ void QInterface::CIPhaseRootN(bitLenInt n, bitLenInt control, bitLenInt target, 
         return;
     }
 
-    for (bitLenInt bit = 0U; bit < length; bit++) {
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
         CIPhaseRootN(n, control + bit, target + bit);
     }
 }
 /// Apply general unitary gate to each bit in "length," starting from bit index "start"
 void QInterface::U(bitLenInt start, bitLenInt length, real1_f theta, real1_f phi, real1_f lambda)
 {
-    for (bitLenInt bit = 0U; bit < length; bit++) {
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
         U(start + bit, theta, phi, lambda);
     }
 }
@@ -924,7 +924,7 @@ void QInterface::U(bitLenInt start, bitLenInt length, real1_f theta, real1_f phi
 /// Apply 2-parameter unitary gate to each bit in "length," starting from bit index "start"
 void QInterface::U2(bitLenInt start, bitLenInt length, real1_f phi, real1_f lambda)
 {
-    for (bitLenInt bit = 0U; bit < length; bit++) {
+    for (bitLenInt bit = 0U; bit < length; ++bit) {
         U2(start + bit, phi, lambda);
     }
 }

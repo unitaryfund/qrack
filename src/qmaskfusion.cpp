@@ -69,7 +69,7 @@ void QMaskFusion::FlushBuffers()
     bitCapInt zMask = 0U;
     bitCapInt xMask = 0U;
     uint8_t phase = 0U;
-    for (bitLenInt i = 0U; i < qubitCount; i++) {
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
         QMaskFusionShard& shard = zxShards[i];
         bitCapInt bitPow = pow2(i);
         if (shard.isZ) {

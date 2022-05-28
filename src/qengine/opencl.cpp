@@ -401,7 +401,7 @@ size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
     }
     size_t frac = wic / gs;
     while ((frac * gs) != wic) {
-        gs++;
+        ++gs;
         frac = wic / gs;
     }
     return gs;
@@ -506,7 +506,7 @@ void QEngineOCL::DispatchQueue()
     OCLDeviceCall ocl = device_context->Reserve(item.api_call);
 
     // Load the arguments.
-    for (unsigned int i = 0U; i < args.size(); i++) {
+    for (unsigned int i = 0U; i < args.size(); ++i) {
         ocl.call.setArg(i, *args[i]);
     }
 
@@ -679,7 +679,7 @@ real1_f QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
     // This interface is potentially parallelizable, but, for now, better performance is probably given by implementing
     // it as a serial loop.
     real1 totSum = ZERO_R1;
-    for (bitCapIntOcl i = 0U; i < maxI; i++) {
+    for (bitCapIntOcl i = 0U; i < maxI; ++i) {
         totSum += toSum[i];
     }
 
@@ -1069,10 +1069,10 @@ void QEngineOCL::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
     DISPATCH_WRITE(waitVec, *uniformBuffer, sizeof(complex) * 4U * pow2Ocl(controlLen + mtrxSkipLen), mtrxs, error);
 
     std::unique_ptr<bitCapIntOcl[]> qPowers(new bitCapIntOcl[controlLen + mtrxSkipLen]);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         qPowers[i] = pow2Ocl(controls[i]);
     }
-    for (bitLenInt i = 0U; i < mtrxSkipLen; i++) {
+    for (bitLenInt i = 0U; i < mtrxSkipLen; ++i) {
         qPowers[controlLen + i] = (bitCapIntOcl)mtrxSkipPowers[i];
     }
 
@@ -1143,7 +1143,7 @@ void QEngineOCL::CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLe
 
     bitCapIntOcl controlMask = 0U;
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         controlMask |= controlPowers[i];
     }
@@ -1722,7 +1722,7 @@ real1_f QEngineOCL::ProbMask(bitCapInt mask, bitCapInt permutation)
     bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
     bitLenInt length; // c accumulates the total bits set in v
     std::vector<bitCapIntOcl> skipPowersVec;
-    for (length = 0U; v; length++) {
+    for (length = 0U; v; ++length) {
         bitCapIntOcl oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         skipPowersVec.push_back((v ^ oldV) & oldV);
@@ -1764,7 +1764,7 @@ void QEngineOCL::ProbMaskAll(bitCapInt mask, real1* probsArray)
     bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
     bitLenInt length;
     std::vector<bitCapIntOcl> powersVec;
-    for (length = 0U; v; length++) {
+    for (length = 0U; v; ++length) {
         bitCapIntOcl oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         powersVec.push_back((v ^ oldV) & oldV);
@@ -1791,7 +1791,7 @@ void QEngineOCL::ProbMaskAll(bitCapInt mask, real1* probsArray)
     bitCapIntOcl skipPower;
     bitLenInt skipLength = 0U; // c accumulates the total bits set in v
     std::vector<bitCapIntOcl> skipPowersVec;
-    for (skipLength = 0U; v; skipLength++) {
+    for (skipLength = 0U; v; ++skipLength) {
         bitCapIntOcl oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         skipPower = (v ^ oldV) & oldV;
@@ -1898,7 +1898,7 @@ real1_f QEngineOCL::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, 
     }
 
     std::unique_ptr<bitCapIntOcl[]> bitPowers(new bitCapIntOcl[length]);
-    for (bitLenInt p = 0U; p < length; p++) {
+    for (bitLenInt p = 0U; p < length; ++p) {
         bitPowers[p] = pow2Ocl(bits[p]);
     }
 
@@ -1930,7 +1930,7 @@ real1_f QEngineOCL::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
     real1 totProb = ZERO_R1;
     bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
     LockSync(CL_MAP_READ);
-    for (bitCapIntOcl i = 0U; i < maxQPower; i++) {
+    for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
         bitCapIntOcl outputInt = (i & outputMask) >> valueStart;
         real1 prob = norm(stateVec[i]);
         totProb += prob;
@@ -2087,7 +2087,7 @@ void QEngineOCL::CINT(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bitL
 
     bitCapIntOcl controlMask = 0U;
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         controlMask |= controlPowers[i];
     }
@@ -2572,12 +2572,12 @@ void QEngineOCL::CMULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart
 
     std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
     bitCapIntOcl controlMask = 0U;
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         bitCapIntOcl controlPower = pow2Ocl(controls[i]);
         skipPowers[i] = controlPower;
         controlMask |= controlPower;
     }
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         skipPowers[i + controlLen] = pow2Ocl(carryStart + i);
     }
     std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
@@ -2606,12 +2606,12 @@ void QEngineOCL::CMULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN
 
     std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
     bitCapIntOcl controlMask = 0U;
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         bitCapIntOcl controlPower = pow2Ocl(controls[i]);
         skipPowers[i] = controlPower;
         controlMask |= controlPower;
     }
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         skipPowers[i + controlLen] = pow2Ocl(carryStart + i);
     }
     std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
@@ -2925,7 +2925,7 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
     }
 
     complex totInner = ZERO_CMPLX;
-    for (int i = 0; i < partInnerSize; i++) {
+    for (int i = 0; i < partInnerSize; ++i) {
         totInner += partInner[i];
     }
 

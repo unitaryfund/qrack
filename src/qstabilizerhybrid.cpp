@@ -140,7 +140,7 @@ bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
 void QStabilizerHybrid::FlushBuffers()
 {
     if (stabilizer) {
-        for (bitLenInt i = 0U; i < qubitCount; i++) {
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
             if (shards[i]) {
                 // This will call FlushBuffers() again after no longer stabilizer.
                 SwitchToEngine();
@@ -153,7 +153,7 @@ void QStabilizerHybrid::FlushBuffers()
         return;
     }
 
-    for (bitLenInt i = 0U; i < qubitCount; i++) {
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
         MpsShardPtr shard = shards[i];
         if (shard) {
             shards[i] = NULL;
@@ -170,7 +170,7 @@ bool QStabilizerHybrid::TrimControls(
         return false;
     }
 
-    for (bitLenInt i = 0U; i < lControlLen; i++) {
+    for (bitLenInt i = 0U; i < lControlLen; ++i) {
         bitLenInt bit = lControls[i];
 
         if (!stabilizer->IsSeparableZ(bit)) {
@@ -254,7 +254,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     if (stabilizer) {
         c->engine = NULL;
         c->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
-        for (bitLenInt i = 0U; i < qubitCount; i++) {
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
             if (shards[i]) {
                 c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
             }
@@ -317,7 +317,7 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
     // Resize the shards buffer.
     shards.insert(shards.end(), toCopy->shards.begin(), toCopy->shards.end());
     // Split the common shared_ptr references, with toCopy.
-    for (bitLenInt i = qubitCount; i < nQubits; i++) {
+    for (bitLenInt i = qubitCount; i < nQubits; ++i) {
         if (shards[i]) {
             shards[i] = shards[i]->Clone();
         }
@@ -807,7 +807,7 @@ bitCapInt QStabilizerHybrid::MAll()
 {
     bitCapInt toRet = 0U;
     if (stabilizer) {
-        for (bitLenInt i = 0U; i < qubitCount; i++) {
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
             if (shards[i] && shards[i]->IsInvert()) {
                 InvertBuffer(i);
             }
@@ -847,20 +847,20 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
     }
 
     std::vector<bitLenInt> bits(qPowerCount);
-    for (bitLenInt i = 0U; i < qPowerCount; i++) {
+    for (bitLenInt i = 0U; i < qPowerCount; ++i) {
         bits[i] = log2(qPowers[i]);
     }
 
     std::map<bitCapInt, int> results;
-    for (unsigned shot = 0U; shot < shots; shot++) {
+    for (unsigned shot = 0U; shot < shots; ++shot) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         bitCapInt sample = 0U;
-        for (bitLenInt i = 0U; i < qPowerCount; i++) {
+        for (bitLenInt i = 0U; i < qPowerCount; ++i) {
             if (clone->M(bits[i])) {
                 sample |= pow2(i);
             }
         }
-        results[sample]++;
+        ++(results[sample]);
     }
 
     return results;
@@ -879,14 +879,14 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     }
 
     std::vector<bitLenInt> bits(qPowerCount);
-    for (bitLenInt i = 0U; i < qPowerCount; i++) {
+    for (bitLenInt i = 0U; i < qPowerCount; ++i) {
         bits[i] = log2(qPowers[i]);
     }
 
     par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         bitCapInt sample = 0U;
-        for (bitLenInt i = 0U; i < qPowerCount; i++) {
+        for (bitLenInt i = 0U; i < qPowerCount; ++i) {
             if (clone->M(bits[i])) {
                 sample |= pow2(i);
             }
@@ -952,13 +952,13 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
     if (!stabilizer && toCompare->stabilizer) {
         SetPermutation(0U);
         stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
-        for (bitLenInt i = 0U; i < qubitCount; i++) {
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
             shards[i] = toCompare->shards[i] ? toCompare->shards[i]->Clone() : NULL;
         }
     } else if (stabilizer && !toCompare->stabilizer) {
         toCompare->SetPermutation(0U);
         toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
-        for (bitLenInt i = 0U; i < qubitCount; i++) {
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
             toCompare->shards[i] = shards[i] ? shards[i]->Clone() : NULL;
         }
     }
@@ -1025,13 +1025,13 @@ bool QStabilizerHybrid::TrySeparate(const bitLenInt* qubits, bitLenInt length, r
         std::copy(qubits, qubits + length, q.begin());
         std::sort(q.begin(), q.end());
 
-        for (bitLenInt i = 1U; i < length; i++) {
+        for (bitLenInt i = 1U; i < length; ++i) {
             Swap(q[0U] + i, q[i]);
         }
 
         const bool toRet = stabilizer->CanDecomposeDispose(q[0U], length);
 
-        for (bitLenInt i = 1U; i < length; i++) {
+        for (bitLenInt i = 1U; i < length; ++i) {
             Swap(q[0U] + i, q[i]);
         }
 

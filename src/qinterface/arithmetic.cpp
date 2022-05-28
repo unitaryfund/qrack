@@ -35,18 +35,18 @@ void QInterface::INC(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     }
 
     std::unique_ptr<bitLenInt[]> bits(new bitLenInt[length]);
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         bits[i] = start + i;
     }
 
     const bitLenInt lengthMin1 = length - 1U;
 
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         if (!((toAdd >> i) & 1U)) {
             continue;
         }
         X(start + i);
-        for (bitLenInt j = 0U; j < (lengthMin1 - i); j++) {
+        for (bitLenInt j = 0U; j < (lengthMin1 - i); ++j) {
             MACInvert(&(bits[i]), j + 1U, ONE_CMPLX, ONE_CMPLX, start + ((i + j + 1U) % length));
         }
     }
@@ -66,17 +66,17 @@ void QInterface::INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bit
     }
 
     std::unique_ptr<bitLenInt[]> bits(new bitLenInt[length + 1U]);
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         bits[i] = start + i;
     }
     bits[length] = carryIndex;
 
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         if (!((toAdd >> i) & 1U)) {
             continue;
         }
         X(start + i);
-        for (bitLenInt j = 0U; j < (length - i); j++) {
+        for (bitLenInt j = 0U; j < (length - i); ++j) {
             const bitLenInt target = start + (((i + j + 1U) == length) ? carryIndex : ((i + j + 1U) % length));
             MACInvert(&(bits[i]), j + 1U, ONE_CMPLX, ONE_CMPLX, target);
         }
@@ -92,7 +92,7 @@ void QInterface::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLen
     const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
-        toAdd++;
+        ++toAdd;
     }
 
     INCDECC(toAdd, start, length, carryIndex);
@@ -105,7 +105,7 @@ void QInterface::DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLen
     if (hasCarry) {
         X(carryIndex);
     } else {
-        toSub++;
+        ++toSub;
     }
 
     const bitCapInt invToSub = pow2(length) - toSub;
@@ -132,28 +132,28 @@ void QInterface::CINC(
         return;
     }
 
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         X(controls[0]);
     }
 
     const bitLenInt lengthMin1 = length - 1U;
 
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         if (!((toAdd >> i) & 1U)) {
             continue;
         }
         MACInvert(controls, controlLen, ONE_CMPLX, ONE_CMPLX, start + i);
-        for (bitLenInt j = 0U; j < (lengthMin1 - i); j++) {
+        for (bitLenInt j = 0U; j < (lengthMin1 - i); ++j) {
             std::unique_ptr<bitLenInt[]> bits(new bitLenInt[controlLen + length]);
             std::copy(controls, controls + controlLen, bits.get());
-            for (bitLenInt k = 0U; k < (j + 1U); k++) {
+            for (bitLenInt k = 0U; k < (j + 1U); ++k) {
                 bits[controlLen + k] = start + i + k;
             }
             MACInvert(bits.get(), controlLen + j + 1U, ONE_CMPLX, ONE_CMPLX, start + ((i + j + 1U) % length));
         }
     }
 
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         X(controls[0]);
     }
 }
@@ -196,7 +196,7 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
     const bool isPow2 = isPowerOfTwo(modN);
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
     bitLenInt controls[1];
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         controls[0] = inStart + i;
         const bitCapInt partMul = (toMul * pow2(i)) % modN;
         if (!partMul) {
@@ -212,13 +212,13 @@ void QInterface::MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, 
     const bitCapInt diffPow = pow2(length) / modN;
     const bitLenInt lDiff = log2(diffPow);
     controls[0] = inStart + length - (lDiff + 1U);
-    for (bitCapInt i = 0U; i < diffPow; i++) {
+    for (bitCapInt i = 0U; i < diffPow; ++i) {
         DEC(modN, inStart, length);
         X(controls[0]);
         CDEC(modN, outStart, oLength, controls, 1U);
         X(controls[0]);
     }
-    for (bitCapInt i = 0U; i < diffPow; i++) {
+    for (bitCapInt i = 0U; i < diffPow; ++i) {
         INC(modN, inStart, length);
     }
 }
@@ -236,10 +236,10 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     controls[0] = inStart + length - (lDiff + 1U);
 
     if (!isPow2) {
-        for (bitCapInt i = 0U; i < diffPow; i++) {
+        for (bitCapInt i = 0U; i < diffPow; ++i) {
             DEC(modN, inStart, length);
         }
-        for (bitCapInt i = 0U; i < diffPow; i++) {
+        for (bitCapInt i = 0U; i < diffPow; ++i) {
             X(controls[0]);
             CINC(modN, outStart, oLength, controls, 1U);
             X(controls[0]);
@@ -247,7 +247,7 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
         }
     }
 
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         controls[0] = inStart + i;
         const bitCapInt partMul = (toMul * pow2(i)) % modN;
         if (!partMul) {
@@ -267,7 +267,7 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen + 1U]);
     std::copy(controls, controls + controlLen, lControls.get());
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         lControls[controlLen] = inStart + i;
         const bitCapInt partMul = (toMul * pow2(i)) % modN;
         if (!partMul) {
@@ -283,13 +283,13 @@ void QInterface::CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
     const bitCapInt diffPow = pow2(length) / modN;
     const bitLenInt lDiff = log2(diffPow);
     lControls[controlLen] = inStart + length - (lDiff + 1U);
-    for (bitCapInt i = 0U; i < diffPow; i++) {
+    for (bitCapInt i = 0U; i < diffPow; ++i) {
         CDEC(modN, inStart, length, lControls.get(), controlLen);
         X(lControls[controlLen]);
         CDEC(modN, outStart, oLength, lControls.get(), controlLen + 1U);
         X(lControls[controlLen]);
     }
-    for (bitCapInt i = 0U; i < diffPow; i++) {
+    for (bitCapInt i = 0U; i < diffPow; ++i) {
         CINC(modN, inStart, length, lControls.get(), controlLen);
     }
 }
@@ -309,10 +309,10 @@ void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
     lControls[controlLen] = inStart + length - (lDiff + 1U);
 
     if (!isPow2) {
-        for (bitCapInt i = 0U; i < diffPow; i++) {
+        for (bitCapInt i = 0U; i < diffPow; ++i) {
             CDEC(modN, inStart, length, lControls.get(), controlLen);
         }
-        for (bitCapInt i = 0U; i < diffPow; i++) {
+        for (bitCapInt i = 0U; i < diffPow; ++i) {
             X(lControls[controlLen]);
             CINC(modN, outStart, oLength, lControls.get(), controlLen + 1U);
             X(lControls[controlLen]);
@@ -320,7 +320,7 @@ void QInterface::CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart
         }
     }
 
-    for (bitLenInt i = 0U; i < length; i++) {
+    for (bitLenInt i = 0U; i < length; ++i) {
         lControls[controlLen] = inStart + i;
         const bitCapInt partMul = (toMul * pow2(i)) % modN;
         if (!partMul) {
@@ -427,7 +427,7 @@ void QInterface::ADC(bitLenInt input1, bitLenInt input2, bitLenInt output, bitLe
 
     // Otherwise, length > 1.
     const bitLenInt end = length - 1U;
-    for (bitLenInt i = 1U; i < end; i++) {
+    for (bitLenInt i = 1U; i < end; ++i) {
         FullAdd(input1 + i, input2 + i, output + i, output + i + 1U);
     }
     FullAdd(input1 + end, input2 + end, output + end, carry);
@@ -470,7 +470,7 @@ void QInterface::CADC(const bitLenInt* controls, bitLenInt controlLen, bitLenInt
 
     // Otherwise, length > 1.
     const bitLenInt end = length - 1U;
-    for (bitLenInt i = 1; i < end; i++) {
+    for (bitLenInt i = 1; i < end; ++i) {
         CFullAdd(controls, controlLen, input1 + i, input2 + i, output + i, output + i + 1U);
     }
     CFullAdd(controls, controlLen, input1 + end, input2 + end, output + end, carry);

@@ -101,7 +101,7 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end
 {
     const bitCapInt itemCount = end - begin;
     const bitCapInt maxLcv = begin + itemCount;
-    for (bitCapInt j = begin; j < maxLcv; j++) {
+    for (bitCapInt j = begin; j < maxLcv; ++j) {
         j |= fn(j, 0U);
     }
 }
@@ -115,7 +115,7 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
     Branch();
 
     if (depth) {
-        depth--;
+        --depth;
         if (!branches[0U]) {
             return NULL;
         }

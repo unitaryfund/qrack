@@ -44,7 +44,7 @@ void QBdtNode::Prune(bitLenInt depth)
     QBdtNodeInterfacePtr& b1 = branches[1U];
 
     // Prune recursively to depth.
-    depth--;
+    --depth;
     branches[0U]->Prune(depth);
     if (b0.get() != b1.get()) {
         branches[1U]->Prune(depth);
@@ -67,7 +67,7 @@ void QBdtNode::Prune(bitLenInt depth)
         QBdtNodeInterfacePtr leaf0 = b0;
         QBdtNodeInterfacePtr leaf1 = b1;
 
-        for (bitLenInt j = 0U; j < depth; j++) {
+        for (bitLenInt j = 0U; j < depth; ++j) {
             size_t bit = SelectBit(i, depth - (j + 1U));
 
             if (!leaf0 || !leaf1) {
@@ -113,7 +113,7 @@ void QBdtNode::Branch(bitLenInt depth)
         b1 = b1->ShallowClone();
     }
 
-    depth--;
+    --depth;
     b0->Branch(depth);
     b1->Branch(depth);
 }
@@ -161,7 +161,7 @@ void QBdtNode::PopStateVector(bitLenInt depth)
     QBdtNodeInterfacePtr& b1 = branches[1U];
 
     // Depth-first
-    depth--;
+    --depth;
     b0->PopStateVector(depth);
     if (b0.get() != b1.get()) {
         b1->PopStateVector(depth);
@@ -213,7 +213,7 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
 
         return;
     }
-    depth--;
+    --depth;
 
     if (!depth && size) {
         QBdtNodeInterfacePtr c = branches[0U];
@@ -327,7 +327,7 @@ void QBdtNode::PushStateVector(const complex2& mtrxCol1, const complex2& mtrxCol
         throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
                                 "depth, or root depth lacks method implementation.)");
     }
-    depth--;
+    --depth;
 
     b0->Branch();
     b1->Branch();
@@ -432,7 +432,7 @@ void QBdtNode::PushStateVector(const complex* mtrx, QBdtNodeInterfacePtr& b0, QB
         throw std::out_of_range("QBdtNode::PushStateVector() not implemented at depth=0! (You didn't push to root "
                                 "depth, or root depth lacks method implementation.)");
     }
-    depth--;
+    --depth;
 
     b0->Branch();
     b1->Branch();

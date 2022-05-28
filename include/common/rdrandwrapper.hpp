@@ -134,7 +134,7 @@ public:
 
         real1_f res = ZERO_R1_F;
         real1_f part = ONE_R1_F;
-        for (unsigned i = 0U; i < 32U; i++) {
+        for (unsigned i = 0U; i < 32U; ++i) {
             part /= 2;
             if ((v >> i) & 1U) {
                 res += part;
@@ -144,7 +144,7 @@ public:
 #if FPPOW > 5
         v = NextRaw();
 
-        for (unsigned i = 0U; i < 32U; i++) {
+        for (unsigned i = 0U; i < 32U; ++i) {
             part /= 2;
             if ((v >> i) & 1U) {
                 res += part;

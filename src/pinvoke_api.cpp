@@ -24,7 +24,7 @@
     const std::lock_guard<std::mutex> metaLock(metaOperationMutex);                                                    \
     std::map<QInterface*, std::mutex>::iterator mutexLockIt;                                                           \
     std::vector<std::unique_ptr<const std::lock_guard<std::mutex>>> simulatorLocks;                                    \
-    for (mutexLockIt = simulatorMutexes.begin(); mutexLockIt != simulatorMutexes.end(); mutexLockIt++) {               \
+    for (mutexLockIt = simulatorMutexes.begin(); mutexLockIt != simulatorMutexes.end(); ++mutexLockIt) {               \
         simulatorLocks.push_back(std::unique_ptr<const std::lock_guard<std::mutex>>(                                   \
             new const std::lock_guard<std::mutex>(mutexLockIt->second)));                                              \
     }
@@ -88,7 +88,7 @@ bitLenInt MaxShardQubits()
 
 void TransformPauliBasis(QInterfacePtr simulator, uintq len, int* bases, uintq* qubitIds)
 {
-    for (uintq i = 0U; i < len; i++) {
+    for (uintq i = 0U; i < len; ++i) {
         switch (bases[i]) {
         case PauliX:
             simulator->H(shards[simulator.get()][qubitIds[i]]);
@@ -107,7 +107,7 @@ void TransformPauliBasis(QInterfacePtr simulator, uintq len, int* bases, uintq* 
 
 void RevertPauliBasis(QInterfacePtr simulator, uintq len, int* bases, uintq* qubitIds)
 {
-    for (uintq i = 0U; i < len; i++) {
+    for (uintq i = 0U; i < len; ++i) {
         switch (bases[i]) {
         case PauliX:
             simulator->H(shards[simulator.get()][qubitIds[i]]);
@@ -168,7 +168,7 @@ void MCRHelper(uintq sid, uintq b, double phi, uintq n, uintq* c, uintq q)
 {
     QInterfacePtr simulator = simulators[sid];
     std::unique_ptr<bitLenInt[]> ctrlsArray(new bitLenInt[n]);
-    for (uintq i = 0U; i < n; i++) {
+    for (uintq i = 0U; i < n; ++i) {
         ctrlsArray[i] = shards[simulator.get()][c[i]];
     }
 
@@ -217,7 +217,7 @@ inline std::size_t make_mask(std::vector<bitLenInt> const& qs)
 
 std::map<uintq, bitLenInt>::iterator FindShardValue(bitLenInt v, std::map<uintq, bitLenInt>& simMap)
 {
-    for (auto it = simMap.begin(); it != simMap.end(); it++) {
+    for (auto it = simMap.begin(); it != simMap.end(); ++it) {
         if (it->second == v) {
             // We have the matching it1, if we break.
             return it;
@@ -238,13 +238,13 @@ uintq MapArithmetic(QInterfacePtr simulator, uintq n, uintq* q)
 {
     uintq start = shards[simulator.get()][q[0U]];
     std::unique_ptr<bitLenInt[]> bitArray(new bitLenInt[n]);
-    for (uintq i = 0U; i < n; i++) {
+    for (uintq i = 0U; i < n; ++i) {
         bitArray[i] = shards[simulator.get()][q[i]];
         if (start > bitArray[i]) {
             start = bitArray[i];
         }
     }
-    for (uintq i = 0U; i < n; i++) {
+    for (uintq i = 0U; i < n; ++i) {
         simulator->Swap(start + i, bitArray[i]);
         SwapShardValues(start + i, bitArray[i], shards[simulator.get()]);
     }
@@ -269,7 +269,7 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, uintq n, uintq* q1,
     uintq start2 = shards[simulator.get()][q2[0U]];
     std::unique_ptr<bitLenInt[]> bitArray1(new bitLenInt[n]);
     std::unique_ptr<bitLenInt[]> bitArray2(new bitLenInt[n]);
-    for (uintq i = 0U; i < n; i++) {
+    for (uintq i = 0U; i < n; ++i) {
         bitArray1[i] = shards[simulator.get()][q1[i]];
         if (start1 > bitArray1[i]) {
             start1 = bitArray1[i];
@@ -288,7 +288,7 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, uintq n, uintq* q1,
         bitArray1.swap(bitArray2);
     }
 
-    for (uintq i = 0U; i < n; i++) {
+    for (uintq i = 0U; i < n; ++i) {
         simulator->Swap(start1 + i, bitArray1[i]);
         SwapShardValues(start1 + i, bitArray1[i], shards[simulator.get()]);
     }
@@ -297,7 +297,7 @@ MapArithmeticResult2 MapArithmetic2(QInterfacePtr simulator, uintq n, uintq* q1,
         start2 = start1 + n;
     }
 
-    for (uintq i = 0U; i < n; i++) {
+    for (uintq i = 0U; i < n; ++i) {
         simulator->Swap(start2 + i, bitArray2[i]);
         SwapShardValues(start2 + i, bitArray2[i], shards[simulator.get()]);
     }
@@ -315,14 +315,14 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, uintq n1, uintq* q1
     uintq start2 = shards[simulator.get()][q2[0U]];
     std::unique_ptr<bitLenInt[]> bitArray1(new bitLenInt[n1]);
     std::unique_ptr<bitLenInt[]> bitArray2(new bitLenInt[n2]);
-    for (uintq i = 0U; i < n1; i++) {
+    for (uintq i = 0U; i < n1; ++i) {
         bitArray1[i] = shards[simulator.get()][q1[i]];
         if (start1 > bitArray1[i]) {
             start1 = bitArray1[i];
         }
     }
 
-    for (uintq i = 0U; i < n2; i++) {
+    for (uintq i = 0U; i < n2; ++i) {
         bitArray2[i] = shards[simulator.get()][q2[i]];
         if (start2 > bitArray2[i]) {
             start2 = bitArray2[i];
@@ -337,7 +337,7 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, uintq n1, uintq* q1
         bitArray1.swap(bitArray2);
     }
 
-    for (uintq i = 0U; i < n1; i++) {
+    for (uintq i = 0U; i < n1; ++i) {
         simulator->Swap(start1 + i, bitArray1[i]);
         SwapShardValues(start1 + i, bitArray1[i], shards[simulator.get()]);
     }
@@ -346,7 +346,7 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, uintq n1, uintq* q1
         start2 = start1 + n1;
     }
 
-    for (uintq i = 0U; i < n2; i++) {
+    for (uintq i = 0U; i < n2; ++i) {
         simulator->Swap(start2 + i, bitArray2[i]);
         SwapShardValues(start2 + i, bitArray2[i], shards[simulator.get()]);
     }
@@ -360,7 +360,7 @@ MapArithmeticResult2 MapArithmetic3(QInterfacePtr simulator, uintq n1, uintq* q1
 
 void _darray_to_creal1_array(double* params, bitCapIntOcl componentCount, complex* amps)
 {
-    for (bitCapIntOcl j = 0U; j < componentCount; j++) {
+    for (bitCapIntOcl j = 0U; j < componentCount; ++j) {
         amps[j] = complex(real1(params[2U * j]), real1(params[2U * j + 1U]));
     }
 }
@@ -373,7 +373,7 @@ bitCapInt _combineA(uintq na, const uintq* a)
 
 #if QBCAPPOW > 6
     bitCapInt aTot = 0U;
-    for (uintq i = 0U; i < na; i++) {
+    for (uintq i = 0U; i < na; ++i) {
         aTot <<= bitsInCap;
         aTot |= a[na - (i + 1U)];
     }
@@ -400,7 +400,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool md, _In_ bo
 
     uintq sid = (uintq)simulators.size();
 
-    for (uintq i = 0U; i < simulators.size(); i++) {
+    for (uintq i = 0U; i < simulators.size(); ++i) {
         if (simulatorReservations[i] == false) {
             sid = i;
             simulatorReservations[i] = true;
@@ -488,7 +488,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_type(_In_ uintq q, _In_ bool md, _In_ bo
     }
 
     shards[simulator.get()] = {};
-    for (uintq i = 0U; i < q; i++) {
+    for (uintq i = 0U; i < q; ++i) {
         shards[simulator.get()][i] = (bitLenInt)i;
     }
 
@@ -504,7 +504,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count(_In_ uintq q, _In_ bool hp)
 
     uintq sid = (uintq)simulators.size();
 
-    for (uintq i = 0U; i < simulators.size(); i++) {
+    for (uintq i = 0U; i < simulators.size(); ++i) {
         if (simulatorReservations[i] == false) {
             sid = i;
             simulatorReservations[i] = true;
@@ -550,7 +550,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count(_In_ uintq q, _In_ bool hp)
     }
 
     shards[simulator.get()] = {};
-    for (uintq i = 0U; i < q; i++) {
+    for (uintq i = 0U; i < q; ++i) {
         shards[simulator.get()][i] = (bitLenInt)i;
     }
 
@@ -566,7 +566,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_pager(_In_ uintq q, _In_ bool hp)
 
     uintq sid = (uintq)simulators.size();
 
-    for (uintq i = 0U; i < simulators.size(); i++) {
+    for (uintq i = 0U; i < simulators.size(); ++i) {
         if (simulatorReservations[i] == false) {
             sid = i;
             simulatorReservations[i] = true;
@@ -581,7 +581,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_pager(_In_ uintq q, _In_ bool hp)
     std::vector<int> deviceList;
 #if ENABLE_OPENCL
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance().GetDeviceContextPtrVector();
-    for (size_t i = 0U; i < deviceContext.size(); i++) {
+    for (size_t i = 0U; i < deviceContext.size(); ++i) {
         deviceList.push_back(i);
     }
     const size_t defaultDeviceID = OCLEngine::Instance().GetDefaultDeviceID();
@@ -618,7 +618,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_pager(_In_ uintq q, _In_ bool hp)
     }
 
     shards[simulator.get()] = {};
-    for (uintq i = 0U; i < q; i++) {
+    for (uintq i = 0U; i < q; ++i) {
         shards[simulator.get()][i] = (bitLenInt)i;
     }
 
@@ -634,7 +634,7 @@ MICROSOFT_QUANTUM_DECL uintq init_clone(_In_ uintq sid)
 
     uintq nsid = (uintq)simulators.size();
 
-    for (uintq i = 0U; i < simulators.size(); i++) {
+    for (uintq i = 0U; i < simulators.size(); ++i) {
         if (simulatorReservations[i] == false) {
             nsid = i;
             simulatorReservations[i] = true;
@@ -666,7 +666,7 @@ MICROSOFT_QUANTUM_DECL uintq init_clone(_In_ uintq sid)
     }
 
     shards[simulator.get()] = {};
-    for (uintq i = 0U; i < simulator->GetQubitCount(); i++) {
+    for (uintq i = 0U; i < simulator->GetQubitCount(); ++i) {
         shards[simulator.get()][i] = shards[simulators[sid].get()][i];
     }
 
@@ -727,7 +727,7 @@ MICROSOFT_QUANTUM_DECL void DumpIds(_In_ uintq sid, _In_ IdCallback callback)
     QInterfacePtr simulator = simulators[sid];
 
     std::map<uintq, bitLenInt>::iterator it;
-    for (it = shards[simulator.get()].begin(); it != shards[simulator.get()].end(); it++) {
+    for (it = shards[simulator.get()].begin(); it != shards[simulator.get()].end(); ++it) {
         callback(it->first);
     }
 }
@@ -742,7 +742,7 @@ MICROSOFT_QUANTUM_DECL void Dump(_In_ uintq sid, _In_ ProbAmpCallback callback)
     QInterfacePtr simulator = simulators[sid];
     bitCapIntOcl wfnl = (bitCapIntOcl)simulator->GetMaxQPower();
 
-    for (size_t i = 0U; i < wfnl; i++) {
+    for (size_t i = 0U; i < wfnl; ++i) {
         complex amp;
         try {
             amp = simulator->GetAmplitude(i);
@@ -793,7 +793,7 @@ MICROSOFT_QUANTUM_DECL void PhaseParity(_In_ uintq sid, _In_ double lambda, _In_
     SIMULATOR_LOCK_GUARD(sid)
     QInterfacePtr simulator = simulators[sid];
     bitCapInt mask = 0U;
-    for (uintq i = 0U; i < n; i++) {
+    for (uintq i = 0U; i < n; ++i) {
         mask |= pow2(shards[simulator.get()][q[i]]);
     }
 
@@ -823,7 +823,7 @@ double _JointEnsembleProbabilityHelper(QInterfacePtr simulator, uintq n, int* b,
     }
 
     bitCapInt mask = 0U;
-    for (bitLenInt i = 0U; i < (bitLenInt)n; i++) {
+    for (bitLenInt i = 0U; i < (bitLenInt)n; ++i) {
         bitCapInt bit = pow2(shards[simulator.get()][qVec[i]]);
         mask |= bit;
     }
@@ -921,9 +921,9 @@ MICROSOFT_QUANTUM_DECL bool release(_In_ uintq sid, _In_ uintq q)
     } else {
         bitLenInt oIndex = shards[simulator.get()][q];
         simulator->Dispose(oIndex, 1U);
-        for (uintq i = 0U; i < shards[simulator.get()].size(); i++) {
+        for (uintq i = 0U; i < shards[simulator.get()].size(); ++i) {
             if (shards[simulator.get()][i] > oIndex) {
-                shards[simulator.get()][i]--;
+                --(shards[simulator.get()][i]);
             }
         }
         shards[simulator.get()].erase(q);
@@ -1111,7 +1111,7 @@ MICROSOFT_QUANTUM_DECL void Mtrx(_In_ uintq sid, _In_reads_(8) double* m, _In_ u
     SIMULATOR_LOCK_GUARD(sid)                                                                                          \
     QInterfacePtr simulator = simulators[sid];                                                                         \
     std::unique_ptr<bitLenInt[]> ctrlsArray(new bitLenInt[numC]);                                                      \
-    for (uintq i = 0; i < numC; i++) {                                                                                 \
+    for (uintq i = 0; i < numC; ++i) {                                                                                 \
         ctrlsArray[i] = shards[simulator.get()][c[i]];                                                                 \
     }
 
@@ -1435,7 +1435,7 @@ MICROSOFT_QUANTUM_DECL void Multiplex1Mtrx(
     SIMULATOR_LOCK_GUARD(sid)                                                                                          \
     QInterfacePtr simulator = simulators[sid];                                                                         \
     bitCapInt mask = 0U;                                                                                               \
-    for (uintq i = 0U; i < numQ; i++) {                                                                                \
+    for (uintq i = 0U; i < numQ; ++i) {                                                                                \
         mask |= pow2(shards[simulator.get()][q[i]]);                                                                   \
     }
 
@@ -1673,7 +1673,7 @@ MICROSOFT_QUANTUM_DECL void MeasureShots(
 
     QInterfacePtr simulator = simulators[sid];
     std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[n]);
-    for (uintq i = 0U; i < n; i++) {
+    for (uintq i = 0U; i < n; ++i) {
         qPowers[i] = Qrack::pow2(shards[simulator.get()][q[i]]);
     }
 
@@ -1771,7 +1771,7 @@ MICROSOFT_QUANTUM_DECL void Compose(_In_ uintq sid1, _In_ uintq sid2, uintq* q)
         throw std::runtime_error("Cannot 'Compose()' simulators of different layer stack types.");
     }
 
-    for (size_t i = 0U; i < simulatorTypes[sid1].size(); i++) {
+    for (size_t i = 0U; i < simulatorTypes[sid1].size(); ++i) {
         if (simulatorTypes[sid1][i] != simulatorTypes[sid2][i]) {
             throw std::runtime_error("Cannot 'Compose()' simulators of different layer stack types.");
         }
@@ -1790,7 +1790,7 @@ MICROSOFT_QUANTUM_DECL void Compose(_In_ uintq sid1, _In_ uintq sid2, uintq* q)
         simulatorErrors[sid2] = 1;
     }
 
-    for (bitLenInt i = 0; i < pQubitCount; i++) {
+    for (bitLenInt i = 0; i < pQubitCount; ++i) {
         shards[simulator1.get()][q[i]] = oQubitCount + i;
     }
 }
@@ -1807,7 +1807,7 @@ MICROSOFT_QUANTUM_DECL uintq Decompose(_In_ uintq sid, _In_ uintq n, _In_reads_(
     try {
         nQubitIndex = simulator->GetQubitCount() - n;
 
-        for (uintq i = 0U; i < n; i++) {
+        for (uintq i = 0U; i < n; ++i) {
             simulator->Swap(shards[simulator.get()][q[i]], i + nQubitIndex);
         }
 
@@ -1818,11 +1818,11 @@ MICROSOFT_QUANTUM_DECL uintq Decompose(_In_ uintq sid, _In_ uintq n, _In_reads_(
     }
 
     bitLenInt oIndex;
-    for (uintq j = 0U; j < n; j++) {
+    for (uintq j = 0U; j < n; ++j) {
         oIndex = shards[simulator.get()][q[j]];
-        for (uintq i = 0U; i < shards[simulator.get()].size(); i++) {
+        for (uintq i = 0U; i < shards[simulator.get()].size(); ++i) {
             if (shards[simulator.get()][i] > oIndex) {
-                shards[simulator.get()][i]--;
+                --(shards[simulator.get()][i]);
             }
         }
         shards[simulator.get()].erase(q[j]);
@@ -1844,7 +1844,7 @@ MICROSOFT_QUANTUM_DECL void Dispose(_In_ uintq sid, _In_ uintq n, _In_reads_(n) 
     try {
         nQubitIndex = simulator->GetQubitCount() - n;
 
-        for (uintq i = 0U; i < n; i++) {
+        for (uintq i = 0U; i < n; ++i) {
             simulator->Swap(shards[simulator.get()][q[i]], i + nQubitIndex);
         }
 
@@ -1855,11 +1855,11 @@ MICROSOFT_QUANTUM_DECL void Dispose(_In_ uintq sid, _In_ uintq n, _In_reads_(n) 
     }
 
     bitLenInt oIndex;
-    for (uintq j = 0U; j < n; j++) {
+    for (uintq j = 0U; j < n; ++j) {
         oIndex = shards[simulator.get()][q[j]];
-        for (uintq i = 0U; i < shards[simulator.get()].size(); i++) {
+        for (uintq i = 0U; i < shards[simulator.get()].size(); ++i) {
             if (shards[simulator.get()][i] > oIndex) {
-                shards[simulator.get()][i]--;
+                --(shards[simulator.get()][i]);
             }
         }
         shards[simulator.get()].erase(q[j]);
@@ -2427,7 +2427,7 @@ MICROSOFT_QUANTUM_DECL bool TrySeparateTol(_In_ uintq sid, _In_ uintq n, _In_rea
 
     QInterfacePtr simulator = simulators[sid];
     std::unique_ptr<bitLenInt[]> bitArray(new bitLenInt[n]);
-    for (uintq i = 0U; i < n; i++) {
+    for (uintq i = 0U; i < n; ++i) {
         bitArray[i] = shards[simulator.get()][q[i]];
     }
 
@@ -2460,7 +2460,7 @@ MICROSOFT_QUANTUM_DECL void TimeEvolve(_In_ uintq sid, _In_ double t, _In_ uintq
 {
     bitCapIntOcl mtrxOffset = 0U;
     Hamiltonian h(n);
-    for (uintq i = 0U; i < n; i++) {
+    for (uintq i = 0U; i < n; ++i) {
         h[i] = std::make_shared<UniformHamiltonianOp>(teos[i], mtrx + mtrxOffset);
         mtrxOffset += pow2Ocl(teos[i].controlLen) * 8U;
     }

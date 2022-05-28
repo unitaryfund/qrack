@@ -87,7 +87,7 @@ protected:
     {
         Dispatch([this, fn] {
             const bitLenInt maxLcv = qubitCount << 1U;
-            for (bitLenInt i = 0; i < maxLcv; i++) {
+            for (bitLenInt i = 0; i < maxLcv; ++i) {
                 fn(i);
             }
         });
@@ -168,7 +168,7 @@ public:
                 rawRandBools = hardware_rand_generator->NextRaw();
                 rawRandBoolsRemaining = sizeof(unsigned) * bitsInByte;
             }
-            rawRandBoolsRemaining--;
+            --rawRandBoolsRemaining;
 
             return (bool)((rawRandBools >> rawRandBoolsRemaining) & 1U);
         } else {
@@ -221,7 +221,7 @@ protected:
     void rowmult(const bitLenInt& i, const bitLenInt& k)
     {
         r[i] = clifford(i, k);
-        for (bitLenInt j = 0U; j < qubitCount; j++) {
+        for (bitLenInt j = 0U; j < qubitCount; ++j) {
             x[i][j] = x[i][j] ^ x[k][j];
             z[i][j] = z[i][j] ^ z[k][j];
         }

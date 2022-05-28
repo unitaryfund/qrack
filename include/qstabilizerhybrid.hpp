@@ -55,7 +55,7 @@ protected:
     void FlushBuffers();
     void DumpBuffers()
     {
-        for (bitLenInt i = 0; i < qubitCount; i++) {
+        for (bitLenInt i = 0; i < qubitCount; ++i) {
             shards[i] = NULL;
         }
     }

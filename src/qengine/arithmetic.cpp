@@ -190,7 +190,7 @@ void QEngineCPU::CINC(
 
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
     bitCapIntOcl controlMask = 0;
-    for (bitLenInt i = 0; i < controlLen; i++) {
+    for (bitLenInt i = 0; i < controlLen; ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         controlMask |= controlPowers[i];
     }
@@ -489,12 +489,12 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
     std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
     bitCapIntOcl controlMask = 0;
-    for (bitLenInt i = 0; i < controlLen; i++) {
+    for (bitLenInt i = 0; i < controlLen; ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         skipPowers[i] = controlPowers[i];
         controlMask |= controlPowers[i];
     }
-    for (bitLenInt i = 0; i < length; i++) {
+    for (bitLenInt i = 0; i < length; ++i) {
         skipPowers[i + controlLen] = pow2Ocl(carryStart + i);
     }
     std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
@@ -518,9 +518,9 @@ void QEngineCPU::CMULDIV(const IOFn& inFn, const IOFn& outFn, const bitCapInt& t
 
             nStateVec->write(lcv, stateVec->read(lcv));
             bitCapIntOcl partControlMask;
-            for (bitCapIntOcl j = ONE_BCI; j < pow2Mask(controlLen); j++) {
+            for (bitCapIntOcl j = ONE_BCI; j < pow2Mask(controlLen); ++j) {
                 partControlMask = 0;
-                for (bitLenInt k = 0; k < controlLen; k++) {
+                for (bitLenInt k = 0; k < controlLen; ++k) {
                     if ((j >> k) & ONE_BCI) {
                         partControlMask |= controlPowers[k];
                     }
@@ -659,12 +659,12 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
     std::unique_ptr<bitCapIntOcl[]> skipPowers(new bitCapIntOcl[controlLen + length]);
     std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controlLen]);
     bitCapIntOcl controlMask = 0;
-    for (bitLenInt i = 0; i < controlLen; i++) {
+    for (bitLenInt i = 0; i < controlLen; ++i) {
         controlPowers[i] = pow2Ocl(controls[i]);
         skipPowers[i] = controlPowers[i];
         controlMask |= controlPowers[i];
     }
-    for (bitLenInt i = 0; i < length; i++) {
+    for (bitLenInt i = 0; i < length; ++i) {
         skipPowers[i + controlLen] = pow2Ocl(outStart + i);
     }
     std::sort(skipPowers.get(), skipPowers.get() + controlLen + length);
@@ -690,9 +690,9 @@ void QEngineCPU::CModNOut(const MFn& kernelFn, const bitCapInt& modN, const bitL
             }
             nStateVec->write(lcv, stateVec->read(lcv));
 
-            for (bitCapIntOcl j = ONE_BCI; j < pow2Mask(controlLen); j++) {
+            for (bitCapIntOcl j = ONE_BCI; j < pow2Mask(controlLen); ++j) {
                 bitCapIntOcl partControlMask = 0;
-                for (bitLenInt k = 0; k < controlLen; k++) {
+                for (bitLenInt k = 0; k < controlLen; ++k) {
                     if ((j >> k) & ONE_BCI) {
                         partControlMask |= controlPowers[k];
                     }
@@ -785,7 +785,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         std::unique_ptr<int8_t[]> nibbles(new int8_t[nibbleCount]);
         bool isValid = true;
-        for (int j = 0; j < nibbleCount; j++) {
+        for (int j = 0; j < nibbleCount; ++j) {
             int8_t test1 = (int)(inOutInt & 15UL);
             inOutInt >>= 4UL;
             int8_t test2 = (int)(partToAdd % 10);
@@ -797,11 +797,11 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         }
         if (isValid) {
             bitCapIntOcl outInt = 0;
-            for (int j = 0; j < nibbleCount; j++) {
+            for (int j = 0; j < nibbleCount; ++j) {
                 if (nibbles[j] > 9) {
                     nibbles[j] -= 10;
                     if ((j + 1) < nibbleCount) {
-                        nibbles[j + 1]++;
+                        ++(nibbles[j + 1]);
                     }
                 }
                 outInt |= (bitCapIntOcl)nibbles[j] << (j * 4U * ONE_BCI);
@@ -869,7 +869,7 @@ void QEngineCPU::INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt len
             isValid = false;
         }
 
-        for (int j = 1; j < nibbleCount; j++) {
+        for (int j = 1; j < nibbleCount; ++j) {
             test1 = (int)(inOutInt & 15UL);
             inOutInt >>= 4U * ONE_BCI;
             test2 = (int)(partToAdd % 10);
@@ -883,11 +883,11 @@ void QEngineCPU::INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt len
             bitCapIntOcl outInt = 0;
             bitCapIntOcl outRes = 0;
             bitCapIntOcl carryRes = 0;
-            for (int j = 0; j < nibbleCount; j++) {
+            for (int j = 0; j < nibbleCount; ++j) {
                 if (nibbles[j] > 9) {
                     nibbles[j] -= 10;
                     if ((j + 1) < nibbleCount) {
-                        nibbles[j + 1]++;
+                        ++(nibbles[j + 1]);
                     } else {
                         carryRes = carryMask;
                     }
@@ -952,7 +952,7 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
         fn = [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
             bitCapIntOcl inputInt = (lcv & inputMask) >> indexStart;
             bitCapIntOcl outputInt = 0;
-            for (bitCapIntOcl j = 0; j < valueBytes; j++) {
+            for (bitCapIntOcl j = 0; j < valueBytes; ++j) {
                 outputInt |= (bitCapIntOcl)values[inputInt * valueBytes + j] << (8U * j);
             }
             bitCapIntOcl outputRes = outputInt << valueStart;
@@ -1048,7 +1048,7 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
         } else if (valueBytes == 4) {
             outputInt = ((uint32_t*)values)[inputInt];
         } else {
-            for (bitCapIntOcl j = 0; j < valueBytes; j++) {
+            for (bitCapIntOcl j = 0; j < valueBytes; ++j) {
                 outputInt |= (bitCapIntOcl)values[inputInt * valueBytes + j] << (8U * j);
             }
         }
@@ -1160,7 +1160,7 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
         } else if (valueBytes == 4) {
             outputInt = ((uint32_t*)values)[inputInt];
         } else {
-            for (bitCapIntOcl j = 0; j < valueBytes; j++) {
+            for (bitCapIntOcl j = 0; j < valueBytes; ++j) {
                 outputInt |= (bitCapIntOcl)values[inputInt * valueBytes + j] << (8U * j);
             }
         }
@@ -1229,7 +1229,7 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, const unsigned char* va
         } else if (bytes == 4) {
             outputInt = ((uint32_t*)values)[inputInt];
         } else {
-            for (bitCapIntOcl j = 0; j < bytes; j++) {
+            for (bitCapIntOcl j = 0; j < bytes; ++j) {
                 outputInt |= (bitCapIntOcl)values[inputInt * bytes + j] << (8U * j);
             }
         }

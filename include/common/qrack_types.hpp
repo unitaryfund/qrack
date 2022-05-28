@@ -243,7 +243,7 @@ inline bitLenInt log2(bitCapInt n)
     bitCapInt p = n >> ONE_BCI;
     while (p) {
         p >>= ONE_BCI;
-        pow++;
+        ++pow;
     }
     return pow;
 #endif

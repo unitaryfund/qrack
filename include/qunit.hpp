@@ -275,7 +275,7 @@ public:
     virtual bool isFinished();
     virtual void Dump()
     {
-        for (size_t i = 0U; i < shards.size(); i++) {
+        for (size_t i = 0U; i < shards.size(); ++i) {
             shards[i].unit = NULL;
         }
     }
@@ -619,10 +619,10 @@ protected:
     }
     void ToPermBasis(bitLenInt start, bitLenInt length)
     {
-        for (bitLenInt i = 0U; i < length; i++) {
+        for (bitLenInt i = 0U; i < length; ++i) {
             RevertBasis1Qb(start + i);
         }
-        for (bitLenInt i = 0U; i < length; i++) {
+        for (bitLenInt i = 0U; i < length; ++i) {
             RevertBasis2Qb(start + i);
         }
     }
@@ -634,10 +634,10 @@ protected:
     }
     void ToPermBasisProb(bitLenInt start, bitLenInt length)
     {
-        for (bitLenInt i = 0U; i < length; i++) {
+        for (bitLenInt i = 0U; i < length; ++i) {
             RevertBasis1Qb(start + i);
         }
-        for (bitLenInt i = 0U; i < length; i++) {
+        for (bitLenInt i = 0U; i < length; ++i) {
             RevertBasis2Qb(start + i, ONLY_INVERT, ONLY_TARGETS);
         }
     }
@@ -658,13 +658,13 @@ protected:
         }
 
         std::set<bitLenInt> exceptBits;
-        for (bitLenInt i = 0U; i < length; i++) {
+        for (bitLenInt i = 0U; i < length; ++i) {
             exceptBits.insert(start + i);
         }
-        for (bitLenInt i = 0U; i < length; i++) {
+        for (bitLenInt i = 0U; i < length; ++i) {
             RevertBasis1Qb(start + i);
         }
-        for (bitLenInt i = 0U; i < length; i++) {
+        for (bitLenInt i = 0U; i < length; ++i) {
             RevertBasis2Qb(start + i, ONLY_INVERT);
             RevertBasis2Qb(start + i, ONLY_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, exceptBits);
             shards[start + i].DumpMultiBit();
@@ -672,10 +672,10 @@ protected:
     }
     void ToPermBasisAllMeasure()
     {
-        for (bitLenInt i = 0U; i < qubitCount; i++) {
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
             RevertBasis1Qb(i);
         }
-        for (bitLenInt i = 0U; i < qubitCount; i++) {
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
             shards[i].ClearInvertPhase();
             RevertBasis2Qb(i, ONLY_INVERT);
             shards[i].DumpMultiBit();
@@ -684,21 +684,21 @@ protected:
 
     void DirtyShardRange(bitLenInt start, bitLenInt length)
     {
-        for (bitLenInt i = 0U; i < length; i++) {
+        for (bitLenInt i = 0U; i < length; ++i) {
             shards[start + i].MakeDirty();
         }
     }
 
     void DirtyShardRangePhase(bitLenInt start, bitLenInt length)
     {
-        for (bitLenInt i = 0U; i < length; i++) {
+        for (bitLenInt i = 0U; i < length; ++i) {
             shards[start + i].isPhaseDirty = true;
         }
     }
 
     void DirtyShardIndexVector(std::vector<bitLenInt> bitIndices)
     {
-        for (bitLenInt i = 0U; i < (bitLenInt)bitIndices.size(); i++) {
+        for (bitLenInt i = 0U; i < (bitLenInt)bitIndices.size(); ++i) {
             shards[bitIndices[i]].MakeDirty();
         }
     }
@@ -724,7 +724,7 @@ protected:
     bitLenInt FindShardIndex(QEngineShardPtr shard)
     {
         shard->found = true;
-        for (bitLenInt i = 0U; i < shards.size(); i++) {
+        for (bitLenInt i = 0U; i < shards.size(); ++i) {
             if (shards[i].found) {
                 shard->found = false;
                 return i;

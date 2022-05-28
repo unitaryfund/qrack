@@ -416,7 +416,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             if (stateVec->is_sparse()) {
                 bitCapIntOcl setMask = offset1 ^ offset2;
                 bitCapIntOcl filterMask = 0U;
-                for (bitLenInt i = 0U; i < bitCount; i++) {
+                for (bitLenInt i = 0U; i < bitCount; ++i) {
                     filterMask |= (qPowersSorted[i] & ~setMask);
                 }
                 bitCapIntOcl filterValues = filterMask & offset1 & offset2;
@@ -434,7 +434,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             }
 
             real1 rNrm = ZERO_R1;
-            for (unsigned i = 0U; i < numCores; i++) {
+            for (unsigned i = 0U; i < numCores; ++i) {
                 rNrm += rngNrm[i];
             }
             rngNrm.reset();
@@ -584,7 +584,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             if (stateVec->is_sparse()) {
                 bitCapIntOcl setMask = offset1 ^ offset2;
                 bitCapIntOcl filterMask = 0U;
-                for (bitLenInt i = 0U; i < bitCount; i++) {
+                for (bitLenInt i = 0U; i < bitCount; ++i) {
                     filterMask |= (qPowersSorted[i] & ~setMask);
                 }
                 bitCapIntOcl filterValues = filterMask & offset1 & offset2;
@@ -602,7 +602,7 @@ void QEngineCPU::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
             }
 
             real1 rNrm = ZERO_R1;
-            for (unsigned i = 0U; i < numCores; i++) {
+            for (unsigned i = 0U; i < numCores; ++i) {
                 rNrm += rngNrm[i];
             }
             rngNrm.reset();
@@ -717,12 +717,12 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
     real1 nrm = (runningNorm > ZERO_R1) ? ONE_R1 / (real1)sqrt(runningNorm) : ONE_R1;
 
     std::unique_ptr<bitCapIntOcl[]> qPowers(new bitCapIntOcl[controlLen]);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         qPowers[i] = pow2Ocl(controls[i]);
     }
 
     std::unique_ptr<bitCapIntOcl[]> mtrxSkipPowersOcl(new bitCapIntOcl[mtrxSkipLen]);
-    for (bitLenInt i = 0U; i < mtrxSkipLen; i++) {
+    for (bitLenInt i = 0U; i < mtrxSkipLen; ++i) {
         mtrxSkipPowersOcl[i] = (bitCapIntOcl)mtrxSkipPowers[i];
     }
 
@@ -735,7 +735,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
 
     par_for_skip(0U, maxQPowerOcl, targetPower, 1U, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         bitCapIntOcl offset = 0U;
-        for (bitLenInt j = 0U; j < controlLen; j++) {
+        for (bitLenInt j = 0U; j < controlLen; ++j) {
             if (lcv & qPowers[j]) {
                 offset |= pow2Ocl(j);
             }
@@ -744,7 +744,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
         bitCapIntOcl i, iHigh;
         iHigh = offset;
         i = 0U;
-        for (bitCapIntOcl p = 0U; p < mtrxSkipLen; p++) {
+        for (bitCapIntOcl p = 0U; p < mtrxSkipLen; ++p) {
             bitCapIntOcl iLow = iHigh & (mtrxSkipPowersOcl[p] - ONE_BCI);
             i |= iLow;
             iHigh = (iHigh ^ iLow) << ONE_BCI;
@@ -771,7 +771,7 @@ void QEngineCPU::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
     });
 
     runningNorm = ZERO_R1;
-    for (unsigned i = 0U; i < numCores; i++) {
+    for (unsigned i = 0U; i < numCores; ++i) {
         runningNorm += rngNrm[i];
     }
 }
@@ -790,7 +790,7 @@ void QEngineCPU::UniformParityRZ(bitCapInt mask, real1_f angle)
             // From https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
             // c accumulates the total bits set in v
             bitLenInt c;
-            for (c = 0U; perm; c++) {
+            for (c = 0U; perm; ++c) {
                 // clear the least significant bit set
                 perm &= perm - ONE_BCI;
             }
@@ -819,7 +819,7 @@ void QEngineCPU::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlL
     Dispatch(maxQPower >> controlLen, [this, controls, mask, angle] {
         bitCapIntOcl controlMask = 0U;
         std::unique_ptr<bitCapIntOcl[]> controlPowers(new bitCapIntOcl[controls.size()]);
-        for (bitLenInt i = 0U; i < (bitLenInt)controls.size(); i++) {
+        for (bitLenInt i = 0U; i < (bitLenInt)controls.size(); ++i) {
             controlPowers[i] = pow2Ocl(controls[i]);
             controlMask |= controlPowers[i];
         }
@@ -834,7 +834,7 @@ void QEngineCPU::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlL
             // From https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
             // c accumulates the total bits set in v
             bitLenInt c;
-            for (c = 0U; perm; c++) {
+            for (c = 0U; perm; ++c) {
                 // clear the least significant bit set
                 perm &= perm - ONE_BCI;
             }
@@ -994,7 +994,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     }
     Finish();
 
-    for (bitLenInt i = 0U; i < toComposeCount; i++) {
+    for (bitLenInt i = 0U; i < toComposeCount; ++i) {
         QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[i]);
         if (src->doNormalize) {
             src->NormalizeState();
@@ -1014,7 +1014,7 @@ std::map<QInterfacePtr, bitLenInt> QEngineCPU::Compose(std::vector<QInterfacePtr
     par_for(0U, nMaxQPower, [&](const bitCapIntOcl& lcv, const unsigned& cpu) {
         nStateVec->write(lcv, stateVec->read(lcv & startMask));
 
-        for (bitLenInt j = 0U; j < toComposeCount; j++) {
+        for (bitLenInt j = 0U; j < toComposeCount; ++j) {
             QEngineCPUPtr src = std::dynamic_pointer_cast<Qrack::QEngineCPU>(toCopy[j]);
             nStateVec->write(lcv, nStateVec->read(lcv) * src->stateVec->read((lcv & mask[j]) >> offset[j]));
         }
@@ -1088,7 +1088,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             j = lcv & pow2MaskOcl(start);
             j |= (lcv ^ j) << length;
 
-            for (bitCapIntOcl k = 0U; k < partPower; k++) {
+            for (bitCapIntOcl k = 0U; k < partPower; ++k) {
                 bitCapIntOcl l = j | (k << start);
 
                 complex amp = stateVec->read(l);
@@ -1105,7 +1105,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             bitCapIntOcl j;
             j = lcv << start;
 
-            for (bitCapIntOcl k = 0U; k < remainderPower; k++) {
+            for (bitCapIntOcl k = 0U; k < remainderPower; ++k) {
                 bitCapIntOcl l = k & pow2MaskOcl(start);
                 l |= (k ^ l) << length;
                 l = j | l;
@@ -1125,7 +1125,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             j = lcv & pow2MaskOcl(start);
             j |= (lcv ^ j) << length;
 
-            for (bitCapIntOcl k = 0U; k < partPower; k++) {
+            for (bitCapIntOcl k = 0U; k < partPower; ++k) {
                 bitCapIntOcl l = j | (k << start);
 
                 remainderStateProb[lcv] += norm(stateVec->read(l));
@@ -1136,7 +1136,7 @@ void QEngineCPU::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineCPUP
             bitCapIntOcl j;
             j = lcv << start;
 
-            for (bitCapIntOcl k = 0U; k < remainderPower; k++) {
+            for (bitCapIntOcl k = 0U; k < remainderPower; ++k) {
                 bitCapIntOcl l = k & pow2MaskOcl(start);
                 l |= (k ^ l) << length;
                 l = j | l;
@@ -1264,7 +1264,7 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
     stateVec->isReadLocked = true;
 
     real1 oneChance = ZERO_R1;
-    for (unsigned i = 0U; i < numCores; i++) {
+    for (unsigned i = 0U; i < numCores; ++i) {
         oneChance += oneChanceBuff[i];
     }
 
@@ -1300,7 +1300,7 @@ real1_f QEngineCPU::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permuta
     stateVec->isReadLocked = true;
 
     real1 prob = ZERO_R1;
-    for (int thrd = 0; thrd < num_threads; thrd++) {
+    for (int thrd = 0; thrd < num_threads; ++thrd) {
         prob += probs[thrd];
     }
 
@@ -1322,7 +1322,7 @@ real1_f QEngineCPU::ProbMask(bitCapInt mask, bitCapInt permutation)
     bitCapIntOcl v = (bitCapIntOcl)mask; // count the number of bits set in v
     bitLenInt length; // c accumulates the total bits set in v
     std::vector<bitCapIntOcl> skipPowersVec;
-    for (length = 0U; v; length++) {
+    for (length = 0U; v; ++length) {
         bitCapIntOcl oldV = v;
         v &= v - ONE_BCI; // clear the least significant bit set
         skipPowersVec.push_back((v ^ oldV) & oldV);
@@ -1345,7 +1345,7 @@ real1_f QEngineCPU::ProbMask(bitCapInt mask, bitCapInt permutation)
     skipPowers.reset();
 
     real1 prob = ZERO_R1;
-    for (int thrd = 0; thrd < num_threads; thrd++) {
+    for (int thrd = 0; thrd < num_threads; ++thrd) {
         prob += probs[thrd];
     }
 
@@ -1390,7 +1390,7 @@ real1_f QEngineCPU::ProbParity(bitCapInt mask)
     }
     stateVec->isReadLocked = true;
 
-    for (unsigned i = 0U; i < numCores; i++) {
+    for (unsigned i = 0U; i < numCores; ++i) {
         oddChance += oddChanceBuff[i];
     }
 
@@ -1436,7 +1436,7 @@ bool QEngineCPU::ForceMParity(bitCapInt mask, bool result, bool doForce)
     }
     stateVec->isReadLocked = true;
 
-    for (unsigned i = 0U; i < numCores; i++) {
+    for (unsigned i = 0U; i < numCores; ++i) {
         oddChance += oddChanceBuff[i];
     }
 
@@ -1512,7 +1512,7 @@ real1_f QEngineCPU::SumSqrDiff(QEngineCPUPtr toCompare)
     toCompare->stateVec->isReadLocked = true;
 
     complex totInner = ZERO_CMPLX;
-    for (unsigned i = 0U; i < numCores; i++) {
+    for (unsigned i = 0U; i < numCores; ++i) {
         totInner += partInner[i];
     }
 

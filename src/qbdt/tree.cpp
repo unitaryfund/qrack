@@ -74,7 +74,7 @@ void QBdt::FallbackMCMtrx(
     }
 
     std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen]);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         lControls[i] = randQb + i;
         Swap(randQb + i, controls[i]);
     }
@@ -83,7 +83,7 @@ void QBdt::FallbackMCMtrx(
     ApplyControlledSingle(mtrx, lControls.get(), controlLen, controlLen, isAnti);
 
     Swap(randQb + controlLen, target);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         Swap(controlLen - (randQb + i + 1U), controls[controlLen - (randQb + i + 1U)]);
     }
 }
@@ -112,9 +112,9 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
     QEnginePtr qReg = NULL;
     if (attachedQubitCount) {
         const bitCapInt maxI = pow2(bdtQubitCount);
-        for (bitCapInt i = 0U; i < maxI; i++) {
+        for (bitCapInt i = 0U; i < maxI; ++i) {
             QBdtNodeInterfacePtr leaf = root;
-            for (bitLenInt j = 0U; j < bdtQubitCount; j++) {
+            for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
                 if (IS_NORM_0(leaf->scale)) {
                     break;
                 }
@@ -135,7 +135,7 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
     const bitLenInt maxQubit = attachedQubitCount ? (bdtQubitCount - 1U) : bdtQubitCount;
     root = std::make_shared<QBdtNode>(phaseFac);
     QBdtNodeInterfacePtr leaf = root;
-    for (bitLenInt qubit = 0U; qubit < maxQubit; qubit++) {
+    for (bitLenInt qubit = 0U; qubit < maxQubit; ++qubit) {
         const size_t bit = SelectBit(initState, qubit);
         leaf->branches[bit] = std::make_shared<QBdtNode>(ONE_CMPLX);
         leaf->branches[bit ^ 1U] = std::make_shared<QBdtNode>(ZERO_CMPLX);
@@ -166,10 +166,10 @@ QInterfacePtr QBdt::Clone()
 
 template <typename Fn> void QBdt::GetTraversal(Fn getLambda)
 {
-    for (bitCapInt i = 0U; i < bdtMaxQPower; i++) {
+    for (bitCapInt i = 0U; i < bdtMaxQPower; ++i) {
         QBdtNodeInterfacePtr leaf = root;
         complex scale = leaf->scale;
-        for (bitLenInt j = 0U; j < bdtQubitCount; j++) {
+        for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
             if (IS_NORM_0(scale)) {
                 break;
             }
@@ -188,9 +188,9 @@ template <typename Fn> void QBdt::SetTraversal(Fn setLambda)
 {
     root = std::make_shared<QBdtNode>();
 
-    for (bitCapInt i = 0U; i < bdtMaxQPower; i++) {
+    for (bitCapInt i = 0U; i < bdtMaxQPower; ++i) {
         QBdtNodeInterfacePtr leaf = root;
-        for (bitLenInt j = 0U; j < bdtQubitCount; j++) {
+        for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
             leaf->Branch();
             leaf = leaf->branches[SelectBit(i, j)];
         }
@@ -263,13 +263,13 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
     toCompare->ResetStateVector();
 
     complex projection = ZERO_CMPLX;
-    for (bitCapInt i = 0U; i < maxQPower; i++) {
+    for (bitCapInt i = 0U; i < maxQPower; ++i) {
         QBdtNodeInterfacePtr leaf1 = root;
         QBdtNodeInterfacePtr leaf2 = toCompare->root;
         complex scale1 = leaf1->scale;
         complex scale2 = leaf2->scale;
         bitLenInt j;
-        for (j = 0U; j < qubitCount; j++) {
+        for (j = 0U; j < qubitCount; ++j) {
             if (IS_NORM_0(scale1)) {
                 break;
             }
@@ -279,7 +279,7 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
         if (j < qubitCount) {
             continue;
         }
-        for (j = 0U; j < qubitCount; j++) {
+        for (j = 0U; j < qubitCount; ++j) {
             if (IS_NORM_0(scale2)) {
                 break;
             }
@@ -299,7 +299,7 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 {
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
-    for (bitLenInt j = 0U; j < bdtQubitCount; j++) {
+    for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
         if (IS_NORM_0(scale)) {
             break;
         }
@@ -357,7 +357,7 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy)
     if (attachedQubitCount) {
         par_for_qbdt(0U, maxQPower, [&](const bitCapInt& i, const int& cpu) {
             QBdtNodeInterfacePtr leaf = root;
-            for (bitLenInt j = 0U; j < bdtQubitCount; j++) {
+            for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
                 if (IS_NORM_0(leaf->scale)) {
                     // WARNING: Mutates loop control variable!
                     return (bitCapInt)(pow2(bdtQubitCount - j) - ONE_BCI);
@@ -383,7 +383,7 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy)
     const bitCapInt maxI = pow2(maxQubit);
     par_for_qbdt(0U, maxI, [&](const bitCapInt& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf = root;
-        for (bitLenInt j = 0U; j < maxQubit; j++) {
+        for (bitLenInt j = 0U; j < maxQubit; ++j) {
             if (IS_NORM_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
                 return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
@@ -395,7 +395,7 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy)
             return (bitCapInt)0U;
         }
 
-        for (size_t j = 0U; j < 2U; j++) {
+        for (size_t j = 0U; j < 2U; ++j) {
             const complex scale = leaf->branches[j]->scale;
             leaf->branches[j] = IS_NORM_0(scale) ? std::make_shared<QBdtQEngineNode>()
                                                  : std::make_shared<QBdtQEngineNode>(scale, toCopyClone);
@@ -447,10 +447,10 @@ real1_f QBdt::Prob(bitLenInt qubit)
     std::map<QEnginePtr, real1> qiProbs;
 
     real1 oneChance = ZERO_R1;
-    for (bitCapInt i = 0U; i < qPower; i++) {
+    for (bitCapInt i = 0U; i < qPower; ++i) {
         QBdtNodeInterfacePtr leaf = root;
         complex scale = leaf->scale;
-        for (bitLenInt j = 0U; j < maxQubit; j++) {
+        for (bitLenInt j = 0U; j < maxQubit; ++j) {
             if (IS_NORM_0(scale)) {
                 break;
             }
@@ -483,7 +483,7 @@ real1_f QBdt::ProbAll(bitCapInt perm)
 {
     QBdtNodeInterfacePtr leaf = root;
     complex scale = leaf->scale;
-    for (bitLenInt j = 0U; j < bdtQubitCount; j++) {
+    for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
         if (IS_NORM_0(scale)) {
             break;
         }
@@ -520,9 +520,9 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
     std::set<QEnginePtr> qis;
 
-    for (bitCapInt i = 0U; i < qPower; i++) {
+    for (bitCapInt i = 0U; i < qPower; ++i) {
         QBdtNodeInterfacePtr leaf = root;
-        for (bitLenInt j = 0U; j < maxQubit; j++) {
+        for (bitLenInt j = 0U; j < maxQubit; ++j) {
             if (IS_NORM_0(leaf->scale)) {
                 break;
             }
@@ -579,7 +579,7 @@ bitCapInt QBdt::MAll()
 
     bitCapInt result = 0U;
     QBdtNodeInterfacePtr leaf = root;
-    for (bitLenInt i = 0U; i < bdtQubitCount; i++) {
+    for (bitLenInt i = 0U; i < bdtQubitCount; ++i) {
         leaf->Branch();
         real1_f oneChance = clampProb((real1_f)norm(leaf->branches[1U]->scale));
         bool bitResult;
@@ -638,7 +638,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
     par_for_qbdt(0U, qPower, [&](const bitCapInt& i, const int& cpu) {
         QBdtNodeInterfacePtr leaf = root;
         // Iterate to qubit depth.
-        for (bitLenInt j = 0U; j < maxQubit; j++) {
+        for (bitLenInt j = 0U; j < maxQubit; ++j) {
             if (IS_NORM_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
                 return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
@@ -684,7 +684,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
     std::set<QEnginePtr>::iterator it = qis.begin();
     while (it != qis.end()) {
         (*it)->Mtrx(iMtrx, target - bdtQubitCount);
-        it++;
+        ++it;
     }
     root->Prune(maxQubit);
 
@@ -717,7 +717,7 @@ void QBdt::ApplyControlledSingle(
     const bitCapInt qPower = pow2(maxQubit);
     std::vector<bitLenInt> ketControlsVec;
     bitCapInt lowControlMask = 0U;
-    for (bitLenInt c = 0U; c < controlLen; c++) {
+    for (bitLenInt c = 0U; c < controlLen; ++c) {
         const bitLenInt control = controlVec[c];
         if (control < bdtQubitCount) {
             lowControlMask |= pow2(maxQubit - (control + 1U));
@@ -745,7 +745,7 @@ void QBdt::ApplyControlledSingle(
 
         QBdtNodeInterfacePtr leaf = root;
         // Iterate to qubit depth.
-        for (bitLenInt j = 0U; j < maxQubit; j++) {
+        for (bitLenInt j = 0U; j < maxQubit; ++j) {
             if (IS_NORM_0(leaf->scale)) {
                 // WARNING: Mutates loop control variable!
                 return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
@@ -804,7 +804,7 @@ void QBdt::ApplyControlledSingle(
         } else {
             (*it)->MCMtrx(ketControls.get(), ketControlsVec.size(), iMtrx, target - bdtQubitCount);
         }
-        it++;
+        ++it;
     }
 
     root->Prune(maxQubit);

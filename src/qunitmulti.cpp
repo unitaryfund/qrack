@@ -27,7 +27,7 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     if (!devList.size()) {
         defaultDeviceID = (deviceID < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)deviceID;
 
-        for (size_t i = 0U; i < deviceContext.size(); i++) {
+        for (size_t i = 0U; i < deviceContext.size(); ++i) {
             DeviceInfo deviceInfo;
             deviceInfo.id = i;
             deviceList.push_back(deviceInfo);
@@ -37,14 +37,14 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     } else {
         defaultDeviceID = (devList[0U] < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)devList[0U];
 
-        for (size_t i = 0; i < devList.size(); i++) {
+        for (size_t i = 0; i < devList.size(); ++i) {
             DeviceInfo deviceInfo;
             deviceInfo.id = (devList[0U] < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : (size_t)devList[i];
             deviceList.push_back(deviceInfo);
         }
     }
 
-    for (size_t i = 0U; i < deviceList.size(); i++) {
+    for (size_t i = 0U; i < deviceList.size(); ++i) {
         deviceList[i].maxSize = deviceContext[deviceList[i].id]->GetMaxAlloc();
     }
 
@@ -58,7 +58,7 @@ QInterfacePtr QUnitMulti::MakeEngine(bitLenInt length, bitCapInt perm)
     size_t deviceId = defaultDeviceID;
     uint64_t sz = OCLEngine::Instance().GetActiveAllocSize(deviceId);
 
-    for (size_t i = 0U; i < deviceList.size(); i++) {
+    for (size_t i = 0U; i < deviceList.size(); ++i) {
         uint64_t tSz = OCLEngine::Instance().GetActiveAllocSize(deviceList[i].id);
         if (sz > tSz) {
             sz = tSz;
@@ -120,7 +120,7 @@ void QUnitMulti::RedistributeQEngines()
     std::vector<bitCapInt> devSizes(deviceList.size());
     std::fill(devSizes.begin(), devSizes.end(), 0U);
 
-    for (size_t i = 0U; i < qinfos.size(); i++) {
+    for (size_t i = 0U; i < qinfos.size(); ++i) {
         // If the engine adds negligible load, we can let any given unit keep its
         // residency on this device.
         // In fact, single qubit units will be handled entirely by the CPU, anyway.
@@ -145,7 +145,7 @@ void QUnitMulti::RedistributeQEngines()
             }
 
             // Find the device with the lowest load.
-            for (size_t j = 0U; j < deviceList.size(); j++) {
+            for (size_t j = 0U; j < deviceList.size(); ++j) {
                 if ((devSizes[j] < sz) && ((devSizes[j] + qinfos[i].unit->GetMaxQPower()) <= deviceList[j].maxSize)) {
                     deviceID = deviceList[j].id;
                     devIndex = j;
@@ -171,7 +171,7 @@ void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
-    for (auto bit = first; bit < last; bit++) {
+    for (auto bit = first; bit < last; ++bit) {
         EndEmulation(**bit);
     }
 
@@ -179,7 +179,7 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
 
     bool isAlreadyEntangled = true;
     // If already fully entangled, just return unit1.
-    for (auto bit = first + 1U; bit < last; bit++) {
+    for (auto bit = first + 1U; bit < last; ++bit) {
         QInterfacePtr unit = shards[**bit].unit;
         if (unit1 != unit) {
             isAlreadyEntangled = false;
@@ -198,7 +198,7 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
         bitLenInt qubitCount = 0U;
         std::map<QInterfacePtr, bool> found;
 
-        for (auto bit = first; bit < last; bit++) {
+        for (auto bit = first; bit < last; ++bit) {
             QInterfacePtr unit = shards[**bit].unit;
             if (found.find(unit) == found.end()) {
                 found[unit] = true;
@@ -231,7 +231,7 @@ bool QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
 QInterfacePtr QUnitMulti::Clone()
 {
     // TODO: Copy buffers instead of flushing?
-    for (bitLenInt i = 0U; i < qubitCount; i++) {
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
         RevertBasis2Qb(i);
     }
 

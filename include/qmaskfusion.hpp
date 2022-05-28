@@ -66,7 +66,7 @@ protected:
     void DumpBuffers(bitLenInt start, bitLenInt length)
     {
         bitLenInt maxLcv = start + length;
-        for (bitLenInt i = start; i < maxLcv; i++) {
+        for (bitLenInt i = start; i < maxLcv; ++i) {
             DumpBuffer(i);
         }
     }
@@ -98,7 +98,7 @@ protected:
         }
 
         bitLenInt maxLcv = start + length;
-        for (bitLenInt i = start; i < maxLcv; i++) {
+        for (bitLenInt i = start; i < maxLcv; ++i) {
             if (zxShards[i].isBuffered()) {
                 FlushBuffers();
                 return true;
@@ -117,7 +117,7 @@ protected:
         }
 
         bool isBlocked = false;
-        for (bitLenInt i = 0U; i < controlLen; i++) {
+        for (bitLenInt i = 0U; i < controlLen; ++i) {
             bitLenInt control = controls[i];
             isBlocked = zxShards[control].isX;
             if (isBlocked) {
@@ -154,7 +154,7 @@ protected:
 
         bool isBlocked = false;
         bitLenInt maxLcv = start + length;
-        for (bitLenInt i = start; i < maxLcv; i++) {
+        for (bitLenInt i = start; i < maxLcv; ++i) {
             isBlocked = zxShards[i].isX;
             if (isBlocked) {
                 break;

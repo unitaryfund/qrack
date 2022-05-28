@@ -115,7 +115,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, bitLenInt length, const bool* v
 
     std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[length]);
     bitCapInt regMask = 0U;
-    for (bitCapIntOcl i = 0U; i < length; i++) {
+    for (bitCapIntOcl i = 0U; i < length; ++i) {
         qPowers[i] = pow2(bits[i]);
         regMask |= qPowers[i];
     }
@@ -127,7 +127,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, bitLenInt length, const bool* v
     complex nrm;
     if (values != NULL) {
         bitCapInt result = 0U;
-        for (bitLenInt j = 0U; j < length; j++) {
+        for (bitLenInt j = 0U; j < length; ++j) {
             result |= values[j] ? pow2(bits[j]) : 0U;
         }
         nrmlzr = ProbMask(regMask, result);
@@ -163,11 +163,11 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, bitLenInt length, const bool* v
             nrmlzr = largestProb;
             result = lcv;
         }
-        lcv++;
+        ++lcv;
     }
     if (lcv < lengthPower) {
         if (lcv) {
-            lcv--;
+            --lcv;
         }
         result = lcv;
         nrmlzr = probArray[lcv];
@@ -176,7 +176,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, bitLenInt length, const bool* v
     probArray.reset();
 
     bitCapIntOcl i = 0U;
-    for (bitLenInt p = 0U; p < length; p++) {
+    for (bitLenInt p = 0U; p < length; ++p) {
         if (pow2(p) & result) {
             i |= (bitCapIntOcl)qPowers[p];
         }
@@ -259,7 +259,7 @@ void QEngine::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q
     const complex pauliX[4U] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     bitCapIntOcl skipMask = 0U;
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2U]);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
         skipMask |= qPowersSorted[i];
     }
@@ -283,7 +283,7 @@ void QEngine::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenI
 
     const complex pauliX[4U] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2U]);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
     }
     qPowersSorted[controlLen] = pow2Ocl(qubit1);
@@ -307,7 +307,7 @@ void QEngine::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenI
         complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
     bitCapIntOcl skipMask = 0U;
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2U]);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
         skipMask |= qPowersSorted[i];
     }
@@ -332,7 +332,7 @@ void QEngine::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bit
     const complex sqrtX[4] = { complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
         complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2U]);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
     }
     qPowersSorted[controlLen] = pow2Ocl(qubit1);
@@ -356,7 +356,7 @@ void QEngine::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLen
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     bitCapIntOcl skipMask = 0U;
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2U]);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
         skipMask |= qPowersSorted[i];
     }
@@ -381,7 +381,7 @@ void QEngine::AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bi
     const complex iSqrtX[4U] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 2U]);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
     }
     qPowersSorted[controlLen] = pow2Ocl(qubit1);
@@ -395,7 +395,7 @@ void QEngine::ApplyControlled2x2(const bitLenInt* controls, bitLenInt controlLen
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 1U]);
     const bitCapIntOcl targetMask = pow2Ocl(target);
     bitCapIntOcl fullMask = 0U;
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
         fullMask |= qPowersSorted[i];
     }
@@ -411,7 +411,7 @@ void QEngine::ApplyAntiControlled2x2(
 {
     std::unique_ptr<bitCapIntOcl[]> qPowersSorted(new bitCapIntOcl[controlLen + 1U]);
     const bitCapIntOcl targetMask = pow2Ocl(target);
-    for (bitLenInt i = 0U; i < controlLen; i++) {
+    for (bitLenInt i = 0U; i < controlLen; ++i) {
         qPowersSorted[i] = pow2Ocl(controls[i]);
     }
     qPowersSorted[controlLen] = targetMask;
@@ -524,7 +524,7 @@ void QEngine::ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray)
 {
     const bitCapIntOcl lengthMask = pow2Ocl(length) - ONE_BCI;
     std::fill(probsArray, probsArray + lengthMask + ONE_BCI, ZERO_R1);
-    for (bitCapIntOcl i = 0U; i < maxQPower; i++) {
+    for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
         bitCapIntOcl reg = (i >> start) & lengthMask;
         probsArray[reg] += ProbAll(i);
     }
@@ -572,7 +572,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
                 nrmlzr = probArray[lcv];
                 result = lcv;
             }
-            lcv++;
+            ++lcv;
         }
 
         probArray.reset();

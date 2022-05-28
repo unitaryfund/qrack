@@ -125,7 +125,7 @@ public:
     void SetConcurrency(uint32_t threadsPerEngine)
     {
         QInterface::SetConcurrency(threadsPerEngine);
-        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             qPages[i]->SetConcurrency(threadsPerEngine);
         }
     }
@@ -144,7 +144,7 @@ public:
 
     void ZeroAmplitudes()
     {
-        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             qPages[i]->ZeroAmplitudes();
         }
     }
@@ -155,13 +155,13 @@ public:
         src->CombineEngines(qpp);
         src->SeparateEngines(qpp, true);
 
-        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             qPages[i]->CopyStateVec(src->qPages[i]);
         }
     }
     bool IsZeroAmplitude()
     {
-        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             if (!qPages[i]->IsZeroAmplitude()) {
                 return false;
             }
@@ -201,7 +201,7 @@ public:
         }
 
         const bitCapIntOcl offset = qPages.size() >> 1U;
-        for (bitCapIntOcl i = 0U; i < offset; i++) {
+        for (bitCapIntOcl i = 0U; i < offset; ++i) {
             qPages[offset + i].swap(engine->qPages[i]);
         }
     }
@@ -245,7 +245,7 @@ public:
     real1_f GetRunningNorm()
     {
         real1_f toRet = ZERO_R1_F;
-        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             toRet += qPages[i]->GetRunningNorm();
         }
 
@@ -254,7 +254,7 @@ public:
 
     real1_f FirstNonzeroPhase()
     {
-        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             if (!qPages[i]->IsZeroAmplitude()) {
                 return qPages[i]->FirstNonzeroPhase();
             }
@@ -395,14 +395,14 @@ public:
 
     void Finish()
     {
-        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             qPages[i]->Finish();
         }
     };
 
     bool isFinished()
     {
-        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             if (!qPages[i]->isFinished()) {
                 return false;
             }
@@ -413,7 +413,7 @@ public:
 
     void Dump()
     {
-        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             qPages[i]->Dump();
         }
     };
@@ -425,7 +425,7 @@ public:
         deviceIDs.clear();
         deviceIDs.push_back(dID);
 
-        for (bitCapIntOcl i = 0U; i < qPages.size(); i++) {
+        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
             qPages[i]->SetDevice(dID);
         }
 

@@ -243,7 +243,7 @@ bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, cons
 
     bitCapInt iHigh = perm;
     bitCapInt i = 0U;
-    for (bitCapIntOcl p = 0U; p < skipPowersCount; p++) {
+    for (bitCapIntOcl p = 0U; p < skipPowersCount; ++p) {
         bitCapInt iLow = iHigh & (skipPowers[p] - ONE_BCI);
         i |= iLow;
         iHigh = (iHigh ^ iLow) << ONE_BCI;
@@ -258,13 +258,13 @@ std::ostream& operator<<(std::ostream& left, __uint128_t right)
 {
     // 39 decimal digits in 2^128
     unsigned char digits[39U];
-    for (int i = 0; i < 39; i++) {
+    for (int i = 0; i < 39; ++i) {
         digits[i] = right % 10U;
         right /= 10U;
     }
 
     bool hasFirstDigit = false;
-    for (int i = 38; i >= 0; i--) {
+    for (int i = 38; i >= 0; --i) {
         if (hasFirstDigit || (digits[i] > 0)) {
             left << (int)digits[i];
             hasFirstDigit = true;

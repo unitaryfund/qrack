@@ -48,7 +48,7 @@ real1_f QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
     const bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);
     real1 average = ZERO_R1;
     real1 totProb = ZERO_R1;
-    for (bitCapIntOcl i = 0U; i < maxQPower; i++) {
+    for (bitCapIntOcl i = 0U; i < maxQPower; ++i) {
         bitCapIntOcl outputInt = (i & outputMask) >> valueStart;
         real1 prob = norm(stateVec->read(i));
         totProb += prob;

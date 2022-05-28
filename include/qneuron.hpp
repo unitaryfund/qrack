@@ -158,7 +158,7 @@ public:
             return;
         }
 
-        for (bitCapInt perm = 0U; perm < inputPower; perm++) {
+        for (bitCapInt perm = 0U; perm < inputPower; ++perm) {
             startProb = LearnInternal(expected, eta, perm, startProb);
             if (0 > startProb) {
                 break;
@@ -184,13 +184,13 @@ public:
         }
 
         bitCapInt perm = 0U;
-        for (bitLenInt i = 0U; i < inputCount; i++) {
+        for (bitLenInt i = 0U; i < inputCount; ++i) {
             perm |= qReg->M(inputIndices.get()[i]) ? pow2(i) : 0U;
         }
 
         LearnInternal(expected, eta, perm, startProb);
 
-        for (bitLenInt i = 0U; i < inputCount; i++) {
+        for (bitLenInt i = 0U; i < inputCount; ++i) {
             qReg->TrySeparate(inputIndices.get()[i]);
         }
     }

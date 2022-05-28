@@ -101,7 +101,7 @@ struct UniformHamiltonianOp : HamiltonianOp {
 
         controlLen = (bitLenInt)teoh.controlLen;
         controls = new bitLenInt[controlLen];
-        for (bitLenInt i = 0U; i < controlLen; i++) {
+        for (bitLenInt i = 0U; i < controlLen; ++i) {
             controls[i] = (bitLenInt)teoh.controls[i];
         }
 
@@ -110,7 +110,7 @@ struct UniformHamiltonianOp : HamiltonianOp {
         bitCapIntOcl mtrxTermCount = ((bitCapIntOcl)ONE_BCI << controlLen) * 4U;
         BitOp m(new complex[mtrxTermCount], std::default_delete<complex[]>());
         matrix = std::move(m);
-        for (bitCapIntOcl i = 0U; i < mtrxTermCount; i++) {
+        for (bitCapIntOcl i = 0U; i < mtrxTermCount; ++i) {
             matrix.get()[i] = complex((real1)mtrx[i * 2U], (real1)mtrx[(i * 2U) + 1U]);
         }
     }

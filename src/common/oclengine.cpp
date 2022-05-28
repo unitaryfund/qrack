@@ -241,7 +241,7 @@ void OCLEngine::SaveBinary(cl::Program program, std::string path, std::string fi
     size_t clBinSize = 0U;
     int64_t clBinIndex = 0;
 
-    for (size_t i = 0U; i < clBinSizes.size(); i++) {
+    for (size_t i = 0U; i < clBinSizes.size(); ++i) {
         if (clBinSizes[i]) {
             clBinSize = clBinSizes[i];
             clBinIndex = i;
@@ -299,10 +299,10 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
     // get all devices
     std::vector<cl::Platform> devPlatVec;
     std::vector<std::vector<cl::Device>> all_platforms_devices;
-    for (size_t i = 0U; i < all_platforms.size(); i++) {
+    for (size_t i = 0U; i < all_platforms.size(); ++i) {
         all_platforms_devices.push_back(std::vector<cl::Device>());
         all_platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &(all_platforms_devices[i]));
-        for (size_t j = 0U; j < all_platforms_devices[i].size(); j++) {
+        for (size_t j = 0U; j < all_platforms_devices[i].size(); ++j) {
             // VirtualCL seems to break if the assignment constructor of cl::Platform is used here from the original
             // list. Assigning the object from a new query is always fine, though. (They carry the same underlying
             // platform IDs.)
@@ -335,7 +335,7 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
     int64_t plat_id = -1;
     std::vector<cl::Context> all_contexts;
     std::vector<std::string> all_filenames;
-    for (int64_t i = 0; i < deviceCount; i++) {
+    for (int64_t i = 0; i < deviceCount; ++i) {
         // a context is like a "runtime link" to the device and platform;
         // i.e. communication is possible
         if (device_platform_id[i] != plat_id) {
@@ -373,7 +373,7 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
 
         all_dev_contexts.push_back(devCntxt);
 
-        for (unsigned int j = 0U; j < kernelHandles.size(); j++) {
+        for (unsigned int j = 0U; j < kernelHandles.size(); ++j) {
             all_dev_contexts[i]->calls[kernelHandles[j].oclapi] =
                 cl::Kernel(program, kernelHandles[j].kernelname.c_str());
             all_dev_contexts[i]->mutexes.emplace(kernelHandles[j].oclapi, new std::mutex);
@@ -395,7 +395,7 @@ InitOClResult OCLEngine::InitOCL(bool buildFromSource, bool saveBinaries, std::s
     // For VirtualCL support, the device info can only be accessed AFTER all contexts are created.
     std::cout << "Default platform: " << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
     std::cout << "Default device: #" << dev << ", " << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
-    for (int64_t i = 0; i < deviceCount; i++) {
+    for (int64_t i = 0; i < deviceCount; ++i) {
         std::cout << "OpenCL device #" << i << ": " << all_devices[i].getInfo<CL_DEVICE_NAME>() << "\n";
     }
 

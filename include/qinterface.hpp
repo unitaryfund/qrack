@@ -196,7 +196,7 @@ protected:
     template <typename Fn> void MACWrapper(const bitLenInt* controls, bitLenInt controlLen, Fn fn)
     {
         bitCapInt xMask = 0U;
-        for (bitLenInt i = 0U; i < controlLen; i++) {
+        for (bitLenInt i = 0U; i < controlLen; ++i) {
             xMask |= pow2(controls[i]);
         }
 
@@ -2019,7 +2019,7 @@ public:
         while ((last > 0U) && first < (last - 1U)) {
             last--;
             Swap(first, last);
-            first++;
+            ++first;
         }
     }
 
@@ -2267,7 +2267,7 @@ public:
         bitCapInt perm = 0U;
         do {
             amp = GetAmplitude(perm);
-            perm++;
+            ++perm;
         } while ((norm(amp) <= (REAL1_EPSILON * REAL1_EPSILON)) && (perm < maxQPower));
 
         return (real1_f)std::arg(amp);
