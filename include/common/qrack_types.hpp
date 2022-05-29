@@ -279,7 +279,8 @@ bool isOverflowSub(bitCapInt inOutInt, bitCapInt inInt, const bitCapInt& signMas
 bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, const bitLenInt skipPowersCount);
 bitCapInt intPow(bitCapInt base, bitCapInt power);
 bitCapIntOcl intPowOcl(bitCapIntOcl base, bitCapIntOcl power);
-#if ENABLE_UINT128
-std::ostream& operator<<(std::ostream& left, __uint128_t right);
+#if QBCAPPOW == 7U
+std::ostream& operator<<(std::ostream& os, bitCapInt b);
+std::istream& operator>>(std::istream& is, bitCapInt& b);
 #endif
 } // namespace Qrack

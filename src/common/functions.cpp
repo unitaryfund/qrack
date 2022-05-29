@@ -253,25 +253,42 @@ bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, cons
     return i;
 }
 
-#if ENABLE_UINT128
-std::ostream& operator<<(std::ostream& left, __uint128_t right)
+#if QBCAPPOW == 7U
+std::ostream& operator<<(std::ostream& os, bitCapInt b)
 {
-    // 39 decimal digits in 2^128
-    unsigned char digits[39U];
-    for (int i = 0; i < 39; ++i) {
-        digits[i] = right % 10U;
-        right /= 10U;
+    // Calculate the base-10 digits, from lowest to highest.
+    std::vector<std::string> digits;
+    while (b) {
+        digits.push_back(std::to_string((unsigned char)(b % 10U)));
+        b /= 10U;
     }
 
-    bool hasFirstDigit = false;
-    for (int i = 38; i >= 0; --i) {
-        if (hasFirstDigit || (digits[i] > 0)) {
-            left << (int)digits[i];
-            hasFirstDigit = true;
-        }
+    // Reversing order, print the digits from highest to lowest.
+    for (size_t i = digits.size() - 1U; i > 0; i--) {
+        os << digits[i];
+    }
+    // Avoid the need for a signed comparison.
+    os << digits[0];
+
+    return os;
+}
+
+std::istream& operator>>(std::istream& is, bitCapInt& b)
+{
+    // Get the whole input string at once.
+    std::string input;
+    is >> input;
+
+    // Start the output address value at 0.
+    b = 0;
+    for (size_t i = 0; i < input.size(); i++) {
+        // Left shift by 1 base-10 digit.
+        b *= 10;
+        // Add the next lowest base-10 digit.
+        b += (input[i] - 48U);
     }
 
-    return left;
+    return is;
 }
 #endif
 
