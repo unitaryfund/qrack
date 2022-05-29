@@ -74,6 +74,45 @@
         boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>
 #endif
 
+#if QBCAPPOW == 7U
+std::ostream& operator<<(std::ostream& os, bitCapInt b)
+{
+    // Calculate the base-10 digits, from lowest to highest.
+    std::vector<std::string> digits;
+    while (b) {
+        digits.push_back(std::to_string((unsigned char)(b % 10U)));
+        b /= 10U;
+    }
+
+    // Reversing order, print the digits from highest to lowest.
+    for (size_t i = digits.size() - 1U; i > 0; i--) {
+        os << digits[i];
+    }
+    // Avoid the need for a signed comparison.
+    os << digits[0];
+
+    return os;
+}
+
+std::istream& operator>>(std::istream& is, bitCapInt& b)
+{
+    // Get the whole input string at once.
+    std::string input;
+    is >> input;
+
+    // Start the output address value at 0.
+    b = 0;
+    for (size_t i = 0; i < input.size(); i++) {
+        // Left shift by 1 base-10 digit.
+        b *= 10;
+        // Add the next lowest base-10 digit.
+        b += (input[i] - 48U);
+    }
+
+    return is;
+}
+#endif
+
 // Source: https://www.exploringbinary.com/ten-ways-to-check-if-an-integer-is-a-power-of-two-in-c/
 inline bool isPowerOfTwo(const bitCapInt& x) { return (x && !(x & (x - ONE_BCI))); }
 
@@ -137,7 +176,7 @@ bitCapInt floorSqrt(const bitCapInt& x)
     }
 
     // Binary search for floor(sqrt(x))
-    bitCapInt start = 1U, end = x >> 1U, ans;
+    bitCapInt start = 1U, end = x >> 1U, ans = 0U;
     while (start <= end) {
         bitCapInt mid = (start + end) >> 1U;
 
@@ -159,10 +198,12 @@ bitCapInt floorSqrt(const bitCapInt& x)
     return ans;
 }
 
-bitCapInt gcd(const bitCapInt& n1, const bitCapInt& n2)
+bitCapInt gcd(bitCapInt n1, bitCapInt n2)
 {
-    if (n2) {
-        return gcd(n2, n1 % n2);
+    while (n2) {
+        bitCapInt t = n1;
+        n1 = n2;
+        n2 = t % n2;
     }
     return n1;
 }
