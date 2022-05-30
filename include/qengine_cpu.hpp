@@ -34,8 +34,8 @@ void rotate(BidirectionalIterator first, BidirectionalIterator middle, Bidirecti
  */
 class QEngineCPU : public QEngine {
 protected:
-    StateVectorPtr stateVec;
     bool isSparse;
+    StateVectorPtr stateVec;
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
     DispatchQueue dispatchQueue;
     bitLenInt dispatchThreshold;
