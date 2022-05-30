@@ -80,13 +80,13 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     bool randomGlobalPhase, bool useHostMem, int64_t devID, bool useHardwareRNG, bool ignored, real1_f norm_thresh,
     std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
-    , stateVec(NULL)
-    , deviceID(devID)
-    , wait_refs()
-    , nrmArray(NULL, [](real1* r) {})
+    , unlockHostMem(false)
     , nrmGroupSize(0U)
     , totalOclAllocSize(0U)
-    , unlockHostMem(false)
+    , deviceID(devID)
+    , stateVec(NULL)
+    , wait_refs()
+    , nrmArray(NULL, [](real1* r) {})
 {
     InitOCL(devID);
     clFinish();

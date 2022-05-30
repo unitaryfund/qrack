@@ -185,11 +185,19 @@ typedef std::shared_ptr<PoolItem> PoolItemPtr;
  */
 class QEngineOCL : public QEngine {
 protected:
-    complex* stateVec;
+    bool usingHostRam;
+    bool unlockHostMem;
+    size_t nrmGroupCount;
+    size_t nrmGroupSize;
+    size_t maxWorkItems;
+    size_t maxMem;
+    size_t maxAlloc;
+    size_t totalOclAllocSize;
+    size_t preferredConcurrency;
     int64_t deviceID;
-    DeviceContextPtr device_context;
-    std::vector<EventVecPtr> wait_refs;
-    std::list<QueueItem> wait_queue_items;
+    cl_map_flags lockSyncFlags;
+    complex permutationAmp;
+    complex* stateVec;
     std::mutex queue_mutex;
     cl::CommandQueue queue;
     cl::Context context;
@@ -198,19 +206,11 @@ protected:
     BufferPtr stateBuffer;
     BufferPtr nrmBuffer;
     BufferPtr powersBuffer;
+    DeviceContextPtr device_context;
+    std::vector<EventVecPtr> wait_refs;
+    std::list<QueueItem> wait_queue_items;
     std::vector<PoolItemPtr> poolItems;
     std::unique_ptr<real1, void (*)(real1*)> nrmArray;
-    size_t nrmGroupCount;
-    size_t nrmGroupSize;
-    size_t maxWorkItems;
-    size_t maxMem;
-    size_t maxAlloc;
-    size_t totalOclAllocSize;
-    size_t preferredConcurrency;
-    bool unlockHostMem;
-    cl_map_flags lockSyncFlags;
-    bool usingHostRam;
-    complex permutationAmp;
 
 #if defined(__APPLE__)
     real1* _aligned_nrm_array_alloc(bitCapIntOcl allocSize)
