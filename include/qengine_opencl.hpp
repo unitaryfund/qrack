@@ -189,11 +189,7 @@ protected:
     bool unlockHostMem;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
-    size_t maxWorkItems;
-    size_t maxMem;
-    size_t maxAlloc;
     size_t totalOclAllocSize;
-    size_t preferredConcurrency;
     int64_t deviceID;
     cl_map_flags lockSyncFlags;
     complex permutationAmp;
@@ -300,7 +296,7 @@ public:
         AddQueueItem(QueueItem(api_call, workItemCount, localGroupSize, deallocSize, args, localBuffSize));
     }
 
-    bitCapIntOcl GetMaxSize() { return maxAlloc / sizeof(complex); };
+    bitCapIntOcl GetMaxSize() { return device_context->GetMaxAlloc() / sizeof(complex); };
 
     void SetPermutation(bitCapInt perm, complex phaseFac = CMPLX_DEFAULT_ARG);
 

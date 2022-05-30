@@ -574,9 +574,7 @@ void QEngineOCL::SetDevice(int64_t dID)
 
     bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0U;
     nrmGroupSize = device_context->GetPreferredSizeMultiple();
-    maxWorkItems = device_context->GetMaxWorkItems();
-    preferredConcurrency = device_context->GetPreferredConcurrency();
-    nrmGroupCount = preferredConcurrency;
+    nrmGroupCount = device_context->GetPreferredConcurrency();
 
     // constrain to a power of two
     size_t groupSizePow = ONE_BCI;
@@ -588,15 +586,13 @@ void QEngineOCL::SetDevice(int64_t dID)
 
     // If the user wants to not use general host RAM, but we can't allocate enough on the device, fall back to host RAM
     // anyway.
-    maxMem = device_context->GetGlobalSize();
-    maxAlloc = device_context->GetMaxAlloc();
 #if ENABLE_OCL_MEM_GUARDS
     size_t stateVecSize = maxQPowerOcl * sizeof(complex);
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
-    if (stateVecSize > maxAlloc) {
+    if (stateVecSize > device_context->GetMaxAlloc()) {
         FreeAll();
         throw bad_alloc("VRAM limits exceeded in QEngineOCL::SetDevice()");
-    } else if (useHostRam || ((OclMemDenom * stateVecSize) > maxMem)) {
+    } else if (useHostRam || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize())) {
         usingHostRam = true;
     } else {
         usingHostRam = false;
@@ -1291,8 +1287,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     bitCapIntOcl nMaxQPower = bciArgs[0];
     bitCapIntOcl nQubitCount = bciArgs[1] + toCopy->qubitCount;
     size_t nStateVecSize = nMaxQPower * sizeof(complex);
-    maxAlloc = device_context->GetMaxAlloc();
-    if (nStateVecSize > maxAlloc) {
+    if (nStateVecSize > device_context->GetMaxAlloc()) {
         FreeAll();
         throw bad_alloc("VRAM limits exceeded in QEngineOCL::Compose()");
     }
@@ -1303,7 +1298,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
 
     const size_t ngc = FixWorkItemCount(maxQPowerOcl, nrmGroupCount);
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
-    const bool forceAlloc = !stateVec && ((OclMemDenom * nStateVecSize) > maxMem);
+    const bool forceAlloc = !stateVec && ((OclMemDenom * nStateVecSize) > device_context->GetGlobalSize());
 
     writeArgsEvent.wait();
     wait_refs.clear();
@@ -1488,8 +1483,9 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
         SubtractAlloc(partDiff);
 
-        if (!(destination->useHostRam) && destination->stateVec && oNStateVecSize <= destination->maxAlloc &&
-            (2 * oNStateVecSize) <= destination->maxMem) {
+        if (!(destination->useHostRam) && destination->stateVec &&
+            oNStateVecSize <= destination->device_context->GetMaxAlloc() &&
+            (2 * oNStateVecSize) <= destination->device_context->GetGlobalSize()) {
 
             BufferPtr nSB = destination->MakeStateVecBuffer(NULL);
 
@@ -1525,7 +1521,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
 
     clFinish();
 
-    if (!useHostRam && stateVec && ((OclMemDenom * nStateVecSize) <= maxMem)) {
+    if (!useHostRam && stateVec && ((OclMemDenom * nStateVecSize) <= device_context->GetGlobalSize())) {
         FreeStateVec();
     }
     // Drop references to state vector buffer, which we're done with.
