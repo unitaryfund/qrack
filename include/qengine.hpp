@@ -36,8 +36,8 @@ protected:
     bool useHostRam;
     /// The value stored in runningNorm should always be the total probability implied by the norm of all amplitudes,
     /// summed, at each update. To normalize, we should always multiply by 1/sqrt(runningNorm).
-    bitCapIntOcl maxQPowerOcl;
     real1 runningNorm;
+    bitCapIntOcl maxQPowerOcl;
 
     bool IsIdentity(const complex* mtrx, bool isControlled);
 
@@ -46,8 +46,8 @@ public:
         bool useHostMem = false, bool useHardwareRNG = true, real1_f norm_thresh = REAL1_EPSILON)
         : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
         , useHostRam(useHostMem)
-        , maxQPowerOcl(pow2Ocl(qBitCount))
         , runningNorm(ONE_R1)
+        , maxQPowerOcl(pow2Ocl(qBitCount))
     {
         if (qBitCount > (sizeof(bitCapIntOcl) * bitsInByte)) {
             throw std::invalid_argument(
@@ -58,8 +58,8 @@ public:
     /** Default constructor, primarily for protected internal use */
     QEngine()
         : useHostRam(false)
-        , maxQPowerOcl(0U)
         , runningNorm(ONE_R1)
+        , maxQPowerOcl(0U)
     {
         // Intentionally left blank
     }
