@@ -23,14 +23,14 @@ namespace Qrack {
 
 QInterface::QInterface(
     bitLenInt n, qrack_rand_gen_ptr rgp, bool doNorm, bool useHardwareRNG, bool randomGlobalPhase, real1_f norm_thresh)
-    : qubitCount(n)
+    : doNormalize(doNorm)
+    , randGlobalPhase(randomGlobalPhase)
+    , useRDRAND(useHardwareRNG)
+    , qubitCount(n)
+    , amplitudeFloor(norm_thresh)
     , maxQPower(pow2(qubitCount))
     , rand_distribution(ZERO_R1_F, ONE_R1_F)
     , hardware_rand_generator(NULL)
-    , doNormalize(doNorm)
-    , randGlobalPhase(randomGlobalPhase)
-    , useRDRAND(useHardwareRNG)
-    , amplitudeFloor(norm_thresh)
 {
 #if !ENABLE_RDRAND && !ENABLE_RNDFILE && !ENABLE_DEVRAND
     useHardwareRNG = false;

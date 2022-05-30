@@ -139,16 +139,16 @@ enum QInterfaceEngine {
  */
 class QInterface : public ParallelFor {
 protected:
-    bitLenInt qubitCount;
-    bitCapInt maxQPower;
-    uint32_t randomSeed;
-    qrack_rand_gen_ptr rand_generator;
-    std::uniform_real_distribution<real1_s> rand_distribution;
-    std::shared_ptr<RdRandom> hardware_rand_generator;
     bool doNormalize;
     bool randGlobalPhase;
     bool useRDRAND;
+    bitLenInt qubitCount;
+    uint32_t randomSeed;
     real1 amplitudeFloor;
+    bitCapInt maxQPower;
+    qrack_rand_gen_ptr rand_generator;
+    std::uniform_real_distribution<real1_s> rand_distribution;
+    std::shared_ptr<RdRandom> hardware_rand_generator;
 
     virtual void SetQubitCount(bitLenInt qb)
     {
@@ -211,15 +211,15 @@ public:
 
     /** Default constructor, primarily for protected internal use */
     QInterface()
-        : qubitCount(0U)
-        , maxQPower(1U)
-        , randomSeed(0)
-        , rand_distribution(0.0, 1.0)
-        , hardware_rand_generator(NULL)
-        , doNormalize(false)
+        : doNormalize(false)
         , randGlobalPhase(true)
         , useRDRAND(true)
+        , qubitCount(0U)
+        , randomSeed(0)
         , amplitudeFloor(REAL1_EPSILON)
+        , maxQPower(1U)
+        , rand_distribution(0.0, 1.0)
+        , hardware_rand_generator(NULL)
     {
         // Intentionally left blank
     }
