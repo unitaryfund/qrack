@@ -2063,7 +2063,7 @@ MICROSOFT_QUANTUM_DECL void QFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uint
 
     QInterfacePtr simulator = simulators[sid];
     try {
-#if (QBCAPPOW >= 16) && (QBCAPPOW < 32)
+#if QBCAPPOW >= 32
         simulator->QFTR(c, n);
 #else
         std::unique_ptr<bitLenInt[]> q(new bitLenInt[n]);
@@ -2081,7 +2081,7 @@ MICROSOFT_QUANTUM_DECL void IQFT(_In_ uintq sid, _In_ uintq n, _In_reads_(n) uin
 
     QInterfacePtr simulator = simulators[sid];
     try {
-#if (QBCAPPOW >= 16) && (QBCAPPOW < 32)
+#if QBCAPPOW >= 32
         simulator->IQFTR(c, n);
 #else
         std::unique_ptr<bitLenInt[]> q(new bitLenInt[n]);
