@@ -246,7 +246,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
 {
     QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(engineTypes, qubitCount, 0, rand_generator,
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        std::vector<int>{}, thresholdQubits, separabilityThreshold);
+        std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
 
     Finish();
     c->Finish();
@@ -272,7 +272,7 @@ QEnginePtr QStabilizerHybrid::CloneEmpty()
 {
     QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(engineTypes, qubitCount, 0U, rand_generator,
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        std::vector<int>{}, thresholdQubits, separabilityThreshold);
+        std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
     c->Finish();
 
     c->stabilizer = NULL;
@@ -354,7 +354,7 @@ QInterfacePtr QStabilizerHybrid::Decompose(bitLenInt start, bitLenInt length)
 {
     QStabilizerHybridPtr dest = std::make_shared<QStabilizerHybrid>(engineTypes, length, 0, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        std::vector<int>{}, thresholdQubits, separabilityThreshold);
+        std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
 
     Decompose(start, dest);
 
