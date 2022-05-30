@@ -370,7 +370,7 @@ public:
             });
         }
 
-        for (int64_t i = (int64_t)(toRet.size() - 1); i >= 0; i--) {
+        for (int64_t i = (int64_t)(toRet.size() - 1U); i >= 0; i--) {
             if (!toRet[i].size()) {
                 toRetIt = toRet.begin();
                 std::advance(toRetIt, i);
@@ -390,21 +390,21 @@ public:
                 toRet.pop_back();
             }
 
-            const int64_t combineCount = (int64_t)toRet.size() / 2U;
+            const int64_t combineCount = (int64_t)(toRet.size() >> 1U);
 #if ENABLE_PTHREAD
             std::vector<std::future<void>> futures(combineCount);
-            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1); i >= 0; i--) {
                 futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
                     toRet[i].insert(toRet[i].end(), toRet[i + combineCount].begin(), toRet[i + combineCount].end());
                     toRet[i + combineCount].clear();
                 });
             }
-            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1); i >= 0; i--) {
                 futures[i].get();
                 toRet.pop_back();
             }
 #else
-            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1); i >= 0; i--) {
                 toRet[i].insert(toRet[i].end(), toRet[i + combineCount].begin(), toRet[i + combineCount].end());
                 toRet.pop_back();
             }
@@ -468,22 +468,22 @@ public:
                 toRet.pop_back();
             }
 
-            const int64_t combineCount = (int32_t)(toRet.size()) / 2U;
+            const int64_t combineCount = (int64_t)(toRet.size() >> 1U);
 #if ENABLE_PTHREAD
             std::vector<std::future<void>> futures(combineCount);
-            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1); i >= 0; i--) {
                 futures[i] = std::async(std::launch::async, [i, combineCount, &toRet]() {
                     toRet[i].insert(toRet[i + combineCount].begin(), toRet[i + combineCount].end());
                     toRet[i + combineCount].clear();
                 });
             }
 
-            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1); i >= 0; i--) {
                 futures[i].get();
                 toRet.pop_back();
             }
 #else
-            for (int64_t i = (combineCount - 1U); i >= 0; i--) {
+            for (int64_t i = (combineCount - 1); i >= 0; i--) {
                 toRet[i].insert(toRet[i + combineCount].begin(), toRet[i + combineCount].end());
                 toRet.pop_back();
             }
