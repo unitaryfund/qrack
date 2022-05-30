@@ -38,7 +38,7 @@ bool isBinaryOutput;
 int benchmarkSamples = 100;
 int benchmarkDepth = 20;
 int benchmarkMaxMagic = -1;
-std::vector<int> devList;
+std::vector<int64_t> devList;
 
 #define SHOW_OCL_BANNER()                                                                                              \
     if (OCLEngine::Instance().GetDeviceCount()) {                                                                      \

@@ -578,7 +578,7 @@ MICROSOFT_QUANTUM_DECL uintq init_count_pager(_In_ uintq q, _In_ bool hp)
 
     simulatorType.push_back(QINTERFACE_OPTIMAL);
 
-    std::vector<int> deviceList;
+    std::vector<int64_t> deviceList;
 #if ENABLE_OPENCL
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance().GetDeviceContextPtrVector();
     for (size_t i = 0U; i < deviceContext.size(); ++i) {

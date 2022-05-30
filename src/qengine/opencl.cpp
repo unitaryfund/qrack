@@ -77,8 +77,8 @@ namespace Qrack {
     }
 
 QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm,
-    bool randomGlobalPhase, bool useHostMem, int devID, bool useHardwareRNG, bool ignored, real1_f norm_thresh,
-    std::vector<int> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
+    bool randomGlobalPhase, bool useHostMem, int64_t devID, bool useHardwareRNG, bool ignored, real1_f norm_thresh,
+    std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , stateVec(NULL)
     , deviceID(devID)
@@ -538,7 +538,7 @@ void QEngineOCL::DispatchQueue()
     }
 }
 
-void QEngineOCL::SetDevice(int dID)
+void QEngineOCL::SetDevice(int64_t dID)
 {
     if (!(OCLEngine::Instance().GetDeviceCount())) {
         FreeAll();
@@ -549,9 +549,9 @@ void QEngineOCL::SetDevice(int dID)
 
     clFinish();
 
-    int oldContextId = device_context ? device_context->context_id : 0;
+    int64_t oldContextId = device_context ? device_context->context_id : 0;
     const DeviceContextPtr nDeviceContext = OCLEngine::Instance().GetDeviceContextPtr(dID);
-    const int defDevId = (int)OCLEngine::Instance().GetDefaultDeviceID();
+    const int64_t defDevId = (int)OCLEngine::Instance().GetDefaultDeviceID();
 
     std::unique_ptr<complex[]> copyVec = NULL;
 
@@ -686,7 +686,7 @@ real1_f QEngineOCL::ParSum(real1* toSum, bitCapIntOcl maxI)
     return (real1_f)totSum;
 }
 
-void QEngineOCL::InitOCL(int devID) { SetDevice(devID); }
+void QEngineOCL::InitOCL(int64_t devID) { SetDevice(devID); }
 
 void QEngineOCL::ResetStateVec(complex* nStateVec)
 {
@@ -1275,7 +1275,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr to
     }
 
     const bool isMigrate = (device_context->context_id != toCopy->device_context->context_id);
-    const int oDevId = toCopy->deviceID;
+    const int64_t oDevId = toCopy->deviceID;
     if (isMigrate) {
         toCopy->SetDevice(deviceID);
     }
@@ -1413,7 +1413,7 @@ void QEngineOCL::DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLP
     }
 
     const bool isMigrate = destination && (device_context->context_id != destination->device_context->context_id);
-    const int oDevId = destination ? destination->deviceID : 0;
+    const int64_t oDevId = destination ? destination->deviceID : 0;
     if (isMigrate) {
         destination->SetDevice(deviceID);
     }
@@ -2887,7 +2887,7 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
     toCompare->clFinish();
 
     const bool isMigrate = (device_context->context_id != toCompare->device_context->context_id);
-    const int oDevId = toCompare->deviceID;
+    const int64_t oDevId = toCompare->deviceID;
     if (isMigrate) {
         toCompare->SetDevice(deviceID);
     }

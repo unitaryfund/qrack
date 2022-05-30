@@ -28,8 +28,8 @@
 namespace Qrack {
 
 QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
-    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceId,
-    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
+    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceId,
+    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , engineTypes(eng)
@@ -246,7 +246,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
 {
     QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(engineTypes, qubitCount, 0, rand_generator,
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        std::vector<int>{}, thresholdQubits, separabilityThreshold);
+        std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
 
     Finish();
     c->Finish();
@@ -272,7 +272,7 @@ QEnginePtr QStabilizerHybrid::CloneEmpty()
 {
     QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(engineTypes, qubitCount, 0U, rand_generator,
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        std::vector<int>{}, thresholdQubits, separabilityThreshold);
+        std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
     c->Finish();
 
     c->stabilizer = NULL;
@@ -354,7 +354,7 @@ QInterfacePtr QStabilizerHybrid::Decompose(bitLenInt start, bitLenInt length)
 {
     QStabilizerHybridPtr dest = std::make_shared<QStabilizerHybrid>(engineTypes, length, 0, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        std::vector<int>{}, thresholdQubits, separabilityThreshold);
+        std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
 
     Decompose(start, dest);
 

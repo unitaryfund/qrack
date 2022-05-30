@@ -29,7 +29,7 @@ typedef std::shared_ptr<QHybrid> QHybridPtr;
 class QHybrid : public QEngine {
 protected:
     QEnginePtr engine;
-    int devID;
+    int64_t devID;
     complex phaseFactor;
     bool useRDRAND;
     bool isSparse;
@@ -38,13 +38,13 @@ protected:
     bool isGpu;
     bool isPager;
     real1_f separabilityThreshold;
-    std::vector<int> deviceIDs;
+    std::vector<int64_t> deviceIDs;
 
 public:
     QHybrid(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, int deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> devList = {}, bitLenInt qubitThreshold = 0U,
+        bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f ignored2 = FP_NORM_EPSILON_F);
 
     void SetQubitCount(bitLenInt qb)
@@ -466,7 +466,7 @@ public:
 
     QInterfacePtr Clone();
 
-    void SetDevice(int dID)
+    void SetDevice(int64_t dID)
     {
         devID = dID;
         engine->SetDevice(dID);

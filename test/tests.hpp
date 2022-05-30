@@ -45,7 +45,7 @@ extern int benchmarkSamples;
 extern int benchmarkDepth;
 extern int benchmarkMaxMagic;
 extern int timeout;
-extern std::vector<int> devList;
+extern std::vector<int64_t> devList;
 extern bool optimal;
 extern bool optimal_single;
 

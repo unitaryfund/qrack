@@ -63,8 +63,9 @@
 namespace Qrack {
 
 QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
-    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceID, bool useHardwareRNG,
-    bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
+    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceID, bool useHardwareRNG,
+    bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold,
+    real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
     , engines(eng)
     , devID(deviceID)
@@ -3402,7 +3403,7 @@ void QUnit::CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt l
 }
 #endif
 
-bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1_f param1, real1_f param2, real1_f param3, int32_t param4)
+bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1_f param1, real1_f param2, real1_f param3, int64_t param4)
 {
     std::vector<QInterfacePtr> units;
     for (bitLenInt i = 0U; i < shards.size(); ++i) {
@@ -3421,7 +3422,7 @@ bool QUnit::ParallelUnitApply(ParallelUnitFn fn, real1_f param1, real1_f param2,
 void QUnit::UpdateRunningNorm(real1_f norm_thresh)
 {
     ParallelUnitApply(
-        [](QInterfacePtr unit, real1_f norm_thresh, real1_f unused2, real1_f unused3, int32_t unused4) {
+        [](QInterfacePtr unit, real1_f norm_thresh, real1_f unused2, real1_f unused3, int64_t unused4) {
             unit->UpdateRunningNorm(norm_thresh);
             return true;
         },
@@ -3431,7 +3432,7 @@ void QUnit::UpdateRunningNorm(real1_f norm_thresh)
 void QUnit::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)
 {
     ParallelUnitApply(
-        [](QInterfacePtr unit, real1_f nrm, real1_f norm_thresh, real1_f phaseArg, int32_t unused) {
+        [](QInterfacePtr unit, real1_f nrm, real1_f norm_thresh, real1_f phaseArg, int64_t unused) {
             unit->NormalizeState(nrm, norm_thresh, phaseArg);
             return true;
         },
@@ -3440,7 +3441,7 @@ void QUnit::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)
 
 void QUnit::Finish()
 {
-    ParallelUnitApply([](QInterfacePtr unit, real1_f unused1, real1_f unused2, real1_f unused3, int32_t unused4) {
+    ParallelUnitApply([](QInterfacePtr unit, real1_f unused1, real1_f unused2, real1_f unused3, int64_t unused4) {
         unit->Finish();
         return true;
     });
@@ -3449,14 +3450,14 @@ void QUnit::Finish()
 bool QUnit::isFinished()
 {
     return ParallelUnitApply([](QInterfacePtr unit, real1_f unused1, real1_f unused2, real1_f unused3,
-                                 int32_t unused4) { return unit->isFinished(); });
+                                 int64_t unused4) { return unit->isFinished(); });
 }
 
-void QUnit::SetDevice(int dID)
+void QUnit::SetDevice(int64_t dID)
 {
     devID = dID;
     ParallelUnitApply(
-        [](QInterfacePtr unit, real1_f unused1, real1_f forceReInit, real1_f unused2, int32_t dID) {
+        [](QInterfacePtr unit, real1_f unused1, real1_f forceReInit, real1_f unused2, int64_t dID) {
             unit->SetDevice(dID);
             return true;
         },

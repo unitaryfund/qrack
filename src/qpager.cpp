@@ -19,8 +19,9 @@
 namespace Qrack {
 
 QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
-    complex phaseFac, bool ignored, bool ignored2, bool useHostMem, int deviceId, bool useHardwareRNG,
-    bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
+    complex phaseFac, bool ignored, bool ignored2, bool useHostMem, int64_t deviceId, bool useHardwareRNG,
+    bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold,
+    real1_f sep_thresh)
     : QEngine(qBitCount, rgp, false, false, useHostMem, useHardwareRNG, norm_thresh)
     , engines(eng)
     , devID(deviceId)
@@ -53,8 +54,8 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
 }
 
 QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
-    qrack_rand_gen_ptr rgp, complex phaseFac, bool ignored, bool ignored2, bool useHostMem, int deviceId,
-    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int> devList,
+    qrack_rand_gen_ptr rgp, complex phaseFac, bool ignored, bool ignored2, bool useHostMem, int64_t deviceId,
+    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, false, false, useHostMem, useHardwareRNG, norm_thresh)
     , engines(eng)

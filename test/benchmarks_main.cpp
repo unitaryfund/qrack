@@ -43,7 +43,7 @@ int benchmarkSamples = 100;
 int benchmarkDepth = 20;
 int benchmarkMaxMagic = -1;
 int timeout = -1;
-std::vector<int> devList;
+std::vector<int64_t> devList;
 bool optimal = false;
 bool optimal_single = false;
 

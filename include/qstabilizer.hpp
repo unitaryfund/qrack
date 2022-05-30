@@ -97,9 +97,9 @@ protected:
 
 public:
     QStabilizer(bitLenInt n, bitCapInt perm = 0U, qrack_rand_gen_ptr rgp = nullptr, complex ignored = CMPLX_DEFAULT_ARG,
-        bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false, int ignored3 = -1,
+        bool doNorm = false, bool randomGlobalPhase = true, bool ignored2 = false, int64_t ignored3 = -1,
         bool useHardwareRNG = true, bool ignored4 = false, real1_f ignored5 = REAL1_EPSILON,
-        std::vector<int> ignored6 = {}, bitLenInt ignored7 = 0U, real1_f ignored8 = FP_NORM_EPSILON_F);
+        std::vector<int64_t> ignored6 = {}, bitLenInt ignored7 = 0U, real1_f ignored8 = FP_NORM_EPSILON_F);
 
     QInterfacePtr Clone()
     {
@@ -159,7 +159,7 @@ public:
         }
     }
 
-    void SetDevice(int dID) {}
+    void SetDevice(int64_t dID) {}
 
     bool Rand()
     {

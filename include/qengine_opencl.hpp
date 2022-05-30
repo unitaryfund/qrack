@@ -186,7 +186,7 @@ typedef std::shared_ptr<PoolItem> PoolItemPtr;
 class QEngineOCL : public QEngine {
 protected:
     complex* stateVec;
-    int deviceID;
+    int64_t deviceID;
     DeviceContextPtr device_context;
     std::vector<EventVecPtr> wait_refs;
     std::list<QueueItem> wait_queue_items;
@@ -246,8 +246,8 @@ public:
 
     QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
-        bool useHostMem = false, int devID = -1, bool useHardwareRNG = true, bool ignored = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int> ignored2 = {}, bitLenInt ignored4 = 0U,
+        bool useHostMem = false, int64_t devID = -1, bool useHardwareRNG = true, bool ignored = false,
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> ignored2 = {}, bitLenInt ignored4 = 0U,
         real1_f ignored3 = FP_NORM_EPSILON_F);
 
     ~QEngineOCL()
@@ -408,7 +408,7 @@ public:
     bool ForceMParity(bitCapInt mask, bool result, bool doForce = true);
     real1_f ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, bitCapInt offset = 0);
 
-    void SetDevice(int dID);
+    void SetDevice(int64_t dID);
     int64_t GetDevice() { return deviceID; }
 
     void SetQuantumState(const complex* inputState);
@@ -480,7 +480,7 @@ protected:
 
     void Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy);
 
-    void InitOCL(int devID);
+    void InitOCL(int64_t devID);
     PoolItemPtr GetFreePoolItem();
 
     real1_f ParSum(real1* toSum, bitCapIntOcl maxI);

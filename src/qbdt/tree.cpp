@@ -20,8 +20,9 @@
 namespace Qrack {
 
 QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rgp,
-    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int deviceId, bool useHardwareRNG,
-    bool useSparseStateVec, real1_f norm_thresh, std::vector<int> ignored, bitLenInt qubitThreshold, real1_f sep_thresh)
+    complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceId, bool useHardwareRNG,
+    bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devIds, bitLenInt qubitThreshold,
+    real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
     , engines(eng)
     , devID(deviceId)
@@ -30,6 +31,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , bdtQubitCount(qBitCount)
     , bdtMaxQPower(pow2(qBitCount))
     , isAttached(false)
+    , deviceIDs(devIds)
 {
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
@@ -42,7 +44,7 @@ QBdtQEngineNodePtr QBdt::MakeQEngineNode(complex scale, bitLenInt qbCount, bitCa
     return std::make_shared<QBdtQEngineNode>(scale,
         std::dynamic_pointer_cast<QEngine>(
             CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-                false, devID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor)));
+                false, devID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs)));
 }
 
 void QBdt::FallbackMtrx(const complex* mtrx, bitLenInt target)
