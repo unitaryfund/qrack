@@ -717,14 +717,14 @@ void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
         mask = v;
     }
 
-    const int end = (int)(qubits.size() - 1);
-    for (int i = 0; i < end; ++i) {
+    const bitLenInt end = qubits.size() - 1U;
+    for (bitLenInt i = 0; i < end; ++i) {
         CNOT(qubits[i], qubits[i + 1U]);
     }
     real1 cosine = (real1)cos(radians / 2);
     real1 sine = (real1)sin(radians / 2);
     Phase(cosine - I_CMPLX * sine, cosine + I_CMPLX * sine, qubits[end]);
-    for (int i = (end - 1U); i >= 0; i--) {
+    for (int i = (end - 1); i >= 0; --i) {
         CNOT(qubits[i], qubits[i + 1U]);
     }
 }

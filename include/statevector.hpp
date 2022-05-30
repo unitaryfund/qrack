@@ -356,8 +356,7 @@ public:
 
     std::vector<bitCapIntOcl> iterable()
     {
-        const int64_t threadCount = GetConcurrencyLevel();
-        std::vector<std::vector<bitCapIntOcl>> toRet(threadCount);
+        std::vector<std::vector<bitCapIntOcl>> toRet(GetConcurrencyLevel());
         std::vector<std::vector<bitCapIntOcl>>::iterator toRetIt;
 
         // For lock_guard scope
@@ -425,8 +424,7 @@ public:
 
         const bitCapIntOcl unsetMask = ~setMask;
 
-        const int32_t threadCount = GetConcurrencyLevel();
-        std::vector<std::set<bitCapIntOcl>> toRet(threadCount);
+        std::vector<std::set<bitCapIntOcl>> toRet(GetConcurrencyLevel());
         std::vector<std::set<bitCapIntOcl>>::iterator toRetIt;
 
         // For lock_guard scope
