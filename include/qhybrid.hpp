@@ -28,16 +28,16 @@ typedef std::shared_ptr<QHybrid> QHybridPtr;
  */
 class QHybrid : public QEngine {
 protected:
-    QEnginePtr engine;
-    int64_t devID;
-    complex phaseFactor;
+    bool isGpu;
+    bool isPager;
     bool useRDRAND;
     bool isSparse;
     bitLenInt gpuThresholdQubits;
     bitLenInt pagerThresholdQubits;
-    bool isGpu;
-    bool isPager;
     real1_f separabilityThreshold;
+    int64_t devID;
+    QEnginePtr engine;
+    complex phaseFactor;
     std::vector<int64_t> deviceIDs;
 
 public:

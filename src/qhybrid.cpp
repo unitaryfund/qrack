@@ -18,11 +18,11 @@ QHybrid::QHybrid(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_ptr rg
     bool randomGlobalPhase, bool useHostMem, int64_t deviceId, bool useHardwareRNG, bool useSparseStateVec,
     real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
-    , devID(deviceId)
-    , phaseFactor(phaseFac)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
     , separabilityThreshold(sep_thresh)
+    , devID(deviceId)
+    , phaseFactor(phaseFac)
     , deviceIDs(devList)
 {
     if (qubitThreshold) {
