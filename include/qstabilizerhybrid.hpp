@@ -29,19 +29,19 @@ typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
  */
 class QStabilizerHybrid : public QEngine {
 protected:
-    std::vector<QInterfaceEngine> engineTypes;
-    QEnginePtr engine;
-    QStabilizerPtr stabilizer;
-    std::vector<MpsShardPtr> shards;
-    int64_t devID;
-    complex phaseFactor;
+    bool isDefaultPaging;
     bool doNormalize;
     bool isSparse;
-    bool isDefaultPaging;
-    real1_f separabilityThreshold;
     bitLenInt thresholdQubits;
     bitLenInt maxPageQubits;
+    real1_f separabilityThreshold;
+    int64_t devID;
+    complex phaseFactor;
+    QEnginePtr engine;
+    QStabilizerPtr stabilizer;
     std::vector<int64_t> deviceIDs;
+    std::vector<QInterfaceEngine> engineTypes;
+    std::vector<MpsShardPtr> shards;
 
     QStabilizerPtr MakeStabilizer(bitCapInt perm = 0U);
     QEnginePtr MakeEngine(bitCapInt perm = 0U);

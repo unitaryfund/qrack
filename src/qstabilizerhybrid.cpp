@@ -32,18 +32,18 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
-    , engineTypes(eng)
-    , engine(NULL)
-    , shards(qubitCount)
-    , devID(deviceId)
-    , phaseFactor(phaseFac)
+    , isDefaultPaging(false)
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
-    , isDefaultPaging(false)
-    , separabilityThreshold(sep_thresh)
     , thresholdQubits(qubitThreshold)
     , maxPageQubits(-1)
+    , separabilityThreshold(sep_thresh)
+    , devID(deviceId)
+    , phaseFactor(phaseFac)
+    , engine(NULL)
     , deviceIDs(devList)
+    , engineTypes(eng)
+    , shards(qubitCount)
 {
 #if ENABLE_OPENCL
     if ((engineTypes.size() == 1U) && (engineTypes[0U] == QINTERFACE_OPTIMAL_BASE)) {
