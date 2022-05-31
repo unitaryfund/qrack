@@ -1395,7 +1395,7 @@ public:
     virtual void H(bitLenInt start, bitLenInt length);
 
     /** Bitwise Pauli X (or logical "NOT") operator */
-    virtual void X(bitLenInt start, bitLenInt length);
+    virtual void X(bitLenInt start, bitLenInt length) { XMask(bitRegMask(start, length)); }
 
 #if ENABLE_REG_GATES
 

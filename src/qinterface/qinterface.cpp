@@ -629,9 +629,6 @@ bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error
 /// Apply Hadamard gate to each bit in "length," starting from bit index "start"
 REG_GATE_1(H);
 
-/// Apply X ("not") gate to each bit in "length," starting from bit index "start"
-REG_GATE_1(X);
-
 #if ENABLE_REG_GATES
 
 #define REG_GATE_2(gate)                                                                                               \
