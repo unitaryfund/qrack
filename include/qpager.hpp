@@ -221,6 +221,7 @@ public:
         CombineEngines();
         return qPages[0U]->ProbReg(start, length, permutation);
     }
+    using QEngine::ApplyM;
     void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
     {
         CombineEngines();

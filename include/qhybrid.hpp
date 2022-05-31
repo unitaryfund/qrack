@@ -165,6 +165,7 @@ public:
     void QueueSetDoNormalize(bool doNorm) { engine->QueueSetDoNormalize(doNorm); }
     void QueueSetRunningNorm(real1_f runningNrm) { engine->QueueSetRunningNorm(runningNrm); }
 
+    using QEngine::ApplyM;
     void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) { engine->ApplyM(regMask, result, nrm); }
     real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
     {

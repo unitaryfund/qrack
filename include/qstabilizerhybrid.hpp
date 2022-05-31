@@ -186,6 +186,7 @@ public:
         QInterfacePtr thisEngine = thisClone ? thisClone->engine : engine;
         return thisEngine->ProbReg(start, length, permutation);
     }
+    using QEngine::ApplyM;
     void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
     {
         SwitchToEngine();

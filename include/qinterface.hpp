@@ -692,7 +692,7 @@ public:
      *
      * Applies a gate guaranteed to be unitary, from two angles, as commonly defined.
      */
-    virtual void U2(bitLenInt target, real1_f phi, real1_f lambda) { U(target, M_PI / 2, phi, lambda); }
+    virtual void U2(bitLenInt target, real1_f phi, real1_f lambda) { U(target, (real1_f)(M_PI / 2), phi, lambda); }
 
     /**
      * Inverse 2-parameter unitary gate

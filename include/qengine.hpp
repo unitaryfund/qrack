@@ -129,7 +129,9 @@ public:
     virtual void AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubit1, bitLenInt qubit2);
 
 #if ENABLE_ALU
+    using QInterface::M;
     virtual bool M(bitLenInt q) { return QInterface::M(q); }
+    using QInterface::X;
     virtual void X(bitLenInt q) { QInterface::X(q); }
     virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { QInterface::INC(toAdd, start, length); }
     virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }

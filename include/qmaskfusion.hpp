@@ -451,6 +451,8 @@ public:
         DumpBuffer(qubit);
         return engine->ForceM(qubit, result, doForce, doApply);
     }
+
+    using QEngine::ApplyM;
     void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm) { engine->ApplyM(regMask, result, nrm); }
 
 #if ENABLE_ALU

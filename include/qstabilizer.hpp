@@ -294,6 +294,7 @@ public:
     /// Apply an (anti-)CZ gate with control and target
     void AntiCZ(bitLenInt control, bitLenInt target);
     /// Apply a Hadamard gate to target
+    using QInterface::H;
     void H(bitLenInt qubitIndex);
     /// Apply a phase gate (|0>->|0>, |1>->i|1>, or "S") to qubit b
     void S(bitLenInt qubitIndex);
@@ -302,6 +303,7 @@ public:
     /// Apply a phase gate (|0>->|0>, |1>->-|1>, or "Z") to qubit b
     void Z(bitLenInt qubitIndex);
     /// Apply an X (or NOT) gate to target
+    using QInterface::X;
     void X(bitLenInt qubitIndex);
     /// Apply a Pauli Y gate to target
     void Y(bitLenInt qubitIndex);

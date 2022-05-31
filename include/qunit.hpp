@@ -157,7 +157,9 @@ public:
     /** @} */
 
 #if ENABLE_ALU
+    using QInterface::M;
     virtual bool M(bitLenInt q) { return QInterface::M(q); }
+    using QInterface::X;
     virtual void X(bitLenInt q) { QInterface::X(q); }
 
     /**
@@ -279,6 +281,7 @@ public:
             shards[i].unit = NULL;
         }
     }
+    using QInterface::isClifford;
     virtual bool isClifford(bitLenInt qubit) { return shards[qubit].isClifford(); };
 
     virtual bool TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error_tol);

@@ -243,6 +243,7 @@ protected:
     void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
         const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG);
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG);
+    using QEngine::ApplyM;
     void ApplyM(bitCapInt mask, bitCapInt result, complex nrm);
 
 #if ENABLE_ALU
