@@ -50,22 +50,22 @@ typedef std::shared_ptr<QStabilizer> QStabilizerPtr;
 
 class QStabilizer : public QInterface {
 protected:
+    unsigned rawRandBools;
+    unsigned rawRandBoolsRemaining;
+#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
+    bitLenInt dispatchThreshold;
+    DispatchQueue dispatchQueue;
+#endif
+    complex phaseOffset;
+
+    // Phase bits: 0 for +1, 1 for i, 2 for -1, 3 for -i.  Normally either 0 or 2.
+    std::vector<uint8_t> r;
+    // Typedef for special type std::vector<bool> compatibility
     typedef std::vector<bool> BoolVector;
     // (2n+1)*n matrix for stabilizer/destabilizer x bits (there's one "scratch row" at the bottom)
     std::vector<BoolVector> x;
     // (2n+1)*n matrix for z bits
     std::vector<BoolVector> z;
-    // Phase bits: 0 for +1, 1 for i, 2 for -1, 3 for -i.  Normally either 0 or 2.
-    std::vector<uint8_t> r;
-    complex phaseOffset;
-
-    unsigned rawRandBools;
-    unsigned rawRandBoolsRemaining;
-
-#if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
-    DispatchQueue dispatchQueue;
-    bitLenInt dispatchThreshold;
-#endif
 
     typedef std::function<void(const bitLenInt&)> StabilizerParallelFunc;
     typedef std::function<void(void)> DispatchFn;

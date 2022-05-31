@@ -39,12 +39,12 @@ QStabilizer::QStabilizer(bitLenInt n, bitCapInt perm, qrack_rand_gen_ptr rgp, co
     bool randomGlobalPhase, bool ignored2, int64_t ignored3, bool useHardwareRNG, bool ignored4, real1_f ignored5,
     std::vector<int64_t> ignored6, bitLenInt ignored7, real1_f ignored8)
     : QInterface(n, rgp, doNorm, useHardwareRNG, randomGlobalPhase, REAL1_EPSILON)
-    , x((n << 1U) + 1U, BoolVector(n, false))
-    , z((n << 1U) + 1U, BoolVector(n, false))
-    , r((n << 1U) + 1U)
-    , phaseOffset(ONE_CMPLX)
     , rawRandBools(0U)
     , rawRandBoolsRemaining(0U)
+    , phaseOffset(ONE_CMPLX)
+    , r((n << 1U) + 1U)
+    , x((n << 1U) + 1U, BoolVector(n, false))
+    , z((n << 1U) + 1U, BoolVector(n, false))
 {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #if ENABLE_ENV_VARS
