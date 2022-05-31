@@ -30,10 +30,6 @@ class QUnit : public QAlu, public QParity, public QInterface {
 class QUnit : public QParity, public QInterface {
 #endif
 protected:
-    std::vector<QInterfaceEngine> engines;
-    int64_t devID;
-    QEngineShardMap shards;
-    complex phaseFactor;
     bool doNormalize;
     bool useHostRam;
     bool isSparse;
@@ -41,7 +37,11 @@ protected:
     bool isReactiveSeparate;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
+    int64_t devID;
+    complex phaseFactor;
+    QEngineShardMap shards;
     std::vector<int64_t> deviceIDs;
+    std::vector<QInterfaceEngine> engines;
 
     QInterfacePtr MakeEngine(bitLenInt length, bitCapInt perm);
 

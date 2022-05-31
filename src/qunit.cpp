@@ -67,9 +67,6 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold,
     real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, norm_thresh)
-    , engines(eng)
-    , devID(deviceID)
-    , phaseFactor(phaseFac)
     , doNormalize(doNorm)
     , useHostRam(useHostMem)
     , isSparse(useSparseStateVec)
@@ -77,7 +74,10 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , isReactiveSeparate(true)
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
+    , devID(deviceID)
+    , phaseFactor(phaseFac)
     , deviceIDs(devList)
+    , engines(eng)
 {
 #if ENABLE_ENV_VARS
     if (getenv("QRACK_QUNIT_SEPARABILITY_THRESHOLD")) {
