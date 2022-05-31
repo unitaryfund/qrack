@@ -23,14 +23,14 @@ QMaskFusion::QMaskFusion(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount,
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
-    , engTypes(eng)
-    , devID(deviceId)
-    , devices(devList)
-    , phaseFactor(phaseFac)
+    , isCacheEmpty(true)
     , useRDRAND(useHardwareRNG)
     , isSparse(useSparseStateVec)
-    , isCacheEmpty(true)
     , separabilityThreshold(sep_thresh)
+    , devID(deviceId)
+    , phaseFactor(phaseFac)
+    , devices(devList)
+    , engTypes(eng)
     , zxShards(qBitCount)
 {
     if ((engTypes[0U] == QINTERFACE_HYBRID) || (engTypes[0U] == QINTERFACE_OPENCL)) {

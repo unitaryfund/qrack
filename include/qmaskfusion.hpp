@@ -42,16 +42,16 @@ typedef std::shared_ptr<QMaskFusion> QMaskFusionPtr;
  */
 class QMaskFusion : public QEngine {
 protected:
-    QEnginePtr engine;
-    std::vector<QInterfaceEngine> engTypes;
-    int64_t devID;
-    std::vector<int64_t> devices;
-    complex phaseFactor;
+    bool isCacheEmpty;
     bool useRDRAND;
     bool isSparse;
-    bool isCacheEmpty;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
+    int64_t devID;
+    complex phaseFactor;
+    QEnginePtr engine;
+    std::vector<int64_t> devices;
+    std::vector<QInterfaceEngine> engTypes;
     std::vector<QMaskFusionShard> zxShards;
 
     QEnginePtr MakeEngine(bitCapInt initState = 0);
