@@ -359,6 +359,7 @@ public:
     void MACInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
+    using QEngine::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(
         const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const complex* mtrxs)
     {
