@@ -24,14 +24,14 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devIds, bitLenInt qubitThreshold,
     real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
-    , engines(eng)
-    , devID(deviceId)
-    , root(NULL)
+    , isAttached(false)
     , attachedQubitCount(0U)
     , bdtQubitCount(qBitCount)
+    , devID(deviceId)
+    , root(NULL)
     , bdtMaxQPower(pow2(qBitCount))
-    , isAttached(false)
     , deviceIDs(devIds)
+    , engines(eng)
 {
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());

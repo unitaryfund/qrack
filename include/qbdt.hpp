@@ -34,14 +34,14 @@ class QBdt : public QAlu, public QParity, public QInterface {
 class QBdt : public QParity, public QInterface {
 #endif
 protected:
-    std::vector<QInterfaceEngine> engines;
-    int64_t devID;
-    QBdtNodeInterfacePtr root;
+    bool isAttached;
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
+    int64_t devID;
+    QBdtNodeInterfacePtr root;
     bitCapInt bdtMaxQPower;
-    bool isAttached;
     std::vector<int64_t> deviceIDs;
+    std::vector<QInterfaceEngine> engines;
 
     virtual void SetQubitCount(bitLenInt qb, bitLenInt aqb)
     {
