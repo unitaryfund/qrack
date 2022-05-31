@@ -24,26 +24,24 @@ typedef std::shared_ptr<QPager> QPagerPtr;
  */
 class QPager : public QEngine {
 protected:
-    std::vector<QInterfaceEngine> engines;
-    QInterfaceEngine rootEngine;
-    int devID;
-    complex phaseFactor;
-    bool isSparse;
-    std::vector<QEnginePtr> qPages;
-    std::vector<int64_t> deviceIDs;
-    std::vector<bool> devicesHostPointer;
-
     bool useHardwareThreshold;
     bool useGpuThreshold;
+    bool isSparse;
     bitLenInt segmentGlobalQb;
     bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
     bitLenInt thresholdQubitsPerPage;
     bitLenInt baseQubitsPerPage;
-    bitCapInt basePageCount;
-    bitCapIntOcl basePageMaxQPower;
-
     bitLenInt maxQubits;
+    int devID;
+    QInterfaceEngine rootEngine;
+    bitCapIntOcl basePageMaxQPower;
+    complex phaseFactor;
+    bitCapInt basePageCount;
+    std::vector<bool> devicesHostPointer;
+    std::vector<int64_t> deviceIDs;
+    std::vector<QInterfaceEngine> engines;
+    std::vector<QEnginePtr> qPages;
 
     QEnginePtr MakeEngine(bitLenInt length, bitCapIntOcl pageId);
 

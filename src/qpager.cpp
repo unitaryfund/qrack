@@ -23,14 +23,14 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
     bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold,
     real1_f sep_thresh)
     : QEngine(qBitCount, rgp, false, false, useHostMem, useHardwareRNG, norm_thresh)
-    , engines(eng)
-    , devID(deviceId)
-    , phaseFactor(phaseFac)
-    , isSparse(useSparseStateVec)
-    , deviceIDs(devList)
     , useHardwareThreshold(false)
+    , isSparse(useSparseStateVec)
     , minPageQubits(0U)
     , thresholdQubitsPerPage(qubitThreshold)
+    , devID(deviceId)
+    , phaseFactor(phaseFac)
+    , deviceIDs(devList)
+    , engines(eng)
 {
     Init();
 
@@ -58,16 +58,16 @@ QPager::QPager(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenIn
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, false, false, useHostMem, useHardwareRNG, norm_thresh)
-    , engines(eng)
-    , devID(deviceId)
-    , phaseFactor(phaseFac)
-    , isSparse(useSparseStateVec)
-    , deviceIDs(devList)
     , useHardwareThreshold(false)
+    , isSparse(useSparseStateVec)
     , segmentGlobalQb(0U)
     , minPageQubits(0U)
     , maxPageQubits(-1)
     , thresholdQubitsPerPage(qubitThreshold)
+    , devID(deviceId)
+    , phaseFactor(phaseFac)
+    , deviceIDs(devList)
+    , engines(eng)
 {
     Init();
     LockEngine(enginePtr);
