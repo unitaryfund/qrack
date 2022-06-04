@@ -290,7 +290,7 @@ int main()
         // Batch size is BASE_TRIALS * PERIOD_TRIALS.
 
         // Number of times to reuse a random base:
-        const size_t BASE_TRIALS = 1U << 9U;
+        const size_t BASE_TRIALS = 1U << 4U;
 
         const double clockFactor = 1.0 / 1000.0; // Report in ms
         const unsigned threads = std::thread::hardware_concurrency();
@@ -306,8 +306,8 @@ int main()
         std::vector<rand_dist> rDist;
 #if QBCAPPOW > 6U
 #if IS_RSA_SEMIPRIME
-        // Euler's totient is the product of 2 even numbers.
-        bitCapInt distPart = (rMax - rMin) >> 1U;
+        // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
+        bitCapInt distPart = (rMax - rMin) >> 2U;
 #else
         bitCapInt distPart = rMax - rMin;
 #endif
@@ -317,8 +317,8 @@ int main()
         }
         std::reverse(rDist.begin(), rDist.end());
 #elif IS_RSA_SEMIPRIME
-        // Euler's totient is the product of 2 even numbers.
-        rDist.push_back(rand_dist(rMin >> 1U, rMax >> 1U));
+        // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
+        rDist.push_back(rand_dist(rMin >> 2U, rMax >> 2U));
 #else
         rDist.push_back(rand_dist(rMin, rMax));
 #endif
@@ -384,16 +384,16 @@ int main()
                     r |= rDist[i](rand_gen);
                 }
 #if IS_RSA_SEMIPRIME
-                // Euler's totient is the product of 2 even numbers.
-                r += rMin >> 1U;
+                // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
+                r += rMin >> 2U;
 #else
                 r += rMin;
 #endif
 #endif
 
 #if IS_RSA_SEMIPRIME
-                // Euler's totient is the product of 2 even numbers.
-                r >>= 1U;
+                // Euler's totient is the product of 2 even numbers, so it is a multiple of 4.
+                r <<= 2U;
 #else
                 if (r & 1U) {
                     r <<= 1U;
