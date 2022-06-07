@@ -256,6 +256,11 @@ bitCapInt pushApartBits(const bitCapInt& perm, const bitCapInt* skipPowers, cons
 #if QBCAPPOW == 7U
 std::ostream& operator<<(std::ostream& os, bitCapInt b)
 {
+    if (b == 0) {
+        os << "0";
+        return os;
+    }
+
     // Calculate the base-10 digits, from lowest to highest.
     std::vector<std::string> digits;
     while (b) {
@@ -264,7 +269,7 @@ std::ostream& operator<<(std::ostream& os, bitCapInt b)
     }
 
     // Reversing order, print the digits from highest to lowest.
-    for (size_t i = digits.size() - 1U; i > 0; i--) {
+    for (size_t i = digits.size() - 1U; i > 0; --i) {
         os << digits[i];
     }
     // Avoid the need for a signed comparison.
@@ -281,7 +286,7 @@ std::istream& operator>>(std::istream& is, bitCapInt& b)
 
     // Start the output address value at 0.
     b = 0;
-    for (size_t i = 0; i < input.size(); i++) {
+    for (size_t i = 0; i < input.size(); ++i) {
         // Left shift by 1 base-10 digit.
         b *= 10;
         // Add the next lowest base-10 digit.
