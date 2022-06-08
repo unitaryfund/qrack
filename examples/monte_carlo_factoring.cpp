@@ -36,7 +36,7 @@
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // Set the ceiling on prime factors to check via trial division
-#define TRIAL_DIVISION_LEVEL 2
+#define TRIAL_DIVISION_LEVEL 5
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -217,23 +217,6 @@ int main()
     const bitLenInt qubitCount = log2(toFactor) + (isPowerOfTwo(toFactor) ? 0U : 1U);
     std::cout << "Bits to factor: " << (int)qubitCount << std::endl;
 
-    if ((toFactor & 1) == 0) {
-        std::cout << "Factors: 2 * " << (toFactor >> 1) << " = " << toFactor << std::endl;
-        return 0;
-    }
-    if ((toFactor % 3) == 0) {
-        std::cout << "Factors: 3 * " << (toFactor / 3) << " = " << toFactor << std::endl;
-        return 0;
-    }
-    if ((toFactor % 5) == 0) {
-        std::cout << "Factors: 5 * " << (toFactor / 5) << " = " << toFactor << std::endl;
-        return 0;
-    }
-    if ((toFactor % 7) == 0) {
-        std::cout << "Factors: 7 * " << (toFactor / 7) << " = " << toFactor << std::endl;
-        return 0;
-    }
-
 #if IS_DISTRIBUTED
     std::cout << "You can split this work across nodes, without networking!" << std::endl;
     do {
@@ -256,6 +239,33 @@ int main()
 
     auto iterClock = std::chrono::high_resolution_clock::now();
 
+    const std::vector<bitCapInt> trialDivisionPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
+        61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
+        181, 191, 193, 197, 199 };
+
+    bitCapInt baseNumerator = 1U;
+    bitCapInt baseDenominator = 1U;
+    bitCapInt currentPrime = 2U;
+    size_t primeIndex = 0;
+    while (currentPrime <= TRIAL_DIVISION_LEVEL) {
+        if ((toFactor % currentPrime) == 0) {
+            std::cout << "Factors: " << currentPrime << " * " << (toFactor / currentPrime) << " = " << toFactor
+                      << std::endl;
+            return 0;
+        }
+
+        baseDenominator *= currentPrime;
+        baseNumerator *= currentPrime - 1U;
+        primeIndex++;
+        if (primeIndex >= trialDivisionPrimes.size()) {
+            break;
+        }
+        currentPrime = trialDivisionPrimes[primeIndex];
+    }
+    if (primeIndex) {
+        --primeIndex;
+    }
+
 #if IS_RSA_SEMIPRIME
     std::map<bitLenInt, const std::vector<bitCapInt>> primeDict = { { 16U, { 16411U, 65521U } },
         { 28U, { 67108879U, 536870909U } }, { 32U, { 1073741827U, 8589934583U } } };
@@ -267,15 +277,26 @@ int main()
         primeDict[primeBits].size() ? primeDict[primeBits][1] : ((ONE_BCI << (primeBits + 1U)) - 1U);
     const bitCapInt fullMinBase = ((toFactor / maxPrime) < minPrime) ? minPrime : ((toFactor / maxPrime) | 1U);
     const bitCapInt fullMaxBase = ((toFactor / minPrime) > maxPrime) ? maxPrime : ((toFactor / minPrime) | 1U);
+#elif TRIAL_DIVISION_LEVEL < 2
+    const bitCapInt fullMinBase = 2U;
+    // We include potential factors as high as toFactor / nextPrime.
+    const bitCapInt fullMaxBase = toFactor >> 1U;
+#elif TRIAL_DIVISION_LEVEL < 3
+    const bitCapInt fullMinBase = 3U;
+    // We include potential factors as high as toFactor / nextPrime.
+    const bitCapInt fullMaxBase = toFactor / 3U;
 #else
-    // We include potential factors as low as 11.
-    const bitCapInt fullMinBase = 11U;
-    // We include potential factors as high as toFactor / 11.
-    const bitCapInt fullMaxBase = toFactor / 11U;
+    const bitCapInt nextPrime =
+        (primeIndex < trialDivisionPrimes.size()) ? currentPrime : (trialDivisionPrimes.back() + 2U);
+    // We include potential factors as low as the next odd number after the highest trial division prime.
+    const bitCapInt fullMinBase = nextPrime;
+    // We include potential factors as high as toFactor / nextPrime.
+    const bitCapInt fullMaxBase = toFactor / nextPrime;
 #endif
-    const bitCapInt nodeRange = ((nodeCount - 1U) + (fullMaxBase - fullMinBase)) / nodeCount;
-    const bitCapInt nodeMin = fullMinBase + nodeRange * nodeId;
-    const bitCapInt nodeMax = nodeMin + nodeRange;
+    const bitCapInt nodeRange =
+        ((((baseNumerator * (fullMaxBase - fullMinBase)) / baseDenominator) + (nodeCount - 1U)) / nodeCount);
+    const bitCapInt nodeMin = (fullMinBase + nodeRange * nodeId) | 1U;
+    const bitCapInt nodeMax = (nodeMin + nodeRange) | 1U;
 
     std::random_device rand_dev;
     std::mt19937 rand_gen(rand_dev());
@@ -284,7 +305,12 @@ int main()
     std::atomic<bool> isFinished;
     isFinished = false;
 
+#if TRIAL_DIVISION_LEVEL < 7
     const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, &rand_gen, &isFinished](int cpu, unsigned cpuCount) {
+#else
+    const auto workerFn = [toFactor, nodeMin, nodeMax, iterClock, primeIndex, &rand_gen, &isFinished,
+                              &trialDivisionPrimes](int cpu, unsigned cpuCount) {
+#endif
         // These constants are semi-redundant, but they're only defined once per thread,
         // and compilers differ on lambda expression capture of constants.
 
@@ -294,28 +320,12 @@ int main()
         // Number of times to reuse a random base:
         const int BASE_TRIALS = 1U << 16U;
 
-#if TRIAL_DIVISION_LEVEL >= 7
-        const bitCapInt baseDistNumerator = 48U;
-        const bitCapInt threadMinMult = 210U;
-#elif TRIAL_DIVISION_LEVEL >= 5
-        const bitCapInt baseDistNumerator = 8U;
-        const bitCapInt threadMinMult = 30U;
-#elif TRIAL_DIVISION_LEVEL >= 3
-        const bitCapInt baseDistNumerator = 2U;
-        const bitCapInt threadMinMult = 6U;
-#else
-        const bitCapInt baseDistNumerator = 1U;
-        const bitCapInt threadMinMult = 2U;
-#endif
-
         // Round the range length up.
-        const bitCapInt threadRange = (cpuCount + nodeMax - nodeMin) / cpuCount;
-        // Make sure this is a multiple of 2, 3, 5, and 7, +1:
-        const bitCapInt threadMin = ((((nodeMin + threadRange * cpu) / threadMinMult) * threadMinMult) | 1U);
-        // Don't modify the maximum:
-        const bitCapInt threadMax = nodeMin + threadRange * (cpu + 1U);
+        const bitCapInt threadRange = ((nodeMax - nodeMin) + (cpuCount - 1)) / cpuCount;
+        const bitCapInt threadMin = (nodeMin + threadRange * cpu) | 1U;
+        const bitCapInt threadMax = (threadMin + threadRange) | 1U;
 
-        std::vector<rand_dist> baseDist(randRange((baseDistNumerator * (threadMax - threadMin)) / threadMinMult));
+        std::vector<rand_dist> baseDist(randRange(threadMax - threadMin));
 
         for (;;) {
             for (int batchItem = 0U; batchItem < BASE_TRIALS; ++batchItem) {
@@ -329,18 +339,19 @@ int main()
 #endif
 
 #if TRIAL_DIVISION_LEVEL >= 7
-                // Make this NOT multiple of 7, by adding it to itself divided by 6, + 1.
-                base += base / 6U + 1U;
+                for (size_t i = primeIndex; i > 2U; --i) {
+                    base += base / trialDivisionPrimes[i] + 1U;
+                }
 #endif
 #if TRIAL_DIVISION_LEVEL >= 5
-                // Make this NOT multiple of 5, by adding it to itself divided by 4, + 1.
+                // Make this NOT a multiple of 5, by adding it to itself divided by 4, + 1.
                 base += (base >> 2U) + 1U;
 #endif
 #if TRIAL_DIVISION_LEVEL >= 3
-                // Make this NOT multiple of 3, by adding it to itself divided by 2, + 1.
+                // Make this NOT a multiple of 3, by adding it to itself divided by 2, + 1.
                 base += (base >> 1U) + 1U;
 #endif
-                // Make this odd, while adding the minimum.
+                // Make this odd, when added to the minimum.
                 base += base + threadMin;
 
 #if IS_RSA_SEMIPRIME
