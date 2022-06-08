@@ -36,7 +36,7 @@
 // Turn this off, if you don't want to coordinate across multiple (quasi-independent) nodes.
 #define IS_DISTRIBUTED 1
 // Set the ceiling on prime factors to check via trial division
-#define TRIAL_DIVISION_LEVEL 5
+#define TRIAL_DIVISION_LEVEL 13
 // The maximum number of bits in Boost big integers is 2^QBCAPPOW.
 // (2^7, only, needs custom std::cout << operator implementation.)
 #define QBCAPPOW 7U
@@ -262,8 +262,8 @@ int main()
         }
         currentPrime = trialDivisionPrimes[primeIndex];
     }
-    if (primeIndex) {
-        --primeIndex;
+    if (primeIndex >= trialDivisionPrimes.size()) {
+        primeIndex = trialDivisionPrimes.size() - 1U;
     }
 
 #if IS_RSA_SEMIPRIME
@@ -340,7 +340,7 @@ int main()
 
 #if TRIAL_DIVISION_LEVEL >= 7
                 for (size_t i = primeIndex; i > 2U; --i) {
-                    base += base / trialDivisionPrimes[i] + 1U;
+                    base += base / (trialDivisionPrimes[i] - 1U) + 1U;
                 }
 #endif
 #if TRIAL_DIVISION_LEVEL >= 5
