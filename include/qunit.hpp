@@ -70,10 +70,10 @@ public:
         QInterface::SetConcurrency(threadsPerEngine);
         ParallelUnitApply(
             [](QInterfacePtr unit, real1_f unused1, real1_f unused2, real1_f unused3, int64_t threadsPerEngine) {
-                unit->SetConcurrency(threadsPerEngine);
+                unit->SetConcurrency((uint32_t)threadsPerEngine);
                 return true;
             },
-            ZERO_R1_F, ZERO_R1_F, ZERO_R1_F, (uint32_t)threadsPerEngine);
+            ZERO_R1_F, ZERO_R1_F, ZERO_R1_F, threadsPerEngine);
     }
 
     virtual void SetReactiveSeparate(bool isAggSep) { isReactiveSeparate = isAggSep; }
