@@ -67,10 +67,10 @@ void QInterface::ASL(bitLenInt shift, bitLenInt start, bitLenInt length)
         return;
     }
 
-    bitLenInt end = start + length;
     if (shift >= length) {
         SetReg(start, length, 0U);
     } else {
+        const bitLenInt end = start + length;
         Swap(end - 1U, end - 2U);
         ROL(shift, start, length);
         SetReg(start, shift, 0U);
@@ -85,10 +85,10 @@ void QInterface::ASR(bitLenInt shift, bitLenInt start, bitLenInt length)
         return;
     }
 
-    bitLenInt end = start + length;
     if (shift >= length) {
         SetReg(start, length, 0U);
     } else {
+        const bitLenInt end = start + length;
         Swap(end - 1U, end - 2U);
         ROR(shift, start, length);
         SetReg(end - shift - 1U, shift, 0U);
@@ -135,7 +135,7 @@ void QEngineCPU::INC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         return;
     }
 
-    bitCapIntOcl lengthMask = pow2MaskOcl(length);
+    const bitCapIntOcl lengthMask = pow2MaskOcl(length);
     toAdd &= lengthMask;
     if (!toAdd) {
         return;
@@ -564,7 +564,7 @@ void QEngineCPU::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
     }
 
     if (!toDiv) {
-        throw std::invalid_argument("DIV by zero");
+        throw std::invalid_argument("CDIV by zero");
     }
     if (toDiv == ONE_BCI) {
         return;
@@ -615,8 +615,7 @@ void QEngineCPU::MULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, 
         return;
     }
 
-    bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
-
+    const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
     ModNOut([&toModOcl](const bitCapIntOcl& inInt) { return inInt * toModOcl; }, modN, inStart, outStart, length);
 }
 
@@ -626,8 +625,7 @@ void QEngineCPU::IMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
         return;
     }
 
-    bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
-
+    const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
     ModNOut([&toModOcl](const bitCapIntOcl& inInt) { return inInt * toModOcl; }, modN, inStart, outStart, length, true);
 }
 
@@ -638,8 +636,7 @@ void QEngineCPU::POWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart, 
         return;
     }
 
-    bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
-
+    const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
     ModNOut(
         [&toModOcl](const bitCapIntOcl& inInt) { return intPowOcl(toModOcl, inInt); }, modN, inStart, outStart, length);
 }
@@ -712,10 +709,9 @@ void QEngineCPU::CMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
         return;
     }
 
-    bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
-
     SetReg(outStart, length, 0U);
 
+    const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
     CModNOut([&toModOcl](const bitCapIntOcl& inInt) { return inInt * toModOcl; }, modN, inStart, outStart, length,
         controls, controlLen);
 }
@@ -728,8 +724,7 @@ void QEngineCPU::CIMULModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart
         return;
     }
 
-    bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
-
+    const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
     CModNOut([&toModOcl](const bitCapIntOcl& inInt) { return inInt * toModOcl; }, modN, inStart, outStart, length,
         controls, controlLen, true);
 }
@@ -742,8 +737,7 @@ void QEngineCPU::CPOWModNOut(bitCapInt toMod, bitCapInt modN, bitLenInt inStart,
         return;
     }
 
-    bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
-
+    const bitCapIntOcl toModOcl = (bitCapIntOcl)toMod;
     CModNOut([&toModOcl](const bitCapIntOcl& inInt) { return intPowOcl(toModOcl, inInt); }, modN, inStart, outStart,
         length, controls, controlLen);
 }
@@ -758,7 +752,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         return;
     }
 
-    int nibbleCount = length / 4;
+    const bitLenInt nibbleCount = length / 4;
     if (nibbleCount * 4 != (int)length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
@@ -785,7 +779,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         bitCapIntOcl inOutInt = (lcv & inOutMask) >> inOutStart;
         std::unique_ptr<int8_t[]> nibbles(new int8_t[nibbleCount]);
         bool isValid = true;
-        for (int j = 0; j < nibbleCount; ++j) {
+        for (bitLenInt j = 0; j < nibbleCount; ++j) {
             int8_t test1 = (int)(inOutInt & 15UL);
             inOutInt >>= 4UL;
             int8_t test2 = (int)(partToAdd % 10);
@@ -797,7 +791,7 @@ void QEngineCPU::INCBCD(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length)
         }
         if (isValid) {
             bitCapIntOcl outInt = 0;
-            for (int j = 0; j < nibbleCount; ++j) {
+            for (bitLenInt j = 0; j < nibbleCount; ++j) {
                 if (nibbles[j] > 9) {
                     nibbles[j] -= 10;
                     if ((j + 1) < nibbleCount) {
@@ -830,7 +824,7 @@ void QEngineCPU::INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt len
         return;
     }
 
-    int nibbleCount = length / 4;
+    const bitLenInt nibbleCount = length / 4;
     if (nibbleCount * 4 != (int)length) {
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
@@ -869,7 +863,7 @@ void QEngineCPU::INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt len
             isValid = false;
         }
 
-        for (int j = 1; j < nibbleCount; ++j) {
+        for (bitLenInt j = 1; j < nibbleCount; ++j) {
             test1 = (int)(inOutInt & 15UL);
             inOutInt >>= 4U * ONE_BCI;
             test2 = (int)(partToAdd % 10);
@@ -883,7 +877,7 @@ void QEngineCPU::INCDECBCDC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt len
             bitCapIntOcl outInt = 0;
             bitCapIntOcl outRes = 0;
             bitCapIntOcl carryRes = 0;
-            for (int j = 0; j < nibbleCount; ++j) {
+            for (bitLenInt j = 0; j < nibbleCount; ++j) {
                 if (nibbles[j] > 9) {
                     nibbles[j] -= 10;
                     if ((j + 1) < nibbleCount) {
@@ -968,12 +962,11 @@ bitCapInt QEngineCPU::IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bi
 
     ResetStateVec(nStateVec);
 
-    real1_f average = ZERO_R1_F;
 #if ENABLE_VM6502Q_DEBUG
-    average = GetExpectation(valueStart, valueLength);
+    return (bitCapInt)(GetExpectation(valueStart, valueLength) + (real1_f)0.5f);
+#else
+    return 0U;
 #endif
-
-    return (bitCapInt)(average + (real1_f)0.5f);
 }
 
 /// Add based on an indexed load from classical memory
@@ -1079,13 +1072,11 @@ bitCapInt QEngineCPU::IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bi
     // just calculated.
     ResetStateVec(nStateVec);
 
-    real1_f average = ZERO_R1_F;
 #if ENABLE_VM6502Q_DEBUG
-    average = GetExpectation(valueStart, valueLength);
+    return (bitCapInt)(GetExpectation(valueStart, valueLength) + (real1_f)0.5f);
+#else
+    return 0U;
 #endif
-
-    // Return the expectation value.
-    return (bitCapInt)(average + (real1_f)0.5f);
 }
 
 /// Subtract based on an indexed load from classical memory
@@ -1195,13 +1186,11 @@ bitCapInt QEngineCPU::IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bi
     // just calculated.
     ResetStateVec(nStateVec);
 
-    real1_f average = ZERO_R1_F;
 #if ENABLE_VM6502Q_DEBUG
-    average = GetExpectation(valueStart, valueLength);
+    return (bitCapInt)(GetExpectation(valueStart, valueLength) + (real1_f)0.5f);
+#else
+    return 0U;
 #endif
-
-    // Return the expectation value.
-    return (bitCapInt)(average + (real1_f)0.5f);
 }
 
 /// Transform a length of qubit register via lookup through a hash table.
@@ -1209,8 +1198,8 @@ void QEngineCPU::Hash(bitLenInt start, bitLenInt length, const unsigned char* va
 {
     CHECK_ZERO_SKIP();
 
-    bitLenInt bytes = (length + 7U) / 8U;
-    bitCapIntOcl inputMask = bitRegMaskOcl(start, length);
+    const bitLenInt bytes = (length + 7U) / 8U;
+    const bitCapIntOcl inputMask = bitRegMaskOcl(start, length);
 
     Finish();
 

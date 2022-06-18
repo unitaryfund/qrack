@@ -85,10 +85,6 @@ void QInterface::INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bit
 
 void QInterface::INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
 {
-    if (!length) {
-        return;
-    }
-
     const bool hasCarry = M(carryIndex);
     if (hasCarry) {
         X(carryIndex);
@@ -230,10 +226,9 @@ void QInterface::IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart,
 {
     const bool isPow2 = isPowerOfTwo(modN);
     const bitLenInt oLength = isPow2 ? log2(modN) : (log2(modN) + 1U);
-    bitLenInt controls[1];
     const bitCapInt diffPow = pow2(length) / modN;
     const bitLenInt lDiff = log2(diffPow);
-    controls[0] = inStart + length - (lDiff + 1U);
+    bitLenInt controls[1] = { (bitLenInt)(inStart + length - (lDiff + 1U)) };
 
     if (!isPow2) {
         for (bitCapInt i = 0U; i < diffPow; ++i) {

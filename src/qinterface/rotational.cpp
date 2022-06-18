@@ -56,9 +56,7 @@ void QInterface::AI(bitLenInt target, real1_f azimuth, real1_f inclination)
     const real1 sineA = (real1)sin(azimuth);
     const real1 cosineI = (real1)cos(inclination / 2);
     const real1 sineI = (real1)sin(inclination / 2);
-    const complex expA = complex(cosineA, sineA);
-    const complex expNegA = complex(cosineA, -sineA);
-    const complex mtrx[4] = { cosineI, -expNegA * sineI, expA * sineI, cosineI };
+    const complex mtrx[4] = { cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
     Mtrx(mtrx, target);
 }
 
@@ -69,9 +67,7 @@ void QInterface::IAI(bitLenInt target, real1_f azimuth, real1_f inclination)
     const real1 sineA = (real1)sin(azimuth);
     const real1 cosineI = (real1)cos(inclination / 2);
     const real1 sineI = (real1)sin(inclination / 2);
-    const complex expA = complex(cosineA, sineA);
-    const complex expNegA = complex(cosineA, -sineA);
-    const complex mtrx[4] = { cosineI, -expNegA * sineI, expA * sineI, cosineI };
+    const complex mtrx[4] = { cosineI, complex(-cosineA, sineA) * sineI, complex(cosineA, sineA) * sineI, cosineI };
     complex invMtrx[4];
     inv2x2(mtrx, invMtrx);
     Mtrx(invMtrx, target);

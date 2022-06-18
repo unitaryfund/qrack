@@ -370,14 +370,10 @@ void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
     for (bitLenInt bit_pos = 0U; bit_pos < controlLen; ++bit_pos) {
         X(controls[bit_pos]);
     }
-    const bitCapInt maxI = pow2(controlLen);
+    const bitCapInt maxI = pow2(controlLen) - ONE_BCI;
     for (bitCapInt lcv = 0U; lcv < maxI; ++lcv) {
         const bitCapInt index = pushApartBits(lcv, mtrxSkipPowers, mtrxSkipLen) | mtrxSkipValueMask;
         MCMtrx(controls, controlLen, mtrxs + (bitCapIntOcl)(index * 4U), qubitIndex);
-
-        if ((lcv + 1U) == maxI) {
-            continue;
-        }
 
         const bitCapInt lcvDiff = lcv ^ (lcv + ONE_BCI);
         for (bitLenInt bit_pos = 0U; bit_pos < controlLen; ++bit_pos) {
@@ -386,6 +382,8 @@ void QInterface::UniformlyControlledSingleBit(const bitLenInt* controls, bitLenI
             }
         }
     }
+    const bitCapInt index = pushApartBits(maxI, mtrxSkipPowers, mtrxSkipLen) | mtrxSkipValueMask;
+    MCMtrx(controls, controlLen, mtrxs + (bitCapIntOcl)(index * 4U), qubitIndex);
 }
 
 void QInterface::PhaseFlip() { Phase(-ONE_CMPLX, -ONE_CMPLX, 0); }
@@ -571,15 +569,14 @@ void QInterface::CSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenIn
 
 void QInterface::AntiCSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
 {
+    bitCapInt m = 0U;
     for (bitLenInt i = 0U; i < controlLen; ++i) {
-        X(controls[i]);
+        m |= pow2(controls[i]);
     }
 
+    XMask(m);
     CSwap(controls, controlLen, q1, q2);
-
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
-        X(controls[i]);
-    }
+    XMask(m);
 }
 
 void QInterface::CSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
@@ -679,28 +676,26 @@ void QInterface::CISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bit
 
 void QInterface::AntiCSqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
 {
+    bitCapInt m = 0U;
     for (bitLenInt i = 0U; i < controlLen; ++i) {
-        X(controls[i]);
+        m |= pow2(controls[i]);
     }
 
+    XMask(m);
     CSqrtSwap(controls, controlLen, q1, q2);
-
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
-        X(controls[i]);
-    }
+    XMask(m);
 }
 
 void QInterface::AntiCISqrtSwap(const bitLenInt* controls, bitLenInt controlLen, bitLenInt q1, bitLenInt q2)
 {
+    bitCapInt m = 0U;
     for (bitLenInt i = 0U; i < controlLen; ++i) {
-        X(controls[i]);
+        m |= pow2(controls[i]);
     }
 
+    XMask(m);
     CISqrtSwap(controls, controlLen, q1, q2);
-
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
-        X(controls[i]);
-    }
+    XMask(m);
 }
 
 void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
@@ -721,11 +716,11 @@ void QInterface::PhaseParity(real1_f radians, bitCapInt mask)
     for (bitLenInt i = 0; i < end; ++i) {
         CNOT(qubits[i], qubits[i + 1U]);
     }
-    real1 cosine = (real1)cos(radians / 2);
-    real1 sine = (real1)sin(radians / 2);
+    const real1 cosine = (real1)cos(radians / 2);
+    const real1 sine = (real1)sin(radians / 2);
     Phase(cosine - I_CMPLX * sine, cosine + I_CMPLX * sine, qubits[end]);
-    for (int i = (end - 1); i >= 0; --i) {
-        CNOT(qubits[i], qubits[i + 1U]);
+    for (bitLenInt i = 0; i < end; ++i) {
+        CNOT(qubits[end - (i + 1U)], qubits[end - i]);
     }
 }
 
@@ -744,7 +739,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
         HamiltonianOpPtr op = h[i];
         complex* opMtrx = op->matrix.get();
 
-        bitCapIntOcl maxJ = 4;
+        bitCapIntOcl maxJ = 4U;
         if (op->uniform) {
             maxJ *= pow2Ocl(op->controlLen);
         }
@@ -769,10 +764,10 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
             }
             UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx.get());
         } else {
-            complex timesI[4] = { I_CMPLX * mtrx[0], I_CMPLX * mtrx[1], I_CMPLX * mtrx[2], I_CMPLX * mtrx[3] };
-            complex toApply[4];
+            complex timesI[4U] = { I_CMPLX * mtrx[0U], I_CMPLX * mtrx[1U], I_CMPLX * mtrx[2U], I_CMPLX * mtrx[3U] };
+            complex toApply[4U];
             exp2x2(timesI, toApply);
-            if (op->controlLen == 0) {
+            if (op->controlLen == 0U) {
                 Mtrx(toApply, op->targetBit);
             } else if (op->anti) {
                 MACMtrx(op->controls, op->controlLen, toApply, op->targetBit);
