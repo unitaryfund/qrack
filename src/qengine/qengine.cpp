@@ -59,7 +59,7 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         NormalizeState();
     }
 
-    real1_f oneChance = Prob(qubit);
+    const real1_f oneChance = Prob(qubit);
     if (!doForce) {
         if (oneChance >= ONE_R1) {
             result = true;
@@ -70,19 +70,13 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         }
     }
 
-    real1 nrmlzr;
-    if (result) {
-        nrmlzr = oneChance;
-    } else {
-        nrmlzr = ONE_R1 - oneChance;
-    }
-
+    const real1 nrmlzr = result ? oneChance : (ONE_R1 - oneChance);
     if (nrmlzr <= ZERO_R1) {
         throw std::invalid_argument("QEngine::ForceM() forced a measurement result with 0 probability!");
     }
 
-    if (doApply && (nrmlzr != ONE_R1)) {
-        bitCapInt qPower = pow2(qubit);
+    if (doApply && ((ONE_R1 - nrmlzr) > REAL1_EPSILON)) {
+        const bitCapInt qPower = pow2(qubit);
         ApplyM(qPower, result, GetNonunitaryPhase() / (real1)(std::sqrt((real1_s)nrmlzr)));
     }
 
@@ -187,7 +181,7 @@ bitCapInt QEngine::ForceM(const bitLenInt* bits, bitLenInt length, const bool* v
 
     nrm = phase / (real1)(std::sqrt((real1_s)nrmlzr));
 
-    if (doApply && (nrmlzr != ONE_R1)) {
+    if (doApply && ((ONE_R1 - nrmlzr) > REAL1_EPSILON)) {
         ApplyM(regMask, result, nrm);
     }
 
@@ -202,8 +196,7 @@ void QEngine::Mtrx(const complex* mtrx, bitLenInt qubit)
 
     const bool doCalcNorm = doNormalize && !(IsPhase(mtrx) || IsInvert(mtrx));
 
-    bitCapIntOcl qPowers[1U];
-    qPowers[0U] = pow2Ocl(qubit);
+    const bitCapIntOcl qPowers[1U] = { pow2Ocl(qubit) };
     Apply2x2(0U, qPowers[0U], mtrx, 1U, qPowers, doCalcNorm);
 }
 
@@ -399,7 +392,7 @@ void QEngine::ApplyControlled2x2(const bitLenInt* controls, bitLenInt controlLen
         qPowersSorted[i] = pow2Ocl(controls[i]);
         fullMask |= qPowersSorted[i];
     }
-    bitCapIntOcl controlMask = fullMask;
+    const bitCapIntOcl controlMask = fullMask;
     qPowersSorted[controlLen] = targetMask;
     fullMask |= targetMask;
     std::sort(qPowersSorted.get(), qPowersSorted.get() + controlLen + 1U);
@@ -427,9 +420,7 @@ void QEngine::Swap(bitLenInt qubit1, bitLenInt qubit2)
     }
 
     const complex pauliX[4U] = { ZERO_CMPLX, ONE_CMPLX, ONE_CMPLX, ZERO_CMPLX };
-    bitCapIntOcl qPowersSorted[2U];
-    qPowersSorted[0U] = pow2Ocl(qubit1);
-    qPowersSorted[1U] = pow2Ocl(qubit2);
+    bitCapIntOcl qPowersSorted[2U] = { pow2Ocl(qubit1), pow2Ocl(qubit2) };
     std::sort(qPowersSorted, qPowersSorted + 2U);
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
 }
@@ -442,9 +433,7 @@ void QEngine::ISwap(bitLenInt qubit1, bitLenInt qubit2)
     }
 
     const complex pauliX[4U] = { ZERO_CMPLX, I_CMPLX, I_CMPLX, ZERO_CMPLX };
-    bitCapIntOcl qPowersSorted[2U];
-    qPowersSorted[0U] = pow2Ocl(qubit1);
-    qPowersSorted[1U] = pow2Ocl(qubit2);
+    bitCapIntOcl qPowersSorted[2U] = { pow2Ocl(qubit1), pow2Ocl(qubit2) };
     std::sort(qPowersSorted, qPowersSorted + 2U);
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
 }
@@ -457,9 +446,7 @@ void QEngine::IISwap(bitLenInt qubit1, bitLenInt qubit2)
     }
 
     const complex pauliX[4U] = { ZERO_CMPLX, -I_CMPLX, -I_CMPLX, ZERO_CMPLX };
-    bitCapIntOcl qPowersSorted[2U];
-    qPowersSorted[0U] = pow2Ocl(qubit1);
-    qPowersSorted[1U] = pow2Ocl(qubit2);
+    bitCapIntOcl qPowersSorted[2U] = { pow2Ocl(qubit1), pow2Ocl(qubit2) };
     std::sort(qPowersSorted, qPowersSorted + 2U);
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], pauliX, 2U, qPowersSorted, false);
 }
@@ -473,9 +460,7 @@ void QEngine::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
     const complex sqrtX[4U] = { complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f,
         complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f };
-    bitCapIntOcl qPowersSorted[2U];
-    qPowersSorted[0U] = pow2Ocl(qubit1);
-    qPowersSorted[1U] = pow2Ocl(qubit2);
+    bitCapIntOcl qPowersSorted[2U] = { pow2Ocl(qubit1), pow2Ocl(qubit2) };
     std::sort(qPowersSorted, qPowersSorted + 2U);
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], sqrtX, 2U, qPowersSorted, false);
 }
@@ -489,9 +474,7 @@ void QEngine::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
     const complex iSqrtX[4U] = { complex(ONE_R1, -ONE_R1) / (real1)2.0f, complex(ONE_R1, ONE_R1) / (real1)2.0f,
         complex(ONE_R1, ONE_R1) / (real1)2.0f, complex(ONE_R1, -ONE_R1) / (real1)2.0f };
-    bitCapIntOcl qPowersSorted[2];
-    qPowersSorted[0U] = pow2Ocl(qubit1);
-    qPowersSorted[1U] = pow2Ocl(qubit2);
+    bitCapIntOcl qPowersSorted[2U] = { pow2Ocl(qubit1), pow2Ocl(qubit2) };
     std::sort(qPowersSorted, qPowersSorted + 2U);
     Apply2x2(qPowersSorted[0U], qPowersSorted[1U], iSqrtX, 2U, qPowersSorted, false);
 }
@@ -505,9 +488,7 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
     if (abs(ONE_R1 - cosTheta) > REAL1_EPSILON) {
         const complex fSimSwap[4U] = { complex(cosTheta, ZERO_R1), complex(ZERO_R1, sinTheta),
             complex(ZERO_R1, sinTheta), complex(cosTheta, ZERO_R1) };
-        bitCapIntOcl qPowersSorted[2U];
-        qPowersSorted[0U] = pow2Ocl(qubit1);
-        qPowersSorted[1U] = pow2Ocl(qubit2);
+        bitCapIntOcl qPowersSorted[2U] = { pow2Ocl(qubit1), pow2Ocl(qubit2) };
         std::sort(qPowersSorted, qPowersSorted + 2U);
         Apply2x2(qPowersSorted[0U], qPowersSorted[1U], fSimSwap, 2U, qPowersSorted, false);
     }
@@ -516,7 +497,7 @@ void QEngine::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit
         return;
     }
 
-    bitLenInt controls[1U] = { qubit1 };
+    const bitLenInt controls[1U] = { qubit1 };
     MCPhase(controls, 1U, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
 }
 
@@ -557,7 +538,7 @@ bitCapInt QEngine::ForceMReg(bitLenInt start, bitLenInt length, bitCapInt result
         std::unique_ptr<real1[]> probArray(new real1[lengthPower]());
         ProbRegAll(start, length, probArray.get());
 
-        real1_f prob = Rand();
+        const real1_f prob = Rand();
         real1_f lowerProb = ZERO_R1_F;
         result = lengthPower - ONE_BCI;
 
