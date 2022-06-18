@@ -47,14 +47,6 @@ add_executable (shors_factoring
 set_target_properties(shors_factoring PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
 target_link_libraries (shors_factoring ${QRACK_LIBS})
 
-if (Boost_FOUND)
-add_executable (monte_carlo_factoring
-    examples/monte_carlo_factoring.cpp
-    )
-set_target_properties(monte_carlo_factoring PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples")
-target_link_libraries (monte_carlo_factoring pthread)
-endif (Boost_FOUND)
-
 add_executable (pearson32
     examples/pearson32.cpp
     )
@@ -78,9 +70,6 @@ if (ENABLE_ALU)
     target_compile_options (grovers_lookup PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
     target_compile_options (ordered_list_search PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
     target_compile_options (shors_factoring PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-    if (Boost_FOUND)
-        target_compile_options (monte_carlo_factoring PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
-    endif (Boost_FOUND)
     target_compile_options (pearson32 PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
     target_compile_options (quantum_perceptron PUBLIC ${TEST_COMPILE_OPTS} -DCATCH_CONFIG_FAST_COMPILE)
 endif (ENABLE_ALU)
