@@ -1965,7 +1965,7 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[
 
     EventVecPtr waitVec = ResetWaitEvents();
 
-    /* Allocate a temporary nStateVec, or use the one supplied. */
+    // Allocate a temporary nStateVec, or use the one supplied.
     complex* nStateVec = AllocStateVec(maxQPowerOcl);
     BufferPtr nStateBuffer;
     BufferPtr controlBuffer;
@@ -2009,13 +2009,10 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[
         oclArgs.push_back(controlBuffer);
     }
 
-    WaitCall(api_call, ngc, ngs, oclArgs);
+    QueueCall(api_call, ngc, ngs, oclArgs);
 
     ResetStateVec(nStateVec);
     ResetStateBuffer(nStateBuffer);
-
-    controlBuffer.reset();
-    loadBuffer.reset();
 
     SubtractAlloc(sizeDiff);
 }
