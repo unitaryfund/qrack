@@ -474,7 +474,7 @@ protected:
     BufferPtr MakeStateVecBuffer(complex* nStateVec);
     void ReinitBuffer();
 
-    void Compose(OCLAPI apiCall, bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy);
+    void Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy);
 
     void InitOCL(int64_t devID);
     PoolItemPtr GetFreePoolItem();
@@ -553,12 +553,12 @@ protected:
     void WaitCall(OCLAPI api_call, size_t workItemCount, size_t localGroupSize, std::vector<BufferPtr> args,
         size_t localBuffSize = 0U);
     EventVecPtr ResetWaitEvents(bool waitQueue = true);
-    void ApplyMx(OCLAPI api_call, bitCapIntOcl* bciArgs, complex nrm);
-    real1_f Probx(OCLAPI api_call, bitCapIntOcl* bciArgs);
+    void ApplyMx(OCLAPI api_call, const bitCapIntOcl* bciArgs, complex nrm);
+    real1_f Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs);
 
-    void ArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], const unsigned char* values = NULL,
+    void ArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], const unsigned char* values = NULL,
         bitCapIntOcl valuesLength = 0U);
-    void CArithmeticCall(OCLAPI api_call, bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], bitCapIntOcl* controlPowers,
+    void CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[BCI_ARG_LEN], bitCapIntOcl* controlPowers,
         bitLenInt controlLen, const unsigned char* values = NULL, bitCapIntOcl valuesLength = 0U);
     void ROx(OCLAPI api_call, bitLenInt shift, bitLenInt start, bitLenInt length);
 
@@ -583,7 +583,7 @@ protected:
     void INTBCD(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart, bitLenInt length);
     void INTBCDC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex);
 #endif
-    void xMULx(OCLAPI api_call, bitCapIntOcl* bciArgs, BufferPtr controlBuffer);
+    void xMULx(OCLAPI api_call, const bitCapIntOcl* bciArgs, BufferPtr controlBuffer);
     void MULx(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length);
     void MULModx(OCLAPI api_call, bitCapIntOcl toMod, bitCapIntOcl modN, bitLenInt inOutStart, bitLenInt carryStart,
         bitLenInt length);
@@ -593,7 +593,7 @@ protected:
         bitLenInt length, const bitLenInt* controls, bitLenInt controlLen);
     void FullAdx(
         bitLenInt inputBit1, bitLenInt inputBit2, bitLenInt carryInSumOut, bitLenInt carryOut, OCLAPI api_call);
-    void PhaseFlipX(OCLAPI api_call, bitCapIntOcl* bciArgs);
+    void PhaseFlipX(OCLAPI api_call, const bitCapIntOcl* bciArgs);
 
     bitCapIntOcl OpIndexed(OCLAPI api_call, bitCapIntOcl carryIn, bitLenInt indexStart, bitLenInt indexLength,
         bitLenInt valueStart, bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values);
