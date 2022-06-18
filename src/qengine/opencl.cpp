@@ -2508,9 +2508,9 @@ void QEngineOCL::xMULx(OCLAPI api_call, const bitCapIntOcl* bciArgs, BufferPtr c
     const size_t ngs = FixGroupSize(ngc, nrmGroupSize);
 
     if (controlBuffer) {
-        WaitCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, nStateBuffer, controlBuffer });
+        QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, nStateBuffer, controlBuffer });
     } else {
-        WaitCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, nStateBuffer });
+        QueueCall(api_call, ngc, ngs, { stateBuffer, poolItem->ulongBuffer, nStateBuffer });
     }
 
     ResetStateVec(nStateVec);
