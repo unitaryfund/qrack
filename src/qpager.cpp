@@ -229,10 +229,9 @@ void QPager::Init()
 
 QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapIntOcl pageId)
 {
-    const int deviceId = GetPageDevice(pageId);
-    const bool useHostMem = GetPageHostPointer(pageId);
-    QEnginePtr toRet = std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, 0U, 0U, rand_generator,
-        phaseFactor, false, false, useHostMem, deviceId, useRDRAND, isSparse, (real1_f)amplitudeFloor));
+    QEnginePtr toRet =
+        std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, 0U, 0U, rand_generator, phaseFactor, false,
+            false, GetPageHostPointer(pageId), GetPageDevice(pageId), useRDRAND, isSparse, (real1_f)amplitudeFloor));
     toRet->SetQubitCount(length);
 
     return toRet;

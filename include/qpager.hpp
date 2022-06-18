@@ -33,7 +33,7 @@ protected:
     bitLenInt thresholdQubitsPerPage;
     bitLenInt baseQubitsPerPage;
     bitLenInt maxQubits;
-    int devID;
+    int64_t devID;
     QInterfaceEngine rootEngine;
     bitCapIntOcl basePageMaxQPower;
     complex phaseFactor;
