@@ -217,6 +217,53 @@ protected:
     }
 #endif
 
+    using OclCallFn = std::function<cl_int()>;
+    void tryOcl(std::string message, OclCallFn oclCall)
+    {
+        if (oclCall() == CL_SUCCESS) {
+            // Success
+            return;
+        }
+
+        // Soft finish (just for this QEngineOCL)
+        clFinish();
+
+        if (oclCall() == CL_SUCCESS) {
+            // Success after clearing QEngineOCL queue
+            return;
+        }
+
+        // Hard finish (for the unique OpenCL device)
+        clFinish(true);
+
+        cl_int error = oclCall();
+        if (error == CL_SUCCESS) {
+            // Success after clearing all queues for the OpenCL device
+            return;
+        }
+
+        // We're fatally blocked. Clean up and throw to exit.
+        FreeAll();
+        throw std::runtime_error(message + ", error code: " + std::to_string(error));
+    }
+
+    void tryOcl(std::string message, cl_int (*oclCall)())
+    {
+        if (oclCall() == CL_SUCCESS) {
+            return;
+        }
+
+        clFinish();
+
+        cl_int error = oclCall();
+        if (error == CL_SUCCESS) {
+            return;
+        }
+
+        FreeAll();
+        throw std::runtime_error(message + ", error code: " + std::to_string(error));
+    }
+
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
     /// design of the QEngine.
