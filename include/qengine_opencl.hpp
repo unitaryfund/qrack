@@ -21,6 +21,7 @@
 #include "common/oclengine.hpp"
 #include "qengine.hpp"
 
+#include <functional>
 #include <list>
 #include <mutex>
 
@@ -217,8 +218,7 @@ protected:
     }
 #endif
 
-    using OclCallFn = std::function<cl_int()>;
-    void tryOcl(std::string message, OclCallFn oclCall)
+    void tryOcl(std::string message, std::function<cl_int()> oclCall)
     {
         if (oclCall() == CL_SUCCESS) {
             // Success
