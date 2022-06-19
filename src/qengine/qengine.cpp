@@ -70,7 +70,7 @@ bool QEngine::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         }
     }
 
-    const real1 nrmlzr = result ? oneChance : (ONE_R1 - oneChance);
+    const real1_f nrmlzr = result ? oneChance : (ONE_R1 - oneChance);
     if (nrmlzr <= ZERO_R1) {
         throw std::invalid_argument("QEngine::ForceM() forced a measurement result with 0 probability!");
     }
