@@ -285,7 +285,12 @@ void QEngineOCL::LockSync(cl_map_flags flags)
 
     if (stateVec) {
         unlockHostMem = true;
-        queue.enqueueMapBuffer(*stateBuffer, CL_TRUE, flags, 0U, sizeof(complex) * maxQPowerOcl, waitVec.get());
+        tryOcl("Failed to map buffer", [&] {
+            cl_int error;
+            queue.enqueueMapBuffer(
+                *stateBuffer, CL_TRUE, flags, 0U, sizeof(complex) * maxQPowerOcl, waitVec.get(), NULL, &error);
+            return error;
+        });
         wait_refs.clear();
     } else {
         unlockHostMem = false;
