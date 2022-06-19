@@ -329,7 +329,7 @@ void QEngineOCL::clFinish(bool doHard)
     }
 
     if (doHard) {
-        queue.finish();
+        tryOcl("Failed to finish queue", [&] { return queue.finish(); });
     } else {
         device_context->WaitOnAllEvents();
     }

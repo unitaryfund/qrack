@@ -247,23 +247,6 @@ protected:
         throw std::runtime_error(message + ", error code: " + std::to_string(error));
     }
 
-    void tryOcl(std::string message, cl_int (*oclCall)())
-    {
-        if (oclCall() == CL_SUCCESS) {
-            return;
-        }
-
-        clFinish();
-
-        cl_int error = oclCall();
-        if (error == CL_SUCCESS) {
-            return;
-        }
-
-        FreeAll();
-        throw std::runtime_error(message + ", error code: " + std::to_string(error));
-    }
-
 public:
     /// 1 / OclMemDenom is the maximum fraction of total OCL device RAM that a single state vector should occupy, by
     /// design of the QEngine.
@@ -496,6 +479,24 @@ protected:
     {
         cl_int error;
         BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
+        if (error == CL_SUCCESS) {
+            // Success
+            return toRet;
+        }
+
+        // Soft finish (just for this QEngineOCL)
+        clFinish();
+
+        toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
+        if (error == CL_SUCCESS) {
+            // Success after clearing QEngineOCL queue
+            return toRet;
+        }
+
+        // Hard finish (for the unique OpenCL device)
+        clFinish(true);
+
+        toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
         if (error != CL_SUCCESS) {
             FreeAll();
             if (error == CL_MEM_OBJECT_ALLOCATION_FAILURE) {
@@ -564,11 +565,7 @@ protected:
      */
     void clFlush()
     {
-        cl_int error = queue.flush();
-        if (error != CL_SUCCESS) {
-            FreeAll();
-            throw std::runtime_error("Failed to flush queue, error code: " + std::to_string(error));
-        }
+        tryOcl("Failed to flush queue", [&] { return queue.flush(); });
     }
 
     /**
