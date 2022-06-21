@@ -112,8 +112,6 @@ void DispatchQueue::dispatch_thread_handler(void)
         // after wait, we own the lock
 
         if (quit_) {
-            isFinished_ = true;
-            cvFinished_.notify_all();
             continue;
         }
 
@@ -132,6 +130,9 @@ void DispatchQueue::dispatch_thread_handler(void)
             cvFinished_.notify_all();
         }
     } while (!quit_);
+
+    isFinished_ = true;
+    cvFinished_.notify_all();
 }
 
 } // namespace Qrack
