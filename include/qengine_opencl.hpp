@@ -278,7 +278,11 @@ public:
 
     ~QEngineOCL()
     {
+        // clDump() clears the callback queue.
         clDump();
+        // clDump() doesn't wait on any kernel being run, though.
+        clFinish();
+        // Make sure we track device allocation.
         FreeAll();
     }
 

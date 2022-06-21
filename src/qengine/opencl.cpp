@@ -351,10 +351,6 @@ void QEngineOCL::clDump()
         return;
     }
 
-    if (wait_queue_items.size()) {
-        device_context->WaitOnAllEvents();
-    }
-
     wait_queue_items.clear();
     wait_refs.clear();
 }
@@ -513,12 +509,20 @@ void QEngineOCL::DispatchQueue()
         cl::NDRange(item.localGroupSize), // local number (per group)
         kernelWaitVec.get(), // vector of events to wait for
         &(device_context->wait_events->back())); // handle to wait for the kernel
+    device_context->UnlockWaitEvents();
     if (error != CL_SUCCESS) {
-        // We're fatally blocked. Clean up and throw to exit.
+        // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
+        // Clean up and exit.
         FreeAll();
         throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
     }
-    device_context->UnlockWaitEvents();
+    error = queue.flush();
+    if (error != CL_SUCCESS) {
+        // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
+        // Clean up and exit.
+        FreeAll();
+        throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
+    }
 }
 
 void QEngineOCL::SetDevice(int64_t dID)
