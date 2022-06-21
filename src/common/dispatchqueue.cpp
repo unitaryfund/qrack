@@ -19,7 +19,7 @@ DispatchQueue::~DispatchQueue()
 {
     std::unique_lock<std::mutex> lock(lock_);
 
-    if (quit_ || !isStarted_) {
+    if (!isStarted_) {
         return;
     }
 
@@ -112,6 +112,8 @@ void DispatchQueue::dispatch_thread_handler(void)
         // after wait, we own the lock
 
         if (quit_) {
+            isFinished_ = true;
+            cvFinished_.notify_all();
             continue;
         }
 
