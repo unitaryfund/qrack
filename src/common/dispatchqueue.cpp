@@ -23,7 +23,10 @@ DispatchQueue::~DispatchQueue()
         return;
     }
 
+    std::queue<fp_t> empty;
+    std::swap(q_, empty);
     quit_ = true;
+
     lock.unlock();
     cv_.notify_all();
 
@@ -42,7 +45,7 @@ void DispatchQueue::finish()
         return;
     }
 
-    cvFinished_.wait(lock, [this] { return isFinished_; });
+    cvFinished_.wait(lock, [this] { return isFinished_ || quit_; });
 }
 
 void DispatchQueue::dump()
@@ -69,27 +72,6 @@ void DispatchQueue::dispatch(const fp_t& op)
     }
 
     q_.push(op);
-    isFinished_ = false;
-    if (!isStarted_) {
-        isStarted_ = true;
-        thread_ = std::async(std::launch::async, [this] { dispatch_thread_handler(); });
-    }
-
-    // Manual unlocking is done before notifying, to avoid waking up
-    // the waiting thread only to block again (see notify_one for details)
-    lock.unlock();
-    cv_.notify_one();
-}
-
-void DispatchQueue::dispatch(fp_t&& op)
-{
-    std::unique_lock<std::mutex> lock(lock_);
-
-    if (quit_) {
-        return;
-    }
-
-    q_.push(std::move(op));
     isFinished_ = false;
     if (!isStarted_) {
         isStarted_ = true;
@@ -130,9 +112,6 @@ void DispatchQueue::dispatch_thread_handler(void)
             cvFinished_.notify_all();
         }
     } while (!quit_);
-
-    isFinished_ = true;
-    cvFinished_.notify_all();
 }
 
 } // namespace Qrack

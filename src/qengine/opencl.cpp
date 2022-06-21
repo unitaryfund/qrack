@@ -508,13 +508,16 @@ void QEngineOCL::DispatchQueue()
     device_context->LockWaitEvents();
     device_context->wait_events->emplace_back();
     device_context->wait_events->back().setCallback(CL_COMPLETE, _PopQueue, this);
-    tryOcl("Failed to enqueue kernel", [&] {
-        return queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
-            cl::NDRange(item.workItemCount), // global number of work items
-            cl::NDRange(item.localGroupSize), // local number (per group)
-            kernelWaitVec.get(), // vector of events to wait for
-            &(device_context->wait_events->back())); // handle to wait for the kernel
-    });
+    cl_int error = queue.enqueueNDRangeKernel(ocl.call, cl::NullRange, // kernel, offset
+        cl::NDRange(item.workItemCount), // global number of work items
+        cl::NDRange(item.localGroupSize), // local number (per group)
+        kernelWaitVec.get(), // vector of events to wait for
+        &(device_context->wait_events->back())); // handle to wait for the kernel
+    if (error != CL_SUCCESS) {
+        // We're fatally blocked. Clean up and throw to exit.
+        FreeAll();
+        throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
+    }
     device_context->UnlockWaitEvents();
 }
 
