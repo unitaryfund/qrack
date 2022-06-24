@@ -149,7 +149,7 @@ bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
 void QStabilizerHybrid::FlushBuffers()
 {
     if (stabilizer) {
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        for (bitLenInt i = 0U; i < shards.size(); ++i) {
             if (shards[i]) {
                 // This will call FlushBuffers() again after no longer stabilizer.
                 SwitchToEngine();
@@ -162,7 +162,7 @@ void QStabilizerHybrid::FlushBuffers()
         return;
     }
 
-    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+    for (bitLenInt i = 0U; i < shards.size(); ++i) {
         MpsShardPtr shard = shards[i];
         if (shard) {
             shards[i] = NULL;
@@ -263,7 +263,8 @@ QInterfacePtr QStabilizerHybrid::Clone()
     if (stabilizer) {
         c->engine = NULL;
         c->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        c->shards.resize(qubitCount + ancillaCount);
+        for (bitLenInt i = 0U; i < shards.size(); ++i) {
             if (shards[i]) {
                 c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
             }
@@ -500,21 +501,23 @@ void QStabilizerHybrid::GetQuantumState(complex* outputState)
         return;
     }
 
-    bitLenInt i;
-    for (i = 0U; i < qubitCount; ++i) {
-        if (shards[i]) {
-            // We have a cached non-Clifford operation.
-            break;
+    if (!ancillaCount) {
+        bitLenInt i;
+        for (i = 0U; i < qubitCount; ++i) {
+            if (shards[i]) {
+                // We have a cached non-Clifford operation.
+                break;
+            }
+        }
+
+        if (i == qubitCount) {
+            stabilizer->GetQuantumState(outputState);
+            return;
         }
     }
 
-    if (i == qubitCount) {
-        stabilizer->GetQuantumState(outputState);
-        return;
-    }
-
     QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-    clone->FlushBuffers();
+    clone->SwitchToEngine();
     clone->GetQuantumState(outputState);
 }
 
@@ -525,21 +528,23 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
         return;
     }
 
-    bitLenInt i;
-    for (i = 0U; i < qubitCount; ++i) {
-        if (shards[i]) {
-            // We have a cached non-Clifford operation.
-            break;
+    if (!ancillaCount) {
+        bitLenInt i;
+        for (i = 0U; i < qubitCount; ++i) {
+            if (shards[i]) {
+                // We have a cached non-Clifford operation.
+                break;
+            }
+        }
+
+        if (i == qubitCount) {
+            stabilizer->GetProbs(outputProbs);
+            return;
         }
     }
 
-    if (i == qubitCount) {
-        stabilizer->GetProbs(outputProbs);
-        return;
-    }
-
     QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-    clone->FlushBuffers();
+    clone->SwitchToEngine();
     clone->GetProbs(outputProbs);
 }
 complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
@@ -548,20 +553,22 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         return engine->GetAmplitude(perm);
     }
 
-    bitLenInt i;
-    for (i = 0U; i < qubitCount; ++i) {
-        if (shards[i]) {
-            // We have a cached non-Clifford operation.
-            break;
+    if (!ancillaCount) {
+        bitLenInt i;
+        for (i = 0U; i < qubitCount; ++i) {
+            if (shards[i]) {
+                // We have a cached non-Clifford operation.
+                break;
+            }
+        }
+
+        if (i == qubitCount) {
+            return stabilizer->GetAmplitude(perm);
         }
     }
 
-    if (i == qubitCount) {
-        return stabilizer->GetAmplitude(perm);
-    }
-
     QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-    clone->FlushBuffers();
+    clone->SwitchToEngine();
     return clone->GetAmplitude(perm);
 }
 
@@ -1135,13 +1142,13 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
     if (!stabilizer && toCompare->stabilizer) {
         SetPermutation(0U);
         stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        for (bitLenInt i = 0U; i < shards.size(); ++i) {
             shards[i] = toCompare->shards[i] ? toCompare->shards[i]->Clone() : NULL;
         }
     } else if (stabilizer && !toCompare->stabilizer) {
         toCompare->SetPermutation(0U);
         toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        for (bitLenInt i = 0U; i < shards.size(); ++i) {
             toCompare->shards[i] = shards[i] ? shards[i]->Clone() : NULL;
         }
     }
