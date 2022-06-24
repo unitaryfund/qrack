@@ -35,8 +35,10 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , isDefaultPaging(false)
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
+    , useTGadget(true)
     , thresholdQubits(qubitThreshold)
     , maxPageQubits(-1)
+    , ancillaCount(0)
     , separabilityThreshold(sep_thresh)
     , devID(deviceId)
     , phaseFactor(phaseFac)
@@ -66,12 +68,19 @@ QStabilizerPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)
     return std::make_shared<QStabilizer>(
         qubitCount, perm, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
 }
-
 QEnginePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
 {
     QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qubitCount, perm, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
         thresholdQubits, separabilityThreshold);
+    toRet->SetConcurrency(GetConcurrencyLevel());
+    return std::dynamic_pointer_cast<QEngine>(toRet);
+}
+QEnginePtr QStabilizerHybrid::MakeEngine(bitCapInt perm, bitLenInt qbCount)
+{
+    QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qbCount, perm, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+        separabilityThreshold);
     toRet->SetConcurrency(GetConcurrencyLevel());
     return std::dynamic_pointer_cast<QEngine>(toRet);
 }
@@ -293,10 +302,25 @@ void QStabilizerHybrid::SwitchToEngine()
         return;
     }
 
-    engine = MakeEngine();
+    TrimAncillae();
+
+    engine = MakeEngine(0, stabilizer->GetQubitCount());
     stabilizer->GetQuantumState(engine);
     stabilizer = NULL;
     FlushBuffers();
+
+    if (!ancillaCount) {
+        return;
+    }
+
+    // When we measure, we act postselection on reverse T-gadgets.
+    engine->ForceMReg(qubitCount, ancillaCount, 0, true, true);
+    // Ancillae are separable after measurement.
+    engine->Dispose(qubitCount, ancillaCount);
+    // We have extra "gate fusion" shards leftover.
+    shards.erase(shards.begin() + qubitCount, shards.end());
+    // We're done with ancillae.
+    ancillaCount = 0;
 }
 
 bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
@@ -311,11 +335,11 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
         SwitchToEngine();
         toRet = engine->Compose(toCopy->engine);
     } else {
-        toRet = stabilizer->Compose(toCopy->stabilizer);
+        toRet = stabilizer->Compose(toCopy->stabilizer, qubitCount);
     }
 
     // Resize the shards buffer.
-    shards.insert(shards.end(), toCopy->shards.begin(), toCopy->shards.end());
+    shards.insert(shards.begin() + qubitCount, toCopy->shards.begin(), toCopy->shards.end());
     // Split the common shared_ptr references, with toCopy.
     for (bitLenInt i = qubitCount; i < nQubits; ++i) {
         if (shards[i]) {
@@ -324,12 +348,26 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
     }
 
     SetQubitCount(nQubits);
+    ancillaCount += toCopy->ancillaCount;
 
     return toRet;
 }
 
 bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt start)
 {
+    if (start == qubitCount) {
+        return Compose(toCopy);
+    }
+
+    if (ancillaCount || toCopy->ancillaCount) {
+        const bitLenInt origSize = qubitCount;
+        ROL(origSize - start, 0, qubitCount);
+        const bitLenInt result = Compose(toCopy);
+        ROR(origSize - start, 0, qubitCount);
+
+        return result;
+    }
+
     const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
     bitLenInt toRet;
 
@@ -582,6 +620,29 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
+    if (useTGadget && IS_PHASE(mtrx)) {
+        QStabilizerPtr ancilla = std::make_shared<QStabilizer>(
+            1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
+
+        // Form potentially entangled representation, with this.
+        bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
+
+        // Act reverse T-gadget with measurement basis preparation.
+        stabilizer->CNOT(target, ancillaIndex);
+        complex iMtrx[4];
+        inv2x2(mtrx, iMtrx);
+        shards.push_back(std::make_shared<MpsShard>(iMtrx));
+        CacheEigenstate(ancillaIndex);
+        stabilizer->H(ancillaIndex);
+
+        // When we measure, we act postselection, but not yet.
+        // ForceM(ancillaIndex, false, true, true);
+        // Ancilla is separable after measurement.
+        // Dispose(ancillaIndex, 1U);
+
+        ++ancillaCount;
+    }
+
     shards[target] = std::make_shared<MpsShard>(mtrx);
     if (!wasCached) {
         CacheEigenstate(target);
@@ -815,6 +876,14 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         return engine->Prob(qubit);
     }
 
+    TrimAncillae();
+
+    if (ancillaCount) {
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        clone->SwitchToEngine();
+        return clone->Prob(qubit);
+    }
+
     if (shards[qubit] && shards[qubit]->IsInvert()) {
         InvertBuffer(qubit);
     }
@@ -840,7 +909,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
     return ONE_R1_F / 2;
 }
 
-bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
+bool QStabilizerHybrid::ForceMHelper(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
     if (engine) {
         return engine->ForceM(qubit, result, doForce, doApply);
@@ -879,6 +948,14 @@ bitCapInt QStabilizerHybrid::MAll()
 {
     bitCapInt toRet = 0U;
     if (stabilizer) {
+        for (bitLenInt i = 0; i < ancillaCount; i++) {
+            // When we measure, we act postselection on reverse T-gadgets.
+            ForceMHelper(qubitCount + i, false, true, true);
+        }
+        // Ancillae are separable after measurement.
+        stabilizer->Dispose(qubitCount, ancillaCount);
+        ancillaCount = 0;
+
         for (bitLenInt i = 0U; i < qubitCount; ++i) {
             if (shards[i] && shards[i]->IsInvert()) {
                 InvertBuffer(i);
@@ -918,12 +995,29 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
         return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
 
+    TrimAncillae();
+
+    std::map<bitCapInt, int> results;
+    if (ancillaCount) {
+        for (unsigned shot = 0U; shot < shots; ++shot) {
+            QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+            const bitCapInt allMeasure = clone->MAll();
+            bitCapInt sample = 0U;
+            for (bitLenInt i = 0U; i < qPowerCount; ++i) {
+                if (allMeasure && qPowers[i]) {
+                    sample |= pow2(i);
+                }
+            }
+            ++(results[sample]);
+        }
+        return results;
+    }
+
     std::vector<bitLenInt> bits(qPowerCount);
     for (bitLenInt i = 0U; i < qPowerCount; ++i) {
         bits[i] = log2(qPowers[i]);
     }
 
-    std::map<bitCapInt, int> results;
     for (unsigned shot = 0U; shot < shots; ++shot) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         bitCapInt sample = 0U;
@@ -950,6 +1044,23 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
+    TrimAncillae();
+
+    if (ancillaCount) {
+        par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
+            QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+            const bitCapInt allMeasure = clone->MAll();
+            bitCapInt sample = 0U;
+            for (bitLenInt i = 0U; i < qPowerCount; ++i) {
+                if (allMeasure && qPowers[i]) {
+                    sample |= pow2(i);
+                }
+            }
+            shotsArray[shot] = (unsigned)sample;
+        });
+
+        return;
+    }
     std::vector<bitLenInt> bits(qPowerCount);
     for (bitLenInt i = 0U; i < qPowerCount; ++i) {
         bits[i] = log2(qPowers[i]);

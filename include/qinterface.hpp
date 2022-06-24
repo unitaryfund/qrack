@@ -2230,6 +2230,14 @@ public:
      */
     virtual void SetReactiveSeparate(bool isAggSep) {}
     /**
+     *  Set the option to use T-injection gadgets (off by default)
+     *
+     *  If T-injection gadgets are available, as in Qrack::QStabilizerHybrid, then turning this option on attempts to
+     * simulate Clifford+T with polynomial resource gadgets. It can either hurt or help performance, though it commonly
+     * helps.
+     */
+    virtual void SetTInjection(bool useGadget) {}
+    /**
      *  Get reactive separation option
      *
      *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to

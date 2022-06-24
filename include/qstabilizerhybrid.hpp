@@ -32,8 +32,10 @@ protected:
     bool isDefaultPaging;
     bool doNormalize;
     bool isSparse;
+    bool useTGadget;
     bitLenInt thresholdQubits;
     bitLenInt maxPageQubits;
+    bitLenInt ancillaCount;
     real1_f separabilityThreshold;
     int64_t devID;
     complex phaseFactor;
@@ -45,6 +47,7 @@ protected:
 
     QStabilizerPtr MakeStabilizer(bitCapInt perm = 0U);
     QEnginePtr MakeEngine(bitCapInt perm = 0U);
+    QEnginePtr MakeEngine(bitCapInt perm, bitLenInt qbCount);
 
     void InvertBuffer(bitLenInt qubit);
     void FlushIfBlocked(bitLenInt control, bitLenInt target, bool isPhase = false);
@@ -57,6 +60,20 @@ protected:
     {
         for (bitLenInt i = 0; i < qubitCount; ++i) {
             shards[i] = NULL;
+        }
+    }
+
+    void TrimAncillae()
+    {
+        bitLenInt i = 0;
+        while (i < ancillaCount) {
+            if (stabilizer->IsSeparable(qubitCount + i)) {
+                stabilizer->Dispose(qubitCount + i, 1);
+                shards.erase(shards.begin() + qubitCount + i);
+                --ancillaCount;
+            } else {
+                ++i;
+            }
         }
     }
 
@@ -80,6 +97,8 @@ public:
               separation_thresh)
     {
     }
+
+    void SetTInjection(bool useGadget) { useTGadget = useGadget; }
 
     void Finish()
     {
@@ -325,7 +344,14 @@ public:
 
     real1_f Prob(bitLenInt qubit);
 
-    bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
+    bool ForceMHelper(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
+    bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
+    {
+        if (ancillaCount) {
+            SwitchToEngine();
+        }
+        return ForceMHelper(qubit, result, doForce, doApply);
+    }
 
     bitCapInt MAll();
 
