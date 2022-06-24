@@ -508,11 +508,35 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     if (IS_CLIFFORD(mtrx) ||
         (randGlobalPhase && (IS_PHASE(mtrx) || IS_INVERT(mtrx)) && stabilizer->IsSeparableZ(target))) {
         stabilizer->Mtrx(mtrx, target);
-    } else {
-        shards[target] = std::make_shared<MpsShard>(mtrx);
-        if (!wasCached) {
-            CacheEigenstate(target);
-        }
+        return;
+    }
+
+    if (IS_PHASE(mtrx)) {
+        QStabilizerHybridPtr ancilla = std::make_shared<QStabilizerHybrid>(engineTypes, 1, 0, rand_generator,
+            phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+            std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
+
+        // Prepare "magic state":
+        ancilla->H(0);
+        ancilla->shards[0] = std::make_shared<MpsShard>(mtrx);
+        ancilla->CacheEigenstate(0);
+
+        // Form potentially entangled representation, with this.
+        bitLenInt ancillaIndex = Compose(ancilla);
+
+        // Act gadget with postselection.
+        CNOT(target, ancillaIndex);
+        ForceM(ancillaIndex, false, true, true);
+
+        // Ancilla is  separable after measurement.
+        Dispose(ancillaIndex, 1U);
+
+        return;
+    }
+
+    shards[target] = std::make_shared<MpsShard>(mtrx);
+    if (!wasCached) {
+        CacheEigenstate(target);
     }
 }
 
