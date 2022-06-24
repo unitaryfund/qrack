@@ -261,28 +261,10 @@ public:
     void Dispose(bitLenInt start, bitLenInt length);
     void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
-    void SetQuantumState(const complex* inputState);
-    void GetQuantumState(complex* outputState)
-    {
-        FlushBuffers();
-
-        if (stabilizer) {
-            stabilizer->GetQuantumState(outputState);
-        } else {
-            engine->GetQuantumState(outputState);
-        }
-    }
+    void GetQuantumState(complex* outputState);
     void GetProbs(real1* outputProbs);
-    complex GetAmplitude(bitCapInt perm)
-    {
-        FlushBuffers();
-
-        if (stabilizer) {
-            return stabilizer->GetAmplitude(perm);
-        }
-
-        return engine->GetAmplitude(perm);
-    }
+    complex GetAmplitude(bitCapInt perm);
+    void SetQuantumState(const complex* inputState);
     void SetAmplitude(bitCapInt perm, complex amp)
     {
         SwitchToEngine();
