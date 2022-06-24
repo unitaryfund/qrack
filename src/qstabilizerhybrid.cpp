@@ -455,6 +455,78 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
     SetQubitCount(nQubits);
 }
 
+void QStabilizerHybrid::GetQuantumState(complex* outputState)
+{
+    if (engine) {
+        engine->GetQuantumState(outputState);
+        return;
+    }
+
+    bitLenInt i;
+    for (i = 0U; i < qubitCount; ++i) {
+        if (shards[i]) {
+            // We have a cached non-Clifford operation.
+            break;
+        }
+    }
+
+    if (i == qubitCount) {
+        stabilizer->GetQuantumState(outputState);
+        return;
+    }
+
+    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+    clone->FlushBuffers();
+    clone->GetQuantumState(outputState);
+}
+
+void QStabilizerHybrid::GetProbs(real1* outputProbs)
+{
+    if (engine) {
+        engine->GetProbs(outputProbs);
+        return;
+    }
+
+    bitLenInt i;
+    for (i = 0U; i < qubitCount; ++i) {
+        if (shards[i]) {
+            // We have a cached non-Clifford operation.
+            break;
+        }
+    }
+
+    if (i == qubitCount) {
+        stabilizer->GetProbs(outputProbs);
+        return;
+    }
+
+    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+    clone->FlushBuffers();
+    clone->GetProbs(outputProbs);
+}
+complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
+{
+    if (engine) {
+        return engine->GetAmplitude(perm);
+    }
+
+    bitLenInt i;
+    for (i = 0U; i < qubitCount; ++i) {
+        if (shards[i]) {
+            // We have a cached non-Clifford operation.
+            break;
+        }
+    }
+
+    if (i == qubitCount) {
+        return stabilizer->GetAmplitude(perm);
+    }
+
+    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+    clone->FlushBuffers();
+    return clone->GetAmplitude(perm);
+}
+
 void QStabilizerHybrid::SetQuantumState(const complex* inputState)
 {
     DumpBuffers();
@@ -480,19 +552,11 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
         return;
     }
 
-    SwitchToEngine();
-    engine->SetQuantumState(inputState);
-}
-
-void QStabilizerHybrid::GetProbs(real1* outputProbs)
-{
-    FlushBuffers();
-
     if (stabilizer) {
-        stabilizer->GetProbs(outputProbs);
-    } else {
-        engine->GetProbs(outputProbs);
+        engine = MakeEngine();
+        stabilizer = NULL;
     }
+    engine->SetQuantumState(inputState);
 }
 
 void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
