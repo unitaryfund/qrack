@@ -26,6 +26,15 @@ class QStabilizerHybridWeak : public QEngine {
 protected:
     bitLenInt ancillaCount;
 
+    QEnginePtr MakeEngine(bitCapInt perm, bitLenInt qbCount)
+    {
+        QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qbCount, perm, rand_generator, phaseFactor,
+            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+            thresholdQubits, separabilityThreshold);
+        toRet->SetConcurrency(GetConcurrencyLevel());
+        return std::dynamic_pointer_cast<QEngine>(toRet);
+    }
+
 public:
     QStabilizerHybridWeak(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -66,7 +75,7 @@ public:
             }
         }
 
-        engine = MakeEngine();
+        engine = MakeEngine(0, stabilizer->GetQubitCount());
         stabilizer->GetQuantumState(engine);
         stabilizer = NULL;
         FlushBuffers();
