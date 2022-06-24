@@ -343,7 +343,14 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
         toRet = stabilizer->Compose(toCopy->stabilizer, start);
     }
 
+    // Resize the shards buffer.
     shards.insert(shards.begin() + start, toCopy->shards.begin(), toCopy->shards.end());
+    // Split the common shared_ptr references, with toCopy.
+    for (bitLenInt i = 0; i < toCopy->qubitCount; ++i) {
+        if (shards[start + i]) {
+            shards[start + i] = shards[start + i]->Clone();
+        }
+    }
 
     SetQubitCount(nQubits);
 
