@@ -582,44 +582,6 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (IS_PHASE(mtrx)) {
-        QStabilizerHybridPtr ancilla = std::make_shared<QStabilizerHybrid>(engineTypes, 1, 0, rand_generator,
-            phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-            std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
-
-        // Form potentially entangled representation, with this.
-        bitLenInt ancillaIndex = Compose(ancilla);
-
-        // Act gadget with postselection.
-        CNOT(target, ancillaIndex);
-        // Use non-Clifford measurement basis.
-        complex iMtrx[4];
-        inv2x2(mtrx, iMtrx);
-        shards[ancillaIndex] = std::make_shared<MpsShard>(iMtrx);
-        CacheEigenstate(ancillaIndex);
-        H(ancillaIndex);
-        ForceM(ancillaIndex, false, true, true);
-
-        // Ancilla is  separable after measurement.
-        Dispose(ancillaIndex, 1U);
-
-#if 0
-        if (stabilizer) {
-            std::cout<<"Is stabilizer!"<<std::endl;
-        } else {
-            std::cout<<"Is not stabilizer..."<<std::endl;
-        }
-
-        if (shards[target]) {
-            std::cout<<"Is not Clifford..."<<std::endl;
-        } else {
-            std::cout<<"Is Clifford!"<<std::endl;
-        }
-#endif
-
-        return;
-    }
-
     shards[target] = std::make_shared<MpsShard>(mtrx);
     if (!wasCached) {
         CacheEigenstate(target);
