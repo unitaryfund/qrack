@@ -949,8 +949,12 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
     return ONE_R1_F / 2;
 }
 
-bool QStabilizerHybrid::ForceMHelper(bitLenInt qubit, bool result, bool doForce, bool doApply)
+bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
+    if (ancillaCount) {
+        SwitchToEngine();
+    }
+
     if (engine) {
         return engine->ForceM(qubit, result, doForce, doApply);
     }

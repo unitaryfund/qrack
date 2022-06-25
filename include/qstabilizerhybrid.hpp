@@ -331,14 +331,7 @@ public:
 
     real1_f Prob(bitLenInt qubit);
 
-    bool ForceMHelper(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
-    bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true)
-    {
-        if (ancillaCount) {
-            SwitchToEngine();
-        }
-        return ForceMHelper(qubit, result, doForce, doApply);
-    }
+    bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
 
     bitCapInt MAll();
 
