@@ -853,7 +853,7 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
         if (!shards[qubit]->IsPhase() && stabilizer->IsSeparableZ(qubit)) {
             if (doForce) {
                 if (doApply) {
-                    if (result != stabilizer->M(qubit)) {
+                    if (result != stabilizer->ForceM(qubit, result, true, true)) {
                         // Sorry to throw, but the requested forced result is definitely invalid.
                         throw std::invalid_argument(
                             "QStabilizerHybrid::ForceM() forced a measurement result with 0 probability!");
