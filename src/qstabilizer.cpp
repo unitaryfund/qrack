@@ -1238,8 +1238,13 @@ void QStabilizer::Phase(complex topLeft, complex bottomRight, bitLenInt target)
         return;
     }
 
-    if (randGlobalPhase && IsSeparableZ(target)) {
+    if (IsSeparableZ(target)) {
         // This gate has no effect.
+        if (M(target)) {
+            Phase(bottomRight, bottomRight, target);
+        } else {
+            Phase(topLeft, topLeft, target);
+        }
         return;
     }
 
@@ -1275,9 +1280,12 @@ void QStabilizer::Invert(complex topRight, complex bottomLeft, bitLenInt target)
         return;
     }
 
-    if (randGlobalPhase && IsSeparableZ(target)) {
-        // This gate has no meaningful effect on phase.
-        X(target);
+    if (IsSeparableZ(target)) {
+        if (M(target)) {
+            Invert(topRight, topRight, target);
+        } else {
+            Invert(bottomLeft, bottomLeft, target);
+        }
         return;
     }
 
