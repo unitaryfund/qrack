@@ -263,7 +263,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     if (stabilizer) {
         c->engine = NULL;
         c->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
-        c->shards.resize(qubitCount + ancillaCount);
+        c->shards.resize(shards.size());
         for (bitLenInt i = 0U; i < shards.size(); ++i) {
             if (shards[i]) {
                 c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
@@ -648,6 +648,8 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         // Dispose(ancillaIndex, 1U);
 
         ++ancillaCount;
+
+        return;
     }
 
     shards[target] = std::make_shared<MpsShard>(mtrx);
