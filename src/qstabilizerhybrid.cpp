@@ -110,58 +110,77 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
         return;
     }
 
-    MpsShardPtr shard = shards[target];
+    MpsShardPtr shard = shards[control];
+    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+        FlushH(control);
+    }
+    shard = shards[control];
+    if (shard && shard->IsInvert()) {
+        InvertBuffer(control);
+    }
+    shard = shards[control];
+    if (shard && !shard->IsPhase()) {
+        SwitchToEngine();
+        return;
+    }
+
+    shard = shards[target];
     if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
         FlushH(target);
     }
-
     shard = shards[target];
     if (shard && shard->IsInvert()) {
         InvertBuffer(target);
     }
 
-    shard = shards[control];
-    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
-        FlushH(control);
-    }
-
-    shard = shards[control];
-    if (shard && shard->IsInvert()) {
-        InvertBuffer(control);
-    }
-
-    bool isBlocked = (shards[control] && !shards[control]->IsPhase());
     shard = shards[target];
-    if (useTGadget && !isBlocked && !isPhase && shard && shard->IsPhase()) {
-        QStabilizerPtr ancilla = std::make_shared<QStabilizer>(
-            1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
-
-        // Form potentially entangled representation, with this.
-        bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
-        ++ancillaCount;
-
-        // Act reverse T-gadget with measurement basis preparation.
-        stabilizer->CNOT(target, ancillaIndex);
-        complex iMtrx[4];
-        inv2x2(shard->gate, iMtrx);
-        const complex hGate[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-            complex(SQRT1_2_R1, ZERO_R1), -complex(SQRT1_2_R1, ZERO_R1) };
-        complex mtrx[4];
-        mul2x2(hGate, iMtrx, mtrx);
-        shards.push_back(std::make_shared<MpsShard>(mtrx));
-
-        // When we measure, we act postselection, but not yet.
-        // ForceM(ancillaIndex, false, true, true);
-        // Ancilla is separable after measurement.
-        // Dispose(ancillaIndex, 1U);
-
+    if (!shard) {
         return;
     }
-    isBlocked |= (shard && (!isPhase || !shard->IsPhase()));
+    // Shard is definitely non-NULL.
 
-    if (isBlocked) {
+    if (!(shard->IsPhase())) {
         SwitchToEngine();
+        return;
     }
+    // Shard is definitely a phase gate.
+
+    if (isPhase) {
+        return;
+    }
+    // The gate payload is definitely not a phase gate.
+    // This is the new case we can handle with the "reverse gadget" for t-injection in this PRX Quantum article, in
+    // Appendix A: https://journals.aps.org/prxquantum/abstract/10.1103/PRXQuantum.3.020361
+    // Hakop Pashayan, Oliver Reardon-Smith, Kamil Korzekwa, and Stephen D. Bartlett
+    // PRX Quantum 3, 020361 – Published 23 June 2022
+
+    if (!useTGadget) {
+        // The option to optimize this case is off.
+        SwitchToEngine();
+        return;
+    }
+
+    QStabilizerPtr ancilla = std::make_shared<QStabilizer>(
+        1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
+
+    // Form potentially entangled representation, with this.
+    bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
+    ++ancillaCount;
+
+    // Act reverse T-gadget with measurement basis preparation.
+    stabilizer->CNOT(target, ancillaIndex);
+    complex iMtrx[4];
+    inv2x2(shard->gate, iMtrx);
+    const complex hGate[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+        -complex(SQRT1_2_R1, ZERO_R1) };
+    complex mtrx[4];
+    mul2x2(hGate, iMtrx, mtrx);
+    shards.push_back(std::make_shared<MpsShard>(mtrx));
+
+    // When we measure, we act postselection, but not yet.
+    // ForceM(ancillaIndex, false, true, true);
+    // Ancilla is separable after measurement.
+    // Dispose(ancillaIndex, 1U);
 }
 
 bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
