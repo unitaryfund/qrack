@@ -101,24 +101,28 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
         return;
     }
 
-    if (shards[target] && (shards[target]->IsHPhase() || shards[target]->IsHInvert())) {
+    MpsShardPtr shard = shards[target];
+    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
         FlushH(target);
     }
 
-    if (shards[target] && shards[target]->IsInvert()) {
+    shard = shards[target];
+    if (shard && shard->IsInvert()) {
         InvertBuffer(target);
     }
 
-    if (shards[control] && (shards[control]->IsHPhase() || shards[control]->IsHInvert())) {
+    shard = shards[control];
+    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
         FlushH(control);
     }
 
-    if (shards[control] && shards[control]->IsInvert()) {
+    shard = shards[control];
+    if (shard && shard->IsInvert()) {
         InvertBuffer(control);
     }
 
-    bool isBlocked = (shards[target] && (!isPhase || !shards[target]->IsPhase()));
-    isBlocked |= (shards[control] && !shards[control]->IsPhase());
+    const bool isBlocked = (shards[target] && (!isPhase || !shards[target]->IsPhase())) ||
+        (shards[control] && !shards[control]->IsPhase());
 
     if (isBlocked) {
         SwitchToEngine();
@@ -129,15 +133,9 @@ bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
 {
     MpsShardPtr shard = shards[qubit];
     shards[qubit] = NULL;
-    real1_f prob;
 
     const bool isZ1 = stabilizer->M(qubit);
-
-    if (isZ1) {
-        prob = (real1_f)norm(shard->gate[3U]);
-    } else {
-        prob = (real1_f)norm(shard->gate[2U]);
-    }
+    const real1_f prob = (real1_f)((isZ1) ? norm(shard->gate[3U]) : norm(shard->gate[2U]));
 
     bool result;
     if (prob <= ZERO_R1) {
@@ -267,18 +265,20 @@ QInterfacePtr QStabilizerHybrid::Clone()
     Finish();
     c->Finish();
 
-    if (stabilizer) {
-        c->engine = NULL;
-        c->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            if (shards[i]) {
-                c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
-            }
-        }
-    } else {
+    if (engine) {
         // Clone and set engine directly.
         c->engine = std::dynamic_pointer_cast<QEngine>(engine->Clone());
         c->stabilizer = NULL;
+        return c;
+    }
+
+    // Otherwise, stabilizer
+    c->engine = NULL;
+    c->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        if (shards[i]) {
+            c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
+        }
     }
 
     return c;
@@ -505,7 +505,8 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
 
     bitLenInt i;
     for (i = 0U; i < qubitCount; ++i) {
-        if (shards[i]) {
+        MpsShardPtr shard = shards[i];
+        if (shard && !IS_PHASE(shard->gate)) {
             // We have a cached non-Clifford operation.
             break;
         }
@@ -547,32 +548,32 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
 {
     DumpBuffers();
 
-    if (qubitCount == 1U) {
-        engine = NULL;
-
+    if (qubitCount > 1U) {
         if (stabilizer) {
-            stabilizer->SetPermutation(0U);
-        } else {
-            stabilizer = MakeStabilizer(0U);
+            engine = MakeEngine();
+            stabilizer = NULL;
         }
-
-        const real1 prob = (real1)clampProb((real1_f)norm(inputState[1U]));
-        const real1 sqrtProb = sqrt(prob);
-        const real1 sqrt1MinProb = (real1)sqrt(clampProb((real1_f)(ONE_R1 - prob)));
-        const complex phase0 = std::polar(ONE_R1, arg(inputState[0U]));
-        const complex phase1 = std::polar(ONE_R1, arg(inputState[1U]));
-        const complex mtrx[4U] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1,
-            -sqrt1MinProb * phase1 };
-        Mtrx(mtrx, 0);
+        engine->SetQuantumState(inputState);
 
         return;
     }
 
+    // Otherwise, we're preparing 1 qubit.
+    engine = NULL;
+
     if (stabilizer) {
-        engine = MakeEngine();
-        stabilizer = NULL;
+        stabilizer->SetPermutation(0U);
+    } else {
+        stabilizer = MakeStabilizer(0U);
     }
-    engine->SetQuantumState(inputState);
+
+    const real1 prob = (real1)clampProb((real1_f)norm(inputState[1U]));
+    const real1 sqrtProb = sqrt(prob);
+    const real1 sqrt1MinProb = (real1)sqrt(clampProb((real1_f)(ONE_R1 - prob)));
+    const complex phase0 = std::polar(ONE_R1, arg(inputState[0U]));
+    const complex phase1 = std::polar(ONE_R1, arg(inputState[1U]));
+    const complex mtrx[4U] = { sqrt1MinProb * phase0, sqrtProb * phase0, sqrtProb * phase1, -sqrt1MinProb * phase1 };
+    Mtrx(mtrx, 0);
 }
 
 void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
@@ -892,29 +893,31 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
 
 bitCapInt QStabilizerHybrid::MAll()
 {
+    if (engine) {
+        const bitCapInt toRet = engine->MAll();
+        SetPermutation(toRet);
+        return toRet;
+    }
+
     bitCapInt toRet = 0U;
-    if (stabilizer) {
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            if (shards[i] && shards[i]->IsInvert()) {
-                InvertBuffer(i);
-            }
-
-            if (shards[i]) {
-                if (!shards[i]->IsPhase() && stabilizer->IsSeparableZ(i)) {
-                    // Bit was already rotated to Z basis, if separable.
-                    CollapseSeparableShard(i);
-                }
-
-                // Otherwise, buffer will not change the fact that state appears maximally mixed.
-                shards[i] = NULL;
-            }
-
-            if (stabilizer->M(i)) {
-                toRet |= pow2(i);
-            }
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        if (shards[i] && shards[i]->IsInvert()) {
+            InvertBuffer(i);
         }
-    } else {
-        toRet = engine->MAll();
+
+        if (shards[i]) {
+            if (!shards[i]->IsPhase() && stabilizer->IsSeparableZ(i)) {
+                // Bit was already rotated to Z basis, if separable.
+                CollapseSeparableShard(i);
+            }
+
+            // Otherwise, buffer will not change the fact that state appears maximally mixed.
+            shards[i] = NULL;
+        }
+
+        if (stabilizer->M(i)) {
+            toRet |= pow2(i);
+        }
     }
 
     SetPermutation(toRet);
@@ -1089,42 +1092,42 @@ bool QStabilizerHybrid::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         return true;
     }
 
-    if (stabilizer) {
-        if (qubit2 < qubit1) {
-            std::swap(qubit1, qubit2);
-        }
-
-        stabilizer->Swap(qubit1 + 1U, qubit2);
-
-        const bool toRet = stabilizer->CanDecomposeDispose(qubit1, 2U);
-
-        stabilizer->Swap(qubit1 + 1U, qubit2);
-
-        return toRet;
+    if (engine) {
+        return engine->TrySeparate(qubit1, qubit2);
     }
 
-    return engine->TrySeparate(qubit1, qubit2);
+    if (qubit2 < qubit1) {
+        std::swap(qubit1, qubit2);
+    }
+
+    stabilizer->Swap(qubit1 + 1U, qubit2);
+
+    const bool toRet = stabilizer->CanDecomposeDispose(qubit1, 2U);
+
+    stabilizer->Swap(qubit1 + 1U, qubit2);
+
+    return toRet;
 }
 bool QStabilizerHybrid::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error_tol)
 {
-    if (stabilizer) {
-        std::vector<bitLenInt> q(length);
-        std::copy(qubits, qubits + length, q.begin());
-        std::sort(q.begin(), q.end());
-
-        for (bitLenInt i = 1U; i < length; ++i) {
-            Swap(q[0U] + i, q[i]);
-        }
-
-        const bool toRet = stabilizer->CanDecomposeDispose(q[0U], length);
-
-        for (bitLenInt i = 1U; i < length; ++i) {
-            Swap(q[0U] + i, q[i]);
-        }
-
-        return toRet;
+    if (engine) {
+        return engine->TrySeparate(qubits, length, error_tol);
     }
 
-    return engine->TrySeparate(qubits, length, error_tol);
+    std::vector<bitLenInt> q(length);
+    std::copy(qubits, qubits + length, q.begin());
+    std::sort(q.begin(), q.end());
+
+    for (bitLenInt i = 1U; i < length; ++i) {
+        Swap(q[0U] + i, q[i]);
+    }
+
+    const bool toRet = stabilizer->CanDecomposeDispose(q[0U], length);
+
+    for (bitLenInt i = 1U; i < length; ++i) {
+        Swap(q[0U] + i, q[i]);
+    }
+
+    return toRet;
 }
 } // namespace Qrack
