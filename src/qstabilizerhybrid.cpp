@@ -147,9 +147,7 @@ void QStabilizerHybrid::FlushBuffers()
                 return;
             }
         }
-    }
 
-    if (stabilizer) {
         return;
     }
 
