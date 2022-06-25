@@ -101,30 +101,30 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
         return;
     }
 
-    MpsShardPtr shard = shards[target];
-    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
-        FlushH(target);
-    }
-
-    shard = shards[target];
-    if (shard && shard->IsInvert()) {
-        InvertBuffer(target);
-    }
-
-    shard = shards[control];
+    MpsShardPtr shard = shards[control];
     if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
         FlushH(control);
     }
-
     shard = shards[control];
     if (shard && shard->IsInvert()) {
         InvertBuffer(control);
     }
+    shard = shards[control];
+    if (shard && !shard->IsPhase()) {
+        SwitchToEngine();
+        return;
+    }
 
-    const bool isBlocked = (shards[target] && (!isPhase || !shards[target]->IsPhase())) ||
-        (shards[control] && !shards[control]->IsPhase());
-
-    if (isBlocked) {
+    shard = shards[target];
+    if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+        FlushH(target);
+    }
+    shard = shards[target];
+    if (shard && shard->IsInvert()) {
+        InvertBuffer(target);
+    }
+    shard = shards[target];
+    if (shard && (!isPhase || !shard->IsPhase())) {
         SwitchToEngine();
     }
 }
