@@ -1008,7 +1008,7 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
             const bitCapInt allMeasure = clone->MAll();
             bitCapInt sample = 0U;
             for (bitLenInt i = 0U; i < qPowerCount; ++i) {
-                if (allMeasure && qPowers[i]) {
+                if (allMeasure & qPowers[i]) {
                     sample |= pow2(i);
                 }
             }
@@ -1054,7 +1054,7 @@ void QStabilizerHybrid::MultiShotMeasureMask(
             const bitCapInt allMeasure = clone->MAll();
             bitCapInt sample = 0U;
             for (bitLenInt i = 0U; i < qPowerCount; ++i) {
-                if (allMeasure && qPowers[i]) {
+                if (allMeasure & qPowers[i]) {
                     sample |= pow2(i);
                 }
             }
