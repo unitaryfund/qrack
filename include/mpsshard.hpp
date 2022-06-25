@@ -32,6 +32,16 @@ struct MpsShard {
 
     bool IsInvert() { return (norm(gate[0U]) <= FP_NORM_EPSILON) && (norm(gate[3U]) <= FP_NORM_EPSILON); }
 
+    bool IsHPhase()
+    {
+        return ((norm(gate[0U] - gate[1U]) <= FP_NORM_EPSILON) && (norm(gate[2U] + gate[3U]) <= FP_NORM_EPSILON));
+    }
+
+    bool IsHInvert()
+    {
+        return ((norm(gate[0U] + gate[1U]) <= FP_NORM_EPSILON) && (norm(gate[2U] - gate[3U]) <= FP_NORM_EPSILON));
+    }
+
     bool IsIdentity() { return IsPhase() && (norm(gate[0U] - gate[3U]) <= FP_NORM_EPSILON); }
 
     bool IsX(bool randGlobalPhase = true)

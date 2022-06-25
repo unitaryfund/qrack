@@ -50,6 +50,7 @@ protected:
     QEnginePtr MakeEngine(bitCapInt perm, bitLenInt qbCount);
 
     void InvertBuffer(bitLenInt qubit);
+    void FlushH(bitLenInt qubit);
     void FlushIfBlocked(bitLenInt control, bitLenInt target, bool isPhase = false);
     bool CollapseSeparableShard(bitLenInt qubit);
     bool TrimControls(
