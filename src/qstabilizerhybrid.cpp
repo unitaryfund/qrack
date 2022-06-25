@@ -108,8 +108,34 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
         InvertBuffer(control);
     }
 
-    bool isBlocked = (shards[target] && (!isPhase || !shards[target]->IsPhase()));
-    isBlocked |= (shards[control] && !shards[control]->IsPhase());
+    bool isBlocked = (shards[control] && !shards[control]->IsPhase());
+    const MpsShardPtr shard = shards[target];
+    if (useTGadget && !isBlocked && !isPhase && shard && shard->IsPhase()) {
+        QStabilizerPtr ancilla = std::make_shared<QStabilizer>(
+            1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
+
+        // Form potentially entangled representation, with this.
+        bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
+        ++ancillaCount;
+
+        // Act reverse T-gadget with measurement basis preparation.
+        stabilizer->CNOT(target, ancillaIndex);
+        complex iMtrx[4];
+        inv2x2(shard->gate, iMtrx);
+        const complex hGate[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+            complex(SQRT1_2_R1, ZERO_R1), -complex(SQRT1_2_R1, ZERO_R1) };
+        complex mtrx[4];
+        mul2x2(hGate, iMtrx, mtrx);
+        shards.push_back(std::make_shared<MpsShard>(mtrx));
+
+        // When we measure, we act postselection, but not yet.
+        // ForceM(ancillaIndex, false, true, true);
+        // Ancilla is separable after measurement.
+        // Dispose(ancillaIndex, 1U);
+
+        return;
+    }
+    isBlocked |= (shard && (!isPhase || !shard->IsPhase()));
 
     if (isBlocked) {
         SwitchToEngine();
@@ -622,31 +648,6 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
     if (IS_CLIFFORD(mtrx) ||
         (randGlobalPhase && (IS_PHASE(mtrx) || IS_INVERT(mtrx)) && stabilizer->IsSeparableZ(target))) {
         stabilizer->Mtrx(mtrx, target);
-        return;
-    }
-
-    if (useTGadget && IS_PHASE(mtrx)) {
-        QStabilizerPtr ancilla = std::make_shared<QStabilizer>(
-            1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
-
-        // Form potentially entangled representation, with this.
-        bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
-        ++ancillaCount;
-
-        // Act reverse T-gadget with measurement basis preparation.
-        stabilizer->CNOT(target, ancillaIndex);
-        complex iMtrx[4];
-        inv2x2(mtrx, iMtrx);
-        const complex hGate[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-            complex(SQRT1_2_R1, ZERO_R1), -complex(SQRT1_2_R1, ZERO_R1) };
-        mul2x2(hGate, iMtrx, mtrx);
-        shards.push_back(std::make_shared<MpsShard>(mtrx));
-
-        // When we measure, we act postselection, but not yet.
-        // ForceM(ancillaIndex, false, true, true);
-        // Ancilla is separable after measurement.
-        // Dispose(ancillaIndex, 1U);
-
         return;
     }
 
