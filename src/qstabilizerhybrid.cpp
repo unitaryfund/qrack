@@ -576,14 +576,14 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         return;
     }
 
-    if (IS_CLIFFORD(mtrx) ||
-        (randGlobalPhase && (IS_PHASE(mtrx) || IS_INVERT(mtrx)) && stabilizer->IsSeparableZ(target))) {
+    if (IS_CLIFFORD(mtrx) || ((IS_PHASE(mtrx) || IS_INVERT(mtrx)) && stabilizer->IsSeparableZ(target))) {
         stabilizer->Mtrx(mtrx, target);
-    } else {
-        shards[target] = std::make_shared<MpsShard>(mtrx);
-        if (!wasCached) {
-            CacheEigenstate(target);
-        }
+        return;
+    }
+
+    shards[target] = std::make_shared<MpsShard>(mtrx);
+    if (!wasCached) {
+        CacheEigenstate(target);
     }
 }
 
