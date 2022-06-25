@@ -303,8 +303,6 @@ void QStabilizerHybrid::SwitchToEngine()
         return;
     }
 
-    TrimAncillae();
-
     engine = MakeEngine(0, stabilizer->GetQubitCount());
     stabilizer->GetQuantumState(engine);
     stabilizer = NULL;
@@ -633,12 +631,14 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
 
         // Form potentially entangled representation, with this.
         bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
+        ++ancillaCount;
 
         // Act reverse T-gadget with measurement basis preparation.
         stabilizer->CNOT(target, ancillaIndex);
         complex iMtrx[4];
         inv2x2(mtrx, iMtrx);
-        const complex hGate[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), -complex(SQRT1_2_R1, ZERO_R1) };
+        const complex hGate[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+            complex(SQRT1_2_R1, ZERO_R1), -complex(SQRT1_2_R1, ZERO_R1) };
         mul2x2(hGate, iMtrx, mtrx);
         shards.push_back(std::make_shared<MpsShard>(mtrx));
 
@@ -646,8 +646,6 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         // ForceM(ancillaIndex, false, true, true);
         // Ancilla is separable after measurement.
         // Dispose(ancillaIndex, 1U);
-
-        ++ancillaCount;
 
         return;
     }
@@ -885,8 +883,6 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
         return engine->Prob(qubit);
     }
 
-    TrimAncillae();
-
     if (ancillaCount) {
         QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
         clone->SwitchToEngine();
@@ -1004,8 +1000,6 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
         return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
 
-    TrimAncillae();
-
     std::map<bitCapInt, int> results;
     if (ancillaCount) {
         for (unsigned shot = 0U; shot < shots; ++shot) {
@@ -1052,8 +1046,6 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         engine->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
         return;
     }
-
-    TrimAncillae();
 
     if (ancillaCount) {
         par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
