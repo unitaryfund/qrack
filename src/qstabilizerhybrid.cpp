@@ -85,14 +85,32 @@ void QStabilizerHybrid::InvertBuffer(bitLenInt qubit)
     stabilizer->X(qubit);
 }
 
+void QStabilizerHybrid::FlushH(bitLenInt qubit)
+{
+    complex hGate[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+        -complex(SQRT1_2_R1, ZERO_R1) };
+    MpsShardPtr shard = std::make_shared<MpsShard>(hGate);
+    shard->Compose(shards[qubit]->gate);
+    shards[qubit] = shard->IsIdentity() ? NULL : shard;
+    stabilizer->H(qubit);
+}
+
 void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool isPhase)
 {
     if (engine) {
         return;
     }
 
+    if (shards[target] && (shards[target]->IsHPhase() || shards[target]->IsHInvert())) {
+        FlushH(target);
+    }
+
     if (shards[target] && shards[target]->IsInvert()) {
         InvertBuffer(target);
+    }
+
+    if (shards[control] && (shards[control]->IsHPhase() || shards[control]->IsHInvert())) {
+        FlushH(control);
     }
 
     if (shards[control] && shards[control]->IsInvert()) {
