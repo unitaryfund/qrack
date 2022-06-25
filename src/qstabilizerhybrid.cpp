@@ -160,6 +160,8 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
         return;
     }
 
+    shards[target] = NULL;
+
     QStabilizerPtr ancilla = std::make_shared<QStabilizer>(
         1U, 0U, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
 
