@@ -638,9 +638,9 @@ void QStabilizerHybrid::Mtrx(const complex* lMtrx, bitLenInt target)
         stabilizer->CNOT(target, ancillaIndex);
         complex iMtrx[4];
         inv2x2(mtrx, iMtrx);
-        shards.push_back(std::make_shared<MpsShard>(iMtrx));
-        CacheEigenstate(ancillaIndex);
-        stabilizer->H(ancillaIndex);
+        const complex hGate[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), -complex(SQRT1_2_R1, ZERO_R1) };
+        mul2x2(hGate, iMtrx, mtrx);
+        shards.push_back(std::make_shared<MpsShard>(mtrx));
 
         // When we measure, we act postselection, but not yet.
         // ForceM(ancillaIndex, false, true, true);
