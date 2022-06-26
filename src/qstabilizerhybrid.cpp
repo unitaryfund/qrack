@@ -35,7 +35,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , isDefaultPaging(false)
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
-    , useTGadget(false)
+    , useTGadget(true)
     , thresholdQubits(qubitThreshold)
     , maxPageQubits(-1)
     , ancillaCount(0)
@@ -56,8 +56,10 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex));
         if (qubitCount > maxPageQubits) {
             engineTypes.push_back(QINTERFACE_QPAGER);
+            maxQubitPlusAncillaCount = maxPageQubits + 2U;
+        } else {
+            maxQubitPlusAncillaCount = maxPageQubits;
         }
-        maxQubitPlusAncillaCount = maxPageQubits + 2U;
     }
 #endif
 
@@ -504,6 +506,12 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(nQubits);
+
+    // We "cheat" just a little bit, here, without loss of accuracy.
+    // When QUnit uses Prob() to check separability, it flushes non-Clifford gates in a clone.
+    // If a qubit is |0> or |1> when flushed, then Decompose() and Dispose() will break active entanglement, but ancilla
+    // "junk" qubits will also end up separable.
+    TrimAncillae();
 }
 
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
@@ -529,6 +537,12 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(nQubits);
+
+    // We "cheat" just a little bit, here, without loss of accuracy.
+    // When QUnit uses Prob() to check separability, it flushes non-Clifford gates in a clone.
+    // If a qubit is |0> or |1> when flushed, then Decompose() and Dispose() will break active entanglement, but ancilla
+    // "junk" qubits will also end up separable.
+    TrimAncillae();
 }
 
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
@@ -554,6 +568,12 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(nQubits);
+
+    // We "cheat" just a little bit, here, without loss of accuracy.
+    // When QUnit uses Prob() to check separability, it flushes non-Clifford gates in a clone.
+    // If a qubit is |0> or |1> when flushed, then Decompose() and Dispose() will break active entanglement, but ancilla
+    // "junk" qubits will also end up separable.
+    TrimAncillae();
 }
 
 void QStabilizerHybrid::GetQuantumState(complex* outputState)
@@ -887,12 +907,18 @@ void QStabilizerHybrid::MACInvert(
 
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 {
-    if (ancillaCount) {
-        SwitchToEngine();
-    }
-
     if (engine) {
         return engine->Prob(qubit);
+    }
+
+    if (ancillaCount) {
+        // We "cheat" just a little bit, here, without loss of accuracy.
+        // When QUnit uses Prob() to check separability, it flushes non-Clifford gates in a clone.
+        // If a qubit is |0> or |1> when flushed, then Decompose() and Dispose() will break active entanglement, but
+        // ancilla "junk" qubits will also end up separable.
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        clone->SwitchToEngine();
+        return clone->Prob(qubit);
     }
 
     if (shards[qubit] && shards[qubit]->IsInvert()) {
