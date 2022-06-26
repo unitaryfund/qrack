@@ -181,6 +181,7 @@ protected:
 private:
     const size_t procElemCount = device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
     const size_t maxWorkItems = device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+    const size_t maxWorkGroupSize = device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
     const size_t maxAlloc = device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
     const size_t globalSize = device.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
     size_t preferredSizeMultiple;
@@ -274,6 +275,7 @@ public:
 
     size_t GetProcElementCount() { return procElemCount; }
     size_t GetMaxWorkItems() { return maxWorkItems; }
+    size_t GetMaxWorkGroupSize() { return maxWorkGroupSize; }
     size_t GetMaxAlloc() { return maxAlloc; }
     size_t GetGlobalSize() { return globalSize; }
 

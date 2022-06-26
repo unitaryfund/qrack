@@ -377,12 +377,11 @@ size_t QEngineOCL::FixWorkItemCount(size_t maxI, size_t wic)
 size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
 {
     if (gs > wic) {
-        gs = wic;
+        return wic;
     }
-    size_t frac = wic / gs;
-    while ((frac * gs) != wic) {
-        ++gs;
-        frac = wic / gs;
+
+    while (wic % gs) {
+        --gs;
     }
     return gs;
 }
@@ -560,8 +559,11 @@ void QEngineOCL::SetDevice(int64_t dID)
     queue = device_context->queue;
 
     const bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0U;
-    nrmGroupSize = device_context->GetPreferredSizeMultiple();
     nrmGroupCount = device_context->GetPreferredConcurrency();
+    nrmGroupSize = device_context->GetPreferredSizeMultiple();
+    if (nrmGroupSize > device_context->GetMaxWorkGroupSize()) {
+        nrmGroupSize = device_context->GetMaxWorkGroupSize();
+    }
 
     // constrain to a power of two
     size_t groupSizePow = ONE_BCI;
@@ -2831,7 +2833,7 @@ real1_f QEngineOCL::SumSqrDiff(QEngineOCLPtr toCompare)
     BufferPtr locCmplxBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(complex) * partInnerSize);
 
     QueueCall(OCL_API_APPROXCOMPARE, ngc, ngs,
-        { stateBuffer, toCompare->stateBuffer, poolItem->ulongBuffer, locCmplxBuffer }, sizeof(complex) * nrmGroupSize);
+        { stateBuffer, toCompare->stateBuffer, poolItem->ulongBuffer, locCmplxBuffer }, sizeof(complex) * ngs);
 
     std::unique_ptr<complex[]> partInner(new complex[partInnerSize]);
 
