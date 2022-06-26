@@ -561,19 +561,9 @@ void QStabilizerHybrid::GetQuantumState(complex* outputState)
         return;
     }
 
-    if (!ancillaCount) {
-        bitLenInt i;
-        for (i = 0U; i < qubitCount; ++i) {
-            if (shards[i]) {
-                // We have a cached non-Clifford operation.
-                break;
-            }
-        }
-
-        if (i == qubitCount) {
-            stabilizer->GetQuantumState(outputState);
-            return;
-        }
+    if (!ancillaCount && !IsBuffered()) {
+        stabilizer->GetQuantumState(outputState);
+        return;
     }
 
     QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
@@ -588,20 +578,9 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
         return;
     }
 
-    if (!ancillaCount) {
-        bitLenInt i;
-        for (i = 0U; i < qubitCount; ++i) {
-            MpsShardPtr shard = shards[i];
-            if (shard && !IS_PHASE(shard->gate)) {
-                // We have a cached non-Clifford operation.
-                break;
-            }
-        }
-
-        if (i == qubitCount) {
-            stabilizer->GetProbs(outputProbs);
-            return;
-        }
+    if (!ancillaCount && !IsProbBuffered()) {
+        stabilizer->GetProbs(outputProbs);
+        return;
     }
 
     QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
@@ -614,18 +593,8 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         return engine->GetAmplitude(perm);
     }
 
-    if (!ancillaCount) {
-        bitLenInt i;
-        for (i = 0U; i < qubitCount; ++i) {
-            if (shards[i]) {
-                // We have a cached non-Clifford operation.
-                break;
-            }
-        }
-
-        if (i == qubitCount) {
-            return stabilizer->GetAmplitude(perm);
-        }
+    if (!ancillaCount && !IsBuffered()) {
+        return stabilizer->GetAmplitude(perm);
     }
 
     QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());

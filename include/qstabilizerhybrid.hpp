@@ -63,6 +63,29 @@ protected:
             shards[i] = NULL;
         }
     }
+    bool IsBuffered()
+    {
+        for (bitLenInt i = 0U; i < shards.size(); ++i) {
+            if (shards[i]) {
+                // We have a cached non-Clifford operation.
+                return true;
+            }
+        }
+
+        return false;
+    }
+    bool IsProbBuffered()
+    {
+        for (bitLenInt i = 0U; i < shards.size(); ++i) {
+            MpsShardPtr shard = shards[i];
+            if (shard && !((norm(shard->gate[1]) <= FP_NORM_EPSILON) && (norm(shard->gate[2]) <= FP_NORM_EPSILON))) {
+                // We have a cached non-Clifford operation.
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
