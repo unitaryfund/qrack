@@ -173,9 +173,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
 
     // Use reverse t-injection gadget.
     CNOT(target, ancillaIndex);
-    complex iMtrx[4];
-    inv2x2(shard->gate, iMtrx);
-    Mtrx(iMtrx, ancillaIndex);
+    Mtrx(shard->gate, ancillaIndex);
     H(ancillaIndex);
 
     // When we measure, we act postselection, but not yet.
@@ -882,14 +880,12 @@ void QStabilizerHybrid::MACInvert(
 
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 {
-    if (engine) {
-        return engine->Prob(qubit);
+    if (ancillaCount) {
+        SwitchToEngine();
     }
 
-    if (ancillaCount) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->SwitchToEngine();
-        return clone->Prob(qubit);
+    if (engine) {
+        return engine->Prob(qubit);
     }
 
     if (shards[qubit] && shards[qubit]->IsInvert()) {
