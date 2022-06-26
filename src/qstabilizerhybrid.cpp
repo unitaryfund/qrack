@@ -1016,8 +1016,11 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
     }
 
     if (ancillaCount) {
-        SwitchToEngine();
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        clone->SwitchToEngine();
+        return clone->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
+
     if (engine) {
         return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
@@ -1050,8 +1053,11 @@ void QStabilizerHybrid::MultiShotMeasureMask(
     }
 
     if (ancillaCount) {
-        SwitchToEngine();
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        clone->SwitchToEngine();
+        return clone->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
     }
+
     if (engine) {
         engine->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
         return;
