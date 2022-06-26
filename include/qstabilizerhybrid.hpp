@@ -328,11 +328,21 @@ public:
             return;
         }
 
-        if (shards[qubit1] && shards[qubit1]->IsInvert()) {
+        MpsShardPtr shard = shards[qubit1];
+        if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+            FlushH(qubit1);
+        }
+        shard = shards[qubit1];
+        if (shard && shard->IsInvert()) {
             InvertBuffer(qubit1);
         }
 
-        if (shards[qubit2] && shards[qubit2]->IsInvert()) {
+        shard = shards[qubit2];
+        if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+            FlushH(qubit2);
+        }
+        shard = shards[qubit2];
+        if (shard && shard->IsInvert()) {
             InvertBuffer(qubit2);
         }
 
