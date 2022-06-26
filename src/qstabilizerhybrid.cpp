@@ -369,6 +369,8 @@ void QStabilizerHybrid::SwitchToEngine()
         return;
     }
 
+    TrimAncillae();
+
     engine = MakeEngine(0, stabilizer->GetQubitCount());
     stabilizer->GetQuantumState(engine);
     stabilizer = NULL;
