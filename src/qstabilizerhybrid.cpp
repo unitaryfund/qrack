@@ -480,7 +480,7 @@ void QStabilizerHybrid::GetQuantumState(complex* outputState)
     }
 
     QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-    clone->FlushBuffers();
+    clone->SwitchToEngine();
     clone->GetQuantumState(outputState);
 }
 
@@ -497,7 +497,7 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
     }
 
     QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-    clone->FlushBuffers();
+    clone->SwitchToEngine();
     clone->GetProbs(outputProbs);
 }
 complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
@@ -511,7 +511,7 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
     }
 
     QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-    clone->FlushBuffers();
+    clone->SwitchToEngine();
     return clone->GetAmplitude(perm);
 }
 
