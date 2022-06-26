@@ -173,8 +173,8 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     stabilizer->CNOT(target, ancillaIndex);
     complex iMtrx[4U];
     inv2x2(shard->gate, iMtrx);
-    const complex hGate[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-        complex(-SQRT1_2_R1, ZERO_R1) };
+    const complex hGate[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+        complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
     complex mtrx[4U];
     mul2x2(hGate, iMtrx, mtrx);
     shards.push_back(std::make_shared<MpsShard>(mtrx));
@@ -212,14 +212,10 @@ bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
 void QStabilizerHybrid::FlushBuffers()
 {
     if (stabilizer) {
-        for (bitLenInt i = 0U; i < shards.size(); ++i) {
-            if (shards[i]) {
-                // This will call FlushBuffers() again after no longer stabilizer.
-                SwitchToEngine();
-                return;
-            }
+        if (IsBuffered()) {
+            // This will call FlushBuffers() again after no longer stabilizer.
+            SwitchToEngine();
         }
-
         return;
     }
 
