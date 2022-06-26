@@ -72,6 +72,7 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
     , isSparse(useSparseStateVec)
     , freezeBasis2Qb(false)
     , isReactiveSeparate(true)
+    , useTGadget(true)
     , thresholdQubits(qubitThreshold)
     , separabilityThreshold(sep_thresh)
     , devID(deviceID)
@@ -92,9 +93,13 @@ QUnit::QUnit(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt i
 
 QInterfacePtr QUnit::MakeEngine(bitLenInt length, bitCapInt perm)
 {
-    return CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize, randGlobalPhase,
-        useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+    QInterfacePtr toRet = CreateQuantumInterface(engines, length, perm, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
+    toRet->SetConcurrency(GetConcurrencyLevel());
+    toRet->SetTInjection(useTGadget);
+
+    return toRet;
 }
 
 void QUnit::SetPermutation(bitCapInt perm, complex phaseFac)

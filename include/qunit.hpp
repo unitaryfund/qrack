@@ -35,6 +35,7 @@ protected:
     bool isSparse;
     bool freezeBasis2Qb;
     bool isReactiveSeparate;
+    bool useTGadget;
     bitLenInt thresholdQubits;
     real1_f separabilityThreshold;
     int64_t devID;
@@ -74,6 +75,17 @@ public:
                 return true;
             },
             ZERO_R1_F, ZERO_R1_F, ZERO_R1_F, threadsPerEngine);
+    }
+
+    virtual void SetTInjection(bool useGadget)
+    {
+        useTGadget = useGadget;
+        ParallelUnitApply(
+            [](QInterfacePtr unit, real1_f unused1, real1_f unused2, real1_f unused3, int64_t useGadget) {
+                unit->SetTInjection((bool)useGadget);
+                return true;
+            },
+            ZERO_R1_F, ZERO_R1_F, ZERO_R1_F, useGadget ? 1U : 0U);
     }
 
     virtual void SetReactiveSeparate(bool isAggSep) { isReactiveSeparate = isAggSep; }

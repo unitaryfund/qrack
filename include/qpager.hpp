@@ -27,6 +27,7 @@ protected:
     bool useHardwareThreshold;
     bool useGpuThreshold;
     bool isSparse;
+    bool useTGadget;
     bitLenInt segmentGlobalQb;
     bitLenInt minPageQubits;
     bitLenInt maxPageQubits;
@@ -127,6 +128,14 @@ public:
             qPages[i]->SetConcurrency(threadsPerEngine);
         }
     }
+    void SetTInjection(bool useGadget)
+    {
+        useTGadget = useGadget;
+        for (bitCapIntOcl i = 0U; i < qPages.size(); ++i) {
+            qPages[i]->SetTInjection(useTGadget);
+        }
+    }
+    bool GetTInjection() { return useTGadget; }
 
     QEnginePtr ReleaseEngine()
     {

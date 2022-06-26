@@ -32,8 +32,11 @@ protected:
     bool isDefaultPaging;
     bool doNormalize;
     bool isSparse;
+    bool useTGadget;
     bitLenInt thresholdQubits;
     bitLenInt maxPageQubits;
+    bitLenInt ancillaCount;
+    bitLenInt maxQubitPlusAncillaCount;
     real1_f separabilityThreshold;
     int64_t devID;
     complex phaseFactor;
@@ -45,6 +48,7 @@ protected:
 
     QStabilizerPtr MakeStabilizer(bitCapInt perm = 0U);
     QEnginePtr MakeEngine(bitCapInt perm = 0U);
+    QEnginePtr MakeEngine(bitCapInt perm, bitLenInt qbCount);
 
     void InvertBuffer(bitLenInt qubit);
     void FlushH(bitLenInt qubit);
@@ -105,6 +109,9 @@ public:
     {
     }
 
+    void SetTInjection(bool useGadget) { useTGadget = useGadget; }
+    bool GetTInjection() { return useTGadget; }
+
     void Finish()
     {
         if (stabilizer) {
@@ -145,7 +152,6 @@ public:
 
         if (src->stabilizer) {
             stabilizer = std::dynamic_pointer_cast<QStabilizer>(src->stabilizer->Clone());
-            DumpBuffers();
             for (bitLenInt i = 0U; i < qubitCount; ++i) {
                 if (src->shards[i]) {
                     shards[i] = std::make_shared<MpsShard>(src->shards[i]->gate);
@@ -306,9 +312,10 @@ public:
 
         engine = NULL;
 
-        if (stabilizer) {
+        if (stabilizer && !ancillaCount) {
             stabilizer->SetPermutation(perm);
         } else {
+            ancillaCount = 0U;
             stabilizer = MakeStabilizer(perm);
         }
     }
