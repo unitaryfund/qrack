@@ -156,14 +156,9 @@ bool QStabilizerHybrid::CollapseSeparableShard(bitLenInt qubit)
 void QStabilizerHybrid::FlushBuffers()
 {
     if (stabilizer) {
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            if (shards[i]) {
-                // This will call FlushBuffers() again after no longer stabilizer.
-                SwitchToEngine();
-                return;
-            }
+        if (IsBuffered()) {
+            SwitchToEngine();
         }
-
         return;
     }
 
