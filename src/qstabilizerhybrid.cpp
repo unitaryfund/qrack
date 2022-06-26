@@ -163,7 +163,7 @@ void QStabilizerHybrid::FlushBuffers()
         return;
     }
 
-    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+    for (bitLenInt i = 0U; i < shards.size(); ++i) {
         MpsShardPtr shard = shards[i];
         if (shard) {
             shards[i] = NULL;
@@ -271,7 +271,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     // Otherwise, stabilizer
     c->engine = NULL;
     c->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
-    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+    for (bitLenInt i = 0U; i < shards.size(); ++i) {
         if (shards[i]) {
             c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
         }
@@ -1013,13 +1013,13 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
     if (!stabilizer && toCompare->stabilizer) {
         SetPermutation(0U);
         stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        for (bitLenInt i = 0U; i < shards.size(); ++i) {
             shards[i] = toCompare->shards[i] ? toCompare->shards[i]->Clone() : NULL;
         }
     } else if (stabilizer && !toCompare->stabilizer) {
         toCompare->SetPermutation(0U);
         toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        for (bitLenInt i = 0U; i < shards.size(); ++i) {
             toCompare->shards[i] = shards[i] ? shards[i]->Clone() : NULL;
         }
     }

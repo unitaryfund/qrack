@@ -145,6 +145,12 @@ public:
 
         if (src->stabilizer) {
             stabilizer = std::dynamic_pointer_cast<QStabilizer>(src->stabilizer->Clone());
+            DumpBuffers();
+            for (bitLenInt i = 0U; i < qubitCount; ++i) {
+                if (src->shards[i]) {
+                    shards[i] = std::make_shared<MpsShard>(src->shards[i]->gate);
+                }
+            }
             return;
         }
 
