@@ -25,6 +25,7 @@ QPager::QPager(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt
     : QEngine(qBitCount, rgp, false, false, useHostMem, useHardwareRNG, norm_thresh)
     , useHardwareThreshold(false)
     , isSparse(useSparseStateVec)
+    , useTGadget(true)
     , minPageQubits(0U)
     , thresholdQubitsPerPage(qubitThreshold)
     , devID(deviceId)
@@ -233,6 +234,8 @@ QEnginePtr QPager::MakeEngine(bitLenInt length, bitCapIntOcl pageId)
         std::dynamic_pointer_cast<QEngine>(CreateQuantumInterface(engines, 0U, 0U, rand_generator, phaseFactor, false,
             false, GetPageHostPointer(pageId), GetPageDevice(pageId), useRDRAND, isSparse, (real1_f)amplitudeFloor));
     toRet->SetQubitCount(length);
+    toRet->SetConcurrency(GetConcurrencyLevel());
+    toRet->SetTInjection(useTGadget);
 
     return toRet;
 }
