@@ -898,7 +898,7 @@ void QStabilizerHybrid::MACInvert(
 
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 {
-    if (ancillaCount) {
+    if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
         SwitchToEngine();
     }
 
@@ -933,7 +933,7 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 
 bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
-    if (ancillaCount) {
+    if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
         SwitchToEngine();
     }
 
