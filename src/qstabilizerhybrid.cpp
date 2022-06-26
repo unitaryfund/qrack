@@ -57,6 +57,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         if (qubitCount > maxPageQubits) {
             engineTypes.push_back(QINTERFACE_QPAGER);
         }
+        maxQubitPlusAncillaCount = QRACK_MAX_PAGING_QB ? QRACK_MAX_PAGING_QB : (maxPageQubits + 2U);
     }
 #endif
 
