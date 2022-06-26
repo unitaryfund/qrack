@@ -39,6 +39,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , thresholdQubits(qubitThreshold)
     , maxPageQubits(-1)
     , ancillaCount(0)
+    , maxQubitPlusAncillaCount(28)
     , separabilityThreshold(sep_thresh)
     , devID(deviceId)
     , phaseFactor(phaseFac)
@@ -154,7 +155,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Hakop Pashayan, Oliver Reardon-Smith, Kamil Korzekwa, and Stephen D. Bartlett
     // PRX Quantum 3, 020361 – Published 23 June 2022
 
-    if (!useTGadget) {
+    if (!useTGadget || ((qubitCount + ancillaCount) >= maxQubitPlusAncillaCount)) {
         // The option to optimize this case is off.
         SwitchToEngine();
         return;
@@ -327,6 +328,8 @@ QInterfacePtr QStabilizerHybrid::Clone()
     // Otherwise, stabilizer
     c->engine = NULL;
     c->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
+    c->shards.resize(shards.size());
+    c->ancillaCount = ancillaCount;
     for (bitLenInt i = 0U; i < shards.size(); ++i) {
         if (shards[i]) {
             c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
@@ -1117,6 +1120,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         SetPermutation(0U);
         stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
         shards.resize(toCompare->shards.size());
+        ancillaCount = toCompare->ancillaCount;
         for (bitLenInt i = 0U; i < shards.size(); ++i) {
             shards[i] = toCompare->shards[i] ? toCompare->shards[i]->Clone() : NULL;
         }
@@ -1124,6 +1128,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         toCompare->SetPermutation(0U);
         toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
         toCompare->shards.resize(shards.size());
+        toCompare->ancillaCount = ancillaCount;
         for (bitLenInt i = 0U; i < shards.size(); ++i) {
             toCompare->shards[i] = shards[i] ? shards[i]->Clone() : NULL;
         }

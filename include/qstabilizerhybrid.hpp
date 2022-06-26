@@ -36,6 +36,7 @@ protected:
     bitLenInt thresholdQubits;
     bitLenInt maxPageQubits;
     bitLenInt ancillaCount;
+    bitLenInt maxQubitPlusAncillaCount;
     real1_f separabilityThreshold;
     int64_t devID;
     complex phaseFactor;
