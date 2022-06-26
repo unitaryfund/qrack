@@ -75,8 +75,8 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 
 QStabilizerPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)
 {
-    return std::make_shared<QStabilizer>(
-        qubitCount, perm, rand_generator, CMPLX_DEFAULT_ARG, false, randGlobalPhase, false, -1, useRDRAND);
+    return std::make_shared<QStabilizer>(qubitCount + ancillaCount, perm, rand_generator, CMPLX_DEFAULT_ARG, false,
+        randGlobalPhase, false, -1, useRDRAND);
 }
 QEnginePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
 {
@@ -486,6 +486,7 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
 
         dest->shards = shards;
         DumpBuffers();
+        ancillaCount = 0U;
 
         SetQubitCount(1U);
         stabilizer = MakeStabilizer(0U);
@@ -525,6 +526,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
         engine = NULL;
 
         DumpBuffers();
+        ancillaCount = 0U;
 
         SetQubitCount(1U);
         stabilizer = MakeStabilizer(0U);
@@ -556,6 +558,7 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
         engine = NULL;
 
         DumpBuffers();
+        ancillaCount = 0U;
 
         SetQubitCount(1U);
         stabilizer = MakeStabilizer(0U);
@@ -631,6 +634,7 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
     DumpBuffers();
 
     if (qubitCount > 1U) {
+        ancillaCount = 0;
         if (stabilizer) {
             engine = MakeEngine();
             stabilizer = NULL;
@@ -643,9 +647,10 @@ void QStabilizerHybrid::SetQuantumState(const complex* inputState)
     // Otherwise, we're preparing 1 qubit.
     engine = NULL;
 
-    if (stabilizer) {
+    if (stabilizer && !ancillaCount) {
         stabilizer->SetPermutation(0U);
     } else {
+        ancillaCount = 0;
         stabilizer = MakeStabilizer(0U);
     }
 
