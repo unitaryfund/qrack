@@ -478,15 +478,7 @@ void QStabilizerHybrid::GetQuantumState(complex* outputState)
         return;
     }
 
-    bitLenInt i;
-    for (i = 0U; i < qubitCount; ++i) {
-        if (shards[i]) {
-            // We have a cached non-Clifford operation.
-            break;
-        }
-    }
-
-    if (i == qubitCount) {
+    if (!IsBuffered()) {
         stabilizer->GetQuantumState(outputState);
         return;
     }
@@ -503,16 +495,7 @@ void QStabilizerHybrid::GetProbs(real1* outputProbs)
         return;
     }
 
-    bitLenInt i;
-    for (i = 0U; i < qubitCount; ++i) {
-        MpsShardPtr shard = shards[i];
-        if (shard && !IS_PHASE(shard->gate)) {
-            // We have a cached non-Clifford operation.
-            break;
-        }
-    }
-
-    if (i == qubitCount) {
+    if (!IsProbBuffered()) {
         stabilizer->GetProbs(outputProbs);
         return;
     }
@@ -527,15 +510,7 @@ complex QStabilizerHybrid::GetAmplitude(bitCapInt perm)
         return engine->GetAmplitude(perm);
     }
 
-    bitLenInt i;
-    for (i = 0U; i < qubitCount; ++i) {
-        if (shards[i]) {
-            // We have a cached non-Clifford operation.
-            break;
-        }
-    }
-
-    if (i == qubitCount) {
+    if (!IsBuffered()) {
         return stabilizer->GetAmplitude(perm);
     }
 
