@@ -35,7 +35,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , isDefaultPaging(false)
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
-    , useTGadget(true)
+    , useTGadget(false)
     , thresholdQubits(qubitThreshold)
     , maxPageQubits(-1)
     , ancillaCount(0)
@@ -57,7 +57,13 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         if (qubitCount > maxPageQubits) {
             engineTypes.push_back(QINTERFACE_QPAGER);
         }
-        maxQubitPlusAncillaCount = QRACK_MAX_PAGING_QB ? QRACK_MAX_PAGING_QB : (maxPageQubits + 2U);
+        maxQubitPlusAncillaCount = maxPageQubits + 2U;
+    }
+#endif
+
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_MAX_PAGING_QB")) {
+        maxQubitPlusAncillaCount = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
     }
 #endif
 

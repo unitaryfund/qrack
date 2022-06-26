@@ -2230,6 +2230,14 @@ public:
      */
     virtual void SetReactiveSeparate(bool isAggSep) {}
     /**
+     *  Get reactive separation option
+     *
+     *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to
+     * more-aggresively recover separability of subsystems. It can either hurt or help performance, though it commonly
+     * helps.
+     */
+    virtual bool GetReactiveSeparate() { return false; }
+    /**
      *  Set the option to use T-injection gadgets (off by default)
      *
      *  If T-injection gadgets are available, as in Qrack::QStabilizerHybrid, then turning this option on attempts to
@@ -2238,13 +2246,13 @@ public:
      */
     virtual void SetTInjection(bool useGadget) {}
     /**
-     *  Get reactive separation option
+     *  Get the option to use T-injection gadgets
      *
-     *  If reactive separation is available, as in Qrack::QUnit, then turning this option on attempts to
-     * more-aggresively recover separability of subsystems. It can either hurt or help performance, though it commonly
+     *  If T-injection gadgets are available, as in Qrack::QStabilizerHybrid, then turning this option on attempts to
+     * simulate Clifford+T with polynomial resource gadgets. It can either hurt or help performance, though it commonly
      * helps.
      */
-    virtual bool GetReactiveSeparate() { return false; }
+    virtual bool GetTInjection() { return false; }
 
     /**
      *  Clone this QInterface

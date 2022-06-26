@@ -110,6 +110,7 @@ public:
     }
 
     void SetTInjection(bool useGadget) { useTGadget = useGadget; }
+    bool GetTInjection() { return useTGadget; }
 
     void Finish()
     {
