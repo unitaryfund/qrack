@@ -171,11 +171,11 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
 
     // Act reverse T-gadget with measurement basis preparation.
     stabilizer->CNOT(target, ancillaIndex);
-    complex iMtrx[4];
+    complex iMtrx[4U];
     inv2x2(shard->gate, iMtrx);
-    const complex hGate[4] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-        -complex(SQRT1_2_R1, ZERO_R1) };
-    complex mtrx[4];
+    const complex hGate[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
+        complex(-SQRT1_2_R1, ZERO_R1) };
+    complex mtrx[4U];
     mul2x2(hGate, iMtrx, mtrx);
     shards.push_back(std::make_shared<MpsShard>(mtrx));
 
