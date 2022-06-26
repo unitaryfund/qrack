@@ -98,7 +98,7 @@ void QStabilizer::SetPermutation(bitCapInt perm, complex phaseFac)
         if (i < qubitCount) {
             x[i][i] = true;
         } else {
-            bitLenInt j = i - qubitCount;
+            const bitLenInt j = i - qubitCount;
             z[i][j] = true;
         }
     }
@@ -287,7 +287,7 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
 /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
 void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec, QInterfacePtr eng)
 {
-    AmplitudeEntry entry = getBasisAmp(nrm);
+    const AmplitudeEntry entry = getBasisAmp(nrm);
     if (entry.amplitude == ZERO_CMPLX) {
         return;
     }
@@ -304,7 +304,7 @@ void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec, QInterfac
 /// Returns the probability from applying the Pauli operator in the "scratch space" of q to |0...0>
 void QStabilizer::setBasisProb(const real1_f& nrm, real1* outputProbs)
 {
-    AmplitudeEntry entry = getBasisAmp(nrm);
+    const AmplitudeEntry entry = getBasisAmp(nrm);
     outputProbs[entry.permutation] = norm(entry.amplitude);
 }
 
@@ -364,7 +364,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
 
     setBasisState(nrm, stateVec, NULL);
     for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-        bitCapIntOcl t2 = t ^ (t + 1U);
+        const bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -394,7 +394,7 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
 
     setBasisState(nrm, NULL, eng);
     for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-        bitCapIntOcl t2 = t ^ (t + 1U);
+        const bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -423,7 +423,7 @@ void QStabilizer::GetProbs(real1* outputProbs)
 
     setBasisProb(nrm, outputProbs);
     for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-        bitCapIntOcl t2 = t ^ (t + 1U);
+        const bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
@@ -452,13 +452,13 @@ complex QStabilizer::GetAmplitude(bitCapInt perm)
         return entry.amplitude;
     }
     for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
-        bitCapIntOcl t2 = t ^ (t + 1U);
+        const bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
             if ((t2 >> i) & 1U) {
                 rowmult(elemCount, qubitCount + i);
             }
         }
-        AmplitudeEntry entry = getBasisAmp(nrm);
+        const AmplitudeEntry entry = getBasisAmp(nrm);
         if (entry.permutation == perm) {
             return entry.amplitude;
         }
@@ -767,9 +767,6 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 
     // pivot row in stabilizer
     bitLenInt p;
-    // pivot row in destabilizer
-    bitLenInt m;
-
     // loop over stabilizer generators
     for (p = 0U; p < n; ++p) {
         // if a Zbar does NOT commute with Z_b (the operator being measured), then outcome is random
@@ -816,6 +813,9 @@ bool QStabilizer::ForceM(bitLenInt t, bool result, bool doForce, bool doApply)
 
     // Before, we were checking if stabilizer generators commute with Z_b; now, we're checking destabilizer
     // generators
+
+    // pivot row in destabilizer
+    bitLenInt m;
     for (m = 0U; m < n; ++m) {
         if (x[m][t]) {
             break;
@@ -912,7 +912,7 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
     const bitLenInt end = start + length;
 
     for (bitLenInt i = 0U; i < start; ++i) {
-        bitLenInt i2 = i + qubitCount;
+        const bitLenInt i2 = i + qubitCount;
         for (bitLenInt j = start; j < end; ++j) {
             if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
@@ -921,7 +921,7 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
     }
 
     for (bitLenInt i = end; i < qubitCount; ++i) {
-        bitLenInt i2 = i + qubitCount;
+        const bitLenInt i2 = i + qubitCount;
         for (bitLenInt j = start; j < end; ++j) {
             if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
@@ -930,7 +930,7 @@ bool QStabilizer::CanDecomposeDispose(const bitLenInt start, const bitLenInt len
     }
 
     for (bitLenInt i = start; i < end; ++i) {
-        bitLenInt i2 = i + qubitCount;
+        const bitLenInt i2 = i + qubitCount;
         for (bitLenInt j = 0U; j < start; ++j) {
             if (x[i][j] || z[i][j] || x[i2][j] || z[i2][j]) {
                 return false;
@@ -1310,7 +1310,7 @@ void QStabilizer::MCPhase(
     }
 
     if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
-        real1_f prob = Prob(target);
+        const real1_f prob = Prob(target);
         if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
             return;
         }
@@ -1392,7 +1392,7 @@ void QStabilizer::MACPhase(
     }
 
     if (IS_NORM_0(topLeft - ONE_CMPLX) || IS_NORM_0(bottomRight - ONE_CMPLX)) {
-        real1_f prob = Prob(target);
+        const real1_f prob = Prob(target);
         if (IS_NORM_0(topLeft - ONE_CMPLX) && (prob == ZERO_R1)) {
             return;
         }
@@ -1590,7 +1590,7 @@ void QStabilizer::MACInvert(
 
 void QStabilizer::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 {
-    bitLenInt controls[1U] = { qubit1 };
+    const bitLenInt controls[1U] = { qubit1 };
     real1 sinTheta = (real1)sin(theta);
 
     if (IS_0_R1(sinTheta)) {
