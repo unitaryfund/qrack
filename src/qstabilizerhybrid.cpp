@@ -169,16 +169,14 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     // Form potentially entangled representation, with this.
     bitLenInt ancillaIndex = stabilizer->Compose(ancilla);
     ++ancillaCount;
+    shards.push_back(NULL);
 
-    // Act reverse T-gadget with measurement basis preparation.
-    stabilizer->CNOT(target, ancillaIndex);
-    complex iMtrx[4U];
+    // Use reverse t-injection gadget.
+    CNOT(target, ancillaIndex);
+    complex iMtrx[4];
     inv2x2(shard->gate, iMtrx);
-    const complex hGate[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(SQRT1_2_R1, ZERO_R1),
-        complex(SQRT1_2_R1, ZERO_R1), complex(-SQRT1_2_R1, ZERO_R1) };
-    complex mtrx[4U];
-    mul2x2(hGate, iMtrx, mtrx);
-    shards.push_back(std::make_shared<MpsShard>(mtrx));
+    Mtrx(iMtrx, ancillaIndex);
+    H(ancillaIndex);
 
     // When we measure, we act postselection, but not yet.
     // ForceM(ancillaIndex, false, true, true);
