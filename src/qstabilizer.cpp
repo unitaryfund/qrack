@@ -1000,6 +1000,9 @@ void QStabilizer::DecomposeDispose(const bitLenInt start, const bitLenInt length
         x[i].erase(x[i].begin() + start, x[i].begin() + end);
         z[i].erase(z[i].begin() + start, z[i].begin() + end);
     }
+
+    // We want to have the maximum number of 0 cross terms possible.
+    gaussian();
 }
 
 real1_f QStabilizer::ApproxCompareHelper(QStabilizerPtr toCompare, bool isDiscreteBool, real1_f error_tol)
