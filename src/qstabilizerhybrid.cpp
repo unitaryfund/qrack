@@ -157,6 +157,7 @@ void QStabilizerHybrid::FlushBuffers()
 {
     if (stabilizer) {
         if (IsBuffered()) {
+            // This will call FlushBuffers() again after no longer stabilizer.
             SwitchToEngine();
         }
         return;
