@@ -600,8 +600,7 @@ QInterfacePtr QUnit::EntangleRange(
 bool QUnit::TrySeparateClifford(bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
-
-    if (!shard.unit || !shard.unit->isClifford() || !shard.unit->TrySeparate(shard.mapped)) {
+    if (!shard.unit->TrySeparate(shard.mapped)) {
         return false;
     }
 
