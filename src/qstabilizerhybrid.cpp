@@ -903,21 +903,7 @@ void QStabilizerHybrid::MACInvert(
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 {
     if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->SwitchToEngine();
-        real1_f prob = clone->Prob(qubit);
-        if ((prob <= REAL1_EPSILON) || ((ONE_R1 - prob) <= REAL1_EPSILON)) {
-            // The qubit would be separable after gadget flush.
-            stabilizer->ForceM(qubit, (ONE_R1 / 2) < prob, true, true);
-            shards[qubit] = NULL;
-            TrimAncillae();
-        } else {
-            stabilizer = NULL;
-            engine = clone->engine;
-            shards = clone->shards;
-            ancillaCount = 0U;
-        }
-        return prob;
+        SwitchToEngine();
     }
 
     if (engine) {
@@ -951,14 +937,8 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 
 bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
-    if (ancillaCount) {
-        real1_f prob = Prob(qubit);
-        if (prob <= REAL1_EPSILON) {
-            return false;
-        }
-        if ((ONE_R1 - prob) <= REAL1_EPSILON) {
-            return true;
-        }
+    if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
+        SwitchToEngine();
     }
 
     if (engine) {
