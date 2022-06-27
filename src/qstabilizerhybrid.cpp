@@ -951,8 +951,14 @@ real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 
 bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 {
-    if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
-        SwitchToEngine();
+    if (ancillaCount) {
+        real1_f prob = Prob(qubit);
+        if (prob <= REAL1_EPSILON) {
+            return false;
+        }
+        if ((ONE_R1 - prob) <= REAL1_EPSILON) {
+            return true;
+        }
     }
 
     if (engine) {
