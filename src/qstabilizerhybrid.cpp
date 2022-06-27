@@ -185,7 +185,7 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     shards.push_back(NULL);
 
     // Use reverse t-injection gadget.
-    CNOT(target, ancillaIndex);
+    stabilizer->CNOT(target, ancillaIndex);
     Mtrx(shard->gate, ancillaIndex);
     H(ancillaIndex);
 
@@ -967,8 +967,9 @@ bool QStabilizerHybrid::ForceM(bitLenInt qubit, bool result, bool doForce, bool 
             return CollapseSeparableShard(qubit);
         }
 
-        // Otherwise, buffer will not change the fact that state appears maximally mixed.
-        shards[qubit] = NULL;
+        // Otherwise, we have non-Clifford measurement.
+        SwitchToEngine();
+        return engine->ForceM(qubit, result, doForce, doApply);
     }
 
     return stabilizer->ForceM(qubit, result, doForce, doApply);
@@ -998,8 +999,11 @@ bitCapInt QStabilizerHybrid::MAll()
                 CollapseSeparableShard(i);
             }
 
-            // Otherwise, buffer will not change the fact that state appears maximally mixed.
-            shards[i] = NULL;
+            // Otherwise, we have non-Clifford measurement.
+            SwitchToEngine();
+            bitCapInt toRet = engine->MAll();
+            SetPermutation(toRet);
+            return toRet;
         }
 
         if (stabilizer->M(i)) {
