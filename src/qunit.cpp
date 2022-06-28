@@ -715,7 +715,7 @@ bool QUnit::TrySeparate(bitLenInt qubit)
     real1_f z = ZERO_R1_F;
 
     for (bitLenInt i = 0U; i < 3U; ++i) {
-        prob = 2 * ((ONE_R1_F / 2) - ProbBase(qubit));
+        prob = ONE_R1_F - 2 * ProbBase(qubit);
 
         if (!shard.unit) {
             return true;
