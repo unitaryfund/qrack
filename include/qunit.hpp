@@ -660,8 +660,8 @@ protected:
     void ToPermBasisMeasure(bitLenInt qubit)
     {
         RevertBasis1Qb(qubit);
-        RevertBasis2Qb(qubit, ONLY_INVERT, ONLY_TARGETS);
-        RevertBasis2Qb(qubit, INVERT_AND_PHASE, ONLY_CONTROLS);
+        RevertBasis2Qb(qubit, ONLY_INVERT);
+        RevertBasis2Qb(qubit, ONLY_PHASE, ONLY_CONTROLS);
 
         shards[qubit].DumpMultiBit();
     }
@@ -672,17 +672,16 @@ protected:
             return;
         }
 
-        for (bitLenInt i = 0U; i < length; ++i) {
-            RevertBasis1Qb(start + i);
-        }
-
         std::set<bitLenInt> exceptBits;
         for (bitLenInt i = 0U; i < length; ++i) {
             exceptBits.insert(start + i);
         }
         for (bitLenInt i = 0U; i < length; ++i) {
-            RevertBasis2Qb(start + i, ONLY_INVERT, ONLY_TARGETS);
-            RevertBasis2Qb(start + i, INVERT_AND_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, exceptBits);
+            RevertBasis1Qb(start + i);
+        }
+        for (bitLenInt i = 0U; i < length; ++i) {
+            RevertBasis2Qb(start + i, ONLY_INVERT);
+            RevertBasis2Qb(start + i, ONLY_PHASE, ONLY_CONTROLS, CTRL_AND_ANTI, exceptBits);
             shards[start + i].DumpMultiBit();
         }
     }
