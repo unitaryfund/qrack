@@ -312,6 +312,8 @@ protected:
     virtual void ZBase(bitLenInt target);
     virtual real1_f ProbBase(bitLenInt qubit);
 
+    virtual bool TrySeparateClifford(bitLenInt qubit);
+
     virtual void EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse);
 
 #if ENABLE_ALU

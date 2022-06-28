@@ -597,6 +597,30 @@ QInterfacePtr QUnit::EntangleRange(
     return toRet;
 }
 
+bool QUnit::TrySeparateClifford(bitLenInt qubit)
+{
+    QEngineShard& shard = shards[qubit];
+    if (!shard.unit->TrySeparate(shard.mapped)) {
+        return false;
+    }
+
+    // If TrySeparate() == true, this bit can be decomposed.
+    QInterfacePtr sepUnit = MakeEngine(1U, 0U);
+    shard.unit->Decompose(shard.mapped, sepUnit);
+
+    for (bitLenInt i = 0U; i < qubitCount; ++i) {
+        if ((shard.unit == shards[i].unit) && (shard.mapped < shards[i].mapped)) {
+            --(shards[i].mapped);
+        }
+    }
+    shard.mapped = 0U;
+    shard.unit = sepUnit;
+
+    ProbBase(qubit);
+
+    return true;
+}
+
 bool QUnit::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error_tol)
 {
     if (length == 1U) {
@@ -684,25 +708,8 @@ bool QUnit::TrySeparate(bitLenInt qubit)
         return true;
     }
 
-    if (shard.unit->isClifford()) {
-        if (!shard.unit->isClifford(qubit) || !shard.unit->TrySeparate(shard.mapped)) {
-            return false;
-        }
-
-        QInterfacePtr sepUnit = MakeEngine(1U, 0U);
-        shard.unit->Decompose(shard.mapped, sepUnit);
-
-        for (bitLenInt i = 0U; i < qubitCount; ++i) {
-            if ((shard.unit == shards[i].unit) && (shard.mapped < shards[i].mapped)) {
-                --(shards[i].mapped);
-            }
-        }
-        shard.mapped = 0U;
-        shard.unit = sepUnit;
-
-        ProbBase(qubit);
-
-        return true;
+    if (shard.unit && shard.unit->isClifford()) {
+        return TrySeparateClifford(qubit);
     }
 
     real1_f prob;
