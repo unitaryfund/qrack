@@ -628,6 +628,9 @@ bool QUnit::TrySeparate(const bitLenInt* qubits, bitLenInt length, real1_f error
         QEngineShard& shard = shards[qubit];
 
         if (shard.GetQubitCount() == 1U) {
+            if (shard.unit) {
+                ProbBase(qubit);
+            }
             return true;
         }
 
