@@ -600,23 +600,31 @@ QInterfacePtr QUnit::EntangleRange(
 bool QUnit::TrySeparateClifford(bitLenInt qubit)
 {
     QEngineShard& shard = shards[qubit];
-    if (!shard.unit->isClifford(qubit) || !shard.unit->TrySeparate(shard.mapped)) {
+    if (!shard.unit->TrySeparate(shard.mapped)) {
         return false;
     }
 
     // If TrySeparate() == true, this bit can be decomposed.
-    QInterfacePtr sepUnit = MakeEngine(1U, 0U);
-    shard.unit->Decompose(shard.mapped, sepUnit);
+    QInterfacePtr sepUnit = shard.unit->Decompose(shard.mapped, 1U);
+    const bool isPair = (shard.unit->GetQubitCount() == 1U);
 
+    bitLenInt oQubit = 0U;
     for (bitLenInt i = 0U; i < qubitCount; ++i) {
-        if ((shard.unit == shards[i].unit) && (shard.mapped < shards[i].mapped)) {
-            --(shards[i].mapped);
+        if ((shard.unit == shards[i].unit) && (shard.mapped != shards[i].mapped)) {
+            oQubit = i;
+            if (shard.mapped < shards[i].mapped) {
+                --(shards[i].mapped);
+            }
         }
     }
+
     shard.mapped = 0U;
     shard.unit = sepUnit;
 
     ProbBase(qubit);
+    if (isPair) {
+        ProbBase(oQubit);
+    }
 
     return true;
 }

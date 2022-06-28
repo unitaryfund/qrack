@@ -1185,7 +1185,7 @@ void QStabilizerHybrid::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f
 
 bool QStabilizerHybrid::TrySeparate(bitLenInt qubit)
 {
-    if (qubitCount == 1U) {
+    if ((qubitCount == 1U) && !ancillaCount) {
         return true;
     }
 
@@ -1197,7 +1197,7 @@ bool QStabilizerHybrid::TrySeparate(bitLenInt qubit)
 }
 bool QStabilizerHybrid::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 {
-    if (qubitCount == 2U) {
+    if ((qubitCount == 2U) && !ancillaCount) {
         return true;
     }
 
