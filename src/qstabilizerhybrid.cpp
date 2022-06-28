@@ -229,7 +229,7 @@ void QStabilizerHybrid::FlushBuffers()
         return;
     }
 
-    for (bitLenInt i = 0U; i < shards.size(); ++i) {
+    for (size_t i = 0U; i < shards.size(); ++i) {
         MpsShardPtr shard = shards[i];
         if (shard) {
             shards[i] = NULL;
@@ -339,7 +339,7 @@ QInterfacePtr QStabilizerHybrid::Clone()
     c->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
     c->shards.resize(shards.size());
     c->ancillaCount = ancillaCount;
-    for (bitLenInt i = 0U; i < shards.size(); ++i) {
+    for (size_t i = 0U; i < shards.size(); ++i) {
         if (shards[i]) {
             c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
         }
