@@ -3790,9 +3790,9 @@ void QUnit::CommuteH(bitLenInt bitIndex)
 
         QEngineShardPtr partner = phaseShard->first;
 
-        if (IS_OPPOSITE(polarDiff, polarSame)) {
-            continue;
-        }
+        // if (IS_OPPOSITE(polarDiff, polarSame)) {
+        //     continue;
+        // }
 
         if (buffer->isInvert && IS_SAME(polarDiff, polarSame)) {
             continue;
@@ -3813,9 +3813,9 @@ void QUnit::CommuteH(bitLenInt bitIndex)
 
         QEngineShardPtr partner = phaseShard->first;
 
-        if (IS_OPPOSITE(polarDiff, polarSame)) {
-            continue;
-        }
+        // if (IS_OPPOSITE(polarDiff, polarSame)) {
+        //     continue;
+        // }
 
         if (buffer->isInvert && IS_SAME(polarDiff, polarSame)) {
             continue;
