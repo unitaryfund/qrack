@@ -12,16 +12,20 @@
 
 #include <thread>
 
-#define IS_REAL_0(r) (abs(r) <= FP_NORM_EPSILON)
+#define IS_REAL_1(r) (abs(ONE_CMPLX - r) <= FP_NORM_EPSILON)
 #define IS_CTRLED_CLIFFORD(top, bottom)                                                                                \
-    ((IS_REAL_0(std::real(top)) || IS_REAL_0(std::imag(top))) && (IS_SAME(top, bottom) || IS_SAME(top, -bottom)))
+    ((IS_REAL_1(std::real(top)) || IS_REAL_1(std::imag(bottom))) && (IS_SAME(top, bottom) || IS_SAME(top, -bottom)))
+#define IS_CLIFFORD_PHASE_INVERT(top, bottom)                                                                          \
+    (IS_SAME(top, bottom) || IS_SAME(top, -bottom) || IS_SAME(top, I_CMPLX * bottom) || IS_SAME(top, -I_CMPLX * bottom))
 #define IS_CLIFFORD(mtrx)                                                                                              \
-    ((IS_SAME(mtrx[0U], mtrx[1U]) || IS_SAME(mtrx[0U], -mtrx[1U]) || IS_SAME(mtrx[0U], I_CMPLX * mtrx[1U]) ||          \
-         IS_SAME(mtrx[0U], -I_CMPLX * mtrx[1U])) &&                                                                    \
-        (IS_SAME(mtrx[0U], mtrx[2U]) || IS_SAME(mtrx[0U], -mtrx[2U]) || IS_SAME(mtrx[0U], I_CMPLX * mtrx[2U]) ||       \
-            IS_SAME(mtrx[0U], -I_CMPLX * mtrx[2U])) &&                                                                 \
-        (IS_SAME(mtrx[0U], mtrx[3U]) || IS_SAME(mtrx[0U], -mtrx[3U]) || IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U]) ||       \
-            IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U])))
+    ((IS_PHASE(mtrx) && IS_CLIFFORD_PHASE_INVERT(mtrx[0], mtrx[3])) ||                                                 \
+        (IS_INVERT(mtrx) && IS_CLIFFORD_PHASE_INVERT(mtrx[1], mtrx[2])) ||                                             \
+        ((IS_SAME(mtrx[0U], mtrx[1U]) || IS_SAME(mtrx[0U], -mtrx[1U]) || IS_SAME(mtrx[0U], I_CMPLX * mtrx[1U]) ||      \
+             IS_SAME(mtrx[0U], -I_CMPLX * mtrx[1U])) &&                                                                \
+            (IS_SAME(mtrx[0U], mtrx[2U]) || IS_SAME(mtrx[0U], -mtrx[2U]) || IS_SAME(mtrx[0U], I_CMPLX * mtrx[2U]) ||   \
+                IS_SAME(mtrx[0U], -I_CMPLX * mtrx[2U])) &&                                                             \
+            (IS_SAME(mtrx[0U], mtrx[3U]) || IS_SAME(mtrx[0U], -mtrx[3U]) || IS_SAME(mtrx[0U], I_CMPLX * mtrx[3U]) ||   \
+                IS_SAME(mtrx[0U], -I_CMPLX * mtrx[3U]))))
 #define IS_PHASE(mtrx) (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]))
 #define IS_INVERT(mtrx) (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U]))
 
