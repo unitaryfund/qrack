@@ -2221,7 +2221,8 @@ void QUnit::MCPhase(
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI);
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL, {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard) && (!IS_SAME(topLeft, -bottomRight) || !ARE_CLIFFORD(cShard, tShard))) {
+        if (!IS_SAME_UNIT(cShard, tShard) &&
+            (!(IS_SAME(ONE_CMPLX, topLeft) && IS_SAME(-ONE_CMPLX, bottomRight)) || !ARE_CLIFFORD(cShard, tShard))) {
             tShard.AddPhaseAngles(&cShard, topLeft, bottomRight);
             OptimizePairBuffers(control, target, false);
 
@@ -2263,7 +2264,8 @@ void QUnit::MACPhase(
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_CTRL);
         RevertBasis2Qb(target, ONLY_INVERT, ONLY_TARGETS, ONLY_ANTI, {}, { control });
 
-        if (!IS_SAME_UNIT(cShard, tShard) && (!IS_SAME(topLeft, -bottomRight) || !ARE_CLIFFORD(cShard, tShard))) {
+        if (!IS_SAME_UNIT(cShard, tShard) &&
+            (!(IS_SAME(ONE_CMPLX, topLeft) && IS_SAME(-ONE_CMPLX, bottomRight)) || !ARE_CLIFFORD(cShard, tShard))) {
             tShard.AddAntiPhaseAngles(&cShard, bottomRight, topLeft);
             OptimizePairBuffers(control, target, true);
 
@@ -2304,7 +2306,9 @@ void QUnit::MCInvert(
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_CTRL, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) &&
-            ((!IS_SAME(topRight, bottomLeft) && !IS_SAME(topRight, -bottomLeft)) || !ARE_CLIFFORD(cShard, tShard))) {
+            (!((IS_SAME(ONE_CMPLX, topRight) && IS_SAME(ONE_CMPLX, bottomLeft)) ||
+                 ((IS_SAME(-I_CMPLX, topRight) && IS_SAME(I_CMPLX, bottomLeft)))) ||
+                !ARE_CLIFFORD(cShard, tShard))) {
             tShard.AddInversionAngles(&cShard, topRight, bottomLeft);
             OptimizePairBuffers(control, target, false);
 
@@ -2345,7 +2349,9 @@ void QUnit::MACInvert(
         RevertBasis2Qb(target, INVERT_AND_PHASE, CONTROLS_AND_TARGETS, ONLY_ANTI, {}, { control });
 
         if (!IS_SAME_UNIT(cShard, tShard) &&
-            ((!IS_SAME(topRight, bottomLeft) && !IS_SAME(topRight, -bottomLeft)) || !ARE_CLIFFORD(cShard, tShard))) {
+            (!((IS_SAME(ONE_CMPLX, topRight) && IS_SAME(ONE_CMPLX, bottomLeft)) ||
+                 ((IS_SAME(-I_CMPLX, topRight) && IS_SAME(I_CMPLX, bottomLeft)))) ||
+                !ARE_CLIFFORD(cShard, tShard))) {
             tShard.AddAntiInversionAngles(&cShard, bottomLeft, topRight);
             OptimizePairBuffers(control, target, true);
 
