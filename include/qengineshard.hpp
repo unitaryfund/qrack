@@ -302,7 +302,7 @@ public:
 
         return unit->Prob(mapped);
     }
-    bool isClifford() { return unit && unit->isClifford(mapped); };
+    bool isClifford() { return !unit || (unit && unit->isClifford(mapped)); };
 };
 
 class QEngineShardMap {
