@@ -395,7 +395,8 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
 {
     const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
 
-    if ((nQubits + ancillaCount + toCopy->ancillaCount) > maxQubitPlusAncillaCount) {
+    if ((nQubits <= maxQubitPlusAncillaCount) &&
+        (nQubits + ancillaCount + toCopy->ancillaCount) > maxQubitPlusAncillaCount) {
         SwitchToEngine();
     }
 
