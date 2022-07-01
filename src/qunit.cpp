@@ -50,7 +50,8 @@
 #define UNSAFE_CACHED_ONE(shard) (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && IS_AMP_0(shard.amp0))
 #define UNSAFE_CACHED_ZERO(shard) (!shard.isProbDirty && (shard.pauliBasis == PauliZ) && IS_AMP_0(shard.amp1))
 #define IS_SAME_UNIT(shard1, shard2) (shard1.unit && (shard1.unit == shard2.unit))
-#define ARE_CLIFFORD(shard1, shard2) (shard1.isClifford() && shard2.isClifford())
+#define ARE_CLIFFORD(shard1, shard2)                                                                                   \
+    ((engines[0U] == QINTERFACE_STABILIZER_HYBRID) && shard1.isClifford() && shard2.isClifford())
 #define BLOCKED_SEPARATE(shard) (shard.unit && shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped))
 #define SWAP_IDENT(shard1, shard2)                                                                                     \
     (!DIRTY(shard1) && !DIRTY(shard2) && (shard1.pauliBasis == shard2.pauliBasis) &&                                   \
