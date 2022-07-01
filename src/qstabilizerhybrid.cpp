@@ -1149,7 +1149,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         stabilizer = std::dynamic_pointer_cast<QStabilizer>(toCompare->stabilizer->Clone());
         shards.resize(toCompare->shards.size());
         ancillaCount = toCompare->ancillaCount;
-        for (bitLenInt i = 0U; i < shards.size(); ++i) {
+        for (size_t i = 0U; i < shards.size(); ++i) {
             shards[i] = toCompare->shards[i] ? toCompare->shards[i]->Clone() : NULL;
         }
     } else if (stabilizer && !toCompare->stabilizer) {
@@ -1157,7 +1157,7 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
         toCompare->stabilizer = std::dynamic_pointer_cast<QStabilizer>(stabilizer->Clone());
         toCompare->shards.resize(shards.size());
         toCompare->ancillaCount = ancillaCount;
-        for (bitLenInt i = 0U; i < shards.size(); ++i) {
+        for (size_t i = 0U; i < shards.size(); ++i) {
             toCompare->shards[i] = shards[i] ? shards[i]->Clone() : NULL;
         }
     }
