@@ -32,7 +32,7 @@
 #define IS_0_R1(r) (abs(r) <= REAL1_EPSILON)
 #define IS_1_R1(r) (abs(ONE_R1 - r) <= REAL1_EPSILON)
 #define IS_1_CMPLX(c) (norm(ONE_CMPLX - (c)) <= FP_NORM_EPSILON)
-#define SHARD_STATE(shard) (norm(shard.amp0) < (ONE_R1 / 2))
+#define SHARD_STATE(shard) ((2 * norm(shard.amp0)) < ONE_R1)
 #define QUEUED_PHASE(shard)                                                                                            \
     ((shard.targetOfShards.size() != 0U) || (shard.controlsShards.size() != 0U) ||                                     \
         (shard.antiTargetOfShards.size() != 0U) || (shard.antiControlsShards.size() != 0U))
