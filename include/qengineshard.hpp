@@ -302,7 +302,15 @@ public:
 
         return unit->Prob(mapped);
     }
-    bool isClifford() { return !unit || (unit && unit->isClifford(mapped)); };
+    bool isClifford()
+    {
+        return (unit && unit->isClifford(mapped)) ||
+            (!unit &&
+                ((norm(amp0) <= FP_NORM_EPSILON) || (norm(amp1) <= FP_NORM_EPSILON) ||
+                    (norm(amp0 - amp1) <= FP_NORM_EPSILON) || (norm(amp0 + amp1) <= FP_NORM_EPSILON) ||
+                    (norm(amp0 - I_CMPLX * amp1) <= FP_NORM_EPSILON) ||
+                    (norm(amp0 + I_CMPLX * amp1) <= FP_NORM_EPSILON)));
+    };
 };
 
 class QEngineShardMap {
