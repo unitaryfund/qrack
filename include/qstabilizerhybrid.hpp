@@ -88,6 +88,24 @@ protected:
         return false;
     }
 
+    void TrimAncillae()
+    {
+        if (engine) {
+            return;
+        }
+
+        bitLenInt i = 0;
+        while (i < ancillaCount) {
+            if (stabilizer->IsSeparable(qubitCount + i)) {
+                stabilizer->Dispose(qubitCount + i, 1);
+                shards.erase(shards.begin() + qubitCount + i);
+                --ancillaCount;
+            } else {
+                ++i;
+            }
+        }
+    }
+
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
 

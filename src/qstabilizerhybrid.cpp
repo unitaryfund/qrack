@@ -903,7 +903,19 @@ void QStabilizerHybrid::MACInvert(
 real1_f QStabilizerHybrid::Prob(bitLenInt qubit)
 {
     if (ancillaCount && !(stabilizer->IsSeparable(qubit))) {
-        SwitchToEngine();
+        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+        clone->SwitchToEngine();
+        const real1_f prob = clone->Prob(qubit);
+        if (prob <= FP_NORM_EPSILON) {
+            stabilizer->ForceM(qubit, false, true, true);
+            shards[qubit] = NULL;
+            TrimAncillae();
+        } else if ((ONE_R1 - prob) <= FP_NORM_EPSILON) {
+            stabilizer->ForceM(qubit, true, true, true);
+            shards[qubit] = NULL;
+            TrimAncillae();
+        }
+        return prob;
     }
 
     if (engine) {
