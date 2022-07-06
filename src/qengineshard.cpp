@@ -119,8 +119,8 @@ void QEngineShard::AddBuffer(QEngineShardPtr p, ShardToPhaseMap& localMap, GetBu
     }
 }
 
-void QEngineShard::AddAngles(QEngineShardPtr control, complex cmplxDiff, complex cmplxSame,
-    AddRemoveFn localFn, ShardToPhaseMap& localMap, AddRemoveFn remoteFn)
+void QEngineShard::AddAngles(QEngineShardPtr control, complex cmplxDiff, complex cmplxSame, AddRemoveFn localFn,
+    ShardToPhaseMap& localMap, AddRemoveFn remoteFn)
 {
     ((*this).*localFn)(control);
 

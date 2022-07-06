@@ -83,7 +83,7 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
     for (auto&& shard : shards) {
         if (shard.unit && (std::find(qips.begin(), qips.end(), shard.unit) == qips.end())) {
             qips.push_back(shard.unit);
-            size_t deviceIndex = std::distance(
+            const size_t deviceIndex = std::distance(
                 deviceList.begin(), std::find_if(deviceList.begin(), deviceList.end(), [&](DeviceInfo di) {
                     return di.id == (shard.unit->GetDevice() < 0) ? OCLEngine::Instance().GetDefaultDeviceID()
                                                                   : (size_t)shard.unit->GetDevice();
@@ -220,8 +220,8 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
 
 bool QUnitMulti::SeparateBit(bool value, bitLenInt qubit)
 {
-    bool isClifford = shards[qubit].unit->isClifford();
-    bool toRet = QUnit::SeparateBit(value, qubit);
+    const bool isClifford = shards[qubit].unit->isClifford();
+    const bool toRet = QUnit::SeparateBit(value, qubit);
     if (!isClifford && toRet) {
         RedistributeQEngines();
     }
