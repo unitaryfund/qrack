@@ -6431,7 +6431,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
     const int GateCount2Qb = 7;
     const int Depth = 6;
 
-    const int TRIALS = 100;
+    const int TRIALS = 10000;
     const int n = 6;
 
     int d;

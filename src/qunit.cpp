@@ -3742,8 +3742,6 @@ void QUnit::CommuteH(bitLenInt bitIndex)
         return;
     }
 
-    // bool isNoncommuting = false;
-
     ShardToPhaseMap controlsShards = shard.controlsShards;
 
     for (auto phaseShard = controlsShards.begin(); phaseShard != controlsShards.end(); ++phaseShard) {
@@ -3751,7 +3749,6 @@ void QUnit::CommuteH(bitLenInt bitIndex)
         QEngineShardPtr partner = phaseShard->first;
 
         if (buffer->isInvert) {
-            // isNoncommuting = true;
             continue;
         }
 
@@ -3774,7 +3771,6 @@ void QUnit::CommuteH(bitLenInt bitIndex)
         QEngineShardPtr partner = phaseShard->first;
 
         if (buffer->isInvert) {
-            // isNoncommuting = true;
             continue;
         }
 
@@ -3802,11 +3798,11 @@ void QUnit::CommuteH(bitLenInt bitIndex)
 
         QEngineShardPtr partner = phaseShard->first;
 
-        // if (!isNoncommuting && IS_OPPOSITE(polarDiff, polarSame)) {
-        //     continue;
-        // }
+        if (IS_SAME(polarDiff, polarSame)) {
+            continue;
+        }
 
-        if (buffer->isInvert && IS_SAME(polarDiff, polarSame)) {
+        if (buffer->isInvert && IS_OPPOSITE(polarDiff, polarSame)) {
             continue;
         }
 
@@ -3825,11 +3821,11 @@ void QUnit::CommuteH(bitLenInt bitIndex)
 
         QEngineShardPtr partner = phaseShard->first;
 
-        // if (!isNoncommuting && IS_OPPOSITE(polarDiff, polarSame)) {
-        //     continue;
-        // }
+        if (IS_SAME(polarDiff, polarSame)) {
+            continue;
+        }
 
-        if (buffer->isInvert && IS_SAME(polarDiff, polarSame)) {
+        if (buffer->isInvert && IS_OPPOSITE(polarDiff, polarSame)) {
             continue;
         }
 
