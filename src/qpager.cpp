@@ -621,6 +621,10 @@ void QPager::CombineAndOpControlled(
 
 bitLenInt QPager::Compose(QPagerPtr toCopy)
 {
+    if (!toCopy->qubitCount) {
+        return qubitCount;
+    }
+
     if ((qubitCount + toCopy->qubitCount) > maxQubits) {
         throw std::invalid_argument(
             "Cannot instantiate a QPager with greater capacity than environment variable QRACK_MAX_PAGING_QB.");

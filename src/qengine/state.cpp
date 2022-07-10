@@ -848,6 +848,11 @@ void QEngineCPU::CUniformParityRZ(const bitLenInt* cControls, bitLenInt controlL
 bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 {
     const bitLenInt result = qubitCount;
+
+    if (!toCopy->qubitCount) {
+        return result;
+    }
+
     const bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
 
     if (!qubitCount) {

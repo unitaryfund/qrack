@@ -397,6 +397,10 @@ void QStabilizerHybrid::SwitchToEngine()
 
 bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
 {
+    if (!toCopy->qubitCount) {
+        return qubitCount;
+    }
+
     const bitLenInt nQubits = qubitCount + toCopy->qubitCount;
 
     if ((nQubits <= maxQubitPlusAncillaCount) &&
@@ -415,6 +419,7 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
         toRet = engine->Compose(toCopy->engine);
     } else {
         toRet = stabilizer->Compose(toCopy->stabilizer, qubitCount);
+        ancillaCount += toCopy->ancillaCount;
     }
 
     // Resize the shards buffer.
@@ -427,7 +432,6 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
     }
 
     SetQubitCount(nQubits);
-    ancillaCount += toCopy->ancillaCount;
     FixPaging();
     // This would be more performant for toCopy reuse, but toCopy probably won't be reused.
     // toCopy->FixPaging();
@@ -439,6 +443,10 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
 {
     if (start == qubitCount) {
         return Compose(toCopy);
+    }
+
+    if (!toCopy->qubitCount) {
+        return qubitCount;
     }
 
     if (ancillaCount || toCopy->ancillaCount) {
@@ -496,6 +504,11 @@ QInterfacePtr QStabilizerHybrid::Decompose(bitLenInt start, bitLenInt length)
 void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
 {
     const bitLenInt length = dest->qubitCount;
+
+    if (!length) {
+        return;
+    }
+
     const bitLenInt nQubits = qubitCount - length;
 
     if (engine) {
