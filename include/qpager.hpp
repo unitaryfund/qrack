@@ -54,7 +54,7 @@ protected:
         basePageMaxQPower = pow2Ocl(baseQubitsPerPage);
     }
 
-    bitCapInt pageMaxQPower() { return maxQPower / qPages.size(); }
+    bitCapInt pageMaxQPower() { return qPages.size() ? (maxQPower / qPages.size()) : ONE_BCI; }
     bitLenInt pagedQubitCount() { return log2((bitCapInt)qPages.size()); }
     bitLenInt qubitsPerPage() { return log2(pageMaxQPower()); }
     int64_t GetPageDevice(bitCapIntOcl page) { return deviceIDs[page % deviceIDs.size()]; }
