@@ -109,6 +109,65 @@ public:
     {
     }
 
+    bool isPaged() { return (engineTypes[0] == QINTERFACE_QPAGER); }
+
+    void TurnOnPaging()
+    {
+        if (engineTypes[0] == QINTERFACE_QPAGER) {
+            return;
+        }
+        engineTypes.insert(engineTypes.begin(), QINTERFACE_QPAGER);
+
+        if (engine) {
+            QPagerPtr nEngine = std::make_shared<QPager>(engine, engineTypes, qubitCount, 0U, rand_generator,
+                phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
+                (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
+            engine = nEngine;
+        }
+    }
+
+    void TurnOffPaging()
+    {
+        if (engineTypes[0] != QINTERFACE_QPAGER) {
+            return;
+        }
+        engineTypes.erase(engineTypes.begin());
+        if (!engineTypes.size()) {
+            engineTypes.push_back(QINTERFACE_OPTIMAL_BASE);
+        }
+
+        if (engine) {
+            engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
+        }
+    }
+
+    void FixPaging()
+    {
+        if (!isDefaultPaging) {
+            return;
+        }
+
+        if (qubitCount <= maxPageQubits) {
+            TurnOffPaging();
+        }
+        if (qubitCount > maxPageQubits) {
+            TurnOnPaging();
+        }
+    }
+
+    void SyncPagingWithOther(QStabilizerHybridPtr oSim)
+    {
+        if (!isDefaultPaging) {
+            return;
+        }
+
+        if (oSim->isPaged()) {
+            TurnOnPaging();
+        } else if (isPaged()) {
+            oSim->TurnOnPaging();
+        }
+    }
+
     void SetTInjection(bool useGadget) { useTGadget = useGadget; }
     bool GetTInjection() { return useTGadget; }
 

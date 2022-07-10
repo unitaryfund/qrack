@@ -403,9 +403,11 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
     bitLenInt toRet;
     if (engine) {
         toCopy->SwitchToEngine();
+        SyncPagingWithOther(toCopy);
         toRet = engine->Compose(toCopy->engine);
     } else if (toCopy->engine) {
         SwitchToEngine();
+        SyncPagingWithOther(toCopy);
         toRet = engine->Compose(toCopy->engine);
     } else {
         toRet = stabilizer->Compose(toCopy->stabilizer, qubitCount);
@@ -422,6 +424,7 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
 
     SetQubitCount(nQubits);
     ancillaCount += toCopy->ancillaCount;
+    toCopy->FixPaging();
 
     return toRet;
 }
@@ -446,9 +449,11 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
 
     if (engine) {
         toCopy->SwitchToEngine();
+        SyncPagingWithOther(toCopy);
         toRet = engine->Compose(toCopy->engine, start);
     } else if (toCopy->engine) {
         SwitchToEngine();
+        SyncPagingWithOther(toCopy);
         toRet = engine->Compose(toCopy->engine, start);
     } else {
         toRet = stabilizer->Compose(toCopy->stabilizer, start);
@@ -464,6 +469,7 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
     }
 
     SetQubitCount(nQubits);
+    toCopy->FixPaging();
 
     return toRet;
 }
@@ -484,24 +490,12 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     const bitLenInt length = dest->qubitCount;
     const bitLenInt nQubits = qubitCount - length;
 
-    if (length == qubitCount) {
-        dest->stabilizer = stabilizer;
-        stabilizer = NULL;
-        dest->engine = engine;
-        engine = NULL;
-
-        dest->shards = shards;
-        DumpBuffers();
-        ancillaCount = 0U;
-
-        SetQubitCount(1U);
-        stabilizer = MakeStabilizer(0U);
-        return;
-    }
-
     if (engine) {
         dest->SwitchToEngine();
+        SyncPagingWithOther(dest);
         engine->Decompose(start, dest->engine);
+        FixPaging();
+        dest->FixPaging();
         SetQubitCount(qubitCount - length);
         return;
     }
@@ -515,23 +509,14 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(nQubits);
+
+    FixPaging();
+    dest->FixPaging();
 }
 
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
 {
     const bitLenInt nQubits = qubitCount - length;
-
-    if (length == qubitCount) {
-        stabilizer = NULL;
-        engine = NULL;
-
-        DumpBuffers();
-        ancillaCount = 0U;
-
-        SetQubitCount(1U);
-        stabilizer = MakeStabilizer(0U);
-        return;
-    }
 
     if (engine) {
         engine->Dispose(start, length);
@@ -541,23 +526,13 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(nQubits);
+
+    FixPaging();
 }
 
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
 {
     const bitLenInt nQubits = qubitCount - length;
-
-    if (length == qubitCount) {
-        stabilizer = NULL;
-        engine = NULL;
-
-        DumpBuffers();
-        ancillaCount = 0U;
-
-        SetQubitCount(1U);
-        stabilizer = MakeStabilizer(0U);
-        return;
-    }
 
     if (engine) {
         engine->Dispose(start, length, disposedPerm);
@@ -567,6 +542,8 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(nQubits);
+
+    FixPaging();
 }
 
 void QStabilizerHybrid::GetQuantumState(complex* outputState)
