@@ -161,6 +161,12 @@ public:
             return;
         }
 
+        if ((qubitCount + oSim->qubitCount + ancillaCount + oSim->ancillaCount) > maxPageQubits) {
+            TurnOnPaging();
+            oSim->TurnOnPaging();
+            return;
+        }
+
         if (oSim->isPaged()) {
             TurnOnPaging();
         } else if (isPaged()) {
