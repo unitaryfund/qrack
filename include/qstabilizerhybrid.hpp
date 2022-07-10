@@ -116,14 +116,12 @@ public:
         if (engineTypes[0] == QINTERFACE_QPAGER) {
             return;
         }
-        engineTypes.insert(engineTypes.begin(), QINTERFACE_QPAGER);
-
         if (engine) {
-            QPagerPtr nEngine = std::make_shared<QPager>(engine, engineTypes, qubitCount, 0U, rand_generator,
-                phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-                (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
-            engine = nEngine;
+            engine = std::make_shared<QPager>(engine, engineTypes, qubitCount, 0U, rand_generator, phaseFactor,
+                doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+                deviceIDs, thresholdQubits, separabilityThreshold);
         }
+        engineTypes.insert(engineTypes.begin(), QINTERFACE_QPAGER);
     }
 
     void TurnOffPaging()
@@ -135,7 +133,6 @@ public:
         if (!engineTypes.size()) {
             engineTypes.push_back(QINTERFACE_OPTIMAL_BASE);
         }
-
         if (engine) {
             engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
         }
