@@ -147,10 +147,10 @@ public:
             return;
         }
 
-        if (qubitCount <= maxPageQubits) {
+        if ((qubitCount + ancillaCount) <= maxPageQubits) {
             TurnOffPaging();
         }
-        if (qubitCount > maxPageQubits) {
+        if ((qubitCount + ancillaCount) > maxPageQubits) {
             TurnOnPaging();
         }
     }

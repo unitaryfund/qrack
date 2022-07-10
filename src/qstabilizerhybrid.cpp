@@ -188,6 +188,8 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     Mtrx(shard->gate, ancillaIndex);
     H(ancillaIndex);
 
+    FixPaging();
+
     // When we measure, we act postselection, but not yet.
     // ForceM(ancillaIndex, false, true, true);
     // Ancilla is separable after measurement.
@@ -389,6 +391,8 @@ void QStabilizerHybrid::SwitchToEngine()
     shards.erase(shards.begin() + qubitCount, shards.end());
     // We're done with ancillae.
     ancillaCount = 0;
+
+    FixPaging();
 }
 
 bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
@@ -469,7 +473,8 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
     }
 
     SetQubitCount(nQubits);
-    toCopy->FixPaging();
+    // This would be more performant for toCopy reuse, but toCopy probably won't be reused.
+    // toCopy->FixPaging();
 
     return toRet;
 }
