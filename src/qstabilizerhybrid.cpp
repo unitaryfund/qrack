@@ -428,7 +428,9 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
 
     SetQubitCount(nQubits);
     ancillaCount += toCopy->ancillaCount;
-    toCopy->FixPaging();
+    FixPaging();
+    // This would be more performant for toCopy reuse, but toCopy probably won't be reused.
+    // toCopy->FixPaging();
 
     return toRet;
 }
@@ -473,6 +475,7 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
     }
 
     SetQubitCount(nQubits);
+    FixPaging();
     // This would be more performant for toCopy reuse, but toCopy probably won't be reused.
     // toCopy->FixPaging();
 
