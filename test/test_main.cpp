@@ -26,6 +26,7 @@ enum QInterfaceEngine testSubEngineType = QINTERFACE_CPU;
 enum QInterfaceEngine testSubSubEngineType = QINTERFACE_CPU;
 qrack_rand_gen_ptr rng;
 bool enable_normalization = false;
+bool disable_t_injection = false;
 bool use_host_dma = false;
 bool disable_hardware_rng = false;
 bool async_time = false;

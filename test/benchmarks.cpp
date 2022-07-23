@@ -117,6 +117,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
 
         QInterfacePtr qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG,
             enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+        if (disable_t_injection) {
+            qftReg->SetTInjection(false);
+        }
         avgt = 0.0;
         sampleFailureCount = 0;
         trialClocks.clear();
@@ -171,6 +174,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 // Re-alloc:
                 qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG, enable_normalization,
                     true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+                if (disable_t_injection) {
+                    qftReg->SetTInjection(false);
+                }
 
                 sampleFailureCount++;
                 isTrialSuccessful = false;
@@ -209,6 +215,9 @@ void benchmarkLoopVariable(std::function<void(QInterfacePtr, bitLenInt)> fn, bit
                 // Re-alloc:
                 qftReg = CreateQuantumInterface(engineStack, numBits, 0, rng, CMPLX_DEFAULT_ARG, enable_normalization,
                     true, use_host_dma, device_id, !disable_hardware_rng, sparse, REAL1_EPSILON, devList);
+                if (disable_t_injection) {
+                    qftReg->SetTInjection(false);
+                }
 
                 sampleFailureCount++;
                 isTrialSuccessful = false;
@@ -2695,6 +2704,9 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     QInterfacePtr goldStandard = CreateQuantumInterface({ testSubEngineType, testSubSubEngineType }, n, 0, rng,
         ONE_CMPLX, enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng);
+    if (disable_t_injection) {
+        goldStandard->SetTInjection(false);
+    }
 
     for (d = 0; d < Depth; d++) {
         std::vector<int>& layer1QbRands = gate1QbRands[d];
@@ -2820,6 +2832,9 @@ TEST_CASE("test_universal_circuit_digital_cross_entropy", "[supreme]")
 
     QInterfacePtr testCase = CreateQuantumInterface({ testEngineType, testSubEngineType }, n, 0, rng, ONE_CMPLX,
         enable_normalization, true, use_host_dma, device_id, !disable_hardware_rng, sparse);
+    if (disable_t_injection) {
+        testCase->SetTInjection(false);
+    }
 
     std::map<bitCapInt, int> testCaseResult;
 
