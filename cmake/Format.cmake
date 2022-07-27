@@ -1,6 +1,6 @@
 set( FORMAT_EXCLUDE_FILES "catch.hpp" "_build")
 
-find_program ( CLANG_FORMAT clang-format-9 )
+find_program ( CLANG_FORMAT clang-format-14 )
 file (GLOB_RECURSE ALL_SOURCE_FILES *.cpp *.hpp)
 
 foreach (SOURCE_FILE ${ALL_SOURCE_FILES})
