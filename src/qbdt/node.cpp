@@ -75,7 +75,6 @@ void QBdtNode::Prune(bitLenInt depth)
             }
 
             if (leaf0->branches[bit] == leaf1->branches[bit]) {
-                leaf0->branches[bit] = leaf1->branches[bit];
                 // WARNING: Mutates loop control variable!
                 return (bitCapInt)(pow2(depth - j) - ONE_BCI);
             }
