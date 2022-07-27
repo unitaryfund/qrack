@@ -43,8 +43,8 @@ QBdtQEngineNodePtr QBdt::MakeQEngineNode(complex scale, bitLenInt qbCount, bitCa
 {
     return std::make_shared<QBdtQEngineNode>(scale,
         std::dynamic_pointer_cast<QEngine>(
-            CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-                false, devID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs)));
+            CreateQuantumInterface(engines, qbCount, perm, rand_generator, ONE_CMPLX, doNormalize, false, false, devID,
+                hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs)));
 }
 
 void QBdt::FallbackMtrx(const complex* mtrx, bitLenInt target)

@@ -82,6 +82,10 @@ bool QBdtNodeInterface::isEqualUnder(QBdtNodeInterfacePtr r)
         return true;
     }
 
+    if (norm(scale) <= FP_NORM_EPSILON) {
+        return norm(r->scale) <= FP_NORM_EPSILON;
+    }
+
     if (branches[0U] != r->branches[0U]) {
         return false;
     }

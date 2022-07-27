@@ -234,8 +234,10 @@ public:
 
     virtual real1_f ProbParity(bitCapInt mask)
     {
-        QInterfacePtr unit = (!bdtQubitCount) ? NODE_TO_QENGINE(root) : MakeTempStateVector();
-        return QINTERFACE_TO_QPARITY(unit)->ProbParity(mask);
+        bool toRet;
+        ExecuteAsStateVector(
+            [&](QInterfacePtr eng) { toRet = QINTERFACE_TO_QPARITY(NODE_TO_QENGINE(root))->ProbParity(mask); });
+        return toRet;
     }
     virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
     {
