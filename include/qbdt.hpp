@@ -317,12 +317,16 @@ public:
     virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen)
     {
-        QInterface::CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+        ExecuteAsStateVector([&](QInterfacePtr eng) {
+            QINTERFACE_TO_QALU(eng)->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+        });
     }
     virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen)
     {
-        QInterface::CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+        ExecuteAsStateVector([&](QInterfacePtr eng) {
+            QINTERFACE_TO_QALU(eng)->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
+        });
     }
     virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
     {
