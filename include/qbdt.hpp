@@ -43,13 +43,13 @@ protected:
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engines;
 
-    virtual void SetQubitCount(bitLenInt qb, bitLenInt aqb)
+    void SetQubitCount(bitLenInt qb, bitLenInt aqb)
     {
         attachedQubitCount = aqb;
         SetQubitCount(qb);
     }
 
-    virtual void SetQubitCount(bitLenInt qb)
+    void SetQubitCount(bitLenInt qb)
     {
         QInterface::SetQubitCount(qb);
         bdtQubitCount = qubitCount - attachedQubitCount;
@@ -144,50 +144,50 @@ public:
     {
     }
 
-    virtual bool isBinaryDecisionTree() { return true; };
+    bool isBinaryDecisionTree() { return true; };
 
-    virtual void SetDevice(int64_t dID) {}
+    void SetDevice(int64_t dID) {}
 
-    virtual void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
+    void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
         // Intentionally left blank.
     }
 
-    virtual void NormalizeState(
+    void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)
     {
         root->Normalize(bdtQubitCount);
     }
 
-    virtual real1_f SumSqrDiff(QInterfacePtr toCompare)
+    real1_f SumSqrDiff(QInterfacePtr toCompare)
     {
         return SumSqrDiff(std::dynamic_pointer_cast<QBdt>(toCompare));
     }
-    virtual real1_f SumSqrDiff(QBdtPtr toCompare);
+    real1_f SumSqrDiff(QBdtPtr toCompare);
 
-    virtual void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG);
+    void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG);
 
-    virtual QInterfacePtr Clone();
+    QInterfacePtr Clone();
 
-    virtual void GetQuantumState(complex* state);
-    virtual void GetQuantumState(QInterfacePtr eng);
-    virtual void SetQuantumState(const complex* state);
-    virtual void SetQuantumState(QInterfacePtr eng);
-    virtual void GetProbs(real1* outputProbs);
+    void GetQuantumState(complex* state);
+    void GetQuantumState(QInterfacePtr eng);
+    void SetQuantumState(const complex* state);
+    void SetQuantumState(QInterfacePtr eng);
+    void GetProbs(real1* outputProbs);
 
-    virtual complex GetAmplitude(bitCapInt perm);
-    virtual void SetAmplitude(bitCapInt perm, complex amp)
+    complex GetAmplitude(bitCapInt perm);
+    void SetAmplitude(bitCapInt perm, complex amp)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->SetAmplitude(perm, amp); });
     }
 
     using QInterface::Compose;
-    virtual bitLenInt Compose(QBdtPtr toCopy, bitLenInt start);
-    virtual bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
+    bitLenInt Compose(QBdtPtr toCopy, bitLenInt start);
+    bitLenInt Compose(QInterfacePtr toCopy, bitLenInt start)
     {
         return Compose(std::dynamic_pointer_cast<QBdt>(toCopy), start);
     }
-    virtual bitLenInt Attach(QEnginePtr toCopy, bitLenInt start)
+    bitLenInt Attach(QEnginePtr toCopy, bitLenInt start)
     {
         if (start == qubitCount) {
             return Attach(toCopy);
@@ -200,39 +200,39 @@ public:
 
         return result;
     }
-    virtual bitLenInt Attach(QEnginePtr toCopy);
-    virtual void Decompose(bitLenInt start, QInterfacePtr dest)
+    bitLenInt Attach(QEnginePtr toCopy);
+    void Decompose(bitLenInt start, QInterfacePtr dest)
     {
         DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));
     }
-    virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
-    virtual void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
+    QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
+    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
 
-    virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     {
         DecomposeDispose(start, length, NULL);
     }
 
-    virtual real1_f Prob(bitLenInt qubitIndex);
-    virtual real1_f ProbAll(bitCapInt fullRegister);
+    real1_f Prob(bitLenInt qubitIndex);
+    real1_f ProbAll(bitCapInt fullRegister);
 
-    virtual bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
-    virtual bitCapInt MAll();
+    bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
+    bitCapInt MAll();
 
-    virtual void Mtrx(const complex* mtrx, bitLenInt target);
-    virtual void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
-    virtual void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
-    virtual void MCPhase(
+    void Mtrx(const complex* mtrx, bitLenInt target);
+    void MCMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
+    void MACMtrx(const bitLenInt* controls, bitLenInt controlLen, const complex* mtrx, bitLenInt target);
+    void MCPhase(
         const bitLenInt* controls, bitLenInt controlLen, complex topLeft, complex bottomRight, bitLenInt target);
-    virtual void MCInvert(
+    void MCInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
-    virtual void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
+    void FSim(real1_f theta, real1_f phi, bitLenInt qubitIndex1, bitLenInt qubitIndex2)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { eng->FSim(theta, phi, qubitIndex1, qubitIndex2); });
     }
 
-    virtual real1_f ProbParity(bitCapInt mask)
+    real1_f ProbParity(bitCapInt mask)
     {
         if (!mask) {
             return ZERO_R1_F;
@@ -247,13 +247,13 @@ public:
             [&](QInterfacePtr eng) { toRet = QINTERFACE_TO_QPARITY(NODE_TO_QENGINE(root))->ProbParity(mask); });
         return toRet;
     }
-    virtual void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
+    void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QPARITY(eng)->CUniformParityRZ(controls, controlLen, mask, angle);
         });
     }
-    virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
+    bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
     {
         // If no bits in mask:
         if (!mask) {
@@ -271,136 +271,136 @@ public:
 
 #if ENABLE_ALU
     using QInterface::M;
-    virtual bool M(bitLenInt q) { return QInterface::M(q); }
+    bool M(bitLenInt q) { return QInterface::M(q); }
     using QInterface::X;
-    virtual void X(bitLenInt q) { QInterface::X(q); }
-    virtual void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { QInterface::INC(toAdd, start, length); }
-    virtual void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
-    virtual void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void X(bitLenInt q) { QInterface::X(q); }
+    void INC(bitCapInt toAdd, bitLenInt start, bitLenInt length) { QInterface::INC(toAdd, start, length); }
+    void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length) { QInterface::DEC(toSub, start, length); }
+    void INCC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         QInterface::INCC(toAdd, start, length, carryIndex);
     }
-    virtual void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void DECC(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         QInterface::DECC(toSub, start, length, carryIndex);
     }
-    virtual void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    void INCS(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         QInterface::INCS(toAdd, start, length, overflowIndex);
     }
-    virtual void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
     {
         QInterface::DECS(toSub, start, length, overflowIndex);
     }
-    virtual void CINC(
+    void CINC(
         bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
     {
         QInterface::CINC(toAdd, inOutStart, length, controls, controlLen);
     }
-    virtual void CDEC(
+    void CDEC(
         bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
     {
         QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
     }
-    virtual void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void INCDECC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         QInterface::INCDECC(toAdd, start, length, carryIndex);
     }
-    virtual void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    void MULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         QInterface::MULModNOut(toMul, modN, inStart, outStart, length);
     }
-    virtual void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    void IMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         QInterface::IMULModNOut(toMul, modN, inStart, outStart, length);
     }
-    virtual void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    void CMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QALU(eng)->CMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
         });
     }
-    virtual void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    void CIMULModNOut(bitCapInt toMul, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QALU(eng)->CIMULModNOut(toMul, modN, inStart, outStart, length, controls, controlLen);
         });
     }
-    virtual void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
+    void PhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length)
     {
         ExecuteAsStateVector(
             [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->PhaseFlipIfLess(greaterPerm, start, length); });
         ResetStateVector();
     }
-    virtual void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
+    void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QALU(eng)->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
         });
         ResetStateVector();
     }
-    virtual void INCDECSC(
+    void INCDECSC(
         bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QALU(eng)->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
         });
     }
-    virtual void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         ExecuteAsStateVector(
             [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->INCDECSC(toAdd, start, length, carryIndex); });
     }
 #if ENABLE_BCD
-    virtual void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
+    void INCBCD(bitCapInt toAdd, bitLenInt start, bitLenInt length)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->INCBCD(toAdd, start, length); });
     }
-    virtual void INCDECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
+    void INCDECBCDC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt carryIndex)
     {
         ExecuteAsStateVector(
             [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->INCDECBCDC(toAdd, start, length, carryIndex); });
     }
 #endif
-    virtual void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+    void MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
         ExecuteAsStateVector(
             [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->MUL(toMul, inOutStart, carryStart, length); });
     }
-    virtual void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
+    void DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
     {
         ExecuteAsStateVector(
             [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->DIV(toDiv, inOutStart, carryStart, length); });
     }
-    virtual void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
+    void POWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length)
     {
         ExecuteAsStateVector(
             [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->POWModNOut(base, modN, inStart, outStart, length); });
     }
-    virtual void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QALU(eng)->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
         });
     }
-    virtual void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
+    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QALU(eng)->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
         });
     }
-    virtual void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
+    void CPOWModNOut(bitCapInt base, bitCapInt modN, bitLenInt inStart, bitLenInt outStart, bitLenInt length,
         const bitLenInt* controls, bitLenInt controlLen)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QALU(eng)->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
         });
     }
-    virtual bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+    bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, const unsigned char* values, bool resetValue = true)
     {
         return BitCapIntAsStateVector([&](QInterfacePtr eng) {
@@ -408,7 +408,7 @@ public:
                 indexStart, indexLength, valueStart, valueLength, values, resetValue);
         });
     }
-    virtual bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+    bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
     {
         return BitCapIntAsStateVector([&](QInterfacePtr eng) {
@@ -416,7 +416,7 @@ public:
                 indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         });
     }
-    virtual bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
+    bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
         bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
     {
         return BitCapIntAsStateVector([&](QInterfacePtr eng) {
@@ -424,7 +424,7 @@ public:
                 indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         });
     }
-    virtual void Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
+    void Hash(bitLenInt start, bitLenInt length, const unsigned char* values)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->Hash(start, length, values); });
     }
