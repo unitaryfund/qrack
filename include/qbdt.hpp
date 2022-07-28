@@ -159,10 +159,7 @@ public:
         root->Normalize(bdtQubitCount);
     }
 
-    real1_f SumSqrDiff(QInterfacePtr toCompare)
-    {
-        return SumSqrDiff(std::dynamic_pointer_cast<QBdt>(toCompare));
-    }
+    real1_f SumSqrDiff(QInterfacePtr toCompare) { return SumSqrDiff(std::dynamic_pointer_cast<QBdt>(toCompare)); }
     real1_f SumSqrDiff(QBdtPtr toCompare);
 
     void SetPermutation(bitCapInt initState, complex phaseFac = CMPLX_DEFAULT_ARG);
@@ -208,10 +205,7 @@ public:
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
     void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
 
-    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
-    {
-        DecomposeDispose(start, length, NULL);
-    }
+    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) { DecomposeDispose(start, length, NULL); }
 
     real1_f Prob(bitLenInt qubitIndex);
     real1_f ProbAll(bitCapInt fullRegister);
@@ -292,13 +286,11 @@ public:
     {
         QInterface::DECS(toSub, start, length, overflowIndex);
     }
-    void CINC(
-        bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
     {
         QInterface::CINC(toAdd, inOutStart, length, controls, controlLen);
     }
-    void CDEC(
-        bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
+    void CDEC(bitCapInt toSub, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
     {
         QInterface::CDEC(toSub, inOutStart, length, controls, controlLen);
     }
@@ -341,8 +333,7 @@ public:
         });
         ResetStateVector();
     }
-    void INCDECSC(
-        bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
+    void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QALU(eng)->INCDECSC(toAdd, start, length, overflowIndex, carryIndex);
@@ -379,15 +370,15 @@ public:
         ExecuteAsStateVector(
             [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->POWModNOut(base, modN, inStart, outStart, length); });
     }
-    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen)
+    void CMUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
+        bitLenInt controlLen)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QALU(eng)->CMUL(toMul, inOutStart, carryStart, length, controls, controlLen);
         });
     }
-    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length,
-        const bitLenInt* controls, bitLenInt controlLen)
+    void CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length, const bitLenInt* controls,
+        bitLenInt controlLen)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QALU(eng)->CDIV(toDiv, inOutStart, carryStart, length, controls, controlLen);
@@ -400,24 +391,24 @@ public:
             QINTERFACE_TO_QALU(eng)->CPOWModNOut(base, modN, inStart, outStart, length, controls, controlLen);
         });
     }
-    bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, const unsigned char* values, bool resetValue = true)
+    bitCapInt IndexedLDA(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+        const unsigned char* values, bool resetValue = true)
     {
         return BitCapIntAsStateVector([&](QInterfacePtr eng) {
             return QINTERFACE_TO_QALU(eng)->IndexedLDA(
                 indexStart, indexLength, valueStart, valueLength, values, resetValue);
         });
     }
-    bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
+    bitCapInt IndexedADC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+        bitLenInt carryIndex, const unsigned char* values)
     {
         return BitCapIntAsStateVector([&](QInterfacePtr eng) {
             return QINTERFACE_TO_QALU(eng)->IndexedADC(
                 indexStart, indexLength, valueStart, valueLength, carryIndex, values);
         });
     }
-    bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart,
-        bitLenInt valueLength, bitLenInt carryIndex, const unsigned char* values)
+    bitCapInt IndexedSBC(bitLenInt indexStart, bitLenInt indexLength, bitLenInt valueStart, bitLenInt valueLength,
+        bitLenInt carryIndex, const unsigned char* values)
     {
         return BitCapIntAsStateVector([&](QInterfacePtr eng) {
             return QINTERFACE_TO_QALU(eng)->IndexedSBC(
