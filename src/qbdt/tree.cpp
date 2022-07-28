@@ -539,7 +539,7 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
         if (isKet) {
             QEnginePtr qi = NODE_TO_QENGINE(leaf);
             if (qis.find(qi) == qis.end()) {
-                NODE_TO_QENGINE(leaf)->ForceM(qubit - bdtQubitCount, result, false, true);
+                NODE_TO_QENGINE(leaf)->ForceM(qubit - bdtQubitCount, result, true, true);
                 qis.insert(qi);
             }
             continue;
