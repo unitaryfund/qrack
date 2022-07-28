@@ -620,11 +620,6 @@ public:
         SwitchToEngine();
         return QINTERFACE_TO_QPARITY(engine)->ForceMParity(mask, result, doForce);
     }
-    void UniformParityRZ(bitCapInt mask, real1_f angle)
-    {
-        SwitchToEngine();
-        QINTERFACE_TO_QPARITY(engine)->UniformParityRZ(mask, angle);
-    }
     void CUniformParityRZ(const bitLenInt* controls, bitLenInt controlLen, bitCapInt mask, real1_f angle)
     {
         SwitchToEngine();

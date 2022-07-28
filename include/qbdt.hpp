@@ -234,7 +234,15 @@ public:
 
     virtual real1_f ProbParity(bitCapInt mask)
     {
-        bool toRet;
+        if (!mask) {
+            return ZERO_R1_F;
+        }
+
+        if (!(mask & (mask - ONE_BCI))) {
+            return Prob(log2(mask));
+        }
+
+        real1_f toRet;
         ExecuteAsStateVector(
             [&](QInterfacePtr eng) { toRet = QINTERFACE_TO_QPARITY(NODE_TO_QENGINE(root))->ProbParity(mask); });
         return toRet;
@@ -247,6 +255,16 @@ public:
     }
     virtual bool ForceMParity(bitCapInt mask, bool result, bool doForce = true)
     {
+        // If no bits in mask:
+        if (!mask) {
+            return false;
+        }
+
+        // If only one bit in mask:
+        if (!(mask & (mask - ONE_BCI))) {
+            return ForceM(log2(mask), result, doForce);
+        }
+
         SetStateVector();
         return QINTERFACE_TO_QPARITY(NODE_TO_QENGINE(root))->ForceMParity(mask, result, doForce);
     }
