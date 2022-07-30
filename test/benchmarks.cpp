@@ -1161,7 +1161,7 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
 
             std::vector<bitLenInt> usedBits;
 
-            for (int row = 0; row < rowLen; row++) {
+            for (int row = 1; row < rowLen; row += 2) {
                 for (int col = 0; col < colLen; col++) {
                     // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
                     // In this test, the boundaries of the rectangle have no couplers.
@@ -1175,13 +1175,11 @@ TEST_CASE("test_stabilizer_t_nn", "[supreme]")
                         continue;
                     }
 
-                    bitLenInt tempGate = (row & 1U) ? gate : (gate ^ 3U);
-
                     int tempRow = row;
                     int tempCol = col;
 
-                    tempRow += ((tempGate & 2U) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
+                    tempRow += ((gate & 2U) ? 1 : -1);
+                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
 
                     bitLenInt b2 = tempRow * colLen + tempCol;
 
@@ -1353,7 +1351,7 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
 
             std::vector<bitLenInt> usedBits;
 
-            for (int row = 0; row < rowLen; row++) {
+            for (int row = 1; row < rowLen; row += 2) {
                 for (int col = 0; col < colLen; col++) {
                     // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
                     // In this test, the boundaries of the rectangle have no couplers.
@@ -1367,13 +1365,11 @@ TEST_CASE("test_stabilizer_t_nn_d", "[supreme]")
                         continue;
                     }
 
-                    bitLenInt tempGate = (row & 1U) ? gate : (gate ^ 3U);
-
                     int tempRow = row;
                     int tempCol = col;
 
-                    tempRow += ((tempGate & 2U) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
+                    tempRow += ((gate & 2U) ? 1 : -1);
+                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
 
                     bitLenInt b2 = tempRow * colLen + tempCol;
 
@@ -1476,7 +1472,7 @@ TEST_CASE("test_dense", "[supreme]")
 
             std::vector<bitLenInt> usedBits;
 
-            for (int row = 0; row < rowLen; row++) {
+            for (int row = 1; row < rowLen; row += 2) {
                 for (int col = 0; col < colLen; col++) {
                     // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
                     // In this test, the boundaries of the rectangle have no couplers.
@@ -1490,13 +1486,11 @@ TEST_CASE("test_dense", "[supreme]")
                         continue;
                     }
 
-                    bitLenInt tempGate = (row & 1U) ? gate : (gate ^ 3U);
-
                     int tempRow = row;
                     int tempCol = col;
 
-                    tempRow += ((tempGate & 2U) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
+                    tempRow += ((gate & 2U) ? 1 : -1);
+                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
 
                     bitLenInt b2 = tempRow * colLen + tempCol;
 
@@ -1661,7 +1655,7 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
 
             std::vector<bitLenInt> usedBits;
 
-            for (row = 0; row < rowLen; row++) {
+            for (row = 1; row < rowLen; row += 2) {
                 for (col = 0; col < colLen; col++) {
                     // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
                     // In this test, the boundaries of the rectangle have no couplers.
@@ -1676,13 +1670,11 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
                         continue;
                     }
 
-                    tempGate = (row & 1U) ? gate : (gate ^ 3U);
-
                     tempRow = row;
                     tempCol = col;
 
-                    tempRow += ((tempGate & 2U) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
+                    tempRow += ((gate & 2U) ? 1 : -1);
+                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
 
                     b2 = tempRow * colLen + tempCol;
 
@@ -1691,7 +1683,7 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
                         continue;
                     }
 
-                    tempGate = tempGate ^ 3U;
+                    tempGate = gate ^ 3U;
 
                     tempRow = row;
                     tempCol = col;
@@ -1818,13 +1810,12 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
 
     benchmarkLoop([&](QInterfacePtr qReg, bitLenInt n) {
         int d;
-        bitLenInt i;
+        bitLenInt i, gate;
         real1_f gateRand;
         complex top, bottom;
         bitLenInt b1, b2;
         int row, col;
         int tempRow, tempCol;
-        bitLenInt gate, tempGate;
         bitLenInt controls[1];
 
         // The test runs 2 bit gates according to a tiling sequence.
@@ -1912,7 +1903,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
 
             std::vector<bitLenInt> usedBits;
 
-            for (row = 0; row < rowLen; row++) {
+            for (row = 1; row < rowLen; row += 2) {
                 for (col = 0; col < colLen; col++) {
                     // The following pattern is isomorphic to a 45 degree bias on a rectangle, for couplers.
                     // In this test, the boundaries of the rectangle have no couplers.
@@ -1926,13 +1917,11 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                         continue;
                     }
 
-                    tempGate = (row & 1U) ? gate : (gate ^ 3U);
-
                     tempRow = row;
                     tempCol = col;
 
-                    tempRow += ((tempGate & 2U) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
+                    tempRow += ((gate & 2U) ? 1 : -1);
+                    tempCol += (colLen == 1) ? 0 : ((gate & 1U) ? 1 : 0);
 
                     b2 = tempRow * colLen + tempCol;
 
