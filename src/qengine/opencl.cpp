@@ -498,7 +498,6 @@ void QEngineOCL::DispatchQueue()
 void QEngineOCL::SetDevice(int64_t dID)
 {
     if (!(OCLEngine::Instance().GetDeviceCount())) {
-        FreeAll();
         throw std::runtime_error("Tried to initialize QEngineOCL, but no available OpenCL devices.");
     }
 
@@ -550,7 +549,6 @@ void QEngineOCL::SetDevice(int64_t dID)
     const size_t stateVecSize = maxQPowerOcl * sizeof(complex);
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > device_context->GetMaxAlloc()) {
-        FreeAll();
         throw bad_alloc("VRAM limits exceeded in QEngineOCL::SetDevice()");
     } else if (useHostRam || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize())) {
         usingHostRam = true;
@@ -888,7 +886,6 @@ void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
         api_call = OCL_API_APPLY2X2_DOUBLE_WIDE;
         break;
     default:
-        FreeAll();
         throw("Invalid APPLY2X2 kernel selected!");
     }
 
@@ -1223,7 +1220,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
     const bitCapIntOcl nQubitCount = bciArgs[1] + toCopy->qubitCount;
     const size_t nStateVecSize = nMaxQPower * sizeof(complex);
     if (nStateVecSize > device_context->GetMaxAlloc()) {
-        FreeAll();
         throw bad_alloc("VRAM limits exceeded in QEngineOCL::Compose()");
     }
 
@@ -2144,7 +2140,6 @@ void QEngineOCL::INTBCD(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, bi
 
     const bitLenInt nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
-        FreeAll();
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
 
@@ -2177,7 +2172,6 @@ void QEngineOCL::INTBCDC(OCLAPI api_call, bitCapIntOcl toMod, bitLenInt start, b
 
     const bitLenInt nibbleCount = length / 4;
     if (nibbleCount * 4 != length) {
-        FreeAll();
         throw std::invalid_argument("BCD word bit length must be a multiple of 4.");
     }
 
@@ -2224,7 +2218,6 @@ void QEngineOCL::MUL(bitCapInt toMul, bitLenInt inOutStart, bitLenInt carryStart
 void QEngineOCL::DIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStart, bitLenInt length)
 {
     if (!toDiv) {
-        FreeAll();
         throw std::runtime_error("DIV by zero");
     }
 
@@ -2329,7 +2322,6 @@ void QEngineOCL::CDIV(bitCapInt toDiv, bitLenInt inOutStart, bitLenInt carryStar
     }
 
     if (!toDiv) {
-        FreeAll();
         throw std::runtime_error("DIV by zero");
     }
 

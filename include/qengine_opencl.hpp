@@ -240,8 +240,7 @@ protected:
             return;
         }
 
-        // We're fatally blocked. Clean up and throw to exit.
-        FreeAll();
+        // We're fatally blocked. Throw to exit.
         throw std::runtime_error(message + ", error code: " + std::to_string(error));
     }
 
@@ -461,7 +460,6 @@ protected:
         size_t currentAlloc = OCLEngine::Instance().AddToActiveAllocSize(deviceID, size);
         if (currentAlloc > OCLEngine::Instance().GetMaxActiveAllocSize()) {
             OCLEngine::Instance().SubtractFromActiveAllocSize(deviceID, size);
-            FreeAll();
             throw bad_alloc("VRAM limits exceeded in QEngineOCL::AddAlloc()");
         }
         totalOclAllocSize += size;
@@ -495,7 +493,6 @@ protected:
 
         toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
         if (error != CL_SUCCESS) {
-            FreeAll();
             if (error == CL_MEM_OBJECT_ALLOCATION_FAILURE) {
                 throw bad_alloc("CL_MEM_OBJECT_ALLOCATION_FAILURE in QEngineOCL::MakeBuffer()");
             }
