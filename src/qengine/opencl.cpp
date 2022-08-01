@@ -2712,8 +2712,6 @@ void QEngineOCL::GetQuantumState(complex* outputState)
 
     EventVecPtr waitVec = ResetWaitEvents();
     DISPATCH_BLOCK_READ(waitVec, *stateBuffer, 0U, sizeof(complex) * maxQPowerOcl, outputState);
-
-    clFinish();
 }
 
 /// Get all probabilities, in unsigned int permutation basis
