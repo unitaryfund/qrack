@@ -185,6 +185,7 @@ class QEngineOCL : public QEngine {
 protected:
     bool usingHostRam;
     bool unlockHostMem;
+    cl_int callbackError;
     size_t nrmGroupCount;
     size_t nrmGroupSize;
     size_t totalOclAllocSize;
@@ -215,9 +216,22 @@ protected:
     }
 #endif
 
+    void checkCallbackError()
+    {
+        if (callbackError == CL_SUCCESS) {
+            return;
+        }
+
+        cl_int error = callbackError;
+        callbackError = CL_SUCCESS;
+        throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
+    }
+
     // For std::function, cl_int use might discard int qualifiers.
     void tryOcl(std::string message, std::function<int()> oclCall)
     {
+        checkCallbackError();
+
         if (oclCall() == CL_SUCCESS) {
             // Success
             return;

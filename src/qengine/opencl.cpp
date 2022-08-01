@@ -72,6 +72,7 @@ QEngineOCL::QEngineOCL(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
     , unlockHostMem(false)
+    , callbackError(CL_SUCCESS)
     , nrmGroupSize(0U)
     , totalOclAllocSize(0U)
     , deviceID(devID)
@@ -310,9 +311,12 @@ void QEngineOCL::clFinish(bool doHard)
         return;
     }
 
+    checkCallbackError();
+
     while (wait_queue_items.size() > 1) {
         device_context->WaitOnAllEvents();
         PopQueue();
+        checkCallbackError();
     }
 
     if (doHard) {
@@ -381,6 +385,7 @@ EventVecPtr QEngineOCL::ResetWaitEvents(bool waitQueue)
         while (wait_queue_items.size() > 1) {
             device_context->WaitOnAllEvents();
             PopQueue();
+            checkCallbackError();
         }
     }
 
@@ -485,12 +490,16 @@ void QEngineOCL::DispatchQueue()
     device_context->UnlockWaitEvents();
     if (error != CL_SUCCESS) {
         // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
-        throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
+        callbackError = error;
+        clDump();
+        return;
     }
     error = queue.flush();
     if (error != CL_SUCCESS) {
         // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
-        throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
+        callbackError = error;
+        clDump();
+        return;
     }
 }
 
