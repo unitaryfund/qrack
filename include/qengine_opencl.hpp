@@ -289,6 +289,8 @@ public:
 
     ~QEngineOCL()
     {
+        // Theoretically, all user output is blocking, so don't throw in destructor.
+        callbackError = CL_SUCCESS;
         // Make sure we track device allocation.
         FreeAll();
     }
@@ -573,7 +575,13 @@ protected:
      */
     void clFlush()
     {
-        tryOcl("Failed to flush queue", [&] { return queue.flush(); });
+        checkCallbackError();
+
+        cl_int error = queue.flush();
+        if (error != CL_SUCCESS) {
+            // We're fatally blocked. Throw to exit.
+            throw std::runtime_error("Failed to flush queue, error code: " + std::to_string(error));
+        }
     }
 
     /**

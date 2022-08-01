@@ -323,7 +323,9 @@ void QEngineOCL::clFinish(bool doHard)
         tryOcl("Failed to finish queue", [&] { return queue.finish(); });
     } else {
         device_context->WaitOnAllEvents();
+        checkCallbackError();
     }
+
     wait_refs.clear();
 }
 
