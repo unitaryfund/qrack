@@ -569,7 +569,15 @@ protected:
      */
     void clFlush()
     {
-        tryOcl("Failed to flush queue", [&] { return queue.flush(); });
+        cl_int error = queue.flush();
+        if (error == CL_SUCCESS) {
+            // Success after clearing all queues for the OpenCL device
+            return;
+        }
+
+        // We're fatally blocked. Clean up and throw to exit.
+        FreeAll();
+        throw std::runtime_error("Failed to flush queue, error code: " + std::to_string(error));
     }
 
     /**
