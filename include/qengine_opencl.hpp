@@ -216,10 +216,14 @@ protected:
     }
 #endif
 
-    void checkCallbackError()
+    void checkCallbackError(bool unlockWaitEvents = false)
     {
         if (callbackError == CL_SUCCESS) {
             return;
+        }
+
+        if (unlockWaitEvents) {
+            device_context->UnlockWaitEvents();
         }
 
         cl_int error = callbackError;
@@ -230,7 +234,7 @@ protected:
     // For std::function, cl_int use might discard int qualifiers.
     void tryOcl(std::string message, std::function<int()> oclCall, bool unlockWaitEvents = false)
     {
-        checkCallbackError();
+        checkCallbackError(unlockWaitEvents);
 
         if (oclCall() == CL_SUCCESS) {
             // Success
