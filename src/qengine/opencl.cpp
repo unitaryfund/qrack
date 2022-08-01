@@ -251,6 +251,7 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
 
     cl::Event writeArgsEvent;
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, writeArgsEvent, error);
+    writeArgsEvent.wait();
 
     QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
@@ -258,8 +259,6 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
 
     runningNorm = REAL1_DEFAULT_ARG;
     engineOcl->runningNorm = REAL1_DEFAULT_ARG;
-
-    writeArgsEvent.wait();
 }
 
 void QEngineOCL::LockSync(cl_map_flags flags)
