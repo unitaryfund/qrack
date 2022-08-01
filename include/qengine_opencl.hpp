@@ -128,7 +128,6 @@ struct PoolItem {
 
     std::shared_ptr<real1> probArray;
     std::shared_ptr<real1> angleArray;
-    complex* otherStateVec;
 
     BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
     {
@@ -153,7 +152,6 @@ struct PoolItem {
     PoolItem(cl::Context& context)
         : probArray(NULL)
         , angleArray(NULL)
-        , otherStateVec(NULL)
     {
         cmplxBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(complex) * CMPLX_NORM_LEN);
         realBuffer = MakeBuffer(context, CL_MEM_READ_ONLY, sizeof(real1) * REAL_ARG_LEN);
@@ -278,10 +276,6 @@ public:
 
     ~QEngineOCL()
     {
-        // clDump() clears the callback queue.
-        clDump();
-        // clDump() doesn't wait on any kernel being run, though.
-        clFinish();
         // Make sure we track device allocation.
         FreeAll();
     }

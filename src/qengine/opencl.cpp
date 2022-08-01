@@ -102,6 +102,7 @@ void QEngineOCL::ZeroAmplitudes()
 {
     clDump();
     runningNorm = ZERO_R1;
+    clFinish();
 
     if (!stateBuffer) {
         return;
@@ -406,7 +407,6 @@ void QEngineOCL::PopQueue()
         if (poolItems.size()) {
             poolItems.front()->probArray = NULL;
             poolItems.front()->angleArray = NULL;
-            poolItems.front()->otherStateVec = NULL;
 
             SubtractAlloc(wait_queue_items.front().deallocSize);
 
@@ -486,15 +486,11 @@ void QEngineOCL::DispatchQueue()
     device_context->UnlockWaitEvents();
     if (error != CL_SUCCESS) {
         // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
-        // Clean up and exit.
-        FreeAll();
         throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
     }
     error = queue.flush();
     if (error != CL_SUCCESS) {
         // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
-        // Clean up and exit.
-        FreeAll();
         throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
     }
 }
