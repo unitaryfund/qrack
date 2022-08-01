@@ -305,11 +305,6 @@ public:
         SwitchToEngine();
         engine->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
     }
-    void FreeStateVec(complex* sv = NULL)
-    {
-        SwitchToEngine();
-        engine->FreeStateVec(sv);
-    }
     real1_f GetRunningNorm()
     {
         if (stabilizer) {

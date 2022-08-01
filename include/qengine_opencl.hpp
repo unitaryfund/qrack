@@ -193,7 +193,7 @@ protected:
     int64_t deviceID;
     cl_map_flags lockSyncFlags;
     complex permutationAmp;
-    complex* stateVec;
+    std::shared_ptr<complex> stateVec;
     std::mutex queue_mutex;
     cl::CommandQueue queue;
     cl::Context context;
@@ -298,7 +298,6 @@ public:
 
     void FreeAll();
     void ZeroAmplitudes();
-    void FreeStateVec(complex* sv = NULL);
     void CopyStateVec(QEnginePtr src);
 
     void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length);
@@ -520,10 +519,10 @@ protected:
 
     real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength);
 
-    complex* AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
-    void ResetStateVec(complex* sv);
+    std::shared_ptr<complex> AllocStateVec(bitCapInt elemCount, bool doForceAlloc = false);
+    void FreeStateVec() { stateVec = NULL; }
     void ResetStateBuffer(BufferPtr nStateBuffer);
-    BufferPtr MakeStateVecBuffer(complex* nStateVec);
+    BufferPtr MakeStateVecBuffer(std::shared_ptr<complex> nStateVec);
     void ReinitBuffer();
 
     void Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCLPtr toCopy);

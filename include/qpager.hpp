@@ -245,11 +245,6 @@ public:
         CombineEngines();
         qPages[0U]->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
     }
-    void FreeStateVec(complex* sv = NULL)
-    {
-        CombineEngines();
-        qPages[0U]->FreeStateVec(sv);
-    }
     real1_f GetRunningNorm()
     {
         real1_f toRet = ZERO_R1_F;

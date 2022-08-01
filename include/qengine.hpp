@@ -214,7 +214,5 @@ public:
 
     using QInterface::Decompose;
     virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
-
-    virtual void FreeStateVec(complex* sv = NULL) = 0;
 };
 } // namespace Qrack

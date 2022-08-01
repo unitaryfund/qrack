@@ -496,8 +496,6 @@ protected:
         engine->ApplyAntiControlled2x2(controls, controlLen, target, mtrx);
     }
 
-    void FreeStateVec(complex* sv = NULL) { engine->FreeStateVec(sv); }
-
 #if ENABLE_ALU
     void INCDECC(bitCapInt toMod, bitLenInt inOutStart, bitLenInt length, bitLenInt carryIndex)
     {
