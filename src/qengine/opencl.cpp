@@ -331,12 +331,8 @@ void QEngineOCL::clFinish(bool doHard)
 
 void QEngineOCL::clDump()
 {
-    if (!device_context) {
-        return;
-    }
-
-    wait_queue_items.clear();
-    wait_refs.clear();
+    // clDump as it were would interrupt external dependency.
+    clFinish();
 }
 
 size_t QEngineOCL::FixWorkItemCount(size_t maxI, size_t wic)
@@ -493,14 +489,12 @@ void QEngineOCL::DispatchQueue()
     if (error != CL_SUCCESS) {
         // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
         callbackError = error;
-        clDump();
         return;
     }
     error = queue.flush();
     if (error != CL_SUCCESS) {
         // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
         callbackError = error;
-        clDump();
         return;
     }
 }
