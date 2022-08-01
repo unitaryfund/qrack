@@ -45,10 +45,13 @@ namespace Qrack {
 #define DISPATCH_WRITE(waitVec, buff, size, array, error)                                                              \
     device_context->LockWaitEvents();                                                                                  \
     device_context->wait_events->emplace_back();                                                                       \
-    tryOcl("Failed to enqueue buffer write", [&] {                                                                     \
-        return queue.enqueueWriteBuffer(                                                                               \
-            buff, CL_FALSE, 0U, size, array, waitVec.get(), &(device_context->wait_events->back()));                   \
-    });                                                                                                                \
+    tryOcl(                                                                                                            \
+        "Failed to enqueue buffer write",                                                                              \
+        [&] {                                                                                                          \
+            return queue.enqueueWriteBuffer(                                                                           \
+                buff, CL_FALSE, 0U, size, array, waitVec.get(), &(device_context->wait_events->back()));               \
+        },                                                                                                             \
+        true);                                                                                                         \
     device_context->UnlockWaitEvents();
 
 #define DISPATCH_BLOCK_READ(waitVec, buff, offset, length, array)                                                      \
@@ -254,8 +257,9 @@ void QEngineOCL::ShuffleBuffers(QEnginePtr engine)
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl), bciArgs, writeArgsEvent, error);
     writeArgsEvent.wait();
 
-    WaitCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
+    QueueCall(OCL_API_SHUFFLEBUFFERS, nrmGroupCount, nrmGroupSize,
         { stateBuffer, engineOcl->stateBuffer, poolItem->ulongBuffer });
+    engineOcl->wait_refs.emplace_back(device_context->wait_events);
 
     runningNorm = REAL1_DEFAULT_ARG;
     engineOcl->runningNorm = REAL1_DEFAULT_ARG;
@@ -671,10 +675,13 @@ void QEngineOCL::SetPermutation(bitCapInt perm, complex phaseFac)
     EventVecPtr waitVec = ResetWaitEvents();
     device_context->LockWaitEvents();
     device_context->wait_events->emplace_back();
-    tryOcl("Failed to enqueue buffer write", [&] {
-        return queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex),
-            &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
-    });
+    tryOcl(
+        "Failed to enqueue buffer write",
+        [&] {
+            return queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm,
+                sizeof(complex), &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
+        },
+        true);
     device_context->UnlockWaitEvents();
 
     QueueSetRunningNorm(ONE_R1_F);
@@ -1246,7 +1253,8 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
 
     toCopy->clFinish();
 
-    WaitCall(apiCall, ngc, ngs, { stateBuffer, toCopy->stateBuffer, poolItem->ulongBuffer, nStateBuffer });
+    QueueCall(apiCall, ngc, ngs, { stateBuffer, toCopy->stateBuffer, poolItem->ulongBuffer, nStateBuffer });
+    toCopy->wait_refs.emplace_back(device_context->wait_events);
 
     stateVec = nStateVec;
     ResetStateBuffer(nStateBuffer);
@@ -1896,10 +1904,13 @@ void QEngineOCL::CArithmeticCall(OCLAPI api_call, const bitCapIntOcl (&bciArgs)[
     if (controlLen) {
         device_context->LockWaitEvents();
         device_context->wait_events->emplace_back();
-        tryOcl("Failed to enqueue buffer copy", [&] {
-            return queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0U, 0U, sizeof(complex) * maxQPowerOcl,
-                waitVec.get(), &(device_context->wait_events->back()));
-        });
+        tryOcl(
+            "Failed to enqueue buffer copy",
+            [&] {
+                return queue.enqueueCopyBuffer(*stateBuffer, *nStateBuffer, 0U, 0U, sizeof(complex) * maxQPowerOcl,
+                    waitVec.get(), &(device_context->wait_events->back()));
+            },
+            true);
         device_context->UnlockWaitEvents();
     } else {
         ClearBuffer(nStateBuffer, 0U, maxQPowerOcl);
@@ -2697,10 +2708,13 @@ void QEngineOCL::SetAmplitude(bitCapInt perm, complex amp)
     EventVecPtr waitVec = ResetWaitEvents();
     device_context->LockWaitEvents();
     device_context->wait_events->emplace_back();
-    tryOcl("Failed to enqueue buffer write", [&] {
-        return queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm, sizeof(complex),
-            &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
-    });
+    tryOcl(
+        "Failed to enqueue buffer write",
+        [&] {
+            return queue.enqueueWriteBuffer(*stateBuffer, CL_FALSE, sizeof(complex) * (bitCapIntOcl)perm,
+                sizeof(complex), &permutationAmp, waitVec.get(), &(device_context->wait_events->back()));
+        },
+        true);
     device_context->UnlockWaitEvents();
 }
 

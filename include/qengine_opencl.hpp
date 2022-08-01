@@ -228,7 +228,7 @@ protected:
     }
 
     // For std::function, cl_int use might discard int qualifiers.
-    void tryOcl(std::string message, std::function<int()> oclCall)
+    void tryOcl(std::string message, std::function<int()> oclCall, bool unlockWaitEvents = false)
     {
         checkCallbackError();
 
@@ -252,6 +252,10 @@ protected:
         if (error == CL_SUCCESS) {
             // Success after clearing all queues for the OpenCL device
             return;
+        }
+
+        if (unlockWaitEvents) {
+            device_context->UnlockWaitEvents();
         }
 
         // We're fatally blocked. Throw to exit.
