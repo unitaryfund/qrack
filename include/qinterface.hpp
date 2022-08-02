@@ -2200,8 +2200,7 @@ public:
     virtual bool isClifford(bitLenInt qubit) { return false; }
 
     /**
-     * Returns "true" if current qubit state is identifiably within the Clifford set, or "false" if it is not or cannot
-     * be determined.
+     * Returns "true" if current simulation is OpenCL-based.
      */
     virtual bool isOpenCL() { return false; }
 
