@@ -1210,6 +1210,14 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
         return;
     }
 
+    const bitCapIntOcl oMaxQPower = maxQPowerOcl;
+    const bitCapIntOcl nMaxQPower = bciArgs[0];
+    const bitCapIntOcl nQubitCount = bciArgs[1] + toCopy->qubitCount;
+    const size_t nStateVecSize = nMaxQPower * sizeof(complex);
+    if (nStateVecSize > device_context->GetMaxAlloc()) {
+        throw bad_alloc("VRAM limits exceeded in QEngineOCL::Compose()");
+    }
+
     if (doNormalize) {
         NormalizeState();
     }
@@ -1228,14 +1236,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
 
     cl::Event writeArgsEvent;
     DISPATCH_TEMP_WRITE(waitVec, *(poolItem->ulongBuffer), sizeof(bitCapIntOcl) * 7, bciArgs, writeArgsEvent, error);
-
-    const bitCapIntOcl oMaxQPower = maxQPowerOcl;
-    const bitCapIntOcl nMaxQPower = bciArgs[0];
-    const bitCapIntOcl nQubitCount = bciArgs[1] + toCopy->qubitCount;
-    const size_t nStateVecSize = nMaxQPower * sizeof(complex);
-    if (nStateVecSize > device_context->GetMaxAlloc()) {
-        throw bad_alloc("VRAM limits exceeded in QEngineOCL::Compose()");
-    }
 
     AddAlloc(sizeof(complex) * nMaxQPower);
 
