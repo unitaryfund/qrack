@@ -372,8 +372,15 @@ void QStabilizerHybrid::SwitchToEngine()
         return;
     }
 
-    engine = MakeEngine(0, stabilizer->GetQubitCount());
-    stabilizer->GetQuantumState(engine);
+    const bitLenInt qb = stabilizer->GetQubitCount();
+    engine = MakeEngine(0, qb);
+    if (engine->isOpenCL()) {
+        std::unique_ptr<complex[]> stateVec(new complex[pow2Ocl(qb)]);
+        stabilizer->GetQuantumState(stateVec.get());
+        engine->SetQuantumState(stateVec.get());
+    } else {
+        stabilizer->GetQuantumState(engine);
+    }
     stabilizer = NULL;
     FlushBuffers();
 

@@ -136,6 +136,7 @@ public:
         }
     }
     bool GetTInjection() { return useTGadget; }
+    bool isOpenCL() { return qPages[0U]->isOpenCL(); }
 
     QEnginePtr ReleaseEngine()
     {

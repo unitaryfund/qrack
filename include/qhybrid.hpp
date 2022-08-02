@@ -65,7 +65,7 @@ public:
 
     QEnginePtr MakeEngine(bool isOpenCL);
 
-    bool IsOpencl() { return isGpu; }
+    bool isOpenCL() { return isGpu; }
 
     void SetConcurrency(uint32_t threadCount)
     {

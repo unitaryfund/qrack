@@ -248,7 +248,10 @@ protected:
     AmplitudeEntry getBasisAmp(const real1_f& nrm);
 
     /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
-    void setBasisState(const real1_f& nrm, complex* stateVec, QInterfacePtr eng);
+    void setBasisState(const real1_f& nrm, complex* stateVec);
+
+    /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
+    void setBasisState(const real1_f& nrm, QInterfacePtr eng);
 
     /// Returns the probability from applying the Pauli operator in the "scratch space" of q to |0...0>
     void setBasisProb(const real1_f& nrm, real1* outputProbs);

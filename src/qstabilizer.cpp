@@ -285,18 +285,19 @@ AmplitudeEntry QStabilizer::getBasisAmp(const real1_f& nrm)
 }
 
 /// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
-void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec, QInterfacePtr eng)
+void QStabilizer::setBasisState(const real1_f& nrm, complex* stateVec)
 {
     const AmplitudeEntry entry = getBasisAmp(nrm);
-    if (entry.amplitude == ZERO_CMPLX) {
-        return;
-    }
-
-    if (stateVec) {
+    if (entry.amplitude != ZERO_CMPLX) {
         stateVec[entry.permutation] = entry.amplitude;
     }
+}
 
-    if (eng) {
+/// Returns the result of applying the Pauli operator in the "scratch space" of q to |0...0>
+void QStabilizer::setBasisState(const real1_f& nrm, QInterfacePtr eng)
+{
+    const AmplitudeEntry entry = getBasisAmp(nrm);
+    if (entry.amplitude != ZERO_CMPLX) {
         eng->SetAmplitude(entry.permutation, entry.amplitude);
     }
 }
@@ -362,7 +363,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
     // init stateVec as all 0 values
     std::fill(stateVec, stateVec + pow2Ocl(qubitCount), ZERO_CMPLX);
 
-    setBasisState(nrm, stateVec, NULL);
+    setBasisState(nrm, stateVec);
     for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
         const bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
@@ -370,7 +371,7 @@ void QStabilizer::GetQuantumState(complex* stateVec)
                 rowmult(elemCount, qubitCount + i);
             }
         }
-        setBasisState(nrm, stateVec, NULL);
+        setBasisState(nrm, stateVec);
     }
 }
 
@@ -392,7 +393,7 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
     eng->SetPermutation(0U);
     eng->SetAmplitude(0U, ZERO_CMPLX);
 
-    setBasisState(nrm, NULL, eng);
+    setBasisState(nrm, eng);
     for (bitCapIntOcl t = 0U; t < permCountMin1; ++t) {
         const bitCapIntOcl t2 = t ^ (t + 1U);
         for (bitLenInt i = 0U; i < g; ++i) {
@@ -400,7 +401,7 @@ void QStabilizer::GetQuantumState(QInterfacePtr eng)
                 rowmult(elemCount, qubitCount + i);
             }
         }
-        setBasisState(nrm, NULL, eng);
+        setBasisState(nrm, eng);
     }
 }
 
