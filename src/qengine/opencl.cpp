@@ -395,8 +395,11 @@ EventVecPtr QEngineOCL::ResetWaitEvents(bool waitQueue)
         }
     }
 
-    wait_refs.emplace_back(device_context->ResetWaitEvents());
-    return wait_refs.back();
+    EventVecPtr waitVec = device_context->ResetWaitEvents();
+    if (waitVec->size()) {
+        wait_refs.emplace_back(waitVec);
+    }
+    return wait_refs.size() ? wait_refs.back() : std::make_shared<EventVec>();
 }
 
 void QEngineOCL::WaitCall(

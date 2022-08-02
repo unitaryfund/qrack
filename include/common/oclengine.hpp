@@ -49,7 +49,8 @@ class OCLDeviceCall;
 class OCLDeviceContext;
 
 typedef std::shared_ptr<OCLDeviceContext> DeviceContextPtr;
-typedef std::shared_ptr<std::vector<cl::Event>> EventVecPtr;
+typedef std::vector<cl::Event> EventVec;
+typedef std::shared_ptr<EventVec> EventVecPtr;
 
 enum OCLAPI {
     OCL_API_UNKNOWN = 0,
