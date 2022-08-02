@@ -226,9 +226,10 @@ protected:
             device_context->UnlockWaitEvents();
         }
 
-        cl_int error = callbackError;
-        callbackError = CL_SUCCESS;
-        throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(error));
+        wait_queue_items.clear();
+        wait_refs.clear();
+
+        throw std::runtime_error("Failed to enqueue kernel, error code: " + std::to_string(callbackError));
     }
 
     // For std::function, cl_int use might discard int qualifiers.
@@ -261,6 +262,9 @@ protected:
         if (unlockWaitEvents) {
             device_context->UnlockWaitEvents();
         }
+
+        wait_queue_items.clear();
+        wait_refs.clear();
 
         // We're fatally blocked. Throw to exit.
         throw std::runtime_error(message + ", error code: " + std::to_string(error));
@@ -334,6 +338,7 @@ public:
         // For lock_guard:
         if (true) {
             std::lock_guard<std::mutex> lock(queue_mutex);
+            checkCallbackError();
             isBase = !wait_queue_items.size();
             wait_queue_items.push_back(item);
         }
@@ -498,6 +503,8 @@ protected:
 
     BufferPtr MakeBuffer(const cl::Context& context, cl_mem_flags flags, size_t size, void* host_ptr = NULL)
     {
+        checkCallbackError();
+
         cl_int error;
         BufferPtr toRet = std::make_shared<cl::Buffer>(context, flags, size, host_ptr, &error);
         if (error == CL_SUCCESS) {
