@@ -373,8 +373,10 @@ void QStabilizerHybrid::SwitchToEngine()
     }
 
     engine = MakeEngine(0, stabilizer->GetQubitCount());
-    stabilizer->GetQuantumState(engine);
-    stabilizer = NULL;
+    std::shared_ptr<complex> stateVec(new complex[pow2Ocl(stabilizer->GetQubitCount())]);
+    stabilizer->GetQuantumState(stateVec.get());
+    engine->SetQuantumState(stateVec.get());
+    stateVec = NULL;
     FlushBuffers();
 
     if (!ancillaCount) {
