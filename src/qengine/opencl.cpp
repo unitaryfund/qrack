@@ -497,12 +497,16 @@ void QEngineOCL::DispatchQueue()
     if (error != CL_SUCCESS) {
         // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
         callbackError = error;
+        wait_queue_items.clear();
+        wait_refs.clear();
         return;
     }
     error = queue.flush();
     if (error != CL_SUCCESS) {
         // We're fatally blocked, since we can't make any blocking calls like clFinish() in a callback.
         callbackError = error;
+        wait_queue_items.clear();
+        wait_refs.clear();
         return;
     }
 }
