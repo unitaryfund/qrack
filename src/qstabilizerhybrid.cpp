@@ -1021,34 +1021,15 @@ std::map<bitCapInt, int> QStabilizerHybrid::MultiShotMeasureMask(
         return std::map<bitCapInt, int>();
     }
 
-    if (ancillaCount) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->SwitchToEngine();
-        return clone->MultiShotMeasureMask(qPowers, qPowerCount, shots);
-    }
-
     if (engine) {
         return engine->MultiShotMeasureMask(qPowers, qPowerCount, shots);
     }
 
-    std::vector<bitLenInt> bits(qPowerCount);
-    for (bitLenInt i = 0U; i < qPowerCount; ++i) {
-        bits[i] = log2(qPowers[i]);
-    }
+    // TODO: Simulation in terms of copies of stabilizer seems bugged.
+    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+    clone->SwitchToEngine();
 
-    std::map<bitCapInt, int> results;
-    for (unsigned shot = 0U; shot < shots; ++shot) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        bitCapInt sample = 0U;
-        for (bitLenInt i = 0U; i < qPowerCount; ++i) {
-            if (clone->M(bits[i])) {
-                sample |= pow2(i);
-            }
-        }
-        ++(results[sample]);
-    }
-
-    return results;
+    return clone->MultiShotMeasureMask(qPowers, qPowerCount, shots);
 }
 
 void QStabilizerHybrid::MultiShotMeasureMask(
@@ -1058,32 +1039,15 @@ void QStabilizerHybrid::MultiShotMeasureMask(
         return;
     }
 
-    if (ancillaCount) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        clone->SwitchToEngine();
-        return clone->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
-    }
-
     if (engine) {
         engine->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
         return;
     }
 
-    std::vector<bitLenInt> bits(qPowerCount);
-    for (bitLenInt i = 0U; i < qPowerCount; ++i) {
-        bits[i] = log2(qPowers[i]);
-    }
-
-    par_for(0U, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
-        QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
-        bitCapInt sample = 0U;
-        for (bitLenInt i = 0U; i < qPowerCount; ++i) {
-            if (clone->M(bits[i])) {
-                sample |= pow2(i);
-            }
-        }
-        shotsArray[shot] = (unsigned)sample;
-    });
+    // TODO: Simulation in terms of copies of stabilizer seems bugged.
+    QStabilizerHybridPtr clone = std::dynamic_pointer_cast<QStabilizerHybrid>(Clone());
+    clone->SwitchToEngine();
+    clone->MultiShotMeasureMask(qPowers, qPowerCount, shots, shotsArray);
 }
 
 real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol)
