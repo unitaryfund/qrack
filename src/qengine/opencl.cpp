@@ -106,7 +106,6 @@ void QEngineOCL::ZeroAmplitudes()
 {
     clDump();
     runningNorm = ZERO_R1;
-    clFinish();
 
     if (!stateBuffer) {
         return;
@@ -340,6 +339,8 @@ void QEngineOCL::clDump()
 
     wait_queue_items.clear();
     wait_refs.clear();
+    device_context->WaitOnAllEvents();
+    checkCallbackError();
 }
 
 size_t QEngineOCL::FixWorkItemCount(size_t maxI, size_t wic)
@@ -899,7 +900,7 @@ void QEngineOCL::Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const comp
         api_call = OCL_API_APPLY2X2_DOUBLE_WIDE;
         break;
     default:
-        throw("Invalid APPLY2X2 kernel selected!");
+        throw std::runtime_error("Invalid APPLY2X2 kernel selected!");
     }
 
     // Wait for buffer write from limited lifetime objects
