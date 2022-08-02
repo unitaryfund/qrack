@@ -307,7 +307,7 @@ public:
         FreeAll();
     }
 
-    virtual bool isOpenCL(bitLenInt qubit) { return true; }
+    virtual bool isOpenCL() { return true; }
 
     bool IsZeroAmplitude() { return !stateBuffer; }
     real1_f FirstNonzeroPhase()

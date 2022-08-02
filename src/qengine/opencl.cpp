@@ -2970,6 +2970,15 @@ void QEngineOCL::UpdateRunningNorm(real1_f norm_thresh)
     }
 }
 
+#if defined(__APPLE__)
+complex* _aligned_state_vec_alloc(bitCapIntOcl allocSize)
+{
+    void* toRet;
+    posix_memalign(&toRet, QRACK_ALIGN_SIZE, allocSize);
+    return (complex*)toRet;
+}
+#endif
+
 std::shared_ptr<complex> QEngineOCL::AllocStateVec(bitCapInt elemCount, bool doForceAlloc)
 {
     // If we're not using host ram, there's no reason to allocate.
