@@ -44,6 +44,7 @@ protected:
     QStabilizerPtr stabilizer;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engineTypes;
+    std::vector<QInterfaceEngine> cloneEngineTypes;
     std::vector<MpsShardPtr> shards;
 
     QStabilizerPtr MakeStabilizer(bitCapInt perm = 0U);
