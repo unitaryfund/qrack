@@ -10,7 +10,7 @@
 // See LICENSE.md in the project root or https://www.gnu.org/licenses/lgpl-3.0.en.html
 // for details.
 
-#include "qfactory.hpp"
+#include "qengine_cpu.hpp"
 
 namespace Qrack {
 
@@ -20,9 +20,9 @@ QInterfacePtr QEngineCPU::Clone()
         return CloneEmpty();
     }
 
-    QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(
-        CreateQuantumInterface(QINTERFACE_CPU, qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-            false, -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
+    QEngineCPUPtr clone =
+        std::make_shared<QEngineCPU>(qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
+            (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
 
     Finish();
     clone->Finish();
@@ -34,9 +34,8 @@ QInterfacePtr QEngineCPU::Clone()
 
 QEnginePtr QEngineCPU::CloneEmpty()
 {
-    QEngineCPUPtr clone = std::dynamic_pointer_cast<QEngineCPU>(
-        CreateQuantumInterface(QINTERFACE_CPU, 0U, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
-            -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor));
+    QEngineCPUPtr clone = std::make_shared<QEngineCPU>(0U, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
+        false, -1, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
 
     clone->SetQubitCount(qubitCount);
 
