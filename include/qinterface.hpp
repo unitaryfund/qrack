@@ -1236,6 +1236,14 @@ public:
      */
     virtual void CRZ(real1_f radians, bitLenInt control, bitLenInt target);
 
+    /**
+     * Controlled Y axis rotation gate
+     *
+     * If "control" is set to 1, rotates as \f$ e^{-i \theta/2} \f$ around
+     * Pauli Y axis.
+     */
+    virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target);
+
 #if ENABLE_ROT_API
     /**
      * Dyadic fraction phase shift gate
@@ -1340,14 +1348,6 @@ public:
      * Rotates as \f$ \exp\left(i*{\pi * numerator} / 2^{denomPower}\right) \f$ around Pauli Y axis.
      */
     virtual void RYDyad(int numerator, int denomPower, bitLenInt qubitIndex);
-
-    /**
-     * Controlled Y axis rotation gate
-     *
-     * If "control" is set to 1, rotates as \f$ e^{-i \theta/2} \f$ around
-     * Pauli Y axis.
-     */
-    virtual void CRY(real1_f radians, bitLenInt control, bitLenInt target);
 
     /**
      * Controlled dyadic fraction y axis rotation gate
@@ -2303,6 +2303,26 @@ public:
 
         return (real1_f)std::arg(amp);
     }
+
+    /**
+     *  Simulate a local qubit depolarizing noise channel, under a stochastic "weak simulation condition." Under "weak"
+     * condition, sampling and exact state queries are not accurate, but sampling can be achieved via repeated full
+     * execution of a noisy circuit, for each hardware-realistic measurement sample.
+     */
+    virtual void DepolarizingChannelWeak1Qb(bitLenInt qubit, real1_f lambda);
+
+    /**
+     *  Simulate a local qubit depolarizing noise channel, under a "strong simulation condition." "Strong" condition
+     * supports measurement sampling and direct queries of state, but the expression of state is in terms of one
+     * retained ancillary qubit per applied noise channel. condition, sampling and exact state queries are not accurate,
+     * but sampling can be achieved via repeated full execution of a noisy circuit, for each hardware-realistic
+     * measurement sample.
+     *
+     * This method returns a newly-allocated qubit ancilla index which must be retained to maintain "strong" simulation.
+     * Note that "strong" ancilla can be measured at any time and discarded, but this makes the simulation condition
+     * "weak".
+     */
+    virtual bitLenInt DepolarizingChannelStrong1Qb(bitLenInt qubit, real1_f lambda);
 
     /** @} */
 };

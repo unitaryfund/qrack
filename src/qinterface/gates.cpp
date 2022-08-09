@@ -786,4 +786,45 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
     }
 }
 
+void QInterface::DepolarizingChannelWeak1Qb(bitLenInt qubit, real1_f lambda)
+{
+    if (lambda <= ZERO_R1) {
+        return;
+    }
+
+    // Original qubit, Z->X basis
+    H(qubit);
+
+    // Allocate an ancilla
+    const bitLenInt ancilla = Allocate(1U);
+    // Partially entangle with the ancilla
+    CRY(2 * asin(std::pow(lambda, ONE_R1 / 4)), qubit, ancilla);
+    // Partially collapse the original state
+    M(ancilla);
+    // The ancilla is fully separable, after measurement.
+    Dispose(ancilla, 1U);
+
+    // Uncompute
+    H(qubit);
+
+    // Original qubit might be below separability threshold
+    TrySeparate(qubit);
+}
+
+bitLenInt QInterface::DepolarizingChannelStrong1Qb(bitLenInt qubit, real1_f lambda)
+{
+    // Original qubit, Z->X basis
+    H(qubit);
+
+    // Allocate an ancilla
+    const bitLenInt ancilla = Allocate(1U);
+    // Partially entangle with the ancilla
+    CRY(2 * asin(std::pow(lambda, ONE_R1 / 4)), qubit, ancilla);
+
+    // Uncompute
+    H(qubit);
+
+    return ancilla;
+}
+
 } // namespace Qrack
