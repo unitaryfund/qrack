@@ -741,6 +741,18 @@ void QPager::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
     CombineEngines(baseQubitsPerPage);
 }
 
+bitLenInt QPager::Allocate(bitLenInt start, bitLenInt length)
+{
+    if (!length) {
+        return start;
+    }
+
+    QPagerPtr nQubits = std::make_shared<QPager>(engines, length, 0U, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, false, 0, (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor,
+        deviceIDs, thresholdQubitsPerPage);
+    return Compose(nQubits, start);
+}
+
 void QPager::SetQuantumState(const complex* inputState)
 {
     const bitCapIntOcl pagePower = (bitCapIntOcl)pageMaxQPower();

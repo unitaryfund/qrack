@@ -116,6 +116,8 @@ public:
     virtual QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length);
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
+    using QInterface::Allocate;
+    virtual bitLenInt Allocate(bitLenInt start, bitLenInt length);
 
     /**
      * \defgroup BasicGates Basic quantum gate primitives

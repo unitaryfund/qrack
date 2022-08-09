@@ -379,6 +379,17 @@ public:
         DecomposeDispose(start, length, (QStabilizerPtr)NULL);
     }
     bool CanDecomposeDispose(const bitLenInt start, const bitLenInt length);
+    using QInterface::Allocate;
+    bitLenInt Allocate(bitLenInt start, bitLenInt length)
+    {
+        if (!length) {
+            return start;
+        }
+
+        QStabilizerPtr nQubits = std::make_shared<QStabilizer>(length, 0U, rand_generator, CMPLX_DEFAULT_ARG, false,
+            randGlobalPhase, false, -1, hardware_rand_generator != NULL);
+        return Compose(nQubits, start);
+    }
 
     void NormalizeState(
         real1_f nrm = REAL1_DEFAULT_ARG, real1_f norm_thresh = REAL1_DEFAULT_ARG, real1_f phaseArg = ZERO_R1_F)

@@ -213,6 +213,21 @@ public:
         SetQubitCount(qubitCount - length);
     }
 
+    using QEngine::Allocate;
+    bitLenInt Allocate(bitLenInt start, bitLenInt length)
+    {
+        if (!length) {
+            return start;
+        }
+
+        QHybridPtr nQubits = std::make_shared<QHybrid>(length, 0U, rand_generator, phaseFactor, doNormalize,
+            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+            gpuThresholdQubits, separabilityThreshold);
+        nQubits->SetConcurrency(GetConcurrencyLevel());
+
+        return Compose(nQubits, start);
+    }
+
     bool TryDecompose(bitLenInt start, QHybridPtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
     {
         const bitLenInt nQubitCount = qubitCount - dest->GetQubitCount();
@@ -464,7 +479,16 @@ public:
 
     void Dump() { engine->Dump(); }
 
-    QInterfacePtr Clone();
+    QInterfacePtr Clone()
+    {
+        QHybridPtr c = std::make_shared<QHybrid>(qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
+            randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
+            gpuThresholdQubits, separabilityThreshold);
+        c->runningNorm = runningNorm;
+        c->SetConcurrency(GetConcurrencyLevel());
+        c->engine->CopyStateVec(engine);
+        return c;
+    }
 
     void SetDevice(int64_t dID)
     {

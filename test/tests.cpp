@@ -2901,6 +2901,18 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose")
     REQUIRE_THAT(qftReg, HasProbability(0, 4, 0xb));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_allocate")
+{
+    qftReg = CreateQuantumInterface({ testEngineType, testSubEngineType, testSubSubEngineType }, 8, 0x2b, rng);
+    qftReg->Allocate(0, 4);
+    REQUIRE_THAT(qftReg, HasProbability(0, 12, 0x2b0));
+
+    qftReg->SetPermutation(0x2b);
+    qftReg->Allocate(1);
+    REQUIRE(qftReg->GetQubitCount() == 13);
+    REQUIRE_THAT(qftReg, HasProbability(0, 13, 0x2b));
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_dispose_perm")
 {
     qftReg->SetPermutation(0x2b);

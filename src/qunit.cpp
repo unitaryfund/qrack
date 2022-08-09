@@ -479,6 +479,19 @@ QInterfacePtr QUnit::EntangleInCurrentBasis(
     return unit1;
 }
 
+bitLenInt QUnit::Allocate(bitLenInt start, bitLenInt length)
+{
+    if (!length) {
+        return start;
+    }
+
+    QUnitPtr nQubits = std::make_shared<QUnit>(engines, length, 0U, rand_generator, phaseFactor, doNormalize,
+        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
+        separabilityThreshold);
+    nQubits->SetReactiveSeparate(isReactiveSeparate);
+    return Compose(nQubits, start);
+}
+
 QInterfacePtr QUnit::Entangle(std::vector<bitLenInt> bits)
 {
     std::sort(bits.begin(), bits.end());

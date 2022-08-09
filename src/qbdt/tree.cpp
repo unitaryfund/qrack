@@ -416,6 +416,18 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     root->Prune(bdtQubitCount);
 }
 
+bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)
+{
+    if (!length) {
+        return start;
+    }
+
+    QBdtPtr nQubits = std::make_shared<QBdt>(length, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
+        -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+
+    return Compose(nQubits, start);
+}
+
 real1_f QBdt::Prob(bitLenInt qubit)
 {
     const bool isKet = (qubit >= bdtQubitCount);

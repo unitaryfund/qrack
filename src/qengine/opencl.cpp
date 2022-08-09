@@ -1556,6 +1556,17 @@ void QEngineOCL::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPe
     SubtractAlloc(sizeDiff);
 }
 
+bitLenInt QEngineOCL::Allocate(bitLenInt start, bitLenInt length)
+{
+    if (!length) {
+        return start;
+    }
+
+    QEngineOCLPtr nQubits = std::make_shared<QEngineOCL>(length, 0U, rand_generator, ONE_CMPLX, doNormalize,
+        randGlobalPhase, useHostRam, deviceID, hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor);
+    return Compose(nQubits, start);
+}
+
 real1_f QEngineOCL::Probx(OCLAPI api_call, const bitCapIntOcl* bciArgs)
 {
     if (doNormalize) {

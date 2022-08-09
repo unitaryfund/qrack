@@ -566,6 +566,18 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
     FixPaging();
 }
 
+bitLenInt QStabilizerHybrid::Allocate(bitLenInt start, bitLenInt length)
+{
+    if (!length) {
+        return start;
+    }
+
+    QStabilizerHybridPtr nQubits = std::make_shared<QStabilizerHybrid>(cloneEngineTypes, length, 0, rand_generator,
+        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+        std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
+    return Compose(nQubits, start);
+}
+
 void QStabilizerHybrid::GetQuantumState(complex* outputState)
 {
     if (engine) {

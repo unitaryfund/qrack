@@ -296,6 +296,8 @@ public:
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
     void Dispose(bitLenInt start, bitLenInt length);
     void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
+    using QEngine::Allocate;
+    bitLenInt Allocate(bitLenInt start, bitLenInt length);
 
     void Mtrx(const complex* mtrx, bitLenInt target);
     void Phase(complex topLeft, complex bottomRight, bitLenInt qubitIndex)

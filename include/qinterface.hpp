@@ -419,6 +419,16 @@ public:
     virtual void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) = 0;
 
     /**
+     * Allocate new "length" count of |0> state qubits at end of qubit index position
+     */
+    virtual bitLenInt Allocate(bitLenInt length) { return Allocate(qubitCount, length); }
+
+    /**
+     * Allocate new "length" count of |0> state qubits at specified qubit index start position
+     */
+    virtual bitLenInt Allocate(bitLenInt start, bitLenInt length) = 0;
+
+    /**
      * \defgroup BasicGates Basic quantum gate primitives
      *@{
      */

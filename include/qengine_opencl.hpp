@@ -412,6 +412,8 @@ public:
     void Decompose(bitLenInt start, QInterfacePtr dest);
     void Dispose(bitLenInt start, bitLenInt length);
     void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
+    using QEngine::Allocate;
+    bitLenInt Allocate(bitLenInt start, bitLenInt length);
 
     void ROL(bitLenInt shift, bitLenInt start, bitLenInt length);
 

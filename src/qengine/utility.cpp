@@ -42,6 +42,18 @@ QEnginePtr QEngineCPU::CloneEmpty()
     return clone;
 }
 
+bitLenInt QEngineCPU::Allocate(bitLenInt start, bitLenInt length)
+{
+    if (!length) {
+        return start;
+    }
+
+    QEngineCPUPtr nQubits =
+        std::make_shared<QEngineCPU>(length, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
+            (hardware_rand_generator == NULL) ? false : true, isSparse, (real1_f)amplitudeFloor);
+    return Compose(nQubits, start);
+}
+
 real1_f QEngineCPU::GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
 {
     const bitCapIntOcl outputMask = bitRegMaskOcl(valueStart, valueLength);

@@ -207,6 +207,9 @@ public:
 
     void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) { DecomposeDispose(start, length, NULL); }
 
+    using QInterface::Allocate;
+    bitLenInt Allocate(bitLenInt start, bitLenInt length);
+
     real1_f Prob(bitLenInt qubitIndex);
     real1_f ProbAll(bitCapInt fullRegister);
 

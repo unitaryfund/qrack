@@ -136,6 +136,9 @@ public:
     void Dispose(bitLenInt start, bitLenInt length);
     void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
 
+    using QEngine::Allocate;
+    bitLenInt Allocate(bitLenInt start, bitLenInt length);
+
     /** @} */
 
     void XMask(bitCapInt mask);

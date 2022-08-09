@@ -53,17 +53,6 @@ QEnginePtr QMaskFusion::MakeEngine(bitCapInt initState)
         devices, thresholdQubits, separabilityThreshold));
 }
 
-QInterfacePtr QMaskFusion::Clone()
-{
-    FlushBuffers();
-
-    QMaskFusionPtr c = std::make_shared<QMaskFusion>(engTypes, qubitCount, 0U, rand_generator, phaseFactor, doNormalize,
-        randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, devices, thresholdQubits,
-        separabilityThreshold);
-    c->engine = std::dynamic_pointer_cast<QEngine>(engine->Clone());
-    return c;
-}
-
 void QMaskFusion::FlushBuffers()
 {
     bitCapInt zMask = 0U;

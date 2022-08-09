@@ -302,6 +302,18 @@ public:
         }
         return result;
     }
+    using QEngine::Allocate;
+    bitLenInt Allocate(bitLenInt start, bitLenInt length)
+    {
+        if (!length) {
+            return start;
+        }
+
+        QMaskFusionPtr nQubits = std::make_shared<QMaskFusion>(engTypes, length, 0U, rand_generator, phaseFactor,
+            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, devices,
+            thresholdQubits, separabilityThreshold);
+        return Compose(nQubits, start);
+    }
 
     void SetQuantumState(const complex* inputState)
     {
@@ -673,7 +685,16 @@ public:
 
     bool isFinished() { return engine->isFinished(); }
 
-    QInterfacePtr Clone();
+    QInterfacePtr Clone()
+    {
+        FlushBuffers();
+
+        QMaskFusionPtr c = std::make_shared<QMaskFusion>(engTypes, qubitCount, 0U, rand_generator, phaseFactor,
+            doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, devices,
+            thresholdQubits, separabilityThreshold);
+        c->engine = std::dynamic_pointer_cast<QEngine>(engine->Clone());
+        return c;
+    }
 
     void SetDevice(int64_t dID)
     {

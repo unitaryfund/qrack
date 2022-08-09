@@ -59,15 +59,4 @@ QEnginePtr QHybrid::MakeEngine(bool isOpenCL)
     toRet->SetConcurrency(GetConcurrencyLevel());
     return toRet;
 }
-
-QInterfacePtr QHybrid::Clone()
-{
-    QHybridPtr c =
-        std::make_shared<QHybrid>(qubitCount, 0U, rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam,
-            devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, gpuThresholdQubits, separabilityThreshold);
-    c->runningNorm = runningNorm;
-    c->SetConcurrency(GetConcurrencyLevel());
-    c->engine->CopyStateVec(engine);
-    return c;
-}
 } // namespace Qrack
