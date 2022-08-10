@@ -239,11 +239,9 @@ bitCapInt QInterface::ForceM(const bitLenInt* bits, bitLenInt length, const bool
         return result;
     }
 
-    std::vector<bitCapInt> qPowers(length);
-    for (bitLenInt bit = 0U; bit < length; ++bit) {
-        qPowers[bit] = pow2(bits[bit]);
-    }
-    result = MultiShotMeasureMask(&(qPowers[0]), qPowers.size(), 1).begin()->first;
+    std::unique_ptr<bitCapInt[]> qPowers(new bitCapInt[length]);
+    std::transform(bits, bits + length, qPowers.get(), pow2);
+    result = MultiShotMeasureMask(qPowers.get(), length, 1).begin()->first;
 
     return result;
 }
@@ -367,9 +365,7 @@ void QInterface::ProbBitsAll(const bitLenInt* bits, bitLenInt length, real1* pro
     std::fill(probsArray, probsArray + pow2Ocl(length), ZERO_R1);
 
     std::vector<bitCapInt> bitPowers(length);
-    for (bitLenInt p = 0U; p < length; ++p) {
-        bitPowers[p] = pow2(bits[p]);
-    }
+    std::transform(bits, bits + length, bitPowers.begin(), pow2);
 
     for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
         bitCapIntOcl retIndex = 0U;
@@ -389,9 +385,7 @@ real1_f QInterface::ExpectationBitsAll(const bitLenInt* bits, bitLenInt length, 
     }
 
     std::vector<bitCapInt> bitPowers(length);
-    for (bitLenInt p = 0U; p < length; ++p) {
-        bitPowers[p] = pow2(bits[p]);
-    }
+    std::transform(bits, bits + length, bitPowers.begin(), pow2);
 
     real1_f expectation = 0;
     for (bitCapInt lcv = 0U; lcv < maxQPower; ++lcv) {
@@ -415,34 +409,9 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
     }
 
     std::unique_ptr<bitLenInt[]> bitMap(new bitLenInt[qPowerCount]);
-    std::vector<bitCapInt> maskMap(qPowerCount);
-    for (bitLenInt i = 0U; i < qPowerCount; ++i) {
-        maskMap[i] = qPowers[i];
-        bitMap[i] = log2(qPowers[i]);
-    }
+    std::transform(qPowers, qPowers + qPowerCount, bitMap.get(), log2);
 
     const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowerCount);
-
-    if ((shots == 1U) && (qPowerCount == qubitCount)) {
-        real1 maskProb = (real1)Rand();
-        real1 cumulativeProb = ZERO_R1;
-        std::map<bitCapInt, int> results;
-        for (bitCapIntOcl j = 0U; j < maskMaxQPower; ++j) {
-            cumulativeProb += ProbAll(j);
-            if (cumulativeProb >= maskProb) {
-                bitCapIntOcl maskPerm = 0U;
-                for (bitLenInt i = 0U; i < qPowerCount; ++i) {
-                    if (j & maskMap[i]) {
-                        maskPerm |= pow2Ocl(i);
-                    }
-                }
-                results[maskPerm] = 1U;
-                break;
-            }
-        }
-        return results;
-    }
-
     std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
     ProbBitsAll(bitMap.get(), qPowerCount, &(maskProbsVec[0]));
     std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
@@ -466,33 +435,9 @@ void QInterface::MultiShotMeasureMask(
     }
 
     std::unique_ptr<bitLenInt[]> bitMap(new bitLenInt[qPowerCount]);
-    std::vector<bitCapInt> maskMap(qPowerCount);
-    for (bitLenInt i = 0U; i < qPowerCount; ++i) {
-        maskMap[i] = qPowers[i];
-        bitMap[i] = log2(qPowers[i]);
-    }
+    std::transform(qPowers, qPowers + qPowerCount, bitMap.get(), log2);
 
     const bitCapIntOcl maskMaxQPower = pow2Ocl(qPowerCount);
-
-    if ((shots == 1U) && (qPowerCount == qubitCount)) {
-        real1 maskProb = (real1)Rand();
-        real1 cumulativeProb = ZERO_R1;
-        for (bitCapIntOcl j = 0U; j < maskMaxQPower; ++j) {
-            cumulativeProb += ProbAll(j);
-            if (cumulativeProb >= maskProb) {
-                bitCapIntOcl maskPerm = 0U;
-                for (bitLenInt i = 0U; i < qPowerCount; ++i) {
-                    if (j & maskMap[i]) {
-                        maskPerm |= pow2Ocl(i);
-                    }
-                }
-                shotsArray[0] = (unsigned)maskPerm;
-                break;
-            }
-        }
-        return;
-    }
-
     std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
     ProbBitsAll(bitMap.get(), qPowerCount, &(maskProbsVec[0]));
     std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
