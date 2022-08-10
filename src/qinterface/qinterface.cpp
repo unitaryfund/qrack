@@ -13,6 +13,7 @@
 #include "qinterface.hpp"
 
 #include <algorithm>
+#include <random>
 #include <thread>
 
 #if SEED_DEVRAND
@@ -442,63 +443,16 @@ std::map<bitCapInt, int> QInterface::MultiShotMeasureMask(
         return results;
     }
 
-    std::unique_ptr<real1[]> maskProbsArray(new real1[(bitCapIntOcl)maskMaxQPower]);
-    ProbBitsAll(bitMap.get(), qPowerCount, maskProbsArray.get());
+    std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
+    ProbBitsAll(bitMap.get(), qPowerCount, &(maskProbsVec[0]));
+    std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
 
-    if (shots == 1U) {
-        real1 maskProb = (real1)Rand();
-        real1 cumulativeProb = ZERO_R1;
-        std::map<bitCapInt, int> results;
-        for (bitCapIntOcl j = 0U; j < maskMaxQPower; ++j) {
-            cumulativeProb += maskProbsArray[j];
-            if (cumulativeProb >= maskProb) {
-                results[j] = 1U;
-                break;
-            }
-        }
-        return results;
-    }
-
-    bitCapIntOcl singlePerm = ((maskProbsArray[0] + FP_NORM_EPSILON) >= ONE_R1) ? 0U : maskMaxQPower;
-    bitCapIntOcl j = 1U;
-    if (singlePerm && (maskProbsArray[0] <= FP_NORM_EPSILON)) {
-        for (j = 1U; j < maskMaxQPower; ++j) {
-            if (maskProbsArray[j] > FP_NORM_EPSILON) {
-                if ((maskProbsArray[j] + FP_NORM_EPSILON) >= ONE_R1) {
-                    singlePerm = j;
-                }
-                break;
-            }
-
-            maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
-        }
-    }
-
-    if (singlePerm < maskMaxQPower) {
-        std::map<bitCapInt, int> results;
-        results[singlePerm] = shots;
-        return results;
-    }
-
-    for (; j < maskMaxQPower; ++j) {
-        maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
-    }
+    std::random_device rd;
+    std::mt19937 gen(rd());
 
     std::map<bitCapInt, int> results;
     for (unsigned int shot = 0U; shot < shots; ++shot) {
-        real1 maskProb = (real1)Rand();
-        real1* bound = std::upper_bound(maskProbsArray.get(), maskProbsArray.get() + maskMaxQPower, maskProb);
-        size_t dist = bound - maskProbsArray.get();
-        if (dist >= maskMaxQPower) {
-            --bound;
-        }
-        if (maskProb > 0) {
-            while (dist && maskProbsArray[dist - 1U] == maskProb) {
-                --dist;
-            }
-        }
-
-        ++(results[dist]);
+        ++(results[dist(gen)]);
     }
 
     return results;
@@ -539,61 +493,14 @@ void QInterface::MultiShotMeasureMask(
         return;
     }
 
-    std::unique_ptr<real1[]> maskProbsArray(new real1[(bitCapIntOcl)maskMaxQPower]);
-    ProbBitsAll(bitMap.get(), qPowerCount, maskProbsArray.get());
+    std::vector<real1> maskProbsVec((bitCapIntOcl)maskMaxQPower);
+    ProbBitsAll(bitMap.get(), qPowerCount, &(maskProbsVec[0]));
+    std::discrete_distribution<bitCapIntOcl> dist(maskProbsVec.begin(), maskProbsVec.end());
 
-    if (shots == 1U) {
-        real1 maskProb = (real1)Rand();
-        real1 cumulativeProb = ZERO_R1;
-        for (bitCapIntOcl j = 0U; j < maskMaxQPower; ++j) {
-            cumulativeProb += maskProbsArray[j];
-            if (cumulativeProb >= maskProb) {
-                shotsArray[0] = (unsigned)j;
-                break;
-            }
-        }
-        return;
-    }
+    std::random_device rd;
+    std::mt19937 gen(rd());
 
-    bitCapIntOcl singlePerm = ((maskProbsArray[0] + FP_NORM_EPSILON) >= ONE_R1) ? 0U : maskMaxQPower;
-    bitCapIntOcl j = 1U;
-    if (singlePerm && (maskProbsArray[0] <= FP_NORM_EPSILON)) {
-        for (j = 1U; j < maskMaxQPower; ++j) {
-            if (maskProbsArray[j] > FP_NORM_EPSILON) {
-                if ((maskProbsArray[j] + FP_NORM_EPSILON) >= ONE_R1) {
-                    singlePerm = j;
-                }
-                break;
-            }
-
-            maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
-        }
-    }
-
-    if (singlePerm < maskMaxQPower) {
-        std::fill(shotsArray, shotsArray + shots, (unsigned)singlePerm);
-        return;
-    }
-
-    for (; j < maskMaxQPower; ++j) {
-        maskProbsArray[j] = maskProbsArray[j - 1U] + maskProbsArray[j];
-    }
-
-    par_for(0, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) {
-        real1 maskProb = (real1)Rand();
-        real1* bound = std::upper_bound(maskProbsArray.get(), maskProbsArray.get() + maskMaxQPower, maskProb);
-        size_t dist = bound - maskProbsArray.get();
-        if (dist >= maskMaxQPower) {
-            --bound;
-        }
-        if (maskProb > 0) {
-            while (dist && maskProbsArray[dist - 1U] == maskProb) {
-                --dist;
-            }
-        }
-
-        shotsArray[shot] = (unsigned)dist;
-    });
+    par_for(0, shots, [&](const bitCapIntOcl& shot, const unsigned& cpu) { shotsArray[shot] = (unsigned)dist(gen); });
 }
 
 bool QInterface::TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol)
