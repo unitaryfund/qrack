@@ -859,8 +859,10 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     real1_f x = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
     unit->CS(shard1.mapped, shard2.mapped);
     real1_f y = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
-    unit->CIS(mapped1, mapped2);
-    unit->CH(mapped1, mapped2);
+    const complex mtrx[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1),
+        complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1) };
+    const bitLenInt controls[1U] = { mapped1 };
+    unit->MCMtrx(controls, 1U, mtrx, mapped2);
 
     const real1_f inclination = atan2(sqrt(x * x + y * y), z);
     const real1_f azimuth = atan2(y, x);
