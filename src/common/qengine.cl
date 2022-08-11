@@ -729,6 +729,49 @@ void kernel prob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr,
     }
 }
 
+void kernel cprob(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer,
+    local real1* lProbBuffer)
+{
+    const bitCapIntOcl Nthreads = get_global_size(0);
+    const bitCapIntOcl4 args = vload4(0, bitCapIntOclPtr);
+    const bitCapIntOcl maxI = args.x;
+    const bitCapIntOcl qPower = args.y;
+    const bitCapIntOcl qControlPower = args.z;
+    const bitCapIntOcl qControlMask = args.w;
+    bitCapIntOcl qMask1, qMask2;
+    if (qPower < qControlPower) {
+        qMask1 = qPower - ONE_BCI;
+        qMask2 = qControlPower - ONE_BCI;
+    } else {
+        qMask1 = qControlPower - ONE_BCI;
+        qMask2 = qPower - ONE_BCI;
+    }
+    
+    real1 oneChancePart = ZERO_R1;
+
+    for (bitCapIntOcl lcv = ID; lcv < maxI; lcv += Nthreads) {
+        PUSH_APART_2()    
+        i |= qPower | qControlMask;
+        cmplx amp = stateVec[i];
+        oneChancePart += dot(amp, amp);
+    }
+
+    const bitCapIntOcl locID = get_local_id(0);
+    const bitCapIntOcl locNthreads = get_local_size(0);
+    lProbBuffer[locID] = oneChancePart;
+
+    for (bitCapIntOcl lcv = (locNthreads >> ONE_BCI); lcv > 0U; lcv >>= ONE_BCI) {
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (locID < lcv) {
+            lProbBuffer[locID] += lProbBuffer[locID + lcv];
+        }
+    }
+
+    if (locID == 0U) {
+        oneChanceBuffer[get_group_id(0)] = lProbBuffer[0];
+    }
+}
+
 void kernel probreg(global cmplx* stateVec, constant bitCapIntOcl* bitCapIntOclPtr, global real1* oneChanceBuffer,
     local real1* lProbBuffer)
 {

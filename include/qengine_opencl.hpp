@@ -455,6 +455,7 @@ public:
 #endif
 
     real1_f Prob(bitLenInt qubit);
+    real1_f CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target);
     real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation);
     void ProbRegAll(bitLenInt start, bitLenInt length, real1* probsArray);
     real1_f ProbMask(bitCapInt mask, bitCapInt permutation);

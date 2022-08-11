@@ -93,6 +93,7 @@ const std::vector<OCLKernelHandle> OCLEngine::kernelHandles = {
     OCLKernelHandle(OCL_API_DISPOSEPROB, "disposeprob"),
     OCLKernelHandle(OCL_API_DISPOSE, "dispose"),
     OCLKernelHandle(OCL_API_PROB, "prob"),
+    OCLKernelHandle(OCL_API_CPROB, "cprob"),
     OCLKernelHandle(OCL_API_PROBREG, "probreg"),
     OCLKernelHandle(OCL_API_PROBREGALL, "probregall"),
     OCLKernelHandle(OCL_API_PROBMASK, "probmask"),

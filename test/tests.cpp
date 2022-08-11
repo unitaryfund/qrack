@@ -3011,6 +3011,27 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_setbit")
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 0x01));
 }
 
+TEST_CASE_METHOD(QInterfaceTestFixture, "test_cprob")
+{
+    qftReg->SetPermutation(0x01);
+    qftReg->CNOT(0, 1);
+    REQUIRE(qftReg->CProb(0, 1) > 0.99);
+    REQUIRE(qftReg->ACProb(0, 1) < 0.01);
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    REQUIRE(qftReg->CProb(0, 1) > 0.99);
+    REQUIRE(qftReg->ACProb(0, 1) < 0.01);
+
+    qftReg->SetPermutation(0x00);
+    qftReg->H(0);
+    qftReg->CNOT(0, 1);
+    qftReg->H(1);
+    REQUIRE_FLOAT(qftReg->CProb(0, 1), 0.5);
+    REQUIRE_FLOAT(qftReg->ACProb(0, 1), 0.5);
+}
+
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_proball")
 {
     qftReg->SetPermutation(0x02);

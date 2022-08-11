@@ -446,6 +446,10 @@ public:
     }
 
     real1_f Prob(bitLenInt qubitIndex) { return engine->Prob(qubitIndex); }
+    real1_f CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)
+    {
+        return engine->CtrlOrAntiProb(controlState, control, target);
+    }
     real1_f ProbAll(bitCapInt fullRegister) { return engine->ProbAll(fullRegister); }
     real1_f ProbMask(bitCapInt mask, bitCapInt permutation) { return engine->ProbMask(mask, permutation); }
     real1_f ProbParity(bitCapInt mask) { return engine->ProbParity(mask); }

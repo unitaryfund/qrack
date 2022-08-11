@@ -209,6 +209,7 @@ public:
      */
 
     real1_f Prob(bitLenInt qubitIndex);
+    real1_f CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target);
     real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation);
     real1_f ProbMask(bitCapInt mask, bitCapInt permutation);
     real1_f ProbParity(bitCapInt mask);

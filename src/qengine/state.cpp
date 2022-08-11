@@ -1266,6 +1266,54 @@ real1_f QEngineCPU::Prob(bitLenInt qubit)
     return clampProb((real1_f)oneChance);
 }
 
+/// PSEUDO-QUANTUM Direct measure of bit probability to be in |1> state, if control is in |0>/|1>, false/true,
+/// "controlState".
+real1_f QEngineCPU::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)
+{
+    if (!stateVec) {
+        return ZERO_R1_F;
+    }
+
+    real1_f controlProb = Prob(control);
+    if (!controlState) {
+        controlProb = ONE_R1 - controlProb;
+    }
+    if (controlProb <= FP_NORM_EPSILON) {
+        return ZERO_R1;
+    }
+    if ((ONE_R1 - controlProb) <= FP_NORM_EPSILON) {
+        return Prob(target);
+    }
+
+    const bitCapIntOcl qControlPower = pow2Ocl(control);
+    const bitCapIntOcl qControlMask = controlState ? qControlPower : 0U;
+    const bitCapIntOcl qPower = pow2Ocl(target);
+    const unsigned numCores = GetConcurrencyLevel();
+    std::unique_ptr<real1[]> oneChanceBuff(new real1[numCores]());
+
+    ParallelFunc fn = (ParallelFunc)([&](const bitCapIntOcl& lcv, const unsigned& cpu) {
+        if ((lcv & qControlPower) == qControlMask) {
+            oneChanceBuff[cpu] += norm(stateVec->read(lcv | qPower));
+        }
+    });
+
+    stateVec->isReadLocked = false;
+    if (stateVec->is_sparse()) {
+        par_for_set(CastStateVecSparse()->iterable(qPower, qPower, qPower), fn);
+    } else {
+        par_for_skip(0U, maxQPowerOcl, qPower, 1U, fn);
+    }
+    stateVec->isReadLocked = true;
+
+    real1 oneChance = ZERO_R1;
+    for (unsigned i = 0U; i < numCores; ++i) {
+        oneChance += oneChanceBuff[i];
+    }
+    oneChance /= controlProb;
+
+    return clampProb((real1_f)oneChance);
+}
+
 // Returns probability of permutation of the register
 real1_f QEngineCPU::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
 {

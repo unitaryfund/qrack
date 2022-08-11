@@ -1611,6 +1611,35 @@ real1_f QEngineOCL::Prob(bitLenInt qubit)
     return Probx(OCL_API_PROB, bciArgs);
 }
 
+real1_f QEngineOCL::CtrlOrAntiProb(bool controlState, bitLenInt control, bitLenInt target)
+{
+    if (!stateBuffer) {
+        return ZERO_R1_F;
+    }
+
+    real1_f controlProb = Prob(control);
+    if (!controlState) {
+        controlProb = ONE_R1 - controlProb;
+    }
+    if (controlProb <= FP_NORM_EPSILON) {
+        return ZERO_R1;
+    }
+    if ((ONE_R1 - controlProb) <= FP_NORM_EPSILON) {
+        return Prob(target);
+    }
+
+    const bitCapIntOcl qPower = pow2Ocl(target);
+    const bitCapIntOcl qControlPower = pow2Ocl(control);
+    const bitCapIntOcl qControlMask = controlState ? qControlPower : 0U;
+    const bitCapIntOcl bciArgs[BCI_ARG_LEN] = { (bitCapIntOcl)(maxQPowerOcl >> 2U), qPower, qControlPower, qControlMask,
+        0U, 0U, 0U, 0U, 0U, 0U };
+
+    real1_f oneChance = Probx(OCL_API_CPROB, bciArgs);
+    oneChance /= controlProb;
+
+    return clampProb((real1_f)oneChance);
+}
+
 // Returns probability of permutation of the register
 real1_f QEngineOCL::ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
 {

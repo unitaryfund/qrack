@@ -2047,6 +2047,32 @@ public:
      * \warning PSEUDO-QUANTUM
      */
     virtual real1_f Prob(bitLenInt qubitIndex) = 0;
+    /**
+     * Direct measure of bit probability to be in |1> state, if control bit is |1>.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f CProb(bitLenInt control, bitLenInt target)
+    {
+        AntiCNOT(control, target);
+        real1_f prob = Prob(target);
+        AntiCNOT(control, target);
+
+        return prob;
+    }
+    /**
+     * Direct measure of bit probability to be in |1> state, if control bit is |0>.
+     *
+     * \warning PSEUDO-QUANTUM
+     */
+    virtual real1_f ACProb(bitLenInt control, bitLenInt target)
+    {
+        CNOT(control, target);
+        real1_f prob = Prob(target);
+        CNOT(control, target);
+
+        return prob;
+    }
 
     /**
      * Direct measure of full permutation probability
