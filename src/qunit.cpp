@@ -798,58 +798,87 @@ bool QUnit::TrySeparate(bitLenInt qubit)
 
 bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
 {
-    // If either shard separates as a single bit, there's no point in checking for entanglement.
-    bool isShard1Sep = TrySeparate(qubit1);
-    bool isShard2Sep = TrySeparate(qubit2);
-
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (isShard1Sep || isShard2Sep || shard1.unit != shard2.unit) {
+    if (freezeBasis2Qb || !shard1.unit || !shard2.unit || (shard1.unit != shard2.unit)) {
         // Both shards have non-null units, and we've tried everything, if they're not the same unit.
+        const bool isShard1Sep = TrySeparate(qubit1);
+        const bool isShard2Sep = TrySeparate(qubit2);
         return isShard1Sep && isShard2Sep;
     }
 
-    if (freezeBasis2Qb) {
-        return false;
-    }
+    const QInterfacePtr unit = shard1.unit;
+    bitLenInt mapped1 = shard1.mapped;
+    bitLenInt mapped2 = shard2.mapped;
 
     // Both shards are in the same unit.
-    if (shard1.unit->isClifford() && !shard1.unit->TrySeparate(shard1.mapped, shard2.mapped)) {
+    if (unit->isClifford() && !unit->TrySeparate(mapped1, mapped2)) {
         return false;
     }
 
-    const bool wasReactiveSeparate = isReactiveSeparate;
-    isReactiveSeparate = true;
-
-    // Try a maximally disentangling operation, in 3 bases.
-
-    // "Kick up" the one possible bit of entanglement entropy into a 2-qubit buffer.
-    CNOT(qubit1, qubit2);
-    if (!shard1.unit || !shard2.unit) {
-        CNOT(qubit1, qubit2);
-        isReactiveSeparate = wasReactiveSeparate;
-        return !shard1.unit && !shard2.unit;
+    if (QUEUED_PHASE(shard1) || QUEUED_PHASE(shard2)) {
+        // Both shards have non-null units, and we've tried everything, if they're not the same unit.
+        const bool isShard1Sep = TrySeparate(qubit1);
+        const bool isShard2Sep = TrySeparate(qubit2);
+        return isShard1Sep && isShard2Sep;
     }
 
-    bitLenInt controls[1U] = { qubit1 };
-    MCPhase(controls, 1U, -I_CMPLX, I_CMPLX, qubit2);
-    if (!shard1.unit || !shard2.unit) {
-        CY(qubit1, qubit2);
-        isReactiveSeparate = wasReactiveSeparate;
-        return !shard1.unit && !shard2.unit;
+    RevertBasis1Qb(qubit1);
+    RevertBasis1Qb(qubit2);
+
+    bool isAnti = false;
+    if (separabilityThreshold > FP_NORM_EPSILON_F) {
+        real1_f prob1 = ProbBase(qubit1);
+        real1_f prob2 = ProbBase(qubit2);
+
+        const bool isAnti1 = (prob1 < 0.5f);
+        if (isAnti1) {
+            prob1 = ONE_R1 - prob1;
+        }
+        const bool isAnti2 = (prob2 < 0.5f);
+        if (isAnti2) {
+            prob2 = ONE_R1 - prob2;
+        }
+        if (prob1 > prob2) {
+            isAnti = isAnti1;
+        } else {
+            isAnti = isAnti2;
+            std::swap(qubit1, qubit2);
+            std::swap(mapped1, mapped2);
+        }
     }
 
-    MCInvert(controls, 1U, -I_CMPLX, -I_CMPLX, qubit2);
-    CZ(qubit1, qubit2);
-    if (!shard1.unit || !shard2.unit) {
-        isReactiveSeparate = wasReactiveSeparate;
-        return !shard1.unit && !shard2.unit;
+    if (isAnti) {
+        X(qubit1);
     }
 
-    isReactiveSeparate = wasReactiveSeparate;
+    // "Controlled inverse state preparation"
+    real1_f z = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    unit->CH(shard1.mapped, shard2.mapped);
+    real1_f x = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    unit->CS(shard1.mapped, shard2.mapped);
+    real1_f y = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    unit->CIS(mapped1, mapped2);
+    unit->CH(mapped1, mapped2);
 
-    return false;
+    const real1_f inclination = atan2(sqrt(x * x + y * y), z);
+    const real1_f azimuth = atan2(y, x);
+
+    unit->CIAI(mapped1, mapped2, azimuth, inclination);
+    shard1.MakeDirty();
+    shard2.MakeDirty();
+
+    const bool isShard1Sep = TrySeparate(qubit1);
+    const bool isShard2Sep = TrySeparate(qubit2);
+
+    CAI(qubit1, qubit2, azimuth, inclination);
+
+    if (isAnti) {
+        X(qubit1);
+    }
+
+    return isShard1Sep && isShard2Sep;
 }
 
 void QUnit::OrderContiguous(QInterfacePtr unit)
