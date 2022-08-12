@@ -595,8 +595,25 @@ protected:
      */
     void clDump();
 
-    size_t FixWorkItemCount(size_t maxI, size_t wic);
-    size_t FixGroupSize(size_t wic, size_t gs);
+    size_t FixWorkItemCount(size_t maxI, size_t wic)
+    {
+        if (wic > maxI) {
+            // Guaranteed to be a power of two
+            return maxI;
+        }
+
+        // Otherwise, clamp to a power of two
+        return (size_t)pow2(log2(wic));
+    }
+
+    size_t FixGroupSize(size_t wic, size_t gs)
+    {
+        if (gs > wic) {
+            return wic;
+        }
+
+        return gs - (wic % gs);
+    }
 
     void DecomposeDispose(bitLenInt start, bitLenInt length, QEngineOCLPtr dest);
 

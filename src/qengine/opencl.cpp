@@ -343,37 +343,6 @@ void QEngineOCL::clDump()
     checkCallbackError();
 }
 
-size_t QEngineOCL::FixWorkItemCount(size_t maxI, size_t wic)
-{
-    if (wic > maxI) {
-        // Guaranteed to be a power of two
-        wic = maxI;
-    } else {
-        // Otherwise, clamp to a power of two
-        size_t power = 2;
-        while (power < wic) {
-            power <<= ONE_BCI;
-        }
-        if (power > wic) {
-            power >>= ONE_BCI;
-        }
-        wic = power;
-    }
-    return wic;
-}
-
-size_t QEngineOCL::FixGroupSize(size_t wic, size_t gs)
-{
-    if (gs > wic) {
-        return wic;
-    }
-
-    while (wic % gs) {
-        --gs;
-    }
-    return gs;
-}
-
 PoolItemPtr QEngineOCL::GetFreePoolItem()
 {
     std::lock_guard<std::mutex> lock(queue_mutex);
