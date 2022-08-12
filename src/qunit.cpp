@@ -827,58 +827,43 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
     RevertBasis1Qb(qubit1);
     RevertBasis1Qb(qubit2);
 
-    bool isAnti = false;
-    if (separabilityThreshold > FP_NORM_EPSILON_F) {
-        real1_f prob1 = ProbBase(qubit1);
-        real1_f prob2 = ProbBase(qubit2);
-
-        const bool isAnti1 = (prob1 < 0.5f);
-        if (isAnti1) {
-            prob1 = ONE_R1 - prob1;
-        }
-        const bool isAnti2 = (prob2 < 0.5f);
-        if (isAnti2) {
-            prob2 = ONE_R1 - prob2;
-        }
-        if (prob1 > prob2) {
-            isAnti = isAnti1;
-        } else {
-            isAnti = isAnti2;
-            std::swap(qubit1, qubit2);
-            std::swap(mapped1, mapped2);
-        }
-    }
-
-    if (isAnti) {
-        X(qubit1);
-    }
-
     // "Controlled inverse state preparation"
-    real1_f z = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
-    unit->CH(shard1.mapped, shard2.mapped);
-    real1_f x = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
-    unit->CS(shard1.mapped, shard2.mapped);
-    real1_f y = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
     const complex mtrx[4U] = { complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, -SQRT1_2_R1),
         complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1) };
     const bitLenInt controls[1U] = { mapped1 };
-    unit->MCMtrx(controls, 1U, mtrx, mapped2);
 
+    const real1_f z = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    unit->CH(shard1.mapped, shard2.mapped);
+    const real1_f x = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    unit->CS(shard1.mapped, shard2.mapped);
+    const real1_f y = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    unit->MCMtrx(controls, 1U, mtrx, mapped2);
     const real1_f inclination = atan2(sqrt(x * x + y * y), z);
     const real1_f azimuth = atan2(y, x);
-
     unit->CIAI(mapped1, mapped2, azimuth, inclination);
+    shard1.MakeDirty();
+    shard2.MakeDirty();
+
+    X(qubit1);
+
+    const real1_f zAnti = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    unit->CH(shard1.mapped, shard2.mapped);
+    const real1_f xAnti = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    unit->CS(shard1.mapped, shard2.mapped);
+    const real1_f yAnti = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    unit->MCMtrx(controls, 1U, mtrx, mapped2);
+    const real1_f inclinationAnti = atan2(sqrt(xAnti * xAnti + yAnti * yAnti), zAnti);
+    const real1_f azimuthAnti = atan2(yAnti, xAnti);
+    unit->CIAI(mapped1, mapped2, azimuthAnti, inclinationAnti);
     shard1.MakeDirty();
     shard2.MakeDirty();
 
     const bool isShard1Sep = TrySeparate(qubit1);
     const bool isShard2Sep = TrySeparate(qubit2);
 
+    CAI(qubit1, qubit2, azimuthAnti, inclinationAnti);
+    X(qubit1);
     CAI(qubit1, qubit2, azimuth, inclination);
-
-    if (isAnti) {
-        X(qubit1);
-    }
 
     return isShard1Sep && isShard2Sep;
 }
