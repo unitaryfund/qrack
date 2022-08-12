@@ -832,29 +832,28 @@ bool QUnit::TrySeparate(bitLenInt qubit1, bitLenInt qubit2)
         complex(SQRT1_2_R1, ZERO_R1), complex(ZERO_R1, SQRT1_2_R1) };
     const bitLenInt controls[1U] = { mapped1 };
 
-    const real1_f z = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    real1_f z = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
     unit->CH(shard1.mapped, shard2.mapped);
-    const real1_f x = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    real1_f x = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
     unit->CS(shard1.mapped, shard2.mapped);
-    const real1_f y = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    real1_f y = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
     unit->MCMtrx(controls, 1U, mtrx, mapped2);
     const real1_f inclination = atan2(sqrt(x * x + y * y), z);
     const real1_f azimuth = atan2(y, x);
     unit->CIAI(mapped1, mapped2, azimuth, inclination);
-    shard1.MakeDirty();
-    shard2.MakeDirty();
 
-    X(qubit1);
+    unit->X(mapped1);
 
-    const real1_f zAnti = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    z = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
     unit->CH(shard1.mapped, shard2.mapped);
-    const real1_f xAnti = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    x = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
     unit->CS(shard1.mapped, shard2.mapped);
-    const real1_f yAnti = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
+    y = ONE_R1_F - 2 * unit->CProb(mapped1, mapped2);
     unit->MCMtrx(controls, 1U, mtrx, mapped2);
-    const real1_f inclinationAnti = atan2(sqrt(xAnti * xAnti + yAnti * yAnti), zAnti);
-    const real1_f azimuthAnti = atan2(yAnti, xAnti);
+    const real1_f inclinationAnti = atan2(sqrt(x * x + y * y), z);
+    const real1_f azimuthAnti = atan2(y, z);
     unit->CIAI(mapped1, mapped2, azimuthAnti, inclinationAnti);
+
     shard1.MakeDirty();
     shard2.MakeDirty();
 
