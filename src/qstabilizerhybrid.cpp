@@ -777,6 +777,15 @@ void QStabilizerHybrid::MCInvert(
         return;
     }
 
+    if (stabilizer && (controls.size() > 1U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
+        H(target);
+        const real1_f prob = Prob(target);
+        H(target);
+        if (prob <= FP_NORM_EPSILON) {
+            return;
+        }
+    }
+
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
         SwitchToEngine();
     } else {
@@ -884,6 +893,15 @@ void QStabilizerHybrid::MACInvert(
     if (!controls.size()) {
         Invert(topRight, bottomLeft, target);
         return;
+    }
+
+    if (stabilizer && (controls.size() > 1U) && IS_SAME(topRight, ONE_CMPLX) && IS_SAME(bottomLeft, ONE_CMPLX)) {
+        H(target);
+        const real1_f prob = Prob(target);
+        H(target);
+        if (prob <= FP_NORM_EPSILON) {
+            return;
+        }
     }
 
     if ((controls.size() > 1U) || !IS_CTRLED_CLIFFORD(topRight, bottomLeft)) {
