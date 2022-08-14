@@ -475,12 +475,10 @@ void QInterface::ISwap(bitLenInt q1, bitLenInt q2)
         return;
     }
 
+    Swap(q1, q2);
+    CZ(q1, q2);
     S(q1);
     S(q2);
-    H(q1);
-    CNOT(q1, q2);
-    CNOT(q2, q1);
-    H(q2);
 }
 
 void QInterface::IISwap(bitLenInt q1, bitLenInt q2)
@@ -489,12 +487,10 @@ void QInterface::IISwap(bitLenInt q1, bitLenInt q2)
         return;
     }
 
-    H(q2);
-    CNOT(q2, q1);
-    CNOT(q1, q2);
-    H(q1);
     IS(q2);
     IS(q1);
+    CZ(q1, q2);
+    Swap(q1, q2);
 }
 
 void QInterface::SqrtSwap(bitLenInt q1, bitLenInt q2)
