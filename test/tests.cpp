@@ -6591,7 +6591,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
             for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
                 MultiQubitGate multiGate = layerMultiQbRands[i];
                 if (multiGate.gate == 0) {
-                    testCase->Swap(multiGate.b1, multiGate.b2);
+                    testCase->ISwap(multiGate.b1, multiGate.b2);
                 } else if (multiGate.gate == 1) {
                     testCase->CNOT(multiGate.b1, multiGate.b2);
                 } else if (multiGate.gate == 2) {
@@ -6626,7 +6626,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
             for (i = (layerMultiQbRands.size() - 1U); i >= 0; i--) {
                 MultiQubitGate multiGate = layerMultiQbRands[i];
                 if (multiGate.gate == 0) {
-                    testCase->Swap(multiGate.b1, multiGate.b2);
+                    testCase->IISwap(multiGate.b1, multiGate.b2);
                 } else if (multiGate.gate == 1) {
                     testCase->CNOT(multiGate.b1, multiGate.b2);
                 } else if (multiGate.gate == 2) {
@@ -6715,7 +6715,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
                 for (i = 0; i < (int)layerMultiQbRands.size(); i++) {
                     MultiQubitGate multiGate = layerMultiQbRands[i];
                     if (multiGate.gate == 0) {
-                        std::cout << "qftReg->Swap(" << (int)multiGate.b1 << "," << (int)multiGate.b2 << ");"
+                        std::cout << "qftReg->ISwap(" << (int)multiGate.b1 << "," << (int)multiGate.b2 << ");"
                                   << std::endl;
                         // testCase->Swap(multiGate.b1, multiGate.b2);
                     } else if (multiGate.gate == 1) {
@@ -6775,7 +6775,7 @@ TEST_CASE("test_mirror_circuit", "[mirror]")
                 for (i = (layerMultiQbRands.size() - 1U); i >= 0; i--) {
                     MultiQubitGate multiGate = layerMultiQbRands[i];
                     if (multiGate.gate == 0) {
-                        std::cout << "qftReg->Swap(" << (int)multiGate.b1 << "," << (int)multiGate.b2 << ");"
+                        std::cout << "qftReg->IISwap(" << (int)multiGate.b1 << "," << (int)multiGate.b2 << ");"
                                   << std::endl;
                         // testCase->Swap(multiGate.b1, multiGate.b2);
                     } else if (multiGate.gate == 1) {

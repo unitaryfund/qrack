@@ -395,41 +395,6 @@ public:
         }
     }
 
-    void ISwap(bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (qubit1 == qubit2) {
-            return;
-        }
-
-        MpsShardPtr shard = shards[qubit1];
-        if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
-            FlushH(qubit1);
-        }
-        shard = shards[qubit1];
-        if (shard && shard->IsInvert()) {
-            InvertBuffer(qubit1);
-        }
-
-        shard = shards[qubit2];
-        if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
-            FlushH(qubit2);
-        }
-        shard = shards[qubit2];
-        if (shard && shard->IsInvert()) {
-            InvertBuffer(qubit2);
-        }
-
-        if ((shards[qubit1] && !shards[qubit1]->IsPhase()) || (shards[qubit2] && !shards[qubit2]->IsPhase())) {
-            FlushBuffers();
-        }
-
-        if (stabilizer) {
-            stabilizer->ISwap(qubit1, qubit2);
-        } else {
-            engine->ISwap(qubit1, qubit2);
-        }
-    }
-
     real1_f Prob(bitLenInt qubit);
 
     bool ForceM(bitLenInt qubit, bool result, bool doForce = true, bool doApply = true);
