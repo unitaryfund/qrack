@@ -762,7 +762,7 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
             for (bitCapIntOcl j = 0U; j < pow2(op->controlLen); ++j) {
                 exp2x2(mtrx.get() + (j * 4U), expMtrx.get() + (j * 4U));
             }
-            UniformlyControlledSingleBit(op->controls, op->controlLen, op->targetBit, expMtrx.get());
+            UniformlyControlledSingleBit(op->controls.get(), op->controlLen, op->targetBit, expMtrx.get());
         } else {
             complex timesI[4U] = { I_CMPLX * mtrx[0U], I_CMPLX * mtrx[1U], I_CMPLX * mtrx[2U], I_CMPLX * mtrx[3U] };
             complex toApply[4U];
@@ -770,16 +770,16 @@ void QInterface::TimeEvolve(Hamiltonian h, real1_f timeDiff_f)
             if (op->controlLen == 0U) {
                 Mtrx(toApply, op->targetBit);
             } else if (op->anti) {
-                MACMtrx(op->controls, op->controlLen, toApply, op->targetBit);
+                MACMtrx(op->controls.get(), op->controlLen, toApply, op->targetBit);
             } else {
-                MCMtrx(op->controls, op->controlLen, toApply, op->targetBit);
+                MCMtrx(op->controls.get(), op->controlLen, toApply, op->targetBit);
             }
         }
 
         if (op->toggles) {
             for (bitLenInt j = 0U; j < op->controlLen; ++j) {
-                if (op->toggles[j]) {
-                    X(op->controls[j]);
+                if (op->toggles.get()[j]) {
+                    X(op->controls.get()[j]);
                 }
             }
         }

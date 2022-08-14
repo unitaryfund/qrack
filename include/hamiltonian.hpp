@@ -29,10 +29,10 @@ namespace Qrack {
 struct HamiltonianOp {
     bitLenInt targetBit;
     BitOp matrix;
-    bitLenInt* controls;
+    std::unique_ptr<bitLenInt[]> controls;
     bitLenInt controlLen;
     bool anti;
-    bool* toggles;
+    std::unique_ptr<bool[]> toggles;
     bool uniform;
 
     HamiltonianOp()
@@ -67,22 +67,11 @@ struct HamiltonianOp {
         , toggles(NULL)
         , uniform(false)
     {
-        std::copy(ctrls, ctrls + ctrlLen, controls);
+        std::copy(ctrls, ctrls + ctrlLen, controls.get());
 
         if (ctrlToggles) {
-            toggles = new bool[ctrlLen];
-            std::copy(ctrlToggles, ctrlToggles + ctrlLen, toggles);
-        }
-    }
-
-    ~HamiltonianOp()
-    {
-        if (controls) {
-            delete[] controls;
-        }
-
-        if (toggles) {
-            delete[] toggles;
+            toggles = std::unique_ptr<bool[]>(new bool[ctrlLen]);
+            std::copy(ctrlToggles, ctrlToggles + ctrlLen, toggles.get());
         }
     }
 };
@@ -100,7 +89,7 @@ struct UniformHamiltonianOp : HamiltonianOp {
         targetBit = (bitLenInt)(teoh.target);
 
         controlLen = (bitLenInt)teoh.controlLen;
-        controls = new bitLenInt[controlLen];
+        controls = std::unique_ptr<bitLenInt[]>(new bitLenInt[controlLen]);
         for (bitLenInt i = 0U; i < controlLen; ++i) {
             controls[i] = (bitLenInt)teoh.controls[i];
         }
