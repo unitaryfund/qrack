@@ -643,6 +643,41 @@ void QStabilizer::ISwap(bitLenInt c, bitLenInt t)
     });
 }
 
+void QStabilizer::IISwap(bitLenInt c, bitLenInt t)
+{
+    if (c == t) {
+        return;
+    }
+
+    if (!randGlobalPhase && IsSeparableZ(c) && IsSeparableZ(t) && (M(c) != M(t))) {
+        phaseOffset *= -I_CMPLX;
+    }
+
+    ParFor([this, c, t](const bitLenInt& i) {
+        z[i][c] = z[i][c] ^ x[i][c];
+        z[i][t] = z[i][t] ^ x[i][t];
+
+        if (x[i][c]) {
+            z[i][t] = !z[i][t];
+
+            if (z[i][c] && !x[i][t]) {
+                r[i] = (r[i] + 2U) & 0x3U;
+            }
+        }
+
+        if (x[i][t]) {
+            z[i][c] = !z[i][c];
+
+            if (!x[i][c] && z[i][t]) {
+                r[i] = (r[i] + 2U) & 0x3U;
+            }
+        }
+
+        BoolVector::swap(x[i][c], x[i][t]);
+        BoolVector::swap(z[i][c], z[i][t]);
+    });
+}
+
 /// Apply a Hadamard gate to target
 void QStabilizer::H(bitLenInt t)
 {

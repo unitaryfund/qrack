@@ -314,6 +314,8 @@ public:
     void Swap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
     // Swap two bits and apply a phase factor of i if they are different
     void ISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
+    // Swap two bits and apply a phase factor of -i if they are different
+    void IISwap(bitLenInt qubitIndex1, bitLenInt qubitIndex2);
 
     /// Measure qubit t
     bool ForceM(bitLenInt t, bool result, bool doForce = true, bool doApply = true);
