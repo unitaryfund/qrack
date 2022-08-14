@@ -543,14 +543,8 @@ void QEngineOCL::SetDevice(int64_t dID)
     if (nrmGroupSize > device_context->GetMaxWorkGroupSize()) {
         nrmGroupSize = device_context->GetMaxWorkGroupSize();
     }
-
     // constrain to a power of two
-    size_t groupSizePow = ONE_BCI;
-    while (groupSizePow <= nrmGroupSize) {
-        groupSizePow <<= ONE_BCI;
-    }
-    groupSizePow >>= ONE_BCI;
-    nrmGroupSize = groupSizePow;
+    nrmGroupSize = (size_t)pow2(log2(nrmGroupSize));
 
     const size_t nrmArrayAllocSize =
         (!nrmGroupSize || ((sizeof(real1) * nrmGroupCount / nrmGroupSize) < QRACK_ALIGN_SIZE))

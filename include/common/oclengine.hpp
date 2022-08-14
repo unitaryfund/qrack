@@ -269,7 +269,7 @@ public:
             preferredConcurrency <<= 1U;
         }
         preferredConcurrency =
-            hybridOffset > 0 ? (preferredConcurrency << hybridOffset) : (preferredConcurrency >> hybridOffset);
+            hybridOffset > 0 ? (preferredConcurrency << hybridOffset) : (preferredConcurrency >> -hybridOffset);
         if (preferredConcurrency < 1U) {
             preferredConcurrency = 1U;
         }
