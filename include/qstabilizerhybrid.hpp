@@ -92,6 +92,51 @@ protected:
     real1_f ApproxCompareHelper(
         QStabilizerHybridPtr toCompare, bool isDiscreteBool, real1_f error_tol = TRYDECOMPOSE_EPSILON);
 
+    void ISwapHelper(bitLenInt qubit1, bitLenInt qubit2, bool inverse)
+    {
+        if (qubit1 == qubit2) {
+            return;
+        }
+
+        MpsShardPtr shard = shards[qubit1];
+        if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+            FlushH(qubit1);
+        }
+        shard = shards[qubit1];
+        if (shard && shard->IsInvert()) {
+            InvertBuffer(qubit1);
+        }
+
+        shard = shards[qubit2];
+        if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
+            FlushH(qubit2);
+        }
+        shard = shards[qubit2];
+        if (shard && shard->IsInvert()) {
+            InvertBuffer(qubit2);
+        }
+
+        if ((shards[qubit1] && !shards[qubit1]->IsPhase()) || (shards[qubit2] && !shards[qubit2]->IsPhase())) {
+            FlushBuffers();
+        }
+
+        std::swap(shards[qubit1], shards[qubit2]);
+
+        if (stabilizer) {
+            if (inverse) {
+                stabilizer->IISwap(qubit1, qubit2);
+            } else {
+                stabilizer->ISwap(qubit1, qubit2);
+            }
+        } else {
+            if (inverse) {
+                engine->IISwap(qubit1, qubit2);
+            } else {
+                engine->ISwap(qubit1, qubit2);
+            }
+        }
+    }
+
 public:
     QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0U,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -395,42 +440,8 @@ public:
         }
     }
 
-    void ISwap(bitLenInt qubit1, bitLenInt qubit2)
-    {
-        if (qubit1 == qubit2) {
-            return;
-        }
-
-        MpsShardPtr shard = shards[qubit1];
-        if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
-            FlushH(qubit1);
-        }
-        shard = shards[qubit1];
-        if (shard && shard->IsInvert()) {
-            InvertBuffer(qubit1);
-        }
-
-        shard = shards[qubit2];
-        if (shard && (shard->IsHPhase() || shard->IsHInvert())) {
-            FlushH(qubit2);
-        }
-        shard = shards[qubit2];
-        if (shard && shard->IsInvert()) {
-            InvertBuffer(qubit2);
-        }
-
-        if ((shards[qubit1] && !shards[qubit1]->IsPhase()) || (shards[qubit2] && !shards[qubit2]->IsPhase())) {
-            FlushBuffers();
-        }
-
-        std::swap(shards[qubit1], shards[qubit2]);
-
-        if (stabilizer) {
-            stabilizer->ISwap(qubit1, qubit2);
-        } else {
-            engine->ISwap(qubit1, qubit2);
-        }
-    }
+    void ISwap(bitLenInt qubit1, bitLenInt qubit2) { ISwapHelper(qubit1, qubit2, false); }
+    void IISwap(bitLenInt qubit1, bitLenInt qubit2) { ISwapHelper(qubit1, qubit2, true); }
 
     real1_f Prob(bitLenInt qubit);
 

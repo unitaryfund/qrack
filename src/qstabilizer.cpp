@@ -625,23 +625,20 @@ void QStabilizer::ISwap(bitLenInt c, bitLenInt t)
         if (x[i][t]) {
             z[i][c] = !z[i][c];
 
-            if (x[i][c] && (z[i][t] == z[i][c])) {
+            if (!x[i][c] && z[i][t]) {
                 r[i] = (r[i] + 2U) & 0x3U;
             }
         }
 
         if (x[i][c]) {
             z[i][t] = !z[i][t];
+
+            if (z[i][c] && !x[i][t]) {
+                r[i] = (r[i] + 2U) & 0x3U;
+            }
         }
 
-        if (x[i][c] && z[i][c]) {
-            r[i] = (r[i] + 2U) & 0x3U;
-        }
         z[i][c] = z[i][c] ^ x[i][c];
-
-        if (x[i][t] && z[i][t]) {
-            r[i] = (r[i] + 2U) & 0x3U;
-        }
         z[i][t] = z[i][t] ^ x[i][t];
     });
 }
