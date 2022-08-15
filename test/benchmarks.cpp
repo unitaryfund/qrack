@@ -1667,25 +1667,26 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
                         continue;
                     }
 
-                    tempGate = gate ^ 3U;
-
-                    tempRow = row;
-                    tempCol = col;
-
-                    tempRow += ((tempGate & 2U) ? 1 : -1);
-                    tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
-
-                    b3 = tempRow * colLen + tempCol;
-
-                    if ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
-                        (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())) {
-                        is3Qubit = false;
-                    } else {
-                        is3Qubit = (b3 < b1) || ((qReg->Rand() * 2) >= ONE_R1);
-                    }
-
                     usedBits.push_back(b1);
                     usedBits.push_back(b2);
+
+                    // Try to pack 3-qubit gates as "greedily" as we can:
+                    tempGate = 0U;
+                    do {
+                        tempRow = row;
+                        tempCol = col;
+
+                        tempRow += ((tempGate & 2U) ? 1 : -1);
+                        tempCol += (colLen == 1) ? 0 : ((tempGate & 1U) ? 1 : 0);
+
+                        b3 = tempRow * colLen + tempCol;
+
+                        ++tempGate;
+                    } while ((tempGate < 4) &&
+                        ((tempRow < 0) || (tempCol < 0) || (tempRow >= rowLen) || (tempCol >= colLen) ||
+                            (std::find(usedBits.begin(), usedBits.end(), b3) != usedBits.end())));
+
+                    is3Qubit = (tempGate < 4) && ((qReg->Rand() * 2) >= ONE_R1);
                     if (is3Qubit) {
                         usedBits.push_back(b3);
                     }
