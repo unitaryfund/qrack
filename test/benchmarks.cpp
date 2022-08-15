@@ -1706,7 +1706,7 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
                     gateRand = GateCountMultiQb * qReg->Rand();
 
                     if (is3Qubit) {
-                        if ((gateRand < (3 * ONE_R1)) && (8 * qReg->Rand()) < ONE_R1) {
+                        if ((gateRand < (3 * ONE_R1)) && ((8 * qReg->Rand()) < ONE_R1)) {
                             const bitLenInt controls[1U] = { b1 };
                             qReg->CSwap(controls, 1U, b2, b3);
                             continue;
@@ -1739,7 +1739,7 @@ TEST_CASE("test_stabilizer_t_cc_nn", "[supreme]")
                         // std::cout << "(b1, b2, b3) = (" << (int)b1 << ", " << (int)b2 << ", " << (int)b3 << ")"
                         //           << std::endl;
                     } else {
-                        if ((gateRand < (3 * ONE_R1)) && (4 * qReg->Rand()) < ONE_R1) {
+                        if ((gateRand < (3 * ONE_R1)) && ((4 * qReg->Rand()) < ONE_R1)) {
                             // In 3 CNOT(a,b) sequence, for example, 1/4 of sequences on average are equivalent to SWAP.
                             qReg->Swap(b1, b2);
                             continue;
