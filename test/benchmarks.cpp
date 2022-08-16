@@ -1797,7 +1797,7 @@ TEST_CASE("test_dense_cc_nn", "[supreme]")
 
     std::cout << "(random circuit depth: " << benchmarkDepth << ")";
 
-    const int GateCountMultiQb = 4;
+    const int GateCountMultiQb = 3;
 
     // bitLenInt maxShardQubits = -1;
     // if (getenv("QRACK_MAX_PAGING_QB")) {
