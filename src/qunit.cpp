@@ -53,10 +53,6 @@
 #define ARE_CLIFFORD(shard1, shard2)                                                                                   \
     ((engines[0U] == QINTERFACE_STABILIZER_HYBRID) && shard1.isClifford() && shard2.isClifford())
 #define BLOCKED_SEPARATE(shard) (shard.unit && shard.unit->isClifford() && !shard.unit->TrySeparate(shard.mapped))
-#define SWAP_IDENT(shard1, shard2)                                                                                     \
-    (!DIRTY(shard1) && !DIRTY(shard2) && (shard1.pauliBasis == shard2.pauliBasis) &&                                   \
-        IS_AMP_0(shard1.amp0 - shard2.amp0) && IS_AMP_0(shard1.amp1 - shard2.amp1) && !QUEUED_PHASE(shard1) &&         \
-        !QUEUED_PHASE(shard2))
 #define IS_PHASE_OR_INVERT(mtrx)                                                                                       \
     ((IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U])) || (IS_NORM_0(mtrx[0U]) && IS_NORM_0(mtrx[3U])))
 
@@ -1764,11 +1760,6 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
 
-    if (SWAP_IDENT(shard1, shard2)) {
-        // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
-        return;
-    }
-
     if (IS_SAME_UNIT(shard1, shard2) || ARE_CLIFFORD(shard1, shard2)) {
         QInterfacePtr unit = Entangle({ qubit1, qubit2 });
         if (isInverse) {
@@ -1781,15 +1772,11 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
         return;
     }
 
-    const complex phaseFac = isInverse ? -I_CMPLX : I_CMPLX;
-
-    bitLenInt control[1U] = { qubit1 };
-    MCPhase(control, 1U, phaseFac, ONE_CMPLX, qubit2);
-    control[0U] = qubit2;
-    MCPhase(control, 1U, phaseFac, ONE_CMPLX, qubit1);
-
-    // Simply swap the bit mapping.
-    shards.swap(qubit1, qubit2);
+    if (isInverse) {
+        QInterface::IISwap(qubit1, qubit2);
+    } else {
+        QInterface::ISwap(qubit1, qubit2);
+    }
 }
 
 void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
@@ -1803,11 +1790,6 @@ void QUnit::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
-
-    if (SWAP_IDENT(shard1, shard2)) {
-        // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
-        return;
-    }
 
     Entangle({ qubit1, qubit2 })->SqrtSwap(shard1.mapped, shard2.mapped);
 
@@ -1828,11 +1810,6 @@ void QUnit::ISqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
-
-    if (SWAP_IDENT(shard1, shard2)) {
-        // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
-        return;
-    }
 
     Entangle({ qubit1, qubit2 })->ISqrtSwap(shard1.mapped, shard2.mapped);
 
@@ -1863,12 +1840,6 @@ void QUnit::FSim(real1_f theta, real1_f phi, bitLenInt qubit1, bitLenInt qubit2)
 
     QEngineShard& shard1 = shards[qubit1];
     QEngineShard& shard2 = shards[qubit2];
-
-    if (SWAP_IDENT(shard1, shard2)) {
-        // We can avoid dirtying the cache and entangling, since this gate doesn't swap identical classical bits.
-        MCPhase(controls, 1U, ONE_CMPLX, exp(complex(ZERO_R1, (real1)phi)), qubit2);
-        return;
-    }
 
     Entangle({ qubit1, qubit2 })->FSim(theta, phi, shard1.mapped, shard2.mapped);
 
