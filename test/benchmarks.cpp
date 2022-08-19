@@ -2145,8 +2145,6 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                         std::swap(b1, b2);
                     }
 
-                    gateRand = DimCountMultiQb * qReg->Rand();
-
                     gateRand = 4 * qReg->Rand();
                     if (gateRand < ONE_R1) {
                         // 1 out of 4 chance of producing swap from 3 CNOTs, for example.
@@ -2163,7 +2161,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                         gateRand = 2 * qReg->Rand();
                         if (gateRand < ONE_R1) {
                             // "Phase" transforms:
-                            gateRand = DimCount1Qb * qReg->Rand();
+                            gateRand = DimCountMultiQb * qReg->Rand();
                             if (gateRand < ONE_R1) {
                                 qReg->CH(b1, b2);
                             } else if (gateRand < (2 * ONE_R1)) {
@@ -2194,7 +2192,7 @@ TEST_CASE("test_stabilizer_ct_nn", "[supreme]")
                             qReg->MCPhase(controls, 1U, top, bottom, b2);
                         } else {
                             // "Phase" transforms:
-                            gateRand = DimCount1Qb * qReg->Rand();
+                            gateRand = DimCountMultiQb * qReg->Rand();
                             if (gateRand < ONE_R1) {
                                 qReg->AntiCH(b1, b2);
                             } else if (gateRand < (2 * ONE_R1)) {
