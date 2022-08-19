@@ -1769,7 +1769,7 @@ void QUnit::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
         return;
     }
 
-    if (IS_SAME_UNIT(shard1, shard2)) {
+    if (IS_SAME_UNIT(shard1, shard2) || ARE_CLIFFORD(shard1, shard2)) {
         QInterfacePtr unit = Entangle({ qubit1, qubit2 });
         if (isInverse) {
             unit->IISwap(shard1.mapped, shard2.mapped);
