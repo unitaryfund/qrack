@@ -1325,7 +1325,9 @@ void QPager::Swap(bitLenInt qubit1, bitLenInt qubit2)
         return;
     }
 
-    CombineAndOp([&](QEnginePtr engine) { engine->Swap(qubit1, qubit2); }, { qubit1, qubit2 });
+    for (bitLenInt i = 0U; i < qPages.size(); ++i) {
+        qPages[i]->Swap(qubit1, qubit2);
+    }
 }
 void QPager::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
 {
@@ -1346,15 +1348,15 @@ void QPager::EitherISwap(bitLenInt qubit1, bitLenInt qubit2, bool isInverse)
         return;
     }
 
-    CombineAndOp(
-        [&](QEnginePtr engine) {
-            if (isInverse) {
-                engine->IISwap(qubit1, qubit2);
-            } else {
-                engine->ISwap(qubit1, qubit2);
-            }
-        },
-        { qubit1, qubit2 });
+    if (isInverse) {
+        for (bitLenInt i = 0U; i < qPages.size(); ++i) {
+            qPages[i]->IISwap(qubit1, qubit2);
+        }
+    } else {
+        for (bitLenInt i = 0U; i < qPages.size(); ++i) {
+            qPages[i]->ISwap(qubit1, qubit2);
+        }
+    }
 }
 void QPager::SqrtSwap(bitLenInt qubit1, bitLenInt qubit2)
 {
