@@ -171,18 +171,6 @@ protected:
         return toClamp;
     }
 
-    void FreeAligned(void* toFree)
-    {
-        if (toFree) {
-#if defined(_WIN32)
-            _aligned_free(toFree);
-#else
-            free(toFree);
-#endif
-        }
-        toFree = NULL;
-    }
-
     complex GetNonunitaryPhase()
     {
         if (randGlobalPhase) {
