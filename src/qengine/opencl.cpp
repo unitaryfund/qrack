@@ -1191,9 +1191,11 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
     const bitCapIntOcl nMaxQPower = bciArgs[0];
     const bitCapIntOcl nQubitCount = bciArgs[1] + toCopy->qubitCount;
     const size_t nStateVecSize = nMaxQPower * sizeof(complex);
+#if ENABLE_OCL_MEM_GUARDS
     if (nStateVecSize > device_context->GetMaxAlloc()) {
         throw bad_alloc("VRAM limits exceeded in QEngineOCL::Compose()");
     }
+#endif
 
     if (doNormalize) {
         NormalizeState();
