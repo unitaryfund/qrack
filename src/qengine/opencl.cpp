@@ -530,11 +530,8 @@ void QEngineOCL::SetDevice(int64_t dID)
     // Device RAM should be large enough for 2 times the size of the stateVec, plus some excess.
     if (stateVecSize > device_context->GetMaxAlloc()) {
         throw bad_alloc("VRAM limits exceeded in QEngineOCL::SetDevice()");
-    } else if (useHostRam || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize())) {
-        usingHostRam = true;
-    } else {
-        usingHostRam = false;
     }
+    usingHostRam = (useHostRam || ((OclMemDenom * stateVecSize) > device_context->GetGlobalSize()));
 #endif
 
     const bitCapIntOcl oldNrmVecAlignSize = nrmGroupSize ? (nrmGroupCount / nrmGroupSize) : 0U;
