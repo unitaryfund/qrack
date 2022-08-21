@@ -25,8 +25,6 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
     , isAttached(false)
-    , attachedQubitCount(0U)
-    , bdtQubitCount(qBitCount)
     , devID(deviceId)
     , root(NULL)
     , bdtMaxQPower(pow2(qBitCount))
@@ -36,6 +34,30 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
 #endif
+
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
+        segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
+    }
+#endif
+    bitLenInt engineLevel = 0U;
+    QInterfaceEngine rootEngine = engines[0U];
+    while ((engines.size() < engineLevel) && (rootEngine != QINTERFACE_CPU) && (rootEngine != QINTERFACE_OPENCL) &&
+        (rootEngine != QINTERFACE_HYBRID)) {
+        ++engineLevel;
+        rootEngine = engines[engineLevel];
+    }
+
+#if ENABLE_OPENCL
+    if (rootEngine != QINTERFACE_CPU) {
+        maxPageQubits =
+            log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
+    }
+#endif
+
+    bdtQubitCount = (maxPageQubits < qBitCount) ? (qBitCount - maxPageQubits) : 0U;
+    attachedQubitCount = qBitCount - bdtQubitCount;
+
     SetPermutation(initState);
 }
 
@@ -312,6 +334,9 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     root->InsertAtDepth(toCopy->root, start, toCopy->bdtQubitCount);
     SetQubitCount(qubitCount + toCopy->qubitCount, attachedQubitCount + toCopy->attachedQubitCount);
 
+    bdtQubitCount = (maxPageQubits < qubitCount) ? (qubitCount - maxPageQubits) : 0U;
+    attachedQubitCount = qubitCount - bdtQubitCount;
+
     return start;
 }
 
@@ -412,6 +437,9 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         root->RemoveSeparableAtDepth(start, length);
     }
     SetQubitCount(qubitCount - length, attachedQubitCount);
+
+    bdtQubitCount = (maxPageQubits < qubitCount) ? (qubitCount - maxPageQubits) : 0U;
+    attachedQubitCount = qubitCount - bdtQubitCount;
 
     root->Prune(bdtQubitCount);
 }

@@ -37,6 +37,8 @@ protected:
     bool isAttached;
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
+    bitLenInt segmentGlobalQb;
+    bitLenInt maxPageQubits;
     int64_t devID;
     QBdtNodeInterfacePtr root;
     bitCapInt bdtMaxQPower;

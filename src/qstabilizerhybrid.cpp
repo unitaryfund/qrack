@@ -61,7 +61,11 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex));
         maxQubitPlusAncillaCount = maxPageQubits + 2U;
         if (qubitCount > maxPageQubits) {
-            engineTypes.push_back(QINTERFACE_QPAGER);
+            if (getenv("QRACK_QPAGER_DEVICES")) {
+                engineTypes.push_back(QINTERFACE_QPAGER);
+            } else {
+                engineTypes.push_back(QINTERFACE_BDT);
+            }
         }
     }
 #endif
