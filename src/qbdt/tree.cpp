@@ -180,8 +180,6 @@ QInterfacePtr QBdt::Clone()
     QBdtPtr copyPtr = std::make_shared<QBdt>(qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
         false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
-    ResetStateVector();
-
     copyPtr->root = root ? root->ShallowClone() : NULL;
     copyPtr->SetQubitCount(qubitCount, attachedQubitCount);
     copyPtr->isAttached = isAttached;
@@ -284,8 +282,9 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
         return ONE_R1_F;
     }
 
-    ResetStateVector();
-    toCompare->ResetStateVector();
+    // TODO: Fix this method, without the reset:
+    // ResetStateVector();
+    // toCompare->ResetStateVector();
 
     complex projection = ZERO_CMPLX;
     for (bitCapInt i = 0U; i < maxQPower; ++i) {
@@ -341,13 +340,6 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
-    ResetStateVector();
-    toCopy->ResetStateVector();
-
-    if (toCopy->attachedQubitCount) {
-        throw std::domain_error("QBdt::Compose() not fully implemented, after Attach()!");
-    }
-
     if (attachedQubitCount && start) {
         ROR(start, 0U, qubitCount);
         Compose(toCopy, 0U);
@@ -449,11 +441,6 @@ QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
-    ResetStateVector();
-
-    if (length > bdtQubitCount) {
-        throw std::domain_error("QBdt::DecomposeDispose() not fully implemented, after Attach()!");
-    }
 
     if (attachedQubitCount && start) {
         ROR(start, 0U, qubitCount);
@@ -464,7 +451,6 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     }
 
     if (dest) {
-        dest->ResetStateVector();
         dest->root = root->RemoveSeparableAtDepth(start, length);
     } else {
         root->RemoveSeparableAtDepth(start, length);

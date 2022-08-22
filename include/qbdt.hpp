@@ -88,16 +88,6 @@ protected:
         root = nRoot;
         SetQubitCount(qubitCount, qubitCount);
     }
-    void ResetStateVector()
-    {
-        if (bdtQubitCount) {
-            return;
-        }
-
-        QBdtQEngineNodePtr oRoot = std::dynamic_pointer_cast<QBdtQEngineNode>(root);
-        SetQubitCount(qubitCount, 0U);
-        SetQuantumState(NODE_TO_QENGINE(oRoot));
-    }
 
     template <typename Fn> void GetTraversal(Fn getLambda);
     template <typename Fn> void SetTraversal(Fn setLambda);
@@ -346,14 +336,12 @@ public:
     {
         ExecuteAsStateVector(
             [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->PhaseFlipIfLess(greaterPerm, start, length); });
-        ResetStateVector();
     }
     void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QALU(eng)->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
         });
-        ResetStateVector();
     }
     void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {

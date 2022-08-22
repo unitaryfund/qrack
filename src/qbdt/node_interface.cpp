@@ -112,7 +112,7 @@ void QBdtNodeInterface::_par_for_qbdt(const bitCapInt begin, const bitCapInt end
 
 QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
 {
-    if (!size || (norm(scale) <= FP_NORM_EPSILON)) {
+    if (norm(scale) <= FP_NORM_EPSILON) {
         return NULL;
     }
 
@@ -134,6 +134,10 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
         }
 
         return toRet;
+    }
+
+    if (!size) {
+        return NULL;
     }
 
     QBdtNodeInterfacePtr toRet = ShallowClone();
