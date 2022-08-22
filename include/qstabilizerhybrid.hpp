@@ -12,6 +12,7 @@
 #pragma once
 
 #include "mpsshard.hpp"
+#include "qbdt.hpp"
 #include "qengine.hpp"
 #include "qstabilizer.hpp"
 
@@ -35,6 +36,7 @@ class QStabilizerHybrid : public QParity, public QInterface {
 protected:
     bool useHostRam;
     bool isDefaultPaging;
+    bool isPagingVsBdt;
     bool doNormalize;
     bool isSparse;
     bool useTGadget;
@@ -160,7 +162,7 @@ public:
     {
     }
 
-    bool isPaged() { return (engineTypes[0] == QINTERFACE_QPAGER); }
+    bool isPaged() { return (engineTypes[0] == QINTERFACE_QPAGER) || (engineTypes[0] == QINTERFACE_BDT); }
 
     void TurnOnPaging()
     {
@@ -189,6 +191,33 @@ public:
         }
     }
 
+    void TurnOnBdt()
+    {
+        if (engineTypes[0] == QINTERFACE_BDT) {
+            return;
+        }
+        if (engine) {
+            engine = std::make_shared<QBdt>(std::dynamic_pointer_cast<QEngine>(engine), engineTypes, qubitCount, 0U,
+                rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
+                (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
+        }
+        engineTypes.insert(engineTypes.begin(), QINTERFACE_BDT);
+    }
+
+    void TurnOffBdt()
+    {
+        if (engineTypes[0] != QINTERFACE_BDT) {
+            return;
+        }
+        engineTypes.erase(engineTypes.begin());
+        if (!engineTypes.size()) {
+            engineTypes.push_back(QINTERFACE_OPTIMAL_BASE);
+        }
+        if (engine) {
+            engine = std::dynamic_pointer_cast<QBdt>(engine)->ReleaseEngine();
+        }
+    }
+
     void FixPaging()
     {
         if (!isDefaultPaging) {
@@ -196,10 +225,18 @@ public:
         }
 
         if ((qubitCount + ancillaCount) <= maxPageQubits) {
-            TurnOffPaging();
+            if (isPagingVsBdt) {
+                TurnOffPaging();
+            } else {
+                TurnOffBdt();
+            }
         }
         if ((qubitCount + ancillaCount) > maxPageQubits) {
-            TurnOnPaging();
+            if (isPagingVsBdt) {
+                TurnOnPaging();
+            } else {
+                TurnOffBdt();
+            }
         }
     }
 
@@ -216,9 +253,17 @@ public:
         }
 
         if (oSim->isPaged()) {
-            TurnOnPaging();
+            if (isPagingVsBdt) {
+                TurnOnPaging();
+            } else {
+                TurnOnBdt();
+            }
         } else if (isPaged()) {
-            oSim->TurnOnPaging();
+            if (isPagingVsBdt) {
+                oSim->TurnOnPaging();
+            } else {
+                oSim->TurnOnBdt();
+            }
         }
     }
 

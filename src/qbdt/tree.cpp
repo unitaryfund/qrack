@@ -31,6 +31,36 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     , deviceIDs(devIds)
     , engines(eng)
 {
+    Init();
+
+    bdtQubitCount = (maxPageQubits < qBitCount) ? (qBitCount - maxPageQubits) : 0U;
+    attachedQubitCount = qBitCount - bdtQubitCount;
+
+    SetPermutation(initState);
+}
+
+QBdt::QBdt(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState,
+    qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceId,
+    bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devIds,
+    bitLenInt qubitThreshold, real1_f sep_thresh)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
+    , isAttached(false)
+    , devID(deviceId)
+    , root(NULL)
+    , bdtMaxQPower(pow2(qBitCount))
+    , deviceIDs(devIds)
+    , engines(eng)
+{
+    Init();
+
+    bdtQubitCount = 0U;
+    attachedQubitCount = qBitCount;
+
+    LockEngine(enginePtr);
+}
+
+void QBdt::Init()
+{
 #if ENABLE_PTHREAD
     SetConcurrency(std::thread::hardware_concurrency());
 #endif
@@ -54,11 +84,6 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
             log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) - segmentGlobalQb;
     }
 #endif
-
-    bdtQubitCount = (maxPageQubits < qBitCount) ? (qBitCount - maxPageQubits) : 0U;
-    attachedQubitCount = qBitCount - bdtQubitCount;
-
-    SetPermutation(initState);
 }
 
 QBdtQEngineNodePtr QBdt::MakeQEngineNode(complex scale, bitLenInt qbCount, bitCapInt perm)
@@ -426,8 +451,16 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
     ResetStateVector();
 
-    if (attachedQubitCount) {
+    if (length > bdtQubitCount) {
         throw std::domain_error("QBdt::DecomposeDispose() not fully implemented, after Attach()!");
+    }
+
+    if (attachedQubitCount && start) {
+        ROR(start, 0U, qubitCount);
+        DecomposeDispose(0U, length, dest);
+        ROL(start, 0U, qubitCount);
+
+        return;
     }
 
     if (dest) {

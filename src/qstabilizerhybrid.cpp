@@ -38,6 +38,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
     , useHostRam(useHostMem)
     , isDefaultPaging(false)
+    , isPagingVsBdt(false)
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
@@ -57,12 +58,13 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 #if ENABLE_OPENCL
     if ((engineTypes.size() == 1U) && (engineTypes[0U] == QINTERFACE_OPTIMAL_BASE)) {
         isDefaultPaging = true;
+        isPagingVsBdt = devList.size() || getenv("QRACK_QPAGER_DEVICES");
 
         DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
         maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex));
         maxQubitPlusAncillaCount = maxPageQubits + 2U;
         if (qubitCount > maxPageQubits) {
-            if (devList.size() || getenv("QRACK_QPAGER_DEVICES")) {
+            if (isPagingVsBdt) {
                 engineTypes.push_back(QINTERFACE_QPAGER);
             } else {
                 engineTypes.push_back(QINTERFACE_BDT);

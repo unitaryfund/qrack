@@ -128,6 +128,8 @@ protected:
 
     void ApplySingle(const complex* mtrx, bitLenInt target);
 
+    void Init();
+
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -136,15 +138,30 @@ public:
         bitLenInt qubitThreshold = 0, real1_f separation_thresh = FP_NORM_EPSILON_F);
 
     QBdt(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
-        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
+        complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = false,
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> ignored = {}, bitLenInt qubitThreshold = 0U,
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = FP_NORM_EPSILON_F)
-        : QBdt({ QINTERFACE_OPTIMAL_SCHROEDINGER }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
-              useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold,
-              separation_thresh)
+#if ENABLE_OPENCL
+        : QBdt({ OCLEngine::Instance().GetDeviceCount() ? QINTERFACE_OPENCL : QINTERFACE_CPU }, qBitCount, initState,
+              rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId, useHardwareRNG, useSparseStateVec,
+              norm_thresh, devList, qubitThreshold, separation_thresh)
+#else
+        : QBdt({ QINTERFACE_CPU }, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem, deviceId,
+              useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
+#endif
     {
     }
+
+    QBdt(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ignored = 0U,
+        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
+        bool randomGlobalPhase = false, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
+        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
+        bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
+
+    QEnginePtr ReleaseEngine() { return NODE_TO_QENGINE(root); }
+
+    void LockEngine(QEnginePtr eng) { root = std::make_shared<QBdtQEngineNode>(ONE_CMPLX, eng); }
 
     bool isBinaryDecisionTree() { return true; };
 

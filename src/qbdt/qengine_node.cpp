@@ -140,7 +140,7 @@ void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, con
 
 QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
 {
-    if (!size || (IS_NORM_0(scale))) {
+    if (!size || IS_NORM_0(scale)) {
         return NULL;
     }
 
