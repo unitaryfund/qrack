@@ -282,38 +282,15 @@ real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
         return ONE_R1_F;
     }
 
-    // TODO: Fix this method, without the reset:
-    // ResetStateVector();
-    // toCompare->ResetStateVector();
+    if (randGlobalPhase) {
+        real1_f lPhaseArg = FirstNonzeroPhase();
+        real1_f rPhaseArg = toCompare->FirstNonzeroPhase();
+        root->scale *= std::polar(ONE_R1, rPhaseArg - lPhaseArg);
+    }
 
     complex projection = ZERO_CMPLX;
     for (bitCapInt i = 0U; i < maxQPower; ++i) {
-        QBdtNodeInterfacePtr leaf1 = root;
-        QBdtNodeInterfacePtr leaf2 = toCompare->root;
-        complex scale1 = leaf1->scale;
-        complex scale2 = leaf2->scale;
-        bitLenInt j;
-        for (j = 0U; j < qubitCount; ++j) {
-            if (IS_NORM_0(scale1)) {
-                break;
-            }
-            leaf1 = leaf1->branches[SelectBit(i, j)];
-            scale1 *= leaf1->scale;
-        }
-        if (j < qubitCount) {
-            continue;
-        }
-        for (j = 0U; j < qubitCount; ++j) {
-            if (IS_NORM_0(scale2)) {
-                break;
-            }
-            leaf2 = leaf2->branches[SelectBit(i, j)];
-            scale2 *= leaf2->scale;
-        }
-        if (j < qubitCount) {
-            continue;
-        }
-        projection += conj(scale2) * scale1;
+        projection += conj(toCompare->GetAmplitude(i)) * GetAmplitude(i);
     }
 
     return ONE_R1_F - clampProb((real1_f)norm(projection));
