@@ -317,77 +317,6 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     return start;
 }
 
-bitLenInt QBdt::Attach(QEnginePtr toCopy)
-{
-    if (toCopy->GetIsArbitraryGlobalPhase()) {
-        throw std::invalid_argument("QBdt attached qubits cannot have arbitrary global phase!");
-    }
-
-    const bitLenInt toRet = qubitCount;
-
-    if (!qubitCount) {
-        QEnginePtr toCopyClone = std::dynamic_pointer_cast<QEngine>(toCopy->Clone());
-        root = std::make_shared<QBdtQEngineNode>(GetNonunitaryPhase(), toCopyClone);
-        SetQubitCount(toCopy->GetQubitCount(), toCopy->GetQubitCount());
-
-        return toRet;
-    }
-
-    if (attachedQubitCount) {
-        par_for_qbdt(0U, maxQPower, [&](const bitCapInt& i, const int& cpu) {
-            QBdtNodeInterfacePtr leaf = root;
-            for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
-                if (IS_NORM_0(leaf->scale)) {
-                    // WARNING: Mutates loop control variable!
-                    return (bitCapInt)(pow2(bdtQubitCount - j) - ONE_BCI);
-                }
-                leaf = leaf->branches[SelectBit(i, bdtQubitCount - (j + 1U))];
-            }
-
-            if (!IS_NORM_0(leaf->scale)) {
-                NODE_TO_QENGINE(leaf)->Compose(toCopy);
-            }
-
-            return (bitCapInt)0U;
-        });
-
-        SetQubitCount(qubitCount + toCopy->GetQubitCount(), attachedQubitCount + toCopy->GetQubitCount());
-
-        return toRet;
-    }
-
-    QEnginePtr toCopyClone = std::dynamic_pointer_cast<QEngine>(toCopy->Clone());
-
-    const bitLenInt maxQubit = bdtQubitCount - 1U;
-    const bitCapInt maxI = pow2(maxQubit);
-    par_for_qbdt(0U, maxI, [&](const bitCapInt& i, const int& cpu) {
-        QBdtNodeInterfacePtr leaf = root;
-        for (bitLenInt j = 0U; j < maxQubit; ++j) {
-            if (IS_NORM_0(leaf->scale)) {
-                // WARNING: Mutates loop control variable!
-                return (bitCapInt)(pow2(maxQubit - j) - ONE_BCI);
-            }
-            leaf = leaf->branches[SelectBit(i, maxQubit - (j + 1U))];
-        }
-
-        if (IS_NORM_0(leaf->scale)) {
-            return (bitCapInt)0U;
-        }
-
-        for (size_t j = 0U; j < 2U; ++j) {
-            const complex scale = leaf->branches[j]->scale;
-            leaf->branches[j] = IS_NORM_0(scale) ? std::make_shared<QBdtQEngineNode>()
-                                                 : std::make_shared<QBdtQEngineNode>(scale, toCopyClone);
-        }
-
-        return (bitCapInt)0U;
-    });
-
-    SetQubitCount(qubitCount + toCopy->GetQubitCount(), toCopy->GetQubitCount());
-
-    return toRet;
-}
-
 QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
 {
     QBdtPtr dest = std::make_shared<QBdt>(bdtQubitCount, length, rand_generator, ONE_CMPLX, doNormalize,
@@ -401,23 +330,18 @@ QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
 
-    if (attachedQubitCount && start) {
-        ROR(start, 0U, qubitCount);
-        DecomposeDispose(0U, length, dest);
-        ROL(start, 0U, qubitCount);
-
-        return;
+    bitLenInt attachedDiff = 0U;
+    if ((start + length) > bdtQubitCount) {
+        attachedDiff = (start > bdtQubitCount) ? length : (start + length - bdtQubitCount);
     }
 
     if (dest) {
         dest->root = root->RemoveSeparableAtDepth(start, length);
+        dest->SetQubitCount(length, attachedDiff);
     } else {
         root->RemoveSeparableAtDepth(start, length);
     }
-    SetQubitCount(qubitCount - length, attachedQubitCount);
-    bdtQubitCount = (maxPageQubits < qubitCount) ? (qubitCount - maxPageQubits) : 0U;
-    attachedQubitCount = qubitCount - bdtQubitCount;
-
+    SetQubitCount(qubitCount - length, attachedQubitCount - attachedDiff);
     root->Prune(bdtQubitCount);
 }
 
@@ -565,13 +489,6 @@ bool QBdt::ForceM(bitLenInt qubit, bool result, bool doForce, bool doApply)
 
 bitCapInt QBdt::MAll()
 {
-    if (!bdtQubitCount) {
-        const bitCapInt toRet = NODE_TO_QENGINE(root)->MAll();
-        SetPermutation(toRet);
-
-        return toRet;
-    }
-
     bitCapInt result = 0U;
     QBdtNodeInterfacePtr leaf = root;
     for (bitLenInt i = 0U; i < bdtQubitCount; ++i) {
@@ -608,13 +525,13 @@ bitCapInt QBdt::MAll()
 
 void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 {
-    if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]) && (randGlobalPhase || IS_NORM_0(ONE_CMPLX - mtrx[0U])) &&
-        IS_NORM_0(mtrx[0U] - mtrx[3U])) {
+    if (!bdtQubitCount) {
+        NODE_TO_QENGINE(root)->Mtrx(mtrx, target);
         return;
     }
 
-    if (!bdtQubitCount) {
-        NODE_TO_QENGINE(root)->Mtrx(mtrx, target);
+    if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]) && IS_NORM_0(mtrx[0U] - mtrx[3U]) &&
+        (randGlobalPhase || IS_NORM_0(ONE_CMPLX - mtrx[0U]))) {
         return;
     }
 
@@ -669,6 +586,11 @@ void QBdt::ApplyControlledSingle(
         } else {
             NODE_TO_QENGINE(root)->MCMtrx(controls, controlLen, mtrx, target);
         }
+        return;
+    }
+
+    if (IS_NORM_0(mtrx[1U]) && IS_NORM_0(mtrx[2U]) && IS_NORM_0(ONE_CMPLX - mtrx[0U]) &&
+        IS_NORM_0(ONE_CMPLX - mtrx[3U])) {
         return;
     }
 
