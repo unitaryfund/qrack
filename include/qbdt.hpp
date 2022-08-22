@@ -34,7 +34,6 @@ class QBdt : public QAlu, public QParity, public QInterface {
 class QBdt : public QParity, public QInterface {
 #endif
 protected:
-    bool isAttached;
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
     bitLenInt segmentGlobalQb;
@@ -79,7 +78,7 @@ protected:
             return;
         }
 
-        if (isAttached) {
+        if (attachedQubitCount) {
             throw std::domain_error("QBdt::SetStateVector() not yet implemented, after Attach() call!");
         }
 

@@ -24,7 +24,6 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devIds, bitLenInt qubitThreshold,
     real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
-    , isAttached(false)
     , devID(deviceId)
     , root(NULL)
     , bdtMaxQPower(pow2(qBitCount))
@@ -44,7 +43,6 @@ QBdt::QBdt(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qB
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devIds,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
-    , isAttached(false)
     , devID(deviceId)
     , root(NULL)
     , bdtMaxQPower(pow2(qBitCount))
@@ -177,12 +175,31 @@ void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 
 QInterfacePtr QBdt::Clone()
 {
-    QBdtPtr copyPtr = std::make_shared<QBdt>(qubitCount, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
-        false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+    QBdtPtr copyPtr = std::make_shared<QBdt>(0U, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false, -1,
+        (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
 
     copyPtr->root = root ? root->ShallowClone() : NULL;
     copyPtr->SetQubitCount(qubitCount, attachedQubitCount);
-    copyPtr->isAttached = isAttached;
+
+    if (!attachedQubitCount) {
+        return copyPtr;
+    }
+
+    if (!bdtQubitCount) {
+        QBdtQEngineNodePtr eLeaf = std::dynamic_pointer_cast<QBdtQEngineNode>(copyPtr->root);
+        if (eLeaf->qReg) {
+            eLeaf->qReg = std::dynamic_pointer_cast<QEngine>(eLeaf->qReg->Clone());
+        }
+        return copyPtr;
+    }
+
+    copyPtr->SetTraversal([](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
+        QBdtQEngineNodePtr eLeaf = std::dynamic_pointer_cast<QBdtQEngineNode>(leaf);
+        if (eLeaf->qReg) {
+            eLeaf->qReg = std::dynamic_pointer_cast<QEngine>(eLeaf->qReg->Clone());
+        }
+    });
+    copyPtr->root->Prune(bdtQubitCount);
 
     return copyPtr;
 }
@@ -340,7 +357,6 @@ bitLenInt QBdt::Attach(QEnginePtr toCopy)
         throw std::invalid_argument("QBdt attached qubits cannot have arbitrary global phase!");
     }
 
-    isAttached = true;
     const bitLenInt toRet = qubitCount;
 
     if (!qubitCount) {
@@ -898,7 +914,7 @@ void QBdt::MCInvert(
     }
 
     const complex mtrx[4U] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    if (!IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
+    if ((controlLen > 1U) || !IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
         ApplyControlledSingle(mtrx, controls, controlLen, target, false);
         return;
     }
