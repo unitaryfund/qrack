@@ -914,22 +914,22 @@ void QBdt::MCInvert(
     }
 
     const complex mtrx[4U] = { ZERO_CMPLX, topRight, bottomLeft, ZERO_CMPLX };
-    if ((controlLen > 1U) || !IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
+    if (!IS_NORM_0(ONE_CMPLX - topRight) || !IS_NORM_0(ONE_CMPLX - bottomLeft)) {
         ApplyControlledSingle(mtrx, controls, controlLen, target, false);
         return;
     }
 
-    std::vector<bitLenInt> controlVec(controlLen);
-    std::copy(controls, controls + controlLen, controlVec.begin());
-    std::sort(controlVec.begin(), controlVec.end());
+    std::unique_ptr<bitLenInt[]> lControls = std::unique_ptr<bitLenInt[]>(new bitLenInt[controlLen]);
+    std::copy(controls, controls + controlLen, lControls.get());
+    std::sort(lControls.get(), lControls.get() + controlLen);
 
-    if ((controlVec.back() < target) || (target >= bdtQubitCount)) {
+    if ((lControls.get()[controlLen - 1U] < target) || (target >= bdtQubitCount)) {
         ApplyControlledSingle(mtrx, controls, controlLen, target, false);
         return;
     }
 
     H(target);
-    MCPhase(controls, controlLen, ONE_CMPLX, -ONE_CMPLX, target);
+    MCPhase(lControls.get(), controlLen, ONE_CMPLX, -ONE_CMPLX, target);
     H(target);
 }
 } // namespace Qrack
