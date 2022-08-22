@@ -59,10 +59,6 @@ protected:
 
     QBdtQEngineNodePtr MakeQEngineNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
 
-    void FallbackMtrx(const complex* mtrx, bitLenInt target);
-    void FallbackMCMtrx(
-        const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti);
-
     QInterfacePtr MakeTempStateVector()
     {
         QInterfacePtr copyPtr = NODE_TO_QENGINE(MakeQEngineNode(ONE_R1, qubitCount));

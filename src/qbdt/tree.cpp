@@ -92,49 +92,6 @@ QBdtQEngineNodePtr QBdt::MakeQEngineNode(complex scale, bitLenInt qbCount, bitCa
                 hardware_rand_generator != NULL, false, (real1_f)amplitudeFloor, deviceIDs)));
 }
 
-void QBdt::FallbackMtrx(const complex* mtrx, bitLenInt target)
-{
-    if (!bdtQubitCount) {
-        throw std::domain_error("QBdt has no universal qubits to fall back to, for FallbackMtrx()!");
-    }
-
-    bitLenInt randQb = (bitLenInt)(bdtQubitCount * Rand());
-    if (randQb >= bdtQubitCount) {
-        randQb = bdtQubitCount;
-    }
-
-    Swap(randQb, target);
-    Mtrx(mtrx, randQb);
-    Swap(randQb, target);
-}
-
-void QBdt::FallbackMCMtrx(
-    const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti)
-{
-    if (bdtQubitCount < (controlLen + 1U)) {
-        throw std::domain_error("QBdt doesn't have enough universal qubits to fall back to, for FallbackMCMtrx()!");
-    }
-
-    bitLenInt randQb = (bitLenInt)((bdtQubitCount - controlLen) * Rand());
-    if (randQb >= (bdtQubitCount - controlLen)) {
-        randQb = (bdtQubitCount - controlLen);
-    }
-
-    std::unique_ptr<bitLenInt[]> lControls(new bitLenInt[controlLen]);
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
-        lControls[i] = randQb + i;
-        Swap(randQb + i, controls[i]);
-    }
-    Swap(randQb + controlLen, target);
-
-    ApplyControlledSingle(mtrx, lControls.get(), controlLen, controlLen, isAnti);
-
-    Swap(randQb + controlLen, target);
-    for (bitLenInt i = 0U; i < controlLen; ++i) {
-        Swap(controlLen - (randQb + i + 1U), controls[controlLen - (randQb + i + 1U)]);
-    }
-}
-
 void QBdt::SetPermutation(bitCapInt initState, complex phaseFac)
 {
     if (!qubitCount) {
@@ -344,7 +301,6 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
     root->InsertAtDepth(toCopy->root, start, toCopy->bdtQubitCount);
     SetQubitCount(qubitCount + toCopy->qubitCount, attachedQubitCount + toCopy->attachedQubitCount);
-
     bdtQubitCount = (maxPageQubits < qubitCount) ? (qubitCount - maxPageQubits) : 0U;
     attachedQubitCount = qubitCount - bdtQubitCount;
 
@@ -449,7 +405,6 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
         root->RemoveSeparableAtDepth(start, length);
     }
     SetQubitCount(qubitCount - length, attachedQubitCount);
-
     bdtQubitCount = (maxPageQubits < qubitCount) ? (qubitCount - maxPageQubits) : 0U;
     attachedQubitCount = qubitCount - bdtQubitCount;
 
@@ -657,9 +612,6 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
     const bitLenInt maxQubit = isKet ? bdtQubitCount : target;
     const bitCapInt qPower = pow2(maxQubit);
 
-    std::set<QEnginePtr> qis;
-    bool isFail = false;
-
 #if ENABLE_COMPLEX_X2
     const complex2 mtrxCol1(mtrx[0U], mtrx[2U]);
     const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
@@ -683,15 +635,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
 
         if (isKet) {
             leaf->Branch();
-            QEnginePtr qi = NODE_TO_QENGINE(leaf);
-            try {
-                qi->Mtrx(mtrx, target - bdtQubitCount);
-            } catch (const std::domain_error&) {
-                isFail = true;
-
-                return (bitCapInt)(qPower - ONE_BCI);
-            }
-            qis.insert(qi);
+            NODE_TO_QENGINE(leaf)->Mtrx(mtrx, target - bdtQubitCount);
         } else {
 #if ENABLE_COMPLEX_X2
             leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
@@ -703,22 +647,7 @@ void QBdt::ApplySingle(const complex* mtrx, bitLenInt target)
         return (bitCapInt)0U;
     });
 
-    if (!isFail) {
-        root->Prune(maxQubit);
-
-        return;
-    }
-
-    complex iMtrx[4U];
-    inv2x2(mtrx, iMtrx);
-    std::set<QEnginePtr>::iterator it = qis.begin();
-    while (it != qis.end()) {
-        (*it)->Mtrx(iMtrx, target - bdtQubitCount);
-        ++it;
-    }
     root->Prune(maxQubit);
-
-    FallbackMtrx(mtrx, target);
 }
 
 void QBdt::ApplyControlledSingle(
@@ -764,10 +693,6 @@ void QBdt::ApplyControlledSingle(
     const complex2 mtrxCol2(mtrx[1U], mtrx[3U]);
 #endif
 
-    std::set<QEnginePtr> qis;
-
-    bool isFail = false;
-
     par_for_qbdt(0U, qPower, [&](const bitCapInt& i, const int& cpu) {
         if ((i & lowControlMask) != lowControlPerm) {
             return (bitCapInt)(lowControlMask - ONE_BCI);
@@ -791,18 +716,11 @@ void QBdt::ApplyControlledSingle(
         if (isKet) {
             leaf->Branch();
             QEnginePtr qi = NODE_TO_QENGINE(leaf);
-            try {
-                if (isAnti) {
-                    qi->MACMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
-                } else {
-                    qi->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
-                }
-            } catch (const std::domain_error&) {
-                isFail = true;
-
-                return (bitCapInt)(qPower - ONE_BCI);
+            if (isAnti) {
+                qi->MACMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
+            } else {
+                qi->MCMtrx(ketControls.get(), ketControlsVec.size(), mtrx, target - bdtQubitCount);
             }
-            qis.insert(qi);
         } else {
 #if ENABLE_COMPLEX_X2
             leaf->Apply2x2(mtrxCol1, mtrxCol2, bdtQubitCount - target);
@@ -814,37 +732,12 @@ void QBdt::ApplyControlledSingle(
         return (bitCapInt)0U;
     });
 
-    if (!isFail) {
-        root->Prune(maxQubit);
-        // Undo isSwapped.
-        if (isSwapped) {
-            Swap(target, controlVec.back());
-            std::swap(target, controlVec.back());
-        }
-
-        return;
-    }
-
-    complex iMtrx[4U];
-    inv2x2(mtrx, iMtrx);
-    std::set<QEnginePtr>::iterator it = qis.begin();
-    while (it != qis.end()) {
-        if (isAnti) {
-            (*it)->MACMtrx(ketControls.get(), ketControlsVec.size(), iMtrx, target - bdtQubitCount);
-        } else {
-            (*it)->MCMtrx(ketControls.get(), ketControlsVec.size(), iMtrx, target - bdtQubitCount);
-        }
-        ++it;
-    }
-
     root->Prune(maxQubit);
     // Undo isSwapped.
     if (isSwapped) {
         Swap(target, controlVec.back());
         std::swap(target, controlVec.back());
     }
-
-    FallbackMCMtrx(mtrx, controls, controlLen, target, isAnti);
 }
 
 void QBdt::Mtrx(const complex* mtrx, bitLenInt target) { ApplySingle(mtrx, target); }
