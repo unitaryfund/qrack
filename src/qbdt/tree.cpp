@@ -291,7 +291,7 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
-    if (attachedQubitCount || toCopy->attachedQubitCount) {
+    if (bdtQubitCount && (attachedQubitCount || toCopy->attachedQubitCount)) {
         if (start < bdtQubitCount) {
             const bitLenInt offset = bdtQubitCount - start;
             ROR(qubitCount - offset, 0U, qubitCount);
@@ -329,7 +329,6 @@ QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
-
     bitLenInt attachedDiff = 0U;
     if ((start + length) > bdtQubitCount) {
         attachedDiff = (start > bdtQubitCount) ? length : (start + length - bdtQubitCount);

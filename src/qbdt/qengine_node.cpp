@@ -130,12 +130,8 @@ void QBdtQEngineNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, con
         return;
     }
 
-    if (depth) {
-        throw std::runtime_error("QBdtQEngineNode::InsertAtDepth() not implemented for nonzero depth!");
-    }
-
     QBdtQEngineNodePtr bEng = std::dynamic_pointer_cast<QBdtQEngineNode>(b);
-    qReg->Compose(bEng->qReg, 0U);
+    qReg->Compose(bEng->qReg, depth);
 }
 
 QBdtNodeInterfacePtr QBdtQEngineNode::RemoveSeparableAtDepth(bitLenInt depth, const bitLenInt& size)
