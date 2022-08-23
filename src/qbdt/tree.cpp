@@ -146,11 +146,15 @@ QInterfacePtr QBdt::Clone()
         return copyPtr;
     }
 
-    copyPtr->SetTraversal([](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
-        QBdtQEngineNodePtr eLeaf = std::dynamic_pointer_cast<QBdtQEngineNode>(leaf);
-        if (eLeaf->qReg) {
-            eLeaf->qReg = std::dynamic_pointer_cast<QEngine>(eLeaf->qReg->Clone());
+    std::map<QEnginePtr, QEnginePtr> qis;
+
+    copyPtr->SetTraversal([&qis](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) {
+        QBdtQEngineNodePtr qenp = std::dynamic_pointer_cast<QBdtQEngineNode>(leaf);
+        QEnginePtr qi = NODE_TO_QENGINE(qenp);
+        if (qis.find(qi) == qis.end()) {
+            qis[qi] = std::dynamic_pointer_cast<QEngine>(qi->Clone());
         }
+        NODE_TO_QENGINE(qenp) = qis[qi];
     });
     copyPtr->root->Prune(bdtQubitCount);
 
