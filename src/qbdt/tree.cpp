@@ -291,6 +291,10 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
+    if (maxPageQubits < (attachedQubitCount + toCopy->attachedQubitCount)) {
+        toCopy->ResetStateVector((attachedQubitCount + toCopy->attachedQubitCount) - maxPageQubits);
+    }
+
     if (!bdtQubitCount && !toCopy->bdtQubitCount) {
         NODE_TO_QENGINE(root)->Compose(NODE_TO_QENGINE(toCopy->root), start);
         SetQubitCount(qubitCount + toCopy->qubitCount, qubitCount + toCopy->qubitCount);
@@ -336,6 +340,14 @@ QInterfacePtr QBdt::Decompose(bitLenInt start, bitLenInt length)
 
 void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
 {
+    if (start && bdtQubitCount && attachedQubitCount) {
+        ROR(start, 0U, qubitCount);
+        DecomposeDispose(0U, length, dest);
+        ROL(start, 0U, qubitCount);
+
+        return;
+    }
+
     bitLenInt attachedDiff = 0U;
     if ((start + length) > bdtQubitCount) {
         attachedDiff = (start > bdtQubitCount) ? length : (start + length - bdtQubitCount);

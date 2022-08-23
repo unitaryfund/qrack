@@ -2773,6 +2773,9 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_isfinished")
 
 TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
 {
+    const bool isStabilizerQBdt =
+        (testSubSubEngineType == QINTERFACE_BDT) && (testSubEngineType == QINTERFACE_STABILIZER_HYBRID);
+
     bitLenInt toSep[2];
 
     qftReg->SetPermutation(85);
@@ -2785,8 +2788,10 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
 
     for (i = 0; i < 8; i++) {
         qftReg->TrySeparate(i);
-        toSep[0] = i;
-        qftReg->TrySeparate(toSep, 1, FP_NORM_EPSILON_F);
+        if (!isStabilizerQBdt) {
+            toSep[0] = i;
+            qftReg->TrySeparate(toSep, 1, FP_NORM_EPSILON_F);
+        }
     }
 
     REQUIRE_THAT(qftReg, HasProbability(0, 8, 85));
@@ -2797,9 +2802,11 @@ TEST_CASE_METHOD(QInterfaceTestFixture, "test_tryseparate")
     qftReg->CNOT(0, 2);
     qftReg->CNOT(0, 2);
     qftReg->TrySeparate(0, 1);
-    toSep[0] = 0;
-    toSep[1] = 1;
-    qftReg->TrySeparate(toSep, 2, FP_NORM_EPSILON_F);
+    if (!isStabilizerQBdt) {
+        toSep[0] = 0;
+        toSep[1] = 1;
+        qftReg->TrySeparate(toSep, 2, FP_NORM_EPSILON_F);
+    }
     qftReg->CNOT(0, 1);
     qftReg->Z(0);
     qftReg->H(0);

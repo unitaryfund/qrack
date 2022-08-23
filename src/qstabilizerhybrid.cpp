@@ -331,9 +331,6 @@ QInterfacePtr QStabilizerHybrid::Clone()
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
         std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
 
-    Finish();
-    c->Finish();
-
     if (engine) {
         // Clone and set engine directly.
         c->engine = std::dynamic_pointer_cast<QEngine>(engine->Clone());
