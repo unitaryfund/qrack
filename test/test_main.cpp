@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
         opencl = true;
         hybrid = true;
         stabilizer = true;
-        bdt = true;
+        // bdt = true;
         // stabilizer_qpager = true;
         // stabilizer_bdt = true;
     }
