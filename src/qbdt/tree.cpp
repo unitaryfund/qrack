@@ -305,6 +305,9 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 
         if (maxPageQubits < (attachedQubitCount + toCopy->attachedQubitCount + qbSpan)) {
             const bitLenInt diff = (attachedQubitCount + toCopy->attachedQubitCount + qbSpan) - maxPageQubits;
+            if (toCopy->qubitCount < diff) {
+                throw std::domain_error("Too many attached qubits to compose in QBdt::Compose()!");
+            }
             toCopy->ResetStateVector(toCopy->qubitCount - diff);
         }
     }
