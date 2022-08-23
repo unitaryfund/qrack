@@ -147,7 +147,7 @@ public:
               rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId, useHardwareRNG, useSparseStateVec,
               norm_thresh, devList, qubitThreshold, separation_thresh)
 #else
-        : QBdt({ QINTERFACE_CPU }, qBitCount, initState, rgp, phaseFac, doNorm, ignored, useHostMem, deviceId,
+        : QBdt({ QINTERFACE_CPU }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId,
               useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
 #endif
     {
