@@ -152,8 +152,8 @@ int main(int argc, char* argv[])
         hybrid = true;
         stabilizer = true;
         bdt = true;
-        stabilizer_bdt = true;
         // stabilizer_qpager = true;
+        // stabilizer_bdt = true;
     }
 
     if (devListStr.compare("") != 0) {
