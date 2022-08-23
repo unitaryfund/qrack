@@ -12,6 +12,7 @@
 #pragma once
 
 #include "mpsshard.hpp"
+#include "qbdt.hpp"
 #include "qengine.hpp"
 #include "qstabilizer.hpp"
 
@@ -27,9 +28,15 @@ typedef std::shared_ptr<QStabilizerHybrid> QStabilizerHybridPtr;
  * A "Qrack::QStabilizerHybrid" internally switched between Qrack::QStabilizer and Qrack::QEngine to maximize
  * performance.
  */
-class QStabilizerHybrid : public QEngine {
+#if ENABLE_ALU
+class QStabilizerHybrid : public QAlu, public QParity, public QInterface {
+#else
+class QStabilizerHybrid : public QParity, public QInterface {
+#endif
 protected:
+    bool useHostRam;
     bool isDefaultPaging;
+    bool isPagingVsBdt;
     bool doNormalize;
     bool isSparse;
     bool useTGadget;
@@ -40,7 +47,7 @@ protected:
     real1_f separabilityThreshold;
     int64_t devID;
     complex phaseFactor;
-    QEnginePtr engine;
+    QInterfacePtr engine;
     QStabilizerPtr stabilizer;
     std::vector<int64_t> deviceIDs;
     std::vector<QInterfaceEngine> engineTypes;
@@ -48,8 +55,8 @@ protected:
     std::vector<MpsShardPtr> shards;
 
     QStabilizerPtr MakeStabilizer(bitCapInt perm = 0U);
-    QEnginePtr MakeEngine(bitCapInt perm = 0U);
-    QEnginePtr MakeEngine(bitCapInt perm, bitLenInt qbCount);
+    QInterfacePtr MakeEngine(bitCapInt perm = 0U);
+    QInterfacePtr MakeEngine(bitCapInt perm, bitLenInt qbCount);
 
     void InvertBuffer(bitLenInt qubit);
     void FlushH(bitLenInt qubit);
@@ -155,7 +162,7 @@ public:
     {
     }
 
-    bool isPaged() { return (engineTypes[0] == QINTERFACE_QPAGER); }
+    bool isPaged() { return (engineTypes[0] == QINTERFACE_QPAGER) || (engineTypes[0] == QINTERFACE_BDT); }
 
     void TurnOnPaging()
     {
@@ -163,9 +170,9 @@ public:
             return;
         }
         if (engine) {
-            engine = std::make_shared<QPager>(engine, engineTypes, qubitCount, 0U, rand_generator, phaseFactor,
-                doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-                deviceIDs, thresholdQubits, separabilityThreshold);
+            engine = std::make_shared<QPager>(std::dynamic_pointer_cast<QEngine>(engine), engineTypes, qubitCount, 0U,
+                rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
+                (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
         }
         engineTypes.insert(engineTypes.begin(), QINTERFACE_QPAGER);
     }
@@ -184,6 +191,33 @@ public:
         }
     }
 
+    void TurnOnBdt()
+    {
+        if (engineTypes[0] == QINTERFACE_BDT) {
+            return;
+        }
+        if (engine) {
+            engine = std::make_shared<QBdt>(std::dynamic_pointer_cast<QEngine>(engine), engineTypes, qubitCount, 0U,
+                rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
+                (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
+        }
+        engineTypes.insert(engineTypes.begin(), QINTERFACE_BDT);
+    }
+
+    void TurnOffBdt()
+    {
+        if (engineTypes[0] != QINTERFACE_BDT) {
+            return;
+        }
+        engineTypes.erase(engineTypes.begin());
+        if (!engineTypes.size()) {
+            engineTypes.push_back(QINTERFACE_OPTIMAL_BASE);
+        }
+        if (engine) {
+            engine = std::dynamic_pointer_cast<QBdt>(engine)->ReleaseEngine();
+        }
+    }
+
     void FixPaging()
     {
         if (!isDefaultPaging) {
@@ -191,10 +225,18 @@ public:
         }
 
         if ((qubitCount + ancillaCount) <= maxPageQubits) {
-            TurnOffPaging();
+            if (isPagingVsBdt) {
+                TurnOffPaging();
+            } else {
+                TurnOffBdt();
+            }
         }
         if ((qubitCount + ancillaCount) > maxPageQubits) {
-            TurnOnPaging();
+            if (isPagingVsBdt) {
+                TurnOnPaging();
+            } else {
+                TurnOffBdt();
+            }
         }
     }
 
@@ -211,9 +253,17 @@ public:
         }
 
         if (oSim->isPaged()) {
-            TurnOnPaging();
+            if (isPagingVsBdt) {
+                TurnOnPaging();
+            } else {
+                TurnOnBdt();
+            }
         } else if (isPaged()) {
-            oSim->TurnOnPaging();
+            if (isPagingVsBdt) {
+                oSim->TurnOnPaging();
+            } else {
+                oSim->TurnOnBdt();
+            }
         }
     }
 
@@ -248,128 +298,6 @@ public:
         }
     }
 
-    void ZeroAmplitudes()
-    {
-        SwitchToEngine();
-        engine->ZeroAmplitudes();
-    }
-    void CopyStateVec(QEnginePtr src) { CopyStateVec(std::dynamic_pointer_cast<QStabilizerHybrid>(src)); }
-    void CopyStateVec(QStabilizerHybridPtr src)
-    {
-        SetPermutation(0U);
-
-        if (src->stabilizer) {
-            stabilizer = std::dynamic_pointer_cast<QStabilizer>(src->stabilizer->Clone());
-            for (bitLenInt i = 0U; i < qubitCount; ++i) {
-                if (src->shards[i]) {
-                    shards[i] = std::make_shared<MpsShard>(src->shards[i]->gate);
-                }
-            }
-            return;
-        }
-
-        engine = MakeEngine();
-        engine->CopyStateVec(src->engine);
-    }
-    bool IsZeroAmplitude()
-    {
-        if (stabilizer) {
-            return false;
-        }
-
-        return engine->IsZeroAmplitude();
-    }
-    void GetAmplitudePage(complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
-    {
-        SwitchToEngine();
-        engine->GetAmplitudePage(pagePtr, offset, length);
-    }
-    void SetAmplitudePage(const complex* pagePtr, bitCapIntOcl offset, bitCapIntOcl length)
-    {
-        SwitchToEngine();
-        engine->SetAmplitudePage(pagePtr, offset, length);
-    }
-    void SetAmplitudePage(QEnginePtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
-    {
-        SetAmplitudePage(std::dynamic_pointer_cast<QStabilizerHybrid>(pageEnginePtr), srcOffset, dstOffset, length);
-    }
-    void SetAmplitudePage(
-        QStabilizerHybridPtr pageEnginePtr, bitCapIntOcl srcOffset, bitCapIntOcl dstOffset, bitCapIntOcl length)
-    {
-        SwitchToEngine();
-        pageEnginePtr->SwitchToEngine();
-        engine->SetAmplitudePage(pageEnginePtr->engine, srcOffset, dstOffset, length);
-    }
-    void ShuffleBuffers(QEnginePtr oEngine) { ShuffleBuffers(std::dynamic_pointer_cast<QStabilizerHybrid>(oEngine)); }
-    void ShuffleBuffers(QStabilizerHybridPtr oEngine)
-    {
-        SwitchToEngine();
-        oEngine->SwitchToEngine();
-        engine->ShuffleBuffers(oEngine->engine);
-    }
-    QEnginePtr CloneEmpty();
-    void QueueSetDoNormalize(bool doNorm)
-    {
-        doNormalize = doNorm;
-        if (engine) {
-            engine->QueueSetDoNormalize(doNorm);
-        }
-    }
-    void QueueSetRunningNorm(real1_f runningNrm)
-    {
-        if (engine) {
-            engine->QueueSetRunningNorm(runningNrm);
-        }
-    }
-    real1_f ProbReg(bitLenInt start, bitLenInt length, bitCapInt permutation)
-    {
-        QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
-        if (thisClone) {
-            thisClone->SwitchToEngine();
-        }
-        QInterfacePtr thisEngine = thisClone ? thisClone->engine : engine;
-        return thisEngine->ProbReg(start, length, permutation);
-    }
-    using QEngine::ApplyM;
-    void ApplyM(bitCapInt regMask, bitCapInt result, complex nrm)
-    {
-        SwitchToEngine();
-        return engine->ApplyM(regMask, result, nrm);
-    }
-    real1_f GetExpectation(bitLenInt valueStart, bitLenInt valueLength)
-    {
-        QStabilizerHybridPtr thisClone = stabilizer ? std::dynamic_pointer_cast<QStabilizerHybrid>(Clone()) : NULL;
-        if (thisClone) {
-            thisClone->SwitchToEngine();
-        }
-        QEnginePtr thisEngine = thisClone ? thisClone->engine : engine;
-        return thisEngine->GetExpectation(valueStart, valueLength);
-    }
-    void Apply2x2(bitCapIntOcl offset1, bitCapIntOcl offset2, const complex* mtrx, bitLenInt bitCount,
-        const bitCapIntOcl* qPowersSorted, bool doCalcNorm, real1_f norm_thresh = REAL1_DEFAULT_ARG)
-    {
-        SwitchToEngine();
-        engine->Apply2x2(offset1, offset2, mtrx, bitCount, qPowersSorted, doCalcNorm, norm_thresh);
-    }
-    real1_f GetRunningNorm()
-    {
-        if (stabilizer) {
-            return (real1_f)ONE_R1;
-        }
-
-        Finish();
-        return engine->GetRunningNorm();
-    }
-
-    real1_f FirstNonzeroPhase()
-    {
-        if (stabilizer) {
-            return stabilizer->FirstNonzeroPhase();
-        }
-
-        return engine->FirstNonzeroPhase();
-    }
-
     /**
      * Switches between CPU and GPU used modes. (This will not incur a performance penalty, if the chosen mode matches
      * the current mode.) Mode switching happens automatically when qubit counts change, but Compose() and Decompose()
@@ -383,7 +311,7 @@ public:
 
     bool isBinaryDecisionTree() { return engine && engine->isBinaryDecisionTree(); };
 
-    using QEngine::Compose;
+    using QInterface::Compose;
     bitLenInt Compose(QStabilizerHybridPtr toCopy);
     bitLenInt Compose(QInterfacePtr toCopy) { return Compose(std::dynamic_pointer_cast<QStabilizerHybrid>(toCopy)); }
     bitLenInt Compose(QStabilizerHybridPtr toCopy, bitLenInt start);
@@ -399,7 +327,7 @@ public:
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
     void Dispose(bitLenInt start, bitLenInt length);
     void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm);
-    using QEngine::Allocate;
+    using QInterface::Allocate;
     bitLenInt Allocate(bitLenInt start, bitLenInt length);
 
     void GetQuantumState(complex* outputState);
@@ -461,7 +389,7 @@ public:
     void MACInvert(
         const bitLenInt* controls, bitLenInt controlLen, complex topRight, complex bottomLeft, bitLenInt target);
 
-    using QEngine::UniformlyControlledSingleBit;
+    using QInterface::UniformlyControlledSingleBit;
     void UniformlyControlledSingleBit(
         const bitLenInt* controls, bitLenInt controlLen, bitLenInt qubitIndex, const complex* mtrxs)
     {
@@ -638,6 +566,10 @@ public:
     }
 
 #if ENABLE_ALU
+    using QInterface::M;
+    bool M(bitLenInt q) { return QInterface::M(q); }
+    using QInterface::X;
+    void X(bitLenInt q) { QInterface::X(q); }
     void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
         SwitchToEngine();
@@ -657,6 +589,24 @@ public:
         }
 
         engine->INC(toAdd, start, length);
+    }
+    void DEC(bitCapInt toSub, bitLenInt start, bitLenInt length)
+    {
+        if (stabilizer) {
+            QInterface::DEC(toSub, start, length);
+            return;
+        }
+
+        engine->DEC(toSub, start, length);
+    }
+    void DECS(bitCapInt toSub, bitLenInt start, bitLenInt length, bitLenInt overflowIndex)
+    {
+        if (stabilizer) {
+            QInterface::DECS(toSub, start, length, overflowIndex);
+            return;
+        }
+
+        engine->DECS(toSub, start, length, overflowIndex);
     }
     void CINC(bitCapInt toAdd, bitLenInt inOutStart, bitLenInt length, const bitLenInt* controls, bitLenInt controlLen)
     {

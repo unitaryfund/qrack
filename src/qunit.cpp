@@ -3567,8 +3567,6 @@ QInterfacePtr QUnit::Clone()
         randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
 
-    Finish();
-    copyPtr->Finish();
     copyPtr->SetReactiveSeparate(isReactiveSeparate);
 
     return CloneBody(copyPtr);

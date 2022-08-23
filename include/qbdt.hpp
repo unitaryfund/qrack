@@ -34,9 +34,11 @@ class QBdt : public QAlu, public QParity, public QInterface {
 class QBdt : public QParity, public QInterface {
 #endif
 protected:
-    bool isAttached;
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
+    bitLenInt segmentGlobalQb;
+    bitLenInt maxPageQubits;
+    bitLenInt maxQubits;
     int64_t devID;
     QBdtNodeInterfacePtr root;
     bitCapInt bdtMaxQPower;
@@ -58,10 +60,6 @@ protected:
 
     QBdtQEngineNodePtr MakeQEngineNode(complex scale, bitLenInt qbCount, bitCapInt perm = 0U);
 
-    void FallbackMtrx(const complex* mtrx, bitLenInt target);
-    void FallbackMCMtrx(
-        const complex* mtrx, const bitLenInt* controls, bitLenInt controlLen, bitLenInt target, bool isAnti);
-
     QInterfacePtr MakeTempStateVector()
     {
         QInterfacePtr copyPtr = NODE_TO_QENGINE(MakeQEngineNode(ONE_R1, qubitCount));
@@ -77,7 +75,7 @@ protected:
             return;
         }
 
-        if (isAttached) {
+        if (attachedQubitCount) {
             throw std::domain_error("QBdt::SetStateVector() not yet implemented, after Attach() call!");
         }
 
@@ -85,16 +83,6 @@ protected:
         GetQuantumState(NODE_TO_QENGINE(nRoot));
         root = nRoot;
         SetQubitCount(qubitCount, qubitCount);
-    }
-    void ResetStateVector()
-    {
-        if (bdtQubitCount) {
-            return;
-        }
-
-        QBdtQEngineNodePtr oRoot = std::dynamic_pointer_cast<QBdtQEngineNode>(root);
-        SetQubitCount(qubitCount, 0U);
-        SetQuantumState(NODE_TO_QENGINE(oRoot));
     }
 
     template <typename Fn> void GetTraversal(Fn getLambda);
@@ -126,6 +114,23 @@ protected:
 
     void ApplySingle(const complex* mtrx, bitLenInt target);
 
+    void Init();
+
+    void ResetStateVector(bitLenInt aqb = 0U)
+    {
+        if (attachedQubitCount <= aqb) {
+            return;
+        }
+
+        if (bdtQubitCount) {
+            throw std::domain_error("Cannot QBdt::ResetStateVector() with BDT qubits!");
+        }
+
+        QBdtQEngineNodePtr oRoot = std::dynamic_pointer_cast<QBdtQEngineNode>(root);
+        SetQubitCount(qubitCount, 0U);
+        SetQuantumState(NODE_TO_QENGINE(oRoot));
+    }
+
 public:
     QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt initState = 0,
         qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
@@ -136,13 +141,35 @@ public:
     QBdt(bitLenInt qBitCount, bitCapInt initState = 0U, qrack_rand_gen_ptr rgp = nullptr,
         complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false, bool randomGlobalPhase = true,
         bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true, bool useSparseStateVec = false,
-        real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> ignored = {}, bitLenInt qubitThreshold = 0U,
+        real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {}, bitLenInt qubitThreshold = 0U,
         real1_f separation_thresh = FP_NORM_EPSILON_F)
-        : QBdt({ QINTERFACE_OPTIMAL_SCHROEDINGER }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase,
-              useHostMem, deviceId, useHardwareRNG, useSparseStateVec, norm_thresh, ignored, qubitThreshold,
-              separation_thresh)
+#if ENABLE_OPENCL
+        : QBdt({ OCLEngine::Instance().GetDeviceCount() ? QINTERFACE_OPENCL : QINTERFACE_CPU }, qBitCount, initState,
+              rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId, useHardwareRNG, useSparseStateVec,
+              norm_thresh, devList, qubitThreshold, separation_thresh)
+#else
+        : QBdt({ QINTERFACE_CPU }, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, deviceId,
+              useHardwareRNG, useSparseStateVec, norm_thresh, devList, qubitThreshold, separation_thresh)
+#endif
     {
     }
+
+    QBdt(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ignored = 0U,
+        qrack_rand_gen_ptr rgp = nullptr, complex phaseFac = CMPLX_DEFAULT_ARG, bool doNorm = false,
+        bool randomGlobalPhase = true, bool useHostMem = false, int64_t deviceId = -1, bool useHardwareRNG = true,
+        bool useSparseStateVec = false, real1_f norm_thresh = REAL1_EPSILON, std::vector<int64_t> devList = {},
+        bitLenInt qubitThreshold = 0U, real1_f separation_thresh = FP_NORM_EPSILON_F);
+
+    QEnginePtr ReleaseEngine()
+    {
+        if (bdtQubitCount) {
+            throw std::domain_error("Cannot release QEngine from QBdt with BDT qubits!");
+        }
+
+        return NODE_TO_QENGINE(root);
+    }
+
+    void LockEngine(QEnginePtr eng) { root = std::make_shared<QBdtQEngineNode>(ONE_CMPLX, eng); }
 
     bool isBinaryDecisionTree() { return true; };
 
@@ -184,28 +211,44 @@ public:
     {
         return Compose(std::dynamic_pointer_cast<QBdt>(toCopy), start);
     }
-    bitLenInt Attach(QEnginePtr toCopy, bitLenInt start)
-    {
-        if (start == qubitCount) {
-            return Attach(toCopy);
-        }
-
-        const bitLenInt origSize = qubitCount;
-        ROL(origSize - start, 0U, qubitCount);
-        bitLenInt result = Attach(toCopy, qubitCount);
-        ROR(origSize - start, 0U, qubitCount);
-
-        return result;
-    }
-    bitLenInt Attach(QEnginePtr toCopy);
     void Decompose(bitLenInt start, QInterfacePtr dest)
     {
-        DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));
+        QBdtPtr d = std::dynamic_pointer_cast<QBdt>(dest);
+        if (!bdtQubitCount) {
+            d->root = d->MakeQEngineNode(ONE_CMPLX, d->qubitCount, 0U);
+            NODE_TO_QENGINE(root)->Decompose(start, NODE_TO_QENGINE(d->root));
+            d->SetQubitCount(d->qubitCount, d->qubitCount);
+            SetQubitCount(qubitCount - d->qubitCount, qubitCount - d->qubitCount);
+
+            return;
+        }
+
+        DecomposeDispose(start, dest->GetQubitCount(), d);
     }
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
-    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
+    void Dispose(bitLenInt start, bitLenInt length)
+    {
+        if (!bdtQubitCount) {
+            NODE_TO_QENGINE(root)->Dispose(start, length);
+            SetQubitCount(qubitCount - length, qubitCount - length);
 
-    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) { DecomposeDispose(start, length, NULL); }
+            return;
+        }
+
+        DecomposeDispose(start, length, NULL);
+    }
+
+    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+    {
+        if (!bdtQubitCount) {
+            NODE_TO_QENGINE(root)->Dispose(start, length, disposedPerm);
+            SetQubitCount(qubitCount - length, qubitCount - length);
+
+            return;
+        }
+
+        DecomposeDispose(start, length, NULL);
+    }
 
     using QInterface::Allocate;
     bitLenInt Allocate(bitLenInt start, bitLenInt length);
@@ -327,14 +370,12 @@ public:
     {
         ExecuteAsStateVector(
             [&](QInterfacePtr eng) { QINTERFACE_TO_QALU(eng)->PhaseFlipIfLess(greaterPerm, start, length); });
-        ResetStateVector();
     }
     void CPhaseFlipIfLess(bitCapInt greaterPerm, bitLenInt start, bitLenInt length, bitLenInt flagIndex)
     {
         ExecuteAsStateVector([&](QInterfacePtr eng) {
             QINTERFACE_TO_QALU(eng)->CPhaseFlipIfLess(greaterPerm, start, length, flagIndex);
         });
-        ResetStateVector();
     }
     void INCDECSC(bitCapInt toAdd, bitLenInt start, bitLenInt length, bitLenInt overflowIndex, bitLenInt carryIndex)
     {

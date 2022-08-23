@@ -35,8 +35,10 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     qrack_rand_gen_ptr rgp, complex phaseFac, bool doNorm, bool randomGlobalPhase, bool useHostMem, int64_t deviceId,
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devList,
     bitLenInt qubitThreshold, real1_f sep_thresh)
-    : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, useHostMem, useHardwareRNG, norm_thresh)
+    : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
+    , useHostRam(useHostMem)
     , isDefaultPaging(false)
+    , isPagingVsBdt(false)
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
@@ -56,12 +58,17 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 #if ENABLE_OPENCL
     if ((engineTypes.size() == 1U) && (engineTypes[0U] == QINTERFACE_OPTIMAL_BASE)) {
         isDefaultPaging = true;
+        isPagingVsBdt = devList.size() || !getenv("QRACK_QBDT_DEFAULT_OPT_IN") || getenv("QRACK_QPAGER_DEVICES");
 
         DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
         maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex));
         maxQubitPlusAncillaCount = maxPageQubits + 2U;
         if (qubitCount > maxPageQubits) {
-            engineTypes.push_back(QINTERFACE_QPAGER);
+            if (isPagingVsBdt) {
+                engineTypes.push_back(QINTERFACE_QPAGER);
+            } else {
+                engineTypes.push_back(QINTERFACE_BDT);
+            }
         }
     }
 #endif
@@ -80,21 +87,21 @@ QStabilizerPtr QStabilizerHybrid::MakeStabilizer(bitCapInt perm)
     return std::make_shared<QStabilizer>(qubitCount + ancillaCount, perm, rand_generator, CMPLX_DEFAULT_ARG, false,
         randGlobalPhase, false, -1, useRDRAND);
 }
-QEnginePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
+QInterfacePtr QStabilizerHybrid::MakeEngine(bitCapInt perm)
 {
     QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qubitCount, perm, rand_generator, phaseFactor,
         doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs,
         thresholdQubits, separabilityThreshold);
     toRet->SetConcurrency(GetConcurrencyLevel());
-    return std::dynamic_pointer_cast<QEngine>(toRet);
+    return toRet;
 }
-QEnginePtr QStabilizerHybrid::MakeEngine(bitCapInt perm, bitLenInt qbCount)
+QInterfacePtr QStabilizerHybrid::MakeEngine(bitCapInt perm, bitLenInt qbCount)
 {
     QInterfacePtr toRet = CreateQuantumInterface(engineTypes, qbCount, perm, rand_generator, phaseFactor, doNormalize,
         randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits,
         separabilityThreshold);
     toRet->SetConcurrency(GetConcurrencyLevel());
-    return std::dynamic_pointer_cast<QEngine>(toRet);
+    return toRet;
 }
 
 void QStabilizerHybrid::InvertBuffer(bitLenInt qubit)
@@ -324,9 +331,6 @@ QInterfacePtr QStabilizerHybrid::Clone()
         phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
         std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
 
-    Finish();
-    c->Finish();
-
     if (engine) {
         // Clone and set engine directly.
         c->engine = std::dynamic_pointer_cast<QEngine>(engine->Clone());
@@ -344,25 +348,6 @@ QInterfacePtr QStabilizerHybrid::Clone()
             c->shards[i] = std::make_shared<MpsShard>(shards[i]->gate);
         }
     }
-
-    return c;
-}
-
-QEnginePtr QStabilizerHybrid::CloneEmpty()
-{
-    QStabilizerHybridPtr c = std::make_shared<QStabilizerHybrid>(cloneEngineTypes, qubitCount, 0U, rand_generator,
-        phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
-        std::vector<int64_t>{}, thresholdQubits, separabilityThreshold);
-    c->Finish();
-
-    c->stabilizer = NULL;
-    c->engine = std::dynamic_pointer_cast<QEngine>(
-        CreateQuantumInterface(engineTypes, 0U, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, useHostRam,
-            devID, useRDRAND, isSparse, (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold));
-    c->engine->SetConcurrency(GetConcurrencyLevel());
-
-    c->engine->ZeroAmplitudes();
-    c->engine->SetQubitCount(qubitCount);
 
     return c;
 }
@@ -1194,11 +1179,6 @@ real1_f QStabilizerHybrid::ApproxCompareHelper(QStabilizerHybridPtr toCompare, b
 
 void QStabilizerHybrid::NormalizeState(real1_f nrm, real1_f norm_thresh, real1_f phaseArg)
 {
-    if (abs(nrm) <= FP_NORM_EPSILON) {
-        ZeroAmplitudes();
-        return;
-    }
-
     if ((nrm > ZERO_R1) && (abs(ONE_R1 - nrm) > FP_NORM_EPSILON)) {
         SwitchToEngine();
     }
