@@ -38,6 +38,7 @@ protected:
     bitLenInt bdtQubitCount;
     bitLenInt segmentGlobalQb;
     bitLenInt maxPageQubits;
+    bitLenInt maxQubits;
     int64_t devID;
     QBdtNodeInterfacePtr root;
     bitCapInt bdtMaxQPower;
@@ -117,16 +118,16 @@ protected:
 
     void ResetStateVector(bitLenInt aqb = 0U)
     {
-        if (!bdtQubitCount) {
+        if (attachedQubitCount <= aqb) {
             return;
         }
 
-        if (attachedQubitCount) {
-            throw std::domain_error("QBdt::ResetStateVector() not implemented when already partially BDT qubits!");
+        if (bdtQubitCount) {
+            throw std::domain_error("Cannot QBdt::ResetStateVector() with BDT qubits!");
         }
 
         QBdtQEngineNodePtr oRoot = std::dynamic_pointer_cast<QBdtQEngineNode>(root);
-        SetQubitCount(qubitCount, aqb);
+        SetQubitCount(qubitCount, 0U);
         SetQuantumState(NODE_TO_QENGINE(oRoot));
     }
 
