@@ -190,12 +190,42 @@ public:
     }
     void Decompose(bitLenInt start, QInterfacePtr dest)
     {
-        DecomposeDispose(start, dest->GetQubitCount(), std::dynamic_pointer_cast<QBdt>(dest));
+        QBdtPtr d = std::dynamic_pointer_cast<QBdt>(dest);
+        if (!bdtQubitCount) {
+            d->root = d->MakeQEngineNode(ONE_CMPLX, d->qubitCount, 0U);
+            NODE_TO_QENGINE(root)->Decompose(start, NODE_TO_QENGINE(d->root));
+            d->SetQubitCount(d->qubitCount, d->qubitCount);
+            SetQubitCount(qubitCount - d->qubitCount, qubitCount - d->qubitCount);
+
+            return;
+        }
+
+        DecomposeDispose(start, dest->GetQubitCount(), d);
     }
     QInterfacePtr Decompose(bitLenInt start, bitLenInt length);
-    void Dispose(bitLenInt start, bitLenInt length) { DecomposeDispose(start, length, NULL); }
+    void Dispose(bitLenInt start, bitLenInt length)
+    {
+        if (!bdtQubitCount) {
+            NODE_TO_QENGINE(root)->Dispose(start, length);
+            SetQubitCount(qubitCount - length, qubitCount - length);
 
-    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm) { DecomposeDispose(start, length, NULL); }
+            return;
+        }
+
+        DecomposeDispose(start, length, NULL);
+    }
+
+    void Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
+    {
+        if (!bdtQubitCount) {
+            NODE_TO_QENGINE(root)->Dispose(start, length, disposedPerm);
+            SetQubitCount(qubitCount - length, qubitCount - length);
+
+            return;
+        }
+
+        DecomposeDispose(start, length, NULL);
+    }
 
     using QInterface::Allocate;
     bitLenInt Allocate(bitLenInt start, bitLenInt length);

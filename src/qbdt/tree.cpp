@@ -291,6 +291,13 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
+    if (!bdtQubitCount && !toCopy->bdtQubitCount) {
+        NODE_TO_QENGINE(root)->Compose(NODE_TO_QENGINE(toCopy->root), start);
+        SetQubitCount(qubitCount + toCopy->qubitCount, qubitCount + toCopy->qubitCount);
+
+        return start;
+    }
+
     if (bdtQubitCount && (attachedQubitCount || toCopy->attachedQubitCount)) {
         if (start < bdtQubitCount) {
             const bitLenInt offset = bdtQubitCount - start;
