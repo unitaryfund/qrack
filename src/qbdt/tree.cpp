@@ -26,14 +26,12 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
     , devID(deviceId)
     , root(NULL)
-    , bdtMaxQPower(pow2(qBitCount))
     , deviceIDs(devIds)
     , engines(eng)
 {
     Init();
 
-    bdtQubitCount = (maxPageQubits < qBitCount) ? (qBitCount - maxPageQubits) : 0U;
-    attachedQubitCount = qBitCount - bdtQubitCount;
+    SetQubitCount(qBitCount, (maxPageQubits < qBitCount) ? maxPageQubits : qBitCount);
 
     SetPermutation(initState);
 }
@@ -45,14 +43,12 @@ QBdt::QBdt(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qB
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
     , devID(deviceId)
     , root(NULL)
-    , bdtMaxQPower(pow2(qBitCount))
     , deviceIDs(devIds)
     , engines(eng)
 {
     Init();
 
-    bdtQubitCount = 0U;
-    attachedQubitCount = qBitCount;
+    SetQubitCount(qBitCount, qBitCount);
 
     LockEngine(enginePtr);
 }
@@ -163,7 +159,7 @@ QInterfacePtr QBdt::Clone()
 
 template <typename Fn> void QBdt::GetTraversal(Fn getLambda)
 {
-    for (bitCapInt i = 0U; i < bdtMaxQPower; ++i) {
+    for (bitCapInt i = 0U; i < maxQPower; ++i) {
         QBdtNodeInterfacePtr leaf = root;
         complex scale = leaf->scale;
         for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
@@ -185,7 +181,7 @@ template <typename Fn> void QBdt::SetTraversal(Fn setLambda)
 {
     root = std::make_shared<QBdtNode>();
 
-    for (bitCapInt i = 0U; i < bdtMaxQPower; ++i) {
+    for (bitCapInt i = 0U; i < maxQPower; ++i) {
         QBdtNodeInterfacePtr leaf = root;
         for (bitLenInt j = 0U; j < bdtQubitCount; ++j) {
             leaf->Branch();
