@@ -304,7 +304,7 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
-    const bitLenInt qbSpan = (maxQubits <= maxPageQubits) ? 0U : (maxQubits - (maxPageQubits + 1U));
+    const bitLenInt qbSpan = maxQubits - maxPageQubits;
     if (maxPageQubits < (attachedQubitCount + toCopy->attachedQubitCount + qbSpan)) {
         if (!bdtQubitCount) {
             const bitLenInt diff = (attachedQubitCount + toCopy->attachedQubitCount + qbSpan) - maxPageQubits;
