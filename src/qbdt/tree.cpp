@@ -304,15 +304,12 @@ complex QBdt::GetAmplitude(bitCapInt perm)
 
 bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
 {
-    const bitLenInt qbSpan = maxQubits - maxPageQubits;
-    if (maxPageQubits < (attachedQubitCount + toCopy->attachedQubitCount + qbSpan)) {
-        if (!bdtQubitCount) {
-            const bitLenInt diff = (attachedQubitCount + toCopy->attachedQubitCount + qbSpan) - maxPageQubits;
-            ResetStateVector((diff < qubitCount) ? (qubitCount - diff) : 0U);
-        }
+    if (maxPageQubits < (attachedQubitCount + toCopy->attachedQubitCount)) {
+        const bitLenInt diff = (attachedQubitCount + toCopy->attachedQubitCount) - maxPageQubits;
+        ResetStateVector((diff < qubitCount) ? (qubitCount - diff) : 0U);
 
-        if (maxPageQubits < (attachedQubitCount + toCopy->attachedQubitCount + qbSpan)) {
-            const bitLenInt diff = (attachedQubitCount + toCopy->attachedQubitCount + qbSpan) - maxPageQubits;
+        if (maxPageQubits < (attachedQubitCount + toCopy->attachedQubitCount)) {
+            const bitLenInt diff = (attachedQubitCount + toCopy->attachedQubitCount) - maxPageQubits;
             if (toCopy->qubitCount < diff) {
                 throw std::domain_error("Too many attached qubits to compose in QBdt::Compose()!");
             }

@@ -123,12 +123,19 @@ protected:
         }
 
         if (bdtQubitCount) {
-            throw std::domain_error("Cannot QBdt::ResetStateVector() with BDT qubits!");
+            QBdtQEngineNodePtr oRoot = std::dynamic_pointer_cast<QBdtQEngineNode>(root);
+            SetQubitCount(qubitCount, aqb);
+            SetQuantumState(NODE_TO_QENGINE(oRoot));
         }
 
-        QBdtQEngineNodePtr oRoot = std::dynamic_pointer_cast<QBdtQEngineNode>(root);
-        SetQubitCount(qubitCount, aqb);
-        SetQuantumState(NODE_TO_QENGINE(oRoot));
+        const bitLenInt oBdtQubitCount = bdtQubitCount;
+        const bitLenInt length = attachedQubitCount - aqb;
+        QBdtPtr nQubits = std::make_shared<QBdt>(length, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase, false,
+            -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
+        nQubits->ResetStateVector();
+        Compose(nQubits, oBdtQubitCount);
+        ROR(length, oBdtQubitCount, qubitCount);
+        Dispose(qubitCount, qubitCount - length);
     }
 
 public:
