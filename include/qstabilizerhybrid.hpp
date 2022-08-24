@@ -235,7 +235,7 @@ public:
             if (isPagingVsBdt) {
                 TurnOnPaging();
             } else {
-                TurnOffBdt();
+                TurnOnBdt();
             }
         }
     }

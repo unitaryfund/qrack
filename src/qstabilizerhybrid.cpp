@@ -55,14 +55,34 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     , cloneEngineTypes(eng)
     , shards(qubitCount)
 {
+
+#if ENABLE_OPENCL
+    DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
+    maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex));
+#endif
+
+#if ENABLE_ENV_VARS
+    maxQubitPlusAncillaCount = getenv("QRACK_MAX_PAGING_QB")
+        ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")))
+        : maxPageQubits + 2U;
+#else
+    maxQubitPlusAncillaCount = maxPageQubits + 2U;
+#endif
+
 #if ENABLE_OPENCL
     if ((engineTypes.size() == 1U) && (engineTypes[0U] == QINTERFACE_OPTIMAL_BASE)) {
         isDefaultPaging = true;
-        isPagingVsBdt = devList.size() || !getenv("QRACK_QBDT_DEFAULT_OPT_IN") || getenv("QRACK_QPAGER_DEVICES");
 
-        DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-        maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex));
-        maxQubitPlusAncillaCount = maxPageQubits + 2U;
+#if ENABLE_ENV_VARS
+        isPagingVsBdt = devList.size() || !getenv("QRACK_QBDT_DEFAULT_OPT_IN") || getenv("QRACK_QPAGER_DEVICES");
+#else
+        isPagingVsBdt = devList.size();
+#endif
+
+        if (!isPagingVsBdt) {
+            maxPageQubits -= maxQubitPlusAncillaCount - maxPageQubits;
+        }
+
         if (qubitCount > maxPageQubits) {
             if (isPagingVsBdt) {
                 engineTypes.push_back(QINTERFACE_QPAGER);
@@ -70,11 +90,6 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
                 engineTypes.push_back(QINTERFACE_BDT);
             }
         }
-    }
-#endif
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_MAX_PAGING_QB")) {
-        maxQubitPlusAncillaCount = (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")));
     }
 #endif
 

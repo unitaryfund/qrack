@@ -82,6 +82,9 @@ void QBdt::Init()
     }
     maxQubits = getenv("QRACK_MAX_PAGING_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")))
                                               : (maxPageQubits + 2U);
+    if (getenv("QRACK_BDT_QB_OFFSET")) {
+        maxPageQubits -= (bitLenInt)std::stoi(std::string(getenv("QRACK_BDT_QB_OFFSET")));
+    }
 #endif
 }
 
