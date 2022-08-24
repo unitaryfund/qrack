@@ -127,7 +127,7 @@ protected:
         }
 
         QBdtQEngineNodePtr oRoot = std::dynamic_pointer_cast<QBdtQEngineNode>(root);
-        SetQubitCount(qubitCount, 0U);
+        SetQubitCount(qubitCount, aqb);
         SetQuantumState(NODE_TO_QENGINE(oRoot));
     }
 

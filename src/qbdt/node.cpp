@@ -200,11 +200,15 @@ void QBdtNode::InsertAtDepth(QBdtNodeInterfacePtr b, bitLenInt depth, const bitL
     }
 
     if (!depth) {
-        QBdtNodeInterfacePtr c = ShallowClone();
-        branches[0U] = b->branches[0U];
-        branches[1U] = b->branches[1U];
+        if (!size) {
+            return;
+        }
 
-        if (!size || !c->branches[0U]) {
+        QBdtNodeInterfacePtr c = ShallowClone();
+        std::swap(branches[0U], b->branches[0U]);
+        std::swap(branches[1U], b->branches[1U]);
+
+        if (!c->branches[0U]) {
             return;
         }
 
