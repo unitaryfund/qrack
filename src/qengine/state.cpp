@@ -45,11 +45,15 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     real1_f norm_thresh, std::vector<int64_t> devList, bitLenInt qubitThreshold, real1_f sep_thresh)
     : QEngine(qBitCount, rgp, doNorm, randomGlobalPhase, true, useHardwareRNG, norm_thresh)
     , isSparse(useSparseStateVec)
+    , maxQubits(-1)
 {
 #if ENABLE_QUNIT_CPU_PARALLEL && ENABLE_PTHREAD
 #if ENABLE_ENV_VARS
     const bitLenInt pStridePow =
         (bitLenInt)(getenv("QRACK_PSTRIDEPOW") ? std::stoi(std::string(getenv("QRACK_PSTRIDEPOW"))) : PSTRIDEPOW);
+    if (getenv("QRACK_MAX_CPU_QB")) {
+        maxQubits = std::stoi(std::string(getenv("QRACK_MAX_CPU_QB")));
+    }
 #else
     const bitLenInt pStridePow = PSTRIDEPOW;
 #endif
@@ -57,6 +61,11 @@ QEngineCPU::QEngineCPU(bitLenInt qBitCount, bitCapInt initState, qrack_rand_gen_
     const bitLenInt minStridePow = (numCores > 1U) ? (bitLenInt)pow2Ocl(log2(numCores - 1U)) : 0U;
     dispatchThreshold = (pStridePow > minStridePow) ? (pStridePow - minStridePow) : 0U;
 #endif
+
+    if (qBitCount > maxQubits) {
+        throw std::invalid_argument(
+            "Cannot instantiate a QEngineCPU with greater capacity than environment variable QRACK_MAX_CPU_QB.");
+    }
 
     if (!qubitCount) {
         ZeroAmplitudes();
@@ -855,6 +864,11 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy)
 
     const bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
 
+    if (nQubitCount > maxQubits) {
+        throw std::invalid_argument(
+            "Cannot instantiate a QEngineCPU with greater capacity than environment variable QRACK_MAX_CPU_QB.");
+    }
+
     if (!qubitCount) {
         Finish();
         SetQubitCount(toCopy->qubitCount);
@@ -930,6 +944,11 @@ bitLenInt QEngineCPU::Compose(QEngineCPUPtr toCopy, bitLenInt start)
     }
 
     const bitLenInt nQubitCount = qubitCount + toCopy->qubitCount;
+
+    if (nQubitCount > maxQubits) {
+        throw std::invalid_argument(
+            "Cannot instantiate a QEngineCPU with greater capacity than environment variable QRACK_MAX_CPU_QB.");
+    }
 
     if (!stateVec || !toCopy->stateVec) {
         // Compose will have a wider but 0 stateVec
