@@ -164,6 +164,27 @@ public:
 
     bool isPaged() { return (engineTypes[0] == QINTERFACE_QPAGER) || (engineTypes[0] == QINTERFACE_BDT); }
 
+    void TurnOnHighWidth()
+    {
+        if (isPagingVsBdt) {
+            TurnOnPaging();
+        }
+        // else {
+        //     TurnOnBdt();
+        // }
+    }
+
+    void TurnOffHighWidth()
+    {
+        if (isPagingVsBdt) {
+            TurnOffPaging();
+        }
+        // else {
+        //     // Intentionally skipped:
+        //     TurnOffBdt();
+        // }
+    }
+
     void TurnOnPaging()
     {
         if (engineTypes[0] == QINTERFACE_QPAGER) {
@@ -225,18 +246,10 @@ public:
         }
 
         if ((qubitCount + ancillaCount) <= maxPageQubits) {
-            if (isPagingVsBdt) {
-                TurnOffPaging();
-            } else {
-                TurnOffBdt();
-            }
+            TurnOffHighWidth();
         }
         if ((qubitCount + ancillaCount) > maxPageQubits) {
-            if (isPagingVsBdt) {
-                TurnOnPaging();
-            } else {
-                TurnOnBdt();
-            }
+            TurnOnHighWidth();
         }
     }
 
@@ -247,23 +260,15 @@ public:
         }
 
         if ((qubitCount + oSim->qubitCount + ancillaCount + oSim->ancillaCount) > maxPageQubits) {
-            TurnOnPaging();
-            oSim->TurnOnPaging();
+            TurnOnHighWidth();
+            oSim->TurnOnHighWidth();
             return;
         }
 
         if (oSim->isPaged()) {
-            if (isPagingVsBdt) {
-                TurnOnPaging();
-            } else {
-                TurnOnBdt();
-            }
+            TurnOnHighWidth();
         } else if (isPaged()) {
-            if (isPagingVsBdt) {
-                oSim->TurnOnPaging();
-            } else {
-                oSim->TurnOnBdt();
-            }
+            oSim->TurnOnHighWidth();
         }
     }
 

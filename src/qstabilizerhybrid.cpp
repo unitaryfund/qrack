@@ -81,14 +81,9 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 
         if (!isPagingVsBdt) {
             maxPageQubits -= maxQubitPlusAncillaCount - maxPageQubits;
-        }
-
-        if (qubitCount > maxPageQubits) {
-            if (isPagingVsBdt) {
-                engineTypes.push_back(QINTERFACE_QPAGER);
-            } else {
-                engineTypes.push_back(QINTERFACE_BDT);
-            }
+            engineTypes.push_back(QINTERFACE_BDT);
+        } else if (qubitCount > maxPageQubits) {
+            engineTypes.push_back(QINTERFACE_QPAGER);
         }
     }
 #endif
