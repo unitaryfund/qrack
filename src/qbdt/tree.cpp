@@ -24,7 +24,6 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devIds, bitLenInt qubitThreshold,
     real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
-    , segmentGlobalQb(0)
     , devID(deviceId)
     , root(NULL)
     , deviceIDs(devIds)
@@ -42,7 +41,6 @@ QBdt::QBdt(QEnginePtr enginePtr, std::vector<QInterfaceEngine> eng, bitLenInt qB
     bool useHardwareRNG, bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devIds,
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
-    , segmentGlobalQb(0)
     , devID(deviceId)
     , root(NULL)
     , deviceIDs(devIds)
@@ -69,6 +67,13 @@ void QBdt::Init()
         rootEngine = engines[engineLevel];
     }
 
+#if ENABLE_ENV_VARS
+    bitLenInt segmentGlobalQb = 0;
+    if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
+        segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
+    }
+#endif
+
 #if ENABLE_OPENCL
     if (rootEngine != QINTERFACE_CPU) {
         maxPageQubits =
@@ -77,11 +82,6 @@ void QBdt::Init()
 #endif
 
 #if ENABLE_ENV_VARS
-    if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
-        segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
-    }
-    maxQubits = getenv("QRACK_MAX_PAGING_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_PAGING_QB")))
-                                              : (maxPageQubits + 2U);
     if (getenv("QRACK_BDT_QB_OFFSET")) {
         const bitLenInt offset = (bitLenInt)std::stoi(std::string(getenv("QRACK_BDT_QB_OFFSET")));
         maxPageQubits -= (offset < maxPageQubits) ? offset : maxPageQubits;

@@ -36,9 +36,7 @@ class QBdt : public QParity, public QInterface {
 protected:
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
-    bitLenInt segmentGlobalQb;
     bitLenInt maxPageQubits;
-    bitLenInt maxQubits;
     int64_t devID;
     QBdtNodeInterfacePtr root;
     bitCapInt bdtMaxQPower;
