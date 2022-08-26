@@ -154,6 +154,8 @@ To set the `QPager` device ID list, use the `QRACK_QPAGER_DEVICES` environment v
 ## Maximum allocation guard
 Set the maximum allowed allocation (in MB) for the global OpenCL pool with `QRACK_MAX_ALLOC_MB`. This includes (VRAM) state vectors and auxiliary buffers larger than approximately `sizeof(bitCapIntOcl) * sizeof(bitCapIntOcl)`. This should also include out-of-place single duplication of any state vector. This does **not** include non-OpenCL general heap or stack allocation.
 
+`QRACK_MAX_PAGING_QB` and `QRACK_MAX_CPU_QB` environment variables set a maximum on how many qubits can be allocated on a single `QPager` or `QEngineCPU` instance, respectively. This qubit limit is for maximum single `QPager` or `QEngineCPU` allocation, whereas `QUnit` and `QUnitMulti` might allocate _more_ qubits than this as separable subsystems, requiring that no individual separable subsystem exceeds the qubit limit environment variables. (`QEngineOCL` limits are automatically maximal according to a query Qrack makes of maximum allocation segment on a given OpenCL device.)
+
 Note that this controls total direct Qrack OpenCL buffer allocation, not total Qrack library allocation. Total OpenCL buffer allocation is **not** fully indicative of total library allocation.
 
 ## Approximation options
