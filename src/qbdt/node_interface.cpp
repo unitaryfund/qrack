@@ -124,16 +124,11 @@ QBdtNodeInterfacePtr QBdtNodeInterface::RemoveSeparableAtDepth(bitLenInt depth, 
             return NULL;
         }
 
-        QBdtNodeInterfacePtr toRet = branches[0U]->RemoveSeparableAtDepth(depth, size);
-        if (branches[0U].get() != branches[1U].get()) {
-            if (toRet) {
-                branches[1U]->RemoveSeparableAtDepth(depth, size);
-            } else {
-                toRet = branches[1U]->RemoveSeparableAtDepth(depth, size);
-            }
-        }
+        QBdtNodeInterfacePtr toRet1 = branches[0U]->RemoveSeparableAtDepth(depth, size);
+        QBdtNodeInterfacePtr toRet2 =
+            (branches[0U].get() == branches[1U].get()) ? toRet1 : branches[1U]->RemoveSeparableAtDepth(depth, size);
 
-        return toRet;
+        return (norm(toRet1->scale) > norm(toRet2->scale)) ? toRet1 : toRet2;
     }
 
     if (!size) {
