@@ -68,8 +68,8 @@ void QBdt::Init()
     }
 
 #if ENABLE_OPENCL
-#if ENABLE_ENV_VARS
     bitLenInt segmentGlobalQb = 0;
+#if ENABLE_ENV_VARS
     if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
         segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
     }
