@@ -437,8 +437,8 @@ public:
 
 #if ENABLE_OPENCL
         if (rootEngine != QINTERFACE_CPU) {
-            maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex)) -
-                segmentGlobalQb;
+            maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
+            maxPageQubits = (segmentGlobalQb < maxPageQubits) ? maxPageQubits - segmentGlobalQb : 0U;
         }
 
         if (!useGpuThreshold) {

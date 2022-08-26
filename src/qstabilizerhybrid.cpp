@@ -69,6 +69,13 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     maxQubitPlusAncillaCount = maxPageQubits + 2U;
 #endif
 
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
+        const bitLenInt segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
+        maxPageQubits = (segmentGlobalQb < maxPageQubits) ? maxPageQubits - segmentGlobalQb : 0U;
+    }
+#endif
+
 #if ENABLE_OPENCL
     if ((engineTypes.size() == 1U) && (engineTypes[0U] == QINTERFACE_OPTIMAL_BASE)) {
         isDefaultPaging = true;
