@@ -68,14 +68,13 @@ void QBdt::Init()
     }
 
 #if ENABLE_OPENCL
-    bitLenInt segmentGlobalQb = 0;
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
-        segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
-    }
-#endif
-
     if (rootEngine != QINTERFACE_CPU) {
+        bitLenInt segmentGlobalQb = 0U;
+#if ENABLE_ENV_VARS
+        if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
+            segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
+        }
+#endif
         maxPageQubits = log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetMaxAlloc() / sizeof(complex));
         maxPageQubits = (segmentGlobalQb < maxPageQubits) ? maxPageQubits - segmentGlobalQb : 0U;
     }
