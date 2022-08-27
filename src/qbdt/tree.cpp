@@ -377,7 +377,7 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         aqb = maxPageQubits;
     }
 
-    if (aqb < attachedQubitCount) {
+    if (aqb > attachedQubitCount) {
         ResetStateVector(aqb);
     }
 
