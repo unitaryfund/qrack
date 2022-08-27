@@ -81,7 +81,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
         isDefaultPaging = true;
 
 #if ENABLE_ENV_VARS
-        isPagingVsBdt = devList.size() || getenv("QRACK_QBDT_DEFAULT_OPT_OUT") || getenv("QRACK_QPAGER_DEVICES");
+        isPagingVsBdt = devList.size() || !getenv("QRACK_QBDT_DEFAULT_OPT_IN") || getenv("QRACK_QPAGER_DEVICES");
 #else
         isPagingVsBdt = devList.size();
 #endif
