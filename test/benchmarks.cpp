@@ -2555,7 +2555,8 @@ TEST_CASE("test_ccz_ccx_h", "[supreme]")
 
 TEST_CASE("test_quantum_supremacy", "[supreme]")
 {
-    std::cout << "(random circuit depth: " << benchmarkDepth << ")";
+    std::cout << "(random circuit depth: " << benchmarkDepth << ")" << std::endl;
+    std::cout << "WARNING: 54 qubit reading is rather 53 qubits with Sycamore's excluded qubit.";
 
     // This is an attempt to simulate the circuit argued to establish quantum supremacy.
     // See https://doi.org/10.1038/s41586-019-1666-5
@@ -2566,6 +2567,7 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // The 2 bit indicates +/- row offset.
         // This is the "ABCDCDAB" pattern, from the Cirq definition of the circuit in the supplemental materials to the
         // paper.
+        const bitLenInt deadQubit = 3U;
         std::list<bitLenInt> gateSequence = { 0, 3, 2, 1, 2, 1, 0, 3 };
 
         // We factor the qubit count into two integers, as close to a perfect square as we can.
@@ -2601,6 +2603,13 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
         // See https://arxiv.org/abs/1710.05867
         for (d = 0; d < benchmarkDepth; d++) {
             for (i = 0; i < n; i++) {
+                if ((n == 54U) && (i == deadQubit)) {
+                    if (d == 0) {
+                        lastSingleBitGates.push_back(0);
+                    }
+                    continue;
+                }
+
                 gateRand = qReg->Rand();
 
                 // Each individual bit has one of these 3 gates applied at random.
@@ -2685,6 +2694,10 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
 
                     b1 = row * colLen + col;
                     b2 = tempRow * colLen + tempCol;
+
+                    if ((n == 54U) && ((b1 == deadQubit) || (b2 == deadQubit))) {
+                        continue;
+                    }
 
                     // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
                     // different.
