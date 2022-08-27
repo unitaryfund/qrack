@@ -69,7 +69,7 @@ void QBdt::Init()
 
 #if ENABLE_OPENCL
     if (rootEngine != QINTERFACE_CPU) {
-        bitLenInt segmentGlobalQb = 1U;
+        bitLenInt segmentGlobalQb = 5U;
 #if ENABLE_ENV_VARS
         if (getenv("QRACK_SEGMENT_QBDT_QB")) {
             segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_QBDT_QB")));
