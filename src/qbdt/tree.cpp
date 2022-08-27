@@ -252,6 +252,25 @@ void QBdt::GetProbs(real1* outputProbs)
 {
     GetTraversal([outputProbs](bitCapIntOcl i, complex scale) { outputProbs[i] = norm(scale); });
 }
+void QBdt::SetDevice(int64_t dID)
+{
+    if (devID == dID) {
+        return;
+    }
+
+    devID = dID;
+
+    if (!attachedQubitCount) {
+        return;
+    }
+
+    if (!bdtQubitCount) {
+        NODE_TO_QENGINE(root)->SetDevice(dID);
+        return;
+    }
+
+    SetTraversal([dID](bitCapIntOcl i, QBdtNodeInterfacePtr leaf) { NODE_TO_QENGINE(leaf)->SetDevice(dID); });
+}
 
 real1_f QBdt::SumSqrDiff(QBdtPtr toCompare)
 {

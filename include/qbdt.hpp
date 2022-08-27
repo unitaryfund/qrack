@@ -178,7 +178,7 @@ public:
 
     bool isBinaryDecisionTree() { return true; };
 
-    void SetDevice(int64_t dID) {}
+    void SetDevice(int64_t dID);
 
     void UpdateRunningNorm(real1_f norm_thresh = REAL1_DEFAULT_ARG)
     {
