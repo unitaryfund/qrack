@@ -372,15 +372,6 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
         SetQubitCount(qubitCount + toCopy->qubitCount, attachedQubitCount + toCopy->attachedQubitCount);
     }
 
-    bitLenInt aqb = (bitLenInt)((ketFraction * qubitCount) + (ONE_R1 / 2));
-    if (aqb > maxPageQubits) {
-        aqb = maxPageQubits;
-    }
-
-    if (aqb < attachedQubitCount) {
-        ResetStateVector(aqb);
-    }
-
     return start;
 }
 
@@ -417,6 +408,14 @@ void QBdt::DecomposeDispose(bitLenInt start, bitLenInt length, QBdtPtr dest)
     }
     SetQubitCount(qubitCount - length, attachedQubitCount - attachedDiff);
     root->Prune(bdtQubitCount);
+    
+    bitLenInt aqb = (bitLenInt)((ketFraction * qubitCount) + (ONE_R1 / 2));
+    if (aqb > maxPageQubits) {
+        aqb = maxPageQubits;
+    }
+    if (aqb < attachedQubitCount) {
+        ResetStateVector(aqb);
+    }
 }
 
 bitLenInt QBdt::Allocate(bitLenInt start, bitLenInt length)

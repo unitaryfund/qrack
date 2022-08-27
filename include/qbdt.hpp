@@ -132,7 +132,8 @@ protected:
         QBdtPtr nQubits = std::make_shared<QBdt>(length, 0U, rand_generator, ONE_CMPLX, doNormalize, randGlobalPhase,
             false, -1, (hardware_rand_generator == NULL) ? false : true, false, (real1_f)amplitudeFloor);
         nQubits->ResetStateVector();
-        Compose(nQubits, oBdtQubitCount);
+        root->InsertAtDepth(nQubits->root, oBdtQubitCount, length);
+        SetQubitCount(qubitCount + length, aqb);
         ROR(length, oBdtQubitCount, qubitCount);
         Dispose(qubitCount - length, length);
     }
