@@ -37,7 +37,6 @@ protected:
     bitLenInt attachedQubitCount;
     bitLenInt bdtQubitCount;
     bitLenInt maxPageQubits;
-    real1_f ketFraction;
     int64_t devID;
     QBdtNodeInterfacePtr root;
     bitCapInt bdtMaxQPower;
