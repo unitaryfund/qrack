@@ -24,6 +24,7 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
     bool useSparseStateVec, real1_f norm_thresh, std::vector<int64_t> devIds, bitLenInt qubitThreshold,
     real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
+    , ketFraction(ONE_R1 / 2)
     , devID(deviceId)
     , root(NULL)
     , deviceIDs(devIds)
@@ -31,13 +32,12 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
 {
     Init();
 
-    real1_f allocRatio = ONE_R1 / 2;
 #if ENABLE_ENV_VARS
-    if (getenv("QRACK_KET_QBDT_RATIO")) {
-        allocRatio = (real1_f)std::stof(std::string(getenv("QRACK_KET_QBDT_RATIO")));
+    if (getenv("QRACK_QBDT_KET_FRACTION")) {
+        ketFraction = (real1_f)std::stof(std::string(getenv("QRACK_QBDT_KET_FRACTION")));
     }
 #endif
-    bitLenInt aqb = (bitLenInt)((allocRatio * qBitCount) + (ONE_R1 / 2));
+    bitLenInt aqb = (bitLenInt)((ketFraction * qBitCount) + (ONE_R1 / 2));
     if (aqb > maxPageQubits) {
         aqb = maxPageQubits;
     }
@@ -346,32 +346,40 @@ bitLenInt QBdt::Compose(QBdtPtr toCopy, bitLenInt start)
     if (!bdtQubitCount && !toCopy->bdtQubitCount) {
         NODE_TO_QENGINE(root)->Compose(NODE_TO_QENGINE(toCopy->root), start);
         SetQubitCount(qubitCount + toCopy->qubitCount, qubitCount + toCopy->qubitCount);
+    } else {
 
-        return start;
-    }
+        if (bdtQubitCount && (attachedQubitCount || toCopy->attachedQubitCount)) {
+            if (start < bdtQubitCount) {
+                const bitLenInt offset = bdtQubitCount - start;
+                ROR(qubitCount - offset, 0U, qubitCount);
+                Compose(toCopy, offset);
+                ROL(qubitCount - offset, 0U, qubitCount);
 
-    if (bdtQubitCount && (attachedQubitCount || toCopy->attachedQubitCount)) {
-        if (start < bdtQubitCount) {
-            const bitLenInt offset = bdtQubitCount - start;
-            ROR(qubitCount - offset, 0U, qubitCount);
-            Compose(toCopy, offset);
-            ROL(qubitCount - offset, 0U, qubitCount);
+                return start;
+            }
 
-            return start;
+            if (start > bdtQubitCount) {
+                const bitLenInt offset = start - bdtQubitCount;
+                ROR(offset, 0U, qubitCount);
+                Compose(toCopy, qubitCount - offset);
+                ROL(offset, 0U, qubitCount);
+
+                return start;
+            }
         }
 
-        if (start > bdtQubitCount) {
-            const bitLenInt offset = start - bdtQubitCount;
-            ROR(offset, 0U, qubitCount);
-            Compose(toCopy, qubitCount - offset);
-            ROL(offset, 0U, qubitCount);
-
-            return start;
-        }
+        root->InsertAtDepth(toCopy->root, start, toCopy->qubitCount);
+        SetQubitCount(qubitCount + toCopy->qubitCount, attachedQubitCount + toCopy->attachedQubitCount);
     }
 
-    root->InsertAtDepth(toCopy->root, start, toCopy->qubitCount);
-    SetQubitCount(qubitCount + toCopy->qubitCount, attachedQubitCount + toCopy->attachedQubitCount);
+    bitLenInt aqb = (bitLenInt)((ketFraction * qubitCount) + (ONE_R1 / 2));
+    if (aqb > maxPageQubits) {
+        aqb = maxPageQubits;
+    }
+
+    if (aqb > attachedQubitCount) {
+        ResetStateVector(aqb);
+    }
 
     return start;
 }
