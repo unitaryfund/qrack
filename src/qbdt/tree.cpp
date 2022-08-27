@@ -31,7 +31,14 @@ QBdt::QBdt(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, bitCapInt ini
 {
     Init();
 
-    SetQubitCount(qBitCount, (maxPageQubits < qBitCount) ? maxPageQubits : qBitCount);
+    real1_f allocRatio = ONE_R1 / 2;
+#if ENABLE_ENV_VARS
+    if (getenv("QRACK_KET_QBDT_RATIO")) {
+        allocRatio = (real1_f)std::stof(std::string(getenv("QRACK_KET_QBDT_RATIO")));
+    }
+#endif
+
+    SetQubitCount(qBitCount, (bitLenInt)((allocRatio * qBitCount) + (ONE_R1 / 2)));
 
     SetPermutation(initState);
 }
