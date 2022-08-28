@@ -21,12 +21,24 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QUnit(eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG,
           useSparseStateVec, norm_thresh, devList, qubitThreshold, sep_thresh)
+    , isQEngineOCL(false)
 {
 #if ENABLE_ENV_VARS
     isRedistributing = (bool)getenv("QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE");
 #else
     isRedistributing = false;
 #endif
+
+    for (bitLenInt i = 0U; i < engines.size(); i++) {
+        if ((engines[i] == QINTERFACE_CPU) || (engines[i] == QINTERFACE_HYBRID)) {
+            isQEngineOCL = true;
+            break;
+        }
+        if (engines[i] == QINTERFACE_OPENCL) {
+            isQEngineOCL = true;
+            break;
+        }
+    }
 
     if (qubitThreshold) {
         thresholdQubits = qubitThreshold;
@@ -130,7 +142,8 @@ void QUnitMulti::RedistributeQEngines()
         // We want to proactively set OpenCL devices for the event they cross threshold.
         if (!isRedistributing &&
             !(!qinfos[i].unit || (qinfos[i].unit->GetMaxQPower() <= 2U) ||
-                (qinfos[i].unit->GetQubitCount() < thresholdQubits) || qinfos[i].unit->isClifford())) {
+                (!isQEngineOCL && (qinfos[i].unit->GetQubitCount() < thresholdQubits)) ||
+                qinfos[i].unit->isClifford())) {
             continue;
         }
 

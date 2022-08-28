@@ -62,6 +62,7 @@ class QUnitMulti : public QUnit {
 
 protected:
     bool isRedistributing;
+    bool isQEngineOCL;
     size_t defaultDeviceID;
     std::vector<DeviceInfo> deviceList;
 
