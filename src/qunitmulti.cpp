@@ -123,7 +123,7 @@ void QUnitMulti::RedistributeQEngines()
         // In fact, single qubit units will be handled entirely by the CPU, anyway.
         // So will QHybrid "shards" that are below the GPU transition threshold.
         if (!(qinfos[i].unit) || (qinfos[i].unit->GetMaxQPower() <= 2U) ||
-            (qinfos[i].unit->GetQubitCount() < thresholdQubits)) {
+            (qinfos[i].unit->GetQubitCount() < thresholdQubits) || qinfos[i].unit->isClifford()) {
             continue;
         }
 
