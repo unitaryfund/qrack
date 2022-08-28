@@ -149,9 +149,6 @@ void QUnitMulti::RedistributeQEngines()
 
         // If the original OpenCL device has equal load to the least, we prefer the original.
         int64_t deviceID = qinfos[i].unit->GetDevice();
-        if (deviceID < 0) {
-            deviceID = OCLEngine::Instance().GetDefaultDeviceID();
-        }
         int64_t devIndex = qinfos[i].deviceIndex;
         bitCapInt sz = devSizes[devIndex];
 
@@ -168,16 +165,13 @@ void QUnitMulti::RedistributeQEngines()
             for (size_t j = 0U; j < deviceList.size(); ++j) {
                 if ((devSizes[j] < sz) && ((devSizes[j] + qinfos[i].unit->GetMaxQPower()) <= deviceList[j].maxSize)) {
                     deviceID = deviceList[j].id;
-                    if (deviceID < 0) {
-                        deviceID = OCLEngine::Instance().GetDefaultDeviceID();
-                    }
                     devIndex = j;
                     sz = devSizes[j];
                 }
             }
 
             // Add this unit to the device with the lowest load.
-            qinfos[i].unit->SetDevice(deviceID);
+            qinfos[i].unit->SetDevice((deviceID < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : deviceID);
         }
 
         // Update the size of buffers handles by this device.

@@ -366,10 +366,7 @@ public:
     }
     size_t AddToActiveAllocSize(const int64_t& dev, size_t size)
     {
-        if (dev < -1) {
-            throw std::runtime_error("Invalid device selection: " + std::to_string(dev));
-        }
-        size_t lDev = (dev == -1) ? GetDefaultDeviceID() : dev;
+        size_t lDev = (dev < 0) ? GetDefaultDeviceID() : dev;
 
         if (size == 0) {
             return activeAllocSizes[lDev];
@@ -382,10 +379,7 @@ public:
     }
     size_t SubtractFromActiveAllocSize(const int64_t& dev, size_t size)
     {
-        if (dev < -1) {
-            throw std::runtime_error("Invalid device selection: " + std::to_string(dev));
-        }
-        size_t lDev = (dev == -1) ? GetDefaultDeviceID() : dev;
+        size_t lDev = (dev < 0) ? GetDefaultDeviceID() : dev;
 
         if (size == 0) {
             return activeAllocSizes[lDev];
@@ -401,7 +395,7 @@ public:
     }
     void ResetActiveAllocSize(const int64_t& dev)
     {
-        size_t lDev = (dev == -1) ? GetDefaultDeviceID() : dev;
+        size_t lDev = (dev < 0) ? GetDefaultDeviceID() : dev;
         std::lock_guard<std::mutex> lock(allocMutex);
         // User code should catch std::bad_alloc and reset:
         activeAllocSizes[lDev] = 0;
