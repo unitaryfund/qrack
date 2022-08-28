@@ -1203,7 +1203,7 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
 
     const bool isMigrate = (device_context->context_id != toCopy->device_context->context_id);
     const bool isReverseMigrate = qubitCount < toCopy->qubitCount;
-    const bitLenInt oDevID = deviceID;
+    const int64_t oDevID = deviceID;
     if (isMigrate) {
         if (isReverseMigrate) {
             SetDevice(toCopy->deviceID);
