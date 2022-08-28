@@ -171,7 +171,7 @@ void QUnitMulti::RedistributeQEngines()
             }
 
             // Add this unit to the device with the lowest load.
-            qinfos[i].unit->SetDevice((deviceID < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : deviceID);
+            qinfos[i].unit->SetDevice(deviceID);
         }
 
         // Update the size of buffers handles by this device.
@@ -233,7 +233,7 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
 
         // If device capacity is exceeded, put on default device:
         if (pow2(qubitCount) > unit1->GetMaxSize()) {
-            unit1->SetDevice((deviceList[0U].id < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : deviceList[0U].id);
+            unit1->SetDevice(deviceList[0U].id);
         }
     }
 
