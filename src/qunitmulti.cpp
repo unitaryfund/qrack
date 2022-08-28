@@ -148,8 +148,11 @@ void QUnitMulti::RedistributeQEngines()
         }
 
         // If the original OpenCL device has equal load to the least, we prefer the original.
-        size_t deviceID = qinfos[i].unit->GetDevice();
-        size_t devIndex = qinfos[i].deviceIndex;
+        int64_t deviceID = qinfos[i].unit->GetDevice();
+        if (deviceID < 0) {
+            deviceID = OCLEngine::Instance().GetDefaultDeviceID();
+        }
+        int64_t devIndex = qinfos[i].deviceIndex;
         bitCapInt sz = devSizes[devIndex];
 
         // If the original device has 0 determined load, don't switch the unit.
@@ -165,6 +168,9 @@ void QUnitMulti::RedistributeQEngines()
             for (size_t j = 0U; j < deviceList.size(); ++j) {
                 if ((devSizes[j] < sz) && ((devSizes[j] + qinfos[i].unit->GetMaxQPower()) <= deviceList[j].maxSize)) {
                     deviceID = deviceList[j].id;
+                    if (deviceID < 0) {
+                        deviceID = OCLEngine::Instance().GetDefaultDeviceID();
+                    }
                     devIndex = j;
                     sz = devSizes[j];
                 }
@@ -233,7 +239,7 @@ QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
 
         // If device capacity is exceeded, put on default device:
         if (pow2(qubitCount) > unit1->GetMaxSize()) {
-            unit1->SetDevice(deviceList[0U].id);
+            unit1->SetDevice((deviceList[0U].id < 0) ? OCLEngine::Instance().GetDefaultDeviceID() : deviceList[0U].id);
         }
     }
 
