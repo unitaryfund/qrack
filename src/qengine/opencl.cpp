@@ -1202,8 +1202,14 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
     }
 
     const bool isMigrate = (device_context->context_id != toCopy->device_context->context_id);
+    const bool isReverseMigrate = qubitCount < toCopy->qubitCount;
+    const bitLenInt oDevID = deviceID;
     if (isMigrate) {
-        toCopy->SetDevice(deviceID);
+        if (isReverseMigrate) {
+            SetDevice(toCopy->deviceID);
+        } else {
+            toCopy->SetDevice(deviceID);
+        }
     }
 
     PoolItemPtr poolItem = GetFreePoolItem();
@@ -1235,6 +1241,10 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
     ResetStateBuffer(nStateBuffer);
 
     SubtractAlloc(sizeof(complex) * oMaxQPower);
+
+    if (isMigrate && isReverseMigrate) {
+        SetDevice(oDevID);
+    }
 }
 
 bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)
