@@ -2699,6 +2699,8 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                         continue;
                     }
 
+                    qReg->TrySeparate(b1, b2);
+
                     // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
                     // different.
                     qReg->ISwap(b1, b2);
@@ -2706,8 +2708,6 @@ TEST_CASE("test_quantum_supremacy", "[supreme]")
                     controls[0] = b1;
                     qReg->MCPhase(controls, 1U, ONE_CMPLX, sixthRoot, b2);
                     // Note that these gates are both symmetric under exchange of "b1" and "b2".
-
-                    // qReg->TrySeparate(b1, b2);
 
                     // std::cout<<"("<<b1<<", "<<b2<<")"<<std::endl;
                 }
