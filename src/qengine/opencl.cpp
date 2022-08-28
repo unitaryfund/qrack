@@ -1202,7 +1202,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
     }
 
     const bool isMigrate = (device_context->context_id != toCopy->device_context->context_id);
-    const int64_t oDevId = toCopy->deviceID;
     if (isMigrate) {
         toCopy->SetDevice(deviceID);
     }
@@ -1236,10 +1235,6 @@ void QEngineOCL::Compose(OCLAPI apiCall, const bitCapIntOcl* bciArgs, QEngineOCL
     ResetStateBuffer(nStateBuffer);
 
     SubtractAlloc(sizeof(complex) * oMaxQPower);
-
-    if (isMigrate) {
-        toCopy->SetDevice(oDevId);
-    }
 }
 
 bitLenInt QEngineOCL::Compose(QEngineOCLPtr toCopy)

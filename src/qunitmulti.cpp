@@ -22,6 +22,12 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     : QUnit(eng, qBitCount, initState, rgp, phaseFac, doNorm, randomGlobalPhase, useHostMem, -1, useHardwareRNG,
           useSparseStateVec, norm_thresh, devList, qubitThreshold, sep_thresh)
 {
+#if ENABLE_ENV_VARS
+    isRedistributing = (bool)getenv("QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE");
+#else
+    isRedistributing = false;
+#endif
+
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance().GetDeviceContextPtrVector();
 
     if (!devList.size()) {
@@ -101,24 +107,15 @@ std::vector<QEngineInfo> QUnitMulti::GetQInfos()
 void QUnitMulti::RedistributeQEngines()
 {
     // Only redistribute if the env var flag is set and NOT a null string.
-#if ENABLE_ENV_VARS
-    if (!getenv("QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE") || strcmp(getenv("QRACK_ENABLE_QUNITMULTI_REDISTRIBUTE"), "")) {
-        return;
-    }
-#else
-    return;
-#endif
-
     // No need to redistribute, if there is only 1 device
-    if (deviceList.size() == 1U) {
+    if (!isRedistributing || deviceList.size() <= 1U) {
         return;
     }
 
     // Get shard sizes and devices
     std::vector<QEngineInfo> qinfos = GetQInfos();
 
-    std::vector<bitCapInt> devSizes(deviceList.size());
-    std::fill(devSizes.begin(), devSizes.end(), 0U);
+    std::vector<bitCapInt> devSizes(deviceList.size(), 0U);
 
     for (size_t i = 0U; i < qinfos.size(); ++i) {
         // If the engine adds negligible load, we can let any given unit keep its
@@ -164,32 +161,40 @@ void QUnitMulti::RedistributeQEngines()
 
 void QUnitMulti::Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
 {
+    if (!length) {
+        return;
+    }
+
     QUnit::Detach(start, length, dest);
-    RedistributeQEngines();
+    if (!dest || (dest->shards[0U].unit && !dest->shards[0U].unit->isClifford())) {
+        RedistributeQEngines();
+    }
 }
 
 QInterfacePtr QUnitMulti::EntangleInCurrentBasis(
     std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
 {
-    for (auto bit = first; bit < last; ++bit) {
-        EndEmulation(**bit);
-    }
-
     QInterfacePtr unit1 = shards[**first].unit;
+    if (unit1) {
+        bool isAlreadyEntangled = true;
+        // If already fully entangled, just return unit1.
+        for (auto bit = first + 1U; bit < last; ++bit) {
+            QInterfacePtr unit = shards[**bit].unit;
+            if (unit1 != unit) {
+                isAlreadyEntangled = false;
+                break;
+            }
+        }
 
-    bool isAlreadyEntangled = true;
-    // If already fully entangled, just return unit1.
-    for (auto bit = first + 1U; bit < last; ++bit) {
-        QInterfacePtr unit = shards[**bit].unit;
-        if (unit1 != unit) {
-            isAlreadyEntangled = false;
-            break;
+        if (isAlreadyEntangled) {
+            return unit1;
         }
     }
 
-    if (isAlreadyEntangled) {
-        return unit1;
+    for (auto bit = first; bit < last; ++bit) {
+        EndEmulation(**bit);
     }
+    unit1 = shards[**first].unit;
 
     // This does nothing if the first unit is the default device:
     if (deviceList[0U].id !=
@@ -239,8 +244,6 @@ QInterfacePtr QUnitMulti::Clone()
         doNormalize, randGlobalPhase, useHostRam, defaultDeviceID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
         deviceIDs, thresholdQubits, separabilityThreshold);
 
-    Finish();
-    copyPtr->Finish();
     copyPtr->SetReactiveSeparate(isReactiveSeparate);
 
     return CloneBody(copyPtr);

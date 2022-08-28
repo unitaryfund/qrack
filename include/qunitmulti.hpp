@@ -61,6 +61,7 @@ typedef std::shared_ptr<QUnitMulti> QUnitMultiPtr;
 class QUnitMulti : public QUnit {
 
 protected:
+    bool isRedistributing;
     size_t defaultDeviceID;
     std::vector<DeviceInfo> deviceList;
 
