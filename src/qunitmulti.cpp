@@ -28,6 +28,15 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     isRedistributing = false;
 #endif
 
+    if (qubitThreshold) {
+        thresholdQubits = qubitThreshold;
+    } else {
+        const bitLenInt gpuQubits =
+            log2(OCLEngine::Instance().GetDeviceContextPtr(devID)->GetPreferredConcurrency()) + 1U;
+        const bitLenInt cpuQubits = (GetStride() <= ONE_BCI) ? 0U : (log2(GetStride() - ONE_BCI) + 1U);
+        thresholdQubits = gpuQubits < cpuQubits ? gpuQubits : cpuQubits;
+    }
+
     std::vector<DeviceContextPtr> deviceContext = OCLEngine::Instance().GetDeviceContextPtrVector();
 
     if (!devList.size()) {
@@ -108,7 +117,7 @@ void QUnitMulti::RedistributeQEngines()
 {
     // Only redistribute if the env var flag is set and NOT a null string.
     // No need to redistribute, if there is only 1 device
-    if (!isRedistributing || deviceList.size() <= 1U) {
+    if (deviceList.size() <= 1U) {
         return;
     }
 
@@ -118,12 +127,10 @@ void QUnitMulti::RedistributeQEngines()
     std::vector<bitCapInt> devSizes(deviceList.size(), 0U);
 
     for (size_t i = 0U; i < qinfos.size(); ++i) {
-        // If the engine adds negligible load, we can let any given unit keep its
-        // residency on this device.
-        // In fact, single qubit units will be handled entirely by the CPU, anyway.
-        // So will QHybrid "shards" that are below the GPU transition threshold.
-        if (!(qinfos[i].unit) || (qinfos[i].unit->GetMaxQPower() <= 2U) ||
-            (qinfos[i].unit->GetQubitCount() < thresholdQubits) || qinfos[i].unit->isClifford()) {
+        // We want to proactively set OpenCL devices for the event they cross threshold.
+        if (!isRedistributing &&
+            !(!qinfos[i].unit || (qinfos[i].unit->GetMaxQPower() <= 2U) ||
+                (qinfos[i].unit->GetQubitCount() < thresholdQubits) || qinfos[i].unit->isClifford())) {
             continue;
         }
 
