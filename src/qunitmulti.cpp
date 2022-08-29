@@ -31,7 +31,7 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
 
     for (bitLenInt i = 0U; i < engines.size(); i++) {
         if ((engines[i] == QINTERFACE_CPU) || (engines[i] == QINTERFACE_HYBRID)) {
-            isQEngineOCL = true;
+            isQEngineOCL = false;
             break;
         }
         if (engines[i] == QINTERFACE_OPENCL) {
@@ -141,7 +141,7 @@ void QUnitMulti::RedistributeQEngines()
     for (size_t i = 0U; i < qinfos.size(); ++i) {
         // We want to proactively set OpenCL devices for the event they cross threshold.
         if (!isRedistributing &&
-            !(!qinfos[i].unit || (qinfos[i].unit->GetMaxQPower() <= 2U) ||
+            !((qinfos[i].unit->GetMaxQPower() <= 2U) ||
                 (!isQEngineOCL && (qinfos[i].unit->GetQubitCount() < thresholdQubits)) ||
                 qinfos[i].unit->isClifford())) {
             continue;
