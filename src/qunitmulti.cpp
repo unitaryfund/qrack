@@ -38,6 +38,9 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
             break;
         }
     }
+    if (engines.back() == QINTERFACE_QPAGER) {
+        isQEngineOCL = true;
+    }
 
     if (qubitThreshold) {
         thresholdQubits = qubitThreshold;
