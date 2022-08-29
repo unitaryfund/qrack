@@ -37,13 +37,10 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     bitLenInt qubitThreshold, real1_f sep_thresh)
     : QInterface(qBitCount, rgp, doNorm, useHardwareRNG, randomGlobalPhase, doNorm ? norm_thresh : ZERO_R1_F)
     , useHostRam(useHostMem)
-    , isDefaultPaging(false)
-    , isPagingVsBdt(false)
     , doNormalize(doNorm)
     , isSparse(useSparseStateVec)
     , useTGadget(true)
     , thresholdQubits(qubitThreshold)
-    , maxPageQubits(-1)
     , ancillaCount(0)
     , maxQubitPlusAncillaCount(28)
     , separabilityThreshold(sep_thresh)
@@ -58,7 +55,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
 
 #if ENABLE_OPENCL
     DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
-    maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex));
+    const bitLenInt maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex));
 #endif
 
 #if ENABLE_ENV_VARS
@@ -69,28 +66,15 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     maxQubitPlusAncillaCount = maxPageQubits + 2U;
 #endif
 
-#if ENABLE_ENV_VARS
-    if (getenv("QRACK_SEGMENT_GLOBAL_QB")) {
-        const bitLenInt segmentGlobalQb = (bitLenInt)std::stoi(std::string(getenv("QRACK_SEGMENT_GLOBAL_QB")));
-        maxPageQubits = (segmentGlobalQb < maxPageQubits) ? maxPageQubits - segmentGlobalQb : 0U;
-    }
-#endif
-
 #if ENABLE_OPENCL
     if ((engineTypes.size() == 1U) && (engineTypes[0U] == QINTERFACE_OPTIMAL_BASE)) {
-        isDefaultPaging = true;
-
 #if ENABLE_ENV_VARS
-        isPagingVsBdt = devList.size() || getenv("QRACK_QBDT_DEFAULT_OPT_OUT") || getenv("QRACK_QPAGER_DEVICES");
+        const bool isBdt = !devList.size() && getenv("QRACK_QBDT_DEFAULT_OPT_IN") && !getenv("QRACK_QPAGER_DEVICES");
 #else
-        isPagingVsBdt = devList.size();
+        const bool isBdt = !devList.size();
 #endif
-
-        if (!isPagingVsBdt) {
-            maxPageQubits -= maxQubitPlusAncillaCount - maxPageQubits;
+        if (isBdt) {
             engineTypes.push_back(QINTERFACE_BDT);
-        } else if (qubitCount > maxPageQubits) {
-            engineTypes.push_back(QINTERFACE_QPAGER);
         }
     }
 #endif
@@ -210,8 +194,6 @@ void QStabilizerHybrid::FlushIfBlocked(bitLenInt control, bitLenInt target, bool
     stabilizer->CNOT(target, ancillaIndex);
     Mtrx(shard->gate, ancillaIndex);
     H(ancillaIndex);
-
-    FixPaging();
 
     // When we measure, we act postselection, but not yet.
     // ForceM(ancillaIndex, false, true, true);
@@ -392,8 +374,6 @@ void QStabilizerHybrid::SwitchToEngine()
     shards.erase(shards.begin() + qubitCount, shards.end());
     // We're done with ancillae.
     ancillaCount = 0;
-
-    FixPaging();
 }
 
 bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
@@ -412,11 +392,9 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
     bitLenInt toRet;
     if (engine) {
         toCopy->SwitchToEngine();
-        SyncPagingWithOther(toCopy);
         toRet = engine->Compose(toCopy->engine);
     } else if (toCopy->engine) {
         SwitchToEngine();
-        SyncPagingWithOther(toCopy);
         toRet = engine->Compose(toCopy->engine);
     } else {
         toRet = stabilizer->Compose(toCopy->stabilizer, qubitCount);
@@ -433,9 +411,6 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy)
     }
 
     SetQubitCount(nQubits);
-    FixPaging();
-    // This would be more performant for toCopy reuse, but toCopy probably won't be reused.
-    // toCopy->FixPaging();
 
     return toRet;
 }
@@ -464,11 +439,9 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
 
     if (engine) {
         toCopy->SwitchToEngine();
-        SyncPagingWithOther(toCopy);
         toRet = engine->Compose(toCopy->engine, start);
     } else if (toCopy->engine) {
         SwitchToEngine();
-        SyncPagingWithOther(toCopy);
         toRet = engine->Compose(toCopy->engine, start);
     } else {
         toRet = stabilizer->Compose(toCopy->stabilizer, start);
@@ -484,9 +457,6 @@ bitLenInt QStabilizerHybrid::Compose(QStabilizerHybridPtr toCopy, bitLenInt star
     }
 
     SetQubitCount(nQubits);
-    FixPaging();
-    // This would be more performant for toCopy reuse, but toCopy probably won't be reused.
-    // toCopy->FixPaging();
 
     return toRet;
 }
@@ -514,10 +484,7 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
 
     if (engine) {
         dest->SwitchToEngine();
-        SyncPagingWithOther(dest);
         engine->Decompose(start, dest->engine);
-        FixPaging();
-        dest->FixPaging();
         SetQubitCount(qubitCount - length);
         return;
     }
@@ -531,9 +498,6 @@ void QStabilizerHybrid::Decompose(bitLenInt start, QStabilizerHybridPtr dest)
     std::copy(shards.begin() + start, shards.begin() + start + length, dest->shards.begin());
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(nQubits);
-
-    FixPaging();
-    dest->FixPaging();
 }
 
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
@@ -548,8 +512,6 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length)
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(nQubits);
-
-    FixPaging();
 }
 
 void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt disposedPerm)
@@ -564,8 +526,6 @@ void QStabilizerHybrid::Dispose(bitLenInt start, bitLenInt length, bitCapInt dis
 
     shards.erase(shards.begin() + start, shards.begin() + start + length);
     SetQubitCount(nQubits);
-
-    FixPaging();
 }
 
 bitLenInt QStabilizerHybrid::Allocate(bitLenInt start, bitLenInt length)

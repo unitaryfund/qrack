@@ -35,13 +35,10 @@ class QStabilizerHybrid : public QParity, public QInterface {
 #endif
 protected:
     bool useHostRam;
-    bool isDefaultPaging;
-    bool isPagingVsBdt;
     bool doNormalize;
     bool isSparse;
     bool useTGadget;
     bitLenInt thresholdQubits;
-    bitLenInt maxPageQubits;
     bitLenInt ancillaCount;
     bitLenInt maxQubitPlusAncillaCount;
     real1_f separabilityThreshold;
@@ -164,27 +161,6 @@ public:
 
     bool isPaged() { return (engineTypes[0] == QINTERFACE_QPAGER) || (engineTypes[0] == QINTERFACE_BDT); }
 
-    void TurnOnHighWidth()
-    {
-        if (isPagingVsBdt) {
-            TurnOnPaging();
-        }
-        // else {
-        //     TurnOnBdt();
-        // }
-    }
-
-    void TurnOffHighWidth()
-    {
-        if (isPagingVsBdt) {
-            TurnOffPaging();
-        }
-        // else {
-        //     // Intentionally skipped:
-        //     TurnOffBdt();
-        // }
-    }
-
     void TurnOnPaging()
     {
         if (engineTypes[0] == QINTERFACE_QPAGER) {
@@ -236,39 +212,6 @@ public:
         }
         if (engine) {
             engine = std::dynamic_pointer_cast<QBdt>(engine)->ReleaseEngine();
-        }
-    }
-
-    void FixPaging()
-    {
-        if (!isDefaultPaging) {
-            return;
-        }
-
-        if ((qubitCount + ancillaCount) <= maxPageQubits) {
-            TurnOffHighWidth();
-        }
-        if ((qubitCount + ancillaCount) > maxPageQubits) {
-            TurnOnHighWidth();
-        }
-    }
-
-    void SyncPagingWithOther(QStabilizerHybridPtr oSim)
-    {
-        if (!isDefaultPaging) {
-            return;
-        }
-
-        if ((qubitCount + oSim->qubitCount + ancillaCount + oSim->ancillaCount) > maxPageQubits) {
-            TurnOnHighWidth();
-            oSim->TurnOnHighWidth();
-            return;
-        }
-
-        if (oSim->isPaged()) {
-            TurnOnHighWidth();
-        } else if (isPaged()) {
-            oSim->TurnOnHighWidth();
         }
     }
 
