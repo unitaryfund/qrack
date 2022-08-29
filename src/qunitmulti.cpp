@@ -31,7 +31,6 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
 
     for (bitLenInt i = 0U; i < engines.size(); i++) {
         if ((engines[i] == QINTERFACE_CPU) || (engines[i] == QINTERFACE_HYBRID)) {
-            isQEngineOCL = false;
             break;
         }
         if (engines[i] == QINTERFACE_OPENCL) {
