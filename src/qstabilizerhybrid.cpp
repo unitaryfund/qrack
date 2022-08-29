@@ -57,7 +57,7 @@ QStabilizerHybrid::QStabilizerHybrid(std::vector<QInterfaceEngine> eng, bitLenIn
     DeviceContextPtr devContext = OCLEngine::Instance().GetDeviceContextPtr(devID);
     const bitLenInt maxPageQubits = log2(devContext->GetMaxAlloc() / sizeof(complex));
 #else
-    const bitLenInt maxPageQubits = getenv("QRACK_MAX_CPU_QB")) ? std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
+    const bitLenInt maxPageQubits = getenv("QRACK_MAX_CPU_QB") ? (bitLenInt)std::stoi(std::string(getenv("QRACK_MAX_CPU_QB"))) : 30U;
 #endif
 
 #if ENABLE_ENV_VARS
