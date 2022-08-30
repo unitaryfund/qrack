@@ -86,27 +86,56 @@ public:
     {
     }
 
-    virtual bool TryDecompose(bitLenInt start, QInterfacePtr dest, real1_f error_tol = TRYDECOMPOSE_EPSILON)
+    virtual QInterfacePtr Clone()
     {
-        return false;
-    }
+        // TODO: Copy buffers instead of flushing?
+        for (bitLenInt i = 0U; i < qubitCount; ++i) {
+            RevertBasis2Qb(i);
+        }
 
-    virtual QInterfacePtr Clone();
+        QUnitMultiPtr copyPtr = std::make_shared<QUnitMulti>(engines, qubitCount, 0U, rand_generator, phaseFactor,
+            doNormalize, randGlobalPhase, useHostRam, defaultDeviceID, useRDRAND, isSparse, (real1_f)amplitudeFloor,
+            deviceIDs, thresholdQubits, separabilityThreshold);
+
+        copyPtr->SetReactiveSeparate(isReactiveSeparate);
+
+        return CloneBody(copyPtr);
+    }
 
 protected:
     virtual std::vector<QEngineInfo> GetQInfos();
 
-    virtual bool SeparateBit(bool value, bitLenInt qubit);
+    virtual bool SeparateBit(bool value, bitLenInt qubit)
+    {
+        const bool toRet = QUnit::SeparateBit(value, qubit);
+        RedistributeQEngines();
+
+        return toRet;
+    }
 
     virtual void Detach(bitLenInt start, bitLenInt length, QUnitPtr dest)
     {
         Detach(start, length, std::dynamic_pointer_cast<QUnitMulti>(dest));
     }
-    virtual void Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest);
+    virtual void Detach(bitLenInt start, bitLenInt length, QUnitMultiPtr dest)
+    {
+        if (!length) {
+            return;
+        }
 
-    virtual void RedistributeQEngines();
+        QUnit::Detach(start, length, dest);
+        RedistributeQEngines();
+    }
 
     virtual QInterfacePtr EntangleInCurrentBasis(
-        std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last);
+        std::vector<bitLenInt*>::iterator first, std::vector<bitLenInt*>::iterator last)
+    {
+        QInterfacePtr toRet = QUnit::EntangleInCurrentBasis(first, last);
+        RedistributeQEngines();
+
+        return toRet;
+    }
+
+    virtual void RedistributeQEngines();
 };
 } // namespace Qrack

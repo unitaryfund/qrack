@@ -159,62 +159,6 @@ public:
     {
     }
 
-    bool isPaged() { return (engineTypes[0] == QINTERFACE_QPAGER) || (engineTypes[0] == QINTERFACE_BDT); }
-
-    void TurnOnPaging()
-    {
-        if (engineTypes[0] == QINTERFACE_QPAGER) {
-            return;
-        }
-        if (engine) {
-            engine = std::make_shared<QPager>(std::dynamic_pointer_cast<QEngine>(engine), engineTypes, qubitCount, 0U,
-                rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-                (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
-        }
-        engineTypes.insert(engineTypes.begin(), QINTERFACE_QPAGER);
-    }
-
-    void TurnOffPaging()
-    {
-        if (engineTypes[0] != QINTERFACE_QPAGER) {
-            return;
-        }
-        engineTypes.erase(engineTypes.begin());
-        if (!engineTypes.size()) {
-            engineTypes.push_back(QINTERFACE_OPTIMAL_BASE);
-        }
-        if (engine) {
-            engine = std::dynamic_pointer_cast<QPager>(engine)->ReleaseEngine();
-        }
-    }
-
-    void TurnOnBdt()
-    {
-        if (engineTypes[0] == QINTERFACE_BDT) {
-            return;
-        }
-        if (engine) {
-            engine = std::make_shared<QBdt>(std::dynamic_pointer_cast<QEngine>(engine), engineTypes, qubitCount, 0U,
-                rand_generator, phaseFactor, doNormalize, randGlobalPhase, useHostRam, devID, useRDRAND, isSparse,
-                (real1_f)amplitudeFloor, deviceIDs, thresholdQubits, separabilityThreshold);
-        }
-        engineTypes.insert(engineTypes.begin(), QINTERFACE_BDT);
-    }
-
-    void TurnOffBdt()
-    {
-        if (engineTypes[0] != QINTERFACE_BDT) {
-            return;
-        }
-        engineTypes.erase(engineTypes.begin());
-        if (!engineTypes.size()) {
-            engineTypes.push_back(QINTERFACE_OPTIMAL_BASE);
-        }
-        if (engine) {
-            engine = std::dynamic_pointer_cast<QBdt>(engine)->ReleaseEngine();
-        }
-    }
-
     void SetTInjection(bool useGadget) { useTGadget = useGadget; }
     bool GetTInjection() { return useTGadget; }
 
