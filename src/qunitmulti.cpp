@@ -29,7 +29,7 @@ QUnitMulti::QUnitMulti(std::vector<QInterfaceEngine> eng, bitLenInt qBitCount, b
     isRedistributing = false;
 #endif
 
-    for (bitLenInt i = 0U; i < engines.size(); i++) {
+    for (size_t i = 0U; i < engines.size(); i++) {
         if ((engines[i] == QINTERFACE_CPU) || (engines[i] == QINTERFACE_HYBRID)) {
             break;
         }
