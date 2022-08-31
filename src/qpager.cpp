@@ -163,6 +163,9 @@ void QPager::Init()
                 std::vector<int> ids(tokens.size() - 1U);
                 for (unsigned i = 1U; i < tokens.size(); ++i) {
                     ids[i - 1U] = stoi(tokens[i]);
+                    if (ids[i - 1U] == -2) {
+                        ids[i - 1U] = devID;
+                    }
                 }
                 for (unsigned i = 0U; i < maxI; ++i) {
                     for (unsigned j = 0U; j < ids.size(); ++j) {
