@@ -2851,8 +2851,6 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                     }
                 }
 
-                inject_1qb_u3_noise(qReg, i, noiseParam);
-
                 // This is a QUnit specific optimization attempt method that can "compress" (or "Schmidt decompose")
                 // the representation without changing the logical state of the QUnit, up to float error:
                 // qReg->TrySeparate(i);
@@ -2889,6 +2887,9 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                     }
 
                     qReg->TrySeparate(b1, b2);
+
+                    inject_1qb_u3_noise(qReg, b1, noiseParam);
+                    inject_1qb_u3_noise(qReg, b2, noiseParam);
 
                     // "iSWAP" is read to be a SWAP operation that imparts a phase factor of i if the bits are
                     // different.
