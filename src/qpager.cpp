@@ -157,6 +157,12 @@ void QPager::Init()
                 std::vector<std::string> tokens{ first, last };
                 if (tokens.size() == 1U) {
                     deviceIDs.push_back(stoi(term));
+                    if (deviceIDs.back() == -2) {
+                        deviceIDs.back() = devID;
+                    }
+                    if (deviceIDs.back() == -1) {
+                        deviceIDs.back() = (int)OCLEngine::Instance().GetDefaultDeviceID();
+                    }
                     continue;
                 }
                 const unsigned maxI = stoi(tokens[0U]);
