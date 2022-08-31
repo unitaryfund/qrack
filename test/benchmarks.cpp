@@ -2767,6 +2767,9 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
         }
         int rowLen = n / colLen;
 
+        // "1/6 of a full CZ" is read to indicate the 6th root of the gate operator.
+        complex sixthRoot = pow(-ONE_CMPLX, complex((real1)(1.0f / 6.0f)));
+
         // std::cout<<"n="<<(int)n<<std::endl;
         // std::cout<<"rowLen="<<(int)rowLen<<std::endl;
         // std::cout<<"colLen="<<(int)colLen<<std::endl;
@@ -2902,7 +2905,6 @@ TEST_CASE("test_noisy_sycamore", "[supreme]")
                     // real1_f root = ONE_R1 / 6;
                     // root = (ONE_R1 + 2 * (qReg->Rand() - noiseParam)) * root;
                     // complex sixthRoot = pow(-ONE_CMPLX, complex(root));
-                    complex sixthRoot = pow(-ONE_CMPLX, complex(ONE_R1 / 6));
 
                     controls[0] = b1;
                     qReg->MCPhase(controls, 1U, ONE_CMPLX, sixthRoot, b2);
